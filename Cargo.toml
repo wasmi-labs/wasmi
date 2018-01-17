@@ -1,0 +1,10 @@
+[package]
+name = "parity-wasm-interp"
+version = "0.1.0"
+authors = ["Sergey Pepyakin <s.pepyakin@gmail.com>"]
+
+[dependencies]
+# parity-wasm = "0.20"
+parity-wasm = { path = "/Users/pepyakin/dev/parity/parity-wasm" }
+wabt = "0.1"
+byteorder = "1.0"
