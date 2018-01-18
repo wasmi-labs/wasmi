@@ -413,21 +413,6 @@ impl ModuleInstance {
 		})
 	}
 
-	pub fn invoke_index<E: Externals>(
-		&self,
-		func_idx: u32,
-		args: &[RuntimeValue],
-		externals: &mut E,
-	) -> Result<Option<RuntimeValue>, Error> {
-		let func_instance = self.func_by_index(func_idx).ok_or_else(|| {
-			Error::Function(format!(
-				"Module doesn't contain function at index {}",
-				func_idx
-			))
-		})?;
-		FuncInstance::invoke(func_instance, Cow::Borrowed(args), externals)
-	}
-
 	pub fn invoke_export<E: Externals>(
 		&self,
 		func_name: &str,
