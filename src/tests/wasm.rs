@@ -1,6 +1,6 @@
 use parity_wasm::elements::deserialize_file;
 use parity_wasm::elements::{FunctionType, GlobalType, MemoryType, Module, TableType};
-use {Error, FuncRef, GlobalInstance, GlobalRef, ImportsBuilder, MemoryInstance,
+use {Error, Signature, FuncRef, GlobalInstance, GlobalRef, ImportsBuilder, MemoryInstance,
                   MemoryRef, ModuleImportResolver, ModuleInstance, NopExternals, RuntimeValue,
                   TableInstance, TableRef};
 use validation::validate_module;
@@ -24,7 +24,7 @@ impl Env {
 }
 
 impl ModuleImportResolver for Env {
-	fn resolve_func(&self, _field_name: &str, _func_type: &FunctionType) -> Result<FuncRef, Error> {
+	fn resolve_func(&self, _field_name: &str, _func_type: &Signature) -> Result<FuncRef, Error> {
 		Err(Error::Instantiation(
 			"env module doesn't provide any functions".into(),
 		))

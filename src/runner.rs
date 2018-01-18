@@ -5,7 +5,7 @@ use std::fmt::{self, Display};
 use std::iter::repeat;
 use std::collections::{HashMap, VecDeque};
 use parity_wasm::elements::{Opcode, BlockType, Local, FunctionType};
-use Error;
+use {Error, Signature};
 use module::ModuleRef;
 use func::FuncRef;
 use func::FuncInstance;
@@ -102,8 +102,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 							function_stack.push_back(function_context);
 							function_stack.push_back(nested_context);
 						},
-						FuncInstance::Host { ref func_type, .. } => {
-							let args = prepare_function_args(func_type, &mut function_context.value_stack)?;
+						FuncInstance::Host { ref signature, .. } => {
+							let args = prepare_function_args(signature, &mut function_context.value_stack)?;
 							let return_val = FuncInstance::invoke(nested_func.clone(), args.into(), self.externals)?;
 							if let Some(return_val) = return_val {
 								function_context.value_stack_mut().push(return_val)?;
@@ -428,7 +428,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	fn run_call_indirect(
 		&mut self,
 		context: &mut FunctionContext,
-		type_idx: u32,
+		signature_idx: u32,
 	) -> Result<InstructionOutcome, Error> {
 		let table_func_idx: u32 = context.value_stack_mut().pop_as()?;
 		let table = context
@@ -438,10 +438,10 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		let func_ref = table.get(table_func_idx)?;
 
 		{
-			let actual_function_type = func_ref.func_type();
+			let actual_function_type = func_ref.signature();
 			let required_function_type = context
 				.module()
-				.type_by_index(type_idx)
+				.signature_by_index(signature_idx)
 				.expect("Due to validation type should exists");
 
 			if &*required_function_type != actual_function_type {
@@ -1001,7 +1001,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 }
 
 impl FunctionContext {
-	pub fn new<'store>(function: FuncRef, value_stack_limit: usize, frame_stack_limit: usize, function_type: &FunctionType, args: Vec<RuntimeValue>) -> Self {
+	pub fn new<'store>(function: FuncRef, value_stack_limit: usize, frame_stack_limit: usize, signature: &Signature, args: Vec<RuntimeValue>) -> Self {
 		let module = match *function {
 			FuncInstance::Internal { ref module, .. } => module.clone(),
 			FuncInstance::Host { .. } => panic!("Host functions can't be called as internally defined functions; Thus FunctionContext can be created only with internally defined functions; qed"),
@@ -1010,7 +1010,7 @@ impl FunctionContext {
 			is_initialized: false,
 			function: function,
 			module: module,
-			return_type: function_type.return_type().map(|vt| BlockType::Value(vt)).unwrap_or(BlockType::NoResult),
+			return_type: signature.return_type().map(|vt| BlockType::Value(vt)).unwrap_or(BlockType::NoResult),
 			value_stack: StackWithLimit::with_limit(value_stack_limit),
 			frame_stack: StackWithLimit::with_limit(frame_stack_limit),
 			locals: args,
@@ -1024,7 +1024,7 @@ impl FunctionContext {
 				FuncInstance::Internal { ref module, .. } => module.clone(),
 				FuncInstance::Host { .. } => panic!("Host functions can't be called as internally defined functions; Thus FunctionContext can be created only with internally defined functions; qed"),
 			};
-			let function_type = function.func_type();
+			let function_type = function.signature();
 			let function_return_type = function_type.return_type().map(|vt| BlockType::Value(vt)).unwrap_or(BlockType::NoResult);
 			let function_locals = prepare_function_args(&function_type, &mut self.value_stack)?;
 			(function_locals, module, function_return_type)
@@ -1151,8 +1151,8 @@ fn effective_address(address: u32, offset: u32) -> Result<u32, Error> {
 	}
 }
 
-pub fn prepare_function_args(function_type: &FunctionType, caller_stack: &mut StackWithLimit<RuntimeValue>) -> Result<Vec<RuntimeValue>, Error> {
-	let mut args = function_type.params().iter().cloned().rev().map(|expected_type| {
+pub fn prepare_function_args(signature: &Signature, caller_stack: &mut StackWithLimit<RuntimeValue>) -> Result<Vec<RuntimeValue>, Error> {
+	let mut args = signature.params().iter().cloned().rev().map(|expected_type| {
 		let param_value = caller_stack.pop()?;
 		let actual_type = param_value.value_type();
 		if actual_type != expected_type {

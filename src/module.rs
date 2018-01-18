@@ -4,7 +4,7 @@ use std::fmt;
 use std::collections::HashMap;
 use std::borrow::Cow;
 use parity_wasm::elements::{External, FunctionType, InitExpr, Internal, Opcode, ResizableLimits, Type};
-use {Error, MemoryInstance, RuntimeValue, TableInstance};
+use {Error, Signature, MemoryInstance, RuntimeValue, TableInstance};
 use imports::ImportResolver;
 use global::{GlobalInstance, GlobalRef};
 use func::{FuncRef, FuncBody, FuncInstance};
@@ -89,7 +89,7 @@ impl ExternVal {
 
 #[derive(Debug)]
 pub struct ModuleInstance {
-	types: RefCell<Vec<Rc<FunctionType>>>,
+	signatures: RefCell<Vec<Rc<Signature>>>,
 	tables: RefCell<Vec<TableRef>>,
 	funcs: RefCell<Vec<FuncRef>>,
 	memories: RefCell<Vec<MemoryRef>>,
@@ -101,7 +101,7 @@ impl ModuleInstance {
 	fn default() -> Self {
 		ModuleInstance {
 			funcs: RefCell::new(Vec::new()),
-			types: RefCell::new(Vec::new()),
+			signatures: RefCell::new(Vec::new()),
 			tables: RefCell::new(Vec::new()),
 			memories: RefCell::new(Vec::new()),
 			globals: RefCell::new(Vec::new()),
@@ -129,16 +129,16 @@ impl ModuleInstance {
 		self.exports.borrow().get(name).cloned()
 	}
 
-	pub(crate) fn type_by_index(&self, idx: u32) -> Option<Rc<FunctionType>> {
-		self.types.borrow().get(idx as usize).cloned()
+	pub(crate) fn signature_by_index(&self, idx: u32) -> Option<Rc<Signature>> {
+		self.signatures.borrow().get(idx as usize).cloned()
 	}
 
 	fn push_func(&self, func: FuncRef) {
 		self.funcs.borrow_mut().push(func);
 	}
 
-	fn push_type(&self, func_type: Rc<FunctionType>) {
-		self.types.borrow_mut().push(func_type)
+	fn push_signature(&self, signature: Rc<Signature>) {
+		self.signatures.borrow_mut().push(signature)
 	}
 
 	fn push_memory(&self, memory: MemoryRef) {
@@ -165,8 +165,8 @@ impl ModuleInstance {
 		let instance = ModuleRef(Rc::new(ModuleInstance::default()));
 
 		for &Type::Function(ref ty) in module.type_section().map(|ts| ts.types()).unwrap_or(&[]) {
-			let type_id = alloc_func_type(ty.clone());
-			instance.push_type(type_id);
+			let signature = Rc::new(ty.clone().into());
+			instance.push_signature(signature);
 		}
 
 		{
@@ -184,10 +184,10 @@ impl ModuleInstance {
 			{
 				match (import.external(), extern_val) {
 					(&External::Function(fn_type_idx), &ExternVal::Func(ref func)) => {
-						let expected_fn_type = instance.type_by_index(fn_type_idx).expect(
+						let expected_fn_type = instance.signature_by_index(fn_type_idx).expect(
 							"Due to validation function type should exists",
 						);
-						let actual_fn_type = func.func_type();
+						let actual_fn_type = func.signature();
 						if &*expected_fn_type != actual_fn_type {
 							return Err(Error::Instantiation(format!(
 								"Expected function with type {:?}, but actual type is {:?} for entry {}",
@@ -241,7 +241,7 @@ impl ModuleInstance {
 			for (index, (ty, body)) in
 				Iterator::zip(funcs.into_iter(), bodies.into_iter()).enumerate()
 			{
-				let func_type = instance.type_by_index(ty.type_ref()).expect(
+				let signature = instance.signature_by_index(ty.type_ref()).expect(
 					"Due to validation type should exists",
 				);
 				let labels = labels.get(&index).expect(
@@ -253,7 +253,7 @@ impl ModuleInstance {
 					labels: labels,
 				};
 				let func_instance =
-					FuncInstance::alloc_internal(instance.clone(), func_type, func_body);
+					FuncInstance::alloc_internal(instance.clone(), signature, func_body);
 				instance.push_func(func_instance);
 			}
 		}
@@ -386,7 +386,8 @@ impl ModuleInstance {
 					let &Type::Function(ref func_type) = types
 						.get(fn_ty_idx as usize)
 						.expect("Due to validation functions should have valid types");
-					let func = imports.resolve_func(module_name, field_name, func_type)?;
+					let signature = func_type.clone().into();
+					let func = imports.resolve_func(module_name, field_name, &signature)?;
 					ExternVal::Func(func)
 				}
 				External::Table(ref table_type) => {
@@ -476,10 +477,6 @@ impl<'a> NotStartedModuleRef<'a> {
 		assert!(self.validated_module.module().start_section().is_none());
 		self.instance
 	}
-}
-
-fn alloc_func_type(func_type: FunctionType) -> Rc<FunctionType> {
-	Rc::new(func_type)
 }
 
 fn eval_init_expr(init_expr: &InitExpr, module: &ModuleInstance) -> RuntimeValue {

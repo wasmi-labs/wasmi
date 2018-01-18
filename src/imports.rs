@@ -5,14 +5,14 @@ use memory::MemoryRef;
 use func::FuncRef;
 use table::TableRef;
 use module::ModuleRef;
-use Error;
+use {Error, Signature};
 
 pub trait ImportResolver {
 	fn resolve_func(
 		&self,
 		module_name: &str,
 		field_name: &str,
-		func_type: &FunctionType,
+		func_type: &Signature,
 	) -> Result<FuncRef, Error>;
 
 	fn resolve_global(
@@ -75,11 +75,11 @@ impl<'a> ImportResolver for ImportsBuilder<'a> {
 		&self,
 		module_name: &str,
 		field_name: &str,
-		func_type: &FunctionType,
+		signature: &Signature,
 	) -> Result<FuncRef, Error> {
 		self.resolver(module_name).ok_or_else(||
 			Error::Instantiation(format!("Module {} not found", module_name))
-		)?.resolve_func(field_name, func_type)
+		)?.resolve_func(field_name, signature)
 	}
 
 	fn resolve_global(
@@ -120,7 +120,7 @@ pub trait ModuleImportResolver {
 	fn resolve_func(
 		&self,
 		field_name: &str,
-		_func_type: &FunctionType,
+		_signature: &Signature,
 	) -> Result<FuncRef, Error> {
 		Err(Error::Instantiation(
 			format!("Export {} not found", field_name),
@@ -162,7 +162,7 @@ impl ModuleImportResolver for ModuleRef {
 	fn resolve_func(
 		&self,
 		field_name: &str,
-		_func_type: &FunctionType,
+		_signature: &Signature,
 	) -> Result<FuncRef, Error> {
 		Ok(self.export_by_name(field_name)
 			.ok_or_else(|| {

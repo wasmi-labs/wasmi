@@ -2,7 +2,7 @@
 use parity_wasm::elements::{deserialize_buffer, FunctionType, MemoryType, TableType, ValueType};
 use validation::{validate_module, ValidatedModule};
 use {
-	Error, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
+	Error, Signature, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
 	MemoryInstance, MemoryRef, TableInstance, TableRef, ModuleImportResolver, ModuleInstance, ModuleRef,
 	RuntimeValue, TryInto,
 };
@@ -144,14 +144,14 @@ impl Externals for TestHost {
 }
 
 impl TestHost {
-	fn check_signature(&self, index: usize, func_type: &FunctionType) -> bool {
+	fn check_signature(&self, index: usize, signature: &Signature) -> bool {
 		if index == RECURSE_FUNC_INDEX {
 			// This function requires special handling because it is polymorphic.
-			if func_type.params().len() != 1 {
+			if signature.params().len() != 1 {
 				return false;
 			}
-			let param_type = func_type.params()[0];
-			return func_type.return_type() == Some(param_type);
+			let param_type = signature.params()[0];
+			return signature.return_type() == Some(param_type);
 		}
 
 		let (params, ret_ty): (&[ValueType], Option<ValueType>) = match index {
@@ -162,12 +162,12 @@ impl TestHost {
 			_ => return false,
 		};
 
-		func_type.params() == params && func_type.return_type() == ret_ty
+		signature.params() == params && signature.return_type() == ret_ty
 	}
 }
 
 impl ModuleImportResolver for TestHost {
-	fn resolve_func(&self, field_name: &str, func_type: &FunctionType) -> Result<FuncRef, Error> {
+	fn resolve_func(&self, field_name: &str, signature: &Signature) -> Result<FuncRef, Error> {
 		let index = match field_name {
 			"sub" => SUB_FUNC_INDEX,
 			"err" => ERR_FUNC_INDEX,
@@ -181,15 +181,15 @@ impl ModuleImportResolver for TestHost {
 			}
 		};
 
-		if !self.check_signature(index, func_type) {
+		if !self.check_signature(index, signature) {
 			return Err(Error::Instantiation(format!(
 				"Export `{}` doesnt match expected type {:?}",
 				field_name,
-				func_type
+				signature
 			)));
 		}
 
-		Ok(FuncInstance::alloc_host(func_type.clone(), index))
+		Ok(FuncInstance::alloc_host(signature.clone(), index))
 	}
 
 	fn resolve_memory(
@@ -424,22 +424,22 @@ fn defer_providing_externals() {
 		fn resolve_func(
 			&self,
 			field_name: &str,
-			func_type: &FunctionType,
+			signature: &Signature,
 		) -> Result<FuncRef, Error> {
 			if field_name != "inc" {
 				return Err(Error::Instantiation(
 					format!("Export {} not found", field_name),
 				));
 			}
-			if func_type.params() != &[ValueType::I32] || func_type.return_type() != None {
+			if signature.params() != &[ValueType::I32] || signature.return_type() != None {
 				return Err(Error::Instantiation(format!(
 					"Export `{}` doesnt match expected type {:?}",
 					field_name,
-					func_type
+					signature
 				)));
 			}
 
-			Ok(FuncInstance::alloc_host(func_type.clone(), INC_FUNC_INDEX))
+			Ok(FuncInstance::alloc_host(signature.clone(), INC_FUNC_INDEX))
 		}
 
 		fn resolve_memory(
@@ -552,7 +552,7 @@ fn two_envs_one_externals() {
 		fn resolve_func(
 			&self,
 			field_name: &str,
-			func_type: &FunctionType,
+			signature: &Signature,
 		) -> Result<FuncRef, Error> {
 			let index = match field_name {
 				"ordinary" => ORDINARY_FUNC_INDEX,
@@ -564,7 +564,7 @@ fn two_envs_one_externals() {
 				}
 			};
 
-			Ok(FuncInstance::alloc_host(func_type.clone(), index))
+			Ok(FuncInstance::alloc_host(signature.clone(), index))
 		}
 	}
 
@@ -572,7 +572,7 @@ fn two_envs_one_externals() {
 		fn resolve_func(
 			&self,
 			field_name: &str,
-			func_type: &FunctionType,
+			signature: &Signature,
 		) -> Result<FuncRef, Error> {
 			let index = match field_name {
 				"ordinary" => ORDINARY_FUNC_INDEX,
@@ -588,7 +588,7 @@ fn two_envs_one_externals() {
 				}
 			};
 
-			Ok(FuncInstance::alloc_host(func_type.clone(), index))
+			Ok(FuncInstance::alloc_host(signature.clone(), index))
 		}
 	}
 
@@ -663,7 +663,7 @@ fn dynamically_add_host_func() {
 					self.added_funcs += 1;
 
 					let added_func = FuncInstance::alloc_host(
-						FunctionType::new(vec![], Some(ValueType::I32)),
+						Signature::new(&[], Some(ValueType::I32)),
 						host_func_index as usize,
 					);
 					self.table.set(table_index, Some(added_func))?;
@@ -682,7 +682,7 @@ fn dynamically_add_host_func() {
 		fn resolve_func(
 			&self,
 			field_name: &str,
-			func_type: &FunctionType,
+			signature: &Signature,
 		) -> Result<FuncRef, Error> {
 			let index = match field_name {
 				"add_func" => ADD_FUNC_FUNC_INDEX,
@@ -692,7 +692,7 @@ fn dynamically_add_host_func() {
 					))
 				}
 			};
-			Ok(FuncInstance::alloc_host(func_type.clone(), index))
+			Ok(FuncInstance::alloc_host(signature.clone(), index))
 		}
 
 		fn resolve_table(

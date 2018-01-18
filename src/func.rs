@@ -3,7 +3,7 @@ use std::fmt;
 use std::collections::HashMap;
 use std::borrow::Cow;
 use parity_wasm::elements::{FunctionType, Local, Opcodes};
-use Error;
+use {Error, Signature};
 use host::Externals;
 use runner::{prepare_function_args, FunctionContext, Interpreter};
 use value::RuntimeValue;
@@ -24,12 +24,12 @@ impl ::std::ops::Deref for FuncRef {
 #[derive(Clone)]
 pub enum FuncInstance {
 	Internal {
-		func_type: Rc<FunctionType>,
+		signature: Rc<Signature>,
 		module: ModuleRef,
 		body: Rc<FuncBody>,
 	},
 	Host {
-		func_type: FunctionType,
+		signature: Signature,
 		host_func_index: usize,
 	},
 }
@@ -38,19 +38,19 @@ impl fmt::Debug for FuncInstance {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match self {
 			&FuncInstance::Internal {
-				ref func_type,
-				ref module,
+				ref signature,
 				..
 			} => {
+				// We can't write description of self.module here, because it generate 
+				// debug string for function instances and this will lead to infinite loop.
 				write!(
 					f,
-					"Internal {{ type={:?}, module={:?} }}",
-					func_type,
-					module
+					"Internal {{ signature={:?} }}",
+					signature,
 				)
 			}
-			&FuncInstance::Host { ref func_type, .. } => {
-				write!(f, "Host {{ type={:?} }}", func_type)
+			&FuncInstance::Host { ref signature, .. } => {
+				write!(f, "Host {{ signature={:?} }}", signature)
 			}
 		}
 	}
@@ -59,29 +59,29 @@ impl fmt::Debug for FuncInstance {
 impl FuncInstance {
 	pub(crate) fn alloc_internal(
 		module: ModuleRef,
-		func_type: Rc<FunctionType>,
+		signature: Rc<Signature>,
 		body: FuncBody,
 	) -> FuncRef {
 		let func = FuncInstance::Internal {
-			func_type,
+			signature,
 			module: module,
 			body: Rc::new(body),
 		};
 		FuncRef(Rc::new(func))
 	}
 
-	pub fn alloc_host(func_type: FunctionType, host_func_index: usize) -> FuncRef {
+	pub fn alloc_host(signature: Signature, host_func_index: usize) -> FuncRef {
 		let func = FuncInstance::Host {
-			func_type,
+			signature,
 			host_func_index,
 		};
 		FuncRef(Rc::new(func))
 	}
 
-	pub fn func_type(&self) -> &FunctionType {
+	pub fn signature(&self) -> &Signature {
 		match *self {
-			FuncInstance::Internal { ref func_type, .. } => func_type,
-			FuncInstance::Host { ref func_type, .. } => func_type,
+			FuncInstance::Internal { ref signature, .. } => signature,
+			FuncInstance::Host { ref signature, .. } => signature,
 		}
 	}
 
@@ -103,15 +103,15 @@ impl FuncInstance {
 		}
 
 		let result = match *func {
-			FuncInstance::Internal { ref func_type, .. } => {
+			FuncInstance::Internal { ref signature, .. } => {
 				let mut stack =
 					StackWithLimit::with_data(args.into_iter().cloned(), DEFAULT_VALUE_STACK_LIMIT);
-				let args = prepare_function_args(func_type, &mut stack)?;
+				let args = prepare_function_args(signature, &mut stack)?;
 				let context = FunctionContext::new(
 					func.clone(),
 					DEFAULT_VALUE_STACK_LIMIT,
 					DEFAULT_FRAME_STACK_LIMIT,
-					func_type,
+					signature,
 					args,
 				);
 				InvokeKind::Internal(context)
