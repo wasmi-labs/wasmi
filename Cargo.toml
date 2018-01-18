@@ -1,10 +1,16 @@
 [package]
 name = "parity-wasm-interp"
 version = "0.1.0"
-authors = ["Sergey Pepyakin <s.pepyakin@gmail.com>"]
+authors = ["Nikolay Volf <nikvolf@gmail.com>", "Svyatoslav Nikolsky <svyatonik@yandex.ru>", "Sergey Pepyakin <s.pepyakin@gmail.com>"]
+license = "MIT/Apache-2.0"
+readme = "README.md"
+description = "WebAssembly interpreter"
+keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
+exclude = [ "res/*", "spec/*" ]
 
 [dependencies]
-# parity-wasm = "0.20"
-parity-wasm = { path = "/Users/pepyakin/dev/parity/parity-wasm" }
-wabt = "0.1"
+parity-wasm = "0.20"
 byteorder = "1.0"
+
+[dev-dependencies]
+wabt = "0.1.2"
