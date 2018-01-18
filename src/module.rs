@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use std::fmt;
 use std::collections::HashMap;
 use std::borrow::Cow;
-use parity_wasm::elements::{External, FunctionType, InitExpr, Internal, Opcode, ResizableLimits, Type};
+use parity_wasm::elements::{External, InitExpr, Internal, Opcode, ResizableLimits, Type};
 use {Error, Signature, MemoryInstance, RuntimeValue, TableInstance};
 use imports::ImportResolver;
 use global::{GlobalInstance, GlobalRef};
@@ -165,7 +165,7 @@ impl ModuleInstance {
 		let instance = ModuleRef(Rc::new(ModuleInstance::default()));
 
 		for &Type::Function(ref ty) in module.type_section().map(|ts| ts.types()).unwrap_or(&[]) {
-			let signature = Rc::new(ty.clone().into());
+			let signature = Rc::new(Signature::from_elements(ty.clone()));
 			instance.push_signature(signature);
 		}
 
@@ -207,7 +207,7 @@ impl ModuleInstance {
 						instance.push_memory(memory.clone());
 					}
 					(&External::Global(ref gl), &ExternVal::Global(ref global)) => {
-						if gl.content_type() != global.value_type() {
+						if gl.content_type() != global.elements_value_type() {
 							return Err(Error::Instantiation(format!(
 								"Expect global with {:?} type, but provided global with {:?} type",
 								gl.content_type(),
@@ -386,7 +386,7 @@ impl ModuleInstance {
 					let &Type::Function(ref func_type) = types
 						.get(fn_ty_idx as usize)
 						.expect("Due to validation functions should have valid types");
-					let signature = func_type.clone().into();
+					let signature = Signature::from_elements(func_type.clone());
 					let func = imports.resolve_func(module_name, field_name, &signature)?;
 					ExternVal::Func(func)
 				}

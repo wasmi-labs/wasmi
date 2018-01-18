@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use parity_wasm::elements::{FunctionType, GlobalType, MemoryType, TableType};
+use parity_wasm::elements::{GlobalType, MemoryType, TableType};
 use global::GlobalRef;
 use memory::MemoryRef;
 use func::FuncRef;

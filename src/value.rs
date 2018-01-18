@@ -130,12 +130,12 @@ impl RuntimeValue {
 	}
 
 	/// Get variable type for this value.
-	pub fn value_type(&self) -> ValueType {
+	pub fn value_type(&self) -> ::types::ValueType {
 		match *self {
-			RuntimeValue::I32(_) => ValueType::I32,
-			RuntimeValue::I64(_) => ValueType::I64,
-			RuntimeValue::F32(_) => ValueType::F32,
-			RuntimeValue::F64(_) => ValueType::F64,
+			RuntimeValue::I32(_) => ::types::ValueType::I32,
+			RuntimeValue::I64(_) => ::types::ValueType::I64,
+			RuntimeValue::F32(_) => ::types::ValueType::F32,
+			RuntimeValue::F64(_) => ::types::ValueType::F64,
 		}
 	}
 }

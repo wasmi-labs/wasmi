@@ -4,7 +4,7 @@ use std::{u32, usize};
 use std::fmt::{self, Display};
 use std::iter::repeat;
 use std::collections::{HashMap, VecDeque};
-use parity_wasm::elements::{Opcode, BlockType, Local, FunctionType};
+use parity_wasm::elements::{Opcode, BlockType, Local};
 use {Error, Signature};
 use module::ModuleRef;
 use func::FuncRef;
@@ -1010,7 +1010,7 @@ impl FunctionContext {
 			is_initialized: false,
 			function: function,
 			module: module,
-			return_type: signature.return_type().map(|vt| BlockType::Value(vt)).unwrap_or(BlockType::NoResult),
+			return_type: signature.return_type().map(|vt| BlockType::Value(vt.into_elements())).unwrap_or(BlockType::NoResult),
 			value_stack: StackWithLimit::with_limit(value_stack_limit),
 			frame_stack: StackWithLimit::with_limit(frame_stack_limit),
 			locals: args,
@@ -1025,7 +1025,7 @@ impl FunctionContext {
 				FuncInstance::Host { .. } => panic!("Host functions can't be called as internally defined functions; Thus FunctionContext can be created only with internally defined functions; qed"),
 			};
 			let function_type = function.signature();
-			let function_return_type = function_type.return_type().map(|vt| BlockType::Value(vt)).unwrap_or(BlockType::NoResult);
+			let function_return_type = function_type.return_type().map(|vt| BlockType::Value(vt.into_elements())).unwrap_or(BlockType::NoResult);
 			let function_locals = prepare_function_args(&function_type, &mut self.value_stack)?;
 			(function_locals, module, function_return_type)
 		};

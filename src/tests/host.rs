@@ -1,11 +1,12 @@
 
-use parity_wasm::elements::{deserialize_buffer, FunctionType, MemoryType, TableType, ValueType};
+use parity_wasm::elements::{deserialize_buffer, MemoryType, TableType};
 use validation::{validate_module, ValidatedModule};
 use {
 	Error, Signature, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
 	MemoryInstance, MemoryRef, TableInstance, TableRef, ModuleImportResolver, ModuleInstance, ModuleRef,
 	RuntimeValue, TryInto,
 };
+use types::ValueType;
 use wabt::wat2wasm;
 
 #[derive(Debug, Clone, PartialEq)]

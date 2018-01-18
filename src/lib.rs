@@ -97,8 +97,6 @@ impl From<::common::stack::Error> for Error {
 	}
 }
 
-use types::Signature;
-
 mod validation;
 mod common;
 mod memory;
@@ -123,3 +121,4 @@ pub use self::imports::{ModuleImportResolver, ImportResolver, ImportsBuilder};
 pub use self::module::{ModuleInstance, ModuleRef, ExternVal, NotStartedModuleRef};
 pub use self::global::{GlobalInstance, GlobalRef};
 pub use self::func::{FuncInstance, FuncRef};
+pub use self::types::{Signature, ValueType};

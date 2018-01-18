@@ -1,5 +1,5 @@
 use parity_wasm::elements::deserialize_file;
-use parity_wasm::elements::{FunctionType, GlobalType, MemoryType, Module, TableType};
+use parity_wasm::elements::{GlobalType, MemoryType, Module, TableType};
 use {Error, Signature, FuncRef, GlobalInstance, GlobalRef, ImportsBuilder, MemoryInstance,
                   MemoryRef, ModuleImportResolver, ModuleInstance, NopExternals, RuntimeValue,
                   TableInstance, TableRef};

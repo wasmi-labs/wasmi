@@ -2,7 +2,7 @@ use std::rc::Rc;
 use std::fmt;
 use std::collections::HashMap;
 use std::borrow::Cow;
-use parity_wasm::elements::{FunctionType, Local, Opcodes};
+use parity_wasm::elements::{Local, Opcodes};
 use {Error, Signature};
 use host::Externals;
 use runner::{prepare_function_args, FunctionContext, Interpreter};

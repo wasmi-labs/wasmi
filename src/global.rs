@@ -1,8 +1,9 @@
 use std::rc::Rc;
 use std::cell::Cell;
-use parity_wasm::elements::ValueType;
 use value::RuntimeValue;
 use Error;
+use types::ValueType;
+use parity_wasm::elements::{ValueType as EValueType};
 
 #[derive(Clone, Debug)]
 pub struct GlobalRef(Rc<GlobalInstance>);
@@ -55,5 +56,9 @@ impl GlobalInstance {
 
 	pub fn value_type(&self) -> ValueType {
 		self.val.get().value_type()
+	}
+
+	pub(crate) fn elements_value_type(&self) -> EValueType {
+		self.value_type().into_elements()
 	}
 }
