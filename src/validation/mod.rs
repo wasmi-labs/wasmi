@@ -38,8 +38,8 @@ impl From<stack::Error> for Error {
 
 #[derive(Clone)]
 pub struct ValidatedModule {
-	labels: HashMap<usize, HashMap<usize, usize>>,
-	module: Module,
+	pub labels: HashMap<usize, HashMap<usize, usize>>,
+	pub module: Module,
 }
 
 impl ValidatedModule {
@@ -49,10 +49,6 @@ impl ValidatedModule {
 
 	pub fn into_module(self) -> Module {
 		self.module
-	}
-
-	pub(crate) fn labels(&self) -> &HashMap<usize, HashMap<usize, usize>> {
-		&self.labels
 	}
 }
 

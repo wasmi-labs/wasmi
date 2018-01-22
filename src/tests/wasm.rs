@@ -1,9 +1,10 @@
-use parity_wasm::elements::deserialize_file;
 use parity_wasm::elements::{GlobalType, MemoryType, Module, TableType};
-use {Error, Signature, FuncRef, GlobalInstance, GlobalRef, ImportsBuilder, MemoryInstance,
-                  MemoryRef, ModuleImportResolver, ModuleInstance, NopExternals, RuntimeValue,
-                  TableInstance, TableRef};
-use validation::validate_module;
+use {
+	Error, Signature, FuncRef, GlobalInstance, GlobalRef, ImportsBuilder, MemoryInstance,
+    MemoryRef, ModuleImportResolver, ModuleInstance, NopExternals, RuntimeValue,
+    TableInstance, TableRef, LoadedModule, load_from_buffer,
+};
+use std::fs::File;
 
 struct Env {
 	table_base: GlobalRef,
@@ -69,6 +70,14 @@ impl ModuleImportResolver for Env {
 	}
 }
 
+fn load_from_file(filename: &str) -> LoadedModule {
+	use std::io::prelude::*;
+	let mut file = File::open(filename).unwrap();
+	let mut buf = Vec::new();
+	file.read_to_end(&mut buf).unwrap();
+	load_from_buffer(buf).unwrap()
+}
+
 #[test]
 fn interpreter_inc_i32() {
 	// Name of function contained in WASM file (note the leading underline)
@@ -76,14 +85,12 @@ fn interpreter_inc_i32() {
 	// The WASM file containing the module and function
 	const WASM_FILE: &str = &"res/cases/v1/inc_i32.wasm";
 
-	let module: Module =
-		deserialize_file(WASM_FILE).expect("Failed to deserialize module from buffer");
-	let validated_module = validate_module(module).expect("Failed to validate module");
+	let module = load_from_file(WASM_FILE);
 
 	let env = Env::new();
 
 	let instance = ModuleInstance::new(
-		&validated_module,
+		&module,
 		&ImportsBuilder::new().with_resolver("env", &env),
 	).expect("Failed to instantiate module")
 		.assert_no_start();
@@ -110,13 +117,11 @@ fn interpreter_accumulate_u8() {
 
 
     // Load the module-structure from wasm-file and add to program
-    let module: Module =
-        deserialize_file(WASM_FILE).expect("Failed to deserialize module from buffer");
-	let validated_module = validate_module(module).expect("Failed to validate module");
+	let module = load_from_file(WASM_FILE);
 
 	let env = Env::new();
 	let instance = ModuleInstance::new(
-		&validated_module,
+		&module,
 		&ImportsBuilder::new().with_resolver("env", &env),
 	).expect("Failed to instantiate module")
 		.assert_no_start();

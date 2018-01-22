@@ -4,14 +4,13 @@ use std::fmt;
 use std::collections::HashMap;
 use std::borrow::Cow;
 use parity_wasm::elements::{External, InitExpr, Internal, Opcode, ResizableLimits, Type};
-use {Error, Signature, MemoryInstance, RuntimeValue, TableInstance};
+use {LoadedModule, Error, Signature, MemoryInstance, RuntimeValue, TableInstance};
 use imports::ImportResolver;
 use global::{GlobalInstance, GlobalRef};
 use func::{FuncRef, FuncBody, FuncInstance};
 use table::TableRef;
 use memory::MemoryRef;
 use host::Externals;
-use validation::ValidatedModule;
 use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 
 #[derive(Clone, Debug)]
@@ -158,10 +157,10 @@ impl ModuleInstance {
 	}
 
 	fn alloc_module(
-		validated_module: &ValidatedModule,
+		loaded_module: &LoadedModule,
 		extern_vals: &[ExternVal]
 	) -> Result<ModuleRef, Error> {
-		let module = validated_module.module();
+		let module = loaded_module.module();
 		let instance = ModuleRef(Rc::new(ModuleInstance::default()));
 
 		for &Type::Function(ref ty) in module.type_section().map(|ts| ts.types()).unwrap_or(&[]) {
@@ -227,7 +226,7 @@ impl ModuleInstance {
 			}
 		}
 
-		let labels = validated_module.labels();
+		let labels = loaded_module.labels();
 		{
 			let funcs = module.function_section().map(|fs| fs.entries()).unwrap_or(
 				&[],
@@ -327,12 +326,12 @@ impl ModuleInstance {
 	}
 
 	fn instantiate_with_externvals(
-		validated_module: &ValidatedModule,
+		loaded_module: &LoadedModule,
 		extern_vals: &[ExternVal],
 	) -> Result<ModuleRef, Error> {
-		let module = validated_module.module();
+		let module = loaded_module.module();
 
-		let module_ref = ModuleInstance::alloc_module(validated_module, extern_vals)?;
+		let module_ref = ModuleInstance::alloc_module(loaded_module, extern_vals)?;
 
 		for element_segment in module.elements_section().map(|es| es.entries()).unwrap_or(
 			&[],
@@ -371,10 +370,10 @@ impl ModuleInstance {
 	}
 
 	pub fn new<'m, I: ImportResolver>(
-		validated_module: &'m ValidatedModule,
+		loaded_module: &'m LoadedModule,
 		imports: &I,
 	) -> Result<NotStartedModuleRef<'m>, Error> {
-		let module = validated_module.module();
+		let module = loaded_module.module();
 
 		let mut extern_vals = Vec::new();
 		for import_entry in module.import_section().map(|s| s.entries()).unwrap_or(&[]) {
@@ -406,9 +405,9 @@ impl ModuleInstance {
 			extern_vals.push(extern_val);
 		}
 
-		let instance = Self::instantiate_with_externvals(validated_module, &extern_vals)?;
+		let instance = Self::instantiate_with_externvals(loaded_module, &extern_vals)?;
 		Ok(NotStartedModuleRef {
-			validated_module,
+			loaded_module,
 			instance,
 		})
 	}
@@ -439,7 +438,7 @@ impl ModuleInstance {
 }
 
 pub struct NotStartedModuleRef<'a> {
-	validated_module: &'a ValidatedModule,
+	loaded_module: &'a LoadedModule,
 	instance: ModuleRef,
 }
 
@@ -449,7 +448,7 @@ impl<'a> NotStartedModuleRef<'a> {
 	}
 
 	pub fn run_start<'b, E: Externals>(self, state: &'b mut E) -> Result<ModuleRef, Error> {
-		if let Some(start_fn_idx) = self.validated_module.module().start_section() {
+		if let Some(start_fn_idx) = self.loaded_module.module().start_section() {
 			let start_func = self.instance.func_by_index(start_fn_idx).expect(
 				"Due to validation start function should exists",
 			);
@@ -459,7 +458,7 @@ impl<'a> NotStartedModuleRef<'a> {
 	}
 
 	pub fn assert_no_start(self) -> ModuleRef {
-		assert!(self.validated_module.module().start_section().is_none());
+		assert!(self.loaded_module.module().start_section().is_none());
 		self.instance
 	}
 }

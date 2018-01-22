@@ -10,10 +10,15 @@ extern crate byteorder;
 
 use std::fmt;
 use std::error;
+use std::path::Path;
+use std::collections::HashMap;
+use parity_wasm::elements::Module;
 
 /// Internal interpreter error.
 #[derive(Debug)]
 pub enum Error {
+	/// Module validation error. Might occur only at load time.
+	Validation(String),
 	/// Error while instantiating a module. Might occur when provided
 	/// with incorrect exports (i.e. linkage failure).
 	Instantiation(String),
@@ -38,6 +43,7 @@ pub enum Error {
 impl Into<String> for Error {
 	fn into(self) -> String {
 		match self {
+			Error::Validation(s) => s,
 			Error::Instantiation(s) => s,
 			Error::Function(s) => s,
 			Error::Table(s) => s,
@@ -54,6 +60,7 @@ impl Into<String> for Error {
 impl fmt::Display for Error {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match *self {
+			Error::Validation(ref s) => write!(f, "Validation: {}", s),
 			Error::Instantiation(ref s) => write!(f, "Instantiation: {}", s),
 			Error::Function(ref s) => write!(f, "Function: {}", s),
 			Error::Table(ref s) => write!(f, "Table: {}", s),
@@ -72,6 +79,7 @@ impl fmt::Display for Error {
 impl error::Error for Error {
 	fn description(&self) -> &str {
 		match *self {
+			Error::Validation(ref s) => s,
 			Error::Instantiation(ref s) => s,
 			Error::Function(ref s) => s,
 			Error::Table(ref s) => s,
@@ -85,9 +93,16 @@ impl error::Error for Error {
 	}
 }
 
+
 impl<U> From<U> for Error where U: host::HostError + Sized {
 	fn from(e: U) -> Self {
 		Error::Host(Box::new(e))
+	}
+}
+
+impl From<validation::Error> for Error {
+	fn from(e: validation::Error) -> Error {
+		Error::Validation(e.to_string())
 	}
 }
 
@@ -122,3 +137,41 @@ pub use self::module::{ModuleInstance, ModuleRef, ExternVal, NotStartedModuleRef
 pub use self::global::{GlobalInstance, GlobalRef};
 pub use self::func::{FuncInstance, FuncRef};
 pub use self::types::{Signature, ValueType};
+
+pub struct LoadedModule {
+	labels: HashMap<usize, HashMap<usize, usize>>,
+	module: Module,
+}
+
+impl LoadedModule {
+	pub(crate) fn module(&self) -> &Module {
+		&self.module
+	}
+
+	pub(crate) fn labels(&self) -> &HashMap<usize, HashMap<usize, usize>> {
+		&self.labels
+	}
+
+	pub fn into_module(self) -> Module {
+		self.module
+	}
+}
+
+pub fn load_from_module(module: Module) -> Result<LoadedModule, Error> {
+	use validation::{validate_module, ValidatedModule};
+	let ValidatedModule {
+		labels,
+		module,
+	} = validate_module(module)?;
+
+	Ok(LoadedModule {
+		labels,
+		module,
+	})
+}
+
+pub fn load_from_buffer<B: AsRef<[u8]>>(buffer: B) -> Result<LoadedModule, Error> {
+	let module = parity_wasm::elements::deserialize_buffer(buffer.as_ref())
+		.map_err(|e: parity_wasm::elements::Error| Error::Validation(e.to_string()))?;
+	load_from_module(module)
+}

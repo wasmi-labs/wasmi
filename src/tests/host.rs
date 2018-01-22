@@ -1,10 +1,9 @@
 
 use parity_wasm::elements::{deserialize_buffer, MemoryType, TableType};
-use validation::{validate_module, ValidatedModule};
 use {
 	Error, Signature, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
 	MemoryInstance, MemoryRef, TableInstance, TableRef, ModuleImportResolver, ModuleInstance, ModuleRef,
-	RuntimeValue, TryInto,
+	RuntimeValue, TryInto, LoadedModule, load_from_buffer,
 };
 use types::ValueType;
 use wabt::wat2wasm;
@@ -204,11 +203,9 @@ impl ModuleImportResolver for TestHost {
 	}
 }
 
-fn parse_wat(source: &str) -> ValidatedModule {
+fn parse_wat(source: &str) -> LoadedModule {
 	let wasm_binary = wat2wasm(source).expect("Failed to parse wat source");
-	let module = deserialize_buffer(&wasm_binary).expect("Failed to deserialize module");
-	let validated_module = validate_module(module).expect("Failed to validate module");
-	validated_module
+	load_from_buffer(wasm_binary).expect("Failed to load parsed module")
 }
 
 #[test]
