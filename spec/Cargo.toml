@@ -1,0 +1,25 @@
+[package]
+name = "parity-wasm-testsuite"
+version = "0.0.0"
+authors = ["NikVolf <nikvolf@gmail.com>"]
+license = "MIT/Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/nikvolf/parity-wasm"
+homepage = "https://github.com/nikvolf/parity-wasm"
+description = "parity-wasm testsuite"
+build = "build.rs"
+
+[build-dependencies]
+cmake = "0.1"
+
+[dependencies]
+parity-wasm-interp = { path = ".." }
+serde_json = "1.0"
+serde_derive = "1.0"
+serde = "1.0"
+
+[dev-dependencies]
+parity-wasm-interp = { path = ".." }
+serde_json = "1.0"
+serde_derive = "1.0"
+serde = "1.0"
