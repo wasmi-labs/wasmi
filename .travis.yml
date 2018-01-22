@@ -1,0 +1,19 @@
+dist: trusty
+sudo: required
+language:
+- rust
+- cpp
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-6
+    - g++-6
+    - cmake
+script:
+- export CC=/usr/bin/gcc-6
+- export CXX=/usr/bin/g++-6
+- cargo build --verbose
+- cargo test --verbose
+- cargo test --manifest-path=spec/Cargo.toml
