@@ -7,7 +7,7 @@ use std::fs::File;
 use wasmi::{
 	Error as InterpreterError, ModuleInstance, ModuleRef,
 	Externals, RuntimeValue, FuncRef, TryInto, ModuleImportResolver, 
-	HostError, ImportsBuilder, Signature, ValueType,
+	FuncInstance, HostError, ImportsBuilder, Signature, ValueType,
 };
 
 #[derive(Debug)]
@@ -175,9 +175,9 @@ impl<'a> ModuleImportResolver for RuntimeModuleImportResolver {
 	) -> Result<FuncRef, InterpreterError> {
 		let func_ref = match field_name {
 			"set" => {
-				FuncRef::alloc_host(Signature::new(&[ValueType::I32], None), SET_FUNC_INDEX)
+				FuncInstance::alloc_host(Signature::new(&[ValueType::I32], None), SET_FUNC_INDEX)
 			},
-			"get" => FuncRef::alloc_host(Signature::new(&[ValueType::I32], Some(ValueType::I32)), GET_FUNC_INDEX),
+			"get" => FuncInstance::alloc_host(Signature::new(&[ValueType::I32], Some(ValueType::I32)), GET_FUNC_INDEX),
 			_ => return Err(
 				InterpreterError::Function(
 					format!("host module doesn't export function with name {}", field_name)

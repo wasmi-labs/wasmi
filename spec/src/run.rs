@@ -13,7 +13,8 @@ use wasmi::{
     GlobalInstance, GlobalRef, ImportResolver, ImportsBuilder,
     MemoryInstance, MemoryRef, ModuleImportResolver, ModuleInstance,
     ModuleRef, RuntimeValue, TableInstance, TableRef, ValueType,
-    load_from_buffer, LoadedModule, Signature, MemoryDescriptor, TableDescriptor, GlobalDescriptor,
+    load_from_buffer, LoadedModule, Signature, MemoryDescriptor, 
+    TableDescriptor, GlobalDescriptor, FuncInstance,
 };
 
 #[derive(Debug)]
@@ -81,7 +82,7 @@ impl ModuleImportResolver for SpecModule {
                 ));
             }
 
-            let func = FuncRef::alloc_host(func_type.clone(), PRINT_FUNC_INDEX);
+            let func = FuncInstance::alloc_host(func_type.clone(), PRINT_FUNC_INDEX);
             return Ok(func);
         }
 

@@ -14,26 +14,17 @@ use common::{DEFAULT_FRAME_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT};
 #[derive(Clone, Debug)]
 pub struct FuncRef(Rc<FuncInstance>);
 
-impl FuncRef {
-	pub fn alloc_host(signature: Signature, host_func_index: usize) -> FuncRef {
-		let func = FuncInstance::Host {
-			signature,
-			host_func_index,
-		};
-		FuncRef(Rc::new(func))
-	}
-
-	pub fn signature(&self) -> &Signature {
-		self.0.signature()
-	}
-
-	pub(crate) fn as_instance(&self) -> &FuncInstance {
+impl ::std::ops::Deref for FuncRef {
+	type Target = FuncInstance;
+	fn deref(&self) -> &FuncInstance {
 		&self.0
 	}
 }
 
+pub struct FuncInstance(FuncInstanceInternal);
+
 #[derive(Clone)]
-pub(crate) enum FuncInstance {
+pub(crate) enum FuncInstanceInternal {
 	Internal {
 		signature: Rc<Signature>,
 		module: Weak<ModuleInstance>,
@@ -47,8 +38,8 @@ pub(crate) enum FuncInstance {
 
 impl fmt::Debug for FuncInstance {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		match self {
-			&FuncInstance::Internal {
+		match self.as_internal() {
+			&FuncInstanceInternal::Internal {
 				ref signature,
 				..
 			} => {
@@ -60,7 +51,7 @@ impl fmt::Debug for FuncInstance {
 					signature,
 				)
 			}
-			&FuncInstance::Host { ref signature, .. } => {
+			&FuncInstanceInternal::Host { ref signature, .. } => {
 				write!(f, "Host {{ signature={:?} }}", signature)
 			}
 		}
@@ -68,30 +59,42 @@ impl fmt::Debug for FuncInstance {
 }
 
 impl FuncInstance {
+	pub fn alloc_host(signature: Signature, host_func_index: usize) -> FuncRef {
+		let func = FuncInstanceInternal::Host {
+			signature,
+			host_func_index,
+		};
+		FuncRef(Rc::new(FuncInstance(func)))
+	}
+
+	pub(crate) fn as_internal(&self) -> &FuncInstanceInternal {
+		&self.0
+	}
+
 	pub(crate) fn alloc_internal(
 		module: Weak<ModuleInstance>,
 		signature: Rc<Signature>,
 		body: FuncBody,
 	) -> FuncRef {
-		let func = FuncInstance::Internal {
+		let func = FuncInstanceInternal::Internal {
 			signature,
 			module: module,
 			body: Rc::new(body),
 		};
-		FuncRef(Rc::new(func))
+		FuncRef(Rc::new(FuncInstance(func)))
 	}
 
 	pub fn signature(&self) -> &Signature {
-		match *self {
-			FuncInstance::Internal { ref signature, .. } => signature,
-			FuncInstance::Host { ref signature, .. } => signature,
+		match *self.as_internal() {
+			FuncInstanceInternal::Internal { ref signature, .. } => signature,
+			FuncInstanceInternal::Host { ref signature, .. } => signature,
 		}
 	}
 
 	pub(crate) fn body(&self) -> Option<Rc<FuncBody>> {
-		match *self {
-			FuncInstance::Internal { ref body, .. } => Some(Rc::clone(body)),
-			FuncInstance::Host { .. } => None,
+		match *self.as_internal() {
+			FuncInstanceInternal::Internal { ref body, .. } => Some(Rc::clone(body)),
+			FuncInstanceInternal::Host { .. } => None,
 		}
 	}
 
@@ -105,8 +108,8 @@ impl FuncInstance {
 			Host(usize, &'a [RuntimeValue]),
 		}
 
-		let result = match *func.as_instance() {
-			FuncInstance::Internal { ref signature, .. } => {
+		let result = match *func.as_internal() {
+			FuncInstanceInternal::Internal { ref signature, .. } => {
 				let mut stack =
 					StackWithLimit::with_data(args.into_iter().cloned(), DEFAULT_VALUE_STACK_LIMIT);
 				let args = prepare_function_args(signature, &mut stack)?;
@@ -119,7 +122,7 @@ impl FuncInstance {
 				);
 				InvokeKind::Internal(context)
 			}
-			FuncInstance::Host { ref host_func_index, .. } => {
+			FuncInstanceInternal::Host { ref host_func_index, .. } => {
 				InvokeKind::Host(*host_func_index, &*args)
 			}
 		};

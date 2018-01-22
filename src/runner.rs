@@ -7,8 +7,7 @@ use std::collections::{HashMap, VecDeque};
 use parity_wasm::elements::{Opcode, BlockType, Local};
 use {Error, Signature};
 use module::ModuleRef;
-use func::FuncRef;
-use func::FuncInstance;
+use func::{FuncRef, FuncInstance, FuncInstanceInternal};
 use value::{
 	RuntimeValue, TryInto, WrapInto, TryTruncateInto, ExtendInto,
 	ArithmeticOps, Integer, Float, LittleEndianConvert, TransmuteInto,
@@ -78,7 +77,6 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			let mut function_context = function_stack.pop_back().expect("on loop entry - not empty; on loop continue - checking for emptiness; qed");
 			let function_ref = function_context.function.clone();
 			let function_body = function_ref
-				.as_instance()
 				.body()
 				.expect(
 					"Host functions checked in function_return below; Internal functions always have a body; qed"
@@ -101,13 +99,13 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 					}
 				},
 				RunResult::NestedCall(nested_func) => {
-					match *nested_func.as_instance() {
-						FuncInstance::Internal { .. } => {
+					match *nested_func.as_internal() {
+						FuncInstanceInternal::Internal { .. } => {
 							let nested_context = function_context.nested(nested_func.clone())?;
 							function_stack.push_back(function_context);
 							function_stack.push_back(nested_context);
 						},
-						FuncInstance::Host { ref signature, .. } => {
+						FuncInstanceInternal::Host { ref signature, .. } => {
 							let args = prepare_function_args(signature, &mut function_context.value_stack)?;
 							let return_val = FuncInstance::invoke(nested_func.clone(), args.into(), self.externals)?;
 							if let Some(return_val) = return_val {
@@ -1007,9 +1005,9 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 
 impl FunctionContext {
 	pub fn new<'store>(function: FuncRef, value_stack_limit: usize, frame_stack_limit: usize, signature: &Signature, args: Vec<RuntimeValue>) -> Self {
-		let module = match *function.as_instance() {
-			FuncInstance::Internal { ref module, .. } => module.upgrade().expect("module deallocated"),
-			FuncInstance::Host { .. } => panic!("Host functions can't be called as internally defined functions; Thus FunctionContext can be created only with internally defined functions; qed"),
+		let module = match *function.as_internal() {
+			FuncInstanceInternal::Internal { ref module, .. } => module.upgrade().expect("module deallocated"),
+			FuncInstanceInternal::Host { .. } => panic!("Host functions can't be called as internally defined functions; Thus FunctionContext can be created only with internally defined functions; qed"),
 		};
 		FunctionContext {
 			is_initialized: false,
@@ -1025,9 +1023,9 @@ impl FunctionContext {
 
 	pub fn nested(&mut self, function: FuncRef) -> Result<Self, Error> {
 		let (function_locals, module, function_return_type) = {
-			let module = match *function.as_instance() {
-				FuncInstance::Internal { ref module, .. } => module.upgrade().expect("module deallocated"),
-				FuncInstance::Host { .. } => panic!("Host functions can't be called as internally defined functions; Thus FunctionContext can be created only with internally defined functions; qed"),
+			let module = match *function.as_internal() {
+				FuncInstanceInternal::Internal { ref module, .. } => module.upgrade().expect("module deallocated"),
+				FuncInstanceInternal::Host { .. } => panic!("Host functions can't be called as internally defined functions; Thus FunctionContext can be created only with internally defined functions; qed"),
 			};
 			let function_type = function.signature();
 			let function_return_type = function_type.return_type().map(|vt| BlockType::Value(vt.into_elements())).unwrap_or(BlockType::NoResult);

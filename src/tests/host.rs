@@ -1,5 +1,5 @@
 use {
-	Error, Signature, Externals, FuncRef, HostError, ImportsBuilder,
+	Error, Signature, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
 	MemoryInstance, MemoryRef, TableInstance, TableRef, ModuleImportResolver, ModuleInstance, ModuleRef,
 	RuntimeValue, TryInto, LoadedModule, load_from_buffer, TableDescriptor, MemoryDescriptor,
 };
@@ -187,7 +187,7 @@ impl ModuleImportResolver for TestHost {
 			)));
 		}
 
-		Ok(FuncRef::alloc_host(signature.clone(), index))
+		Ok(FuncInstance::alloc_host(signature.clone(), index))
 	}
 
 	fn resolve_memory(
@@ -435,7 +435,7 @@ fn defer_providing_externals() {
 				)));
 			}
 
-			Ok(FuncRef::alloc_host(signature.clone(), INC_FUNC_INDEX))
+			Ok(FuncInstance::alloc_host(signature.clone(), INC_FUNC_INDEX))
 		}
 
 		fn resolve_memory(
@@ -560,7 +560,7 @@ fn two_envs_one_externals() {
 				}
 			};
 
-			Ok(FuncRef::alloc_host(signature.clone(), index))
+			Ok(FuncInstance::alloc_host(signature.clone(), index))
 		}
 	}
 
@@ -584,7 +584,7 @@ fn two_envs_one_externals() {
 				}
 			};
 
-			Ok(FuncRef::alloc_host(signature.clone(), index))
+			Ok(FuncInstance::alloc_host(signature.clone(), index))
 		}
 	}
 
@@ -658,7 +658,7 @@ fn dynamically_add_host_func() {
 					let host_func_index = table_index + 1;
 					self.added_funcs += 1;
 
-					let added_func = FuncRef::alloc_host(
+					let added_func = FuncInstance::alloc_host(
 						Signature::new(&[], Some(ValueType::I32)),
 						host_func_index as usize,
 					);
@@ -688,7 +688,7 @@ fn dynamically_add_host_func() {
 					))
 				}
 			};
-			Ok(FuncRef::alloc_host(signature.clone(), index))
+			Ok(FuncInstance::alloc_host(signature.clone(), index))
 		}
 
 		fn resolve_table(

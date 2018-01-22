@@ -134,7 +134,7 @@ pub use self::host::{Externals, NopExternals, HostError};
 pub use self::imports::{ModuleImportResolver, ImportResolver, ImportsBuilder};
 pub use self::module::{ModuleInstance, ModuleRef, ExternVal, NotStartedModuleRef};
 pub use self::global::{GlobalInstance, GlobalRef};
-pub use self::func::{FuncRef};
+pub use self::func::{FuncInstance, FuncRef};
 pub use self::types::{Signature, ValueType, GlobalDescriptor, TableDescriptor, MemoryDescriptor};
 
 pub struct LoadedModule {
