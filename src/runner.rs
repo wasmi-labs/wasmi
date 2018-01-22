@@ -1008,13 +1008,13 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 impl FunctionContext {
 	pub fn new<'store>(function: FuncRef, value_stack_limit: usize, frame_stack_limit: usize, signature: &Signature, args: Vec<RuntimeValue>) -> Self {
 		let module = match *function.as_instance() {
-			FuncInstance::Internal { ref module, .. } => module.clone(),
+			FuncInstance::Internal { ref module, .. } => module.upgrade().expect("module deallocated"),
 			FuncInstance::Host { .. } => panic!("Host functions can't be called as internally defined functions; Thus FunctionContext can be created only with internally defined functions; qed"),
 		};
 		FunctionContext {
 			is_initialized: false,
 			function: function,
-			module: module,
+			module: ModuleRef(module),
 			return_type: signature.return_type().map(|vt| BlockType::Value(vt.into_elements())).unwrap_or(BlockType::NoResult),
 			value_stack: StackWithLimit::with_limit(value_stack_limit),
 			frame_stack: StackWithLimit::with_limit(frame_stack_limit),
@@ -1026,7 +1026,7 @@ impl FunctionContext {
 	pub fn nested(&mut self, function: FuncRef) -> Result<Self, Error> {
 		let (function_locals, module, function_return_type) = {
 			let module = match *function.as_instance() {
-				FuncInstance::Internal { ref module, .. } => module.clone(),
+				FuncInstance::Internal { ref module, .. } => module.upgrade().expect("module deallocated"),
 				FuncInstance::Host { .. } => panic!("Host functions can't be called as internally defined functions; Thus FunctionContext can be created only with internally defined functions; qed"),
 			};
 			let function_type = function.signature();
@@ -1038,7 +1038,7 @@ impl FunctionContext {
 		Ok(FunctionContext {
 			is_initialized: false,
 			function: function,
-			module: module,
+			module: ModuleRef(module),
 			return_type: function_return_type,
 			value_stack: StackWithLimit::with_limit(self.value_stack.limit() - self.value_stack.len()),
 			frame_stack: StackWithLimit::with_limit(self.frame_stack.limit() - self.frame_stack.len()),

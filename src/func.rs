@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 use std::fmt;
 use std::collections::HashMap;
 use std::borrow::Cow;
@@ -7,7 +7,7 @@ use {Error, Signature};
 use host::Externals;
 use runner::{prepare_function_args, FunctionContext, Interpreter};
 use value::RuntimeValue;
-use module::ModuleRef;
+use module::ModuleInstance;
 use common::stack::StackWithLimit;
 use common::{DEFAULT_FRAME_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT};
 
@@ -36,7 +36,7 @@ impl FuncRef {
 pub(crate) enum FuncInstance {
 	Internal {
 		signature: Rc<Signature>,
-		module: ModuleRef,
+		module: Weak<ModuleInstance>,
 		body: Rc<FuncBody>,
 	},
 	Host {
@@ -69,7 +69,7 @@ impl fmt::Debug for FuncInstance {
 
 impl FuncInstance {
 	pub(crate) fn alloc_internal(
-		module: ModuleRef,
+		module: Weak<ModuleInstance>,
 		signature: Rc<Signature>,
 		body: FuncBody,
 	) -> FuncRef {

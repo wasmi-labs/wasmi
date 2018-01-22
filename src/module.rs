@@ -15,7 +15,7 @@ use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use types::{GlobalDescriptor, TableDescriptor, MemoryDescriptor};
 
 #[derive(Clone, Debug)]
-pub struct ModuleRef(Rc<ModuleInstance>);
+pub struct ModuleRef(pub(crate) Rc<ModuleInstance>);
 
 impl ::std::ops::Deref for ModuleRef {
 	type Target = ModuleInstance;
@@ -253,7 +253,7 @@ impl ModuleInstance {
 					labels: labels,
 				};
 				let func_instance =
-					FuncInstance::alloc_internal(instance.clone(), signature, func_body);
+					FuncInstance::alloc_internal(Rc::downgrade(&instance.0), signature, func_body);
 				instance.push_func(func_instance);
 			}
 		}
