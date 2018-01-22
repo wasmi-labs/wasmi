@@ -1,5 +1,5 @@
 
-use parity_wasm::elements::{deserialize_buffer, MemoryType, TableType};
+use parity_wasm::elements::{MemoryType, TableType};
 use {
 	Error, Signature, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
 	MemoryInstance, MemoryRef, TableInstance, TableRef, ModuleImportResolver, ModuleInstance, ModuleRef,

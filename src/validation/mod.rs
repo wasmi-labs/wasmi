@@ -42,16 +42,6 @@ pub struct ValidatedModule {
 	pub module: Module,
 }
 
-impl ValidatedModule {
-	pub fn module(&self) -> &Module {
-		&self.module
-	}
-
-	pub fn into_module(self) -> Module {
-		self.module
-	}
-}
-
 impl ::std::ops::Deref for ValidatedModule {
 	type Target = Module;
 	fn deref(&self) -> &Module {

@@ -24,15 +24,10 @@ pub struct GlobalInstance {
 impl GlobalInstance {
 
 	pub fn alloc(val: RuntimeValue, mutable: bool) -> GlobalRef {
-		let global = GlobalInstance::new(val, mutable);
-		GlobalRef(Rc::new(global))
-	}
-
-	fn new(val: RuntimeValue, mutable: bool) -> GlobalInstance {
-		GlobalInstance {
+		GlobalRef(Rc::new(GlobalInstance {
 			val: Cell::new(val),
 			mutable,
-		}
+		}))
 	}
 
 	pub fn set(&self, val: RuntimeValue) -> Result<(), Error> {

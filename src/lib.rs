@@ -10,7 +10,6 @@ extern crate byteorder;
 
 use std::fmt;
 use std::error;
-use std::path::Path;
 use std::collections::HashMap;
 use parity_wasm::elements::Module;
 
@@ -136,7 +135,7 @@ pub use self::imports::{ModuleImportResolver, ImportResolver, ImportsBuilder};
 pub use self::module::{ModuleInstance, ModuleRef, ExternVal, NotStartedModuleRef};
 pub use self::global::{GlobalInstance, GlobalRef};
 pub use self::func::{FuncInstance, FuncRef};
-pub use self::types::{Signature, ValueType};
+pub use self::types::{Signature, ValueType, GlobalDescriptor};
 
 pub struct LoadedModule {
 	labels: HashMap<usize, HashMap<usize, usize>>,

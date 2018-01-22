@@ -1,8 +1,8 @@
-use parity_wasm::elements::{GlobalType, MemoryType, Module, TableType};
+use parity_wasm::elements::{MemoryType, TableType};
 use {
 	Error, Signature, FuncRef, GlobalInstance, GlobalRef, ImportsBuilder, MemoryInstance,
     MemoryRef, ModuleImportResolver, ModuleInstance, NopExternals, RuntimeValue,
-    TableInstance, TableRef, LoadedModule, load_from_buffer,
+    TableInstance, TableRef, LoadedModule, load_from_buffer, GlobalDescriptor,
 };
 use std::fs::File;
 
@@ -34,7 +34,7 @@ impl ModuleImportResolver for Env {
 	fn resolve_global(
 		&self,
 		field_name: &str,
-		_global_type: &GlobalType,
+		_global_type: &GlobalDescriptor,
 	) -> Result<GlobalRef, Error> {
 		match field_name {
 			"tableBase" => Ok(self.table_base.clone()),

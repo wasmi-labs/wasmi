@@ -1,10 +1,11 @@
 use std::collections::HashMap;
-use parity_wasm::elements::{GlobalType, MemoryType, TableType};
+use parity_wasm::elements::{MemoryType, TableType};
 use global::GlobalRef;
 use memory::MemoryRef;
 use func::FuncRef;
 use table::TableRef;
 use module::ModuleRef;
+use types::GlobalDescriptor;
 use {Error, Signature};
 
 pub trait ImportResolver {
@@ -19,7 +20,7 @@ pub trait ImportResolver {
 		&self,
 		module_name: &str,
 		field_name: &str,
-		global_type: &GlobalType,
+		global_type: &GlobalDescriptor,
 	) -> Result<GlobalRef, Error>;
 
 	fn resolve_memory(
@@ -86,7 +87,7 @@ impl<'a> ImportResolver for ImportsBuilder<'a> {
 		&self,
 		module_name: &str,
 		field_name: &str,
-		global_type: &GlobalType,
+		global_type: &GlobalDescriptor,
 	) -> Result<GlobalRef, Error> {
 		self.resolver(module_name).ok_or_else(||
 			Error::Instantiation(format!("Module {} not found", module_name))
@@ -130,7 +131,7 @@ pub trait ModuleImportResolver {
 	fn resolve_global(
 		&self,
 		field_name: &str,
-		_global_type: &GlobalType,
+		_global_type: &GlobalDescriptor,
 	) -> Result<GlobalRef, Error> {
 		Err(Error::Instantiation(
 			format!("Export {} not found", field_name),
@@ -177,7 +178,7 @@ impl ModuleImportResolver for ModuleRef {
 	fn resolve_global(
 		&self,
 		field_name: &str,
-		_global_type: &GlobalType,
+		_global_type: &GlobalDescriptor,
 	) -> Result<GlobalRef, Error> {
 		Ok(self.export_by_name(field_name)
 			.ok_or_else(|| {

@@ -1,4 +1,4 @@
-use parity_wasm::elements::{FunctionType, ValueType as EValueType};
+use parity_wasm::elements::{FunctionType, ValueType as EValueType, GlobalType};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Signature {
@@ -55,5 +55,27 @@ impl ValueType {
 			ValueType::F32 => EValueType::F32,
 			ValueType::F64 => EValueType::F64,
 		}
+	}
+}
+
+pub struct GlobalDescriptor {
+	value_type: ValueType,
+	mutable: bool,
+}
+
+impl GlobalDescriptor {
+	pub(crate) fn from_global_type(global_type: &GlobalType) -> GlobalDescriptor {
+		GlobalDescriptor {
+			value_type: ValueType::from_elements(global_type.content_type()),
+			mutable: global_type.is_mutable(),
+		}
+	}
+
+	pub fn value_type(&self) -> ValueType {
+		self.value_type
+	}
+
+	pub fn is_mutable(&self) -> bool {
+		self.mutable
 	}
 }
