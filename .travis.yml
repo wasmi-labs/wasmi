@@ -14,7 +14,6 @@ addons:
 script:
 - export CC=/usr/bin/gcc-6
 - export CXX=/usr/bin/g++-6
-- cargo build --verbose
 - cargo test --verbose
 - cargo test --manifest-path=spec/Cargo.toml
 after_success: |
