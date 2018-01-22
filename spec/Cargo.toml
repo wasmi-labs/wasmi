@@ -1,5 +1,5 @@
 [package]
-name = "parity-wasm-testsuite"
+name = "wasmi-spec"
 version = "0.0.0"
 authors = ["NikVolf <nikvolf@gmail.com>"]
 license = "MIT/Apache-2.0"
@@ -13,13 +13,13 @@ build = "build.rs"
 cmake = "0.1"
 
 [dependencies]
-parity-wasm-interp = { path = ".." }
+wasmi = { path = ".." }
 serde_json = "1.0"
 serde_derive = "1.0"
 serde = "1.0"
 
 [dev-dependencies]
-parity-wasm-interp = { path = ".." }
+wasmi = { path = ".." }
 serde_json = "1.0"
 serde_derive = "1.0"
 serde = "1.0"

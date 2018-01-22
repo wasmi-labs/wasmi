@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 use serde_json;
 use super::test;
-use parity_wasm_interp::{
+use wasmi::{
     Error as InterpreterError, Externals, FuncInstance, FuncRef,
     GlobalInstance, GlobalRef, ImportResolver, ImportsBuilder,
     MemoryInstance, MemoryRef, ModuleImportResolver, ModuleInstance,
