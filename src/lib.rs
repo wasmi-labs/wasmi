@@ -1,6 +1,6 @@
 //! WebAssembly interpreter module.
 
-// TODO(pepyakin): Fix these asap
+// TODO(pepyakin): Fix this asap https://github.com/pepyakin/wasmi/issues/3
 #![allow(missing_docs)]
 
 #[cfg(test)]
