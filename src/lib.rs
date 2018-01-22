@@ -135,7 +135,7 @@ pub use self::imports::{ModuleImportResolver, ImportResolver, ImportsBuilder};
 pub use self::module::{ModuleInstance, ModuleRef, ExternVal, NotStartedModuleRef};
 pub use self::global::{GlobalInstance, GlobalRef};
 pub use self::func::{FuncInstance, FuncRef};
-pub use self::types::{Signature, ValueType, GlobalDescriptor};
+pub use self::types::{Signature, ValueType, GlobalDescriptor, TableDescriptor};
 
 pub struct LoadedModule {
 	labels: HashMap<usize, HashMap<usize, usize>>,

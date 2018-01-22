@@ -1,4 +1,4 @@
-use parity_wasm::elements::{FunctionType, ValueType as EValueType, GlobalType};
+use parity_wasm::elements::{FunctionType, ValueType as EValueType, GlobalType, TableType};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Signature {
@@ -64,7 +64,7 @@ pub struct GlobalDescriptor {
 }
 
 impl GlobalDescriptor {
-	pub(crate) fn from_global_type(global_type: &GlobalType) -> GlobalDescriptor {
+	pub(crate) fn from_elements(global_type: &GlobalType) -> GlobalDescriptor {
 		GlobalDescriptor {
 			value_type: ValueType::from_elements(global_type.content_type()),
 			mutable: global_type.is_mutable(),
@@ -77,5 +77,27 @@ impl GlobalDescriptor {
 
 	pub fn is_mutable(&self) -> bool {
 		self.mutable
+	}
+}
+
+pub struct TableDescriptor {
+	initial: u32,
+	maximum: Option<u32>,
+}
+
+impl TableDescriptor {
+	pub(crate) fn from_elements(table_type: &TableType) -> TableDescriptor {
+		TableDescriptor {
+			initial: table_type.limits().initial(),
+			maximum: table_type.limits().maximum(),
+		}
+	}
+
+	pub fn initial(&self) -> u32 {
+		self.initial
+	}
+
+	pub fn maximum(&self) -> Option<u32> {
+		self.maximum
 	}
 }

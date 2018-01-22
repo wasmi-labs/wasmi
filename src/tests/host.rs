@@ -1,9 +1,9 @@
 
-use parity_wasm::elements::{MemoryType, TableType};
+use parity_wasm::elements::MemoryType;
 use {
 	Error, Signature, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
 	MemoryInstance, MemoryRef, TableInstance, TableRef, ModuleImportResolver, ModuleInstance, ModuleRef,
-	RuntimeValue, TryInto, LoadedModule, load_from_buffer,
+	RuntimeValue, TryInto, LoadedModule, load_from_buffer, TableDescriptor,
 };
 use types::ValueType;
 use wabt::wat2wasm;
@@ -696,7 +696,7 @@ fn dynamically_add_host_func() {
 		fn resolve_table(
 			&self,
 			field_name: &str,
-			_table_type: &TableType,
+			_table_type: &TableDescriptor,
 		) -> Result<TableRef, Error> {
 			if field_name == "table" {
 				Ok(self.table.clone())

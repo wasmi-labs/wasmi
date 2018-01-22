@@ -12,7 +12,7 @@ use table::TableRef;
 use memory::MemoryRef;
 use host::Externals;
 use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
-use types::GlobalDescriptor;
+use types::{GlobalDescriptor, TableDescriptor};
 
 #[derive(Clone, Debug)]
 pub struct ModuleRef(Rc<ModuleInstance>);
@@ -391,7 +391,8 @@ impl ModuleInstance {
 					ExternVal::Func(func)
 				}
 				External::Table(ref table_type) => {
-					let table = imports.resolve_table(module_name, field_name, table_type)?;
+					let table_descriptor = TableDescriptor::from_elements(table_type);
+					let table = imports.resolve_table(module_name, field_name, &table_descriptor)?;
 					ExternVal::Table(table)
 				}
 				External::Memory(ref memory_type) => {
@@ -399,7 +400,7 @@ impl ModuleInstance {
 					ExternVal::Memory(memory)
 				}
 				External::Global(ref global_type) => {
-					let global_descriptor = GlobalDescriptor::from_global_type(global_type);
+					let global_descriptor = GlobalDescriptor::from_elements(global_type);
 					let global = imports.resolve_global(module_name, field_name, &global_descriptor)?;
 					ExternVal::Global(global)
 				}
