@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use serde_json;
 use super::test;
 use wasmi::{
-    Error as InterpreterError, Externals, FuncInstance, FuncRef,
+    Error as InterpreterError, Externals, FuncRef,
     GlobalInstance, GlobalRef, ImportResolver, ImportsBuilder,
     MemoryInstance, MemoryRef, ModuleImportResolver, ModuleInstance,
     ModuleRef, RuntimeValue, TableInstance, TableRef, ValueType,
@@ -81,7 +81,7 @@ impl ModuleImportResolver for SpecModule {
                 ));
             }
 
-            let func = FuncInstance::alloc_host(func_type.clone(), PRINT_FUNC_INDEX);
+            let func = FuncRef::alloc_host(func_type.clone(), PRINT_FUNC_INDEX);
             return Ok(func);
         }
 

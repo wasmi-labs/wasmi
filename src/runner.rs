@@ -77,7 +77,12 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		loop {
 			let mut function_context = function_stack.pop_back().expect("on loop entry - not empty; on loop continue - checking for emptiness; qed");
 			let function_ref = function_context.function.clone();
-			let function_body = function_ref.body().expect("Host functions checked in function_return below; Internal functions always have a body; qed");
+			let function_body = function_ref
+				.as_instance()
+				.body()
+				.expect(
+					"Host functions checked in function_return below; Internal functions always have a body; qed"
+				);
 			if !function_context.is_initialized() {
 				let return_type = function_context.return_type;
 				function_context.initialize(&function_body.locals);
@@ -96,7 +101,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 					}
 				},
 				RunResult::NestedCall(nested_func) => {
-					match *nested_func {
+					match *nested_func.as_instance() {
 						FuncInstance::Internal { .. } => {
 							let nested_context = function_context.nested(nested_func.clone())?;
 							function_stack.push_back(function_context);
@@ -1002,7 +1007,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 
 impl FunctionContext {
 	pub fn new<'store>(function: FuncRef, value_stack_limit: usize, frame_stack_limit: usize, signature: &Signature, args: Vec<RuntimeValue>) -> Self {
-		let module = match *function {
+		let module = match *function.as_instance() {
 			FuncInstance::Internal { ref module, .. } => module.clone(),
 			FuncInstance::Host { .. } => panic!("Host functions can't be called as internally defined functions; Thus FunctionContext can be created only with internally defined functions; qed"),
 		};
@@ -1020,7 +1025,7 @@ impl FunctionContext {
 
 	pub fn nested(&mut self, function: FuncRef) -> Result<Self, Error> {
 		let (function_locals, module, function_return_type) = {
-			let module = match *function {
+			let module = match *function.as_instance() {
 				FuncInstance::Internal { ref module, .. } => module.clone(),
 				FuncInstance::Host { .. } => panic!("Host functions can't be called as internally defined functions; Thus FunctionContext can be created only with internally defined functions; qed"),
 			};

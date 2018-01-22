@@ -14,15 +14,26 @@ use common::{DEFAULT_FRAME_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT};
 #[derive(Clone, Debug)]
 pub struct FuncRef(Rc<FuncInstance>);
 
-impl ::std::ops::Deref for FuncRef {
-	type Target = FuncInstance;
-	fn deref(&self) -> &FuncInstance {
+impl FuncRef {
+	pub fn alloc_host(signature: Signature, host_func_index: usize) -> FuncRef {
+		let func = FuncInstance::Host {
+			signature,
+			host_func_index,
+		};
+		FuncRef(Rc::new(func))
+	}
+
+	pub fn signature(&self) -> &Signature {
+		self.0.signature()
+	}
+
+	pub(crate) fn as_instance(&self) -> &FuncInstance {
 		&self.0
 	}
 }
 
 #[derive(Clone)]
-pub enum FuncInstance {
+pub(crate) enum FuncInstance {
 	Internal {
 		signature: Rc<Signature>,
 		module: ModuleRef,
@@ -70,14 +81,6 @@ impl FuncInstance {
 		FuncRef(Rc::new(func))
 	}
 
-	pub fn alloc_host(signature: Signature, host_func_index: usize) -> FuncRef {
-		let func = FuncInstance::Host {
-			signature,
-			host_func_index,
-		};
-		FuncRef(Rc::new(func))
-	}
-
 	pub fn signature(&self) -> &Signature {
 		match *self {
 			FuncInstance::Internal { ref signature, .. } => signature,
@@ -102,7 +105,7 @@ impl FuncInstance {
 			Host(usize, &'a [RuntimeValue]),
 		}
 
-		let result = match *func {
+		let result = match *func.as_instance() {
 			FuncInstance::Internal { ref signature, .. } => {
 				let mut stack =
 					StackWithLimit::with_data(args.into_iter().cloned(), DEFAULT_VALUE_STACK_LIMIT);
