@@ -1,8 +1,7 @@
-use parity_wasm::elements::MemoryType;
 use {
 	Error, Signature, FuncRef, GlobalInstance, GlobalRef, ImportsBuilder, MemoryInstance,
     MemoryRef, ModuleImportResolver, ModuleInstance, NopExternals, RuntimeValue,
-    TableInstance, TableRef, LoadedModule, load_from_buffer, GlobalDescriptor, TableDescriptor,
+    TableInstance, TableRef, LoadedModule, load_from_buffer, GlobalDescriptor, TableDescriptor, MemoryDescriptor,
 };
 use std::fs::File;
 
@@ -49,7 +48,7 @@ impl ModuleImportResolver for Env {
 	fn resolve_memory(
 		&self,
 		field_name: &str,
-		_memory_type: &MemoryType,
+		_memory_type: &MemoryDescriptor,
 	) -> Result<MemoryRef, Error> {
 		match field_name {
 			"memory" => Ok(self.memory.clone()),

@@ -1,4 +1,5 @@
-use parity_wasm::elements::{FunctionType, ValueType as EValueType, GlobalType, TableType};
+use parity_wasm::elements::{
+	FunctionType, ValueType as EValueType, GlobalType, TableType, MemoryType};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Signature {
@@ -100,4 +101,26 @@ impl TableDescriptor {
 	pub fn maximum(&self) -> Option<u32> {
 		self.maximum
 	}
+}
+
+pub struct MemoryDescriptor {
+	initial: u32,
+	maximum: Option<u32>,
+}
+
+impl MemoryDescriptor {
+	pub(crate) fn from_elements(memory_type: &MemoryType) -> MemoryDescriptor {
+		MemoryDescriptor {
+			initial: memory_type.limits().initial(),
+			maximum: memory_type.limits().maximum(),
+		}
+	}
+
+	pub fn initial(&self) -> u32 {
+		self.initial
+	}
+
+	pub fn maximum(&self) -> Option<u32> {
+		self.maximum
+	}	
 }

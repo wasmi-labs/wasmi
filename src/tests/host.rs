@@ -1,9 +1,7 @@
-
-use parity_wasm::elements::MemoryType;
 use {
 	Error, Signature, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
 	MemoryInstance, MemoryRef, TableInstance, TableRef, ModuleImportResolver, ModuleInstance, ModuleRef,
-	RuntimeValue, TryInto, LoadedModule, load_from_buffer, TableDescriptor,
+	RuntimeValue, TryInto, LoadedModule, load_from_buffer, TableDescriptor, MemoryDescriptor,
 };
 use types::ValueType;
 use wabt::wat2wasm;
@@ -195,7 +193,7 @@ impl ModuleImportResolver for TestHost {
 	fn resolve_memory(
 		&self,
 		field_name: &str,
-		_memory_type: &MemoryType,
+		_memory_type: &MemoryDescriptor,
 	) -> Result<MemoryRef, Error> {
 		Err(Error::Instantiation(
 			format!("Export {} not found", field_name),
@@ -443,7 +441,7 @@ fn defer_providing_externals() {
 		fn resolve_memory(
 			&self,
 			field_name: &str,
-			_memory_type: &MemoryType,
+			_memory_type: &MemoryDescriptor,
 		) -> Result<MemoryRef, Error> {
 			if field_name == "mem" {
 				Ok(self.mem.clone())
