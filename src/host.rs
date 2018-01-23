@@ -2,6 +2,20 @@ use std::any::TypeId;
 use value::RuntimeValue;
 use Error;
 
+pub struct RuntimeArgs<'a>(&'a [RuntimeValue]);
+
+impl<'a> From<&'a [RuntimeValue]> for RuntimeArgs<'a> {
+	fn from(inner: &'a [RuntimeValue]) -> Self {
+		RuntimeArgs(inner)
+	}
+}
+
+impl<'a> RuntimeArgs<'a> {
+	fn nth<T>(&self, idx: usize) -> Result<T, Error> where RuntimeValue: From<T> {
+		Err(Error::Value("Invalid cast".to_owned()))
+	}
+}
+
 /// Custom user error.
 pub trait HostError: 'static + ::std::fmt::Display + ::std::fmt::Debug {
 	#[doc(hidden)]
@@ -49,4 +63,19 @@ impl Externals for NopExternals {
 	) -> Result<Option<RuntimeValue>, Error> {
 		Err(Error::Trap("invoke index on no-op externals".into()))
 	}
+}
+
+#[cfg(test)]
+mod tests {
+
+	use value::RuntimeValue;
+	use super::RuntimeArgs;
+
+	#[test]
+	fn i32_runtime_args() {
+		let args: RuntimeArgs = (&[RuntimeValue::I32(0)][..]).into();
+		let val: i32 = args.nth(0).unwrap();
+		assert_eq!(val, 0);
+	}
+
 }
