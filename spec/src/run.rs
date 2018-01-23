@@ -13,8 +13,8 @@ use wasmi::{
     GlobalInstance, GlobalRef, ImportResolver, ImportsBuilder,
     MemoryInstance, MemoryRef, ModuleImportResolver, ModuleInstance,
     ModuleRef, RuntimeValue, TableInstance, TableRef, ValueType,
-    load_from_buffer, LoadedModule, Signature, MemoryDescriptor, 
-    TableDescriptor, GlobalDescriptor, FuncInstance,
+    load_from_buffer, LoadedModule, Signature, MemoryDescriptor,
+    TableDescriptor, GlobalDescriptor, FuncInstance, RuntimeArgs,
 };
 
 #[derive(Debug)]
@@ -57,7 +57,7 @@ impl Externals for SpecModule {
     fn invoke_index(
         &mut self,
         index: usize,
-        args: &[RuntimeValue],
+        args: RuntimeArgs,
     ) -> Result<Option<RuntimeValue>, InterpreterError> {
         match index {
             PRINT_FUNC_INDEX => {

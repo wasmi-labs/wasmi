@@ -1,7 +1,7 @@
 use {
 	Error, Signature, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
 	MemoryInstance, MemoryRef, TableInstance, TableRef, ModuleImportResolver, ModuleInstance, ModuleRef,
-	RuntimeValue, TryInto, LoadedModule, load_from_buffer, TableDescriptor, MemoryDescriptor,
+	RuntimeValue, RuntimeArgs, LoadedModule, load_from_buffer, TableDescriptor, MemoryDescriptor,
 };
 use types::ValueType;
 use wabt::wat2wasm;
@@ -78,25 +78,24 @@ impl Externals for TestHost {
 	fn invoke_index(
 		&mut self,
 		index: usize,
-		args: &[RuntimeValue],
+		args: RuntimeArgs,
 	) -> Result<Option<RuntimeValue>, Error> {
-		let mut args = args.iter().cloned();
 		match index {
 			SUB_FUNC_INDEX => {
-				let a: i32 = args.next().unwrap().try_into().unwrap();
-				let b: i32 = args.next().unwrap().try_into().unwrap();
+				let a: i32 = args.nth(0)?;
+				let b: i32 = args.nth(1)?;
 
 				let result: RuntimeValue = (a - b).into();
 
 				Ok(Some(result))
 			}
 			ERR_FUNC_INDEX => {
-				let error_code: u32 = args.next().unwrap().try_into().unwrap();
+				let error_code = args.nth::<i32>(0)? as u32;
 				let error = HostErrorWithCode { error_code };
 				Err(Error::Host(Box::new(error)))
 			}
 			INC_MEM_FUNC_INDEX => {
-				let ptr: u32 = args.next().unwrap().try_into().unwrap();
+				let ptr = args.nth::<i32>(0)? as u32;
 
 				let memory = self.memory.as_ref().expect(
 					"Function 'inc_mem' expects attached memory",
@@ -109,7 +108,7 @@ impl Externals for TestHost {
 				Ok(None)
 			}
 			GET_MEM_FUNC_INDEX => {
-				let ptr: u32 = args.next().unwrap().try_into().unwrap();
+				let ptr = args.nth::<i32>(0)? as u32;
 
 				let memory = self.memory.as_ref().expect(
 					"Function 'get_mem' expects attached memory",
@@ -120,7 +119,7 @@ impl Externals for TestHost {
 				Ok(Some(RuntimeValue::I32(buf[0] as i32)))
 			}
 			RECURSE_FUNC_INDEX => {
-				let val: RuntimeValue = args.next().unwrap();
+				let val = args.nth_value(0)?;
 
 				let instance = self.instance
 					.as_ref()
@@ -463,12 +462,11 @@ fn defer_providing_externals() {
 		fn invoke_index(
 			&mut self,
 			index: usize,
-			args: &[RuntimeValue],
+			args: RuntimeArgs,
 		) -> Result<Option<RuntimeValue>, Error> {
 			match index {
 				INC_FUNC_INDEX => {
-					let mut args = args.iter().cloned();
-					let a: u32 = args.next().unwrap().try_into().unwrap();
+					let a = args.nth::<i32>(0)? as u32;
 					*self.acc += a;
 					Ok(None)
 				}
@@ -528,7 +526,7 @@ fn two_envs_one_externals() {
 		fn invoke_index(
 			&mut self,
 			index: usize,
-			_args: &[RuntimeValue],
+			_args: RuntimeArgs,
 		) -> Result<Option<RuntimeValue>, Error> {
 			match index {
 				PRIVILEGED_FUNC_INDEX => {
@@ -648,7 +646,7 @@ fn dynamically_add_host_func() {
 		fn invoke_index(
 			&mut self,
 			index: usize,
-			_args: &[RuntimeValue],
+			_args: RuntimeArgs,
 		) -> Result<Option<RuntimeValue>, Error> {
 			match index {
 				ADD_FUNC_FUNC_INDEX => {

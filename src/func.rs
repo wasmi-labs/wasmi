@@ -43,7 +43,7 @@ impl fmt::Debug for FuncInstance {
 				ref signature,
 				..
 			} => {
-				// We can't write description of self.module here, because it generate 
+				// We can't write description of self.module here, because it generate
 				// debug string for function instances and this will lead to infinite loop.
 				write!(
 					f,
@@ -132,7 +132,7 @@ impl FuncInstance {
 				let mut interpreter = Interpreter::new(externals);
 				interpreter.run_function(ctx)
 			}
-			InvokeKind::Host(host_func, args) => externals.invoke_index(host_func, args),
+			InvokeKind::Host(host_func, args) => externals.invoke_index(host_func, args.into()),
 		}
 	}
 }
