@@ -5,6 +5,12 @@ use Error;
 use types::ValueType;
 use parity_wasm::elements::{ValueType as EValueType};
 
+/// Reference to a [`GlobalInstance`].
+///
+/// This reference has a reference-counting semantics.
+///
+/// [`GlobalInstance`]: struct.GlobalInstance.html
+///
 #[derive(Clone, Debug)]
 pub struct GlobalRef(Rc<GlobalInstance>);
 
@@ -15,6 +21,15 @@ impl ::std::ops::Deref for GlobalRef {
 	}
 }
 
+/// Runtime representation of a global variable (or `global` for short).
+///
+/// Global contains a value of a specified type and flag which specifies whether this
+/// global are mutable or immutable. Neither type of the value nor immutability can't be changed
+/// after creation.
+///
+/// Attempt to change value of immutable global or to change type of
+/// the value (e.g. assign I32 value to a global that was created with I64 type) will lead to an error.
+///
 #[derive(Debug)]
 pub struct GlobalInstance {
 	val: Cell<RuntimeValue>,

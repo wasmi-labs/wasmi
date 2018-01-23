@@ -7,6 +7,12 @@ use Error;
 use func::FuncRef;
 use module::check_limits;
 
+/// Reference to a [`TableInstance`].
+///
+/// This reference has a reference-counting semantics.
+///
+/// [`TableInstance`]: struct.TableInstance.html
+///
 #[derive(Clone, Debug)]
 pub struct TableRef(Rc<TableInstance>);
 
@@ -17,7 +23,19 @@ impl ::std::ops::Deref for TableRef {
 	}
 }
 
-/// Table instance.
+/// Runtime representation of a table.
+///
+/// A table is a array of untyped functions. It allows wasm code to call functions
+/// indirectly through a dynamic index into a table. For example, this allows emulating function
+/// pointers by way of table indices.
+///
+/// Table is created with an initial size but can be grown dynamically via [`grow`] method.
+/// Growth can be limited by an optional maximum size.
+///
+/// In future, a table might be extended to be able to hold not only functions but different types.
+///
+/// [`grow`]: #method.grow
+///
 pub struct TableInstance {
 	/// Table limits.
 	limits: ResizableLimits,

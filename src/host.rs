@@ -2,7 +2,7 @@ use std::any::TypeId;
 use value::{RuntimeValue, TryInto};
 use Error;
 
-/// Safe wrapper for list of arguments
+/// Safe wrapper for list of arguments.
 #[derive(Debug)]
 pub struct RuntimeArgs<'a>(&'a [RuntimeValue]);
 
