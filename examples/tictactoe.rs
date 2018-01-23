@@ -6,8 +6,9 @@ use std::fmt;
 use std::fs::File;
 use wasmi::{
 	Error as InterpreterError, ModuleInstance, ModuleRef,
-	Externals, RuntimeValue, FuncRef, TryInto, ModuleImportResolver, 
+	Externals, RuntimeValue, FuncRef, ModuleImportResolver,
 	FuncInstance, HostError, ImportsBuilder, Signature, ValueType,
+	RuntimeArgs,
 };
 
 #[derive(Debug)]
@@ -147,16 +148,16 @@ impl<'a> Externals for Runtime<'a> {
 	fn invoke_index(
 		&mut self,
 		index: usize,
-		args: &[RuntimeValue],
+		args: RuntimeArgs,
 	) -> Result<Option<RuntimeValue>, InterpreterError> {
 		match index {
 			SET_FUNC_INDEX => {
-				let idx: i32 = args[0].try_into().unwrap();
+				let idx: i32 = args.nth(0)?;
 				self.game.set(idx, self.player)?;
 				Ok(None)
 			}
 			GET_FUNC_INDEX => {
-				let idx: i32 = args[0].try_into().unwrap();
+				let idx: i32 = args.nth(0)?;
 				let val: i32 = tictactoe::Player::into_i32(self.game.get(idx)?);
 				Ok(Some(val.into()))
 			}

@@ -1,7 +1,8 @@
 use std::any::TypeId;
-use value::RuntimeValue;
+use value::{RuntimeValue, TryInto};
 use Error;
 
+/// Safe wrapper for list of arguments
 pub struct RuntimeArgs<'a>(&'a [RuntimeValue]);
 
 impl<'a> From<&'a [RuntimeValue]> for RuntimeArgs<'a> {
@@ -11,8 +12,23 @@ impl<'a> From<&'a [RuntimeValue]> for RuntimeArgs<'a> {
 }
 
 impl<'a> RuntimeArgs<'a> {
-	fn nth<T>(&self, idx: usize) -> Result<T, Error> where RuntimeValue: From<T> {
-		Err(Error::Value("Invalid cast".to_owned()))
+
+	/// Extract argument by index `idx` returning error if cast is invalid or not enough arguments
+	pub fn nth<T>(&self, idx: usize) -> Result<T, Error> where RuntimeValue: TryInto<T, Error> {
+		Ok(self.nth_value(idx)?.try_into().map_err(|_| Error::Value("Invalid argument cast".to_owned()))?)
+	}
+
+	/// Extract argument as a runtime value by index `idx` returning error is not enougn arguments
+	pub fn nth_value(&self, idx: usize) -> Result<RuntimeValue, Error> {
+		if self.0.len() <= idx {
+			return Err(Error::Value("Invalid argument index".to_owned()));
+		}
+		Ok(self.0[idx])
+	}
+
+	/// Total number of arguments
+	pub fn len(&self) -> usize {
+		self.0.len()
 	}
 }
 
@@ -49,7 +65,7 @@ pub trait Externals {
 	fn invoke_index(
 		&mut self,
 		index: usize,
-		args: &[RuntimeValue],
+		args: RuntimeArgs,
 	) -> Result<Option<RuntimeValue>, Error>;
 }
 
@@ -59,7 +75,7 @@ impl Externals for NopExternals {
 	fn invoke_index(
 		&mut self,
 		_index: usize,
-		_args: &[RuntimeValue],
+		_args: RuntimeArgs,
 	) -> Result<Option<RuntimeValue>, Error> {
 		Err(Error::Trap("invoke index on no-op externals".into()))
 	}
