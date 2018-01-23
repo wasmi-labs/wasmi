@@ -1,7 +1,14 @@
 use parity_wasm::elements::{
 	FunctionType, ValueType as EValueType, GlobalType, TableType, MemoryType};
 
-#[derive(Debug, Clone, PartialEq)]
+/// Signature of a function.
+///
+/// Signature of a function consists of zero or more parameter [types][type] and zero or one return [type].
+///
+/// Two signatures are considered equal if they have equal list of parameters and equal return types.
+///
+/// [type]: enum.ValueType.html
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Signature {
 	params: Vec<ValueType>,
 	return_type: Option<ValueType>,
@@ -31,6 +38,14 @@ impl Signature {
 	}
 }
 
+/// Type of a value.
+///
+/// Wasm code manipulate values of the four basic value types:
+/// integers and floating-point (IEEE 754-2008) data of 32 or 64 bit width each, respectively.
+///
+/// There is no distinction between signed and unsigned integer types. Instead, integers are
+/// interpreted by respective operations as either unsigned or signed in two’s complement representation.
+///
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ValueType {
 	I32,

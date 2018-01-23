@@ -10,6 +10,12 @@ use module::ModuleInstance;
 use common::stack::StackWithLimit;
 use common::{DEFAULT_FRAME_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT};
 
+/// Reference to a [`FuncInstance`].
+///
+/// This reference has a reference-counting semantics.
+///
+/// [`FuncInstance`]: struct.FuncInstance.html
+///
 #[derive(Clone, Debug)]
 pub struct FuncRef(Rc<FuncInstance>);
 
@@ -20,6 +26,21 @@ impl ::std::ops::Deref for FuncRef {
 	}
 }
 
+/// Runtime representation of a function.
+///
+/// Functions are the unit of orgianization of code in WebAssembly. Each function takes a sequence of values
+/// as parameters and either optionally return a value or trap.
+/// Functions can call other function (including itself, i.e recursively) and imported functions
+/// (i.e defined in another module).
+///
+/// Functions can be defined either:
+///
+/// - by a wasm module,
+/// - by the host environment and passed to a wasm module as an import.
+///   See more in [`Externals`].
+///
+/// [`Externals`]: trait.Externals.html
+///
 pub struct FuncInstance(FuncInstanceInternal);
 
 #[derive(Clone)]

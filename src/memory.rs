@@ -13,6 +13,12 @@ pub const LINEAR_MEMORY_PAGE_SIZE: u32 = 65536;
 /// Maximal number of pages.
 const LINEAR_MEMORY_MAX_PAGES: u32 = 65536;
 
+/// Reference to a [`MemoryInstance`].
+///
+/// This reference has a reference-counting semantics.
+///
+/// [`MemoryInstance`]: struct.MemoryInstance.html
+///
 #[derive(Clone, Debug)]
 pub struct MemoryRef(Rc<MemoryInstance>);
 
@@ -23,7 +29,15 @@ impl ::std::ops::Deref for MemoryRef {
 	}
 }
 
-/// Linear memory instance.
+/// Runtime representation of a linear memory (or `memory` for short).
+///
+/// A memory is a contiguous, mutable array of raw bytes. Wasm code can load and store values
+/// from/to a linear memory at any byte address.
+/// A trap occurs if an access is not within the bounds of the current memory size.
+///
+/// A memory is created with an initial size but can be grown dynamically.
+/// The growth can be limited by specifying maximum size.
+/// The size of a memory is always a integer multiple of a page size - 64KiB.
 pub struct MemoryInstance {
 	/// Memofy limits.
 	limits: ResizableLimits,
