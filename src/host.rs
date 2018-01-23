@@ -3,6 +3,7 @@ use value::{RuntimeValue, TryInto};
 use Error;
 
 /// Safe wrapper for list of arguments
+#[derive(Debug)]
 pub struct RuntimeArgs<'a>(&'a [RuntimeValue]);
 
 impl<'a> From<&'a [RuntimeValue]> for RuntimeArgs<'a> {
@@ -94,4 +95,9 @@ mod tests {
 		assert_eq!(val, 0);
 	}
 
+	#[test]
+	fn i64_invalid_arg_cast() {
+		let args: RuntimeArgs = (&[RuntimeValue::I64(90534534545322)][..]).into();
+		assert!(args.nth::<i32>(0).is_err());
+	}
 }

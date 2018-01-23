@@ -1,8 +1,7 @@
 use {
 	Error, Signature, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
 	MemoryInstance, MemoryRef, TableInstance, TableRef, ModuleImportResolver, ModuleInstance, ModuleRef,
-	RuntimeValue, TryInto, LoadedModule, load_from_buffer, TableDescriptor, MemoryDescriptor,
-	RuntimeArgs,
+	RuntimeValue, RuntimeArgs, LoadedModule, load_from_buffer, TableDescriptor, MemoryDescriptor,
 };
 use types::ValueType;
 use wabt::wat2wasm;
