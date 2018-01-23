@@ -84,7 +84,7 @@ impl MemoryInstance {
 			None => u32::MAX,
 		};
 		let initial_size = calculate_memory_size(0, limits.initial(), maximum_size)
-			.ok_or(Error::Memory(format!("initial memory size must be at most {} pages", LINEAR_MEMORY_MAX_PAGES)))?;
+			.ok_or_else(|| Error::Memory(format!("initial memory size must be at most {} pages", LINEAR_MEMORY_MAX_PAGES)))?;
 
 		let memory = MemoryInstance {
 			limits: limits,
@@ -165,7 +165,7 @@ impl MemoryInstance {
 		where B: ::std::ops::Deref<Target=Vec<u8>>
 	{
 		let end = offset.checked_add(size)
-			.ok_or(Error::Memory(format!("trying to access memory block of size {} from offset {}", size, offset)))?;
+			.ok_or_else(|| Error::Memory(format!("trying to access memory block of size {} from offset {}", size, offset)))?;
 
 		if end > buffer.len() {
 			return Err(Error::Memory(format!("trying to access region [{}..{}] in memory [0..{}]", offset, end, buffer.len())));

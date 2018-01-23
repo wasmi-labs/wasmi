@@ -1,7 +1,6 @@
 use std::rc::{Rc, Weak};
 use std::fmt;
 use std::collections::HashMap;
-use std::borrow::Cow;
 use parity_wasm::elements::{Local, Opcodes};
 use {Error, Signature};
 use host::Externals;
@@ -99,8 +98,8 @@ impl FuncInstance {
 	}
 
 	pub(crate) fn invoke<E: Externals>(
-		func: FuncRef,
-		args: Cow<[RuntimeValue]>,
+		func: &FuncRef,
+		args: &[RuntimeValue],
 		externals: &mut E,
 	) -> Result<Option<RuntimeValue>, Error> {
 		enum InvokeKind<'a> {

@@ -99,7 +99,7 @@ impl TableInstance {
 				buffer_len
 			)),
 		)?;
-		Ok(table_elem.ok_or(Error::Table(format!(
+		Ok(table_elem.ok_or_else(|| Error::Table(format!(
 			"trying to read uninitialized element on index {}",
 			offset
 		)))?)

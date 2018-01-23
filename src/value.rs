@@ -180,7 +180,7 @@ impl TryInto<bool, Error> for RuntimeValue {
 	fn try_into(self) -> Result<bool, Error> {
 		match self {
 			RuntimeValue::I32(val) => Ok(val != 0),
-			_ => Err(Error::Value(format!("32-bit int value expected"))),
+			_ => Err(Error::Value("32-bit int value expected".to_owned())),
 		}
 	}
 }
@@ -189,7 +189,7 @@ impl TryInto<i32, Error> for RuntimeValue {
 	fn try_into(self) -> Result<i32, Error> {
 		match self {
 			RuntimeValue::I32(val) => Ok(val),
-			_ => Err(Error::Value(format!("32-bit int value expected"))),
+			_ => Err(Error::Value("32-bit int value expected".to_owned())),
 		}
 	}
 }
@@ -198,7 +198,7 @@ impl TryInto<i64, Error> for RuntimeValue {
 	fn try_into(self) -> Result<i64, Error> {
 		match self {
 			RuntimeValue::I64(val) => Ok(val),
-			_ => Err(Error::Value(format!("64-bit int value expected"))),
+			_ => Err(Error::Value("64-bit int value expected".to_owned())),
 		}
 	}
 }
@@ -207,7 +207,7 @@ impl TryInto<f32, Error> for RuntimeValue {
 	fn try_into(self) -> Result<f32, Error> {
 		match self {
 			RuntimeValue::F32(val) => Ok(val),
-			_ => Err(Error::Value(format!("32-bit float value expected"))),
+			_ => Err(Error::Value("32-bit float value expected".to_owned())),
 		}
 	}
 }
@@ -216,7 +216,7 @@ impl TryInto<f64, Error> for RuntimeValue {
 	fn try_into(self) -> Result<f64, Error> {
 		match self {
 			RuntimeValue::F64(val) => Ok(val),
-			_ => Err(Error::Value(format!("64-bit float value expected"))),
+			_ => Err(Error::Value("64-bit float value expected".to_owned())),
 		}
 	}
 }
@@ -225,7 +225,7 @@ impl TryInto<u32, Error> for RuntimeValue {
 	fn try_into(self) -> Result<u32, Error> {
 		match self {
 			RuntimeValue::I32(val) => Ok(val as u32),
-			_ => Err(Error::Value(format!("32-bit int value expected"))),
+			_ => Err(Error::Value("32-bit int value expected".to_owned())),
 		}
 	}
 }
@@ -234,7 +234,7 @@ impl TryInto<u64, Error> for RuntimeValue {
 	fn try_into(self) -> Result<u64, Error> {
 		match self {
 			RuntimeValue::I64(val) => Ok(val as u64),
-			_ => Err(Error::Value(format!("64-bit int value expected"))),
+			_ => Err(Error::Value("64-bit int value expected".to_owned())),
 		}
 	}
 }
@@ -379,7 +379,7 @@ impl LittleEndianConvert for i8 {
 	fn from_little_endian(buffer: Vec<u8>) -> Result<Self, Error> {
 		buffer.get(0)
 			.map(|v| *v as i8)
-			.ok_or(Error::Value("invalid little endian buffer".into()))
+			.ok_or_else(|| Error::Value("invalid little endian buffer".into()))
 	}
 }
 
@@ -391,7 +391,7 @@ impl LittleEndianConvert for u8 {
 	fn from_little_endian(buffer: Vec<u8>) -> Result<Self, Error> {
 		buffer.get(0)
 			.cloned()
-			.ok_or(Error::Value("invalid little endian buffer".into()))
+			.ok_or_else(|| Error::Value("invalid little endian buffer".into()))
 	}
 }
 

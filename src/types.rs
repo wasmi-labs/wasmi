@@ -23,7 +23,7 @@ impl Signature {
 		self.return_type
 	}
 
-	pub(crate) fn from_elements(func_type: FunctionType) -> Signature {
+	pub(crate) fn from_elements(func_type: &FunctionType) -> Signature {
 		Signature {
 			params: func_type.params().iter().cloned().map(ValueType::from_elements).collect(),
 			return_type: func_type.return_type().map(ValueType::from_elements),
@@ -122,5 +122,5 @@ impl MemoryDescriptor {
 
 	pub fn maximum(&self) -> Option<u32> {
 		self.maximum
-	}	
+	}
 }

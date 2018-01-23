@@ -107,7 +107,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 						},
 						FuncInstanceInternal::Host { ref signature, .. } => {
 							let args = prepare_function_args(signature, &mut function_context.value_stack)?;
-							let return_val = FuncInstance::invoke(nested_func.clone(), args.into(), self.externals)?;
+							let return_val = FuncInstance::invoke(&nested_func, &args, self.externals)?;
 							if let Some(return_val) = return_val {
 								function_context.value_stack_mut().push(return_val)?;
 							}
@@ -407,7 +407,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		}
 	}
 
-	fn run_br_table(&mut self, context: &mut FunctionContext, table: &Vec<u32>, default: u32) -> Result<InstructionOutcome, Error> {
+	fn run_br_table(&mut self, context: &mut FunctionContext, table: &[u32], default: u32) -> Result<InstructionOutcome, Error> {
 		let index: u32 = context.value_stack_mut().pop_as()?;
 		Ok(InstructionOutcome::Branch(table.get(index as usize).cloned().unwrap_or(default) as usize))
 	}
@@ -1004,7 +1004,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 }
 
 impl FunctionContext {
-	pub fn new<'store>(function: FuncRef, value_stack_limit: usize, frame_stack_limit: usize, signature: &Signature, args: Vec<RuntimeValue>) -> Self {
+	pub fn new(function: FuncRef, value_stack_limit: usize, frame_stack_limit: usize, signature: &Signature, args: Vec<RuntimeValue>) -> Self {
 		let module = match *function.as_internal() {
 			FuncInstanceInternal::Internal { ref module, .. } => module.upgrade().expect("module deallocated"),
 			FuncInstanceInternal::Host { .. } => panic!("Host functions can't be called as internally defined functions; Thus FunctionContext can be created only with internally defined functions; qed"),
@@ -1029,7 +1029,7 @@ impl FunctionContext {
 			};
 			let function_type = function.signature();
 			let function_return_type = function_type.return_type().map(|vt| BlockType::Value(vt.into_elements())).unwrap_or(BlockType::NoResult);
-			let function_locals = prepare_function_args(&function_type, &mut self.value_stack)?;
+			let function_locals = prepare_function_args(function_type, &mut self.value_stack)?;
 			(function_locals, module, function_return_type)
 		};
 
@@ -1055,7 +1055,7 @@ impl FunctionContext {
 
 		let locals = locals.iter()
 			.flat_map(|l| repeat(l.value_type()).take(l.count() as usize))
-			.map(|vt| RuntimeValue::default(vt))
+			.map(RuntimeValue::default)
 			.collect::<Vec<_>>();
 		self.locals.extend(locals);
 	}

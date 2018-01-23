@@ -2,7 +2,6 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
 use std::collections::HashMap;
-use std::borrow::Cow;
 use parity_wasm::elements::{External, InitExpr, Internal, Opcode, ResizableLimits, Type};
 use {LoadedModule, Error, Signature, MemoryInstance, RuntimeValue, TableInstance};
 use imports::ImportResolver;
@@ -165,7 +164,7 @@ impl ModuleInstance {
 		let instance = ModuleRef(Rc::new(ModuleInstance::default()));
 
 		for &Type::Function(ref ty) in module.type_section().map(|ts| ts.types()).unwrap_or(&[]) {
-			let signature = Rc::new(Signature::from_elements(ty.clone()));
+			let signature = Rc::new(Signature::from_elements(ty));
 			instance.push_signature(signature);
 		}
 
@@ -174,9 +173,9 @@ impl ModuleInstance {
 				&[],
 			);
 			if imports.len() != extern_vals.len() {
-				return Err(Error::Instantiation(format!(
-					"extern_vals length is not equal to import section entries"
-				)));
+				return Err(Error::Instantiation(
+					"extern_vals length is not equal to import section entries".to_owned()
+				));
 			}
 
 			for (import, extern_val) in
@@ -386,7 +385,7 @@ impl ModuleInstance {
 					let &Type::Function(ref func_type) = types
 						.get(fn_ty_idx as usize)
 						.expect("Due to validation functions should have valid types");
-					let signature = Signature::from_elements(func_type.clone());
+					let signature = Signature::from_elements(func_type);
 					let func = imports.resolve_func(module_name, field_name, &signature)?;
 					ExternVal::Func(func)
 				}
@@ -437,7 +436,7 @@ impl ModuleInstance {
 			}
 		};
 
-		FuncInstance::invoke(func_instance.clone(), Cow::Borrowed(args), externals)
+		FuncInstance::invoke(&func_instance, args, externals)
 	}
 }
 
@@ -451,12 +450,12 @@ impl<'a> NotStartedModuleRef<'a> {
 		&self.instance
 	}
 
-	pub fn run_start<'b, E: Externals>(self, state: &'b mut E) -> Result<ModuleRef, Error> {
+	pub fn run_start<E: Externals>(self, state: &mut E) -> Result<ModuleRef, Error> {
 		if let Some(start_fn_idx) = self.loaded_module.module().start_section() {
 			let start_func = self.instance.func_by_index(start_fn_idx).expect(
 				"Due to validation start function should exists",
 			);
-			FuncInstance::invoke(start_func, Cow::Borrowed(&[]), state)?;
+			FuncInstance::invoke(&start_func, &[], state)?;
 		}
 		Ok(self.instance)
 	}
