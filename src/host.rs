@@ -19,7 +19,7 @@ impl<'a> RuntimeArgs<'a> {
 		Ok(self.nth_value(idx)?.try_into().map_err(|_| Error::Value("Invalid argument cast".to_owned()))?)
 	}
 
-	/// Extract argument as a runtime value by index `idx` returning error is not enougn arguments
+	/// Extract argument as a runtime value by index `idx` returning error is not enough arguments
 	pub fn nth_value(&self, idx: usize) -> Result<RuntimeValue, Error> {
 		if self.0.len() <= idx {
 			return Err(Error::Value("Invalid argument index".to_owned()));
