@@ -34,7 +34,7 @@ impl<'a> RuntimeArgs<'a> {
 }
 
 /// Custom user error.
-pub trait HostError: 'static + ::std::fmt::Display + ::std::fmt::Debug {
+pub trait HostError: 'static + ::std::fmt::Display + ::std::fmt::Debug + Send + Sync {
 	#[doc(hidden)]
 	fn __private_get_type_id__(&self) -> TypeId {
 		TypeId::of::<Self>()
