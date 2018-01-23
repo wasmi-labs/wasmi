@@ -90,12 +90,12 @@ impl Externals for TestHost {
 				Ok(Some(result))
 			}
 			ERR_FUNC_INDEX => {
-				let error_code = args.nth::<i32>(0)? as u32;
+				let error_code: u32 = args.nth(0)?;
 				let error = HostErrorWithCode { error_code };
 				Err(Error::Host(Box::new(error)))
 			}
 			INC_MEM_FUNC_INDEX => {
-				let ptr = args.nth::<i32>(0)? as u32;
+				let ptr: u32 = args.nth(0)?;
 
 				let memory = self.memory.as_ref().expect(
 					"Function 'inc_mem' expects attached memory",
@@ -108,7 +108,7 @@ impl Externals for TestHost {
 				Ok(None)
 			}
 			GET_MEM_FUNC_INDEX => {
-				let ptr = args.nth::<i32>(0)? as u32;
+				let ptr: u32 = args.nth(0)?;
 
 				let memory = self.memory.as_ref().expect(
 					"Function 'get_mem' expects attached memory",
@@ -466,7 +466,7 @@ fn defer_providing_externals() {
 		) -> Result<Option<RuntimeValue>, Error> {
 			match index {
 				INC_FUNC_INDEX => {
-					let a = args.nth::<i32>(0)? as u32;
+					let a = args.nth::<u32>(0)?;
 					*self.acc += a;
 					Ok(None)
 				}
