@@ -176,9 +176,9 @@ impl<'a> ModuleImportResolver for RuntimeModuleImportResolver {
 	) -> Result<FuncRef, InterpreterError> {
 		let func_ref = match field_name {
 			"set" => {
-				FuncInstance::alloc_host(Signature::new(&[ValueType::I32], None), SET_FUNC_INDEX)
+				FuncInstance::alloc_host(Signature::new(&[ValueType::I32][..], None), SET_FUNC_INDEX)
 			},
-			"get" => FuncInstance::alloc_host(Signature::new(&[ValueType::I32], Some(ValueType::I32)), GET_FUNC_INDEX),
+			"get" => FuncInstance::alloc_host(Signature::new(&[ValueType::I32][..], Some(ValueType::I32)), GET_FUNC_INDEX),
 			_ => return Err(
 				InterpreterError::Function(
 					format!("host module doesn't export function with name {}", field_name)
