@@ -657,7 +657,7 @@ fn dynamically_add_host_func() {
 					self.added_funcs += 1;
 
 					let added_func = FuncInstance::alloc_host(
-						Signature::new(&[], Some(ValueType::I32)),
+						Signature::new(&[][..], Some(ValueType::I32)),
 						host_func_index as usize,
 					);
 					self.table.set(table_index, Some(added_func))?;

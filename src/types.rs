@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use parity_wasm::elements::{
 	FunctionType, ValueType as EValueType, GlobalType, TableType, MemoryType};
 
@@ -10,20 +12,23 @@ use parity_wasm::elements::{
 /// [type]: enum.ValueType.html
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Signature {
-	params: Vec<ValueType>,
+	params: Cow<'static, [ValueType]>,
 	return_type: Option<ValueType>,
 }
 
 impl Signature {
-	pub fn new(params: &[ValueType], return_type: Option<ValueType>) -> Signature {
+	pub fn new<C: Into<Cow<'static, [ValueType]>>>(
+		params: C,
+		return_type: Option<ValueType>
+	) -> Signature {
 		Signature {
-			params: params.to_vec(),
+			params: params.into(),
 			return_type: return_type,
 		}
 	}
 
 	pub fn params(&self) -> &[ValueType] {
-		&self.params
+		&self.params.as_ref()
 	}
 
 	pub fn return_type(&self) -> Option<ValueType> {
