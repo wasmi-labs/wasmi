@@ -7,36 +7,95 @@ use module::ModuleRef;
 use types::{GlobalDescriptor, TableDescriptor, MemoryDescriptor};
 use {Error, Signature};
 
+
+/// Resolver of a module's dependencies.
+///
+/// A module have dependencies in a form of a list of imports (i.e.
+/// tuple of a (`module_name`, `field_name`, `descriptor`)).
+///
+/// The job of implementations of this trait is to provide on each
+/// import a corresponding concrete reference.
 pub trait ImportResolver {
+
+	/// Resolve a function.
+	///
+	/// Returned function should match given `signature`, i.e. all parameter types and return value should have exact match.
+	/// Otherwise, link-time error will occur.
 	fn resolve_func(
 		&self,
-		module_name: &str,
+		_module_name: &str,
 		field_name: &str,
-		func_type: &Signature,
+		_signature: &Signature,
 	) -> Result<FuncRef, Error>;
 
+	/// Resolve a global variable.
+	///
+	/// Returned global should match given `descriptor`, i.e. type and mutability
+	/// should match. Otherwise, link-time error will occur.
 	fn resolve_global(
 		&self,
 		module_name: &str,
 		field_name: &str,
-		global_type: &GlobalDescriptor,
+		descriptor: &GlobalDescriptor,
 	) -> Result<GlobalRef, Error>;
 
+	/// Resolve a memory.
+	///
+	/// Returned memory should match requested memory (described by the `descriptor`),
+	/// i.e. initial size of a returned memory should be equal or larger than requested memory.
+	/// Furthermore, if requested memory have maximum size, returned memory either should have
+	/// equal or larger maximum size or have no maximum size at all.
+	/// If returned memory doesn't match the requested then link-time error will occur.
 	fn resolve_memory(
 		&self,
 		module_name: &str,
 		field_name: &str,
-		memory_type: &MemoryDescriptor,
+		descriptor: &MemoryDescriptor,
 	) -> Result<MemoryRef, Error>;
 
+	/// Resolve a table.
+	///
+	/// Returned table should match requested table (described by the `descriptor`),
+	/// i.e. initial size of a returned table should be equal or larger than requested table.
+	/// Furthermore, if requested memory have maximum size, returned memory either should have
+	/// equal or larger maximum size or have no maximum size at all.
+	/// If returned table doesn't match the requested then link-time error will occur.
 	fn resolve_table(
 		&self,
 		module_name: &str,
 		field_name: &str,
-		table_type: &TableDescriptor,
+		descriptor: &TableDescriptor,
 	) -> Result<TableRef, Error>;
 }
 
+/// Convenience builder of [`ImportResolver`].
+///
+/// With help of this builder, you can easily create [`ImportResolver`], just by
+/// adding needed [resolvers][`ModuleImportResolver`] by names.
+///
+/// # Examples
+///
+/// ```rust
+/// use wasmi::{load_from_buffer, ModuleInstance, ImportsBuilder};
+/// #
+/// # struct EnvModuleResolver;
+/// # impl ::wasmi::ModuleImportResolver for EnvModuleResolver { }
+/// # fn func() -> Result<(), ::wasmi::Error> {
+/// # let module = load_from_buffer(&[0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]).unwrap();
+/// # let other_instance = ModuleInstance::new(&module, &ImportsBuilder::default())?.assert_no_start();
+///
+/// let imports = ImportsBuilder::new()
+/// 	.with_resolver("env", &EnvModuleResolver)
+/// 	// Note, that ModuleInstance can be a resolver too.
+/// 	.with_resolver("other_instance", &other_instance);
+/// let instance = ModuleInstance::new(&module, &imports)?.assert_no_start();
+///
+/// # Ok(())
+/// # }
+/// ```
+///
+/// [`ImportResolver`]: trait.ImportResolver.html
+/// [`ModuleImportResolver`]: trait.ModuleImportResolver.html
 pub struct ImportsBuilder<'a> {
 	modules: HashMap<String, &'a ModuleImportResolver>,
 }
@@ -48,10 +107,12 @@ impl<'a> Default for ImportsBuilder<'a> {
 }
 
 impl<'a> ImportsBuilder<'a> {
+	/// Create an empty `ImportsBuilder`.
 	pub fn new() -> ImportsBuilder<'a> {
 		ImportsBuilder { modules: HashMap::new() }
 	}
 
+	/// Register an resolver by a name.
 	pub fn with_resolver<N: Into<String>>(
 		mut self,
 		name: N,
@@ -61,11 +122,12 @@ impl<'a> ImportsBuilder<'a> {
 		self
 	}
 
+	/// Register an resolver by a name.
 	pub fn push_resolver<N: Into<String>>(&mut self, name: N, resolver: &'a ModuleImportResolver) {
 		self.modules.insert(name.into(), resolver);
 	}
 
-	pub fn resolver(&self, name: &str) -> Option<&ModuleImportResolver> {
+	fn resolver(&self, name: &str) -> Option<&ModuleImportResolver> {
 		self.modules.get(name).cloned()
 	}
 }
@@ -116,7 +178,15 @@ impl<'a> ImportResolver for ImportsBuilder<'a> {
 	}
 }
 
+/// Version of [`ImportResolver`] specialized for a single module.
+///
+/// [`ImportResolver`]: trait.ImportResolver.html
 pub trait ModuleImportResolver {
+	/// Resolve a function.
+	///
+	/// See [`ImportResolver::resolve_func`] for details.
+	///
+	/// [`ImportResolver::resolve_func`]: trait.ImportResolver.html#tymethod.resolve_func
 	fn resolve_func(
 		&self,
 		field_name: &str,
@@ -127,6 +197,11 @@ pub trait ModuleImportResolver {
 		))
 	}
 
+	/// Resolve a global variable.
+	///
+	/// See [`ImportResolver::resolve_global`] for details.
+	///
+	/// [`ImportResolver::resolve_global`]: trait.ImportResolver.html#tymethod.resolve_global
 	fn resolve_global(
 		&self,
 		field_name: &str,
@@ -137,6 +212,11 @@ pub trait ModuleImportResolver {
 		))
 	}
 
+	/// Resolve a memory.
+	///
+	/// See [`ImportResolver::resolve_memory`] for details.
+	///
+	/// [`ImportResolver::resolve_memory`]: trait.ImportResolver.html#tymethod.resolve_memory
 	fn resolve_memory(
 		&self,
 		field_name: &str,
@@ -147,6 +227,11 @@ pub trait ModuleImportResolver {
 		))
 	}
 
+	/// Resolve a table.
+	///
+	/// See [`ImportResolver::resolve_table`] for details.
+	///
+	/// [`ImportResolver::resolve_table`]: trait.ImportResolver.html#tymethod.resolve_table
 	fn resolve_table(
 		&self,
 		field_name: &str,
