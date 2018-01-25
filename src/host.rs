@@ -45,31 +45,30 @@ impl<'a> RuntimeArgs<'a> {
 ///
 /// #[derive(Debug)]
 /// struct MyError {
-///		code: u32,
+///     code: u32,
 /// }
 ///
 /// impl fmt::Display for MyError {
-///		fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-///			write!(f, "MyError, code={}", self.code)
-///		}
+///     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+///         write!(f, "MyError, code={}", self.code)
+///     }
 /// }
 ///
 /// impl HostError for MyError { }
 ///
 /// fn failable_fn() -> Result<(), Error> {
-///		let my_error = MyError { code: 1312 };
-///		Err(Error::Host(Box::new(my_error)))
+///     let my_error = MyError { code: 1312 };
+///     Err(Error::Host(Box::new(my_error)))
 /// }
 ///
 /// match failable_fn() {
-///		Err(Error::Host(host_error)) => {
-///			let my_error = host_error.downcast_ref::<MyError>().unwrap();
-///			assert_eq!(my_error.code, 1312);
-///		}
-///		_ => panic!(),
+///     Err(Error::Host(host_error)) => {
+///         let my_error = host_error.downcast_ref::<MyError>().unwrap();
+///         assert_eq!(my_error.code, 1312);
+///     }
+///     _ => panic!(),
 /// }
 /// ```
-///
 pub trait HostError: 'static + ::std::fmt::Display + ::std::fmt::Debug + Send + Sync {
 	#[doc(hidden)]
 	fn __private_get_type_id__(&self) -> TypeId {
@@ -104,69 +103,69 @@ impl HostError {
 ///
 /// ```rust
 /// use wasmi::{
-///		Externals, RuntimeValue, RuntimeArgs, Error, ModuleImportResolver,
-///		FuncRef, ValueType, Signature, FuncInstance
-///	};
+///     Externals, RuntimeValue, RuntimeArgs, Error, ModuleImportResolver,
+///     FuncRef, ValueType, Signature, FuncInstance
+/// };
 ///
 /// struct HostExternals {
-///		counter: usize,
+///     counter: usize,
 /// }
 ///
 /// const ADD_FUNC_INDEX: usize = 0;
 ///
 /// impl Externals for HostExternals {
-///		fn invoke_index(
-///			&mut self,
-///			index: usize,
-///			args: RuntimeArgs,
-///		) -> Result<Option<RuntimeValue>, Error> {
-///			match index {
-///				ADD_FUNC_INDEX => {
-///					let a: u32 = args.nth(0).unwrap();
-///					let b: u32 = args.nth(1).unwrap();
-///					let result = a + b;
+///     fn invoke_index(
+///         &mut self,
+///         index: usize,
+///         args: RuntimeArgs,
+///     ) -> Result<Option<RuntimeValue>, Error> {
+///         match index {
+///             ADD_FUNC_INDEX => {
+///                 let a: u32 = args.nth(0).unwrap();
+///                 let b: u32 = args.nth(1).unwrap();
+///                 let result = a + b;
 ///
-///					Ok(Some(RuntimeValue::I32(result as i32)))
-///				}
-///				_ => panic!("Unimplemented function at {}", index),
-///			}
-///		}
+///                 Ok(Some(RuntimeValue::I32(result as i32)))
+///             }
+///             _ => panic!("Unimplemented function at {}", index),
+///         }
+///     }
 /// }
 ///
 /// impl HostExternals {
-///		fn check_signature(
-///			&self,
-///			index: usize,
-///			signature: &Signature
-///		) -> bool {
-///			let (params, ret_ty): (&[ValueType], Option<ValueType>) = match index {
-///				ADD_FUNC_INDEX => (&[ValueType::I32, ValueType::I32], Some(ValueType::I32)),
-///				_ => return false,
-///			};
-///			signature.params() == params && signature.return_type() == ret_ty
-///		}
+///     fn check_signature(
+///         &self,
+///         index: usize,
+///         signature: &Signature
+///     ) -> bool {
+///         let (params, ret_ty): (&[ValueType], Option<ValueType>) = match index {
+///             ADD_FUNC_INDEX => (&[ValueType::I32, ValueType::I32], Some(ValueType::I32)),
+///             _ => return false,
+///         };
+///         signature.params() == params && signature.return_type() == ret_ty
+///     }
 /// }
 ///
 /// impl ModuleImportResolver for HostExternals {
-///		fn resolve_func(
-///			&self,
-///			field_name: &str,
-///			signature: &Signature
-///		) -> Result<FuncRef, Error> {
-///			let index = match field_name {
-///				"add" => ADD_FUNC_INDEX,
-///				_ => {
-///					return Err(Error::Instantiation(
-///						format!("Export {} not found", field_name),
-///					))
-///				}
-///			};
+///     fn resolve_func(
+///         &self,
+///         field_name: &str,
+///         signature: &Signature
+///     ) -> Result<FuncRef, Error> {
+///         let index = match field_name {
+///             "add" => ADD_FUNC_INDEX,
+///             _ => {
+///                 return Err(Error::Instantiation(
+///                     format!("Export {} not found", field_name),
+///                 ))
+///             }
+///         };
 ///
-///			Ok(FuncInstance::alloc_host(
-///				Signature::new(&[ValueType::I32, ValueType::I32][..], Some(ValueType::I32)),
-///				ADD_FUNC_INDEX,
-///			))
-///		}
+///         Ok(FuncInstance::alloc_host(
+///             Signature::new(&[ValueType::I32, ValueType::I32][..], Some(ValueType::I32)),
+///             ADD_FUNC_INDEX,
+///         ))
+///     }
 /// }
 /// ```
 pub trait Externals {

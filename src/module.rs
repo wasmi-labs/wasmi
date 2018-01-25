@@ -13,6 +13,11 @@ use host::Externals;
 use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use types::{GlobalDescriptor, TableDescriptor, MemoryDescriptor};
 
+/// Reference to a [`ModuleInstance`].
+///
+/// This reference has a reference-counting semantics.
+///
+/// [`ModuleInstance`]: struct.ModuleInstance.html
 #[derive(Clone, Debug)]
 pub struct ModuleRef(pub(crate) Rc<ModuleInstance>);
 
@@ -421,9 +426,9 @@ impl ModuleInstance {
 	///
 	/// // ModuleInstance::new returns instance which `start` function isn't called.
 	/// let not_started = ModuleInstance::new(
-	///		&module,
-	///		&ImportsBuilder::default()
-	///	)?;
+	///     &module,
+	///     &ImportsBuilder::default()
+	/// )?;
 	/// // Call `start` function if any.
 	/// let instance = not_started.run_start(&mut NopExternals)?;
 	///
@@ -441,9 +446,9 @@ impl ModuleInstance {
 	///
 	/// // This will panic if the module actually contain `start` function.
 	/// let not_started = ModuleInstance::new(
-	///		&module,
-	///		&ImportsBuilder::default()
-	///	)?.assert_no_start();
+	///     &module,
+	///     &ImportsBuilder::default()
+	/// )?.assert_no_start();
 	///
 	/// # Ok(())
 	/// # }
@@ -520,30 +525,30 @@ impl ModuleInstance {
 	/// # extern crate wabt;
 	/// # use wasmi::{ModuleInstance, ImportsBuilder, NopExternals, RuntimeValue};
 	/// # fn main() {
-	///	# let wasm_binary: Vec<u8> = wabt::wat2wasm(
-	///	# 	r#"
-	///	# 	(module
-	///	# 		(func (export "add") (param i32 i32) (result i32)
-	/// # 			get_local 0
-	/// # 			get_local 1
-	///	# 			i32.add
-	///	# 		)
-	///	# 	)
-	///	# 	"#,
-	///	# ).expect("failed to parse wat");
+	/// # let wasm_binary: Vec<u8> = wabt::wat2wasm(
+	/// #   r#"
+	/// #   (module
+	/// #       (func (export "add") (param i32 i32) (result i32)
+	/// #           get_local 0
+	/// #           get_local 1
+	/// #           i32.add
+	/// #       )
+	/// #   )
+	/// #   "#,
+	/// # ).expect("failed to parse wat");
 	/// # let module = wasmi::load_from_buffer(&wasm_binary).expect("failed to load wasm");
 	/// # let instance = ModuleInstance::new(
-	///	# &module,
-	///	# &ImportsBuilder::default()
-	///	# ).expect("failed to instantiate wasm module").assert_no_start();
+	/// # &module,
+	/// # &ImportsBuilder::default()
+	/// # ).expect("failed to instantiate wasm module").assert_no_start();
 	/// assert_eq!(
-	/// 	instance.invoke_export(
-	/// 		"add",
-	/// 		&[RuntimeValue::I32(5), RuntimeValue::I32(3)],
-	///			&mut NopExternals,
-	///		).expect("failed to execute export"),
-	///		Some(RuntimeValue::I32(8)),
-	///	);
+	///     instance.invoke_export(
+	///         "add",
+	///         &[RuntimeValue::I32(5), RuntimeValue::I32(3)],
+	///         &mut NopExternals,
+	///     ).expect("failed to execute export"),
+	///     Some(RuntimeValue::I32(8)),
+	/// );
 	/// # }
 	/// ```
 	pub fn invoke_export<E: Externals>(

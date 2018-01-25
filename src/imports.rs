@@ -89,9 +89,9 @@ pub trait ImportResolver {
 /// # let other_instance = ModuleInstance::new(&module, &ImportsBuilder::default())?.assert_no_start();
 ///
 /// let imports = ImportsBuilder::new()
-/// 	.with_resolver("env", &EnvModuleResolver)
-/// 	// Note, that ModuleInstance can be a resolver too.
-/// 	.with_resolver("other_instance", &other_instance);
+///     .with_resolver("env", &EnvModuleResolver)
+///     // Note, that ModuleInstance can be a resolver too.
+///     .with_resolver("other_instance", &other_instance);
 /// let instance = ModuleInstance::new(&module, &imports)?.assert_no_start();
 ///
 /// # Ok(())
