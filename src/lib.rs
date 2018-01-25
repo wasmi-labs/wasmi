@@ -1,4 +1,98 @@
-//! WebAssembly interpreter module.
+//! # wasmi
+//!
+//! This library allows to load WebAssembly modules in binary format and invoke functions on them.
+//!
+//! # Introduction
+//!
+//! WebAssembly (wasm) is a safe, portable, compact format that designed for efficient execution.
+//!
+//! Wasm code is distributed in a form of modules, that contains definitions of:
+//!
+//! - functions,
+//! - global variables,
+//! - linear memories,
+//! - tables.
+//!
+//! and this definitions can be imported. Also, each definition can be exported.
+//!
+//! In addition to definitions, modules can define initialization data for their memories or tables that takes the
+//! form of segments copied to given offsets. They can also define a `start` function that is automatically executed.
+//!
+//! ## Loading and Validation
+//!
+//! Before execution a module should be validated. This process checks that module is well-formed
+//! and makes only allowed operations.
+//!
+//! Valid modules can't access memory out of it's sandbox, can't cause stack underflow
+//! and can call functions only with correct signatures.
+//!
+//! ## Instantiatiation
+//!
+//! In order to execute code in wasm module it should be instatiated.
+//! Instantiation includes the following steps:
+//!
+//! 1. Create an empty module instance,
+//! 2. Resolve definition instances for each declared import in the module,
+//! 3. Instantiate definitions declared in the module (e.g. allocate global variables, allocate linear memory, etc),
+//! 4. Initialize memory and table contents by copiying segments into them,
+//! 5. Execute `start` function, if any.
+//!
+//! After these steps, module instance are ready to execute functions.
+//!
+//! ## Execution
+//!
+//! It is allowed to only execute functions which are exported by a module.
+//! Functions can either return a result or trap (e.g. there can't be linking-error at the middle of execution).
+//! This property is ensured by the validation process.
+//!
+//! # Examples
+//!
+//! ```rust
+//! extern crate wasmi;
+//! extern crate wabt;
+//!
+//! use wasmi::{ModuleInstance, ImportsBuilder, NopExternals, RuntimeValue};
+//!
+//! fn main() {
+//!     // Parse WAT (WebAssembly Text format) into wasm bytecode.
+//!     let wasm_binary: Vec<u8> =
+//!         wabt::wat2wasm(
+//!             r#"
+//!             (module
+//!                 (func (export "test") (result i32)
+//!                     i32.const 1337
+//!                 )
+//!             )
+//!             "#,
+//!         )
+//!         .expect("failed to parse wat");
+//!
+//!     // Load wasm binary and prepare it for instantiation.
+//!     let module = wasmi::load_from_buffer(&wasm_binary)
+//!         .expect("failed to load wasm");
+//!
+//!     // Instantiate a module with empty imports and
+//!     // asserting that there is no `start` function.
+//!     let instance =
+//!         ModuleInstance::new(
+//!             &module,
+//!             &ImportsBuilder::default()
+//!         )
+//!         .expect("failed to instantiate wasm module")
+//!         .assert_no_start();
+//!
+//!     // Finally, invoke exported function "test" with no parameters
+//!     // and empty external function executor.
+//!     assert_eq!(
+//!         instance.invoke_export(
+//!             "test",
+//!             &[],
+//!             &mut NopExternals,
+//!         ).expect("failed to execute export"),
+//!         Some(RuntimeValue::I32(1337)),
+//!     );
+//! }
+//! ```
 
 // TODO(pepyakin): Fix this asap https://github.com/pepyakin/wasmi/issues/3
 #![allow(missing_docs)]
