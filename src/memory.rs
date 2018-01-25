@@ -38,6 +38,8 @@ impl ::std::ops::Deref for MemoryRef {
 /// A memory is created with an initial size but can be grown dynamically.
 /// The growth can be limited by specifying maximum size.
 /// The size of a memory is always a integer multiple of a page size - 64KiB.
+///
+/// At the moment, wasm doesn't provide any way to shrink the memory.
 pub struct MemoryInstance {
 	/// Memofy limits.
 	limits: ResizableLimits,

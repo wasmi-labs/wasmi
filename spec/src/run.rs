@@ -339,6 +339,7 @@ fn run_action(
                     InterpreterError::Global(format!("Expected to have export with name {}", field))
                 })?
                 .as_global()
+                .cloned()
                 .ok_or_else(|| {
                     InterpreterError::Global(format!("Expected export {} to be a global", field))
                 })?;

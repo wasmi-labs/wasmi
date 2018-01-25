@@ -15,7 +15,6 @@ use common::{DEFAULT_FRAME_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT};
 /// This reference has a reference-counting semantics.
 ///
 /// [`FuncInstance`]: struct.FuncInstance.html
-///
 #[derive(Clone, Debug)]
 pub struct FuncRef(Rc<FuncInstance>);
 
@@ -30,8 +29,8 @@ impl ::std::ops::Deref for FuncRef {
 ///
 /// Functions are the unit of orgianization of code in WebAssembly. Each function takes a sequence of values
 /// as parameters and either optionally return a value or trap.
-/// Functions can call other function (including itself, i.e recursively) and imported functions
-/// (i.e defined in another module).
+/// Functions can call other function including itself (i.e recursive calls are allowed) and imported functions
+/// (i.e functions defined in another module or by the host environment).
 ///
 /// Functions can be defined either:
 ///
@@ -40,7 +39,6 @@ impl ::std::ops::Deref for FuncRef {
 ///   See more in [`Externals`].
 ///
 /// [`Externals`]: trait.Externals.html
-///
 pub struct FuncInstance(FuncInstanceInternal);
 
 #[derive(Clone)]

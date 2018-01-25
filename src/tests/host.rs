@@ -345,6 +345,7 @@ fn pull_internal_mem_from_module() {
 		.export_by_name("mem")
 		.expect("Module expected to have 'mem' export")
 		.as_memory()
+		.cloned()
 		.expect("'mem' export should be a memory");
 
 	env.memory = Some(internal_mem);

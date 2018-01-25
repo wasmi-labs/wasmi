@@ -23,6 +23,7 @@ impl ::std::ops::Deref for ModuleRef {
 	}
 }
 
+/// An external value is the runtime representation of an entity that can be imported or exported.
 pub enum ExternVal {
 	Func(FuncRef),
 	Table(TableRef),
@@ -57,35 +58,64 @@ impl fmt::Debug for ExternVal {
 }
 
 impl ExternVal {
-	pub fn as_func(&self) -> Option<FuncRef> {
+	/// Get underlying function reference if this `ExternVal` contains
+	/// a function, or `None` if it is some other kind.
+	pub fn as_func(&self) -> Option<&FuncRef> {
 		match *self {
-			ExternVal::Func(ref func) => Some(func.clone()),
+			ExternVal::Func(ref func) => Some(func),
 			_ => None,
 		}
 	}
 
-	pub fn as_table(&self) -> Option<TableRef> {
+	/// Get underlying table reference if this `ExternVal` contains
+	/// a table, or `None` if it is some other kind.
+	pub fn as_table(&self) -> Option<&TableRef> {
 		match *self {
-			ExternVal::Table(ref table) => Some(table.clone()),
+			ExternVal::Table(ref table) => Some(table),
 			_ => None,
 		}
 	}
 
-	pub fn as_memory(&self) -> Option<MemoryRef> {
+	/// Get underlying memory reference if this `ExternVal` contains
+	/// a memory, or `None` if it is some other kind.
+	pub fn as_memory(&self) -> Option<&MemoryRef> {
 		match *self {
-			ExternVal::Memory(ref memory) => Some(memory.clone()),
+			ExternVal::Memory(ref memory) => Some(memory),
 			_ => None,
 		}
 	}
 
-	pub fn as_global(&self) -> Option<GlobalRef> {
+	/// Get underlying global variable reference if this `ExternVal` contains
+	/// a global, or `None` if it is some other kind.
+	pub fn as_global(&self) -> Option<&GlobalRef> {
 		match *self {
-			ExternVal::Global(ref global) => Some(global.clone()),
+			ExternVal::Global(ref global) => Some(global),
 			_ => None,
 		}
 	}
 }
 
+/// A module instance is the runtime representation of a [module][`LoadedModule`].
+///
+/// It is created by instantiating a [module][`LoadedModule`], and collects runtime representations
+/// of all entities that are imported or defined by the module, namely:
+///
+/// - [functions][`FuncInstance`],
+/// - [memories][`MemoryInstance`],
+/// - [tables][`TableInstance`],
+/// - [globals][`GlobalInstance`],
+///
+/// In order to instantiate a module you need to provide entities to satisfy
+/// every module's imports (i.e. wasm modules don't have optional imports).
+///
+/// After module is instantiated you can start invoking it's exported functions with [`invoke_export`].
+///
+/// [`LoadedModule`]: struct.LoadedModule.html
+/// [`FuncInstance`]: struct.FuncInstance.html
+/// [`MemoryInstance`]: struct.MemoryInstance.html
+/// [`TableInstance`]: struct.TableInstance.html
+/// [`GlobalInstance`]: struct.GlobalInstance.html
+/// [`invoke_export`]: #method.invoke_export
 #[derive(Debug)]
 pub struct ModuleInstance {
 	signatures: RefCell<Vec<Rc<Signature>>>,
@@ -122,10 +152,6 @@ impl ModuleInstance {
 
 	pub(crate) fn func_by_index(&self, idx: u32) -> Option<FuncRef> {
 		self.funcs.borrow().get(idx as usize).cloned()
-	}
-
-	pub fn export_by_name(&self, name: &str) -> Option<ExternVal> {
-		self.exports.borrow().get(name).cloned()
 	}
 
 	pub(crate) fn signature_by_index(&self, idx: u32) -> Option<Rc<Signature>> {
@@ -369,6 +395,63 @@ impl ModuleInstance {
 		Ok(module_ref)
 	}
 
+	/// Instantiate a [module][`LoadedModule`].
+	///
+	/// Note that in case of successful instantiation this function returns a reference to
+	/// a module which `start` function is not called.
+	/// In order to complete instantiatiation `start` function must be called. However, there are
+	/// situations where you might need to do additional setup before calling `start` function.
+	/// For such sitations this separation might be useful.
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if the module cannot be instantiated.
+	///
+	/// This can happen if one of the imports can't
+	/// be satisfied (e.g module isn't registered in `imports` [resolver][`ImportResolver`]) or
+	/// there is a mismatch between requested import and provided (e.g. module requested memory with no
+	/// maximum size limit, however, was provided memory with the maximum size limit).
+	///
+	/// # Examples
+	///
+	/// ```rust
+	/// use wasmi::{load_from_buffer, ModuleInstance, ImportsBuilder, NopExternals};
+	/// # fn func() -> Result<(), ::wasmi::Error> {
+	/// # let module = load_from_buffer(&[0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]).unwrap();
+	///
+	/// // ModuleInstance::new returns instance which `start` function isn't called.
+	/// let not_started = ModuleInstance::new(
+	///		&module,
+	///		&ImportsBuilder::default()
+	///	)?;
+	/// // Call `start` function if any.
+	/// let instance = not_started.run_start(&mut NopExternals)?;
+	///
+	/// # Ok(())
+	/// # }
+	/// ```
+	///
+	/// If you sure that the module doesn't have `start` function you can use [`assert_no_start`] to get
+	/// instantiated module without calling `start` function.
+	///
+	/// ```rust
+	/// use wasmi::{load_from_buffer, ModuleInstance, ImportsBuilder, NopExternals};
+	/// # fn func() -> Result<(), ::wasmi::Error> {
+	/// # let module = load_from_buffer(&[0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]).unwrap();
+	///
+	/// // This will panic if the module actually contain `start` function.
+	/// let not_started = ModuleInstance::new(
+	///		&module,
+	///		&ImportsBuilder::default()
+	///	)?.assert_no_start();
+	///
+	/// # Ok(())
+	/// # }
+	/// ```
+	///
+	/// [`LoadedModule`]: struct.LoadedModule.html
+	/// [`ImportResolver`]: trait.ImportResolver.html
+	/// [`assert_no_start`]: struct.NotStartedModuleRef.html#method.assert_no_start
 	pub fn new<'m, I: ImportResolver>(
 		loaded_module: &'m LoadedModule,
 		imports: &I,
@@ -415,6 +498,54 @@ impl ModuleInstance {
 		})
 	}
 
+	/// Invoke exported function by a name.
+	///
+	/// This function finds exported function by a name, and calls it with provided arguments and
+	/// external state.
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if:
+	///
+	/// - there are no export with a given name or this export is not a function,
+	/// - given arguments doesn't match to function signature,
+	/// - trap occured at the execution time,
+	///
+	/// # Examples
+	///
+	/// Invoke a function that takes two numbers and returns sum of them.
+	///
+	/// ```rust
+	/// # extern crate wasmi;
+	/// # extern crate wabt;
+	/// # use wasmi::{ModuleInstance, ImportsBuilder, NopExternals, RuntimeValue};
+	/// # fn main() {
+	///	# let wasm_binary: Vec<u8> = wabt::wat2wasm(
+	///	# 	r#"
+	///	# 	(module
+	///	# 		(func (export "add") (param i32 i32) (result i32)
+	/// # 			get_local 0
+	/// # 			get_local 1
+	///	# 			i32.add
+	///	# 		)
+	///	# 	)
+	///	# 	"#,
+	///	# ).expect("failed to parse wat");
+	/// # let module = wasmi::load_from_buffer(&wasm_binary).expect("failed to load wasm");
+	/// # let instance = ModuleInstance::new(
+	///	# &module,
+	///	# &ImportsBuilder::default()
+	///	# ).expect("failed to instantiate wasm module").assert_no_start();
+	/// assert_eq!(
+	/// 	instance.invoke_export(
+	/// 		"add",
+	/// 		&[RuntimeValue::I32(5), RuntimeValue::I32(3)],
+	///			&mut NopExternals,
+	///		).expect("failed to execute export"),
+	///		Some(RuntimeValue::I32(8)),
+	///	);
+	/// # }
+	/// ```
 	pub fn invoke_export<E: Externals>(
 		&self,
 		func_name: &str,
@@ -437,6 +568,13 @@ impl ModuleInstance {
 		};
 
 		FuncInstance::invoke(&func_instance, args, externals)
+	}
+
+	/// Find export by a name.
+	///
+	/// Returns `None` if there is no export with such name.
+	pub fn export_by_name(&self, name: &str) -> Option<ExternVal> {
+		self.exports.borrow().get(name).cloned()
 	}
 }
 

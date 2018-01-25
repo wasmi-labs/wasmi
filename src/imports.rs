@@ -15,6 +15,10 @@ use {Error, Signature};
 ///
 /// The job of implementations of this trait is to provide on each
 /// import a corresponding concrete reference.
+///
+/// For simple use-cases you can use [`ImportsBuilder`].
+///
+/// [`ImportsBuilder`]: struct.ImportsBuilder.html
 pub trait ImportResolver {
 
 	/// Resolve a function.
@@ -254,6 +258,7 @@ impl ModuleImportResolver for ModuleRef {
 				Error::Instantiation(format!("Export {} not found", field_name))
 			})?
 			.as_func()
+			.cloned()
 			.ok_or_else(|| {
 				Error::Instantiation(format!("Export {} is not a function", field_name))
 			})?)
@@ -269,6 +274,7 @@ impl ModuleImportResolver for ModuleRef {
 				Error::Instantiation(format!("Export {} not found", field_name))
 			})?
 			.as_global()
+			.cloned()
 			.ok_or_else(|| {
 				Error::Instantiation(format!("Export {} is not a global", field_name))
 			})?)
@@ -284,6 +290,7 @@ impl ModuleImportResolver for ModuleRef {
 				Error::Instantiation(format!("Export {} not found", field_name))
 			})?
 			.as_memory()
+			.cloned()
 			.ok_or_else(|| {
 				Error::Instantiation(format!("Export {} is not a memory", field_name))
 			})?)
@@ -299,6 +306,7 @@ impl ModuleImportResolver for ModuleRef {
 				Error::Instantiation(format!("Export {} not found", field_name))
 			})?
 			.as_table()
+			.cloned()
 			.ok_or_else(|| {
 				Error::Instantiation(format!("Export {} is not a table", field_name))
 			})?)
