@@ -68,7 +68,7 @@
 //!         .expect("failed to parse wat");
 //!
 //!     // Load wasm binary and prepare it for instantiation.
-//!     let module = wasmi::load_from_buffer(&wasm_binary)
+//!     let module = wasmi::Module::from_buffer(&wasm_binary)
 //!         .expect("failed to load wasm");
 //!
 //!     // Instantiate a module with empty imports and

@@ -420,9 +420,9 @@ impl ModuleInstance {
 	/// # Examples
 	///
 	/// ```rust
-	/// use wasmi::{load_from_buffer, ModuleInstance, ImportsBuilder, NopExternals};
+	/// use wasmi::{ModuleInstance, ImportsBuilder, NopExternals};
 	/// # fn func() -> Result<(), ::wasmi::Error> {
-	/// # let module = load_from_buffer(&[0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]).unwrap();
+	/// # let module = wasmi::Module::from_buffer(&[0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]).unwrap();
 	///
 	/// // ModuleInstance::new returns instance which `start` function isn't called.
 	/// let not_started = ModuleInstance::new(
@@ -440,9 +440,9 @@ impl ModuleInstance {
 	/// instantiated module without calling `start` function.
 	///
 	/// ```rust
-	/// use wasmi::{load_from_buffer, ModuleInstance, ImportsBuilder, NopExternals};
+	/// use wasmi::{ModuleInstance, ImportsBuilder, NopExternals};
 	/// # fn func() -> Result<(), ::wasmi::Error> {
-	/// # let module = load_from_buffer(&[0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]).unwrap();
+	/// # let module = wasmi::Module::from_buffer(&[0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]).unwrap();
 	///
 	/// // This will panic if the module actually contain `start` function.
 	/// let not_started = ModuleInstance::new(
@@ -536,7 +536,7 @@ impl ModuleInstance {
 	/// #   )
 	/// #   "#,
 	/// # ).expect("failed to parse wat");
-	/// # let module = wasmi::load_from_buffer(&wasm_binary).expect("failed to load wasm");
+	/// # let module = wasmi::Module::from_buffer(&wasm_binary).expect("failed to load wasm");
 	/// # let instance = ModuleInstance::new(
 	/// # &module,
 	/// # &ImportsBuilder::default()
