@@ -68,7 +68,7 @@
 //!         .expect("failed to parse wat");
 //!
 //!     // Load wasm binary and prepare it for instantiation.
-//!     let module = wasmi::load_from_buffer(&wasm_binary)
+//!     let module = wasmi::Module::from_buffer(&wasm_binary)
 //!         .expect("failed to load wasm");
 //!
 //!     // Instantiate a module with empty imports and
@@ -105,7 +105,6 @@ extern crate byteorder;
 use std::fmt;
 use std::error;
 use std::collections::HashMap;
-use parity_wasm::elements::Module;
 
 /// Internal interpreter error.
 #[derive(Debug)]
@@ -223,7 +222,7 @@ mod tests;
 
 pub use self::memory::{MemoryInstance, MemoryRef};
 pub use self::table::{TableInstance, TableRef};
-pub use self::value::{RuntimeValue, TryInto};
+pub use self::value::RuntimeValue;
 pub use self::host::{Externals, NopExternals, HostError, RuntimeArgs};
 pub use self::imports::{ModuleImportResolver, ImportResolver, ImportsBuilder};
 pub use self::module::{ModuleInstance, ModuleRef, ExternVal, NotStartedModuleRef};
@@ -231,40 +230,96 @@ pub use self::global::{GlobalInstance, GlobalRef};
 pub use self::func::{FuncInstance, FuncRef};
 pub use self::types::{Signature, ValueType, GlobalDescriptor, TableDescriptor, MemoryDescriptor};
 
-pub struct LoadedModule {
+/// Deserialized module prepared for instantiation.
+pub struct Module {
 	labels: HashMap<usize, HashMap<usize, usize>>,
-	module: Module,
+	module: parity_wasm::elements::Module,
 }
 
-impl LoadedModule {
-	pub(crate) fn module(&self) -> &Module {
+impl Module {
+
+	/// Create `Module` from `parity_wasm::elements::Module`.
+	///
+	/// This function will load, validate and prepare a `parity_wasm`'s `Module`.
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if provided `Module` is not valid.
+	///
+	/// # Examples
+	///
+	/// ```rust
+	/// extern crate parity_wasm;
+	/// extern crate wasmi;
+	///
+	/// use parity_wasm::builder;
+	/// use parity_wasm::elements;
+	///
+	/// fn main() {
+	///     let parity_module =
+	///         builder::module()
+	///             .function()
+	///                 .signature().with_param(elements::ValueType::I32).build()
+	///                 .body().build()
+	///             .build()
+	///         .build();
+	///
+	///     let module = wasmi::Module::from_parity_wasm_module(parity_module)
+	///         .expect("parity-wasm builder generated invalid module!");
+	///
+	///     // Instantiate `module`, etc...
+	/// }
+	/// ```
+	pub fn from_parity_wasm_module(module: parity_wasm::elements::Module) -> Result<Module, Error> {
+		use validation::{validate_module, ValidatedModule};
+		let ValidatedModule {
+			labels,
+			module,
+		} = validate_module(module)?;
+
+		Ok(Module {
+			labels,
+			module,
+		})
+	}
+
+	/// Create `Module` from a given buffer.
+	///
+	/// This function will deserialize wasm module from a given module,
+	/// validate and prepare it for instantiation.
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if wasm binary in provided `buffer` is not valid wasm binary.
+	///
+	/// # Examples
+	///
+	/// ```rust
+	/// extern crate wasmi;
+	///
+	/// fn main() {
+	///     let module =
+	///         wasmi::Module::from_buffer(
+	///             // Minimal module:
+	///             //   \0asm - magic
+	///             //    0x01 - version (in little-endian)
+	///             &[0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]
+	///         ).expect("Failed to load minimal module");
+	///
+	///     // Instantiate `module`, etc...
+	/// }
+	/// ```
+	pub fn from_buffer<B: AsRef<[u8]>>(buffer: B) -> Result<Module, Error> {
+		let module = parity_wasm::elements::deserialize_buffer(buffer.as_ref())
+			.map_err(|e: parity_wasm::elements::Error| Error::Validation(e.to_string()))?;
+		Module::from_parity_wasm_module(module)
+	}
+
+	pub(crate) fn module(&self) -> &parity_wasm::elements::Module {
 		&self.module
 	}
 
 	pub(crate) fn labels(&self) -> &HashMap<usize, HashMap<usize, usize>> {
 		&self.labels
 	}
-
-	pub fn into_module(self) -> Module {
-		self.module
-	}
-}
-
-pub fn load_from_module(module: Module) -> Result<LoadedModule, Error> {
-	use validation::{validate_module, ValidatedModule};
-	let ValidatedModule {
-		labels,
-		module,
-	} = validate_module(module)?;
-
-	Ok(LoadedModule {
-		labels,
-		module,
-	})
-}
-
-pub fn load_from_buffer<B: AsRef<[u8]>>(buffer: B) -> Result<LoadedModule, Error> {
-	let module = parity_wasm::elements::deserialize_buffer(buffer.as_ref())
-		.map_err(|e: parity_wasm::elements::Error| Error::Validation(e.to_string()))?;
-	load_from_module(module)
 }

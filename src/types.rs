@@ -3,13 +3,14 @@ use std::borrow::Cow;
 use parity_wasm::elements::{
 	FunctionType, ValueType as EValueType, GlobalType, TableType, MemoryType};
 
-/// Signature of a function.
+/// Signature of a [function].
 ///
 /// Signature of a function consists of zero or more parameter [types][type] and zero or one return [type].
 ///
 /// Two signatures are considered equal if they have equal list of parameters and equal return types.
 ///
 /// [type]: enum.ValueType.html
+/// [function]: struct.FuncInstance.html
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Signature {
 	params: Cow<'static, [ValueType]>,
@@ -79,6 +80,12 @@ impl ValueType {
 	}
 }
 
+/// Description of a global variable.
+///
+/// Primarly used to describe imports of global variables.
+/// See [`ImportResolver`] for details.
+///
+/// [`ImportResolver`]: trait.ImportResolver.html
 pub struct GlobalDescriptor {
 	value_type: ValueType,
 	mutable: bool,
@@ -101,6 +108,12 @@ impl GlobalDescriptor {
 	}
 }
 
+/// Description of a table.
+///
+/// Primarly used to describe imports of tables.
+/// See [`ImportResolver`] for details.
+///
+/// [`ImportResolver`]: trait.ImportResolver.html
 pub struct TableDescriptor {
 	initial: u32,
 	maximum: Option<u32>,
@@ -123,6 +136,12 @@ impl TableDescriptor {
 	}
 }
 
+/// Description of a linear memory.
+///
+/// Primarly used to describe imports of linear memories.
+/// See [`ImportResolver`] for details.
+///
+/// [`ImportResolver`]: trait.ImportResolver.html
 pub struct MemoryDescriptor {
 	initial: u32,
 	maximum: Option<u32>,

@@ -10,7 +10,7 @@ use module::ModuleInstance;
 use common::stack::StackWithLimit;
 use common::{DEFAULT_FRAME_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT};
 
-/// Reference to a [`FuncInstance`].
+/// Reference to a function (See [`FuncInstance`] for details).
 ///
 /// This reference has a reference-counting semantics.
 ///
@@ -77,12 +77,33 @@ impl fmt::Debug for FuncInstance {
 }
 
 impl FuncInstance {
+
+	/// Allocate a function instance for a host function.
+	///
+	/// When this function instance will be called by the wasm code,
+	/// the instance of [`Externals`] will be invoked by calling `invoke_index`
+	/// with specified `host_func_index` here.
+	/// This call will be made with the `signature` provided here.
+	///
+	/// [`Externals`]: trait.Externals.html
 	pub fn alloc_host(signature: Signature, host_func_index: usize) -> FuncRef {
 		let func = FuncInstanceInternal::Host {
 			signature,
 			host_func_index,
 		};
 		FuncRef(Rc::new(FuncInstance(func)))
+	}
+
+	/// Returns [signature] of this function instance.
+	///
+	/// This function instance can only be called with matching signatures.
+	///
+	/// [signature]: struct.Signature.html
+	pub fn signature(&self) -> &Signature {
+		match *self.as_internal() {
+			FuncInstanceInternal::Internal { ref signature, .. } => signature,
+			FuncInstanceInternal::Host { ref signature, .. } => signature,
+		}
 	}
 
 	pub(crate) fn as_internal(&self) -> &FuncInstanceInternal {
@@ -100,13 +121,6 @@ impl FuncInstance {
 			body: Rc::new(body),
 		};
 		FuncRef(Rc::new(FuncInstance(func)))
-	}
-
-	pub fn signature(&self) -> &Signature {
-		match *self.as_internal() {
-			FuncInstanceInternal::Internal { ref signature, .. } => signature,
-			FuncInstanceInternal::Host { ref signature, .. } => signature,
-		}
 	}
 
 	pub(crate) fn body(&self) -> Option<Rc<FuncBody>> {

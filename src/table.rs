@@ -7,7 +7,7 @@ use Error;
 use func::FuncRef;
 use module::check_limits;
 
-/// Reference to a [`TableInstance`].
+/// Reference to a table (See [`TableInstance`] for details).
 ///
 /// This reference has a reference-counting semantics.
 ///

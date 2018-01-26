@@ -5,7 +5,7 @@ use Error;
 use types::ValueType;
 use parity_wasm::elements::{ValueType as EValueType};
 
-/// Reference to a [`GlobalInstance`].
+/// Reference to a global variable (See [`GlobalInstance`] for details).
 ///
 /// This reference has a reference-counting semantics.
 ///

@@ -4,7 +4,7 @@ extern crate wasmi;
 use std::env::args;
 
 use parity_wasm::elements::{Internal, External, Type, FunctionType, ValueType};
-use wasmi::{RuntimeValue, ModuleInstance, NopExternals, ImportsBuilder, load_from_module};
+use wasmi::{RuntimeValue, ModuleInstance, NopExternals, ImportsBuilder};
 
 
 fn main() {
@@ -69,7 +69,7 @@ fn main() {
         }).collect::<Vec<RuntimeValue>>()
     };
 
-    let loaded_module = load_from_module(module).expect("Module to be valid");
+    let loaded_module = wasmi::Module::from_parity_wasm_module(module).expect("Module to be valid");
 
     // Intialize deserialized module. It adds module into It expects 3 parameters:
     // - a name for the module

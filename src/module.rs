@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use std::fmt;
 use std::collections::HashMap;
 use parity_wasm::elements::{External, InitExpr, Internal, Opcode, ResizableLimits, Type};
-use {LoadedModule, Error, Signature, MemoryInstance, RuntimeValue, TableInstance};
+use {Module, Error, Signature, MemoryInstance, RuntimeValue, TableInstance};
 use imports::ImportResolver;
 use global::{GlobalInstance, GlobalRef};
 use func::{FuncRef, FuncBody, FuncInstance};
@@ -100,9 +100,9 @@ impl ExternVal {
 	}
 }
 
-/// A module instance is the runtime representation of a [module][`LoadedModule`].
+/// A module instance is the runtime representation of a [module][`Module`].
 ///
-/// It is created by instantiating a [module][`LoadedModule`], and collects runtime representations
+/// It is created by instantiating a [module][`Module`], and collects runtime representations
 /// of all entities that are imported or defined by the module, namely:
 ///
 /// - [functions][`FuncInstance`],
@@ -115,7 +115,7 @@ impl ExternVal {
 ///
 /// After module is instantiated you can start invoking it's exported functions with [`invoke_export`].
 ///
-/// [`LoadedModule`]: struct.LoadedModule.html
+/// [`Module`]: struct.Module.html
 /// [`FuncInstance`]: struct.FuncInstance.html
 /// [`MemoryInstance`]: struct.MemoryInstance.html
 /// [`TableInstance`]: struct.TableInstance.html
@@ -188,7 +188,7 @@ impl ModuleInstance {
 	}
 
 	fn alloc_module(
-		loaded_module: &LoadedModule,
+		loaded_module: &Module,
 		extern_vals: &[ExternVal]
 	) -> Result<ModuleRef, Error> {
 		let module = loaded_module.module();
@@ -357,7 +357,7 @@ impl ModuleInstance {
 	}
 
 	fn instantiate_with_externvals(
-		loaded_module: &LoadedModule,
+		loaded_module: &Module,
 		extern_vals: &[ExternVal],
 	) -> Result<ModuleRef, Error> {
 		let module = loaded_module.module();
@@ -400,13 +400,15 @@ impl ModuleInstance {
 		Ok(module_ref)
 	}
 
-	/// Instantiate a [module][`LoadedModule`].
+	/// Instantiate a [module][`Module`].
 	///
 	/// Note that in case of successful instantiation this function returns a reference to
 	/// a module which `start` function is not called.
 	/// In order to complete instantiatiation `start` function must be called. However, there are
 	/// situations where you might need to do additional setup before calling `start` function.
 	/// For such sitations this separation might be useful.
+	///
+	/// See [`NotStartedModuleRef`] for details.
 	///
 	/// # Errors
 	///
@@ -420,9 +422,9 @@ impl ModuleInstance {
 	/// # Examples
 	///
 	/// ```rust
-	/// use wasmi::{load_from_buffer, ModuleInstance, ImportsBuilder, NopExternals};
+	/// use wasmi::{ModuleInstance, ImportsBuilder, NopExternals};
 	/// # fn func() -> Result<(), ::wasmi::Error> {
-	/// # let module = load_from_buffer(&[0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]).unwrap();
+	/// # let module = wasmi::Module::from_buffer(&[0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]).unwrap();
 	///
 	/// // ModuleInstance::new returns instance which `start` function isn't called.
 	/// let not_started = ModuleInstance::new(
@@ -440,9 +442,9 @@ impl ModuleInstance {
 	/// instantiated module without calling `start` function.
 	///
 	/// ```rust
-	/// use wasmi::{load_from_buffer, ModuleInstance, ImportsBuilder, NopExternals};
+	/// use wasmi::{ModuleInstance, ImportsBuilder, NopExternals};
 	/// # fn func() -> Result<(), ::wasmi::Error> {
-	/// # let module = load_from_buffer(&[0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]).unwrap();
+	/// # let module = wasmi::Module::from_buffer(&[0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]).unwrap();
 	///
 	/// // This will panic if the module actually contain `start` function.
 	/// let not_started = ModuleInstance::new(
@@ -454,11 +456,12 @@ impl ModuleInstance {
 	/// # }
 	/// ```
 	///
-	/// [`LoadedModule`]: struct.LoadedModule.html
+	/// [`Module`]: struct.Module.html
+	/// [`NotStartedModuleRef`]: struct.NotStartedModuleRef.html
 	/// [`ImportResolver`]: trait.ImportResolver.html
 	/// [`assert_no_start`]: struct.NotStartedModuleRef.html#method.assert_no_start
 	pub fn new<'m, I: ImportResolver>(
-		loaded_module: &'m LoadedModule,
+		loaded_module: &'m Module,
 		imports: &I,
 	) -> Result<NotStartedModuleRef<'m>, Error> {
 		let module = loaded_module.module();
@@ -536,7 +539,7 @@ impl ModuleInstance {
 	/// #   )
 	/// #   "#,
 	/// # ).expect("failed to parse wat");
-	/// # let module = wasmi::load_from_buffer(&wasm_binary).expect("failed to load wasm");
+	/// # let module = wasmi::Module::from_buffer(&wasm_binary).expect("failed to load wasm");
 	/// # let instance = ModuleInstance::new(
 	/// # &module,
 	/// # &ImportsBuilder::default()
@@ -583,8 +586,20 @@ impl ModuleInstance {
 	}
 }
 
+/// Mostly instantiated [`ModuleRef`].
+///
+/// The last step of instantiation is call to `start` function (if any).
+/// To get [fully instantiated module instance][`ModuleRef`], [running `start` function][`run_start`] is required.
+///
+/// If you sure, that there is no `start` function (e.g. because you created it without one), you can
+/// call [`assert_no_start`] which returns [`ModuleRef`] without calling `start` function. However,
+/// it will panic if module contains `start` function.
+///
+/// [`ModuleRef`]: struct.ModuleRef.html
+/// [`run_start`]: #method.run_start
+/// [`assert_no_start`]: #method.assert_no_start
 pub struct NotStartedModuleRef<'a> {
-	loaded_module: &'a LoadedModule,
+	loaded_module: &'a Module,
 	instance: ModuleRef,
 }
 
