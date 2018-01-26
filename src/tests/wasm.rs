@@ -1,7 +1,7 @@
 use {
 	Error, Signature, FuncRef, GlobalInstance, GlobalRef, ImportsBuilder, MemoryInstance,
     MemoryRef, ModuleImportResolver, ModuleInstance, NopExternals, RuntimeValue,
-    TableInstance, TableRef, LoadedModule, load_from_buffer, GlobalDescriptor, TableDescriptor, MemoryDescriptor,
+    TableInstance, TableRef, Module, GlobalDescriptor, TableDescriptor, MemoryDescriptor,
 };
 use std::fs::File;
 
@@ -69,12 +69,12 @@ impl ModuleImportResolver for Env {
 	}
 }
 
-fn load_from_file(filename: &str) -> LoadedModule {
+fn load_from_file(filename: &str) -> Module {
 	use std::io::prelude::*;
 	let mut file = File::open(filename).unwrap();
 	let mut buf = Vec::new();
 	file.read_to_end(&mut buf).unwrap();
-	load_from_buffer(buf).unwrap()
+	Module::from_buffer(buf).unwrap()
 }
 
 #[test]

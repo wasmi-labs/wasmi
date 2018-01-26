@@ -195,7 +195,7 @@ fn instantiate(path: &str) -> Result<ModuleRef, Error> {
 		let mut file = File::open(path).unwrap();
 		let mut wasm_buf = Vec::new();
 		file.read_to_end(&mut wasm_buf).unwrap();
-		wasmi::load_from_buffer(&wasm_buf)?
+		wasmi::Module::from_buffer(&wasm_buf)?
 	};
 
 	let mut imports = ImportsBuilder::new();

@@ -105,7 +105,6 @@ extern crate byteorder;
 use std::fmt;
 use std::error;
 use std::collections::HashMap;
-use parity_wasm::elements::Module;
 
 /// Internal interpreter error.
 #[derive(Debug)]
@@ -231,40 +230,37 @@ pub use self::global::{GlobalInstance, GlobalRef};
 pub use self::func::{FuncInstance, FuncRef};
 pub use self::types::{Signature, ValueType, GlobalDescriptor, TableDescriptor, MemoryDescriptor};
 
-pub struct LoadedModule {
+/// Deserialized module prepared for instantiation.
+pub struct Module {
 	labels: HashMap<usize, HashMap<usize, usize>>,
-	module: Module,
+	module: parity_wasm::elements::Module,
 }
 
-impl LoadedModule {
-	pub(crate) fn module(&self) -> &Module {
+impl Module {
+	pub fn from_module(module: parity_wasm::elements::Module) -> Result<Module, Error> {
+		use validation::{validate_module, ValidatedModule};
+		let ValidatedModule {
+			labels,
+			module,
+		} = validate_module(module)?;
+
+		Ok(Module {
+			labels,
+			module,
+		})
+	}
+
+	pub fn from_buffer<B: AsRef<[u8]>>(buffer: B) -> Result<Module, Error> {
+		let module = parity_wasm::elements::deserialize_buffer(buffer.as_ref())
+			.map_err(|e: parity_wasm::elements::Error| Error::Validation(e.to_string()))?;
+		Module::from_module(module)
+	}
+
+	pub(crate) fn module(&self) -> &parity_wasm::elements::Module {
 		&self.module
 	}
 
 	pub(crate) fn labels(&self) -> &HashMap<usize, HashMap<usize, usize>> {
 		&self.labels
 	}
-
-	pub fn into_module(self) -> Module {
-		self.module
-	}
-}
-
-pub fn load_from_module(module: Module) -> Result<LoadedModule, Error> {
-	use validation::{validate_module, ValidatedModule};
-	let ValidatedModule {
-		labels,
-		module,
-	} = validate_module(module)?;
-
-	Ok(LoadedModule {
-		labels,
-		module,
-	})
-}
-
-pub fn load_from_buffer<B: AsRef<[u8]>>(buffer: B) -> Result<LoadedModule, Error> {
-	let module = parity_wasm::elements::deserialize_buffer(buffer.as_ref())
-		.map_err(|e: parity_wasm::elements::Error| Error::Validation(e.to_string()))?;
-	load_from_module(module)
 }

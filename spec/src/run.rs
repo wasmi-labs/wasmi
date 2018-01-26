@@ -13,7 +13,7 @@ use wasmi::{
     GlobalInstance, GlobalRef, ImportResolver, ImportsBuilder,
     MemoryInstance, MemoryRef, ModuleImportResolver, ModuleInstance,
     ModuleRef, RuntimeValue, TableInstance, TableRef, ValueType,
-    load_from_buffer, LoadedModule, Signature, MemoryDescriptor,
+    Module, Signature, MemoryDescriptor,
     TableDescriptor, GlobalDescriptor, FuncInstance, RuntimeArgs,
 };
 
@@ -225,7 +225,7 @@ impl ImportResolver for SpecDriver {
     }
 }
 
-fn try_load_module(base_dir: &Path, module_path: &str) -> Result<LoadedModule, Error> {
+fn try_load_module(base_dir: &Path, module_path: &str) -> Result<Module, Error> {
     use std::io::prelude::*;
 
     let mut wasm_path = PathBuf::from(base_dir.clone());
@@ -233,7 +233,7 @@ fn try_load_module(base_dir: &Path, module_path: &str) -> Result<LoadedModule, E
 	let mut file = File::open(wasm_path).unwrap();
 	let mut buf = Vec::new();
 	file.read_to_end(&mut buf).unwrap();
-	load_from_buffer(buf).map_err(|e| Error::Load(e.to_string()))
+	Module::from_buffer(buf).map_err(|e| Error::Load(e.to_string()))
 }
 
 fn try_load(

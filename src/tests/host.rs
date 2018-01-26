@@ -1,7 +1,7 @@
 use {
 	Error, Signature, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
 	MemoryInstance, MemoryRef, TableInstance, TableRef, ModuleImportResolver, ModuleInstance, ModuleRef,
-	RuntimeValue, RuntimeArgs, LoadedModule, load_from_buffer, TableDescriptor, MemoryDescriptor,
+	RuntimeValue, RuntimeArgs, Module, TableDescriptor, MemoryDescriptor,
 };
 use types::ValueType;
 use wabt::wat2wasm;
@@ -200,9 +200,9 @@ impl ModuleImportResolver for TestHost {
 	}
 }
 
-fn parse_wat(source: &str) -> LoadedModule {
+fn parse_wat(source: &str) -> Module {
 	let wasm_binary = wat2wasm(source).expect("Failed to parse wat source");
-	load_from_buffer(wasm_binary).expect("Failed to load parsed module")
+	Module::from_buffer(wasm_binary).expect("Failed to load parsed module")
 }
 
 #[test]

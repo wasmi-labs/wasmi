@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use std::fmt;
 use std::collections::HashMap;
 use parity_wasm::elements::{External, InitExpr, Internal, Opcode, ResizableLimits, Type};
-use {LoadedModule, Error, Signature, MemoryInstance, RuntimeValue, TableInstance};
+use {Module, Error, Signature, MemoryInstance, RuntimeValue, TableInstance};
 use imports::ImportResolver;
 use global::{GlobalInstance, GlobalRef};
 use func::{FuncRef, FuncBody, FuncInstance};
@@ -100,9 +100,9 @@ impl ExternVal {
 	}
 }
 
-/// A module instance is the runtime representation of a [module][`LoadedModule`].
+/// A module instance is the runtime representation of a [module][`Module`].
 ///
-/// It is created by instantiating a [module][`LoadedModule`], and collects runtime representations
+/// It is created by instantiating a [module][`Module`], and collects runtime representations
 /// of all entities that are imported or defined by the module, namely:
 ///
 /// - [functions][`FuncInstance`],
@@ -115,7 +115,7 @@ impl ExternVal {
 ///
 /// After module is instantiated you can start invoking it's exported functions with [`invoke_export`].
 ///
-/// [`LoadedModule`]: struct.LoadedModule.html
+/// [`Module`]: struct.Module.html
 /// [`FuncInstance`]: struct.FuncInstance.html
 /// [`MemoryInstance`]: struct.MemoryInstance.html
 /// [`TableInstance`]: struct.TableInstance.html
@@ -188,7 +188,7 @@ impl ModuleInstance {
 	}
 
 	fn alloc_module(
-		loaded_module: &LoadedModule,
+		loaded_module: &Module,
 		extern_vals: &[ExternVal]
 	) -> Result<ModuleRef, Error> {
 		let module = loaded_module.module();
@@ -357,7 +357,7 @@ impl ModuleInstance {
 	}
 
 	fn instantiate_with_externvals(
-		loaded_module: &LoadedModule,
+		loaded_module: &Module,
 		extern_vals: &[ExternVal],
 	) -> Result<ModuleRef, Error> {
 		let module = loaded_module.module();
@@ -400,7 +400,7 @@ impl ModuleInstance {
 		Ok(module_ref)
 	}
 
-	/// Instantiate a [module][`LoadedModule`].
+	/// Instantiate a [module][`Module`].
 	///
 	/// Note that in case of successful instantiation this function returns a reference to
 	/// a module which `start` function is not called.
@@ -454,11 +454,11 @@ impl ModuleInstance {
 	/// # }
 	/// ```
 	///
-	/// [`LoadedModule`]: struct.LoadedModule.html
+	/// [`Module`]: struct.Module.html
 	/// [`ImportResolver`]: trait.ImportResolver.html
 	/// [`assert_no_start`]: struct.NotStartedModuleRef.html#method.assert_no_start
 	pub fn new<'m, I: ImportResolver>(
-		loaded_module: &'m LoadedModule,
+		loaded_module: &'m Module,
 		imports: &I,
 	) -> Result<NotStartedModuleRef<'m>, Error> {
 		let module = loaded_module.module();
@@ -584,7 +584,7 @@ impl ModuleInstance {
 }
 
 pub struct NotStartedModuleRef<'a> {
-	loaded_module: &'a LoadedModule,
+	loaded_module: &'a Module,
 	instance: ModuleRef,
 }
 

@@ -4,14 +4,14 @@ extern crate wasmi;
 
 use std::env::args;
 use std::fs::File;
-use wasmi::{ModuleInstance, NopExternals, RuntimeValue, ImportsBuilder, load_from_buffer, LoadedModule};
+use wasmi::{ModuleInstance, NopExternals, RuntimeValue, ImportsBuilder, Module};
 
-fn load_from_file(filename: &str) -> LoadedModule {
+fn load_from_file(filename: &str) -> Module {
 	use std::io::prelude::*;
 	let mut file = File::open(filename).unwrap();
 	let mut buf = Vec::new();
 	file.read_to_end(&mut buf).unwrap();
-	load_from_buffer(buf).unwrap()
+	Module::from_buffer(buf).unwrap()
 }
 
 fn main() {
