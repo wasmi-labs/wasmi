@@ -237,13 +237,18 @@ pub struct Module {
 }
 
 impl Module {
+
 	/// Create `Module` from `parity_wasm::elements::Module`.
 	///
 	/// This function will load, validate and prepare a `parity_wasm`'s `Module`.
 	///
+	/// # Errors
+	///
+	/// Returns 'Err' if provided `Module` is not valid.
+	///
 	/// # Examples
 	///
-	/// ```
+	/// ```rust
 	/// extern crate parity_wasm;
 	/// extern crate wasmi;
 	///
@@ -280,7 +285,30 @@ impl Module {
 
 	/// Create `Module` from a given buffer.
 	///
+	/// This function will deserialize wasm module from a given module,
+	/// validate and prepare it for instantiation.
 	///
+	/// # Errors
+	///
+	/// Returns 'Err' if wasm binary in provided `buffer` is not valid.
+	///
+	/// # Examples
+	///
+	/// ```rust
+	/// extern crate wasmi;
+	///
+	/// fn main() {
+	///     let module =
+	///         wasmi::Module::from_buffer(
+	///             // Minimal module:
+	///             //   \0asm - magic
+	///             //    0x01 - version (in little-endian)
+	///             &[0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]
+	///         ).expect("Failed to load minimal module");
+	///
+	///     // Instantiate `module`, etc...
+	/// }
+	/// ```
 	pub fn from_buffer<B: AsRef<[u8]>>(buffer: B) -> Result<Module, Error> {
 		let module = parity_wasm::elements::deserialize_buffer(buffer.as_ref())
 			.map_err(|e: parity_wasm::elements::Error| Error::Validation(e.to_string()))?;
