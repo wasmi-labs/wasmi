@@ -10,7 +10,7 @@ use module::ModuleInstance;
 use common::stack::StackWithLimit;
 use common::{DEFAULT_FRAME_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT};
 
-/// Reference to a [`FuncInstance`].
+/// Reference to a function (See [`FuncInstance`] for details).
 ///
 /// This reference has a reference-counting semantics.
 ///

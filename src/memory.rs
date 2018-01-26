@@ -13,7 +13,7 @@ pub const LINEAR_MEMORY_PAGE_SIZE: u32 = 65536;
 /// Maximal number of pages.
 const LINEAR_MEMORY_MAX_PAGES: u32 = 65536;
 
-/// Reference to a [`MemoryInstance`].
+/// Reference to a memory (See [`MemoryInstance`] for details).
 ///
 /// This reference has a reference-counting semantics.
 ///
