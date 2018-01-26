@@ -12,7 +12,8 @@ addons:
     - g++-6
     - cmake
 install:
-- cargo install cargo-deadlinks
+# Install `cargo-deadlinks` unless it is currently installed.
+- command -v cargo-deadlinks &> /dev/null || cargo install cargo-deadlinks
 script:
 - export CC=/usr/bin/gcc-6
 - export CXX=/usr/bin/g++-6
