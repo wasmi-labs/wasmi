@@ -80,6 +80,12 @@ impl ValueType {
 	}
 }
 
+/// Description of a global variable.
+///
+/// Primarly used to describe imports of global variables.
+/// See [`ImportResolver`] for details.
+///
+/// [`ImportResolver`]: trait.ImportResolver.html
 pub struct GlobalDescriptor {
 	value_type: ValueType,
 	mutable: bool,
@@ -102,6 +108,12 @@ impl GlobalDescriptor {
 	}
 }
 
+/// Description of a table.
+///
+/// Primarly used to describe imports of tables.
+/// See [`ImportResolver`] for details.
+///
+/// [`ImportResolver`]: trait.ImportResolver.html
 pub struct TableDescriptor {
 	initial: u32,
 	maximum: Option<u32>,
@@ -124,6 +136,12 @@ impl TableDescriptor {
 	}
 }
 
+/// Description of a linear memory.
+///
+/// Primarly used to describe imports of linear memories.
+/// See [`ImportResolver`] for details.
+///
+/// [`ImportResolver`]: trait.ImportResolver.html
 pub struct MemoryDescriptor {
 	initial: u32,
 	maximum: Option<u32>,
