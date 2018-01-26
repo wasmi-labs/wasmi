@@ -237,7 +237,35 @@ pub struct Module {
 }
 
 impl Module {
-	pub fn from_module(module: parity_wasm::elements::Module) -> Result<Module, Error> {
+	/// Create `Module` from `parity_wasm::elements::Module`.
+	///
+	/// This function will load, validate and prepare a `parity_wasm`'s `Module`.
+	///
+	/// # Examples
+	///
+	/// ```
+	/// extern crate parity_wasm;
+	/// extern crate wasmi;
+	///
+	/// use parity_wasm::builder;
+	/// use parity_wasm::elements;
+	///
+	/// fn main() {
+	///     let parity_module =
+	///         builder::module()
+	///             .function()
+	///                 .signature().with_param(elements::ValueType::I32).build()
+	///                 .body().build()
+	///             .build()
+	///         .build();
+	///
+	///     let module = wasmi::Module::from_parity_wasm_module(parity_module)
+	///         .expect("parity-wasm builder generated invalid module!");
+	///
+	///     // Instantiate `module`, etc...
+	/// }
+	/// ```
+	pub fn from_parity_wasm_module(module: parity_wasm::elements::Module) -> Result<Module, Error> {
 		use validation::{validate_module, ValidatedModule};
 		let ValidatedModule {
 			labels,
@@ -250,10 +278,13 @@ impl Module {
 		})
 	}
 
+	/// Create `Module` from a given buffer.
+	///
+	///
 	pub fn from_buffer<B: AsRef<[u8]>>(buffer: B) -> Result<Module, Error> {
 		let module = parity_wasm::elements::deserialize_buffer(buffer.as_ref())
 			.map_err(|e: parity_wasm::elements::Error| Error::Validation(e.to_string()))?;
-		Module::from_module(module)
+		Module::from_parity_wasm_module(module)
 	}
 
 	pub(crate) fn module(&self) -> &parity_wasm::elements::Module {
