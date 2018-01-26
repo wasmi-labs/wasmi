@@ -244,7 +244,7 @@ impl Module {
 	///
 	/// # Errors
 	///
-	/// Returns 'Err' if provided `Module` is not valid.
+	/// Returns `Err` if provided `Module` is not valid.
 	///
 	/// # Examples
 	///
@@ -290,7 +290,7 @@ impl Module {
 	///
 	/// # Errors
 	///
-	/// Returns 'Err' if wasm binary in provided `buffer` is not valid.
+	/// Returns `Err` if wasm binary in provided `buffer` is not valid wasm binary.
 	///
 	/// # Examples
 	///
