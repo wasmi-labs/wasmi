@@ -500,7 +500,7 @@ impl Validator {
 		Ok(InstructionOutcome::ValidateNextInstruction)
 	}
 
-	fn validate_br_table(context: &mut FunctionValidationContext, table: &Vec<u32>, default: u32) -> Result<InstructionOutcome, Error> {
+	fn validate_br_table(context: &mut FunctionValidationContext, table: &[u32], default: u32) -> Result<InstructionOutcome, Error> {
 		let mut required_block_type = None;
 
 		{
