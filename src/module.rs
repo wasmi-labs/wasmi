@@ -408,6 +408,8 @@ impl ModuleInstance {
 	/// situations where you might need to do additional setup before calling `start` function.
 	/// For such sitations this separation might be useful.
 	///
+	/// See [`NotStartedModuleRef`] for details.
+	///
 	/// # Errors
 	///
 	/// Returns `Err` if the module cannot be instantiated.
@@ -455,6 +457,7 @@ impl ModuleInstance {
 	/// ```
 	///
 	/// [`Module`]: struct.Module.html
+	/// [`NotStartedModuleRef`]: struct.NotStartedModuleRef.html
 	/// [`ImportResolver`]: trait.ImportResolver.html
 	/// [`assert_no_start`]: struct.NotStartedModuleRef.html#method.assert_no_start
 	pub fn new<'m, I: ImportResolver>(
@@ -583,6 +586,18 @@ impl ModuleInstance {
 	}
 }
 
+/// Mostly instantiated [`ModuleRef`].
+///
+/// The last step of instantiation is call to `start` function (if any).
+/// To get [fully instantiated module instance][`ModuleRef`], [running `start` function][`run_start`] is required.
+///
+/// If you sure, that there is no `start` function (e.g. because you created it without one), you can
+/// call [`assert_no_start`] which returns [`ModuleRef`] without calling `start` function. However,
+/// it will panic if module contains `start` function.
+///
+/// [`ModuleRef`]: struct.ModuleRef.html
+/// [`run_start`]: #method.run_start
+/// [`assert_no_start`]: #method.assert_no_start
 pub struct NotStartedModuleRef<'a> {
 	loaded_module: &'a Module,
 	instance: ModuleRef,
