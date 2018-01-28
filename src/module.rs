@@ -603,6 +603,14 @@ pub struct NotStartedModuleRef<'a> {
 	instance: ModuleRef,
 }
 
+impl<'a> ::std::ops::Deref for NotStartedModuleRef<'a> {
+	type Target = ModuleInstance;
+
+	fn deref(&self) -> &ModuleInstance {
+		&*self.instance
+	}
+}
+
 impl<'a> NotStartedModuleRef<'a> {
 	pub fn not_started_instance(&self) -> &ModuleRef {
 		&self.instance
