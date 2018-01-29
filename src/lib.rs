@@ -106,6 +106,11 @@ use std::fmt;
 use std::error;
 use std::collections::HashMap;
 
+#[derive(Debug)]
+pub enum Trap {
+	Unreachable,
+}
+
 /// Internal interpreter error.
 #[derive(Debug)]
 pub enum Error {
@@ -127,7 +132,7 @@ pub enum Error {
 	/// Value-level error.
 	Value(String),
 	/// Trap.
-	Trap(String),
+	Trap(Trap),
 	/// Custom embedder error.
 	Host(Box<host::HostError>),
 }
@@ -143,7 +148,7 @@ impl Into<String> for Error {
 			Error::Global(s) => s,
 			Error::Stack(s) => s,
 			Error::Value(s) => s,
-			Error::Trap(s) => format!("trap: {}", s),
+			Error::Trap(s) => format!("trap: {:?}", s),
 			Error::Host(e) => format!("user: {}", e),
 		}
 	}
@@ -160,7 +165,7 @@ impl fmt::Display for Error {
 			Error::Global(ref s) => write!(f, "Global: {}", s),
 			Error::Stack(ref s) => write!(f, "Stack: {}", s),
 			Error::Value(ref s) => write!(f, "Value: {}", s),
-			Error::Trap(ref s) => write!(f, "Trap: {}", s),
+			Error::Trap(ref s) => write!(f, "Trap: {:?}", s),
 			Error::Host(ref e) => write!(f, "User: {}", e),
 		}
 	}
@@ -179,7 +184,7 @@ impl error::Error for Error {
 			Error::Global(ref s) => s,
 			Error::Stack(ref s) => s,
 			Error::Value(ref s) => s,
-			Error::Trap(ref s) => s,
+			Error::Trap(_) => "Trap",
 			Error::Host(_) => "Host error",
 		}
 	}

@@ -1,6 +1,6 @@
 use std::any::TypeId;
 use value::{RuntimeValue, TryInto};
-use Error;
+use {Error, Trap};
 
 /// Safe wrapper for list of arguments.
 #[derive(Debug)]
@@ -188,7 +188,7 @@ impl Externals for NopExternals {
 		_index: usize,
 		_args: RuntimeArgs,
 	) -> Result<Option<RuntimeValue>, Error> {
-		Err(Error::Trap("invoke index on no-op externals".into()))
+		Err(Error::Trap(Trap::Unreachable))
 	}
 }
 

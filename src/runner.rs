@@ -5,7 +5,7 @@ use std::fmt::{self, Display};
 use std::iter::repeat;
 use std::collections::{HashMap, VecDeque};
 use parity_wasm::elements::{Opcode, BlockType, Local};
-use {Error, Signature};
+use {Error, Trap, Signature};
 use module::ModuleRef;
 use func::{FuncRef, FuncInstance, FuncInstanceInternal};
 use value::{
@@ -351,7 +351,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_unreachable(&mut self, _context: &mut FunctionContext) -> Result<InstructionOutcome, Error> {
-		Err(Error::Trap("programmatic".into()))
+		Err(Error::Trap(Trap::Unreachable))
 	}
 
 	fn run_nop(&mut self, _context: &mut FunctionContext) -> Result<InstructionOutcome, Error> {
