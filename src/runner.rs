@@ -543,7 +543,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		let m = context.module()
 			.memory_by_index(DEFAULT_MEMORY_INDEX)
 			.expect("Due to validation memory should exists");
-		let b = m.get(address, mem::size_of::<T>())?;
+		let b = m.get(address, mem::size_of::<T>())
+			.map_err(|_| Error::Trap(Trap::MemoryAccessOutOfBounds))?;
 		let n = T::from_little_endian(&b)?;
 		context.value_stack_mut().push(n.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
@@ -560,7 +561,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		let m = context.module()
 			.memory_by_index(DEFAULT_MEMORY_INDEX)
 			.expect("Due to validation memory should exists");
-		let b = m.get(address, mem::size_of::<T>())?;
+		let b = m.get(address, mem::size_of::<T>())
+			.map_err(|_| Error::Trap(Trap::MemoryAccessOutOfBounds))?;
 		let v = T::from_little_endian(&b)?;
 		let stack_value: U = v.extend_into();
 		context
@@ -586,7 +588,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		let m = context.module()
 			.memory_by_index(DEFAULT_MEMORY_INDEX)
 			.expect("Due to validation memory should exists");
-		m.set(address, &stack_value)?;
+		m.set(address, &stack_value)
+			.map_err(|_| Error::Trap(Trap::MemoryAccessOutOfBounds))?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
@@ -616,7 +619,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		let m = context.module()
 			.memory_by_index(DEFAULT_MEMORY_INDEX)
 			.expect("Due to validation memory should exists");
-		m.set(address, &stack_value)?;
+		m.set(address, &stack_value)
+			.map_err(|_| Error::Trap(Trap::MemoryAccessOutOfBounds))?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
