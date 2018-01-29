@@ -470,11 +470,10 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.value_stack_mut()
 			.pop_triple()
 			.and_then(|(left, mid, right)| {
-				let right: Result<_, Error> = right.try_into();
-				match (left, mid, right) {
-					(left, mid, Ok(condition)) => Ok((left, mid, condition)),
-					_ => Err(Error::Stack("expected to get int value from stack".into()))
-				}
+				let condition = right
+					.try_into()
+					.expect("Due to validation stack top should be int");
+				Ok((left, mid, condition))
 			})
 			.map(|(left, mid, condition)| if condition { left } else { mid })
 			.map(|val| context.value_stack_mut().push(val))
