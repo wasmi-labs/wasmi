@@ -53,7 +53,7 @@ pub trait LittleEndianConvert where Self: Sized {
 	/// Convert to little endian buffer.
 	fn into_little_endian(self) -> Vec<u8>;
 	/// Convert from little endian buffer.
-	fn from_little_endian(buffer: Vec<u8>) -> Result<Self, Error>;
+	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error>;
 }
 
 /// Arithmetic operations.
@@ -376,7 +376,7 @@ impl LittleEndianConvert for i8 {
 		vec![self as u8]
 	}
 
-	fn from_little_endian(buffer: Vec<u8>) -> Result<Self, Error> {
+	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		buffer.get(0)
 			.map(|v| *v as i8)
 			.ok_or_else(|| Error::Value("invalid little endian buffer".into()))
@@ -388,7 +388,7 @@ impl LittleEndianConvert for u8 {
 		vec![self]
 	}
 
-	fn from_little_endian(buffer: Vec<u8>) -> Result<Self, Error> {
+	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		buffer.get(0)
 			.cloned()
 			.ok_or_else(|| Error::Value("invalid little endian buffer".into()))
@@ -403,7 +403,7 @@ impl LittleEndianConvert for i16 {
 		vec
 	}
 
-	fn from_little_endian(buffer: Vec<u8>) -> Result<Self, Error> {
+	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_i16::<LittleEndian>()
 			.map_err(|e| Error::Value(e.to_string()))
 	}
@@ -417,7 +417,7 @@ impl LittleEndianConvert for u16 {
 		vec
 	}
 
-	fn from_little_endian(buffer: Vec<u8>) -> Result<Self, Error> {
+	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_u16::<LittleEndian>()
 			.map_err(|e| Error::Value(e.to_string()))
 	}
@@ -431,7 +431,7 @@ impl LittleEndianConvert for i32 {
 		vec
 	}
 
-	fn from_little_endian(buffer: Vec<u8>) -> Result<Self, Error> {
+	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_i32::<LittleEndian>()
 			.map_err(|e| Error::Value(e.to_string()))
 	}
@@ -445,7 +445,7 @@ impl LittleEndianConvert for u32 {
 		vec
 	}
 
-	fn from_little_endian(buffer: Vec<u8>) -> Result<Self, Error> {
+	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_u32::<LittleEndian>()
 			.map_err(|e| Error::Value(e.to_string()))
 	}
@@ -459,7 +459,7 @@ impl LittleEndianConvert for i64 {
 		vec
 	}
 
-	fn from_little_endian(buffer: Vec<u8>) -> Result<Self, Error> {
+	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_i64::<LittleEndian>()
 			.map_err(|e| Error::Value(e.to_string()))
 	}
@@ -473,7 +473,7 @@ impl LittleEndianConvert for f32 {
 		vec
 	}
 
-	fn from_little_endian(buffer: Vec<u8>) -> Result<Self, Error> {
+	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_u32::<LittleEndian>()
 			.map(f32_from_bits)
 			.map_err(|e| Error::Value(e.to_string()))
@@ -488,7 +488,7 @@ impl LittleEndianConvert for f64 {
 		vec
 	}
 
-	fn from_little_endian(buffer: Vec<u8>) -> Result<Self, Error> {
+	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_u64::<LittleEndian>()
 			.map(f64_from_bits)
 			.map_err(|e| Error::Value(e.to_string()))

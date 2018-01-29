@@ -544,7 +544,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.memory_by_index(DEFAULT_MEMORY_INDEX)
 			.expect("Due to validation memory should exists");
 		let b = m.get(address, mem::size_of::<T>())?;
-		let n = T::from_little_endian(b)?;
+		let n = T::from_little_endian(&b)?;
 		context.value_stack_mut().push(n.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
@@ -561,7 +561,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.memory_by_index(DEFAULT_MEMORY_INDEX)
 			.expect("Due to validation memory should exists");
 		let b = m.get(address, mem::size_of::<T>())?;
-		let v = T::from_little_endian(b)?;
+		let v = T::from_little_endian(&b)?;
 		let stack_value: U = v.extend_into();
 		context
 			.value_stack_mut()
