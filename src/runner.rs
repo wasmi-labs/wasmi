@@ -545,7 +545,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.expect("Due to validation memory should exists");
 		let b = m.get(address, mem::size_of::<T>())
 			.map_err(|_| Error::Trap(Trap::MemoryAccessOutOfBounds))?;
-		let n = T::from_little_endian(&b)?;
+		let n = T::from_little_endian(&b)
+			.expect("Can't fail since buffer length should be size_of::<T>");
 		context.value_stack_mut().push(n.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
@@ -563,7 +564,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.expect("Due to validation memory should exists");
 		let b = m.get(address, mem::size_of::<T>())
 			.map_err(|_| Error::Trap(Trap::MemoryAccessOutOfBounds))?;
-		let v = T::from_little_endian(&b)?;
+		let v = T::from_little_endian(&b)
+			.expect("Can't fail since buffer length should be size_of::<T>");
 		let stack_value: U = v.extend_into();
 		context
 			.value_stack_mut()
