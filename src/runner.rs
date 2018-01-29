@@ -369,8 +369,11 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_if(&mut self, context: &mut FunctionContext, labels: &HashMap<usize, usize>, block_type: BlockType) -> Result<InstructionOutcome, Error> {
-		let branch = context.value_stack_mut().pop_as()?;
-		let block_frame_type = if branch { BlockFrameType::IfTrue } else {
+		let condition: bool = context
+			.value_stack_mut()
+			.pop_as()
+			.expect("Due to validation stack top should be an int");
+		let block_frame_type = if condition { BlockFrameType::IfTrue } else {
 			let else_pos = labels[&context.position];
 			if !labels.contains_key(&else_pos) {
 				context.position = else_pos;
