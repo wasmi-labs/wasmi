@@ -486,9 +486,9 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_get_local(&mut self, context: &mut FunctionContext, index: u32) -> Result<InstructionOutcome, Error> {
-		context.get_local(index as usize)
-			.map(|value| context.value_stack_mut().push(value))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+		let value = context.get_local(index as usize);
+		context.value_stack_mut().push(value)?;
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_set_local(&mut self, context: &mut FunctionContext, index: u32) -> Result<InstructionOutcome, Error> {
@@ -1071,10 +1071,10 @@ impl FunctionContext {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	pub fn get_local(&mut self, index: usize) -> Result<RuntimeValue, Error> {
-		Ok(self.locals.get(index)
+	pub fn get_local(&mut self, index: usize) -> RuntimeValue {
+		self.locals.get(index)
 			.cloned()
-			.expect("Due to validation local should exists"))
+			.expect("Due to validation local should exists")
 	}
 
 	pub fn value_stack(&self) -> &StackWithLimit<RuntimeValue> {
