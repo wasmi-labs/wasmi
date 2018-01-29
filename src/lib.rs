@@ -109,6 +109,7 @@ use std::collections::HashMap;
 #[derive(Debug)]
 pub enum Trap {
 	Unreachable,
+	MemoryAccessOutOfBounds,
 }
 
 /// Internal interpreter error.

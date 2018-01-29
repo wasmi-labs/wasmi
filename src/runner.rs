@@ -534,7 +534,12 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 
 	fn run_load<T>(&mut self, context: &mut FunctionContext, _align: u32, offset: u32) -> Result<InstructionOutcome, Error>
 		where RuntimeValue: From<T>, T: LittleEndianConvert {
-		let address = effective_address(offset, context.value_stack_mut().pop_as()?)?;
+		let address =
+			effective_address(
+				offset,
+				context.value_stack_mut().pop_as()?
+			)
+			.map_err(Error::Trap)?;
 		let m = context.module()
 			.memory_by_index(DEFAULT_MEMORY_INDEX)
 			.expect("Due to validation memory should exists");
@@ -546,7 +551,12 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 
 	fn run_load_extend<T, U>(&mut self, context: &mut FunctionContext, _align: u32, offset: u32) -> Result<InstructionOutcome, Error>
 		where T: ExtendInto<U>, RuntimeValue: From<U>, T: LittleEndianConvert {
-		let address = effective_address(offset, context.value_stack_mut().pop_as()?)?;
+		let address =
+			effective_address(
+				offset,
+				context.value_stack_mut().pop_as()?
+			)
+			.map_err(Error::Trap)?;
 		let m = context.module()
 			.memory_by_index(DEFAULT_MEMORY_INDEX)
 			.expect("Due to validation memory should exists");
@@ -566,7 +576,12 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.value_stack_mut()
 			.pop_as::<T>()
 			.map(|n| n.into_little_endian())?;
-		let address = effective_address(offset, context.value_stack_mut().pop_as::<u32>()?)?;
+		let address =
+			effective_address(
+				offset,
+				context.value_stack_mut().pop_as::<u32>()?
+			)
+			.map_err(Error::Trap)?;
 
 		let m = context.module()
 			.memory_by_index(DEFAULT_MEMORY_INDEX)
@@ -592,7 +607,12 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.map_err(Into::into)
 			.and_then(|v| v.try_into())?;
 		let stack_value = stack_value.wrap_into().into_little_endian();
-		let address = effective_address(offset, context.value_stack_mut().pop_as::<u32>()?)?;
+		let address =
+			effective_address(
+				offset,
+				context.value_stack_mut().pop_as::<u32>()?
+			)
+			.map_err(Error::Trap)?;
 		let m = context.module()
 			.memory_by_index(DEFAULT_MEMORY_INDEX)
 			.expect("Due to validation memory should exists");
@@ -1147,9 +1167,9 @@ impl fmt::Debug for FunctionContext {
 	}
 }
 
-fn effective_address(address: u32, offset: u32) -> Result<u32, Error> {
+fn effective_address(address: u32, offset: u32) -> Result<u32, Trap> {
 	match offset.checked_add(address) {
-		None => Err(Error::Memory(format!("invalid memory access: {} + {}", offset, address))),
+		None => Err(Trap::MemoryAccessOutOfBounds),
 		Some(address) => Ok(address),
 	}
 }
