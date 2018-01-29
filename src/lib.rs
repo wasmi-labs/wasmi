@@ -113,6 +113,8 @@ pub enum Trap {
 	TableAccessOutOfBounds,
 	ElemUninitialized,
 	ElemSignatureMismatch,
+	DivisionByZero,
+	InvalidConversionToInt,
 }
 
 /// Internal interpreter error.

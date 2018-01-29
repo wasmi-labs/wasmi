@@ -791,7 +791,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.value_stack_mut()
 			.pop_pair_as::<T>()
 			.map(|(left, right)| (left.transmute_into(), right.transmute_into()))
-			.map(|(left, right)| left.div(right))?
+			.map(|(left, right)| left.div(right).map_err(|_| Error::Trap(Trap::DivisionByZero)))?
 			.map(|v| v.transmute_into())
 			.map(|v| context.value_stack_mut().push(v.into()))
 			.map(|_| InstructionOutcome::RunNextInstruction)
@@ -803,7 +803,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.value_stack_mut()
 			.pop_pair_as::<T>()
 			.map(|(left, right)| (left.transmute_into(), right.transmute_into()))
-			.map(|(left, right)| left.rem(right))?
+			.map(|(left, right)| left.rem(right).map_err(|_| Error::Trap(Trap::DivisionByZero)))?
 			.map(|v| v.transmute_into())
 			.map(|v| context.value_stack_mut().push(v.into()))
 			.map(|_| InstructionOutcome::RunNextInstruction)
@@ -996,7 +996,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		context
 			.value_stack_mut()
 			.pop_as::<T>()
-			.and_then(|v| v.try_truncate_into())
+			.and_then(|v| v.try_truncate_into().map_err(|_| Error::Trap(Trap::InvalidConversionToInt)))
 			.map(|v| v.transmute_into())
 			.map(|v| context.value_stack_mut().push(v.into()))
 			.map(|_| InstructionOutcome::RunNextInstruction)
