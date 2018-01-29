@@ -1,7 +1,7 @@
 use std::{i32, i64, u32, u64, f32};
 use std::io;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use Error;
+use {Error, Trap};
 use parity_wasm::elements::ValueType;
 
 
@@ -65,7 +65,7 @@ pub trait ArithmeticOps<T> {
 	/// Multiply two values.
 	fn mul(self, other: T) -> T;
 	/// Divide two values.
-	fn div(self, other: T) -> Result<T, Error>;
+	fn div(self, other: T) -> Result<T, Trap>;
 }
 
 /// Integer value.
@@ -81,7 +81,7 @@ pub trait Integer<T>: ArithmeticOps<T> {
 	/// Get right bit rotation result.
 	fn rotr(self, other: T) -> T;
 	/// Get division remainder.
-	fn rem(self, other: T) -> Result<T, Error>;
+	fn rem(self, other: T) -> Result<T, Trap>;
 }
 
 /// Float-point value.
@@ -263,19 +263,19 @@ impl_wrap_into!(f64, f32);
 
 macro_rules! impl_try_truncate_into {
 	($from: ident, $into: ident) => {
-		impl TryTruncateInto<$into, Error> for $from {
-			fn try_truncate_into(self) -> Result<$into, Error> {
+		impl TryTruncateInto<$into, Trap> for $from {
+			fn try_truncate_into(self) -> Result<$into, Trap> {
 				// Casting from a float to an integer will round the float towards zero
 				// NOTE: currently this will cause Undefined Behavior if the rounded value cannot be represented by the
 				// target integer type. This includes Inf and NaN. This is a bug and will be fixed.
 				if self.is_nan() || self.is_infinite() {
-					return Err(Error::Value("invalid float value for this operation".into()));
+					return Err(Trap::InvalidConversionToInt);
 				}
 
 				// range check
 				let result = self as $into;
 				if result as $from != self.trunc() {
-					return Err(Error::Value("invalid float value for this operation".into()));
+					return Err(Trap::InvalidConversionToInt);
 				}
 
 				Ok(self as $into)
@@ -537,12 +537,14 @@ macro_rules! impl_integer_arithmetic_ops {
 			fn add(self, other: $type) -> $type { self.wrapping_add(other) }
 			fn sub(self, other: $type) -> $type { self.wrapping_sub(other) }
 			fn mul(self, other: $type) -> $type { self.wrapping_mul(other) }
-			fn div(self, other: $type) -> Result<$type, Error> {
-				if other == 0 { Err(Error::Value("Division by zero".to_owned())) }
+			fn div(self, other: $type) -> Result<$type, Trap> {
+				if other == 0 {
+					Err(Trap::DivisionByZero)
+				}
 				else {
 					let (result, overflow) = self.overflowing_div(other);
 					if overflow {
-						return Err(Error::Value("Attempt to divide with overflow".to_owned()));
+						Err(Trap::InvalidConversionToInt)
 					} else {
 						Ok(result)
 					}
@@ -563,7 +565,7 @@ macro_rules! impl_float_arithmetic_ops {
 			fn add(self, other: $type) -> $type { self + other }
 			fn sub(self, other: $type) -> $type { self - other }
 			fn mul(self, other: $type) -> $type { self * other }
-			fn div(self, other: $type) -> Result<$type, Error> { Ok(self / other) }
+			fn div(self, other: $type) -> Result<$type, Trap> { Ok(self / other) }
 		}
 	}
 }
@@ -579,8 +581,8 @@ macro_rules! impl_integer {
 			fn count_ones(self) -> $type { self.count_ones() as $type }
 			fn rotl(self, other: $type) -> $type { self.rotate_left(other as u32) }
 			fn rotr(self, other: $type) -> $type { self.rotate_right(other as u32) }
-			fn rem(self, other: $type) -> Result<$type, Error> {
-				if other == 0 { Err(Error::Value("Division by zero".to_owned())) }
+			fn rem(self, other: $type) -> Result<$type, Trap> {
+				if other == 0 { Err(Trap::DivisionByZero) }
 				else { Ok(self.wrapping_rem(other)) }
 			}
 		}
