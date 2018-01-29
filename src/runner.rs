@@ -372,7 +372,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		let condition: bool = context
 			.value_stack_mut()
 			.pop_as()
-			.expect("Due to validation stack top should be an int");
+			.expect("Due to validation stack top should be I32");
 		let block_frame_type = if condition { BlockFrameType::IfTrue } else {
 			let else_pos = labels[&context.position];
 			if !labels.contains_key(&else_pos) {
@@ -436,7 +436,10 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		context: &mut FunctionContext,
 		signature_idx: u32,
 	) -> Result<InstructionOutcome, Error> {
-		let table_func_idx: u32 = context.value_stack_mut().pop_as()?;
+		let table_func_idx: u32 = context
+			.value_stack_mut()
+			.pop_as()
+			.expect("Due to validation stack top should be I32");
 		let table = context
 			.module()
 			.table_by_index(DEFAULT_TABLE_INDEX)
@@ -475,7 +478,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.and_then(|(left, mid, right)| {
 				let condition = right
 					.try_into()
-					.expect("Due to validation stack top should be int");
+					.expect("Due to validation stack top should be I32");
 				Ok((left, mid, condition))
 			})
 			.map(|(left, mid, condition)| if condition { left } else { mid })
@@ -490,15 +493,22 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_set_local(&mut self, context: &mut FunctionContext, index: u32) -> Result<InstructionOutcome, Error> {
-		let arg = context.value_stack_mut().pop()?;
-		context.set_local(index as usize, arg)
-			.map(|_| InstructionOutcome::RunNextInstruction)
+		let arg = context
+			.value_stack_mut()
+			.pop()
+			.expect("Due to vaidation stack should contain value");
+		context.set_local(index as usize, arg);
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_tee_local(&mut self, context: &mut FunctionContext, index: u32) -> Result<InstructionOutcome, Error> {
-		let arg = context.value_stack().top()?.clone();
-		context.set_local(index as usize, arg)
-			.map(|_| InstructionOutcome::RunNextInstruction)
+		let arg = context
+			.value_stack()
+			.top()
+			.expect("Due to vaidation stack should contain value")
+			.clone();
+		context.set_local(index as usize, arg);
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_get_global(
@@ -520,8 +530,10 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		context: &mut FunctionContext,
 		index: u32,
 	) -> Result<InstructionOutcome, Error> {
-		let val = context.value_stack_mut().pop()?;
-
+		let val = context
+			.value_stack_mut()
+			.pop()
+			.expect("Due to vaidation stack should contain value");
 		let global = context
 			.module()
 			.global_by_index(index)
@@ -532,10 +544,14 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 
 	fn run_load<T>(&mut self, context: &mut FunctionContext, _align: u32, offset: u32) -> Result<InstructionOutcome, Error>
 		where RuntimeValue: From<T>, T: LittleEndianConvert {
+		let raw_address = context
+			.value_stack_mut()
+			.pop_as()
+			.expect("Due to vaidation stack should contain value");
 		let address =
 			effective_address(
 				offset,
-				context.value_stack_mut().pop_as()?
+				raw_address,
 			)
 			.map_err(Error::Trap)?;
 		let m = context.module()
@@ -551,10 +567,14 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 
 	fn run_load_extend<T, U>(&mut self, context: &mut FunctionContext, _align: u32, offset: u32) -> Result<InstructionOutcome, Error>
 		where T: ExtendInto<U>, RuntimeValue: From<U>, T: LittleEndianConvert {
+		let raw_address = context
+			.value_stack_mut()
+			.pop_as()
+			.expect("Due to vaidation stack should contain value");
 		let address =
 			effective_address(
 				offset,
-				context.value_stack_mut().pop_as()?
+				raw_address,
 			)
 			.map_err(Error::Trap)?;
 		let m = context.module()
@@ -577,7 +597,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		let stack_value = context
 			.value_stack_mut()
 			.pop_as::<T>()
-			.map(|n| n.into_little_endian())?;
+			.expect("Due to vaidation stack should contain value")
+			.into_little_endian();
 		let address =
 			effective_address(
 				offset,
@@ -607,13 +628,18 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		let stack_value: T = context
 			.value_stack_mut()
 			.pop()
-			.map_err(Into::into)
-			.and_then(|v| v.try_into())?;
+			.expect("Due to vaidation stack should contain value")
+			.try_into()
+			.expect("Due to validation value should be of proper type");
 		let stack_value = stack_value.wrap_into().into_little_endian();
+		let raw_address = context
+			.value_stack_mut()
+			.pop_as::<u32>()
+			.expect("Due to validation stack should contain value");
 		let address =
 			effective_address(
 				offset,
-				context.value_stack_mut().pop_as::<u32>()?
+				raw_address,
 			)
 			.map_err(Error::Trap)?;
 		let m = context.module()
@@ -657,74 +683,64 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.map(|_| InstructionOutcome::RunNextInstruction)
 	}
 
+	fn run_relop<T, F>(&mut self, context: &mut FunctionContext, f: F) -> Result<InstructionOutcome, Error>
+	where
+		RuntimeValue: TryInto<T, Error>,
+		F: FnOnce(T, T) -> bool,
+	{
+		let (left, right) = context
+			.value_stack_mut()
+			.pop_pair_as::<T>()
+			.expect("Due to validation stack should contain pair of values");
+		let v = if f(left, right) {
+			RuntimeValue::I32(1)
+		} else {
+			RuntimeValue::I32(0)
+		};
+		context.value_stack_mut().push(v).map_err(|e| Error::Stack(e.to_string()))?;
+		Ok(InstructionOutcome::RunNextInstruction)
+	}
+
 	fn run_eqz<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
 		where RuntimeValue: TryInto<T, Error>, T: PartialEq<T> + Default {
-		context
+		let v = context
 			.value_stack_mut()
 			.pop_as::<T>()
-			.map(|v| RuntimeValue::I32(if v == Default::default() { 1 } else { 0 }))
-			.and_then(|v| context.value_stack_mut().push(v).map_err(Into::into))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+			.expect("Due to vaidation stack should contain value");
+		let v = RuntimeValue::I32(if v == Default::default() { 1 } else { 0 });
+		context.value_stack_mut().push(v).map_err(|e| Error::Stack(e.to_string()))?;
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_eq<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: TryInto<T, Error>, T: PartialEq<T> {
-		context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.map(|(left, right)| RuntimeValue::I32(if left == right { 1 } else { 0 }))
-			.and_then(|v| context.value_stack_mut().push(v).map_err(Into::into))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+	where RuntimeValue: TryInto<T, Error>, T: PartialEq<T>
+	{
+		self.run_relop(context, |left, right| left == right)
 	}
 
 	fn run_ne<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
 		where RuntimeValue: TryInto<T, Error>, T: PartialEq<T> {
-		context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.map(|(left, right)| RuntimeValue::I32(if left != right { 1 } else { 0 }))
-			.and_then(|v| context.value_stack_mut().push(v).map_err(Into::into))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+		self.run_relop(context, |left, right| left != right)
 	}
 
 	fn run_lt<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
 		where RuntimeValue: TryInto<T, Error>, T: PartialOrd<T> + Display {
-		context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.map(|(left, right)| RuntimeValue::I32(if left < right { 1 } else { 0 }))
-			.and_then(|v| context.value_stack_mut().push(v).map_err(Into::into))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+		self.run_relop(context, |left, right| left < right)
 	}
 
 	fn run_gt<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
 		where RuntimeValue: TryInto<T, Error>, T: PartialOrd<T> {
-		context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.map(|(left, right)| RuntimeValue::I32(if left > right { 1 } else { 0 }))
-			.and_then(|v| context.value_stack_mut().push(v).map_err(Into::into))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+		self.run_relop(context, |left, right| left > right)
 	}
 
 	fn run_lte<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
 		where RuntimeValue: TryInto<T, Error>, T: PartialOrd<T> {
-		context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.map(|(left, right)| RuntimeValue::I32(if left <= right { 1 } else { 0 }))
-			.and_then(|v| context.value_stack_mut().push(v).map_err(Into::into))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+		self.run_relop(context, |left, right| left <= right)
 	}
 
 	fn run_gte<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
 		where RuntimeValue: TryInto<T, Error>, T: PartialOrd<T> {
-		context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.map(|(left, right)| RuntimeValue::I32(if left >= right { 1 } else { 0 }))
-			.and_then(|v| context.value_stack_mut().push(v).map_err(Into::into))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+		self.run_relop(context, |left, right| left >= right)
 	}
 
 	fn run_clz<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
@@ -1088,11 +1104,9 @@ impl FunctionContext {
 		self.module.clone()
 	}
 
-	pub fn set_local(&mut self, index: usize, value: RuntimeValue) -> Result<InstructionOutcome, Error> {
+	pub fn set_local(&mut self, index: usize, value: RuntimeValue) {
 		let l = self.locals.get_mut(index).expect("Due to validation local should exists");
-
 		*l = value;
-		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	pub fn get_local(&mut self, index: usize) -> RuntimeValue {
