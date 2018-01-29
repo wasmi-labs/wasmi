@@ -438,7 +438,9 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.module()
 			.table_by_index(DEFAULT_TABLE_INDEX)
 			.expect("Due to validation table should exists");
-		let func_ref = table.get(table_func_idx)?;
+		let func_ref = table.get(table_func_idx)
+			.map_err(|_| Error::Trap(Trap::TableAccessOutOfBounds))?
+			.ok_or_else(|| Error::Trap(Trap::ElemUninitialized))?;
 
 		{
 			let actual_function_type = func_ref.signature();
@@ -448,13 +450,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 				.expect("Due to validation type should exists");
 
 			if &*required_function_type != actual_function_type {
-				return Err(Error::Function(format!(
-					"expected function with signature ({:?}) -> {:?} when got with ({:?}) -> {:?}",
-					required_function_type.params(),
-					required_function_type.return_type(),
-					actual_function_type.params(),
-					actual_function_type.return_type()
-				)));
+				return Err(Error::Trap(Trap::ElemSignatureMismatch));
 			}
 		}
 

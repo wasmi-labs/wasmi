@@ -107,7 +107,7 @@ impl TableInstance {
 	}
 
 	/// Get the specific value in the table
-	pub fn get(&self, offset: u32) -> Result<FuncRef, Error> {
+	pub fn get(&self, offset: u32) -> Result<Option<FuncRef>, Error> {
 		let buffer = self.buffer.borrow();
 		let buffer_len = buffer.len();
 		let table_elem = buffer.get(offset as usize).cloned().ok_or_else(||
@@ -117,10 +117,7 @@ impl TableInstance {
 				buffer_len
 			)),
 		)?;
-		Ok(table_elem.ok_or_else(|| Error::Table(format!(
-			"trying to read uninitialized element on index {}",
-			offset
-		)))?)
+		Ok(table_elem)
 	}
 
 	/// Set the table element to the specified function.

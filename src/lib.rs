@@ -110,6 +110,9 @@ use std::collections::HashMap;
 pub enum Trap {
 	Unreachable,
 	MemoryAccessOutOfBounds,
+	TableAccessOutOfBounds,
+	ElemUninitialized,
+	ElemSignatureMismatch,
 }
 
 /// Internal interpreter error.
