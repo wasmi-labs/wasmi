@@ -152,12 +152,12 @@ impl<'a> Externals for Runtime<'a> {
 	) -> Result<Option<RuntimeValue>, Trap> {
 		match index {
 			SET_FUNC_INDEX => {
-				let idx: i32 = args.nth(0)?;
+				let idx: i32 = args.nth(0);
 				self.game.set(idx, self.player)?;
 				Ok(None)
 			}
 			GET_FUNC_INDEX => {
-				let idx: i32 = args.nth(0)?;
+				let idx: i32 = args.nth(0);
 				let val: i32 = tictactoe::Player::into_i32(self.game.get(idx)?);
 				Ok(Some(val.into()))
 			}

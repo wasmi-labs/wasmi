@@ -116,6 +116,7 @@ pub enum Trap {
 	DivisionByZero,
 	InvalidConversionToInt,
 	StackOverflow,
+	Host(Box<host::HostError>),
 }
 
 /// Internal interpreter error.
@@ -201,6 +202,18 @@ impl error::Error for Error {
 impl<U> From<U> for Error where U: host::HostError + Sized {
 	fn from(e: U) -> Self {
 		Error::Host(Box::new(e))
+	}
+}
+
+impl<U> From<U> for Trap where U: host::HostError + Sized {
+	fn from(e: U) -> Self {
+		Trap::Host(Box::new(e))
+	}
+}
+
+impl From<Trap> for Error {
+	fn from(e: Trap) -> Error {
+		Error::Trap(e)
 	}
 }
 

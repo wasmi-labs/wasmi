@@ -14,16 +14,21 @@ impl<'a> From<&'a [RuntimeValue]> for RuntimeArgs<'a> {
 
 impl<'a> RuntimeArgs<'a> {
 	/// Extract argument by index `idx` returning error if cast is invalid or not enough arguments
-	pub fn nth<T>(&self, idx: usize) -> Result<T, Error> where RuntimeValue: TryInto<T, Error> {
-		Ok(self.nth_value(idx)?.try_into().map_err(|_| Error::Value("Invalid argument cast".to_owned()))?)
+	pub fn nth_checked<T>(&self, idx: usize) -> Result<T, Error> where RuntimeValue: TryInto<T, Error> {
+		Ok(self.nth_value_checked(idx)?.try_into().map_err(|_| Error::Value("Invalid argument cast".to_owned()))?)
 	}
 
 	/// Extract argument as a runtime value by index `idx` returning error is not enough arguments
-	pub fn nth_value(&self, idx: usize) -> Result<RuntimeValue, Error> {
+	pub fn nth_value_checked(&self, idx: usize) -> Result<RuntimeValue, Error> {
 		if self.0.len() <= idx {
 			return Err(Error::Value("Invalid argument index".to_owned()));
 		}
 		Ok(self.0[idx])
+	}
+
+	pub fn nth<T>(&self, idx: usize) -> T where RuntimeValue: TryInto<T, Error> {
+		let value = self.nth_value_checked(idx).expect("Invalid argument index");
+		value.try_into().expect("Unexpected argument type")
 	}
 
 	/// Total number of arguments
@@ -104,7 +109,7 @@ impl HostError {
 /// ```rust
 /// use wasmi::{
 ///     Externals, RuntimeValue, RuntimeArgs, Error, ModuleImportResolver,
-///     FuncRef, ValueType, Signature, FuncInstance
+///     FuncRef, ValueType, Signature, FuncInstance, Trap,
 /// };
 ///
 /// struct HostExternals {
@@ -118,11 +123,11 @@ impl HostError {
 ///         &mut self,
 ///         index: usize,
 ///         args: RuntimeArgs,
-///     ) -> Result<Option<RuntimeValue>, Error> {
+///     ) -> Result<Option<RuntimeValue>, Trap> {
 ///         match index {
 ///             ADD_FUNC_INDEX => {
-///                 let a: u32 = args.nth(0).unwrap();
-///                 let b: u32 = args.nth(1).unwrap();
+///                 let a: u32 = args.nth(0);
+///                 let b: u32 = args.nth(1);
 ///                 let result = a + b;
 ///
 ///                 Ok(Some(RuntimeValue::I32(result as i32)))
@@ -201,14 +206,14 @@ mod tests {
 	#[test]
 	fn i32_runtime_args() {
 		let args: RuntimeArgs = (&[RuntimeValue::I32(0)][..]).into();
-		let val: i32 = args.nth(0).unwrap();
+		let val: i32 = args.nth_checked(0).unwrap();
 		assert_eq!(val, 0);
 	}
 
 	#[test]
 	fn i64_invalid_arg_cast() {
 		let args: RuntimeArgs = (&[RuntimeValue::I64(90534534545322)][..]).into();
-		assert!(args.nth::<i32>(0).is_err());
+		assert!(args.nth_checked::<i32>(0).is_err());
 	}
 
 	// Tests that `HostError` trait is object safe.
