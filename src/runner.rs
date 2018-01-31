@@ -743,303 +743,298 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		self.run_relop(context, |left, right| left >= right)
 	}
 
-	fn run_clz<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<T> + TryInto<T, Error>, T: Integer<T> {
-		context
+	fn run_unop<T, U, F>(&mut self, context: &mut FunctionContext, f: F) -> Result<InstructionOutcome, Error>
+	where
+		F: FnOnce(T) -> U,
+		RuntimeValue: From<U> + TryInto<T, Error>
+	{
+		let v = context
 			.value_stack_mut()
 			.pop_as::<T>()
-			.map(|v| v.leading_zeros())
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+			.map(|v| f(v))
+			.expect("Due to vaidation stack should contain value");
+		context.value_stack_mut().push(v.into())?;
+		Ok(InstructionOutcome::RunNextInstruction)
+	}
+
+	fn run_clz<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
+	where RuntimeValue: From<T> + TryInto<T, Error>, T: Integer<T> {
+		self.run_unop(context, |v| v.leading_zeros())
 	}
 
 	fn run_ctz<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<T> + TryInto<T, Error>, T: Integer<T> {
-		context
-			.value_stack_mut()
-			.pop_as::<T>()
-			.map(|v| v.trailing_zeros())
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+	where RuntimeValue: From<T> + TryInto<T, Error>, T: Integer<T> {
+		self.run_unop(context, |v| v.trailing_zeros())
 	}
 
 	fn run_popcnt<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<T> + TryInto<T, Error>, T: Integer<T> {
-		context
-			.value_stack_mut()
-			.pop_as::<T>()
-			.map(|v| v.count_ones())
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+	where RuntimeValue: From<T> + TryInto<T, Error>, T: Integer<T> {
+		self.run_unop(context, |v| v.count_ones())
 	}
 
 	fn run_add<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
 		where RuntimeValue: From<T> + TryInto<T, Error>, T: ArithmeticOps<T> {
-		context
+		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
-			.map(|(left, right)| left.add(right))
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+			.expect("Due to validation stack should contain pair of values");
+		let v = left.add(right);
+		context.value_stack_mut().push(v.into())?;
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_sub<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
 		where RuntimeValue: From<T> + TryInto<T, Error>, T: ArithmeticOps<T> {
-		context
+		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
-			.map(|(left, right)| left.sub(right))
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+			.expect("Due to validation stack should contain pair of values");
+		let v = left.sub(right);
+		context.value_stack_mut().push(v.into())?;
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_mul<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<T> + TryInto<T, Error>, T: ArithmeticOps<T> {
-		context
+	where RuntimeValue: From<T> + TryInto<T, Error>, T: ArithmeticOps<T> {
+		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
-			.map(|(left, right)| left.mul(right))
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+			.expect("Due to validation stack should contain pair of values");
+		let v = left.mul(right);
+		context.value_stack_mut().push(v.into())?;
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_div<T, U>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<T> + TryInto<T, Error>, T: TransmuteInto<U> + Display, U: ArithmeticOps<U> + TransmuteInto<T> {
-		context
+	where RuntimeValue: From<T> + TryInto<T, Error>, T: TransmuteInto<U> + Display, U: ArithmeticOps<U> + TransmuteInto<T> {
+		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
-			.map(|(left, right)| (left.transmute_into(), right.transmute_into()))
-			.map(|(left, right)| left.div(right).map_err(Error::Trap))?
-			.map(|v| v.transmute_into())
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+			.expect("Due to validation stack should contain pair of values");
+		let (left, right) = (left.transmute_into(), right.transmute_into());
+		let v = left.div(right).map_err(Error::Trap)?;
+		let v = v.transmute_into();
+		context.value_stack_mut().push(v.into())?;
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_rem<T, U>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<T> + TryInto<T, Error>, T: TransmuteInto<U>, U: Integer<U> + TransmuteInto<T> {
-		context
+	where RuntimeValue: From<T> + TryInto<T, Error>, T: TransmuteInto<U>, U: Integer<U> + TransmuteInto<T> {
+		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
-			.map(|(left, right)| (left.transmute_into(), right.transmute_into()))
-			.map(|(left, right)| left.rem(right).map_err(Error::Trap))?
-			.map(|v| v.transmute_into())
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+			.expect("Due to validation stack should contain pair of values");
+		let (left, right) = (left.transmute_into(), right.transmute_into());
+		let v = left.rem(right).map_err(Error::Trap)?;
+		let v = v.transmute_into();
+		context.value_stack_mut().push(v.into())?;
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_and<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<<T as ops::BitAnd>::Output> + TryInto<T, Error>, T: ops::BitAnd<T> {
-		context
+	where RuntimeValue: From<<T as ops::BitAnd>::Output> + TryInto<T, Error>, T: ops::BitAnd<T> {
+		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
-			.map(|(left, right)| left.bitand(right))
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+			.expect("Due to validation stack should contain pair of values");
+		let v = left.bitand(right);
+		context.value_stack_mut().push(v.into())?;
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_or<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<<T as ops::BitOr>::Output> + TryInto<T, Error>, T: ops::BitOr<T> {
-		context
+	where RuntimeValue: From<<T as ops::BitOr>::Output> + TryInto<T, Error>, T: ops::BitOr<T> {
+		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
-			.map(|(left, right)| left.bitor(right))
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+			.expect("Due to validation stack should contain pair of values");
+		let v = left.bitor(right);
+		context.value_stack_mut().push(v.into())?;
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_xor<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<<T as ops::BitXor>::Output> + TryInto<T, Error>, T: ops::BitXor<T> {
-		context
+	where RuntimeValue: From<<T as ops::BitXor>::Output> + TryInto<T, Error>, T: ops::BitXor<T> {
+		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
-			.map(|(left, right)| left.bitxor(right))
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+			.expect("Due to validation stack should contain pair of values");
+		let v = left.bitxor(right);
+		context.value_stack_mut().push(v.into())?;
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_shl<T>(&mut self, context: &mut FunctionContext, mask: T) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<<T as ops::Shl<T>>::Output> + TryInto<T, Error>, T: ops::Shl<T> + ops::BitAnd<T, Output=T> {
-		context
+	where RuntimeValue: From<<T as ops::Shl<T>>::Output> + TryInto<T, Error>, T: ops::Shl<T> + ops::BitAnd<T, Output=T> {
+		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
-			.map(|(left, right)| left.shl(right & mask))
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+			.expect("Due to validation stack should contain pair of values");
+		let v = left.shl(right & mask);
+		context.value_stack_mut().push(v.into())?;
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_shr<T, U>(&mut self, context: &mut FunctionContext, mask: U) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<T> + TryInto<T, Error>, T: TransmuteInto<U>, U: ops::Shr<U> + ops::BitAnd<U, Output=U>, <U as ops::Shr<U>>::Output: TransmuteInto<T> {
-		context
+	where RuntimeValue: From<T> + TryInto<T, Error>, T: TransmuteInto<U>, U: ops::Shr<U> + ops::BitAnd<U, Output=U>, <U as ops::Shr<U>>::Output: TransmuteInto<T> {
+		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
-			.map(|(left, right)| (left.transmute_into(), right.transmute_into()))
-			.map(|(left, right)| left.shr(right & mask))
-			.map(|v| v.transmute_into())
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+			.expect("Due to validation stack should contain pair of values");
+		let (left, right) = (left.transmute_into(), right.transmute_into());
+		let v = left.shr(right & mask);
+		let v = v.transmute_into();
+		context.value_stack_mut().push(v.into())?;
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_rotl<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<T> + TryInto<T, Error>, T: Integer<T> {
-		context
+	where RuntimeValue: From<T> + TryInto<T, Error>, T: Integer<T> {
+		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
-			.map(|(left, right)| left.rotl(right))
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+			.expect("Due to validation stack should contain pair of values");
+		let v = left.rotl(right);
+		context.value_stack_mut().push(v.into())?;
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_rotr<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<T> + TryInto<T, Error>, T: Integer<T> {
-		context
+	where RuntimeValue: From<T> + TryInto<T, Error>, T: Integer<T>
+	{
+		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
-			.map(|(left, right)| left.rotr(right))
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+			.expect("Due to validation stack should contain pair of values");
+		let v = left.rotr(right);
+		context.value_stack_mut().push(v.into())?;
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_abs<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<T> + TryInto<T, Error>, T: Float<T> {
-		context
-			.value_stack_mut()
-			.pop_as::<T>()
-			.map(|v| v.abs())
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+	where RuntimeValue: From<T> + TryInto<T, Error>, T: Float<T>
+	{
+		self.run_unop(context, |v| v.abs())
 	}
 
 	fn run_neg<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<<T as ops::Neg>::Output> + TryInto<T, Error>, T: ops::Neg {
-		context
-			.value_stack_mut()
-			.pop_as::<T>()
-			.map(|v| v.neg())
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+	where
+		RuntimeValue: From<<T as ops::Neg>::Output> + TryInto<T, Error>,
+		T: ops::Neg
+	{
+		self.run_unop(context, |v| v.neg())
 	}
 
 	fn run_ceil<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<T> + TryInto<T, Error>, T: Float<T> {
-		context
-			.value_stack_mut()
-			.pop_as::<T>()
-			.map(|v| v.ceil())
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+	where RuntimeValue: From<T> + TryInto<T, Error>, T: Float<T>
+	{
+		self.run_unop(context, |v| v.ceil())
 	}
 
 	fn run_floor<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<T> + TryInto<T, Error>, T: Float<T> {
-		context
-			.value_stack_mut()
-			.pop_as::<T>()
-			.map(|v| v.floor())
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+	where RuntimeValue: From<T> + TryInto<T, Error>, T: Float<T>
+	{
+		self.run_unop(context, |v| v.floor())
 	}
 
 	fn run_trunc<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<T> + TryInto<T, Error>, T: Float<T> {
-		context
-			.value_stack_mut()
-			.pop_as::<T>()
-			.map(|v| v.trunc())
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+	where RuntimeValue: From<T> + TryInto<T, Error>, T: Float<T>
+	{
+		self.run_unop(context, |v| v.trunc())
 	}
 
 	fn run_nearest<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<T> + TryInto<T, Error>, T: Float<T> {
-		context
-			.value_stack_mut()
-			.pop_as::<T>()
-			.map(|v| v.nearest())
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+	where RuntimeValue: From<T> + TryInto<T, Error>, T: Float<T>
+	{
+		self.run_unop(context, |v| v.nearest())
 	}
 
 	fn run_sqrt<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<T> + TryInto<T, Error>, T: Float<T> {
-		context
-			.value_stack_mut()
-			.pop_as::<T>()
-			.map(|v| v.sqrt())
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+	where RuntimeValue: From<T> + TryInto<T, Error>, T: Float<T>
+	{
+		self.run_unop(context, |v| v.sqrt())
 	}
 
 	fn run_min<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<T> + TryInto<T, Error>, T: Float<T> {
-		context
+	where RuntimeValue: From<T> + TryInto<T, Error>, T: Float<T>
+	{
+		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
-			.map(|(left, right)| left.min(right))
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+			.expect("Due to validation stack should contain pair of values");
+		let v = left.min(right);
+		context.value_stack_mut().push(v.into())?;
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_max<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<T> + TryInto<T, Error>, T: Float<T> {
-		context
+	where RuntimeValue: From<T> + TryInto<T, Error>, T: Float<T> {
+		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
-			.map(|(left, right)| left.max(right))
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+			.expect("Due to validation stack should contain pair of values");
+		let v = left.max(right);
+		context.value_stack_mut().push(v.into())?;
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_copysign<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<T> + TryInto<T, Error>, T: Float<T> {
-		context
+	where RuntimeValue: From<T> + TryInto<T, Error>, T: Float<T> {
+		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
-			.map(|(left, right)| left.copysign(right))
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+			.expect("Due to validation stack should contain pair of values");
+		let v = left.copysign(right);
+		context.value_stack_mut().push(v.into())?;
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_wrap<T, U>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<U> + TryInto<T, Error>, T: WrapInto<U> {
-		context
-			.value_stack_mut()
-			.pop_as::<T>()
-			.map(|v| v.wrap_into())
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+	where RuntimeValue: From<U> + TryInto<T, Error>, T: WrapInto<U> {
+		self.run_unop(context, |v| v.wrap_into())
 	}
 
 	fn run_trunc_to_int<T, U, V>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
 		where RuntimeValue: From<V> + TryInto<T, Error>, T: TryTruncateInto<U, Trap>, U: TransmuteInto<V>,  {
-		context
+		let v = context
 			.value_stack_mut()
 			.pop_as::<T>()
-			.and_then(|v| v.try_truncate_into().map_err(Error::Trap))
+			.expect("Due to vaidation stack should contain value");
+
+		v.try_truncate_into().map_err(Error::Trap)
 			.map(|v| v.transmute_into())
 			.map(|v| context.value_stack_mut().push(v.into()))
 			.map(|_| InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_extend<T, U, V>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<V> + TryInto<T, Error>, T: ExtendInto<U>, U: TransmuteInto<V> {
-		context
+	where
+		RuntimeValue: From<V> + TryInto<T, Error>, T: ExtendInto<U>, U: TransmuteInto<V>
+	{
+		let v = context
 			.value_stack_mut()
 			.pop_as::<T>()
-			.map_err(Error::into)
-			.map(|v| v.extend_into())
-			.map(|v| v.transmute_into())
-			.map(|v| context.value_stack_mut().push(v.into()))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+			.expect("Due to vaidation stack should contain value");
+
+		let v = v.extend_into().transmute_into();
+		context.value_stack_mut().push(v.into())?;
+
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_reinterpret<T, U>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Error>
-		where RuntimeValue: From<U>, RuntimeValue: TryInto<T, Error>, T: TransmuteInto<U> {
-		context
+	where
+		RuntimeValue: From<U>, RuntimeValue: TryInto<T, Error>, T: TransmuteInto<U>
+	{
+		let v = context
 			.value_stack_mut()
 			.pop_as::<T>()
-			.map(TransmuteInto::transmute_into)
-			.and_then(|val| context.value_stack_mut().push(val.into()).map_err(Into::into))
-			.map(|_| InstructionOutcome::RunNextInstruction)
+			.expect("Due to vaidation stack should contain value");
+
+		let v = v.transmute_into();
+		context.value_stack_mut().push(v.into())?;
+
+		Ok(InstructionOutcome::RunNextInstruction)
 	}
 }
 
