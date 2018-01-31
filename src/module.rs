@@ -1,3 +1,4 @@
+use runner::check_function_args;
 use Trap;
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -576,7 +577,9 @@ impl ModuleInstance {
 			}
 		};
 
-		FuncInstance::invoke(&func_instance, args, externals).map_err(|t| Error::Trap(t))
+		check_function_args(func_instance.signature(), &args)?;
+		FuncInstance::invoke(&func_instance, args, externals)
+			.map_err(|t| Error::Trap(t))
 	}
 
 	/// Find export by a name.
