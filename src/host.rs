@@ -13,12 +13,20 @@ impl<'a> From<&'a [RuntimeValue]> for RuntimeArgs<'a> {
 }
 
 impl<'a> RuntimeArgs<'a> {
-	/// Extract argument by index `idx` returning error if cast is invalid or not enough arguments
+	/// Extract argument by index `idx`.
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if cast is invalid or not enough arguments.
 	pub fn nth_checked<T>(&self, idx: usize) -> Result<T, Error> where RuntimeValue: TryInto<T, Error> {
 		Ok(self.nth_value_checked(idx)?.try_into().map_err(|_| Error::Value("Invalid argument cast".to_owned()))?)
 	}
 
-	/// Extract argument as a runtime value by index `idx` returning error is not enough arguments
+	/// Extract argument as a [`RuntimeValue`] by index `idx`.
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if this list have not enough arguments.
 	pub fn nth_value_checked(&self, idx: usize) -> Result<RuntimeValue, Error> {
 		if self.0.len() <= idx {
 			return Err(Error::Value("Invalid argument index".to_owned()));
@@ -26,6 +34,11 @@ impl<'a> RuntimeArgs<'a> {
 		Ok(self.0[idx])
 	}
 
+	/// Extract argument by index `idx`.
+	///
+	/// # Panics
+	///
+	/// Panics if cast is invalid or not enough arguments.
 	pub fn nth<T>(&self, idx: usize) -> T where RuntimeValue: TryInto<T, Error> {
 		let value = self.nth_value_checked(idx).expect("Invalid argument index");
 		value.try_into().expect("Unexpected argument type")
