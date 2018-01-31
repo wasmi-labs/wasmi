@@ -4,11 +4,9 @@ use std::collections::HashMap;
 use parity_wasm::elements::{Local, Opcodes};
 use {Error, Signature};
 use host::Externals;
-use runner::{prepare_function_args, FunctionContext, Interpreter};
+use runner::{check_function_args, Interpreter};
 use value::RuntimeValue;
 use module::ModuleInstance;
-use common::stack::StackWithLimit;
-use common::{DEFAULT_FRAME_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT};
 
 /// Reference to a function (See [`FuncInstance`] for details).
 ///
@@ -135,36 +133,15 @@ impl FuncInstance {
 		args: &[RuntimeValue],
 		externals: &mut E,
 	) -> Result<Option<RuntimeValue>, Error> {
-		enum InvokeKind<'a> {
-			Internal(FunctionContext),
-			Host(usize, &'a [RuntimeValue]),
-		}
-
-		let result = match *func.as_internal() {
+		match *func.as_internal() {
 			FuncInstanceInternal::Internal { ref signature, .. } => {
-				let mut stack =
-					StackWithLimit::with_data(args.into_iter().cloned(), DEFAULT_VALUE_STACK_LIMIT);
-				let args = prepare_function_args(signature, &mut stack)?;
-				let context = FunctionContext::new(
-					func.clone(),
-					DEFAULT_VALUE_STACK_LIMIT,
-					DEFAULT_FRAME_STACK_LIMIT,
-					signature,
-					args,
-				);
-				InvokeKind::Internal(context)
+				check_function_args(signature, &args)?;
+				let mut interpreter = Interpreter::new(externals);
+				interpreter.start_execution(func, args)
 			}
 			FuncInstanceInternal::Host { ref host_func_index, .. } => {
-				InvokeKind::Host(*host_func_index, &*args)
+				externals.invoke_index(*host_func_index, args.into())
 			}
-		};
-
-		match result {
-			InvokeKind::Internal(ctx) => {
-				let mut interpreter = Interpreter::new(externals);
-				interpreter.run_function(ctx)
-			}
-			InvokeKind::Host(host_func, args) => externals.invoke_index(host_func, args.into()),
 		}
 	}
 }

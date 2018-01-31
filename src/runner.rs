@@ -15,29 +15,11 @@ use value::{
 use host::Externals;
 use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX, BlockFrame, BlockFrameType};
 use common::stack::StackWithLimit;
+use common::{DEFAULT_FRAME_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT};
 
 /// Function interpreter.
 pub struct Interpreter<'a, E: Externals + 'a> {
 	externals: &'a mut E,
-}
-
-/// Function execution context.
-pub struct FunctionContext {
-	/// Is context initialized.
-	pub is_initialized: bool,
-	/// Internal function reference.
-	pub function: FuncRef,
-	pub module: ModuleRef,
-	/// Function return type.
-	pub return_type: BlockType,
-	/// Local variables.
-	pub locals: Vec<RuntimeValue>,
-	/// Values stack.
-	pub value_stack: StackWithLimit<RuntimeValue>,
-	/// Blocks frames stack.
-	pub frame_stack: StackWithLimit<BlockFrame>,
-	/// Current instruction position.
-	pub position: usize,
 }
 
 /// Interpreter action to execute after executing instruction.
@@ -69,7 +51,18 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		}
 	}
 
-	pub fn run_function(&mut self, function_context: FunctionContext) -> Result<Option<RuntimeValue>, Error> {
+	pub fn start_execution(&mut self, func: &FuncRef, args: &[RuntimeValue]) -> Result<Option<RuntimeValue>, Error> {
+		let context = FunctionContext::new(
+			func.clone(),
+			DEFAULT_VALUE_STACK_LIMIT,
+			DEFAULT_FRAME_STACK_LIMIT,
+			func.signature(),
+			args.into_iter().cloned().collect(),
+		);
+		self.run_function(context)
+	}
+
+	fn run_function(&mut self, function_context: FunctionContext) -> Result<Option<RuntimeValue>, Error> {
 		let mut function_stack = VecDeque::new();
 		function_stack.push_back(function_context);
 
@@ -1038,6 +1031,25 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 }
 
+/// Function execution context.
+struct FunctionContext {
+	/// Is context initialized.
+	pub is_initialized: bool,
+	/// Internal function reference.
+	pub function: FuncRef,
+	pub module: ModuleRef,
+	/// Function return type.
+	pub return_type: BlockType,
+	/// Local variables.
+	pub locals: Vec<RuntimeValue>,
+	/// Values stack.
+	pub value_stack: ValueStack,
+	/// Blocks frames stack.
+	pub frame_stack: StackWithLimit<BlockFrame>,
+	/// Current instruction position.
+	pub position: usize,
+}
+
 impl FunctionContext {
 	pub fn new(function: FuncRef, value_stack_limit: usize, frame_stack_limit: usize, signature: &Signature, args: Vec<RuntimeValue>) -> Self {
 		let module = match *function.as_internal() {
@@ -1049,7 +1061,7 @@ impl FunctionContext {
 			function: function,
 			module: ModuleRef(module),
 			return_type: signature.return_type().map(|vt| BlockType::Value(vt.into_elements())).unwrap_or(BlockType::NoResult),
-			value_stack: StackWithLimit::with_limit(value_stack_limit),
+			value_stack: ValueStack::with_limit(value_stack_limit),
 			frame_stack: StackWithLimit::with_limit(frame_stack_limit),
 			locals: args,
 			position: 0,
@@ -1073,7 +1085,7 @@ impl FunctionContext {
 			function: function,
 			module: ModuleRef(module),
 			return_type: function_return_type,
-			value_stack: StackWithLimit::with_limit(self.value_stack.limit() - self.value_stack.len()),
+			value_stack: ValueStack::with_limit(self.value_stack.limit() - self.value_stack.len()),
 			frame_stack: StackWithLimit::with_limit(self.frame_stack.limit() - self.frame_stack.len()),
 			locals: function_locals,
 			position: 0,
@@ -1110,11 +1122,11 @@ impl FunctionContext {
 			.expect("Due to validation local should exists")
 	}
 
-	pub fn value_stack(&self) -> &StackWithLimit<RuntimeValue> {
+	pub fn value_stack(&self) -> &ValueStack {
 		&self.value_stack
 	}
 
-	pub fn value_stack_mut(&mut self) -> &mut StackWithLimit<RuntimeValue> {
+	pub fn value_stack_mut(&mut self) -> &mut ValueStack {
 		&mut self.value_stack
 	}
 
@@ -1164,7 +1176,7 @@ impl FunctionContext {
 			BlockType::Value(_) if frame.frame_type != BlockFrameType::Loop || !is_branch => Some(self.value_stack.pop()?),
 			_ => None,
 		};
-		self.value_stack.resize(frame.value_stack_len, RuntimeValue::I32(0));
+		self.value_stack.resize(frame.value_stack_len);
 		self.position = if is_branch { frame.branch_position } else { frame.end_position };
 		if let Some(frame_value) = frame_value {
 			self.value_stack.push(frame_value)?;
@@ -1187,26 +1199,55 @@ fn effective_address(address: u32, offset: u32) -> Result<u32, Trap> {
 	}
 }
 
-pub fn prepare_function_args(signature: &Signature, caller_stack: &mut StackWithLimit<RuntimeValue>) -> Result<Vec<RuntimeValue>, Error> {
-	let mut args = signature.params().iter().cloned().rev().map(|expected_type| {
-		let param_value = caller_stack.pop()?;
+fn prepare_function_args(signature: &Signature, caller_stack: &mut ValueStack) -> Result<Vec<RuntimeValue>, Error> {
+	let mut args = signature.params().iter().cloned().rev().map(|_| {
+		caller_stack.pop()
+	}).collect::<Result<Vec<RuntimeValue>, _>>()?;
+	args.reverse();
+	check_function_args(signature, &args)?;
+	Ok(args)
+}
+
+pub fn check_function_args(signature: &Signature, args: &[RuntimeValue]) -> Result<(), Error> {
+	if signature.params().len() != args.len() {
+		return Err(
+			Error::Function(
+				format!(
+					"not enough arguments, given {} but expected: {}",
+					args.len(),
+					signature.params().len(),
+				)
+			)
+		);
+	}
+
+	signature.params().iter().cloned().zip(args).map(|(expected_type, param_value)| {
 		let actual_type = param_value.value_type();
 		if actual_type != expected_type {
 			return Err(Error::Function(format!("invalid parameter type {:?} when expected {:?}", actual_type, expected_type)));
 		}
-
-		Ok(param_value)
+		Ok(())
 	}).collect::<Result<Vec<_>, _>>()?;
-	args.reverse();
-	Ok(args)
+
+	Ok(())
 }
 
-impl StackWithLimit<RuntimeValue> {
+struct ValueStack {
+	stack_with_limit: StackWithLimit<RuntimeValue>,
+}
+
+impl ValueStack {
+	fn with_limit(limit: usize) -> ValueStack {
+		ValueStack {
+			stack_with_limit: StackWithLimit::with_limit(limit),
+		}
+	}
+
 	fn pop_as<T>(&mut self) -> Result<T, Error>
 	where
 		RuntimeValue: TryInto<T, Error>,
 	{
-		let value = self.pop()?;
+		let value = self.stack_with_limit.pop()?;
 		TryInto::try_into(value)
 	}
 
@@ -1220,9 +1261,33 @@ impl StackWithLimit<RuntimeValue> {
 	}
 
 	fn pop_triple(&mut self) -> Result<(RuntimeValue, RuntimeValue, RuntimeValue), Error> {
-		let right = self.pop()?;
-		let mid = self.pop()?;
-		let left = self.pop()?;
+		let right = self.stack_with_limit.pop()?;
+		let mid = self.stack_with_limit.pop()?;
+		let left = self.stack_with_limit.pop()?;
 		Ok((left, mid, right))
+	}
+
+	fn pop(&mut self) -> Result<RuntimeValue, Error> {
+		self.stack_with_limit.pop().map_err(|e| Error::Stack(e.to_string()))
+	}
+
+	fn push(&mut self, value: RuntimeValue) -> Result<(), Error> {
+		self.stack_with_limit.push(value).map_err(|e| Error::Stack(e.to_string()))
+	}
+
+	fn resize(&mut self, new_len: usize) {
+		self.stack_with_limit.resize(new_len, RuntimeValue::I32(0));
+	}
+
+	fn len(&self) -> usize {
+		self.stack_with_limit.len()
+	}
+
+	fn limit(&self) -> usize {
+		self.stack_with_limit.limit()
+	}
+
+	fn top(&self) -> Result<&RuntimeValue, Error> {
+		self.stack_with_limit.top().map_err(|e| Error::Stack(e.to_string()))
 	}
 }
