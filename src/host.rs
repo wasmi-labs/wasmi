@@ -26,7 +26,7 @@ impl<'a> RuntimeArgs<'a> {
 	///
 	/// # Errors
 	///
-	/// Returns `Err` if this list have not enough arguments.
+	/// Returns `Err` if this list has not enough arguments.
 	pub fn nth_value_checked(&self, idx: usize) -> Result<RuntimeValue, Error> {
 		if self.0.len() <= idx {
 			return Err(Error::Value("Invalid argument index".to_owned()));
