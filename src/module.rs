@@ -1,3 +1,4 @@
+use Trap;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
@@ -575,7 +576,7 @@ impl ModuleInstance {
 			}
 		};
 
-		FuncInstance::invoke(&func_instance, args, externals)
+		FuncInstance::invoke(&func_instance, args, externals).map_err(|t| Error::Trap(t))
 	}
 
 	/// Find export by a name.
@@ -608,7 +609,7 @@ impl<'a> NotStartedModuleRef<'a> {
 		&self.instance
 	}
 
-	pub fn run_start<E: Externals>(self, state: &mut E) -> Result<ModuleRef, Error> {
+	pub fn run_start<E: Externals>(self, state: &mut E) -> Result<ModuleRef, Trap> {
 		if let Some(start_fn_idx) = self.loaded_module.module().start_section() {
 			let start_func = self.instance.func_by_index(start_fn_idx).expect(
 				"Due to validation start function should exists",

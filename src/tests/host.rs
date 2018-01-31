@@ -1,7 +1,7 @@
 use {
 	Error, Signature, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
 	MemoryInstance, MemoryRef, TableInstance, TableRef, ModuleImportResolver, ModuleInstance, ModuleRef,
-	RuntimeValue, RuntimeArgs, Module, TableDescriptor, MemoryDescriptor,
+	RuntimeValue, RuntimeArgs, Module, TableDescriptor, MemoryDescriptor, Trap,
 };
 use types::ValueType;
 use wabt::wat2wasm;
@@ -79,7 +79,7 @@ impl Externals for TestHost {
 		&mut self,
 		index: usize,
 		args: RuntimeArgs,
-	) -> Result<Option<RuntimeValue>, Error> {
+	) -> Result<Option<RuntimeValue>, Trap> {
 		match index {
 			SUB_FUNC_INDEX => {
 				let a: i32 = args.nth(0)?;
@@ -464,7 +464,7 @@ fn defer_providing_externals() {
 			&mut self,
 			index: usize,
 			args: RuntimeArgs,
-		) -> Result<Option<RuntimeValue>, Error> {
+		) -> Result<Option<RuntimeValue>, Trap> {
 			match index {
 				INC_FUNC_INDEX => {
 					let a = args.nth::<u32>(0)?;
@@ -528,7 +528,7 @@ fn two_envs_one_externals() {
 			&mut self,
 			index: usize,
 			_args: RuntimeArgs,
-		) -> Result<Option<RuntimeValue>, Error> {
+		) -> Result<Option<RuntimeValue>, Trap> {
 			match index {
 				PRIVILEGED_FUNC_INDEX => {
 					println!("privileged!");
@@ -648,7 +648,7 @@ fn dynamically_add_host_func() {
 			&mut self,
 			index: usize,
 			_args: RuntimeArgs,
-		) -> Result<Option<RuntimeValue>, Error> {
+		) -> Result<Option<RuntimeValue>, Trap> {
 			match index {
 				ADD_FUNC_FUNC_INDEX => {
 					// Allocate indicies for the new function.

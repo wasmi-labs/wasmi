@@ -115,6 +115,7 @@ pub enum Trap {
 	ElemSignatureMismatch,
 	DivisionByZero,
 	InvalidConversionToInt,
+	StackOverflow,
 }
 
 /// Internal interpreter error.

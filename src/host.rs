@@ -173,7 +173,7 @@ pub trait Externals {
 		&mut self,
 		index: usize,
 		args: RuntimeArgs,
-	) -> Result<Option<RuntimeValue>, Error>;
+	) -> Result<Option<RuntimeValue>, Trap>;
 }
 
 /// Implementation of [`Externals`] that just traps on [`invoke_index`].
@@ -187,8 +187,8 @@ impl Externals for NopExternals {
 		&mut self,
 		_index: usize,
 		_args: RuntimeArgs,
-	) -> Result<Option<RuntimeValue>, Error> {
-		Err(Error::Trap(Trap::Unreachable))
+	) -> Result<Option<RuntimeValue>, Trap> {
+		Err(Trap::Unreachable)
 	}
 }
 
