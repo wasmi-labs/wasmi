@@ -106,16 +106,75 @@ use std::fmt;
 use std::error;
 use std::collections::HashMap;
 
+/// Error type which can happen at execution time.
+///
+/// Under some conditions, wasm execution may produce a `Trap`, which immediately aborts execution.
+/// Traps can't be handled by WebAssembly code, but are reported to the embedder.
 #[derive(Debug)]
 pub enum Trap {
+	/// Wasm code executed `unreachable` opcode.
+	///
+	/// `unreachable` is a special opcode which always traps upon execution.
+	/// This opcode have a similar purpose as `ud2` in x86.
 	Unreachable,
+
+	/// Attempt to load or store at the address which
+	/// lies outside of bounds of the memory.
+	///
+	/// Since addresses are interpreted as unsigned integers, out of bounds access
+	/// can't happen with negative addresses (i.e. they will always wrap).
 	MemoryAccessOutOfBounds,
+
+	/// Attempt to access table element at index which
+	/// lies outside of bounds.
+	///
+	/// This typically can happen when `call_indirect` is executed
+	/// with index that lies out of bounds.
+	///
+	/// Since indexes are interpreted as unsinged integers, out of bounds access
+	/// can't happen with negative indexes (i.e. they will always wrap).
 	TableAccessOutOfBounds,
+
+	/// Attempt to access table element which is uninitialized (i.e. `None`).
+	///
+	/// This typically can happen when `call_indirect` is executed.
 	ElemUninitialized,
+
+	/// Attempt to `call_indirect` function with mismatched [signature][`Signature`].
+	///
+	/// `call_indirect` always specifies the expected signature of function.
+	/// If `call_indirect` is executed with index that points on function with
+	/// signature different that is expected by this `call_indirect`, this trap is raised.
+	///
+	/// [`Signature`]: struct.Signature.html
 	ElemSignatureMismatch,
+
+	/// Attempt to divide by zero.
+	///
+	/// This trap typically can happen if `div` or `rem` is executed with
+	/// zero as divider.
 	DivisionByZero,
+
+	/// Attempt to make a conversion to an int failed.
+	///
+	/// This can happen when:
+	///
+	/// - trying to do signed division (or get the remainder) -2<sup>N-1</sup> over -1. This is
+	///   because the result +2<sup>N-1</sup> isn't representable as a N-bit signed integer.
+	/// - trying to truncate NaNs, infinity, or value for which the result is out of range into an integer.
 	InvalidConversionToInt,
+
+	/// Stack overflow.
+	///
+	/// This is likely caused by some infinite or very deep recursion.
+	/// Extensive inlining might also be the cause of stack overflow.
 	StackOverflow,
+
+	/// Error specified by the host.
+	///
+	/// Typically returned from an implementation of [`Externals`].
+	///
+	/// [`Externals`]: trait.Externals.html
 	Host(Box<host::HostError>),
 }
 
