@@ -13,13 +13,14 @@ use wasmi::{
     GlobalInstance, GlobalRef, ImportResolver, ImportsBuilder,
     MemoryInstance, MemoryRef, ModuleImportResolver, ModuleInstance,
     ModuleRef, RuntimeValue, TableInstance, TableRef, ValueType,
-    Module, Signature, MemoryDescriptor,
+    Module, Signature, MemoryDescriptor, Trap,
     TableDescriptor, GlobalDescriptor, FuncInstance, RuntimeArgs,
 };
 
 #[derive(Debug)]
 enum Error {
     Load(String),
+    Start(Trap),
     Interpreter(InterpreterError),
 }
 
@@ -58,7 +59,7 @@ impl Externals for SpecModule {
         &mut self,
         index: usize,
         args: RuntimeArgs,
-    ) -> Result<Option<RuntimeValue>, InterpreterError> {
+    ) -> Result<Option<RuntimeValue>, Trap> {
         match index {
             PRINT_FUNC_INDEX => {
                 println!("print: {:?}", args);
@@ -243,7 +244,9 @@ fn try_load(
 ) -> Result<(), Error> {
     let module = try_load_module(base_dir, module_path)?;
     let instance = ModuleInstance::new(&module, &ImportsBuilder::default())?;
-    instance.run_start(spec_driver.spec_module())?;
+    instance
+		.run_start(spec_driver.spec_module())
+		.map_err(|trap| Error::Start(trap))?;
     Ok(())
 }
 

@@ -1,7 +1,7 @@
 use {
 	Error, Signature, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
 	MemoryInstance, MemoryRef, TableInstance, TableRef, ModuleImportResolver, ModuleInstance, ModuleRef,
-	RuntimeValue, RuntimeArgs, Module, TableDescriptor, MemoryDescriptor,
+	RuntimeValue, RuntimeArgs, Module, TableDescriptor, MemoryDescriptor, Trap,
 };
 use types::ValueType;
 use wabt::wat2wasm;
@@ -79,23 +79,23 @@ impl Externals for TestHost {
 		&mut self,
 		index: usize,
 		args: RuntimeArgs,
-	) -> Result<Option<RuntimeValue>, Error> {
+	) -> Result<Option<RuntimeValue>, Trap> {
 		match index {
 			SUB_FUNC_INDEX => {
-				let a: i32 = args.nth(0)?;
-				let b: i32 = args.nth(1)?;
+				let a: i32 = args.nth(0);
+				let b: i32 = args.nth(1);
 
 				let result: RuntimeValue = (a - b).into();
 
 				Ok(Some(result))
 			}
 			ERR_FUNC_INDEX => {
-				let error_code: u32 = args.nth(0)?;
+				let error_code: u32 = args.nth(0);
 				let error = HostErrorWithCode { error_code };
-				Err(Error::Host(Box::new(error)))
+				Err(Trap::Host(Box::new(error)))
 			}
 			INC_MEM_FUNC_INDEX => {
-				let ptr: u32 = args.nth(0)?;
+				let ptr: u32 = args.nth(0);
 
 				let memory = self.memory.as_ref().expect(
 					"Function 'inc_mem' expects attached memory",
@@ -108,7 +108,7 @@ impl Externals for TestHost {
 				Ok(None)
 			}
 			GET_MEM_FUNC_INDEX => {
-				let ptr: u32 = args.nth(0)?;
+				let ptr: u32 = args.nth(0);
 
 				let memory = self.memory.as_ref().expect(
 					"Function 'get_mem' expects attached memory",
@@ -119,7 +119,7 @@ impl Externals for TestHost {
 				Ok(Some(RuntimeValue::I32(buf[0] as i32)))
 			}
 			RECURSE_FUNC_INDEX => {
-				let val = args.nth_value(0)?;
+				let val = args.nth_value_checked(0).expect("Exactly one argument expected");
 
 				let instance = self.instance
 					.as_ref()
@@ -131,7 +131,7 @@ impl Externals for TestHost {
 					.expect("expected to be Some");
 
 				if val.value_type() != result.value_type() {
-					return Err(Error::Host(Box::new(HostErrorWithCode { error_code: 123 })));
+					return Err(Trap::Host(Box::new(HostErrorWithCode { error_code: 123 })));
 				}
 				Ok(Some(result))
 			}
@@ -263,7 +263,7 @@ fn host_err() {
 	);
 
 	let host_error: Box<HostError> = match error {
-		Error::Host(err) => err,
+		Error::Trap(Trap::Host(err)) => err,
 		err => panic!("Unexpected error {:?}", err),
 	};
 
@@ -464,10 +464,10 @@ fn defer_providing_externals() {
 			&mut self,
 			index: usize,
 			args: RuntimeArgs,
-		) -> Result<Option<RuntimeValue>, Error> {
+		) -> Result<Option<RuntimeValue>, Trap> {
 			match index {
 				INC_FUNC_INDEX => {
-					let a = args.nth::<u32>(0)?;
+					let a = args.nth::<u32>(0);
 					*self.acc += a;
 					Ok(None)
 				}
@@ -528,7 +528,7 @@ fn two_envs_one_externals() {
 			&mut self,
 			index: usize,
 			_args: RuntimeArgs,
-		) -> Result<Option<RuntimeValue>, Error> {
+		) -> Result<Option<RuntimeValue>, Trap> {
 			match index {
 				PRIVILEGED_FUNC_INDEX => {
 					println!("privileged!");
@@ -648,7 +648,7 @@ fn dynamically_add_host_func() {
 			&mut self,
 			index: usize,
 			_args: RuntimeArgs,
-		) -> Result<Option<RuntimeValue>, Error> {
+		) -> Result<Option<RuntimeValue>, Trap> {
 			match index {
 				ADD_FUNC_FUNC_INDEX => {
 					// Allocate indicies for the new function.
@@ -661,7 +661,8 @@ fn dynamically_add_host_func() {
 						Signature::new(&[][..], Some(ValueType::I32)),
 						host_func_index as usize,
 					);
-					self.table.set(table_index, Some(added_func))?;
+					self.table.set(table_index, Some(added_func))
+						.map_err(|_| Trap::TableAccessOutOfBounds)?;
 
 					Ok(Some(RuntimeValue::I32(table_index as i32)))
 				}

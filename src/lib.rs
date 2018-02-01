@@ -106,6 +106,78 @@ use std::fmt;
 use std::error;
 use std::collections::HashMap;
 
+/// Error type which can happen at execution time.
+///
+/// Under some conditions, wasm execution may produce a `Trap`, which immediately aborts execution.
+/// Traps can't be handled by WebAssembly code, but are reported to the embedder.
+#[derive(Debug)]
+pub enum Trap {
+	/// Wasm code executed `unreachable` opcode.
+	///
+	/// `unreachable` is a special opcode which always traps upon execution.
+	/// This opcode have a similar purpose as `ud2` in x86.
+	Unreachable,
+
+	/// Attempt to load or store at the address which
+	/// lies outside of bounds of the memory.
+	///
+	/// Since addresses are interpreted as unsigned integers, out of bounds access
+	/// can't happen with negative addresses (i.e. they will always wrap).
+	MemoryAccessOutOfBounds,
+
+	/// Attempt to access table element at index which
+	/// lies outside of bounds.
+	///
+	/// This typically can happen when `call_indirect` is executed
+	/// with index that lies out of bounds.
+	///
+	/// Since indexes are interpreted as unsinged integers, out of bounds access
+	/// can't happen with negative indexes (i.e. they will always wrap).
+	TableAccessOutOfBounds,
+
+	/// Attempt to access table element which is uninitialized (i.e. `None`).
+	///
+	/// This typically can happen when `call_indirect` is executed.
+	ElemUninitialized,
+
+	/// Attempt to `call_indirect` function with mismatched [signature][`Signature`].
+	///
+	/// `call_indirect` always specifies the expected signature of function.
+	/// If `call_indirect` is executed with index that points on function with
+	/// signature different that is expected by this `call_indirect`, this trap is raised.
+	///
+	/// [`Signature`]: struct.Signature.html
+	ElemSignatureMismatch,
+
+	/// Attempt to divide by zero.
+	///
+	/// This trap typically can happen if `div` or `rem` is executed with
+	/// zero as divider.
+	DivisionByZero,
+
+	/// Attempt to make a conversion to an int failed.
+	///
+	/// This can happen when:
+	///
+	/// - trying to do signed division (or get the remainder) -2<sup>N-1</sup> over -1. This is
+	///   because the result +2<sup>N-1</sup> isn't representable as a N-bit signed integer.
+	/// - trying to truncate NaNs, infinity, or value for which the result is out of range into an integer.
+	InvalidConversionToInt,
+
+	/// Stack overflow.
+	///
+	/// This is likely caused by some infinite or very deep recursion.
+	/// Extensive inlining might also be the cause of stack overflow.
+	StackOverflow,
+
+	/// Error specified by the host.
+	///
+	/// Typically returned from an implementation of [`Externals`].
+	///
+	/// [`Externals`]: trait.Externals.html
+	Host(Box<host::HostError>),
+}
+
 /// Internal interpreter error.
 #[derive(Debug)]
 pub enum Error {
@@ -127,7 +199,7 @@ pub enum Error {
 	/// Value-level error.
 	Value(String),
 	/// Trap.
-	Trap(String),
+	Trap(Trap),
 	/// Custom embedder error.
 	Host(Box<host::HostError>),
 }
@@ -143,7 +215,7 @@ impl Into<String> for Error {
 			Error::Global(s) => s,
 			Error::Stack(s) => s,
 			Error::Value(s) => s,
-			Error::Trap(s) => format!("trap: {}", s),
+			Error::Trap(s) => format!("trap: {:?}", s),
 			Error::Host(e) => format!("user: {}", e),
 		}
 	}
@@ -160,7 +232,7 @@ impl fmt::Display for Error {
 			Error::Global(ref s) => write!(f, "Global: {}", s),
 			Error::Stack(ref s) => write!(f, "Stack: {}", s),
 			Error::Value(ref s) => write!(f, "Value: {}", s),
-			Error::Trap(ref s) => write!(f, "Trap: {}", s),
+			Error::Trap(ref s) => write!(f, "Trap: {:?}", s),
 			Error::Host(ref e) => write!(f, "User: {}", e),
 		}
 	}
@@ -179,7 +251,7 @@ impl error::Error for Error {
 			Error::Global(ref s) => s,
 			Error::Stack(ref s) => s,
 			Error::Value(ref s) => s,
-			Error::Trap(ref s) => s,
+			Error::Trap(_) => "Trap",
 			Error::Host(_) => "Host error",
 		}
 	}
@@ -189,6 +261,18 @@ impl error::Error for Error {
 impl<U> From<U> for Error where U: host::HostError + Sized {
 	fn from(e: U) -> Self {
 		Error::Host(Box::new(e))
+	}
+}
+
+impl<U> From<U> for Trap where U: host::HostError + Sized {
+	fn from(e: U) -> Self {
+		Trap::Host(Box::new(e))
+	}
+}
+
+impl From<Trap> for Error {
+	fn from(e: Trap) -> Error {
+		Error::Trap(e)
 	}
 }
 
