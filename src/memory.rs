@@ -109,7 +109,7 @@ impl MemoryInstance {
 		}
 
 		let maximum_size = maximum_pages.saturating_mul(LINEAR_MEMORY_PAGE_SIZE);
-		let initial_size = calculate_memory_size(0, limits.initial(), maximum_size).expect("ok");
+		let initial_size = initial_pages.saturating_mul(LINEAR_MEMORY_PAGE_SIZE);
 
 		let memory = MemoryInstance {
 			limits: limits,
