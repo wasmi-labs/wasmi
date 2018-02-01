@@ -30,11 +30,26 @@ impl ::std::ops::Deref for ModuleRef {
 	}
 }
 
-/// An external value is the runtime representation of an entity that can be imported or exported.
+/// An external value is the runtime representation of an entity
+/// that can be imported or exported.
 pub enum ExternVal {
+	/// [Function][`FuncInstance`].
+	///
+	/// [`FuncInstance`]: struct.FuncInstance.html
 	Func(FuncRef),
+	/// [Table][`TableInstance`].
+	///
+	/// [`TableInstance`]: struct.TableInstance.html
 	Table(TableRef),
+	/// [Memory][`MemoryInstance`].
+	///
+	/// [`MemoryInstance`]: struct.MemoryInstance.html
 	Memory(MemoryRef),
+	/// [Global][`GlobalInstance`].
+	///
+	/// Should be immutable.
+	///
+	/// [`GlobalInstance`]: struct.GlobalInstance.html
 	Global(GlobalRef),
 }
 
@@ -592,8 +607,13 @@ impl ModuleInstance {
 
 /// Mostly instantiated [`ModuleRef`].
 ///
-/// The last step of instantiation is call to `start` function (if any).
+/// At this point memory segments and tables are copied. However, `start` function (if any) is not called.
 /// To get [fully instantiated module instance][`ModuleRef`], [running `start` function][`run_start`] is required.
+///
+/// You can still access not fully initialized instance by calling [`not_started_instance`],
+/// but keep in mind, that this is sort of escape hatch: module really might depend on initialization
+/// done in `start` function. It's definetely not recommended to call any exports on [`ModuleRef`]
+/// returned by this function.
 ///
 /// If you sure, that there is no `start` function (e.g. because you created it without one), you can
 /// call [`assert_no_start`] which returns [`ModuleRef`] without calling `start` function. However,
@@ -602,16 +622,31 @@ impl ModuleInstance {
 /// [`ModuleRef`]: struct.ModuleRef.html
 /// [`run_start`]: #method.run_start
 /// [`assert_no_start`]: #method.assert_no_start
+/// [`not_started_instance`]: #method.not_started_instance
 pub struct NotStartedModuleRef<'a> {
 	loaded_module: &'a Module,
 	instance: ModuleRef,
 }
 
 impl<'a> NotStartedModuleRef<'a> {
+	/// Returns not fully initialized instance.
+	///
+	/// To fully initialize the instance you need to call either [`run_start`] or
+	/// [`assert_no_start`]. See struct documentation for details.
+	///
+	/// [`NotStartedModuleRef`]: struct.NotStartedModuleRef.html
+	/// [`ModuleRef`]: struct.ModuleRef.html
+	/// [`run_start`]: #method.run_start
+	/// [`assert_no_start`]: #method.assert_no_start
 	pub fn not_started_instance(&self) -> &ModuleRef {
 		&self.instance
 	}
 
+	/// Executes `start` function (if any) and returns fully instantiated module.
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if start function traps.
 	pub fn run_start<E: Externals>(self, state: &mut E) -> Result<ModuleRef, Trap> {
 		if let Some(start_fn_idx) = self.loaded_module.module().start_section() {
 			let start_func = self.instance.func_by_index(start_fn_idx).expect(
@@ -622,8 +657,15 @@ impl<'a> NotStartedModuleRef<'a> {
 		Ok(self.instance)
 	}
 
+	/// Returns fully instantiated module without running `start` function.
+	///
+	/// # Panics
+	///
+	/// This function panics if original module contains `start` function.
 	pub fn assert_no_start(self) -> ModuleRef {
-		assert!(self.loaded_module.module().start_section().is_none());
+		if self.loaded_module.module().start_section().is_some() {
+			panic!("assert_no_start called on module with `start` function");
+		}
 		self.instance
 	}
 }
@@ -685,4 +727,28 @@ pub fn check_limits(limits: &ResizableLimits) -> Result<(), Error> {
 	}
 
 	Ok(())
+}
+
+
+#[cfg(test)]
+mod tests {
+	use imports::ImportsBuilder;
+	use super::{ModuleInstance};
+	use tests::parse_wat;
+
+	#[should_panic]
+	#[test]
+	fn assert_no_start_panics_on_module_with_start() {
+		let module_with_start = parse_wat(
+			r#"
+			(module
+				(func $f)
+				(start $f))
+			"#
+		);
+		ModuleInstance::new(
+			&module_with_start,
+			&ImportsBuilder::default()
+		).unwrap().assert_no_start();
+	}
 }

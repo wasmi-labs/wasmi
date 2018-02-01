@@ -18,6 +18,8 @@ pub struct Signature {
 }
 
 impl Signature {
+	/// Creates new signature with givens
+	/// parameter types and optional return type.
 	pub fn new<C: Into<Cow<'static, [ValueType]>>>(
 		params: C,
 		return_type: Option<ValueType>
@@ -28,10 +30,12 @@ impl Signature {
 		}
 	}
 
+	/// Returns parameter types of this signature.
 	pub fn params(&self) -> &[ValueType] {
 		&self.params.as_ref()
 	}
 
+	/// Returns return type of this signature.
 	pub fn return_type(&self) -> Option<ValueType> {
 		self.return_type
 	}
@@ -54,9 +58,13 @@ impl Signature {
 ///
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ValueType {
+	/// 32-bit signed or unsigned integer.
 	I32,
+	/// 64-bit signed or unsigned integer.
 	I64,
+	/// 32-bit IEEE 754-2008 floating point number.
 	F32,
+	/// 64-bit IEEE 754-2008 floating point number.
 	F64,
 }
 
@@ -99,10 +107,12 @@ impl GlobalDescriptor {
 		}
 	}
 
+	/// Returns [`ValueType`] of the requested global.
 	pub fn value_type(&self) -> ValueType {
 		self.value_type
 	}
 
+	/// Returns whether the requested global mutable.
 	pub fn is_mutable(&self) -> bool {
 		self.mutable
 	}
@@ -127,10 +137,12 @@ impl TableDescriptor {
 		}
 	}
 
+	/// Returns initial size of the requested table.
 	pub fn initial(&self) -> u32 {
 		self.initial
 	}
 
+	/// Returns maximum size of the requested table.
 	pub fn maximum(&self) -> Option<u32> {
 		self.maximum
 	}
@@ -155,10 +167,12 @@ impl MemoryDescriptor {
 		}
 	}
 
+	/// Returns initial size (in pages) of the requested memory.
 	pub fn initial(&self) -> u32 {
 		self.initial
 	}
 
+	/// Returns maximum size (in pages) of the requested memory.
 	pub fn maximum(&self) -> Option<u32> {
 		self.maximum
 	}

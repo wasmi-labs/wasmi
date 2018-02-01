@@ -53,7 +53,16 @@ impl fmt::Debug for TableInstance {
 }
 
 impl TableInstance {
-
+	/// Allocate a table instance.
+	///
+	/// The table allocated with initial size, specified by `initial_size`.
+	/// Maximum size can be specified by `maximum_size`.
+	///
+	/// All table elements are allocated uninitialized.
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if `initial_size` is greater than `maximum_size`.
 	pub fn alloc(initial_size: u32, maximum_size: Option<u32>) -> Result<TableRef, Error> {
 		let table = TableInstance::new(ResizableLimits::new(initial_size, maximum_size))?;
 		Ok(TableRef(Rc::new(table)))
@@ -72,18 +81,26 @@ impl TableInstance {
 		&self.limits
 	}
 
+	/// Returns size this table was created with.
 	pub fn initial_size(&self) -> u32 {
 		self.limits.initial()
 	}
 
+	/// Returns maximum size `TableInstance` can grow to.
 	pub fn maximum_size(&self) -> Option<u32> {
 		self.limits.maximum()
 	}
 
+	/// Returns current size of the table.
 	pub fn current_size(&self) -> u32 {
 		self.buffer.borrow().len() as u32
 	}
 
+	/// Increases the size of the table by given number of elements.
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if tried to allocate more elements than permited by limit.
 	pub fn grow(&self, by: u32) -> Result<(), Error> {
 		let mut buffer = self.buffer.borrow_mut();
 		let maximum_size = self.maximum_size().unwrap_or(u32::MAX);
