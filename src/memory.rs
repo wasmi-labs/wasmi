@@ -98,14 +98,18 @@ impl MemoryInstance {
 	fn new(limits: ResizableLimits) -> Result<Self, Error> {
 		check_limits(&limits)?;
 
-		let maximum_size = match limits.maximum() {
-			Some(maximum_pages) if maximum_pages > LINEAR_MEMORY_MAX_PAGES =>
-				return Err(Error::Memory(format!("maximum memory size must be at most {} pages", LINEAR_MEMORY_MAX_PAGES))),
-			Some(maximum_pages) => maximum_pages.saturating_mul(LINEAR_MEMORY_PAGE_SIZE),
-			None => u32::MAX,
-		};
-		let initial_size = calculate_memory_size(0, limits.initial(), maximum_size)
-			.ok_or_else(|| Error::Memory(format!("initial memory size must be at most {} pages", LINEAR_MEMORY_MAX_PAGES)))?;
+		let initial_pages = limits.initial();
+		let maximum_pages = limits.maximum().unwrap_or(LINEAR_MEMORY_MAX_PAGES);
+
+		if initial_pages > LINEAR_MEMORY_MAX_PAGES {
+			return Err(Error::Memory(format!("initial memory size must be at most {} pages", LINEAR_MEMORY_MAX_PAGES)));
+		}
+		if maximum_pages > LINEAR_MEMORY_MAX_PAGES {
+			return Err(Error::Memory(format!("maximum memory size must be at most {} pages", LINEAR_MEMORY_MAX_PAGES)));
+		}
+
+		let maximum_size = maximum_pages.saturating_mul(LINEAR_MEMORY_PAGE_SIZE);
+		let initial_size = calculate_memory_size(0, limits.initial(), maximum_size).expect("ok");
 
 		let memory = MemoryInstance {
 			limits: limits,
@@ -252,22 +256,48 @@ impl MemoryInstance {
 }
 
 fn calculate_memory_size(old_size: u32, additional_pages: u32, maximum_size: u32) -> Option<u32> {
-	additional_pages
-		.checked_mul(LINEAR_MEMORY_PAGE_SIZE)
-		.and_then(|size| size.checked_add(old_size))
-		.and_then(|size| if size > maximum_size {
-			None
-		} else {
-			Some(size)
-		})
+	let size = additional_pages
+		.saturating_mul(LINEAR_MEMORY_PAGE_SIZE);
+	match size.checked_add(old_size) {
+		Some(size) if size <= maximum_size => Some(size),
+		_ => None,
+	}
 }
 
 #[cfg(test)]
 mod tests {
 
-	use super::MemoryInstance;
+	use super::{MemoryInstance, LINEAR_MEMORY_MAX_PAGES};
 	use Error;
 	use parity_wasm::elements::ResizableLimits;
+
+	#[test]
+	fn alloc() {
+		let fixtures = &[
+			(0, None, true),
+			(0, Some(0), true),
+			(1, None, true),
+			(1, Some(1), true),
+			(0, Some(1), true),
+			(1, Some(0), false),
+			(0, Some(LINEAR_MEMORY_MAX_PAGES), true),
+			(LINEAR_MEMORY_MAX_PAGES, Some(LINEAR_MEMORY_MAX_PAGES), true),
+			(LINEAR_MEMORY_MAX_PAGES, Some(0), false),
+			(LINEAR_MEMORY_MAX_PAGES, None, true),
+		];
+		for &(initial, maybe_max, expected_ok) in fixtures {
+			let result = MemoryInstance::alloc(initial, maybe_max);
+			if result.is_ok() != expected_ok {
+				panic!(
+					"unexpected error, initial={}, max={:?}, expected={}, result={:?}",
+					initial,
+					maybe_max,
+					expected_ok,
+					result,
+				);
+			}
+		}
+	}
 
 	fn create_memory(initial_content: &[u8]) -> MemoryInstance {
 		let mem = MemoryInstance::new(ResizableLimits::new(1, Some(1)))
