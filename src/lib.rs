@@ -94,8 +94,7 @@
 //! }
 //! ```
 
-// TODO(pepyakin): Fix this asap https://github.com/pepyakin/wasmi/issues/3
-#![allow(missing_docs)]
+#![warn(missing_docs)]
 
 #[cfg(test)]
 extern crate wabt;

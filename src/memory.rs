@@ -88,7 +88,20 @@ impl<'a, B: 'a> CheckedRegion<'a, B> where B: ::std::ops::Deref<Target=Vec<u8>> 
 }
 
 impl MemoryInstance {
-
+	/// Allocate a memory instance.
+	///
+	/// The memory allocated with initial number of pages specified by `initial_pages`.
+	/// Minimal possible value for `initial_pages` is 0 and maximum possible is `65536`.
+	/// (Since maximum addressible memory is 4GiB = 65536 * 64KiB).
+	///
+	/// It is possible to limit maximum number of pages this memory instance can have by specifying
+	/// `maximum_page`. If not specified, this memory instance would be able to allocate up to 4GiB.
+	///
+	/// Allocated memory is always zeroed.
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if `initial_pages` is greater than `maximum_pages`.
 	pub fn alloc(initial_pages: u32, maximum_pages: Option<u32>) -> Result<MemoryRef, Error> {
 		let memory = MemoryInstance::new(ResizableLimits::new(initial_pages, maximum_pages))?;
 		Ok(MemoryRef(Rc::new(memory)))
@@ -121,10 +134,15 @@ impl MemoryInstance {
 		&self.limits
 	}
 
+	/// Returns number of pages this `MemoryInstance` was created with.
 	pub fn initial_pages(&self) -> u32 {
 		self.limits.initial()
 	}
 
+	/// Returns maximum amount of pages this `MemoryInstance` can grow to.
+	///
+	/// Returns `None` if there is no limit set.
+	/// This means that memory can grow up to 4GiB.
 	pub fn maximum_pages(&self) -> Option<u32> {
 		self.limits.maximum()
 	}
@@ -134,7 +152,7 @@ impl MemoryInstance {
 		self.buffer.borrow().len() as u32 / LINEAR_MEMORY_PAGE_SIZE
 	}
 
-	/// Get data at given offset.
+	/// Copy data from memory at given offset.
 	pub fn get(&self, offset: u32, size: usize) -> Result<Vec<u8>, Error> {
 		let buffer = self.buffer.borrow();
 		let region = self.checked_region(&buffer, offset as usize, size)?;
@@ -142,7 +160,7 @@ impl MemoryInstance {
 		Ok(region.slice().to_vec())
 	}
 
-	/// Write memory slice into another slice
+	/// Copy data from given offset in the memory into `target` slice.
 	pub fn get_into(&self, offset: u32, target: &mut [u8]) -> Result<(), Error> {
 		let buffer = self.buffer.borrow();
 		let region = self.checked_region(&buffer, offset as usize, target.len())?;
@@ -152,7 +170,7 @@ impl MemoryInstance {
 		Ok(())
 	}
 
-	/// Set data at given offset.
+	/// Copy data in the memory at given offset.
 	pub fn set(&self, offset: u32, value: &[u8]) -> Result<(), Error> {
 		let mut buffer = self.buffer.borrow_mut();
 		let range = self.checked_region(&buffer, offset as usize, value.len())?.range();
@@ -164,6 +182,10 @@ impl MemoryInstance {
 
 	/// Increases the size of the linear memory by given number of pages.
 	/// Returns previous memory size (in pages) if succeeds.
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if tried to allocate more memory than permited by limit.
 	pub fn grow(&self, pages: u32) -> Result<u32, Error> {
 		let mut buffer = self.buffer.borrow_mut();
 		let old_size = buffer.len() as u32;

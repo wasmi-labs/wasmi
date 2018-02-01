@@ -1,10 +1,10 @@
 use {
 	Error, Signature, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
 	MemoryInstance, MemoryRef, TableInstance, TableRef, ModuleImportResolver, ModuleInstance, ModuleRef,
-	RuntimeValue, RuntimeArgs, Module, TableDescriptor, MemoryDescriptor, Trap,
+	RuntimeValue, RuntimeArgs, TableDescriptor, MemoryDescriptor, Trap,
 };
 use types::ValueType;
-use wabt::wat2wasm;
+use super::parse_wat;
 
 #[derive(Debug, Clone, PartialEq)]
 struct HostErrorWithCode {
@@ -198,11 +198,6 @@ impl ModuleImportResolver for TestHost {
 			format!("Export {} not found", field_name),
 		))
 	}
-}
-
-fn parse_wat(source: &str) -> Module {
-	let wasm_binary = wat2wasm(source).expect("Failed to parse wat source");
-	Module::from_buffer(wasm_binary).expect("Failed to load parsed module")
 }
 
 #[test]

@@ -10,7 +10,6 @@ use parity_wasm::elements::{ValueType as EValueType};
 /// This reference has a reference-counting semantics.
 ///
 /// [`GlobalInstance`]: struct.GlobalInstance.html
-///
 #[derive(Clone, Debug)]
 pub struct GlobalRef(Rc<GlobalInstance>);
 
@@ -37,7 +36,10 @@ pub struct GlobalInstance {
 }
 
 impl GlobalInstance {
-
+	/// Allocate a global variable instance.
+	///
+	/// Since it is possible to export only immutable globals,
+	/// users likely want to set `mutable` to `false`.
 	pub fn alloc(val: RuntimeValue, mutable: bool) -> GlobalRef {
 		GlobalRef(Rc::new(GlobalInstance {
 			val: Cell::new(val),
@@ -45,6 +47,12 @@ impl GlobalInstance {
 		}))
 	}
 
+	/// Change the value of this global variable.
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if this global isn't mutable or if
+	/// type of `val` doesn't match global's type.
 	pub fn set(&self, val: RuntimeValue) -> Result<(), Error> {
 		if !self.mutable {
 			return Err(Error::Global("Attempt to change an immutable variable".into()));
@@ -56,14 +64,19 @@ impl GlobalInstance {
 		Ok(())
 	}
 
+	/// Get the value of this global variable.
 	pub fn get(&self) -> RuntimeValue {
 		self.val.get()
 	}
 
+	/// Returns if this global variable is mutable.
+	///
+	/// Imported and/or exported globals are always immutable.
 	pub fn is_mutable(&self) -> bool {
 		self.mutable
 	}
 
+	/// Returns value type of this global variable.
 	pub fn value_type(&self) -> ValueType {
 		self.val.get().value_type()
 	}

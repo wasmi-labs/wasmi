@@ -187,6 +187,7 @@ impl HostError {
 /// }
 /// ```
 pub trait Externals {
+	/// Perform invoke of a host function by specified `index`.
 	fn invoke_index(
 		&mut self,
 		index: usize,
