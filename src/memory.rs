@@ -8,8 +8,13 @@ use parity_wasm::elements::ResizableLimits;
 use Error;
 use module::check_limits;
 
-/// Linear memory page size.
+/// Size of a page of [linear memory][`MemoryInstance`] - 64KiB.
+///
+/// The size of a memory is always a integer multiple of a page size.
+///
+/// [`MemoryInstance`]: struct.MemoryInstance.html
 pub const LINEAR_MEMORY_PAGE_SIZE: u32 = 65536;
+
 /// Maximal number of pages.
 const LINEAR_MEMORY_MAX_PAGES: u32 = 65536;
 
