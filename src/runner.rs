@@ -5,7 +5,7 @@ use std::fmt::{self, Display};
 use std::iter::repeat;
 use std::collections::{HashMap, VecDeque};
 use parity_wasm::elements::{Opcode, BlockType, Local};
-use {Error, TrapKind, Signature};
+use {Error, Trap, TrapKind, Signature};
 use module::ModuleRef;
 use func::{FuncRef, FuncInstance, FuncInstanceInternal};
 use value::{
@@ -51,7 +51,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		}
 	}
 
-	pub fn start_execution(&mut self, func: &FuncRef, args: &[RuntimeValue]) -> Result<Option<RuntimeValue>, TrapKind> {
+	pub fn start_execution(&mut self, func: &FuncRef, args: &[RuntimeValue]) -> Result<Option<RuntimeValue>, Trap> {
 		let context = FunctionContext::new(
 			func.clone(),
 			DEFAULT_VALUE_STACK_LIMIT,
@@ -66,7 +66,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		self.run_interpreter_loop(&mut function_stack)
 	}
 
-	fn run_interpreter_loop(&mut self, function_stack: &mut VecDeque<FunctionContext>) -> Result<Option<RuntimeValue>, TrapKind> {
+	fn run_interpreter_loop(&mut self, function_stack: &mut VecDeque<FunctionContext>) -> Result<Option<RuntimeValue>, Trap> {
 		loop {
 			let mut function_context = function_stack.pop_back().expect("on loop entry - not empty; on loop continue - checking for emptiness; qed");
 			let function_ref = function_context.function.clone();
@@ -78,16 +78,16 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			if !function_context.is_initialized() {
 				let return_type = function_context.return_type;
 				function_context.initialize(&function_body.locals);
-				function_context.push_frame(&function_body.labels, BlockFrameType::Function, return_type)?;
+				function_context.push_frame(&function_body.labels, BlockFrameType::Function, return_type).map_err(Trap::new)?;
 			}
 
-			let function_return = self.do_run_function(&mut function_context, function_body.opcodes.elements(), &function_body.labels)?;
+			let function_return = self.do_run_function(&mut function_context, function_body.opcodes.elements(), &function_body.labels).map_err(Trap::new)?;
 
 			match function_return {
 				RunResult::Return(return_value) => {
 					match function_stack.back_mut() {
 						Some(caller_context) => if let Some(return_value) = return_value {
-							caller_context.value_stack_mut().push(return_value)?;
+							caller_context.value_stack_mut().push(return_value).map_err(Trap::new)?;
 						},
 						None => return Ok(return_value),
 					}
@@ -95,7 +95,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 				RunResult::NestedCall(nested_func) => {
 					match *nested_func.as_internal() {
 						FuncInstanceInternal::Internal { .. } => {
-							let nested_context = function_context.nested(nested_func.clone())?;
+							let nested_context = function_context.nested(nested_func.clone()).map_err(Trap::new)?;
 							function_stack.push_back(function_context);
 							function_stack.push_back(nested_context);
 						},
@@ -103,7 +103,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 							let args = prepare_function_args(signature, &mut function_context.value_stack);
 							let return_val = FuncInstance::invoke(&nested_func, &args, self.externals)?;
 							if let Some(return_val) = return_val {
-								function_context.value_stack_mut().push(return_val)?;
+								function_context.value_stack_mut().push(return_val).map_err(Trap::new)?;
 							}
 							function_stack.push_back(function_context);
 						}

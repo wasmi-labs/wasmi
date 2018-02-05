@@ -1,7 +1,7 @@
 use {
 	Error, Signature, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
 	MemoryInstance, MemoryRef, TableInstance, TableRef, ModuleImportResolver, ModuleInstance, ModuleRef,
-	RuntimeValue, RuntimeArgs, TableDescriptor, MemoryDescriptor, TrapKind,
+	RuntimeValue, RuntimeArgs, TableDescriptor, MemoryDescriptor, Trap, TrapKind,
 };
 use types::ValueType;
 use super::parse_wat;
@@ -79,7 +79,7 @@ impl Externals for TestHost {
 		&mut self,
 		index: usize,
 		args: RuntimeArgs,
-	) -> Result<Option<RuntimeValue>, TrapKind> {
+	) -> Result<Option<RuntimeValue>, Trap> {
 		match index {
 			SUB_FUNC_INDEX => {
 				let a: i32 = args.nth(0);
@@ -92,7 +92,7 @@ impl Externals for TestHost {
 			ERR_FUNC_INDEX => {
 				let error_code: u32 = args.nth(0);
 				let error = HostErrorWithCode { error_code };
-				Err(TrapKind::Host(Box::new(error)))
+				Err(Trap::new(TrapKind::Host(Box::new(error))))
 			}
 			INC_MEM_FUNC_INDEX => {
 				let ptr: u32 = args.nth(0);
@@ -131,7 +131,7 @@ impl Externals for TestHost {
 					.expect("expected to be Some");
 
 				if val.value_type() != result.value_type() {
-					return Err(TrapKind::Host(Box::new(HostErrorWithCode { error_code: 123 })));
+					return Err(Trap::new(TrapKind::Host(Box::new(HostErrorWithCode { error_code: 123 }))));
 				}
 				Ok(Some(result))
 			}
@@ -257,12 +257,7 @@ fn host_err() {
 		"`test` expected to return error",
 	);
 
-	let host_error: Box<HostError> = match error {
-		Error::TrapKind(TrapKind::Host(err)) => err,
-		err => panic!("Unexpected error {:?}", err),
-	};
-
-	let error_with_code = host_error.downcast_ref::<HostErrorWithCode>().expect(
+	let error_with_code = error.as_host_error().expect("Expected host error").downcast_ref::<HostErrorWithCode>().expect(
 		"Failed to downcast to expected error type",
 	);
 	assert_eq!(error_with_code.error_code, 228);
@@ -459,7 +454,7 @@ fn defer_providing_externals() {
 			&mut self,
 			index: usize,
 			args: RuntimeArgs,
-		) -> Result<Option<RuntimeValue>, TrapKind> {
+		) -> Result<Option<RuntimeValue>, Trap> {
 			match index {
 				INC_FUNC_INDEX => {
 					let a = args.nth::<u32>(0);
@@ -523,7 +518,7 @@ fn two_envs_one_externals() {
 			&mut self,
 			index: usize,
 			_args: RuntimeArgs,
-		) -> Result<Option<RuntimeValue>, TrapKind> {
+		) -> Result<Option<RuntimeValue>, Trap> {
 			match index {
 				PRIVILEGED_FUNC_INDEX => {
 					println!("privileged!");
@@ -643,7 +638,7 @@ fn dynamically_add_host_func() {
 			&mut self,
 			index: usize,
 			_args: RuntimeArgs,
-		) -> Result<Option<RuntimeValue>, TrapKind> {
+		) -> Result<Option<RuntimeValue>, Trap> {
 			match index {
 				ADD_FUNC_FUNC_INDEX => {
 					// Allocate indicies for the new function.
@@ -657,7 +652,7 @@ fn dynamically_add_host_func() {
 						host_func_index as usize,
 					);
 					self.table.set(table_index, Some(added_func))
-						.map_err(|_| TrapKind::TableAccessOutOfBounds)?;
+						.map_err(|_| Trap::new(TrapKind::TableAccessOutOfBounds))?;
 
 					Ok(Some(RuntimeValue::I32(table_index as i32)))
 				}

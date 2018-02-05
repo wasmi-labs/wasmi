@@ -49,7 +49,7 @@ pub enum Command {
         action: Action,
     },
     #[serde(rename = "assert_trap")]
-    AssertTrapKind {
+    AssertTrap {
         line: u64,
         action: Action,
         text: String,

@@ -1,6 +1,6 @@
 use std::any::TypeId;
 use value::{RuntimeValue, TryInto};
-use TrapKind;
+use {TrapKind, Trap};
 
 /// Safe wrapper for list of arguments.
 #[derive(Debug)]
@@ -18,8 +18,8 @@ impl<'a> RuntimeArgs<'a> {
 	/// # Errors
 	///
 	/// Returns `Err` if cast is invalid or not enough arguments.
-	pub fn nth_checked<T>(&self, idx: usize) -> Result<T, TrapKind> where RuntimeValue: TryInto<T, ::value::Error> {
-		Ok(self.nth_value_checked(idx)?.try_into().map_err(|_| TrapKind::UnexpectedSignature)?)
+	pub fn nth_checked<T>(&self, idx: usize) -> Result<T, Trap> where RuntimeValue: TryInto<T, ::value::Error> {
+		Ok(self.nth_value_checked(idx)?.try_into().map_err(|_| Trap::new(TrapKind::UnexpectedSignature))?)
 	}
 
 	/// Extract argument as a [`RuntimeValue`] by index `idx`.
@@ -27,9 +27,9 @@ impl<'a> RuntimeArgs<'a> {
 	/// # Errors
 	///
 	/// Returns `Err` if this list has not enough arguments.
-	pub fn nth_value_checked(&self, idx: usize) -> Result<RuntimeValue, TrapKind> {
+	pub fn nth_value_checked(&self, idx: usize) -> Result<RuntimeValue, Trap> {
 		if self.0.len() <= idx {
-			return Err(TrapKind::UnexpectedSignature);
+			return Err(Trap::new(TrapKind::UnexpectedSignature));
 		}
 		Ok(self.0[idx])
 	}
@@ -122,7 +122,7 @@ impl HostError {
 /// ```rust
 /// use wasmi::{
 ///     Externals, RuntimeValue, RuntimeArgs, Error, ModuleImportResolver,
-///     FuncRef, ValueType, Signature, FuncInstance, TrapKind,
+///     FuncRef, ValueType, Signature, FuncInstance, Trap,
 /// };
 ///
 /// struct HostExternals {
@@ -136,11 +136,11 @@ impl HostError {
 ///         &mut self,
 ///         index: usize,
 ///         args: RuntimeArgs,
-///     ) -> Result<Option<RuntimeValue>, TrapKind> {
+///     ) -> Result<Option<RuntimeValue>, Trap> {
 ///         match index {
 ///             ADD_FUNC_INDEX => {
-///                 let a: u32 = args.nth(0);
-///                 let b: u32 = args.nth(1);
+///                 let a: u32 = args.nth_checked(0)?;
+///                 let b: u32 = args.nth_checked(1)?;
 ///                 let result = a + b;
 ///
 ///                 Ok(Some(RuntimeValue::I32(result as i32)))
@@ -192,7 +192,7 @@ pub trait Externals {
 		&mut self,
 		index: usize,
 		args: RuntimeArgs,
-	) -> Result<Option<RuntimeValue>, TrapKind>;
+	) -> Result<Option<RuntimeValue>, Trap>;
 }
 
 /// Implementation of [`Externals`] that just traps on [`invoke_index`].
@@ -206,8 +206,8 @@ impl Externals for NopExternals {
 		&mut self,
 		_index: usize,
 		_args: RuntimeArgs,
-	) -> Result<Option<RuntimeValue>, TrapKind> {
-		Err(TrapKind::Unreachable)
+	) -> Result<Option<RuntimeValue>, Trap> {
+		Err(Trap::new(TrapKind::Unreachable))
 	}
 }
 

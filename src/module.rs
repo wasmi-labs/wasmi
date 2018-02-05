@@ -1,5 +1,5 @@
 use runner::check_function_args;
-use TrapKind;
+use Trap;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
@@ -594,7 +594,7 @@ impl ModuleInstance {
 
 		check_function_args(func_instance.signature(), &args)?;
 		FuncInstance::invoke(&func_instance, args, externals)
-			.map_err(|t| Error::TrapKind(t))
+			.map_err(|t| Error::Trap(t))
 	}
 
 	/// Find export by a name.
@@ -647,7 +647,7 @@ impl<'a> NotStartedModuleRef<'a> {
 	/// # Errors
 	///
 	/// Returns `Err` if start function traps.
-	pub fn run_start<E: Externals>(self, state: &mut E) -> Result<ModuleRef, TrapKind> {
+	pub fn run_start<E: Externals>(self, state: &mut E) -> Result<ModuleRef, Trap> {
 		if let Some(start_fn_idx) = self.loaded_module.module().start_section() {
 			let start_func = self.instance.func_by_index(start_fn_idx).expect(
 				"Due to validation start function should exists",
