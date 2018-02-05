@@ -1,8 +1,8 @@
 use std::{i32, i64, u32, u64, f32};
 use std::io;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use {TrapKind};
 use parity_wasm::elements::ValueType;
+use TrapKind;
 
 #[derive(Debug)]
 pub enum Error {
