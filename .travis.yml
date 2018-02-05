@@ -11,16 +11,19 @@ addons:
     - gcc-6
     - g++-6
     - cmake
+env:
+- NIGHTLY_TOOLCHAIN=nightly-2018-02-05
+
 install:
 # Install `cargo-deadlinks` unless it is currently installed.
 - command -v cargo-deadlinks &> /dev/null || cargo install cargo-deadlinks
 # Install nightly toolchain.
-- rustup toolchain install nightly-2018-02-05
+- rustup toolchain install $(NIGHTLY_TOOLCHAIN)
 script:
 - export CC=/usr/bin/gcc-6
 - export CXX=/usr/bin/g++-6
 # Make sure fuzz targets are not broken.
-- cargo +nightly check --tests --manifest-path=fuzz/Cargo.toml
+- rustup run $(NIGHTLY_TOOLCHAIN) cargo check --tests --manifest-path=fuzz/Cargo.toml
 - ./test.sh
 - ./doc.sh
 after_success: |
