@@ -652,7 +652,7 @@ fn dynamically_add_host_func() {
 						host_func_index as usize,
 					);
 					self.table.set(table_index, Some(added_func))
-						.map_err(|_| Trap::new(TrapKind::TableAccessOutOfBounds))?;
+						.map_err(|_| TrapKind::TableAccessOutOfBounds)?;
 
 					Ok(Some(RuntimeValue::I32(table_index as i32)))
 				}

@@ -316,6 +316,12 @@ impl From<Trap> for Error {
 	}
 }
 
+impl From<TrapKind> for Trap {
+	fn from(e: TrapKind) -> Trap {
+		Trap::new(e)
+	}
+}
+
 impl From<validation::Error> for Error {
 	fn from(e: validation::Error) -> Error {
 		Error::Validation(e.to_string())

@@ -19,7 +19,7 @@ impl<'a> RuntimeArgs<'a> {
 	///
 	/// Returns `Err` if cast is invalid or not enough arguments.
 	pub fn nth_checked<T>(&self, idx: usize) -> Result<T, Trap> where RuntimeValue: TryInto<T, ::value::Error> {
-		Ok(self.nth_value_checked(idx)?.try_into().map_err(|_| Trap::new(TrapKind::UnexpectedSignature))?)
+		Ok(self.nth_value_checked(idx)?.try_into().map_err(|_| TrapKind::UnexpectedSignature)?)
 	}
 
 	/// Extract argument as a [`RuntimeValue`] by index `idx`.

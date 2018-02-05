@@ -141,7 +141,7 @@ impl FuncInstance {
 		args: &[RuntimeValue],
 		externals: &mut E,
 	) -> Result<Option<RuntimeValue>, Trap> {
-		check_function_args(func.signature(), &args).map_err(|_| Trap::new(TrapKind::UnexpectedSignature))?;
+		check_function_args(func.signature(), &args).map_err(|_| TrapKind::UnexpectedSignature)?;
 		match *func.as_internal() {
 			FuncInstanceInternal::Internal { .. } => {
 				let mut interpreter = Interpreter::new(externals);
