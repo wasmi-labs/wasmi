@@ -193,8 +193,6 @@ pub enum Error {
 	Memory(String),
 	/// Global-level error.
 	Global(String),
-	/// Stack-level error.
-	Stack(String),
 	/// Value-level error.
 	Value(String),
 	/// Trap.
@@ -212,7 +210,6 @@ impl Into<String> for Error {
 			Error::Table(s) => s,
 			Error::Memory(s) => s,
 			Error::Global(s) => s,
-			Error::Stack(s) => s,
 			Error::Value(s) => s,
 			Error::Trap(s) => format!("trap: {:?}", s),
 			Error::Host(e) => format!("user: {}", e),
@@ -229,15 +226,12 @@ impl fmt::Display for Error {
 			Error::Table(ref s) => write!(f, "Table: {}", s),
 			Error::Memory(ref s) => write!(f, "Memory: {}", s),
 			Error::Global(ref s) => write!(f, "Global: {}", s),
-			Error::Stack(ref s) => write!(f, "Stack: {}", s),
 			Error::Value(ref s) => write!(f, "Value: {}", s),
 			Error::Trap(ref s) => write!(f, "Trap: {:?}", s),
 			Error::Host(ref e) => write!(f, "User: {}", e),
 		}
 	}
 }
-
-
 
 impl error::Error for Error {
 	fn description(&self) -> &str {
@@ -248,7 +242,6 @@ impl error::Error for Error {
 			Error::Table(ref s) => s,
 			Error::Memory(ref s) => s,
 			Error::Global(ref s) => s,
-			Error::Stack(ref s) => s,
 			Error::Value(ref s) => s,
 			Error::Trap(_) => "Trap",
 			Error::Host(_) => "Host error",
@@ -278,12 +271,6 @@ impl From<Trap> for Error {
 impl From<validation::Error> for Error {
 	fn from(e: validation::Error) -> Error {
 		Error::Validation(e.to_string())
-	}
-}
-
-impl From<::common::stack::Error> for Error {
-	fn from(e: ::common::stack::Error) -> Self {
-		Error::Stack(e.to_string())
 	}
 }
 

@@ -148,8 +148,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			BlockType::Value(_) => {
 				let result = function_context
 					.value_stack_mut()
-					.pop()
-					.expect("Due to validation stack shouldn't be empty");
+					.pop();
 				Some(result)
 			},
 			BlockType::NoResult => None,
@@ -480,8 +479,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	fn run_select(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap> {
 		let (left, mid, right) = context
 			.value_stack_mut()
-			.pop_triple()
-			.expect("Due to validation there should be 3 values on stack");
+			.pop_triple();
 
 		let condition = right
 			.try_into()
@@ -500,8 +498,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	fn run_set_local(&mut self, context: &mut FunctionContext, index: u32) -> Result<InstructionOutcome, Trap> {
 		let arg = context
 			.value_stack_mut()
-			.pop()
-			.expect("Due to vaidation stack should contain value");
+			.pop();
 		context.set_local(index as usize, arg);
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
@@ -510,7 +507,6 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		let arg = context
 			.value_stack()
 			.top()
-			.expect("Due to vaidation stack should contain value")
 			.clone();
 		context.set_local(index as usize, arg);
 		Ok(InstructionOutcome::RunNextInstruction)
@@ -537,8 +533,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	) -> Result<InstructionOutcome, Trap> {
 		let val = context
 			.value_stack_mut()
-			.pop()
-			.expect("Due to vaidation stack should contain value");
+			.pop();
 		let global = context
 			.module()
 			.global_by_index(index)
@@ -634,7 +629,6 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		let stack_value: T = context
 			.value_stack_mut()
 			.pop()
-			.expect("Due to vaidation stack should contain value")
 			.try_into()
 			.expect("Due to validation value should be of proper type");
 		let stack_value = stack_value.wrap_into().into_little_endian();
@@ -1192,7 +1186,7 @@ impl FunctionContext {
 
 		let frame_value = match frame.block_type {
 			BlockType::Value(_) if frame.frame_type != BlockFrameType::Loop || !is_branch =>
-				Some(self.value_stack.pop().expect("Due to validation, stack shouldn't be empty")),
+				Some(self.value_stack.pop()),
 			_ => None,
 		};
 		self.value_stack.resize(frame.value_stack_len);
@@ -1218,10 +1212,17 @@ fn effective_address(address: u32, offset: u32) -> Result<u32, Trap> {
 	}
 }
 
-fn prepare_function_args(signature: &Signature, caller_stack: &mut ValueStack) -> Vec<RuntimeValue> {
-	let mut args = signature.params().iter().cloned().rev().map(|_| {
-		caller_stack.pop().expect("Due to validation stack shouldn't be empty")
-	}).collect::<Vec<RuntimeValue>>();
+fn prepare_function_args(
+	signature: &Signature,
+	caller_stack: &mut ValueStack,
+) -> Vec<RuntimeValue> {
+	let mut args = signature
+		.params()
+		.iter()
+		.cloned()
+		.rev()
+		.map(|_| caller_stack.pop())
+		.collect::<Vec<RuntimeValue>>();
 	args.reverse();
 	check_function_args(signature, &args).expect("Due to validation arguments should match");
 	args
@@ -1266,7 +1267,9 @@ impl ValueStack {
 	where
 		RuntimeValue: TryInto<T, Error>,
 	{
-		let value = self.stack_with_limit.pop()?;
+		let value = self.stack_with_limit
+			.pop()
+			.expect("Due to validation stack shouldn't be empty");
 		TryInto::try_into(value)
 	}
 
@@ -1279,15 +1282,15 @@ impl ValueStack {
 		Ok((left, right))
 	}
 
-	fn pop_triple(&mut self) -> Result<(RuntimeValue, RuntimeValue, RuntimeValue), Error> {
-		let right = self.stack_with_limit.pop()?;
-		let mid = self.stack_with_limit.pop()?;
-		let left = self.stack_with_limit.pop()?;
-		Ok((left, mid, right))
+	fn pop_triple(&mut self) -> (RuntimeValue, RuntimeValue, RuntimeValue) {
+		let right = self.stack_with_limit.pop().expect("Due to validation stack shouldn't be empty");
+		let mid = self.stack_with_limit.pop().expect("Due to validation stack shouldn't be empty");
+		let left = self.stack_with_limit.pop().expect("Due to validation stack shouldn't be empty");
+		(left, mid, right)
 	}
 
-	fn pop(&mut self) -> Result<RuntimeValue, Error> {
-		self.stack_with_limit.pop().map_err(|e| Error::Stack(e.to_string()))
+	fn pop(&mut self) -> RuntimeValue {
+		self.stack_with_limit.pop().expect("Due to validation stack shouldn't be empty")
 	}
 
 	fn push(&mut self, value: RuntimeValue) -> Result<(), Trap> {
@@ -1307,7 +1310,7 @@ impl ValueStack {
 		self.stack_with_limit.limit()
 	}
 
-	fn top(&self) -> Result<&RuntimeValue, Error> {
-		self.stack_with_limit.top().map_err(|e| Error::Stack(e.to_string()))
+	fn top(&self) -> &RuntimeValue {
+		self.stack_with_limit.top().expect("Due to validation stack shouldn't be empty")
 	}
 }
