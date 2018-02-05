@@ -17,6 +17,8 @@ install:
 script:
 - export CC=/usr/bin/gcc-6
 - export CXX=/usr/bin/g++-6
+# Make sure fuzz targets are not broken.
+- cargo check --tests --manifest-path=fuzz/Cargo.toml
 - ./test.sh
 - ./doc.sh
 after_success: |
