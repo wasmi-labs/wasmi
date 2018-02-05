@@ -14,6 +14,8 @@ addons:
 install:
 # Install `cargo-deadlinks` unless it is currently installed.
 - command -v cargo-deadlinks &> /dev/null || cargo install cargo-deadlinks
+# Install nightly toolchain.
+- rustup toolchain install nightly-2018-02-05
 script:
 - export CC=/usr/bin/gcc-6
 - export CXX=/usr/bin/g++-6
