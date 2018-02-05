@@ -132,10 +132,10 @@ impl FuncInstance {
 	/// # Errors
 	///
 	/// Returns `Err` if `args` types is not match function [`signature`] or
-	/// if [`TrapKind`] at execution time occured.
+	/// if [`Trap`] at execution time occured.
 	///
 	/// [`signature`]: #method.signature
-	/// [`TrapKind`]: #enum.TrapKind.html
+	/// [`Trap`]: #enum.Trap.html
 	pub fn invoke<E: Externals>(
 		func: &FuncRef,
 		args: &[RuntimeValue],

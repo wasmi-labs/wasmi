@@ -127,9 +127,10 @@ impl Trap {
 }
 
 /// Error type which can thrown by wasm code or by host environment.
-///
-/// Under some conditions, wasm execution may produce a `TrapKind`, which immediately aborts execution.
-/// TrapKinds can't be handled by WebAssembly code, but are reported to the embedder.
+/// 
+/// See [`Trap`] for details.
+/// 
+/// [`Trap`]: struct.Trap.html
 #[derive(Debug)]
 pub enum TrapKind {
 	/// Wasm code executed `unreachable` opcode.
@@ -275,7 +276,7 @@ impl fmt::Display for Error {
 			Error::Memory(ref s) => write!(f, "Memory: {}", s),
 			Error::Global(ref s) => write!(f, "Global: {}", s),
 			Error::Value(ref s) => write!(f, "Value: {}", s),
-			Error::Trap(ref s) => write!(f, "TrapKind: {:?}", s),
+			Error::Trap(ref s) => write!(f, "Trap: {:?}", s),
 			Error::Host(ref e) => write!(f, "User: {}", e),
 		}
 	}
@@ -291,7 +292,7 @@ impl error::Error for Error {
 			Error::Memory(ref s) => s,
 			Error::Global(ref s) => s,
 			Error::Value(ref s) => s,
-			Error::Trap(_) => "TrapKind",
+			Error::Trap(_) => "Trap",
 			Error::Host(_) => "Host error",
 		}
 	}
