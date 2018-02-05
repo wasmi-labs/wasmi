@@ -105,7 +105,7 @@ use std::fmt;
 use std::error;
 use std::collections::HashMap;
 
-/// Error type which can happen at execution time.
+/// Error type which can thrown by wasm code or by host environment.
 ///
 /// Under some conditions, wasm execution may produce a `Trap`, which immediately aborts execution.
 /// Traps can't be handled by WebAssembly code, but are reported to the embedder.
@@ -168,6 +168,12 @@ pub enum Trap {
 	/// This is likely caused by some infinite or very deep recursion.
 	/// Extensive inlining might also be the cause of stack overflow.
 	StackOverflow,
+
+	/// Unexpected signature provided.
+	///
+	/// This can happen if [`FuncInstance`] was invoked
+	/// with mismatching signature.
+	UnexpectedSignature,
 
 	/// Error specified by the host.
 	///

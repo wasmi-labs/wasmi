@@ -1,9 +1,16 @@
 use std::{i32, i64, u32, u64, f32};
 use std::io;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use {Error, Trap};
+use {Trap};
 use parity_wasm::elements::ValueType;
 
+#[derive(Debug)]
+pub enum Error {
+	UnexpectedType {
+		expected: ValueType,
+	},
+	InvalidLittleEndianBuffer,
+}
 
 /// Runtime value.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -180,7 +187,7 @@ impl TryInto<bool, Error> for RuntimeValue {
 	fn try_into(self) -> Result<bool, Error> {
 		match self {
 			RuntimeValue::I32(val) => Ok(val != 0),
-			_ => Err(Error::Value("32-bit int value expected".to_owned())),
+			_ => Err(Error::UnexpectedType { expected: ValueType::I32 }),
 		}
 	}
 }
@@ -189,7 +196,7 @@ impl TryInto<i32, Error> for RuntimeValue {
 	fn try_into(self) -> Result<i32, Error> {
 		match self {
 			RuntimeValue::I32(val) => Ok(val),
-			_ => Err(Error::Value("32-bit int value expected".to_owned())),
+			_ => Err(Error::UnexpectedType { expected: ValueType::I32 }),
 		}
 	}
 }
@@ -198,7 +205,7 @@ impl TryInto<i64, Error> for RuntimeValue {
 	fn try_into(self) -> Result<i64, Error> {
 		match self {
 			RuntimeValue::I64(val) => Ok(val),
-			_ => Err(Error::Value("64-bit int value expected".to_owned())),
+			_ => Err(Error::UnexpectedType { expected: ValueType::I64 }),
 		}
 	}
 }
@@ -207,7 +214,7 @@ impl TryInto<f32, Error> for RuntimeValue {
 	fn try_into(self) -> Result<f32, Error> {
 		match self {
 			RuntimeValue::F32(val) => Ok(val),
-			_ => Err(Error::Value("32-bit float value expected".to_owned())),
+			_ => Err(Error::UnexpectedType { expected: ValueType::F32 }),
 		}
 	}
 }
@@ -216,7 +223,7 @@ impl TryInto<f64, Error> for RuntimeValue {
 	fn try_into(self) -> Result<f64, Error> {
 		match self {
 			RuntimeValue::F64(val) => Ok(val),
-			_ => Err(Error::Value("64-bit float value expected".to_owned())),
+			_ => Err(Error::UnexpectedType { expected: ValueType::F64 }),
 		}
 	}
 }
@@ -225,7 +232,7 @@ impl TryInto<u32, Error> for RuntimeValue {
 	fn try_into(self) -> Result<u32, Error> {
 		match self {
 			RuntimeValue::I32(val) => Ok(val as u32),
-			_ => Err(Error::Value("32-bit int value expected".to_owned())),
+			_ => Err(Error::UnexpectedType { expected: ValueType::I32 }),
 		}
 	}
 }
@@ -234,7 +241,7 @@ impl TryInto<u64, Error> for RuntimeValue {
 	fn try_into(self) -> Result<u64, Error> {
 		match self {
 			RuntimeValue::I64(val) => Ok(val as u64),
-			_ => Err(Error::Value("64-bit int value expected".to_owned())),
+			_ => Err(Error::UnexpectedType { expected: ValueType::I64 }),
 		}
 	}
 }
@@ -379,7 +386,7 @@ impl LittleEndianConvert for i8 {
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		buffer.get(0)
 			.map(|v| *v as i8)
-			.ok_or_else(|| Error::Value("invalid little endian buffer".into()))
+			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -391,7 +398,7 @@ impl LittleEndianConvert for u8 {
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		buffer.get(0)
 			.cloned()
-			.ok_or_else(|| Error::Value("invalid little endian buffer".into()))
+			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -405,7 +412,7 @@ impl LittleEndianConvert for i16 {
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_i16::<LittleEndian>()
-			.map_err(|e| Error::Value(e.to_string()))
+			.map_err(|_| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -419,7 +426,7 @@ impl LittleEndianConvert for u16 {
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_u16::<LittleEndian>()
-			.map_err(|e| Error::Value(e.to_string()))
+			.map_err(|_| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -433,7 +440,7 @@ impl LittleEndianConvert for i32 {
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_i32::<LittleEndian>()
-			.map_err(|e| Error::Value(e.to_string()))
+			.map_err(|_| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -447,7 +454,7 @@ impl LittleEndianConvert for u32 {
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_u32::<LittleEndian>()
-			.map_err(|e| Error::Value(e.to_string()))
+			.map_err(|_| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -461,7 +468,7 @@ impl LittleEndianConvert for i64 {
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_i64::<LittleEndian>()
-			.map_err(|e| Error::Value(e.to_string()))
+			.map_err(|_| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -476,7 +483,7 @@ impl LittleEndianConvert for f32 {
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_u32::<LittleEndian>()
 			.map(f32_from_bits)
-			.map_err(|e| Error::Value(e.to_string()))
+			.map_err(|_| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -491,7 +498,7 @@ impl LittleEndianConvert for f64 {
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_u64::<LittleEndian>()
 			.map(f64_from_bits)
-			.map_err(|e| Error::Value(e.to_string()))
+			.map_err(|_| Error::InvalidLittleEndianBuffer)
 	}
 }
 
