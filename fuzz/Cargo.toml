@@ -10,7 +10,7 @@ cargo-fuzz = true
 
 [dependencies]
 wasmi = { path = ".." }
-wabt = "0.1.6"
+wabt = "0.1.7"
 
 [dependencies.libfuzzer-sys]
 git = "https://github.com/rust-fuzz/libfuzzer-sys.git"
