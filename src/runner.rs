@@ -1204,7 +1204,6 @@ fn prepare_function_args(
 		.params()
 		.iter()
 		.cloned()
-		.rev()
 		.map(|_| caller_stack.pop())
 		.collect::<Vec<RuntimeValue>>();
 	args.reverse();
