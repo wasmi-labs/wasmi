@@ -2,7 +2,7 @@ use std::rc::{Rc, Weak};
 use std::fmt;
 use std::collections::HashMap;
 use parity_wasm::elements::{Local, Opcodes};
-use {Trap, Signature};
+use {TrapKind, Signature};
 use host::Externals;
 use runner::{check_function_args, Interpreter};
 use value::RuntimeValue;
@@ -132,16 +132,16 @@ impl FuncInstance {
 	/// # Errors
 	///
 	/// Returns `Err` if `args` types is not match function [`signature`] or
-	/// if [`Trap`] at execution time occured.
+	/// if [`TrapKind`] at execution time occured.
 	///
 	/// [`signature`]: #method.signature
-	/// [`Trap`]: #enum.Trap.html
+	/// [`TrapKind`]: #enum.TrapKind.html
 	pub fn invoke<E: Externals>(
 		func: &FuncRef,
 		args: &[RuntimeValue],
 		externals: &mut E,
-	) -> Result<Option<RuntimeValue>, Trap> {
-		check_function_args(func.signature(), &args).map_err(|_| Trap::UnexpectedSignature)?;
+	) -> Result<Option<RuntimeValue>, TrapKind> {
+		check_function_args(func.signature(), &args).map_err(|_| TrapKind::UnexpectedSignature)?;
 		match *func.as_internal() {
 			FuncInstanceInternal::Internal { .. } => {
 				let mut interpreter = Interpreter::new(externals);

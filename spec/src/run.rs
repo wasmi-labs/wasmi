@@ -13,14 +13,14 @@ use wasmi::{
     GlobalInstance, GlobalRef, ImportResolver, ImportsBuilder,
     MemoryInstance, MemoryRef, ModuleImportResolver, ModuleInstance,
     ModuleRef, RuntimeValue, TableInstance, TableRef, ValueType,
-    Module, Signature, MemoryDescriptor, Trap,
+    Module, Signature, MemoryDescriptor, TrapKind,
     TableDescriptor, GlobalDescriptor, FuncInstance, RuntimeArgs,
 };
 
 #[derive(Debug)]
 enum Error {
     Load(String),
-    Start(Trap),
+    Start(TrapKind),
     Interpreter(InterpreterError),
 }
 
@@ -59,7 +59,7 @@ impl Externals for SpecModule {
         &mut self,
         index: usize,
         args: RuntimeArgs,
-    ) -> Result<Option<RuntimeValue>, Trap> {
+    ) -> Result<Option<RuntimeValue>, TrapKind> {
         match index {
             PRINT_FUNC_INDEX => {
                 println!("print: {:?}", args);
@@ -495,7 +495,7 @@ pub fn spec(name: &str) {
                     Err(e) => println!("assert_exhaustion at line {} - success ({:?})", line, e),
                 }
             }
-            &test::Command::AssertTrap {
+            &test::Command::AssertTrapKind {
                 line, ref action, ..
             } => {
                 let result = run_action(&mut spec_driver, action);

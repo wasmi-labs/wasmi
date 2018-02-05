@@ -1,6 +1,6 @@
 use std::any::TypeId;
 use value::{RuntimeValue, TryInto};
-use Trap;
+use TrapKind;
 
 /// Safe wrapper for list of arguments.
 #[derive(Debug)]
@@ -18,8 +18,8 @@ impl<'a> RuntimeArgs<'a> {
 	/// # Errors
 	///
 	/// Returns `Err` if cast is invalid or not enough arguments.
-	pub fn nth_checked<T>(&self, idx: usize) -> Result<T, Trap> where RuntimeValue: TryInto<T, ::value::Error> {
-		Ok(self.nth_value_checked(idx)?.try_into().map_err(|_| Trap::UnexpectedSignature)?)
+	pub fn nth_checked<T>(&self, idx: usize) -> Result<T, TrapKind> where RuntimeValue: TryInto<T, ::value::Error> {
+		Ok(self.nth_value_checked(idx)?.try_into().map_err(|_| TrapKind::UnexpectedSignature)?)
 	}
 
 	/// Extract argument as a [`RuntimeValue`] by index `idx`.
@@ -27,9 +27,9 @@ impl<'a> RuntimeArgs<'a> {
 	/// # Errors
 	///
 	/// Returns `Err` if this list has not enough arguments.
-	pub fn nth_value_checked(&self, idx: usize) -> Result<RuntimeValue, Trap> {
+	pub fn nth_value_checked(&self, idx: usize) -> Result<RuntimeValue, TrapKind> {
 		if self.0.len() <= idx {
-			return Err(Trap::UnexpectedSignature);
+			return Err(TrapKind::UnexpectedSignature);
 		}
 		Ok(self.0[idx])
 	}
@@ -122,7 +122,7 @@ impl HostError {
 /// ```rust
 /// use wasmi::{
 ///     Externals, RuntimeValue, RuntimeArgs, Error, ModuleImportResolver,
-///     FuncRef, ValueType, Signature, FuncInstance, Trap,
+///     FuncRef, ValueType, Signature, FuncInstance, TrapKind,
 /// };
 ///
 /// struct HostExternals {
@@ -136,7 +136,7 @@ impl HostError {
 ///         &mut self,
 ///         index: usize,
 ///         args: RuntimeArgs,
-///     ) -> Result<Option<RuntimeValue>, Trap> {
+///     ) -> Result<Option<RuntimeValue>, TrapKind> {
 ///         match index {
 ///             ADD_FUNC_INDEX => {
 ///                 let a: u32 = args.nth(0);
@@ -192,7 +192,7 @@ pub trait Externals {
 		&mut self,
 		index: usize,
 		args: RuntimeArgs,
-	) -> Result<Option<RuntimeValue>, Trap>;
+	) -> Result<Option<RuntimeValue>, TrapKind>;
 }
 
 /// Implementation of [`Externals`] that just traps on [`invoke_index`].
@@ -206,8 +206,8 @@ impl Externals for NopExternals {
 		&mut self,
 		_index: usize,
 		_args: RuntimeArgs,
-	) -> Result<Option<RuntimeValue>, Trap> {
-		Err(Trap::Unreachable)
+	) -> Result<Option<RuntimeValue>, TrapKind> {
+		Err(TrapKind::Unreachable)
 	}
 }
 

@@ -5,7 +5,7 @@ use std::fmt::{self, Display};
 use std::iter::repeat;
 use std::collections::{HashMap, VecDeque};
 use parity_wasm::elements::{Opcode, BlockType, Local};
-use {Error, Trap, Signature};
+use {Error, TrapKind, Signature};
 use module::ModuleRef;
 use func::{FuncRef, FuncInstance, FuncInstanceInternal};
 use value::{
@@ -51,7 +51,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		}
 	}
 
-	pub fn start_execution(&mut self, func: &FuncRef, args: &[RuntimeValue]) -> Result<Option<RuntimeValue>, Trap> {
+	pub fn start_execution(&mut self, func: &FuncRef, args: &[RuntimeValue]) -> Result<Option<RuntimeValue>, TrapKind> {
 		let context = FunctionContext::new(
 			func.clone(),
 			DEFAULT_VALUE_STACK_LIMIT,
@@ -66,7 +66,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		self.run_interpreter_loop(&mut function_stack)
 	}
 
-	fn run_interpreter_loop(&mut self, function_stack: &mut VecDeque<FunctionContext>) -> Result<Option<RuntimeValue>, Trap> {
+	fn run_interpreter_loop(&mut self, function_stack: &mut VecDeque<FunctionContext>) -> Result<Option<RuntimeValue>, TrapKind> {
 		loop {
 			let mut function_context = function_stack.pop_back().expect("on loop entry - not empty; on loop continue - checking for emptiness; qed");
 			let function_ref = function_context.function.clone();
@@ -113,7 +113,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		}
 	}
 
-	fn do_run_function(&mut self, function_context: &mut FunctionContext, function_body: &[Opcode], function_labels: &HashMap<usize, usize>) -> Result<RunResult, Trap> {
+	fn do_run_function(&mut self, function_context: &mut FunctionContext, function_body: &[Opcode], function_labels: &HashMap<usize, usize>) -> Result<RunResult, TrapKind> {
 		loop {
 			let instruction = &function_body[function_context.position];
 
@@ -155,7 +155,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		}))
 	}
 
-	fn run_instruction(&mut self, context: &mut FunctionContext, labels: &HashMap<usize, usize>, opcode: &Opcode) -> Result<InstructionOutcome, Trap> {
+	fn run_instruction(&mut self, context: &mut FunctionContext, labels: &HashMap<usize, usize>, opcode: &Opcode) -> Result<InstructionOutcome, TrapKind> {
 		match opcode {
 			&Opcode::Unreachable => self.run_unreachable(context),
 			&Opcode::Nop => self.run_nop(context),
@@ -349,25 +349,25 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		}
 	}
 
-	fn run_unreachable(&mut self, _context: &mut FunctionContext) -> Result<InstructionOutcome, Trap> {
-		Err(Trap::Unreachable)
+	fn run_unreachable(&mut self, _context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind> {
+		Err(TrapKind::Unreachable)
 	}
 
-	fn run_nop(&mut self, _context: &mut FunctionContext) -> Result<InstructionOutcome, Trap> {
+	fn run_nop(&mut self, _context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_block(&mut self, context: &mut FunctionContext, labels: &HashMap<usize, usize>, block_type: BlockType) -> Result<InstructionOutcome, Trap> {
+	fn run_block(&mut self, context: &mut FunctionContext, labels: &HashMap<usize, usize>, block_type: BlockType) -> Result<InstructionOutcome, TrapKind> {
 		context.push_frame(labels, BlockFrameType::Block, block_type)?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_loop(&mut self, context: &mut FunctionContext, labels: &HashMap<usize, usize>, block_type: BlockType) -> Result<InstructionOutcome, Trap> {
+	fn run_loop(&mut self, context: &mut FunctionContext, labels: &HashMap<usize, usize>, block_type: BlockType) -> Result<InstructionOutcome, TrapKind> {
 		context.push_frame(labels, BlockFrameType::Loop, block_type)?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_if(&mut self, context: &mut FunctionContext, labels: &HashMap<usize, usize>, block_type: BlockType) -> Result<InstructionOutcome, Trap> {
+	fn run_if(&mut self, context: &mut FunctionContext, labels: &HashMap<usize, usize>, block_type: BlockType) -> Result<InstructionOutcome, TrapKind> {
 		let condition: bool = context
 			.value_stack_mut()
 			.pop_as();
@@ -386,23 +386,23 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_else(&mut self, context: &mut FunctionContext, labels: &HashMap<usize, usize>) -> Result<InstructionOutcome, Trap> {
+	fn run_else(&mut self, context: &mut FunctionContext, labels: &HashMap<usize, usize>) -> Result<InstructionOutcome, TrapKind> {
 		let end_pos = labels[&context.position];
 		context.pop_frame(false)?;
 		context.position = end_pos;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_end(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap> {
+	fn run_end(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind> {
 		context.pop_frame(false)?;
 		Ok(InstructionOutcome::End)
 	}
 
-	fn run_br(&mut self, _context: &mut FunctionContext, label_idx: u32) -> Result<InstructionOutcome, Trap> {
+	fn run_br(&mut self, _context: &mut FunctionContext, label_idx: u32) -> Result<InstructionOutcome, TrapKind> {
 		Ok(InstructionOutcome::Branch(label_idx as usize))
 	}
 
-	fn run_br_if(&mut self, context: &mut FunctionContext, label_idx: u32) -> Result<InstructionOutcome, Trap> {
+	fn run_br_if(&mut self, context: &mut FunctionContext, label_idx: u32) -> Result<InstructionOutcome, TrapKind> {
 		let condition = context.value_stack_mut().pop_as();
 		if condition {
 			Ok(InstructionOutcome::Branch(label_idx as usize))
@@ -411,13 +411,13 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		}
 	}
 
-	fn run_br_table(&mut self, context: &mut FunctionContext, table: &[u32], default: u32) -> Result<InstructionOutcome, Trap> {
+	fn run_br_table(&mut self, context: &mut FunctionContext, table: &[u32], default: u32) -> Result<InstructionOutcome, TrapKind> {
 		let index: u32 = context.value_stack_mut()
 			.pop_as();
 		Ok(InstructionOutcome::Branch(table.get(index as usize).cloned().unwrap_or(default) as usize))
 	}
 
-	fn run_return(&mut self, _context: &mut FunctionContext) -> Result<InstructionOutcome, Trap> {
+	fn run_return(&mut self, _context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind> {
 		Ok(InstructionOutcome::Return)
 	}
 
@@ -425,7 +425,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		&mut self,
 		context: &mut FunctionContext,
 		func_idx: u32,
-	) -> Result<InstructionOutcome, Trap> {
+	) -> Result<InstructionOutcome, TrapKind> {
 		let func = context
 			.module()
 			.func_by_index(func_idx)
@@ -437,7 +437,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		&mut self,
 		context: &mut FunctionContext,
 		signature_idx: u32,
-	) -> Result<InstructionOutcome, Trap> {
+	) -> Result<InstructionOutcome, TrapKind> {
 		let table_func_idx: u32 = context
 			.value_stack_mut()
 			.pop_as();
@@ -446,8 +446,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.table_by_index(DEFAULT_TABLE_INDEX)
 			.expect("Due to validation table should exists");
 		let func_ref = table.get(table_func_idx)
-			.map_err(|_| Trap::TableAccessOutOfBounds)?
-			.ok_or_else(|| Trap::ElemUninitialized)?;
+			.map_err(|_| TrapKind::TableAccessOutOfBounds)?
+			.ok_or_else(|| TrapKind::ElemUninitialized)?;
 
 		{
 			let actual_function_type = func_ref.signature();
@@ -457,21 +457,21 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 				.expect("Due to validation type should exists");
 
 			if &*required_function_type != actual_function_type {
-				return Err(Trap::ElemSignatureMismatch);
+				return Err(TrapKind::ElemSignatureMismatch);
 			}
 		}
 
 		Ok(InstructionOutcome::ExecuteCall(func_ref))
 	}
 
-	fn run_drop(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap> {
+	fn run_drop(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind> {
 		let _ = context
 			.value_stack_mut()
 			.pop();
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_select(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap> {
+	fn run_select(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind> {
 		let (left, mid, right) = context
 			.value_stack_mut()
 			.pop_triple();
@@ -484,13 +484,13 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_get_local(&mut self, context: &mut FunctionContext, index: u32) -> Result<InstructionOutcome, Trap> {
+	fn run_get_local(&mut self, context: &mut FunctionContext, index: u32) -> Result<InstructionOutcome, TrapKind> {
 		let val = context.get_local(index as usize);
 		context.value_stack_mut().push(val)?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_set_local(&mut self, context: &mut FunctionContext, index: u32) -> Result<InstructionOutcome, Trap> {
+	fn run_set_local(&mut self, context: &mut FunctionContext, index: u32) -> Result<InstructionOutcome, TrapKind> {
 		let arg = context
 			.value_stack_mut()
 			.pop();
@@ -498,7 +498,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_tee_local(&mut self, context: &mut FunctionContext, index: u32) -> Result<InstructionOutcome, Trap> {
+	fn run_tee_local(&mut self, context: &mut FunctionContext, index: u32) -> Result<InstructionOutcome, TrapKind> {
 		let arg = context
 			.value_stack()
 			.top()
@@ -511,7 +511,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		&mut self,
 		context: &mut FunctionContext,
 		index: u32,
-	) -> Result<InstructionOutcome, Trap> {
+	) -> Result<InstructionOutcome, TrapKind> {
 		let global = context
 			.module()
 			.global_by_index(index)
@@ -525,7 +525,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		&mut self,
 		context: &mut FunctionContext,
 		index: u32,
-	) -> Result<InstructionOutcome, Trap> {
+	) -> Result<InstructionOutcome, TrapKind> {
 		let val = context
 			.value_stack_mut()
 			.pop();
@@ -537,7 +537,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_load<T>(&mut self, context: &mut FunctionContext, _align: u32, offset: u32) -> Result<InstructionOutcome, Trap>
+	fn run_load<T>(&mut self, context: &mut FunctionContext, _align: u32, offset: u32) -> Result<InstructionOutcome, TrapKind>
 		where RuntimeValue: From<T>, T: LittleEndianConvert {
 		let raw_address = context
 			.value_stack_mut()
@@ -551,14 +551,14 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.memory_by_index(DEFAULT_MEMORY_INDEX)
 			.expect("Due to validation memory should exists");
 		let b = m.get(address, mem::size_of::<T>())
-			.map_err(|_| Trap::MemoryAccessOutOfBounds)?;
+			.map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
 		let n = T::from_little_endian(&b)
 			.expect("Can't fail since buffer length should be size_of::<T>");
 		context.value_stack_mut().push(n.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_load_extend<T, U>(&mut self, context: &mut FunctionContext, _align: u32, offset: u32) -> Result<InstructionOutcome, Trap>
+	fn run_load_extend<T, U>(&mut self, context: &mut FunctionContext, _align: u32, offset: u32) -> Result<InstructionOutcome, TrapKind>
 		where T: ExtendInto<U>, RuntimeValue: From<U>, T: LittleEndianConvert {
 		let raw_address = context
 			.value_stack_mut()
@@ -572,7 +572,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.memory_by_index(DEFAULT_MEMORY_INDEX)
 			.expect("Due to validation memory should exists");
 		let b = m.get(address, mem::size_of::<T>())
-			.map_err(|_| Trap::MemoryAccessOutOfBounds)?;
+			.map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
 		let v = T::from_little_endian(&b)
 			.expect("Can't fail since buffer length should be size_of::<T>");
 		let stack_value: U = v.extend_into();
@@ -583,7 +583,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.map(|_| InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_store<T>(&mut self, context: &mut FunctionContext, _align: u32, offset: u32) -> Result<InstructionOutcome, Trap>
+	fn run_store<T>(&mut self, context: &mut FunctionContext, _align: u32, offset: u32) -> Result<InstructionOutcome, TrapKind>
 		where RuntimeValue: TryInto<T, ::value::Error>, T: LittleEndianConvert {
 		let stack_value = context
 			.value_stack_mut()
@@ -602,7 +602,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.memory_by_index(DEFAULT_MEMORY_INDEX)
 			.expect("Due to validation memory should exists");
 		m.set(address, &stack_value)
-			.map_err(|_| Trap::MemoryAccessOutOfBounds)?;
+			.map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
@@ -611,7 +611,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		context: &mut FunctionContext,
 		_align: u32,
 		offset: u32,
-	) -> Result<InstructionOutcome, Trap>
+	) -> Result<InstructionOutcome, TrapKind>
 	where
 		RuntimeValue: TryInto<T, ::value::Error>,
 		T: WrapInto<U>,
@@ -635,11 +635,11 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.memory_by_index(DEFAULT_MEMORY_INDEX)
 			.expect("Due to validation memory should exists");
 		m.set(address, &stack_value)
-			.map_err(|_| Trap::MemoryAccessOutOfBounds)?;
+			.map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_current_memory(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap> {
+	fn run_current_memory(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind> {
 		let m = context.module()
 			.memory_by_index(DEFAULT_MEMORY_INDEX)
 			.expect("Due to validation memory should exists");
@@ -650,7 +650,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_grow_memory(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap> {
+	fn run_grow_memory(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind> {
 		let pages: u32 = context
 			.value_stack_mut()
 			.pop_as();
@@ -666,7 +666,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_const(&mut self, context: &mut FunctionContext, val: RuntimeValue) -> Result<InstructionOutcome, Trap> {
+	fn run_const(&mut self, context: &mut FunctionContext, val: RuntimeValue) -> Result<InstructionOutcome, TrapKind> {
 		context
 			.value_stack_mut()
 			.push(val)
@@ -674,7 +674,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.map(|_| InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_relop<T, F>(&mut self, context: &mut FunctionContext, f: F) -> Result<InstructionOutcome, Trap>
+	fn run_relop<T, F>(&mut self, context: &mut FunctionContext, f: F) -> Result<InstructionOutcome, TrapKind>
 	where
 		RuntimeValue: TryInto<T, ::value::Error>,
 		F: FnOnce(T, T) -> bool,
@@ -692,7 +692,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_eqz<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_eqz<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 		where RuntimeValue: TryInto<T, ::value::Error>, T: PartialEq<T> + Default {
 		let v = context
 			.value_stack_mut()
@@ -702,38 +702,38 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_eq<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_eq<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: TryInto<T, ::value::Error>, T: PartialEq<T>
 	{
 		self.run_relop(context, |left, right| left == right)
 	}
 
-	fn run_ne<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_ne<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 		where RuntimeValue: TryInto<T, ::value::Error>, T: PartialEq<T> {
 		self.run_relop(context, |left, right| left != right)
 	}
 
-	fn run_lt<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_lt<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 		where RuntimeValue: TryInto<T, ::value::Error>, T: PartialOrd<T> + Display {
 		self.run_relop(context, |left, right| left < right)
 	}
 
-	fn run_gt<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_gt<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 		where RuntimeValue: TryInto<T, ::value::Error>, T: PartialOrd<T> {
 		self.run_relop(context, |left, right| left > right)
 	}
 
-	fn run_lte<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_lte<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 		where RuntimeValue: TryInto<T, ::value::Error>, T: PartialOrd<T> {
 		self.run_relop(context, |left, right| left <= right)
 	}
 
-	fn run_gte<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_gte<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 		where RuntimeValue: TryInto<T, ::value::Error>, T: PartialOrd<T> {
 		self.run_relop(context, |left, right| left >= right)
 	}
 
-	fn run_unop<T, U, F>(&mut self, context: &mut FunctionContext, f: F) -> Result<InstructionOutcome, Trap>
+	fn run_unop<T, U, F>(&mut self, context: &mut FunctionContext, f: F) -> Result<InstructionOutcome, TrapKind>
 	where
 		F: FnOnce(T) -> U,
 		RuntimeValue: From<U> + TryInto<T, ::value::Error>
@@ -746,22 +746,22 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_clz<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_clz<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Integer<T> {
 		self.run_unop(context, |v| v.leading_zeros())
 	}
 
-	fn run_ctz<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_ctz<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Integer<T> {
 		self.run_unop(context, |v| v.trailing_zeros())
 	}
 
-	fn run_popcnt<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_popcnt<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Integer<T> {
 		self.run_unop(context, |v| v.count_ones())
 	}
 
-	fn run_add<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_add<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 		where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: ArithmeticOps<T> {
 		let (left, right) = context
 			.value_stack_mut()
@@ -772,7 +772,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_sub<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_sub<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 		where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: ArithmeticOps<T> {
 		let (left, right) = context
 			.value_stack_mut()
@@ -783,7 +783,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_mul<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_mul<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: ArithmeticOps<T> {
 		let (left, right) = context
 			.value_stack_mut()
@@ -794,7 +794,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_div<T, U>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_div<T, U>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: TransmuteInto<U> + Display, U: ArithmeticOps<U> + TransmuteInto<T> {
 		let (left, right) = context
 			.value_stack_mut()
@@ -807,7 +807,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_rem<T, U>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_rem<T, U>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: TransmuteInto<U>, U: Integer<U> + TransmuteInto<T> {
 		let (left, right) = context
 			.value_stack_mut()
@@ -820,7 +820,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_and<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_and<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<<T as ops::BitAnd>::Output> + TryInto<T, ::value::Error>, T: ops::BitAnd<T> {
 		let (left, right) = context
 			.value_stack_mut()
@@ -831,7 +831,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_or<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_or<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<<T as ops::BitOr>::Output> + TryInto<T, ::value::Error>, T: ops::BitOr<T> {
 		let (left, right) = context
 			.value_stack_mut()
@@ -842,7 +842,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_xor<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_xor<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<<T as ops::BitXor>::Output> + TryInto<T, ::value::Error>, T: ops::BitXor<T> {
 		let (left, right) = context
 			.value_stack_mut()
@@ -853,7 +853,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_shl<T>(&mut self, context: &mut FunctionContext, mask: T) -> Result<InstructionOutcome, Trap>
+	fn run_shl<T>(&mut self, context: &mut FunctionContext, mask: T) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<<T as ops::Shl<T>>::Output> + TryInto<T, ::value::Error>, T: ops::Shl<T> + ops::BitAnd<T, Output=T> {
 		let (left, right) = context
 			.value_stack_mut()
@@ -864,7 +864,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_shr<T, U>(&mut self, context: &mut FunctionContext, mask: U) -> Result<InstructionOutcome, Trap>
+	fn run_shr<T, U>(&mut self, context: &mut FunctionContext, mask: U) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: TransmuteInto<U>, U: ops::Shr<U> + ops::BitAnd<U, Output=U>, <U as ops::Shr<U>>::Output: TransmuteInto<T> {
 		let (left, right) = context
 			.value_stack_mut()
@@ -877,7 +877,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_rotl<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_rotl<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Integer<T> {
 		let (left, right) = context
 			.value_stack_mut()
@@ -888,7 +888,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_rotr<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_rotr<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Integer<T>
 	{
 		let (left, right) = context
@@ -900,13 +900,13 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_abs<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_abs<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Float<T>
 	{
 		self.run_unop(context, |v| v.abs())
 	}
 
-	fn run_neg<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_neg<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where
 		RuntimeValue: From<<T as ops::Neg>::Output> + TryInto<T, ::value::Error>,
 		T: ops::Neg
@@ -914,37 +914,37 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		self.run_unop(context, |v| v.neg())
 	}
 
-	fn run_ceil<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_ceil<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Float<T>
 	{
 		self.run_unop(context, |v| v.ceil())
 	}
 
-	fn run_floor<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_floor<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Float<T>
 	{
 		self.run_unop(context, |v| v.floor())
 	}
 
-	fn run_trunc<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_trunc<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Float<T>
 	{
 		self.run_unop(context, |v| v.trunc())
 	}
 
-	fn run_nearest<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_nearest<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Float<T>
 	{
 		self.run_unop(context, |v| v.nearest())
 	}
 
-	fn run_sqrt<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_sqrt<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Float<T>
 	{
 		self.run_unop(context, |v| v.sqrt())
 	}
 
-	fn run_min<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_min<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Float<T>
 	{
 		let (left, right) = context
@@ -956,7 +956,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_max<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_max<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Float<T> {
 		let (left, right) = context
 			.value_stack_mut()
@@ -967,7 +967,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_copysign<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_copysign<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Float<T> {
 		let (left, right) = context
 			.value_stack_mut()
@@ -978,13 +978,13 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_wrap<T, U>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_wrap<T, U>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<U> + TryInto<T, ::value::Error>, T: WrapInto<U> {
 		self.run_unop(context, |v| v.wrap_into())
 	}
 
-	fn run_trunc_to_int<T, U, V>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
-		where RuntimeValue: From<V> + TryInto<T, ::value::Error>, T: TryTruncateInto<U, Trap>, U: TransmuteInto<V>,  {
+	fn run_trunc_to_int<T, U, V>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+		where RuntimeValue: From<V> + TryInto<T, ::value::Error>, T: TryTruncateInto<U, TrapKind>, U: TransmuteInto<V>,  {
 		let v = context
 			.value_stack_mut()
 			.pop_as::<T>();
@@ -995,7 +995,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.map(|_| InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_extend<T, U, V>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_extend<T, U, V>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where
 		RuntimeValue: From<V> + TryInto<T, ::value::Error>, T: ExtendInto<U>, U: TransmuteInto<V>
 	{
@@ -1009,7 +1009,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_reinterpret<T, U>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, Trap>
+	fn run_reinterpret<T, U>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where
 		RuntimeValue: From<U>, RuntimeValue: TryInto<T, ::value::Error>, T: TransmuteInto<U>
 	{
@@ -1061,7 +1061,7 @@ impl FunctionContext {
 		}
 	}
 
-	pub fn nested(&mut self, function: FuncRef) -> Result<Self, Trap> {
+	pub fn nested(&mut self, function: FuncRef) -> Result<Self, TrapKind> {
 		let (function_locals, module, function_return_type) = {
 			let module = match *function.as_internal() {
 				FuncInstanceInternal::Internal { ref module, .. } => module.upgrade().expect("module deallocated"),
@@ -1127,7 +1127,7 @@ impl FunctionContext {
 		&self.frame_stack
 	}
 
-	pub fn push_frame(&mut self, labels: &HashMap<usize, usize>, frame_type: BlockFrameType, block_type: BlockType) -> Result<(), Trap> {
+	pub fn push_frame(&mut self, labels: &HashMap<usize, usize>, frame_type: BlockFrameType, block_type: BlockType) -> Result<(), TrapKind> {
 		let begin_position = self.position;
 		let branch_position = match frame_type {
 			BlockFrameType::Function => usize::MAX,
@@ -1153,7 +1153,7 @@ impl FunctionContext {
 			branch_position: branch_position,
 			end_position: end_position,
 			value_stack_len: self.value_stack.len(),
-		}).map_err(|_| Trap::StackOverflow)?;
+		}).map_err(|_| TrapKind::StackOverflow)?;
 
 		Ok(())
 	}
@@ -1162,7 +1162,7 @@ impl FunctionContext {
 		let _ = self.frame_stack.pop().expect("Due to validation frame stack shouldn't be empty");
 	}
 
-	pub fn pop_frame(&mut self, is_branch: bool) -> Result<(), Trap> {
+	pub fn pop_frame(&mut self, is_branch: bool) -> Result<(), TrapKind> {
 		let frame = self.frame_stack
 			.pop()
 			.expect("Due to validation frame stack shouldn't be empty");
@@ -1189,9 +1189,9 @@ impl fmt::Debug for FunctionContext {
 	}
 }
 
-fn effective_address(address: u32, offset: u32) -> Result<u32, Trap> {
+fn effective_address(address: u32, offset: u32) -> Result<u32, TrapKind> {
 	match offset.checked_add(address) {
-		None => Err(Trap::MemoryAccessOutOfBounds),
+		None => Err(TrapKind::MemoryAccessOutOfBounds),
 		Some(address) => Ok(address),
 	}
 }
@@ -1277,9 +1277,9 @@ impl ValueStack {
 		self.stack_with_limit.pop().expect("Due to validation stack shouldn't be empty")
 	}
 
-	fn push(&mut self, value: RuntimeValue) -> Result<(), Trap> {
+	fn push(&mut self, value: RuntimeValue) -> Result<(), TrapKind> {
 		self.stack_with_limit.push(value)
-			.map_err(|_| Trap::StackOverflow)
+			.map_err(|_| TrapKind::StackOverflow)
 	}
 
 	fn resize(&mut self, new_len: usize) {

@@ -107,10 +107,10 @@ use std::collections::HashMap;
 
 /// Error type which can thrown by wasm code or by host environment.
 ///
-/// Under some conditions, wasm execution may produce a `Trap`, which immediately aborts execution.
-/// Traps can't be handled by WebAssembly code, but are reported to the embedder.
+/// Under some conditions, wasm execution may produce a `TrapKind`, which immediately aborts execution.
+/// TrapKinds can't be handled by WebAssembly code, but are reported to the embedder.
 #[derive(Debug)]
-pub enum Trap {
+pub enum TrapKind {
 	/// Wasm code executed `unreachable` opcode.
 	///
 	/// `unreachable` is a special opcode which always traps upon execution.
@@ -201,8 +201,8 @@ pub enum Error {
 	Global(String),
 	/// Value-level error.
 	Value(String),
-	/// Trap.
-	Trap(Trap),
+	/// TrapKind.
+	TrapKind(TrapKind),
 	/// Custom embedder error.
 	Host(Box<host::HostError>),
 }
@@ -217,7 +217,7 @@ impl Into<String> for Error {
 			Error::Memory(s) => s,
 			Error::Global(s) => s,
 			Error::Value(s) => s,
-			Error::Trap(s) => format!("trap: {:?}", s),
+			Error::TrapKind(s) => format!("trap: {:?}", s),
 			Error::Host(e) => format!("user: {}", e),
 		}
 	}
@@ -233,7 +233,7 @@ impl fmt::Display for Error {
 			Error::Memory(ref s) => write!(f, "Memory: {}", s),
 			Error::Global(ref s) => write!(f, "Global: {}", s),
 			Error::Value(ref s) => write!(f, "Value: {}", s),
-			Error::Trap(ref s) => write!(f, "Trap: {:?}", s),
+			Error::TrapKind(ref s) => write!(f, "TrapKind: {:?}", s),
 			Error::Host(ref e) => write!(f, "User: {}", e),
 		}
 	}
@@ -249,7 +249,7 @@ impl error::Error for Error {
 			Error::Memory(ref s) => s,
 			Error::Global(ref s) => s,
 			Error::Value(ref s) => s,
-			Error::Trap(_) => "Trap",
+			Error::TrapKind(_) => "TrapKind",
 			Error::Host(_) => "Host error",
 		}
 	}
@@ -262,15 +262,15 @@ impl<U> From<U> for Error where U: host::HostError + Sized {
 	}
 }
 
-impl<U> From<U> for Trap where U: host::HostError + Sized {
+impl<U> From<U> for TrapKind where U: host::HostError + Sized {
 	fn from(e: U) -> Self {
-		Trap::Host(Box::new(e))
+		TrapKind::Host(Box::new(e))
 	}
 }
 
-impl From<Trap> for Error {
-	fn from(e: Trap) -> Error {
-		Error::Trap(e)
+impl From<TrapKind> for Error {
+	fn from(e: TrapKind) -> Error {
+		Error::TrapKind(e)
 	}
 }
 
