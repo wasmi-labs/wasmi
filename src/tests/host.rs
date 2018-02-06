@@ -92,7 +92,7 @@ impl Externals for TestHost {
 			ERR_FUNC_INDEX => {
 				let error_code: u32 = args.nth(0);
 				let error = HostErrorWithCode { error_code };
-				Err(Trap::new(TrapKind::Host(Box::new(error))))
+				Err(TrapKind::Host(Box::new(error)).into())
 			}
 			INC_MEM_FUNC_INDEX => {
 				let ptr: u32 = args.nth(0);
@@ -131,7 +131,7 @@ impl Externals for TestHost {
 					.expect("expected to be Some");
 
 				if val.value_type() != result.value_type() {
-					return Err(Trap::new(TrapKind::Host(Box::new(HostErrorWithCode { error_code: 123 }))));
+					return Err(TrapKind::Host(Box::new(HostErrorWithCode { error_code: 123 })).into());
 				}
 				Ok(Some(result))
 			}

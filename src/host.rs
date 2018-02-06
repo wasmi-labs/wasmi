@@ -29,7 +29,7 @@ impl<'a> RuntimeArgs<'a> {
 	/// Returns `Err` if this list has not enough arguments.
 	pub fn nth_value_checked(&self, idx: usize) -> Result<RuntimeValue, Trap> {
 		if self.0.len() <= idx {
-			return Err(Trap::new(TrapKind::UnexpectedSignature));
+			return Err(TrapKind::UnexpectedSignature.into());
 		}
 		Ok(self.0[idx])
 	}
@@ -207,7 +207,7 @@ impl Externals for NopExternals {
 		_index: usize,
 		_args: RuntimeArgs,
 	) -> Result<Option<RuntimeValue>, Trap> {
-		Err(Trap::new(TrapKind::Unreachable))
+		Err(TrapKind::Unreachable.into())
 	}
 }
 
