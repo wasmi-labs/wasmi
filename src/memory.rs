@@ -42,9 +42,11 @@ impl ::std::ops::Deref for MemoryRef {
 ///
 /// A memory is created with an initial size but can be grown dynamically.
 /// The growth can be limited by specifying maximum size.
-/// The size of a memory is always a integer multiple of a page size - 64KiB.
+/// The size of a memory is always a integer multiple of a [page size][`LINEAR_MEMORY_PAGE_SIZE`] - 64KiB.
 ///
 /// At the moment, wasm doesn't provide any way to shrink the memory.
+///
+/// [`LINEAR_MEMORY_PAGE_SIZE`]: constant.LINEAR_MEMORY_PAGE_SIZE.html
 pub struct MemoryInstance {
 	/// Memofy limits.
 	limits: ResizableLimits,
@@ -92,7 +94,7 @@ impl MemoryInstance {
 	///
 	/// The memory allocated with initial number of pages specified by `initial_pages`.
 	/// Minimal possible value for `initial_pages` is 0 and maximum possible is `65536`.
-	/// (Since maximum addressible memory is 4GiB = 65536 * 64KiB).
+	/// (Since maximum addressible memory is 2<sup>32</sup> = 4GiB = 65536 * [64KiB][`LINEAR_MEMORY_PAGE_SIZE`]).
 	///
 	/// It is possible to limit maximum number of pages this memory instance can have by specifying
 	/// `maximum_page`. If not specified, this memory instance would be able to allocate up to 4GiB.
@@ -101,7 +103,12 @@ impl MemoryInstance {
 	///
 	/// # Errors
 	///
-	/// Returns `Err` if `initial_pages` is greater than `maximum_pages`.
+	/// Returns `Err` if:
+	///
+	/// - `initial_pages` is greater than `maximum_pages`
+	/// - either `initial_pages` or `maximum_pages` is greater than `65536`.
+	///
+	/// [`LINEAR_MEMORY_PAGE_SIZE`]: constant.LINEAR_MEMORY_PAGE_SIZE.html
 	pub fn alloc(initial_pages: u32, maximum_pages: Option<u32>) -> Result<MemoryRef, Error> {
 		let memory = MemoryInstance::new(ResizableLimits::new(initial_pages, maximum_pages))?;
 		Ok(MemoryRef(Rc::new(memory)))
@@ -165,6 +172,10 @@ impl MemoryInstance {
 	}
 
 	/// Copy data from given offset in the memory into `target` slice.
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if the specified region is out of bounds.
 	pub fn get_into(&self, offset: u32, target: &mut [u8]) -> Result<(), Error> {
 		let buffer = self.buffer.borrow();
 		let region = self.checked_region(&buffer, offset as usize, target.len())?;
@@ -189,7 +200,7 @@ impl MemoryInstance {
 	///
 	/// # Errors
 	///
-	/// Returns `Err` if tried to allocate more memory than permited by limit.
+	/// Returns `Err` if attempted to allocate more memory than permited by the limit.
 	pub fn grow(&self, pages: u32) -> Result<u32, Error> {
 		let mut buffer = self.buffer.borrow_mut();
 		let old_size = buffer.len() as u32;
@@ -225,7 +236,13 @@ impl MemoryInstance {
 		})
 	}
 
-	/// Copy memory region. Semantically equivalent to `memmove`.
+	/// Copy contents of one memory region to another.
+	///
+	/// Semantically equivalent to `memmove`.
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if either of specified regions is out of bounds.
 	pub fn copy(&self, src_offset: usize, dst_offset: usize, len: usize) -> Result<(), Error> {
 		let buffer = self.buffer.borrow_mut();
 
@@ -241,8 +258,17 @@ impl MemoryInstance {
 		Ok(())
 	}
 
-	/// Copy memory region, non-overlapping version. Semantically equivalent to `memcpy`,
+	/// Copy contents of one memory region to another (non-overlapping version).
+	///
+	/// Semantically equivalent to `memcpy`.
 	/// but returns Error if source overlaping with destination.
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if:
+	///
+	/// - either of specified regions is out of bounds,
+	/// - these regions overlaps.
 	pub fn copy_nonoverlapping(&self, src_offset: usize, dst_offset: usize, len: usize) -> Result<(), Error> {
 		let buffer = self.buffer.borrow_mut();
 
@@ -262,7 +288,13 @@ impl MemoryInstance {
 		Ok(())
 	}
 
-	/// Clear memory region with a specified value. Semantically equivalent to `memset`.
+	/// Fill memory region with a specified value.
+	///
+	/// Semantically equivalent to `memset`.
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if the specified region is out of bounds.
 	pub fn clear(&self, offset: usize, new_val: u8, len: usize) -> Result<(), Error> {
 		let mut buffer = self.buffer.borrow_mut();
 
@@ -271,7 +303,11 @@ impl MemoryInstance {
 		Ok(())
 	}
 
-	/// Zero memory region
+	/// Fill specified memory region with zeroes.
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if the specified region is out of bounds.
 	pub fn zero(&self, offset: usize, len: usize) -> Result<(), Error> {
 		self.clear(offset, 0, len)
 	}

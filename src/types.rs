@@ -50,12 +50,9 @@ impl Signature {
 
 /// Type of a value.
 ///
-/// Wasm code manipulate values of the four basic value types:
-/// integers and floating-point (IEEE 754-2008) data of 32 or 64 bit width each, respectively.
+/// See [`RuntimeValue`] for details.
 ///
-/// There is no distinction between signed and unsigned integer types. Instead, integers are
-/// interpreted by respective operations as either unsigned or signed in two’s complement representation.
-///
+/// [`RuntimeValue`]: enum.RuntimeValue.html
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ValueType {
 	/// 32-bit signed or unsigned integer.
@@ -108,6 +105,8 @@ impl GlobalDescriptor {
 	}
 
 	/// Returns [`ValueType`] of the requested global.
+	///
+	/// [`ValueType`]: enum.ValueType.html
 	pub fn value_type(&self) -> ValueType {
 		self.value_type
 	}
