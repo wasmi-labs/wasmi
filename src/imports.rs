@@ -127,6 +127,8 @@ impl<'a> ImportsBuilder<'a> {
 	}
 
 	/// Register an resolver by a name.
+	///
+	/// Mutable borrowed version.
 	pub fn push_resolver<N: Into<String>>(&mut self, name: N, resolver: &'a ModuleImportResolver) {
 		self.modules.insert(name.into(), resolver);
 	}

@@ -19,6 +19,14 @@ use types::{GlobalDescriptor, TableDescriptor, MemoryDescriptor};
 ///
 /// This reference has a reference-counting semantics.
 ///
+/// All [`ModuleInstance`] have strong references to it's components (i.e.
+/// globals, memories, funcs, tables), however, this components have
+/// weak references to it's containing module. This might be a problem
+/// at execution time.
+///
+/// So if have to make sure that all modules which might be needed at execution time
+/// should be retained.
+///
 /// [`ModuleInstance`]: struct.ModuleInstance.html
 #[derive(Clone, Debug)]
 pub struct ModuleRef(pub(crate) Rc<ModuleInstance>);

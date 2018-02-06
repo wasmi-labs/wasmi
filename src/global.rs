@@ -27,8 +27,10 @@ impl ::std::ops::Deref for GlobalRef {
 /// after creation.
 ///
 /// Attempt to change value of immutable global or to change type of
-/// the value (e.g. assign I32 value to a global that was created with I64 type) will lead to an error.
+/// the value (e.g. assign [`I32`] value to a global that was created with [`I64`] type) will lead to an error.
 ///
+/// [`I32`]: enum.RuntimeValue.html#variant.I32
+/// [`I64`]: enum.RuntimeValue.html#variant.I64
 #[derive(Debug)]
 pub struct GlobalInstance {
 	val: Cell<RuntimeValue>,
@@ -71,7 +73,7 @@ impl GlobalInstance {
 
 	/// Returns if this global variable is mutable.
 	///
-	/// Imported and/or exported globals are always immutable.
+	/// Note: Imported and/or exported globals are always immutable.
 	pub fn is_mutable(&self) -> bool {
 		self.mutable
 	}
