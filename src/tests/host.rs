@@ -1,7 +1,7 @@
 use {
 	Error, Signature, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
 	MemoryInstance, MemoryRef, TableInstance, TableRef, ModuleImportResolver, ModuleInstance, ModuleRef,
-	RuntimeValue, RuntimeArgs, TableDescriptor, MemoryDescriptor, Trap,
+	RuntimeValue, RuntimeArgs, TableDescriptor, MemoryDescriptor, Trap, TrapKind,
 };
 use types::ValueType;
 use super::parse_wat;
@@ -92,7 +92,7 @@ impl Externals for TestHost {
 			ERR_FUNC_INDEX => {
 				let error_code: u32 = args.nth(0);
 				let error = HostErrorWithCode { error_code };
-				Err(Trap::Host(Box::new(error)))
+				Err(TrapKind::Host(Box::new(error)).into())
 			}
 			INC_MEM_FUNC_INDEX => {
 				let ptr: u32 = args.nth(0);
@@ -131,7 +131,7 @@ impl Externals for TestHost {
 					.expect("expected to be Some");
 
 				if val.value_type() != result.value_type() {
-					return Err(Trap::Host(Box::new(HostErrorWithCode { error_code: 123 })));
+					return Err(TrapKind::Host(Box::new(HostErrorWithCode { error_code: 123 })).into());
 				}
 				Ok(Some(result))
 			}
@@ -257,12 +257,7 @@ fn host_err() {
 		"`test` expected to return error",
 	);
 
-	let host_error: Box<HostError> = match error {
-		Error::Trap(Trap::Host(err)) => err,
-		err => panic!("Unexpected error {:?}", err),
-	};
-
-	let error_with_code = host_error.downcast_ref::<HostErrorWithCode>().expect(
+	let error_with_code = error.as_host_error().expect("Expected host error").downcast_ref::<HostErrorWithCode>().expect(
 		"Failed to downcast to expected error type",
 	);
 	assert_eq!(error_with_code.error_code, 228);
@@ -657,7 +652,7 @@ fn dynamically_add_host_func() {
 						host_func_index as usize,
 					);
 					self.table.set(table_index, Some(added_func))
-						.map_err(|_| Trap::TableAccessOutOfBounds)?;
+						.map_err(|_| TrapKind::TableAccessOutOfBounds)?;
 
 					Ok(Some(RuntimeValue::I32(table_index as i32)))
 				}

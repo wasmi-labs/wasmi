@@ -1,9 +1,16 @@
 use std::{i32, i64, u32, u64, f32};
 use std::io;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use {Error, Trap};
 use parity_wasm::elements::ValueType;
+use TrapKind;
 
+#[derive(Debug)]
+pub enum Error {
+	UnexpectedType {
+		expected: ValueType,
+	},
+	InvalidLittleEndianBuffer,
+}
 
 /// Runtime value.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -65,7 +72,7 @@ pub trait ArithmeticOps<T> {
 	/// Multiply two values.
 	fn mul(self, other: T) -> T;
 	/// Divide two values.
-	fn div(self, other: T) -> Result<T, Trap>;
+	fn div(self, other: T) -> Result<T, TrapKind>;
 }
 
 /// Integer value.
@@ -81,7 +88,7 @@ pub trait Integer<T>: ArithmeticOps<T> {
 	/// Get right bit rotation result.
 	fn rotr(self, other: T) -> T;
 	/// Get division remainder.
-	fn rem(self, other: T) -> Result<T, Trap>;
+	fn rem(self, other: T) -> Result<T, TrapKind>;
 }
 
 /// Float-point value.
@@ -180,7 +187,7 @@ impl TryInto<bool, Error> for RuntimeValue {
 	fn try_into(self) -> Result<bool, Error> {
 		match self {
 			RuntimeValue::I32(val) => Ok(val != 0),
-			_ => Err(Error::Value("32-bit int value expected".to_owned())),
+			_ => Err(Error::UnexpectedType { expected: ValueType::I32 }),
 		}
 	}
 }
@@ -189,7 +196,7 @@ impl TryInto<i32, Error> for RuntimeValue {
 	fn try_into(self) -> Result<i32, Error> {
 		match self {
 			RuntimeValue::I32(val) => Ok(val),
-			_ => Err(Error::Value("32-bit int value expected".to_owned())),
+			_ => Err(Error::UnexpectedType { expected: ValueType::I32 }),
 		}
 	}
 }
@@ -198,7 +205,7 @@ impl TryInto<i64, Error> for RuntimeValue {
 	fn try_into(self) -> Result<i64, Error> {
 		match self {
 			RuntimeValue::I64(val) => Ok(val),
-			_ => Err(Error::Value("64-bit int value expected".to_owned())),
+			_ => Err(Error::UnexpectedType { expected: ValueType::I64 }),
 		}
 	}
 }
@@ -207,7 +214,7 @@ impl TryInto<f32, Error> for RuntimeValue {
 	fn try_into(self) -> Result<f32, Error> {
 		match self {
 			RuntimeValue::F32(val) => Ok(val),
-			_ => Err(Error::Value("32-bit float value expected".to_owned())),
+			_ => Err(Error::UnexpectedType { expected: ValueType::F32 }),
 		}
 	}
 }
@@ -216,7 +223,7 @@ impl TryInto<f64, Error> for RuntimeValue {
 	fn try_into(self) -> Result<f64, Error> {
 		match self {
 			RuntimeValue::F64(val) => Ok(val),
-			_ => Err(Error::Value("64-bit float value expected".to_owned())),
+			_ => Err(Error::UnexpectedType { expected: ValueType::F64 }),
 		}
 	}
 }
@@ -225,7 +232,7 @@ impl TryInto<u32, Error> for RuntimeValue {
 	fn try_into(self) -> Result<u32, Error> {
 		match self {
 			RuntimeValue::I32(val) => Ok(val as u32),
-			_ => Err(Error::Value("32-bit int value expected".to_owned())),
+			_ => Err(Error::UnexpectedType { expected: ValueType::I32 }),
 		}
 	}
 }
@@ -234,7 +241,7 @@ impl TryInto<u64, Error> for RuntimeValue {
 	fn try_into(self) -> Result<u64, Error> {
 		match self {
 			RuntimeValue::I64(val) => Ok(val as u64),
-			_ => Err(Error::Value("64-bit int value expected".to_owned())),
+			_ => Err(Error::UnexpectedType { expected: ValueType::I64 }),
 		}
 	}
 }
@@ -263,19 +270,19 @@ impl_wrap_into!(f64, f32);
 
 macro_rules! impl_try_truncate_into {
 	($from: ident, $into: ident) => {
-		impl TryTruncateInto<$into, Trap> for $from {
-			fn try_truncate_into(self) -> Result<$into, Trap> {
+		impl TryTruncateInto<$into, TrapKind> for $from {
+			fn try_truncate_into(self) -> Result<$into, TrapKind> {
 				// Casting from a float to an integer will round the float towards zero
 				// NOTE: currently this will cause Undefined Behavior if the rounded value cannot be represented by the
 				// target integer type. This includes Inf and NaN. This is a bug and will be fixed.
 				if self.is_nan() || self.is_infinite() {
-					return Err(Trap::InvalidConversionToInt);
+					return Err(TrapKind::InvalidConversionToInt);
 				}
 
 				// range check
 				let result = self as $into;
 				if result as $from != self.trunc() {
-					return Err(Trap::InvalidConversionToInt);
+					return Err(TrapKind::InvalidConversionToInt);
 				}
 
 				Ok(self as $into)
@@ -379,7 +386,7 @@ impl LittleEndianConvert for i8 {
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		buffer.get(0)
 			.map(|v| *v as i8)
-			.ok_or_else(|| Error::Value("invalid little endian buffer".into()))
+			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -391,7 +398,7 @@ impl LittleEndianConvert for u8 {
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		buffer.get(0)
 			.cloned()
-			.ok_or_else(|| Error::Value("invalid little endian buffer".into()))
+			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -405,7 +412,7 @@ impl LittleEndianConvert for i16 {
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_i16::<LittleEndian>()
-			.map_err(|e| Error::Value(e.to_string()))
+			.map_err(|_| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -419,7 +426,7 @@ impl LittleEndianConvert for u16 {
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_u16::<LittleEndian>()
-			.map_err(|e| Error::Value(e.to_string()))
+			.map_err(|_| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -433,7 +440,7 @@ impl LittleEndianConvert for i32 {
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_i32::<LittleEndian>()
-			.map_err(|e| Error::Value(e.to_string()))
+			.map_err(|_| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -447,7 +454,7 @@ impl LittleEndianConvert for u32 {
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_u32::<LittleEndian>()
-			.map_err(|e| Error::Value(e.to_string()))
+			.map_err(|_| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -461,7 +468,7 @@ impl LittleEndianConvert for i64 {
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_i64::<LittleEndian>()
-			.map_err(|e| Error::Value(e.to_string()))
+			.map_err(|_| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -476,7 +483,7 @@ impl LittleEndianConvert for f32 {
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_u32::<LittleEndian>()
 			.map(f32_from_bits)
-			.map_err(|e| Error::Value(e.to_string()))
+			.map_err(|_| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -491,7 +498,7 @@ impl LittleEndianConvert for f64 {
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_u64::<LittleEndian>()
 			.map(f64_from_bits)
-			.map_err(|e| Error::Value(e.to_string()))
+			.map_err(|_| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -537,14 +544,14 @@ macro_rules! impl_integer_arithmetic_ops {
 			fn add(self, other: $type) -> $type { self.wrapping_add(other) }
 			fn sub(self, other: $type) -> $type { self.wrapping_sub(other) }
 			fn mul(self, other: $type) -> $type { self.wrapping_mul(other) }
-			fn div(self, other: $type) -> Result<$type, Trap> {
+			fn div(self, other: $type) -> Result<$type, TrapKind> {
 				if other == 0 {
-					Err(Trap::DivisionByZero)
+					Err(TrapKind::DivisionByZero)
 				}
 				else {
 					let (result, overflow) = self.overflowing_div(other);
 					if overflow {
-						Err(Trap::InvalidConversionToInt)
+						Err(TrapKind::InvalidConversionToInt)
 					} else {
 						Ok(result)
 					}
@@ -565,7 +572,7 @@ macro_rules! impl_float_arithmetic_ops {
 			fn add(self, other: $type) -> $type { self + other }
 			fn sub(self, other: $type) -> $type { self - other }
 			fn mul(self, other: $type) -> $type { self * other }
-			fn div(self, other: $type) -> Result<$type, Trap> { Ok(self / other) }
+			fn div(self, other: $type) -> Result<$type, TrapKind> { Ok(self / other) }
 		}
 	}
 }
@@ -581,8 +588,8 @@ macro_rules! impl_integer {
 			fn count_ones(self) -> $type { self.count_ones() as $type }
 			fn rotl(self, other: $type) -> $type { self.rotate_left(other as u32) }
 			fn rotr(self, other: $type) -> $type { self.rotate_right(other as u32) }
-			fn rem(self, other: $type) -> Result<$type, Trap> {
-				if other == 0 { Err(Trap::DivisionByZero) }
+			fn rem(self, other: $type) -> Result<$type, TrapKind> {
+				if other == 0 { Err(TrapKind::DivisionByZero) }
 				else { Ok(self.wrapping_rem(other)) }
 			}
 		}

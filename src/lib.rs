@@ -105,12 +105,34 @@ use std::fmt;
 use std::error;
 use std::collections::HashMap;
 
-/// Error type which can happen at execution time.
+/// Error type which can thrown by wasm code or by host environment.
 ///
 /// Under some conditions, wasm execution may produce a `Trap`, which immediately aborts execution.
 /// Traps can't be handled by WebAssembly code, but are reported to the embedder.
 #[derive(Debug)]
-pub enum Trap {
+pub struct Trap {
+	kind: TrapKind,
+}
+
+impl Trap {
+	/// Create new trap.
+	pub fn new(kind: TrapKind) -> Trap {
+		Trap { kind }
+	}
+
+	/// Returns kind of this trap.
+	pub fn kind(&self) -> &TrapKind {
+		&self.kind
+	}
+}
+
+/// Error type which can thrown by wasm code or by host environment.
+/// 
+/// See [`Trap`] for details.
+/// 
+/// [`Trap`]: struct.Trap.html
+#[derive(Debug)]
+pub enum TrapKind {
 	/// Wasm code executed `unreachable` opcode.
 	///
 	/// `unreachable` is a special opcode which always traps upon execution.
@@ -169,6 +191,12 @@ pub enum Trap {
 	/// Extensive inlining might also be the cause of stack overflow.
 	StackOverflow,
 
+	/// Unexpected signature provided.
+	///
+	/// This can happen if [`FuncInstance`] was invoked
+	/// with mismatching signature.
+	UnexpectedSignature,
+
 	/// Error specified by the host.
 	///
 	/// Typically returned from an implementation of [`Externals`].
@@ -193,14 +221,33 @@ pub enum Error {
 	Memory(String),
 	/// Global-level error.
 	Global(String),
-	/// Stack-level error.
-	Stack(String),
 	/// Value-level error.
 	Value(String),
 	/// Trap.
 	Trap(Trap),
 	/// Custom embedder error.
 	Host(Box<host::HostError>),
+}
+
+impl Error {
+	/// Returns [`HostError`] if this `Error` represents some host error.
+	/// 
+	/// I.e. if this error have variant [`Host`] or [`Trap`][`Trap`] with [host][`TrapKind::Host`] error.
+	/// 
+	/// [`HostError`]: trait.HostError.html
+	/// [`Host`]: enum.Error.html#variant.Host
+	/// [`Trap`]: enum.Error.html#variant.Trap
+	/// [`TrapKind::Host`]: enum.TrapKind.html#variant.Host
+	pub fn as_host_error(&self) -> Option<&host::HostError> {
+		match *self {
+			Error::Host(ref host_err) => Some(&**host_err),
+			Error::Trap(ref trap) => match *trap.kind() {
+				TrapKind::Host(ref host_err) => Some(&**host_err),
+				_ => None,
+			}
+			_ => None,
+		}
+	}
 }
 
 impl Into<String> for Error {
@@ -212,7 +259,6 @@ impl Into<String> for Error {
 			Error::Table(s) => s,
 			Error::Memory(s) => s,
 			Error::Global(s) => s,
-			Error::Stack(s) => s,
 			Error::Value(s) => s,
 			Error::Trap(s) => format!("trap: {:?}", s),
 			Error::Host(e) => format!("user: {}", e),
@@ -229,15 +275,12 @@ impl fmt::Display for Error {
 			Error::Table(ref s) => write!(f, "Table: {}", s),
 			Error::Memory(ref s) => write!(f, "Memory: {}", s),
 			Error::Global(ref s) => write!(f, "Global: {}", s),
-			Error::Stack(ref s) => write!(f, "Stack: {}", s),
 			Error::Value(ref s) => write!(f, "Value: {}", s),
 			Error::Trap(ref s) => write!(f, "Trap: {:?}", s),
 			Error::Host(ref e) => write!(f, "User: {}", e),
 		}
 	}
 }
-
-
 
 impl error::Error for Error {
 	fn description(&self) -> &str {
@@ -248,14 +291,12 @@ impl error::Error for Error {
 			Error::Table(ref s) => s,
 			Error::Memory(ref s) => s,
 			Error::Global(ref s) => s,
-			Error::Stack(ref s) => s,
 			Error::Value(ref s) => s,
 			Error::Trap(_) => "Trap",
 			Error::Host(_) => "Host error",
 		}
 	}
 }
-
 
 impl<U> From<U> for Error where U: host::HostError + Sized {
 	fn from(e: U) -> Self {
@@ -265,7 +306,7 @@ impl<U> From<U> for Error where U: host::HostError + Sized {
 
 impl<U> From<U> for Trap where U: host::HostError + Sized {
 	fn from(e: U) -> Self {
-		Trap::Host(Box::new(e))
+		Trap::new(TrapKind::Host(Box::new(e)))
 	}
 }
 
@@ -275,15 +316,15 @@ impl From<Trap> for Error {
 	}
 }
 
-impl From<validation::Error> for Error {
-	fn from(e: validation::Error) -> Error {
-		Error::Validation(e.to_string())
+impl From<TrapKind> for Trap {
+	fn from(e: TrapKind) -> Trap {
+		Trap::new(e)
 	}
 }
 
-impl From<::common::stack::Error> for Error {
-	fn from(e: ::common::stack::Error) -> Self {
-		Error::Stack(e.to_string())
+impl From<validation::Error> for Error {
+	fn from(e: validation::Error) -> Error {
+		Error::Validation(e.to_string())
 	}
 }
 

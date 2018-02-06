@@ -1,6 +1,6 @@
 use std::any::TypeId;
 use value::{RuntimeValue, TryInto};
-use {Error, Trap};
+use {TrapKind, Trap};
 
 /// Safe wrapper for list of arguments.
 #[derive(Debug)]
@@ -18,8 +18,8 @@ impl<'a> RuntimeArgs<'a> {
 	/// # Errors
 	///
 	/// Returns `Err` if cast is invalid or not enough arguments.
-	pub fn nth_checked<T>(&self, idx: usize) -> Result<T, Error> where RuntimeValue: TryInto<T, Error> {
-		Ok(self.nth_value_checked(idx)?.try_into().map_err(|_| Error::Value("Invalid argument cast".to_owned()))?)
+	pub fn nth_checked<T>(&self, idx: usize) -> Result<T, Trap> where RuntimeValue: TryInto<T, ::value::Error> {
+		Ok(self.nth_value_checked(idx)?.try_into().map_err(|_| TrapKind::UnexpectedSignature)?)
 	}
 
 	/// Extract argument as a [`RuntimeValue`] by index `idx`.
@@ -27,9 +27,9 @@ impl<'a> RuntimeArgs<'a> {
 	/// # Errors
 	///
 	/// Returns `Err` if this list has not enough arguments.
-	pub fn nth_value_checked(&self, idx: usize) -> Result<RuntimeValue, Error> {
+	pub fn nth_value_checked(&self, idx: usize) -> Result<RuntimeValue, Trap> {
 		if self.0.len() <= idx {
-			return Err(Error::Value("Invalid argument index".to_owned()));
+			return Err(TrapKind::UnexpectedSignature.into());
 		}
 		Ok(self.0[idx])
 	}
@@ -39,7 +39,7 @@ impl<'a> RuntimeArgs<'a> {
 	/// # Panics
 	///
 	/// Panics if cast is invalid or not enough arguments.
-	pub fn nth<T>(&self, idx: usize) -> T where RuntimeValue: TryInto<T, Error> {
+	pub fn nth<T>(&self, idx: usize) -> T where RuntimeValue: TryInto<T, ::value::Error> {
 		let value = self.nth_value_checked(idx).expect("Invalid argument index");
 		value.try_into().expect("Unexpected argument type")
 	}
@@ -139,8 +139,8 @@ impl HostError {
 ///     ) -> Result<Option<RuntimeValue>, Trap> {
 ///         match index {
 ///             ADD_FUNC_INDEX => {
-///                 let a: u32 = args.nth(0);
-///                 let b: u32 = args.nth(1);
+///                 let a: u32 = args.nth_checked(0)?;
+///                 let b: u32 = args.nth_checked(1)?;
 ///                 let result = a + b;
 ///
 ///                 Ok(Some(RuntimeValue::I32(result as i32)))
@@ -207,7 +207,7 @@ impl Externals for NopExternals {
 		_index: usize,
 		_args: RuntimeArgs,
 	) -> Result<Option<RuntimeValue>, Trap> {
-		Err(Trap::Unreachable)
+		Err(TrapKind::Unreachable.into())
 	}
 }
 

@@ -2,7 +2,7 @@ use std::rc::{Rc, Weak};
 use std::fmt;
 use std::collections::HashMap;
 use parity_wasm::elements::{Local, Opcodes};
-use {Trap, Signature};
+use {Trap, TrapKind, Signature};
 use host::Externals;
 use runner::{check_function_args, Interpreter};
 use value::RuntimeValue;
@@ -75,7 +75,6 @@ impl fmt::Debug for FuncInstance {
 }
 
 impl FuncInstance {
-
 	/// Allocate a function instance for a host function.
 	///
 	/// When this function instance will be called by the wasm code,
@@ -128,20 +127,30 @@ impl FuncInstance {
 		}
 	}
 
-	pub(crate) fn invoke<E: Externals>(
+	/// Invoke this function.
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if `args` types is not match function [`signature`] or
+	/// if [`Trap`] at execution time occured.
+	///
+	/// [`signature`]: #method.signature
+	/// [`Trap`]: #enum.Trap.html
+	pub fn invoke<E: Externals>(
 		func: &FuncRef,
 		args: &[RuntimeValue],
 		externals: &mut E,
 	) -> Result<Option<RuntimeValue>, Trap> {
-		debug_assert!(check_function_args(func.signature(), &args).is_ok());
+		check_function_args(func.signature(), &args).map_err(|_| TrapKind::UnexpectedSignature)?;
 		match *func.as_internal() {
 			FuncInstanceInternal::Internal { .. } => {
 				let mut interpreter = Interpreter::new(externals);
 				interpreter.start_execution(func, args)
 			}
-			FuncInstanceInternal::Host { ref host_func_index, .. } => {
-				externals.invoke_index(*host_func_index, args.into())
-			}
+			FuncInstanceInternal::Host {
+				ref host_func_index,
+				..
+			} => externals.invoke_index(*host_func_index, args.into()),
 		}
 	}
 }
