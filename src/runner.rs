@@ -1203,7 +1203,6 @@ fn prepare_function_args(
 	let mut args = signature
 		.params()
 		.iter()
-		.cloned()
 		.map(|_| caller_stack.pop())
 		.collect::<Vec<RuntimeValue>>();
 	args.reverse();
