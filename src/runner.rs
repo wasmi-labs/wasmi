@@ -1153,6 +1153,7 @@ impl FunctionContext {
 			branch_position: branch_position,
 			end_position: end_position,
 			value_stack_len: self.value_stack.len(),
+			polymorphic_stack: false,
 		}).map_err(|_| TrapKind::StackOverflow)?;
 
 		Ok(())
