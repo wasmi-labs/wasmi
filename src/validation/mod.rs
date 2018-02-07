@@ -163,7 +163,7 @@ pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
 
 	// validate export section
 	if let Some(export_section) = module.export_section() {
-		let mut export_names = HashSet::new();
+		let mut export_names = HashSet::with_capacity(export_section.entries().len());
 		for export in export_section.entries() {
 			// HashSet::insert returns false if item already in set.
 			let duplicate = export_names.insert(export.field()) == false;
