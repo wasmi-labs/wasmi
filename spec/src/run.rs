@@ -361,13 +361,12 @@ pub fn run_wast2wasm(name: &str) -> FixtureParams {
 
     let mut wast2wasm_path = PathBuf::from(outdir.clone());
     wast2wasm_path.push("bin");
-    wast2wasm_path.push("wast2wasm");
+    wast2wasm_path.push("wast2json");
 
     let mut json_spec_path = PathBuf::from(outdir.clone());
     json_spec_path.push(&format!("{}.json", name));
 
     let wast2wasm_output = Command::new(wast2wasm_path)
-        .arg("--spec")
         .arg("-o")
         .arg(&json_spec_path)
         .arg(&format!("./wabt/third_party/testsuite/{}.wast", name))
@@ -378,13 +377,13 @@ pub fn run_wast2wasm(name: &str) -> FixtureParams {
         json: json_spec_path.to_str().unwrap().to_owned(),
         failing: {
             if !wast2wasm_output.status.success() {
-                println!("wasm2wast error code: {}", wast2wasm_output.status);
+                println!("wast2json error code: {}", wast2wasm_output.status);
                 println!(
-                    "wasm2wast stdout: {}",
+                    "wast2json stdout: {}",
                     String::from_utf8_lossy(&wast2wasm_output.stdout)
                 );
                 println!(
-                    "wasm2wast stderr: {}",
+                    "wast2json stderr: {}",
                     String::from_utf8_lossy(&wast2wasm_output.stderr)
                 );
                 true
@@ -395,20 +394,23 @@ pub fn run_wast2wasm(name: &str) -> FixtureParams {
     }
 }
 
-pub fn failing_spec(name: &str) {
-    let fixture = run_wast2wasm(name);
-    if !fixture.failing {
-        panic!("wasm2wast expected to fail, but terminated normally");
-    }
-}
-
 pub fn spec(name: &str) {
     let tmpdir = env::var("OUT_DIR").unwrap();
 
     let fixture = run_wast2wasm(name);
-    if fixture.failing {
-        panic!("wasm2wast terminated abnormally, expected to success");
-    }
+
+	let wast2wasm_fail_expected = name.ends_with(".fail");
+	if wast2wasm_fail_expected {
+		if !fixture.failing {
+			panic!("wast2json expected to fail, but terminated normally");
+		}
+		// Failing fixture, bail out.
+		return;
+	}
+
+	if fixture.failing {
+		panic!("wast2json terminated abnormally, expected to success");
+	}
 
     let mut f =
         File::open(&fixture.json).expect(&format!("Failed to load json file {}", &fixture.json));
