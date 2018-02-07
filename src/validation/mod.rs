@@ -1,6 +1,6 @@
 use std::error;
 use std::fmt;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use parity_wasm::elements::{
 	BlockType, External, GlobalEntry, GlobalType, Internal, MemoryType, Module, Opcode,
 	ResizableLimits, TableType, ValueType, InitExpr, Type
@@ -163,7 +163,15 @@ pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
 
 	// validate export section
 	if let Some(export_section) = module.export_section() {
+		let mut export_names = HashSet::new();
 		for export in export_section.entries() {
+			// HashSet::insert returns false if item already in set.
+			let duplicate = export_names.insert(export.field()) == false;
+			if duplicate {
+				return Err(Error(
+					format!("duplicate export {}", export.field()),
+				));
+			}
 			match *export.internal() {
 				Internal::Function(function_index) => {
 					context.require_function(function_index)?;
