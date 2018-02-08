@@ -11,7 +11,7 @@ exclude = [ "res/*", "spec/*" ]
 [dependencies]
 parity-wasm = "0.23"
 byteorder = "1.0"
-memory_units = "0.2"
+memory_units = { git = "https://github.com/pepyakin/memory_units.git", rev = "e09093e" }
 
 [dev-dependencies]
 wabt = "0.1.2"
