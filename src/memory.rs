@@ -6,14 +6,14 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use parity_wasm::elements::ResizableLimits;
 use Error;
-use memory_units::{RoundUpTo, Pages, Bytes};
+use memory_units::{RoundUpTo, Pages, Bytes, ByteSize};
 
 /// Size of a page of [linear memory][`MemoryInstance`] - 64KiB.
 ///
 /// The size of a memory is always a integer multiple of a page size.
 ///
 /// [`MemoryInstance`]: struct.MemoryInstance.html
-pub const LINEAR_MEMORY_PAGE_SIZE: Bytes = Bytes(65536);
+pub const LINEAR_MEMORY_PAGE_SIZE: Bytes = Pages::BYTE_SIZE;
 
 /// Maximal number of pages.
 const LINEAR_MEMORY_MAX_PAGES: Pages = Pages(65536);
@@ -343,10 +343,9 @@ pub fn validate_memory(initial: Pages, maximum: Option<Pages>) -> Result<(), Str
 #[cfg(test)]
 mod tests {
 
-	use super::{MemoryInstance, LINEAR_MEMORY_MAX_PAGES};
+	use super::{MemoryInstance, LINEAR_MEMORY_PAGE_SIZE};
 	use Error;
-	use parity_wasm::elements::ResizableLimits;
-	use memory_units::Pages;
+	use memory_units::{Pages, Bytes};
 
 	#[test]
 	fn alloc() {
@@ -377,6 +376,11 @@ mod tests {
 				);
 			}
 		}
+	}
+
+	#[test]
+	fn ensure_page_size() {
+		assert_eq!(LINEAR_MEMORY_PAGE_SIZE, Bytes(65536));
 	}
 
 	fn create_memory(initial_content: &[u8]) -> MemoryInstance {
