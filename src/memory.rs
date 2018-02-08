@@ -120,16 +120,14 @@ impl MemoryInstance {
 	/// Create new linear memory instance.
 	fn new(initial: Pages, maximum: Option<Pages>) -> Self {
 		let limits = ResizableLimits::new(initial.0 as u32, maximum.map(|p| p.0 as u32));
-		let memory = MemoryInstance {
+
+		let initial_size: Bytes = initial.into();
+		MemoryInstance {
 			limits: limits,
-			buffer: RefCell::new(vec![]),
+			buffer: RefCell::new(vec![0; initial_size.0]),
 			initial: initial,
 			maximum: maximum,
-		};
-
-		memory.grow(initial).expect("Initial grow should always succeed");
-
-		memory
+		}
 	}
 
 	/// Return linear memory limits.
