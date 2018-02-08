@@ -93,12 +93,12 @@ impl<'a, B: 'a> CheckedRegion<'a, B> where B: ::std::ops::Deref<Target=Vec<u8>> 
 impl MemoryInstance {
 	/// Allocate a memory instance.
 	///
-	/// The memory allocated with initial number of pages specified by `initial_pages`.
-	/// Minimal possible value for `initial_pages` is 0 and maximum possible is `65536`.
+	/// The memory allocated with initial number of pages specified by `initial`.
+	/// Minimal possible value for `initial` is 0 and maximum possible is `65536`.
 	/// (Since maximum addressible memory is 2<sup>32</sup> = 4GiB = 65536 * [64KiB][`LINEAR_MEMORY_PAGE_SIZE`]).
 	///
 	/// It is possible to limit maximum number of pages this memory instance can have by specifying
-	/// `maximum_page`. If not specified, this memory instance would be able to allocate up to 4GiB.
+	/// `maximum`. If not specified, this memory instance would be able to allocate up to 4GiB.
 	///
 	/// Allocated memory is always zeroed.
 	///
@@ -106,8 +106,8 @@ impl MemoryInstance {
 	///
 	/// Returns `Err` if:
 	///
-	/// - `initial_pages` is greater than `maximum_pages`
-	/// - either `initial_pages` or `maximum_pages` is greater than `65536`.
+	/// - `initial` is greater than `maximum`
+	/// - either `initial` or `maximum` is greater than `65536`.
 	///
 	/// [`LINEAR_MEMORY_PAGE_SIZE`]: constant.LINEAR_MEMORY_PAGE_SIZE.html
 	pub fn alloc(initial: Pages, maximum: Option<Pages>) -> Result<MemoryRef, Error> {
@@ -151,11 +151,32 @@ impl MemoryInstance {
 	/// Returns current linear memory size.
 	///
 	/// Maximum memory size cannot exceed `65536` pages or 4GiB.
+	///
+	/// # Example
+	///
+	/// To convert number of pages to number of bytes you can use the following code:
+	///
+	/// ```rust
+	/// use wasmi::MemoryInstance;
+	/// use wasmi::memory_units::*;
+	///
+	/// let memory = MemoryInstance::alloc(Pages(1), None).unwrap();
+	/// let byte_size: Bytes = memory.current_size().into();
+	/// assert_eq!(
+	///     byte_size,
+	///     Bytes(65536),
+	/// );
+	/// ```
 	pub fn current_size(&self) -> Pages {
 		Bytes(self.buffer.borrow().len()).round_up_to()
 	}
 
 	/// Copy data from memory at given offset.
+	///
+	/// This will allocate vector for you.
+	/// If you can provide a mutable slice you can use [`get_into`].
+	///
+	/// [`get_into`]: #method.get_into
 	pub fn get(&self, offset: u32, size: usize) -> Result<Vec<u8>, Error> {
 		let buffer = self.buffer.borrow();
 		let region = self.checked_region(&buffer, offset as usize, size)?;
@@ -188,7 +209,7 @@ impl MemoryInstance {
 	}
 
 	/// Increases the size of the linear memory by given number of pages.
-	/// Returns previous memory size (in pages) if succeeds.
+	/// Returns previous memory size if succeeds.
 	///
 	/// # Errors
 	///
