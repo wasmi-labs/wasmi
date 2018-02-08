@@ -3,6 +3,7 @@ use {
     MemoryRef, ModuleImportResolver, ModuleInstance, NopExternals, RuntimeValue,
     TableInstance, TableRef, Module, GlobalDescriptor, TableDescriptor, MemoryDescriptor,
 };
+use memory_units::Pages;
 use std::fs::File;
 
 struct Env {
@@ -17,7 +18,7 @@ impl Env {
 		Env {
 			table_base: GlobalInstance::alloc(RuntimeValue::I32(0), false),
 			memory_base: GlobalInstance::alloc(RuntimeValue::I32(0), false),
-			memory: MemoryInstance::alloc(256, None).unwrap(),
+			memory: MemoryInstance::alloc(Pages(256), None).unwrap(),
 			table: TableInstance::alloc(64, None).unwrap(),
 		}
 	}

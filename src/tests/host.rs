@@ -4,6 +4,7 @@ use {
 	RuntimeValue, RuntimeArgs, TableDescriptor, MemoryDescriptor, Trap, TrapKind,
 };
 use types::ValueType;
+use memory_units::Pages;
 use super::parse_wat;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -36,7 +37,7 @@ struct TestHost {
 impl TestHost {
 	fn new() -> TestHost {
 		TestHost {
-			memory: Some(MemoryInstance::alloc(1, Some(1)).unwrap()),
+			memory: Some(MemoryInstance::alloc(Pages(1), Some(Pages(1))).unwrap()),
 			instance: None,
 		}
 	}
@@ -483,7 +484,7 @@ fn defer_providing_externals() {
 	// Create HostImportResolver with some initialized memory instance.
 	// This memory instance will be provided as 'mem' export.
 	let host_import_resolver =
-		HostImportResolver { mem: MemoryInstance::alloc(1, Some(1)).unwrap() };
+		HostImportResolver { mem: MemoryInstance::alloc(Pages(1), Some(Pages(1))).unwrap() };
 
 	// Instantiate module with `host_import_resolver` as import resolver for "host" module.
 	let instance = ModuleInstance::new(

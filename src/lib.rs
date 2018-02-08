@@ -100,6 +100,7 @@
 extern crate wabt;
 extern crate parity_wasm;
 extern crate byteorder;
+extern crate memory_units as memory_units_crate;
 
 use std::fmt;
 use std::error;
@@ -127,9 +128,9 @@ impl Trap {
 }
 
 /// Error type which can thrown by wasm code or by host environment.
-/// 
+///
 /// See [`Trap`] for details.
-/// 
+///
 /// [`Trap`]: struct.Trap.html
 #[derive(Debug)]
 pub enum TrapKind {
@@ -231,9 +232,9 @@ pub enum Error {
 
 impl Error {
 	/// Returns [`HostError`] if this `Error` represents some host error.
-	/// 
+	///
 	/// I.e. if this error have variant [`Host`] or [`Trap`][`Trap`] with [host][`TrapKind::Host`] error.
-	/// 
+	///
 	/// [`HostError`]: trait.HostError.html
 	/// [`Host`]: enum.Error.html#variant.Host
 	/// [`Trap`]: enum.Error.html#variant.Trap
@@ -353,6 +354,12 @@ pub use self::module::{ModuleInstance, ModuleRef, ExternVal, NotStartedModuleRef
 pub use self::global::{GlobalInstance, GlobalRef};
 pub use self::func::{FuncInstance, FuncRef};
 pub use self::types::{Signature, ValueType, GlobalDescriptor, TableDescriptor, MemoryDescriptor};
+
+/// WebAssembly-specific sizes and units.
+pub mod memory_units {
+	pub use memory_units_crate::wasm32::*;
+	pub use memory_units_crate::{Bytes, ByteSize, RoundUpTo, size_of};
+}
 
 /// Deserialized module prepared for instantiation.
 pub struct Module {

@@ -16,6 +16,7 @@ use wasmi::{
     Module, Signature, MemoryDescriptor, Trap,
     TableDescriptor, GlobalDescriptor, FuncInstance, RuntimeArgs,
 };
+use wasmi::memory_units::Pages;
 
 #[derive(Debug)]
 enum Error {
@@ -43,7 +44,7 @@ impl SpecModule {
     fn new() -> Self {
         SpecModule {
             table: TableInstance::alloc(10, Some(20)).unwrap(),
-            memory: MemoryInstance::alloc(1, Some(2)).unwrap(),
+            memory: MemoryInstance::alloc(Pages(1), Some(Pages(2))).unwrap(),
             global_i32: GlobalInstance::alloc(RuntimeValue::I32(666), false),
             global_i64: GlobalInstance::alloc(RuntimeValue::I64(666), false),
             global_f32: GlobalInstance::alloc(RuntimeValue::F32(666.0), false),

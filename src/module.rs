@@ -14,6 +14,7 @@ use memory::MemoryRef;
 use host::Externals;
 use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use types::{GlobalDescriptor, TableDescriptor, MemoryDescriptor};
+use memory_units::Pages;
 
 /// Reference to a [`ModuleInstance`].
 ///
@@ -325,10 +326,11 @@ impl ModuleInstance {
 			&[],
 		)
 		{
-			let memory = MemoryInstance::alloc(
-				memory_type.limits().initial(),
-				memory_type.limits().maximum()
-			)?;
+			let initial: Pages = Pages(memory_type.limits().initial() as usize);
+			let maximum: Option<Pages> = memory_type.limits().maximum().map(|m| Pages(m as usize));
+
+			let memory = MemoryInstance::alloc(initial, maximum)
+				.expect("Due to validation `initial` and `maximum` should be valid");
 			instance.push_memory(memory);
 		}
 
