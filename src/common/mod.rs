@@ -26,6 +26,10 @@ pub struct BlockFrame {
 	pub end_position: usize,
 	/// A limit integer value, which is an index into the value stack indicating where to reset it to on a branch to that label.
 	pub value_stack_len: usize,
+	/// Boolean which signals whether value stack became polymorphic. Value stack starts in non-polymorphic state and
+	/// becomes polymorphic only after an instruction that never passes control further is executed,
+	/// i.e. `unreachable`, `br` (but not `br_if`!), etc.
+	pub polymorphic_stack: bool,
 }
 
 /// Type of block frame.

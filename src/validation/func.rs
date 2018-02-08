@@ -41,8 +41,6 @@ struct FunctionValidationContext<'a> {
 enum StackValueType {
 	/// Any value type.
 	Any,
-	/// Any number of any values of any type.
-	AnyUnlimited,
 	/// Concrete value type.
 	Specific(ValueType),
 }
@@ -347,13 +345,13 @@ impl Validator {
 	}
 
 	fn validate_drop(context: &mut FunctionValidationContext) -> Result<InstructionOutcome, Error> {
-		context.pop_any_value().map(|_| ())?;
+		context.pop_value(StackValueType::Any).map(|_| ())?;
 		Ok(InstructionOutcome::ValidateNextInstruction)
 	}
 
 	fn validate_select(context: &mut FunctionValidationContext) -> Result<InstructionOutcome, Error> {
 		context.pop_value(ValueType::I32.into())?;
-		let select_type = context.pop_any_value()?;
+		let select_type = context.pop_value(StackValueType::Any)?;
 		context.pop_value(select_type)?;
 		context.push_value(select_type)?;
 		Ok(InstructionOutcome::ValidateNextInstruction)
@@ -367,7 +365,7 @@ impl Validator {
 
 	fn validate_set_local(context: &mut FunctionValidationContext, index: u32) -> Result<InstructionOutcome, Error> {
 		let local_type = context.require_local(index)?;
-		let value_type = context.pop_any_value()?;
+		let value_type = context.pop_value(StackValueType::Any)?;
 		if local_type != value_type {
 			return Err(Error(format!("Trying to update local {} of type {:?} with value of type {:?}", index, local_type, value_type)));
 		}
@@ -376,7 +374,7 @@ impl Validator {
 
 	fn validate_tee_local(context: &mut FunctionValidationContext, index: u32) -> Result<InstructionOutcome, Error> {
 		let local_type = context.require_local(index)?;
-		let value_type = context.tee_any_value()?;
+		let value_type = context.tee_value(StackValueType::Any)?;
 		if local_type != value_type {
 			return Err(Error(format!("Trying to update local {} of type {:?} with value of type {:?}", index, local_type, value_type)));
 		}
@@ -397,7 +395,7 @@ impl Validator {
 			let global = context.module.require_global(index, Some(true))?;
 			global.content_type().into()
 		};
-		let value_type = context.pop_any_value()?;
+		let value_type = context.pop_value(StackValueType::Any)?;
 		if global_type != value_type {
 			return Err(Error(format!("Trying to update global {} of type {:?} with value of type {:?}", index, global_type, value_type)));
 		}
@@ -610,47 +608,50 @@ impl<'a> FunctionValidationContext<'a> {
 		Ok(self.value_stack.push(value_type.into())?)
 	}
 
-	fn pop_value(&mut self, value_type: StackValueType) -> Result<(), Error> {
-		self.check_stack_access()?;
-		match self.value_stack.pop()? {
-			StackValueType::Specific(stack_value_type) if stack_value_type == value_type => Ok(()),
-			StackValueType::Any => Ok(()),
-			StackValueType::AnyUnlimited => {
-				self.value_stack.push(StackValueType::AnyUnlimited)?;
-				Ok(())
-			},
-			stack_value_type @ _ => Err(Error(format!("Expected value of type {:?} on top of stack. Got {:?}", value_type, stack_value_type))),
+	fn pop_value(&mut self, value_type: StackValueType) -> Result<StackValueType, Error> {
+		let (is_stack_polymorphic, label_value_stack_len) = {
+			let frame = self.top_label()?;
+			(frame.polymorphic_stack, frame.value_stack_len)
+		};
+		let stack_is_empty = self.value_stack.len() == label_value_stack_len;
+		let actual_value = if stack_is_empty && is_stack_polymorphic {
+			StackValueType::Any
+		} else {
+			self.check_stack_access()?;
+			self.value_stack.pop()?
+		};
+		match actual_value {
+			StackValueType::Specific(stack_value_type) if stack_value_type == value_type => {
+				Ok(actual_value)
+			}
+			StackValueType::Any => Ok(actual_value),
+			stack_value_type @ _ => Err(Error(format!(
+				"Expected value of type {:?} on top of stack. Got {:?}",
+				value_type, stack_value_type
+			))),
 		}
 	}
 
-	fn tee_value(&mut self, value_type: StackValueType) -> Result<(), Error> {
-		self.check_stack_access()?;
-		match *self.value_stack.top()? {
-			StackValueType::Specific(stack_value_type) if stack_value_type == value_type => Ok(()),
-			StackValueType::Any | StackValueType::AnyUnlimited => Ok(()),
-			stack_value_type @ _ => Err(Error(format!("Expected value of type {:?} on top of stack. Got {:?}", value_type, stack_value_type))),
+	fn check_stack_access(&self) -> Result<(), Error> {
+		let value_stack_min = self.frame_stack.top().expect("at least 1 topmost block").value_stack_len;
+		if self.value_stack.len() > value_stack_min {
+			Ok(())
+		} else {
+			Err(Error("Trying to access parent frame stack values.".into()))
 		}
 	}
 
-	fn pop_any_value(&mut self) -> Result<StackValueType, Error> {
-		self.check_stack_access()?;
-		match self.value_stack.pop()? {
-			StackValueType::Specific(stack_value_type) => Ok(StackValueType::Specific(stack_value_type)),
-			StackValueType::Any => Ok(StackValueType::Any),
-			StackValueType::AnyUnlimited => {
-				self.value_stack.push(StackValueType::AnyUnlimited)?;
-				Ok(StackValueType::Any)
-			},
-		}
-	}
-
-	fn tee_any_value(&mut self) -> Result<StackValueType, Error> {
-		self.check_stack_access()?;
-		Ok(self.value_stack.top().map(Clone::clone)?)
+	fn tee_value(&mut self, value_type: StackValueType) -> Result<StackValueType, Error> {
+		let value = self.pop_value(value_type)?;
+		self.push_value(value)?;
+		Ok(value)
 	}
 
 	fn unreachable(&mut self) -> Result<(), Error> {
-		Ok(self.value_stack.push(StackValueType::AnyUnlimited)?)
+		let frame = self.frame_stack.top_mut()?;
+		self.value_stack.resize(frame.value_stack_len, StackValueType::Any);
+		frame.polymorphic_stack = true;
+		Ok(())
 	}
 
 	fn top_label(&self) -> Result<&BlockFrame, Error> {
@@ -665,23 +666,31 @@ impl<'a> FunctionValidationContext<'a> {
 			branch_position: self.position,
 			end_position: self.position,
 			value_stack_len: self.value_stack.len(),
+			polymorphic_stack: false,
 		})?)
 	}
 
 	fn pop_label(&mut self) -> Result<InstructionOutcome, Error> {
-		let frame = self.frame_stack.pop()?;
-		let actual_value_type = if self.value_stack.len() > frame.value_stack_len {
-			Some(self.value_stack.pop()?)
-		} else {
-			None
-		};
-		self.value_stack.resize(frame.value_stack_len, StackValueType::Any);
-
-		match frame.block_type {
-			BlockType::NoResult if actual_value_type.map(|vt| vt.is_any_unlimited()).unwrap_or(true) => (),
-			BlockType::Value(required_value_type) if actual_value_type.map(|vt| vt == required_value_type).unwrap_or(false) => (),
-			_ => return Err(Error(format!("Expected block to return {:?} while it has returned {:?}", frame.block_type, actual_value_type))),
+		// Don't pop frame yet. This is essential since we still might pop values from the value stack
+		// and this in turn requires current frame to check whether or not we've reached
+		// unreachable.
+		let block_type = self.frame_stack.top()?.block_type;
+		match block_type {
+			BlockType::NoResult => (),
+			BlockType::Value(required_value_type) => {
+				self.pop_value(StackValueType::Specific(required_value_type))?;
+			}
 		}
+
+		let frame = self.frame_stack.pop()?;
+		if self.value_stack.len() != frame.value_stack_len {
+			return Err(Error(format!(
+				"Unexpected stack height {}, expected {}",
+				self.value_stack.len(),
+				frame.value_stack_len
+			)));
+		}
+
 		if !self.frame_stack.is_empty() {
 			self.labels.insert(frame.begin_position, self.position);
 		}
@@ -707,15 +716,6 @@ impl<'a> FunctionValidationContext<'a> {
 			.ok_or(Error(format!("Trying to access local with index {} when there are only {} locals", idx, self.locals.len())))
 	}
 
-	fn check_stack_access(&self) -> Result<(), Error> {
-		let value_stack_min = self.frame_stack.top().expect("at least 1 topmost block").value_stack_len;
-		if self.value_stack.len() > value_stack_min {
-			Ok(())
-		} else {
-			Err(Error("Trying to access parent frame stack values.".into()))
-		}
-	}
-
 	fn into_labels(self) -> HashMap<usize, usize> {
 		self.labels
 	}
@@ -729,16 +729,9 @@ impl StackValueType {
 		}
 	}
 
-	fn is_any_unlimited(&self) -> bool {
-		match self {
-			&StackValueType::AnyUnlimited => true,
-			_ => false,
-		}
-	}
-
 	fn value_type(&self) -> ValueType {
 		match self {
-			&StackValueType::Any | &StackValueType::AnyUnlimited => unreachable!("must be checked by caller"),
+			&StackValueType::Any => unreachable!("must be checked by caller"),
 			&StackValueType::Specific(value_type) => value_type,
 		}
 	}
@@ -752,7 +745,7 @@ impl From<ValueType> for StackValueType {
 
 impl PartialEq<StackValueType> for StackValueType {
 	fn eq(&self, other: &StackValueType) -> bool {
-		if self.is_any() || other.is_any() || self.is_any_unlimited() || other.is_any_unlimited() {
+		if self.is_any() || other.is_any() {
 			true
 		} else {
 			self.value_type() == other.value_type()
@@ -762,7 +755,7 @@ impl PartialEq<StackValueType> for StackValueType {
 
 impl PartialEq<ValueType> for StackValueType {
 	fn eq(&self, other: &ValueType) -> bool {
-		if self.is_any() || self.is_any_unlimited() {
+		if self.is_any() {
 			true
 		} else {
 			self.value_type() == *other

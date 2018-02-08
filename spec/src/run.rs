@@ -25,9 +25,9 @@ enum Error {
 }
 
 impl From<InterpreterError> for Error {
-	fn from(e: InterpreterError) -> Error {
-		Error::Interpreter(e)
-	}
+    fn from(e: InterpreterError) -> Error {
+        Error::Interpreter(e)
+    }
 }
 
 struct SpecModule {
@@ -143,6 +143,7 @@ impl ModuleImportResolver for SpecModule {
 struct SpecDriver {
     spec_module: SpecModule,
     instances: HashMap<String, ModuleRef>,
+    last_module: Option<ModuleRef>,
 }
 
 impl SpecDriver {
@@ -150,6 +151,7 @@ impl SpecDriver {
         SpecDriver {
             spec_module: SpecModule::new(),
             instances: HashMap::new(),
+            last_module: None,
         }
     }
 
@@ -157,14 +159,26 @@ impl SpecDriver {
         &mut self.spec_module
     }
 
-    fn add_module(&mut self, name: String, module: ModuleRef) {
-        self.instances.insert(name, module);
+    fn add_module(&mut self, name: Option<String>, module: ModuleRef) {
+        self.last_module = Some(module.clone());
+        if let Some(name) = name {
+            self.instances.insert(name, module);
+        }
     }
 
     fn module(&self, name: &str) -> Result<ModuleRef, InterpreterError> {
         self.instances.get(name).cloned().ok_or_else(|| {
             InterpreterError::Instantiation(format!("Module not registered {}", name))
         })
+    }
+
+    fn module_or_last(&self, name: Option<&str>) -> Result<ModuleRef, InterpreterError> {
+        match name {
+            Some(name) => self.module(name),
+            None => self.last_module.clone().ok_or_else(|| {
+                InterpreterError::Instantiation("No modules registered".into())
+            }),
+        }
     }
 }
 
@@ -231,10 +245,10 @@ fn try_load_module(base_dir: &Path, module_path: &str) -> Result<Module, Error> 
 
     let mut wasm_path = PathBuf::from(base_dir.clone());
     wasm_path.push(module_path);
-	let mut file = File::open(wasm_path).unwrap();
-	let mut buf = Vec::new();
-	file.read_to_end(&mut buf).unwrap();
-	Module::from_buffer(buf).map_err(|e| Error::Load(e.to_string()))
+    let mut file = File::open(wasm_path).unwrap();
+    let mut buf = Vec::new();
+    file.read_to_end(&mut buf).unwrap();
+    Module::from_buffer(buf).map_err(|e| Error::Load(e.to_string()))
 }
 
 fn try_load(
@@ -245,8 +259,8 @@ fn try_load(
     let module = try_load_module(base_dir, module_path)?;
     let instance = ModuleInstance::new(&module, &ImportsBuilder::default())?;
     instance
-		.run_start(spec_driver.spec_module())
-		.map_err(|trap| Error::Start(trap))?;
+        .run_start(spec_driver.spec_module())
+        .map_err(|trap| Error::Start(trap))?;
     Ok(())
 }
 
@@ -263,11 +277,8 @@ fn load_module(
         .run_start(spec_driver.spec_module())
         .expect("Run start failed");
 
-    let module_name = name.as_ref()
-        .map(|s| s.as_ref())
-        .unwrap_or("wasm_test")
-        .trim_left_matches('$');
-    spec_driver.add_module(module_name.to_owned(), instance.clone());
+    let module_name = name.clone();
+    spec_driver.add_module(module_name, instance.clone());
 
     instance
 }
@@ -311,10 +322,8 @@ fn run_action(
             ref field,
             ref args,
         } => {
-            let module = module.clone().unwrap_or("wasm_test".into());
-            let module = module.trim_left_matches('$');
-            let module = program.module(&module).expect(&format!(
-                "Expected program to have loaded module {}",
+            let module = program.module_or_last(module.as_ref().map(|x| x.as_ref())).expect(&format!(
+                "Expected program to have loaded module {:?}",
                 module
             ));
             module.invoke_export(
@@ -328,10 +337,8 @@ fn run_action(
             ref field,
             ..
         } => {
-            let module = module.clone().unwrap_or("wasm_test".into());
-            let module = module.trim_left_matches('$');
-            let module = program.module(&module).expect(&format!(
-                "Expected program to have loaded module {}",
+            let module = program.module_or_last(module.as_ref().map(|x| x.as_ref())).expect(&format!(
+                "Expected program to have loaded module {:?}",
                 module
             ));
             let field = jstring_to_rstring(&field);
@@ -361,13 +368,12 @@ pub fn run_wast2wasm(name: &str) -> FixtureParams {
 
     let mut wast2wasm_path = PathBuf::from(outdir.clone());
     wast2wasm_path.push("bin");
-    wast2wasm_path.push("wast2wasm");
+    wast2wasm_path.push("wast2json");
 
     let mut json_spec_path = PathBuf::from(outdir.clone());
     json_spec_path.push(&format!("{}.json", name));
 
     let wast2wasm_output = Command::new(wast2wasm_path)
-        .arg("--spec")
         .arg("-o")
         .arg(&json_spec_path)
         .arg(&format!("./wabt/third_party/testsuite/{}.wast", name))
@@ -378,13 +384,13 @@ pub fn run_wast2wasm(name: &str) -> FixtureParams {
         json: json_spec_path.to_str().unwrap().to_owned(),
         failing: {
             if !wast2wasm_output.status.success() {
-                println!("wasm2wast error code: {}", wast2wasm_output.status);
+                println!("wast2json error code: {}", wast2wasm_output.status);
                 println!(
-                    "wasm2wast stdout: {}",
+                    "wast2json stdout: {}",
                     String::from_utf8_lossy(&wast2wasm_output.stdout)
                 );
                 println!(
-                    "wasm2wast stderr: {}",
+                    "wast2json stderr: {}",
                     String::from_utf8_lossy(&wast2wasm_output.stderr)
                 );
                 true
@@ -395,19 +401,22 @@ pub fn run_wast2wasm(name: &str) -> FixtureParams {
     }
 }
 
-pub fn failing_spec(name: &str) {
-    let fixture = run_wast2wasm(name);
-    if !fixture.failing {
-        panic!("wasm2wast expected to fail, but terminated normally");
-    }
-}
-
 pub fn spec(name: &str) {
     let tmpdir = env::var("OUT_DIR").unwrap();
 
     let fixture = run_wast2wasm(name);
+
+    let wast2wasm_fail_expected = name.ends_with(".fail");
+    if wast2wasm_fail_expected {
+        if !fixture.failing {
+            panic!("wast2json expected to fail, but terminated normally");
+        }
+        // Failing fixture, bail out.
+        return;
+    }
+
     if fixture.failing {
-        panic!("wasm2wast terminated abnormally, expected to success");
+        panic!("wast2json terminated abnormally, expected to success");
     }
 
     let mut f =
@@ -416,7 +425,6 @@ pub fn spec(name: &str) {
         serde_json::from_reader(&mut f).expect("Failed to deserialize JSON file");
 
     let mut spec_driver = SpecDriver::new();
-    let mut last_module = None;
     for command in &spec.commands {
         println!("command {:?}", command);
         match command {
@@ -425,7 +433,7 @@ pub fn spec(name: &str) {
                 ref filename,
                 ..
             } => {
-                last_module = Some(load_module(tmpdir.as_ref(), &filename, &name, &mut spec_driver));
+                load_module(tmpdir.as_ref(), &filename, &name, &mut spec_driver);
             }
             &test::Command::AssertReturn {
                 line,
@@ -533,19 +541,16 @@ pub fn spec(name: &str) {
                 Err(e) => println!("assert_uninstantiable - success ({:?})", e),
             },
             &test::Command::Register {
+                line,
                 ref name,
                 ref as_name,
                 ..
             } => {
-                match name {
-                    &Some(ref name) => assert_eq!(name.trim_left_matches('$'), as_name), // we have already registered this module without $ prefix
-                    &None => spec_driver.add_module(
-                        as_name.clone(),
-                        last_module
-                            .take()
-                            .expect("Last module must be set for this command"),
-                    ),
-                }
+                let module = match spec_driver.module_or_last(name.as_ref().map(|x| x.as_ref())) {
+                    Ok(module) => module,
+                    Err(e) => panic!("No such module, at line {} - ({:?})", e, line),
+                };
+                spec_driver.add_module(Some(as_name.clone()), module);
             }
             &test::Command::Action { line, ref action } => {
                 match run_action(&mut spec_driver, action) {
