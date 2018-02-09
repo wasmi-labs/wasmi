@@ -101,6 +101,12 @@ extern crate wabt;
 extern crate parity_wasm;
 extern crate byteorder;
 
+#[cfg(all(not(feature = "32bit_opt_in"), target_pointer_width = "32"))]
+compile_error! {"32-bit targets are not supported at the moment.
+You can use '32bit_opt_in' feature.
+See https://github.com/pepyakin/wasmi/issues/43"
+}
+
 use std::fmt;
 use std::error;
 use std::collections::HashMap;
@@ -127,9 +133,9 @@ impl Trap {
 }
 
 /// Error type which can thrown by wasm code or by host environment.
-/// 
+///
 /// See [`Trap`] for details.
-/// 
+///
 /// [`Trap`]: struct.Trap.html
 #[derive(Debug)]
 pub enum TrapKind {
@@ -231,9 +237,9 @@ pub enum Error {
 
 impl Error {
 	/// Returns [`HostError`] if this `Error` represents some host error.
-	/// 
+	///
 	/// I.e. if this error have variant [`Host`] or [`Trap`][`Trap`] with [host][`TrapKind::Host`] error.
-	/// 
+	///
 	/// [`HostError`]: trait.HostError.html
 	/// [`Host`]: enum.Error.html#variant.Host
 	/// [`Trap`]: enum.Error.html#variant.Trap
