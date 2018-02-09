@@ -10,9 +10,6 @@ use validation::Error;
 use common::stack::StackWithLimit;
 use common::{BlockFrame, BlockFrameType};
 
-/// Constant from wabt' validator.cc to skip alignment validation (not a part of spec).
-const NATURAL_ALIGNMENT: u32 = 0xFFFFFFFF;
-
 /// Maximum number of entries in value stack.
 const DEFAULT_VALUE_STACK_LIMIT: usize = 16384;
 /// Maximum number of entries in frame stack.
@@ -403,10 +400,8 @@ impl Validator {
 	}
 
 	fn validate_load(context: &mut FunctionValidationContext, align: u32, max_align: u32, value_type: ValueType) -> Result<InstructionOutcome, Error> {
-		if align != NATURAL_ALIGNMENT {
-			if 1u32.checked_shl(align).unwrap_or(u32::MAX) > max_align {
-				return Err(Error(format!("Too large memory alignment 2^{} (expected at most {})", align, max_align)));
-			}
+		if 1u32.checked_shl(align).unwrap_or(u32::MAX) > max_align {
+			return Err(Error(format!("Too large memory alignment 2^{} (expected at most {})", align, max_align)));
 		}
 
 		context.pop_value(ValueType::I32.into())?;
@@ -416,10 +411,8 @@ impl Validator {
 	}
 
 	fn validate_store(context: &mut FunctionValidationContext, align: u32, max_align: u32, value_type: ValueType) -> Result<InstructionOutcome, Error> {
-		if align != NATURAL_ALIGNMENT {
-			if 1u32.checked_shl(align).unwrap_or(u32::MAX) > max_align {
-				return Err(Error(format!("Too large memory alignment 2^{} (expected at most {})", align, max_align)));
-			}
+		if 1u32.checked_shl(align).unwrap_or(u32::MAX) > max_align {
+			return Err(Error(format!("Too large memory alignment 2^{} (expected at most {})", align, max_align)));
 		}
 
 		context.module.require_memory(DEFAULT_MEMORY_INDEX)?;
