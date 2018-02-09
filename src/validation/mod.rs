@@ -8,6 +8,7 @@ use parity_wasm::elements::{
 use common::stack;
 use self::context::ModuleContextBuilder;
 use self::func::Validator;
+use memory_units::Pages;
 
 mod context;
 mod func;
@@ -267,7 +268,7 @@ fn validate_limits(limits: &ResizableLimits) -> Result<(), Error> {
 	if let Some(maximum) = limits.maximum() {
 		if limits.initial() > maximum {
 			return Err(Error(format!(
-				"maximum limit {} is lesser than minimum {}",
+				"maximum limit {} is less than minimum {}",
 				maximum,
 				limits.initial()
 			)));
@@ -277,7 +278,9 @@ fn validate_limits(limits: &ResizableLimits) -> Result<(), Error> {
 }
 
 fn validate_memory_type(memory_type: &MemoryType) -> Result<(), Error> {
-	validate_limits(memory_type.limits())
+	let initial: Pages = Pages(memory_type.limits().initial() as usize);
+	let maximum: Option<Pages> = memory_type.limits().maximum().map(|m| Pages(m as usize));
+	::memory::validate_memory(initial, maximum).map_err(Error)
 }
 
 fn validate_table_type(table_type: &TableType) -> Result<(), Error> {

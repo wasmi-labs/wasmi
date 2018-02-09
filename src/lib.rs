@@ -100,6 +100,7 @@
 extern crate wabt;
 extern crate parity_wasm;
 extern crate byteorder;
+extern crate memory_units as memory_units_crate;
 
 #[cfg(all(not(feature = "32bit_opt_in"), target_pointer_width = "32"))]
 compile_error! {"32-bit targets are not supported at the moment.
@@ -359,6 +360,12 @@ pub use self::module::{ModuleInstance, ModuleRef, ExternVal, NotStartedModuleRef
 pub use self::global::{GlobalInstance, GlobalRef};
 pub use self::func::{FuncInstance, FuncRef};
 pub use self::types::{Signature, ValueType, GlobalDescriptor, TableDescriptor, MemoryDescriptor};
+
+/// WebAssembly-specific sizes and units.
+pub mod memory_units {
+	pub use memory_units_crate::wasm32::*;
+	pub use memory_units_crate::{Bytes, ByteSize, RoundUpTo, size_of};
+}
 
 /// Deserialized module prepared for instantiation.
 pub struct Module {

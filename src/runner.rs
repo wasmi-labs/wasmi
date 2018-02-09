@@ -16,6 +16,7 @@ use host::Externals;
 use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX, BlockFrame, BlockFrameType};
 use common::stack::StackWithLimit;
 use common::{DEFAULT_FRAME_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT};
+use memory_units::Pages;
 
 /// Function interpreter.
 pub struct Interpreter<'a, E: Externals + 'a> {
@@ -643,7 +644,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		let m = context.module()
 			.memory_by_index(DEFAULT_MEMORY_INDEX)
 			.expect("Due to validation memory should exists");
-		let s = m.size();
+		let s = m.current_size().0;
 		context
 			.value_stack_mut()
 			.push(RuntimeValue::I32(s as i32))?;
@@ -657,9 +658,10 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		let m = context.module()
 			.memory_by_index(DEFAULT_MEMORY_INDEX)
 			.expect("Due to validation memory should exists");
-		// Pushes -1 if allocation fails or previous memory size, if succeeds.
-		let m = m.grow(pages)
-			.unwrap_or(u32::MAX);
+		let m = match m.grow(Pages(pages as usize)) {
+			Ok(Pages(new_size)) => new_size as u32,
+			Err(_) => u32::MAX, // Returns -1 (or 0xFFFFFFFF) in case of error.
+		};
 		context
 			.value_stack_mut()
 			.push(RuntimeValue::I32(m as i32))?;
