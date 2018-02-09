@@ -474,23 +474,6 @@ impl ScriptVisitor<Error> for SpecRunner {
 }
 
 pub fn spec(name: &str) {
-    // let tmpdir = env::var("OUT_DIR").unwrap();
-
-    // let fixture = run_wast2wasm(name);
-
-    // let wast2wasm_fail_expected = name.ends_with(".fail");
-    // if wast2wasm_fail_expected {
-    //     if !fixture.failing {
-    //         panic!("wast2json expected to fail, but terminated normally");
-    //     }
-    //     // Failing fixture, bail out.
-    //     return;
-    // }
-
-    // if fixture.failing {
-    //     panic!("wast2json terminated abnormally, expected to success");
-    // }
-
 	println!("running test: {}", name);
 
 	let mut spec_runner = SpecRunner {
