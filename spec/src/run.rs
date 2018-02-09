@@ -1,8 +1,5 @@
+#![cfg(test)]
 
-use std::env;
-use std::path::{Path, PathBuf};
-use std::process::Command;
-use std::fs::File;
 use std::collections::HashMap;
 
 use wasmi::{
@@ -22,15 +19,6 @@ fn spec_to_runtime_value(value: Value) -> RuntimeValue {
 		Value::I64(v) => RuntimeValue::I64(v),
 		Value::F32(v) => RuntimeValue::F32(v),
 		Value::F64(v) => RuntimeValue::F64(v),
-	}
-}
-
-fn runtime_value_to_spec(value: RuntimeValue) -> Value {
-	match value {
-		RuntimeValue::I32(v) => Value::I32(v),
-		RuntimeValue::I64(v) => Value::I64(v),
-		RuntimeValue::F32(v) => Value::F32(v),
-		RuntimeValue::F64(v) => Value::F64(v),
 	}
 }
 
@@ -335,49 +323,6 @@ fn run_action(
     }
 }
 
-pub struct FixtureParams {
-    failing: bool,
-    json: String,
-}
-
-pub fn run_wast2wasm(name: &str) -> FixtureParams {
-    let outdir = env::var("OUT_DIR").unwrap();
-
-    let mut wast2wasm_path = PathBuf::from(outdir.clone());
-    wast2wasm_path.push("bin");
-    wast2wasm_path.push("wast2json");
-
-    let mut json_spec_path = PathBuf::from(outdir.clone());
-    json_spec_path.push(&format!("{}.json", name));
-
-    let wast2wasm_output = Command::new(wast2wasm_path)
-        .arg("-o")
-        .arg(&json_spec_path)
-        .arg(&format!("./wabt/third_party/testsuite/{}.wast", name))
-        .output()
-        .expect("Failed to execute process");
-
-    FixtureParams {
-        json: json_spec_path.to_str().unwrap().to_owned(),
-        failing: {
-            if !wast2wasm_output.status.success() {
-                println!("wast2json error code: {}", wast2wasm_output.status);
-                println!(
-                    "wast2json stdout: {}",
-                    String::from_utf8_lossy(&wast2wasm_output.stdout)
-                );
-                println!(
-                    "wast2json stderr: {}",
-                    String::from_utf8_lossy(&wast2wasm_output.stderr)
-                );
-                true
-            } else {
-                false
-            }
-        },
-    }
-}
-
 struct SpecRunner {
 	spec_driver: SpecDriver,
 }
@@ -420,7 +365,7 @@ impl SpecRunner {
 }
 
 impl ScriptVisitor<Error> for SpecRunner {
-    fn module(&mut self, line: u64, wasm: &[u8], name: Option<String>) -> Result<(), Error> {
+    fn module(&mut self, _line: u64, wasm: &[u8], name: Option<String>) -> Result<(), Error> {
         load_module(wasm, &name, &mut self.spec_driver);
 		Ok(())
     }
@@ -474,23 +419,35 @@ impl ScriptVisitor<Error> for SpecRunner {
         Ok(())
     }
 
-    fn assert_trap(&mut self, line: u64, action: &Action, text: &str) -> Result<(), Error> {
+    fn assert_trap(&mut self, line: u64, action: &Action, _text: &str) -> Result<(), Error> {
+		let result = run_action(&mut self.spec_driver, action);
+		match result {
+			Ok(result) => {
+				panic!(
+					"Expected action to result in a trap, got result: {:?}",
+					result
+				);
+			}
+			Err(e) => {
+				println!("assert_trap at line {} - success ({:?})", line, e);
+			}
+		}
         Ok(())
     }
 
-    fn assert_invalid(&mut self, line: u64, wasm: &[u8], text: &str) -> Result<(), Error> {
+    fn assert_invalid(&mut self, line: u64, wasm: &[u8], _text: &str) -> Result<(), Error> {
         self.assert_incorrect_modules(line, wasm)
     }
 
-    fn assert_malformed(&mut self, line: u64, wasm: &[u8], text: &str) -> Result<(), Error> {
+    fn assert_malformed(&mut self, line: u64, wasm: &[u8], _text: &str) -> Result<(), Error> {
         self.assert_incorrect_modules(line, wasm)
     }
 
-    fn assert_unlinkable(&mut self, line: u64, wasm: &[u8], text: &str) -> Result<(), Error> {
+    fn assert_unlinkable(&mut self, line: u64, wasm: &[u8], _text: &str) -> Result<(), Error> {
         self.assert_incorrect_modules(line, wasm)
     }
 
-    fn assert_uninstantiable(&mut self, line: u64, wasm: &[u8], text: &str) -> Result<(), Error> {
+    fn assert_uninstantiable(&mut self, line: u64, wasm: &[u8], _text: &str) -> Result<(), Error> {
         match try_load(wasm, &mut self.spec_driver) {
 			Ok(_) => panic!("Expected error running start function at line {}", line),
 			Err(e) => println!("assert_uninstantiable - success ({:?})", e),
