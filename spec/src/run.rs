@@ -496,6 +496,6 @@ pub fn spec(name: &str) {
 	let mut spec_runner = SpecRunner {
 		spec_driver: SpecDriver::new(),
 	};
-	let spec_script_path = format!("./wabt/third_party/testsuite/{}.wast", name);
+	let spec_script_path = format!("testsuite/{}.wast", name);
 	run_spec(spec_script_path, &mut spec_runner).expect("success");
 }
