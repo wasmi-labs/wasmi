@@ -10,10 +10,10 @@ use validation::Error;
 use common::stack::StackWithLimit;
 use common::{BlockFrame, BlockFrameType};
 
-/// Maximum number of entries in value stack.
+/// Maximum number of entries in value stack per function.
 const DEFAULT_VALUE_STACK_LIMIT: usize = 16384;
-/// Maximum number of entries in frame stack.
-const DEFAULT_FRAME_STACK_LIMIT: usize = 1024;
+/// Maximum number of entries in frame stack per function.
+const DEFAULT_FRAME_STACK_LIMIT: usize = 16384;
 
 /// Function validation context.
 struct FunctionValidationContext<'a> {
