@@ -10,7 +10,7 @@ cargo-fuzz = true
 
 [dependencies]
 wasmi = { path = ".." }
-wabt = "0.1.7"
+wabt = "0.2.1"
 wasmparser = "0.14.1"
 
 [dependencies.libfuzzer-sys]
