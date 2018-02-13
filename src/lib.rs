@@ -103,7 +103,8 @@ extern crate byteorder;
 extern crate memory_units as memory_units_crate;
 
 #[cfg(all(not(feature = "32bit_opt_in"), target_pointer_width = "32"))]
-compile_error! {"32-bit targets are not supported at the moment.
+compile_error! {
+"32-bit targets are not supported at the moment.
 You can use '32bit_opt_in' feature.
 See https://github.com/pepyakin/wasmi/issues/43"
 }
