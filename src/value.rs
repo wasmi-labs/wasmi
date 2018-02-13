@@ -123,12 +123,12 @@ pub trait Float<T>: ArithmeticOps<T> {
 
 impl RuntimeValue {
 	/// Creates new default value of given type.
-	pub fn default(value_type: ValueType) -> Self {
+	pub fn default(value_type: ::types::ValueType) -> Self {
 		match value_type {
-			ValueType::I32 => RuntimeValue::I32(0),
-			ValueType::I64 => RuntimeValue::I64(0),
-			ValueType::F32 => RuntimeValue::F32(0f32),
-			ValueType::F64 => RuntimeValue::F64(0f64),
+			::types::ValueType::I32 => RuntimeValue::I32(0),
+			::types::ValueType::I64 => RuntimeValue::I64(0),
+			::types::ValueType::F32 => RuntimeValue::F32(0f32),
+			::types::ValueType::F64 => RuntimeValue::F64(0f64),
 		}
 	}
 
