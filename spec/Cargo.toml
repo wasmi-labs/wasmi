@@ -10,4 +10,4 @@ description = "parity-wasm testsuite"
 
 [dependencies]
 wasmi = { path = ".." }
-wabt = "0.1.8"
+wabt = "0.2.0"

@@ -3,35 +3,40 @@
 use std::collections::HashMap;
 
 use wasmi::{
-    Error as InterpreterError, Externals, FuncRef,
-    GlobalInstance, GlobalRef, ImportResolver, ImportsBuilder,
-    MemoryInstance, MemoryRef, ModuleImportResolver, ModuleInstance,
-    ModuleRef, RuntimeValue, TableInstance, TableRef, ValueType,
-    Module, Signature, MemoryDescriptor, Trap,
-    TableDescriptor, GlobalDescriptor, FuncInstance, RuntimeArgs,
-};
+    Error as InterpreterError, Externals, FuncInstance, FuncRef, GlobalDescriptor,
+    GlobalInstance, GlobalRef, ImportResolver, ImportsBuilder, MemoryDescriptor,
+    MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance, ModuleRef,
+    RuntimeArgs, RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef, Trap,
+    ValueType};
 use wasmi::memory_units::Pages;
-use wabt::spec::{Action, Visitor as ScriptVisitor, Value, run_spec};
+use wabt::script::{self, Action, Command, CommandKind, ScriptParser, Value};
 
 fn spec_to_runtime_value(value: Value) -> RuntimeValue {
-	match value {
-		Value::I32(v) => RuntimeValue::I32(v),
-		Value::I64(v) => RuntimeValue::I64(v),
-		Value::F32(v) => RuntimeValue::F32(v),
-		Value::F64(v) => RuntimeValue::F64(v),
-	}
+    match value {
+        Value::I32(v) => RuntimeValue::I32(v),
+        Value::I64(v) => RuntimeValue::I64(v),
+        Value::F32(v) => RuntimeValue::F32(v),
+        Value::F64(v) => RuntimeValue::F64(v),
+    }
 }
 
 #[derive(Debug)]
 enum Error {
     Load(String),
     Start(Trap),
+    Script(script::Error),
     Interpreter(InterpreterError),
 }
 
 impl From<InterpreterError> for Error {
     fn from(e: InterpreterError) -> Error {
         Error::Interpreter(e)
+    }
+}
+
+impl From<script::Error> for Error {
+    fn from(e: script::Error) -> Error {
+        Error::Script(e)
     }
 }
 
@@ -92,9 +97,10 @@ impl ModuleImportResolver for SpecModule {
             return Ok(func);
         }
 
-        Err(InterpreterError::Instantiation(
-            format!("Unknown host func import {}", field_name),
-        ))
+        Err(InterpreterError::Instantiation(format!(
+            "Unknown host func import {}",
+            field_name
+        )))
     }
 
     fn resolve_global(
@@ -111,9 +117,10 @@ impl ModuleImportResolver for SpecModule {
             };
         }
 
-        Err(InterpreterError::Instantiation(
-            format!("Unknown host global import {}", field_name),
-        ))
+        Err(InterpreterError::Instantiation(format!(
+            "Unknown host global import {}",
+            field_name
+        )))
     }
 
     fn resolve_memory(
@@ -125,9 +132,10 @@ impl ModuleImportResolver for SpecModule {
             return Ok(self.memory.clone());
         }
 
-        Err(InterpreterError::Instantiation(
-            format!("Unknown host memory import {}", field_name),
-        ))
+        Err(InterpreterError::Instantiation(format!(
+            "Unknown host memory import {}",
+            field_name
+        )))
     }
 
     fn resolve_table(
@@ -139,9 +147,10 @@ impl ModuleImportResolver for SpecModule {
             return Ok(self.table.clone());
         }
 
-        Err(InterpreterError::Instantiation(
-            format!("Unknown host table import {}", field_name),
-        ))
+        Err(InterpreterError::Instantiation(format!(
+            "Unknown host table import {}",
+            field_name
+        )))
     }
 }
 
@@ -180,9 +189,9 @@ impl SpecDriver {
     fn module_or_last(&self, name: Option<&str>) -> Result<ModuleRef, InterpreterError> {
         match name {
             Some(name) => self.module(name),
-            None => self.last_module.clone().ok_or_else(|| {
-                InterpreterError::Instantiation("No modules registered".into())
-            }),
+            None => self.last_module
+                .clone()
+                .ok_or_else(|| InterpreterError::Instantiation("No modules registered".into())),
         }
     }
 }
@@ -249,10 +258,7 @@ fn try_load_module(wasm: &[u8]) -> Result<Module, Error> {
     Module::from_buffer(wasm).map_err(|e| Error::Load(e.to_string()))
 }
 
-fn try_load(
-    wasm: &[u8],
-    spec_driver: &mut SpecDriver,
-) -> Result<(), Error> {
+fn try_load(wasm: &[u8], spec_driver: &mut SpecDriver) -> Result<(), Error> {
     let module = try_load_module(wasm)?;
     let instance = ModuleInstance::new(&module, &ImportsBuilder::default())?;
     instance
@@ -261,13 +267,8 @@ fn try_load(
     Ok(())
 }
 
-fn load_module(
-    wasm: &[u8],
-    name: &Option<String>,
-    spec_driver: &mut SpecDriver,
-) -> ModuleRef {
-    let module =
-        try_load_module(wasm).expect(&format!("Wasm failed to load"));
+fn load_module(wasm: &[u8], name: &Option<String>, spec_driver: &mut SpecDriver) -> ModuleRef {
+    let module = try_load_module(wasm).expect(&format!("Wasm failed to load"));
     let instance = ModuleInstance::new(&module, spec_driver)
         .expect("Instantiation failed")
         .run_start(spec_driver.spec_module())
@@ -289,13 +290,18 @@ fn run_action(
             ref field,
             ref args,
         } => {
-            let module = program.module_or_last(module.as_ref().map(|x| x.as_ref())).expect(&format!(
-                "Expected program to have loaded module {:?}",
-                module
-            ));
+            let module = program
+                .module_or_last(module.as_ref().map(|x| x.as_ref()))
+                .expect(&format!(
+                    "Expected program to have loaded module {:?}",
+                    module
+                ));
             module.invoke_export(
                 field,
-                &args.iter().cloned().map(spec_to_runtime_value).collect::<Vec<_>>(),
+                &args.iter()
+                    .cloned()
+                    .map(spec_to_runtime_value)
+                    .collect::<Vec<_>>(),
                 program.spec_module(),
             )
         }
@@ -304,10 +310,12 @@ fn run_action(
             ref field,
             ..
         } => {
-            let module = program.module_or_last(module.as_ref().map(|x| x.as_ref())).expect(&format!(
-                "Expected program to have loaded module {:?}",
-                module
-            ));
+            let module = program
+                .module_or_last(module.as_ref().map(|x| x.as_ref()))
+                .expect(&format!(
+                    "Expected program to have loaded module {:?}",
+                    module
+                ));
             let global = module
                 .export_by_name(&field)
                 .ok_or_else(|| {
@@ -323,162 +331,128 @@ fn run_action(
     }
 }
 
-struct SpecRunner {
-	spec_driver: SpecDriver,
-}
-
-impl SpecRunner {
-	fn assert_nans(&mut self, line: u64, action: &Action) -> Result<(), Error> {
-		let result = run_action(&mut self.spec_driver, action);
-		match result {
-			Ok(result) => {
-				for actual_result in result.into_iter().collect::<Vec<RuntimeValue>>() {
-					match actual_result {
-						RuntimeValue::F32(val) => if !val.is_nan() {
-							panic!("Expected nan value, got {:?}", val)
-						},
-						RuntimeValue::F64(val) => if !val.is_nan() {
-							panic!("Expected nan value, got {:?}", val)
-						},
-						val @ _ => {
-							panic!("Expected action to return float value, got {:?}", val)
-						}
-					}
-				}
-				println!("assert_return_nan at line {} - success", line);
-			}
-			Err(e) => {
-				panic!("Expected action to return value, got error: {:?}", e);
-			}
-		}
-		Ok(())
-	}
-
-	fn assert_incorrect_modules(&mut self, line: u64, wasm: &[u8]) -> Result<(), Error> {
-		let module_load = try_load(wasm, &mut self.spec_driver);
-		match module_load {
-			Ok(_) => panic!("Expected invalid module definition, got some module!"),
-			Err(e) => println!("assert_invalid at line {} - success ({:?})", line, e),
-		}
-		Ok(())
-	}
-}
-
-impl ScriptVisitor<Error> for SpecRunner {
-    fn module(&mut self, _line: u64, wasm: &[u8], name: Option<String>) -> Result<(), Error> {
-        load_module(wasm, &name, &mut self.spec_driver);
-		Ok(())
-    }
-
-    fn assert_return(&mut self, line: u64, action: &Action, expected: &[Value]) -> Result<(), Error> {
-		let result = run_action(&mut self.spec_driver, action);
-		match result {
-			Ok(result) => {
-				let spec_expected = expected.iter().cloned().map(spec_to_runtime_value).collect::<Vec<_>>();
-				let actual_result = result.into_iter().collect::<Vec<RuntimeValue>>();
-				for (actual_result, spec_expected) in
-					actual_result.iter().zip(spec_expected.iter())
-				{
-					assert_eq!(actual_result.value_type(), spec_expected.value_type());
-					// f32::NAN != f32::NAN
-					match spec_expected {
-						&RuntimeValue::F32(val) if val.is_nan() => match actual_result {
-							&RuntimeValue::F32(val) => assert!(val.is_nan()),
-							_ => unreachable!(), // checked above that types are same
-						},
-						&RuntimeValue::F64(val) if val.is_nan() => match actual_result {
-							&RuntimeValue::F64(val) => assert!(val.is_nan()),
-							_ => unreachable!(), // checked above that types are same
-						},
-						spec_expected @ _ => assert_eq!(actual_result, spec_expected),
-					}
-				}
-				println!("assert_return at line {} - success", line);
-			}
-			Err(e) => {
-				panic!("Expected action to return value, got error: {:?}", e);
-			}
-		}
-        Ok(())
-    }
-
-    fn assert_return_canonical_nan(&mut self, line: u64, action: &Action) -> Result<(), Error> {
-        self.assert_nans(line, action)
-    }
-
-    fn assert_return_arithmetic_nan(&mut self, line: u64, action: &Action) -> Result<(), Error> {
-        self.assert_nans(line, action)
-    }
-
-    fn assert_exhaustion(&mut self, line: u64, action: &Action) -> Result<(), Error> {
-		let result = run_action(&mut self.spec_driver, action);
-		match result {
-			Ok(result) => panic!("Expected exhaustion, got result: {:?}", result),
-			Err(e) => println!("assert_exhaustion at line {} - success ({:?})", line, e),
-		}
-        Ok(())
-    }
-
-    fn assert_trap(&mut self, line: u64, action: &Action, _text: &str) -> Result<(), Error> {
-		let result = run_action(&mut self.spec_driver, action);
-		match result {
-			Ok(result) => {
-				panic!(
-					"Expected action to result in a trap, got result: {:?}",
-					result
-				);
-			}
-			Err(e) => {
-				println!("assert_trap at line {} - success ({:?})", line, e);
-			}
-		}
-        Ok(())
-    }
-
-    fn assert_invalid(&mut self, line: u64, wasm: &[u8], _text: &str) -> Result<(), Error> {
-        self.assert_incorrect_modules(line, wasm)
-    }
-
-    fn assert_malformed(&mut self, line: u64, wasm: &[u8], _text: &str) -> Result<(), Error> {
-        self.assert_incorrect_modules(line, wasm)
-    }
-
-    fn assert_unlinkable(&mut self, line: u64, wasm: &[u8], _text: &str) -> Result<(), Error> {
-        self.assert_incorrect_modules(line, wasm)
-    }
-
-    fn assert_uninstantiable(&mut self, line: u64, wasm: &[u8], _text: &str) -> Result<(), Error> {
-        match try_load(wasm, &mut self.spec_driver) {
-			Ok(_) => panic!("Expected error running start function at line {}", line),
-			Err(e) => println!("assert_uninstantiable - success ({:?})", e),
-		}
-		Ok(())
-    }
-
-    fn register(&mut self, line: u64, name: Option<&str>, as_name: &str) -> Result<(), Error> {
-		let module = match self.spec_driver.module_or_last(name.as_ref().map(|x| x.as_ref())) {
-			Ok(module) => module,
-			Err(e) => panic!("No such module, at line {} - ({:?})", e, line),
-		};
-		self.spec_driver.add_module(Some(as_name.to_owned()), module);
-        Ok(())
-    }
-
-    fn perform_action(&mut self, line: u64, action: &Action) -> Result<(), Error> {
-		match run_action(&mut self.spec_driver, action) {
-			Ok(_) => {}
-			Err(e) => panic!("Failed to invoke action at line {}: {:?}", line, e),
-		}
-        Ok(())
-    }
-}
-
 pub fn spec(name: &str) {
-	println!("running test: {}", name);
+    println!("running test: {}", name);
+    try_spec(name).expect("Failed to run spec");
+}
 
-	let mut spec_runner = SpecRunner {
-		spec_driver: SpecDriver::new(),
-	};
-	let spec_script_path = format!("testsuite/{}.wast", name);
-	run_spec(spec_script_path, &mut spec_runner).expect("success");
+fn try_spec(name: &str) -> Result<(), Error> {
+    let mut spec_driver = SpecDriver::new();
+    let spec_script_path = format!("testsuite/{}.wast", name);
+    let mut parser = ScriptParser::from_file(spec_script_path).expect("Can't read spec script");
+    while let Some(Command { kind, line }) = parser.next()? {
+        match kind {
+            CommandKind::Module { name, module, .. } => {
+                load_module(&module.into_vec()?, &name, &mut spec_driver);
+            }
+            CommandKind::AssertReturn { action, expected } => {
+                let result = run_action(&mut spec_driver, &action);
+                match result {
+                    Ok(result) => {
+                        let spec_expected = expected
+                            .iter()
+                            .cloned()
+                            .map(spec_to_runtime_value)
+                            .collect::<Vec<_>>();
+                        let actual_result = result.into_iter().collect::<Vec<RuntimeValue>>();
+                        for (actual_result, spec_expected) in
+                            actual_result.iter().zip(spec_expected.iter())
+                        {
+                            assert_eq!(actual_result.value_type(), spec_expected.value_type());
+                            // f32::NAN != f32::NAN
+                            match spec_expected {
+                                &RuntimeValue::F32(val) if val.is_nan() => match actual_result {
+                                    &RuntimeValue::F32(val) => assert!(val.is_nan()),
+                                    _ => unreachable!(), // checked above that types are same
+                                },
+                                &RuntimeValue::F64(val) if val.is_nan() => match actual_result {
+                                    &RuntimeValue::F64(val) => assert!(val.is_nan()),
+                                    _ => unreachable!(), // checked above that types are same
+                                },
+                                spec_expected @ _ => assert_eq!(actual_result, spec_expected),
+                            }
+                        }
+                        println!("assert_return at line {} - success", line);
+                    }
+                    Err(e) => {
+                        panic!("Expected action to return value, got error: {:?}", e);
+                    }
+                }
+            }
+            CommandKind::AssertReturnCanonicalNan { action }
+            | CommandKind::AssertReturnArithmeticNan { action } => {
+                let result = run_action(&mut spec_driver, &action);
+                match result {
+                    Ok(result) => {
+                        for actual_result in result.into_iter().collect::<Vec<RuntimeValue>>() {
+                            match actual_result {
+                                RuntimeValue::F32(val) => if !val.is_nan() {
+                                    panic!("Expected nan value, got {:?}", val)
+                                },
+                                RuntimeValue::F64(val) => if !val.is_nan() {
+                                    panic!("Expected nan value, got {:?}", val)
+                                },
+                                val @ _ => {
+                                    panic!("Expected action to return float value, got {:?}", val)
+                                }
+                            }
+                        }
+                        println!("assert_return_nan at line {} - success", line);
+                    }
+                    Err(e) => {
+                        panic!("Expected action to return value, got error: {:?}", e);
+                    }
+                }
+            }
+            CommandKind::AssertExhaustion { action, .. } => {
+                let result = run_action(&mut spec_driver, &action);
+                match result {
+                    Ok(result) => panic!("Expected exhaustion, got result: {:?}", result),
+                    Err(e) => println!("assert_exhaustion at line {} - success ({:?})", line, e),
+                }
+            }
+            CommandKind::AssertTrap { action, .. } => {
+                let result = run_action(&mut spec_driver, &action);
+                match result {
+                    Ok(result) => {
+                        panic!(
+                            "Expected action to result in a trap, got result: {:?}",
+                            result
+                        );
+                    }
+                    Err(e) => {
+                        println!("assert_trap at line {} - success ({:?})", line, e);
+                    }
+                }
+            }
+            CommandKind::AssertInvalid { module, .. }
+            | CommandKind::AssertMalformed { module, .. }
+            | CommandKind::AssertUnlinkable { module, .. } => {
+                let module_load = try_load(&module.into_vec()?, &mut spec_driver);
+                match module_load {
+                    Ok(_) => panic!("Expected invalid module definition, got some module!"),
+                    Err(e) => println!("assert_invalid at line {} - success ({:?})", line, e),
+                }
+            }
+            CommandKind::AssertUninstantiable { module, .. } => {
+                match try_load(&module.into_vec()?, &mut spec_driver) {
+                    Ok(_) => panic!("Expected error running start function at line {}", line),
+                    Err(e) => println!("assert_uninstantiable - success ({:?})", e),
+                }
+            }
+            CommandKind::Register { name, as_name, .. } => {
+                let module = match spec_driver.module_or_last(name.as_ref().map(|x| x.as_ref())) {
+                    Ok(module) => module,
+                    Err(e) => panic!("No such module, at line {} - ({:?})", e, line),
+                };
+                spec_driver.add_module(Some(as_name.clone()), module);
+            }
+            CommandKind::PerformAction(action) => match run_action(&mut spec_driver, &action) {
+                Ok(_) => {}
+                Err(e) => panic!("Failed to invoke action at line {}: {:?}", line, e),
+            },
+        }
+    }
+
+    Ok(())
 }
