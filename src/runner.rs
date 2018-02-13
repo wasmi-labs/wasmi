@@ -15,8 +15,12 @@ use value::{
 use host::Externals;
 use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX, BlockFrame, BlockFrameType};
 use common::stack::StackWithLimit;
-use common::{DEFAULT_FRAME_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT};
 use memory_units::Pages;
+
+/// Maximum number of entries in value stack.
+pub const DEFAULT_VALUE_STACK_LIMIT: usize = 16384;
+/// Maximum number of entries in frame stack.
+pub const DEFAULT_FRAME_STACK_LIMIT: usize = 16384;
 
 /// Function interpreter.
 pub struct Interpreter<'a, E: Externals + 'a> {
