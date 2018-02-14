@@ -1101,6 +1101,7 @@ impl FunctionContext {
 
 		let locals = locals.iter()
 			.flat_map(|l| repeat(l.value_type()).take(l.count() as usize))
+			.map(::types::ValueType::from_elements)
 			.map(RuntimeValue::default)
 			.collect::<Vec<_>>();
 		self.locals.extend(locals);
