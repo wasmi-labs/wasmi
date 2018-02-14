@@ -1,9 +1,6 @@
 
-#[cfg_attr(test, macro_use)] #[cfg(test)] extern crate serde_derive;
 extern crate wasmi;
-extern crate serde;
-extern crate serde_json;
+extern crate wabt;
 
 mod run;
-mod test;
 mod fixtures;
