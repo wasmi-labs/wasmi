@@ -462,7 +462,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 				.expect("Due to validation type should exists");
 
 			if &*required_function_type != actual_function_type {
-				return Err(TrapKind::ElemSignatureMismatch);
+				return Err(TrapKind::UnexpectedSignature);
 			}
 		}
 

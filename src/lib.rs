@@ -169,15 +169,6 @@ pub enum TrapKind {
 	/// This typically can happen when `call_indirect` is executed.
 	ElemUninitialized,
 
-	/// Attempt to `call_indirect` function with mismatched [signature][`Signature`].
-	///
-	/// `call_indirect` always specifies the expected signature of function.
-	/// If `call_indirect` is executed with index that points on function with
-	/// signature different that is expected by this `call_indirect`, this trap is raised.
-	///
-	/// [`Signature`]: struct.Signature.html
-	ElemSignatureMismatch,
-
 	/// Attempt to divide by zero.
 	///
 	/// This trap typically can happen if `div` or `rem` is executed with
@@ -199,10 +190,17 @@ pub enum TrapKind {
 	/// Extensive inlining might also be the cause of stack overflow.
 	StackOverflow,
 
-	/// Unexpected signature provided.
+	/// Attempt to invoke a function with mismatching signature.
 	///
 	/// This can happen if [`FuncInstance`] was invoked
-	/// with mismatching signature.
+	/// with mismatching [signature][`Signature`].
+	///
+	/// This can always happen with indirect calls. `call_indirect` instruction always
+	/// specifies the expected signature of function. If `call_indirect` is executed
+	/// with index that points on function with signature different that is
+	/// expected by this `call_indirect`, this trap is raised.
+	///
+	/// [`Signature`]: struct.Signature.html
 	UnexpectedSignature,
 
 	/// Error specified by the host.
