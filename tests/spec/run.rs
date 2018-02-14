@@ -338,7 +338,7 @@ pub fn spec(name: &str) {
 
 fn try_spec(name: &str) -> Result<(), Error> {
     let mut spec_driver = SpecDriver::new();
-    let spec_script_path = format!("testsuite/{}.wast", name);
+    let spec_script_path = format!("tests/spec/testsuite/{}.wast", name);
     let mut parser = ScriptParser::from_file(spec_script_path).expect("Can't read spec script");
     while let Some(Command { kind, line }) = parser.next()? {
         match kind {

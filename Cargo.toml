@@ -14,7 +14,7 @@ byteorder = "1.0"
 memory_units = { git = "https://github.com/pepyakin/memory_units.git", rev = "e09093e" }
 
 [dev-dependencies]
-wabt = "0.1.2"
+wabt = "0.2.0"
 
 [features]
 # 32-bit platforms are not supported and not tested. Use this flag if you really want to use
