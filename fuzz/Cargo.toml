@@ -25,5 +25,9 @@ name = "load"
 path = "fuzz_targets/load.rs"
 
 [[bin]]
+name = "load_wabt"
+path = "fuzz_targets/load_wabt.rs"
+
+[[bin]]
 name = "load_wasmparser"
 path = "fuzz_targets/load_wasmparser.rs"
