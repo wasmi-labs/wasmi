@@ -31,6 +31,7 @@ fuzz_target!(|data: &[u8]| {
     let wasm_result = Command::new("wasm")
         .arg(seed_path)
 		.stdout(Stdio::null())
+		.stderr(Stdio::null())
         .status()
         .expect("failed to execute `wasm`");
 
