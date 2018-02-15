@@ -7,7 +7,7 @@ extern crate tempdir;
 
 use std::fs::File;
 use std::io::Write;
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 fuzz_target!(|data: &[u8]| {
 	let wasmi_result = wasmi::Module::from_buffer(data);
@@ -30,6 +30,7 @@ fuzz_target!(|data: &[u8]| {
 
     let wasm_result = Command::new("wasm")
         .arg(seed_path)
+		.stdout(Stdio::null())
         .status()
         .expect("failed to execute `wasm`");
 
