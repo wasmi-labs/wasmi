@@ -9,17 +9,12 @@ use std::fs::File;
 use std::io::Write;
 use std::process::{Command, Stdio};
 
-fuzz_target!(|data: &[u8]| {
-	let wasmi_result = wasmi::Module::from_buffer(data);
-
-	let temp_dir = tempdir::TempDir::new("spec").unwrap();
-
-	let mut seed_path = temp_dir.path().to_path_buf();
-	seed_path.push("test.wasm");
+fn run_spec(data: &[u8]) -> Result<(), ()> {
+	const TEST_FILE: &'static str = "test.wasm";
 
 	{
 		let mut seedfile =
-			File::create(&seed_path).expect("open temporary file for writing to store fuzzer input");
+			File::create(TEST_FILE).expect("open temporary file for writing to store fuzzer input");
 		seedfile.write_all(data).expect(
 			"write fuzzer input to temporary file",
 		);
@@ -28,12 +23,29 @@ fuzz_target!(|data: &[u8]| {
 		);
 	}
 
-    let wasm_result = Command::new("wasm")
-        .arg(seed_path)
+    let exit_status = Command::new("wasm")
+		.arg("-d")
+        .arg(TEST_FILE)
 		.stdout(Stdio::null())
 		.stderr(Stdio::null())
         .status()
         .expect("failed to execute `wasm`");
 
-	assert_eq!(wasmi_result.is_ok(), wasm_result.success());
+	if exit_status.success() {
+		Ok(())
+	} else {
+		Err(())
+	}
+}
+
+fn run_wasmi(data: &[u8]) -> Result<(), ()> {
+	let _ = wasmi::Module::from_buffer(data).map_err(|_| ())?;
+	Ok(())
+}
+
+fuzz_target!(|data: &[u8]| {
+	let wasmi_result = run_wasmi(data);
+    let wasm_result = run_spec(data);
+
+	assert_eq!(wasmi_result.is_ok(), wasm_result.is_ok());
 });
