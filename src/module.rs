@@ -403,6 +403,15 @@ impl ModuleInstance {
 			let table_inst = module_ref.table_by_index(DEFAULT_TABLE_INDEX).expect(
 				"Due to validation default table should exists",
 			);
+
+			// This check is not only for bailing out early, but also to check the case when
+			// segment consist of 0 members.
+			if offset_val as usize + element_segment.members().len() > table_inst.current_size() as usize {
+				return Err(
+					Error::Instantiation("elements segment does not fit".to_string())
+				);
+			}
+
 			for (j, func_idx) in element_segment.members().into_iter().enumerate() {
 				let func = module_ref.func_by_index(*func_idx).expect(
 					"Due to validation funcs from element segments should exists",

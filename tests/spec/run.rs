@@ -7,7 +7,7 @@ use wasmi::{
     GlobalInstance, GlobalRef, ImportResolver, ImportsBuilder, MemoryDescriptor,
     MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance, ModuleRef,
     RuntimeArgs, RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef, Trap,
-    ValueType};
+};
 use wasmi::memory_units::Pages;
 use wabt::script::{self, Action, Command, CommandKind, ScriptParser, Value};
 
@@ -44,7 +44,6 @@ struct SpecModule {
     table: TableRef,
     memory: MemoryRef,
     global_i32: GlobalRef,
-    global_i64: GlobalRef,
     global_f32: GlobalRef,
     global_f64: GlobalRef,
 }
@@ -55,7 +54,6 @@ impl SpecModule {
             table: TableInstance::alloc(10, Some(20)).unwrap(),
             memory: MemoryInstance::alloc(Pages(1), Some(Pages(2))).unwrap(),
             global_i32: GlobalInstance::alloc(RuntimeValue::I32(666), false),
-            global_i64: GlobalInstance::alloc(RuntimeValue::I64(666), false),
             global_f32: GlobalInstance::alloc(RuntimeValue::F32(666.0), false),
             global_f64: GlobalInstance::alloc(RuntimeValue::F64(666.0), false),
         }
@@ -86,41 +84,45 @@ impl ModuleImportResolver for SpecModule {
         field_name: &str,
         func_type: &Signature,
     ) -> Result<FuncRef, InterpreterError> {
-        if field_name == "print" {
-            if func_type.return_type().is_some() {
-                return Err(InterpreterError::Instantiation(
-                    "Function `print` have unit return type".into(),
-                ));
-            }
+		let index = match field_name {
+			"print" => PRINT_FUNC_INDEX,
+			"print_i32" => PRINT_FUNC_INDEX,
+			"print_i32_f32" => PRINT_FUNC_INDEX,
+			"print_f64_f64" => PRINT_FUNC_INDEX,
+			"print_f32" => PRINT_FUNC_INDEX,
+			"print_f64" => PRINT_FUNC_INDEX,
+			_ => {
+				return Err(InterpreterError::Instantiation(format!(
+					"Unknown host func import {}",
+					field_name
+				)));
+			}
+		};
 
-            let func = FuncInstance::alloc_host(func_type.clone(), PRINT_FUNC_INDEX);
-            return Ok(func);
-        }
+		if func_type.return_type().is_some() {
+			return Err(InterpreterError::Instantiation(
+				"Function `print_` have unit return type".into(),
+			));
+		}
 
-        Err(InterpreterError::Instantiation(format!(
-            "Unknown host func import {}",
-            field_name
-        )))
+        let func = FuncInstance::alloc_host(func_type.clone(), index);
+		return Ok(func);
     }
 
     fn resolve_global(
         &self,
         field_name: &str,
-        global_type: &GlobalDescriptor,
+        _global_type: &GlobalDescriptor,
     ) -> Result<GlobalRef, InterpreterError> {
-        if field_name == "global" {
-            return match global_type.value_type() {
-                ValueType::I32 => Ok(self.global_i32.clone()),
-                ValueType::I64 => Ok(self.global_i64.clone()),
-                ValueType::F32 => Ok(self.global_f32.clone()),
-                ValueType::F64 => Ok(self.global_f64.clone()),
-            };
-        }
-
-        Err(InterpreterError::Instantiation(format!(
-            "Unknown host global import {}",
-            field_name
-        )))
+		match field_name {
+			"global_i32" => Ok(self.global_i32.clone()),
+			"global_f32" => Ok(self.global_f32.clone()),
+			"global_f64" => Ok(self.global_f64.clone()),
+			_ => Err(InterpreterError::Instantiation(format!(
+				"Unknown host global import {}",
+				field_name
+			)))
+		}
     }
 
     fn resolve_memory(
