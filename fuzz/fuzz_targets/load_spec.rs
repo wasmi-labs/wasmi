@@ -10,11 +10,13 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 
 fn run_spec(data: &[u8]) -> Result<(), ()> {
-	const TEST_FILE: &'static str = "test.wasm";
+	let temp_dir = tempdir::TempDir::new("spec").unwrap();
+	let mut seed_path = temp_dir.path().to_path_buf();
+	seed_path.push("test.wasm");
 
 	{
 		let mut seedfile =
-			File::create(TEST_FILE).expect("open temporary file for writing to store fuzzer input");
+			File::create(&seed_path).expect("open temporary file for writing to store fuzzer input");
 		seedfile.write_all(data).expect(
 			"write fuzzer input to temporary file",
 		);
@@ -25,7 +27,7 @@ fn run_spec(data: &[u8]) -> Result<(), ()> {
 
     let exit_status = Command::new("wasm")
 		.arg("-d")
-        .arg(TEST_FILE)
+        .arg(&seed_path)
 		.stdout(Stdio::null())
 		.stderr(Stdio::null())
         .status()
