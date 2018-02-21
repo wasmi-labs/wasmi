@@ -9,7 +9,7 @@ keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
 exclude = [ "res/*", "spec/*" ]
 
 [dependencies]
-parity-wasm = "0.25"
+parity-wasm = "0.27"
 byteorder = "1.0"
 memory_units = "0.3.0"
 
