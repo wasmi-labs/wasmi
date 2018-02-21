@@ -216,7 +216,6 @@ impl MemoryInstance {
 	/// Returns `Err` if attempted to allocate more memory than permited by the limit.
 	pub fn grow(&self, additional: Pages) -> Result<Pages, Error> {
 		let size_before_grow: Pages = self.current_size();
-		println!("grow({:?}) = {:?}", additional, size_before_grow);
 
 		if additional == Pages(0) {
 			return Ok(size_before_grow);
