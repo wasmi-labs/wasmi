@@ -6,7 +6,7 @@ license = "MIT/Apache-2.0"
 readme = "README.md"
 description = "WebAssembly interpreter"
 keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
-exclude = [ "res/*", "spec/*" ]
+exclude = [ "res/*", "tests/*", "fuzz/*" ]
 
 [dependencies]
 parity-wasm = "0.27"
