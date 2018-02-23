@@ -269,17 +269,17 @@ fn try_load(wasm: &[u8], spec_driver: &mut SpecDriver) -> Result<(), Error> {
     Ok(())
 }
 
-fn load_module(wasm: &[u8], name: &Option<String>, spec_driver: &mut SpecDriver) -> ModuleRef {
-    let module = try_load_module(wasm).expect(&format!("Wasm failed to load"));
+fn load_module(wasm: &[u8], name: &Option<String>, spec_driver: &mut SpecDriver) -> Result<ModuleRef, Error> {
+    let module = try_load_module(wasm)?;
     let instance = ModuleInstance::new(&module, spec_driver)
-        .expect("Instantiation failed")
+        .map_err(|e| Error::Load(e.to_string()))?
         .run_start(spec_driver.spec_module())
-        .expect("Run start failed");
+        .map_err(|trap| Error::Start(trap))?;
 
     let module_name = name.clone();
     spec_driver.add_module(module_name, instance.clone());
 
-    instance
+    Ok(instance)
 }
 
 fn run_action(
@@ -343,9 +343,10 @@ fn try_spec(name: &str) -> Result<(), Error> {
     let spec_script_path = format!("tests/spec/testsuite/{}.wast", name);
     let mut parser = ScriptParser::from_file(spec_script_path).expect("Can't read spec script");
     while let Some(Command { kind, line }) = parser.next()? {
+		println!("Line {}:", line);
         match kind {
             CommandKind::Module { name, module, .. } => {
-                load_module(&module.into_vec()?, &name, &mut spec_driver);
+                load_module(&module.into_vec()?, &name, &mut spec_driver).expect("Failed to load module");
             }
             CommandKind::AssertReturn { action, expected } => {
                 let result = run_action(&mut spec_driver, &action);
