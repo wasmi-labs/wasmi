@@ -492,32 +492,39 @@ impl Validator {
 	}
 
 	fn validate_br_table(context: &mut FunctionValidationContext, table: &[u32], default: u32) -> Result<InstructionOutcome, Error> {
-		let mut required_block_type = None;
-
-		{
+		let required_block_type: BlockType = {
 			let default_block = context.require_label(default)?;
-			if default_block.frame_type != BlockFrameType::Loop {
-				required_block_type = Some(default_block.block_type);
-			}
+			let required_block_type = if default_block.frame_type != BlockFrameType::Loop {
+				default_block.block_type
+			} else {
+				BlockType::NoResult
+			};
 
 			for label in table {
 				let label_block = context.require_label(*label)?;
-				if label_block.frame_type != BlockFrameType::Loop {
-					if let Some(required_block_type) = required_block_type {
-						if required_block_type != label_block.block_type {
-							return Err(Error(format!("Labels in br_table points to block of different types: {:?} and {:?}", required_block_type, label_block.block_type)));
-						}
-					}
-					required_block_type = Some(label_block.block_type);
+				let label_block_type = if label_block.frame_type != BlockFrameType::Loop {
+					label_block.block_type
+				} else {
+					BlockType::NoResult
+				};
+				if required_block_type != label_block_type {
+					return Err(
+						Error(
+							format!(
+								"Labels in br_table points to block of different types: {:?} and {:?}",
+								required_block_type,
+								label_block.block_type
+							)
+						)
+					);
 				}
 			}
-		}
+			required_block_type
+		};
 
 		context.pop_value(ValueType::I32.into())?;
-		if let Some(required_block_type) = required_block_type {
-			if let BlockType::Value(value_type) = required_block_type {
-				context.tee_value(value_type.into())?;
-			}
+		if let BlockType::Value(value_type) = required_block_type {
+			context.tee_value(value_type.into())?;
 		}
 
 		Ok(InstructionOutcome::Unreachable)
