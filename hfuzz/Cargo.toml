@@ -6,4 +6,5 @@ authors = ["Sergey Pepyakin <s.pepyakin@gmail.com>"]
 [dependencies]
 honggfuzz = "0.5"
 wasmi = { path = ".." }
-
+tempdir = "0.3.6"
+wabt = "0.2.0"
