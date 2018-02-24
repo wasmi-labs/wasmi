@@ -16,6 +16,7 @@ tempdir = "0.3.6"
 
 [dependencies.libfuzzer-sys]
 git = "https://github.com/rust-fuzz/libfuzzer-sys.git"
+rev = "737524f7de1e85342b8b6cd1c01edc71018183ba"
 
 # Prevent this from interfering with workspaces
 [workspace]
