@@ -134,12 +134,12 @@ impl RuntimeValue {
 
 	/// Creates new value by interpreting passed u32 as f32.
 	pub fn decode_f32(val: u32) -> Self {
-		RuntimeValue::F32(f32_from_bits(val))
+		RuntimeValue::F32(f32::from_bits(val))
 	}
 
 	/// Creates new value by interpreting passed u64 as f64.
 	pub fn decode_f64(val: u64) -> Self {
-		RuntimeValue::F64(f64_from_bits(val))
+		RuntimeValue::F64(f64::from_bits(val))
 	}
 
 	/// Get variable type for this value.
@@ -367,21 +367,20 @@ impl_transmute_into_as!(u32, i32);
 impl_transmute_into_as!(i64, u64);
 impl_transmute_into_as!(u64, i64);
 
-// TODO: rewrite these safely when `f32/f32::to_bits/from_bits` stabilized.
 impl TransmuteInto<i32> for f32 {
-	fn transmute_into(self) -> i32 { unsafe { ::std::mem::transmute(self) } }
+	fn transmute_into(self) -> i32 { self.to_bits() as i32 }
 }
 
 impl TransmuteInto<i64> for f64 {
-	fn transmute_into(self) -> i64 { unsafe { ::std::mem::transmute(self) } }
+	fn transmute_into(self) -> i64 { self.to_bits() as i64 }
 }
 
 impl TransmuteInto<f32> for i32 {
-	fn transmute_into(self) -> f32 { f32_from_bits(self as _) }
+	fn transmute_into(self) -> f32 { f32::from_bits(self as u32) }
 }
 
 impl TransmuteInto<f64> for i64 {
-	fn transmute_into(self) -> f64 { f64_from_bits(self as _) }
+	fn transmute_into(self) -> f64 { f64::from_bits(self as u64) }
 }
 
 impl LittleEndianConvert for i8 {
@@ -488,7 +487,7 @@ impl LittleEndianConvert for f32 {
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_u32::<LittleEndian>()
-			.map(f32_from_bits)
+			.map(f32::from_bits)
 			.map_err(|_| Error::InvalidLittleEndianBuffer)
 	}
 }
@@ -503,45 +502,9 @@ impl LittleEndianConvert for f64 {
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
 		io::Cursor::new(buffer).read_u64::<LittleEndian>()
-			.map(f64_from_bits)
+			.map(f64::from_bits)
 			.map_err(|_| Error::InvalidLittleEndianBuffer)
 	}
-}
-
-// Convert u32 to f32 safely, masking out sNAN
-fn f32_from_bits(mut v: u32) -> f32 {
-	const EXP_MASK: u32   = 0x7F800000;
-	const QNAN_MASK: u32  = 0x00400000;
-	const FRACT_MASK: u32 = 0x007FFFFF;
-
-	if v & EXP_MASK == EXP_MASK && v & FRACT_MASK != 0 {
-		// If we have a NaN value, we
-		// convert signaling NaN values to quiet NaN
-		// by setting the the highest bit of the fraction
-		// TODO: remove when https://github.com/BurntSushi/byteorder/issues/71 closed.
-		// or `f32::from_bits` stabilized.
-		v |= QNAN_MASK;
-	}
-
-	unsafe { ::std::mem::transmute(v) }
-}
-
-// Convert u64 to f64 safely, masking out sNAN
-fn f64_from_bits(mut v: u64) -> f64 {
-	const EXP_MASK: u64   = 0x7FF0000000000000;
-	const QNAN_MASK: u64  = 0x0001000000000000;
-	const FRACT_MASK: u64 = 0x000FFFFFFFFFFFFF;
-
-	if v & EXP_MASK == EXP_MASK && v & FRACT_MASK != 0 {
-		// If we have a NaN value, we
-		// convert signaling NaN values to quiet NaN
-		// by setting the the highest bit of the fraction
-		// TODO: remove when https://github.com/BurntSushi/byteorder/issues/71 closed.
-		// or `f64::from_bits` stabilized.
-		v |= QNAN_MASK;
-	}
-
-	unsafe { ::std::mem::transmute(v) }
 }
 
 macro_rules! impl_integer_arithmetic_ops {
