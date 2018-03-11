@@ -134,6 +134,18 @@ impl Trap {
 	}
 }
 
+impl fmt::Display for Trap {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(f, "Trap: {:?}", self.kind)
+	}
+}
+
+impl error::Error for Trap {
+	fn description(&self) -> &str {
+		"runtime trap"
+	}
+}
+
 /// Error type which can thrown by wasm code or by host environment.
 ///
 /// See [`Trap`] for details.
