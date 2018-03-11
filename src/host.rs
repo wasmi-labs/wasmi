@@ -2,7 +2,10 @@ use std::any::TypeId;
 use value::{RuntimeValue, FromRuntimeValue};
 use {TrapKind, Trap};
 
-/// Safe wrapper for list of arguments.
+/// Wrapper around slice of [`RuntimeValue`] for using it
+/// as an argument list conveniently.
+///
+/// [`RuntimeValue`]: enum.RuntimeValue.html
 #[derive(Debug)]
 pub struct RuntimeArgs<'a>(&'a [RuntimeValue]);
 
@@ -33,6 +36,8 @@ impl<'a> RuntimeArgs<'a> {
 	/// # Errors
 	///
 	/// Returns `Err` if this list has not enough arguments.
+	///
+	/// [`RuntimeValue`]: enum.RuntimeValue.html
 	pub fn nth_value_checked(&self, idx: usize) -> Result<RuntimeValue, Trap> {
 		if self.0.len() <= idx {
 			return Err(TrapKind::UnexpectedSignature.into());
