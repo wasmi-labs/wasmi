@@ -1,7 +1,7 @@
 use std::mem;
 use std::ops;
 use std::{u32, usize};
-use std::fmt::{self, Display};
+use std::fmt;
 use std::iter::repeat;
 use std::collections::{HashMap, VecDeque};
 use parity_wasm::elements::{Opcode, BlockType, Local};
@@ -9,7 +9,7 @@ use {Error, Trap, TrapKind, Signature};
 use module::ModuleRef;
 use func::{FuncRef, FuncInstance, FuncInstanceInternal};
 use value::{
-	RuntimeValue, TryInto, WrapInto, TryTruncateInto, ExtendInto,
+	RuntimeValue, FromRuntimeValue, WrapInto, TryTruncateInto, ExtendInto,
 	ArithmeticOps, Integer, Float, LittleEndianConvert, TransmuteInto,
 };
 use host::Externals;
@@ -589,7 +589,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_store<T>(&mut self, context: &mut FunctionContext, _align: u32, offset: u32) -> Result<InstructionOutcome, TrapKind>
-		where RuntimeValue: TryInto<T, ::value::Error>, T: LittleEndianConvert {
+		where T: FromRuntimeValue, T: LittleEndianConvert {
 		let stack_value = context
 			.value_stack_mut()
 			.pop_as::<T>()
@@ -618,7 +618,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		offset: u32,
 	) -> Result<InstructionOutcome, TrapKind>
 	where
-		RuntimeValue: TryInto<T, ::value::Error>,
+		T: FromRuntimeValue,
 		T: WrapInto<U>,
 		U: LittleEndianConvert,
 	{
@@ -682,7 +682,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 
 	fn run_relop<T, F>(&mut self, context: &mut FunctionContext, f: F) -> Result<InstructionOutcome, TrapKind>
 	where
-		RuntimeValue: TryInto<T, ::value::Error>,
+		T: FromRuntimeValue,
 		F: FnOnce(T, T) -> bool,
 	{
 		let (left, right) = context
@@ -699,7 +699,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_eqz<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-		where RuntimeValue: TryInto<T, ::value::Error>, T: PartialEq<T> + Default {
+		where T: FromRuntimeValue, T: PartialEq<T> + Default {
 		let v = context
 			.value_stack_mut()
 			.pop_as::<T>();
@@ -709,40 +709,41 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_eq<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: TryInto<T, ::value::Error>, T: PartialEq<T>
+	where T: FromRuntimeValue + PartialEq<T>
 	{
-		self.run_relop(context, |left, right| left == right)
+		self.run_relop(context, |left: T, right: T| left == right)
 	}
 
 	fn run_ne<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-		where RuntimeValue: TryInto<T, ::value::Error>, T: PartialEq<T> {
-		self.run_relop(context, |left, right| left != right)
+		where T: FromRuntimeValue + PartialEq<T> {
+		self.run_relop(context, |left: T, right: T| left != right)
 	}
 
 	fn run_lt<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-		where RuntimeValue: TryInto<T, ::value::Error>, T: PartialOrd<T> + Display {
-		self.run_relop(context, |left, right| left < right)
+		where T: FromRuntimeValue + PartialOrd<T> {
+		self.run_relop(context, |left: T, right: T| left < right)
 	}
 
 	fn run_gt<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-		where RuntimeValue: TryInto<T, ::value::Error>, T: PartialOrd<T> {
-		self.run_relop(context, |left, right| left > right)
+		where T: FromRuntimeValue + PartialOrd<T> {
+		self.run_relop(context, |left: T, right: T| left > right)
 	}
 
 	fn run_lte<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-		where RuntimeValue: TryInto<T, ::value::Error>, T: PartialOrd<T> {
-		self.run_relop(context, |left, right| left <= right)
+		where T: FromRuntimeValue + PartialOrd<T> {
+		self.run_relop(context, |left: T, right: T| left <= right)
 	}
 
 	fn run_gte<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-		where RuntimeValue: TryInto<T, ::value::Error>, T: PartialOrd<T> {
-		self.run_relop(context, |left, right| left >= right)
+		where T: FromRuntimeValue + PartialOrd<T> {
+		self.run_relop(context, |left: T, right: T| left >= right)
 	}
 
 	fn run_unop<T, U, F>(&mut self, context: &mut FunctionContext, f: F) -> Result<InstructionOutcome, TrapKind>
 	where
 		F: FnOnce(T) -> U,
-		RuntimeValue: From<U> + TryInto<T, ::value::Error>
+		T: FromRuntimeValue,
+		RuntimeValue: From<U>
 	{
 		let v = context
 			.value_stack_mut()
@@ -753,22 +754,22 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_clz<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Integer<T> {
-		self.run_unop(context, |v| v.leading_zeros())
+	where RuntimeValue: From<T>, T: Integer<T> + FromRuntimeValue {
+		self.run_unop(context, |v: T| v.leading_zeros())
 	}
 
 	fn run_ctz<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Integer<T> {
-		self.run_unop(context, |v| v.trailing_zeros())
+	where RuntimeValue: From<T>, T: Integer<T> + FromRuntimeValue {
+		self.run_unop(context, |v: T| v.trailing_zeros())
 	}
 
 	fn run_popcnt<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Integer<T> {
-		self.run_unop(context, |v| v.count_ones())
+	where RuntimeValue: From<T>, T: Integer<T> + FromRuntimeValue {
+		self.run_unop(context, |v: T| v.count_ones())
 	}
 
 	fn run_add<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-		where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: ArithmeticOps<T> {
+		where RuntimeValue: From<T>, T: ArithmeticOps<T> + FromRuntimeValue {
 		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
@@ -779,7 +780,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_sub<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-		where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: ArithmeticOps<T> {
+		where RuntimeValue: From<T>, T: ArithmeticOps<T> + FromRuntimeValue {
 		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
@@ -790,7 +791,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_mul<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: ArithmeticOps<T> {
+	where RuntimeValue: From<T>, T: ArithmeticOps<T> + FromRuntimeValue {
 		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
@@ -801,7 +802,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_div<T, U>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: TransmuteInto<U> + Display, U: ArithmeticOps<U> + TransmuteInto<T> {
+	where RuntimeValue: From<T>, T: TransmuteInto<U> + FromRuntimeValue, U: ArithmeticOps<U> + TransmuteInto<T> {
 		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
@@ -814,7 +815,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_rem<T, U>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: TransmuteInto<U>, U: Integer<U> + TransmuteInto<T> {
+	where RuntimeValue: From<T>, T: TransmuteInto<U> + FromRuntimeValue, U: Integer<U> + TransmuteInto<T> {
 		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
@@ -827,7 +828,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_and<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<<T as ops::BitAnd>::Output> + TryInto<T, ::value::Error>, T: ops::BitAnd<T> {
+	where RuntimeValue: From<<T as ops::BitAnd>::Output>, T: ops::BitAnd<T> + FromRuntimeValue {
 		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
@@ -838,7 +839,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_or<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<<T as ops::BitOr>::Output> + TryInto<T, ::value::Error>, T: ops::BitOr<T> {
+	where RuntimeValue: From<<T as ops::BitOr>::Output>, T: ops::BitOr<T> + FromRuntimeValue {
 		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
@@ -849,7 +850,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_xor<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<<T as ops::BitXor>::Output> + TryInto<T, ::value::Error>, T: ops::BitXor<T> {
+	where RuntimeValue: From<<T as ops::BitXor>::Output>, T: ops::BitXor<T> + FromRuntimeValue {
 		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
@@ -860,7 +861,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_shl<T>(&mut self, context: &mut FunctionContext, mask: T) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<<T as ops::Shl<T>>::Output> + TryInto<T, ::value::Error>, T: ops::Shl<T> + ops::BitAnd<T, Output=T> {
+	where RuntimeValue: From<<T as ops::Shl<T>>::Output>, T: ops::Shl<T> + ops::BitAnd<T, Output=T> + FromRuntimeValue {
 		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
@@ -871,7 +872,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_shr<T, U>(&mut self, context: &mut FunctionContext, mask: U) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: TransmuteInto<U>, U: ops::Shr<U> + ops::BitAnd<U, Output=U>, <U as ops::Shr<U>>::Output: TransmuteInto<T> {
+	where RuntimeValue: From<T>, T: TransmuteInto<U> + FromRuntimeValue, U: ops::Shr<U> + ops::BitAnd<U, Output=U>, <U as ops::Shr<U>>::Output: TransmuteInto<T> {
 		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
@@ -884,7 +885,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_rotl<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Integer<T> {
+	where RuntimeValue: From<T>, T: Integer<T> + FromRuntimeValue {
 		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
@@ -895,7 +896,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_rotr<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Integer<T>
+	where RuntimeValue: From<T>, T: Integer<T> + FromRuntimeValue
 	{
 		let (left, right) = context
 			.value_stack_mut()
@@ -907,51 +908,51 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_abs<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Float<T>
+	where RuntimeValue: From<T>, T: Float<T> + FromRuntimeValue
 	{
-		self.run_unop(context, |v| v.abs())
+		self.run_unop(context, |v: T| v.abs())
 	}
 
 	fn run_neg<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where
-		RuntimeValue: From<<T as ops::Neg>::Output> + TryInto<T, ::value::Error>,
-		T: ops::Neg
+		RuntimeValue: From<<T as ops::Neg>::Output>,
+		T: ops::Neg + FromRuntimeValue
 	{
-		self.run_unop(context, |v| v.neg())
+		self.run_unop(context, |v: T| v.neg())
 	}
 
 	fn run_ceil<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Float<T>
+	where RuntimeValue: From<T>, T: Float<T> + FromRuntimeValue
 	{
-		self.run_unop(context, |v| v.ceil())
+		self.run_unop(context, |v: T| v.ceil())
 	}
 
 	fn run_floor<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Float<T>
+	where RuntimeValue: From<T>, T: Float<T> + FromRuntimeValue
 	{
-		self.run_unop(context, |v| v.floor())
+		self.run_unop(context, |v: T| v.floor())
 	}
 
 	fn run_trunc<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Float<T>
+	where RuntimeValue: From<T>, T: Float<T> + FromRuntimeValue
 	{
-		self.run_unop(context, |v| v.trunc())
+		self.run_unop(context, |v: T| v.trunc())
 	}
 
 	fn run_nearest<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Float<T>
+	where RuntimeValue: From<T>, T: Float<T> + FromRuntimeValue
 	{
-		self.run_unop(context, |v| v.nearest())
+		self.run_unop(context, |v: T| v.nearest())
 	}
 
 	fn run_sqrt<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Float<T>
+	where RuntimeValue: From<T>, T: Float<T> + FromRuntimeValue
 	{
-		self.run_unop(context, |v| v.sqrt())
+		self.run_unop(context, |v: T| v.sqrt())
 	}
 
 	fn run_min<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Float<T>
+	where RuntimeValue: From<T>, T: Float<T> + FromRuntimeValue
 	{
 		let (left, right) = context
 			.value_stack_mut()
@@ -963,7 +964,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_max<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Float<T> {
+	where RuntimeValue: From<T>, T: Float<T> + FromRuntimeValue {
 		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
@@ -974,7 +975,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_copysign<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<T> + TryInto<T, ::value::Error>, T: Float<T> {
+	where RuntimeValue: From<T>, T: Float<T> + FromRuntimeValue {
 		let (left, right) = context
 			.value_stack_mut()
 			.pop_pair_as::<T>()
@@ -985,12 +986,12 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_wrap<T, U>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-	where RuntimeValue: From<U> + TryInto<T, ::value::Error>, T: WrapInto<U> {
-		self.run_unop(context, |v| v.wrap_into())
+	where RuntimeValue: From<U>, T: WrapInto<U> + FromRuntimeValue {
+		self.run_unop(context, |v: T| v.wrap_into())
 	}
 
 	fn run_trunc_to_int<T, U, V>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
-		where RuntimeValue: From<V> + TryInto<T, ::value::Error>, T: TryTruncateInto<U, TrapKind>, U: TransmuteInto<V>,  {
+		where RuntimeValue: From<V>, T: TryTruncateInto<U, TrapKind> + FromRuntimeValue, U: TransmuteInto<V>,  {
 		let v = context
 			.value_stack_mut()
 			.pop_as::<T>();
@@ -1003,7 +1004,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 
 	fn run_extend<T, U, V>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where
-		RuntimeValue: From<V> + TryInto<T, ::value::Error>, T: ExtendInto<U>, U: TransmuteInto<V>
+		RuntimeValue: From<V>, T: ExtendInto<U> + FromRuntimeValue, U: TransmuteInto<V>
 	{
 		let v = context
 			.value_stack_mut()
@@ -1017,7 +1018,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 
 	fn run_reinterpret<T, U>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
 	where
-		RuntimeValue: From<U>, RuntimeValue: TryInto<T, ::value::Error>, T: TransmuteInto<U>
+		RuntimeValue: From<U>, T: FromRuntimeValue, T: TransmuteInto<U>
 	{
 		let v = context
 			.value_stack_mut()
@@ -1255,17 +1256,17 @@ impl ValueStack {
 
 	fn pop_as<T>(&mut self) -> T
 	where
-		RuntimeValue: TryInto<T, ::value::Error>,
+		T: FromRuntimeValue,
 	{
 		let value = self.stack_with_limit
 			.pop()
 			.expect("Due to validation stack shouldn't be empty");
-		TryInto::try_into(value).expect("Due to validation stack top's type should match")
+		value.try_into().expect("Due to validation stack top's type should match")
 	}
 
 	fn pop_pair_as<T>(&mut self) -> Result<(T, T), Error>
 	where
-		RuntimeValue: TryInto<T, ::value::Error>,
+		T: FromRuntimeValue,
 	{
 		let right = self.pop_as();
 		let left = self.pop_as();

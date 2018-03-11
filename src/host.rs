@@ -1,5 +1,5 @@
 use std::any::TypeId;
-use value::{RuntimeValue, TryInto};
+use value::{RuntimeValue, FromRuntimeValue};
 use {TrapKind, Trap};
 
 /// Safe wrapper for list of arguments.
@@ -18,8 +18,8 @@ impl<'a> RuntimeArgs<'a> {
 	/// # Errors
 	///
 	/// Returns `Err` if cast is invalid or not enough arguments.
-	pub fn nth_checked<T>(&self, idx: usize) -> Result<T, Trap> where RuntimeValue: TryInto<T, ::value::Error> {
-		Ok(self.nth_value_checked(idx)?.try_into().map_err(|_| TrapKind::UnexpectedSignature)?)
+	pub fn nth_checked<T>(&self, idx: usize) -> Result<T, Trap> where T: FromRuntimeValue {
+		Ok(self.nth_value_checked(idx)?.try_into().ok_or_else(|| TrapKind::UnexpectedSignature)?)
 	}
 
 	/// Extract argument as a [`RuntimeValue`] by index `idx`.
@@ -39,7 +39,7 @@ impl<'a> RuntimeArgs<'a> {
 	/// # Panics
 	///
 	/// Panics if cast is invalid or not enough arguments.
-	pub fn nth<T>(&self, idx: usize) -> T where RuntimeValue: TryInto<T, ::value::Error> {
+	pub fn nth<T>(&self, idx: usize) -> T where T: FromRuntimeValue {
 		let value = self.nth_value_checked(idx).expect("Invalid argument index");
 		value.try_into().expect("Unexpected argument type")
 	}

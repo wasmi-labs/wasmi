@@ -1,14 +1,10 @@
 use std::{i32, i64, u32, u64, f32};
 use std::io;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use parity_wasm::elements::ValueType;
 use TrapKind;
 
 #[derive(Debug)]
 pub enum Error {
-	UnexpectedType {
-		expected: ValueType,
-	},
 	InvalidLittleEndianBuffer,
 }
 
@@ -31,10 +27,23 @@ pub enum RuntimeValue {
 	F64(f64),
 }
 
-/// Try to convert into trait.
-pub trait TryInto<T, E> {
-	/// Try to convert self into other value.
-	fn try_into(self) -> Result<T, E>;
+/// Trait for creating value from a [`RuntimeValue`].
+///
+/// Typically each implementation can create a value from the specific type.
+/// For example, values of type `bool` or `u32` are both represented by [`I32`] and `f64` values are represented by
+/// [`F64`].
+///
+/// [`I32`]: enum.RuntimeValue.html#variant.I32
+/// [`F64`]: enum.RuntimeValue.html#variant.F64
+/// [`RuntimeValue`]: enum.RuntimeValue.html
+pub trait FromRuntimeValue where Self: Sized {
+	/// Create a value of type `Self` from a given [`RuntimeValue`].
+	///
+	/// Returns `None` if the [`RuntimeValue`] is of type different than
+	/// expected by the conversion in question.
+	///
+	/// [`RuntimeValue`]: enum.RuntimeValue.html
+	fn from_runtime_value(val: RuntimeValue) -> Option<Self>;
 }
 
 /// Convert one type to another by wrapping.
@@ -151,6 +160,17 @@ impl RuntimeValue {
 			RuntimeValue::F64(_) => ::types::ValueType::F64,
 		}
 	}
+
+	/// Returns `T` if this particular [`RuntimeValue`] contains
+	/// appropriate type.
+	///
+	/// See [`FromRuntimeValue`] for details.
+	///
+	/// [`FromRuntimeValue`]: trait.FromRuntimeValue.html
+	/// [`RuntimeValue`]: enum.RuntimeValue.html
+	pub fn try_into<T: FromRuntimeValue>(self) -> Option<T> {
+		FromRuntimeValue::from_runtime_value(self)
+	}
 }
 
 impl From<i32> for RuntimeValue {
@@ -189,68 +209,38 @@ impl From<f64> for RuntimeValue {
 	}
 }
 
-impl TryInto<bool, Error> for RuntimeValue {
-	fn try_into(self) -> Result<bool, Error> {
-		match self {
-			RuntimeValue::I32(val) => Ok(val != 0),
-			_ => Err(Error::UnexpectedType { expected: ValueType::I32 }),
+macro_rules! impl_from_runtime_value {
+	($expected_rt_ty: ident, $into: ty) => {
+		impl FromRuntimeValue for $into {
+			fn from_runtime_value(val: RuntimeValue) -> Option<Self> {
+				match val {
+					RuntimeValue::$expected_rt_ty(val) => Some(val as $into),
+					_ => None,
+				}
+			}
+		}
+	};
+}
+
+/// This conversion assumes that boolean values are represented by
+/// [`I32`] type.
+///
+/// [`I32`]: enum.RuntimeValue.html#variant.I32
+impl FromRuntimeValue for bool {
+	fn from_runtime_value(val: RuntimeValue) -> Option<Self> {
+		match val {
+			RuntimeValue::I32(val) => Some(val != 0),
+			_ => None,
 		}
 	}
 }
 
-impl TryInto<i32, Error> for RuntimeValue {
-	fn try_into(self) -> Result<i32, Error> {
-		match self {
-			RuntimeValue::I32(val) => Ok(val),
-			_ => Err(Error::UnexpectedType { expected: ValueType::I32 }),
-		}
-	}
-}
-
-impl TryInto<i64, Error> for RuntimeValue {
-	fn try_into(self) -> Result<i64, Error> {
-		match self {
-			RuntimeValue::I64(val) => Ok(val),
-			_ => Err(Error::UnexpectedType { expected: ValueType::I64 }),
-		}
-	}
-}
-
-impl TryInto<f32, Error> for RuntimeValue {
-	fn try_into(self) -> Result<f32, Error> {
-		match self {
-			RuntimeValue::F32(val) => Ok(val),
-			_ => Err(Error::UnexpectedType { expected: ValueType::F32 }),
-		}
-	}
-}
-
-impl TryInto<f64, Error> for RuntimeValue {
-	fn try_into(self) -> Result<f64, Error> {
-		match self {
-			RuntimeValue::F64(val) => Ok(val),
-			_ => Err(Error::UnexpectedType { expected: ValueType::F64 }),
-		}
-	}
-}
-
-impl TryInto<u32, Error> for RuntimeValue {
-	fn try_into(self) -> Result<u32, Error> {
-		match self {
-			RuntimeValue::I32(val) => Ok(val as u32),
-			_ => Err(Error::UnexpectedType { expected: ValueType::I32 }),
-		}
-	}
-}
-
-impl TryInto<u64, Error> for RuntimeValue {
-	fn try_into(self) -> Result<u64, Error> {
-		match self {
-			RuntimeValue::I64(val) => Ok(val as u64),
-			_ => Err(Error::UnexpectedType { expected: ValueType::I64 }),
-		}
-	}
-}
+impl_from_runtime_value!(I32, i32);
+impl_from_runtime_value!(I64, i64);
+impl_from_runtime_value!(F32, f32);
+impl_from_runtime_value!(F64, f64);
+impl_from_runtime_value!(I32, u32);
+impl_from_runtime_value!(I64, u64);
 
 macro_rules! impl_wrap_into {
 	($from: ident, $into: ident) => {
