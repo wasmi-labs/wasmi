@@ -12,6 +12,12 @@ impl<'a> From<&'a [RuntimeValue]> for RuntimeArgs<'a> {
 	}
 }
 
+impl<'a> AsRef<[RuntimeValue]> for RuntimeArgs<'a> {
+	fn as_ref(&self) -> &[RuntimeValue] {
+		self.0
+	}
+}
+
 impl<'a> RuntimeArgs<'a> {
 	/// Extract argument by index `idx`.
 	///
