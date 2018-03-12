@@ -21,9 +21,7 @@ run_test!("call", wasm_call);
 run_test!("call_indirect", wasm_call_indirect);
 run_test!("comments", wasm_comments);
 run_test!("const", wasm_const);
-// TODO: commented out until sNaN issue is resolved:
-// https://github.com/NikVolf/parity-wasm/blob/b5aaf103cf28f1e36df832f4883f55043e67894b/src/interpreter/value.rs#L510
-// run_test!("conversions", wasm_conversions);
+run_test!("conversions", wasm_conversions);
 run_test!("custom_section", wasm_custom_section);
 run_test!("elem", wasm_elem);
 run_test!("endianness", wasm_endianness);
@@ -35,11 +33,9 @@ run_test!("f64", wasm_f64);
 run_test!("f64_bitwise", wasm_f64_bitwise);
 run_test!("f64_cmp", wasm_f64_cmp);
 run_test!("fac", wasm_fac);
-// TODO: commented out until sNaN issue is resolved:
-// https://github.com/NikVolf/parity-wasm/blob/b5aaf103cf28f1e36df832f4883f55043e67894b/src/interpreter/value.rs#L510
-// run_test!("float_exprs", wasm_float_exprs);
-// run_test!("float_literals", wasm_float_literals);
-// run_test!("float_memory", wasm_float_memory);
+run_test!("float_exprs", wasm_float_exprs);
+run_test!("float_literals", wasm_float_literals);
+run_test!("float_memory", wasm_float_memory);
 run_test!("float_misc", wasm_float_misc);
 run_test!("forward", wasm_forward);
 run_test!("func", wasm_func);
