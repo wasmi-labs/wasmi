@@ -364,7 +364,7 @@ mod tests;
 
 pub use self::memory::{MemoryInstance, MemoryRef, LINEAR_MEMORY_PAGE_SIZE};
 pub use self::table::{TableInstance, TableRef};
-pub use self::value::RuntimeValue;
+pub use self::value::{RuntimeValue, FromRuntimeValue};
 pub use self::host::{Externals, NopExternals, HostError, RuntimeArgs};
 pub use self::imports::{ModuleImportResolver, ImportResolver, ImportsBuilder};
 pub use self::module::{ModuleInstance, ModuleRef, ExternVal, NotStartedModuleRef};
