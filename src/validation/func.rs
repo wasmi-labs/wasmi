@@ -371,10 +371,7 @@ impl Validator {
 
 	fn validate_tee_local(context: &mut FunctionValidationContext, index: u32) -> Result<InstructionOutcome, Error> {
 		let local_type = context.require_local(index)?;
-		let value_type = context.tee_value(StackValueType::Any)?;
-		if local_type != value_type {
-			return Err(Error(format!("Trying to update local {} of type {:?} with value of type {:?}", index, local_type, value_type)));
-		}
+		context.tee_value(local_type)?;
 		Ok(InstructionOutcome::ValidateNextInstruction)
 	}
 
@@ -641,10 +638,10 @@ impl<'a> FunctionValidationContext<'a> {
 		}
 	}
 
-	fn tee_value(&mut self, value_type: StackValueType) -> Result<StackValueType, Error> {
-		let value = self.pop_value(value_type)?;
-		self.push_value(value)?;
-		Ok(value)
+	fn tee_value(&mut self, value_type: StackValueType) -> Result<(), Error> {
+		let _ = self.pop_value(value_type)?;
+		self.push_value(value_type)?;
+		Ok(())
 	}
 
 	fn unreachable(&mut self) -> Result<(), Error> {
