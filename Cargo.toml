@@ -22,4 +22,4 @@ wabt = "~0.2.2"
 # 32-bit platforms are not supported and not tested. Use this flag if you really want to use
 # wasmi on these platforms.
 # See https://github.com/pepyakin/wasmi/issues/43
-32bit_opt_in = []
+opt-in-32bit = []
