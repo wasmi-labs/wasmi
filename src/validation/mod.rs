@@ -195,7 +195,7 @@ pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
 		for import in import_section.entries() {
 			match *import.external() {
 				External::Function(function_type_index) => {
-					context.require_function(function_type_index)?;
+					context.require_function_type(function_type_index)?;
 				}
 				External::Global(ref global_type) => {
 					if global_type.is_mutable() {
