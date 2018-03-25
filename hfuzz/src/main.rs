@@ -8,7 +8,12 @@ use std::fs::File;
 use std::io::Write;
 use std::process::{Command, Stdio};
 
-fn run_spec(data: &[u8]) -> Result<(), ()> {
+fn dump_all_into_buf(src: &[u8], buf: &mut [u8; 64]) {
+	let common_len = usize::min(src.len(), buf.len());
+	buf[0..common_len].copy_from_slice(&src[0..common_len]);
+}
+
+fn run_spec(data: &[u8], stdout_msg_buf: &mut [u8; 64], stderr_msg_buf: &mut [u8; 64]) -> Result<(), ()> {
 	let temp_dir = tempdir::TempDir::new("spec").unwrap();
 	let mut seed_path = temp_dir.path().to_path_buf();
 	seed_path.push("test.wasm");
@@ -24,17 +29,19 @@ fn run_spec(data: &[u8]) -> Result<(), ()> {
 		);
 	}
 
-    let exit_status = Command::new("wasm")
+    let output = Command::new("wasm")
 		.arg("-d")
         .arg(&seed_path)
 		.stdout(Stdio::null())
 		.stderr(Stdio::null())
-        .status()
+        .output()
         .expect("failed to execute `wasm`");
 
-	if exit_status.success() {
+	if output.status.success() {
 		Ok(())
 	} else {
+		dump_all_into_buf(&output.stdout, stdout_msg_buf);
+		dump_all_into_buf(&output.stderr, stderr_msg_buf);
 		Err(())
 	}
 }
@@ -47,10 +54,17 @@ fn run_wasmi(data: &[u8]) -> Result<(), ()> {
 fn main() {
     loop {
         fuzz!(|data: &[u8]| {
-			let wasmi_result = run_wasmi(data);
-			let wasm_result = run_spec(data);
+			// Keep messages on stack. This should lead to a different stack hashes for
+			// different error messages.
+			let mut stdout_msg_buf: [u8; 64] = [0; 64];
+			let mut stderr_msg_buf: [u8; 64] = [0; 64];
 
-			assert_eq!(wasmi_result.is_ok(), wasm_result.is_ok());
+			let wasmi_result = run_wasmi(data);
+			let wasm_result = run_spec(data, &mut stdout_msg_buf, &mut stderr_msg_buf);
+
+			if wasmi_result.is_ok() != wasm_result.is_ok() {
+				panic!("stdout: {:?}, stderr: {:?}", &stdout_msg_buf[..], &stderr_msg_buf as &[u8]);
+			}
         });
     }
 }
