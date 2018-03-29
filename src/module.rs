@@ -383,10 +383,16 @@ impl ModuleInstance {
 		Ok(instance)
 	}
 
-	fn instantiate_with_externvals(
-		loaded_module: &Module,
+	/// Instantiate a module with given [external values][ExternVal] as imports.
+	///
+	/// See [new] for details.
+	///
+	/// [new]: #method.new
+	/// [ExternVal]: https://webassembly.github.io/spec/core/exec/runtime.html#syntax-externval
+	pub fn with_externvals<'a>(
+		loaded_module: &'a Module,
 		extern_vals: &[ExternVal],
-	) -> Result<ModuleRef, Error> {
+	) -> Result<NotStartedModuleRef<'a>, Error> {
 		let module = loaded_module.module();
 
 		let module_ref = ModuleInstance::alloc_module(loaded_module, extern_vals)?;
@@ -433,7 +439,10 @@ impl ModuleInstance {
 			memory_inst.set(offset_val, data_segment.value())?;
 		}
 
-		Ok(module_ref)
+		Ok(NotStartedModuleRef {
+			loaded_module,
+			instance: module_ref,
+		})
 	}
 
 	/// Instantiate a [module][`Module`].
@@ -535,11 +544,7 @@ impl ModuleInstance {
 			extern_vals.push(extern_val);
 		}
 
-		let instance = Self::instantiate_with_externvals(loaded_module, &extern_vals)?;
-		Ok(NotStartedModuleRef {
-			loaded_module,
-			instance,
-		})
+		Self::with_externvals(loaded_module, &extern_vals)
 	}
 
 	/// Invoke exported function by a name.
