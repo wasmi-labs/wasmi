@@ -213,9 +213,9 @@ impl ModuleInstance {
 		self.exports.borrow_mut().insert(name.into(), extern_val);
 	}
 
-	fn alloc_module(
+	fn alloc_module<'i, I: Iterator<Item = &'i ExternVal>>(
 		loaded_module: &Module,
-		extern_vals: &[ExternVal]
+		extern_vals: I,
 	) -> Result<ModuleRef, Error> {
 		let module = loaded_module.module();
 		let instance = ModuleRef(Rc::new(ModuleInstance::default()));
@@ -226,18 +226,26 @@ impl ModuleInstance {
 		}
 
 		{
-			let imports = module.import_section().map(|is| is.entries()).unwrap_or(
-				&[],
-			);
-			if imports.len() != extern_vals.len() {
-				return Err(Error::Instantiation(
-					"extern_vals length is not equal to import section entries".to_owned()
-				));
-			}
+			let mut imports = module
+				.import_section()
+				.map(|is| is.entries())
+				.unwrap_or(&[])
+				.into_iter();
+			let mut extern_vals = extern_vals;
+			loop {
+				// Iterate on imports and extern_vals in lockstep, a-la `Iterator:zip`.
+				// We can't use `Iterator::zip` since we want to check if lengths of both iterators are same and
+				// `Iterator::zip` just returns `None` if either of iterators return `None`.
+				let (import, extern_val) = match (imports.next(), extern_vals.next()) {
+					(Some(import), Some(extern_val)) => (import, extern_val),
+					(None, None) => break,
+					(Some(_), None) | (None, Some(_)) => {
+						return Err(Error::Instantiation(
+							"extern_vals length is not equal to import section entries".to_owned(),
+						));
+					}
+				};
 
-			for (import, extern_val) in
-				Iterator::zip(imports.into_iter(), extern_vals.into_iter())
-			{
 				match (import.external(), extern_val) {
 					(&External::Function(fn_type_idx), &ExternVal::Func(ref func)) => {
 						let expected_fn_type = instance.signature_by_index(fn_type_idx).expect(
@@ -383,10 +391,16 @@ impl ModuleInstance {
 		Ok(instance)
 	}
 
-	fn instantiate_with_externvals(
-		loaded_module: &Module,
-		extern_vals: &[ExternVal],
-	) -> Result<ModuleRef, Error> {
+	/// Instantiate a module with given [external values][ExternVal] as imports.
+	///
+	/// See [new] for details.
+	///
+	/// [new]: #method.new
+	/// [ExternVal]: https://webassembly.github.io/spec/core/exec/runtime.html#syntax-externval
+	pub fn with_externvals<'a, 'i, I: Iterator<Item = &'i ExternVal>>(
+		loaded_module: &'a Module,
+		extern_vals: I,
+	) -> Result<NotStartedModuleRef<'a>, Error> {
 		let module = loaded_module.module();
 
 		let module_ref = ModuleInstance::alloc_module(loaded_module, extern_vals)?;
@@ -433,7 +447,10 @@ impl ModuleInstance {
 			memory_inst.set(offset_val, data_segment.value())?;
 		}
 
-		Ok(module_ref)
+		Ok(NotStartedModuleRef {
+			loaded_module,
+			instance: module_ref,
+		})
 	}
 
 	/// Instantiate a [module][`Module`].
@@ -535,11 +552,7 @@ impl ModuleInstance {
 			extern_vals.push(extern_val);
 		}
 
-		let instance = Self::instantiate_with_externvals(loaded_module, &extern_vals)?;
-		Ok(NotStartedModuleRef {
-			loaded_module,
-			instance,
-		})
+		Self::with_externvals(loaded_module, extern_vals.iter())
 	}
 
 	/// Invoke exported function by a name.
@@ -752,7 +765,9 @@ pub fn check_limits(limits: &ResizableLimits) -> Result<(), Error> {
 #[cfg(test)]
 mod tests {
 	use imports::ImportsBuilder;
-	use super::{ModuleInstance};
+	use func::FuncInstance;
+	use types::{Signature, ValueType};
+	use super::{ModuleInstance, ExternVal};
 	use tests::parse_wat;
 
 	#[should_panic]
@@ -769,5 +784,52 @@ mod tests {
 			&module_with_start,
 			&ImportsBuilder::default()
 		).unwrap().assert_no_start();
+	}
+
+	#[test]
+	fn imports_provided_by_externvals() {
+		let module_with_single_import = parse_wat(
+			r#"
+			(module
+				(import "foo" "bar" (func))
+				)
+			"#,
+		);
+
+		assert!(
+			ModuleInstance::with_externvals(
+				&module_with_single_import,
+				[
+					ExternVal::Func(FuncInstance::alloc_host(Signature::new(&[][..], None), 0),)
+				].iter(),
+			).is_ok()
+		);
+
+		// externval vector is longer than import count.
+		assert!(
+			ModuleInstance::with_externvals(
+				&module_with_single_import,
+				[
+					ExternVal::Func(FuncInstance::alloc_host(Signature::new(&[][..], None), 0)),
+					ExternVal::Func(FuncInstance::alloc_host(Signature::new(&[][..], None), 1)),
+				].iter(),
+			).is_err()
+		);
+
+		// externval vector is shorter than import count.
+		assert!(ModuleInstance::with_externvals(&module_with_single_import, [].iter(),).is_err());
+
+		// externval vector has an unexpected type.
+		assert!(
+			ModuleInstance::with_externvals(
+				&module_with_single_import,
+				[
+					ExternVal::Func(FuncInstance::alloc_host(
+						Signature::new(&[][..], Some(ValueType::I32)),
+						0
+					),)
+				].iter(),
+			).is_err()
+		);
 	}
 }
