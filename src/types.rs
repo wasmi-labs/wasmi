@@ -20,6 +20,22 @@ pub struct Signature {
 impl Signature {
 	/// Creates new signature with givens
 	/// parameter types and optional return type.
+	///
+	/// # Examples
+	///
+	/// ```rust
+	/// use wasmi::{Signature, ValueType};
+	///
+	/// // s1: (i32) -> ()
+	/// let s1 = Signature::new(&[ValueType::I32][..], None);
+	///
+	/// // s2: () -> i32
+	/// let s2 = Signature::new(&[][..], Some(ValueType::I32));
+	///
+	/// // s3: (I64) -> ()
+	/// let dynamic_params = vec![ValueType::I64];
+	/// let s3 = Signature::new(dynamic_params, None);
+	/// ```
 	pub fn new<C: Into<Cow<'static, [ValueType]>>>(
 		params: C,
 		return_type: Option<ValueType>
