@@ -1,4 +1,7 @@
-# wasmi
+[![crates.io link](https://img.shields.io/crates/v/wasmi.svg)](https://crates.io/crates/wasmi)
+[![Build Status](https://travis-ci.org/paritytech/wasmi.svg?branch=master)](https://travis-ci.org/paritytech/wasmi)
+
+# `wasmi`
 
 WASM interpreter (previously lived in [parity-wasm](https://github.com/paritytech/parity-wasm))
 
