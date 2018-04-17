@@ -107,6 +107,14 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 						FuncInstanceInternal::Host { ref signature, .. } => {
 							let args = prepare_function_args(signature, &mut function_context.value_stack);
 							let return_val = FuncInstance::invoke(&nested_func, &args, self.externals)?;
+
+							// Check if `return_val` matches the signature.
+							let value_ty = return_val.clone().map(|val| val.value_type());
+							let expected_ty = nested_func.signature().return_type();
+							if value_ty != expected_ty {
+								return Err(TrapKind::UnexpectedSignature.into());
+							}
+
 							if let Some(return_val) = return_val {
 								function_context.value_stack_mut().push(return_val).map_err(Trap::new)?;
 							}
