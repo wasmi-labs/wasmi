@@ -430,9 +430,7 @@ impl Module {
 		})
 	}
 
-	/// Create `Module` from `parity_wasm::elements::Module`.
-	///
-	/// This function will load, validate and prepare a `parity_wasm`'s `Module`.
+	/// Fail if the module contains any floating-point operations
 	///
 	/// # Errors
 	///

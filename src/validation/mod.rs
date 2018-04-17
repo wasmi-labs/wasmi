@@ -56,10 +56,10 @@ pub fn deny_floating_point(module: &Module) -> Result<(), Error> {
 			use parity_wasm::elements::Opcode::*;
 
 			macro_rules! match_eq {
-                    ($pattern:pat) => {
-                        |val| if let $pattern = *val { true } else { false }
-                    }
-                }
+				($pattern:pat) => {
+					|val| if let $pattern = *val { true } else { false }
+				};
+			}
 
 			const DENIED: &[fn(&Opcode) -> bool] = &[
 				match_eq!(F32Load(_, _)),
@@ -133,7 +133,29 @@ pub fn deny_floating_point(module: &Module) -> Result<(), Error> {
 			];
 
 			if DENIED.iter().any(|is_denied| is_denied(op)) {
-				return Err(Error(format!("Unimplemented opcode: {:?}", op)));
+				return Err(Error(format!("Floating point operation denied: {:?}", op)));
+			}
+		}
+	}
+
+	if let (Some(sec), Some(types)) = (module.function_section(), module.type_section()) {
+		use parity_wasm::elements::{Type, ValueType};
+
+		let types = types.types();
+
+		for sig in sec.entries() {
+			if let Some(typ) = types.get(sig.type_ref() as usize) {
+				match *typ {
+					Type::Function(ref func) => {
+						if func.params()
+							.iter()
+							.chain(func.return_type().as_ref())
+							.any(|&typ| typ == ValueType::F32 || typ == ValueType::F64)
+						{
+							return Err(Error(format!("Use of floating point types denied")));
+						}
+					}
+				}
 			}
 		}
 	}
