@@ -385,7 +385,6 @@ pub struct Module {
 }
 
 impl Module {
-
 	/// Create `Module` from `parity_wasm::elements::Module`.
 	///
 	/// This function will load, validate and prepare a `parity_wasm`'s `Module`.
@@ -429,6 +428,66 @@ impl Module {
 			labels,
 			module,
 		})
+	}
+
+	/// Fail if the module contains any floating-point operations
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if provided `Module` is not valid.
+	///
+	/// # Examples
+	///
+	/// ```rust
+	/// # extern crate wasmi;
+	/// # extern crate wabt;
+	///
+	/// let wasm_binary: Vec<u8> =
+	///     wabt::wat2wasm(
+	///         r#"
+	///         (module
+	///          (func $add (param $lhs i32) (param $rhs i32) (result i32)
+	///                get_local $lhs
+	///                get_local $rhs
+	///                i32.add))
+	///         "#,
+	///     )
+	///     .expect("failed to parse wat");
+	///
+	/// // Load wasm binary and prepare it for instantiation.
+	/// let module = wasmi::Module::from_buffer(&wasm_binary).expect("Parsing failed");
+	/// assert!(module.deny_floating_point().is_ok());
+	///
+	/// let wasm_binary: Vec<u8> =
+	///     wabt::wat2wasm(
+	///         r#"
+	///         (module
+	///          (func $add (param $lhs f32) (param $rhs f32) (result f32)
+	///                get_local $lhs
+	///                get_local $rhs
+	///                f32.add))
+	///         "#,
+	///     )
+	///     .expect("failed to parse wat");
+	///
+	/// let module = wasmi::Module::from_buffer(&wasm_binary).expect("Parsing failed");
+	/// assert!(module.deny_floating_point().is_err());
+	///
+	/// let wasm_binary: Vec<u8> =
+	///     wabt::wat2wasm(
+	///         r#"
+	///         (module
+	///          (func $add (param $lhs f32) (param $rhs f32) (result f32)
+	///                get_local $lhs))
+	///         "#,
+	///     )
+	///     .expect("failed to parse wat");
+	///
+	/// let module = wasmi::Module::from_buffer(&wasm_binary).expect("Parsing failed");
+	/// assert!(module.deny_floating_point().is_err());
+	/// ```
+	pub fn deny_floating_point(&self) -> Result<(), Error> {
+		validation::deny_floating_point(&self.module).map_err(Into::into)
 	}
 
 	/// Create `Module` from a given buffer.
