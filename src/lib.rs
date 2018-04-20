@@ -98,6 +98,10 @@
 
 #[cfg(test)]
 extern crate wabt;
+#[cfg(test)]
+#[macro_use]
+extern crate assert_matches;
+
 extern crate parity_wasm;
 extern crate byteorder;
 extern crate memory_units as memory_units_crate;

@@ -1,11 +1,11 @@
 use std::u32;
-use std::iter::repeat;
 use std::collections::HashMap;
 use parity_wasm::elements::{Opcode, BlockType, ValueType, TableElementType, Func, FuncBody};
 use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use validation::context::ModuleContext;
 
 use validation::Error;
+use validation::util::Locals;
 
 use common::stack::StackWithLimit;
 use common::{BlockFrame, BlockFrameType};
@@ -22,7 +22,7 @@ struct FunctionValidationContext<'a> {
 	/// Current instruction position.
 	position: usize,
 	/// Local variables.
-	locals: &'a [ValueType],
+	locals: Locals<'a>,
 	/// Value stack.
 	value_stack: StackWithLimit<StackValueType>,
 	/// Frame stack.
@@ -62,19 +62,9 @@ impl Validator {
 	) -> Result<HashMap<usize, usize>, Error> {
 		let (params, result_ty) = module.require_function_type(func.type_ref())?;
 
-		// locals = (params + vars)
-		let mut locals = params.to_vec();
-		locals.extend(
-			body.locals()
-				.iter()
-				.flat_map(|l| repeat(l.value_type())
-				.take(l.count() as usize)
-			),
-		);
-
 		let mut context = FunctionValidationContext::new(
 			&module,
-			&locals,
+			Locals::new(params, body.locals()),
 			DEFAULT_VALUE_STACK_LIMIT,
 			DEFAULT_FRAME_STACK_LIMIT,
 			result_ty,
@@ -585,7 +575,7 @@ impl Validator {
 impl<'a> FunctionValidationContext<'a> {
 	fn new(
 		module: &'a ModuleContext,
-		locals: &'a [ValueType],
+		locals: Locals<'a>,
 		value_stack_limit: usize,
 		frame_stack_limit: usize,
 		return_type: BlockType,
@@ -707,10 +697,7 @@ impl<'a> FunctionValidationContext<'a> {
 	}
 
 	fn require_local(&self, idx: u32) -> Result<StackValueType, Error> {
-		self.locals.get(idx as usize)
-			.cloned()
-			.map(Into::into)
-			.ok_or(Error(format!("Trying to access local with index {} when there are only {} locals", idx, self.locals.len())))
+		Ok(self.locals.type_of_local(idx).map(StackValueType::from)?)
 	}
 
 	fn into_labels(self) -> HashMap<usize, usize> {
