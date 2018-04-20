@@ -17,6 +17,7 @@ memory_units = "0.3.0"
 
 [dev-dependencies]
 wabt = "~0.2.2"
+assert_matches = "1.1"
 
 [features]
 # 32-bit platforms are not supported and not tested. Use this flag if you really want to use

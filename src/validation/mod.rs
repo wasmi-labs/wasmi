@@ -12,6 +12,7 @@ use memory_units::Pages;
 
 mod context;
 mod func;
+mod util;
 
 #[cfg(test)]
 mod tests;
