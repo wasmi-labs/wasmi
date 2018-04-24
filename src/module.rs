@@ -420,7 +420,7 @@ impl ModuleInstance {
 
 			// This check is not only for bailing out early, but also to check the case when
 			// segment consist of 0 members.
-			if offset_val as usize + element_segment.members().len() > table_inst.current_size() as usize {
+			if offset_val as u64 + element_segment.members().len() as u64 > table_inst.current_size() as u64 {
 				return Err(
 					Error::Instantiation("elements segment does not fit".to_string())
 				);

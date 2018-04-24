@@ -1,6 +1,7 @@
-use std::{i32, i64, u32, u64, f32};
-use std::io;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use nan_preserving_float::{F32, F64};
+use std::io;
+use std::{f32, i32, i64, u32, u64};
 use TrapKind;
 
 #[derive(Debug)]
@@ -22,9 +23,9 @@ pub enum RuntimeValue {
 	/// Value of 64-bit signed or unsigned integer.
 	I64(i64),
 	/// Value of 32-bit IEEE 754-2008 floating point number.
-	F32(f32),
+	F32(F32),
 	/// Value of 64-bit IEEE 754-2008 floating point number.
-	F64(f64),
+	F64(F64),
 }
 
 /// Trait for creating value from a [`RuntimeValue`].
@@ -136,19 +137,19 @@ impl RuntimeValue {
 		match value_type {
 			::types::ValueType::I32 => RuntimeValue::I32(0),
 			::types::ValueType::I64 => RuntimeValue::I64(0),
-			::types::ValueType::F32 => RuntimeValue::F32(0f32),
-			::types::ValueType::F64 => RuntimeValue::F64(0f64),
+			::types::ValueType::F32 => RuntimeValue::F32(0f32.into()),
+			::types::ValueType::F64 => RuntimeValue::F64(0f64.into()),
 		}
 	}
 
 	/// Creates new value by interpreting passed u32 as f32.
 	pub fn decode_f32(val: u32) -> Self {
-		RuntimeValue::F32(f32::from_bits(val))
+		RuntimeValue::F32(F32::from_bits(val))
 	}
 
 	/// Creates new value by interpreting passed u64 as f64.
 	pub fn decode_f64(val: u64) -> Self {
-		RuntimeValue::F64(f64::from_bits(val))
+		RuntimeValue::F64(F64::from_bits(val))
 	}
 
 	/// Get variable type for this value.
@@ -197,14 +198,14 @@ impl From<u64> for RuntimeValue {
 	}
 }
 
-impl From<f32> for RuntimeValue {
-	fn from(val: f32) -> Self {
+impl From<F32> for RuntimeValue {
+	fn from(val: F32) -> Self {
 		RuntimeValue::F32(val)
 	}
 }
 
-impl From<f64> for RuntimeValue {
-	fn from(val: f64) -> Self {
+impl From<F64> for RuntimeValue {
+	fn from(val: F64) -> Self {
 		RuntimeValue::F64(val)
 	}
 }
@@ -214,7 +215,7 @@ macro_rules! impl_from_runtime_value {
 		impl FromRuntimeValue for $into {
 			fn from_runtime_value(val: RuntimeValue) -> Option<Self> {
 				match val {
-					RuntimeValue::$expected_rt_ty(val) => Some(val as $into),
+					RuntimeValue::$expected_rt_ty(val) => Some(val.transmute_into()),
 					_ => None,
 				}
 			}
@@ -237,19 +238,26 @@ impl FromRuntimeValue for bool {
 
 impl_from_runtime_value!(I32, i32);
 impl_from_runtime_value!(I64, i64);
-impl_from_runtime_value!(F32, f32);
-impl_from_runtime_value!(F64, f64);
+impl_from_runtime_value!(F32, F32);
+impl_from_runtime_value!(F64, F64);
 impl_from_runtime_value!(I32, u32);
 impl_from_runtime_value!(I64, u64);
 
 macro_rules! impl_wrap_into {
-	($from: ident, $into: ident) => {
+	($from:ident, $into:ident) => {
 		impl WrapInto<$into> for $from {
 			fn wrap_into(self) -> $into {
 				self as $into
 			}
 		}
-	}
+	};
+	($from:ident, $intermediate:ident, $into:ident) => {
+		impl WrapInto<$into> for $from {
+			fn wrap_into(self) -> $into {
+				$into::from(self as $intermediate)
+			}
+		}
+	};
 }
 
 impl_wrap_into!(i32, i8);
@@ -257,12 +265,18 @@ impl_wrap_into!(i32, i16);
 impl_wrap_into!(i64, i8);
 impl_wrap_into!(i64, i16);
 impl_wrap_into!(i64, i32);
-impl_wrap_into!(i64, f32);
-impl_wrap_into!(u64, f32);
+impl_wrap_into!(i64, f32, F32);
+impl_wrap_into!(u64, f32, F32);
 // Casting from an f64 to an f32 will produce the closest possible value (rounding strategy unspecified)
 // NOTE: currently this will cause Undefined Behavior if the value is finite but larger or smaller than the
 // largest or smallest finite value representable by f32. This is a bug and will be fixed.
 impl_wrap_into!(f64, f32);
+
+impl WrapInto<F32> for F64 {
+	fn wrap_into(self) -> F32 {
+		(f64::from(self) as f32).into()
+	}
+}
 
 macro_rules! impl_try_truncate_into {
 	($from: ident, $into: ident) => {
@@ -284,7 +298,14 @@ macro_rules! impl_try_truncate_into {
 				Ok(self as $into)
 			}
 		}
-	}
+	};
+	($from:ident, $intermediate:ident, $into:ident) => {
+		impl TryTruncateInto<$into, TrapKind> for $from {
+			fn try_truncate_into(self) -> Result<$into, TrapKind> {
+				$intermediate::from(self).try_truncate_into()
+			}
+		}
+	};
 }
 
 impl_try_truncate_into!(f32, i32);
@@ -295,15 +316,30 @@ impl_try_truncate_into!(f32, u32);
 impl_try_truncate_into!(f32, u64);
 impl_try_truncate_into!(f64, u32);
 impl_try_truncate_into!(f64, u64);
+impl_try_truncate_into!(F32, f32, i32);
+impl_try_truncate_into!(F32, f32, i64);
+impl_try_truncate_into!(F64, f64, i32);
+impl_try_truncate_into!(F64, f64, i64);
+impl_try_truncate_into!(F32, f32, u32);
+impl_try_truncate_into!(F32, f32, u64);
+impl_try_truncate_into!(F64, f64, u32);
+impl_try_truncate_into!(F64, f64, u64);
 
 macro_rules! impl_extend_into {
-	($from: ident, $into: ident) => {
+	($from:ident, $into:ident) => {
 		impl ExtendInto<$into> for $from {
 			fn extend_into(self) -> $into {
 				self as $into
 			}
 		}
-	}
+	};
+	($from:ident, $intermediate:ident, $into:ident) => {
+		impl ExtendInto<$into> for $from {
+			fn extend_into(self) -> $into {
+				$into::from(self as $intermediate)
+			}
+		}
+	};
 }
 
 impl_extend_into!(i8, i32);
@@ -325,6 +361,20 @@ impl_extend_into!(i64, f64);
 impl_extend_into!(u64, f64);
 impl_extend_into!(f32, f64);
 
+impl_extend_into!(i32, f32, F32);
+impl_extend_into!(i32, f64, F64);
+impl_extend_into!(u32, f32, F32);
+impl_extend_into!(u32, f64, F64);
+impl_extend_into!(i64, f64, F64);
+impl_extend_into!(u64, f64, F64);
+impl_extend_into!(f32, f64, F64);
+
+impl ExtendInto<F64> for F32 {
+	fn extend_into(self) -> F64 {
+		(f32::from(self) as f64).into()
+	}
+}
+
 macro_rules! impl_transmute_into_self {
 	($type: ident) => {
 		impl TransmuteInto<$type> for $type {
@@ -339,6 +389,8 @@ impl_transmute_into_self!(i32);
 impl_transmute_into_self!(i64);
 impl_transmute_into_self!(f32);
 impl_transmute_into_self!(f64);
+impl_transmute_into_self!(F32);
+impl_transmute_into_self!(F64);
 
 macro_rules! impl_transmute_into_as {
 	($from: ident, $into: ident) => {
@@ -356,6 +408,49 @@ impl_transmute_into_as!(i32, u32);
 impl_transmute_into_as!(u32, i32);
 impl_transmute_into_as!(i64, u64);
 impl_transmute_into_as!(u64, i64);
+
+macro_rules! impl_transmute_into_npf {
+	($npf:ident, $float:ident, $signed:ident, $unsigned:ident) => {
+		impl TransmuteInto<$float> for $npf {
+			fn transmute_into(self) -> $float {
+				self.into()
+			}
+		}
+
+		impl TransmuteInto<$npf> for $float {
+			fn transmute_into(self) -> $npf {
+				self.into()
+			}
+		}
+
+		impl TransmuteInto<$signed> for $npf {
+			fn transmute_into(self) -> $signed {
+				self.to_bits() as _
+			}
+		}
+
+		impl TransmuteInto<$unsigned> for $npf {
+			fn transmute_into(self) -> $unsigned {
+				self.to_bits()
+			}
+		}
+
+		impl TransmuteInto<$npf> for $signed {
+			fn transmute_into(self) -> $npf {
+				$npf::from_bits(self as _)
+			}
+		}
+
+		impl TransmuteInto<$npf> for $unsigned {
+			fn transmute_into(self) -> $npf {
+				$npf::from_bits(self)
+			}
+		}
+	};
+}
+
+impl_transmute_into_npf!(F32, f32, i32, u32);
+impl_transmute_into_npf!(F64, f64, i64, u64);
 
 impl TransmuteInto<i32> for f32 {
 	fn transmute_into(self) -> i32 { self.to_bits() as i32 }
@@ -497,6 +592,26 @@ impl LittleEndianConvert for f64 {
 	}
 }
 
+impl LittleEndianConvert for F32 {
+	fn into_little_endian(self) -> Vec<u8> {
+		(self.to_bits() as i32).into_little_endian()
+	}
+
+	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
+		i32::from_little_endian(buffer).map(|val| Self::from_bits(val as _))
+	}
+}
+
+impl LittleEndianConvert for F64 {
+	fn into_little_endian(self) -> Vec<u8> {
+		(self.to_bits() as i64).into_little_endian()
+	}
+
+	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
+		i64::from_little_endian(buffer).map(|val| Self::from_bits(val as _))
+	}
+}
+
 macro_rules! impl_integer_arithmetic_ops {
 	($type: ident) => {
 		impl ArithmeticOps<$type> for $type {
@@ -538,6 +653,8 @@ macro_rules! impl_float_arithmetic_ops {
 
 impl_float_arithmetic_ops!(f32);
 impl_float_arithmetic_ops!(f64);
+impl_float_arithmetic_ops!(F32);
+impl_float_arithmetic_ops!(F64);
 
 macro_rules! impl_integer {
 	($type: ident) => {
@@ -561,13 +678,26 @@ impl_integer!(i64);
 impl_integer!(u64);
 
 macro_rules! impl_float {
-	($type: ident, $int_type: ident) => {
+	($type:ident, $int_type:ident) => {
+		impl_float!($type, $type, $int_type);
+	};
+	($type:ident, $intermediate:ident, $int_type:ident) => {
 		impl Float<$type> for $type {
-			fn abs(self) -> $type { self.abs() }
-			fn floor(self) -> $type { self.floor() }
-			fn ceil(self) -> $type { self.ceil() }
-			fn trunc(self) -> $type { self.trunc() }
-			fn round(self) -> $type { self.round() }
+			fn abs(self) -> $type {
+				$intermediate::abs(self.into()).into()
+			}
+			fn floor(self) -> $type {
+				$intermediate::floor(self.into()).into()
+			}
+			fn ceil(self) -> $type {
+				$intermediate::ceil(self.into()).into()
+			}
+			fn trunc(self) -> $type {
+				$intermediate::trunc(self.into()).into()
+			}
+			fn round(self) -> $type {
+				$intermediate::round(self.into()).into()
+			}
 			fn nearest(self) -> $type {
 				let round = self.round();
 				if self.fract().abs() != 0.5 {
@@ -583,12 +713,13 @@ macro_rules! impl_float {
 					round
 				}
 			}
-			fn sqrt(self) -> $type { self.sqrt() }
+			fn sqrt(self) -> $type {
+				$intermediate::sqrt(self.into()).into()
+			}
 			// This instruction corresponds to what is sometimes called "minNaN" in other languages.
 			fn min(self, other: $type) -> $type {
 				if self.is_nan() || other.is_nan() {
-					use std::$type;
-					return $type::NAN;
+					return ::std::$intermediate::NAN.into();
 				}
 
 				self.min(other)
@@ -596,8 +727,7 @@ macro_rules! impl_float {
 			// This instruction corresponds to what is sometimes called "maxNaN" in other languages.
 			fn max(self, other: $type) -> $type {
 				if self.is_nan() || other.is_nan() {
-					use std::$type;
-					return $type::NAN;
+					return ::std::$intermediate::NAN.into();
 				}
 
 				self.max(other)
@@ -623,8 +753,10 @@ macro_rules! impl_float {
 				}
 			}
 		}
-	}
+	};
 }
 
 impl_float!(f32, i32);
 impl_float!(f64, i64);
+impl_float!(F32, f32, i32);
+impl_float!(F64, f64, i64);

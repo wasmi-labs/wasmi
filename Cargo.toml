@@ -14,13 +14,8 @@ exclude = [ "/res/*", "/tests/*", "/fuzz/*" ]
 parity-wasm = "0.27"
 byteorder = "1.0"
 memory_units = "0.3.0"
+nan-preserving-float = "0.1.0"
 
 [dev-dependencies]
-wabt = "~0.2.2"
 assert_matches = "1.1"
-
-[features]
-# 32-bit platforms are not supported and not tested. Use this flag if you really want to use
-# wasmi on these platforms.
-# See https://github.com/pepyakin/wasmi/issues/43
-opt-in-32bit = []
+wabt = "^0.2.3"
