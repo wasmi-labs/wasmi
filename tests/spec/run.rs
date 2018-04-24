@@ -426,7 +426,7 @@ fn try_spec(name: &str) -> Result<(), Error> {
 				let result = run_action(&mut spec_driver, &action);
 				match result {
 					Ok(result) => panic!("Expected exhaustion, got result: {:?}", result),
-					Err(e) => {},
+					Err(_e) => {},
 				}
 			}
 			CommandKind::AssertTrap { action, .. } => {
@@ -438,8 +438,7 @@ fn try_spec(name: &str) -> Result<(), Error> {
 							result
 						);
 					}
-					Err(e) => {
-					}
+					Err(_e) => {}
 				}
 			}
 			CommandKind::AssertInvalid { module, .. }
@@ -448,13 +447,13 @@ fn try_spec(name: &str) -> Result<(), Error> {
 				let module_load = try_load(&module.into_vec()?, &mut spec_driver);
 				match module_load {
 					Ok(_) => panic!("Expected invalid module definition, got some module!"),
-					Err(e) => {},
+					Err(_e) => {},
 				}
 			}
 			CommandKind::AssertUninstantiable { module, .. } => {
 				match try_load(&module.into_vec()?, &mut spec_driver) {
 					Ok(_) => panic!("Expected error running start function at line {}", line),
-					Err(e) => {},
+					Err(_e) => {},
 				}
 			}
 			CommandKind::Register { name, as_name, .. } => {
@@ -475,7 +474,7 @@ fn try_spec(name: &str) -> Result<(), Error> {
 		use std::fmt::Write;
 		let mut out = "\n".to_owned();
 		for err in errors {
-			write!(out, "{}", err);
+			write!(out, "{}", err).expect("Error formatting errors");
 		}
 		panic!(out);
 	}
