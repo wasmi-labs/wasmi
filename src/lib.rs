@@ -105,13 +105,7 @@ extern crate assert_matches;
 extern crate parity_wasm;
 extern crate byteorder;
 extern crate memory_units as memory_units_crate;
-
-#[cfg(all(not(feature = "opt-in-32bit"), target_pointer_width = "32"))]
-compile_error! {
-"32-bit targets are not supported at the moment.
-You can use 'opt-in-32bit' feature.
-See https://github.com/pepyakin/wasmi/issues/43"
-}
+extern crate nan_preserving_float;
 
 use std::fmt;
 use std::error;

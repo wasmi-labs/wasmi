@@ -369,6 +369,7 @@ mod tests {
 
 	#[test]
 	fn alloc() {
+		#[cfg(target_pointer_width = "64")]
 		let fixtures = &[
 			(0, None, true),
 			(0, Some(0), true),
@@ -381,6 +382,17 @@ mod tests {
 			(65536, Some(0), false),
 			(65536, None, true),
 		];
+
+		#[cfg(target_pointer_width = "32")]
+		let fixtures = &[
+			(0, None, true),
+			(0, Some(0), true),
+			(1, None, true),
+			(1, Some(1), true),
+			(0, Some(1), true),
+			(1, Some(0), false),
+		];
+
 		for (index, &(initial, maybe_max, expected_ok)) in fixtures.iter().enumerate() {
 			let initial: Pages = Pages(initial);
 			let maximum: Option<Pages> = maybe_max.map(|m| Pages(m));
