@@ -1,0 +1,7 @@
+[package]
+name = "benches"
+version = "0.1.0"
+authors = ["Sergey Pepyakin <s.pepyakin@gmail.com>"]
+
+[dependencies]
+wasmi = { path = ".." }

@@ -8,7 +8,7 @@ repository = "https://github.com/paritytech/wasmi"
 documentation = "https://paritytech.github.io/wasmi/"
 description = "WebAssembly interpreter"
 keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
-exclude = [ "/res/*", "/tests/*", "/fuzz/*" ]
+exclude = [ "/res/*", "/tests/*", "/fuzz/*", "/benches/*" ]
 
 [dependencies]
 parity-wasm = "0.27"
