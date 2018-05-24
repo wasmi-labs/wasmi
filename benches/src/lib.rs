@@ -2,6 +2,8 @@
 
 extern crate test;
 extern crate wasmi;
+#[macro_use]
+extern crate assert_matches;
 
 use std::error;
 use std::fs::File;
@@ -28,17 +30,14 @@ fn bench_tiny_keccak(b: &mut Bencher) {
 		.expect("failed to instantiate wasm module")
 		.assert_no_start();
 
-	let test_data = match instance
-		.invoke_export("prepare_tiny_keccak", &[], &mut NopExternals)
-		.unwrap()
-	{
-		Some(v @ RuntimeValue::I32(_)) => v,
-		_ => panic!(),
-	};
+	let test_data_ptr = assert_matches!(
+		instance.invoke_export("prepare_tiny_keccak", &[], &mut NopExternals),
+		Ok(Some(v @ RuntimeValue::I32(_))) => v
+	);
 
 	b.iter(|| {
 		instance
-			.invoke_export("bench_tiny_keccak", &[test_data], &mut NopExternals)
+			.invoke_export("bench_tiny_keccak", &[test_data_ptr], &mut NopExternals)
 			.unwrap();
 	});
 }
