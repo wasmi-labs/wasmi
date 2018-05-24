@@ -3,6 +3,9 @@ sudo: required
 language:
 - rust
 - cpp
+rust:
+  - nightly
+  - stable
 addons:
   apt:
     sources:
@@ -12,18 +15,16 @@ addons:
     - g++-6
     - cmake
 env:
-- NIGHTLY_TOOLCHAIN=nightly-2018-02-05
+- CC=/usr/bin/gcc-6 CXX=/usr/bin/g++-6
 
 install:
 # Install `cargo-deadlinks` unless it is currently installed.
 - command -v cargo-deadlinks &> /dev/null || cargo install cargo-deadlinks
-# Install nightly toolchain.
-- rustup toolchain install $NIGHTLY_TOOLCHAIN
+- if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then rustup target add wasm32-unknown-unknown; fi
 script:
-- export CC=/usr/bin/gcc-6
-- export CXX=/usr/bin/g++-6
 # Make sure fuzz targets are not broken.
-- rustup run $NIGHTLY_TOOLCHAIN cargo check --tests --manifest-path=fuzz/Cargo.toml
+- if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then cargo check --tests --manifest-path=fuzz/Cargo.toml; fi
+- if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then cargo check --benches --manifest-path=benches/Cargo.toml; fi
 - ./test.sh
 - ./doc.sh
 after_success: |
