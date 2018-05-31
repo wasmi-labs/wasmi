@@ -48,7 +48,7 @@ impl ::std::ops::Deref for MemoryRef {
 ///
 /// [`LINEAR_MEMORY_PAGE_SIZE`]: constant.LINEAR_MEMORY_PAGE_SIZE.html
 pub struct MemoryInstance {
-	/// Memofy limits.
+	/// Memory limits.
 	limits: ResizableLimits,
 	/// Linear memory buffer.
 	buffer: RefCell<Vec<u8>>,
@@ -315,7 +315,7 @@ impl MemoryInstance {
 		Ok(())
 	}
 
-	/// Fill memory region with a specified value.
+	/// Fill the memory region with the specified value.
 	///
 	/// Semantically equivalent to `memset`.
 	///
@@ -330,13 +330,42 @@ impl MemoryInstance {
 		Ok(())
 	}
 
-	/// Fill specified memory region with zeroes.
+	/// Fill the specified memory region with zeroes.
 	///
 	/// # Errors
 	///
 	/// Returns `Err` if the specified region is out of bounds.
 	pub fn zero(&self, offset: usize, len: usize) -> Result<(), Error> {
 		self.clear(offset, 0, len)
+	}
+
+	/// Provides direct access to the underlying memory buffer.
+	///
+	/// # Panics
+	///
+	/// Any call that requires write access to memory (such as [`set`], [`clear`], etc) made within
+	/// the closure will panic. Proceed with caution.
+	///
+	/// [`set`]: #method.get
+	/// [`clear`]: #method.set
+	pub fn with_direct_access<R, F: FnOnce(&[u8]) -> R>(&self, f: F) -> R {
+		let buf = self.buffer.borrow();
+		f(&*buf)
+	}
+
+	/// Provides direct mutable access to the underlying memory buffer.
+	///
+	/// # Panics
+	///
+	/// Any calls that requires either read or write access to memory (such as [`get`], [`set`], [`copy`], etc) made
+	/// within the closure will panic. Proceed with caution.
+	///
+	/// [`get`]: #method.get
+	/// [`set`]: #method.set
+	/// [`copy`]: #method.copy
+	pub fn with_direct_access_mut<R, F: FnOnce(&mut [u8]) -> R>(&self, f: F) -> R {
+		let mut buf = self.buffer.borrow_mut();
+		f(&mut *buf)
 	}
 }
 
@@ -483,5 +512,28 @@ mod tests {
 		mem.get_into(7, &mut data[..]).expect("get_into should not fail");
 
 		assert_eq!(data, [17, 129]);
+	}
+
+	#[test]
+	fn zero_copy() {
+		let mem = MemoryInstance::alloc(Pages(1), None).unwrap();
+		mem.with_direct_access_mut(|buf| {
+			assert_eq!(buf.len(), 65536);
+			buf[..10].copy_from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+		});
+		mem.with_direct_access(|buf| {
+			assert_eq!(buf.len(), 65536);
+			assert_eq!(&buf[..10], &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+		});
+	}
+
+	#[should_panic]
+	#[test]
+	fn zero_copy_panics_on_nested_access() {
+		let mem = MemoryInstance::alloc(Pages(1), None).unwrap();
+		let mem_inner = mem.clone();
+		mem.with_direct_access(move |_| {
+			let _ = mem_inner.set(0, &[11, 12, 13]);
+		});
 	}
 }
