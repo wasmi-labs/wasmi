@@ -19,9 +19,9 @@ use memory_units::Pages;
 use nan_preserving_float::{F32, F64};
 
 /// Maximum number of entries in value stack.
-pub const DEFAULT_VALUE_STACK_LIMIT: usize = 16384;
+pub const DEFAULT_VALUE_STACK_LIMIT: usize = 4 * 1024 * 1024;
 /// Maximum number of entries in frame stack.
-pub const DEFAULT_FRAME_STACK_LIMIT: usize = 16384;
+pub const DEFAULT_FRAME_STACK_LIMIT: usize = 4 * 1024 * 1024;
 
 /// Function interpreter.
 pub struct Interpreter<'a, E: Externals + 'a> {
