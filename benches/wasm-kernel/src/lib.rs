@@ -1,6 +1,7 @@
 #![no_std]
 #![feature(lang_items)]
 #![feature(core_intrinsics)]
+#![feature(panic_implementation)]
 
 extern crate rlibc;
 extern crate tiny_keccak;
@@ -8,13 +9,8 @@ extern crate tiny_keccak;
 use tiny_keccak::Keccak;
 
 #[no_mangle]
-#[lang = "panic_fmt"]
-pub extern "C" fn panic_fmt(
-	_args: ::core::fmt::Arguments,
-	_file: &'static str,
-	_line: u32,
-	_col: u32,
-) -> ! {
+#[panic_implementation]
+pub fn panic_fmt(_info: &::core::panic::PanicInfo) -> ! {
 	use core::intrinsics;
 	unsafe {
 		intrinsics::abort();
