@@ -25,7 +25,9 @@ script:
 # Make sure fuzz targets are not broken.
 - if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then cargo check --tests --manifest-path=fuzz/Cargo.toml; fi
 - if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then cargo check --benches --manifest-path=benches/Cargo.toml; fi
-- ./test.sh
+# Run tests in the release mode since some of the tests from the spec
+# perfrom reaaally bad in the debug mode.
+- CARGOFLAGS=--release ./test.sh
 - ./doc.sh
 after_success: |
   # Build documentation and deploy it to github pages.
