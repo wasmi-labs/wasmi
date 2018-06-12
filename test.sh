@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-set -eux
+set -ex
 
 cd $(dirname $0)
 
-time cargo test
+time cargo test $CARGOFLAGS
 
 cd -
