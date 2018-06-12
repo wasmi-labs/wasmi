@@ -356,7 +356,7 @@ mod imports;
 mod global;
 mod func;
 mod types;
-mod instructions;
+mod isa;
 
 #[cfg(test)]
 mod tests;
@@ -379,7 +379,7 @@ pub mod memory_units {
 
 /// Deserialized module prepared for instantiation.
 pub struct Module {
-	labels: HashMap<usize, HashMap<usize, usize>>,
+	code_map: Vec<isa::Instructions>,
 	module: parity_wasm::elements::Module,
 }
 
@@ -419,12 +419,12 @@ impl Module {
 	pub fn from_parity_wasm_module(module: parity_wasm::elements::Module) -> Result<Module, Error> {
 		use validation::{validate_module, ValidatedModule};
 		let ValidatedModule {
-			labels,
+			code_map,
 			module,
 		} = validate_module(module)?;
 
 		Ok(Module {
-			labels,
+			code_map,
 			module,
 		})
 	}
@@ -525,7 +525,7 @@ impl Module {
 		&self.module
 	}
 
-	pub(crate) fn labels(&self) -> &HashMap<usize, HashMap<usize, usize>> {
-		&self.labels
+	pub(crate) fn code(&self) -> &Vec<isa::Instructions> {
+		&self.code_map
 	}
 }

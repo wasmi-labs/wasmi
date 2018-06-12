@@ -4,7 +4,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
 use std::collections::HashMap;
-use parity_wasm::elements::{External, InitExpr, Internal, Instruction, ResizableLimits, Type};
+use parity_wasm::elements::{External, InitExpr, Internal, Opcode, ResizableLimits, Type};
 use {Module, Error, Signature, MemoryInstance, RuntimeValue, TableInstance};
 use imports::ImportResolver;
 use global::{GlobalInstance, GlobalRef};
@@ -291,7 +291,7 @@ impl ModuleInstance {
 			}
 		}
 
-		let labels = loaded_module.labels();
+		let code = loaded_module.code();
 		{
 			let funcs = module.function_section().map(|fs| fs.entries()).unwrap_or(
 				&[],
@@ -308,13 +308,12 @@ impl ModuleInstance {
 				let signature = instance.signature_by_index(ty.type_ref()).expect(
 					"Due to validation type should exists",
 				);
-				let labels = labels.get(&index).expect(
+				let code = code.get(index).expect(
 					"At func validation time labels are collected; Collected labels are added by index; qed",
 				).clone();
 				let func_body = FuncBody {
 					locals: body.locals().to_vec(),
-					instructions: body.code().clone(),
-					labels: labels,
+					code: code,
 				};
 				let func_instance =
 					FuncInstance::alloc_internal(Rc::downgrade(&instance.0), signature, func_body);
@@ -709,11 +708,11 @@ fn eval_init_expr(init_expr: &InitExpr, module: &ModuleInstance) -> RuntimeValue
 		"Due to validation `code`.len() should be 2"
 	);
 	match code[0] {
-		Instruction::I32Const(v) => v.into(),
-		Instruction::I64Const(v) => v.into(),
-		Instruction::F32Const(v) => RuntimeValue::decode_f32(v),
-		Instruction::F64Const(v) => RuntimeValue::decode_f64(v),
-		Instruction::GetGlobal(idx) => {
+		Opcode::I32Const(v) => v.into(),
+		Opcode::I64Const(v) => v.into(),
+		Opcode::F32Const(v) => RuntimeValue::decode_f32(v),
+		Opcode::F64Const(v) => RuntimeValue::decode_f64(v),
+		Opcode::GetGlobal(idx) => {
 			let global = module.global_by_index(idx).expect(
 				"Due to validation global should exists in module",
 			);

@@ -20,6 +20,21 @@ impl<'a> Locals<'a> {
 		}
 	}
 
+	/// Returns total count of all declared locals and paramaterers.
+	///
+	/// Returns `Err` if count overflows 32-bit value.
+	pub fn count(&self) -> Result<u32, Error> {
+		let mut acc = self.params.len() as u32;
+		for locals_group in self.local_groups {
+			acc = acc
+				.checked_add(locals_group.count())
+				.ok_or_else(||
+					Error(String::from("Locals range no in 32-bit range"))
+				)?;
+		}
+		Ok(acc)
+	}
+
 	/// Returns the type of a local variable (either a declared local or a param).
 	///
 	/// Returns `Err` in the case of overflow or when idx falls out of range.
