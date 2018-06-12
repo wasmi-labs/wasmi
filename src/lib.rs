@@ -356,6 +356,7 @@ mod imports;
 mod global;
 mod func;
 mod types;
+mod instructions;
 
 #[cfg(test)]
 mod tests;
