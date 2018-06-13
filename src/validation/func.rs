@@ -109,19 +109,14 @@ impl Validator {
 		context.push_label(BlockFrameType::Function, result_ty, func_label)?;
 		Validator::validate_function_block(&mut context, body.code().elements())?;
 
-
 		while !context.frame_stack.is_empty() {
 			let branch_label = context.top_label()?.branch_label;
 			context.sink.resolve_label(branch_label);
 		}
 
-		// Emit explicit return.
-		// let (drop, keep) = context.drop_keep_return()?;
-		// TODO:
-
 		context.sink.emit(isa::Instruction::Return {
 			drop: 0,
-			keep: 0,
+			keep: if result_ty == BlockType::NoResult { 0 } else { 1 },
 		});
 
 		Ok(context.into_code())

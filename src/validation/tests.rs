@@ -2,8 +2,11 @@ use super::validate_module;
 use parity_wasm::builder::module;
 use parity_wasm::elements::{
     External, GlobalEntry, GlobalType, ImportEntry, InitExpr, MemoryType,
-    Instruction, Instructions, TableType, ValueType, BlockType
+    Instruction, Instructions, TableType, ValueType, BlockType, deserialize_buffer,
+    Module,
 };
+use isa;
+use wabt;
 
 #[test]
 fn empty_is_valid() {
@@ -298,4 +301,71 @@ fn if_else_with_return_type_validation() {
 			.build()
 		.build();
 	validate_module(m).unwrap();
+}
+
+fn compile(wat: &str) -> Vec<isa::Instruction> {
+	let wasm = wabt::wat2wasm(wat).unwrap();
+	let module = deserialize_buffer::<Module>(&wasm).unwrap();
+	let validated_module = validate_module(module).unwrap();
+	let code = &validated_module.code_map[0];
+	code.code.clone()
+}
+
+#[test]
+fn explicit_return_no_value() {
+	let code = compile(r#"
+		(module
+			(func (export "call")
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::Return {
+				drop: 0,
+				keep: 0,
+			}
+		]
+	)
+}
+
+#[test]
+fn explicit_return_with_value() {
+	let code = compile(r#"
+		(module
+			(func (export "call") (result i32)
+				i32.const 0
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::I32Const(0),
+			isa::Instruction::Return {
+				drop: 0,
+				keep: 1,
+			}
+		]
+	)
+}
+
+#[test]
+fn explicit_return_param() {
+		let code = compile(r#"
+		(module
+			(func (export "call") (param i32)
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::Return {
+				drop: 1,
+				keep: 0,
+			}
+		]
+	)
 }

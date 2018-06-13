@@ -40,7 +40,7 @@
 //! - Reserved immediates are ignored for `call_indirect`, `current_memory`, `grow_memory`.
 //!
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Target {
 	pub dst_pc: u32,
 	pub drop: u32,
@@ -48,7 +48,7 @@ pub struct Target {
 }
 
 #[allow(unused)] // TODO: Remove
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Instruction {
 	/// Push a local variable or an argument from the specified depth.
 	GetLocal(u32),
