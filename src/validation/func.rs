@@ -307,18 +307,18 @@ impl Validator {
 				context.pop_label()?;
 			},
 			Br(depth) => {
+				Validator::validate_br(context, depth)?;
+
 				let target = context.require_target(depth)?;
 				context.sink.emit_br(target);
-
-				Validator::validate_br(context, depth)?;
 
 				return Ok(InstructionOutcome::Unreachable);
 			},
 			BrIf(depth) => {
+				Validator::validate_br_if(context, depth)?;
+
 				let target = context.require_target(depth)?;
 				context.sink.emit_br_nez(target);
-
-				Validator::validate_br_if(context, depth)?;
 			},
 			BrTable(ref table, default) => {
 				Validator::validate_br_table(context, table, default)?;

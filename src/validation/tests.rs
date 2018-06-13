@@ -628,8 +628,8 @@ fn if_else_branch_from_true_branch() {
 			isa::Instruction::I32Const(1),
 			isa::Instruction::BrIfNez(isa::Target {
 				dst_pc: 9,
-				drop: 1, // TODO: Is this correct?
-				keep: 1, // TODO: Is this correct?
+				drop: 0,
+				keep: 1,
 			}),
 			isa::Instruction::Drop,
 			isa::Instruction::I32Const(2),
@@ -686,7 +686,7 @@ fn if_else_branch_from_false_branch() {
 			isa::Instruction::I32Const(1),
 			isa::Instruction::BrIfNez(isa::Target {
 				dst_pc: 9,
-				drop: 1, // TODO: Is this correct?
+				drop: 0,
 				keep: 1,
 			}),
 			isa::Instruction::Drop,
@@ -720,7 +720,7 @@ fn loop_() {
 			isa::Instruction::I32Const(1),
 			isa::Instruction::BrIfNez(isa::Target {
 				dst_pc: 0,
-				drop: 1,
+				drop: 0,
 				keep: 0,
 			}),
 			isa::Instruction::I32Const(2),
@@ -840,7 +840,6 @@ fn brtable_returns_result() {
 	)
 }
 
-
 #[test]
 fn wabt_example() {
 	let code = compile(r#"
@@ -864,7 +863,7 @@ fn wabt_example() {
 			isa::Instruction::BrIfNez(isa::Target {
 				dst_pc: 4,
 				keep: 0,
-				drop: 1,
+				drop: 0,
 			}),
 			isa::Instruction::I32Const(1),
 			isa::Instruction::Return {
@@ -883,3 +882,4 @@ fn wabt_example() {
 		]
 	)
 }
+
