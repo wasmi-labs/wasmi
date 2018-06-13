@@ -168,16 +168,13 @@ impl Validator {
 	}
 
 	fn validate_instruction(context: &mut FunctionValidationContext, opcode: &Opcode) -> Result<InstructionOutcome, Error> {
-		// TODO: use InstructionOutcome::*;
-
-		println!("opcode={:?}", opcode);
-
 		use self::Opcode::*;
 		match *opcode {
 			// Nop instruction doesn't do anything. It is safe to just skip it.
 			Nop => {},
 
 			Unreachable => {
+				context.sink.emit(isa::Instruction::Unreachable);
 				return Ok(InstructionOutcome::Unreachable);
 			},
 
@@ -324,6 +321,8 @@ impl Validator {
 				Validator::validate_br_if(context, depth)?;
 			},
 			BrTable(ref table, default) => {
+				Validator::validate_br_table(context, table, default)?;
+
 				let mut targets = Vec::new();
 				for depth in table.iter() {
 					let target = context.require_target(*depth)?;
@@ -331,8 +330,6 @@ impl Validator {
 				}
 				let default_target = context.require_target(default)?;
 				context.sink.emit_br_table(&targets, default_target);
-
-				Validator::validate_br_table(context, table, default)?;
 
 				return Ok(InstructionOutcome::Unreachable);
 			},
@@ -1574,10 +1571,6 @@ impl<'a> FunctionValidationContext<'a> {
 
 		let value_stack_height = self.value_stack.len() as u32;
 		let drop = if frame.polymorphic_stack { 0 } else {
-			// TODO
-			println!("value_stack_height = {}", value_stack_height);
-			println!("frame.value_stack_len = {}", frame.value_stack_len);
-			println!("keep = {}", keep);
 			(value_stack_height - frame.value_stack_len as u32) - keep as u32
 		};
 

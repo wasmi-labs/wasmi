@@ -701,7 +701,7 @@ fn if_else_branch_from_false_branch() {
 }
 
 #[test]
-fn empty_loop() {
+fn loop_() {
 	let code = compile(r#"
 		(module
 			(func (export "call")
@@ -733,9 +733,113 @@ fn empty_loop() {
 	)
 }
 
-// TODO: Loop
-// TODO: Empty loop?
-// TODO: brtable
+#[test]
+fn loop_empty() {
+	let code = compile(r#"
+		(module
+			(func (export "call")
+				loop
+				end
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::Return {
+				drop: 0,
+				keep: 0,
+			},
+		]
+	)
+}
+
+#[test]
+fn brtable() {
+	let code = compile(r#"
+		(module
+			(func (export "call")
+				block $1
+					loop $2
+						i32.const 0
+						br_table $2 $1
+					end
+				end
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::I32Const(0),
+			isa::Instruction::BrTable(
+				vec![
+					isa::Target {
+						dst_pc: 0,
+						keep: 0,
+						drop: 0,
+					},
+					isa::Target {
+						dst_pc: 2,
+						keep: 0,
+						drop: 0,
+					},
+				].into_boxed_slice()
+			),
+			isa::Instruction::Return {
+				drop: 0,
+				keep: 0,
+			},
+		]
+	)
+}
+
+#[test]
+fn brtable_returns_result() {
+	let code = compile(r#"
+		(module
+			(func (export "call")
+				block $1 (result i32)
+					block $2 (result i32)
+						i32.const 0
+						i32.const 1
+						br_table $2 $1
+					end
+					unreachable
+				end
+				drop
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::I32Const(0),
+			isa::Instruction::I32Const(1),
+			isa::Instruction::BrTable(
+				vec![
+					isa::Target {
+						dst_pc: 3,
+						keep: 1,
+						drop: 0,
+					},
+					isa::Target {
+						dst_pc: 4,
+						keep: 1,
+						drop: 0,
+					},
+				].into_boxed_slice()
+			),
+			isa::Instruction::Unreachable,
+			isa::Instruction::Drop,
+			isa::Instruction::Return {
+				drop: 0,
+				keep: 0,
+			},
+		]
+	)
+}
+
 
 #[test]
 fn wabt_example() {
