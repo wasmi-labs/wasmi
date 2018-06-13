@@ -51,17 +51,13 @@ pub struct Target {
 #[derive(Debug, Clone)]
 pub enum Instruction {
 	/// Push a local variable or an argument from the specified depth.
-	GetLocal {
-		depth: u32
-	},
+	GetLocal(u32),
 
 	/// Pop a value and put it in at the specified depth.
-	SetLocal {
-		depth: u32
-	},
+	SetLocal(u32),
 
 	/// Copy a value to the specified depth.
-	TeeLocal { depth: u32 },
+	TeeLocal(u32),
 
 	/// Similar to the Wasm ones, but instead of a label depth
 	/// they specify direct PC.
@@ -75,7 +71,10 @@ pub enum Instruction {
 	BrTable(Box<[Target]>),
 
 	Unreachable,
-	Return,
+	Return {
+		drop: u32,
+		keep: u8,
+	},
 
 	Call(u32),
 	CallIndirect(u32),

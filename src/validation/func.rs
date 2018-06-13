@@ -108,10 +108,21 @@ impl Validator {
 		let func_label = context.sink.new_label();
 		context.push_label(BlockFrameType::Function, result_ty, func_label)?;
 		Validator::validate_function_block(&mut context, body.code().elements())?;
+
+
 		while !context.frame_stack.is_empty() {
-			// TODO: resolve labels?
-			context.pop_label()?;
+			let branch_label = context.top_label()?.branch_label;
+			context.sink.resolve_label(branch_label);
 		}
+
+		// Emit explicit return.
+		// let (drop, keep) = context.drop_keep_return()?;
+		// TODO:
+
+		context.sink.emit(isa::Instruction::Return {
+			drop: 0,
+			keep: 0,
+		});
 
 		Ok(context.into_code())
 	}
@@ -239,7 +250,11 @@ impl Validator {
 			},
 			Return => {
 				Validator::validate_return(context)?;
-				context.sink.emit(isa::Instruction::Return);
+				let (drop, keep) = context.drop_keep_return()?;
+				context.sink.emit(isa::Instruction::Return {
+					drop,
+					keep,
+				});
 			},
 
 			Call(index) => {
@@ -266,7 +281,7 @@ impl Validator {
 				let depth = context.relative_local_depth(index)?;
 				Validator::validate_get_local(context, index)?;
 				context.sink.emit(
-					isa::Instruction::GetLocal { depth },
+					isa::Instruction::GetLocal(depth),
 				);
 			},
 			SetLocal(index) => {
@@ -275,7 +290,7 @@ impl Validator {
 				let depth = context.relative_local_depth(index)?;
 				Validator::validate_set_local(context, index)?;
 				context.sink.emit(
-					isa::Instruction::SetLocal { depth },
+					isa::Instruction::SetLocal(depth),
 				);
 			},
 			TeeLocal(index) => {
@@ -284,7 +299,7 @@ impl Validator {
 				let depth = context.relative_local_depth(index)?;
 				Validator::validate_tee_local(context, index)?;
 				context.sink.emit(
-					isa::Instruction::TeeLocal { depth },
+					isa::Instruction::TeeLocal(depth),
 				);
 			},
 			GetGlobal(index) => {
@@ -1396,7 +1411,7 @@ impl<'a> FunctionValidationContext<'a> {
 		})?)
 	}
 
-	fn pop_label(&mut self) -> Result<InstructionOutcome, Error> {
+	fn pop_label(&mut self) -> Result<(), Error> {
 		// Don't pop frame yet. This is essential since we still might pop values from the value stack
 		// and this in turn requires current frame to check whether or not we've reached
 		// unreachable.
@@ -1421,7 +1436,7 @@ impl<'a> FunctionValidationContext<'a> {
 			self.push_value(value_type.into())?;
 		}
 
-		Ok(InstructionOutcome::ValidateNextInstruction)
+		Ok(())
 	}
 
 	fn require_label(&self, idx: u32) -> Result<&BlockFrame, Error> {
@@ -1454,6 +1469,14 @@ impl<'a> FunctionValidationContext<'a> {
 			keep,
 			drop,
 		})
+	}
+
+	fn drop_keep_return(&self) -> Result<(u32, u8), Error> {
+		// TODO: Refactor
+		let deepest = self.frame_stack.len();
+		let target = self.require_target(deepest as u32)?;
+
+		Ok((target.drop, target.keep))
 	}
 
 	fn relative_local_depth(&mut self, idx: u32) -> Result<u32, Error> {
