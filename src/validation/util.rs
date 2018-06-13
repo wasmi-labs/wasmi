@@ -20,11 +20,16 @@ impl<'a> Locals<'a> {
 		}
 	}
 
+	/// Returns parameter count.
+	pub fn param_count(&self) -> u32 {
+		self.params.len() as u32
+	}
+
 	/// Returns total count of all declared locals and paramaterers.
 	///
 	/// Returns `Err` if count overflows 32-bit value.
 	pub fn count(&self) -> Result<u32, Error> {
-		let mut acc = self.params.len() as u32;
+		let mut acc = self.param_count();
 		for locals_group in self.local_groups {
 			acc = acc
 				.checked_add(locals_group.count())
@@ -44,7 +49,7 @@ impl<'a> Locals<'a> {
 		}
 
 		// If an index doesn't point to a param, then we have to look into local declarations.
-		let mut start_idx = self.params.len() as u32;
+		let mut start_idx = self.param_count();
 		for locals_group in self.local_groups {
 			let end_idx = start_idx
 				.checked_add(locals_group.count())

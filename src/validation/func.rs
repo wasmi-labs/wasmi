@@ -24,8 +24,6 @@ struct BlockFrame {
 	block_type: BlockType,
 	/// A label for reference to block instruction.
 	begin_position: usize,
-	// TODO:
-	branch_label: LabelId,
 	/// A limit integer value, which is an index into the value stack indicating where to reset it to on a branch to that label.
 	value_stack_len: usize,
 	/// Boolean which signals whether value stack became polymorphic. Value stack starts in non-polymorphic state and
@@ -37,35 +35,63 @@ struct BlockFrame {
 /// Type of block frame.
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum BlockFrameType {
-	/// Function frame.
-	Function,
 	/// Usual block frame.
-	Block,
+	///
+	/// Can be used for an implicit function block.
+	Block {
+		end_label: LabelId,
+	},
 	/// Loop frame (branching to the beginning of block).
-	Loop,
+	Loop {
+		header: LabelId,
+	},
 	/// True-subblock of if expression.
-	IfTrue,
+	IfTrue {
+		/// If jump happens inside the if-true block then control will
+		/// land on this label.
+		end_label: LabelId,
+
+		/// If the condition of the `if` statement is unsatisfied, control
+		/// will land on this label. This label might point to `else` block if it
+		/// exists. Otherwise it equal to `end_label`.
+		if_not: LabelId,
+	},
 	/// False-subblock of if expression.
-	IfFalse,
+	IfFalse {
+		end_label: LabelId,
+	}
 }
 
-/// Function validation context.
-struct FunctionValidationContext<'a> {
-	/// Wasm module
-	module: &'a ModuleContext,
-	/// Current instruction position.
-	position: usize,
-	/// Local variables.
-	locals: Locals<'a>,
-	/// Value stack.
-	value_stack: StackWithLimit<StackValueType>,
-	/// Frame stack.
-	frame_stack: StackWithLimit<BlockFrame>,
-	/// Function return type. None if validating expression.
-	return_type: Option<BlockType>,
+impl BlockFrameType {
+	/// Returns a label which should be used as a branch destination.
+	fn br_destination(&self) -> LabelId {
+		match *self {
+			BlockFrameType::Block { end_label } => end_label,
+			BlockFrameType::Loop { header } => header,
+			BlockFrameType::IfTrue { end_label, .. } => end_label,
+			BlockFrameType::IfFalse { end_label } => end_label,
+		}
+	}
 
-	// TODO: comment
-	sink: Sink,
+	/// Returns a label which should be resolved at the `End` opcode.
+	///
+	/// All block types have it except loops. Loops doesn't use end as a branch
+	/// destination.
+	fn end_label(&self) -> LabelId {
+		match *self {
+			BlockFrameType::Block { end_label } => end_label,
+			BlockFrameType::IfTrue { end_label, .. } => end_label,
+			BlockFrameType::IfFalse { end_label } => end_label,
+			BlockFrameType::Loop { .. } => panic!("loop doesn't use end label"),
+		}
+	}
+
+	fn is_loop(&self) -> bool {
+		match *self {
+			BlockFrameType::Loop { .. } => true,
+			_ => false,
+		}
+	}
 }
 
 /// Value type on the stack.
@@ -105,19 +131,18 @@ impl Validator {
 			result_ty,
 		);
 
-		let func_label = context.sink.new_label();
-		context.push_label(BlockFrameType::Function, result_ty, func_label)?;
+		let end_label = context.sink.new_label();
+		context.push_label(
+			BlockFrameType::Block {
+				end_label,
+			},
+			result_ty
+		)?;
 		Validator::validate_function_block(&mut context, body.code().elements())?;
 
 		while !context.frame_stack.is_empty() {
-			let branch_label = context.top_label()?.branch_label;
-			context.sink.resolve_label(branch_label);
+			context.pop_label()?;
 		}
-
-		context.sink.emit(isa::Instruction::Return {
-			drop: 0,
-			keep: if result_ty == BlockType::NoResult { 0 } else { 1 },
-		});
 
 		Ok(context.into_code())
 	}
@@ -145,6 +170,8 @@ impl Validator {
 	fn validate_instruction(context: &mut FunctionValidationContext, opcode: &Opcode) -> Result<InstructionOutcome, Error> {
 		// TODO: use InstructionOutcome::*;
 
+		println!("opcode={:?}", opcode);
+
 		use self::Opcode::*;
 		match *opcode {
 			// Nop instruction doesn't do anything. It is safe to just skip it.
@@ -155,15 +182,25 @@ impl Validator {
 			},
 
 			Block(block_type) => {
-				let label = context.sink.new_label();
-				context.push_label(BlockFrameType::Block, block_type, label)?;
+				let end_label = context.sink.new_label();
+				context.push_label(
+					BlockFrameType::Block {
+						end_label
+					},
+					block_type
+				)?;
 			},
 			Loop(block_type) => {
 				// Resolve loop header right away.
-				let loop_header = context.top_label()?.branch_label;
-				context.sink.resolve_label(loop_header);
+				let header = context.sink.new_label();
+				context.sink.resolve_label(header);
 
-				context.push_label(BlockFrameType::Loop, block_type, loop_header)?;
+				context.push_label(
+					BlockFrameType::Loop {
+						header,
+					},
+					block_type
+				)?;
 			},
 			If(block_type) => {
 				// if
@@ -172,84 +209,143 @@ impl Validator {
 				//
 				// translates to ->
 				//
-				// br_if_not $end
+				// br_if_not $if_not
 				//   ..
-				// $end
+				// $if_not:
+
+				// if_not will be resolved whenever `end` or `else` operator will be met.
+				let if_not = context.sink.new_label();
 				let end_label = context.sink.new_label();
+
 				context.pop_value(ValueType::I32.into())?;
-				context.push_label(BlockFrameType::IfTrue, block_type, end_label)?;
+				context.push_label(
+					BlockFrameType::IfTrue {
+						if_not,
+						end_label,
+					},
+					block_type
+				)?;
+
+				context.sink.emit_br_eqz(Target {
+					label: if_not,
+					drop: 0,
+					keep: 0,
+				});
 			},
 			Else => {
+				let (block_type, if_not, end_label) = {
+					let top_frame = context.top_label()?;
+
+					let (if_not, end_label) = match top_frame.frame_type {
+						BlockFrameType::IfTrue { if_not, end_label } => (if_not, end_label),
+						_ => return Err(Error("Misplaced else instruction".into())),
+					};
+					(top_frame.block_type, if_not, end_label)
+				};
+
 				// First, we need to finish if-true block: add a jump from the end of the if-true block
 				// to the "end_label" (it will be resolved at End).
-				let end_target = context.require_target(0)?;
-				let end_label = end_target.label;
-				context.sink.emit_br(end_target);
+				context.sink.emit_br(Target {
+					label: end_label,
+					drop: 0,
+					keep: 0,
+				});
+
+				// Resolve `if_not` to here so when if condition is unsatisfied control flow
+				// will jump to this label.
+				context.sink.resolve_label(if_not);
 
 				// Then, we validate. Validator will pop the if..else block and the push else..end block.
-				let block_type = {
-					let top_frame = context.top_label()?;
-					if top_frame.frame_type != BlockFrameType::IfTrue {
-						return Err(Error("Misplaced else instruction".into()));
-					}
-					top_frame.block_type
-				};
 				context.pop_label()?;
 
 				if let BlockType::Value(value_type) = block_type {
 					context.pop_value(value_type.into())?;
 				}
-				context.push_label(BlockFrameType::IfFalse, block_type, end_label)?;
+				context.push_label(
+					BlockFrameType::IfFalse {
+						end_label,
+					},
+					block_type,
+				)?;
 			},
 			End => {
 				{
 					let frame_type = context.top_label()?.frame_type;
+					if let BlockFrameType::IfTrue { if_not, .. } = frame_type {
+						if context.top_label()?.block_type != BlockType::NoResult {
+							return Err(
+								Error(
+									format!(
+										"If block without else required to have NoResult block type. But it have {:?} type",
+										context.top_label()?.block_type
+									)
+								)
+							);
+						}
 
-					// If this end for a non-loop frame then we resolve it's label location to here.
-					if frame_type != BlockFrameType::Loop {
-						let loop_header = context.top_label()?.branch_label;
-						context.sink.resolve_label(loop_header);
+						context.sink.resolve_label(if_not);
 					}
 				}
 
 				{
-					let top_frame = context.top_label()?;
-					if top_frame.frame_type == BlockFrameType::IfTrue {
-						if top_frame.block_type != BlockType::NoResult {
-							return Err(Error(format!("If block without else required to have NoResult block type. But it have {:?} type", top_frame.block_type)));
-						}
+					let frame_type = context.top_label()?.frame_type;
+
+					// If this end for a non-loop frame then we resolve it's label location to here.
+					if !frame_type.is_loop() {
+						let end_label = frame_type.end_label();
+						context.sink.resolve_label(end_label);
 					}
+				}
+
+				if context.frame_stack.len() == 1 {
+					// We are about to close the last frame. Insert
+					// an explicit return.
+					let (drop, keep) = context.drop_keep_return()?;
+					context.sink.emit(isa::Instruction::Return {
+						drop,
+						keep,
+					});
 				}
 
 				context.pop_label()?;
 			},
 			Br(depth) => {
-				Validator::validate_br(context, depth)?;
 				let target = context.require_target(depth)?;
 				context.sink.emit_br(target);
+
+				Validator::validate_br(context, depth)?;
+
+				return Ok(InstructionOutcome::Unreachable);
 			},
 			BrIf(depth) => {
-				Validator::validate_br_if(context, depth)?;
 				let target = context.require_target(depth)?;
 				context.sink.emit_br_nez(target);
+
+				Validator::validate_br_if(context, depth)?;
 			},
 			BrTable(ref table, default) => {
-				Validator::validate_br_table(context, table, default)?;
 				let mut targets = Vec::new();
 				for depth in table.iter() {
 					let target = context.require_target(*depth)?;
 					targets.push(target);
 				}
-				let default = context.require_target(default)?;
-				context.sink.emit_br_table(&targets, default);
+				let default_target = context.require_target(default)?;
+				context.sink.emit_br_table(&targets, default_target);
+
+				Validator::validate_br_table(context, table, default)?;
+
+				return Ok(InstructionOutcome::Unreachable);
 			},
 			Return => {
-				Validator::validate_return(context)?;
 				let (drop, keep) = context.drop_keep_return()?;
 				context.sink.emit(isa::Instruction::Return {
 					drop,
 					keep,
 				});
+
+				Validator::validate_return(context)?;
+
+				return Ok(InstructionOutcome::Unreachable);
 			},
 
 			Call(index) => {
@@ -280,10 +376,8 @@ impl Validator {
 				);
 			},
 			SetLocal(index) => {
-				// We need to calculate relative depth before validation since
-				// it will change value stack size.
-				let depth = context.relative_local_depth(index)?;
 				Validator::validate_set_local(context, index)?;
+				let depth = context.relative_local_depth(index)?;
 				context.sink.emit(
 					isa::Instruction::SetLocal(depth),
 				);
@@ -1205,7 +1299,7 @@ impl Validator {
 			let frame = context.require_label(idx)?;
 			(frame.frame_type, frame.block_type)
 		};
-		if frame_type != BlockFrameType::Loop {
+		if !frame_type.is_loop() {
 			if let BlockType::Value(value_type) = frame_block_type {
 				context.tee_value(value_type.into())?;
 			}
@@ -1220,7 +1314,7 @@ impl Validator {
 			let frame = context.require_label(idx)?;
 			(frame.frame_type, frame.block_type)
 		};
-		if frame_type != BlockFrameType::Loop {
+		if !frame_type.is_loop() {
 			if let BlockType::Value(value_type) = frame_block_type {
 				context.tee_value(value_type.into())?;
 			}
@@ -1231,7 +1325,7 @@ impl Validator {
 	fn validate_br_table(context: &mut FunctionValidationContext, table: &[u32], default: u32) -> Result<InstructionOutcome, Error> {
 		let required_block_type: BlockType = {
 			let default_block = context.require_label(default)?;
-			let required_block_type = if default_block.frame_type != BlockFrameType::Loop {
+			let required_block_type = if !default_block.frame_type.is_loop() {
 				default_block.block_type
 			} else {
 				BlockType::NoResult
@@ -1239,7 +1333,7 @@ impl Validator {
 
 			for label in table {
 				let label_block = context.require_label(*label)?;
-				let label_block_type = if label_block.frame_type != BlockFrameType::Loop {
+				let label_block_type = if !label_block.frame_type.is_loop() {
 					label_block.block_type
 				} else {
 					BlockType::NoResult
@@ -1322,6 +1416,25 @@ impl Validator {
 	}
 }
 
+/// Function validation context.
+struct FunctionValidationContext<'a> {
+	/// Wasm module
+	module: &'a ModuleContext,
+	/// Current instruction position.
+	position: usize,
+	/// Local variables.
+	locals: Locals<'a>,
+	/// Value stack.
+	value_stack: StackWithLimit<StackValueType>,
+	/// Frame stack.
+	frame_stack: StackWithLimit<BlockFrame>,
+	/// Function return type.
+	return_type: BlockType,
+
+	// TODO: comment
+	sink: Sink,
+}
+
 impl<'a> FunctionValidationContext<'a> {
 	fn new(
 		module: &'a ModuleContext,
@@ -1336,7 +1449,7 @@ impl<'a> FunctionValidationContext<'a> {
 			locals: locals,
 			value_stack: StackWithLimit::with_limit(value_stack_limit),
 			frame_stack: StackWithLimit::with_limit(frame_stack_limit),
-			return_type: Some(return_type),
+			return_type: return_type,
 			sink: Sink::new(),
 		}
 	}
@@ -1395,12 +1508,11 @@ impl<'a> FunctionValidationContext<'a> {
 		Ok(self.frame_stack.top()?)
 	}
 
-	fn push_label(&mut self, frame_type: BlockFrameType, block_type: BlockType, branch_label: LabelId) -> Result<(), Error> {
+	fn push_label(&mut self, frame_type: BlockFrameType, block_type: BlockType) -> Result<(), Error> {
 		Ok(self.frame_stack.push(BlockFrame {
 			frame_type: frame_type,
 			block_type: block_type,
 			begin_position: self.position,
-			branch_label,
 			value_stack_len: self.value_stack.len(),
 			polymorphic_stack: false,
 		})?)
@@ -1420,6 +1532,11 @@ impl<'a> FunctionValidationContext<'a> {
 
 		let frame = self.frame_stack.pop()?;
 		if self.value_stack.len() != frame.value_stack_len {
+			if true {
+				panic!("Unexpected stack height {}, expected {}",
+				self.value_stack.len(),
+				frame.value_stack_len)
+			}
 			return Err(Error(format!(
 				"Unexpected stack height {}, expected {}",
 				self.value_stack.len(),
@@ -1439,7 +1556,7 @@ impl<'a> FunctionValidationContext<'a> {
 	}
 
 	fn return_type(&self) -> Result<BlockType, Error> {
-		self.return_type.ok_or(Error("Trying to return from expression".into()))
+		Ok(self.return_type)
 	}
 
 	fn require_local(&self, idx: u32) -> Result<StackValueType, Error> {
@@ -1448,19 +1565,24 @@ impl<'a> FunctionValidationContext<'a> {
 
 	fn require_target(&self, depth: u32) -> Result<Target, Error> {
 		let frame = self.require_label(depth)?;
-		let label = frame.branch_label;
 
 		let keep: u8 = match (frame.frame_type, frame.block_type) {
-			(BlockFrameType::Loop, _) => 0,
+			(BlockFrameType::Loop { .. }, _) => 0,
 			(_, BlockType::NoResult) => 0,
 			(_, BlockType::Value(_)) => 1,
 		};
 
 		let value_stack_height = self.value_stack.len() as u32;
-		let drop = value_stack_height - frame.value_stack_len as u32 - keep as u32;
+		let drop = if frame.polymorphic_stack { 0 } else {
+			// TODO
+			println!("value_stack_height = {}", value_stack_height);
+			println!("frame.value_stack_len = {}", frame.value_stack_len);
+			println!("keep = {}", keep);
+			(value_stack_height - frame.value_stack_len as u32) - keep as u32
+		};
 
 		Ok(Target {
-			label,
+			label: frame.frame_type.br_destination(),
 			keep,
 			drop,
 		})
@@ -1468,8 +1590,11 @@ impl<'a> FunctionValidationContext<'a> {
 
 	fn drop_keep_return(&self) -> Result<(u32, u8), Error> {
 		// TODO: Refactor
-		let deepest = self.frame_stack.len();
-		let target = self.require_target(deepest as u32)?;
+		let deepest = (self.frame_stack.len() - 1) as u32;
+		let mut target = self.require_target(deepest)?;
+
+		// Drop all local variables and parameters upon exit.
+		target.drop += self.locals.count()?;
 
 		Ok((target.drop, target.keep))
 	}
@@ -1684,8 +1809,10 @@ impl Sink {
 		if let Label::Resolved(_) = self.labels[label.0] {
 			panic!("Trying to resolve already resolved label");
 		}
-
 		let dst_pc = self.cur_pc();
+
+		// Patch all relocations that was previously recorded for this
+		// particular label.
 		let unresolved_rels = self.unresolved.remove(&label).unwrap_or(Vec::new());
 		for reloc in unresolved_rels {
 			match reloc {
@@ -1701,6 +1828,9 @@ impl Sink {
 				}
 			}
 		}
+
+		// Mark this label as resolved.
+		self.labels[label.0] = Label::Resolved(dst_pc);
 	}
 
 	fn into_inner(self) -> Vec<isa::Instruction> {

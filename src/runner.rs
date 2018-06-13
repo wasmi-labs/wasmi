@@ -21,8 +21,6 @@ use isa;
 
 /// Maximum number of entries in value stack.
 pub const DEFAULT_VALUE_STACK_LIMIT: usize = 16384;
-/// Maximum number of entries in frame stack.
-pub const DEFAULT_FRAME_STACK_LIMIT: usize = 16384;
 
 /// Function interpreter.
 pub struct Interpreter<'a, E: Externals + 'a> {

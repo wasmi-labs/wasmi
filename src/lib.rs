@@ -109,7 +109,6 @@ extern crate nan_preserving_float;
 
 use std::fmt;
 use std::error;
-use std::collections::HashMap;
 
 /// Error type which can thrown by wasm code or by host environment.
 ///

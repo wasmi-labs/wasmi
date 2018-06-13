@@ -1,6 +1,6 @@
 use std::error;
 use std::fmt;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use parity_wasm::elements::{
 	BlockType, External, GlobalEntry, GlobalType, Internal, MemoryType, Module, Instruction,
 	ResizableLimits, TableType, ValueType, InitExpr, Type,
