@@ -56,14 +56,6 @@ impl<T> StackWithLimit<T> where T: Clone {
 			.ok_or_else(|| Error("non-empty stack expected".into()))
 	}
 
-	pub fn pick_mut(&mut self, depth: usize) -> Result<&mut T, Error> {
-		let len = self.values.len();
-		// TODO:
-		self.values
-			.get_mut(len - 1 - depth)
-			.ok_or_else(|| Error("non-empty stack expected".into()))
-	}
-
 	pub fn get(&self, index: usize) -> Result<&T, Error> {
 		if index >= self.values.len() {
 			return Err(Error(format!("trying to get value at position {} on stack of size {}", index, self.values.len())));

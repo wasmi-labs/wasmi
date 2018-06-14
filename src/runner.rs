@@ -6,6 +6,7 @@ use std::iter::repeat;
 use parity_wasm::elements::Local;
 use {Error, Trap, TrapKind, Signature};
 use module::ModuleRef;
+use memory::MemoryRef;
 use func::{FuncRef, FuncInstance, FuncInstanceInternal};
 use value::{
 	RuntimeValue, FromRuntimeValue, WrapInto, TryTruncateInto, ExtendInto,
@@ -13,7 +14,6 @@ use value::{
 };
 use host::Externals;
 use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
-use common::stack::StackWithLimit;
 use memory_units::Pages;
 use nan_preserving_float::{F32, F64};
 use isa;
@@ -123,7 +123,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 
 					match *nested_func.as_internal() {
 						FuncInstanceInternal::Internal { .. } => {
-							let nested_context = function_context.nested(nested_func.clone()).map_err(Trap::new)?;
+							let nested_context = FunctionContext::new(nested_func.clone());
 							call_stack.push(function_context);
 							call_stack.push(nested_context);
 						},
@@ -534,8 +534,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 				offset,
 				raw_address,
 			)?;
-		let m = context.module()
-			.memory_by_index(DEFAULT_MEMORY_INDEX)
+		let m = context
+			.memory()
 			.expect("Due to validation memory should exists");
 		let b = m.get(address, mem::size_of::<T>())
 			.map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
@@ -555,8 +555,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 				offset,
 				raw_address,
 			)?;
-		let m = context.module()
-			.memory_by_index(DEFAULT_MEMORY_INDEX)
+		let m = context
+			.memory()
 			.expect("Due to validation memory should exists");
 		let b = m.get(address, mem::size_of::<T>())
 			.map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
@@ -585,8 +585,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 				raw_address,
 			)?;
 
-		let m = context.module()
-			.memory_by_index(DEFAULT_MEMORY_INDEX)
+		let m = context
+			.memory()
 			.expect("Due to validation memory should exists");
 		m.set(address, &stack_value)
 			.map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
@@ -617,8 +617,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 				offset,
 				raw_address,
 			)?;
-		let m = context.module()
-			.memory_by_index(DEFAULT_MEMORY_INDEX)
+		let m = context
+			.memory()
 			.expect("Due to validation memory should exists");
 		m.set(address, &stack_value)
 			.map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
@@ -626,8 +626,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_current_memory(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind> {
-		let m = context.module()
-			.memory_by_index(DEFAULT_MEMORY_INDEX)
+		let m = context
+			.memory()
 			.expect("Due to validation memory should exists");
 		let s = m.current_size().0;
 		self
@@ -640,8 +640,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		let pages: u32 = self
 			.value_stack
 			.pop_as();
-		let m = context.module()
-			.memory_by_index(DEFAULT_MEMORY_INDEX)
+		let m = context
+			.memory()
 			.expect("Due to validation memory should exists");
 		let m = match m.grow(Pages(pages as usize)) {
 			Ok(Pages(new_size)) => new_size as u32,
@@ -1003,6 +1003,7 @@ struct FunctionContext {
 	/// Internal function reference.
 	pub function: FuncRef,
 	pub module: ModuleRef,
+	pub memory: Option<MemoryRef>,
 	/// Current instruction position.
 	pub position: usize,
 }
@@ -1013,26 +1014,14 @@ impl FunctionContext {
 			FuncInstanceInternal::Internal { ref module, .. } => module.upgrade().expect("module deallocated"),
 			FuncInstanceInternal::Host { .. } => panic!("Host functions can't be called as internally defined functions; Thus FunctionContext can be created only with internally defined functions; qed"),
 		};
+		let memory = module.memory_by_index(DEFAULT_MEMORY_INDEX);
 		FunctionContext {
 			is_initialized: false,
 			function: function,
 			module: ModuleRef(module),
+			memory: memory,
 			position: 0,
 		}
-	}
-
-	pub fn nested(&mut self, function: FuncRef) -> Result<Self, TrapKind> {
-		let module = match *function.as_internal() {
-			FuncInstanceInternal::Internal { ref module, .. } => module.upgrade().expect("module deallocated"),
-			FuncInstanceInternal::Host { .. } => panic!("Host functions can't be called as internally defined functions; Thus FunctionContext can be created only with internally defined functions; qed"),
-		};
-
-		Ok(FunctionContext {
-			is_initialized: false,
-			function: function,
-			module: ModuleRef(module),
-			position: 0,
-		})
 	}
 
 	pub fn is_initialized(&self) -> bool {
@@ -1060,6 +1049,10 @@ impl FunctionContext {
 
 	pub fn module(&self) -> ModuleRef {
 		self.module.clone()
+	}
+
+	pub fn memory(&self) -> Option<&MemoryRef> {
+		self.memory.as_ref()
 	}
 }
 
