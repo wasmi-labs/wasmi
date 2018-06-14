@@ -1216,10 +1216,6 @@ impl ValueStack {
 		self.stack_with_limit.len()
 	}
 
-	fn limit(&self) -> usize {
-		self.stack_with_limit.limit()
-	}
-
 	fn top(&self) -> &RuntimeValue {
 		self.stack_with_limit.top().expect("Due to validation stack shouldn't be empty")
 	}
