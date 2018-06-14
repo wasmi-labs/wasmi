@@ -3,7 +3,6 @@ use std::ops;
 use std::{u32, usize};
 use std::fmt;
 use std::iter::repeat;
-use std::collections::VecDeque;
 use parity_wasm::elements::Local;
 use {Error, Trap, TrapKind, Signature};
 use module::ModuleRef;
@@ -71,12 +70,10 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 				)?;
 		}
 
-		let context = FunctionContext::new(
-			func.clone(),
-		);
+		let initial_frame = FunctionContext::new(func.clone());
 
-		let mut call_stack = VecDeque::new();
-		call_stack.push_back(context);
+		let mut call_stack = Vec::new();
+		call_stack.push(initial_frame);
 
 		self.run_interpreter_loop(&mut call_stack)?;
 
@@ -88,10 +85,10 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		}))
 	}
 
-	fn run_interpreter_loop(&mut self, call_stack: &mut VecDeque<FunctionContext>) -> Result<(), Trap> {
+	fn run_interpreter_loop(&mut self, call_stack: &mut Vec<FunctionContext>) -> Result<(), Trap> {
 		loop {
 			let mut function_context = call_stack
-				.pop_back()
+				.pop()
 				.expect("on loop entry - not empty; on loop continue - checking for emptiness; qed");
 			let function_ref = function_context.function.clone();
 			let function_body = function_ref
@@ -113,7 +110,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 
 			match function_return {
 				RunResult::Return => {
-					if call_stack.back().is_none() {
+					if call_stack.last().is_none() {
 						// This was the last frame in the call stack. This means we
 						// are done executing.
 						return Ok(());
@@ -127,8 +124,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 					match *nested_func.as_internal() {
 						FuncInstanceInternal::Internal { .. } => {
 							let nested_context = function_context.nested(nested_func.clone()).map_err(Trap::new)?;
-							call_stack.push_back(function_context);
-							call_stack.push_back(nested_context);
+							call_stack.push(function_context);
+							call_stack.push(nested_context);
 						},
 						FuncInstanceInternal::Host { ref signature, .. } => {
 							let args = prepare_function_args(signature, &mut self.value_stack);
@@ -144,7 +141,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 							if let Some(return_val) = return_val {
 								self.value_stack.push(return_val).map_err(Trap::new)?;
 							}
-							call_stack.push_back(function_context);
+							call_stack.push(function_context);
 						}
 					}
 				},
@@ -154,25 +151,20 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 
 	fn drop_keep(&mut self, drop: u32, keep: u8) -> Result<(), TrapKind> {
 		assert!(keep <= 1);
-		// println!("drop: {}, keep: {}, stack: {:?}", drop, keep, self.value_stack);
+
 		if keep == 1 {
 			let top = *self.value_stack.top();
 			*self.value_stack.pick_mut(drop as usize) = top;
 		}
 
-		// println!("drop: {}, keep: {}, stack: {:?}", drop, keep, self.value_stack);
 		let cur_stack_len = self.value_stack.len();
 		self.value_stack.resize(cur_stack_len - drop as usize);
-		// println!("drop: {}, keep: {}, stack: {:?}", drop, keep, self.value_stack);
 		Ok(())
 	}
 
 	fn do_run_function(&mut self, function_context: &mut FunctionContext, instructions: &[isa::Instruction]) -> Result<RunResult, TrapKind> {
 		loop {
 			let instruction = &instructions[function_context.position];
-
-			// println!("{:?}", instruction);
-			// println!("  before = {:?}", self.value_stack);
 
 			match self.run_instruction(function_context, instruction)? {
 				InstructionOutcome::RunNextInstruction => function_context.position += 1,
@@ -189,8 +181,6 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 					break;
 				},
 			}
-
-			// println!("  after = {:?}", self.value_stack);
 		}
 
 		Ok(RunResult::Return)
