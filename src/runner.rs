@@ -20,11 +20,11 @@ use nan_preserving_float::{F32, F64};
 use isa;
 
 /// Maximum number of entries in value stack.
-pub const DEFAULT_VALUE_STACK_LIMIT: usize = 16384;
+pub const DEFAULT_VALUE_STACK_LIMIT: usize = 16 * 1024;
 
-struct EvalContext {
-	call_stack: VecDeque<FunctionContext>,
-}
+// TODO: Do the initial calibration.
+// TODO: Make these parameters changeble.
+pub const DEFAULT_CALL_STACK_LIMIT: usize = 1024;
 
 /// Interpreter action to execute after executing instruction.
 pub enum InstructionOutcome {
@@ -75,9 +75,9 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 
 		self.run_interpreter_loop(&mut function_stack)?;
 
-		println!("return stack: {:?}", self.value_stack);
+		// println!("return stack: {:?}", self.value_stack);
 
-		Ok(func.signature().return_type().map(|vt| {
+		Ok(func.signature().return_type().map(|_vt| {
 			let return_value = self.value_stack
 				.pop();
 
@@ -116,6 +116,10 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 					}
 				},
 				RunResult::NestedCall(nested_func) => {
+					if function_stack.len() + 1 >= DEFAULT_CALL_STACK_LIMIT {
+						return Err(TrapKind::StackOverflow.into());
+					}
+
 					match *nested_func.as_internal() {
 						FuncInstanceInternal::Internal { .. } => {
 							let nested_context = function_context.nested(nested_func.clone()).map_err(Trap::new)?;
@@ -146,16 +150,16 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 
 	fn drop_keep(&mut self, drop: u32, keep: u8) -> Result<(), TrapKind> {
 		assert!(keep <= 1);
-		println!("drop: {}, keep: {}, stack: {:?}", drop, keep, self.value_stack);
+		// println!("drop: {}, keep: {}, stack: {:?}", drop, keep, self.value_stack);
 		if keep == 1 {
 			let top = *self.value_stack.top();
 			*self.value_stack.pick_mut(drop as usize) = top;
 		}
 
-		println!("drop: {}, keep: {}, stack: {:?}", drop, keep, self.value_stack);
+		// println!("drop: {}, keep: {}, stack: {:?}", drop, keep, self.value_stack);
 		let cur_stack_len = self.value_stack.len();
 		self.value_stack.resize(cur_stack_len - drop as usize);
-		println!("drop: {}, keep: {}, stack: {:?}", drop, keep, self.value_stack);
+		// println!("drop: {}, keep: {}, stack: {:?}", drop, keep, self.value_stack);
 		Ok(())
 	}
 
@@ -163,8 +167,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		loop {
 			let instruction = &instructions[function_context.position];
 
-			println!("{:?}", instruction);
-			println!("  before = {:?}", self.value_stack);
+			// println!("{:?}", instruction);
+			// println!("  before = {:?}", self.value_stack);
 
 			match self.run_instruction(function_context, instruction)? {
 				InstructionOutcome::RunNextInstruction => function_context.position += 1,
@@ -182,12 +186,13 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 				},
 			}
 
-			println!("  after = {:?}", self.value_stack);
+			// println!("  after = {:?}", self.value_stack);
 		}
 
 		Ok(RunResult::Return)
 	}
 
+	#[inline(always)]
 	fn run_instruction(&mut self, context: &mut FunctionContext, instruction: &isa::Instruction) -> Result<InstructionOutcome, TrapKind> {
 		match instruction {
 			&isa::Instruction::Unreachable => self.run_unreachable(context),

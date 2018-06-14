@@ -17,7 +17,7 @@
 //! that it is less convenient to interpret. For example, let's look at
 //! the following example in hypothetical structured stack machine:
 //!
-//! ```
+//! ```plain
 //! loop
 //!   ...
 //!   if_true_jump_to_end

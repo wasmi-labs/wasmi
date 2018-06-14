@@ -155,7 +155,12 @@ impl Validator {
 
 		loop {
 			let opcode = &body[context.position];
-			match Validator::validate_instruction(context, opcode)? {
+
+			let outcome = Validator::validate_instruction(context, opcode)
+				.map_err(|err| Error(format!("At instruction {:?}(@{}): {}", opcode, context.position, err)))?;
+
+			println!("opcode: {:?}, outcome={:?}", opcode, outcome);
+			match outcome {
 				InstructionOutcome::ValidateNextInstruction => (),
 				InstructionOutcome::Unreachable => context.unreachable()?,
 			}
@@ -225,8 +230,7 @@ impl Validator {
 
 				context.sink.emit_br_eqz(Target {
 					label: if_not,
-					drop: 0,
-					keep: 0,
+					drop_keep: DropKeep { drop: 0, keep: 0 },
 				});
 			},
 			Else => {
@@ -244,8 +248,7 @@ impl Validator {
 				// to the "end_label" (it will be resolved at End).
 				context.sink.emit_br(Target {
 					label: end_label,
-					drop: 0,
-					keep: 0,
+					drop_keep: DropKeep { drop: 0, keep: 0 },
 				});
 
 				// Resolve `if_not` to here so when if condition is unsatisfied control flow
@@ -297,7 +300,7 @@ impl Validator {
 				if context.frame_stack.len() == 1 {
 					// We are about to close the last frame. Insert
 					// an explicit return.
-					let (drop, keep) = context.drop_keep_return()?;
+					let DropKeep { drop, keep } = context.drop_keep_return()?;
 					context.sink.emit(isa::Instruction::Return {
 						drop,
 						keep,
@@ -334,13 +337,15 @@ impl Validator {
 				return Ok(InstructionOutcome::Unreachable);
 			},
 			Return => {
-				let (drop, keep) = context.drop_keep_return()?;
+				let DropKeep { drop, keep } = context.drop_keep_return()?;
 				context.sink.emit(isa::Instruction::Return {
 					drop,
 					keep,
 				});
 
-				Validator::validate_return(context)?;
+				if let BlockType::Value(value_type) = context.return_type()? {
+					context.tee_value(value_type.into())?;
+				}
 
 				return Ok(InstructionOutcome::Unreachable);
 			},
@@ -1358,13 +1363,6 @@ impl Validator {
 		Ok(InstructionOutcome::Unreachable)
 	}
 
-	fn validate_return(context: &mut FunctionValidationContext) -> Result<InstructionOutcome, Error> {
-		if let BlockType::Value(value_type) = context.return_type()? {
-			context.tee_value(value_type.into())?;
-		}
-		Ok(InstructionOutcome::Unreachable)
-	}
-
 	fn validate_call(context: &mut FunctionValidationContext, idx: u32) -> Result<InstructionOutcome, Error> {
 		let (argument_types, return_type) = context.module.require_function(idx)?;
 		for argument_type in argument_types.iter().rev() {
@@ -1529,11 +1527,6 @@ impl<'a> FunctionValidationContext<'a> {
 
 		let frame = self.frame_stack.pop()?;
 		if self.value_stack.len() != frame.value_stack_len {
-			if true {
-				panic!("Unexpected stack height {}, expected {}",
-				self.value_stack.len(),
-				frame.value_stack_len)
-			}
 			return Err(Error(format!(
 				"Unexpected stack height {}, expected {}",
 				self.value_stack.len(),
@@ -1561,6 +1554,7 @@ impl<'a> FunctionValidationContext<'a> {
 	}
 
 	fn require_target(&self, depth: u32) -> Result<Target, Error> {
+		let is_stack_polymorphic = self.top_label()?.polymorphic_stack;
 		let frame = self.require_label(depth)?;
 
 		let keep: u8 = match (frame.frame_type, frame.block_type) {
@@ -1569,27 +1563,63 @@ impl<'a> FunctionValidationContext<'a> {
 			(_, BlockType::Value(_)) => 1,
 		};
 
-		let value_stack_height = self.value_stack.len() as u32;
-		let drop = if frame.polymorphic_stack { 0 } else {
-			(value_stack_height - frame.value_stack_len as u32) - keep as u32
+		let value_stack_height = self.value_stack.len();
+		let drop = if is_stack_polymorphic { 0 } else {
+			// TODO: Remove this.
+			// println!("value_stack_height = {}", value_stack_height);
+			// println!("frame.value_stack_len = {}", frame.value_stack_len);
+			// println!("keep = {}", keep);
+
+			if value_stack_height < frame.value_stack_len {
+				// TODO: Better error message.
+				return Err(
+					Error(
+						format!(
+							"Stack underflow detected: value stack height ({}) is lower than minimum stack len ({})",
+							value_stack_height,
+							frame.value_stack_len,
+						)
+					)
+				);
+			}
+			if (value_stack_height as u32 - frame.value_stack_len as u32) < keep as u32 {
+				// TODO: Better error message.
+				return Err(
+					Error(
+						format!(
+							"Stack underflow detected: asked to keep {} values, but there are only {}",
+							keep,
+							(value_stack_height as u32 - frame.value_stack_len as u32),
+						)
+					)
+				);
+			}
+
+			(value_stack_height as u32 - frame.value_stack_len as u32) - keep as u32
 		};
 
 		Ok(Target {
 			label: frame.frame_type.br_destination(),
-			keep,
-			drop,
+			drop_keep: DropKeep {
+				drop,
+				keep,
+			},
 		})
 	}
 
-	fn drop_keep_return(&self) -> Result<(u32, u8), Error> {
-		// TODO: Refactor
+	fn drop_keep_return(&self) -> Result<DropKeep, Error> {
+		assert!(
+			!self.frame_stack.is_empty(),
+			"drop_keep_return can't be called with the frame stack empty"
+		);
+
 		let deepest = (self.frame_stack.len() - 1) as u32;
-		let mut target = self.require_target(deepest)?;
+		let mut drop_keep = self.require_target(deepest)?.drop_keep;
 
 		// Drop all local variables and parameters upon exit.
-		target.drop += self.locals.count()?;
+		drop_keep.drop += self.locals.count()?;
 
-		Ok((target.drop, target.keep))
+		Ok(drop_keep)
 	}
 
 	fn relative_local_depth(&mut self, idx: u32) -> Result<u32, Error> {
@@ -1662,10 +1692,15 @@ impl PartialEq<StackValueType> for ValueType {
 }
 
 #[derive(Clone)]
-struct Target {
-	label: LabelId,
+struct DropKeep {
 	drop: u32,
 	keep: u8,
+}
+
+#[derive(Clone)]
+struct Target {
+	label: LabelId,
+	drop_keep: DropKeep,
 }
 
 enum Reloc {
@@ -1725,8 +1760,10 @@ impl Sink {
 	fn emit_br(&mut self, target: Target) {
 		let Target {
 			label,
-			drop,
-			keep,
+			drop_keep: DropKeep {
+				drop,
+				keep,
+			},
 		} = target;
 		let pc = self.cur_pc();
 		let dst_pc = self.pc_or_placeholder(label, || Reloc::Br { pc });
@@ -1740,8 +1777,10 @@ impl Sink {
 	fn emit_br_eqz(&mut self, target: Target) {
 		let Target {
 			label,
-			drop,
-			keep,
+			drop_keep: DropKeep {
+				drop,
+				keep,
+			},
 		} = target;
 		let pc = self.cur_pc();
 		let dst_pc = self.pc_or_placeholder(label, || Reloc::Br { pc });
@@ -1755,8 +1794,10 @@ impl Sink {
 	fn emit_br_nez(&mut self, target: Target) {
 		let Target {
 			label,
-			drop,
-			keep,
+			drop_keep: DropKeep {
+				drop,
+				keep,
+			},
 		} = target;
 		let pc = self.cur_pc();
 		let dst_pc = self.pc_or_placeholder(label, || Reloc::Br { pc });
@@ -1772,7 +1813,10 @@ impl Sink {
 
 		let pc = self.cur_pc();
 		let mut isa_targets = Vec::new();
-		for (idx, &Target { label, drop, keep }) in targets.iter().chain(iter::once(&default)).enumerate() {
+		for (idx, &Target { label, drop_keep: DropKeep {
+				drop,
+				keep,
+			}}) in targets.iter().chain(iter::once(&default)).enumerate() {
 			let dst_pc = self.pc_or_placeholder(label, || Reloc::BrTable { pc, idx });
 			isa_targets.push(
 				isa::Target {
