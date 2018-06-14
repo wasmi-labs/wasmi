@@ -149,19 +149,6 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		}
 	}
 
-	fn drop_keep(&mut self, drop: u32, keep: u8) -> Result<(), TrapKind> {
-		assert!(keep <= 1);
-
-		if keep == 1 {
-			let top = *self.value_stack.top();
-			*self.value_stack.pick_mut(drop as usize) = top;
-		}
-
-		let cur_stack_len = self.value_stack.len();
-		self.value_stack.resize(cur_stack_len - drop as usize);
-		Ok(())
-	}
-
 	fn do_run_function(&mut self, function_context: &mut FunctionContext, instructions: &[isa::Instruction]) -> Result<RunResult, TrapKind> {
 		loop {
 			let instruction = &instructions[function_context.position];
@@ -170,14 +157,14 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 				InstructionOutcome::RunNextInstruction => function_context.position += 1,
 				InstructionOutcome::Branch(target) => {
 					function_context.position = target.dst_pc as usize;
-					self.drop_keep(target.drop, target.keep)?;
+					self.value_stack.drop_keep(target.drop, target.keep);
 				},
 				InstructionOutcome::ExecuteCall(func_ref) => {
 					function_context.position += 1;
 					return Ok(RunResult::NestedCall(func_ref));
 				},
 				InstructionOutcome::Return(drop, keep) => {
-					self.drop_keep(drop, keep)?;
+					self.value_stack.drop_keep(drop, keep);
 					break;
 				},
 			}
@@ -186,7 +173,6 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(RunResult::Return)
 	}
 
-	#[inline(always)]
 	fn run_instruction(&mut self, context: &mut FunctionContext, instruction: &isa::Instruction) -> Result<InstructionOutcome, TrapKind> {
 		match instruction {
 			&isa::Instruction::Unreachable => self.run_unreachable(context),
@@ -486,7 +472,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_get_local(&mut self, index: u32) -> Result<InstructionOutcome, TrapKind> {
-		let val = *self.value_stack.pick_mut(index as usize - 1);
+		let val = *self.value_stack.pick_mut(index as usize);
 		self.value_stack.push(val)?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
@@ -495,7 +481,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		let val = self
 			.value_stack
 			.pop();
-		*self.value_stack.pick_mut(index as usize - 1) = val;
+		*self.value_stack.pick_mut(index as usize) = val;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
@@ -504,7 +490,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.value_stack
 			.top()
 			.clone();
-		*self.value_stack.pick_mut(index as usize - 1) = val;
+		*self.value_stack.pick_mut(index as usize) = val;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
@@ -1146,23 +1132,40 @@ pub fn check_function_args(signature: &Signature, args: &[RuntimeValue]) -> Resu
 
 #[derive(Debug)]
 struct ValueStack {
-	stack_with_limit: StackWithLimit<RuntimeValue>,
+	buf: Box<[RuntimeValue]>,
+	/// Index of the first free place in the stack.
+	sp: usize,
 }
 
 impl ValueStack {
 	fn with_limit(limit: usize) -> ValueStack {
+		let mut buf = Vec::new();
+		buf.resize(limit, RuntimeValue::I32(0));
+
 		ValueStack {
-			stack_with_limit: StackWithLimit::with_limit(limit),
+			buf: buf.into_boxed_slice(),
+			sp: 0,
 		}
+	}
+
+	#[inline]
+	fn drop_keep(&mut self, drop: u32, keep: u8) {
+		assert!(keep <= 1);
+
+		if keep == 1 {
+			let top = *self.top();
+			*self.pick_mut(drop as usize + 1) = top;
+		}
+
+		let cur_stack_len = self.len();
+		self.resize(cur_stack_len - drop as usize);
 	}
 
 	fn pop_as<T>(&mut self) -> T
 	where
 		T: FromRuntimeValue,
 	{
-		let value = self.stack_with_limit
-			.pop()
-			.expect("Due to validation stack shouldn't be empty");
+		let value = self.pop();
 		value.try_into().expect("Due to validation stack top's type should match")
 	}
 
@@ -1176,36 +1179,47 @@ impl ValueStack {
 	}
 
 	fn pop_triple(&mut self) -> (RuntimeValue, RuntimeValue, RuntimeValue) {
-		let right = self.stack_with_limit.pop().expect("Due to validation stack shouldn't be empty");
-		let mid = self.stack_with_limit.pop().expect("Due to validation stack shouldn't be empty");
-		let left = self.stack_with_limit.pop().expect("Due to validation stack shouldn't be empty");
+		let right = self.pop();
+		let mid = self.pop();
+		let left = self.pop();
 		(left, mid, right)
 	}
 
-	fn pick_mut(&mut self, depth: usize) -> &mut RuntimeValue {
-		self.stack_with_limit
-			.pick_mut(depth)
-			.expect("Due to validation this should succeed")
-	}
-
-	fn pop(&mut self) -> RuntimeValue {
-		self.stack_with_limit.pop().expect("Due to validation stack shouldn't be empty")
-	}
-
-	fn push(&mut self, value: RuntimeValue) -> Result<(), TrapKind> {
-		self.stack_with_limit.push(value)
-			.map_err(|_| TrapKind::StackOverflow)
-	}
-
-	fn resize(&mut self, new_len: usize) {
-		self.stack_with_limit.resize(new_len, RuntimeValue::I32(0));
-	}
-
-	fn len(&self) -> usize {
-		self.stack_with_limit.len()
-	}
-
+	#[inline]
 	fn top(&self) -> &RuntimeValue {
-		self.stack_with_limit.top().expect("Due to validation stack shouldn't be empty")
+		self.pick(1)
+	}
+
+	fn pick(&self, depth: usize) -> &RuntimeValue {
+		&self.buf[self.sp - depth]
+	}
+
+	#[inline]
+	fn pick_mut(&mut self, depth: usize) -> &mut RuntimeValue {
+		&mut self.buf[self.sp - depth]
+	}
+
+	#[inline]
+	fn pop(&mut self) -> RuntimeValue {
+		self.sp -= 1;
+		self.buf[self.sp]
+	}
+
+	#[inline]
+	fn push(&mut self, value: RuntimeValue) -> Result<(), TrapKind> {
+		let cell = self.buf.get_mut(self.sp).ok_or_else(|| TrapKind::StackOverflow)?;
+		*cell = value;
+		self.sp += 1;
+		Ok(())
+	}
+
+	#[inline]
+	fn resize(&mut self, new_len: usize) {
+		self.sp = new_len;
+	}
+
+	#[inline]
+	fn len(&self) -> usize {
+		self.sp
 	}
 }
