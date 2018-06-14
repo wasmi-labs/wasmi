@@ -668,8 +668,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	{
 		let (left, right) = self
 			.value_stack
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+			.pop_pair_as::<T>();
 		let v = if f(left, right) {
 			RuntimeValue::I32(1)
 		} else {
@@ -753,8 +752,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		where RuntimeValue: From<T>, T: ArithmeticOps<T> + FromRuntimeValue {
 		let (left, right) = self
 			.value_stack
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+			.pop_pair_as::<T>();
 		let v = left.add(right);
 		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
@@ -764,8 +762,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		where RuntimeValue: From<T>, T: ArithmeticOps<T> + FromRuntimeValue {
 		let (left, right) = self
 			.value_stack
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+			.pop_pair_as::<T>();
 		let v = left.sub(right);
 		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
@@ -775,8 +772,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	where RuntimeValue: From<T>, T: ArithmeticOps<T> + FromRuntimeValue {
 		let (left, right) = self
 			.value_stack
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+			.pop_pair_as::<T>();
 		let v = left.mul(right);
 		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
@@ -786,8 +782,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	where RuntimeValue: From<T>, T: TransmuteInto<U> + FromRuntimeValue, U: ArithmeticOps<U> + TransmuteInto<T> {
 		let (left, right) = self
 			.value_stack
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+			.pop_pair_as::<T>();
 		let (left, right) = (left.transmute_into(), right.transmute_into());
 		let v = left.div(right)?;
 		let v = v.transmute_into();
@@ -799,8 +794,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	where RuntimeValue: From<T>, T: TransmuteInto<U> + FromRuntimeValue, U: Integer<U> + TransmuteInto<T> {
 		let (left, right) = self
 			.value_stack
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+			.pop_pair_as::<T>();
 		let (left, right) = (left.transmute_into(), right.transmute_into());
 		let v = left.rem(right)?;
 		let v = v.transmute_into();
@@ -812,8 +806,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	where RuntimeValue: From<<T as ops::BitAnd>::Output>, T: ops::BitAnd<T> + FromRuntimeValue {
 		let (left, right) = self
 			.value_stack
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+			.pop_pair_as::<T>();
 		let v = left.bitand(right);
 		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
@@ -823,8 +816,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	where RuntimeValue: From<<T as ops::BitOr>::Output>, T: ops::BitOr<T> + FromRuntimeValue {
 		let (left, right) = self
 			.value_stack
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+			.pop_pair_as::<T>();
 		let v = left.bitor(right);
 		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
@@ -834,8 +826,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	where RuntimeValue: From<<T as ops::BitXor>::Output>, T: ops::BitXor<T> + FromRuntimeValue {
 		let (left, right) = self
 			.value_stack
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+			.pop_pair_as::<T>();
 		let v = left.bitxor(right);
 		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
@@ -845,8 +836,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	where RuntimeValue: From<<T as ops::Shl<T>>::Output>, T: ops::Shl<T> + ops::BitAnd<T, Output=T> + FromRuntimeValue {
 		let (left, right) = self
 			.value_stack
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+			.pop_pair_as::<T>();
 		let v = left.shl(right & mask);
 		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
@@ -856,8 +846,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	where RuntimeValue: From<T>, T: TransmuteInto<U> + FromRuntimeValue, U: ops::Shr<U> + ops::BitAnd<U, Output=U>, <U as ops::Shr<U>>::Output: TransmuteInto<T> {
 		let (left, right) = self
 			.value_stack
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+			.pop_pair_as::<T>();
 		let (left, right) = (left.transmute_into(), right.transmute_into());
 		let v = left.shr(right & mask);
 		let v = v.transmute_into();
@@ -869,8 +858,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	where RuntimeValue: From<T>, T: Integer<T> + FromRuntimeValue {
 		let (left, right) = self
 			.value_stack
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+			.pop_pair_as::<T>();
 		let v = left.rotl(right);
 		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
@@ -881,8 +869,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	{
 		let (left, right) = self
 			.value_stack
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+			.pop_pair_as::<T>();
 		let v = left.rotr(right);
 		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
@@ -937,8 +924,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	{
 		let (left, right) = self
 			.value_stack
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+			.pop_pair_as::<T>();
 		let v = left.min(right);
 		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
@@ -948,8 +934,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	where RuntimeValue: From<T>, T: Float<T> + FromRuntimeValue {
 		let (left, right) = self
 			.value_stack
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+			.pop_pair_as::<T>();
 		let v = left.max(right);
 		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
@@ -959,8 +944,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	where RuntimeValue: From<T>, T: Float<T> + FromRuntimeValue {
 		let (left, right) = self
 			.value_stack
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+			.pop_pair_as::<T>();
 		let v = left.copysign(right);
 		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
@@ -1158,9 +1142,10 @@ impl ValueStack {
 		}
 
 		let cur_stack_len = self.len();
-		self.resize(cur_stack_len - drop as usize);
+		self.sp = cur_stack_len - drop as usize;
 	}
 
+	#[inline]
 	fn pop_as<T>(&mut self) -> T
 	where
 		T: FromRuntimeValue,
@@ -1169,15 +1154,17 @@ impl ValueStack {
 		value.try_into().expect("Due to validation stack top's type should match")
 	}
 
-	fn pop_pair_as<T>(&mut self) -> Result<(T, T), Error>
+	#[inline]
+	fn pop_pair_as<T>(&mut self) -> (T, T)
 	where
 		T: FromRuntimeValue,
 	{
 		let right = self.pop_as();
 		let left = self.pop_as();
-		Ok((left, right))
+		(left, right)
 	}
 
+	#[inline]
 	fn pop_triple(&mut self) -> (RuntimeValue, RuntimeValue, RuntimeValue) {
 		let right = self.pop();
 		let mid = self.pop();
@@ -1211,11 +1198,6 @@ impl ValueStack {
 		*cell = value;
 		self.sp += 1;
 		Ok(())
-	}
-
-	#[inline]
-	fn resize(&mut self, new_len: usize) {
-		self.sp = new_len;
 	}
 
 	#[inline]
