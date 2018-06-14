@@ -20,11 +20,10 @@ use nan_preserving_float::{F32, F64};
 use isa;
 
 /// Maximum number of entries in value stack.
-pub const DEFAULT_VALUE_STACK_LIMIT: usize = 16 * 1024;
+pub const DEFAULT_VALUE_STACK_LIMIT: usize = (512 * 1024) / ::std::mem::size_of::<RuntimeValue>();
 
-// TODO: Do the initial calibration.
 // TODO: Make these parameters changeble.
-pub const DEFAULT_CALL_STACK_LIMIT: usize = 1024;
+pub const DEFAULT_CALL_STACK_LIMIT: usize = 16 * 1024;
 
 /// Interpreter action to execute after executing instruction.
 pub enum InstructionOutcome {
