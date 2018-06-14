@@ -173,6 +173,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(RunResult::Return)
 	}
 
+	#[inline(always)]
 	fn run_instruction(&mut self, context: &mut FunctionContext, instruction: &isa::Instruction) -> Result<InstructionOutcome, TrapKind> {
 		match instruction {
 			&isa::Instruction::Unreachable => self.run_unreachable(context),
