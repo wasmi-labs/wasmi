@@ -75,12 +75,10 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			func.clone(),
 		);
 
-		let mut function_stack = VecDeque::new();
-		function_stack.push_back(context);
+		let mut call_stack = VecDeque::new();
+		call_stack.push_back(context);
 
-		self.run_interpreter_loop(&mut function_stack)?;
-
-		// println!("return stack: {:?}", self.value_stack);
+		self.run_interpreter_loop(&mut call_stack)?;
 
 		Ok(func.signature().return_type().map(|_vt| {
 			let return_value = self.value_stack
@@ -90,9 +88,9 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		}))
 	}
 
-	fn run_interpreter_loop(&mut self, function_stack: &mut VecDeque<FunctionContext>) -> Result<(), Trap> {
+	fn run_interpreter_loop(&mut self, call_stack: &mut VecDeque<FunctionContext>) -> Result<(), Trap> {
 		loop {
-			let mut function_context = function_stack
+			let mut function_context = call_stack
 				.pop_back()
 				.expect("on loop entry - not empty; on loop continue - checking for emptiness; qed");
 			let function_ref = function_context.function.clone();
@@ -115,21 +113,22 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 
 			match function_return {
 				RunResult::Return => {
-					if function_stack.back().is_none() {
-						// There are no more frames in the call stack.
+					if call_stack.back().is_none() {
+						// This was the last frame in the call stack. This means we
+						// are done executing.
 						return Ok(());
 					}
 				},
 				RunResult::NestedCall(nested_func) => {
-					if function_stack.len() + 1 >= DEFAULT_CALL_STACK_LIMIT {
+					if call_stack.len() + 1 >= DEFAULT_CALL_STACK_LIMIT {
 						return Err(TrapKind::StackOverflow.into());
 					}
 
 					match *nested_func.as_internal() {
 						FuncInstanceInternal::Internal { .. } => {
 							let nested_context = function_context.nested(nested_func.clone()).map_err(Trap::new)?;
-							function_stack.push_back(function_context);
-							function_stack.push_back(nested_context);
+							call_stack.push_back(function_context);
+							call_stack.push_back(nested_context);
 						},
 						FuncInstanceInternal::Host { ref signature, .. } => {
 							let args = prepare_function_args(signature, &mut self.value_stack);
@@ -145,7 +144,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 							if let Some(return_val) = return_val {
 								self.value_stack.push(return_val).map_err(Trap::new)?;
 							}
-							function_stack.push_back(function_context);
+							call_stack.push_back(function_context);
 						}
 					}
 				},
