@@ -170,12 +170,14 @@ impl Validator {
 	) -> Result<isa::Instructions, Error> {
 		let (params, result_ty) = module.require_function_type(func.type_ref())?;
 
+		let ins_size_estimate = body.code().elements().len();
 		let mut context = FunctionValidationContext::new(
 			&module,
 			Locals::new(params, body.locals()),
 			DEFAULT_VALUE_STACK_LIMIT,
 			DEFAULT_FRAME_STACK_LIMIT,
 			result_ty,
+			ins_size_estimate,
 		);
 
 		let end_label = context.sink.new_label();
@@ -1319,6 +1321,7 @@ impl<'a> FunctionValidationContext<'a> {
 		value_stack_limit: usize,
 		frame_stack_limit: usize,
 		return_type: BlockType,
+		size_estimate: usize,
 	) -> Self {
 		FunctionValidationContext {
 			module: module,
@@ -1327,7 +1330,7 @@ impl<'a> FunctionValidationContext<'a> {
 			value_stack: StackWithLimit::with_limit(value_stack_limit),
 			frame_stack: StackWithLimit::with_limit(frame_stack_limit),
 			return_type: return_type,
-			sink: Sink::new(),
+			sink: Sink::with_instruction_capacity(size_estimate),
 		}
 	}
 
@@ -1563,10 +1566,9 @@ struct Sink {
 }
 
 impl Sink {
-	// TODO: Default size estimate?
-	fn new() -> Sink {
+	fn with_instruction_capacity(capacity: usize) -> Sink {
 		Sink {
-			ins: Vec::new(),
+			ins: Vec::with_capacity(estimate),
 			labels: Vec::new(),
 		}
 	}
