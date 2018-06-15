@@ -1,5 +1,4 @@
 use std::u32;
-use std::collections::HashMap;
 use parity_wasm::elements::{Opcode, BlockType, ValueType, TableElementType, Func, FuncBody};
 use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use validation::context::ModuleContext;
@@ -1538,6 +1537,7 @@ struct Target {
 	drop_keep: DropKeep,
 }
 
+#[derive(Debug)]
 enum Reloc {
 	Br {
 		pc: u32,
@@ -1550,6 +1550,8 @@ enum Reloc {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 struct LabelId(usize);
+
+#[derive(Debug, PartialEq, Eq)]
 enum Label {
 	Resolved(u32),
 	NotResolved,
@@ -1557,8 +1559,7 @@ enum Label {
 
 struct Sink {
 	ins: Vec<isa::Instruction>,
-	labels: Vec<Label>,
-	unresolved: HashMap<LabelId, Vec<Reloc>>,
+	labels: Vec<(Label, Vec<Reloc>)>,
 }
 
 impl Sink {
@@ -1567,7 +1568,6 @@ impl Sink {
 		Sink {
 			ins: Vec::new(),
 			labels: Vec::new(),
-			unresolved: HashMap::new(),
 		}
 	}
 
@@ -1577,11 +1577,9 @@ impl Sink {
 
 	fn pc_or_placeholder<F: FnOnce() -> Reloc>(&mut self, label: LabelId, reloc_creator: F) -> u32 {
 		match self.labels[label.0] {
-			Label::Resolved(dst_pc) => dst_pc,
-			Label::NotResolved => {
-				self.unresolved
-					.entry(label)
-					.or_insert(Vec::new())
+			(Label::Resolved(dst_pc), _) => dst_pc,
+			(Label::NotResolved, ref mut unresolved) => {
+				unresolved
 					.push(reloc_creator());
 				u32::max_value()
 			}
@@ -1669,7 +1667,7 @@ impl Sink {
 	fn new_label(&mut self) -> LabelId {
 		let label_idx = self.labels.len();
 		self.labels.push(
-			Label::NotResolved,
+			(Label::NotResolved, Vec::new()),
 		);
 		LabelId(label_idx)
 	}
@@ -1678,14 +1676,16 @@ impl Sink {
 	///
 	/// Panics if the label is already resolved.
 	fn resolve_label(&mut self, label: LabelId) {
-		if let Label::Resolved(_) = self.labels[label.0] {
+		use std::mem;
+
+		if let (Label::Resolved(_), _) = self.labels[label.0] {
 			panic!("Trying to resolve already resolved label");
 		}
 		let dst_pc = self.cur_pc();
 
 		// Patch all relocations that was previously recorded for this
 		// particular label.
-		let unresolved_rels = self.unresolved.remove(&label).unwrap_or(Vec::new());
+		let unresolved_rels = mem::replace(&mut self.labels[label.0].1, Vec::new());
 		for reloc in unresolved_rels {
 			match reloc {
 				Reloc::Br { pc } => match self.ins[pc as usize] {
@@ -1702,11 +1702,19 @@ impl Sink {
 		}
 
 		// Mark this label as resolved.
-		self.labels[label.0] = Label::Resolved(dst_pc);
+		self.labels[label.0] = (Label::Resolved(dst_pc), Vec::new());
 	}
 
 	fn into_inner(self) -> Vec<isa::Instruction> {
-		assert!(self.unresolved.is_empty());
+		// At this moment all labels should be resolved.
+		assert!({
+			self.labels.iter().all(|(state, unresolved)|
+				match (state, unresolved) {
+					(Label::Resolved(_), unresolved) if unresolved.is_empty() => true,
+					_ => false,
+				}
+			)
+		}, "there are unresolved labels left: {:?}", self.labels);
 		self.ins
 	}
 }
