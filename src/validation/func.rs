@@ -205,17 +205,8 @@ impl Validator {
 				)?;
 			},
 			If(block_type) => {
-				// if
-				//   ..
-				// end
-				//
-				// translates to ->
-				//
-				// br_if_not $if_not
-				//   ..
-				// $if_not:
-
-				// if_not will be resolved whenever `end` or `else` operator will be met.
+				// `if_not` will be resolved whenever `End` or `Else` operator will be met.
+				// `end_label` will always be resolved at `End`.
 				let if_not = context.sink.new_label();
 				let end_label = context.sink.new_label();
 
@@ -271,26 +262,26 @@ impl Validator {
 			End => {
 				{
 					let frame_type = context.top_label()?.frame_type;
+
 					if let BlockFrameType::IfTrue { if_not, .. } = frame_type {
+						// A `if` without an `else` can't return a result.
 						if context.top_label()?.block_type != BlockType::NoResult {
 							return Err(
 								Error(
 									format!(
-										"If block without else required to have NoResult block type. But it have {:?} type",
+										"If block without else required to have NoResult block type. But it has {:?} type",
 										context.top_label()?.block_type
 									)
 								)
 							);
 						}
 
+						// Resolve `if_not` label. If the `if's` condition doesn't hold the control will jump
+						// to here.
 						context.sink.resolve_label(if_not);
 					}
-				}
 
-				{
-					let frame_type = context.top_label()?.frame_type;
-
-					// If this end for a non-loop frame then we resolve it's label location to here.
+					// Unless it's a loop, resolve the `end_label` position here.
 					if !frame_type.is_loop() {
 						let end_label = frame_type.end_label();
 						context.sink.resolve_label(end_label);
@@ -337,15 +328,15 @@ impl Validator {
 				return Ok(InstructionOutcome::Unreachable);
 			},
 			Return => {
+				if let BlockType::Value(value_type) = context.return_type()? {
+					context.tee_value(value_type.into())?;
+				}
+
 				let DropKeep { drop, keep } = context.drop_keep_return()?;
 				context.sink.emit(isa::Instruction::Return {
 					drop,
 					keep,
 				});
-
-				if let BlockType::Value(value_type) = context.return_type()? {
-					context.tee_value(value_type.into())?;
-				}
 
 				return Ok(InstructionOutcome::Unreachable);
 			},
@@ -370,7 +361,7 @@ impl Validator {
 
 			GetLocal(index) => {
 				// We need to calculate relative depth before validation since
-				// it will change value stack size.
+				// it will change the value stack size.
 				let depth = context.relative_local_depth(index)?;
 				Validator::validate_get_local(context, index)?;
 				context.sink.emit(
