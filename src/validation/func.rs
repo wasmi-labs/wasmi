@@ -103,6 +103,54 @@ enum StackValueType {
 	Specific(ValueType),
 }
 
+impl StackValueType {
+	fn is_any(&self) -> bool {
+		match self {
+			&StackValueType::Any => true,
+			_ => false,
+		}
+	}
+
+	fn value_type(&self) -> ValueType {
+		match self {
+			&StackValueType::Any => unreachable!("must be checked by caller"),
+			&StackValueType::Specific(value_type) => value_type,
+		}
+	}
+}
+
+impl From<ValueType> for StackValueType {
+	fn from(value_type: ValueType) -> Self {
+		StackValueType::Specific(value_type)
+	}
+}
+
+impl PartialEq<StackValueType> for StackValueType {
+	fn eq(&self, other: &StackValueType) -> bool {
+		if self.is_any() || other.is_any() {
+			true
+		} else {
+			self.value_type() == other.value_type()
+		}
+	}
+}
+
+impl PartialEq<ValueType> for StackValueType {
+	fn eq(&self, other: &ValueType) -> bool {
+		if self.is_any() {
+			true
+		} else {
+			self.value_type() == *other
+		}
+	}
+}
+
+impl PartialEq<StackValueType> for ValueType {
+	fn eq(&self, other: &StackValueType) -> bool {
+		other == self
+	}
+}
+
 /// Function validator.
 pub struct Validator;
 
@@ -376,10 +424,8 @@ impl Validator {
 				);
 			}
 			TeeLocal(index) => {
-				// We need to calculate relative depth before validation since
-				// it will change value stack size.
-				let depth = context.relative_local_depth(index)?;
 				Validator::validate_tee_local(context, index)?;
+				let depth = context.relative_local_depth(index)?;
 				context.sink.emit(
 					isa::Instruction::TeeLocal(depth),
 				);
@@ -1477,54 +1523,6 @@ impl<'a> FunctionValidationContext<'a> {
 		isa::Instructions {
 			code: self.sink.into_inner(),
 		}
-	}
-}
-
-impl StackValueType {
-	fn is_any(&self) -> bool {
-		match self {
-			&StackValueType::Any => true,
-			_ => false,
-		}
-	}
-
-	fn value_type(&self) -> ValueType {
-		match self {
-			&StackValueType::Any => unreachable!("must be checked by caller"),
-			&StackValueType::Specific(value_type) => value_type,
-		}
-	}
-}
-
-impl From<ValueType> for StackValueType {
-	fn from(value_type: ValueType) -> Self {
-		StackValueType::Specific(value_type)
-	}
-}
-
-impl PartialEq<StackValueType> for StackValueType {
-	fn eq(&self, other: &StackValueType) -> bool {
-		if self.is_any() || other.is_any() {
-			true
-		} else {
-			self.value_type() == other.value_type()
-		}
-	}
-}
-
-impl PartialEq<ValueType> for StackValueType {
-	fn eq(&self, other: &ValueType) -> bool {
-		if self.is_any() {
-			true
-		} else {
-			self.value_type() == *other
-		}
-	}
-}
-
-impl PartialEq<StackValueType> for ValueType {
-	fn eq(&self, other: &StackValueType) -> bool {
-		other == self
 	}
 }
 
