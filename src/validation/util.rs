@@ -10,14 +10,26 @@ use validation::Error;
 pub struct Locals<'a> {
 	params: &'a [ValueType],
 	local_groups: &'a [Local],
+	count: u32,
 }
 
 impl<'a> Locals<'a> {
-	pub fn new(params: &'a [ValueType], local_groups: &'a [Local]) -> Locals<'a> {
-		Locals {
+	/// Create a new wrapper around declared variables and parameters.
+	pub fn new(params: &'a [ValueType], local_groups: &'a [Local]) -> Result<Locals<'a>, Error> {
+		let mut acc = params.len() as u32;
+		for locals_group in local_groups {
+			acc = acc
+				.checked_add(locals_group.count())
+				.ok_or_else(||
+					Error(String::from("Locals range no in 32-bit range"))
+				)?;
+		}
+
+		Ok(Locals {
 			params,
 			local_groups,
-		}
+			count: acc,
+		})
 	}
 
 	/// Returns parameter count.
@@ -26,18 +38,8 @@ impl<'a> Locals<'a> {
 	}
 
 	/// Returns total count of all declared locals and paramaterers.
-	///
-	/// Returns `Err` if count overflows 32-bit value.
-	pub fn count(&self) -> Result<u32, Error> {
-		let mut acc = self.param_count();
-		for locals_group in self.local_groups {
-			acc = acc
-				.checked_add(locals_group.count())
-				.ok_or_else(||
-					Error(String::from("Locals range no in 32-bit range"))
-				)?;
-		}
-		Ok(acc)
+	pub fn count(&self) -> u32 {
+		self.count
 	}
 
 	/// Returns the type of a local variable (either a declared local or a param).
@@ -82,7 +84,7 @@ mod tests {
 	fn locals_it_works() {
 		let params = vec![ValueType::I32, ValueType::I64];
 		let local_groups = vec![Local::new(2, ValueType::F32), Local::new(2, ValueType::F64)];
-		let locals = Locals::new(&params, &local_groups);
+		let locals = Locals::new(&params, &local_groups).unwrap();
 
 		assert_matches!(locals.type_of_local(0), Ok(ValueType::I32));
 		assert_matches!(locals.type_of_local(1), Ok(ValueType::I64));
@@ -96,7 +98,7 @@ mod tests {
 	#[test]
 	fn locals_no_declared_locals() {
 		let params = vec![ValueType::I32];
-		let locals = Locals::new(&params, &[]);
+		let locals = Locals::new(&params, &[]).unwrap();
 
 		assert_matches!(locals.type_of_local(0), Ok(ValueType::I32));
 		assert_matches!(locals.type_of_local(1), Err(_));
@@ -105,7 +107,7 @@ mod tests {
 	#[test]
 	fn locals_no_params() {
 		let local_groups = vec![Local::new(2, ValueType::I32), Local::new(3, ValueType::I64)];
-		let locals = Locals::new(&[], &local_groups);
+		let locals = Locals::new(&[], &local_groups).unwrap();
 
 		assert_matches!(locals.type_of_local(0), Ok(ValueType::I32));
 		assert_matches!(locals.type_of_local(1), Ok(ValueType::I32));
@@ -121,7 +123,7 @@ mod tests {
 			Local::new(u32::max_value(), ValueType::I32),
 			Local::new(1, ValueType::I64),
 		];
-		let locals = Locals::new(&[], &local_groups);
+		let locals = Locals::new(&[], &local_groups).unwrap();
 
 		assert_matches!(
 			locals.type_of_local(u32::max_value() - 1),

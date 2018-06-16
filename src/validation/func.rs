@@ -173,7 +173,7 @@ impl Validator {
 		let ins_size_estimate = body.code().elements().len();
 		let mut context = FunctionValidationContext::new(
 			&module,
-			Locals::new(params, body.locals()),
+			Locals::new(params, body.locals())?,
 			DEFAULT_VALUE_STACK_LIMIT,
 			DEFAULT_FRAME_STACK_LIMIT,
 			result_ty,
@@ -375,9 +375,8 @@ impl Validator {
 						)?;
 					}
 
-					let locals_count = context.locals.count()?;
 					let DropKeep { drop, keep } = drop_keep_return(
-						locals_count,
+						&context.locals,
 						&context.value_stack,
 						&context.frame_stack,
 					);
@@ -442,9 +441,8 @@ impl Validator {
 					tee_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
 				}
 
-				let locals_count = context.locals.count()?;
 				let DropKeep { drop, keep } = drop_keep_return(
-					locals_count,
+					&context.locals,
 					&context.value_stack,
 					&context.frame_stack
 				);
@@ -1589,7 +1587,7 @@ fn require_target(
 }
 
 fn drop_keep_return(
-	locals_count: u32,
+	locals: &Locals,
 	value_stack: &StackWithLimit<StackValueType>,
 	frame_stack: &StackWithLimit<BlockFrame>,
 ) -> DropKeep {
@@ -1602,7 +1600,7 @@ fn drop_keep_return(
 	let mut drop_keep = require_target(deepest, value_stack, frame_stack).drop_keep;
 
 	// Drop all local variables and parameters upon exit.
-	drop_keep.drop += locals_count;
+	drop_keep.drop += locals.count();
 
 	drop_keep
 }
@@ -1618,7 +1616,7 @@ fn relative_local_depth(
 ) -> Result<u32, Error> {
 	// TODO: Comment stack layout
 	let value_stack_height = value_stack.len() as u32;
-	let locals_and_params_count = locals.count()?;
+	let locals_and_params_count = locals.count();
 
 	let depth = value_stack_height
 		.checked_add(locals_and_params_count)
