@@ -3,11 +3,11 @@
 //! The instruction set is mostly derived from Wasm. However,
 //! there is a substantial difference.
 //!
-//! # Structured Stack Machine vs Traditional One
+//! # Structured Stack Machine vs Plain One
 //!
 //! Wasm is a structured stack machine. Wasm encodes control flow in structures
 //! similar to that commonly found in a programming languages
-//! such as if, while. That contrasts to a traditional stack machine which
+//! such as if, while. That contrasts to a plain stack machine which
 //!  encodes all control flow with goto-like instructions.
 //!
 //! Structured stack machine code aligns well with goals of Wasm,
@@ -29,6 +29,33 @@
 //! until it reaches the *matching* `end`. That's quite inefficient compared
 //! to a plain goto to the specific position.
 //!
+//! Because of this, the translation from the Wasm structured stack machine into a
+//! plain one is taking place.
+//!
+//! # Locals
+//!
+//! In a plain stack machine local variables and arguments live on the stack. Instead of
+//! accessing predifined locals slots in a plain stack machine locals are addressed relative
+//! to the current stack pointer. Because of this instead of taking an index of a local
+//! in {get,set,tee}_local operations, they take a relative depth as immediate. This works
+//! because at each instruction we always know the current stack height.
+//!
+//! Roughly, the stack layout looks like this
+//!
+//! | caller arguments |
+//! |  - arg 1         |
+//! |  - arg 2         |
+//! +------------------+
+//! | callee locals    |
+//! |  - var 1         |
+//! |  - var 2         |
+//! +------------------+
+//! | operands         |
+//! |  - op 1          |
+//! |  - op 2          |
+//! |                  |  <-- current stack pointer
+//! +------------------+
+//!
 //! # Differences from Wasm
 //!
 //! - There is no `nop` instruction.
@@ -40,13 +67,20 @@
 //! - Reserved immediates are ignored for `call_indirect`, `current_memory`, `grow_memory`.
 //!
 
+/// Should we keep a value before "discarding" a stack frame?
+///
+/// Note that this is a `enum` since Wasm doesn't support multiple return
+/// values at the moment.
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Keep {
 	None,
+	/// Pop one value from the yet-to-be-discarded stack frame to the
+	/// current stack frame.
 	Single,
 }
 
+/// Specifies how many values we should keep and how many we should drop.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct DropKeep {
 	pub drop: u32,
