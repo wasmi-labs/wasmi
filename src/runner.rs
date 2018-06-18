@@ -33,7 +33,7 @@ pub enum InstructionOutcome {
 	/// Execute function call.
 	ExecuteCall(FuncRef),
 	/// Return from current function block.
-	Return(u32, u8),
+	Return(isa::DropKeep),
 }
 
 /// Function run result.
@@ -157,14 +157,14 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 				InstructionOutcome::RunNextInstruction => function_context.position += 1,
 				InstructionOutcome::Branch(target) => {
 					function_context.position = target.dst_pc as usize;
-					self.value_stack.drop_keep(target.drop, target.keep);
+					self.value_stack.drop_keep(target.drop_keep);
 				},
 				InstructionOutcome::ExecuteCall(func_ref) => {
 					function_context.position += 1;
 					return Ok(RunResult::NestedCall(func_ref));
 				},
-				InstructionOutcome::Return(drop, keep) => {
-					self.value_stack.drop_keep(drop, keep);
+				InstructionOutcome::Return(drop_keep) => {
+					self.value_stack.drop_keep(drop_keep);
 					break;
 				},
 			}
@@ -182,7 +182,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			&isa::Instruction::BrIfEqz(ref target) => self.run_br_eqz(target.clone()),
 			&isa::Instruction::BrIfNez(ref target) => self.run_br_nez(target.clone()),
 			&isa::Instruction::BrTable(ref targets) => self.run_br_table(targets),
-			&isa::Instruction::Return { drop, keep } => self.run_return(drop, keep),
+			&isa::Instruction::Return(drop_keep) => self.run_return(drop_keep),
 
 			&isa::Instruction::Call(index) => self.run_call(context, index),
 			&isa::Instruction::CallIndirect(index) => self.run_call_indirect(context, index),
@@ -405,8 +405,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::Branch(dst))
 	}
 
-	fn run_return(&mut self, drop: u32, keep: u8) -> Result<InstructionOutcome, TrapKind> {
-		Ok(InstructionOutcome::Return(drop, keep))
+	fn run_return(&mut self, drop_keep: isa::DropKeep) -> Result<InstructionOutcome, TrapKind> {
+		Ok(InstructionOutcome::Return(drop_keep))
 	}
 
 	fn run_call(
@@ -1127,16 +1127,14 @@ impl ValueStack {
 	}
 
 	#[inline]
-	fn drop_keep(&mut self, drop: u32, keep: u8) {
-		assert!(keep <= 1);
-
-		if keep == 1 {
+	fn drop_keep(&mut self, drop_keep: isa::DropKeep) {
+		if drop_keep.keep == isa::Keep::Single {
 			let top = *self.top();
-			*self.pick_mut(drop as usize + 1) = top;
+			*self.pick_mut(drop_keep.drop as usize + 1) = top;
 		}
 
 		let cur_stack_len = self.len();
-		self.sp = cur_stack_len - drop as usize;
+		self.sp = cur_stack_len - drop_keep.drop as usize;
 	}
 
 	#[inline]

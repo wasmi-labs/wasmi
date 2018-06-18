@@ -40,11 +40,23 @@
 //! - Reserved immediates are ignored for `call_indirect`, `current_memory`, `grow_memory`.
 //!
 
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Keep {
+	None,
+	Single,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct DropKeep {
+	pub drop: u32,
+	pub keep: Keep,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Target {
 	pub dst_pc: u32,
-	pub drop: u32,
-	pub keep: u8,
+	pub drop_keep: DropKeep,
 }
 
 #[allow(unused)] // TODO: Remove
@@ -71,10 +83,7 @@ pub enum Instruction {
 	BrTable(Box<[Target]>),
 
 	Unreachable,
-	Return {
-		drop: u32,
-		keep: u8,
-	},
+	Return(DropKeep),
 
 	Call(u32),
 	CallIndirect(u32),

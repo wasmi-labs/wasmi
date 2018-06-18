@@ -123,12 +123,9 @@ mod tests {
 			Local::new(u32::max_value(), ValueType::I32),
 			Local::new(1, ValueType::I64),
 		];
-		let locals = Locals::new(&[], &local_groups).unwrap();
-
 		assert_matches!(
-			locals.type_of_local(u32::max_value() - 1),
-			Ok(ValueType::I32)
+			Locals::new(&[], &local_groups),
+			Err(_)
 		);
-		assert_matches!(locals.type_of_local(u32::max_value()), Err(_));
 	}
 }

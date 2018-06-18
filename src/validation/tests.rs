@@ -327,10 +327,10 @@ fn implicit_return_no_value() {
 	assert_eq!(
 		code,
 		vec![
-			isa::Instruction::Return {
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 0,
-				keep: 0,
-			}
+				keep: isa::Keep::None,
+			})
 		]
 	)
 }
@@ -348,10 +348,10 @@ fn implicit_return_with_value() {
 		code,
 		vec![
 			isa::Instruction::I32Const(0),
-			isa::Instruction::Return {
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 0,
-				keep: 1,
-			}
+				keep: isa::Keep::Single,
+			}),
 		]
 	)
 }
@@ -367,10 +367,10 @@ fn implicit_return_param() {
 	assert_eq!(
 		code,
 		vec![
-			isa::Instruction::Return {
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 1,
-				keep: 0,
-			}
+				keep: isa::Keep::None,
+			}),
 		]
 	)
 }
@@ -388,10 +388,10 @@ fn get_local() {
 		code,
 		vec![
 			isa::Instruction::GetLocal(1),
-			isa::Instruction::Return {
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 1,
-				keep: 1,
-			}
+				keep: isa::Keep::Single,
+			}),
 		]
 	)
 }
@@ -410,14 +410,14 @@ fn explicit_return() {
 		code,
 		vec![
 			isa::Instruction::GetLocal(1),
-			isa::Instruction::Return {
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 1,
-				keep: 1,
-			},
-			isa::Instruction::Return {
+				keep: isa::Keep::Single,
+			}),
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 1,
-				keep: 1,
-			}
+				keep: isa::Keep::Single,
+			}),
 		]
 	)
 }
@@ -444,10 +444,10 @@ fn add_params() {
 			isa::Instruction::GetLocal(2),
 			isa::Instruction::GetLocal(2),
 			isa::Instruction::I32Add,
-			isa::Instruction::Return {
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 2,
-				keep: 1,
-			}
+				keep: isa::Keep::Single,
+			}),
 		]
 	)
 }
@@ -468,10 +468,10 @@ fn drop_locals() {
 		vec![
 			isa::Instruction::GetLocal(2),
 			isa::Instruction::SetLocal(1),
-			isa::Instruction::Return {
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 2,
-				keep: 0,
-			}
+				keep: isa::Keep::None,
+			}),
 		]
 	)
 }
@@ -496,19 +496,21 @@ fn if_without_else() {
 			isa::Instruction::I32Const(1),
 			isa::Instruction::BrIfEqz(isa::Target {
 				dst_pc: 4,
-				drop: 0,
-				keep: 0,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
 			}),
 			isa::Instruction::I32Const(2),
-			isa::Instruction::Return {
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 1, // 1 param
-				keep: 1, // 1 result
-			},
+				keep: isa::Keep::Single, // 1 result
+			}),
 			isa::Instruction::I32Const(3),
-			isa::Instruction::Return {
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 1,
-				keep: 1,
-			},
+				keep: isa::Keep::Single,
+			}),
 		]
 	)
 }
@@ -536,22 +538,26 @@ fn if_else() {
 			isa::Instruction::I32Const(1),
 			isa::Instruction::BrIfEqz(isa::Target {
 				dst_pc: 5,
-				drop: 0,
-				keep: 0,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
 			}),
 			isa::Instruction::I32Const(2),
 			isa::Instruction::SetLocal(1),
 			isa::Instruction::Br(isa::Target {
 				dst_pc: 7,
-				drop: 0,
-				keep: 0,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
 			}),
 			isa::Instruction::I32Const(3),
 			isa::Instruction::SetLocal(1),
-			isa::Instruction::Return {
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 1,
-				keep: 0,
-			},
+				keep: isa::Keep::None,
+			}),
 		]
 	)
 }
@@ -577,21 +583,25 @@ fn if_else_returns_result() {
 			isa::Instruction::I32Const(1),
 			isa::Instruction::BrIfEqz(isa::Target {
 				dst_pc: 4,
-				drop: 0,
-				keep: 0,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
 			}),
 			isa::Instruction::I32Const(2),
 			isa::Instruction::Br(isa::Target {
 				dst_pc: 5,
-				drop: 0,
-				keep: 0,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
 			}),
 			isa::Instruction::I32Const(3),
 			isa::Instruction::Drop,
-			isa::Instruction::Return {
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 0,
-				keep: 0,
-			},
+				keep: isa::Keep::None,
+			}),
 		]
 	)
 }
@@ -621,29 +631,35 @@ fn if_else_branch_from_true_branch() {
 			isa::Instruction::I32Const(1),
 			isa::Instruction::BrIfEqz(isa::Target {
 				dst_pc: 8,
-				drop: 0,
-				keep: 0,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
 			}),
 			isa::Instruction::I32Const(1),
 			isa::Instruction::I32Const(1),
 			isa::Instruction::BrIfNez(isa::Target {
 				dst_pc: 9,
-				drop: 0,
-				keep: 1,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::Single,
+				},
 			}),
 			isa::Instruction::Drop,
 			isa::Instruction::I32Const(2),
 			isa::Instruction::Br(isa::Target {
 				dst_pc: 9,
-				drop: 0,
-				keep: 0,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
 			}),
 			isa::Instruction::I32Const(3),
 			isa::Instruction::Drop,
-			isa::Instruction::Return {
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 0,
-				keep: 0,
-			},
+				keep: isa::Keep::None,
+			}),
 		]
 	)
 }
@@ -673,29 +689,35 @@ fn if_else_branch_from_false_branch() {
 			isa::Instruction::I32Const(1),
 			isa::Instruction::BrIfEqz(isa::Target {
 				dst_pc: 4,
-				drop: 0,
-				keep: 0,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
 			}),
 			isa::Instruction::I32Const(1),
 			isa::Instruction::Br(isa::Target {
 				dst_pc: 9,
-				drop: 0,
-				keep: 0,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
 			}),
 			isa::Instruction::I32Const(2),
 			isa::Instruction::I32Const(1),
 			isa::Instruction::BrIfNez(isa::Target {
 				dst_pc: 9,
-				drop: 0,
-				keep: 1,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::Single,
+				},
 			}),
 			isa::Instruction::Drop,
 			isa::Instruction::I32Const(3),
 			isa::Instruction::Drop,
-			isa::Instruction::Return {
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 0,
-				keep: 0,
-			},
+				keep: isa::Keep::None,
+			}),
 		]
 	)
 }
@@ -720,15 +742,17 @@ fn loop_() {
 			isa::Instruction::I32Const(1),
 			isa::Instruction::BrIfNez(isa::Target {
 				dst_pc: 0,
-				drop: 0,
-				keep: 0,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
 			}),
 			isa::Instruction::I32Const(2),
 			isa::Instruction::Drop,
-			isa::Instruction::Return {
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 0,
-				keep: 0,
-			},
+				keep: isa::Keep::None,
+			}),
 		]
 	)
 }
@@ -746,10 +770,10 @@ fn loop_empty() {
 	assert_eq!(
 		code,
 		vec![
-			isa::Instruction::Return {
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 0,
-				keep: 0,
-			},
+				keep: isa::Keep::None,
+			}),
 		]
 	)
 }
@@ -776,20 +800,24 @@ fn brtable() {
 				vec![
 					isa::Target {
 						dst_pc: 0,
-						keep: 0,
-						drop: 0,
+						drop_keep: isa::DropKeep {
+							drop: 0,
+							keep: isa::Keep::None,
+						},
 					},
 					isa::Target {
 						dst_pc: 2,
-						keep: 0,
-						drop: 0,
+						drop_keep: isa::DropKeep {
+							drop: 0,
+							keep: isa::Keep::None,
+						},
 					},
 				].into_boxed_slice()
 			),
-			isa::Instruction::Return {
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 0,
-				keep: 0,
-			},
+				keep: isa::Keep::None,
+			}),
 		]
 	)
 }
@@ -820,22 +848,26 @@ fn brtable_returns_result() {
 				vec![
 					isa::Target {
 						dst_pc: 3,
-						keep: 1,
-						drop: 0,
+						drop_keep: isa::DropKeep {
+							drop: 0,
+							keep: isa::Keep::Single,
+						},
 					},
 					isa::Target {
 						dst_pc: 4,
-						keep: 1,
-						drop: 0,
+						drop_keep: isa::DropKeep {
+							keep: isa::Keep::Single,
+							drop: 0,
+						},
 					},
 				].into_boxed_slice()
 			),
 			isa::Instruction::Unreachable,
 			isa::Instruction::Drop,
-			isa::Instruction::Return {
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 0,
-				keep: 0,
-			},
+				keep: isa::Keep::None,
+			}),
 		]
 	)
 }
@@ -862,24 +894,25 @@ fn wabt_example() {
 			isa::Instruction::GetLocal(1),
 			isa::Instruction::BrIfNez(isa::Target {
 				dst_pc: 4,
-				keep: 0,
-				drop: 0,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
 			}),
 			isa::Instruction::I32Const(1),
-			isa::Instruction::Return {
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 1, // 1 parameter
-				keep: 1, // return value
-			},
+				keep: isa::Keep::Single,
+			}),
 			isa::Instruction::I32Const(2),
-			isa::Instruction::Return {
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 1,
-				keep: 1,
-			},
-			isa::Instruction::Return {
+				keep: isa::Keep::Single,
+			}),
+			isa::Instruction::Return(isa::DropKeep {
 				drop: 1,
-				keep: 1,
-			},
+				keep: isa::Keep::Single,
+			}),
 		]
 	)
 }
-

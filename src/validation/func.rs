@@ -283,7 +283,7 @@ impl Validator {
 
 				context.sink.emit_br_eqz(Target {
 					label: if_not,
-					drop_keep: DropKeep { drop: 0, keep: 0 },
+					drop_keep: isa::DropKeep { drop: 0, keep: isa::Keep::None, },
 				});
 			}
 			Else => {
@@ -303,7 +303,7 @@ impl Validator {
 				// to the "end_label" (it will be resolved at End).
 				context.sink.emit_br(Target {
 					label: end_label,
-					drop_keep: DropKeep { drop: 0, keep: 0 },
+					drop_keep: isa::DropKeep { drop: 0, keep: isa::Keep::None, },
 				});
 
 				// Resolve `if_not` to here so when if condition is unsatisfied control flow
@@ -375,15 +375,12 @@ impl Validator {
 						)?;
 					}
 
-					let DropKeep { drop, keep } = drop_keep_return(
+					let drop_keep = drop_keep_return(
 						&context.locals,
 						&context.value_stack,
 						&context.frame_stack,
 					);
-					context.sink.emit(isa::Instruction::Return {
-						drop,
-						keep,
-					});
+					context.sink.emit(isa::Instruction::Return(drop_keep));
 				}
 
 				pop_label(&mut context.value_stack, &mut context.frame_stack)?;
@@ -441,15 +438,12 @@ impl Validator {
 					tee_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
 				}
 
-				let DropKeep { drop, keep } = drop_keep_return(
+				let drop_keep = drop_keep_return(
 					&context.locals,
 					&context.value_stack,
 					&context.frame_stack
 				);
-				context.sink.emit(isa::Instruction::Return {
-					drop,
-					keep,
-				});
+				context.sink.emit(isa::Instruction::Return(drop_keep));
 
 				return Ok(InstructionOutcome::Unreachable);
 			}
@@ -1549,13 +1543,13 @@ fn require_target(
 		require_label(depth, frame_stack).expect("require_target called with a bogus depth");
 
 	// Find out how many values we need to keep (copy to the new stack location after the drop).
-	let keep: u8 = match (frame.frame_type, frame.block_type) {
+	let keep: isa::Keep = match (frame.frame_type, frame.block_type) {
 		// A loop doesn't take a value upon a branch. It can return value
 		// only via reaching it's closing `End` operator.
-		(BlockFrameType::Loop { .. }, _) => 0,
+		(BlockFrameType::Loop { .. }, _) => isa::Keep::None,
 
-		(_, BlockType::Value(_)) => 1,
-		(_, BlockType::NoResult) => 0,
+		(_, BlockType::Value(_)) => isa::Keep::Single,
+		(_, BlockType::NoResult) => isa::Keep::None,
 	};
 
 	// Find out how many values we need to discard.
@@ -1573,7 +1567,7 @@ fn require_target(
 		);
 		assert!(
 			(value_stack_height as u32 - frame.value_stack_len as u32) >= keep as u32,
-			"Stack underflow detected: asked to keep {} values, but there are only {}",
+			"Stack underflow detected: asked to keep {:?} values, but there are only {}",
 			keep,
 			value_stack_height as u32 - frame.value_stack_len as u32,
 		);
@@ -1582,7 +1576,7 @@ fn require_target(
 
 	Target {
 		label: frame.frame_type.br_destination(),
-		drop_keep: DropKeep { drop, keep },
+		drop_keep: isa::DropKeep { drop, keep },
 	}
 }
 
@@ -1590,7 +1584,7 @@ fn drop_keep_return(
 	locals: &Locals,
 	value_stack: &StackWithLimit<StackValueType>,
 	frame_stack: &StackWithLimit<BlockFrame>,
-) -> DropKeep {
+) -> isa::DropKeep {
 	assert!(
 		!frame_stack.is_empty(),
 		"drop_keep_return can't be called with the frame stack empty"
@@ -1628,15 +1622,9 @@ fn relative_local_depth(
 }
 
 #[derive(Clone)]
-struct DropKeep {
-	drop: u32,
-	keep: u8,
-}
-
-#[derive(Clone)]
 struct Target {
 	label: LabelId,
-	drop_keep: DropKeep,
+	drop_keep: isa::DropKeep,
 }
 
 #[derive(Debug)]
@@ -1694,51 +1682,39 @@ impl Sink {
 	fn emit_br(&mut self, target: Target) {
 		let Target {
 			label,
-			drop_keep: DropKeep {
-				drop,
-				keep,
-			},
+			drop_keep,
 		} = target;
 		let pc = self.cur_pc();
 		let dst_pc = self.pc_or_placeholder(label, || Reloc::Br { pc });
 		self.ins.push(isa::Instruction::Br(isa::Target {
 			dst_pc,
-			drop,
-			keep,
+			drop_keep: drop_keep.into(),
 		}));
 	}
 
 	fn emit_br_eqz(&mut self, target: Target) {
 		let Target {
 			label,
-			drop_keep: DropKeep {
-				drop,
-				keep,
-			},
+			drop_keep,
 		} = target;
 		let pc = self.cur_pc();
 		let dst_pc = self.pc_or_placeholder(label, || Reloc::Br { pc });
 		self.ins.push(isa::Instruction::BrIfEqz(isa::Target {
 			dst_pc,
-			drop,
-			keep,
+			drop_keep: drop_keep.into(),
 		}));
 	}
 
 	fn emit_br_nez(&mut self, target: Target) {
 		let Target {
 			label,
-			drop_keep: DropKeep {
-				drop,
-				keep,
-			},
+			drop_keep,
 		} = target;
 		let pc = self.cur_pc();
 		let dst_pc = self.pc_or_placeholder(label, || Reloc::Br { pc });
 		self.ins.push(isa::Instruction::BrIfNez(isa::Target {
 			dst_pc,
-			drop,
-			keep,
+			drop_keep: drop_keep.into(),
 		}));
 	}
 
@@ -1747,16 +1723,12 @@ impl Sink {
 
 		let pc = self.cur_pc();
 		let mut isa_targets = Vec::new();
-		for (idx, &Target { label, drop_keep: DropKeep {
-				drop,
-				keep,
-			}}) in targets.iter().chain(iter::once(&default)).enumerate() {
+		for (idx, &Target { label, drop_keep }) in targets.iter().chain(iter::once(&default)).enumerate() {
 			let dst_pc = self.pc_or_placeholder(label, || Reloc::BrTable { pc, idx });
 			isa_targets.push(
 				isa::Target {
 					dst_pc,
-					keep,
-					drop,
+					drop_keep: drop_keep.into(),
 				},
 			);
 		}
