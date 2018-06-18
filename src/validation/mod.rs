@@ -7,7 +7,7 @@ use parity_wasm::elements::{
 };
 use common::stack;
 use self::context::ModuleContextBuilder;
-use self::func::Validator;
+use self::func::FunctionReader;
 use memory_units::Pages;
 use isa;
 
@@ -258,10 +258,10 @@ pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
 					index
 				)),
 			)?;
-			let code = Validator::validate_function(&context, function, function_body)
+			let code = FunctionReader::read_function(&context, function, function_body)
 				.map_err(|e| {
 					let Error(ref msg) = e;
-					Error(format!("Function #{} validation error: {}", index, msg))
+					Error(format!("Function #{} reading/validation error: {}", index, msg))
 				})?;
 			code_map.push(code);
 		}

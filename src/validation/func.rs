@@ -150,20 +150,19 @@ impl PartialEq<StackValueType> for ValueType {
 	}
 }
 
-/// Function validator.
-pub struct Validator;
-
 /// Instruction outcome.
 #[derive(Debug, Clone)]
-enum InstructionOutcome {
+enum Outcome {
 	/// Continue with next instruction.
-	ValidateNextInstruction,
+	NextInstruction,
 	/// Unreachable instruction reached.
 	Unreachable,
 }
 
-impl Validator {
-	pub fn validate_function(
+pub struct FunctionReader;
+
+impl FunctionReader {
+	pub fn read_function(
 		module: &ModuleContext,
 		func: &Func,
 		body: &FuncBody,
@@ -190,14 +189,14 @@ impl Validator {
 			&context.value_stack,
 			&mut context.frame_stack,
 		)?;
-		Validator::validate_function_block(&mut context, body.code().elements())?;
+		FunctionReader::read_function_body(&mut context, body.code().elements())?;
 
 		assert!(context.frame_stack.is_empty());
 
 		Ok(context.into_code())
 	}
 
-	fn validate_function_block(context: &mut FunctionValidationContext, body: &[Opcode]) -> Result<(), Error> {
+	fn read_function_body(context: &mut FunctionValidationContext, body: &[Opcode]) -> Result<(), Error> {
 		let body_len = body.len();
 		if body_len == 0 {
 			return Err(Error("Non-empty function body expected".into()));
@@ -206,13 +205,13 @@ impl Validator {
 		loop {
 			let opcode = &body[context.position];
 
-			let outcome = Validator::validate_instruction(context, opcode)
+			let outcome = FunctionReader::read_instruction(context, opcode)
 				.map_err(|err| Error(format!("At instruction {:?}(@{}): {}", opcode, context.position, err)))?;
 
 			println!("opcode: {:?}, outcome={:?}", opcode, outcome);
 			match outcome {
-				InstructionOutcome::ValidateNextInstruction => (),
-				InstructionOutcome::Unreachable => make_top_frame_polymorphic(
+				Outcome::NextInstruction => (),
+				Outcome::Unreachable => make_top_frame_polymorphic(
 					&mut context.value_stack,
 					&mut context.frame_stack
 				),
@@ -225,7 +224,7 @@ impl Validator {
 		}
 	}
 
-	fn validate_instruction(context: &mut FunctionValidationContext, opcode: &Opcode) -> Result<InstructionOutcome, Error> {
+	fn read_instruction(context: &mut FunctionValidationContext, opcode: &Opcode) -> Result<Outcome, Error> {
 		use self::Opcode::*;
 		match *opcode {
 			// Nop instruction doesn't do anything. It is safe to just skip it.
@@ -233,7 +232,7 @@ impl Validator {
 
 			Unreachable => {
 				context.sink.emit(isa::Instruction::Unreachable);
-				return Ok(InstructionOutcome::Unreachable);
+				return Ok(Outcome::Unreachable);
 			}
 
 			Block(block_type) => {
@@ -375,6 +374,7 @@ impl Validator {
 						)?;
 					}
 
+					// Emit the return instruction.
 					let drop_keep = drop_keep_return(
 						&context.locals,
 						&context.value_stack,
@@ -400,7 +400,7 @@ impl Validator {
 				);
 				context.sink.emit_br(target);
 
-				return Ok(InstructionOutcome::Unreachable);
+				return Ok(Outcome::Unreachable);
 			}
 			BrIf(depth) => {
 				Validator::validate_br_if(context, depth)?;
@@ -431,7 +431,7 @@ impl Validator {
 				);
 				context.sink.emit_br_table(&targets, default_target);
 
-				return Ok(InstructionOutcome::Unreachable);
+				return Ok(Outcome::Unreachable);
 			}
 			Return => {
 				if let BlockType::Value(value_type) = context.return_type()? {
@@ -445,7 +445,7 @@ impl Validator {
 				);
 				context.sink.emit(isa::Instruction::Return(drop_keep));
 
-				return Ok(InstructionOutcome::Unreachable);
+				return Ok(Outcome::Unreachable);
 			}
 
 			Call(index) => {
@@ -1133,9 +1133,14 @@ impl Validator {
 			}
 		}
 
-		Ok(InstructionOutcome::ValidateNextInstruction)
+		Ok(Outcome::NextInstruction)
 	}
+}
 
+/// Function validator.
+struct Validator;
+
+impl Validator {
 	fn validate_const(context: &mut FunctionValidationContext, value_type: ValueType) -> Result<(), Error> {
 		push_value(&mut context.value_stack, value_type.into())?;
 		Ok(())
@@ -1379,8 +1384,7 @@ struct FunctionValidationContext<'a> {
 	frame_stack: StackWithLimit<BlockFrame>,
 	/// Function return type.
 	return_type: BlockType,
-
-	// TODO: comment
+	/// A sink used to emit optimized code.
 	sink: Sink,
 }
 
@@ -1603,12 +1607,12 @@ fn require_local(locals: &Locals, idx: u32) -> Result<ValueType, Error> {
 	Ok(locals.type_of_local(idx)?)
 }
 
+/// See stack layout definition in mod isa.
 fn relative_local_depth(
 	idx: u32,
 	locals: &Locals,
 	value_stack: &StackWithLimit<StackValueType>
 ) -> Result<u32, Error> {
-	// TODO: Comment stack layout
 	let value_stack_height = value_stack.len() as u32;
 	let locals_and_params_count = locals.count();
 
@@ -1621,23 +1625,33 @@ fn relative_local_depth(
 	Ok(depth)
 }
 
+/// The target of a branch instruction.
+///
+/// It references a `LabelId` instead of exact instruction address. This is handy
+/// for emitting code right away with labels resolved later.
 #[derive(Clone)]
 struct Target {
 	label: LabelId,
 	drop_keep: isa::DropKeep,
 }
 
+/// A relocation entry that specifies.
 #[derive(Debug)]
 enum Reloc {
+	/// Patch the destination of the branch instruction (br, br_eqz, br_nez)
+	/// at the specified pc.
 	Br {
 		pc: u32,
 	},
+	/// Patch the specified destination index inside of br_table instruction at
+	/// the specified pc.
 	BrTable {
 		pc: u32,
 		idx: usize,
 	},
 }
 
+/// Identifier of a label.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 struct LabelId(usize);
 
@@ -1737,6 +1751,7 @@ impl Sink {
 		));
 	}
 
+	/// Create a new unresolved label.
 	fn new_label(&mut self) -> LabelId {
 		let label_idx = self.labels.len();
 		self.labels.push(
@@ -1778,6 +1793,7 @@ impl Sink {
 		self.labels[label.0] = (Label::Resolved(dst_pc), Vec::new());
 	}
 
+	/// Consume this Sink and returns isa::Instruction.
 	fn into_inner(self) -> Vec<isa::Instruction> {
 		// At this moment all labels should be resolved.
 		assert!({
