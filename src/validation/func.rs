@@ -208,7 +208,6 @@ impl FunctionReader {
 			let outcome = FunctionReader::read_instruction(context, opcode)
 				.map_err(|err| Error(format!("At instruction {:?}(@{}): {}", opcode, context.position, err)))?;
 
-			println!("opcode: {:?}, outcome={:?}", opcode, outcome);
 			match outcome {
 				Outcome::NextInstruction => (),
 				Outcome::Unreachable => make_top_frame_polymorphic(
@@ -308,12 +307,6 @@ impl FunctionReader {
 				// Resolve `if_not` to here so when if condition is unsatisfied control flow
 				// will jump to this label.
 				context.sink.resolve_label(if_not);
-
-				println!(
-					"value_stack: {:#?}, frame_stack: {:#?}",
-					context.value_stack,
-					context.frame_stack,
-				);
 
 				// Then, we pop the current label. It discards all values that pushed in the current
 				// frame.
