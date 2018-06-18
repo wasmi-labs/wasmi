@@ -4,6 +4,7 @@ extern crate test;
 extern crate wasmi;
 #[macro_use]
 extern crate assert_matches;
+extern crate wabt;
 
 use std::error;
 use std::fs::File;
@@ -95,9 +96,53 @@ fn bench_rev_comp(b: &mut Bencher) {
 		"",
 	);
 	let result = memory
-		.get(output_data_mem_offset, REVCOMP_INPUT.len())
+		.get(output_data_mem_offset, REVCOMP_OUTPUT.len())
 		.expect("can't get result data from a wasm memory");
 	assert_eq!(&*result, REVCOMP_OUTPUT);
+}
+
+#[bench]
+fn bench_regex_redux(b: &mut Bencher) {
+	let wasm_kernel = load_from_file(
+		"./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm",
+	).expect("failed to load wasm_kernel. Is `build.rs` broken?");
+
+	let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
+		.expect("failed to instantiate wasm module")
+		.assert_no_start();
+
+	// Allocate buffers for the input and output.
+	let test_data_ptr: RuntimeValue = {
+		let input_size = RuntimeValue::I32(REVCOMP_INPUT.len() as i32);
+		assert_matches!(
+			instance.invoke_export("prepare_regex_redux", &[input_size], &mut NopExternals),
+			Ok(Some(v @ RuntimeValue::I32(_))) => v,
+			"",
+		)
+	};
+
+	// Get the pointer to the input buffer.
+	let input_data_mem_offset = assert_matches!(
+		instance.invoke_export("regex_redux_input_ptr", &[test_data_ptr], &mut NopExternals),
+		Ok(Some(RuntimeValue::I32(v))) => v as u32,
+		"",
+	);
+
+	// Copy test data inside the wasm memory.
+	let memory = instance.export_by_name("memory")
+		.expect("Expected export with a name 'memory'")
+		.as_memory()
+		.expect("'memory' should be a memory instance")
+		.clone();
+	memory
+		.set(input_data_mem_offset, REVCOMP_INPUT)
+		.expect("can't load test data into a wasm memory");
+
+	b.iter(|| {
+		instance
+			.invoke_export("bench_regex_redux", &[test_data_ptr], &mut NopExternals)
+			.unwrap();
+	});
 }
 
 #[bench]
@@ -193,7 +238,7 @@ fn recursive_ok(b: &mut Bencher) {
 
 	b.iter(|| {
 		let value = instance
-			.invoke_export("call", &[RuntimeValue::I32(9999)], &mut NopExternals);
+			.invoke_export("call", &[RuntimeValue::I32(8000)], &mut NopExternals);
 		assert_matches!(value, Ok(Some(RuntimeValue::I32(0))));
 	});
 }

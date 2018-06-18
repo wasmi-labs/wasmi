@@ -1,14 +1,12 @@
-#![no_std]
-#![feature(lang_items)]
-#![feature(core_intrinsics)]
-#![feature(panic_implementation)]
-
-extern crate rlibc;
 extern crate tiny_keccak;
+extern crate regex;
+#[macro_use]
+extern crate lazy_static;
 
 use tiny_keccak::Keccak;
 
 mod rev_complement;
+mod regex_redux;
 
 pub struct TinyKeccakTestData {
 	data: &'static [u8],
@@ -74,7 +72,7 @@ pub extern "C" fn rev_complement_input_ptr(test_data: *mut RevComplementTestData
 #[no_mangle]
 pub extern "C" fn rev_complement_output_ptr(test_data: *mut RevComplementTestData) -> *const u8 {
 	unsafe {
-		(*test_data).output.as_mut_ptr()
+		(*test_data).output.as_ptr()
 	}
 }
 
@@ -83,5 +81,42 @@ pub extern "C" fn bench_rev_complement(test_data: *mut RevComplementTestData) {
 	unsafe {
 		let result = rev_complement::run(&*(*test_data).input);
 		(*test_data).output.copy_from_slice(&result);
+	}
+}
+
+pub struct RegexReduxTestData {
+	input: Box<[u8]>,
+	output: Option<usize>,
+}
+
+#[no_mangle]
+pub extern "C" fn prepare_regex_redux(size: usize) -> *mut RegexReduxTestData {
+	regex_redux::prepare();
+
+	let input = vec![0; size];
+	let test_data = Box::new(
+		RegexReduxTestData {
+			input: input.into_boxed_slice(),
+			output: None,
+		}
+	);
+
+	// Basically leak the pointer to the test data. This shouldn't be harmful since `prepare` is called
+	// only once per bench run (not for the iteration), and afterwards whole memory instance is discarded.
+	Box::into_raw(test_data)
+}
+
+#[no_mangle]
+pub extern "C" fn regex_redux_input_ptr(test_data: *mut RegexReduxTestData) -> *mut u8 {
+	unsafe {
+		(*test_data).input.as_mut_ptr()
+	}
+}
+
+#[no_mangle]
+pub extern "C" fn bench_regex_redux(test_data: *mut RegexReduxTestData) {
+	unsafe {
+		let result = regex_redux::run(&*(*test_data).input);
+		(*test_data).output = Some(result);
 	}
 }
