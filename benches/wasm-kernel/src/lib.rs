@@ -3,6 +3,7 @@ extern crate regex;
 #[macro_use]
 extern crate lazy_static;
 
+use std::mem::ManuallyDrop;
 use tiny_keccak::Keccak;
 
 mod rev_complement;
@@ -41,8 +42,8 @@ pub extern "C" fn bench_tiny_keccak(test_data: *const TinyKeccakTestData) {
 }
 
 pub struct RevComplementTestData {
-	input: Box<[u8]>,
-	output: Box<[u8]>,
+	input: ManuallyDrop<Box<[u8]>>,
+	output: ManuallyDrop<Box<[u8]>>,
 }
 
 #[no_mangle]
@@ -52,8 +53,8 @@ pub extern "C" fn prepare_rev_complement(size: usize) -> *mut RevComplementTestD
 
 	let test_data = Box::new(
 		RevComplementTestData {
-			input: input.into_boxed_slice(),
-			output: output.into_boxed_slice(),
+			input: ManuallyDrop::new(input.into_boxed_slice()),
+			output: ManuallyDrop::new(output.into_boxed_slice()),
 		}
 	);
 
@@ -85,7 +86,7 @@ pub extern "C" fn bench_rev_complement(test_data: *mut RevComplementTestData) {
 }
 
 pub struct RegexReduxTestData {
-	input: Box<[u8]>,
+	input: ManuallyDrop<Box<[u8]>>,
 	output: Option<usize>,
 }
 
@@ -96,7 +97,7 @@ pub extern "C" fn prepare_regex_redux(size: usize) -> *mut RegexReduxTestData {
 	let input = vec![0; size];
 	let test_data = Box::new(
 		RegexReduxTestData {
-			input: input.into_boxed_slice(),
+			input: ManuallyDrop::new(input.into_boxed_slice()),
 			output: None,
 		}
 	);
