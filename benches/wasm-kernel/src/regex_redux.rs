@@ -9,7 +9,7 @@ lazy_static! {
 }
 
 pub fn prepare() {
-	&REGEX;
+	::lazy_static::initialize(&REGEX);
 }
 
 pub fn run(seq: &[u8]) -> usize {
