@@ -4,9 +4,8 @@
 //! [1]: https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/regexredux-rust-2.html
 
 lazy_static! {
-	static ref REGEX: ::regex::bytes::Regex = {
-		::regex::bytes::Regex::new("agggtaa[cgt]|[acg]ttaccct").unwrap()
-	};
+	static ref REGEX: ::regex::bytes::Regex =
+		{ ::regex::bytes::Regex::new("agggtaa[cgt]|[acg]ttaccct").unwrap() };
 }
 
 pub fn prepare() {

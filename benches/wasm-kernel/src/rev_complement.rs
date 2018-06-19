@@ -1,12 +1,19 @@
-//! Adapted version from benchmarks game. In particular
-//! rayon is removed.
-//!
+// Adapted version from benchmarks game. In particular
+// rayon is removed.
+//
 // https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-rust-3.html
 
+// The Computer Language Benchmarks Game
+// https://salsa.debian.org/benchmarksgame-team/benchmarksgame/
+//
+// contributed by the Rust Project Developers
+// contributed by Cristi Cobzarenco
+// contributed by TeXitoi
+// contributed by Matt Brubeck
 
 use std::io::BufRead;
-use std::{cmp, io};
 use std::mem::replace;
+use std::{cmp, io};
 
 /// Lookup table to find the complement of a single FASTA code.
 fn build_table() -> [u8; 256] {
@@ -75,13 +82,15 @@ fn reverse_chunks(left: &mut [u8], right: &mut [u8], table: &[u8; 256]) {
 /// `left` must start at the beginning of a line. If there are an odd number of
 /// bytes, `right` will initially be 1 byte longer than `left`; otherwise they
 /// will have equal lengths.
-fn reverse_complement_left_right(mut left: &mut [u8],
-								 mut right: &mut [u8],
-								 trailing_len: usize,
-								 table: &[u8; 256]) {
+fn reverse_complement_left_right(
+	mut left: &mut [u8],
+	mut right: &mut [u8],
+	trailing_len: usize,
+	table: &[u8; 256],
+) {
 	// Each iteration swaps one line from the start of the sequence with one
 	// from the end.
-	while left.len() > 0  || right.len() > 0 {
+	while left.len() > 0 || right.len() > 0 {
 		// Get the chunk up to the newline in `right`.
 		let mut a = left.split_off_left(trailing_len);
 		let mut b = right.split_off_right(trailing_len);
