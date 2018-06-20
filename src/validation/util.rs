@@ -21,7 +21,7 @@ impl<'a> Locals<'a> {
 			acc = acc
 				.checked_add(locals_group.count())
 				.ok_or_else(||
-					Error(String::from("Locals range no in 32-bit range"))
+					Error(String::from("Locals range not in 32-bit range"))
 				)?;
 		}
 
