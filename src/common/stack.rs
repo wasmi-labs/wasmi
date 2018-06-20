@@ -43,16 +43,14 @@ impl<T> StackWithLimit<T> where T: Clone {
 	}
 
 	pub fn top(&self) -> Result<&T, Error> {
-		let len = self.values.len();
 		self.values
-			.get(len - 1)
+			.last()
 			.ok_or_else(|| Error("non-empty stack expected".into()))
 	}
 
 	pub fn top_mut(&mut self) -> Result<&mut T, Error> {
-		let len = self.values.len();
 		self.values
-			.get_mut(len - 1)
+			.last_mut()
 			.ok_or_else(|| Error("non-empty stack expected".into()))
 	}
 
