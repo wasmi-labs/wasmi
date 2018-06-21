@@ -1,6 +1,7 @@
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use nan_preserving_float::{F32, F64};
 use std::io;
+use std::mem::transmute;
 use std::{f32, i32, i64, u32, u64};
 use TrapKind;
 
@@ -188,13 +189,13 @@ impl From<i64> for RuntimeValue {
 
 impl From<u32> for RuntimeValue {
 	fn from(val: u32) -> Self {
-		RuntimeValue::I32(val as i32)
+		RuntimeValue::I32(val.transmute_into())
 	}
 }
 
 impl From<u64> for RuntimeValue {
 	fn from(val: u64) -> Self {
-		RuntimeValue::I64(val as i64)
+		RuntimeValue::I64(val.transmute_into())
 	}
 }
 
@@ -403,11 +404,8 @@ macro_rules! impl_transmute_into_as {
 }
 
 impl_transmute_into_as!(i8, u8);
-impl_transmute_into_as!(u8, i8);
 impl_transmute_into_as!(i32, u32);
-impl_transmute_into_as!(u32, i32);
 impl_transmute_into_as!(i64, u64);
-impl_transmute_into_as!(u64, i64);
 
 macro_rules! impl_transmute_into_npf {
 	($npf:ident, $float:ident, $signed:ident, $unsigned:ident) => {
@@ -466,6 +464,14 @@ impl TransmuteInto<f32> for i32 {
 
 impl TransmuteInto<f64> for i64 {
 	fn transmute_into(self) -> f64 { f64::from_bits(self as u64) }
+}
+
+impl TransmuteInto<i32> for u32 {
+	fn transmute_into(self) -> i32 { unsafe { transmute(self) } }
+}
+
+impl TransmuteInto<i64> for u64 {
+	fn transmute_into(self) -> i64 { unsafe { transmute(self) } }
 }
 
 impl LittleEndianConvert for i8 {
