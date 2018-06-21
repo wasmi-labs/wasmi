@@ -111,9 +111,15 @@ pub enum Instruction {
 	BrIfEqz(Target),
 	BrIfNez(Target),
 
-	/// Last one is the default.
+	/// br_table [t1 t2 t3 .. tn] tdefault
 	///
-	/// Can be less than zero.
+	/// Pops the value from the stack. Then this value is used as an index
+	/// to the branch table.
+	///
+	/// However, the last target represents the default target. So if the index
+	/// is greater than length of the branch table, then the last index will be used.
+	///
+	/// Validation ensures that there should be at least one target.
 	BrTable(Box<[Target]>),
 
 	Unreachable,
