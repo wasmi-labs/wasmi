@@ -11,8 +11,7 @@ keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
 exclude = [ "/res/*", "/tests/*", "/fuzz/*" ]
 
 [dependencies]
-# parity-wasm = "0.27"
-parity-wasm = { git = "https://github.com/paritytech/parity-wasm.git", rev = "0a61083238d8d9d8d9f6451a5d0da17674b11c21" }
+parity-wasm = "0.27"
 byteorder = "1.0"
 memory_units = "0.3.0"
 
