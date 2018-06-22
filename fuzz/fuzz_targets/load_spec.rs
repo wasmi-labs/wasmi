@@ -25,13 +25,13 @@ fn run_spec(data: &[u8]) -> Result<(), ()> {
 		);
 	}
 
-    let exit_status = Command::new("wasm")
+	let exit_status = Command::new("wasm")
 		.arg("-d")
-        .arg(&seed_path)
+		.arg(&seed_path)
 		.stdout(Stdio::null())
 		.stderr(Stdio::null())
-        .status()
-        .expect("failed to execute `wasm`");
+		.status()
+		.expect("failed to execute `wasm`");
 
 	if exit_status.success() {
 		Ok(())
@@ -47,7 +47,7 @@ fn run_wasmi(data: &[u8]) -> Result<(), ()> {
 
 fuzz_target!(|data: &[u8]| {
 	let wasmi_result = run_wasmi(data);
-    let wasm_result = run_spec(data);
+	let wasm_result = run_spec(data);
 
 	assert_eq!(wasmi_result.is_ok(), wasm_result.is_ok());
 });

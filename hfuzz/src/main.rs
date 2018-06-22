@@ -29,13 +29,13 @@ fn run_spec(data: &[u8], stdout_msg_buf: &mut [u8; 64], stderr_msg_buf: &mut [u8
 		);
 	}
 
-    let output = Command::new("wasm")
+	let output = Command::new("wasm")
 		.arg("-d")
-        .arg(&seed_path)
+		.arg(&seed_path)
 		.stdout(Stdio::null())
 		.stderr(Stdio::null())
-        .output()
-        .expect("failed to execute `wasm`");
+		.output()
+		.expect("failed to execute `wasm`");
 
 	if output.status.success() {
 		Ok(())
@@ -52,8 +52,8 @@ fn run_wasmi(data: &[u8]) -> Result<(), ()> {
 }
 
 fn main() {
-    loop {
-        fuzz!(|data: &[u8]| {
+	loop {
+		fuzz!(|data: &[u8]| {
 			// Keep messages on stack. This should lead to a different stack hashes for
 			// different error messages.
 			let mut stdout_msg_buf: [u8; 64] = [0; 64];
@@ -65,6 +65,6 @@ fn main() {
 			if wasmi_result.is_ok() != wasm_result.is_ok() {
 				panic!("stdout: {:?}, stderr: {:?}", &stdout_msg_buf[..], &stderr_msg_buf as &[u8]);
 			}
-        });
-    }
+		});
+	}
 }
