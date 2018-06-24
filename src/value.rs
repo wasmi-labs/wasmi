@@ -175,6 +175,18 @@ impl RuntimeValue {
 	}
 }
 
+impl From<i8> for RuntimeValue {
+	fn from(val: i8) -> Self {
+		RuntimeValue::I32(val as i32)
+	}
+}
+
+impl From<i16> for RuntimeValue {
+	fn from(val: i16) -> Self {
+		RuntimeValue::I32(val as i32)
+	}
+}
+
 impl From<i32> for RuntimeValue {
 	fn from(val: i32) -> Self {
 		RuntimeValue::I32(val)
@@ -184,6 +196,18 @@ impl From<i32> for RuntimeValue {
 impl From<i64> for RuntimeValue {
 	fn from(val: i64) -> Self {
 		RuntimeValue::I64(val)
+	}
+}
+
+impl From<u8> for RuntimeValue {
+	fn from(val: u8) -> Self {
+		RuntimeValue::I32(val as i32)
+	}
+}
+
+impl From<u16> for RuntimeValue {
+	fn from(val: u16) -> Self {
+		RuntimeValue::I32(val as i32)
 	}
 }
 
@@ -232,6 +256,62 @@ impl FromRuntimeValue for bool {
 	fn from_runtime_value(val: RuntimeValue) -> Option<Self> {
 		match val {
 			RuntimeValue::I32(val) => Some(val != 0),
+			_ => None,
+		}
+	}
+}
+
+///  This conversion assumes that `i8` is represented as an [`I32`].
+/// 
+/// [`I32`]: enum.RuntimeValue.html#variant.I32
+impl FromRuntimeValue for i8 {
+	fn from_runtime_value(val: RuntimeValue) -> Option<Self> {
+		let min = i8::min_value() as i32;
+		let max = i8::max_value() as i32;
+		match val {
+			RuntimeValue::I32(val) if min <= val && val <= max => Some(val as i8),
+			_ => None,
+		}
+	}
+}
+
+///  This conversion assumes that `i16` is represented as an [`I32`].
+/// 
+/// [`I32`]: enum.RuntimeValue.html#variant.I32
+impl FromRuntimeValue for i16 {
+	fn from_runtime_value(val: RuntimeValue) -> Option<Self> {
+		let min = i16::min_value() as i32;
+		let max = i16::max_value() as i32;
+		match val {
+			RuntimeValue::I32(val) if min <= val && val <= max => Some(val as i16),
+			_ => None,
+		}
+	}
+}
+
+///  This conversion assumes that `u8` is represented as an [`I32`].
+/// 
+/// [`I32`]: enum.RuntimeValue.html#variant.I32
+impl FromRuntimeValue for u8 {
+	fn from_runtime_value(val: RuntimeValue) -> Option<Self> {
+		let min = u8::min_value() as i32;
+		let max = u8::max_value() as i32;
+		match val {
+			RuntimeValue::I32(val) if min <= val && val <= max => Some(val as u8),
+			_ => None,
+		}
+	}
+}
+
+///  This conversion assumes that `u16` is represented as an [`I32`].
+/// 
+/// [`I32`]: enum.RuntimeValue.html#variant.I32
+impl FromRuntimeValue for u16 {
+	fn from_runtime_value(val: RuntimeValue) -> Option<Self> {
+		let min = u16::min_value() as i32;
+		let max = u16::max_value() as i32;
+		match val {
+			RuntimeValue::I32(val) if min <= val && val <= max => Some(val as u16),
 			_ => None,
 		}
 	}
