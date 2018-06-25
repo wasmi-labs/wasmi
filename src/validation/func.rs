@@ -434,7 +434,7 @@ impl FunctionReader {
 				let drop_keep = drop_keep_return(
 					&context.locals,
 					&context.value_stack,
-					&context.frame_stack
+					&context.frame_stack,
 				);
 				context.sink.emit(isa::Instruction::Return(drop_keep));
 

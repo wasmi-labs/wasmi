@@ -392,15 +392,15 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_br_table(&mut self, table: &[isa::Target]) -> Result<InstructionOutcome, TrapKind> {
-		let index: u32 = self.value_stack
-			.pop_as();
+		let index: u32 = self.value_stack.pop_as();
 
-		let dst =
-		if (index as usize) < table.len() - 1 {
+		let dst = if (index as usize) < table.len() - 1 {
 			table[index as usize].clone()
 		} else {
-			let len = table.len();
-			table[len - 1].clone()
+			table
+				.last()
+				.expect("Due to validation there should be at least one label")
+				.clone()
 		};
 		Ok(InstructionOutcome::Branch(dst))
 	}
@@ -426,9 +426,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		context: &mut FunctionContext,
 		signature_idx: u32,
 	) -> Result<InstructionOutcome, TrapKind> {
-		let table_func_idx: u32 = self
-			.value_stack
-			.pop_as();
+		let table_func_idx: u32 = self.value_stack.pop_as();
 		let table = context
 			.module()
 			.table_by_index(DEFAULT_TABLE_INDEX)
@@ -453,9 +451,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_drop(&mut self) -> Result<InstructionOutcome, TrapKind> {
-		let _ = self
-			.value_stack
-			.pop();
+		let _ = self.value_stack.pop();
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
