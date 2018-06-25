@@ -12,9 +12,11 @@ cargo-fuzz = true
 wasmi = { path = ".." }
 wabt = "0.2.0"
 wasmparser = "0.14.1"
+tempdir = "0.3.6"
 
 [dependencies.libfuzzer-sys]
 git = "https://github.com/rust-fuzz/libfuzzer-sys.git"
+rev = "737524f7de1e85342b8b6cd1c01edc71018183ba"
 
 # Prevent this from interfering with workspaces
 [workspace]
@@ -31,3 +33,7 @@ path = "fuzz_targets/load_wabt.rs"
 [[bin]]
 name = "load_wasmparser"
 path = "fuzz_targets/load_wasmparser.rs"
+
+[[bin]]
+name = "load_spec"
+path = "fuzz_targets/load_spec.rs"
