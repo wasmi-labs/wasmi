@@ -4,7 +4,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
 use std::collections::HashMap;
-use parity_wasm::elements::{External, InitExpr, Internal, Opcode, ResizableLimits, Type};
+use parity_wasm::elements::{External, InitExpr, Internal, Instruction, ResizableLimits, Type};
 use {Module, Error, Signature, MemoryInstance, RuntimeValue, TableInstance};
 use imports::ImportResolver;
 use global::{GlobalInstance, GlobalRef};
@@ -313,7 +313,7 @@ impl ModuleInstance {
 				).clone();
 				let func_body = FuncBody {
 					locals: body.locals().to_vec(),
-					opcodes: body.code().clone(),
+					instructions: body.code().clone(),
 					labels: labels,
 				};
 				let func_instance =
@@ -709,11 +709,11 @@ fn eval_init_expr(init_expr: &InitExpr, module: &ModuleInstance) -> RuntimeValue
 		"Due to validation `code`.len() should be 2"
 	);
 	match code[0] {
-		Opcode::I32Const(v) => v.into(),
-		Opcode::I64Const(v) => v.into(),
-		Opcode::F32Const(v) => RuntimeValue::decode_f32(v),
-		Opcode::F64Const(v) => RuntimeValue::decode_f64(v),
-		Opcode::GetGlobal(idx) => {
+		Instruction::I32Const(v) => v.into(),
+		Instruction::I64Const(v) => v.into(),
+		Instruction::F32Const(v) => RuntimeValue::decode_f32(v),
+		Instruction::F64Const(v) => RuntimeValue::decode_f64(v),
+		Instruction::GetGlobal(idx) => {
 			let global = module.global_by_index(idx).expect(
 				"Due to validation global should exists in module",
 			);

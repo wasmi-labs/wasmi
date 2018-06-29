@@ -2,8 +2,8 @@ use std::error;
 use std::fmt;
 use std::collections::{HashMap, HashSet};
 use parity_wasm::elements::{
-	BlockType, External, GlobalEntry, GlobalType, Internal, MemoryType, Module, Opcode,
-	ResizableLimits, TableType, ValueType, InitExpr, Type
+	BlockType, External, GlobalEntry, GlobalType, Internal, MemoryType, Module, Instruction,
+	ResizableLimits, TableType, ValueType, InitExpr, Type,
 };
 use common::stack;
 use self::context::ModuleContextBuilder;
@@ -54,7 +54,7 @@ impl ::std::ops::Deref for ValidatedModule {
 pub fn deny_floating_point(module: &Module) -> Result<(), Error> {
 	if let Some(code) = module.code_section() {
 		for op in code.bodies().iter().flat_map(|body| body.code().elements()) {
-			use parity_wasm::elements::Opcode::*;
+			use parity_wasm::elements::Instruction::*;
 
 			macro_rules! match_eq {
 				($pattern:pat) => {
@@ -62,7 +62,7 @@ pub fn deny_floating_point(module: &Module) -> Result<(), Error> {
 				};
 			}
 
-			const DENIED: &[fn(&Opcode) -> bool] = &[
+			const DENIED: &[fn(&Instruction) -> bool] = &[
 				match_eq!(F32Load(_, _)),
 				match_eq!(F64Load(_, _)),
 				match_eq!(F32Store(_, _)),
@@ -423,11 +423,11 @@ fn expr_const_type(init_expr: &InitExpr, globals: &[GlobalType]) -> Result<Value
 		));
 	}
 	let expr_ty: ValueType = match code[0] {
-		Opcode::I32Const(_) => ValueType::I32,
-		Opcode::I64Const(_) => ValueType::I64,
-		Opcode::F32Const(_) => ValueType::F32,
-		Opcode::F64Const(_) => ValueType::F64,
-		Opcode::GetGlobal(idx) => {
+		Instruction::I32Const(_) => ValueType::I32,
+		Instruction::I64Const(_) => ValueType::I64,
+		Instruction::F32Const(_) => ValueType::F32,
+		Instruction::F64Const(_) => ValueType::F64,
+		Instruction::GetGlobal(idx) => {
 			match globals.get(idx as usize) {
 				Some(target_global) => {
 					if target_global.is_mutable() {
@@ -444,7 +444,7 @@ fn expr_const_type(init_expr: &InitExpr, globals: &[GlobalType]) -> Result<Value
 		}
 		_ => return Err(Error("Non constant opcode in init expr".into())),
 	};
-	if code[1] != Opcode::End {
+	if code[1] != Instruction::End {
 		return Err(Error("Expression doesn't ends with `end` opcode".into()));
 	}
 	Ok(expr_ty)
