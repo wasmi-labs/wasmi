@@ -11,7 +11,7 @@ keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
 exclude = [ "/res/*", "/tests/*", "/fuzz/*", "/benches/*" ]
 
 [dependencies]
-parity-wasm = "0.27"
+parity-wasm = "0.31"
 byteorder = "1.0"
 memory_units = "0.3.0"
 nan-preserving-float = "0.1.0"

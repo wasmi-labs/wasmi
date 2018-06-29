@@ -1,6 +1,6 @@
 use std::u32;
 use std::collections::HashMap;
-use parity_wasm::elements::{Opcode, BlockType, ValueType, TableElementType, Func, FuncBody};
+use parity_wasm::elements::{Instruction, BlockType, ValueType, TableElementType, Func, FuncBody};
 use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use validation::context::ModuleContext;
 
@@ -79,7 +79,7 @@ impl Validator {
 		Ok(context.into_labels())
 	}
 
-	fn validate_function_block(context: &mut FunctionValidationContext, body: &[Opcode]) -> Result<(), Error> {
+	fn validate_function_block(context: &mut FunctionValidationContext, body: &[Instruction]) -> Result<(), Error> {
 		let body_len = body.len();
 		if body_len == 0 {
 			return Err(Error("Non-empty function body expected".into()));
@@ -99,9 +99,9 @@ impl Validator {
 		}
 	}
 
-	fn validate_instruction(context: &mut FunctionValidationContext, opcode: &Opcode) -> Result<InstructionOutcome, Error> {
-		use self::Opcode::*;
-		match *opcode {
+	fn validate_instruction(context: &mut FunctionValidationContext, instruction: &Instruction) -> Result<InstructionOutcome, Error> {
+		use self::Instruction::*;
+		match *instruction {
 			Unreachable => Ok(InstructionOutcome::Unreachable),
 			Nop => Ok(InstructionOutcome::ValidateNextInstruction),
 			Block(block_type) => Validator::validate_block(context, block_type),
