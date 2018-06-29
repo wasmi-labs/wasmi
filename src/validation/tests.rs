@@ -2,7 +2,7 @@ use super::validate_module;
 use parity_wasm::builder::module;
 use parity_wasm::elements::{
     External, GlobalEntry, GlobalType, ImportEntry, InitExpr, MemoryType,
-    Opcode, Opcodes, TableType, ValueType, BlockType
+    Instruction, Instructions, TableType, ValueType, BlockType
 };
 
 #[test]
@@ -74,7 +74,7 @@ fn global_init_const() {
 			GlobalEntry::new(
 				GlobalType::new(ValueType::I32, true),
 				InitExpr::new(
-					vec![Opcode::I32Const(42), Opcode::End]
+					vec![Instruction::I32Const(42), Instruction::End]
 				)
 			)
 		)
@@ -86,7 +86,7 @@ fn global_init_const() {
 		.with_global(
 			GlobalEntry::new(
 				GlobalType::new(ValueType::I64, true),
-				InitExpr::new(vec![Opcode::I32Const(42), Opcode::End])
+				InitExpr::new(vec![Instruction::I32Const(42), Instruction::End])
 			)
 		)
 		.build();
@@ -106,7 +106,7 @@ fn global_init_global() {
 		.with_global(
 			GlobalEntry::new(
 				GlobalType::new(ValueType::I32, true),
-				InitExpr::new(vec![Opcode::GetGlobal(0), Opcode::End])
+				InitExpr::new(vec![Instruction::GetGlobal(0), Instruction::End])
 			)
 		)
 		.build();
@@ -117,7 +117,7 @@ fn global_init_global() {
 		.with_global(
 			GlobalEntry::new(
 				GlobalType::new(ValueType::I32, true),
-				InitExpr::new(vec![Opcode::GetGlobal(0), Opcode::End])
+				InitExpr::new(vec![Instruction::GetGlobal(0), Instruction::End])
 			)
 		)
 		.build();
@@ -135,7 +135,7 @@ fn global_init_global() {
 		.with_global(
 			GlobalEntry::new(
 				GlobalType::new(ValueType::I32, true),
-				InitExpr::new(vec![Opcode::GetGlobal(0), Opcode::End])
+				InitExpr::new(vec![Instruction::GetGlobal(0), Instruction::End])
 			)
 		)
 		.build();
@@ -146,13 +146,13 @@ fn global_init_global() {
 		.with_global(
 			GlobalEntry::new(
 				GlobalType::new(ValueType::I32, false),
-				InitExpr::new(vec![Opcode::I32Const(0), Opcode::End])
+				InitExpr::new(vec![Instruction::I32Const(0), Instruction::End])
 			)
 		)
 		.with_global(
 			GlobalEntry::new(
 				GlobalType::new(ValueType::I32, true),
-				InitExpr::new(vec![Opcode::GetGlobal(0), Opcode::End])
+				InitExpr::new(vec![Instruction::GetGlobal(0), Instruction::End])
 			)
 		)
 		.build();
@@ -166,7 +166,7 @@ fn global_init_misc() {
 		.with_global(
 			GlobalEntry::new(
 				GlobalType::new(ValueType::I32, true),
-				InitExpr::new(vec![Opcode::I32Const(42)])
+				InitExpr::new(vec![Instruction::I32Const(42)])
 			)
 		)
 		.build();
@@ -177,7 +177,7 @@ fn global_init_misc() {
 		.with_global(
 			GlobalEntry::new(
 				GlobalType::new(ValueType::I32, true),
-				InitExpr::new(vec![Opcode::End])
+				InitExpr::new(vec![Instruction::End])
 			)
 		)
 		.build();
@@ -188,7 +188,7 @@ fn global_init_misc() {
 		.with_global(
 			GlobalEntry::new(
 				GlobalType::new(ValueType::I32, true),
-				InitExpr::new(vec![Opcode::Unreachable, Opcode::End])
+				InitExpr::new(vec![Instruction::Unreachable, Instruction::End])
 			)
 		)
 		.build();
@@ -234,16 +234,16 @@ fn funcs() {
 	let m = module()
 		.function()
 			.signature().return_type().i32().build()
-			.body().with_opcodes(Opcodes::new(vec![
-				Opcode::Call(1),
-				Opcode::End,
+			.body().with_instructions(Instructions::new(vec![
+				Instruction::Call(1),
+				Instruction::End,
 			])).build()
 			.build()
 		.function()
 			.signature().return_type().i32().build()
-			.body().with_opcodes(Opcodes::new(vec![
-				Opcode::Call(0),
-				Opcode::End,
+			.body().with_instructions(Instructions::new(vec![
+				Instruction::Call(0),
+				Instruction::End,
 			])).build()
 			.build()
 		.build();
@@ -282,18 +282,18 @@ fn if_else_with_return_type_validation() {
 	let m = module()
 		.function()
 			.signature().build()
-			.body().with_opcodes(Opcodes::new(vec![
-				Opcode::I32Const(1),
-				Opcode::If(BlockType::NoResult),
-					Opcode::I32Const(1),
-					Opcode::If(BlockType::Value(ValueType::I32)),
-						Opcode::I32Const(1),
-					Opcode::Else,
-						Opcode::I32Const(2),
-					Opcode::End,
-					Opcode::Drop,
-				Opcode::End,
-				Opcode::End,
+			.body().with_instructions(Instructions::new(vec![
+				Instruction::I32Const(1),
+				Instruction::If(BlockType::NoResult),
+					Instruction::I32Const(1),
+					Instruction::If(BlockType::Value(ValueType::I32)),
+						Instruction::I32Const(1),
+					Instruction::Else,
+						Instruction::I32Const(2),
+					Instruction::End,
+					Instruction::Drop,
+				Instruction::End,
+				Instruction::End,
 			])).build()
 			.build()
 		.build();
