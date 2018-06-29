@@ -1,5 +1,5 @@
 use std::u32;
-use parity_wasm::elements::{Opcode, BlockType, ValueType, TableElementType, Func, FuncBody};
+use parity_wasm::elements::{Instruction, BlockType, ValueType, TableElementType, Func, FuncBody};
 use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use validation::context::ModuleContext;
 
@@ -196,17 +196,17 @@ impl FunctionReader {
 		Ok(context.into_code())
 	}
 
-	fn read_function_body(context: &mut FunctionValidationContext, body: &[Opcode]) -> Result<(), Error> {
+	fn read_function_body(context: &mut FunctionValidationContext, body: &[Instruction]) -> Result<(), Error> {
 		let body_len = body.len();
 		if body_len == 0 {
 			return Err(Error("Non-empty function body expected".into()));
 		}
 
 		loop {
-			let opcode = &body[context.position];
+			let instruction = &body[context.position];
 
-			let outcome = FunctionReader::read_instruction(context, opcode)
-				.map_err(|err| Error(format!("At instruction {:?}(@{}): {}", opcode, context.position, err)))?;
+			let outcome = FunctionReader::read_instruction(context, instruction)
+				.map_err(|err| Error(format!("At instruction {:?}(@{}): {}", instruction, context.position, err)))?;
 
 			match outcome {
 				Outcome::NextInstruction => (),
@@ -223,9 +223,9 @@ impl FunctionReader {
 		}
 	}
 
-	fn read_instruction(context: &mut FunctionValidationContext, opcode: &Opcode) -> Result<Outcome, Error> {
-		use self::Opcode::*;
-		match *opcode {
+	fn read_instruction(context: &mut FunctionValidationContext, instruction: &Instruction) -> Result<Outcome, Error> {
+		use self::Instruction::*;
+		match *instruction {
 			// Nop instruction doesn't do anything. It is safe to just skip it.
 			Nop => {},
 
