@@ -77,12 +77,14 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 
 		self.run_interpreter_loop(&mut call_stack)?;
 
-		Ok(func.signature().return_type().map(|_vt| {
-			let return_value = self.value_stack
-				.pop();
+		let opt_return_value = func.signature().return_type().map(|_vt| {
+			self.value_stack.pop()
+		});
 
-			return_value
-		}))
+		// Ensure that stack is empty after the execution.
+		assert!(self.value_stack.len() == 0);
+
+		Ok(opt_return_value)
 	}
 
 	fn run_interpreter_loop(&mut self, call_stack: &mut Vec<FunctionContext>) -> Result<(), Trap> {
@@ -132,7 +134,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 							let return_val = FuncInstance::invoke(&nested_func, &args, self.externals)?;
 
 							// Check if `return_val` matches the signature.
-							let value_ty = return_val.clone().map(|val| val.value_type());
+							let value_ty = return_val.as_ref().map(|val| val.value_type());
 							let expected_ty = nested_func.signature().return_type();
 							if value_ty != expected_ty {
 								return Err(TrapKind::UnexpectedSignature.into());
