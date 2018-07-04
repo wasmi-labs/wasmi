@@ -1,9 +1,12 @@
-use super::validate_module;
+use super::{validate_module, ValidatedModule};
 use parity_wasm::builder::module;
 use parity_wasm::elements::{
-    External, GlobalEntry, GlobalType, ImportEntry, InitExpr, MemoryType,
-    Instruction, Instructions, TableType, ValueType, BlockType
+	External, GlobalEntry, GlobalType, ImportEntry, InitExpr, MemoryType,
+	Instruction, Instructions, TableType, ValueType, BlockType, deserialize_buffer,
+	Module,
 };
+use isa;
+use wabt;
 
 #[test]
 fn empty_is_valid() {
@@ -298,4 +301,618 @@ fn if_else_with_return_type_validation() {
 			.build()
 		.build();
 	validate_module(m).unwrap();
+}
+
+fn validate(wat: &str) -> ValidatedModule {
+	let wasm = wabt::wat2wasm(wat).unwrap();
+	let module = deserialize_buffer::<Module>(&wasm).unwrap();
+	let validated_module = validate_module(module).unwrap();
+	validated_module
+}
+
+fn compile(wat: &str) -> Vec<isa::Instruction> {
+	let validated_module = validate(wat);
+	let code = &validated_module.code_map[0];
+	code.code.clone()
+}
+
+#[test]
+fn implicit_return_no_value() {
+	let code = compile(r#"
+		(module
+			(func (export "call")
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 0,
+				keep: isa::Keep::None,
+			})
+		]
+	)
+}
+
+#[test]
+fn implicit_return_with_value() {
+	let code = compile(r#"
+		(module
+			(func (export "call") (result i32)
+				i32.const 0
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::I32Const(0),
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 0,
+				keep: isa::Keep::Single,
+			}),
+		]
+	)
+}
+
+#[test]
+fn implicit_return_param() {
+	let code = compile(r#"
+		(module
+			(func (export "call") (param i32)
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 1,
+				keep: isa::Keep::None,
+			}),
+		]
+	)
+}
+
+#[test]
+fn get_local() {
+	let code = compile(r#"
+		(module
+			(func (export "call") (param i32) (result i32)
+				get_local 0
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::GetLocal(1),
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 1,
+				keep: isa::Keep::Single,
+			}),
+		]
+	)
+}
+
+#[test]
+fn explicit_return() {
+	let code = compile(r#"
+		(module
+			(func (export "call") (param i32) (result i32)
+				get_local 0
+				return
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::GetLocal(1),
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 1,
+				keep: isa::Keep::Single,
+			}),
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 1,
+				keep: isa::Keep::Single,
+			}),
+		]
+	)
+}
+
+#[test]
+fn add_params() {
+	let code = compile(r#"
+		(module
+			(func (export "call") (param i32) (param i32) (result i32)
+				get_local 0
+				get_local 1
+				i32.add
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			// This is tricky. Locals are now loaded from the stack. The load
+			// happens from address relative of the current stack pointer. The first load
+			// takes the value below the previous one (i.e the second argument) and then, it increments
+			// the stack pointer. And then the same thing hapens with the value below the previous one
+			// (which happens to be the value loaded by the first get_local).
+			isa::Instruction::GetLocal(2),
+			isa::Instruction::GetLocal(2),
+			isa::Instruction::I32Add,
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 2,
+				keep: isa::Keep::Single,
+			}),
+		]
+	)
+}
+
+#[test]
+fn drop_locals() {
+	let code = compile(r#"
+		(module
+			(func (export "call") (param i32)
+				(local i32)
+				get_local 0
+				set_local 1
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::GetLocal(2),
+			isa::Instruction::SetLocal(1),
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 2,
+				keep: isa::Keep::None,
+			}),
+		]
+	)
+}
+
+#[test]
+fn if_without_else() {
+	let code = compile(r#"
+		(module
+			(func (export "call") (param i32) (result i32)
+				i32.const 1
+				if
+					i32.const 2
+					return
+				end
+				i32.const 3
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::I32Const(1),
+			isa::Instruction::BrIfEqz(isa::Target {
+				dst_pc: 4,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
+			}),
+			isa::Instruction::I32Const(2),
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 1, // 1 param
+				keep: isa::Keep::Single, // 1 result
+			}),
+			isa::Instruction::I32Const(3),
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 1,
+				keep: isa::Keep::Single,
+			}),
+		]
+	)
+}
+
+#[test]
+fn if_else() {
+	let code = compile(r#"
+		(module
+			(func (export "call")
+				(local i32)
+				i32.const 1
+				if
+					i32.const 2
+					set_local 0
+				else
+					i32.const 3
+					set_local 0
+				end
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::I32Const(1),
+			isa::Instruction::BrIfEqz(isa::Target {
+				dst_pc: 5,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
+			}),
+			isa::Instruction::I32Const(2),
+			isa::Instruction::SetLocal(1),
+			isa::Instruction::Br(isa::Target {
+				dst_pc: 7,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
+			}),
+			isa::Instruction::I32Const(3),
+			isa::Instruction::SetLocal(1),
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 1,
+				keep: isa::Keep::None,
+			}),
+		]
+	)
+}
+
+#[test]
+fn if_else_returns_result() {
+	let code = compile(r#"
+		(module
+			(func (export "call")
+				i32.const 1
+				if (result i32)
+					i32.const 2
+				else
+					i32.const 3
+				end
+				drop
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::I32Const(1),
+			isa::Instruction::BrIfEqz(isa::Target {
+				dst_pc: 4,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
+			}),
+			isa::Instruction::I32Const(2),
+			isa::Instruction::Br(isa::Target {
+				dst_pc: 5,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
+			}),
+			isa::Instruction::I32Const(3),
+			isa::Instruction::Drop,
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 0,
+				keep: isa::Keep::None,
+			}),
+		]
+	)
+}
+
+#[test]
+fn if_else_branch_from_true_branch() {
+	let code = compile(r#"
+		(module
+			(func (export "call")
+				i32.const 1
+				if (result i32)
+					i32.const 1
+					i32.const 1
+					br_if 0
+					drop
+					i32.const 2
+				else
+					i32.const 3
+				end
+				drop
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::I32Const(1),
+			isa::Instruction::BrIfEqz(isa::Target {
+				dst_pc: 8,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
+			}),
+			isa::Instruction::I32Const(1),
+			isa::Instruction::I32Const(1),
+			isa::Instruction::BrIfNez(isa::Target {
+				dst_pc: 9,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::Single,
+				},
+			}),
+			isa::Instruction::Drop,
+			isa::Instruction::I32Const(2),
+			isa::Instruction::Br(isa::Target {
+				dst_pc: 9,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
+			}),
+			isa::Instruction::I32Const(3),
+			isa::Instruction::Drop,
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 0,
+				keep: isa::Keep::None,
+			}),
+		]
+	)
+}
+
+#[test]
+fn if_else_branch_from_false_branch() {
+	let code = compile(r#"
+		(module
+			(func (export "call")
+				i32.const 1
+				if (result i32)
+					i32.const 1
+				else
+					i32.const 2
+					i32.const 1
+					br_if 0
+					drop
+					i32.const 3
+				end
+				drop
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::I32Const(1),
+			isa::Instruction::BrIfEqz(isa::Target {
+				dst_pc: 4,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
+			}),
+			isa::Instruction::I32Const(1),
+			isa::Instruction::Br(isa::Target {
+				dst_pc: 9,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
+			}),
+			isa::Instruction::I32Const(2),
+			isa::Instruction::I32Const(1),
+			isa::Instruction::BrIfNez(isa::Target {
+				dst_pc: 9,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::Single,
+				},
+			}),
+			isa::Instruction::Drop,
+			isa::Instruction::I32Const(3),
+			isa::Instruction::Drop,
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 0,
+				keep: isa::Keep::None,
+			}),
+		]
+	)
+}
+
+#[test]
+fn loop_() {
+	let code = compile(r#"
+		(module
+			(func (export "call")
+				loop (result i32)
+					i32.const 1
+					br_if 0
+					i32.const 2
+				end
+				drop
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::I32Const(1),
+			isa::Instruction::BrIfNez(isa::Target {
+				dst_pc: 0,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
+			}),
+			isa::Instruction::I32Const(2),
+			isa::Instruction::Drop,
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 0,
+				keep: isa::Keep::None,
+			}),
+		]
+	)
+}
+
+#[test]
+fn loop_empty() {
+	let code = compile(r#"
+		(module
+			(func (export "call")
+				loop
+				end
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 0,
+				keep: isa::Keep::None,
+			}),
+		]
+	)
+}
+
+#[test]
+fn brtable() {
+	let code = compile(r#"
+		(module
+			(func (export "call")
+				block $1
+					loop $2
+						i32.const 0
+						br_table $2 $1
+					end
+				end
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::I32Const(0),
+			isa::Instruction::BrTable(
+				vec![
+					isa::Target {
+						dst_pc: 0,
+						drop_keep: isa::DropKeep {
+							drop: 0,
+							keep: isa::Keep::None,
+						},
+					},
+					isa::Target {
+						dst_pc: 2,
+						drop_keep: isa::DropKeep {
+							drop: 0,
+							keep: isa::Keep::None,
+						},
+					},
+				].into_boxed_slice()
+			),
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 0,
+				keep: isa::Keep::None,
+			}),
+		]
+	)
+}
+
+#[test]
+fn brtable_returns_result() {
+	let code = compile(r#"
+		(module
+			(func (export "call")
+				block $1 (result i32)
+					block $2 (result i32)
+						i32.const 0
+						i32.const 1
+						br_table $2 $1
+					end
+					unreachable
+				end
+				drop
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::I32Const(0),
+			isa::Instruction::I32Const(1),
+			isa::Instruction::BrTable(
+				vec![
+					isa::Target {
+						dst_pc: 3,
+						drop_keep: isa::DropKeep {
+							drop: 0,
+							keep: isa::Keep::Single,
+						},
+					},
+					isa::Target {
+						dst_pc: 4,
+						drop_keep: isa::DropKeep {
+							keep: isa::Keep::Single,
+							drop: 0,
+						},
+					},
+				].into_boxed_slice()
+			),
+			isa::Instruction::Unreachable,
+			isa::Instruction::Drop,
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 0,
+				keep: isa::Keep::None,
+			}),
+		]
+	)
+}
+
+#[test]
+fn wabt_example() {
+	let code = compile(r#"
+		(module
+			(func (export "call") (param i32) (result i32)
+				block $exit
+					get_local 0
+					br_if $exit
+					i32.const 1
+					return
+				end
+				i32.const 2
+				return
+			)
+		)
+	"#);
+	assert_eq!(
+		code,
+		vec![
+			isa::Instruction::GetLocal(1),
+			isa::Instruction::BrIfNez(isa::Target {
+				dst_pc: 4,
+				drop_keep: isa::DropKeep {
+					drop: 0,
+					keep: isa::Keep::None,
+				},
+			}),
+			isa::Instruction::I32Const(1),
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 1, // 1 parameter
+				keep: isa::Keep::Single,
+			}),
+			isa::Instruction::I32Const(2),
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 1,
+				keep: isa::Keep::Single,
+			}),
+			isa::Instruction::Return(isa::DropKeep {
+				drop: 1,
+				keep: isa::Keep::Single,
+			}),
+		]
+	)
 }

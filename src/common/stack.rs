@@ -1,5 +1,4 @@
 
-use std::collections::VecDeque;
 use std::error;
 use std::fmt;
 
@@ -22,7 +21,7 @@ impl error::Error for Error {
 #[derive(Debug)]
 pub struct StackWithLimit<T> where T: Clone {
 	/// Stack values.
-	values: VecDeque<T>,
+	values: Vec<T>,
 	/// Stack limit (maximal stack len).
 	limit: usize,
 }
@@ -30,7 +29,7 @@ pub struct StackWithLimit<T> where T: Clone {
 impl<T> StackWithLimit<T> where T: Clone {
 	pub fn with_limit(limit: usize) -> Self {
 		StackWithLimit {
-			values: VecDeque::new(),
+			values: Vec::new(),
 			limit: limit
 		}
 	}
@@ -43,19 +42,15 @@ impl<T> StackWithLimit<T> where T: Clone {
 		self.values.len()
 	}
 
-	pub fn limit(&self) -> usize {
-		self.limit
-	}
-
 	pub fn top(&self) -> Result<&T, Error> {
 		self.values
-			.back()
+			.last()
 			.ok_or_else(|| Error("non-empty stack expected".into()))
 	}
 
 	pub fn top_mut(&mut self) -> Result<&mut T, Error> {
 		self.values
-			.back_mut()
+			.last_mut()
 			.ok_or_else(|| Error("non-empty stack expected".into()))
 	}
 
@@ -72,13 +67,13 @@ impl<T> StackWithLimit<T> where T: Clone {
 			return Err(Error(format!("exceeded stack limit {}", self.limit)));
 		}
 
-		self.values.push_back(value);
+		self.values.push(value);
 		Ok(())
 	}
 
 	pub fn pop(&mut self) -> Result<T, Error> {
 		self.values
-			.pop_back()
+			.pop()
 			.ok_or_else(|| Error("non-empty stack expected".into()))
 	}
 

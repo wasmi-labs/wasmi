@@ -291,7 +291,7 @@ impl ModuleInstance {
 			}
 		}
 
-		let labels = loaded_module.labels();
+		let code = loaded_module.code();
 		{
 			let funcs = module.function_section().map(|fs| fs.entries()).unwrap_or(
 				&[],
@@ -308,13 +308,12 @@ impl ModuleInstance {
 				let signature = instance.signature_by_index(ty.type_ref()).expect(
 					"Due to validation type should exists",
 				);
-				let labels = labels.get(&index).expect(
+				let code = code.get(index).expect(
 					"At func validation time labels are collected; Collected labels are added by index; qed",
 				).clone();
 				let func_body = FuncBody {
 					locals: body.locals().to_vec(),
-					instructions: body.code().clone(),
-					labels: labels,
+					code: code,
 				};
 				let func_instance =
 					FuncInstance::alloc_internal(Rc::downgrade(&instance.0), signature, func_body);

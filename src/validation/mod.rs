@@ -1,14 +1,15 @@
 use std::error;
 use std::fmt;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use parity_wasm::elements::{
 	BlockType, External, GlobalEntry, GlobalType, Internal, MemoryType, Module, Instruction,
 	ResizableLimits, TableType, ValueType, InitExpr, Type,
 };
 use common::stack;
 use self::context::ModuleContextBuilder;
-use self::func::Validator;
+use self::func::FunctionReader;
 use memory_units::Pages;
+use isa;
 
 mod context;
 mod func;
@@ -40,7 +41,7 @@ impl From<stack::Error> for Error {
 
 #[derive(Clone)]
 pub struct ValidatedModule {
-	pub labels: HashMap<usize, HashMap<usize, usize>>,
+	pub code_map: Vec<isa::Instructions>,
 	pub module: Module,
 }
 
@@ -167,7 +168,7 @@ pub fn deny_floating_point(module: &Module) -> Result<(), Error> {
 pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
 	let mut context_builder = ModuleContextBuilder::new();
 	let mut imported_globals = Vec::new();
-	let mut labels = HashMap::new();
+	let mut code_map = Vec::new();
 
 	// Copy types from module as is.
 	context_builder.set_types(
@@ -257,12 +258,12 @@ pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
 					index
 				)),
 			)?;
-			let func_labels = Validator::validate_function(&context, function, function_body)
+			let code = FunctionReader::read_function(&context, function, function_body)
 				.map_err(|e| {
 					let Error(ref msg) = e;
-					Error(format!("Function #{} validation error: {}", index, msg))
+					Error(format!("Function #{} reading/validation error: {}", index, msg))
 				})?;
-			labels.insert(index, func_labels);
+			code_map.push(code);
 		}
 	}
 
@@ -374,7 +375,7 @@ pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
 
 	Ok(ValidatedModule {
 		module,
-		labels
+		code_map,
 	})
 }
 

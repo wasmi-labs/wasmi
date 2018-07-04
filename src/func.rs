@@ -1,12 +1,12 @@
 use std::rc::{Rc, Weak};
 use std::fmt;
-use std::collections::HashMap;
-use parity_wasm::elements::{Local, Instructions};
+use parity_wasm::elements::Local;
 use {Trap, TrapKind, Signature};
 use host::Externals;
 use runner::{check_function_args, Interpreter};
 use value::RuntimeValue;
 use module::ModuleInstance;
+use isa;
 
 /// Reference to a function (See [`FuncInstance`] for details).
 ///
@@ -158,6 +158,5 @@ impl FuncInstance {
 #[derive(Clone, Debug)]
 pub struct FuncBody {
 	pub locals: Vec<Local>,
-	pub instructions: Instructions,
-	pub labels: HashMap<usize, usize>,
+	pub code: isa::Instructions,
 }

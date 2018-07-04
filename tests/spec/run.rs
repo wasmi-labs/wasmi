@@ -360,6 +360,8 @@ fn try_spec(name: &str) -> Result<(), Error> {
 				}};
 		}
 
+		println!("Running spec cmd {}: {:?}", line, kind);
+
 		match kind {
 			CommandKind::Module { name, module, .. } => {
 				load_module(&module.into_vec()?, &name, &mut spec_driver)

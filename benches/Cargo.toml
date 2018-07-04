@@ -7,3 +7,6 @@ authors = ["Sergey Pepyakin <s.pepyakin@gmail.com>"]
 wasmi = { path = ".." }
 assert_matches = "1.2"
 wabt = "0.3"
+
+[profile.bench]
+debug = true

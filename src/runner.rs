@@ -3,123 +3,147 @@ use std::ops;
 use std::{u32, usize};
 use std::fmt;
 use std::iter::repeat;
-use std::collections::{HashMap, VecDeque};
-use parity_wasm::elements::{Instruction, BlockType, Local};
+use parity_wasm::elements::Local;
 use {Error, Trap, TrapKind, Signature};
 use module::ModuleRef;
+use memory::MemoryRef;
 use func::{FuncRef, FuncInstance, FuncInstanceInternal};
 use value::{
 	RuntimeValue, FromRuntimeValue, WrapInto, TryTruncateInto, ExtendInto,
 	ArithmeticOps, Integer, Float, LittleEndianConvert, TransmuteInto,
 };
 use host::Externals;
-use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX, BlockFrame, BlockFrameType};
-use common::stack::StackWithLimit;
+use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use memory_units::Pages;
 use nan_preserving_float::{F32, F64};
+use isa;
 
 /// Maximum number of entries in value stack.
-pub const DEFAULT_VALUE_STACK_LIMIT: usize = 16384;
-/// Maximum number of entries in frame stack.
-pub const DEFAULT_FRAME_STACK_LIMIT: usize = 16384;
+pub const DEFAULT_VALUE_STACK_LIMIT: usize = (512 * 1024) / ::std::mem::size_of::<RuntimeValue>();
 
-/// Function interpreter.
-pub struct Interpreter<'a, E: Externals + 'a> {
-	externals: &'a mut E,
-}
+// TODO: Make these parameters changeble.
+pub const DEFAULT_CALL_STACK_LIMIT: usize = 16 * 1024;
 
 /// Interpreter action to execute after executing instruction.
 pub enum InstructionOutcome {
 	/// Continue with next instruction.
 	RunNextInstruction,
-	/// Branch to given frame.
-	Branch(usize),
+	/// Branch to an instruction at the given position.
+	Branch(isa::Target),
 	/// Execute function call.
 	ExecuteCall(FuncRef),
-	/// End current frame.
-	End,
 	/// Return from current function block.
-	Return,
+	Return(isa::DropKeep),
 }
 
 /// Function run result.
 enum RunResult {
-	/// Function has returned (optional) value.
-	Return(Option<RuntimeValue>),
+	/// Function has returned.
+	Return,
 	/// Function is calling other function.
 	NestedCall(FuncRef),
 }
 
+/// Function interpreter.
+pub struct Interpreter<'a, E: Externals + 'a> {
+	externals: &'a mut E,
+	value_stack: ValueStack,
+}
+
 impl<'a, E: Externals> Interpreter<'a, E> {
 	pub fn new(externals: &'a mut E) -> Interpreter<'a, E> {
+		let value_stack = ValueStack::with_limit(DEFAULT_VALUE_STACK_LIMIT);
 		Interpreter {
 			externals,
+			value_stack,
 		}
 	}
 
 	pub fn start_execution(&mut self, func: &FuncRef, args: &[RuntimeValue]) -> Result<Option<RuntimeValue>, Trap> {
-		let context = FunctionContext::new(
-			func.clone(),
-			DEFAULT_VALUE_STACK_LIMIT,
-			DEFAULT_FRAME_STACK_LIMIT,
-			func.signature(),
-			args.into_iter().cloned().collect(),
-		);
+		for arg in args {
+			self.value_stack
+				.push(*arg)
+				.map_err(
+					// There is not enough space for pushing initial arguments.
+					// Weird, but bail out anyway.
+					|_| Trap::from(TrapKind::StackOverflow)
+				)?;
+		}
 
-		let mut function_stack = VecDeque::new();
-		function_stack.push_back(context);
+		let initial_frame = FunctionContext::new(func.clone());
 
-		self.run_interpreter_loop(&mut function_stack)
+		let mut call_stack = Vec::new();
+		call_stack.push(initial_frame);
+
+		self.run_interpreter_loop(&mut call_stack)?;
+
+		let opt_return_value = func.signature().return_type().map(|_vt| {
+			self.value_stack.pop()
+		});
+
+		// Ensure that stack is empty after the execution.
+		assert!(self.value_stack.len() == 0);
+
+		Ok(opt_return_value)
 	}
 
-	fn run_interpreter_loop(&mut self, function_stack: &mut VecDeque<FunctionContext>) -> Result<Option<RuntimeValue>, Trap> {
+	fn run_interpreter_loop(&mut self, call_stack: &mut Vec<FunctionContext>) -> Result<(), Trap> {
 		loop {
-			let mut function_context = function_stack.pop_back().expect("on loop entry - not empty; on loop continue - checking for emptiness; qed");
+			let mut function_context = call_stack
+				.pop()
+				.expect("on loop entry - not empty; on loop continue - checking for emptiness; qed");
 			let function_ref = function_context.function.clone();
 			let function_body = function_ref
 				.body()
 				.expect(
 					"Host functions checked in function_return below; Internal functions always have a body; qed"
 				);
+
 			if !function_context.is_initialized() {
-				let return_type = function_context.return_type;
-				function_context.initialize(&function_body.locals);
-				function_context.push_frame(&function_body.labels, BlockFrameType::Function, return_type).map_err(Trap::new)?;
+				// Initialize stack frame for the function call.
+				function_context.initialize(&function_body.locals, &mut self.value_stack)?;
 			}
 
-			let function_return = self.do_run_function(&mut function_context, function_body.instructions.elements(), &function_body.labels).map_err(Trap::new)?;
+			let function_return =
+				self.do_run_function(
+					&mut function_context,
+					&function_body.code.code,
+				).map_err(Trap::new)?;
 
 			match function_return {
-				RunResult::Return(return_value) => {
-					match function_stack.back_mut() {
-						Some(caller_context) => if let Some(return_value) = return_value {
-							caller_context.value_stack_mut().push(return_value).map_err(Trap::new)?;
-						},
-						None => return Ok(return_value),
+				RunResult::Return => {
+					if call_stack.last().is_none() {
+						// This was the last frame in the call stack. This means we
+						// are done executing.
+						return Ok(());
 					}
 				},
 				RunResult::NestedCall(nested_func) => {
+					if call_stack.len() + 1 >= DEFAULT_CALL_STACK_LIMIT {
+						return Err(TrapKind::StackOverflow.into());
+					}
+
 					match *nested_func.as_internal() {
 						FuncInstanceInternal::Internal { .. } => {
-							let nested_context = function_context.nested(nested_func.clone()).map_err(Trap::new)?;
-							function_stack.push_back(function_context);
-							function_stack.push_back(nested_context);
+							let nested_context = FunctionContext::new(nested_func.clone());
+							call_stack.push(function_context);
+							call_stack.push(nested_context);
 						},
 						FuncInstanceInternal::Host { ref signature, .. } => {
-							let args = prepare_function_args(signature, &mut function_context.value_stack);
+							let args = prepare_function_args(signature, &mut self.value_stack);
 							let return_val = FuncInstance::invoke(&nested_func, &args, self.externals)?;
 
 							// Check if `return_val` matches the signature.
-							let value_ty = return_val.clone().map(|val| val.value_type());
+							let value_ty = return_val.as_ref().map(|val| val.value_type());
 							let expected_ty = nested_func.signature().return_type();
 							if value_ty != expected_ty {
 								return Err(TrapKind::UnexpectedSignature.into());
 							}
 
 							if let Some(return_val) = return_val {
-								function_context.value_stack_mut().push(return_val).map_err(Trap::new)?;
+								self.value_stack.push(return_val).map_err(Trap::new)?;
 							}
-							function_stack.push_back(function_context);
+							call_stack.push(function_context);
 						}
 					}
 				},
@@ -127,239 +151,218 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		}
 	}
 
-	fn do_run_function(&mut self, function_context: &mut FunctionContext, function_body: &[Instruction], function_labels: &HashMap<usize, usize>) -> Result<RunResult, TrapKind> {
+	fn do_run_function(&mut self, function_context: &mut FunctionContext, instructions: &[isa::Instruction]) -> Result<RunResult, TrapKind> {
 		loop {
-			let instruction = &function_body[function_context.position];
+			let instruction = &instructions[function_context.position];
 
-			match self.run_instruction(function_context, function_labels, instruction)? {
+			match self.run_instruction(function_context, instruction)? {
 				InstructionOutcome::RunNextInstruction => function_context.position += 1,
-				InstructionOutcome::Branch(mut index) => {
-					// discard index - 1 blocks
-					while index >= 1 {
-						function_context.discard_frame();
-						index -= 1;
-					}
-
-					function_context.pop_frame(true)?;
-					if function_context.frame_stack().is_empty() {
-						break;
-					}
+				InstructionOutcome::Branch(target) => {
+					function_context.position = target.dst_pc as usize;
+					self.value_stack.drop_keep(target.drop_keep);
 				},
 				InstructionOutcome::ExecuteCall(func_ref) => {
 					function_context.position += 1;
 					return Ok(RunResult::NestedCall(func_ref));
 				},
-				InstructionOutcome::End => {
-					if function_context.frame_stack().is_empty() {
-						break;
-					}
+				InstructionOutcome::Return(drop_keep) => {
+					self.value_stack.drop_keep(drop_keep);
+					break;
 				},
-				InstructionOutcome::Return => break,
 			}
 		}
 
-		Ok(RunResult::Return(match function_context.return_type {
-			BlockType::Value(_) => {
-				let result = function_context
-					.value_stack_mut()
-					.pop();
-				Some(result)
-			},
-			BlockType::NoResult => None,
-		}))
+		Ok(RunResult::Return)
 	}
 
-	fn run_instruction(&mut self, context: &mut FunctionContext, labels: &HashMap<usize, usize>, instruction: &Instruction) -> Result<InstructionOutcome, TrapKind> {
+	#[inline(always)]
+	fn run_instruction(&mut self, context: &mut FunctionContext, instruction: &isa::Instruction) -> Result<InstructionOutcome, TrapKind> {
 		match instruction {
-			&Instruction::Unreachable => self.run_unreachable(context),
-			&Instruction::Nop => self.run_nop(context),
-			&Instruction::Block(block_type) => self.run_block(context, labels, block_type),
-			&Instruction::Loop(block_type) => self.run_loop(context, labels, block_type),
-			&Instruction::If(block_type) => self.run_if(context, labels, block_type),
-			&Instruction::Else => self.run_else(context, labels),
-			&Instruction::End => self.run_end(context),
-			&Instruction::Br(idx) => self.run_br(context, idx),
-			&Instruction::BrIf(idx) => self.run_br_if(context, idx),
-			&Instruction::BrTable(ref table, default) => self.run_br_table(context, table, default),
-			&Instruction::Return => self.run_return(context),
+			&isa::Instruction::Unreachable => self.run_unreachable(context),
 
-			&Instruction::Call(index) => self.run_call(context, index),
-			&Instruction::CallIndirect(index, _reserved) => self.run_call_indirect(context, index),
+			&isa::Instruction::Br(ref target) => self.run_br(context, target.clone()),
+			&isa::Instruction::BrIfEqz(ref target) => self.run_br_eqz(target.clone()),
+			&isa::Instruction::BrIfNez(ref target) => self.run_br_nez(target.clone()),
+			&isa::Instruction::BrTable(ref targets) => self.run_br_table(targets),
+			&isa::Instruction::Return(drop_keep) => self.run_return(drop_keep),
 
-			&Instruction::Drop => self.run_drop(context),
-			&Instruction::Select => self.run_select(context),
+			&isa::Instruction::Call(index) => self.run_call(context, index),
+			&isa::Instruction::CallIndirect(index) => self.run_call_indirect(context, index),
 
-			&Instruction::GetLocal(index) => self.run_get_local(context, index),
-			&Instruction::SetLocal(index) => self.run_set_local(context, index),
-			&Instruction::TeeLocal(index) => self.run_tee_local(context, index),
-			&Instruction::GetGlobal(index) => self.run_get_global(context, index),
-			&Instruction::SetGlobal(index) => self.run_set_global(context, index),
+			&isa::Instruction::Drop => self.run_drop(),
+			&isa::Instruction::Select => self.run_select(),
 
-			&Instruction::I32Load(align, offset) => self.run_load::<i32>(context, align, offset),
-			&Instruction::I64Load(align, offset) => self.run_load::<i64>(context, align, offset),
-			&Instruction::F32Load(align, offset) => self.run_load::<F32>(context, align, offset),
-			&Instruction::F64Load(align, offset) => self.run_load::<F64>(context, align, offset),
-			&Instruction::I32Load8S(align, offset) => self.run_load_extend::<i8, i32>(context, align, offset),
-			&Instruction::I32Load8U(align, offset) => self.run_load_extend::<u8, i32>(context, align, offset),
-			&Instruction::I32Load16S(align, offset) => self.run_load_extend::<i16, i32>(context, align, offset),
-			&Instruction::I32Load16U(align, offset) => self.run_load_extend::<u16, i32>(context, align, offset),
-			&Instruction::I64Load8S(align, offset) => self.run_load_extend::<i8, i64>(context, align, offset),
-			&Instruction::I64Load8U(align, offset) => self.run_load_extend::<u8, i64>(context, align, offset),
-			&Instruction::I64Load16S(align, offset) => self.run_load_extend::<i16, i64>(context, align, offset),
-			&Instruction::I64Load16U(align, offset) => self.run_load_extend::<u16, i64>(context, align, offset),
-			&Instruction::I64Load32S(align, offset) => self.run_load_extend::<i32, i64>(context, align, offset),
-			&Instruction::I64Load32U(align, offset) => self.run_load_extend::<u32, i64>(context, align, offset),
+			&isa::Instruction::GetLocal(depth) => self.run_get_local(depth),
+			&isa::Instruction::SetLocal(depth) => self.run_set_local(depth),
+			&isa::Instruction::TeeLocal(depth) => self.run_tee_local(depth),
+			&isa::Instruction::GetGlobal(index) => self.run_get_global(context, index),
+			&isa::Instruction::SetGlobal(index) => self.run_set_global(context, index),
 
-			&Instruction::I32Store(align, offset) => self.run_store::<i32>(context, align, offset),
-			&Instruction::I64Store(align, offset) => self.run_store::<i64>(context, align, offset),
-			&Instruction::F32Store(align, offset) => self.run_store::<F32>(context, align, offset),
-			&Instruction::F64Store(align, offset) => self.run_store::<F64>(context, align, offset),
-			&Instruction::I32Store8(align, offset) => self.run_store_wrap::<i32, i8>(context, align, offset),
-			&Instruction::I32Store16(align, offset) => self.run_store_wrap::<i32, i16>(context, align, offset),
-			&Instruction::I64Store8(align, offset) => self.run_store_wrap::<i64, i8>(context, align, offset),
-			&Instruction::I64Store16(align, offset) => self.run_store_wrap::<i64, i16>(context, align, offset),
-			&Instruction::I64Store32(align, offset) => self.run_store_wrap::<i64, i32>(context, align, offset),
+			&isa::Instruction::I32Load(offset) => self.run_load::<i32>(context, offset),
+			&isa::Instruction::I64Load(offset) => self.run_load::<i64>(context, offset),
+			&isa::Instruction::F32Load(offset) => self.run_load::<F32>(context, offset),
+			&isa::Instruction::F64Load(offset) => self.run_load::<F64>(context, offset),
+			&isa::Instruction::I32Load8S(offset) => self.run_load_extend::<i8, i32>(context, offset),
+			&isa::Instruction::I32Load8U(offset) => self.run_load_extend::<u8, i32>(context, offset),
+			&isa::Instruction::I32Load16S(offset) => self.run_load_extend::<i16, i32>(context, offset),
+			&isa::Instruction::I32Load16U(offset) => self.run_load_extend::<u16, i32>(context, offset),
+			&isa::Instruction::I64Load8S(offset) => self.run_load_extend::<i8, i64>(context, offset),
+			&isa::Instruction::I64Load8U(offset) => self.run_load_extend::<u8, i64>(context, offset),
+			&isa::Instruction::I64Load16S(offset) => self.run_load_extend::<i16, i64>(context, offset),
+			&isa::Instruction::I64Load16U(offset) => self.run_load_extend::<u16, i64>(context, offset),
+			&isa::Instruction::I64Load32S(offset) => self.run_load_extend::<i32, i64>(context, offset),
+			&isa::Instruction::I64Load32U(offset) => self.run_load_extend::<u32, i64>(context, offset),
 
-			&Instruction::CurrentMemory(_) => self.run_current_memory(context),
-			&Instruction::GrowMemory(_) => self.run_grow_memory(context),
+			&isa::Instruction::I32Store(offset) => self.run_store::<i32>(context, offset),
+			&isa::Instruction::I64Store(offset) => self.run_store::<i64>(context, offset),
+			&isa::Instruction::F32Store(offset) => self.run_store::<F32>(context, offset),
+			&isa::Instruction::F64Store(offset) => self.run_store::<F64>(context, offset),
+			&isa::Instruction::I32Store8(offset) => self.run_store_wrap::<i32, i8>(context, offset),
+			&isa::Instruction::I32Store16(offset) => self.run_store_wrap::<i32, i16>(context, offset),
+			&isa::Instruction::I64Store8(offset) => self.run_store_wrap::<i64, i8>(context, offset),
+			&isa::Instruction::I64Store16(offset) => self.run_store_wrap::<i64, i16>(context, offset),
+			&isa::Instruction::I64Store32(offset) => self.run_store_wrap::<i64, i32>(context, offset),
 
-			&Instruction::I32Const(val) => self.run_const(context, val.into()),
-			&Instruction::I64Const(val) => self.run_const(context, val.into()),
-			&Instruction::F32Const(val) => self.run_const(context, RuntimeValue::decode_f32(val)),
-			&Instruction::F64Const(val) => self.run_const(context, RuntimeValue::decode_f64(val)),
+			&isa::Instruction::CurrentMemory => self.run_current_memory(context),
+			&isa::Instruction::GrowMemory => self.run_grow_memory(context),
 
-			&Instruction::I32Eqz => self.run_eqz::<i32>(context),
-			&Instruction::I32Eq => self.run_eq::<i32>(context),
-			&Instruction::I32Ne => self.run_ne::<i32>(context),
-			&Instruction::I32LtS => self.run_lt::<i32>(context),
-			&Instruction::I32LtU => self.run_lt::<u32>(context),
-			&Instruction::I32GtS => self.run_gt::<i32>(context),
-			&Instruction::I32GtU => self.run_gt::<u32>(context),
-			&Instruction::I32LeS => self.run_lte::<i32>(context),
-			&Instruction::I32LeU => self.run_lte::<u32>(context),
-			&Instruction::I32GeS => self.run_gte::<i32>(context),
-			&Instruction::I32GeU => self.run_gte::<u32>(context),
+			&isa::Instruction::I32Const(val) => self.run_const(val.into()),
+			&isa::Instruction::I64Const(val) => self.run_const(val.into()),
+			&isa::Instruction::F32Const(val) => self.run_const(RuntimeValue::decode_f32(val)),
+			&isa::Instruction::F64Const(val) => self.run_const(RuntimeValue::decode_f64(val)),
 
-			&Instruction::I64Eqz => self.run_eqz::<i64>(context),
-			&Instruction::I64Eq => self.run_eq::<i64>(context),
-			&Instruction::I64Ne => self.run_ne::<i64>(context),
-			&Instruction::I64LtS => self.run_lt::<i64>(context),
-			&Instruction::I64LtU => self.run_lt::<u64>(context),
-			&Instruction::I64GtS => self.run_gt::<i64>(context),
-			&Instruction::I64GtU => self.run_gt::<u64>(context),
-			&Instruction::I64LeS => self.run_lte::<i64>(context),
-			&Instruction::I64LeU => self.run_lte::<u64>(context),
-			&Instruction::I64GeS => self.run_gte::<i64>(context),
-			&Instruction::I64GeU => self.run_gte::<u64>(context),
+			&isa::Instruction::I32Eqz => self.run_eqz::<i32>(),
+			&isa::Instruction::I32Eq => self.run_eq::<i32>(),
+			&isa::Instruction::I32Ne => self.run_ne::<i32>(),
+			&isa::Instruction::I32LtS => self.run_lt::<i32>(),
+			&isa::Instruction::I32LtU => self.run_lt::<u32>(),
+			&isa::Instruction::I32GtS => self.run_gt::<i32>(),
+			&isa::Instruction::I32GtU => self.run_gt::<u32>(),
+			&isa::Instruction::I32LeS => self.run_lte::<i32>(),
+			&isa::Instruction::I32LeU => self.run_lte::<u32>(),
+			&isa::Instruction::I32GeS => self.run_gte::<i32>(),
+			&isa::Instruction::I32GeU => self.run_gte::<u32>(),
 
-			&Instruction::F32Eq => self.run_eq::<F32>(context),
-			&Instruction::F32Ne => self.run_ne::<F32>(context),
-			&Instruction::F32Lt => self.run_lt::<F32>(context),
-			&Instruction::F32Gt => self.run_gt::<F32>(context),
-			&Instruction::F32Le => self.run_lte::<F32>(context),
-			&Instruction::F32Ge => self.run_gte::<F32>(context),
+			&isa::Instruction::I64Eqz => self.run_eqz::<i64>(),
+			&isa::Instruction::I64Eq => self.run_eq::<i64>(),
+			&isa::Instruction::I64Ne => self.run_ne::<i64>(),
+			&isa::Instruction::I64LtS => self.run_lt::<i64>(),
+			&isa::Instruction::I64LtU => self.run_lt::<u64>(),
+			&isa::Instruction::I64GtS => self.run_gt::<i64>(),
+			&isa::Instruction::I64GtU => self.run_gt::<u64>(),
+			&isa::Instruction::I64LeS => self.run_lte::<i64>(),
+			&isa::Instruction::I64LeU => self.run_lte::<u64>(),
+			&isa::Instruction::I64GeS => self.run_gte::<i64>(),
+			&isa::Instruction::I64GeU => self.run_gte::<u64>(),
 
-			&Instruction::F64Eq => self.run_eq::<F64>(context),
-			&Instruction::F64Ne => self.run_ne::<F64>(context),
-			&Instruction::F64Lt => self.run_lt::<F64>(context),
-			&Instruction::F64Gt => self.run_gt::<F64>(context),
-			&Instruction::F64Le => self.run_lte::<F64>(context),
-			&Instruction::F64Ge => self.run_gte::<F64>(context),
+			&isa::Instruction::F32Eq => self.run_eq::<F32>(),
+			&isa::Instruction::F32Ne => self.run_ne::<F32>(),
+			&isa::Instruction::F32Lt => self.run_lt::<F32>(),
+			&isa::Instruction::F32Gt => self.run_gt::<F32>(),
+			&isa::Instruction::F32Le => self.run_lte::<F32>(),
+			&isa::Instruction::F32Ge => self.run_gte::<F32>(),
 
-			&Instruction::I32Clz => self.run_clz::<i32>(context),
-			&Instruction::I32Ctz => self.run_ctz::<i32>(context),
-			&Instruction::I32Popcnt => self.run_popcnt::<i32>(context),
-			&Instruction::I32Add => self.run_add::<i32>(context),
-			&Instruction::I32Sub => self.run_sub::<i32>(context),
-			&Instruction::I32Mul => self.run_mul::<i32>(context),
-			&Instruction::I32DivS => self.run_div::<i32, i32>(context),
-			&Instruction::I32DivU => self.run_div::<i32, u32>(context),
-			&Instruction::I32RemS => self.run_rem::<i32, i32>(context),
-			&Instruction::I32RemU => self.run_rem::<i32, u32>(context),
-			&Instruction::I32And => self.run_and::<i32>(context),
-			&Instruction::I32Or => self.run_or::<i32>(context),
-			&Instruction::I32Xor => self.run_xor::<i32>(context),
-			&Instruction::I32Shl => self.run_shl::<i32>(context, 0x1F),
-			&Instruction::I32ShrS => self.run_shr::<i32, i32>(context, 0x1F),
-			&Instruction::I32ShrU => self.run_shr::<i32, u32>(context, 0x1F),
-			&Instruction::I32Rotl => self.run_rotl::<i32>(context),
-			&Instruction::I32Rotr => self.run_rotr::<i32>(context),
+			&isa::Instruction::F64Eq => self.run_eq::<F64>(),
+			&isa::Instruction::F64Ne => self.run_ne::<F64>(),
+			&isa::Instruction::F64Lt => self.run_lt::<F64>(),
+			&isa::Instruction::F64Gt => self.run_gt::<F64>(),
+			&isa::Instruction::F64Le => self.run_lte::<F64>(),
+			&isa::Instruction::F64Ge => self.run_gte::<F64>(),
 
-			&Instruction::I64Clz => self.run_clz::<i64>(context),
-			&Instruction::I64Ctz => self.run_ctz::<i64>(context),
-			&Instruction::I64Popcnt => self.run_popcnt::<i64>(context),
-			&Instruction::I64Add => self.run_add::<i64>(context),
-			&Instruction::I64Sub => self.run_sub::<i64>(context),
-			&Instruction::I64Mul => self.run_mul::<i64>(context),
-			&Instruction::I64DivS => self.run_div::<i64, i64>(context),
-			&Instruction::I64DivU => self.run_div::<i64, u64>(context),
-			&Instruction::I64RemS => self.run_rem::<i64, i64>(context),
-			&Instruction::I64RemU => self.run_rem::<i64, u64>(context),
-			&Instruction::I64And => self.run_and::<i64>(context),
-			&Instruction::I64Or => self.run_or::<i64>(context),
-			&Instruction::I64Xor => self.run_xor::<i64>(context),
-			&Instruction::I64Shl => self.run_shl::<i64>(context, 0x3F),
-			&Instruction::I64ShrS => self.run_shr::<i64, i64>(context, 0x3F),
-			&Instruction::I64ShrU => self.run_shr::<i64, u64>(context, 0x3F),
-			&Instruction::I64Rotl => self.run_rotl::<i64>(context),
-			&Instruction::I64Rotr => self.run_rotr::<i64>(context),
+			&isa::Instruction::I32Clz => self.run_clz::<i32>(),
+			&isa::Instruction::I32Ctz => self.run_ctz::<i32>(),
+			&isa::Instruction::I32Popcnt => self.run_popcnt::<i32>(),
+			&isa::Instruction::I32Add => self.run_add::<i32>(),
+			&isa::Instruction::I32Sub => self.run_sub::<i32>(),
+			&isa::Instruction::I32Mul => self.run_mul::<i32>(),
+			&isa::Instruction::I32DivS => self.run_div::<i32, i32>(),
+			&isa::Instruction::I32DivU => self.run_div::<i32, u32>(),
+			&isa::Instruction::I32RemS => self.run_rem::<i32, i32>(),
+			&isa::Instruction::I32RemU => self.run_rem::<i32, u32>(),
+			&isa::Instruction::I32And => self.run_and::<i32>(),
+			&isa::Instruction::I32Or => self.run_or::<i32>(),
+			&isa::Instruction::I32Xor => self.run_xor::<i32>(),
+			&isa::Instruction::I32Shl => self.run_shl::<i32>(0x1F),
+			&isa::Instruction::I32ShrS => self.run_shr::<i32, i32>(0x1F),
+			&isa::Instruction::I32ShrU => self.run_shr::<i32, u32>(0x1F),
+			&isa::Instruction::I32Rotl => self.run_rotl::<i32>(),
+			&isa::Instruction::I32Rotr => self.run_rotr::<i32>(),
 
-			&Instruction::F32Abs => self.run_abs::<F32>(context),
-			&Instruction::F32Neg => self.run_neg::<F32>(context),
-			&Instruction::F32Ceil => self.run_ceil::<F32>(context),
-			&Instruction::F32Floor => self.run_floor::<F32>(context),
-			&Instruction::F32Trunc => self.run_trunc::<F32>(context),
-			&Instruction::F32Nearest => self.run_nearest::<F32>(context),
-			&Instruction::F32Sqrt => self.run_sqrt::<F32>(context),
-			&Instruction::F32Add => self.run_add::<F32>(context),
-			&Instruction::F32Sub => self.run_sub::<F32>(context),
-			&Instruction::F32Mul => self.run_mul::<F32>(context),
-			&Instruction::F32Div => self.run_div::<F32, F32>(context),
-			&Instruction::F32Min => self.run_min::<F32>(context),
-			&Instruction::F32Max => self.run_max::<F32>(context),
-			&Instruction::F32Copysign => self.run_copysign::<F32>(context),
+			&isa::Instruction::I64Clz => self.run_clz::<i64>(),
+			&isa::Instruction::I64Ctz => self.run_ctz::<i64>(),
+			&isa::Instruction::I64Popcnt => self.run_popcnt::<i64>(),
+			&isa::Instruction::I64Add => self.run_add::<i64>(),
+			&isa::Instruction::I64Sub => self.run_sub::<i64>(),
+			&isa::Instruction::I64Mul => self.run_mul::<i64>(),
+			&isa::Instruction::I64DivS => self.run_div::<i64, i64>(),
+			&isa::Instruction::I64DivU => self.run_div::<i64, u64>(),
+			&isa::Instruction::I64RemS => self.run_rem::<i64, i64>(),
+			&isa::Instruction::I64RemU => self.run_rem::<i64, u64>(),
+			&isa::Instruction::I64And => self.run_and::<i64>(),
+			&isa::Instruction::I64Or => self.run_or::<i64>(),
+			&isa::Instruction::I64Xor => self.run_xor::<i64>(),
+			&isa::Instruction::I64Shl => self.run_shl::<i64>(0x3F),
+			&isa::Instruction::I64ShrS => self.run_shr::<i64, i64>(0x3F),
+			&isa::Instruction::I64ShrU => self.run_shr::<i64, u64>(0x3F),
+			&isa::Instruction::I64Rotl => self.run_rotl::<i64>(),
+			&isa::Instruction::I64Rotr => self.run_rotr::<i64>(),
 
-			&Instruction::F64Abs => self.run_abs::<F64>(context),
-			&Instruction::F64Neg => self.run_neg::<F64>(context),
-			&Instruction::F64Ceil => self.run_ceil::<F64>(context),
-			&Instruction::F64Floor => self.run_floor::<F64>(context),
-			&Instruction::F64Trunc => self.run_trunc::<F64>(context),
-			&Instruction::F64Nearest => self.run_nearest::<F64>(context),
-			&Instruction::F64Sqrt => self.run_sqrt::<F64>(context),
-			&Instruction::F64Add => self.run_add::<F64>(context),
-			&Instruction::F64Sub => self.run_sub::<F64>(context),
-			&Instruction::F64Mul => self.run_mul::<F64>(context),
-			&Instruction::F64Div => self.run_div::<F64, F64>(context),
-			&Instruction::F64Min => self.run_min::<F64>(context),
-			&Instruction::F64Max => self.run_max::<F64>(context),
-			&Instruction::F64Copysign => self.run_copysign::<F64>(context),
+			&isa::Instruction::F32Abs => self.run_abs::<F32>(),
+			&isa::Instruction::F32Neg => self.run_neg::<F32>(),
+			&isa::Instruction::F32Ceil => self.run_ceil::<F32>(),
+			&isa::Instruction::F32Floor => self.run_floor::<F32>(),
+			&isa::Instruction::F32Trunc => self.run_trunc::<F32>(),
+			&isa::Instruction::F32Nearest => self.run_nearest::<F32>(),
+			&isa::Instruction::F32Sqrt => self.run_sqrt::<F32>(),
+			&isa::Instruction::F32Add => self.run_add::<F32>(),
+			&isa::Instruction::F32Sub => self.run_sub::<F32>(),
+			&isa::Instruction::F32Mul => self.run_mul::<F32>(),
+			&isa::Instruction::F32Div => self.run_div::<F32, F32>(),
+			&isa::Instruction::F32Min => self.run_min::<F32>(),
+			&isa::Instruction::F32Max => self.run_max::<F32>(),
+			&isa::Instruction::F32Copysign => self.run_copysign::<F32>(),
 
-			&Instruction::I32WrapI64 => self.run_wrap::<i64, i32>(context),
-			&Instruction::I32TruncSF32 => self.run_trunc_to_int::<F32, i32, i32>(context),
-			&Instruction::I32TruncUF32 => self.run_trunc_to_int::<F32, u32, i32>(context),
-			&Instruction::I32TruncSF64 => self.run_trunc_to_int::<F64, i32, i32>(context),
-			&Instruction::I32TruncUF64 => self.run_trunc_to_int::<F64, u32, i32>(context),
-			&Instruction::I64ExtendSI32 => self.run_extend::<i32, i64, i64>(context),
-			&Instruction::I64ExtendUI32 => self.run_extend::<u32, u64, i64>(context),
-			&Instruction::I64TruncSF32 => self.run_trunc_to_int::<F32, i64, i64>(context),
-			&Instruction::I64TruncUF32 => self.run_trunc_to_int::<F32, u64, i64>(context),
-			&Instruction::I64TruncSF64 => self.run_trunc_to_int::<F64, i64, i64>(context),
-			&Instruction::I64TruncUF64 => self.run_trunc_to_int::<F64, u64, i64>(context),
-			&Instruction::F32ConvertSI32 => self.run_extend::<i32, F32, F32>(context),
-			&Instruction::F32ConvertUI32 => self.run_extend::<u32, F32, F32>(context),
-			&Instruction::F32ConvertSI64 => self.run_wrap::<i64, F32>(context),
-			&Instruction::F32ConvertUI64 => self.run_wrap::<u64, F32>(context),
-			&Instruction::F32DemoteF64 => self.run_wrap::<F64, F32>(context),
-			&Instruction::F64ConvertSI32 => self.run_extend::<i32, F64, F64>(context),
-			&Instruction::F64ConvertUI32 => self.run_extend::<u32, F64, F64>(context),
-			&Instruction::F64ConvertSI64 => self.run_extend::<i64, F64, F64>(context),
-			&Instruction::F64ConvertUI64 => self.run_extend::<u64, F64, F64>(context),
-			&Instruction::F64PromoteF32 => self.run_extend::<F32, F64, F64>(context),
+			&isa::Instruction::F64Abs => self.run_abs::<F64>(),
+			&isa::Instruction::F64Neg => self.run_neg::<F64>(),
+			&isa::Instruction::F64Ceil => self.run_ceil::<F64>(),
+			&isa::Instruction::F64Floor => self.run_floor::<F64>(),
+			&isa::Instruction::F64Trunc => self.run_trunc::<F64>(),
+			&isa::Instruction::F64Nearest => self.run_nearest::<F64>(),
+			&isa::Instruction::F64Sqrt => self.run_sqrt::<F64>(),
+			&isa::Instruction::F64Add => self.run_add::<F64>(),
+			&isa::Instruction::F64Sub => self.run_sub::<F64>(),
+			&isa::Instruction::F64Mul => self.run_mul::<F64>(),
+			&isa::Instruction::F64Div => self.run_div::<F64, F64>(),
+			&isa::Instruction::F64Min => self.run_min::<F64>(),
+			&isa::Instruction::F64Max => self.run_max::<F64>(),
+			&isa::Instruction::F64Copysign => self.run_copysign::<F64>(),
 
-			&Instruction::I32ReinterpretF32 => self.run_reinterpret::<F32, i32>(context),
-			&Instruction::I64ReinterpretF64 => self.run_reinterpret::<F64, i64>(context),
-			&Instruction::F32ReinterpretI32 => self.run_reinterpret::<i32, F32>(context),
-			&Instruction::F64ReinterpretI64 => self.run_reinterpret::<i64, F64>(context),
+			&isa::Instruction::I32WrapI64 => self.run_wrap::<i64, i32>(),
+			&isa::Instruction::I32TruncSF32 => self.run_trunc_to_int::<F32, i32, i32>(),
+			&isa::Instruction::I32TruncUF32 => self.run_trunc_to_int::<F32, u32, i32>(),
+			&isa::Instruction::I32TruncSF64 => self.run_trunc_to_int::<F64, i32, i32>(),
+			&isa::Instruction::I32TruncUF64 => self.run_trunc_to_int::<F64, u32, i32>(),
+			&isa::Instruction::I64ExtendSI32 => self.run_extend::<i32, i64, i64>(),
+			&isa::Instruction::I64ExtendUI32 => self.run_extend::<u32, u64, i64>(),
+			&isa::Instruction::I64TruncSF32 => self.run_trunc_to_int::<F32, i64, i64>(),
+			&isa::Instruction::I64TruncUF32 => self.run_trunc_to_int::<F32, u64, i64>(),
+			&isa::Instruction::I64TruncSF64 => self.run_trunc_to_int::<F64, i64, i64>(),
+			&isa::Instruction::I64TruncUF64 => self.run_trunc_to_int::<F64, u64, i64>(),
+			&isa::Instruction::F32ConvertSI32 => self.run_extend::<i32, F32, F32>(),
+			&isa::Instruction::F32ConvertUI32 => self.run_extend::<u32, F32, F32>(),
+			&isa::Instruction::F32ConvertSI64 => self.run_wrap::<i64, F32>(),
+			&isa::Instruction::F32ConvertUI64 => self.run_wrap::<u64, F32>(),
+			&isa::Instruction::F32DemoteF64 => self.run_wrap::<F64, F32>(),
+			&isa::Instruction::F64ConvertSI32 => self.run_extend::<i32, F64, F64>(),
+			&isa::Instruction::F64ConvertUI32 => self.run_extend::<u32, F64, F64>(),
+			&isa::Instruction::F64ConvertSI64 => self.run_extend::<i64, F64, F64>(),
+			&isa::Instruction::F64ConvertUI64 => self.run_extend::<u64, F64, F64>(),
+			&isa::Instruction::F64PromoteF32 => self.run_extend::<F32, F64, F64>(),
+
+			&isa::Instruction::I32ReinterpretF32 => self.run_reinterpret::<F32, i32>(),
+			&isa::Instruction::I64ReinterpretF64 => self.run_reinterpret::<F64, i64>(),
+			&isa::Instruction::F32ReinterpretI32 => self.run_reinterpret::<i32, F32>(),
+			&isa::Instruction::F64ReinterpretI64 => self.run_reinterpret::<i64, F64>(),
 		}
 	}
 
@@ -367,72 +370,45 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Err(TrapKind::Unreachable)
 	}
 
-	fn run_nop(&mut self, _context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind> {
-		Ok(InstructionOutcome::RunNextInstruction)
+	fn run_br(&mut self, _context: &mut FunctionContext, target: isa::Target) -> Result<InstructionOutcome, TrapKind> {
+		Ok(InstructionOutcome::Branch(target))
 	}
 
-	fn run_block(&mut self, context: &mut FunctionContext, labels: &HashMap<usize, usize>, block_type: BlockType) -> Result<InstructionOutcome, TrapKind> {
-		context.push_frame(labels, BlockFrameType::Block, block_type)?;
-		Ok(InstructionOutcome::RunNextInstruction)
-	}
-
-	fn run_loop(&mut self, context: &mut FunctionContext, labels: &HashMap<usize, usize>, block_type: BlockType) -> Result<InstructionOutcome, TrapKind> {
-		context.push_frame(labels, BlockFrameType::Loop, block_type)?;
-		Ok(InstructionOutcome::RunNextInstruction)
-	}
-
-	fn run_if(&mut self, context: &mut FunctionContext, labels: &HashMap<usize, usize>, block_type: BlockType) -> Result<InstructionOutcome, TrapKind> {
-		let condition: bool = context
-			.value_stack_mut()
-			.pop_as();
-		let block_frame_type = if condition { BlockFrameType::IfTrue } else {
-			let else_pos = labels[&context.position];
-			if !labels.contains_key(&else_pos) {
-				context.position = else_pos;
-				return Ok(InstructionOutcome::RunNextInstruction);
-			}
-
-			context.position = else_pos;
-			BlockFrameType::IfFalse
-		};
-		context.push_frame(labels, block_frame_type, block_type)?;
-
-		Ok(InstructionOutcome::RunNextInstruction)
-	}
-
-	fn run_else(&mut self, context: &mut FunctionContext, labels: &HashMap<usize, usize>) -> Result<InstructionOutcome, TrapKind> {
-		let end_pos = labels[&context.position];
-		context.pop_frame(false)?;
-		context.position = end_pos;
-		Ok(InstructionOutcome::RunNextInstruction)
-	}
-
-	fn run_end(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind> {
-		context.pop_frame(false)?;
-		Ok(InstructionOutcome::End)
-	}
-
-	fn run_br(&mut self, _context: &mut FunctionContext, label_idx: u32) -> Result<InstructionOutcome, TrapKind> {
-		Ok(InstructionOutcome::Branch(label_idx as usize))
-	}
-
-	fn run_br_if(&mut self, context: &mut FunctionContext, label_idx: u32) -> Result<InstructionOutcome, TrapKind> {
-		let condition = context.value_stack_mut().pop_as();
+	fn run_br_nez(&mut self, target: isa::Target) -> Result<InstructionOutcome, TrapKind> {
+		let condition = self.value_stack.pop_as();
 		if condition {
-			Ok(InstructionOutcome::Branch(label_idx as usize))
+			Ok(InstructionOutcome::Branch(target))
 		} else {
 			Ok(InstructionOutcome::RunNextInstruction)
 		}
 	}
 
-	fn run_br_table(&mut self, context: &mut FunctionContext, table: &[u32], default: u32) -> Result<InstructionOutcome, TrapKind> {
-		let index: u32 = context.value_stack_mut()
-			.pop_as();
-		Ok(InstructionOutcome::Branch(table.get(index as usize).cloned().unwrap_or(default) as usize))
+	fn run_br_eqz(&mut self, target: isa::Target) -> Result<InstructionOutcome, TrapKind> {
+		let condition = self.value_stack.pop_as();
+		if condition {
+			Ok(InstructionOutcome::RunNextInstruction)
+		} else {
+
+			Ok(InstructionOutcome::Branch(target))
+		}
 	}
 
-	fn run_return(&mut self, _context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind> {
-		Ok(InstructionOutcome::Return)
+	fn run_br_table(&mut self, table: &[isa::Target]) -> Result<InstructionOutcome, TrapKind> {
+		let index: u32 = self.value_stack.pop_as();
+
+		let dst = if (index as usize) < table.len() - 1 {
+			table[index as usize].clone()
+		} else {
+			table
+				.last()
+				.expect("Due to validation there should be at least one label")
+				.clone()
+		};
+		Ok(InstructionOutcome::Branch(dst))
+	}
+
+	fn run_return(&mut self, drop_keep: isa::DropKeep) -> Result<InstructionOutcome, TrapKind> {
+		Ok(InstructionOutcome::Return(drop_keep))
 	}
 
 	fn run_call(
@@ -452,9 +428,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		context: &mut FunctionContext,
 		signature_idx: u32,
 	) -> Result<InstructionOutcome, TrapKind> {
-		let table_func_idx: u32 = context
-			.value_stack_mut()
-			.pop_as();
+		let table_func_idx: u32 = self.value_stack.pop_as();
 		let table = context
 			.module()
 			.table_by_index(DEFAULT_TABLE_INDEX)
@@ -478,46 +452,44 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::ExecuteCall(func_ref))
 	}
 
-	fn run_drop(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind> {
-		let _ = context
-			.value_stack_mut()
-			.pop();
+	fn run_drop(&mut self) -> Result<InstructionOutcome, TrapKind> {
+		let _ = self.value_stack.pop();
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_select(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind> {
-		let (left, mid, right) = context
-			.value_stack_mut()
+	fn run_select(&mut self) -> Result<InstructionOutcome, TrapKind> {
+		let (left, mid, right) = self
+			.value_stack
 			.pop_triple();
 
 		let condition = right
 			.try_into()
 			.expect("Due to validation stack top should be I32");
 		let val = if condition { left } else { mid };
-		context.value_stack_mut().push(val)?;
+		self.value_stack.push(val)?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_get_local(&mut self, context: &mut FunctionContext, index: u32) -> Result<InstructionOutcome, TrapKind> {
-		let val = context.get_local(index as usize);
-		context.value_stack_mut().push(val)?;
+	fn run_get_local(&mut self, index: u32) -> Result<InstructionOutcome, TrapKind> {
+		let val = *self.value_stack.pick_mut(index as usize);
+		self.value_stack.push(val)?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_set_local(&mut self, context: &mut FunctionContext, index: u32) -> Result<InstructionOutcome, TrapKind> {
-		let arg = context
-			.value_stack_mut()
+	fn run_set_local(&mut self, index: u32) -> Result<InstructionOutcome, TrapKind> {
+		let val = self
+			.value_stack
 			.pop();
-		context.set_local(index as usize, arg);
+		*self.value_stack.pick_mut(index as usize) = val;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_tee_local(&mut self, context: &mut FunctionContext, index: u32) -> Result<InstructionOutcome, TrapKind> {
-		let arg = context
-			.value_stack()
+	fn run_tee_local(&mut self, index: u32) -> Result<InstructionOutcome, TrapKind> {
+		let val = self
+			.value_stack
 			.top()
 			.clone();
-		context.set_local(index as usize, arg);
+		*self.value_stack.pick_mut(index as usize) = val;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
@@ -531,7 +503,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			.global_by_index(index)
 			.expect("Due to validation global should exists");
 		let val = global.get();
-		context.value_stack_mut().push(val)?;
+		self.value_stack.push(val)?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
@@ -540,8 +512,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		context: &mut FunctionContext,
 		index: u32,
 	) -> Result<InstructionOutcome, TrapKind> {
-		let val = context
-			.value_stack_mut()
+		let val = self
+			.value_stack
 			.pop();
 		let global = context
 			.module()
@@ -551,60 +523,60 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_load<T>(&mut self, context: &mut FunctionContext, _align: u32, offset: u32) -> Result<InstructionOutcome, TrapKind>
+	fn run_load<T>(&mut self, context: &mut FunctionContext, offset: u32) -> Result<InstructionOutcome, TrapKind>
 		where RuntimeValue: From<T>, T: LittleEndianConvert {
-		let raw_address = context
-			.value_stack_mut()
+		let raw_address = self
+			.value_stack
 			.pop_as();
 		let address =
 			effective_address(
 				offset,
 				raw_address,
 			)?;
-		let m = context.module()
-			.memory_by_index(DEFAULT_MEMORY_INDEX)
+		let m = context
+			.memory()
 			.expect("Due to validation memory should exists");
 		let b = m.get(address, mem::size_of::<T>())
 			.map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
 		let n = T::from_little_endian(&b)
 			.expect("Can't fail since buffer length should be size_of::<T>");
-		context.value_stack_mut().push(n.into())?;
+		self.value_stack.push(n.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_load_extend<T, U>(&mut self, context: &mut FunctionContext, _align: u32, offset: u32) -> Result<InstructionOutcome, TrapKind>
+	fn run_load_extend<T, U>(&mut self, context: &mut FunctionContext, offset: u32) -> Result<InstructionOutcome, TrapKind>
 		where T: ExtendInto<U>, RuntimeValue: From<U>, T: LittleEndianConvert {
-		let raw_address = context
-			.value_stack_mut()
+		let raw_address = self
+			.value_stack
 			.pop_as();
 		let address =
 			effective_address(
 				offset,
 				raw_address,
 			)?;
-		let m = context.module()
-			.memory_by_index(DEFAULT_MEMORY_INDEX)
+		let m = context
+			.memory()
 			.expect("Due to validation memory should exists");
 		let b = m.get(address, mem::size_of::<T>())
 			.map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
 		let v = T::from_little_endian(&b)
 			.expect("Can't fail since buffer length should be size_of::<T>");
 		let stack_value: U = v.extend_into();
-		context
-			.value_stack_mut()
+		self
+			.value_stack
 			.push(stack_value.into())
 			.map_err(Into::into)
 			.map(|_| InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_store<T>(&mut self, context: &mut FunctionContext, _align: u32, offset: u32) -> Result<InstructionOutcome, TrapKind>
+	fn run_store<T>(&mut self, context: &mut FunctionContext, offset: u32) -> Result<InstructionOutcome, TrapKind>
 		where T: FromRuntimeValue, T: LittleEndianConvert {
-		let stack_value = context
-			.value_stack_mut()
+		let stack_value = self
+			.value_stack
 			.pop_as::<T>()
 			.into_little_endian();
-		let raw_address = context
-			.value_stack_mut()
+		let raw_address = self
+			.value_stack
 			.pop_as::<u32>();
 		let address =
 			effective_address(
@@ -612,8 +584,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 				raw_address,
 			)?;
 
-		let m = context.module()
-			.memory_by_index(DEFAULT_MEMORY_INDEX)
+		let m = context
+			.memory()
 			.expect("Due to validation memory should exists");
 		m.set(address, &stack_value)
 			.map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
@@ -623,7 +595,6 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	fn run_store_wrap<T, U>(
 		&mut self,
 		context: &mut FunctionContext,
-		_align: u32,
 		offset: u32,
 	) -> Result<InstructionOutcome, TrapKind>
 	where
@@ -631,22 +602,22 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		T: WrapInto<U>,
 		U: LittleEndianConvert,
 	{
-		let stack_value: T = context
-			.value_stack_mut()
+		let stack_value: T = self
+			.value_stack
 			.pop()
 			.try_into()
 			.expect("Due to validation value should be of proper type");
 		let stack_value = stack_value.wrap_into().into_little_endian();
-		let raw_address = context
-			.value_stack_mut()
+		let raw_address = self
+			.value_stack
 			.pop_as::<u32>();
 		let address =
 			effective_address(
 				offset,
 				raw_address,
 			)?;
-		let m = context.module()
-			.memory_by_index(DEFAULT_MEMORY_INDEX)
+		let m = context
+			.memory()
 			.expect("Due to validation memory should exists");
 		m.set(address, &stack_value)
 			.map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
@@ -654,387 +625,371 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 	}
 
 	fn run_current_memory(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind> {
-		let m = context.module()
-			.memory_by_index(DEFAULT_MEMORY_INDEX)
+		let m = context
+			.memory()
 			.expect("Due to validation memory should exists");
 		let s = m.current_size().0;
-		context
-			.value_stack_mut()
+		self
+			.value_stack
 			.push(RuntimeValue::I32(s as i32))?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
 	fn run_grow_memory(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind> {
-		let pages: u32 = context
-			.value_stack_mut()
+		let pages: u32 = self
+			.value_stack
 			.pop_as();
-		let m = context.module()
-			.memory_by_index(DEFAULT_MEMORY_INDEX)
+		let m = context
+			.memory()
 			.expect("Due to validation memory should exists");
 		let m = match m.grow(Pages(pages as usize)) {
 			Ok(Pages(new_size)) => new_size as u32,
 			Err(_) => u32::MAX, // Returns -1 (or 0xFFFFFFFF) in case of error.
 		};
-		context
-			.value_stack_mut()
+		self
+			.value_stack
 			.push(RuntimeValue::I32(m as i32))?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_const(&mut self, context: &mut FunctionContext, val: RuntimeValue) -> Result<InstructionOutcome, TrapKind> {
-		context
-			.value_stack_mut()
+	fn run_const(&mut self, val: RuntimeValue) -> Result<InstructionOutcome, TrapKind> {
+		self
+			.value_stack
 			.push(val)
 			.map_err(Into::into)
 			.map(|_| InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_relop<T, F>(&mut self, context: &mut FunctionContext, f: F) -> Result<InstructionOutcome, TrapKind>
+	fn run_relop<T, F>(&mut self, f: F) -> Result<InstructionOutcome, TrapKind>
 	where
 		T: FromRuntimeValue,
 		F: FnOnce(T, T) -> bool,
 	{
-		let (left, right) = context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+		let (left, right) = self
+			.value_stack
+			.pop_pair_as::<T>();
 		let v = if f(left, right) {
 			RuntimeValue::I32(1)
 		} else {
 			RuntimeValue::I32(0)
 		};
-		context.value_stack_mut().push(v)?;
+		self.value_stack.push(v)?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_eqz<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_eqz<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 		where T: FromRuntimeValue, T: PartialEq<T> + Default {
-		let v = context
-			.value_stack_mut()
+		let v = self
+			.value_stack
 			.pop_as::<T>();
 		let v = RuntimeValue::I32(if v == Default::default() { 1 } else { 0 });
-		context.value_stack_mut().push(v)?;
+		self.value_stack.push(v)?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_eq<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_eq<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where T: FromRuntimeValue + PartialEq<T>
 	{
-		self.run_relop(context, |left: T, right: T| left == right)
+		self.run_relop(|left: T, right: T| left == right)
 	}
 
-	fn run_ne<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_ne<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 		where T: FromRuntimeValue + PartialEq<T> {
-		self.run_relop(context, |left: T, right: T| left != right)
+		self.run_relop(|left: T, right: T| left != right)
 	}
 
-	fn run_lt<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_lt<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 		where T: FromRuntimeValue + PartialOrd<T> {
-		self.run_relop(context, |left: T, right: T| left < right)
+		self.run_relop(|left: T, right: T| left < right)
 	}
 
-	fn run_gt<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_gt<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 		where T: FromRuntimeValue + PartialOrd<T> {
-		self.run_relop(context, |left: T, right: T| left > right)
+		self.run_relop(|left: T, right: T| left > right)
 	}
 
-	fn run_lte<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_lte<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 		where T: FromRuntimeValue + PartialOrd<T> {
-		self.run_relop(context, |left: T, right: T| left <= right)
+		self.run_relop(|left: T, right: T| left <= right)
 	}
 
-	fn run_gte<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_gte<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 		where T: FromRuntimeValue + PartialOrd<T> {
-		self.run_relop(context, |left: T, right: T| left >= right)
+		self.run_relop(|left: T, right: T| left >= right)
 	}
 
-	fn run_unop<T, U, F>(&mut self, context: &mut FunctionContext, f: F) -> Result<InstructionOutcome, TrapKind>
+	fn run_unop<T, U, F>(&mut self, f: F) -> Result<InstructionOutcome, TrapKind>
 	where
 		F: FnOnce(T) -> U,
 		T: FromRuntimeValue,
 		RuntimeValue: From<U>
 	{
-		let v = context
-			.value_stack_mut()
+		let v = self
+			.value_stack
 			.pop_as::<T>();
 		let v = f(v);
-		context.value_stack_mut().push(v.into())?;
+		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_clz<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_clz<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T>, T: Integer<T> + FromRuntimeValue {
-		self.run_unop(context, |v: T| v.leading_zeros())
+		self.run_unop(|v: T| v.leading_zeros())
 	}
 
-	fn run_ctz<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_ctz<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T>, T: Integer<T> + FromRuntimeValue {
-		self.run_unop(context, |v: T| v.trailing_zeros())
+		self.run_unop(|v: T| v.trailing_zeros())
 	}
 
-	fn run_popcnt<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_popcnt<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T>, T: Integer<T> + FromRuntimeValue {
-		self.run_unop(context, |v: T| v.count_ones())
+		self.run_unop(|v: T| v.count_ones())
 	}
 
-	fn run_add<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_add<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 		where RuntimeValue: From<T>, T: ArithmeticOps<T> + FromRuntimeValue {
-		let (left, right) = context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+		let (left, right) = self
+			.value_stack
+			.pop_pair_as::<T>();
 		let v = left.add(right);
-		context.value_stack_mut().push(v.into())?;
+		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_sub<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_sub<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 		where RuntimeValue: From<T>, T: ArithmeticOps<T> + FromRuntimeValue {
-		let (left, right) = context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+		let (left, right) = self
+			.value_stack
+			.pop_pair_as::<T>();
 		let v = left.sub(right);
-		context.value_stack_mut().push(v.into())?;
+		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_mul<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_mul<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T>, T: ArithmeticOps<T> + FromRuntimeValue {
-		let (left, right) = context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+		let (left, right) = self
+			.value_stack
+			.pop_pair_as::<T>();
 		let v = left.mul(right);
-		context.value_stack_mut().push(v.into())?;
+		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_div<T, U>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_div<T, U>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T>, T: TransmuteInto<U> + FromRuntimeValue, U: ArithmeticOps<U> + TransmuteInto<T> {
-		let (left, right) = context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+		let (left, right) = self
+			.value_stack
+			.pop_pair_as::<T>();
 		let (left, right) = (left.transmute_into(), right.transmute_into());
 		let v = left.div(right)?;
 		let v = v.transmute_into();
-		context.value_stack_mut().push(v.into())?;
+		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_rem<T, U>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_rem<T, U>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T>, T: TransmuteInto<U> + FromRuntimeValue, U: Integer<U> + TransmuteInto<T> {
-		let (left, right) = context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+		let (left, right) = self
+			.value_stack
+			.pop_pair_as::<T>();
 		let (left, right) = (left.transmute_into(), right.transmute_into());
 		let v = left.rem(right)?;
 		let v = v.transmute_into();
-		context.value_stack_mut().push(v.into())?;
+		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_and<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_and<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<<T as ops::BitAnd>::Output>, T: ops::BitAnd<T> + FromRuntimeValue {
-		let (left, right) = context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+		let (left, right) = self
+			.value_stack
+			.pop_pair_as::<T>();
 		let v = left.bitand(right);
-		context.value_stack_mut().push(v.into())?;
+		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_or<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_or<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<<T as ops::BitOr>::Output>, T: ops::BitOr<T> + FromRuntimeValue {
-		let (left, right) = context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+		let (left, right) = self
+			.value_stack
+			.pop_pair_as::<T>();
 		let v = left.bitor(right);
-		context.value_stack_mut().push(v.into())?;
+		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_xor<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_xor<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<<T as ops::BitXor>::Output>, T: ops::BitXor<T> + FromRuntimeValue {
-		let (left, right) = context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+		let (left, right) = self
+			.value_stack
+			.pop_pair_as::<T>();
 		let v = left.bitxor(right);
-		context.value_stack_mut().push(v.into())?;
+		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_shl<T>(&mut self, context: &mut FunctionContext, mask: T) -> Result<InstructionOutcome, TrapKind>
+	fn run_shl<T>(&mut self, mask: T) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<<T as ops::Shl<T>>::Output>, T: ops::Shl<T> + ops::BitAnd<T, Output=T> + FromRuntimeValue {
-		let (left, right) = context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+		let (left, right) = self
+			.value_stack
+			.pop_pair_as::<T>();
 		let v = left.shl(right & mask);
-		context.value_stack_mut().push(v.into())?;
+		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_shr<T, U>(&mut self, context: &mut FunctionContext, mask: U) -> Result<InstructionOutcome, TrapKind>
+	fn run_shr<T, U>(&mut self, mask: U) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T>, T: TransmuteInto<U> + FromRuntimeValue, U: ops::Shr<U> + ops::BitAnd<U, Output=U>, <U as ops::Shr<U>>::Output: TransmuteInto<T> {
-		let (left, right) = context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+		let (left, right) = self
+			.value_stack
+			.pop_pair_as::<T>();
 		let (left, right) = (left.transmute_into(), right.transmute_into());
 		let v = left.shr(right & mask);
 		let v = v.transmute_into();
-		context.value_stack_mut().push(v.into())?;
+		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_rotl<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_rotl<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T>, T: Integer<T> + FromRuntimeValue {
-		let (left, right) = context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+		let (left, right) = self
+			.value_stack
+			.pop_pair_as::<T>();
 		let v = left.rotl(right);
-		context.value_stack_mut().push(v.into())?;
+		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_rotr<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_rotr<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T>, T: Integer<T> + FromRuntimeValue
 	{
-		let (left, right) = context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+		let (left, right) = self
+			.value_stack
+			.pop_pair_as::<T>();
 		let v = left.rotr(right);
-		context.value_stack_mut().push(v.into())?;
+		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_abs<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_abs<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T>, T: Float<T> + FromRuntimeValue
 	{
-		self.run_unop(context, |v: T| v.abs())
+		self.run_unop(|v: T| v.abs())
 	}
 
-	fn run_neg<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_neg<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where
 		RuntimeValue: From<<T as ops::Neg>::Output>,
 		T: ops::Neg + FromRuntimeValue
 	{
-		self.run_unop(context, |v: T| v.neg())
+		self.run_unop(|v: T| v.neg())
 	}
 
-	fn run_ceil<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_ceil<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T>, T: Float<T> + FromRuntimeValue
 	{
-		self.run_unop(context, |v: T| v.ceil())
+		self.run_unop(|v: T| v.ceil())
 	}
 
-	fn run_floor<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_floor<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T>, T: Float<T> + FromRuntimeValue
 	{
-		self.run_unop(context, |v: T| v.floor())
+		self.run_unop(|v: T| v.floor())
 	}
 
-	fn run_trunc<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_trunc<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T>, T: Float<T> + FromRuntimeValue
 	{
-		self.run_unop(context, |v: T| v.trunc())
+		self.run_unop(|v: T| v.trunc())
 	}
 
-	fn run_nearest<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_nearest<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T>, T: Float<T> + FromRuntimeValue
 	{
-		self.run_unop(context, |v: T| v.nearest())
+		self.run_unop(|v: T| v.nearest())
 	}
 
-	fn run_sqrt<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_sqrt<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T>, T: Float<T> + FromRuntimeValue
 	{
-		self.run_unop(context, |v: T| v.sqrt())
+		self.run_unop(|v: T| v.sqrt())
 	}
 
-	fn run_min<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_min<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T>, T: Float<T> + FromRuntimeValue
 	{
-		let (left, right) = context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+		let (left, right) = self
+			.value_stack
+			.pop_pair_as::<T>();
 		let v = left.min(right);
-		context.value_stack_mut().push(v.into())?;
+		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_max<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_max<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T>, T: Float<T> + FromRuntimeValue {
-		let (left, right) = context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+		let (left, right) = self
+			.value_stack
+			.pop_pair_as::<T>();
 		let v = left.max(right);
-		context.value_stack_mut().push(v.into())?;
+		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_copysign<T>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_copysign<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<T>, T: Float<T> + FromRuntimeValue {
-		let (left, right) = context
-			.value_stack_mut()
-			.pop_pair_as::<T>()
-			.expect("Due to validation stack should contain pair of values");
+		let (left, right) = self
+			.value_stack
+			.pop_pair_as::<T>();
 		let v = left.copysign(right);
-		context.value_stack_mut().push(v.into())?;
+		self.value_stack.push(v.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_wrap<T, U>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_wrap<T, U>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where RuntimeValue: From<U>, T: WrapInto<U> + FromRuntimeValue {
-		self.run_unop(context, |v: T| v.wrap_into())
+		self.run_unop(|v: T| v.wrap_into())
 	}
 
-	fn run_trunc_to_int<T, U, V>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_trunc_to_int<T, U, V>(&mut self) -> Result<InstructionOutcome, TrapKind>
 		where RuntimeValue: From<V>, T: TryTruncateInto<U, TrapKind> + FromRuntimeValue, U: TransmuteInto<V>,  {
-		let v = context
-			.value_stack_mut()
+		let v = self
+			.value_stack
 			.pop_as::<T>();
 
 		v.try_truncate_into()
 			.map(|v| v.transmute_into())
-			.map(|v| context.value_stack_mut().push(v.into()))
+			.map(|v| self.value_stack.push(v.into()))
 			.map(|_| InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_extend<T, U, V>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_extend<T, U, V>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where
 		RuntimeValue: From<V>, T: ExtendInto<U> + FromRuntimeValue, U: TransmuteInto<V>
 	{
-		let v = context
-			.value_stack_mut()
+		let v = self
+			.value_stack
 			.pop_as::<T>();
 
 		let v = v.extend_into().transmute_into();
-		context.value_stack_mut().push(v.into())?;
+		self.value_stack.push(v.into())?;
 
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_reinterpret<T, U>(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind>
+	fn run_reinterpret<T, U>(&mut self) -> Result<InstructionOutcome, TrapKind>
 	where
 		RuntimeValue: From<U>, T: FromRuntimeValue, T: TransmuteInto<U>
 	{
-		let v = context
-			.value_stack_mut()
+		let v = self
+			.value_stack
 			.pop_as::<T>();
 
 		let v = v.transmute_into();
-		context.value_stack_mut().push(v.into())?;
+		self.value_stack.push(v.into())?;
 
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
@@ -1047,157 +1002,56 @@ struct FunctionContext {
 	/// Internal function reference.
 	pub function: FuncRef,
 	pub module: ModuleRef,
-	/// Function return type.
-	pub return_type: BlockType,
-	/// Local variables.
-	pub locals: Vec<RuntimeValue>,
-	/// Values stack.
-	pub value_stack: ValueStack,
-	/// Blocks frames stack.
-	pub frame_stack: StackWithLimit<BlockFrame>,
+	pub memory: Option<MemoryRef>,
 	/// Current instruction position.
 	pub position: usize,
 }
 
 impl FunctionContext {
-	pub fn new(function: FuncRef, value_stack_limit: usize, frame_stack_limit: usize, signature: &Signature, args: Vec<RuntimeValue>) -> Self {
+	pub fn new(function: FuncRef) -> Self {
 		let module = match *function.as_internal() {
 			FuncInstanceInternal::Internal { ref module, .. } => module.upgrade().expect("module deallocated"),
 			FuncInstanceInternal::Host { .. } => panic!("Host functions can't be called as internally defined functions; Thus FunctionContext can be created only with internally defined functions; qed"),
 		};
+		let memory = module.memory_by_index(DEFAULT_MEMORY_INDEX);
 		FunctionContext {
 			is_initialized: false,
 			function: function,
 			module: ModuleRef(module),
-			return_type: signature.return_type().map(|vt| BlockType::Value(vt.into_elements())).unwrap_or(BlockType::NoResult),
-			value_stack: ValueStack::with_limit(value_stack_limit),
-			frame_stack: StackWithLimit::with_limit(frame_stack_limit),
-			locals: args,
+			memory: memory,
 			position: 0,
 		}
-	}
-
-	pub fn nested(&mut self, function: FuncRef) -> Result<Self, TrapKind> {
-		let (function_locals, module, function_return_type) = {
-			let module = match *function.as_internal() {
-				FuncInstanceInternal::Internal { ref module, .. } => module.upgrade().expect("module deallocated"),
-				FuncInstanceInternal::Host { .. } => panic!("Host functions can't be called as internally defined functions; Thus FunctionContext can be created only with internally defined functions; qed"),
-			};
-			let function_type = function.signature();
-			let function_return_type = function_type.return_type().map(|vt| BlockType::Value(vt.into_elements())).unwrap_or(BlockType::NoResult);
-			let function_locals = prepare_function_args(function_type, &mut self.value_stack);
-			(function_locals, module, function_return_type)
-		};
-
-		Ok(FunctionContext {
-			is_initialized: false,
-			function: function,
-			module: ModuleRef(module),
-			return_type: function_return_type,
-			value_stack: ValueStack::with_limit(self.value_stack.limit() - self.value_stack.len()),
-			frame_stack: StackWithLimit::with_limit(self.frame_stack.limit() - self.frame_stack.len()),
-			locals: function_locals,
-			position: 0,
-		})
 	}
 
 	pub fn is_initialized(&self) -> bool {
 		self.is_initialized
 	}
 
-	pub fn initialize(&mut self, locals: &[Local]) {
+	pub fn initialize(&mut self, locals: &[Local], value_stack: &mut ValueStack) -> Result<(), TrapKind> {
 		debug_assert!(!self.is_initialized);
-		self.is_initialized = true;
 
 		let locals = locals.iter()
 			.flat_map(|l| repeat(l.value_type()).take(l.count() as usize))
 			.map(::types::ValueType::from_elements)
 			.map(RuntimeValue::default)
 			.collect::<Vec<_>>();
-		self.locals.extend(locals);
+
+		// TODO: Replace with extend.
+		for local in locals {
+			value_stack.push(local)
+				.map_err(|_| TrapKind::StackOverflow)?;
+		}
+
+		self.is_initialized = true;
+		Ok(())
 	}
 
 	pub fn module(&self) -> ModuleRef {
 		self.module.clone()
 	}
 
-	pub fn set_local(&mut self, index: usize, value: RuntimeValue) {
-		let l = self.locals.get_mut(index).expect("Due to validation local should exists");
-		*l = value;
-	}
-
-	pub fn get_local(&mut self, index: usize) -> RuntimeValue {
-		self.locals.get(index)
-			.cloned()
-			.expect("Due to validation local should exists")
-	}
-
-	pub fn value_stack(&self) -> &ValueStack {
-		&self.value_stack
-	}
-
-	pub fn value_stack_mut(&mut self) -> &mut ValueStack {
-		&mut self.value_stack
-	}
-
-	pub fn frame_stack(&self) -> &StackWithLimit<BlockFrame> {
-		&self.frame_stack
-	}
-
-	pub fn push_frame(&mut self, labels: &HashMap<usize, usize>, frame_type: BlockFrameType, block_type: BlockType) -> Result<(), TrapKind> {
-		let begin_position = self.position;
-		let branch_position = match frame_type {
-			BlockFrameType::Function => usize::MAX,
-			BlockFrameType::Loop => begin_position,
-			BlockFrameType::IfTrue => {
-				let else_pos = labels[&begin_position];
-				1usize + match labels.get(&else_pos) {
-					Some(end_pos) => *end_pos,
-					None => else_pos,
-				}
-			},
-			_ => labels[&begin_position] + 1,
-		};
-		let end_position = match frame_type {
-			BlockFrameType::Function => usize::MAX,
-			_ => labels[&begin_position] + 1,
-		};
-
-		self.frame_stack.push(BlockFrame {
-			frame_type: frame_type,
-			block_type: block_type,
-			begin_position: begin_position,
-			branch_position: branch_position,
-			end_position: end_position,
-			value_stack_len: self.value_stack.len(),
-			polymorphic_stack: false,
-		}).map_err(|_| TrapKind::StackOverflow)?;
-
-		Ok(())
-	}
-
-	pub fn discard_frame(&mut self) {
-		let _ = self.frame_stack.pop().expect("Due to validation frame stack shouldn't be empty");
-	}
-
-	pub fn pop_frame(&mut self, is_branch: bool) -> Result<(), TrapKind> {
-		let frame = self.frame_stack
-			.pop()
-			.expect("Due to validation frame stack shouldn't be empty");
-		assert!(frame.value_stack_len <= self.value_stack.len(), "invalid stack len");
-
-		let frame_value = match frame.block_type {
-			BlockType::Value(_) if frame.frame_type != BlockFrameType::Loop || !is_branch =>
-				Some(self.value_stack.pop()),
-			_ => None,
-		};
-		self.value_stack.resize(frame.value_stack_len);
-		self.position = if is_branch { frame.branch_position } else { frame.end_position };
-		if let Some(frame_value) = frame_value {
-			self.value_stack.push(frame_value)?;
-		}
-
-		Ok(())
+	pub fn memory(&self) -> Option<&MemoryRef> {
+		self.memory.as_ref()
 	}
 }
 
@@ -1252,65 +1106,92 @@ pub fn check_function_args(signature: &Signature, args: &[RuntimeValue]) -> Resu
 	Ok(())
 }
 
+#[derive(Debug)]
 struct ValueStack {
-	stack_with_limit: StackWithLimit<RuntimeValue>,
+	buf: Box<[RuntimeValue]>,
+	/// Index of the first free place in the stack.
+	sp: usize,
 }
 
 impl ValueStack {
 	fn with_limit(limit: usize) -> ValueStack {
+		let mut buf = Vec::new();
+		buf.resize(limit, RuntimeValue::I32(0));
+
 		ValueStack {
-			stack_with_limit: StackWithLimit::with_limit(limit),
+			buf: buf.into_boxed_slice(),
+			sp: 0,
 		}
 	}
 
+	#[inline]
+	fn drop_keep(&mut self, drop_keep: isa::DropKeep) {
+		if drop_keep.keep == isa::Keep::Single {
+			let top = *self.top();
+			*self.pick_mut(drop_keep.drop as usize + 1) = top;
+		}
+
+		let cur_stack_len = self.len();
+		self.sp = cur_stack_len - drop_keep.drop as usize;
+	}
+
+	#[inline]
 	fn pop_as<T>(&mut self) -> T
 	where
 		T: FromRuntimeValue,
 	{
-		let value = self.stack_with_limit
-			.pop()
-			.expect("Due to validation stack shouldn't be empty");
+		let value = self.pop();
 		value.try_into().expect("Due to validation stack top's type should match")
 	}
 
-	fn pop_pair_as<T>(&mut self) -> Result<(T, T), Error>
+	#[inline]
+	fn pop_pair_as<T>(&mut self) -> (T, T)
 	where
 		T: FromRuntimeValue,
 	{
 		let right = self.pop_as();
 		let left = self.pop_as();
-		Ok((left, right))
+		(left, right)
 	}
 
+	#[inline]
 	fn pop_triple(&mut self) -> (RuntimeValue, RuntimeValue, RuntimeValue) {
-		let right = self.stack_with_limit.pop().expect("Due to validation stack shouldn't be empty");
-		let mid = self.stack_with_limit.pop().expect("Due to validation stack shouldn't be empty");
-		let left = self.stack_with_limit.pop().expect("Due to validation stack shouldn't be empty");
+		let right = self.pop();
+		let mid = self.pop();
+		let left = self.pop();
 		(left, mid, right)
 	}
 
-	fn pop(&mut self) -> RuntimeValue {
-		self.stack_with_limit.pop().expect("Due to validation stack shouldn't be empty")
-	}
-
-	fn push(&mut self, value: RuntimeValue) -> Result<(), TrapKind> {
-		self.stack_with_limit.push(value)
-			.map_err(|_| TrapKind::StackOverflow)
-	}
-
-	fn resize(&mut self, new_len: usize) {
-		self.stack_with_limit.resize(new_len, RuntimeValue::I32(0));
-	}
-
-	fn len(&self) -> usize {
-		self.stack_with_limit.len()
-	}
-
-	fn limit(&self) -> usize {
-		self.stack_with_limit.limit()
-	}
-
+	#[inline]
 	fn top(&self) -> &RuntimeValue {
-		self.stack_with_limit.top().expect("Due to validation stack shouldn't be empty")
+		self.pick(1)
+	}
+
+	fn pick(&self, depth: usize) -> &RuntimeValue {
+		&self.buf[self.sp - depth]
+	}
+
+	#[inline]
+	fn pick_mut(&mut self, depth: usize) -> &mut RuntimeValue {
+		&mut self.buf[self.sp - depth]
+	}
+
+	#[inline]
+	fn pop(&mut self) -> RuntimeValue {
+		self.sp -= 1;
+		self.buf[self.sp]
+	}
+
+	#[inline]
+	fn push(&mut self, value: RuntimeValue) -> Result<(), TrapKind> {
+		let cell = self.buf.get_mut(self.sp).ok_or_else(|| TrapKind::StackOverflow)?;
+		*cell = value;
+		self.sp += 1;
+		Ok(())
+	}
+
+	#[inline]
+	fn len(&self) -> usize {
+		self.sp
 	}
 }
