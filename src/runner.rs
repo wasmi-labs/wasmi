@@ -48,14 +48,17 @@ enum RunResult {
 pub struct Interpreter<'a, E: Externals + 'a> {
 	externals: &'a mut E,
 	value_stack: ValueStack,
+	call_stack: Vec<FunctionContext>,
 }
 
 impl<'a, E: Externals> Interpreter<'a, E> {
 	pub fn new(externals: &'a mut E) -> Interpreter<'a, E> {
 		let value_stack = ValueStack::with_limit(DEFAULT_VALUE_STACK_LIMIT);
+		let call_stack = Vec::new();
 		Interpreter {
 			externals,
 			value_stack,
+			call_stack,
 		}
 	}
 
@@ -72,10 +75,8 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 
 		let initial_frame = FunctionContext::new(func.clone());
 
-		let mut call_stack = Vec::new();
-		call_stack.push(initial_frame);
-
-		self.run_interpreter_loop(&mut call_stack)?;
+		self.call_stack.push(initial_frame);
+		self.run_interpreter_loop()?;
 
 		let opt_return_value = func.signature().return_type().map(|_vt| {
 			self.value_stack.pop()
@@ -87,9 +88,9 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(opt_return_value)
 	}
 
-	fn run_interpreter_loop(&mut self, call_stack: &mut Vec<FunctionContext>) -> Result<(), Trap> {
+	fn run_interpreter_loop(&mut self) -> Result<(), Trap> {
 		loop {
-			let mut function_context = call_stack
+			let mut function_context = self.call_stack
 				.pop()
 				.expect("on loop entry - not empty; on loop continue - checking for emptiness; qed");
 			let function_ref = function_context.function.clone();
@@ -112,22 +113,22 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 
 			match function_return {
 				RunResult::Return => {
-					if call_stack.last().is_none() {
+					if self.call_stack.last().is_none() {
 						// This was the last frame in the call stack. This means we
 						// are done executing.
 						return Ok(());
 					}
 				},
 				RunResult::NestedCall(nested_func) => {
-					if call_stack.len() + 1 >= DEFAULT_CALL_STACK_LIMIT {
+					if self.call_stack.len() + 1 >= DEFAULT_CALL_STACK_LIMIT {
 						return Err(TrapKind::StackOverflow.into());
 					}
 
 					match *nested_func.as_internal() {
 						FuncInstanceInternal::Internal { .. } => {
 							let nested_context = FunctionContext::new(nested_func.clone());
-							call_stack.push(function_context);
-							call_stack.push(nested_context);
+							self.call_stack.push(function_context);
+							self.call_stack.push(nested_context);
 						},
 						FuncInstanceInternal::Host { ref signature, .. } => {
 							let args = prepare_function_args(signature, &mut self.value_stack);
@@ -143,7 +144,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 							if let Some(return_val) = return_val {
 								self.value_stack.push(return_val).map_err(Trap::new)?;
 							}
-							call_stack.push(function_context);
+							self.call_stack.push(function_context);
 						}
 					}
 				},
