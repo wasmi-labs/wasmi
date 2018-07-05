@@ -45,12 +45,24 @@ enum RunResult {
 	NestedCall(FuncRef),
 }
 
+/// Function execution state, related to pause and resume.
+enum RunState {
+	/// The interpreter has been created, but has not been executed.
+	Initialized,
+	/// The interpreter has started execution, and cannot be called again if it exits normally, or no Host traps happened.
+	Started,
+	/// The interpreter has been executed, and returned a Host trap. It can resume execution by providing back a return
+	/// value.
+	Resumable(Option<ValueType>),
+}
+
 /// Function interpreter.
 pub struct Interpreter<'a, E: Externals + 'a> {
 	externals: &'a mut E,
 	value_stack: ValueStack,
 	call_stack: Vec<FunctionContext>,
 	return_type: Option<ValueType>,
+	state: RunState,
 }
 
 impl<'a, E: Externals> Interpreter<'a, E> {
@@ -77,10 +89,12 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			value_stack,
 			call_stack,
 			return_type,
+			state: RunState::Initialized,
 		})
 	}
 
 	pub fn start_execution(&mut self) -> Result<Option<RuntimeValue>, Trap> {
+		self.state = RunState::Started;
 		self.run_interpreter_loop()?;
 
 		let opt_return_value = self.return_type.map(|_vt| {
@@ -137,7 +151,15 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 						},
 						FuncInstanceInternal::Host { ref signature, .. } => {
 							let args = prepare_function_args(signature, &mut self.value_stack);
-							let return_val = FuncInstance::invoke(&nested_func, &args, self.externals)?;
+							let return_val = match FuncInstance::invoke(&nested_func, &args, self.externals) {
+								Ok(val) => val,
+								Err(trap) => {
+									if trap.kind().is_host() {
+										self.state = RunState::Resumable(nested_func.signature().return_type());
+									}
+									return Err(trap);
+								},
+							};
 
 							// Check if `return_val` matches the signature.
 							let value_ty = return_val.as_ref().map(|val| val.value_type());

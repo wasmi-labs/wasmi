@@ -221,6 +221,16 @@ pub enum TrapKind {
 	Host(Box<host::HostError>),
 }
 
+impl TrapKind {
+	/// Whether this trap is specified by the host.
+	pub fn is_host(&self) -> bool {
+		match self {
+			&TrapKind::Host(_) => true,
+			_ => false,
+		}
+	}
+}
+
 /// Internal interpreter error.
 #[derive(Debug)]
 pub enum Error {
