@@ -144,8 +144,8 @@ impl FuncInstance {
 		check_function_args(func.signature(), &args).map_err(|_| TrapKind::UnexpectedSignature)?;
 		match *func.as_internal() {
 			FuncInstanceInternal::Internal { .. } => {
-				let mut interpreter = Interpreter::new(externals);
-				interpreter.start_execution(func, args)
+				let mut interpreter = Interpreter::new(func, args, externals)?;
+				interpreter.start_execution()
 			}
 			FuncInstanceInternal::Host {
 				ref host_func_index,

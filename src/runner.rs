@@ -14,6 +14,7 @@ use value::{
 };
 use host::Externals;
 use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
+use types::ValueType;
 use memory_units::Pages;
 use nan_preserving_float::{F32, F64};
 use isa;
@@ -49,22 +50,14 @@ pub struct Interpreter<'a, E: Externals + 'a> {
 	externals: &'a mut E,
 	value_stack: ValueStack,
 	call_stack: Vec<FunctionContext>,
+	return_type: Option<ValueType>,
 }
 
 impl<'a, E: Externals> Interpreter<'a, E> {
-	pub fn new(externals: &'a mut E) -> Interpreter<'a, E> {
-		let value_stack = ValueStack::with_limit(DEFAULT_VALUE_STACK_LIMIT);
-		let call_stack = Vec::new();
-		Interpreter {
-			externals,
-			value_stack,
-			call_stack,
-		}
-	}
-
-	pub fn start_execution(&mut self, func: &FuncRef, args: &[RuntimeValue]) -> Result<Option<RuntimeValue>, Trap> {
+	pub fn new(func: &FuncRef, args: &[RuntimeValue], externals: &'a mut E) -> Result<Interpreter<'a, E>, Trap> {
+		let mut value_stack = ValueStack::with_limit(DEFAULT_VALUE_STACK_LIMIT);
 		for arg in args {
-			self.value_stack
+			value_stack
 				.push(*arg)
 				.map_err(
 					// There is not enough space for pushing initial arguments.
@@ -73,12 +66,24 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 				)?;
 		}
 
+		let mut call_stack = Vec::new();
 		let initial_frame = FunctionContext::new(func.clone());
+		call_stack.push(initial_frame);
 
-		self.call_stack.push(initial_frame);
+		let return_type = func.signature().return_type();
+
+		Ok(Interpreter {
+			externals,
+			value_stack,
+			call_stack,
+			return_type,
+		})
+	}
+
+	pub fn start_execution(&mut self) -> Result<Option<RuntimeValue>, Trap> {
 		self.run_interpreter_loop()?;
 
-		let opt_return_value = func.signature().return_type().map(|_vt| {
+		let opt_return_value = self.return_type.map(|_vt| {
 			self.value_stack.pop()
 		});
 
