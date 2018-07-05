@@ -37,16 +37,9 @@ pub enum InstructionOutcome {
 	Return(isa::DropKeep),
 }
 
-/// Function run result.
-enum RunResult {
-	/// Function has returned.
-	Return,
-	/// Function is calling other function.
-	NestedCall(FuncRef),
-}
-
+#[derive(PartialEq, Eq)]
 /// Function execution state, related to pause and resume.
-enum RunState {
+pub enum InterpreterState {
 	/// The interpreter has been created, but has not been executed.
 	Initialized,
 	/// The interpreter has started execution, and cannot be called again if it exits normally, or no Host traps happened.
@@ -56,13 +49,30 @@ enum RunState {
 	Resumable(Option<ValueType>),
 }
 
+impl InterpreterState {
+	pub fn is_resumable(&self) -> bool {
+		match self {
+			&InterpreterState::Resumable(_) => true,
+			_ => false,
+		}
+	}
+}
+
+/// Function run result.
+enum RunResult {
+	/// Function has returned.
+	Return,
+	/// Function is calling other function.
+	NestedCall(FuncRef),
+}
+
 /// Function interpreter.
 pub struct Interpreter<'a, E: Externals + 'a> {
 	externals: &'a mut E,
 	value_stack: ValueStack,
 	call_stack: Vec<FunctionContext>,
 	return_type: Option<ValueType>,
-	state: RunState,
+	state: InterpreterState,
 }
 
 impl<'a, E: Externals> Interpreter<'a, E> {
@@ -89,12 +99,49 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			value_stack,
 			call_stack,
 			return_type,
-			state: RunState::Initialized,
+			state: InterpreterState::Initialized,
 		})
 	}
 
 	pub fn start_execution(&mut self) -> Result<Option<RuntimeValue>, Trap> {
-		self.state = RunState::Started;
+		// Ensure that the VM has not been executed.
+		assert!(self.state == InterpreterState::Initialized);
+
+		self.state = InterpreterState::Started;
+		self.run_interpreter_loop()?;
+
+		let opt_return_value = self.return_type.map(|_vt| {
+			self.value_stack.pop()
+		});
+
+		// Ensure that stack is empty after the execution.
+		assert!(self.value_stack.len() == 0);
+
+		Ok(opt_return_value)
+	}
+
+	pub fn resume_execution(&mut self, return_val: Option<RuntimeValue>) -> Result<Option<RuntimeValue>, Trap> {
+		use std::mem::swap;
+
+		// Ensure that the VM is resumable.
+		assert!(self.state.is_resumable());
+
+		let mut resumable_state = InterpreterState::Started;
+		swap(&mut self.state, &mut resumable_state);
+		let expected_ty = match resumable_state {
+			InterpreterState::Resumable(ty) => ty,
+			_ => unreachable!("Resumable arm is checked above is_resumable; qed"),
+		};
+
+		let value_ty = return_val.as_ref().map(|val| val.value_type());
+		if value_ty != expected_ty {
+			return Err(TrapKind::UnexpectedSignature.into());
+		}
+
+		if let Some(return_val) = return_val {
+			self.value_stack.push(return_val).map_err(Trap::new)?;
+		}
+
 		self.run_interpreter_loop()?;
 
 		let opt_return_value = self.return_type.map(|_vt| {
@@ -151,11 +198,14 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 						},
 						FuncInstanceInternal::Host { ref signature, .. } => {
 							let args = prepare_function_args(signature, &mut self.value_stack);
+							// We push the function context first. If the VM is not resumable, it does no harm. If it is, we then save the context here.
+							self.call_stack.push(function_context);
+
 							let return_val = match FuncInstance::invoke(&nested_func, &args, self.externals) {
 								Ok(val) => val,
 								Err(trap) => {
 									if trap.kind().is_host() {
-										self.state = RunState::Resumable(nested_func.signature().return_type());
+										self.state = InterpreterState::Resumable(nested_func.signature().return_type());
 									}
 									return Err(trap);
 								},
@@ -171,7 +221,6 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 							if let Some(return_val) = return_val {
 								self.value_stack.push(return_val).map_err(Trap::new)?;
 							}
-							self.call_stack.push(function_context);
 						}
 					}
 				},
