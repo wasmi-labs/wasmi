@@ -210,6 +210,7 @@ impl From<Trap> for ResumableError {
 	}
 }
 
+/// A resumable invocation handle. This struct is returned by `FuncInstance::invoke_resumable`.
 pub struct FuncInvocation<'args, 'externals, E: Externals + 'externals> {
 	kind: FuncInvocationKind<'args, 'externals, E>,
 }
