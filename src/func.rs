@@ -3,8 +3,9 @@ use std::fmt;
 use parity_wasm::elements::Local;
 use {Trap, TrapKind, Signature};
 use host::Externals;
-use runner::{check_function_args, Interpreter};
+use runner::{check_function_args, Interpreter, InterpreterState};
 use value::RuntimeValue;
+use types::ValueType;
 use module::ModuleInstance;
 use isa;
 
@@ -151,6 +152,131 @@ impl FuncInstance {
 				ref host_func_index,
 				..
 			} => externals.invoke_index(*host_func_index, args.into()),
+		}
+	}
+
+	/// Invoke the function, get a resumable handle.  This handle can then be used to actually start the execution. If a
+	/// Host trap happens, caller can use `resume_execution` to feed the expected return value back in, and then
+	/// continue the execution.
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if `args` types is not match function [`signature`].
+	///
+	/// [`signature`]: #method.signature
+	/// [`Trap`]: #enum.Trap.html
+	pub fn invoke_resumable<'args, 'externals, E: Externals + 'externals>(
+		func: &FuncRef,
+		args: &'args [RuntimeValue],
+		externals: &'externals mut E,
+	) -> Result<FuncInvocation<'args, 'externals, E>, Trap> {
+		check_function_args(func.signature(), &args).map_err(|_| TrapKind::UnexpectedSignature)?;
+		match *func.as_internal() {
+			FuncInstanceInternal::Internal { .. } => {
+				let interpreter = Interpreter::new(func, args, externals)?;
+				Ok(FuncInvocation {
+					kind: FuncInvocationKind::Internal(interpreter),
+				})
+			}
+			FuncInstanceInternal::Host {
+				ref host_func_index,
+				..
+			} => {
+				Ok(FuncInvocation {
+					kind: FuncInvocationKind::Host {
+						args, externals,
+						host_func_index: *host_func_index,
+						finished: false,
+					},
+				})
+			},
+		}
+	}
+}
+
+/// A resumable invocation error.
+pub enum ResumableError {
+	/// Trap happened.
+	Trap(Trap),
+	/// The invocation is not resumable.
+	NotResumable,
+	/// The invocation has already been started.
+	AlreadyStarted,
+}
+
+impl From<Trap> for ResumableError {
+	fn from(trap: Trap) -> Self {
+		ResumableError::Trap(trap)
+	}
+}
+
+pub struct FuncInvocation<'args, 'externals, E: Externals + 'externals> {
+	kind: FuncInvocationKind<'args, 'externals, E>,
+}
+
+enum FuncInvocationKind<'args, 'externals, E: Externals + 'externals> {
+	Internal(Interpreter<'externals, E>),
+	Host {
+		args: &'args [RuntimeValue],
+		externals: &'externals mut E,
+		host_func_index: usize,
+		finished: bool
+	},
+}
+
+impl<'args, 'externals, E: Externals + 'externals> FuncInvocation<'args, 'externals, E> {
+	/// Whether this invocation is currently resumable.
+	pub fn is_resumable(&self) -> bool {
+		match &self.kind {
+			&FuncInvocationKind::Internal(ref interpreter) => interpreter.state().is_resumable(),
+			&FuncInvocationKind::Host { .. } => false,
+		}
+	}
+
+	/// If the invocation is resumable, the expected return value type to be feed back in.
+	pub fn resumable_value_type(&self) -> Option<ValueType> {
+		match &self.kind {
+			&FuncInvocationKind::Internal(ref interpreter) => {
+				match interpreter.state() {
+					&InterpreterState::Resumable(ref value_type) => value_type.clone(),
+					_ => None,
+				}
+			},
+			&FuncInvocationKind::Host { .. } => None,
+		}
+	}
+
+	/// Start the invocation execution.
+	pub fn start_execution(&mut self) -> Result<Option<RuntimeValue>, ResumableError> {
+		match self.kind {
+			FuncInvocationKind::Internal(ref mut interpreter) => {
+				if interpreter.state() != &InterpreterState::Initialized {
+					return Err(ResumableError::AlreadyStarted);
+				}
+				Ok(interpreter.start_execution()?)
+			},
+			FuncInvocationKind::Host { ref args, ref mut externals, ref mut finished, ref host_func_index } => {
+				if *finished {
+					return Err(ResumableError::AlreadyStarted);
+				}
+				*finished = true;
+				Ok(externals.invoke_index(*host_func_index, args.clone().into())?)
+			},
+		}
+	}
+
+	/// Resume an execution if a previous trap of Host kind happened.
+	pub fn resume_execution(&mut self, return_val: Option<RuntimeValue>) -> Result<Option<RuntimeValue>, ResumableError> {
+		match self.kind {
+			FuncInvocationKind::Internal(ref mut interpreter) => {
+				if !interpreter.state().is_resumable() {
+					return Err(ResumableError::AlreadyStarted);
+				}
+				Ok(interpreter.resume_execution(return_val)?)
+			},
+			FuncInvocationKind::Host { .. } => {
+				return Err(ResumableError::NotResumable);
+			},
 		}
 	}
 }

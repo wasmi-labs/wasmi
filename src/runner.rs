@@ -103,6 +103,10 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		})
 	}
 
+	pub fn state(&self) -> &InterpreterState {
+		&self.state
+	}
+
 	pub fn start_execution(&mut self) -> Result<Option<RuntimeValue>, Trap> {
 		// Ensure that the VM has not been executed.
 		assert!(self.state == InterpreterState::Initialized);
