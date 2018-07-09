@@ -67,16 +67,15 @@ enum RunResult {
 }
 
 /// Function interpreter.
-pub struct Interpreter<'a, E: Externals + 'a> {
-	externals: &'a mut E,
+pub struct Interpreter {
 	value_stack: ValueStack,
 	call_stack: Vec<FunctionContext>,
 	return_type: Option<ValueType>,
 	state: InterpreterState,
 }
 
-impl<'a, E: Externals> Interpreter<'a, E> {
-	pub fn new(func: &FuncRef, args: &[RuntimeValue], externals: &'a mut E) -> Result<Interpreter<'a, E>, Trap> {
+impl Interpreter {
+	pub fn new(func: &FuncRef, args: &[RuntimeValue]) -> Result<Interpreter, Trap> {
 		let mut value_stack = ValueStack::with_limit(DEFAULT_VALUE_STACK_LIMIT);
 		for arg in args {
 			value_stack
@@ -95,7 +94,6 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		let return_type = func.signature().return_type();
 
 		Ok(Interpreter {
-			externals,
 			value_stack,
 			call_stack,
 			return_type,
@@ -107,12 +105,12 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		&self.state
 	}
 
-	pub fn start_execution(&mut self) -> Result<Option<RuntimeValue>, Trap> {
+	pub fn start_execution<'a, E: Externals + 'a>(&mut self, externals: &'a mut E) -> Result<Option<RuntimeValue>, Trap> {
 		// Ensure that the VM has not been executed.
 		assert!(self.state == InterpreterState::Initialized);
 
 		self.state = InterpreterState::Started;
-		self.run_interpreter_loop()?;
+		self.run_interpreter_loop(externals)?;
 
 		let opt_return_value = self.return_type.map(|_vt| {
 			self.value_stack.pop()
@@ -124,7 +122,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(opt_return_value)
 	}
 
-	pub fn resume_execution(&mut self, return_val: Option<RuntimeValue>) -> Result<Option<RuntimeValue>, Trap> {
+	pub fn resume_execution<'a, E: Externals + 'a>(&mut self, return_val: Option<RuntimeValue>, externals: &'a mut E) -> Result<Option<RuntimeValue>, Trap> {
 		use std::mem::swap;
 
 		// Ensure that the VM is resumable.
@@ -146,7 +144,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 			self.value_stack.push(return_val).map_err(Trap::new)?;
 		}
 
-		self.run_interpreter_loop()?;
+		self.run_interpreter_loop(externals)?;
 
 		let opt_return_value = self.return_type.map(|_vt| {
 			self.value_stack.pop()
@@ -158,7 +156,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 		Ok(opt_return_value)
 	}
 
-	fn run_interpreter_loop(&mut self) -> Result<(), Trap> {
+	fn run_interpreter_loop<'a, E: Externals + 'a>(&mut self, externals: &'a mut E) -> Result<(), Trap> {
 		loop {
 			let mut function_context = self.call_stack
 				.pop()
@@ -205,7 +203,7 @@ impl<'a, E: Externals> Interpreter<'a, E> {
 							// We push the function context first. If the VM is not resumable, it does no harm. If it is, we then save the context here.
 							self.call_stack.push(function_context);
 
-							let return_val = match FuncInstance::invoke(&nested_func, &args, self.externals) {
+							let return_val = match FuncInstance::invoke(&nested_func, &args, externals) {
 								Ok(val) => val,
 								Err(trap) => {
 									if trap.kind().is_host() {
