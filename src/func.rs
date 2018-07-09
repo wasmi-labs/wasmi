@@ -155,9 +155,11 @@ impl FuncInstance {
 		}
 	}
 
-	/// Invoke the function, get a resumable handle.  This handle can then be used to actually start the execution. If a
-	/// Host trap happens, caller can use `resume_execution` to feed the expected return value back in, and then
+	/// Invoke the function, get a resumable handle. This handle can then be used to [`start_execution`]. If a
+	/// Host trap happens, caller can use [`resume_execution`] to feed the expected return value back in, and then
 	/// continue the execution.
+	///
+	/// This is an experimental API, and this functionality may not be available in other WebAssembly engines.
 	///
 	/// # Errors
 	///
@@ -165,6 +167,8 @@ impl FuncInstance {
 	///
 	/// [`signature`]: #method.signature
 	/// [`Trap`]: #enum.Trap.html
+	/// [`start_execution`]: struct.FuncInvocation.html#method.start_execution
+	/// [`resume_execution`]: struct.FuncInvocation.html#method.resume_execution
 	pub fn invoke_resumable<'args>(
 		func: &FuncRef,
 		args: &'args [RuntimeValue],
