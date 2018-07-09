@@ -1,7 +1,7 @@
 use {
 	Error, Signature, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
 	MemoryInstance, MemoryRef, TableInstance, TableRef, ModuleImportResolver, ModuleInstance, ModuleRef,
-	RuntimeValue, RuntimeArgs, TableDescriptor, MemoryDescriptor, Trap, TrapKind, ResumableError, ExternVal,
+	RuntimeValue, RuntimeArgs, TableDescriptor, MemoryDescriptor, Trap, TrapKind, ResumableError,
 };
 use types::ValueType;
 use memory_units::Pages;
@@ -274,10 +274,8 @@ fn resume_call_host_func() {
 		.expect("Failed to instantiate module")
 		.assert_no_start();
 
-	let func_instance = match instance.export_by_name("test").unwrap() {
-		ExternVal::Func(func_instance) => func_instance,
-		_ => panic!(),
-	};
+	let export = instance.export_by_name("test").unwrap();
+	let func_instance = export.as_func().unwrap();
 
 	let mut invocation = FuncInstance::invoke_resumable(&func_instance, &[]).unwrap();
 	let result = invocation.start_execution(&mut env);
