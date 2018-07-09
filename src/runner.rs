@@ -106,7 +106,7 @@ impl Interpreter {
 	}
 
 	pub fn start_execution<'a, E: Externals + 'a>(&mut self, externals: &'a mut E) -> Result<Option<RuntimeValue>, Trap> {
-		// Ensure that the VM has not been executed.
+		// Ensure that the VM has not been executed. This is checked in `FuncInvocation::start_execution`.
 		assert!(self.state == InterpreterState::Initialized);
 
 		self.state = InterpreterState::Started;
@@ -125,7 +125,7 @@ impl Interpreter {
 	pub fn resume_execution<'a, E: Externals + 'a>(&mut self, return_val: Option<RuntimeValue>, externals: &'a mut E) -> Result<Option<RuntimeValue>, Trap> {
 		use std::mem::swap;
 
-		// Ensure that the VM is resumable.
+		// Ensure that the VM is resumable. This is checked in `FuncInvocation::resume_execution`.
 		assert!(self.state.is_resumable());
 
 		let mut resumable_state = InterpreterState::Started;
