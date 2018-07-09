@@ -116,7 +116,7 @@ impl Interpreter {
 			self.value_stack.pop()
 		});
 
-		// Ensure that stack is empty after the execution.
+		// Ensure that stack is empty after the execution. This is guaranteed by the validation properties.
 		assert!(self.value_stack.len() == 0);
 
 		Ok(opt_return_value)
@@ -150,7 +150,7 @@ impl Interpreter {
 			self.value_stack.pop()
 		});
 
-		// Ensure that stack is empty after the execution.
+		// Ensure that stack is empty after the execution. This is guaranteed by the validation properties.
 		assert!(self.value_stack.len() == 0);
 
 		Ok(opt_return_value)
