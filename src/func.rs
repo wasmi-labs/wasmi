@@ -266,6 +266,13 @@ impl<'args> FuncInvocation<'args> {
 	}
 
 	/// Resume an execution if a previous trap of Host kind happened.
+	///
+	/// `return_val` must be of the value type [`resumable_value_type`], defined by the host function import. Otherwise,
+	/// `UnexpectedSignature` trap will be returned. The current invocation must also be resumable
+	/// [`is_resumable`]. Otherwise, a `NotResumable` error will be returned.
+	///
+	/// [`resumable_value_type`]: struct.FuncInvocation.html#method.resumable_value_type
+	/// [`is_resumable`]: struct.FuncInvocation.html#method.is_resumable
 	pub fn resume_execution<'externals, E: Externals + 'externals>(&mut self, return_val: Option<RuntimeValue>, externals: &'externals mut E) -> Result<Option<RuntimeValue>, ResumableError> {
 		match self.kind {
 			FuncInvocationKind::Internal(ref mut interpreter) => {
