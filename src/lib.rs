@@ -221,6 +221,16 @@ pub enum TrapKind {
 	Host(Box<host::HostError>),
 }
 
+impl TrapKind {
+	/// Whether this trap is specified by the host.
+	pub fn is_host(&self) -> bool {
+		match self {
+			&TrapKind::Host(_) => true,
+			_ => false,
+		}
+	}
+}
+
 /// Internal interpreter error.
 #[derive(Debug)]
 pub enum Error {
@@ -368,7 +378,7 @@ pub use self::host::{Externals, NopExternals, HostError, RuntimeArgs};
 pub use self::imports::{ModuleImportResolver, ImportResolver, ImportsBuilder};
 pub use self::module::{ModuleInstance, ModuleRef, ExternVal, NotStartedModuleRef};
 pub use self::global::{GlobalInstance, GlobalRef};
-pub use self::func::{FuncInstance, FuncRef};
+pub use self::func::{FuncInstance, FuncRef, FuncInvocation, ResumableError};
 pub use self::types::{Signature, ValueType, GlobalDescriptor, TableDescriptor, MemoryDescriptor};
 
 /// WebAssembly-specific sizes and units.

@@ -1,7 +1,7 @@
 use {
 	Error, Signature, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
 	MemoryInstance, MemoryRef, TableInstance, TableRef, ModuleImportResolver, ModuleInstance, ModuleRef,
-	RuntimeValue, RuntimeArgs, TableDescriptor, MemoryDescriptor, Trap, TrapKind,
+	RuntimeValue, RuntimeArgs, TableDescriptor, MemoryDescriptor, Trap, TrapKind, ResumableError,
 };
 use types::ValueType;
 use memory_units::Pages;
@@ -32,6 +32,8 @@ impl HostError for HostErrorWithCode {}
 struct TestHost {
 	memory: Option<MemoryRef>,
 	instance: Option<ModuleRef>,
+
+	trap_sub_result: Option<RuntimeValue>,
 }
 
 impl TestHost {
@@ -39,6 +41,8 @@ impl TestHost {
 		TestHost {
 			memory: Some(MemoryInstance::alloc(Pages(1), Some(Pages(1))).unwrap()),
 			instance: None,
+
+			trap_sub_result: None,
 		}
 	}
 }
@@ -74,6 +78,11 @@ const GET_MEM_FUNC_INDEX: usize = 3;
 /// Note that this function is polymorphic over type T.
 /// This function requires attached module instance.
 const RECURSE_FUNC_INDEX: usize = 4;
+
+/// trap_sub(a: i32, b: i32) -> i32
+///
+/// This function is the same as sub(a, b), but it will send a Host trap which pauses the interpreter execution.
+const TRAP_SUB_FUNC_INDEX: usize = 5;
 
 impl Externals for TestHost {
 	fn invoke_index(
@@ -136,6 +145,14 @@ impl Externals for TestHost {
 				}
 				Ok(Some(result))
 			}
+			TRAP_SUB_FUNC_INDEX => {
+				let a: i32 = args.nth(0);
+				let b: i32 = args.nth(1);
+
+				let result: RuntimeValue = (a - b).into();
+				self.trap_sub_result = Some(result);
+				return Err(TrapKind::Host(Box::new(HostErrorWithCode { error_code: 301 })).into());
+			}
 			_ => panic!("env doesn't provide function at index {}", index),
 		}
 	}
@@ -157,6 +174,7 @@ impl TestHost {
 			ERR_FUNC_INDEX => (&[ValueType::I32], None),
 			INC_MEM_FUNC_INDEX => (&[ValueType::I32], None),
 			GET_MEM_FUNC_INDEX => (&[ValueType::I32], Some(ValueType::I32)),
+			TRAP_SUB_FUNC_INDEX => (&[ValueType::I32, ValueType::I32], Some(ValueType::I32)),
 			_ => return false,
 		};
 
@@ -172,6 +190,7 @@ impl ModuleImportResolver for TestHost {
 			"inc_mem" => INC_MEM_FUNC_INDEX,
 			"get_mem" => GET_MEM_FUNC_INDEX,
 			"recurse" => RECURSE_FUNC_INDEX,
+			"trap_sub" => TRAP_SUB_FUNC_INDEX,
 			_ => {
 				return Err(Error::Instantiation(
 					format!("Export {} not found", field_name),
@@ -226,6 +245,49 @@ fn call_host_func() {
 
 	assert_eq!(
 		instance.invoke_export("test", &[], &mut env).expect(
+			"Failed to invoke 'test' function",
+		),
+		Some(RuntimeValue::I32(-2))
+	);
+}
+
+#[test]
+fn resume_call_host_func() {
+	let module = parse_wat(
+		r#"
+(module
+	(import "env" "trap_sub" (func $trap_sub (param i32 i32) (result i32)))
+
+	(func (export "test") (result i32)
+		(call $trap_sub
+			(i32.const 5)
+			(i32.const 7)
+		)
+	)
+)
+"#,
+	);
+
+	let mut env = TestHost::new();
+
+	let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
+		.expect("Failed to instantiate module")
+		.assert_no_start();
+
+	let export = instance.export_by_name("test").unwrap();
+	let func_instance = export.as_func().unwrap();
+
+	let mut invocation = FuncInstance::invoke_resumable(&func_instance, &[]).unwrap();
+	let result = invocation.start_execution(&mut env);
+	match result {
+		Err(ResumableError::Trap(_)) => {},
+		_ => panic!(),
+	}
+
+	assert!(invocation.is_resumable());
+	let trap_sub_result = env.trap_sub_result.take();
+	assert_eq!(
+		invocation.resume_execution(trap_sub_result, &mut env).expect(
 			"Failed to invoke 'test' function",
 		),
 		Some(RuntimeValue::I32(-2))
@@ -325,6 +387,8 @@ fn pull_internal_mem_from_module() {
 	let mut env = TestHost {
 		memory: None,
 		instance: None,
+
+		trap_sub_result: None,
 	};
 
 	let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
