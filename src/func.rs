@@ -199,8 +199,21 @@ pub enum ResumableError {
 	/// Trap happened.
 	Trap(Trap),
 	/// The invocation is not resumable.
+	///
+	/// Invocations are only resumable if a host function is called, and the host function returns a trap of `Host` kind. For other cases, this error will be returned. This includes:
+	/// - The invocation is directly a host function.
+	/// - The invocation has not been started.
+	/// - The invocation returns normally or returns any trap other than `Host` kind.
+	///
+	/// This error is returned by [`resume_execution`].
+	///
+	/// [`resume_execution`]: struct.FuncInvocation.html#method.resume_execution
 	NotResumable,
 	/// The invocation has already been started.
+	///
+	/// This error is returned by [`start_execution`].
+	///
+	/// [`start_execution`]: struct.FuncInvocation.html#method.start_execution
 	AlreadyStarted,
 }
 
@@ -271,8 +284,8 @@ impl<'args> FuncInvocation<'args> {
 	/// `UnexpectedSignature` trap will be returned. The current invocation must also be resumable
 	/// [`is_resumable`]. Otherwise, a `NotResumable` error will be returned.
 	///
-	/// [`resumable_value_type`]: struct.FuncInvocation.html#method.resumable_value_type
-	/// [`is_resumable`]: struct.FuncInvocation.html#method.is_resumable
+	/// [`resumable_value_type`]: #method.resumable_value_type
+	/// [`is_resumable`]: #method.is_resumable
 	pub fn resume_execution<'externals, E: Externals + 'externals>(&mut self, return_val: Option<RuntimeValue>, externals: &'externals mut E) -> Result<Option<RuntimeValue>, ResumableError> {
 		match self.kind {
 			FuncInvocationKind::Internal(ref mut interpreter) => {
