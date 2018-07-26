@@ -7,6 +7,7 @@ use std::cell::RefCell;
 use parity_wasm::elements::ResizableLimits;
 use Error;
 use memory_units::{RoundUpTo, Pages, Bytes};
+use value::LittleEndianConvert;
 
 /// Size of a page of [linear memory][`MemoryInstance`] - 64KiB.
 ///
@@ -171,6 +172,13 @@ impl MemoryInstance {
 		Bytes(self.buffer.borrow().len()).round_up_to()
 	}
 
+	/// Get value from memory at given offset.
+	pub fn get_value<T: LittleEndianConvert>(&self, offset: u32) -> Result<T, Error> {
+		let buffer = self.buffer.borrow();
+		let region = self.checked_region(&buffer, offset as usize, ::std::mem::size_of::<T>())?;
+		Ok(T::from_little_endian(region.slice()).expect("Slice size is checked"))
+	}
+
 	/// Copy data from memory at given offset.
 	///
 	/// This will allocate vector for you.
@@ -205,6 +213,14 @@ impl MemoryInstance {
 
 		buffer[range].copy_from_slice(value);
 
+		Ok(())
+	}
+
+	/// Copy value in the memory at given offset.
+	pub fn set_value<T: LittleEndianConvert>(&self, offset: u32, value: T) -> Result<(), Error> {
+		let mut buffer = self.buffer.borrow_mut();
+		let range = self.checked_region(&buffer, offset as usize, ::std::mem::size_of::<T>())?.range();
+		value.into_little_endian(&mut buffer[range]);
 		Ok(())
 	}
 

@@ -1,4 +1,3 @@
-use std::mem;
 use std::ops;
 use std::{u32, usize};
 use std::fmt;
@@ -615,10 +614,8 @@ impl Interpreter {
 		let m = context
 			.memory()
 			.expect("Due to validation memory should exists");
-		let b = m.get(address, mem::size_of::<T>())
+		let n: T = m.get_value(address)
 			.map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
-		let n = T::from_little_endian(&b)
-			.expect("Can't fail since buffer length should be size_of::<T>");
 		self.value_stack.push(n.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
@@ -636,10 +633,8 @@ impl Interpreter {
 		let m = context
 			.memory()
 			.expect("Due to validation memory should exists");
-		let b = m.get(address, mem::size_of::<T>())
+		let v: T = m.get_value(address)
 			.map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
-		let v = T::from_little_endian(&b)
-			.expect("Can't fail since buffer length should be size_of::<T>");
 		let stack_value: U = v.extend_into();
 		self
 			.value_stack
@@ -652,8 +647,7 @@ impl Interpreter {
 		where T: FromRuntimeValue, T: LittleEndianConvert {
 		let stack_value = self
 			.value_stack
-			.pop_as::<T>()
-			.into_little_endian();
+			.pop_as::<T>();
 		let raw_address = self
 			.value_stack
 			.pop_as::<u32>();
@@ -666,7 +660,7 @@ impl Interpreter {
 		let m = context
 			.memory()
 			.expect("Due to validation memory should exists");
-		m.set(address, &stack_value)
+		m.set_value(address, stack_value)
 			.map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
@@ -686,7 +680,7 @@ impl Interpreter {
 			.pop()
 			.try_into()
 			.expect("Due to validation value should be of proper type");
-		let stack_value = stack_value.wrap_into().into_little_endian();
+		let stack_value = stack_value.wrap_into();
 		let raw_address = self
 			.value_stack
 			.pop_as::<u32>();
@@ -698,7 +692,7 @@ impl Interpreter {
 		let m = context
 			.memory()
 			.expect("Due to validation memory should exists");
-		m.set(address, &stack_value)
+		m.set_value(address, stack_value)
 			.map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
