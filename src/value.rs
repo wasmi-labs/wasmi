@@ -75,7 +75,7 @@ pub trait TransmuteInto<T> {
 /// Convert from and to little endian.
 pub trait LittleEndianConvert where Self: Sized {
 	/// Convert to little endian buffer.
-	fn into_little_endian(self) -> Vec<u8>;
+	fn into_little_endian(self, buffer: &mut[u8]);
 	/// Convert from little endian buffer.
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error>;
 }
@@ -555,8 +555,8 @@ impl TransmuteInto<i64> for u64 {
 }
 
 impl LittleEndianConvert for i8 {
-	fn into_little_endian(self) -> Vec<u8> {
-		vec![self as u8]
+	fn into_little_endian(self, buffer: &mut[u8]) {
+		buffer[0] = self as u8;
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
@@ -567,8 +567,8 @@ impl LittleEndianConvert for i8 {
 }
 
 impl LittleEndianConvert for u8 {
-	fn into_little_endian(self) -> Vec<u8> {
-		vec![self]
+	fn into_little_endian(self, buffer: &mut[u8]) {
+		buffer[0] = self;
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
@@ -579,11 +579,9 @@ impl LittleEndianConvert for u8 {
 }
 
 impl LittleEndianConvert for i16 {
-	fn into_little_endian(self) -> Vec<u8> {
-		let mut vec = Vec::with_capacity(2);
-		vec.write_i16::<LittleEndian>(self)
+	fn into_little_endian(self, mut buffer: &mut[u8]) {
+		buffer.write_i16::<LittleEndian>(self)
 			.expect("i16 is written without any errors");
-		vec
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
@@ -593,11 +591,9 @@ impl LittleEndianConvert for i16 {
 }
 
 impl LittleEndianConvert for u16 {
-	fn into_little_endian(self) -> Vec<u8> {
-		let mut vec = Vec::with_capacity(2);
-		vec.write_u16::<LittleEndian>(self)
+	fn into_little_endian(self, mut buffer: &mut[u8]) {
+		buffer.write_u16::<LittleEndian>(self)
 			.expect("u16 is written without any errors");
-		vec
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
@@ -607,11 +603,9 @@ impl LittleEndianConvert for u16 {
 }
 
 impl LittleEndianConvert for i32 {
-	fn into_little_endian(self) -> Vec<u8> {
-		let mut vec = Vec::with_capacity(4);
-		vec.write_i32::<LittleEndian>(self)
+	fn into_little_endian(self, mut buffer: &mut[u8]) {
+		buffer.write_i32::<LittleEndian>(self)
 			.expect("i32 is written without any errors");
-		vec
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
@@ -621,11 +615,9 @@ impl LittleEndianConvert for i32 {
 }
 
 impl LittleEndianConvert for u32 {
-	fn into_little_endian(self) -> Vec<u8> {
-		let mut vec = Vec::with_capacity(4);
-		vec.write_u32::<LittleEndian>(self)
+	fn into_little_endian(self, mut buffer: &mut[u8]) {
+		buffer.write_u32::<LittleEndian>(self)
 			.expect("u32 is written without any errors");
-		vec
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
@@ -635,11 +627,9 @@ impl LittleEndianConvert for u32 {
 }
 
 impl LittleEndianConvert for i64 {
-	fn into_little_endian(self) -> Vec<u8> {
-		let mut vec = Vec::with_capacity(8);
-		vec.write_i64::<LittleEndian>(self)
+	fn into_little_endian(self, mut buffer: &mut[u8]) {
+		buffer.write_i64::<LittleEndian>(self)
 			.expect("i64 is written without any errors");
-		vec
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
@@ -649,11 +639,9 @@ impl LittleEndianConvert for i64 {
 }
 
 impl LittleEndianConvert for f32 {
-	fn into_little_endian(self) -> Vec<u8> {
-		let mut vec = Vec::with_capacity(4);
-		vec.write_f32::<LittleEndian>(self)
+	fn into_little_endian(self, mut buffer: &mut[u8]) {
+		buffer.write_f32::<LittleEndian>(self)
 			.expect("f32 is written without any errors");
-		vec
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
@@ -664,11 +652,9 @@ impl LittleEndianConvert for f32 {
 }
 
 impl LittleEndianConvert for f64 {
-	fn into_little_endian(self) -> Vec<u8> {
-		let mut vec = Vec::with_capacity(8);
-		vec.write_f64::<LittleEndian>(self)
+	fn into_little_endian(self, mut buffer: &mut[u8]) {
+		buffer.write_f64::<LittleEndian>(self)
 			.expect("i64 is written without any errors");
-		vec
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
@@ -679,8 +665,8 @@ impl LittleEndianConvert for f64 {
 }
 
 impl LittleEndianConvert for F32 {
-	fn into_little_endian(self) -> Vec<u8> {
-		(self.to_bits() as i32).into_little_endian()
+	fn into_little_endian(self, buffer: &mut[u8]) {
+		(self.to_bits() as i32).into_little_endian(buffer)
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
@@ -689,8 +675,8 @@ impl LittleEndianConvert for F32 {
 }
 
 impl LittleEndianConvert for F64 {
-	fn into_little_endian(self) -> Vec<u8> {
-		(self.to_bits() as i64).into_little_endian()
+	fn into_little_endian(self, buffer: &mut[u8]) {
+		(self.to_bits() as i64).into_little_endian(buffer)
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
