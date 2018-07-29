@@ -23,10 +23,10 @@
 //! Before execution a module should be validated. This process checks that module is well-formed
 //! and makes only allowed operations.
 //!
-//! Valid modules can't access memory out of it's sandbox, can't cause stack underflow
+//! Valid modules can't access memory out of its sandbox, can't cause stack underflow
 //! and can call functions only with correct signatures.
 //!
-//! ## Instantiatiation
+//! ## Instantiation
 //!
 //! In order to execute code in wasm module it should be instatiated.
 //! Instantiation includes the following steps:
@@ -111,7 +111,7 @@ pub extern crate nan_preserving_float;
 use std::fmt;
 use std::error;
 
-/// Error type which can thrown by wasm code or by host environment.
+/// Error type which can be thrown by wasm code or by host environment.
 ///
 /// Under some conditions, wasm execution may produce a `Trap`, which immediately aborts execution.
 /// Traps can't be handled by WebAssembly code, but are reported to the embedder.
@@ -144,7 +144,7 @@ impl error::Error for Trap {
 	}
 }
 
-/// Error type which can thrown by wasm code or by host environment.
+/// Error type which can be thrown by wasm code or by host environment.
 ///
 /// See [`Trap`] for details.
 ///
