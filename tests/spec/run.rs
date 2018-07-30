@@ -344,7 +344,7 @@ fn try_spec(name: &str) -> Result<(), Error> {
 
 	use std::io::Read;
 	let mut spec_source = Vec::new();
-	let mut spec_file = File::open(&spec_script_path).expect("Can't open the file");
+	let mut spec_file = File::open(&spec_script_path).expect("Can't open file");
 	spec_file.read_to_end(&mut spec_source).expect("Can't read file");
 
 	let mut parser = ScriptParser::from_source_and_name(&spec_source, &format!("{}.wast", name)).expect("Can't read spec script");
