@@ -381,7 +381,7 @@ impl MemoryInstance {
 	/// # Panics
 	///
 	/// Any call that requires write access to memory (such as [`set`], [`clear`], etc) made within
-	/// the closure will panic. Proceed with caution.
+	/// the closure will panic. Note that the buffer size may be arbitraty. Proceed with caution.
 	///
 	/// [`set`]: #method.get
 	/// [`clear`]: #method.set
@@ -395,14 +395,15 @@ impl MemoryInstance {
 	/// # Panics
 	///
 	/// Any calls that requires either read or write access to memory (such as [`get`], [`set`], [`copy`], etc) made
-	/// within the closure will panic. Proceed with caution.
+	/// within the closure will panic. Note that the buffer size may be arbitraty.
+	/// The closure may however resize it. Proceed with caution.
 	///
 	/// [`get`]: #method.get
 	/// [`set`]: #method.set
 	/// [`copy`]: #method.copy
-	pub fn with_direct_access_mut<R, F: FnOnce(&mut [u8]) -> R>(&self, f: F) -> R {
+	pub fn with_direct_access_mut<R, F: FnOnce(&mut Vec<u8>) -> R>(&self, f: F) -> R {
 		let mut buf = self.buffer.borrow_mut();
-		f(&mut *buf)
+		f(&mut buf)
 	}
 }
 
