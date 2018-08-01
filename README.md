@@ -16,6 +16,17 @@ license and the Apache License (Version 2.0), at your choice.
 
 See LICENSE-APACHE, and LICENSE-MIT for details.
 
+# Build & Test
+
+As `wasmi` contains a git submodule, you need to use `--recursive` for cloning or to checkout the submodule explicitly, otherwise the testing would fail.
+
+```
+git clone https://github.com/paritytech/wasmi.git --recursive
+cd wasmi
+cargo build
+cargo test
+```
+
 ## Contribution
 
 Unless you explicitly state otherwise, any contribution intentionally submitted
