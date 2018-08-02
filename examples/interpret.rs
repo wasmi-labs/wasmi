@@ -4,7 +4,7 @@ extern crate wasmi;
 
 use std::env::args;
 use std::fs::File;
-use wasmi::{ModuleInstance, NopExternals, RuntimeValue, ImportsBuilder, Module};
+use wasmi::{ModuleInstance, NopExternals, RuntimeValue, ImportsBuilder, InterpreterConfig, Module};
 
 fn load_from_file(filename: &str) -> Module {
 	use std::io::prelude::*;
@@ -31,7 +31,7 @@ fn main() {
      // - a module declaration
      // - "main" module doesn't import native module(s) this is why we don't need to provide external native modules here
      // This test shows how to implement native module https://github.com/NikVolf/parity-wasm/blob/master/src/interpreter/tests/basics.rs#L197
-    let main = ModuleInstance::new(&module, &ImportsBuilder::default())
+    let main = ModuleInstance::new(&module, &ImportsBuilder::default(), &InterpreterConfig::default())
         .expect("Failed to instantiate module")
         .run_start(&mut NopExternals)
         .expect("Failed to run start function in module");

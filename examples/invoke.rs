@@ -4,7 +4,7 @@ extern crate wasmi;
 use std::env::args;
 
 use parity_wasm::elements::{Internal, External, Type, FunctionType, ValueType};
-use wasmi::{RuntimeValue, ModuleInstance, NopExternals, ImportsBuilder};
+use wasmi::{RuntimeValue, ModuleInstance, NopExternals, ImportsBuilder, InterpreterConfig};
 
 
 fn main() {
@@ -76,7 +76,7 @@ fn main() {
     // - a module declaration
     // - "main" module doesn't import native module(s) this is why we don't need to provide external native modules here
     // This test shows how to implement native module https://github.com/NikVolf/parity-wasm/blob/master/src/interpreter/tests/basics.rs#L197
-    let main = ModuleInstance::new(&loaded_module, &ImportsBuilder::default())
+    let main = ModuleInstance::new(&loaded_module, &ImportsBuilder::default(), &InterpreterConfig::default())
         .expect("Failed to instantiate module")
         .run_start(&mut NopExternals)
         .expect("Failed to run start function in module");

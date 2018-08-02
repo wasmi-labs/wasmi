@@ -19,10 +19,9 @@ use nan_preserving_float::{F32, F64};
 use isa;
 
 /// Maximum number of entries in value stack.
-pub const DEFAULT_VALUE_STACK_LIMIT: usize = (1024 * 1024) / ::std::mem::size_of::<RuntimeValue>();
+const DEFAULT_VALUE_STACK_LIMIT: usize = (1024 * 1024) / ::std::mem::size_of::<RuntimeValue>();
 
-// TODO: Make these parameters changeble.
-pub const DEFAULT_CALL_STACK_LIMIT: usize = 64 * 1024;
+const DEFAULT_CALL_STACK_LIMIT: usize = 64 * 1024;
 
 /// Interpreter action to execute after executing instruction.
 pub enum InstructionOutcome {
@@ -65,17 +64,35 @@ enum RunResult {
 	NestedCall(FuncRef),
 }
 
+
+#[derive(Clone, Debug)]
+/// Config parameters for interpreter
+pub struct InterpreterConfig {
+	pub value_stack_limit: usize,
+	pub call_stack_limit: usize,
+}
+
+impl Default for InterpreterConfig {
+	fn default() -> Self {
+		return InterpreterConfig {
+			value_stack_limit: DEFAULT_VALUE_STACK_LIMIT,
+			call_stack_limit: DEFAULT_CALL_STACK_LIMIT,
+		}
+	}
+}
+
 /// Function interpreter.
 pub struct Interpreter {
 	value_stack: ValueStack,
 	call_stack: Vec<FunctionContext>,
 	return_type: Option<ValueType>,
 	state: InterpreterState,
+	config: InterpreterConfig,
 }
 
 impl Interpreter {
-	pub fn new(func: &FuncRef, args: &[RuntimeValue]) -> Result<Interpreter, Trap> {
-		let mut value_stack = ValueStack::with_limit(DEFAULT_VALUE_STACK_LIMIT);
+	pub fn new(func: &FuncRef, args: &[RuntimeValue], config: &InterpreterConfig) -> Result<Interpreter, Trap> {
+		let mut value_stack = ValueStack::with_limit(config.value_stack_limit);
 		for arg in args {
 			value_stack
 				.push(*arg)
@@ -97,6 +114,7 @@ impl Interpreter {
 			call_stack,
 			return_type,
 			state: InterpreterState::Initialized,
+			config: config.clone(),
 		})
 	}
 
@@ -187,7 +205,7 @@ impl Interpreter {
 					}
 				},
 				RunResult::NestedCall(nested_func) => {
-					if self.call_stack.len() + 1 >= DEFAULT_CALL_STACK_LIMIT {
+					if self.call_stack.len() + 1 >= self.config.call_stack_limit {
 						return Err(TrapKind::StackOverflow.into());
 					}
 
@@ -202,7 +220,7 @@ impl Interpreter {
 							// We push the function context first. If the VM is not resumable, it does no harm. If it is, we then save the context here.
 							self.call_stack.push(function_context);
 
-							let return_val = match FuncInstance::invoke(&nested_func, &args, externals) {
+							let return_val = match FuncInstance::invoke(&nested_func, &args, externals, &self.config) {
 								Ok(val) => val,
 								Err(trap) => {
 									if trap.kind().is_host() {

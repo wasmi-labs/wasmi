@@ -80,19 +80,19 @@ pub trait ImportResolver {
 /// # Examples
 ///
 /// ```rust
-/// use wasmi::{ModuleInstance, ImportsBuilder};
+/// use wasmi::{ModuleInstance, ImportsBuilder, InterpreterConfig};
 /// #
 /// # struct EnvModuleResolver;
 /// # impl ::wasmi::ModuleImportResolver for EnvModuleResolver { }
 /// # fn func() -> Result<(), ::wasmi::Error> {
 /// # let module = wasmi::Module::from_buffer(&[0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]).unwrap();
-/// # let other_instance = ModuleInstance::new(&module, &ImportsBuilder::default())?.assert_no_start();
+/// # let other_instance = ModuleInstance::new(&module, &ImportsBuilder::default(), &InterpreterConfig::default())?.assert_no_start();
 ///
 /// let imports = ImportsBuilder::new()
 ///     .with_resolver("env", &EnvModuleResolver)
 ///     // Note, that ModuleInstance can be a resolver too.
 ///     .with_resolver("other_instance", &other_instance);
-/// let instance = ModuleInstance::new(&module, &imports)?.assert_no_start();
+/// let instance = ModuleInstance::new(&module, &imports, &InterpreterConfig::default())?.assert_no_start();
 ///
 /// # Ok(())
 /// # }

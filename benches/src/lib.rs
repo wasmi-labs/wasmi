@@ -8,7 +8,7 @@ extern crate wabt;
 
 use std::error;
 use std::fs::File;
-use wasmi::{ImportsBuilder, Module, ModuleInstance, NopExternals, RuntimeValue};
+use wasmi::{ImportsBuilder, InterpreterConfig, Module, ModuleInstance, NopExternals, RuntimeValue};
 
 use test::Bencher;
 
@@ -30,7 +30,7 @@ fn bench_tiny_keccak(b: &mut Bencher) {
 		"./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm",
 	).expect("failed to load wasm_kernel. Is `build.rs` broken?");
 
-	let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
+	let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default(), &InterpreterConfig::default())
 		.expect("failed to instantiate wasm module")
 		.assert_no_start();
 
@@ -52,7 +52,7 @@ fn bench_rev_comp(b: &mut Bencher) {
 		"./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm",
 	).expect("failed to load wasm_kernel. Is `build.rs` broken?");
 
-	let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
+	let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default(), &InterpreterConfig::default())
 		.expect("failed to instantiate wasm module")
 		.assert_no_start();
 
@@ -107,7 +107,7 @@ fn bench_regex_redux(b: &mut Bencher) {
 		"./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm",
 	).expect("failed to load wasm_kernel. Is `build.rs` broken?");
 
-	let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
+	let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default(), &InterpreterConfig::default())
 		.expect("failed to instantiate wasm module")
 		.assert_no_start();
 
@@ -163,7 +163,7 @@ r#"
 
 	let module = Module::from_buffer(&wasm).unwrap();
 
-	let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
+	let instance = ModuleInstance::new(&module, &ImportsBuilder::default(), &InterpreterConfig::default())
 		.expect("failed to instantiate wasm module")
 		.assert_no_start();
 
@@ -197,7 +197,7 @@ r#"
 
 	let module = Module::from_buffer(&wasm).unwrap();
 
-	let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
+	let instance = ModuleInstance::new(&module, &ImportsBuilder::default(), &InterpreterConfig::default())
 		.expect("failed to instantiate wasm module")
 		.assert_no_start();
 
@@ -232,7 +232,7 @@ fn recursive_ok(b: &mut Bencher) {
 	).unwrap();
 	let module = Module::from_buffer(&wasm).unwrap();
 
-	let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
+	let instance = ModuleInstance::new(&module, &ImportsBuilder::default(), &InterpreterConfig::default())
 		.expect("failed to instantiate wasm module")
 		.assert_no_start();
 
@@ -266,7 +266,7 @@ fn recursive_trap(b: &mut Bencher) {
 	).unwrap();
 	let module = Module::from_buffer(&wasm).unwrap();
 
-	let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
+	let instance = ModuleInstance::new(&module, &ImportsBuilder::default(), &InterpreterConfig::default())
 		.expect("failed to instantiate wasm module")
 		.assert_no_start();
 

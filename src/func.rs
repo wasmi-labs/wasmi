@@ -3,7 +3,7 @@ use std::fmt;
 use parity_wasm::elements::Local;
 use {Trap, TrapKind, Signature};
 use host::Externals;
-use runner::{check_function_args, Interpreter, InterpreterState};
+use runner::{check_function_args, InterpreterConfig, Interpreter, InterpreterState};
 use value::RuntimeValue;
 use types::ValueType;
 use module::ModuleInstance;
@@ -141,11 +141,12 @@ impl FuncInstance {
 		func: &FuncRef,
 		args: &[RuntimeValue],
 		externals: &mut E,
+		config: &InterpreterConfig,
 	) -> Result<Option<RuntimeValue>, Trap> {
 		check_function_args(func.signature(), &args).map_err(|_| TrapKind::UnexpectedSignature)?;
 		match *func.as_internal() {
 			FuncInstanceInternal::Internal { .. } => {
-				let mut interpreter = Interpreter::new(func, args)?;
+				let mut interpreter = Interpreter::new(func, args, config)?;
 				interpreter.start_execution(externals)
 			}
 			FuncInstanceInternal::Host {
@@ -172,11 +173,12 @@ impl FuncInstance {
 	pub fn invoke_resumable<'args>(
 		func: &FuncRef,
 		args: &'args [RuntimeValue],
+		config: &InterpreterConfig,
 	) -> Result<FuncInvocation<'args>, Trap> {
 		check_function_args(func.signature(), &args).map_err(|_| TrapKind::UnexpectedSignature)?;
 		match *func.as_internal() {
 			FuncInstanceInternal::Internal { .. } => {
-				let interpreter = Interpreter::new(func, args)?;
+				let interpreter = Interpreter::new(func, args, config)?;
 				Ok(FuncInvocation {
 					kind: FuncInvocationKind::Internal(interpreter),
 				})
