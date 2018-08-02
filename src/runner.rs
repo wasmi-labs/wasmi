@@ -1,5 +1,6 @@
 use std::ops;
 use std::{u32, usize};
+use std::cmp;
 use std::fmt;
 use std::iter::repeat;
 use parity_wasm::elements::Local;
@@ -1109,11 +1110,7 @@ impl FunctionContext {
 			.map(RuntimeValue::default)
 			.collect::<Vec<_>>();
 
-		// TODO: Replace with extend.
-		for local in locals {
-			value_stack.push(local)
-				.map_err(|_| TrapKind::StackOverflow)?;
-		}
+		value_stack.extend(&locals)?;
 
 		self.is_initialized = true;
 		Ok(())
@@ -1264,7 +1261,46 @@ impl ValueStack {
 	}
 
 	#[inline]
+	fn extend(&mut self, values: &[RuntimeValue]) -> Result<(), TrapKind> {
+		let len = cmp::min(values.len(), self.buf.len() - self.sp);
+		self.buf[self.sp..(self.sp+len)].copy_from_slice(&values[..len]);
+		self.sp += len;
+		if len < values.len() {
+			Err(TrapKind::StackOverflow)
+		} else {
+			Ok(())
+		}
+	}
+
+	#[inline]
 	fn len(&self) -> usize {
 		self.sp
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::ValueStack;
+	use value::RuntimeValue;
+
+	#[test]
+	fn test_stack_extend() {
+		let mut stack = ValueStack::with_limit(5);
+		let values = vec![RuntimeValue::I32(1), RuntimeValue::I32(2), RuntimeValue::I32(3),
+			RuntimeValue::I32(4), RuntimeValue::I32(5)];
+
+		assert!(stack.extend(&values).is_ok());
+		assert_eq!(stack.len(), 5);
+
+		assert!(stack.push(RuntimeValue::I32(6)).is_err());
+
+		// check each elements
+		assert_eq!(stack.pop(), RuntimeValue::I32(5));
+		assert_eq!(stack.pop(), RuntimeValue::I32(4));
+		assert_eq!(stack.pop(), RuntimeValue::I32(3));
+		assert_eq!(stack.pop(), RuntimeValue::I32(2));
+		assert_eq!(stack.pop(), RuntimeValue::I32(1));
+
+		assert_eq!(stack.len(), 0);
 	}
 }
