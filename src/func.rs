@@ -26,7 +26,7 @@ impl ::std::ops::Deref for FuncRef {
 
 /// Runtime representation of a function.
 ///
-/// Functions are the unit of orgianization of code in WebAssembly. Each function takes a sequence of values
+/// Functions are the unit of organization of code in WebAssembly. Each function takes a sequence of values
 /// as parameters and either optionally return a value or trap.
 /// Functions can call other function including itself (i.e recursive calls are allowed) and imported functions
 /// (i.e functions defined in another module or by the host environment).

@@ -565,7 +565,7 @@ impl ModuleInstance {
 	///
 	/// - there are no export with a given name or this export is not a function,
 	/// - given arguments doesn't match to function signature,
-	/// - trap occured at the execution time,
+	/// - trap occurred at the execution time,
 	///
 	/// # Examples
 	///
@@ -643,7 +643,7 @@ impl ModuleInstance {
 ///
 /// You can still access not fully initialized instance by calling [`not_started_instance`],
 /// but keep in mind, that this is sort of escape hatch: module really might depend on initialization
-/// done in `start` function. It's definetely not recommended to call any exports on [`ModuleRef`]
+/// done in `start` function. It's definitely not recommended to call any exports on [`ModuleRef`]
 /// returned by this function.
 ///
 /// If you sure, that there is no `start` function (e.g. because you created it without one), you can
