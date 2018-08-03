@@ -93,7 +93,6 @@ pub struct Target {
 	pub drop_keep: DropKeep,
 }
 
-#[allow(unused)] // TODO: Remove
 #[derive(Debug, Clone, PartialEq)]
 pub enum Instruction {
 	/// Push a local variable or an argument from the specified depth.
