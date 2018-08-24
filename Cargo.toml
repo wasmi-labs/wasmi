@@ -10,6 +10,11 @@ description = "WebAssembly interpreter"
 keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
 exclude = [ "/res/*", "/tests/*", "/fuzz/*", "/benches/*" ]
 
+[features]
+default = ["std"]
+# Disable for no_std support
+std = []
+
 [dependencies]
 parity-wasm = "0.31"
 byteorder = "1.0"
