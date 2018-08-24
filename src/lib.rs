@@ -119,6 +119,7 @@ extern crate assert_matches;
 
 extern crate parity_wasm;
 extern crate byteorder;
+#[cfg(not(feature = "std"))]
 extern crate hashmap_core;
 extern crate memory_units as memory_units_crate;
 

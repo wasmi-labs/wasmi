@@ -3,7 +3,12 @@ use alloc::prelude::*;
 #[cfg(feature = "std")]
 use std::error;
 use core::fmt;
+
+#[cfg(feature = "std")]
+use std::collections::HashSet;
+#[cfg(not(feature = "std"))]
 use hashmap_core::HashSet;
+
 use parity_wasm::elements::{
 	BlockType, External, GlobalEntry, GlobalType, Internal, MemoryType, Module, Instruction,
 	ResizableLimits, TableType, ValueType, InitExpr, Type,

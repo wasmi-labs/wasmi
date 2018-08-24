@@ -5,7 +5,12 @@ use runner::check_function_args;
 use Trap;
 use core::cell::RefCell;
 use core::fmt;
+
+#[cfg(feature = "std")]
+use std::collections::HashMap;
+#[cfg(not(feature = "std"))]
 use hashmap_core::HashMap;
+
 use parity_wasm::elements::{External, InitExpr, Internal, Instruction, ResizableLimits, Type};
 use {Module, Error, Signature, MemoryInstance, RuntimeValue, TableInstance};
 use imports::ImportResolver;

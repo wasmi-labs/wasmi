@@ -29,11 +29,14 @@ cargo test
 
 # `no_std` support
 This crate supports `no_std` environments.
-If the `std` feature is disabled, `no_std` is supported.
-Use like that:
+Enable the `no_std` feature and disable default features:
 ```toml
 [dependencies]
-parity-wasm = { version = "0.31", default-features = false }
+parity-wasm = {
+	version = "0.31",
+	default-features = false,
+	features = "no_std"
+}
 ```
 
 `no_std` requires the `core` and `alloc` libraries and a nightly compiler.
