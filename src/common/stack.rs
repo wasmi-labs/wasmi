@@ -1,7 +1,9 @@
+#[allow(unused_imports)]
+use alloc::prelude::*;
 
 #[cfg(feature = "std")]
 use std::error;
-use std::fmt;
+use core::fmt;
 
 #[derive(Debug)]
 pub struct Error(String);

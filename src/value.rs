@@ -1,7 +1,7 @@
 use byteorder::{ByteOrder, LittleEndian, WriteBytesExt};
 use nan_preserving_float::{F32, F64};
-use std::mem::transmute;
-use std::{f32, i32, i64, u32, u64};
+use core::mem::transmute;
+use core::{f32, i32, i64, u32, u64};
 use TrapKind;
 
 #[derive(Debug)]
@@ -780,7 +780,7 @@ macro_rules! impl_float {
 					return round;
 				}
 
-				use std::ops::Rem;
+				use core::ops::Rem;
 				if round.rem(2.0) == 1.0 {
 					self.floor()
 				} else if round.rem(2.0) == -1.0 {
@@ -795,7 +795,7 @@ macro_rules! impl_float {
 			// This instruction corresponds to what is sometimes called "minNaN" in other languages.
 			fn min(self, other: $type) -> $type {
 				if self.is_nan() || other.is_nan() {
-					return ::std::$intermediate::NAN.into();
+					return ::core::$intermediate::NAN.into();
 				}
 
 				self.min(other)
@@ -803,13 +803,13 @@ macro_rules! impl_float {
 			// This instruction corresponds to what is sometimes called "maxNaN" in other languages.
 			fn max(self, other: $type) -> $type {
 				if self.is_nan() || other.is_nan() {
-					return ::std::$intermediate::NAN.into();
+					return ::core::$intermediate::NAN.into();
 				}
 
 				self.max(other)
 			}
 			fn copysign(self, other: $type) -> $type {
-				use std::mem::size_of;
+				use core::mem::size_of;
 
 				if self.is_nan() {
 					return self;

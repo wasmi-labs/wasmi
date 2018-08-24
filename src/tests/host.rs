@@ -12,8 +12,8 @@ struct HostErrorWithCode {
 	error_code: u32,
 }
 
-impl ::std::fmt::Display for HostErrorWithCode {
-	fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
+impl ::core::fmt::Display for HostErrorWithCode {
+	fn fmt(&self, f: &mut ::core::fmt::Formatter) -> Result<(), ::core::fmt::Error> {
 		write!(f, "{}", self.error_code)
 	}
 }

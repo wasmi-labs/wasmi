@@ -1,5 +1,7 @@
-use std::rc::{Rc, Weak};
-use std::fmt;
+#[allow(unused_imports)]
+use alloc::prelude::*;
+use alloc::rc::{Rc, Weak};
+use core::fmt;
 use parity_wasm::elements::Local;
 use {Trap, TrapKind, Signature};
 use host::Externals;
@@ -17,7 +19,7 @@ use isa;
 #[derive(Clone, Debug)]
 pub struct FuncRef(Rc<FuncInstance>);
 
-impl ::std::ops::Deref for FuncRef {
+impl ::core::ops::Deref for FuncRef {
 	type Target = FuncInstance;
 	fn deref(&self) -> &FuncInstance {
 		&self.0

@@ -96,6 +96,21 @@
 
 #![warn(missing_docs)]
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
+//// alloc is required in no_std
+#![cfg_attr(not(feature = "std"), feature(alloc))]
+
+#[cfg(not(feature = "std"))]
+#[macro_use]
+extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std as alloc;
+
+#[cfg(feature = "std")]
+#[macro_use]
+extern crate core;
+
 #[cfg(test)]
 extern crate wabt;
 #[cfg(test)]
@@ -109,7 +124,9 @@ extern crate memory_units as memory_units_crate;
 
 pub extern crate nan_preserving_float;
 
-use std::fmt;
+#[allow(unused_imports)]
+use alloc::prelude::*;
+use core::fmt;
 #[cfg(feature = "std")]
 use std::error;
 

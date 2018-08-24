@@ -1,3 +1,5 @@
+#[allow(unused_imports)]
+use alloc::prelude::*;
 use hashmap_core::HashMap;
 use global::GlobalRef;
 use memory::MemoryRef;

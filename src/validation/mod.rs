@@ -1,6 +1,8 @@
+#[allow(unused_imports)]
+use alloc::prelude::*;
 #[cfg(feature = "std")]
 use std::error;
-use std::fmt;
+use core::fmt;
 use hashmap_core::HashSet;
 use parity_wasm::elements::{
 	BlockType, External, GlobalEntry, GlobalType, Internal, MemoryType, Module, Instruction,
@@ -47,7 +49,7 @@ pub struct ValidatedModule {
 	pub module: Module,
 }
 
-impl ::std::ops::Deref for ValidatedModule {
+impl ::core::ops::Deref for ValidatedModule {
 	type Target = Module;
 	fn deref(&self) -> &Module {
 		&self.module
