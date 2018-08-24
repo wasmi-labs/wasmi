@@ -1,6 +1,5 @@
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use byteorder::{ByteOrder, LittleEndian, WriteBytesExt};
 use nan_preserving_float::{F32, F64};
-use std::io;
 use std::mem::transmute;
 use std::{f32, i32, i64, u32, u64};
 use TrapKind;
@@ -585,8 +584,9 @@ impl LittleEndianConvert for i16 {
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		io::Cursor::new(buffer).read_i16::<LittleEndian>()
-			.map_err(|_| Error::InvalidLittleEndianBuffer)
+		buffer.get(0..2)
+			.map(LittleEndian::read_i16)
+			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -597,8 +597,9 @@ impl LittleEndianConvert for u16 {
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		io::Cursor::new(buffer).read_u16::<LittleEndian>()
-			.map_err(|_| Error::InvalidLittleEndianBuffer)
+		buffer.get(0..2)
+			.map(LittleEndian::read_u16)
+			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -609,8 +610,9 @@ impl LittleEndianConvert for i32 {
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		io::Cursor::new(buffer).read_i32::<LittleEndian>()
-			.map_err(|_| Error::InvalidLittleEndianBuffer)
+		buffer.get(0..4)
+			.map(LittleEndian::read_i32)
+			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -621,8 +623,9 @@ impl LittleEndianConvert for u32 {
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		io::Cursor::new(buffer).read_u32::<LittleEndian>()
-			.map_err(|_| Error::InvalidLittleEndianBuffer)
+		buffer.get(0..4)
+			.map(LittleEndian::read_u32)
+			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -633,8 +636,9 @@ impl LittleEndianConvert for i64 {
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		io::Cursor::new(buffer).read_i64::<LittleEndian>()
-			.map_err(|_| Error::InvalidLittleEndianBuffer)
+		buffer.get(0..8)
+			.map(LittleEndian::read_i64)
+			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -645,9 +649,9 @@ impl LittleEndianConvert for f32 {
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		io::Cursor::new(buffer).read_u32::<LittleEndian>()
-			.map(f32::from_bits)
-			.map_err(|_| Error::InvalidLittleEndianBuffer)
+		buffer.get(0..4)
+			.map(LittleEndian::read_f32)
+			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -658,9 +662,9 @@ impl LittleEndianConvert for f64 {
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		io::Cursor::new(buffer).read_u64::<LittleEndian>()
-			.map(f64::from_bits)
-			.map_err(|_| Error::InvalidLittleEndianBuffer)
+		buffer.get(0..8)
+			.map(LittleEndian::read_f64)
+			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
