@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use hashmap_core::HashMap;
 use global::GlobalRef;
 use memory::MemoryRef;
 use func::FuncRef;

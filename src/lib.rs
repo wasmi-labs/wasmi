@@ -104,6 +104,7 @@ extern crate assert_matches;
 
 extern crate parity_wasm;
 extern crate byteorder;
+extern crate hashmap_core;
 extern crate memory_units as memory_units_crate;
 
 pub extern crate nan_preserving_float;

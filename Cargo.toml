@@ -18,6 +18,7 @@ std = ["parity-wasm/std"]
 [dependencies]
 parity-wasm = { version = "0.31", default-features = false }
 byteorder = "1.0"
+hashmap_core = "0.1.9"
 memory_units = "0.3.0"
 nan-preserving-float = "0.1.0"
 

@@ -3,7 +3,7 @@ use Trap;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
-use std::collections::HashMap;
+use hashmap_core::HashMap;
 use parity_wasm::elements::{External, InitExpr, Internal, Instruction, ResizableLimits, Type};
 use {Module, Error, Signature, MemoryInstance, RuntimeValue, TableInstance};
 use imports::ImportResolver;
