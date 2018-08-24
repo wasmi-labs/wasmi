@@ -110,6 +110,7 @@ extern crate memory_units as memory_units_crate;
 pub extern crate nan_preserving_float;
 
 use std::fmt;
+#[cfg(feature = "std")]
 use std::error;
 
 /// Error type which can be thrown by wasm code or by host environment.
@@ -139,6 +140,7 @@ impl fmt::Display for Trap {
 	}
 }
 
+#[cfg(feature = "std")]
 impl error::Error for Trap {
 	fn description(&self) -> &str {
 		"runtime trap"
@@ -309,6 +311,7 @@ impl fmt::Display for Error {
 	}
 }
 
+#[cfg(feature = "std")]
 impl error::Error for Error {
 	fn description(&self) -> &str {
 		match *self {

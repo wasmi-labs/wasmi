@@ -1,3 +1,4 @@
+#[cfg(feature = "std")]
 use std::error;
 use std::fmt;
 use hashmap_core::HashSet;
@@ -27,6 +28,7 @@ impl fmt::Display for Error {
 	}
 }
 
+#[cfg(feature = "std")]
 impl error::Error for Error {
 	fn description(&self) -> &str {
 		&self.0
