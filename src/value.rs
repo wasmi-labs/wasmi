@@ -1,4 +1,4 @@
-use byteorder::{ByteOrder, LittleEndian, WriteBytesExt};
+use byteorder::{ByteOrder, LittleEndian};
 use nan_preserving_float::{F32, F64};
 use core::mem::transmute;
 use core::{f32, i32, i64, u32, u64};
@@ -578,9 +578,8 @@ impl LittleEndianConvert for u8 {
 }
 
 impl LittleEndianConvert for i16 {
-	fn into_little_endian(self, mut buffer: &mut[u8]) {
-		buffer.write_i16::<LittleEndian>(self)
-			.expect("i16 is written without any errors");
+	fn into_little_endian(self, buffer: &mut[u8]) {
+		LittleEndian::write_i16(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
@@ -591,9 +590,8 @@ impl LittleEndianConvert for i16 {
 }
 
 impl LittleEndianConvert for u16 {
-	fn into_little_endian(self, mut buffer: &mut[u8]) {
-		buffer.write_u16::<LittleEndian>(self)
-			.expect("u16 is written without any errors");
+	fn into_little_endian(self, buffer: &mut[u8]) {
+		LittleEndian::write_u16(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
@@ -604,9 +602,8 @@ impl LittleEndianConvert for u16 {
 }
 
 impl LittleEndianConvert for i32 {
-	fn into_little_endian(self, mut buffer: &mut[u8]) {
-		buffer.write_i32::<LittleEndian>(self)
-			.expect("i32 is written without any errors");
+	fn into_little_endian(self, buffer: &mut[u8]) {
+		LittleEndian::write_i32(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
@@ -617,9 +614,8 @@ impl LittleEndianConvert for i32 {
 }
 
 impl LittleEndianConvert for u32 {
-	fn into_little_endian(self, mut buffer: &mut[u8]) {
-		buffer.write_u32::<LittleEndian>(self)
-			.expect("u32 is written without any errors");
+	fn into_little_endian(self, buffer: &mut[u8]) {
+		LittleEndian::write_u32(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
@@ -630,9 +626,8 @@ impl LittleEndianConvert for u32 {
 }
 
 impl LittleEndianConvert for i64 {
-	fn into_little_endian(self, mut buffer: &mut[u8]) {
-		buffer.write_i64::<LittleEndian>(self)
-			.expect("i64 is written without any errors");
+	fn into_little_endian(self, buffer: &mut[u8]) {
+		LittleEndian::write_i64(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
@@ -643,9 +638,8 @@ impl LittleEndianConvert for i64 {
 }
 
 impl LittleEndianConvert for f32 {
-	fn into_little_endian(self, mut buffer: &mut[u8]) {
-		buffer.write_f32::<LittleEndian>(self)
-			.expect("f32 is written without any errors");
+	fn into_little_endian(self, buffer: &mut[u8]) {
+		LittleEndian::write_f32(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
@@ -656,9 +650,8 @@ impl LittleEndianConvert for f32 {
 }
 
 impl LittleEndianConvert for f64 {
-	fn into_little_endian(self, mut buffer: &mut[u8]) {
-		buffer.write_f64::<LittleEndian>(self)
-			.expect("i64 is written without any errors");
+	fn into_little_endian(self, buffer: &mut[u8]) {
+		LittleEndian::write_f64(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
