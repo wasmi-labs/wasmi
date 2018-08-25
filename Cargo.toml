@@ -16,7 +16,7 @@ default = ["std"]
 std = ["parity-wasm/std"]
 # Enable for no_std support
 # hashmap_core only works on no_std
-no_std = ["hashmap_core"]
+core = ["hashmap_core"]
 
 [dependencies]
 parity-wasm = { version = "0.31", default-features = false }
