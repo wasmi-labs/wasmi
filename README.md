@@ -42,6 +42,9 @@ parity-wasm = {
 The `core` feature requires the `core` and `alloc` libraries and a nightly compiler.
 Also, code related to `std::error` is disabled.
 
+Floating point operations in `no_std` use [`libm`](https://crates.io/crates/libm), which sometimes panics in debug mode (https://github.com/japaric/libm/issues/4).
+So make sure to either use release builds or avoid WASM with floating point operations, for example by using [`deny_floating_point`](https://docs.rs/wasmi/0.4.0/wasmi/struct.Module.html#method.deny_floating_point).
+
 ## Contribution
 
 Unless you explicitly state otherwise, any contribution intentionally submitted
