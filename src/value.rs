@@ -747,25 +747,22 @@ impl_integer!(i64);
 impl_integer!(u64);
 
 macro_rules! impl_float {
-	($type:ident, $int_type:ident) => {
-		impl_float!($type, $type, $int_type);
-	};
-	($type:ident, $intermediate:ident, $int_type:ident) => {
+	($type:ident, $fXX:ident, $iXX:ident) => {
 		impl Float<$type> for $type {
 			fn abs(self) -> $type {
-				$intermediate::abs(self.into()).into()
+				$fXX::abs(self.into()).into()
 			}
 			fn floor(self) -> $type {
-				$intermediate::floor(self.into()).into()
+				$fXX::floor(self.into()).into()
 			}
 			fn ceil(self) -> $type {
-				$intermediate::ceil(self.into()).into()
+				$fXX::ceil(self.into()).into()
 			}
 			fn trunc(self) -> $type {
-				$intermediate::trunc(self.into()).into()
+				$fXX::trunc(self.into()).into()
 			}
 			fn round(self) -> $type {
-				$intermediate::round(self.into()).into()
+				$fXX::round(self.into()).into()
 			}
 			fn nearest(self) -> $type {
 				let round = self.round();
@@ -783,20 +780,26 @@ macro_rules! impl_float {
 				}
 			}
 			fn sqrt(self) -> $type {
-				$intermediate::sqrt(self.into()).into()
+				$fXX::sqrt(self.into()).into()
 			}
 			// This instruction corresponds to what is sometimes called "minNaN" in other languages.
 			fn min(self, other: $type) -> $type {
-				if self.is_nan() || other.is_nan() {
-					return ::core::$intermediate::NAN.into();
+				if self.is_nan() {
+					return self;
+				}
+				if other.is_nan() {
+					return other;
 				}
 
 				self.min(other)
 			}
 			// This instruction corresponds to what is sometimes called "maxNaN" in other languages.
 			fn max(self, other: $type) -> $type {
-				if self.is_nan() || other.is_nan() {
-					return ::core::$intermediate::NAN.into();
+				if self.is_nan() {
+					return self;
+				}
+				if other.is_nan() {
+					return other;
 				}
 
 				self.max(other)
@@ -808,9 +811,9 @@ macro_rules! impl_float {
 					return self;
 				}
 
-				let sign_mask: $int_type = 1 << ((size_of::<$int_type>() << 3) - 1);
-				let self_int: $int_type = self.transmute_into();
-				let other_int: $int_type = other.transmute_into();
+				let sign_mask: $iXX = 1 << ((size_of::<$iXX>() << 3) - 1);
+				let self_int: $iXX = self.transmute_into();
+				let other_int: $iXX = other.transmute_into();
 				let is_self_sign_set = (self_int & sign_mask) != 0;
 				let is_other_sign_set = (other_int & sign_mask) != 0;
 				if is_self_sign_set == is_other_sign_set {
@@ -825,7 +828,7 @@ macro_rules! impl_float {
 	};
 }
 
-impl_float!(f32, i32);
-impl_float!(f64, i64);
+impl_float!(f32, f32, i32);
+impl_float!(f64, f64, i64);
 impl_float!(F32, f32, i32);
 impl_float!(F64, f64, i64);
