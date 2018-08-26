@@ -746,27 +746,48 @@ impl_integer!(u32);
 impl_integer!(i64);
 impl_integer!(u64);
 
+// Use std float functions in std environment.
+// And libm's implementation in no_std
+#[cfg(feature = "std")]
+macro_rules! call_math {
+	($op:ident, $e:expr, $fXX:ident, $FXXExt:ident) => {
+		$fXX::$op($e)
+	};
+}
+#[cfg(not(feature = "std"))]
+macro_rules! call_math {
+	($op:ident, $e:expr, $fXX:ident, $FXXExt:ident) => {
+		::libm::$FXXExt::$op($e)
+	};
+}
+
+// We cannot call the math functions directly, because there are multiple available implementaitons in no_std.
+// In std, there are only `Value::$op` and `std::$fXX:$op`.
+// The `std` ones are preferred, because they are not from a trait.
+// For `no_std`, the implementations are `Value::$op` and `libm::FXXExt::$op`,
+// both of which are trait implementations and hence ambiguous.
+// So we have to use a full path, which is what `call_math!` does.
 macro_rules! impl_float {
-	($type:ident, $fXX:ident, $iXX:ident) => {
+	($type:ident, $fXX:ident, $FXXExt:ident, $iXX:ident) => {
 		impl Float<$type> for $type {
 			fn abs(self) -> $type {
-				$fXX::abs(self.into()).into()
+				call_math!(abs, $fXX::from(self), $fXX, $FXXExt).into()
 			}
 			fn floor(self) -> $type {
-				$fXX::floor(self.into()).into()
+				call_math!(floor, $fXX::from(self), $fXX, $FXXExt).into()
 			}
 			fn ceil(self) -> $type {
-				$fXX::ceil(self.into()).into()
+				call_math!(ceil, $fXX::from(self), $fXX, $FXXExt).into()
 			}
 			fn trunc(self) -> $type {
-				$fXX::trunc(self.into()).into()
+				call_math!(trunc, $fXX::from(self), $fXX, $FXXExt).into()
 			}
 			fn round(self) -> $type {
-				$fXX::round(self.into()).into()
+				call_math!(round, $fXX::from(self), $fXX, $FXXExt).into()
 			}
 			fn nearest(self) -> $type {
 				let round = self.round();
-				if self.fract().abs() != 0.5 {
+				if call_math!(fract, $fXX::from(self), $fXX, $FXXExt).abs() != 0.5 {
 					return round;
 				}
 
@@ -780,7 +801,7 @@ macro_rules! impl_float {
 				}
 			}
 			fn sqrt(self) -> $type {
-				$fXX::sqrt(self.into()).into()
+				call_math!(sqrt, $fXX::from(self), $fXX, $FXXExt).into()
 			}
 			// This instruction corresponds to what is sometimes called "minNaN" in other languages.
 			fn min(self, other: $type) -> $type {
@@ -828,7 +849,7 @@ macro_rules! impl_float {
 	};
 }
 
-impl_float!(f32, f32, i32);
-impl_float!(f64, f64, i64);
-impl_float!(F32, f32, i32);
-impl_float!(F64, f64, i64);
+impl_float!(f32, f32, F32Ext, i32);
+impl_float!(f64, f64, F64Ext, i64);
+impl_float!(F32, f32, F32Ext, i32);
+impl_float!(F64, f64, F64Ext, i64);
