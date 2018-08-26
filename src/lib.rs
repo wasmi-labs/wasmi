@@ -1,6 +1,6 @@
 //! # wasmi
 //!
-//! This library allows to load WebAssembly modules in binary format and invoke their functions them.
+//! This library allows to load WebAssembly modules in binary format and invoke their functions.
 //!
 //! # Introduction
 //!
@@ -10,12 +10,12 @@
 //!
 //! - functions,
 //! - global variables,
-//! - linear memory spaces and
+//! - linear memory instances and
 //! - tables.
 //!
 //! Each of these definitions can be imported and exported.
 //!
-//! In addition to these definitions, modules can define initialization data for their memory spaces or tables. This initialization data can take the
+//! In addition to these definitions, modules can define initialization data for their memory or tables. This initialization data can take the
 //! form of segments, copied to given offsets. They can also define a `start` function that is automatically executed when the module is loaded.
 //!
 //! ## Loading and Validation
@@ -33,7 +33,7 @@
 //!
 //! 1. Creating an empty module instance.
 //! 2. Resolving the definition instances for each declared import in the module.
-//! 3. Instantiating definitions declared in the module (e.g. allocate global variables, allocate linear memory spaces, etc.).
+//! 3. Instantiating definitions declared in the module (e.g. allocate global variables, allocate linear memory, etc.).
 //! 4. Initializing memory and table contents by copying segments into them.
 //! 5. Executing the `start` function, if any.
 //!
