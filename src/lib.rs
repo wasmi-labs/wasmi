@@ -1,48 +1,48 @@
 //! # wasmi
 //!
-//! This library allows to load WebAssembly modules in binary format and invoke functions on them.
+//! This library allows to load WebAssembly modules in binary format and invoke their functions.
 //!
 //! # Introduction
 //!
-//! WebAssembly (wasm) is a safe, portable, compact format that designed for efficient execution.
+//! WebAssembly (wasm) is a safe, portable and compact format that designed for efficient execution.
 //!
-//! Wasm code is distributed in a form of modules, that contains definitions of:
+//! Wasm code is distributed in the form of modules that contains definitions of:
 //!
 //! - functions,
 //! - global variables,
-//! - linear memories,
+//! - linear memory instances and
 //! - tables.
 //!
-//! and this definitions can be imported. Also, each definition can be exported.
+//! Each of these definitions can be imported and exported.
 //!
-//! In addition to definitions, modules can define initialization data for their memories or tables that takes the
-//! form of segments copied to given offsets. They can also define a `start` function that is automatically executed.
+//! In addition to these definitions, modules can define initialization data for their memory or tables. This initialization data can take the
+//! form of segments, copied to given offsets. They can also define a `start` function that is automatically executed when the module is loaded.
 //!
 //! ## Loading and Validation
 //!
-//! Before execution a module should be validated. This process checks that module is well-formed
+//! Before execution, a module must be validated. This process checks that module is well-formed
 //! and makes only allowed operations.
 //!
-//! Valid modules can't access memory out of its sandbox, can't cause stack underflow
-//! and can call functions only with correct signatures.
+//! A valid module can't access memory out of its sandbox, can't cause stack underflows
+//! and can only call functions with correct signatures.
 //!
 //! ## Instantiation
 //!
-//! In order to execute code in wasm module it should be instatiated.
+//! In order to execute code from a wasm module, it must be instatiated.
 //! Instantiation includes the following steps:
 //!
-//! 1. Create an empty module instance,
-//! 2. Resolve definition instances for each declared import in the module,
-//! 3. Instantiate definitions declared in the module (e.g. allocate global variables, allocate linear memory, etc),
-//! 4. Initialize memory and table contents by copiying segments into them,
-//! 5. Execute `start` function, if any.
+//! 1. Creating an empty module instance.
+//! 2. Resolving the definition instances for each declared import in the module.
+//! 3. Instantiating definitions declared in the module (e.g. allocate global variables, allocate linear memory, etc.).
+//! 4. Initializing memory and table contents by copying segments into them.
+//! 5. Executing the `start` function, if any.
 //!
-//! After these steps, module instance are ready to execute functions.
+//! After these steps, the module instance is ready to execute functions.
 //!
 //! ## Execution
 //!
-//! It is allowed to only execute functions which are exported by a module.
-//! Functions can either return a result or trap (e.g. there can't be linking-error at the middle of execution).
+//! It only is allowed to call functions which are exported by the module.
+//! Functions can either return a result or trap (e.g. there can't be linking error in the middle of the function execution).
 //! This property is ensured by the validation process.
 //!
 //! # Examples
@@ -72,7 +72,7 @@
 //!         .expect("failed to load wasm");
 //!
 //!     // Instantiate a module with empty imports and
-//!     // asserting that there is no `start` function.
+//!     // assert that there is no `start` function.
 //!     let instance =
 //!         ModuleInstance::new(
 //!             &module,
@@ -81,7 +81,7 @@
 //!         .expect("failed to instantiate wasm module")
 //!         .assert_no_start();
 //!
-//!     // Finally, invoke exported function "test" with no parameters
+//!     // Finally, invoke the exported function "test" with no parameters
 //!     // and empty external function executor.
 //!     assert_eq!(
 //!         instance.invoke_export(
