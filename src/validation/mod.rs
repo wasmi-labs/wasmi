@@ -40,8 +40,11 @@ impl From<stack::Error> for Error {
 }
 
 #[derive(Clone)]
+/// A deserialized and validated module
 pub struct ValidatedModule {
+	/// The instructions in each Function, represented using isa::Instructions
 	pub code_map: Vec<isa::Instructions>,
+	/// The deserialized module
 	pub module: Module,
 }
 
@@ -165,6 +168,7 @@ pub fn deny_floating_point(module: &Module) -> Result<(), Error> {
 	Ok(())
 }
 
+/// Validate a module. This checks all of the invariants given by the WebAssembly spec.
 pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
 	let mut context_builder = ModuleContextBuilder::new();
 	let mut imported_globals = Vec::new();
