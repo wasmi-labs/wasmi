@@ -7,9 +7,9 @@ use std::env::args;
 use std::fs::File;
 use wasmi::{
 	Error, FuncInstance, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef,
-	ImportsBuilder, MemoryDescriptor, MemoryInstance, MemoryRef, Module,
-	ModuleImportResolver, ModuleInstance, NopExternals, RuntimeValue, Signature,
-	TableDescriptor, TableInstance, TableRef};
+	ImportsBuilder, InterpreterConfig, MemoryDescriptor, MemoryInstance,
+	MemoryRef, Module, ModuleImportResolver, ModuleInstance, NopExternals,
+	RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef};
 use wasmi::memory_units::*;
 
 fn load_from_file(filename: &str) -> Module {
@@ -75,6 +75,7 @@ fn main() {
 			.with_resolver("global.Math", &ResolveAll)
 			.with_resolver("asm2wasm", &ResolveAll)
 			.with_resolver("spectest", &ResolveAll),
+		&InterpreterConfig::default()
 	).expect("Failed to instantiate module")
 		.run_start(&mut NopExternals)
 		.expect("Failed to run start function in module");

@@ -1,5 +1,5 @@
 use {
-	Error, Signature, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
+	Error, Signature, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder, InterpreterConfig,
 	MemoryInstance, MemoryRef, TableInstance, TableRef, ModuleImportResolver, ModuleInstance, ModuleRef,
 	RuntimeValue, RuntimeArgs, TableDescriptor, MemoryDescriptor, Trap, TrapKind, ResumableError,
 };
@@ -239,7 +239,7 @@ fn call_host_func() {
 
 	let mut env = TestHost::new();
 
-	let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
+	let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env), &InterpreterConfig::default())
 		.expect("Failed to instantiate module")
 		.assert_no_start();
 
@@ -270,14 +270,14 @@ fn resume_call_host_func() {
 
 	let mut env = TestHost::new();
 
-	let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
+	let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env), &InterpreterConfig::default())
 		.expect("Failed to instantiate module")
 		.assert_no_start();
 
 	let export = instance.export_by_name("test").unwrap();
 	let func_instance = export.as_func().unwrap();
 
-	let mut invocation = FuncInstance::invoke_resumable(&func_instance, &[]).unwrap();
+	let mut invocation = FuncInstance::invoke_resumable(&func_instance, &[], &InterpreterConfig::default()).unwrap();
 	let result = invocation.start_execution(&mut env);
 	match result {
 		Err(ResumableError::Trap(_)) => {},
@@ -312,7 +312,7 @@ fn host_err() {
 
 	let mut env = TestHost::new();
 
-	let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
+	let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env), &InterpreterConfig::default())
 		.expect("Failed to instantiate module")
 		.assert_no_start();
 
@@ -347,7 +347,7 @@ fn modify_mem_with_host_funcs() {
 
 	let mut env = TestHost::new();
 
-	let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
+	let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env), &InterpreterConfig::default())
 		.expect("Failed to instantiate module")
 		.assert_no_start();
 
@@ -391,7 +391,7 @@ fn pull_internal_mem_from_module() {
 		trap_sub_result: None,
 	};
 
-	let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
+	let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env), &InterpreterConfig::default())
 		.expect("Failed to instantiate module")
 		.assert_no_start();
 
@@ -442,7 +442,7 @@ fn recursion() {
 
 	let mut env = TestHost::new();
 
-	let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
+	let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env), &InterpreterConfig::default())
 		.expect("Failed to instantiate module")
 		.assert_no_start();
 
@@ -554,6 +554,7 @@ fn defer_providing_externals() {
 	let instance = ModuleInstance::new(
 		&module,
 		&ImportsBuilder::new().with_resolver("host", &host_import_resolver),
+		&InterpreterConfig::default()
 	).expect("Failed to instantiate module")
 		.assert_no_start();
 
@@ -673,6 +674,7 @@ fn two_envs_one_externals() {
 	let trusted_instance = ModuleInstance::new(
 		&trusted_module,
 		&ImportsBuilder::new().with_resolver("env", &PrivilegedResolver),
+		&InterpreterConfig::default()
 	).expect("Failed to instantiate module")
 		.assert_no_start();
 
@@ -681,6 +683,7 @@ fn two_envs_one_externals() {
 		&ImportsBuilder::new()
 			.with_resolver("env", &OrdinaryResolver)
 			.with_resolver("trusted", &trusted_instance),
+		&InterpreterConfig::default()
 	).expect("Failed to instantiate module")
 		.assert_no_start();
 
@@ -788,6 +791,7 @@ fn dynamically_add_host_func() {
 	let instance = ModuleInstance::new(
 		&module,
 		&ImportsBuilder::new().with_resolver("env", &host_externals),
+		&InterpreterConfig::default()
 	).expect("Failed to instantiate module")
 		.assert_no_start();
 

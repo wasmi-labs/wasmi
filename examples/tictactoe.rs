@@ -7,8 +7,8 @@ use std::fs::File;
 use wasmi::{
 	Error as InterpreterError, ModuleInstance, ModuleRef,
 	Externals, RuntimeValue, FuncRef, ModuleImportResolver,
-	FuncInstance, HostError, ImportsBuilder, Signature, ValueType,
-	RuntimeArgs, Trap,
+	FuncInstance, HostError, ImportsBuilder, InterpreterConfig, Signature,
+	ValueType, RuntimeArgs, Trap,
 };
 
 #[derive(Debug)]
@@ -201,7 +201,7 @@ fn instantiate(path: &str) -> Result<ModuleRef, Error> {
 	let mut imports = ImportsBuilder::new();
 	imports.push_resolver("env", &RuntimeModuleImportResolver);
 
-	let instance = ModuleInstance::new(&module, &imports)?
+	let instance = ModuleInstance::new(&module, &imports, &InterpreterConfig::default())?
 		.assert_no_start();
 
 	Ok(instance)

@@ -1,7 +1,8 @@
 use {
 	Error, Signature, FuncRef, GlobalInstance, GlobalRef, ImportsBuilder, MemoryInstance,
-    MemoryRef, ModuleImportResolver, ModuleInstance, NopExternals, RuntimeValue,
-    TableInstance, TableRef, Module, GlobalDescriptor, TableDescriptor, MemoryDescriptor,
+	MemoryRef, ModuleImportResolver, ModuleInstance, NopExternals, RuntimeValue,
+	TableInstance, TableRef, Module, GlobalDescriptor, TableDescriptor, MemoryDescriptor,
+	InterpreterConfig
 };
 use memory_units::Pages;
 use std::fs::File;
@@ -93,6 +94,7 @@ fn interpreter_inc_i32() {
 	let instance = ModuleInstance::new(
 		&module,
 		&ImportsBuilder::new().with_resolver("env", &env),
+		&InterpreterConfig::default()
 	).expect("Failed to instantiate module")
 		.assert_no_start();
 
@@ -124,6 +126,7 @@ fn interpreter_accumulate_u8() {
 	let instance = ModuleInstance::new(
 		&module,
 		&ImportsBuilder::new().with_resolver("env", &env),
+		&InterpreterConfig::default()
 	).expect("Failed to instantiate module")
 		.assert_no_start();
 

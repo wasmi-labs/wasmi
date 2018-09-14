@@ -9,6 +9,7 @@ use {Module, Error, Signature, MemoryInstance, RuntimeValue, TableInstance};
 use imports::ImportResolver;
 use global::{GlobalInstance, GlobalRef};
 use func::{FuncRef, FuncBody, FuncInstance};
+use runner::InterpreterConfig;
 use table::TableRef;
 use memory::MemoryRef;
 use host::Externals;
@@ -155,6 +156,7 @@ pub struct ModuleInstance {
 	memories: RefCell<Vec<MemoryRef>>,
 	globals: RefCell<Vec<GlobalRef>>,
 	exports: RefCell<HashMap<String, ExternVal>>,
+	config: InterpreterConfig,
 }
 
 impl ModuleInstance {
@@ -166,6 +168,7 @@ impl ModuleInstance {
 			memories: RefCell::new(Vec::new()),
 			globals: RefCell::new(Vec::new()),
 			exports: RefCell::new(HashMap::new()),
+			config: Default::default(),
 		}
 	}
 
@@ -399,6 +402,7 @@ impl ModuleInstance {
 	pub fn with_externvals<'a, 'i, I: Iterator<Item = &'i ExternVal>>(
 		loaded_module: &'a Module,
 		extern_vals: I,
+		config: &InterpreterConfig,
 	) -> Result<NotStartedModuleRef<'a>, Error> {
 		let module = loaded_module.module();
 
@@ -449,6 +453,7 @@ impl ModuleInstance {
 		Ok(NotStartedModuleRef {
 			loaded_module,
 			instance: module_ref,
+			config: config.clone(),
 		})
 	}
 
@@ -474,14 +479,15 @@ impl ModuleInstance {
 	/// # Examples
 	///
 	/// ```rust
-	/// use wasmi::{ModuleInstance, ImportsBuilder, NopExternals};
+	/// use wasmi::{ModuleInstance, ImportsBuilder, InterpreterConfig, NopExternals};
 	/// # fn func() -> Result<(), ::wasmi::Error> {
 	/// # let module = wasmi::Module::from_buffer(&[0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]).unwrap();
 	///
 	/// // ModuleInstance::new returns instance which `start` function isn't called.
 	/// let not_started = ModuleInstance::new(
 	///     &module,
-	///     &ImportsBuilder::default()
+	///     &ImportsBuilder::default(),
+	///     &InterpreterConfig::default()
 	/// )?;
 	/// // Call `start` function if any.
 	/// let instance = not_started.run_start(&mut NopExternals)?;
@@ -494,14 +500,15 @@ impl ModuleInstance {
 	/// instantiated module without calling `start` function.
 	///
 	/// ```rust
-	/// use wasmi::{ModuleInstance, ImportsBuilder, NopExternals};
+	/// use wasmi::{ModuleInstance, ImportsBuilder, InterpreterConfig, NopExternals};
 	/// # fn func() -> Result<(), ::wasmi::Error> {
 	/// # let module = wasmi::Module::from_buffer(&[0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]).unwrap();
 	///
 	/// // This will panic if the module actually contain `start` function.
 	/// let not_started = ModuleInstance::new(
 	///     &module,
-	///     &ImportsBuilder::default()
+	///     &ImportsBuilder::default(),
+	///     &InterpreterConfig::default()
 	/// )?.assert_no_start();
 	///
 	/// # Ok(())
@@ -515,6 +522,7 @@ impl ModuleInstance {
 	pub fn new<'m, I: ImportResolver>(
 		loaded_module: &'m Module,
 		imports: &I,
+		config: &InterpreterConfig
 	) -> Result<NotStartedModuleRef<'m>, Error> {
 		let module = loaded_module.module();
 
@@ -551,7 +559,7 @@ impl ModuleInstance {
 			extern_vals.push(extern_val);
 		}
 
-		Self::with_externvals(loaded_module, extern_vals.iter())
+		Self::with_externvals(loaded_module, extern_vals.iter(), config)
 	}
 
 	/// Invoke exported function by a name.
@@ -574,7 +582,7 @@ impl ModuleInstance {
 	/// ```rust
 	/// # extern crate wasmi;
 	/// # extern crate wabt;
-	/// # use wasmi::{ModuleInstance, ImportsBuilder, NopExternals, RuntimeValue};
+	/// # use wasmi::{ModuleInstance, ImportsBuilder, InterpreterConfig, NopExternals, RuntimeValue};
 	/// # fn main() {
 	/// # let wasm_binary: Vec<u8> = wabt::wat2wasm(
 	/// #   r#"
@@ -590,7 +598,8 @@ impl ModuleInstance {
 	/// # let module = wasmi::Module::from_buffer(&wasm_binary).expect("failed to load wasm");
 	/// # let instance = ModuleInstance::new(
 	/// # &module,
-	/// # &ImportsBuilder::default()
+	/// # &ImportsBuilder::default(),
+	/// # &InterpreterConfig::default()
 	/// # ).expect("failed to instantiate wasm module").assert_no_start();
 	/// assert_eq!(
 	///     instance.invoke_export(
@@ -624,7 +633,7 @@ impl ModuleInstance {
 		};
 
 		check_function_args(func_instance.signature(), &args)?;
-		FuncInstance::invoke(&func_instance, args, externals)
+		FuncInstance::invoke(&func_instance, args, externals, &self.config)
 			.map_err(|t| Error::Trap(t))
 	}
 
@@ -657,6 +666,7 @@ impl ModuleInstance {
 pub struct NotStartedModuleRef<'a> {
 	loaded_module: &'a Module,
 	instance: ModuleRef,
+	config: InterpreterConfig,
 }
 
 impl<'a> NotStartedModuleRef<'a> {
@@ -683,7 +693,7 @@ impl<'a> NotStartedModuleRef<'a> {
 			let start_func = self.instance.func_by_index(start_fn_idx).expect(
 				"Due to validation start function should exists",
 			);
-			FuncInstance::invoke(&start_func, &[], state)?;
+			FuncInstance::invoke(&start_func, &[], state, &self.config)?;
 		}
 		Ok(self.instance)
 	}
@@ -765,6 +775,7 @@ pub fn check_limits(limits: &ResizableLimits) -> Result<(), Error> {
 mod tests {
 	use imports::ImportsBuilder;
 	use func::FuncInstance;
+	use runner::InterpreterConfig;
 	use types::{Signature, ValueType};
 	use super::{ModuleInstance, ExternVal};
 	use tests::parse_wat;
@@ -781,7 +792,8 @@ mod tests {
 		);
 		ModuleInstance::new(
 			&module_with_start,
-			&ImportsBuilder::default()
+			&ImportsBuilder::default(),
+			&InterpreterConfig::default()
 		).unwrap().assert_no_start();
 	}
 
@@ -801,6 +813,7 @@ mod tests {
 				[
 					ExternVal::Func(FuncInstance::alloc_host(Signature::new(&[][..], None), 0),)
 				].iter(),
+				&InterpreterConfig::default()
 			).is_ok()
 		);
 
@@ -812,11 +825,12 @@ mod tests {
 					ExternVal::Func(FuncInstance::alloc_host(Signature::new(&[][..], None), 0)),
 					ExternVal::Func(FuncInstance::alloc_host(Signature::new(&[][..], None), 1)),
 				].iter(),
+				&InterpreterConfig::default()
 			).is_err()
 		);
 
 		// externval vector is shorter than import count.
-		assert!(ModuleInstance::with_externvals(&module_with_single_import, [].iter(),).is_err());
+		assert!(ModuleInstance::with_externvals(&module_with_single_import, [].iter(), &InterpreterConfig::default()).is_err());
 
 		// externval vector has an unexpected type.
 		assert!(
@@ -828,6 +842,7 @@ mod tests {
 						0
 					),)
 				].iter(),
+				&InterpreterConfig::default()
 			).is_err()
 		);
 	}

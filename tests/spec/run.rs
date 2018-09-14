@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use wabt::script::{self, Action, Command, CommandKind, ScriptParser, Value};
 use wasmi::memory_units::Pages;
 use wasmi::{Error as InterpreterError, Externals, FuncInstance, FuncRef, GlobalDescriptor,
-            GlobalInstance, GlobalRef, ImportResolver, ImportsBuilder, MemoryDescriptor,
+            GlobalInstance, GlobalRef, ImportResolver, ImportsBuilder, InterpreterConfig, MemoryDescriptor,
             MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance, ModuleRef,
             RuntimeArgs, RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef, Trap};
 
@@ -261,7 +261,7 @@ fn try_load_module(wasm: &[u8]) -> Result<Module, Error> {
 
 fn try_load(wasm: &[u8], spec_driver: &mut SpecDriver) -> Result<(), Error> {
 	let module = try_load_module(wasm)?;
-	let instance = ModuleInstance::new(&module, &ImportsBuilder::default())?;
+	let instance = ModuleInstance::new(&module, &ImportsBuilder::default(), &InterpreterConfig::default())?;
 	instance
 		.run_start(spec_driver.spec_module())
 		.map_err(|trap| Error::Start(trap))?;
@@ -274,7 +274,7 @@ fn load_module(
 	spec_driver: &mut SpecDriver,
 ) -> Result<ModuleRef, Error> {
 	let module = try_load_module(wasm)?;
-	let instance = ModuleInstance::new(&module, spec_driver)
+	let instance = ModuleInstance::new(&module, spec_driver, &InterpreterConfig::default())
 		.map_err(|e| Error::Load(e.to_string()))?
 		.run_start(spec_driver.spec_module())
 		.map_err(|trap| Error::Start(trap))?;

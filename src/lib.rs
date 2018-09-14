@@ -51,7 +51,7 @@
 //! extern crate wasmi;
 //! extern crate wabt;
 //!
-//! use wasmi::{ModuleInstance, ImportsBuilder, NopExternals, RuntimeValue};
+//! use wasmi::{ModuleInstance, ImportsBuilder, InterpreterConfig, NopExternals, RuntimeValue};
 //!
 //! fn main() {
 //!     // Parse WAT (WebAssembly Text format) into wasm bytecode.
@@ -76,7 +76,8 @@
 //!     let instance =
 //!         ModuleInstance::new(
 //!             &module,
-//!             &ImportsBuilder::default()
+//!             &ImportsBuilder::default(),
+//!             &InterpreterConfig::default()
 //!         )
 //!         .expect("failed to instantiate wasm module")
 //!         .assert_no_start();
@@ -380,6 +381,7 @@ pub use self::module::{ModuleInstance, ModuleRef, ExternVal, NotStartedModuleRef
 pub use self::global::{GlobalInstance, GlobalRef};
 pub use self::func::{FuncInstance, FuncRef, FuncInvocation, ResumableError};
 pub use self::types::{Signature, ValueType, GlobalDescriptor, TableDescriptor, MemoryDescriptor};
+pub use self::runner::InterpreterConfig;
 
 /// WebAssembly-specific sizes and units.
 pub mod memory_units {
