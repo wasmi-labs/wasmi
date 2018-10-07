@@ -310,15 +310,29 @@ fn validate(wat: &str) -> ValidatedModule {
 	validated_module
 }
 
-fn compile(wat: &str) -> Vec<isa::Instruction> {
+fn compile(wat: &str) -> (Vec<isa::Instruction>, Vec<u32>) {
 	let validated_module = validate(wat);
 	let code = &validated_module.code_map[0];
-	code.iterate_from(0).map(|i| i.clone()).collect()
+
+	let mut instructions = Vec::new();
+	let mut pcs = Vec::new();
+	let mut iter = code.iterate_from(0);
+	loop {
+		let pc = iter.position();
+		if let Some(instruction) = iter.next() {
+			instructions.push(instruction.clone());
+			pcs.push(pc);
+		} else {
+			break
+		}
+	}
+
+	(instructions, pcs)
 }
 
 #[test]
 fn implicit_return_no_value() {
-	let code = compile(r#"
+	let (code, _) = compile(r#"
 		(module
 			(func (export "call")
 			)
@@ -337,7 +351,7 @@ fn implicit_return_no_value() {
 
 #[test]
 fn implicit_return_with_value() {
-	let code = compile(r#"
+	let (code, _) = compile(r#"
 		(module
 			(func (export "call") (result i32)
 				i32.const 0
@@ -358,7 +372,7 @@ fn implicit_return_with_value() {
 
 #[test]
 fn implicit_return_param() {
-	let code = compile(r#"
+	let (code, _) = compile(r#"
 		(module
 			(func (export "call") (param i32)
 			)
@@ -377,7 +391,7 @@ fn implicit_return_param() {
 
 #[test]
 fn get_local() {
-	let code = compile(r#"
+	let (code, _) = compile(r#"
 		(module
 			(func (export "call") (param i32) (result i32)
 				get_local 0
@@ -398,7 +412,7 @@ fn get_local() {
 
 #[test]
 fn explicit_return() {
-	let code = compile(r#"
+	let (code, _) = compile(r#"
 		(module
 			(func (export "call") (param i32) (result i32)
 				get_local 0
@@ -424,7 +438,7 @@ fn explicit_return() {
 
 #[test]
 fn add_params() {
-	let code = compile(r#"
+	let (code, _) = compile(r#"
 		(module
 			(func (export "call") (param i32) (param i32) (result i32)
 				get_local 0
@@ -454,7 +468,7 @@ fn add_params() {
 
 #[test]
 fn drop_locals() {
-	let code = compile(r#"
+	let (code, _) = compile(r#"
 		(module
 			(func (export "call") (param i32)
 				(local i32)
@@ -478,7 +492,7 @@ fn drop_locals() {
 
 #[test]
 fn if_without_else() {
-	let code = compile(r#"
+	let (code, pcs) = compile(r#"
 		(module
 			(func (export "call") (param i32) (result i32)
 				i32.const 1
@@ -495,7 +509,7 @@ fn if_without_else() {
 		vec![
 			isa::Instruction::I32Const(1),
 			isa::Instruction::BrIfEqz(isa::Target {
-				dst_pc: 4,
+				dst_pc: pcs[4],
 				drop_keep: isa::DropKeep {
 					drop: 0,
 					keep: isa::Keep::None,
@@ -517,7 +531,7 @@ fn if_without_else() {
 
 #[test]
 fn if_else() {
-	let code = compile(r#"
+	let (code, pcs) = compile(r#"
 		(module
 			(func (export "call")
 				(local i32)
@@ -537,7 +551,7 @@ fn if_else() {
 		vec![
 			isa::Instruction::I32Const(1),
 			isa::Instruction::BrIfEqz(isa::Target {
-				dst_pc: 5,
+				dst_pc: pcs[5],
 				drop_keep: isa::DropKeep {
 					drop: 0,
 					keep: isa::Keep::None,
@@ -546,7 +560,7 @@ fn if_else() {
 			isa::Instruction::I32Const(2),
 			isa::Instruction::SetLocal(1),
 			isa::Instruction::Br(isa::Target {
-				dst_pc: 7,
+				dst_pc: pcs[7],
 				drop_keep: isa::DropKeep {
 					drop: 0,
 					keep: isa::Keep::None,
@@ -564,7 +578,7 @@ fn if_else() {
 
 #[test]
 fn if_else_returns_result() {
-	let code = compile(r#"
+	let (code, pcs) = compile(r#"
 		(module
 			(func (export "call")
 				i32.const 1
@@ -582,7 +596,7 @@ fn if_else_returns_result() {
 		vec![
 			isa::Instruction::I32Const(1),
 			isa::Instruction::BrIfEqz(isa::Target {
-				dst_pc: 4,
+				dst_pc: pcs[4],
 				drop_keep: isa::DropKeep {
 					drop: 0,
 					keep: isa::Keep::None,
@@ -590,7 +604,7 @@ fn if_else_returns_result() {
 			}),
 			isa::Instruction::I32Const(2),
 			isa::Instruction::Br(isa::Target {
-				dst_pc: 5,
+				dst_pc: pcs[5],
 				drop_keep: isa::DropKeep {
 					drop: 0,
 					keep: isa::Keep::None,
@@ -608,7 +622,7 @@ fn if_else_returns_result() {
 
 #[test]
 fn if_else_branch_from_true_branch() {
-	let code = compile(r#"
+	let (code, pcs) = compile(r#"
 		(module
 			(func (export "call")
 				i32.const 1
@@ -630,7 +644,7 @@ fn if_else_branch_from_true_branch() {
 		vec![
 			isa::Instruction::I32Const(1),
 			isa::Instruction::BrIfEqz(isa::Target {
-				dst_pc: 8,
+				dst_pc: pcs[8],
 				drop_keep: isa::DropKeep {
 					drop: 0,
 					keep: isa::Keep::None,
@@ -639,7 +653,7 @@ fn if_else_branch_from_true_branch() {
 			isa::Instruction::I32Const(1),
 			isa::Instruction::I32Const(1),
 			isa::Instruction::BrIfNez(isa::Target {
-				dst_pc: 9,
+				dst_pc: pcs[9],
 				drop_keep: isa::DropKeep {
 					drop: 0,
 					keep: isa::Keep::Single,
@@ -648,7 +662,7 @@ fn if_else_branch_from_true_branch() {
 			isa::Instruction::Drop,
 			isa::Instruction::I32Const(2),
 			isa::Instruction::Br(isa::Target {
-				dst_pc: 9,
+				dst_pc: pcs[9],
 				drop_keep: isa::DropKeep {
 					drop: 0,
 					keep: isa::Keep::None,
@@ -666,7 +680,7 @@ fn if_else_branch_from_true_branch() {
 
 #[test]
 fn if_else_branch_from_false_branch() {
-	let code = compile(r#"
+	let (code, pcs) = compile(r#"
 		(module
 			(func (export "call")
 				i32.const 1
@@ -688,7 +702,7 @@ fn if_else_branch_from_false_branch() {
 		vec![
 			isa::Instruction::I32Const(1),
 			isa::Instruction::BrIfEqz(isa::Target {
-				dst_pc: 4,
+				dst_pc: pcs[4],
 				drop_keep: isa::DropKeep {
 					drop: 0,
 					keep: isa::Keep::None,
@@ -696,7 +710,7 @@ fn if_else_branch_from_false_branch() {
 			}),
 			isa::Instruction::I32Const(1),
 			isa::Instruction::Br(isa::Target {
-				dst_pc: 9,
+				dst_pc: pcs[9],
 				drop_keep: isa::DropKeep {
 					drop: 0,
 					keep: isa::Keep::None,
@@ -705,7 +719,7 @@ fn if_else_branch_from_false_branch() {
 			isa::Instruction::I32Const(2),
 			isa::Instruction::I32Const(1),
 			isa::Instruction::BrIfNez(isa::Target {
-				dst_pc: 9,
+				dst_pc: pcs[9],
 				drop_keep: isa::DropKeep {
 					drop: 0,
 					keep: isa::Keep::Single,
@@ -724,7 +738,7 @@ fn if_else_branch_from_false_branch() {
 
 #[test]
 fn loop_() {
-	let code = compile(r#"
+	let (code, _) = compile(r#"
 		(module
 			(func (export "call")
 				loop (result i32)
@@ -759,7 +773,7 @@ fn loop_() {
 
 #[test]
 fn loop_empty() {
-	let code = compile(r#"
+	let (code, _) = compile(r#"
 		(module
 			(func (export "call")
 				loop
@@ -780,7 +794,7 @@ fn loop_empty() {
 
 #[test]
 fn brtable() {
-	let code = compile(r#"
+	let (code, pcs) = compile(r#"
 		(module
 			(func (export "call")
 				block $1
@@ -806,7 +820,7 @@ fn brtable() {
 						},
 					},
 					isa::Target {
-						dst_pc: 2,
+						dst_pc: pcs[2],
 						drop_keep: isa::DropKeep {
 							drop: 0,
 							keep: isa::Keep::None,
@@ -824,7 +838,7 @@ fn brtable() {
 
 #[test]
 fn brtable_returns_result() {
-	let code = compile(r#"
+	let (code, pcs) = compile(r#"
 		(module
 			(func (export "call")
 				block $1 (result i32)
@@ -847,14 +861,14 @@ fn brtable_returns_result() {
 			isa::Instruction::BrTable(
 				vec![
 					isa::Target {
-						dst_pc: 3,
+						dst_pc: pcs[3],
 						drop_keep: isa::DropKeep {
 							drop: 0,
 							keep: isa::Keep::Single,
 						},
 					},
 					isa::Target {
-						dst_pc: 4,
+						dst_pc: pcs[4],
 						drop_keep: isa::DropKeep {
 							keep: isa::Keep::Single,
 							drop: 0,
@@ -874,7 +888,7 @@ fn brtable_returns_result() {
 
 #[test]
 fn wabt_example() {
-	let code = compile(r#"
+	let (code, pcs) = compile(r#"
 		(module
 			(func (export "call") (param i32) (result i32)
 				block $exit
@@ -893,7 +907,7 @@ fn wabt_example() {
 		vec![
 			isa::Instruction::GetLocal(1),
 			isa::Instruction::BrIfNez(isa::Target {
-				dst_pc: 4,
+				dst_pc: pcs[4],
 				drop_keep: isa::DropKeep {
 					drop: 0,
 					keep: isa::Keep::None,
