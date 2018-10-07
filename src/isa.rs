@@ -348,7 +348,7 @@ impl Instructions {
 		}
 	}
 
-	pub fn iterate_from(&self, position: usize) -> InstructionIter {
+	pub fn iterate_from(&self, position: u32) -> InstructionIter {
 		InstructionIter{
 			instructions: &self.vec,
 			position,
@@ -358,12 +358,12 @@ impl Instructions {
 
 pub struct InstructionIter<'a> {
 	instructions: &'a [Instruction],
-	position: usize,
+	position: u32,
 }
 
 impl<'a> InstructionIter<'a> {
 	#[inline]
-	pub fn position(&self) -> usize {
+	pub fn position(&self) -> u32 {
 		self.position
 	}
 }
@@ -373,7 +373,7 @@ impl<'a> Iterator for InstructionIter<'a> {
 
 	#[inline]
 	fn next(&mut self) -> Option<<Self as Iterator>::Item> {
-		self.instructions.get(self.position).map(|instruction| {
+		self.instructions.get(self.position as usize).map(|instruction| {
 			self.position += 1;
 			instruction
 		})

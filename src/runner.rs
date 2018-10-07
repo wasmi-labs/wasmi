@@ -241,7 +241,7 @@ impl Interpreter {
 					function_context.position = iter.position();
 				},
 				InstructionOutcome::Branch(target) => {
-					function_context.position = target.dst_pc as usize;
+					function_context.position = target.dst_pc;
 					iter = instructions.iterate_from(function_context.position);
 					self.value_stack.drop_keep(target.drop_keep);
 				},
@@ -1083,7 +1083,7 @@ struct FunctionContext {
 	pub module: ModuleRef,
 	pub memory: Option<MemoryRef>,
 	/// Current instruction position.
-	pub position: usize,
+	pub position: u32,
 }
 
 impl FunctionContext {
