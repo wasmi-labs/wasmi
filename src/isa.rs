@@ -93,6 +93,22 @@ pub struct Target {
 	pub drop_keep: DropKeep,
 }
 
+/// A relocation entry that specifies.
+#[derive(Debug)]
+pub enum Reloc {
+	/// Patch the destination of the branch instruction (br, br_eqz, br_nez)
+	/// at the specified pc.
+	Br {
+		pc: u32,
+	},
+	/// Patch the specified destination index inside of br_table instruction at
+	/// the specified pc.
+	BrTable {
+		pc: u32,
+		idx: usize,
+	},
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Instruction {
 	/// Push a local variable or an argument from the specified depth.
@@ -303,11 +319,32 @@ pub struct Instructions {
 }
 
 impl Instructions {
-	pub fn new<I>(instructions: I) -> Self
-		where I: IntoIterator<Item=Instruction>
-	{
+	pub fn with_capacity(capacity: usize) -> Self {
 		Instructions {
-			vec: instructions.into_iter().collect()
+			vec: Vec::with_capacity(capacity),
+		}
+	}
+
+	pub fn current_pc(&self) -> u32 {
+		self.vec.len() as u32
+	}
+
+	pub fn push(&mut self, instruction: Instruction) {
+		self.vec.push(instruction);
+	}
+
+	pub fn patch_relocation(&mut self, reloc: Reloc, dst_pc: u32) {
+		match reloc {
+			Reloc::Br { pc } => match self.vec[pc as usize] {
+				Instruction::Br(ref mut target)
+				| Instruction::BrIfEqz(ref mut target)
+				| Instruction::BrIfNez(ref mut target) => target.dst_pc = dst_pc,
+				_ => panic!("branch relocation points to a non-branch instruction"),
+			},
+			Reloc::BrTable { pc, idx } => match self.vec[pc as usize] {
+				Instruction::BrTable(ref mut targets) => targets[idx].dst_pc = dst_pc,
+				_ => panic!("brtable relocation points to not brtable instruction"),
+			}
 		}
 	}
 
