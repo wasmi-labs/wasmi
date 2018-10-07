@@ -299,5 +299,46 @@ pub enum Instruction {
 
 #[derive(Debug, Clone)]
 pub struct Instructions {
-	pub code: Vec<Instruction>,
+	vec: Vec<Instruction>,
+}
+
+impl Instructions {
+	pub fn new<I>(instructions: I) -> Self
+		where I: IntoIterator<Item=Instruction>
+	{
+		Instructions {
+			vec: instructions.into_iter().collect()
+		}
+	}
+
+	pub fn iterate_from(&self, position: usize) -> InstructionIter {
+		InstructionIter{
+			instructions: &self.vec,
+			position,
+		}
+	}
+}
+
+pub struct InstructionIter<'a> {
+	instructions: &'a [Instruction],
+	position: usize,
+}
+
+impl<'a> InstructionIter<'a> {
+	#[inline]
+	pub fn position(&self) -> usize {
+		self.position
+	}
+}
+
+impl<'a> Iterator for InstructionIter<'a> {
+	type Item = &'a Instruction;
+
+	#[inline]
+	fn next(&mut self) -> Option<<Self as Iterator>::Item> {
+		self.instructions.get(self.position).map(|instruction| {
+			self.position += 1;
+			instruction
+		})
+	}
 }

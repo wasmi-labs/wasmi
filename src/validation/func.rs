@@ -1406,9 +1406,7 @@ impl<'a> FunctionValidationContext<'a> {
 	}
 
 	fn into_code(self) -> isa::Instructions {
-		isa::Instructions {
-			code: self.sink.into_inner(),
-		}
+		isa::Instructions::new(self.sink.into_inner())
 	}
 }
 

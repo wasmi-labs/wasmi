@@ -313,7 +313,7 @@ fn validate(wat: &str) -> ValidatedModule {
 fn compile(wat: &str) -> Vec<isa::Instruction> {
 	let validated_module = validate(wat);
 	let code = &validated_module.code_map[0];
-	code.code.clone()
+	code.iterate_from(0).map(|i| i.clone()).collect()
 }
 
 #[test]
