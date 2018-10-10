@@ -175,7 +175,7 @@ impl Interpreter {
 			let function_return =
 				self.do_run_function(
 					&mut function_context,
-					&function_body.code.code,
+					&function_body.code,
 				).map_err(Trap::new)?;
 
 			match function_return {
@@ -229,18 +229,24 @@ impl Interpreter {
 		}
 	}
 
-	fn do_run_function(&mut self, function_context: &mut FunctionContext, instructions: &[isa::Instruction]) -> Result<RunResult, TrapKind> {
+	fn do_run_function(&mut self, function_context: &mut FunctionContext, instructions: &isa::Instructions)
+		-> Result<RunResult, TrapKind>
+	{
+		let mut iter = instructions.iterate_from(function_context.position);
 		loop {
-			let instruction = &instructions[function_context.position];
+			let instruction = iter.next().expect("instruction");
 
 			match self.run_instruction(function_context, instruction)? {
-				InstructionOutcome::RunNextInstruction => function_context.position += 1,
+				InstructionOutcome::RunNextInstruction => {
+					function_context.position = iter.position();
+				},
 				InstructionOutcome::Branch(target) => {
-					function_context.position = target.dst_pc as usize;
+					function_context.position = target.dst_pc;
+					iter = instructions.iterate_from(function_context.position);
 					self.value_stack.drop_keep(target.drop_keep);
 				},
 				InstructionOutcome::ExecuteCall(func_ref) => {
-					function_context.position += 1;
+					function_context.position = iter.position();
 					return Ok(RunResult::NestedCall(func_ref));
 				},
 				InstructionOutcome::Return(drop_keep) => {
@@ -1077,7 +1083,7 @@ struct FunctionContext {
 	pub module: ModuleRef,
 	pub memory: Option<MemoryRef>,
 	/// Current instruction position.
-	pub position: usize,
+	pub position: u32,
 }
 
 impl FunctionContext {
