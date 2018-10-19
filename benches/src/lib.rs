@@ -276,3 +276,53 @@ fn recursive_trap(b: &mut Bencher) {
 		assert_matches!(value, Err(_));
 	});
 }
+
+#[bench]
+fn grow_memory(b: &mut Bencher) {
+	let wasm = wabt::wat2wasm(
+		r#"
+(module
+	(memory 1)
+
+	(func $call (export "call") (param i32)
+		loop $l
+			;; store 1 into newly allocated area
+			(i32.store
+				;; calculate the start address of newly allocated memory area
+				(i32.mul
+					;; grow_memory by 1 page. This will yield the previous size
+					(grow_memory
+						(i32.const 1)
+					)
+					(i32.const 65535)
+				)
+				(i32.const 1)
+			)
+
+			(set_local 0
+				(i32.sub
+					(get_local 0)
+					(i32.const 1)
+				)
+			)
+			(br_if 0
+				(get_local 0)
+			)
+		end
+	)
+)
+		"#
+	).unwrap();
+	let module = Module::from_buffer(&wasm).unwrap();
+
+	b.iter(|| {
+		let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
+			.expect("failed to instantiate wasm module")
+			.assert_no_start();
+
+		let value = instance
+			.invoke_export("call", &[RuntimeValue::I32(1000)], &mut NopExternals);
+		assert_matches!(value, Ok(_));
+	});
+}
+
