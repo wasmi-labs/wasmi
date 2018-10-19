@@ -15,6 +15,7 @@ parity-wasm = "0.31"
 byteorder = "1.0"
 memory_units = "0.3.0"
 nan-preserving-float = "0.1.0"
+memmap = "0.7.0"
 
 [dev-dependencies]
 assert_matches = "1.1"
