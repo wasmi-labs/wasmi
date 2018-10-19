@@ -237,12 +237,9 @@ impl Interpreter {
 			let instruction = iter.next().expect("instruction");
 
 			match self.run_instruction(function_context, instruction)? {
-				InstructionOutcome::RunNextInstruction => {
-					function_context.position = iter.position();
-				},
+				InstructionOutcome::RunNextInstruction => {},
 				InstructionOutcome::Branch(target) => {
-					function_context.position = target.dst_pc;
-					iter = instructions.iterate_from(function_context.position);
+					iter = instructions.iterate_from(target.dst_pc);
 					self.value_stack.drop_keep(target.drop_keep);
 				},
 				InstructionOutcome::ExecuteCall(func_ref) => {
