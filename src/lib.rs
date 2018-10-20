@@ -123,8 +123,6 @@ extern crate byteorder;
 extern crate hashmap_core;
 extern crate memory_units as memory_units_crate;
 
-pub extern crate nan_preserving_float;
-
 #[allow(unused_imports)]
 use alloc::prelude::*;
 use core::fmt;
@@ -392,6 +390,7 @@ mod global;
 mod func;
 mod types;
 mod isa;
+pub mod nan_preserving_float;
 
 #[cfg(test)]
 mod tests;
