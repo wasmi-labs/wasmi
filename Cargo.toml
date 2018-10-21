@@ -27,4 +27,5 @@ libm = { version = "0.1.2", optional = true }
 
 [dev-dependencies]
 assert_matches = "1.1"
+rand = "0.4.2"
 wabt = "0.4"
