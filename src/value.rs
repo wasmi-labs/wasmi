@@ -1,7 +1,6 @@
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use nan_preserving_float::{F32, F64};
 use std::io;
-use std::mem::transmute;
 use std::{f32, i32, i64, u32, u64};
 use TrapKind;
 
