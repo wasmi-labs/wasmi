@@ -316,7 +316,7 @@ impl MemoryInstance {
 
 		unsafe { ::std::ptr::copy(
 			buffer[read_region.range()].as_ptr(),
-			buffer[write_region.range()].as_ptr() as *mut _,
+			buffer[write_region.range()].as_mut_ptr(),
 			len,
 		)}
 
@@ -345,7 +345,7 @@ impl MemoryInstance {
 
 		unsafe { ::std::ptr::copy_nonoverlapping(
 			buffer[read_region.range()].as_ptr(),
-			buffer[write_region.range()].as_ptr() as *mut _,
+			buffer[write_region.range()].as_mut_ptr(),
 			len,
 		)}
 
