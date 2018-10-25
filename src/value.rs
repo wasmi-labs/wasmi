@@ -547,11 +547,11 @@ impl TransmuteInto<f64> for i64 {
 }
 
 impl TransmuteInto<i32> for u32 {
-	fn transmute_into(self) -> i32 { unsafe { transmute(self) } }
+	fn transmute_into(self) -> i32 { self as _ }
 }
 
 impl TransmuteInto<i64> for u64 {
-	fn transmute_into(self) -> i64 { unsafe { transmute(self) } }
+	fn transmute_into(self) -> i64 { self as _ }
 }
 
 impl LittleEndianConvert for i8 {
