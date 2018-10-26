@@ -10,7 +10,7 @@ cargo-fuzz = true
 
 [dependencies]
 wasmi = { path = ".." }
-wabt = "0.2.0"
+wabt = "0.6.0"
 wasmparser = "0.14.1"
 tempdir = "0.3.6"
 

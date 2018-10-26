@@ -18,4 +18,4 @@ nan-preserving-float = "0.1.0"
 
 [dev-dependencies]
 assert_matches = "1.1"
-wabt = "0.4"
+wabt = "0.6"
