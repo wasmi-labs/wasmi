@@ -18,8 +18,6 @@ env:
 - CC=/usr/bin/gcc-8 CXX=/usr/bin/g++-8
 
 install:
-# Install `cargo-deadlinks` unless it is currently installed.
-- command -v cargo-deadlinks &> /dev/null || cargo install --git https://github.com/deadlinks/cargo-deadlinks/
 - if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then rustup target add wasm32-unknown-unknown; fi
 script:
 # Make sure nightly targets are not broken.
