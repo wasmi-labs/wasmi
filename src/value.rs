@@ -27,6 +27,93 @@ pub enum RuntimeValue {
 	F64(F64),
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Default)]
+pub(crate) struct RuntimeValueInternal(pub u64);
+
+impl RuntimeValueInternal {
+	pub fn with_type(self, ty: ValueType) -> RuntimeValue {
+		match ty {
+			ValueType::I32 => RuntimeValue::I32(<_>::from_runtime_value_internal(self)),
+			ValueType::I64 => RuntimeValue::I64(<_>::from_runtime_value_internal(self)),
+			ValueType::F32 => RuntimeValue::F32(<_>::from_runtime_value_internal(self)),
+			ValueType::F64 => RuntimeValue::F64(<_>::from_runtime_value_internal(self)),
+		}
+	}
+}
+
+pub(crate) trait FromRuntimeValueInternal
+where
+	Self: Sized,
+{
+	fn from_runtime_value_internal(val: RuntimeValueInternal) -> Self;
+}
+
+macro_rules! impl_from_runtime_value_internal {
+    ($($t:ty),*) => {
+        $(
+            impl FromRuntimeValueInternal for $t {
+                fn from_runtime_value_internal(
+                    RuntimeValueInternal(val): RuntimeValueInternal,
+                ) -> Self {
+                    val as _
+                }
+            }
+
+            impl From<$t> for RuntimeValueInternal {
+                fn from(other: $t) -> Self {
+                    RuntimeValueInternal(other as _)
+                }
+            }
+        )*
+    };
+}
+
+macro_rules! impl_from_runtime_value_internal_float {
+    ($($t:ty),*) => {
+        $(
+            impl FromRuntimeValueInternal for $t {
+                fn from_runtime_value_internal(
+                    RuntimeValueInternal(val): RuntimeValueInternal,
+                ) -> Self {
+                    <$t>::from_bits(val as _)
+                }
+            }
+
+            impl From<$t> for RuntimeValueInternal {
+                fn from(other: $t) -> Self {
+                    RuntimeValueInternal(other.to_bits() as _)
+                }
+            }
+        )*
+    };
+}
+
+impl_from_runtime_value_internal!(i8, u8, i16, u16, i32, u32, i64, u64);
+impl_from_runtime_value_internal_float!(f32, f64, F32, F64);
+
+impl From<bool> for RuntimeValueInternal {
+	fn from(other: bool) -> Self {
+		(if other { 1 } else { 0 }).into()
+	}
+}
+
+impl FromRuntimeValueInternal for bool {
+	fn from_runtime_value_internal(RuntimeValueInternal(val): RuntimeValueInternal) -> Self {
+		val != 0
+	}
+}
+
+impl From<RuntimeValue> for RuntimeValueInternal {
+	fn from(other: RuntimeValue) -> Self {
+		match other {
+			RuntimeValue::I32(val) => val.into(),
+			RuntimeValue::I64(val) => val.into(),
+			RuntimeValue::F32(val) => val.into(),
+			RuntimeValue::F64(val) => val.into(),
+		}
+	}
+}
+
 /// Trait for creating value from a [`RuntimeValue`].
 ///
 /// Typically each implementation can create a value from the specific type.
@@ -132,12 +219,12 @@ pub trait Float<T>: ArithmeticOps<T> {
 
 impl RuntimeValue {
 	/// Creates new default value of given type.
-	pub fn default(value_type: ::types::ValueType) -> Self {
+	pub fn default(value_type: ValueType) -> Self {
 		match value_type {
-			::types::ValueType::I32 => RuntimeValue::I32(0),
-			::types::ValueType::I64 => RuntimeValue::I64(0),
-			::types::ValueType::F32 => RuntimeValue::F32(0f32.into()),
-			::types::ValueType::F64 => RuntimeValue::F64(0f64.into()),
+			ValueType::I32 => RuntimeValue::I32(0),
+			ValueType::I64 => RuntimeValue::I64(0),
+			ValueType::F32 => RuntimeValue::F32(0f32.into()),
+			ValueType::F64 => RuntimeValue::F64(0f64.into()),
 		}
 	}
 
@@ -152,12 +239,12 @@ impl RuntimeValue {
 	}
 
 	/// Get variable type for this value.
-	pub fn value_type(&self) -> ::types::ValueType {
+	pub fn value_type(&self) -> ValueType {
 		match *self {
-			RuntimeValue::I32(_) => ::types::ValueType::I32,
-			RuntimeValue::I64(_) => ::types::ValueType::I64,
-			RuntimeValue::F32(_) => ::types::ValueType::F32,
-			RuntimeValue::F64(_) => ::types::ValueType::F64,
+			RuntimeValue::I32(_) => ValueType::I32,
+			RuntimeValue::I64(_) => ValueType::I64,
+			RuntimeValue::F32(_) => ValueType::F32,
+			RuntimeValue::F64(_) => ValueType::F64,
 		}
 	}
 
