@@ -96,6 +96,22 @@ pub struct Target {
 	pub drop_keep: DropKeep,
 }
 
+/// A relocation entry that specifies.
+#[derive(Debug)]
+pub enum Reloc {
+	/// Patch the destination of the branch instruction (br, br_eqz, br_nez)
+	/// at the specified pc.
+	Br {
+		pc: u32,
+	},
+	/// Patch the specified destination index inside of br_table instruction at
+	/// the specified pc.
+	BrTable {
+		pc: u32,
+		idx: usize,
+	},
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Instruction {
 	/// Push a local variable or an argument from the specified depth.
@@ -302,5 +318,67 @@ pub enum Instruction {
 
 #[derive(Debug, Clone)]
 pub struct Instructions {
-	pub code: Vec<Instruction>,
+	vec: Vec<Instruction>,
+}
+
+impl Instructions {
+	pub fn with_capacity(capacity: usize) -> Self {
+		Instructions {
+			vec: Vec::with_capacity(capacity),
+		}
+	}
+
+	pub fn current_pc(&self) -> u32 {
+		self.vec.len() as u32
+	}
+
+	pub fn push(&mut self, instruction: Instruction) {
+		self.vec.push(instruction);
+	}
+
+	pub fn patch_relocation(&mut self, reloc: Reloc, dst_pc: u32) {
+		match reloc {
+			Reloc::Br { pc } => match self.vec[pc as usize] {
+				Instruction::Br(ref mut target)
+				| Instruction::BrIfEqz(ref mut target)
+				| Instruction::BrIfNez(ref mut target) => target.dst_pc = dst_pc,
+				_ => panic!("branch relocation points to a non-branch instruction"),
+			},
+			Reloc::BrTable { pc, idx } => match self.vec[pc as usize] {
+				Instruction::BrTable(ref mut targets) => targets[idx].dst_pc = dst_pc,
+				_ => panic!("brtable relocation points to not brtable instruction"),
+			}
+		}
+	}
+
+	pub fn iterate_from(&self, position: u32) -> InstructionIter {
+		InstructionIter{
+			instructions: &self.vec,
+			position,
+		}
+	}
+}
+
+pub struct InstructionIter<'a> {
+	instructions: &'a [Instruction],
+	position: u32,
+}
+
+impl<'a> InstructionIter<'a> {
+	#[inline]
+	pub fn position(&self) -> u32 {
+		self.position
+	}
+}
+
+impl<'a> Iterator for InstructionIter<'a> {
+	type Item = &'a Instruction;
+
+	#[inline]
+	fn next(&mut self) -> Option<<Self as Iterator>::Item> {
+		self.instructions.get(self.position as usize).map(|instruction| {
+			self.position += 1;
+			instruction
+		})
+	}
 }

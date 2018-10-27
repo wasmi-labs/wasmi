@@ -1408,9 +1408,7 @@ impl<'a> FunctionValidationContext<'a> {
 	}
 
 	fn into_code(self) -> isa::Instructions {
-		isa::Instructions {
-			code: self.sink.into_inner(),
-		}
+		self.sink.into_inner()
 	}
 }
 
@@ -1630,22 +1628,6 @@ struct Target {
 	drop_keep: isa::DropKeep,
 }
 
-/// A relocation entry that specifies.
-#[derive(Debug)]
-enum Reloc {
-	/// Patch the destination of the branch instruction (br, br_eqz, br_nez)
-	/// at the specified pc.
-	Br {
-		pc: u32,
-	},
-	/// Patch the specified destination index inside of br_table instruction at
-	/// the specified pc.
-	BrTable {
-		pc: u32,
-		idx: usize,
-	},
-}
-
 /// Identifier of a label.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 struct LabelId(usize);
@@ -1657,23 +1639,23 @@ enum Label {
 }
 
 struct Sink {
-	ins: Vec<isa::Instruction>,
-	labels: Vec<(Label, Vec<Reloc>)>,
+	ins: isa::Instructions,
+	labels: Vec<(Label, Vec<isa::Reloc>)>,
 }
 
 impl Sink {
 	fn with_instruction_capacity(capacity: usize) -> Sink {
 		Sink {
-			ins: Vec::with_capacity(capacity),
+			ins: isa::Instructions::with_capacity(capacity),
 			labels: Vec::new(),
 		}
 	}
 
 	fn cur_pc(&self) -> u32 {
-		self.ins.len() as u32
+		self.ins.current_pc()
 	}
 
-	fn pc_or_placeholder<F: FnOnce() -> Reloc>(&mut self, label: LabelId, reloc_creator: F) -> u32 {
+	fn pc_or_placeholder<F: FnOnce() -> isa::Reloc>(&mut self, label: LabelId, reloc_creator: F) -> u32 {
 		match self.labels[label.0] {
 			(Label::Resolved(dst_pc), _) => dst_pc,
 			(Label::NotResolved, ref mut unresolved) => {
@@ -1694,7 +1676,7 @@ impl Sink {
 			drop_keep,
 		} = target;
 		let pc = self.cur_pc();
-		let dst_pc = self.pc_or_placeholder(label, || Reloc::Br { pc });
+		let dst_pc = self.pc_or_placeholder(label, || isa::Reloc::Br { pc });
 		self.ins.push(isa::Instruction::Br(isa::Target {
 			dst_pc,
 			drop_keep: drop_keep.into(),
@@ -1707,7 +1689,7 @@ impl Sink {
 			drop_keep,
 		} = target;
 		let pc = self.cur_pc();
-		let dst_pc = self.pc_or_placeholder(label, || Reloc::Br { pc });
+		let dst_pc = self.pc_or_placeholder(label, || isa::Reloc::Br { pc });
 		self.ins.push(isa::Instruction::BrIfEqz(isa::Target {
 			dst_pc,
 			drop_keep: drop_keep.into(),
@@ -1720,7 +1702,7 @@ impl Sink {
 			drop_keep,
 		} = target;
 		let pc = self.cur_pc();
-		let dst_pc = self.pc_or_placeholder(label, || Reloc::Br { pc });
+		let dst_pc = self.pc_or_placeholder(label, || isa::Reloc::Br { pc });
 		self.ins.push(isa::Instruction::BrIfNez(isa::Target {
 			dst_pc,
 			drop_keep: drop_keep.into(),
@@ -1733,7 +1715,7 @@ impl Sink {
 		let pc = self.cur_pc();
 		let mut isa_targets = Vec::new();
 		for (idx, &Target { label, drop_keep }) in targets.iter().chain(iter::once(&default)).enumerate() {
-			let dst_pc = self.pc_or_placeholder(label, || Reloc::BrTable { pc, idx });
+			let dst_pc = self.pc_or_placeholder(label, || isa::Reloc::BrTable { pc, idx });
 			isa_targets.push(
 				isa::Target {
 					dst_pc,
@@ -1770,26 +1752,15 @@ impl Sink {
 		// particular label.
 		let unresolved_rels = mem::replace(&mut self.labels[label.0].1, Vec::new());
 		for reloc in unresolved_rels {
-			match reloc {
-				Reloc::Br { pc } => match self.ins[pc as usize] {
-					isa::Instruction::Br(ref mut target)
-					| isa::Instruction::BrIfEqz(ref mut target)
-					| isa::Instruction::BrIfNez(ref mut target) => target.dst_pc = dst_pc,
-					_ => panic!("branch relocation points to a non-branch instruction"),
-				},
-				Reloc::BrTable { pc, idx } => match self.ins[pc as usize] {
-					isa::Instruction::BrTable(ref mut targets) => targets[idx].dst_pc = dst_pc,
-					_ => panic!("brtable relocation points to not brtable instruction"),
-				}
-			}
+			self.ins.patch_relocation(reloc, dst_pc);
 		}
 
 		// Mark this label as resolved.
 		self.labels[label.0] = (Label::Resolved(dst_pc), Vec::new());
 	}
 
-	/// Consume this Sink and returns isa::Instruction.
-	fn into_inner(self) -> Vec<isa::Instruction> {
+	/// Consume this Sink and returns isa::Instructions.
+	fn into_inner(self) -> isa::Instructions {
 		// At this moment all labels should be resolved.
 		assert!({
 			self.labels.iter().all(|(state, unresolved)|

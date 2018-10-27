@@ -7,4 +7,4 @@ authors = ["Sergey Pepyakin <s.pepyakin@gmail.com>"]
 honggfuzz = "=0.5.9" # Strict equal since hfuzz requires dep and cmd versions to match.
 wasmi = { path = ".." }
 tempdir = "0.3.6"
-wabt = "0.2.0"
+wabt = "0.6.0"

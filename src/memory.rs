@@ -318,7 +318,7 @@ impl MemoryInstance {
 
 		unsafe { ::core::ptr::copy(
 			buffer[read_region.range()].as_ptr(),
-			buffer[write_region.range()].as_ptr() as *mut _,
+			buffer[write_region.range()].as_mut_ptr(),
 			len,
 		)}
 
@@ -347,9 +347,32 @@ impl MemoryInstance {
 
 		unsafe { ::core::ptr::copy_nonoverlapping(
 			buffer[read_region.range()].as_ptr(),
-			buffer[write_region.range()].as_ptr() as *mut _,
+			buffer[write_region.range()].as_mut_ptr(),
 			len,
 		)}
+
+		Ok(())
+	}
+
+	/// Copy memory between two (possibly distinct) memory instances.
+	///
+	/// If the same memory instance passed as `src` and `dst` then usual `copy` will be used.
+	pub fn transfer(src: &MemoryRef, src_offset: usize, dst: &MemoryRef, dst_offset: usize, len: usize) -> Result<(), Error> {
+		if Rc::ptr_eq(&src.0, &dst.0) {
+			// `transfer` is invoked with with same source and destination. Let's assume that regions may
+			// overlap and use `copy`.
+			return src.copy(src_offset, dst_offset, len);
+		}
+
+		// Because memory references point to different memory instances, it is safe to `borrow_mut`
+		// both buffers at once (modulo `with_direct_access_mut`).
+		let mut src_buffer = src.buffer.borrow_mut();
+		let mut dst_buffer = dst.buffer.borrow_mut();
+
+		let src_range = src.checked_region(&mut src_buffer, src_offset, len)?.range();
+		let dst_range = dst.checked_region(&mut dst_buffer, dst_offset, len)?.range();
+
+		dst_buffer[dst_range].copy_from_slice(&src_buffer[src_range]);
 
 		Ok(())
 	}
@@ -432,7 +455,8 @@ pub fn validate_memory(initial: Pages, maximum: Option<Pages>) -> Result<(), Str
 #[cfg(test)]
 mod tests {
 
-	use super::{MemoryInstance, LINEAR_MEMORY_PAGE_SIZE};
+	use super::{MemoryRef, MemoryInstance, LINEAR_MEMORY_PAGE_SIZE};
+	use std::rc::Rc;
 	use Error;
 	use memory_units::Pages;
 
@@ -533,6 +557,47 @@ mod tests {
 			Err(Error::Memory(_)) => {},
 			_ => panic!("Expected Error::Memory(_), but got {:?}", result),
 		}
+	}
+
+	#[test]
+	fn transfer_works() {
+		let src = MemoryRef(Rc::new(create_memory(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])));
+		let dst = MemoryRef(Rc::new(create_memory(&[10, 11, 12, 13, 14, 15, 16, 17, 18, 19])));
+
+		MemoryInstance::transfer(&src, 4, &dst, 0, 3).unwrap();
+
+		assert_eq!(src.get(0, 10).unwrap(), &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+		assert_eq!(dst.get(0, 10).unwrap(), &[4, 5, 6, 13, 14, 15, 16, 17, 18, 19]);
+	}
+
+	#[test]
+	fn transfer_still_works_with_same_memory() {
+		let src = MemoryRef(Rc::new(create_memory(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])));
+
+		MemoryInstance::transfer(&src, 4, &src, 0, 3).unwrap();
+
+		assert_eq!(src.get(0, 10).unwrap(), &[4, 5, 6, 3, 4, 5, 6, 7, 8, 9]);
+	}
+
+	#[test]
+	fn transfer_oob_with_same_memory_errors() {
+		let src = MemoryRef(Rc::new(create_memory(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])));
+		assert!(MemoryInstance::transfer(&src, 65535, &src, 0, 3).is_err());
+
+		// Check that memories content left untouched
+		assert_eq!(src.get(0, 10).unwrap(), &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+	}
+
+	#[test]
+	fn transfer_oob_errors() {
+		let src = MemoryRef(Rc::new(create_memory(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])));
+		let dst = MemoryRef(Rc::new(create_memory(&[10, 11, 12, 13, 14, 15, 16, 17, 18, 19])));
+
+		assert!(MemoryInstance::transfer(&src, 65535, &dst, 0, 3).is_err());
+
+		// Check that memories content left untouched
+		assert_eq!(src.get(0, 10).unwrap(), &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+		assert_eq!(dst.get(0, 10).unwrap(), &[10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
 	}
 
 	#[test]
