@@ -1,6 +1,7 @@
 use byteorder::{ByteOrder, LittleEndian};
-use nan_preserving_float::{F32, F64};
 use core::{f32, i32, i64, u32, u64};
+use nan_preserving_float::{F32, F64};
+use types::ValueType;
 use TrapKind;
 
 #[derive(Debug)]
@@ -27,93 +28,6 @@ pub enum RuntimeValue {
 	F64(F64),
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Default)]
-pub(crate) struct RuntimeValueInternal(pub u64);
-
-impl RuntimeValueInternal {
-	pub fn with_type(self, ty: ValueType) -> RuntimeValue {
-		match ty {
-			ValueType::I32 => RuntimeValue::I32(<_>::from_runtime_value_internal(self)),
-			ValueType::I64 => RuntimeValue::I64(<_>::from_runtime_value_internal(self)),
-			ValueType::F32 => RuntimeValue::F32(<_>::from_runtime_value_internal(self)),
-			ValueType::F64 => RuntimeValue::F64(<_>::from_runtime_value_internal(self)),
-		}
-	}
-}
-
-pub(crate) trait FromRuntimeValueInternal
-where
-	Self: Sized,
-{
-	fn from_runtime_value_internal(val: RuntimeValueInternal) -> Self;
-}
-
-macro_rules! impl_from_runtime_value_internal {
-    ($($t:ty),*) => {
-        $(
-            impl FromRuntimeValueInternal for $t {
-                fn from_runtime_value_internal(
-                    RuntimeValueInternal(val): RuntimeValueInternal,
-                ) -> Self {
-                    val as _
-                }
-            }
-
-            impl From<$t> for RuntimeValueInternal {
-                fn from(other: $t) -> Self {
-                    RuntimeValueInternal(other as _)
-                }
-            }
-        )*
-    };
-}
-
-macro_rules! impl_from_runtime_value_internal_float {
-    ($($t:ty),*) => {
-        $(
-            impl FromRuntimeValueInternal for $t {
-                fn from_runtime_value_internal(
-                    RuntimeValueInternal(val): RuntimeValueInternal,
-                ) -> Self {
-                    <$t>::from_bits(val as _)
-                }
-            }
-
-            impl From<$t> for RuntimeValueInternal {
-                fn from(other: $t) -> Self {
-                    RuntimeValueInternal(other.to_bits() as _)
-                }
-            }
-        )*
-    };
-}
-
-impl_from_runtime_value_internal!(i8, u8, i16, u16, i32, u32, i64, u64);
-impl_from_runtime_value_internal_float!(f32, f64, F32, F64);
-
-impl From<bool> for RuntimeValueInternal {
-	fn from(other: bool) -> Self {
-		(if other { 1 } else { 0 }).into()
-	}
-}
-
-impl FromRuntimeValueInternal for bool {
-	fn from_runtime_value_internal(RuntimeValueInternal(val): RuntimeValueInternal) -> Self {
-		val != 0
-	}
-}
-
-impl From<RuntimeValue> for RuntimeValueInternal {
-	fn from(other: RuntimeValue) -> Self {
-		match other {
-			RuntimeValue::I32(val) => val.into(),
-			RuntimeValue::I64(val) => val.into(),
-			RuntimeValue::F32(val) => val.into(),
-			RuntimeValue::F64(val) => val.into(),
-		}
-	}
-}
-
 /// Trait for creating value from a [`RuntimeValue`].
 ///
 /// Typically each implementation can create a value from the specific type.
@@ -123,7 +37,10 @@ impl From<RuntimeValue> for RuntimeValueInternal {
 /// [`I32`]: enum.RuntimeValue.html#variant.I32
 /// [`F64`]: enum.RuntimeValue.html#variant.F64
 /// [`RuntimeValue`]: enum.RuntimeValue.html
-pub trait FromRuntimeValue where Self: Sized {
+pub trait FromRuntimeValue
+where
+	Self: Sized,
+{
 	/// Create a value of type `Self` from a given [`RuntimeValue`].
 	///
 	/// Returns `None` if the [`RuntimeValue`] is of type different than
@@ -158,9 +75,12 @@ pub trait TransmuteInto<T> {
 }
 
 /// Convert from and to little endian.
-pub trait LittleEndianConvert where Self: Sized {
+pub trait LittleEndianConvert
+where
+	Self: Sized,
+{
 	/// Convert to little endian buffer.
-	fn into_little_endian(self, buffer: &mut[u8]);
+	fn into_little_endian(self, buffer: &mut [u8]);
 	/// Convert from little endian buffer.
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error>;
 }
@@ -548,7 +468,7 @@ macro_rules! impl_transmute_into_self {
 				self
 			}
 		}
-	}
+	};
 }
 
 impl_transmute_into_self!(i32);
@@ -565,7 +485,7 @@ macro_rules! impl_transmute_into_as {
 				self as $into
 			}
 		}
-	}
+	};
 }
 
 impl_transmute_into_as!(i8, u8);
@@ -616,139 +536,160 @@ impl_transmute_into_npf!(F32, f32, i32, u32);
 impl_transmute_into_npf!(F64, f64, i64, u64);
 
 impl TransmuteInto<i32> for f32 {
-	fn transmute_into(self) -> i32 { self.to_bits() as i32 }
+	fn transmute_into(self) -> i32 {
+		self.to_bits() as i32
+	}
 }
 
 impl TransmuteInto<i64> for f64 {
-	fn transmute_into(self) -> i64 { self.to_bits() as i64 }
+	fn transmute_into(self) -> i64 {
+		self.to_bits() as i64
+	}
 }
 
 impl TransmuteInto<f32> for i32 {
-	fn transmute_into(self) -> f32 { f32::from_bits(self as u32) }
+	fn transmute_into(self) -> f32 {
+		f32::from_bits(self as u32)
+	}
 }
 
 impl TransmuteInto<f64> for i64 {
-	fn transmute_into(self) -> f64 { f64::from_bits(self as u64) }
+	fn transmute_into(self) -> f64 {
+		f64::from_bits(self as u64)
+	}
 }
 
 impl TransmuteInto<i32> for u32 {
-	fn transmute_into(self) -> i32 { self as _ }
+	fn transmute_into(self) -> i32 {
+		self as _
+	}
 }
 
 impl TransmuteInto<i64> for u64 {
-	fn transmute_into(self) -> i64 { self as _ }
+	fn transmute_into(self) -> i64 {
+		self as _
+	}
 }
 
 impl LittleEndianConvert for i8 {
-	fn into_little_endian(self, buffer: &mut[u8]) {
+	fn into_little_endian(self, buffer: &mut [u8]) {
 		buffer[0] = self as u8;
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		buffer.get(0)
+		buffer
+			.get(0)
 			.map(|v| *v as i8)
 			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
 impl LittleEndianConvert for u8 {
-	fn into_little_endian(self, buffer: &mut[u8]) {
+	fn into_little_endian(self, buffer: &mut [u8]) {
 		buffer[0] = self;
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		buffer.get(0)
+		buffer
+			.get(0)
 			.cloned()
 			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
 impl LittleEndianConvert for i16 {
-	fn into_little_endian(self, buffer: &mut[u8]) {
+	fn into_little_endian(self, buffer: &mut [u8]) {
 		LittleEndian::write_i16(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		buffer.get(0..2)
+		buffer
+			.get(0..2)
 			.map(LittleEndian::read_i16)
 			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
 impl LittleEndianConvert for u16 {
-	fn into_little_endian(self, buffer: &mut[u8]) {
+	fn into_little_endian(self, buffer: &mut [u8]) {
 		LittleEndian::write_u16(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		buffer.get(0..2)
+		buffer
+			.get(0..2)
 			.map(LittleEndian::read_u16)
 			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
 impl LittleEndianConvert for i32 {
-	fn into_little_endian(self, buffer: &mut[u8]) {
+	fn into_little_endian(self, buffer: &mut [u8]) {
 		LittleEndian::write_i32(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		buffer.get(0..4)
+		buffer
+			.get(0..4)
 			.map(LittleEndian::read_i32)
 			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
 impl LittleEndianConvert for u32 {
-	fn into_little_endian(self, buffer: &mut[u8]) {
+	fn into_little_endian(self, buffer: &mut [u8]) {
 		LittleEndian::write_u32(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		buffer.get(0..4)
+		buffer
+			.get(0..4)
 			.map(LittleEndian::read_u32)
 			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
 impl LittleEndianConvert for i64 {
-	fn into_little_endian(self, buffer: &mut[u8]) {
+	fn into_little_endian(self, buffer: &mut [u8]) {
 		LittleEndian::write_i64(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		buffer.get(0..8)
+		buffer
+			.get(0..8)
 			.map(LittleEndian::read_i64)
 			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
 impl LittleEndianConvert for f32 {
-	fn into_little_endian(self, buffer: &mut[u8]) {
+	fn into_little_endian(self, buffer: &mut [u8]) {
 		LittleEndian::write_f32(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		buffer.get(0..4)
+		buffer
+			.get(0..4)
 			.map(LittleEndian::read_f32)
 			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
 impl LittleEndianConvert for f64 {
-	fn into_little_endian(self, buffer: &mut[u8]) {
+	fn into_little_endian(self, buffer: &mut [u8]) {
 		LittleEndian::write_f64(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		buffer.get(0..8)
+		buffer
+			.get(0..8)
 			.map(LittleEndian::read_f64)
 			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
 impl LittleEndianConvert for F32 {
-	fn into_little_endian(self, buffer: &mut[u8]) {
+	fn into_little_endian(self, buffer: &mut [u8]) {
 		(self.to_bits() as i32).into_little_endian(buffer)
 	}
 
@@ -758,7 +699,7 @@ impl LittleEndianConvert for F32 {
 }
 
 impl LittleEndianConvert for F64 {
-	fn into_little_endian(self, buffer: &mut[u8]) {
+	fn into_little_endian(self, buffer: &mut [u8]) {
 		(self.to_bits() as i64).into_little_endian(buffer)
 	}
 
@@ -770,14 +711,19 @@ impl LittleEndianConvert for F64 {
 macro_rules! impl_integer_arithmetic_ops {
 	($type: ident) => {
 		impl ArithmeticOps<$type> for $type {
-			fn add(self, other: $type) -> $type { self.wrapping_add(other) }
-			fn sub(self, other: $type) -> $type { self.wrapping_sub(other) }
-			fn mul(self, other: $type) -> $type { self.wrapping_mul(other) }
+			fn add(self, other: $type) -> $type {
+				self.wrapping_add(other)
+			}
+			fn sub(self, other: $type) -> $type {
+				self.wrapping_sub(other)
+			}
+			fn mul(self, other: $type) -> $type {
+				self.wrapping_mul(other)
+			}
 			fn div(self, other: $type) -> Result<$type, TrapKind> {
 				if other == 0 {
 					Err(TrapKind::DivisionByZero)
-				}
-				else {
+				} else {
 					let (result, overflow) = self.overflowing_div(other);
 					if overflow {
 						Err(TrapKind::InvalidConversionToInt)
@@ -787,7 +733,7 @@ macro_rules! impl_integer_arithmetic_ops {
 				}
 			}
 		}
-	}
+	};
 }
 
 impl_integer_arithmetic_ops!(i32);
@@ -798,12 +744,20 @@ impl_integer_arithmetic_ops!(u64);
 macro_rules! impl_float_arithmetic_ops {
 	($type: ident) => {
 		impl ArithmeticOps<$type> for $type {
-			fn add(self, other: $type) -> $type { self + other }
-			fn sub(self, other: $type) -> $type { self - other }
-			fn mul(self, other: $type) -> $type { self * other }
-			fn div(self, other: $type) -> Result<$type, TrapKind> { Ok(self / other) }
+			fn add(self, other: $type) -> $type {
+				self + other
+			}
+			fn sub(self, other: $type) -> $type {
+				self - other
+			}
+			fn mul(self, other: $type) -> $type {
+				self * other
+			}
+			fn div(self, other: $type) -> Result<$type, TrapKind> {
+				Ok(self / other)
+			}
 		}
-	}
+	};
 }
 
 impl_float_arithmetic_ops!(f32);
@@ -814,17 +768,30 @@ impl_float_arithmetic_ops!(F64);
 macro_rules! impl_integer {
 	($type: ident) => {
 		impl Integer<$type> for $type {
-			fn leading_zeros(self) -> $type { self.leading_zeros() as $type }
-			fn trailing_zeros(self) -> $type { self.trailing_zeros() as $type }
-			fn count_ones(self) -> $type { self.count_ones() as $type }
-			fn rotl(self, other: $type) -> $type { self.rotate_left(other as u32) }
-			fn rotr(self, other: $type) -> $type { self.rotate_right(other as u32) }
+			fn leading_zeros(self) -> $type {
+				self.leading_zeros() as $type
+			}
+			fn trailing_zeros(self) -> $type {
+				self.trailing_zeros() as $type
+			}
+			fn count_ones(self) -> $type {
+				self.count_ones() as $type
+			}
+			fn rotl(self, other: $type) -> $type {
+				self.rotate_left(other as u32)
+			}
+			fn rotr(self, other: $type) -> $type {
+				self.rotate_right(other as u32)
+			}
 			fn rem(self, other: $type) -> Result<$type, TrapKind> {
-				if other == 0 { Err(TrapKind::DivisionByZero) }
-				else { Ok(self.wrapping_rem(other)) }
+				if other == 0 {
+					Err(TrapKind::DivisionByZero)
+				} else {
+					Ok(self.wrapping_rem(other))
+				}
 			}
 		}
-	}
+	};
 }
 
 impl_integer!(i32);
