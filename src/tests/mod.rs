@@ -23,10 +23,10 @@ fn assert_error_properties() {
 fn unsigned_to_runtime_value() {
 	use super::RuntimeValue;
 
-	let overflow_i32: u32 = ::std::i32::MAX as u32 + 1;
+	let overflow_i32: u32 = ::core::i32::MAX as u32 + 1;
 	assert_eq!(RuntimeValue::from(overflow_i32).try_into::<u32>().unwrap(), overflow_i32);
 
-	let overflow_i64: u64 = ::std::i64::MAX as u64 + 1;
+	let overflow_i64: u64 = ::core::i64::MAX as u64 + 1;
 	assert_eq!(RuntimeValue::from(overflow_i64).try_into::<u64>().unwrap(), overflow_i64);
 }
 

@@ -1,7 +1,9 @@
-use std::ops;
-use std::{u32, usize};
-use std::fmt;
-use std::iter::repeat;
+#[allow(unused_imports)]
+use alloc::prelude::*;
+use core::ops;
+use core::{u32, usize};
+use core::fmt;
+use core::iter::repeat;
 use parity_wasm::elements::Local;
 use {Error, Trap, TrapKind, Signature};
 use module::ModuleRef;
@@ -19,7 +21,7 @@ use nan_preserving_float::{F32, F64};
 use isa;
 
 /// Maximum number of entries in value stack.
-pub const DEFAULT_VALUE_STACK_LIMIT: usize = (1024 * 1024) / ::std::mem::size_of::<RuntimeValue>();
+pub const DEFAULT_VALUE_STACK_LIMIT: usize = (1024 * 1024) / ::core::mem::size_of::<RuntimeValue>();
 
 // TODO: Make these parameters changeble.
 pub const DEFAULT_CALL_STACK_LIMIT: usize = 64 * 1024;
@@ -122,7 +124,7 @@ impl Interpreter {
 	}
 
 	pub fn resume_execution<'a, E: Externals + 'a>(&mut self, return_val: Option<RuntimeValue>, externals: &'a mut E) -> Result<Option<RuntimeValue>, Trap> {
-		use std::mem::swap;
+		use core::mem::swap;
 
 		// Ensure that the VM is resumable. This is checked in `FuncInvocation::resume_execution`.
 		assert!(self.state.is_resumable());

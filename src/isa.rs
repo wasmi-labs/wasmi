@@ -67,6 +67,9 @@
 //! - Reserved immediates are ignored for `call_indirect`, `current_memory`, `grow_memory`.
 //!
 
+#[allow(unused_imports)]
+use alloc::prelude::*;
+
 /// Should we keep a value before "discarding" a stack frame?
 ///
 /// Note that this is a `enum` since Wasm doesn't support multiple return

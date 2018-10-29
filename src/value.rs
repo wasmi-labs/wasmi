@@ -1,7 +1,6 @@
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use byteorder::{ByteOrder, LittleEndian};
 use nan_preserving_float::{F32, F64};
-use std::io;
-use std::{f32, i32, i64, u32, u64};
+use core::{f32, i32, i64, u32, u64};
 use TrapKind;
 
 #[derive(Debug)]
@@ -261,7 +260,7 @@ impl FromRuntimeValue for bool {
 }
 
 ///  This conversion assumes that `i8` is represented as an [`I32`].
-/// 
+///
 /// [`I32`]: enum.RuntimeValue.html#variant.I32
 impl FromRuntimeValue for i8 {
 	fn from_runtime_value(val: RuntimeValue) -> Option<Self> {
@@ -275,7 +274,7 @@ impl FromRuntimeValue for i8 {
 }
 
 ///  This conversion assumes that `i16` is represented as an [`I32`].
-/// 
+///
 /// [`I32`]: enum.RuntimeValue.html#variant.I32
 impl FromRuntimeValue for i16 {
 	fn from_runtime_value(val: RuntimeValue) -> Option<Self> {
@@ -289,7 +288,7 @@ impl FromRuntimeValue for i16 {
 }
 
 ///  This conversion assumes that `u8` is represented as an [`I32`].
-/// 
+///
 /// [`I32`]: enum.RuntimeValue.html#variant.I32
 impl FromRuntimeValue for u8 {
 	fn from_runtime_value(val: RuntimeValue) -> Option<Self> {
@@ -303,7 +302,7 @@ impl FromRuntimeValue for u8 {
 }
 
 ///  This conversion assumes that `u16` is represented as an [`I32`].
-/// 
+///
 /// [`I32`]: enum.RuntimeValue.html#variant.I32
 impl FromRuntimeValue for u16 {
 	fn from_runtime_value(val: RuntimeValue) -> Option<Self> {
@@ -578,88 +577,86 @@ impl LittleEndianConvert for u8 {
 }
 
 impl LittleEndianConvert for i16 {
-	fn into_little_endian(self, mut buffer: &mut[u8]) {
-		buffer.write_i16::<LittleEndian>(self)
-			.expect("i16 is written without any errors");
+	fn into_little_endian(self, buffer: &mut[u8]) {
+		LittleEndian::write_i16(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		io::Cursor::new(buffer).read_i16::<LittleEndian>()
-			.map_err(|_| Error::InvalidLittleEndianBuffer)
+		buffer.get(0..2)
+			.map(LittleEndian::read_i16)
+			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
 impl LittleEndianConvert for u16 {
-	fn into_little_endian(self, mut buffer: &mut[u8]) {
-		buffer.write_u16::<LittleEndian>(self)
-			.expect("u16 is written without any errors");
+	fn into_little_endian(self, buffer: &mut[u8]) {
+		LittleEndian::write_u16(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		io::Cursor::new(buffer).read_u16::<LittleEndian>()
-			.map_err(|_| Error::InvalidLittleEndianBuffer)
+		buffer.get(0..2)
+			.map(LittleEndian::read_u16)
+			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
 impl LittleEndianConvert for i32 {
-	fn into_little_endian(self, mut buffer: &mut[u8]) {
-		buffer.write_i32::<LittleEndian>(self)
-			.expect("i32 is written without any errors");
+	fn into_little_endian(self, buffer: &mut[u8]) {
+		LittleEndian::write_i32(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		io::Cursor::new(buffer).read_i32::<LittleEndian>()
-			.map_err(|_| Error::InvalidLittleEndianBuffer)
+		buffer.get(0..4)
+			.map(LittleEndian::read_i32)
+			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
 impl LittleEndianConvert for u32 {
-	fn into_little_endian(self, mut buffer: &mut[u8]) {
-		buffer.write_u32::<LittleEndian>(self)
-			.expect("u32 is written without any errors");
+	fn into_little_endian(self, buffer: &mut[u8]) {
+		LittleEndian::write_u32(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		io::Cursor::new(buffer).read_u32::<LittleEndian>()
-			.map_err(|_| Error::InvalidLittleEndianBuffer)
+		buffer.get(0..4)
+			.map(LittleEndian::read_u32)
+			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
 impl LittleEndianConvert for i64 {
-	fn into_little_endian(self, mut buffer: &mut[u8]) {
-		buffer.write_i64::<LittleEndian>(self)
-			.expect("i64 is written without any errors");
+	fn into_little_endian(self, buffer: &mut[u8]) {
+		LittleEndian::write_i64(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		io::Cursor::new(buffer).read_i64::<LittleEndian>()
-			.map_err(|_| Error::InvalidLittleEndianBuffer)
+		buffer.get(0..8)
+			.map(LittleEndian::read_i64)
+			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
 impl LittleEndianConvert for f32 {
-	fn into_little_endian(self, mut buffer: &mut[u8]) {
-		buffer.write_f32::<LittleEndian>(self)
-			.expect("f32 is written without any errors");
+	fn into_little_endian(self, buffer: &mut[u8]) {
+		LittleEndian::write_f32(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		io::Cursor::new(buffer).read_u32::<LittleEndian>()
-			.map(f32::from_bits)
-			.map_err(|_| Error::InvalidLittleEndianBuffer)
+		buffer.get(0..4)
+			.map(LittleEndian::read_f32)
+			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
 impl LittleEndianConvert for f64 {
-	fn into_little_endian(self, mut buffer: &mut[u8]) {
-		buffer.write_f64::<LittleEndian>(self)
-			.expect("i64 is written without any errors");
+	fn into_little_endian(self, buffer: &mut[u8]) {
+		LittleEndian::write_f64(buffer, self);
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		io::Cursor::new(buffer).read_u64::<LittleEndian>()
-			.map(f64::from_bits)
-			.map_err(|_| Error::InvalidLittleEndianBuffer)
+		buffer.get(0..8)
+			.map(LittleEndian::read_f64)
+			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 
@@ -748,34 +745,52 @@ impl_integer!(u32);
 impl_integer!(i64);
 impl_integer!(u64);
 
-macro_rules! impl_float {
-	($type:ident, $int_type:ident) => {
-		impl_float!($type, $type, $int_type);
+// Use std float functions in std environment.
+// And libm's implementation in no_std
+#[cfg(feature = "std")]
+macro_rules! call_math {
+	($op:ident, $e:expr, $fXX:ident, $FXXExt:ident) => {
+		$fXX::$op($e)
 	};
-	($type:ident, $intermediate:ident, $int_type:ident) => {
+}
+#[cfg(not(feature = "std"))]
+macro_rules! call_math {
+	($op:ident, $e:expr, $fXX:ident, $FXXExt:ident) => {
+		::libm::$FXXExt::$op($e)
+	};
+}
+
+// We cannot call the math functions directly, because there are multiple available implementaitons in no_std.
+// In std, there are only `Value::$op` and `std::$fXX:$op`.
+// The `std` ones are preferred, because they are not from a trait.
+// For `no_std`, the implementations are `Value::$op` and `libm::FXXExt::$op`,
+// both of which are trait implementations and hence ambiguous.
+// So we have to use a full path, which is what `call_math!` does.
+macro_rules! impl_float {
+	($type:ident, $fXX:ident, $FXXExt:ident, $iXX:ident) => {
 		impl Float<$type> for $type {
 			fn abs(self) -> $type {
-				$intermediate::abs(self.into()).into()
+				call_math!(abs, $fXX::from(self), $fXX, $FXXExt).into()
 			}
 			fn floor(self) -> $type {
-				$intermediate::floor(self.into()).into()
+				call_math!(floor, $fXX::from(self), $fXX, $FXXExt).into()
 			}
 			fn ceil(self) -> $type {
-				$intermediate::ceil(self.into()).into()
+				call_math!(ceil, $fXX::from(self), $fXX, $FXXExt).into()
 			}
 			fn trunc(self) -> $type {
-				$intermediate::trunc(self.into()).into()
+				call_math!(trunc, $fXX::from(self), $fXX, $FXXExt).into()
 			}
 			fn round(self) -> $type {
-				$intermediate::round(self.into()).into()
+				call_math!(round, $fXX::from(self), $fXX, $FXXExt).into()
 			}
 			fn nearest(self) -> $type {
 				let round = self.round();
-				if self.fract().abs() != 0.5 {
+				if call_math!(fract, $fXX::from(self), $fXX, $FXXExt).abs() != 0.5 {
 					return round;
 				}
 
-				use std::ops::Rem;
+				use core::ops::Rem;
 				if round.rem(2.0) == 1.0 {
 					self.floor()
 				} else if round.rem(2.0) == -1.0 {
@@ -785,34 +800,40 @@ macro_rules! impl_float {
 				}
 			}
 			fn sqrt(self) -> $type {
-				$intermediate::sqrt(self.into()).into()
+				call_math!(sqrt, $fXX::from(self), $fXX, $FXXExt).into()
 			}
 			// This instruction corresponds to what is sometimes called "minNaN" in other languages.
 			fn min(self, other: $type) -> $type {
-				if self.is_nan() || other.is_nan() {
-					return ::std::$intermediate::NAN.into();
+				if self.is_nan() {
+					return self;
+				}
+				if other.is_nan() {
+					return other;
 				}
 
 				self.min(other)
 			}
 			// This instruction corresponds to what is sometimes called "maxNaN" in other languages.
 			fn max(self, other: $type) -> $type {
-				if self.is_nan() || other.is_nan() {
-					return ::std::$intermediate::NAN.into();
+				if self.is_nan() {
+					return self;
+				}
+				if other.is_nan() {
+					return other;
 				}
 
 				self.max(other)
 			}
 			fn copysign(self, other: $type) -> $type {
-				use std::mem::size_of;
+				use core::mem::size_of;
 
 				if self.is_nan() {
 					return self;
 				}
 
-				let sign_mask: $int_type = 1 << ((size_of::<$int_type>() << 3) - 1);
-				let self_int: $int_type = self.transmute_into();
-				let other_int: $int_type = other.transmute_into();
+				let sign_mask: $iXX = 1 << ((size_of::<$iXX>() << 3) - 1);
+				let self_int: $iXX = self.transmute_into();
+				let other_int: $iXX = other.transmute_into();
 				let is_self_sign_set = (self_int & sign_mask) != 0;
 				let is_other_sign_set = (other_int & sign_mask) != 0;
 				if is_self_sign_set == is_other_sign_set {
@@ -827,7 +848,7 @@ macro_rules! impl_float {
 	};
 }
 
-impl_float!(f32, i32);
-impl_float!(f64, i64);
-impl_float!(F32, f32, i32);
-impl_float!(F64, f64, i64);
+impl_float!(f32, f32, F32Ext, i32);
+impl_float!(f64, f64, F64Ext, i64);
+impl_float!(F32, f32, F32Ext, i32);
+impl_float!(F64, f64, F64Ext, i64);
