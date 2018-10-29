@@ -1,7 +1,6 @@
 #[allow(unused_imports)]
 use alloc::prelude::*;
 use alloc::rc::Rc;
-use runner::check_function_args;
 use Trap;
 use core::cell::RefCell;
 use core::fmt;
@@ -630,7 +629,6 @@ impl ModuleInstance {
 			}
 		};
 
-		check_function_args(func_instance.signature(), &args)?;
 		FuncInstance::invoke(&func_instance, args, externals)
 			.map_err(|t| Error::Trap(t))
 	}
