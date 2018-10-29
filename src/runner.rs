@@ -3,7 +3,7 @@ use std::{u32, usize};
 use std::fmt;
 use std::iter::repeat;
 use parity_wasm::elements::Local;
-use {Error, Trap, TrapKind, Signature};
+use {Trap, TrapKind, Signature};
 use module::ModuleRef;
 use memory::MemoryRef;
 use func::{FuncRef, FuncInstance, FuncInstanceInternal};
@@ -1158,26 +1158,20 @@ fn prepare_function_args(
 	args
 }
 
-pub fn check_function_args(signature: &Signature, args: &[RuntimeValue]) -> Result<(), Error> {
+pub fn check_function_args(signature: &Signature, args: &[RuntimeValue]) -> Result<(), Trap> {
 	if signature.params().len() != args.len() {
 		return Err(
-			Error::Function(
-				format!(
-					"not enough arguments, given {} but expected: {}",
-					args.len(),
-					signature.params().len(),
-				)
-			)
+			TrapKind::UnexpectedSignature.into()
 		);
 	}
 
 	signature.params().iter().cloned().zip(args).map(|(expected_type, param_value)| {
 		let actual_type = param_value.value_type();
 		if actual_type != expected_type {
-			return Err(Error::Function(format!("invalid parameter type {:?} when expected {:?}", actual_type, expected_type)));
+			return Err(TrapKind::UnexpectedSignature.into());
 		}
 		Ok(())
-	}).collect::<Result<Vec<_>, _>>()?;
+	}).collect::<Result<Vec<_>, Trap>>()?;
 
 	Ok(())
 }

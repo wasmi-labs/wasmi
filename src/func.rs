@@ -1,7 +1,7 @@
 use std::rc::{Rc, Weak};
 use std::fmt;
 use parity_wasm::elements::Local;
-use {Trap, TrapKind, Signature};
+use {Trap, Signature};
 use host::Externals;
 use runner::{check_function_args, Interpreter, InterpreterState};
 use value::RuntimeValue;
@@ -142,7 +142,7 @@ impl FuncInstance {
 		args: &[RuntimeValue],
 		externals: &mut E,
 	) -> Result<Option<RuntimeValue>, Trap> {
-		check_function_args(func.signature(), &args).map_err(|_| TrapKind::UnexpectedSignature)?;
+		check_function_args(func.signature(), &args)?;
 		match *func.as_internal() {
 			FuncInstanceInternal::Internal { .. } => {
 				let mut interpreter = Interpreter::new(func, args)?;
@@ -173,7 +173,7 @@ impl FuncInstance {
 		func: &FuncRef,
 		args: &'args [RuntimeValue],
 	) -> Result<FuncInvocation<'args>, Trap> {
-		check_function_args(func.signature(), &args).map_err(|_| TrapKind::UnexpectedSignature)?;
+		check_function_args(func.signature(), &args)?;
 		match *func.as_internal() {
 			FuncInstanceInternal::Internal { .. } => {
 				let interpreter = Interpreter::new(func, args)?;

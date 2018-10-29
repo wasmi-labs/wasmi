@@ -1,4 +1,3 @@
-use runner::check_function_args;
 use Trap;
 use std::rc::Rc;
 use std::cell::RefCell;
