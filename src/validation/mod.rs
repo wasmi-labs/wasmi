@@ -1,6 +1,14 @@
+#[allow(unused_imports)]
+use alloc::prelude::*;
+#[cfg(feature = "std")]
 use std::error;
-use std::fmt;
+use core::fmt;
+
+#[cfg(feature = "std")]
 use std::collections::HashSet;
+#[cfg(not(feature = "std"))]
+use hashmap_core::HashSet;
+
 use parity_wasm::elements::{
 	BlockType, External, GlobalEntry, GlobalType, Internal, MemoryType, Module, Instruction,
 	ResizableLimits, TableType, ValueType, InitExpr, Type,
@@ -27,6 +35,7 @@ impl fmt::Display for Error {
 	}
 }
 
+#[cfg(feature = "std")]
 impl error::Error for Error {
 	fn description(&self) -> &str {
 		&self.0
@@ -45,7 +54,7 @@ pub struct ValidatedModule {
 	pub module: Module,
 }
 
-impl ::std::ops::Deref for ValidatedModule {
+impl ::core::ops::Deref for ValidatedModule {
 	type Target = Module;
 	fn deref(&self) -> &Module {
 		&self.module

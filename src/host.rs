@@ -1,4 +1,4 @@
-use std::any::TypeId;
+use core::any::TypeId;
 use value::{RuntimeValue, FromRuntimeValue};
 use {TrapKind, Trap};
 
@@ -98,7 +98,7 @@ impl<'a> RuntimeArgs<'a> {
 ///     _ => panic!(),
 /// }
 /// ```
-pub trait HostError: 'static + ::std::fmt::Display + ::std::fmt::Debug + Send + Sync {
+pub trait HostError: 'static + ::core::fmt::Display + ::core::fmt::Debug + Send + Sync {
 	#[doc(hidden)]
 	fn __private_get_type_id__(&self) -> TypeId {
 		TypeId::of::<Self>()

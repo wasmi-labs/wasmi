@@ -1,4 +1,11 @@
+#[allow(unused_imports)]
+use alloc::prelude::*;
+
+#[cfg(feature = "std")]
 use std::collections::HashMap;
+#[cfg(not(feature = "std"))]
+use hashmap_core::HashMap;
+
 use global::GlobalRef;
 use memory::MemoryRef;
 use func::FuncRef;

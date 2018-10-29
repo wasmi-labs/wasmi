@@ -1,8 +1,15 @@
+#[allow(unused_imports)]
+use alloc::prelude::*;
+use alloc::rc::Rc;
 use Trap;
-use std::rc::Rc;
-use std::cell::RefCell;
-use std::fmt;
+use core::cell::RefCell;
+use core::fmt;
+
+#[cfg(feature = "std")]
 use std::collections::HashMap;
+#[cfg(not(feature = "std"))]
+use hashmap_core::HashMap;
+
 use parity_wasm::elements::{External, InitExpr, Internal, Instruction, ResizableLimits, Type};
 use {Module, Error, Signature, MemoryInstance, RuntimeValue, TableInstance};
 use imports::ImportResolver;
@@ -31,7 +38,7 @@ use memory_units::Pages;
 #[derive(Clone, Debug)]
 pub struct ModuleRef(pub(crate) Rc<ModuleInstance>);
 
-impl ::std::ops::Deref for ModuleRef {
+impl ::core::ops::Deref for ModuleRef {
 	type Target = ModuleInstance;
 	fn deref(&self) -> &ModuleInstance {
 		&self.0

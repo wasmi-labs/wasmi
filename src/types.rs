@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use alloc::borrow::Cow;
 
 use parity_wasm::elements::{
 	FunctionType, ValueType as EValueType, GlobalType, TableType, MemoryType};

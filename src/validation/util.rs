@@ -1,3 +1,5 @@
+#[allow(unused_imports)]
+use alloc::prelude::*;
 use parity_wasm::elements::{Local, ValueType};
 use validation::Error;
 

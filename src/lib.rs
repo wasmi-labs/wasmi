@@ -96,6 +96,21 @@
 
 #![warn(missing_docs)]
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
+//// alloc is required in no_std
+#![cfg_attr(not(feature = "std"), feature(alloc))]
+
+#[cfg(not(feature = "std"))]
+#[macro_use]
+extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std as alloc;
+
+#[cfg(feature = "std")]
+#[macro_use]
+extern crate core;
+
 #[cfg(test)]
 extern crate wabt;
 #[cfg(test)]
@@ -104,12 +119,18 @@ extern crate assert_matches;
 
 extern crate parity_wasm;
 extern crate byteorder;
+#[cfg(not(feature = "std"))]
+extern crate hashmap_core;
 extern crate memory_units as memory_units_crate;
 
-pub extern crate nan_preserving_float;
-
-use std::fmt;
+#[allow(unused_imports)]
+use alloc::prelude::*;
+use core::fmt;
+#[cfg(feature = "std")]
 use std::error;
+
+#[cfg(not(feature = "std"))]
+extern crate libm;
 
 /// Error type which can be thrown by wasm code or by host environment.
 ///
@@ -138,6 +159,7 @@ impl fmt::Display for Trap {
 	}
 }
 
+#[cfg(feature = "std")]
 impl error::Error for Trap {
 	fn description(&self) -> &str {
 		"runtime trap"
@@ -308,6 +330,7 @@ impl fmt::Display for Error {
 	}
 }
 
+#[cfg(feature = "std")]
 impl error::Error for Error {
 	fn description(&self) -> &str {
 		match *self {
@@ -367,6 +390,7 @@ mod global;
 mod func;
 mod types;
 mod isa;
+pub mod nan_preserving_float;
 
 #[cfg(test)]
 mod tests;

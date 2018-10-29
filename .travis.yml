@@ -23,6 +23,8 @@ script:
 # Make sure nightly targets are not broken.
 - if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then cargo check --tests --manifest-path=fuzz/Cargo.toml; fi
 - if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then cargo check --benches --manifest-path=benches/Cargo.toml; fi
+# Make sure `no_std` version checks.
+- if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then cargo +nightly check --no-default-features --features core; fi
 - ./test.sh
 - ./doc.sh
 after_success: |
