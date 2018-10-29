@@ -1167,13 +1167,12 @@ pub fn check_function_args(signature: &Signature, args: &[RuntimeValue]) -> Resu
 		);
 	}
 
-	signature.params().iter().cloned().zip(args).map(|(expected_type, param_value)| {
+	if signature.params().iter().zip(args).any(|(expected_type, param_value)| {
 		let actual_type = param_value.value_type();
-		if actual_type != expected_type {
-			return Err(TrapKind::UnexpectedSignature.into());
-		}
-		Ok(())
-	}).collect::<Result<Vec<_>, Trap>>()?;
+		&actual_type != expected_type
+	}) {
+		return Err(TrapKind::UnexpectedSignature.into());
+	}
 
 	Ok(())
 }
