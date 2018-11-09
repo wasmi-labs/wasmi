@@ -338,10 +338,15 @@ impl Interpreter {
 		instructions: &isa::Instructions,
 	) -> Result<RunResult, TrapKind> {
 		let mut iter = instructions.iterate_from(function_context.position);
-		loop {
-			let instruction = iter.next().expect("instruction");
 
-			match self.run_instruction(function_context, instruction)? {
+		loop {
+			let instruction = iter.next().expect(
+				"Ran out of instructions, this should be impossible \
+				 since validation ensures that we either have an explicit \
+				 return or an implicit block `end`.",
+			);
+
+			match self.run_instruction(function_context, &instruction)? {
 				InstructionOutcome::RunNextInstruction => {}
 				InstructionOutcome::Branch(target) => {
 					iter = instructions.iterate_from(target.dst_pc);
@@ -370,10 +375,10 @@ impl Interpreter {
 		match instruction {
 			&isa::Instruction::Unreachable => self.run_unreachable(context),
 
-			&isa::Instruction::Br(ref target) => self.run_br(context, target.clone()),
-			&isa::Instruction::BrIfEqz(ref target) => self.run_br_eqz(target.clone()),
-			&isa::Instruction::BrIfNez(ref target) => self.run_br_nez(target.clone()),
-			&isa::Instruction::BrTable(ref targets) => self.run_br_table(targets),
+			&isa::Instruction::Br(target) => self.run_br(context, target.clone()),
+			&isa::Instruction::BrIfEqz(target) => self.run_br_eqz(target.clone()),
+			&isa::Instruction::BrIfNez(target) => self.run_br_nez(target.clone()),
+			&isa::Instruction::BrTable(targets) => self.run_br_table(targets),
 			&isa::Instruction::Return(drop_keep) => self.run_return(drop_keep),
 
 			&isa::Instruction::Call(index) => self.run_call(context, index),
@@ -615,17 +620,11 @@ impl Interpreter {
 		}
 	}
 
-	fn run_br_table(&mut self, table: &[isa::Target]) -> Result<InstructionOutcome, TrapKind> {
+	fn run_br_table(&mut self, targets: isa::BrTargets) -> Result<InstructionOutcome, TrapKind> {
 		let index: u32 = self.value_stack.pop_as();
 
-		let dst = if (index as usize) < table.len() - 1 {
-			table[index as usize].clone()
-		} else {
-			table
-				.last()
-				.expect("Due to validation there should be at least one label")
-				.clone()
-		};
+		let dst = targets.get(index);
+
 		Ok(InstructionOutcome::Branch(dst))
 	}
 
@@ -1261,8 +1260,8 @@ struct FunctionContext {
 
 impl FunctionContext {
 	pub fn new(function: FuncRef) -> Self {
-		let module = match *function.as_internal() {
-			FuncInstanceInternal::Internal { ref module, .. } => module.upgrade().expect("module deallocated"),
+		let module = match function.as_internal() {
+			FuncInstanceInternal::Internal { module, .. } => module.upgrade().expect("module deallocated"),
 			FuncInstanceInternal::Host { .. } => panic!("Host functions can't be called as internally defined functions; Thus FunctionContext can be created only with internally defined functions; qed"),
 		};
 		let memory = module.memory_by_index(DEFAULT_MEMORY_INDEX);
