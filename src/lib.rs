@@ -1,10 +1,10 @@
 //! # wasmi
 //!
-//! This library allows to load WebAssembly modules in binary format and invoke their functions.
+//! This library allows WebAssembly modules to be loaded in binary format and their functions invoked.
 //!
 //! # Introduction
 //!
-//! WebAssembly (wasm) is a safe, portable and compact format that designed for efficient execution.
+//! WebAssembly (wasm) is a safe, portable and compact format that is designed for efficient execution.
 //!
 //! Wasm code is distributed in the form of modules that contains definitions of:
 //!
@@ -20,15 +20,15 @@
 //!
 //! ## Loading and Validation
 //!
-//! Before execution, a module must be validated. This process checks that module is well-formed
+//! Before execution, a module must be validated. This process checks that the module is well-formed
 //! and makes only allowed operations.
 //!
-//! A valid module can't access memory out of its sandbox, can't cause stack underflows
+//! A valid module can't access memory outside its sandbox, can't cause stack underflows
 //! and can only call functions with correct signatures.
 //!
 //! ## Instantiation
 //!
-//! In order to execute code from a wasm module, it must be instatiated.
+//! In order to execute code from a wasm module, it must be instantiated.
 //! Instantiation includes the following steps:
 //!
 //! 1. Creating an empty module instance.
