@@ -174,8 +174,7 @@ impl MemoryInstance {
 	/// Get value from memory at given offset.
 	pub fn get_value<T: LittleEndianConvert>(&self, offset: u32) -> Result<T, Error> {
 		let mut buffer = self.buffer.borrow_mut();
-		let region =
-			self.checked_region(&mut buffer, offset as usize, ::core::mem::size_of::<T>())?;
+		let region = self.checked_region(&mut buffer, offset as usize, ::core::mem::size_of::<T>())?;
 		Ok(T::from_little_endian(&buffer[region.range()]).expect("Slice size is checked"))
 	}
 
@@ -209,9 +208,7 @@ impl MemoryInstance {
 	/// Copy data in the memory at given offset.
 	pub fn set(&self, offset: u32, value: &[u8]) -> Result<(), Error> {
 		let mut buffer = self.buffer.borrow_mut();
-		let range = self
-			.checked_region(&mut buffer, offset as usize, value.len())?
-			.range();
+		let range = self.checked_region(&mut buffer, offset as usize, value.len())?.range();
 
 		buffer[range].copy_from_slice(value);
 
@@ -241,9 +238,7 @@ impl MemoryInstance {
 			return Ok(size_before_grow);
 		}
 		if additional > Pages(65536) {
-			return Err(Error::Memory(format!(
-				"Trying to grow memory by more than 65536 pages"
-			)));
+			return Err(Error::Memory(format!("Trying to grow memory by more than 65536 pages")));
 		}
 
 		let new_size: Pages = size_before_grow + additional;
@@ -260,12 +255,7 @@ impl MemoryInstance {
 		Ok(size_before_grow)
 	}
 
-	fn checked_region<B>(
-		&self,
-		buffer: &mut B,
-		offset: usize,
-		size: usize,
-	) -> Result<CheckedRegion, Error>
+	fn checked_region<B>(&self, buffer: &mut B, offset: usize, size: usize) -> Result<CheckedRegion, Error>
 	where
 		B: ::core::ops::DerefMut<Target = Vec<u8>>,
 	{
@@ -365,8 +355,7 @@ impl MemoryInstance {
 	pub fn copy(&self, src_offset: usize, dst_offset: usize, len: usize) -> Result<(), Error> {
 		let mut buffer = self.buffer.borrow_mut();
 
-		let (read_region, write_region) =
-			self.checked_region_pair(&mut buffer, src_offset, len, dst_offset, len)?;
+		let (read_region, write_region) = self.checked_region_pair(&mut buffer, src_offset, len, dst_offset, len)?;
 
 		unsafe {
 			::core::ptr::copy(
@@ -390,16 +379,10 @@ impl MemoryInstance {
 	///
 	/// - either of specified regions is out of bounds,
 	/// - these regions overlaps.
-	pub fn copy_nonoverlapping(
-		&self,
-		src_offset: usize,
-		dst_offset: usize,
-		len: usize,
-	) -> Result<(), Error> {
+	pub fn copy_nonoverlapping(&self, src_offset: usize, dst_offset: usize, len: usize) -> Result<(), Error> {
 		let mut buffer = self.buffer.borrow_mut();
 
-		let (read_region, write_region) =
-			self.checked_region_pair(&mut buffer, src_offset, len, dst_offset, len)?;
+		let (read_region, write_region) = self.checked_region_pair(&mut buffer, src_offset, len, dst_offset, len)?;
 
 		if read_region.intersects(&write_region) {
 			return Err(Error::Memory(format!(
@@ -439,12 +422,8 @@ impl MemoryInstance {
 		let mut src_buffer = src.buffer.borrow_mut();
 		let mut dst_buffer = dst.buffer.borrow_mut();
 
-		let src_range = src
-			.checked_region(&mut src_buffer, src_offset, len)?
-			.range();
-		let dst_range = dst
-			.checked_region(&mut dst_buffer, dst_offset, len)?
-			.range();
+		let src_range = src.checked_region(&mut src_buffer, src_offset, len)?.range();
+		let dst_range = dst.checked_region(&mut dst_buffer, dst_offset, len)?.range();
 
 		dst_buffer[dst_range].copy_from_slice(&src_buffer[src_range]);
 
@@ -588,8 +567,7 @@ mod tests {
 
 	fn create_memory(initial_content: &[u8]) -> MemoryInstance {
 		let mem = MemoryInstance::new(Pages(1), Some(Pages(1)));
-		mem.set(0, initial_content)
-			.expect("Successful initialize the memory");
+		mem.set(0, initial_content).expect("Successful initialize the memory");
 		mem
 	}
 
@@ -641,17 +619,12 @@ mod tests {
 	#[test]
 	fn transfer_works() {
 		let src = MemoryRef(Rc::new(create_memory(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])));
-		let dst = MemoryRef(Rc::new(create_memory(&[
-			10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-		])));
+		let dst = MemoryRef(Rc::new(create_memory(&[10, 11, 12, 13, 14, 15, 16, 17, 18, 19])));
 
 		MemoryInstance::transfer(&src, 4, &dst, 0, 3).unwrap();
 
 		assert_eq!(src.get(0, 10).unwrap(), &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-		assert_eq!(
-			dst.get(0, 10).unwrap(),
-			&[4, 5, 6, 13, 14, 15, 16, 17, 18, 19]
-		);
+		assert_eq!(dst.get(0, 10).unwrap(), &[4, 5, 6, 13, 14, 15, 16, 17, 18, 19]);
 	}
 
 	#[test]
@@ -675,25 +648,19 @@ mod tests {
 	#[test]
 	fn transfer_oob_errors() {
 		let src = MemoryRef(Rc::new(create_memory(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])));
-		let dst = MemoryRef(Rc::new(create_memory(&[
-			10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-		])));
+		let dst = MemoryRef(Rc::new(create_memory(&[10, 11, 12, 13, 14, 15, 16, 17, 18, 19])));
 
 		assert!(MemoryInstance::transfer(&src, 65535, &dst, 0, 3).is_err());
 
 		// Check that memories content left untouched
 		assert_eq!(src.get(0, 10).unwrap(), &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-		assert_eq!(
-			dst.get(0, 10).unwrap(),
-			&[10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
-		);
+		assert_eq!(dst.get(0, 10).unwrap(), &[10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
 	}
 
 	#[test]
 	fn clear() {
 		let mem = create_memory(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-		mem.clear(0, 0x4A, 10)
-			.expect("To successfully clear the memory");
+		mem.clear(0, 0x4A, 10).expect("To successfully clear the memory");
 		let result = mem.get(0, 10).expect("To successfully retrieve the result");
 		assert_eq!(result, &[0x4A; 10]);
 	}
@@ -701,12 +668,10 @@ mod tests {
 	#[test]
 	fn get_into() {
 		let mem = MemoryInstance::new(Pages(1), None);
-		mem.set(6, &[13, 17, 129])
-			.expect("memory set should not fail");
+		mem.set(6, &[13, 17, 129]).expect("memory set should not fail");
 
 		let mut data = [0u8; 2];
-		mem.get_into(7, &mut data[..])
-			.expect("get_into should not fail");
+		mem.get_into(7, &mut data[..]).expect("get_into should not fail");
 
 		assert_eq!(data, [17, 129]);
 	}

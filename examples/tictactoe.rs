@@ -5,9 +5,8 @@ use std::env;
 use std::fmt;
 use std::fs::File;
 use wasmi::{
-	Error as InterpreterError, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
-	ModuleImportResolver, ModuleInstance, ModuleRef, RuntimeArgs, RuntimeValue, Signature, Trap,
-	ValueType,
+	Error as InterpreterError, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder, ModuleImportResolver,
+	ModuleInstance, ModuleRef, RuntimeArgs, RuntimeValue, Signature, Trap, ValueType,
 };
 
 #[derive(Debug)]
@@ -140,11 +139,7 @@ const SET_FUNC_INDEX: usize = 0;
 const GET_FUNC_INDEX: usize = 1;
 
 impl<'a> Externals for Runtime<'a> {
-	fn invoke_index(
-		&mut self,
-		index: usize,
-		args: RuntimeArgs,
-	) -> Result<Option<RuntimeValue>, Trap> {
+	fn invoke_index(&mut self, index: usize, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
 		match index {
 			SET_FUNC_INDEX => {
 				let idx: i32 = args.nth(0);
@@ -164,16 +159,9 @@ impl<'a> Externals for Runtime<'a> {
 struct RuntimeModuleImportResolver;
 
 impl<'a> ModuleImportResolver for RuntimeModuleImportResolver {
-	fn resolve_func(
-		&self,
-		field_name: &str,
-		_signature: &Signature,
-	) -> Result<FuncRef, InterpreterError> {
+	fn resolve_func(&self, field_name: &str, _signature: &Signature) -> Result<FuncRef, InterpreterError> {
 		let func_ref = match field_name {
-			"set" => FuncInstance::alloc_host(
-				Signature::new(&[ValueType::I32][..], None),
-				SET_FUNC_INDEX,
-			),
+			"set" => FuncInstance::alloc_host(Signature::new(&[ValueType::I32][..], None), SET_FUNC_INDEX),
 			"get" => FuncInstance::alloc_host(
 				Signature::new(&[ValueType::I32][..], Some(ValueType::I32)),
 				GET_FUNC_INDEX,

@@ -22,9 +22,7 @@ fn main() {
 		// Export section has an entry with a func_name with an index inside a module
 		let export_section = module.export_section().expect("No export section found");
 		// It's a section with function declarations (which are references to the type section entries)
-		let function_section = module
-			.function_section()
-			.expect("No function section found");
+		let function_section = module.function_section().expect("No function section found");
 		// Type section stores function types which are referenced by function_section entries
 		let type_section = module.type_section().expect("No type section found");
 
@@ -59,8 +57,7 @@ fn main() {
 		let function_index_in_section = function_index - import_section_len;
 
 		// Getting a type reference from a function section entry
-		let func_type_ref: usize =
-			function_section.entries()[function_index_in_section].type_ref() as usize;
+		let func_type_ref: usize = function_section.entries()[function_index_in_section].type_ref() as usize;
 
 		// Use the reference to get an actual function type
 		let function_type: &FunctionType = match &type_section.types()[func_type_ref] {
@@ -112,7 +109,6 @@ fn main() {
 
 	println!(
 		"Result: {:?}",
-		main.invoke_export(func_name, &args, &mut NopExternals)
-			.expect("")
+		main.invoke_export(func_name, &args, &mut NopExternals).expect("")
 	);
 }

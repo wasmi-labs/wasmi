@@ -63,9 +63,7 @@ impl fmt::Debug for FuncInstance {
 				// debug string for function instances and this will lead to infinite loop.
 				write!(f, "Internal {{ signature={:?} }}", signature,)
 			}
-			&FuncInstanceInternal::Host { ref signature, .. } => {
-				write!(f, "Host {{ signature={:?} }}", signature)
-			}
+			&FuncInstanceInternal::Host { ref signature, .. } => write!(f, "Host {{ signature={:?} }}", signature),
 		}
 	}
 }
@@ -103,11 +101,7 @@ impl FuncInstance {
 		&self.0
 	}
 
-	pub(crate) fn alloc_internal(
-		module: Weak<ModuleInstance>,
-		signature: Rc<Signature>,
-		body: FuncBody,
-	) -> FuncRef {
+	pub(crate) fn alloc_internal(module: Weak<ModuleInstance>, signature: Rc<Signature>, body: FuncBody) -> FuncRef {
 		let func = FuncInstanceInternal::Internal {
 			signature,
 			module: module,
@@ -144,8 +138,7 @@ impl FuncInstance {
 				interpreter.start_execution(externals)
 			}
 			FuncInstanceInternal::Host {
-				ref host_func_index,
-				..
+				ref host_func_index, ..
 			} => externals.invoke_index(*host_func_index, args.into()),
 		}
 	}
@@ -164,10 +157,7 @@ impl FuncInstance {
 	/// [`Trap`]: #enum.Trap.html
 	/// [`start_execution`]: struct.FuncInvocation.html#method.start_execution
 	/// [`resume_execution`]: struct.FuncInvocation.html#method.resume_execution
-	pub fn invoke_resumable<'args>(
-		func: &FuncRef,
-		args: &'args [RuntimeValue],
-	) -> Result<FuncInvocation<'args>, Trap> {
+	pub fn invoke_resumable<'args>(func: &FuncRef, args: &'args [RuntimeValue]) -> Result<FuncInvocation<'args>, Trap> {
 		check_function_args(func.signature(), &args)?;
 		match *func.as_internal() {
 			FuncInstanceInternal::Internal { .. } => {
@@ -177,8 +167,7 @@ impl FuncInstance {
 				})
 			}
 			FuncInstanceInternal::Host {
-				ref host_func_index,
-				..
+				ref host_func_index, ..
 			} => Ok(FuncInvocation {
 				kind: FuncInvocationKind::Host {
 					args,

@@ -12,10 +12,7 @@ macro_rules! impl_binop {
 			type Output = Self;
 
 			fn $func_name(self, other: T) -> Self {
-				$for(
-					$op::$func_name($is::from_bits(self.0), $is::from_bits(other.into().0))
-						.to_bits(),
-				)
+				$for($op::$func_name($is::from_bits(self.0), $is::from_bits(other.into().0)).to_bits())
 			}
 		}
 	};
@@ -23,12 +20,7 @@ macro_rules! impl_binop {
 
 macro_rules! float {
 	($for:ident, $rep:ident, $is:ident) => {
-		float!(
-			$for,
-			$rep,
-			$is,
-			1 << (::core::mem::size_of::<$is>() * 8 - 1)
-		);
+		float!($for, $rep, $is, 1 << (::core::mem::size_of::<$is>() * 8 - 1));
 	};
 	($for:ident, $rep:ident, $is:ident, $sign_bit:expr) => {
 		#[derive(Copy, Clone)]

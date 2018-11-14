@@ -2,8 +2,8 @@ use super::{validate_module, ValidatedModule};
 use isa;
 use parity_wasm::builder::module;
 use parity_wasm::elements::{
-	deserialize_buffer, BlockType, External, GlobalEntry, GlobalType, ImportEntry, InitExpr,
-	Instruction, Instructions, MemoryType, Module, TableType, ValueType,
+	deserialize_buffer, BlockType, External, GlobalEntry, GlobalType, ImportEntry, InitExpr, Instruction, Instructions,
+	MemoryType, Module, TableType, ValueType,
 };
 use wabt;
 
@@ -39,12 +39,7 @@ fn limits() {
 		assert_eq!(validate_module(m).is_ok(), is_valid);
 
 		// defined memory
-		let m = module()
-			.memory()
-			.with_min(min)
-			.with_max(max)
-			.build()
-			.build();
+		let m = module().memory().with_min(min).with_max(max).build().build();
 		assert_eq!(validate_module(m).is_ok(), is_valid);
 
 		// imported table
@@ -185,10 +180,8 @@ fn funcs() {
 		.i32()
 		.build()
 		.body()
-		.with_instructions(Instructions::new(vec![
-			Instruction::Call(1),
-			Instruction::End,
-		])).build()
+		.with_instructions(Instructions::new(vec![Instruction::Call(1), Instruction::End]))
+		.build()
 		.build()
 		.function()
 		.signature()
@@ -196,10 +189,8 @@ fn funcs() {
 		.i32()
 		.build()
 		.body()
-		.with_instructions(Instructions::new(vec![
-			Instruction::Call(0),
-			Instruction::End,
-		])).build()
+		.with_instructions(Instructions::new(vec![Instruction::Call(0), Instruction::End]))
+		.build()
 		.build()
 		.build();
 	assert!(validate_module(m).is_ok());

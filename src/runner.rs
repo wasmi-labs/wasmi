@@ -13,8 +13,8 @@ use module::ModuleRef;
 use nan_preserving_float::{F32, F64};
 use parity_wasm::elements::Local;
 use value::{
-	ArithmeticOps, ExtendInto, Float, Integer, LittleEndianConvert, RuntimeValue, TransmuteInto,
-	TryTruncateInto, WrapInto,
+	ArithmeticOps, ExtendInto, Float, Integer, LittleEndianConvert, RuntimeValue, TransmuteInto, TryTruncateInto,
+	WrapInto,
 };
 use {Signature, Trap, TrapKind, ValueType};
 
@@ -211,9 +211,7 @@ impl Interpreter {
 		self.state = InterpreterState::Started;
 		self.run_interpreter_loop(externals)?;
 
-		let opt_return_value = self
-			.return_type
-			.map(|vt| self.value_stack.pop().with_type(vt));
+		let opt_return_value = self.return_type.map(|vt| self.value_stack.pop().with_type(vt));
 
 		// Ensure that stack is empty after the execution. This is guaranteed by the validation properties.
 		assert!(self.value_stack.len() == 0);
@@ -235,16 +233,12 @@ impl Interpreter {
 		swap(&mut self.state, &mut resumable_state);
 
 		if let Some(return_val) = return_val {
-			self.value_stack
-				.push(return_val.into())
-				.map_err(Trap::new)?;
+			self.value_stack.push(return_val.into()).map_err(Trap::new)?;
 		}
 
 		self.run_interpreter_loop(externals)?;
 
-		let opt_return_value = self
-			.return_type
-			.map(|vt| self.value_stack.pop().with_type(vt));
+		let opt_return_value = self.return_type.map(|vt| self.value_stack.pop().with_type(vt));
 
 		// Ensure that stack is empty after the execution. This is guaranteed by the validation properties.
 		assert!(self.value_stack.len() == 0);
@@ -252,20 +246,16 @@ impl Interpreter {
 		Ok(opt_return_value)
 	}
 
-	fn run_interpreter_loop<'a, E: Externals + 'a>(
-		&mut self,
-		externals: &'a mut E,
-	) -> Result<(), Trap> {
+	fn run_interpreter_loop<'a, E: Externals + 'a>(&mut self, externals: &'a mut E) -> Result<(), Trap> {
 		loop {
-			let mut function_context = self.call_stack.pop().expect(
-				"on loop entry - not empty; on loop continue - checking for emptiness; qed",
-			);
+			let mut function_context = self
+				.call_stack
+				.pop()
+				.expect("on loop entry - not empty; on loop continue - checking for emptiness; qed");
 			let function_ref = function_context.function.clone();
 			let function_body = function_ref
 				.body()
-				.expect(
-					"Host functions checked in function_return below; Internal functions always have a body; qed"
-				);
+				.expect("Host functions checked in function_return below; Internal functions always have a body; qed");
 
 			if !function_context.is_initialized() {
 				// Initialize stack frame for the function call.
@@ -300,18 +290,15 @@ impl Interpreter {
 							// We push the function context first. If the VM is not resumable, it does no harm. If it is, we then save the context here.
 							self.call_stack.push(function_context);
 
-							let return_val =
-								match FuncInstance::invoke(&nested_func, &args, externals) {
-									Ok(val) => val,
-									Err(trap) => {
-										if trap.kind().is_host() {
-											self.state = InterpreterState::Resumable(
-												nested_func.signature().return_type(),
-											);
-										}
-										return Err(trap);
+							let return_val = match FuncInstance::invoke(&nested_func, &args, externals) {
+								Ok(val) => val,
+								Err(trap) => {
+									if trap.kind().is_host() {
+										self.state = InterpreterState::Resumable(nested_func.signature().return_type());
 									}
-								};
+									return Err(trap);
+								}
+							};
 
 							// Check if `return_val` matches the signature.
 							let value_ty = return_val.as_ref().map(|val| val.value_type());
@@ -321,9 +308,7 @@ impl Interpreter {
 							}
 
 							if let Some(return_val) = return_val {
-								self.value_stack
-									.push(return_val.into())
-									.map_err(Trap::new)?;
+								self.value_stack.push(return_val.into()).map_err(Trap::new)?;
 							}
 						}
 					}
@@ -392,52 +377,26 @@ impl Interpreter {
 			&isa::Instruction::I64Load(offset) => self.run_load::<i64>(context, offset),
 			&isa::Instruction::F32Load(offset) => self.run_load::<F32>(context, offset),
 			&isa::Instruction::F64Load(offset) => self.run_load::<F64>(context, offset),
-			&isa::Instruction::I32Load8S(offset) => {
-				self.run_load_extend::<i8, i32>(context, offset)
-			}
-			&isa::Instruction::I32Load8U(offset) => {
-				self.run_load_extend::<u8, i32>(context, offset)
-			}
-			&isa::Instruction::I32Load16S(offset) => {
-				self.run_load_extend::<i16, i32>(context, offset)
-			}
-			&isa::Instruction::I32Load16U(offset) => {
-				self.run_load_extend::<u16, i32>(context, offset)
-			}
-			&isa::Instruction::I64Load8S(offset) => {
-				self.run_load_extend::<i8, i64>(context, offset)
-			}
-			&isa::Instruction::I64Load8U(offset) => {
-				self.run_load_extend::<u8, i64>(context, offset)
-			}
-			&isa::Instruction::I64Load16S(offset) => {
-				self.run_load_extend::<i16, i64>(context, offset)
-			}
-			&isa::Instruction::I64Load16U(offset) => {
-				self.run_load_extend::<u16, i64>(context, offset)
-			}
-			&isa::Instruction::I64Load32S(offset) => {
-				self.run_load_extend::<i32, i64>(context, offset)
-			}
-			&isa::Instruction::I64Load32U(offset) => {
-				self.run_load_extend::<u32, i64>(context, offset)
-			}
+			&isa::Instruction::I32Load8S(offset) => self.run_load_extend::<i8, i32>(context, offset),
+			&isa::Instruction::I32Load8U(offset) => self.run_load_extend::<u8, i32>(context, offset),
+			&isa::Instruction::I32Load16S(offset) => self.run_load_extend::<i16, i32>(context, offset),
+			&isa::Instruction::I32Load16U(offset) => self.run_load_extend::<u16, i32>(context, offset),
+			&isa::Instruction::I64Load8S(offset) => self.run_load_extend::<i8, i64>(context, offset),
+			&isa::Instruction::I64Load8U(offset) => self.run_load_extend::<u8, i64>(context, offset),
+			&isa::Instruction::I64Load16S(offset) => self.run_load_extend::<i16, i64>(context, offset),
+			&isa::Instruction::I64Load16U(offset) => self.run_load_extend::<u16, i64>(context, offset),
+			&isa::Instruction::I64Load32S(offset) => self.run_load_extend::<i32, i64>(context, offset),
+			&isa::Instruction::I64Load32U(offset) => self.run_load_extend::<u32, i64>(context, offset),
 
 			&isa::Instruction::I32Store(offset) => self.run_store::<i32>(context, offset),
 			&isa::Instruction::I64Store(offset) => self.run_store::<i64>(context, offset),
 			&isa::Instruction::F32Store(offset) => self.run_store::<F32>(context, offset),
 			&isa::Instruction::F64Store(offset) => self.run_store::<F64>(context, offset),
 			&isa::Instruction::I32Store8(offset) => self.run_store_wrap::<i32, i8>(context, offset),
-			&isa::Instruction::I32Store16(offset) => {
-				self.run_store_wrap::<i32, i16>(context, offset)
-			}
+			&isa::Instruction::I32Store16(offset) => self.run_store_wrap::<i32, i16>(context, offset),
 			&isa::Instruction::I64Store8(offset) => self.run_store_wrap::<i64, i8>(context, offset),
-			&isa::Instruction::I64Store16(offset) => {
-				self.run_store_wrap::<i64, i16>(context, offset)
-			}
-			&isa::Instruction::I64Store32(offset) => {
-				self.run_store_wrap::<i64, i32>(context, offset)
-			}
+			&isa::Instruction::I64Store16(offset) => self.run_store_wrap::<i64, i16>(context, offset),
+			&isa::Instruction::I64Store32(offset) => self.run_store_wrap::<i64, i32>(context, offset),
 
 			&isa::Instruction::CurrentMemory => self.run_current_memory(context),
 			&isa::Instruction::GrowMemory => self.run_grow_memory(context),
@@ -582,18 +541,11 @@ impl Interpreter {
 		}
 	}
 
-	fn run_unreachable(
-		&mut self,
-		_context: &mut FunctionContext,
-	) -> Result<InstructionOutcome, TrapKind> {
+	fn run_unreachable(&mut self, _context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind> {
 		Err(TrapKind::Unreachable)
 	}
 
-	fn run_br(
-		&mut self,
-		_context: &mut FunctionContext,
-		target: isa::Target,
-	) -> Result<InstructionOutcome, TrapKind> {
+	fn run_br(&mut self, _context: &mut FunctionContext, target: isa::Target) -> Result<InstructionOutcome, TrapKind> {
 		Ok(InstructionOutcome::Branch(target))
 	}
 
@@ -633,11 +585,7 @@ impl Interpreter {
 		Ok(InstructionOutcome::Return(drop_keep))
 	}
 
-	fn run_call(
-		&mut self,
-		context: &mut FunctionContext,
-		func_idx: u32,
-	) -> Result<InstructionOutcome, TrapKind> {
+	fn run_call(&mut self, context: &mut FunctionContext, func_idx: u32) -> Result<InstructionOutcome, TrapKind> {
 		let func = context
 			.module()
 			.func_by_index(func_idx)
@@ -707,11 +655,7 @@ impl Interpreter {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_get_global(
-		&mut self,
-		context: &mut FunctionContext,
-		index: u32,
-	) -> Result<InstructionOutcome, TrapKind> {
+	fn run_get_global(&mut self, context: &mut FunctionContext, index: u32) -> Result<InstructionOutcome, TrapKind> {
 		let global = context
 			.module()
 			.global_by_index(index)
@@ -721,11 +665,7 @@ impl Interpreter {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_set_global(
-		&mut self,
-		context: &mut FunctionContext,
-		index: u32,
-	) -> Result<InstructionOutcome, TrapKind> {
+	fn run_set_global(&mut self, context: &mut FunctionContext, index: u32) -> Result<InstructionOutcome, TrapKind> {
 		let val = self.value_stack.pop();
 		let global = context
 			.module()
@@ -737,23 +677,15 @@ impl Interpreter {
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_load<T>(
-		&mut self,
-		context: &mut FunctionContext,
-		offset: u32,
-	) -> Result<InstructionOutcome, TrapKind>
+	fn run_load<T>(&mut self, context: &mut FunctionContext, offset: u32) -> Result<InstructionOutcome, TrapKind>
 	where
 		RuntimeValueInternal: From<T>,
 		T: LittleEndianConvert,
 	{
 		let raw_address = self.value_stack.pop_as();
 		let address = effective_address(offset, raw_address)?;
-		let m = context
-			.memory()
-			.expect("Due to validation memory should exists");
-		let n: T = m
-			.get_value(address)
-			.map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
+		let m = context.memory().expect("Due to validation memory should exists");
+		let n: T = m.get_value(address).map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
 		self.value_stack.push(n.into())?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
@@ -770,12 +702,8 @@ impl Interpreter {
 	{
 		let raw_address = self.value_stack.pop_as();
 		let address = effective_address(offset, raw_address)?;
-		let m = context
-			.memory()
-			.expect("Due to validation memory should exists");
-		let v: T = m
-			.get_value(address)
-			.map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
+		let m = context.memory().expect("Due to validation memory should exists");
+		let v: T = m.get_value(address).map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
 		let stack_value: U = v.extend_into();
 		self.value_stack
 			.push(stack_value.into())
@@ -783,11 +711,7 @@ impl Interpreter {
 			.map(|_| InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_store<T>(
-		&mut self,
-		context: &mut FunctionContext,
-		offset: u32,
-	) -> Result<InstructionOutcome, TrapKind>
+	fn run_store<T>(&mut self, context: &mut FunctionContext, offset: u32) -> Result<InstructionOutcome, TrapKind>
 	where
 		T: FromRuntimeValueInternal,
 		T: LittleEndianConvert,
@@ -796,9 +720,7 @@ impl Interpreter {
 		let raw_address = self.value_stack.pop_as::<u32>();
 		let address = effective_address(offset, raw_address)?;
 
-		let m = context
-			.memory()
-			.expect("Due to validation memory should exists");
+		let m = context.memory().expect("Due to validation memory should exists");
 		m.set_value(address, stack_value)
 			.map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
 		Ok(InstructionOutcome::RunNextInstruction)
@@ -818,34 +740,22 @@ impl Interpreter {
 		let stack_value = stack_value.wrap_into();
 		let raw_address = self.value_stack.pop_as::<u32>();
 		let address = effective_address(offset, raw_address)?;
-		let m = context
-			.memory()
-			.expect("Due to validation memory should exists");
+		let m = context.memory().expect("Due to validation memory should exists");
 		m.set_value(address, stack_value)
 			.map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_current_memory(
-		&mut self,
-		context: &mut FunctionContext,
-	) -> Result<InstructionOutcome, TrapKind> {
-		let m = context
-			.memory()
-			.expect("Due to validation memory should exists");
+	fn run_current_memory(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind> {
+		let m = context.memory().expect("Due to validation memory should exists");
 		let s = m.current_size().0;
 		self.value_stack.push(RuntimeValueInternal(s as _))?;
 		Ok(InstructionOutcome::RunNextInstruction)
 	}
 
-	fn run_grow_memory(
-		&mut self,
-		context: &mut FunctionContext,
-	) -> Result<InstructionOutcome, TrapKind> {
+	fn run_grow_memory(&mut self, context: &mut FunctionContext) -> Result<InstructionOutcome, TrapKind> {
 		let pages: u32 = self.value_stack.pop_as();
-		let m = context
-			.memory()
-			.expect("Due to validation memory should exists");
+		let m = context.memory().expect("Due to validation memory should exists");
 		let m = match m.grow(Pages(pages as usize)) {
 			Ok(Pages(new_size)) => new_size as u32,
 			Err(_) => u32::MAX, // Returns -1 (or 0xFFFFFFFF) in case of error.
@@ -1279,11 +1189,7 @@ impl FunctionContext {
 		self.is_initialized
 	}
 
-	pub fn initialize(
-		&mut self,
-		locals: &[Local],
-		value_stack: &mut ValueStack,
-	) -> Result<(), TrapKind> {
+	pub fn initialize(&mut self, locals: &[Local], value_stack: &mut ValueStack) -> Result<(), TrapKind> {
 		debug_assert!(!self.is_initialized);
 
 		let num_locals = locals.iter().map(|l| l.count() as usize).sum();
@@ -1291,9 +1197,7 @@ impl FunctionContext {
 
 		// TODO: Replace with extend.
 		for local in locals {
-			value_stack
-				.push(local)
-				.map_err(|_| TrapKind::StackOverflow)?;
+			value_stack.push(local).map_err(|_| TrapKind::StackOverflow)?;
 		}
 
 		self.is_initialized = true;
@@ -1322,10 +1226,7 @@ fn effective_address(address: u32, offset: u32) -> Result<u32, TrapKind> {
 	}
 }
 
-fn prepare_function_args(
-	signature: &Signature,
-	caller_stack: &mut ValueStack,
-) -> Vec<RuntimeValue> {
+fn prepare_function_args(signature: &Signature, caller_stack: &mut ValueStack) -> Vec<RuntimeValue> {
 	let mut out = signature
 		.params()
 		.iter()
@@ -1341,14 +1242,10 @@ pub fn check_function_args(signature: &Signature, args: &[RuntimeValue]) -> Resu
 		return Err(TrapKind::UnexpectedSignature.into());
 	}
 
-	if signature
-		.params()
-		.iter()
-		.zip(args)
-		.any(|(expected_type, param_value)| {
-			let actual_type = param_value.value_type();
-			&actual_type != expected_type
-		}) {
+	if signature.params().iter().zip(args).any(|(expected_type, param_value)| {
+		let actual_type = param_value.value_type();
+		&actual_type != expected_type
+	}) {
 		return Err(TrapKind::UnexpectedSignature.into());
 	}
 
@@ -1405,13 +1302,7 @@ impl ValueStack {
 	}
 
 	#[inline]
-	fn pop_triple(
-		&mut self,
-	) -> (
-		RuntimeValueInternal,
-		RuntimeValueInternal,
-		RuntimeValueInternal,
-	) {
+	fn pop_triple(&mut self) -> (RuntimeValueInternal, RuntimeValueInternal, RuntimeValueInternal) {
 		let right = self.pop();
 		let mid = self.pop();
 		let left = self.pop();
@@ -1440,10 +1331,7 @@ impl ValueStack {
 
 	#[inline]
 	fn push(&mut self, value: RuntimeValueInternal) -> Result<(), TrapKind> {
-		let cell = self
-			.buf
-			.get_mut(self.sp)
-			.ok_or_else(|| TrapKind::StackOverflow)?;
+		let cell = self.buf.get_mut(self.sp).ok_or_else(|| TrapKind::StackOverflow)?;
 		*cell = value;
 		self.sp += 1;
 		Ok(())

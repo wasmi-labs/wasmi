@@ -109,13 +109,8 @@ impl TableInstance {
 		let new_size = self
 			.current_size()
 			.checked_add(by)
-			.and_then(|new_size| {
-				if maximum_size < new_size {
-					None
-				} else {
-					Some(new_size)
-				}
-			}).ok_or_else(|| {
+			.and_then(|new_size| if maximum_size < new_size { None } else { Some(new_size) })
+			.ok_or_else(|| {
 				Error::Table(format!(
 					"Trying to grow table by {} items when there are already {} items",
 					by,

@@ -371,11 +371,9 @@ impl<'a> Iterator for InstructionIter<'a> {
 
 	#[inline]
 	fn next(&mut self) -> Option<<Self as Iterator>::Item> {
-		self.instructions
-			.get(self.position as usize)
-			.map(|instruction| {
-				self.position += 1;
-				instruction
-			})
+		self.instructions.get(self.position as usize).map(|instruction| {
+			self.position += 1;
+			instruction
+		})
 	}
 }

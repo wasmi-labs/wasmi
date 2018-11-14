@@ -15,8 +15,8 @@ use common::stack;
 use isa;
 use memory_units::Pages;
 use parity_wasm::elements::{
-	BlockType, External, GlobalEntry, GlobalType, InitExpr, Instruction, Internal, MemoryType,
-	Module, ResizableLimits, TableType, Type, ValueType,
+	BlockType, External, GlobalEntry, GlobalType, InitExpr, Instruction, Internal, MemoryType, Module, ResizableLimits,
+	TableType, Type, ValueType,
 };
 
 mod context;
@@ -194,11 +194,7 @@ pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
 	);
 
 	// Fill elements with imported values.
-	for import_entry in module
-		.import_section()
-		.map(|i| i.entries())
-		.unwrap_or_default()
-	{
+	for import_entry in module.import_section().map(|i| i.entries()).unwrap_or_default() {
 		match *import_entry.external() {
 			External::Function(idx) => context_builder.push_func_type_index(idx),
 			External::Table(ref table) => context_builder.push_table(table.clone()),
@@ -237,10 +233,7 @@ pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
 
 	let context = context_builder.build();
 
-	let function_section_len = module
-		.function_section()
-		.map(|s| s.entries().len())
-		.unwrap_or(0);
+	let function_section_len = module.function_section().map(|s| s.entries().len()).unwrap_or(0);
 	let code_section_len = module.code_section().map(|s| s.bodies().len()).unwrap_or(0);
 	if function_section_len != code_section_len {
 		return Err(Error(format!(
@@ -252,9 +245,7 @@ pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
 	// validate every function body in user modules
 	if function_section_len != 0 {
 		// tests use invalid code
-		let function_section = module
-			.function_section()
-			.expect("function_section_len != 0; qed");
+		let function_section = module.function_section().expect("function_section_len != 0; qed");
 		let code_section = module
 			.code_section()
 			.expect("function_section_len != 0; function_section_len == code_section_len; qed");
@@ -264,14 +255,10 @@ pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
 				.bodies()
 				.get(index as usize)
 				.ok_or(Error(format!("Missing body for function {}", index)))?;
-			let code =
-				FunctionReader::read_function(&context, function, function_body).map_err(|e| {
-					let Error(ref msg) = e;
-					Error(format!(
-						"Function #{} reading/validation error: {}",
-						index, msg
-					))
-				})?;
+			let code = FunctionReader::read_function(&context, function, function_body).map_err(|e| {
+				let Error(ref msg) = e;
+				Error(format!("Function #{} reading/validation error: {}", index, msg))
+			})?;
 			code_map.push(code);
 		}
 	}
@@ -280,9 +267,7 @@ pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
 	if let Some(start_fn_idx) = module.start_section() {
 		let (params, return_ty) = context.require_function(start_fn_idx)?;
 		if return_ty != BlockType::NoResult || params.len() != 0 {
-			return Err(Error(
-				"start function expected to have type [] -> []".into(),
-			));
+			return Err(Error("start function expected to have type [] -> []".into()));
 		}
 	}
 
@@ -321,10 +306,7 @@ pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
 				}
 				External::Global(ref global_type) => {
 					if global_type.is_mutable() {
-						return Err(Error(format!(
-							"trying to import mutable global {}",
-							import.field()
-						)));
+						return Err(Error(format!("trying to import mutable global {}", import.field())));
 					}
 				}
 				External::Memory(ref memory_type) => {
@@ -423,9 +405,7 @@ fn validate_global_entry(global_entry: &GlobalEntry, globals: &[GlobalType]) -> 
 fn expr_const_type(init_expr: &InitExpr, globals: &[GlobalType]) -> Result<ValueType, Error> {
 	let code = init_expr.code();
 	if code.len() != 2 {
-		return Err(Error(
-			"Init expression should always be with length 2".into(),
-		));
+		return Err(Error("Init expression should always be with length 2".into()));
 	}
 	let expr_ty: ValueType = match code[0] {
 		Instruction::I32Const(_) => ValueType::I32,
@@ -439,12 +419,7 @@ fn expr_const_type(init_expr: &InitExpr, globals: &[GlobalType]) -> Result<Value
 				}
 				target_global.content_type()
 			}
-			None => {
-				return Err(Error(format!(
-					"Global {} doesn't exists or not yet defined",
-					idx
-				)))
-			}
+			None => return Err(Error(format!("Global {} doesn't exists or not yet defined", idx))),
 		},
 		_ => return Err(Error("Non constant opcode in init expr".into())),
 	};

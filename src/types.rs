@@ -1,8 +1,6 @@
 use alloc::borrow::Cow;
 
-use parity_wasm::elements::{
-	FunctionType, GlobalType, MemoryType, TableType, ValueType as EValueType,
-};
+use parity_wasm::elements::{FunctionType, GlobalType, MemoryType, TableType, ValueType as EValueType};
 
 /// Signature of a [function].
 ///
@@ -37,10 +35,7 @@ impl Signature {
 	/// let dynamic_params = vec![ValueType::I64];
 	/// let s3 = Signature::new(dynamic_params, None);
 	/// ```
-	pub fn new<C: Into<Cow<'static, [ValueType]>>>(
-		params: C,
-		return_type: Option<ValueType>,
-	) -> Signature {
+	pub fn new<C: Into<Cow<'static, [ValueType]>>>(params: C, return_type: Option<ValueType>) -> Signature {
 		Signature {
 			params: params.into(),
 			return_type: return_type,

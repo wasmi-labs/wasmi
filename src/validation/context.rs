@@ -1,8 +1,6 @@
 #[allow(unused_imports)]
 use alloc::prelude::*;
-use parity_wasm::elements::{
-	BlockType, FunctionType, GlobalType, MemoryType, TableType, ValueType,
-};
+use parity_wasm::elements::{BlockType, FunctionType, GlobalType, MemoryType, TableType, ValueType};
 use validation::Error;
 
 #[derive(Default, Debug)]
@@ -63,10 +61,7 @@ impl ModuleContext {
 			.ok_or_else(|| Error(format!("Type at index {} doesn't exists", idx)))?;
 
 		let params = ty.params();
-		let return_ty = ty
-			.return_type()
-			.map(BlockType::Value)
-			.unwrap_or(BlockType::NoResult);
+		let return_ty = ty.return_type().map(BlockType::Value).unwrap_or(BlockType::NoResult);
 		Ok((params, return_ty))
 	}
 

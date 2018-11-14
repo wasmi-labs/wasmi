@@ -57,9 +57,7 @@ impl GlobalInstance {
 	/// type of `val` doesn't match global's type.
 	pub fn set(&self, val: RuntimeValue) -> Result<(), Error> {
 		if !self.mutable {
-			return Err(Error::Global(
-				"Attempt to change an immutable variable".into(),
-			));
+			return Err(Error::Global("Attempt to change an immutable variable".into()));
 		}
 		if self.value_type() != val.value_type() {
 			return Err(Error::Global("Attempt to change variable type".into()));

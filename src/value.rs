@@ -590,10 +590,7 @@ impl LittleEndianConvert for u8 {
 	}
 
 	fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-		buffer
-			.get(0)
-			.cloned()
-			.ok_or_else(|| Error::InvalidLittleEndianBuffer)
+		buffer.get(0).cloned().ok_or_else(|| Error::InvalidLittleEndianBuffer)
 	}
 }
 

@@ -208,11 +208,7 @@ impl HostError {
 /// ```
 pub trait Externals {
 	/// Perform invoke of a host function by specified `index`.
-	fn invoke_index(
-		&mut self,
-		index: usize,
-		args: RuntimeArgs,
-	) -> Result<Option<RuntimeValue>, Trap>;
+	fn invoke_index(&mut self, index: usize, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap>;
 }
 
 /// Implementation of [`Externals`] that just traps on [`invoke_index`].
@@ -222,11 +218,7 @@ pub trait Externals {
 pub struct NopExternals;
 
 impl Externals for NopExternals {
-	fn invoke_index(
-		&mut self,
-		_index: usize,
-		_args: RuntimeArgs,
-	) -> Result<Option<RuntimeValue>, Trap> {
+	fn invoke_index(&mut self, _index: usize, _args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
 		Err(TrapKind::Unreachable.into())
 	}
 }

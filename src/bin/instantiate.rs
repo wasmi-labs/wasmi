@@ -7,9 +7,9 @@ use std::env::args;
 use std::fs::File;
 use wasmi::memory_units::*;
 use wasmi::{
-	Error, FuncInstance, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef, ImportsBuilder,
-	MemoryDescriptor, MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance,
-	NopExternals, RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef,
+	Error, FuncInstance, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef, ImportsBuilder, MemoryDescriptor,
+	MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance, NopExternals, RuntimeValue, Signature,
+	TableDescriptor, TableInstance, TableRef,
 };
 
 fn load_from_file(filename: &str) -> Module {
@@ -27,33 +27,21 @@ impl ModuleImportResolver for ResolveAll {
 		Ok(FuncInstance::alloc_host(signature.clone(), 0))
 	}
 
-	fn resolve_global(
-		&self,
-		_field_name: &str,
-		global_type: &GlobalDescriptor,
-	) -> Result<GlobalRef, Error> {
+	fn resolve_global(&self, _field_name: &str, global_type: &GlobalDescriptor) -> Result<GlobalRef, Error> {
 		Ok(GlobalInstance::alloc(
 			RuntimeValue::default(global_type.value_type()),
 			global_type.is_mutable(),
 		))
 	}
 
-	fn resolve_memory(
-		&self,
-		_field_name: &str,
-		memory_type: &MemoryDescriptor,
-	) -> Result<MemoryRef, Error> {
+	fn resolve_memory(&self, _field_name: &str, memory_type: &MemoryDescriptor) -> Result<MemoryRef, Error> {
 		Ok(MemoryInstance::alloc(
 			Pages(memory_type.initial() as usize),
 			memory_type.maximum().map(|m| Pages(m as usize)),
 		).unwrap())
 	}
 
-	fn resolve_table(
-		&self,
-		_field_name: &str,
-		table_type: &TableDescriptor,
-	) -> Result<TableRef, Error> {
+	fn resolve_table(&self, _field_name: &str, table_type: &TableDescriptor) -> Result<TableRef, Error> {
 		Ok(TableInstance::alloc(table_type.initial(), table_type.maximum()).unwrap())
 	}
 }

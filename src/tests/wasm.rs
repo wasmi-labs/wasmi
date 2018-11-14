@@ -1,9 +1,9 @@
 use memory_units::Pages;
 use std::fs::File;
 use {
-	Error, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef, ImportsBuilder, MemoryDescriptor,
-	MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance, NopExternals,
-	RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef,
+	Error, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef, ImportsBuilder, MemoryDescriptor, MemoryInstance,
+	MemoryRef, Module, ModuleImportResolver, ModuleInstance, NopExternals, RuntimeValue, Signature, TableDescriptor,
+	TableInstance, TableRef,
 };
 
 struct Env {
@@ -26,16 +26,10 @@ impl Env {
 
 impl ModuleImportResolver for Env {
 	fn resolve_func(&self, _field_name: &str, _func_type: &Signature) -> Result<FuncRef, Error> {
-		Err(Error::Instantiation(
-			"env module doesn't provide any functions".into(),
-		))
+		Err(Error::Instantiation("env module doesn't provide any functions".into()))
 	}
 
-	fn resolve_global(
-		&self,
-		field_name: &str,
-		_global_type: &GlobalDescriptor,
-	) -> Result<GlobalRef, Error> {
+	fn resolve_global(&self, field_name: &str, _global_type: &GlobalDescriptor) -> Result<GlobalRef, Error> {
 		match field_name {
 			"tableBase" => Ok(self.table_base.clone()),
 			"memoryBase" => Ok(self.memory_base.clone()),
@@ -46,11 +40,7 @@ impl ModuleImportResolver for Env {
 		}
 	}
 
-	fn resolve_memory(
-		&self,
-		field_name: &str,
-		_memory_type: &MemoryDescriptor,
-	) -> Result<MemoryRef, Error> {
+	fn resolve_memory(&self, field_name: &str, _memory_type: &MemoryDescriptor) -> Result<MemoryRef, Error> {
 		match field_name {
 			"memory" => Ok(self.memory.clone()),
 			_ => Err(Error::Instantiation(format!(
@@ -60,11 +50,7 @@ impl ModuleImportResolver for Env {
 		}
 	}
 
-	fn resolve_table(
-		&self,
-		field_name: &str,
-		_table_type: &TableDescriptor,
-	) -> Result<TableRef, Error> {
+	fn resolve_table(&self, field_name: &str, _table_type: &TableDescriptor) -> Result<TableRef, Error> {
 		match field_name {
 			"table" => Ok(self.table.clone()),
 			_ => Err(Error::Instantiation(format!(
@@ -134,10 +120,7 @@ fn interpreter_accumulate_u8() {
 	let _ = env_memory.set(offset, BUF);
 
 	// Set up the function argument list and invoke the function
-	let args = &[
-		RuntimeValue::I32(BUF.len() as i32),
-		RuntimeValue::I32(offset as i32),
-	];
+	let args = &[RuntimeValue::I32(BUF.len() as i32), RuntimeValue::I32(offset as i32)];
 	let retval = instance
 		.invoke_export(FUNCTION_NAME, args, &mut NopExternals)
 		.expect("Failed to execute function");
