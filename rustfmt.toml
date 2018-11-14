@@ -1,0 +1,4 @@
+# Using hard tabs because that's what .editorconfig calls for.
+# Note, hard tabs is normally false. This is a non-standard setup.
+hard_tabs=true
+tab_spaces=4
