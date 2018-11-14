@@ -1,6 +1,6 @@
 use core::any::TypeId;
-use value::{RuntimeValue, FromRuntimeValue};
-use {TrapKind, Trap};
+use value::{FromRuntimeValue, RuntimeValue};
+use {Trap, TrapKind};
 
 /// Wrapper around slice of [`RuntimeValue`] for using it
 /// as an argument list conveniently.
@@ -27,8 +27,14 @@ impl<'a> RuntimeArgs<'a> {
 	/// # Errors
 	///
 	/// Returns `Err` if cast is invalid or not enough arguments.
-	pub fn nth_checked<T>(&self, idx: usize) -> Result<T, Trap> where T: FromRuntimeValue {
-		Ok(self.nth_value_checked(idx)?.try_into().ok_or_else(|| TrapKind::UnexpectedSignature)?)
+	pub fn nth_checked<T>(&self, idx: usize) -> Result<T, Trap>
+	where
+		T: FromRuntimeValue,
+	{
+		Ok(self
+			.nth_value_checked(idx)?
+			.try_into()
+			.ok_or_else(|| TrapKind::UnexpectedSignature)?)
 	}
 
 	/// Extract argument as a [`RuntimeValue`] by index `idx`.
@@ -50,7 +56,10 @@ impl<'a> RuntimeArgs<'a> {
 	/// # Panics
 	///
 	/// Panics if cast is invalid or not enough arguments.
-	pub fn nth<T>(&self, idx: usize) -> T where T: FromRuntimeValue {
+	pub fn nth<T>(&self, idx: usize) -> T
+	where
+		T: FromRuntimeValue,
+	{
 		let value = self.nth_value_checked(idx).expect("Invalid argument index");
 		value.try_into().expect("Unexpected argument type")
 	}
@@ -225,8 +234,8 @@ impl Externals for NopExternals {
 #[cfg(test)]
 mod tests {
 
+	use super::{HostError, RuntimeArgs};
 	use value::RuntimeValue;
-	use super::{RuntimeArgs, HostError};
 
 	#[test]
 	fn i32_runtime_args() {
@@ -242,6 +251,5 @@ mod tests {
 	}
 
 	// Tests that `HostError` trait is object safe.
-	fn _host_error_is_object_safe(_: &HostError) {
-	}
+	fn _host_error_is_object_safe(_: &HostError) {}
 }

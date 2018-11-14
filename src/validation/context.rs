@@ -1,6 +1,8 @@
 #[allow(unused_imports)]
 use alloc::prelude::*;
-use parity_wasm::elements::{MemoryType, TableType, GlobalType, BlockType, ValueType, FunctionType};
+use parity_wasm::elements::{
+	BlockType, FunctionType, GlobalType, MemoryType, TableType, ValueType,
+};
 use validation::Error;
 
 #[derive(Default, Debug)]
@@ -47,26 +49,30 @@ impl ModuleContext {
 	}
 
 	pub fn require_function(&self, idx: u32) -> Result<(&[ValueType], BlockType), Error> {
-		let ty_idx = self.func_type_indexes()
+		let ty_idx = self
+			.func_type_indexes()
 			.get(idx as usize)
 			.ok_or_else(|| Error(format!("Function at index {} doesn't exists", idx)))?;
 		self.require_function_type(*ty_idx)
 	}
 
 	pub fn require_function_type(&self, idx: u32) -> Result<(&[ValueType], BlockType), Error> {
-		let ty = self.types()
+		let ty = self
+			.types()
 			.get(idx as usize)
 			.ok_or_else(|| Error(format!("Type at index {} doesn't exists", idx)))?;
 
 		let params = ty.params();
-		let return_ty = ty.return_type()
+		let return_ty = ty
+			.return_type()
 			.map(BlockType::Value)
 			.unwrap_or(BlockType::NoResult);
 		Ok((params, return_ty))
 	}
 
 	pub fn require_global(&self, idx: u32, mutability: Option<bool>) -> Result<&GlobalType, Error> {
-		let global = self.globals()
+		let global = self
+			.globals()
 			.get(idx as usize)
 			.ok_or_else(|| Error(format!("Global at index {} doesn't exists", idx)))?;
 

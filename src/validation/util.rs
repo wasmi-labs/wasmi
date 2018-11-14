@@ -22,9 +22,7 @@ impl<'a> Locals<'a> {
 		for locals_group in local_groups {
 			acc = acc
 				.checked_add(locals_group.count())
-				.ok_or_else(||
-					Error(String::from("Locals range not in 32-bit range"))
-				)?;
+				.ok_or_else(|| Error(String::from("Locals range not in 32-bit range")))?;
 		}
 
 		Ok(Locals {
@@ -125,9 +123,6 @@ mod tests {
 			Local::new(u32::max_value(), ValueType::I32),
 			Local::new(1, ValueType::I64),
 		];
-		assert_matches!(
-			Locals::new(&[], &local_groups),
-			Err(_)
-		);
+		assert_matches!(Locals::new(&[], &local_groups), Err(_));
 	}
 }

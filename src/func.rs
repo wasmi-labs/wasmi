@@ -2,14 +2,14 @@
 use alloc::prelude::*;
 use alloc::rc::{Rc, Weak};
 use core::fmt;
-use parity_wasm::elements::Local;
-use {Trap, Signature};
 use host::Externals;
-use runner::{check_function_args, Interpreter, InterpreterState};
-use value::RuntimeValue;
-use types::ValueType;
-use module::ModuleInstance;
 use isa;
+use module::ModuleInstance;
+use parity_wasm::elements::Local;
+use runner::{check_function_args, Interpreter, InterpreterState};
+use types::ValueType;
+use value::RuntimeValue;
+use {Signature, Trap};
 
 /// Reference to a function (See [`FuncInstance`] for details).
 ///
@@ -58,17 +58,10 @@ pub(crate) enum FuncInstanceInternal {
 impl fmt::Debug for FuncInstance {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match self.as_internal() {
-			&FuncInstanceInternal::Internal {
-				ref signature,
-				..
-			} => {
+			&FuncInstanceInternal::Internal { ref signature, .. } => {
 				// We can't write description of self.module here, because it generate
 				// debug string for function instances and this will lead to infinite loop.
-				write!(
-					f,
-					"Internal {{ signature={:?} }}",
-					signature,
-				)
+				write!(f, "Internal {{ signature={:?} }}", signature,)
 			}
 			&FuncInstanceInternal::Host { ref signature, .. } => {
 				write!(f, "Host {{ signature={:?} }}", signature)
@@ -186,15 +179,13 @@ impl FuncInstance {
 			FuncInstanceInternal::Host {
 				ref host_func_index,
 				..
-			} => {
-				Ok(FuncInvocation {
-					kind: FuncInvocationKind::Host {
-						args,
-						host_func_index: *host_func_index,
-						finished: false,
-					},
-				})
-			},
+			} => Ok(FuncInvocation {
+				kind: FuncInvocationKind::Host {
+					args,
+					host_func_index: *host_func_index,
+					finished: false,
+				},
+			}),
 		}
 	}
 }
@@ -239,7 +230,7 @@ enum FuncInvocationKind<'args> {
 	Host {
 		args: &'args [RuntimeValue],
 		host_func_index: usize,
-		finished: bool
+		finished: bool,
 	},
 }
 
@@ -255,32 +246,37 @@ impl<'args> FuncInvocation<'args> {
 	/// If the invocation is resumable, the expected return value type to be feed back in.
 	pub fn resumable_value_type(&self) -> Option<ValueType> {
 		match &self.kind {
-			&FuncInvocationKind::Internal(ref interpreter) => {
-				match interpreter.state() {
-					&InterpreterState::Resumable(ref value_type) => value_type.clone(),
-					_ => None,
-				}
+			&FuncInvocationKind::Internal(ref interpreter) => match interpreter.state() {
+				&InterpreterState::Resumable(ref value_type) => value_type.clone(),
+				_ => None,
 			},
 			&FuncInvocationKind::Host { .. } => None,
 		}
 	}
 
 	/// Start the invocation execution.
-	pub fn start_execution<'externals, E: Externals + 'externals>(&mut self, externals: &'externals mut E) -> Result<Option<RuntimeValue>, ResumableError> {
+	pub fn start_execution<'externals, E: Externals + 'externals>(
+		&mut self,
+		externals: &'externals mut E,
+	) -> Result<Option<RuntimeValue>, ResumableError> {
 		match self.kind {
 			FuncInvocationKind::Internal(ref mut interpreter) => {
 				if interpreter.state() != &InterpreterState::Initialized {
 					return Err(ResumableError::AlreadyStarted);
 				}
 				Ok(interpreter.start_execution(externals)?)
-			},
-			FuncInvocationKind::Host { ref args, ref mut finished, ref host_func_index } => {
+			}
+			FuncInvocationKind::Host {
+				ref args,
+				ref mut finished,
+				ref host_func_index,
+			} => {
 				if *finished {
 					return Err(ResumableError::AlreadyStarted);
 				}
 				*finished = true;
 				Ok(externals.invoke_index(*host_func_index, args.clone().into())?)
-			},
+			}
 		}
 	}
 
@@ -292,17 +288,21 @@ impl<'args> FuncInvocation<'args> {
 	///
 	/// [`resumable_value_type`]: #method.resumable_value_type
 	/// [`is_resumable`]: #method.is_resumable
-	pub fn resume_execution<'externals, E: Externals + 'externals>(&mut self, return_val: Option<RuntimeValue>, externals: &'externals mut E) -> Result<Option<RuntimeValue>, ResumableError> {
+	pub fn resume_execution<'externals, E: Externals + 'externals>(
+		&mut self,
+		return_val: Option<RuntimeValue>,
+		externals: &'externals mut E,
+	) -> Result<Option<RuntimeValue>, ResumableError> {
 		match self.kind {
 			FuncInvocationKind::Internal(ref mut interpreter) => {
 				if !interpreter.state().is_resumable() {
 					return Err(ResumableError::AlreadyStarted);
 				}
 				Ok(interpreter.resume_execution(return_val, externals)?)
-			},
+			}
 			FuncInvocationKind::Host { .. } => {
 				return Err(ResumableError::NotResumable);
-			},
+			}
 		}
 	}
 }

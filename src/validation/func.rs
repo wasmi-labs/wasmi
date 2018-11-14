@@ -1,12 +1,12 @@
 #[allow(unused_imports)]
 use alloc::prelude::*;
-use core::u32;
-use parity_wasm::elements::{Instruction, BlockType, ValueType, TableElementType, Func, FuncBody};
 use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
+use core::u32;
+use parity_wasm::elements::{BlockType, Func, FuncBody, Instruction, TableElementType, ValueType};
 use validation::context::ModuleContext;
 
-use validation::Error;
 use validation::util::Locals;
+use validation::Error;
 
 use common::stack::StackWithLimit;
 use isa;
@@ -39,13 +39,9 @@ enum BlockFrameType {
 	/// Usual block frame.
 	///
 	/// Can be used for an implicit function block.
-	Block {
-		end_label: LabelId,
-	},
+	Block { end_label: LabelId },
 	/// Loop frame (branching to the beginning of block).
-	Loop {
-		header: LabelId,
-	},
+	Loop { header: LabelId },
 	/// True-subblock of if expression.
 	IfTrue {
 		/// If jump happens inside the if-true block then control will
@@ -58,9 +54,7 @@ enum BlockFrameType {
 		if_not: LabelId,
 	},
 	/// False-subblock of if expression.
-	IfFalse {
-		end_label: LabelId,
-	}
+	IfFalse { end_label: LabelId },
 }
 
 impl BlockFrameType {
@@ -183,9 +177,7 @@ impl FunctionReader {
 
 		let end_label = context.sink.new_label();
 		push_label(
-			BlockFrameType::Block {
-				end_label,
-			},
+			BlockFrameType::Block { end_label },
 			result_ty,
 			context.position,
 			&context.value_stack,
@@ -198,7 +190,10 @@ impl FunctionReader {
 		Ok(context.into_code())
 	}
 
-	fn read_function_body(context: &mut FunctionValidationContext, body: &[Instruction]) -> Result<(), Error> {
+	fn read_function_body(
+		context: &mut FunctionValidationContext,
+		body: &[Instruction],
+	) -> Result<(), Error> {
 		let body_len = body.len();
 		if body_len == 0 {
 			return Err(Error("Non-empty function body expected".into()));
@@ -207,15 +202,19 @@ impl FunctionReader {
 		loop {
 			let instruction = &body[context.position];
 
-			let outcome = FunctionReader::read_instruction(context, instruction)
-				.map_err(|err| Error(format!("At instruction {:?}(@{}): {}", instruction, context.position, err)))?;
+			let outcome =
+				FunctionReader::read_instruction(context, instruction).map_err(|err| {
+					Error(format!(
+						"At instruction {:?}(@{}): {}",
+						instruction, context.position, err
+					))
+				})?;
 
 			match outcome {
 				Outcome::NextInstruction => (),
-				Outcome::Unreachable => make_top_frame_polymorphic(
-					&mut context.value_stack,
-					&mut context.frame_stack
-				),
+				Outcome::Unreachable => {
+					make_top_frame_polymorphic(&mut context.value_stack, &mut context.frame_stack)
+				}
 			}
 
 			context.position += 1;
@@ -225,11 +224,14 @@ impl FunctionReader {
 		}
 	}
 
-	fn read_instruction(context: &mut FunctionValidationContext, instruction: &Instruction) -> Result<Outcome, Error> {
+	fn read_instruction(
+		context: &mut FunctionValidationContext,
+		instruction: &Instruction,
+	) -> Result<Outcome, Error> {
 		use self::Instruction::*;
 		match *instruction {
 			// Nop instruction doesn't do anything. It is safe to just skip it.
-			Nop => {},
+			Nop => {}
 
 			Unreachable => {
 				context.sink.emit(isa::Instruction::Unreachable);
@@ -239,9 +241,7 @@ impl FunctionReader {
 			Block(block_type) => {
 				let end_label = context.sink.new_label();
 				push_label(
-					BlockFrameType::Block {
-						end_label
-					},
+					BlockFrameType::Block { end_label },
 					block_type,
 					context.position,
 					&context.value_stack,
@@ -254,9 +254,7 @@ impl FunctionReader {
 				context.sink.resolve_label(header);
 
 				push_label(
-					BlockFrameType::Loop {
-						header,
-					},
+					BlockFrameType::Loop { header },
 					block_type,
 					context.position,
 					&context.value_stack,
@@ -269,12 +267,13 @@ impl FunctionReader {
 				let if_not = context.sink.new_label();
 				let end_label = context.sink.new_label();
 
-				pop_value(&mut context.value_stack, &context.frame_stack, ValueType::I32.into())?;
+				pop_value(
+					&mut context.value_stack,
+					&context.frame_stack,
+					ValueType::I32.into(),
+				)?;
 				push_label(
-					BlockFrameType::IfTrue {
-						if_not,
-						end_label,
-					},
+					BlockFrameType::IfTrue { if_not, end_label },
 					block_type,
 					context.position,
 					&context.value_stack,
@@ -283,14 +282,15 @@ impl FunctionReader {
 
 				context.sink.emit_br_eqz(Target {
 					label: if_not,
-					drop_keep: isa::DropKeep { drop: 0, keep: isa::Keep::None, },
+					drop_keep: isa::DropKeep {
+						drop: 0,
+						keep: isa::Keep::None,
+					},
 				});
 			}
 			Else => {
 				let (block_type, if_not, end_label) = {
-					let top_frame = top_label(
-						&context.frame_stack,
-					);
+					let top_frame = top_label(&context.frame_stack);
 
 					let (if_not, end_label) = match top_frame.frame_type {
 						BlockFrameType::IfTrue { if_not, end_label } => (if_not, end_label),
@@ -303,7 +303,10 @@ impl FunctionReader {
 				// to the "end_label" (it will be resolved at End).
 				context.sink.emit_br(Target {
 					label: end_label,
-					drop_keep: isa::DropKeep { drop: 0, keep: isa::Keep::None, },
+					drop_keep: isa::DropKeep {
+						drop: 0,
+						keep: isa::Keep::None,
+					},
 				});
 
 				// Resolve `if_not` to here so when if condition is unsatisfied control flow
@@ -312,14 +315,9 @@ impl FunctionReader {
 
 				// Then, we pop the current label. It discards all values that pushed in the current
 				// frame.
-				pop_label(
-					&mut context.value_stack,
-					&mut context.frame_stack
-				)?;
+				pop_label(&mut context.value_stack, &mut context.frame_stack)?;
 				push_label(
-					BlockFrameType::IfFalse {
-						end_label,
-					},
+					BlockFrameType::IfFalse { end_label },
 					block_type,
 					context.position,
 					&context.value_stack,
@@ -335,14 +333,10 @@ impl FunctionReader {
 				if let BlockFrameType::IfTrue { if_not, .. } = frame_type {
 					// A `if` without an `else` can't return a result.
 					if block_type != BlockType::NoResult {
-						return Err(
-							Error(
-								format!(
+						return Err(Error(format!(
 									"If block without else required to have NoResult block type. But it has {:?} type",
 									block_type
-								)
-							)
-						);
+								)));
 					}
 
 					// Resolve `if_not` label. If the `if's` condition doesn't hold the control will jump
@@ -365,7 +359,7 @@ impl FunctionReader {
 						tee_value(
 							&mut context.value_stack,
 							&context.frame_stack,
-							value_type.into()
+							value_type.into(),
 						)?;
 					}
 
@@ -388,11 +382,7 @@ impl FunctionReader {
 			Br(depth) => {
 				Validator::validate_br(context, depth)?;
 
-				let target = require_target(
-					depth,
-					&context.value_stack,
-					&context.frame_stack,
-				);
+				let target = require_target(depth, &context.value_stack, &context.frame_stack);
 				context.sink.emit_br(target);
 
 				return Ok(Outcome::Unreachable);
@@ -400,11 +390,7 @@ impl FunctionReader {
 			BrIf(depth) => {
 				Validator::validate_br_if(context, depth)?;
 
-				let target = require_target(
-					depth,
-					&context.value_stack,
-					&context.frame_stack,
-				);
+				let target = require_target(depth, &context.value_stack, &context.frame_stack);
 				context.sink.emit_br_nez(target);
 			}
 			BrTable(ref table, default) => {
@@ -412,32 +398,26 @@ impl FunctionReader {
 
 				let mut targets = Vec::new();
 				for depth in table.iter() {
-					let target = require_target(
-						*depth,
-						&context.value_stack,
-						&context.frame_stack,
-					);
+					let target = require_target(*depth, &context.value_stack, &context.frame_stack);
 					targets.push(target);
 				}
-				let default_target = require_target(
-					default,
-					&context.value_stack,
-					&context.frame_stack,
-				);
+				let default_target =
+					require_target(default, &context.value_stack, &context.frame_stack);
 				context.sink.emit_br_table(&targets, default_target);
 
 				return Ok(Outcome::Unreachable);
 			}
 			Return => {
 				if let BlockType::Value(value_type) = context.return_type()? {
-					tee_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
+					tee_value(
+						&mut context.value_stack,
+						&context.frame_stack,
+						value_type.into(),
+					)?;
 				}
 
-				let drop_keep = drop_keep_return(
-					&context.locals,
-					&context.value_stack,
-					&context.frame_stack,
-				);
+				let drop_keep =
+					drop_keep_return(&context.locals, &context.value_stack, &context.frame_stack);
 				context.sink.emit(isa::Instruction::Return(drop_keep));
 
 				return Ok(Outcome::Unreachable);
@@ -464,37 +444,19 @@ impl FunctionReader {
 			GetLocal(index) => {
 				// We need to calculate relative depth before validation since
 				// it will change the value stack size.
-				let depth = relative_local_depth(
-					index,
-					&context.locals,
-					&context.value_stack,
-				)?;
+				let depth = relative_local_depth(index, &context.locals, &context.value_stack)?;
 				Validator::validate_get_local(context, index)?;
-				context.sink.emit(
-					isa::Instruction::GetLocal(depth),
-				);
+				context.sink.emit(isa::Instruction::GetLocal(depth));
 			}
 			SetLocal(index) => {
 				Validator::validate_set_local(context, index)?;
-				let depth = relative_local_depth(
-					index,
-					&context.locals,
-					&context.value_stack,
-				)?;
-				context.sink.emit(
-					isa::Instruction::SetLocal(depth),
-				);
+				let depth = relative_local_depth(index, &context.locals, &context.value_stack)?;
+				context.sink.emit(isa::Instruction::SetLocal(depth));
 			}
 			TeeLocal(index) => {
 				Validator::validate_tee_local(context, index)?;
-				let depth = relative_local_depth(
-					index,
-					&context.locals,
-					&context.value_stack,
-				)?;
-				context.sink.emit(
-					isa::Instruction::TeeLocal(depth),
-				);
+				let depth = relative_local_depth(index, &context.locals, &context.value_stack)?;
+				context.sink.emit(isa::Instruction::TeeLocal(depth));
 			}
 			GetGlobal(index) => {
 				Validator::validate_get_global(context, index)?;
@@ -1136,78 +1098,160 @@ impl FunctionReader {
 struct Validator;
 
 impl Validator {
-	fn validate_const(context: &mut FunctionValidationContext, value_type: ValueType) -> Result<(), Error> {
+	fn validate_const(
+		context: &mut FunctionValidationContext,
+		value_type: ValueType,
+	) -> Result<(), Error> {
 		push_value(&mut context.value_stack, value_type.into())?;
 		Ok(())
 	}
 
-	fn validate_unop(context: &mut FunctionValidationContext, value_type: ValueType) -> Result<(), Error> {
-		pop_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
+	fn validate_unop(
+		context: &mut FunctionValidationContext,
+		value_type: ValueType,
+	) -> Result<(), Error> {
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			value_type.into(),
+		)?;
 		push_value(&mut context.value_stack, value_type.into())?;
 		Ok(())
 	}
 
-	fn validate_binop(context: &mut FunctionValidationContext, value_type: ValueType) -> Result<(), Error> {
-		pop_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
-		pop_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
+	fn validate_binop(
+		context: &mut FunctionValidationContext,
+		value_type: ValueType,
+	) -> Result<(), Error> {
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			value_type.into(),
+		)?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			value_type.into(),
+		)?;
 		push_value(&mut context.value_stack, value_type.into())?;
 		Ok(())
 	}
 
-	fn validate_testop(context: &mut FunctionValidationContext, value_type: ValueType) -> Result<(), Error> {
-		pop_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
+	fn validate_testop(
+		context: &mut FunctionValidationContext,
+		value_type: ValueType,
+	) -> Result<(), Error> {
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			value_type.into(),
+		)?;
 		push_value(&mut context.value_stack, ValueType::I32.into())?;
 		Ok(())
 	}
 
-	fn validate_relop(context: &mut FunctionValidationContext, value_type: ValueType) -> Result<(), Error> {
-		pop_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
-		pop_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
+	fn validate_relop(
+		context: &mut FunctionValidationContext,
+		value_type: ValueType,
+	) -> Result<(), Error> {
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			value_type.into(),
+		)?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			value_type.into(),
+		)?;
 		push_value(&mut context.value_stack, ValueType::I32.into())?;
 		Ok(())
 	}
 
-	fn validate_cvtop(context: &mut FunctionValidationContext, value_type1: ValueType, value_type2: ValueType) -> Result<(), Error> {
-		pop_value(&mut context.value_stack, &context.frame_stack, value_type1.into())?;
+	fn validate_cvtop(
+		context: &mut FunctionValidationContext,
+		value_type1: ValueType,
+		value_type2: ValueType,
+	) -> Result<(), Error> {
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			value_type1.into(),
+		)?;
 		push_value(&mut context.value_stack, value_type2.into())?;
 		Ok(())
 	}
 
 	fn validate_drop(context: &mut FunctionValidationContext) -> Result<(), Error> {
-		pop_value(&mut context.value_stack, &context.frame_stack, StackValueType::Any)?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			StackValueType::Any,
+		)?;
 		Ok(())
 	}
 
 	fn validate_select(context: &mut FunctionValidationContext) -> Result<(), Error> {
-		pop_value(&mut context.value_stack, &context.frame_stack, ValueType::I32.into())?;
-		let select_type = pop_value(&mut context.value_stack, &context.frame_stack, StackValueType::Any)?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			ValueType::I32.into(),
+		)?;
+		let select_type = pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			StackValueType::Any,
+		)?;
 		pop_value(&mut context.value_stack, &context.frame_stack, select_type)?;
 		push_value(&mut context.value_stack, select_type)?;
 		Ok(())
 	}
 
-	fn validate_get_local(context: &mut FunctionValidationContext, index: u32) -> Result<(), Error> {
+	fn validate_get_local(
+		context: &mut FunctionValidationContext,
+		index: u32,
+	) -> Result<(), Error> {
 		let local_type = require_local(&context.locals, index)?;
 		push_value(&mut context.value_stack, local_type.into())?;
 		Ok(())
 	}
 
-	fn validate_set_local(context: &mut FunctionValidationContext, index: u32) -> Result<(), Error> {
+	fn validate_set_local(
+		context: &mut FunctionValidationContext,
+		index: u32,
+	) -> Result<(), Error> {
 		let local_type = require_local(&context.locals, index)?;
-		let value_type = pop_value(&mut context.value_stack, &context.frame_stack, StackValueType::Any)?;
-		if  StackValueType::from(local_type) != value_type {
-			return Err(Error(format!("Trying to update local {} of type {:?} with value of type {:?}", index, local_type, value_type)));
+		let value_type = pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			StackValueType::Any,
+		)?;
+		if StackValueType::from(local_type) != value_type {
+			return Err(Error(format!(
+				"Trying to update local {} of type {:?} with value of type {:?}",
+				index, local_type, value_type
+			)));
 		}
 		Ok(())
 	}
 
-	fn validate_tee_local(context: &mut FunctionValidationContext, index: u32) -> Result<(), Error> {
+	fn validate_tee_local(
+		context: &mut FunctionValidationContext,
+		index: u32,
+	) -> Result<(), Error> {
 		let local_type = require_local(&context.locals, index)?;
-		tee_value(&mut context.value_stack, &context.frame_stack, local_type.into())?;
+		tee_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			local_type.into(),
+		)?;
 		Ok(())
 	}
 
-	fn validate_get_global(context: &mut FunctionValidationContext, index: u32) -> Result<(), Error> {
+	fn validate_get_global(
+		context: &mut FunctionValidationContext,
+		index: u32,
+	) -> Result<(), Error> {
 		let global_type: StackValueType = {
 			let global = context.module.require_global(index, None)?;
 			global.content_type().into()
@@ -1216,37 +1260,75 @@ impl Validator {
 		Ok(())
 	}
 
-	fn validate_set_global(context: &mut FunctionValidationContext, index: u32) -> Result<(), Error> {
+	fn validate_set_global(
+		context: &mut FunctionValidationContext,
+		index: u32,
+	) -> Result<(), Error> {
 		let global_type: StackValueType = {
 			let global = context.module.require_global(index, Some(true))?;
 			global.content_type().into()
 		};
-		let value_type = pop_value(&mut context.value_stack, &context.frame_stack, StackValueType::Any)?;
+		let value_type = pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			StackValueType::Any,
+		)?;
 		if global_type != value_type {
-			return Err(Error(format!("Trying to update global {} of type {:?} with value of type {:?}", index, global_type, value_type)));
+			return Err(Error(format!(
+				"Trying to update global {} of type {:?} with value of type {:?}",
+				index, global_type, value_type
+			)));
 		}
 		Ok(())
 	}
 
-	fn validate_load(context: &mut FunctionValidationContext, align: u32, max_align: u32, value_type: ValueType) -> Result<(), Error> {
+	fn validate_load(
+		context: &mut FunctionValidationContext,
+		align: u32,
+		max_align: u32,
+		value_type: ValueType,
+	) -> Result<(), Error> {
 		if 1u32.checked_shl(align).unwrap_or(u32::MAX) > max_align {
-			return Err(Error(format!("Too large memory alignment 2^{} (expected at most {})", align, max_align)));
+			return Err(Error(format!(
+				"Too large memory alignment 2^{} (expected at most {})",
+				align, max_align
+			)));
 		}
 
-		pop_value(&mut context.value_stack, &context.frame_stack, ValueType::I32.into())?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			ValueType::I32.into(),
+		)?;
 		context.module.require_memory(DEFAULT_MEMORY_INDEX)?;
 		push_value(&mut context.value_stack, value_type.into())?;
 		Ok(())
 	}
 
-	fn validate_store(context: &mut FunctionValidationContext, align: u32, max_align: u32, value_type: ValueType) -> Result<(), Error> {
+	fn validate_store(
+		context: &mut FunctionValidationContext,
+		align: u32,
+		max_align: u32,
+		value_type: ValueType,
+	) -> Result<(), Error> {
 		if 1u32.checked_shl(align).unwrap_or(u32::MAX) > max_align {
-			return Err(Error(format!("Too large memory alignment 2^{} (expected at most {})", align, max_align)));
+			return Err(Error(format!(
+				"Too large memory alignment 2^{} (expected at most {})",
+				align, max_align
+			)));
 		}
 
 		context.module.require_memory(DEFAULT_MEMORY_INDEX)?;
-		pop_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
-		pop_value(&mut context.value_stack, &context.frame_stack, ValueType::I32.into())?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			value_type.into(),
+		)?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			ValueType::I32.into(),
+		)?;
 		Ok(())
 	}
 
@@ -1257,14 +1339,22 @@ impl Validator {
 		};
 		if !frame_type.is_loop() {
 			if let BlockType::Value(value_type) = frame_block_type {
-				tee_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
+				tee_value(
+					&mut context.value_stack,
+					&context.frame_stack,
+					value_type.into(),
+				)?;
 			}
 		}
 		Ok(())
 	}
 
 	fn validate_br_if(context: &mut FunctionValidationContext, depth: u32) -> Result<(), Error> {
-		pop_value(&mut context.value_stack, &context.frame_stack, ValueType::I32.into())?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			ValueType::I32.into(),
+		)?;
 
 		let (frame_type, frame_block_type) = {
 			let frame = require_label(depth, &context.frame_stack)?;
@@ -1272,13 +1362,21 @@ impl Validator {
 		};
 		if !frame_type.is_loop() {
 			if let BlockType::Value(value_type) = frame_block_type {
-				tee_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
+				tee_value(
+					&mut context.value_stack,
+					&context.frame_stack,
+					value_type.into(),
+				)?;
 			}
 		}
 		Ok(())
 	}
 
-	fn validate_br_table(context: &mut FunctionValidationContext, table: &[u32], default: u32) -> Result<(), Error> {
+	fn validate_br_table(
+		context: &mut FunctionValidationContext,
+		table: &[u32],
+		default: u32,
+	) -> Result<(), Error> {
 		let required_block_type: BlockType = {
 			let default_block = require_label(default, &context.frame_stack)?;
 			let required_block_type = if !default_block.frame_type.is_loop() {
@@ -1295,23 +1393,26 @@ impl Validator {
 					BlockType::NoResult
 				};
 				if required_block_type != label_block_type {
-					return Err(
-						Error(
-							format!(
-								"Labels in br_table points to block of different types: {:?} and {:?}",
-								required_block_type,
-								label_block.block_type
-							)
-						)
-					);
+					return Err(Error(format!(
+						"Labels in br_table points to block of different types: {:?} and {:?}",
+						required_block_type, label_block.block_type
+					)));
 				}
 			}
 			required_block_type
 		};
 
-		pop_value(&mut context.value_stack, &context.frame_stack, ValueType::I32.into())?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			ValueType::I32.into(),
+		)?;
 		if let BlockType::Value(value_type) = required_block_type {
-			tee_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
+			tee_value(
+				&mut context.value_stack,
+				&context.frame_stack,
+				value_type.into(),
+			)?;
 		}
 
 		Ok(())
@@ -1320,7 +1421,11 @@ impl Validator {
 	fn validate_call(context: &mut FunctionValidationContext, idx: u32) -> Result<(), Error> {
 		let (argument_types, return_type) = context.module.require_function(idx)?;
 		for argument_type in argument_types.iter().rev() {
-			pop_value(&mut context.value_stack, &context.frame_stack, (*argument_type).into())?;
+			pop_value(
+				&mut context.value_stack,
+				&context.frame_stack,
+				(*argument_type).into(),
+			)?;
 		}
 		if let BlockType::Value(value_type) = return_type {
 			push_value(&mut context.value_stack, value_type.into())?;
@@ -1328,7 +1433,10 @@ impl Validator {
 		Ok(())
 	}
 
-	fn validate_call_indirect(context: &mut FunctionValidationContext, idx: u32) -> Result<(), Error> {
+	fn validate_call_indirect(
+		context: &mut FunctionValidationContext,
+		idx: u32,
+	) -> Result<(), Error> {
 		{
 			let table = context.module.require_table(DEFAULT_TABLE_INDEX)?;
 			if table.elem_type() != TableElementType::AnyFunc {
@@ -1340,10 +1448,18 @@ impl Validator {
 			}
 		}
 
-		pop_value(&mut context.value_stack, &context.frame_stack, ValueType::I32.into())?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			ValueType::I32.into(),
+		)?;
 		let (argument_types, return_type) = context.module.require_function_type(idx)?;
 		for argument_type in argument_types.iter().rev() {
-			pop_value(&mut context.value_stack, &context.frame_stack, (*argument_type).into())?;
+			pop_value(
+				&mut context.value_stack,
+				&context.frame_stack,
+				(*argument_type).into(),
+			)?;
 		}
 		if let BlockType::Value(value_type) = return_type {
 			push_value(&mut context.value_stack, value_type.into())?;
@@ -1359,7 +1475,11 @@ impl Validator {
 
 	fn validate_grow_memory(context: &mut FunctionValidationContext) -> Result<(), Error> {
 		context.module.require_memory(DEFAULT_MEMORY_INDEX)?;
-		pop_value(&mut context.value_stack, &context.frame_stack, ValueType::I32.into())?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			ValueType::I32.into(),
+		)?;
 		push_value(&mut context.value_stack, ValueType::I32.into())?;
 		Ok(())
 	}
@@ -1416,7 +1536,9 @@ fn make_top_frame_polymorphic(
 	value_stack: &mut StackWithLimit<StackValueType>,
 	frame_stack: &mut StackWithLimit<BlockFrame>,
 ) {
-	let frame = frame_stack.top_mut().expect("make_top_frame_polymorphic is called with empty frame stack");
+	let frame = frame_stack
+		.top_mut()
+		.expect("make_top_frame_polymorphic is called with empty frame stack");
 	value_stack.resize(frame.value_stack_len, StackValueType::Any);
 	frame.polymorphic_stack = true;
 }
@@ -1501,7 +1623,11 @@ fn pop_label(
 	match block_type {
 		BlockType::NoResult => (),
 		BlockType::Value(required_value_type) => {
-			let _ = pop_value(value_stack, frame_stack, StackValueType::Specific(required_value_type))?;
+			let _ = pop_value(
+				value_stack,
+				frame_stack,
+				StackValueType::Specific(required_value_type),
+			)?;
 		}
 	}
 
@@ -1518,7 +1644,8 @@ fn pop_label(
 }
 
 fn top_label(frame_stack: &StackWithLimit<BlockFrame>) -> &BlockFrame {
-	frame_stack.top()
+	frame_stack
+		.top()
 		.expect("this function can't be called with empty frame stack")
 }
 
@@ -1534,8 +1661,7 @@ fn require_target(
 	value_stack: &StackWithLimit<StackValueType>,
 	frame_stack: &StackWithLimit<BlockFrame>,
 ) -> Target {
-	let is_stack_polymorphic = top_label(frame_stack)
-		.polymorphic_stack;
+	let is_stack_polymorphic = top_label(frame_stack).polymorphic_stack;
 	let frame =
 		require_label(depth, frame_stack).expect("require_target called with a bogus depth");
 
@@ -1604,7 +1730,7 @@ fn require_local(locals: &Locals, idx: u32) -> Result<ValueType, Error> {
 fn relative_local_depth(
 	idx: u32,
 	locals: &Locals,
-	value_stack: &StackWithLimit<StackValueType>
+	value_stack: &StackWithLimit<StackValueType>,
 ) -> Result<u32, Error> {
 	let value_stack_height = value_stack.len() as u32;
 	let locals_and_params_count = locals.count();
@@ -1612,9 +1738,7 @@ fn relative_local_depth(
 	let depth = value_stack_height
 		.checked_add(locals_and_params_count)
 		.and_then(|x| x.checked_sub(idx))
-		.ok_or_else(||
-			Error(String::from("Locals range not in 32-bit range"))
-		)?;
+		.ok_or_else(|| Error(String::from("Locals range not in 32-bit range")))?;
 	Ok(depth)
 }
 
@@ -1655,12 +1779,15 @@ impl Sink {
 		self.ins.current_pc()
 	}
 
-	fn pc_or_placeholder<F: FnOnce() -> isa::Reloc>(&mut self, label: LabelId, reloc_creator: F) -> u32 {
+	fn pc_or_placeholder<F: FnOnce() -> isa::Reloc>(
+		&mut self,
+		label: LabelId,
+		reloc_creator: F,
+	) -> u32 {
 		match self.labels[label.0] {
 			(Label::Resolved(dst_pc), _) => dst_pc,
 			(Label::NotResolved, ref mut unresolved) => {
-				unresolved
-					.push(reloc_creator());
+				unresolved.push(reloc_creator());
 				u32::max_value()
 			}
 		}
@@ -1671,10 +1798,7 @@ impl Sink {
 	}
 
 	fn emit_br(&mut self, target: Target) {
-		let Target {
-			label,
-			drop_keep,
-		} = target;
+		let Target { label, drop_keep } = target;
 		let pc = self.cur_pc();
 		let dst_pc = self.pc_or_placeholder(label, || isa::Reloc::Br { pc });
 		self.ins.push(isa::Instruction::Br(isa::Target {
@@ -1684,10 +1808,7 @@ impl Sink {
 	}
 
 	fn emit_br_eqz(&mut self, target: Target) {
-		let Target {
-			label,
-			drop_keep,
-		} = target;
+		let Target { label, drop_keep } = target;
 		let pc = self.cur_pc();
 		let dst_pc = self.pc_or_placeholder(label, || isa::Reloc::Br { pc });
 		self.ins.push(isa::Instruction::BrIfEqz(isa::Target {
@@ -1697,10 +1818,7 @@ impl Sink {
 	}
 
 	fn emit_br_nez(&mut self, target: Target) {
-		let Target {
-			label,
-			drop_keep,
-		} = target;
+		let Target { label, drop_keep } = target;
 		let pc = self.cur_pc();
 		let dst_pc = self.pc_or_placeholder(label, || isa::Reloc::Br { pc });
 		self.ins.push(isa::Instruction::BrIfNez(isa::Target {
@@ -1714,26 +1832,23 @@ impl Sink {
 
 		let pc = self.cur_pc();
 		let mut isa_targets = Vec::new();
-		for (idx, &Target { label, drop_keep }) in targets.iter().chain(iter::once(&default)).enumerate() {
+		for (idx, &Target { label, drop_keep }) in
+			targets.iter().chain(iter::once(&default)).enumerate()
+		{
 			let dst_pc = self.pc_or_placeholder(label, || isa::Reloc::BrTable { pc, idx });
-			isa_targets.push(
-				isa::Target {
-					dst_pc,
-					drop_keep: drop_keep.into(),
-				},
-			);
+			isa_targets.push(isa::Target {
+				dst_pc,
+				drop_keep: drop_keep.into(),
+			});
 		}
-		self.ins.push(isa::Instruction::BrTable(
-			isa_targets.into_boxed_slice(),
-		));
+		self.ins
+			.push(isa::Instruction::BrTable(isa_targets.into_boxed_slice()));
 	}
 
 	/// Create a new unresolved label.
 	fn new_label(&mut self) -> LabelId {
 		let label_idx = self.labels.len();
-		self.labels.push(
-			(Label::NotResolved, Vec::new()),
-		);
+		self.labels.push((Label::NotResolved, Vec::new()));
 		LabelId(label_idx)
 	}
 
@@ -1762,14 +1877,18 @@ impl Sink {
 	/// Consume this Sink and returns isa::Instructions.
 	fn into_inner(self) -> isa::Instructions {
 		// At this moment all labels should be resolved.
-		assert!({
-			self.labels.iter().all(|(state, unresolved)|
-				match (state, unresolved) {
-					(Label::Resolved(_), unresolved) if unresolved.is_empty() => true,
-					_ => false,
-				}
-			)
-		}, "there are unresolved labels left: {:?}", self.labels);
+		assert!(
+			{
+				self.labels
+					.iter()
+					.all(|(state, unresolved)| match (state, unresolved) {
+						(Label::Resolved(_), unresolved) if unresolved.is_empty() => true,
+						_ => false,
+					})
+			},
+			"there are unresolved labels left: {:?}",
+			self.labels
+		);
 		self.ins
 	}
 }

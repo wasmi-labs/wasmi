@@ -1,9 +1,9 @@
 #[allow(unused_imports)]
 use alloc::prelude::*;
 
+use core::fmt;
 #[cfg(feature = "std")]
 use std::error;
-use core::fmt;
 
 #[derive(Debug)]
 pub struct Error(String);
@@ -23,18 +23,24 @@ impl error::Error for Error {
 
 /// Stack with limit.
 #[derive(Debug)]
-pub struct StackWithLimit<T> where T: Clone {
+pub struct StackWithLimit<T>
+where
+	T: Clone,
+{
 	/// Stack values.
 	values: Vec<T>,
 	/// Stack limit (maximal stack len).
 	limit: usize,
 }
 
-impl<T> StackWithLimit<T> where T: Clone {
+impl<T> StackWithLimit<T>
+where
+	T: Clone,
+{
 	pub fn with_limit(limit: usize) -> Self {
 		StackWithLimit {
 			values: Vec::new(),
-			limit: limit
+			limit: limit,
 		}
 	}
 
@@ -60,10 +66,17 @@ impl<T> StackWithLimit<T> where T: Clone {
 
 	pub fn get(&self, index: usize) -> Result<&T, Error> {
 		if index >= self.values.len() {
-			return Err(Error(format!("trying to get value at position {} on stack of size {}", index, self.values.len())));
+			return Err(Error(format!(
+				"trying to get value at position {} on stack of size {}",
+				index,
+				self.values.len()
+			)));
 		}
 
-		Ok(self.values.get(self.values.len() - 1 - index).expect("checked couple of lines above"))
+		Ok(self
+			.values
+			.get(self.values.len() - 1 - index)
+			.expect("checked couple of lines above"))
 	}
 
 	pub fn push(&mut self, value: T) -> Result<(), Error> {

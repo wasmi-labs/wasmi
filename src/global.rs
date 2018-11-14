@@ -1,9 +1,9 @@
 use alloc::rc::Rc;
 use core::cell::Cell;
+use parity_wasm::elements::ValueType as EValueType;
+use types::ValueType;
 use value::RuntimeValue;
 use Error;
-use types::ValueType;
-use parity_wasm::elements::{ValueType as EValueType};
 
 /// Reference to a global variable (See [`GlobalInstance`] for details).
 ///
@@ -57,7 +57,9 @@ impl GlobalInstance {
 	/// type of `val` doesn't match global's type.
 	pub fn set(&self, val: RuntimeValue) -> Result<(), Error> {
 		if !self.mutable {
-			return Err(Error::Global("Attempt to change an immutable variable".into()));
+			return Err(Error::Global(
+				"Attempt to change an immutable variable".into(),
+			));
 		}
 		if self.value_type() != val.value_type() {
 			return Err(Error::Global("Attempt to change variable type".into()));

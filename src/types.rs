@@ -1,7 +1,8 @@
 use alloc::borrow::Cow;
 
 use parity_wasm::elements::{
-	FunctionType, ValueType as EValueType, GlobalType, TableType, MemoryType};
+	FunctionType, GlobalType, MemoryType, TableType, ValueType as EValueType,
+};
 
 /// Signature of a [function].
 ///
@@ -38,7 +39,7 @@ impl Signature {
 	/// ```
 	pub fn new<C: Into<Cow<'static, [ValueType]>>>(
 		params: C,
-		return_type: Option<ValueType>
+		return_type: Option<ValueType>,
 	) -> Signature {
 		Signature {
 			params: params.into(),
@@ -58,7 +59,12 @@ impl Signature {
 
 	pub(crate) fn from_elements(func_type: &FunctionType) -> Signature {
 		Signature {
-			params: func_type.params().iter().cloned().map(ValueType::from_elements).collect(),
+			params: func_type
+				.params()
+				.iter()
+				.cloned()
+				.map(ValueType::from_elements)
+				.collect(),
 			return_type: func_type.return_type().map(ValueType::from_elements),
 		}
 	}

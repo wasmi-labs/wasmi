@@ -101,15 +101,10 @@ pub struct Target {
 pub enum Reloc {
 	/// Patch the destination of the branch instruction (br, br_eqz, br_nez)
 	/// at the specified pc.
-	Br {
-		pc: u32,
-	},
+	Br { pc: u32 },
 	/// Patch the specified destination index inside of br_table instruction at
 	/// the specified pc.
-	BrTable {
-		pc: u32,
-		idx: usize,
-	},
+	BrTable { pc: u32, idx: usize },
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -347,12 +342,12 @@ impl Instructions {
 			Reloc::BrTable { pc, idx } => match self.vec[pc as usize] {
 				Instruction::BrTable(ref mut targets) => targets[idx].dst_pc = dst_pc,
 				_ => panic!("brtable relocation points to not brtable instruction"),
-			}
+			},
 		}
 	}
 
 	pub fn iterate_from(&self, position: u32) -> InstructionIter {
-		InstructionIter{
+		InstructionIter {
 			instructions: &self.vec,
 			position,
 		}
@@ -376,9 +371,11 @@ impl<'a> Iterator for InstructionIter<'a> {
 
 	#[inline]
 	fn next(&mut self) -> Option<<Self as Iterator>::Item> {
-		self.instructions.get(self.position as usize).map(|instruction| {
-			self.position += 1;
-			instruction
-		})
+		self.instructions
+			.get(self.position as usize)
+			.map(|instruction| {
+				self.position += 1;
+				instruction
+			})
 	}
 }

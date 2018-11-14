@@ -1,11 +1,10 @@
 use super::{validate_module, ValidatedModule};
+use isa;
 use parity_wasm::builder::module;
 use parity_wasm::elements::{
-	External, GlobalEntry, GlobalType, ImportEntry, InitExpr, MemoryType,
-	Instruction, Instructions, TableType, ValueType, BlockType, deserialize_buffer,
-	Module,
+	deserialize_buffer, BlockType, External, GlobalEntry, GlobalType, ImportEntry, InitExpr,
+	Instruction, Instructions, MemoryType, Module, TableType, ValueType,
 };
-use isa;
 use wabt;
 
 #[test]
@@ -27,45 +26,34 @@ fn limits() {
 
 	for (min, max, is_valid) in test_cases {
 		// defined table
-		let m = module()
-			.table()
-				.with_min(min)
-				.with_max(max)
-				.build()
-			.build();
+		let m = module().table().with_min(min).with_max(max).build().build();
 		assert_eq!(validate_module(m).is_ok(), is_valid);
 
 		// imported table
 		let m = module()
-			.with_import(
-				ImportEntry::new(
-					"core".into(),
-					"table".into(),
-					External::Table(TableType::new(min, max))
-				)
-			)
-			.build();
+			.with_import(ImportEntry::new(
+				"core".into(),
+				"table".into(),
+				External::Table(TableType::new(min, max)),
+			)).build();
 		assert_eq!(validate_module(m).is_ok(), is_valid);
 
 		// defined memory
 		let m = module()
 			.memory()
-				.with_min(min)
-				.with_max(max)
-				.build()
+			.with_min(min)
+			.with_max(max)
+			.build()
 			.build();
 		assert_eq!(validate_module(m).is_ok(), is_valid);
 
 		// imported table
 		let m = module()
-			.with_import(
-				ImportEntry::new(
-					"core".into(),
-					"memory".into(),
-					External::Memory(MemoryType::new(min, max))
-				)
-			)
-			.build();
+			.with_import(ImportEntry::new(
+				"core".into(),
+				"memory".into(),
+				External::Memory(MemoryType::new(min, max)),
+			)).build();
 		assert_eq!(validate_module(m).is_ok(), is_valid);
 	}
 }
@@ -73,92 +61,63 @@ fn limits() {
 #[test]
 fn global_init_const() {
 	let m = module()
-		.with_global(
-			GlobalEntry::new(
-				GlobalType::new(ValueType::I32, true),
-				InitExpr::new(
-					vec![Instruction::I32Const(42), Instruction::End]
-				)
-			)
-		)
-		.build();
+		.with_global(GlobalEntry::new(
+			GlobalType::new(ValueType::I32, true),
+			InitExpr::new(vec![Instruction::I32Const(42), Instruction::End]),
+		)).build();
 	assert!(validate_module(m).is_ok());
 
 	// init expr type differs from declared global type
 	let m = module()
-		.with_global(
-			GlobalEntry::new(
-				GlobalType::new(ValueType::I64, true),
-				InitExpr::new(vec![Instruction::I32Const(42), Instruction::End])
-			)
-		)
-		.build();
+		.with_global(GlobalEntry::new(
+			GlobalType::new(ValueType::I64, true),
+			InitExpr::new(vec![Instruction::I32Const(42), Instruction::End]),
+		)).build();
 	assert!(validate_module(m).is_err());
 }
 
 #[test]
 fn global_init_global() {
 	let m = module()
-		.with_import(
-			ImportEntry::new(
-				"env".into(),
-				"ext_global".into(),
-				External::Global(GlobalType::new(ValueType::I32, false))
-			)
-		)
-		.with_global(
-			GlobalEntry::new(
-				GlobalType::new(ValueType::I32, true),
-				InitExpr::new(vec![Instruction::GetGlobal(0), Instruction::End])
-			)
-		)
-		.build();
+		.with_import(ImportEntry::new(
+			"env".into(),
+			"ext_global".into(),
+			External::Global(GlobalType::new(ValueType::I32, false)),
+		)).with_global(GlobalEntry::new(
+			GlobalType::new(ValueType::I32, true),
+			InitExpr::new(vec![Instruction::GetGlobal(0), Instruction::End]),
+		)).build();
 	assert!(validate_module(m).is_ok());
 
 	// get_global can reference only previously defined globals
 	let m = module()
-		.with_global(
-			GlobalEntry::new(
-				GlobalType::new(ValueType::I32, true),
-				InitExpr::new(vec![Instruction::GetGlobal(0), Instruction::End])
-			)
-		)
-		.build();
+		.with_global(GlobalEntry::new(
+			GlobalType::new(ValueType::I32, true),
+			InitExpr::new(vec![Instruction::GetGlobal(0), Instruction::End]),
+		)).build();
 	assert!(validate_module(m).is_err());
 
 	// get_global can reference only const globals
 	let m = module()
-		.with_import(
-			ImportEntry::new(
-				"env".into(),
-				"ext_global".into(),
-				External::Global(GlobalType::new(ValueType::I32, true))
-			)
-		)
-		.with_global(
-			GlobalEntry::new(
-				GlobalType::new(ValueType::I32, true),
-				InitExpr::new(vec![Instruction::GetGlobal(0), Instruction::End])
-			)
-		)
-		.build();
+		.with_import(ImportEntry::new(
+			"env".into(),
+			"ext_global".into(),
+			External::Global(GlobalType::new(ValueType::I32, true)),
+		)).with_global(GlobalEntry::new(
+			GlobalType::new(ValueType::I32, true),
+			InitExpr::new(vec![Instruction::GetGlobal(0), Instruction::End]),
+		)).build();
 	assert!(validate_module(m).is_err());
 
 	// get_global in init_expr can only refer to imported globals.
 	let m = module()
-		.with_global(
-			GlobalEntry::new(
-				GlobalType::new(ValueType::I32, false),
-				InitExpr::new(vec![Instruction::I32Const(0), Instruction::End])
-			)
-		)
-		.with_global(
-			GlobalEntry::new(
-				GlobalType::new(ValueType::I32, true),
-				InitExpr::new(vec![Instruction::GetGlobal(0), Instruction::End])
-			)
-		)
-		.build();
+		.with_global(GlobalEntry::new(
+			GlobalType::new(ValueType::I32, false),
+			InitExpr::new(vec![Instruction::I32Const(0), Instruction::End]),
+		)).with_global(GlobalEntry::new(
+			GlobalType::new(ValueType::I32, true),
+			InitExpr::new(vec![Instruction::GetGlobal(0), Instruction::End]),
+		)).build();
 	assert!(validate_module(m).is_err());
 }
 
@@ -166,35 +125,26 @@ fn global_init_global() {
 fn global_init_misc() {
 	// without delimiting End opcode
 	let m = module()
-		.with_global(
-			GlobalEntry::new(
-				GlobalType::new(ValueType::I32, true),
-				InitExpr::new(vec![Instruction::I32Const(42)])
-			)
-		)
-		.build();
+		.with_global(GlobalEntry::new(
+			GlobalType::new(ValueType::I32, true),
+			InitExpr::new(vec![Instruction::I32Const(42)]),
+		)).build();
 	assert!(validate_module(m).is_err());
 
 	// empty init expr
 	let m = module()
-		.with_global(
-			GlobalEntry::new(
-				GlobalType::new(ValueType::I32, true),
-				InitExpr::new(vec![Instruction::End])
-			)
-		)
-		.build();
+		.with_global(GlobalEntry::new(
+			GlobalType::new(ValueType::I32, true),
+			InitExpr::new(vec![Instruction::End]),
+		)).build();
 	assert!(validate_module(m).is_err());
 
 	// not an constant opcode used
 	let m = module()
-		.with_global(
-			GlobalEntry::new(
-				GlobalType::new(ValueType::I32, true),
-				InitExpr::new(vec![Instruction::Unreachable, Instruction::End])
-			)
-		)
-		.build();
+		.with_global(GlobalEntry::new(
+			GlobalType::new(ValueType::I32, true),
+			InitExpr::new(vec![Instruction::Unreachable, Instruction::End]),
+		)).build();
 	assert!(validate_module(m).is_err());
 }
 
@@ -202,31 +152,25 @@ fn global_init_misc() {
 fn module_limits_validity() {
 	// module cannot contain more than 1 memory atm.
 	let m = module()
-		.with_import(
-			ImportEntry::new(
-				"core".into(),
-				"memory".into(),
-				External::Memory(MemoryType::new(10, None))
-			)
-		)
-		.memory()
-			.with_min(10)
-			.build()
+		.with_import(ImportEntry::new(
+			"core".into(),
+			"memory".into(),
+			External::Memory(MemoryType::new(10, None)),
+		)).memory()
+		.with_min(10)
+		.build()
 		.build();
 	assert!(validate_module(m).is_err());
 
 	// module cannot contain more than 1 table atm.
 	let m = module()
-		.with_import(
-			ImportEntry::new(
-				"core".into(),
-				"table".into(),
-				External::Table(TableType::new(10, None))
-			)
-		)
-		.table()
-			.with_min(10)
-			.build()
+		.with_import(ImportEntry::new(
+			"core".into(),
+			"table".into(),
+			External::Table(TableType::new(10, None)),
+		)).table()
+		.with_min(10)
+		.build()
 		.build();
 	assert!(validate_module(m).is_err());
 }
@@ -236,19 +180,27 @@ fn funcs() {
 	// recursive function calls is legal.
 	let m = module()
 		.function()
-			.signature().return_type().i32().build()
-			.body().with_instructions(Instructions::new(vec![
-				Instruction::Call(1),
-				Instruction::End,
-			])).build()
-			.build()
+		.signature()
+		.return_type()
+		.i32()
+		.build()
+		.body()
+		.with_instructions(Instructions::new(vec![
+			Instruction::Call(1),
+			Instruction::End,
+		])).build()
+		.build()
 		.function()
-			.signature().return_type().i32().build()
-			.body().with_instructions(Instructions::new(vec![
-				Instruction::Call(0),
-				Instruction::End,
-			])).build()
-			.build()
+		.signature()
+		.return_type()
+		.i32()
+		.build()
+		.body()
+		.with_instructions(Instructions::new(vec![
+			Instruction::Call(0),
+			Instruction::End,
+		])).build()
+		.build()
 		.build();
 	assert!(validate_module(m).is_ok());
 }
@@ -257,26 +209,20 @@ fn funcs() {
 fn globals() {
 	// import immutable global is legal.
 	let m = module()
-		.with_import(
-			ImportEntry::new(
-				"env".into(),
-				"ext_global".into(),
-				External::Global(GlobalType::new(ValueType::I32, false))
-			)
-		)
-		.build();
+		.with_import(ImportEntry::new(
+			"env".into(),
+			"ext_global".into(),
+			External::Global(GlobalType::new(ValueType::I32, false)),
+		)).build();
 	assert!(validate_module(m).is_ok());
 
 	// import mutable global is invalid.
 	let m = module()
-		.with_import(
-			ImportEntry::new(
-				"env".into(),
-				"ext_global".into(),
-				External::Global(GlobalType::new(ValueType::I32, true))
-			)
-		)
-		.build();
+		.with_import(ImportEntry::new(
+			"env".into(),
+			"ext_global".into(),
+			External::Global(GlobalType::new(ValueType::I32, true)),
+		)).build();
 	assert!(validate_module(m).is_err());
 }
 
@@ -284,21 +230,23 @@ fn globals() {
 fn if_else_with_return_type_validation() {
 	let m = module()
 		.function()
-			.signature().build()
-			.body().with_instructions(Instructions::new(vec![
-				Instruction::I32Const(1),
-				Instruction::If(BlockType::NoResult),
-					Instruction::I32Const(1),
-					Instruction::If(BlockType::Value(ValueType::I32)),
-						Instruction::I32Const(1),
-					Instruction::Else,
-						Instruction::I32Const(2),
-					Instruction::End,
-					Instruction::Drop,
-				Instruction::End,
-				Instruction::End,
-			])).build()
-			.build()
+		.signature()
+		.build()
+		.body()
+		.with_instructions(Instructions::new(vec![
+			Instruction::I32Const(1),
+			Instruction::If(BlockType::NoResult),
+			Instruction::I32Const(1),
+			Instruction::If(BlockType::Value(ValueType::I32)),
+			Instruction::I32Const(1),
+			Instruction::Else,
+			Instruction::I32Const(2),
+			Instruction::End,
+			Instruction::Drop,
+			Instruction::End,
+			Instruction::End,
+		])).build()
+		.build()
 		.build();
 	validate_module(m).unwrap();
 }
@@ -323,7 +271,7 @@ fn compile(wat: &str) -> (Vec<isa::Instruction>, Vec<u32>) {
 			instructions.push(instruction.clone());
 			pcs.push(pc);
 		} else {
-			break
+			break;
 		}
 	}
 
@@ -332,32 +280,34 @@ fn compile(wat: &str) -> (Vec<isa::Instruction>, Vec<u32>) {
 
 #[test]
 fn implicit_return_no_value() {
-	let (code, _) = compile(r#"
+	let (code, _) = compile(
+		r#"
 		(module
 			(func (export "call")
 			)
 		)
-	"#);
+	"#,
+	);
 	assert_eq!(
 		code,
-		vec![
-			isa::Instruction::Return(isa::DropKeep {
-				drop: 0,
-				keep: isa::Keep::None,
-			})
-		]
+		vec![isa::Instruction::Return(isa::DropKeep {
+			drop: 0,
+			keep: isa::Keep::None,
+		})]
 	)
 }
 
 #[test]
 fn implicit_return_with_value() {
-	let (code, _) = compile(r#"
+	let (code, _) = compile(
+		r#"
 		(module
 			(func (export "call") (result i32)
 				i32.const 0
 			)
 		)
-	"#);
+	"#,
+	);
 	assert_eq!(
 		code,
 		vec![
@@ -372,32 +322,34 @@ fn implicit_return_with_value() {
 
 #[test]
 fn implicit_return_param() {
-	let (code, _) = compile(r#"
+	let (code, _) = compile(
+		r#"
 		(module
 			(func (export "call") (param i32)
 			)
 		)
-	"#);
+	"#,
+	);
 	assert_eq!(
 		code,
-		vec![
-			isa::Instruction::Return(isa::DropKeep {
-				drop: 1,
-				keep: isa::Keep::None,
-			}),
-		]
+		vec![isa::Instruction::Return(isa::DropKeep {
+			drop: 1,
+			keep: isa::Keep::None,
+		}),]
 	)
 }
 
 #[test]
 fn get_local() {
-	let (code, _) = compile(r#"
+	let (code, _) = compile(
+		r#"
 		(module
 			(func (export "call") (param i32) (result i32)
 				get_local 0
 			)
 		)
-	"#);
+	"#,
+	);
 	assert_eq!(
 		code,
 		vec![
@@ -412,14 +364,16 @@ fn get_local() {
 
 #[test]
 fn explicit_return() {
-	let (code, _) = compile(r#"
+	let (code, _) = compile(
+		r#"
 		(module
 			(func (export "call") (param i32) (result i32)
 				get_local 0
 				return
 			)
 		)
-	"#);
+	"#,
+	);
 	assert_eq!(
 		code,
 		vec![
@@ -438,7 +392,8 @@ fn explicit_return() {
 
 #[test]
 fn add_params() {
-	let (code, _) = compile(r#"
+	let (code, _) = compile(
+		r#"
 		(module
 			(func (export "call") (param i32) (param i32) (result i32)
 				get_local 0
@@ -446,7 +401,8 @@ fn add_params() {
 				i32.add
 			)
 		)
-	"#);
+	"#,
+	);
 	assert_eq!(
 		code,
 		vec![
@@ -468,7 +424,8 @@ fn add_params() {
 
 #[test]
 fn drop_locals() {
-	let (code, _) = compile(r#"
+	let (code, _) = compile(
+		r#"
 		(module
 			(func (export "call") (param i32)
 				(local i32)
@@ -476,7 +433,8 @@ fn drop_locals() {
 				set_local 1
 			)
 		)
-	"#);
+	"#,
+	);
 	assert_eq!(
 		code,
 		vec![
@@ -492,7 +450,8 @@ fn drop_locals() {
 
 #[test]
 fn if_without_else() {
-	let (code, pcs) = compile(r#"
+	let (code, pcs) = compile(
+		r#"
 		(module
 			(func (export "call") (param i32) (result i32)
 				i32.const 1
@@ -503,7 +462,8 @@ fn if_without_else() {
 				i32.const 3
 			)
 		)
-	"#);
+	"#,
+	);
 	assert_eq!(
 		code,
 		vec![
@@ -517,7 +477,7 @@ fn if_without_else() {
 			}),
 			isa::Instruction::I32Const(2),
 			isa::Instruction::Return(isa::DropKeep {
-				drop: 1, // 1 param
+				drop: 1,                 // 1 param
 				keep: isa::Keep::Single, // 1 result
 			}),
 			isa::Instruction::I32Const(3),
@@ -531,7 +491,8 @@ fn if_without_else() {
 
 #[test]
 fn if_else() {
-	let (code, pcs) = compile(r#"
+	let (code, pcs) = compile(
+		r#"
 		(module
 			(func (export "call")
 				(local i32)
@@ -545,7 +506,8 @@ fn if_else() {
 				end
 			)
 		)
-	"#);
+	"#,
+	);
 	assert_eq!(
 		code,
 		vec![
@@ -578,7 +540,8 @@ fn if_else() {
 
 #[test]
 fn if_else_returns_result() {
-	let (code, pcs) = compile(r#"
+	let (code, pcs) = compile(
+		r#"
 		(module
 			(func (export "call")
 				i32.const 1
@@ -590,7 +553,8 @@ fn if_else_returns_result() {
 				drop
 			)
 		)
-	"#);
+	"#,
+	);
 	assert_eq!(
 		code,
 		vec![
@@ -622,7 +586,8 @@ fn if_else_returns_result() {
 
 #[test]
 fn if_else_branch_from_true_branch() {
-	let (code, pcs) = compile(r#"
+	let (code, pcs) = compile(
+		r#"
 		(module
 			(func (export "call")
 				i32.const 1
@@ -638,7 +603,8 @@ fn if_else_branch_from_true_branch() {
 				drop
 			)
 		)
-	"#);
+	"#,
+	);
 	assert_eq!(
 		code,
 		vec![
@@ -680,7 +646,8 @@ fn if_else_branch_from_true_branch() {
 
 #[test]
 fn if_else_branch_from_false_branch() {
-	let (code, pcs) = compile(r#"
+	let (code, pcs) = compile(
+		r#"
 		(module
 			(func (export "call")
 				i32.const 1
@@ -696,7 +663,8 @@ fn if_else_branch_from_false_branch() {
 				drop
 			)
 		)
-	"#);
+	"#,
+	);
 	assert_eq!(
 		code,
 		vec![
@@ -738,7 +706,8 @@ fn if_else_branch_from_false_branch() {
 
 #[test]
 fn loop_() {
-	let (code, _) = compile(r#"
+	let (code, _) = compile(
+		r#"
 		(module
 			(func (export "call")
 				loop (result i32)
@@ -749,7 +718,8 @@ fn loop_() {
 				drop
 			)
 		)
-	"#);
+	"#,
+	);
 	assert_eq!(
 		code,
 		vec![
@@ -773,28 +743,29 @@ fn loop_() {
 
 #[test]
 fn loop_empty() {
-	let (code, _) = compile(r#"
+	let (code, _) = compile(
+		r#"
 		(module
 			(func (export "call")
 				loop
 				end
 			)
 		)
-	"#);
+	"#,
+	);
 	assert_eq!(
 		code,
-		vec![
-			isa::Instruction::Return(isa::DropKeep {
-				drop: 0,
-				keep: isa::Keep::None,
-			}),
-		]
+		vec![isa::Instruction::Return(isa::DropKeep {
+			drop: 0,
+			keep: isa::Keep::None,
+		}),]
 	)
 }
 
 #[test]
 fn brtable() {
-	let (code, pcs) = compile(r#"
+	let (code, pcs) = compile(
+		r#"
 		(module
 			(func (export "call")
 				block $1
@@ -805,7 +776,8 @@ fn brtable() {
 				end
 			)
 		)
-	"#);
+	"#,
+	);
 	assert_eq!(
 		code,
 		vec![
@@ -838,7 +810,8 @@ fn brtable() {
 
 #[test]
 fn brtable_returns_result() {
-	let (code, pcs) = compile(r#"
+	let (code, pcs) = compile(
+		r#"
 		(module
 			(func (export "call")
 				block $1 (result i32)
@@ -852,7 +825,8 @@ fn brtable_returns_result() {
 				drop
 			)
 		)
-	"#);
+	"#,
+	);
 	assert_eq!(
 		code,
 		vec![
@@ -888,7 +862,8 @@ fn brtable_returns_result() {
 
 #[test]
 fn wabt_example() {
-	let (code, pcs) = compile(r#"
+	let (code, pcs) = compile(
+		r#"
 		(module
 			(func (export "call") (param i32) (result i32)
 				block $exit
@@ -901,7 +876,8 @@ fn wabt_example() {
 				return
 			)
 		)
-	"#);
+	"#,
+	);
 	assert_eq!(
 		code,
 		vec![

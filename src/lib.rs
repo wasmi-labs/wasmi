@@ -95,9 +95,7 @@
 //! ```
 
 #![warn(missing_docs)]
-
 #![cfg_attr(not(feature = "std"), no_std)]
-
 //// alloc is required in no_std
 #![cfg_attr(not(feature = "std"), feature(alloc))]
 
@@ -117,11 +115,11 @@ extern crate wabt;
 #[macro_use]
 extern crate assert_matches;
 
-extern crate parity_wasm;
 extern crate byteorder;
 #[cfg(not(feature = "std"))]
 extern crate hashmap_core;
 extern crate memory_units as memory_units_crate;
+extern crate parity_wasm;
 
 #[allow(unused_imports)]
 use alloc::prelude::*;
@@ -292,7 +290,7 @@ impl Error {
 			Error::Trap(ref trap) => match *trap.kind() {
 				TrapKind::Host(ref host_err) => Some(&**host_err),
 				_ => None,
-			}
+			},
 			_ => None,
 		}
 	}
@@ -347,13 +345,19 @@ impl error::Error for Error {
 	}
 }
 
-impl<U> From<U> for Error where U: host::HostError + Sized {
+impl<U> From<U> for Error
+where
+	U: host::HostError + Sized,
+{
 	fn from(e: U) -> Self {
 		Error::Host(Box::new(e))
 	}
 }
 
-impl<U> From<U> for Trap where U: host::HostError + Sized {
+impl<U> From<U> for Trap
+where
+	U: host::HostError + Sized,
+{
 	fn from(e: U) -> Self {
 		Trap::new(TrapKind::Host(Box::new(e)))
 	}
@@ -377,38 +381,38 @@ impl From<validation::Error> for Error {
 	}
 }
 
-mod validation;
 mod common;
-mod memory;
-mod module;
-mod runner;
-mod table;
-mod value;
+mod func;
+mod global;
 mod host;
 mod imports;
-mod global;
-mod func;
-mod types;
 mod isa;
+mod memory;
+mod module;
 pub mod nan_preserving_float;
+mod runner;
+mod table;
+mod types;
+mod validation;
+mod value;
 
 #[cfg(test)]
 mod tests;
 
-pub use self::memory::{MemoryInstance, MemoryRef, LINEAR_MEMORY_PAGE_SIZE};
-pub use self::table::{TableInstance, TableRef};
-pub use self::value::{RuntimeValue, FromRuntimeValue};
-pub use self::host::{Externals, NopExternals, HostError, RuntimeArgs};
-pub use self::imports::{ModuleImportResolver, ImportResolver, ImportsBuilder};
-pub use self::module::{ModuleInstance, ModuleRef, ExternVal, NotStartedModuleRef};
+pub use self::func::{FuncInstance, FuncInvocation, FuncRef, ResumableError};
 pub use self::global::{GlobalInstance, GlobalRef};
-pub use self::func::{FuncInstance, FuncRef, FuncInvocation, ResumableError};
-pub use self::types::{Signature, ValueType, GlobalDescriptor, TableDescriptor, MemoryDescriptor};
+pub use self::host::{Externals, HostError, NopExternals, RuntimeArgs};
+pub use self::imports::{ImportResolver, ImportsBuilder, ModuleImportResolver};
+pub use self::memory::{MemoryInstance, MemoryRef, LINEAR_MEMORY_PAGE_SIZE};
+pub use self::module::{ExternVal, ModuleInstance, ModuleRef, NotStartedModuleRef};
+pub use self::table::{TableInstance, TableRef};
+pub use self::types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor, ValueType};
+pub use self::value::{FromRuntimeValue, RuntimeValue};
 
 /// WebAssembly-specific sizes and units.
 pub mod memory_units {
 	pub use memory_units_crate::wasm32::*;
-	pub use memory_units_crate::{Bytes, ByteSize, RoundUpTo, size_of};
+	pub use memory_units_crate::{size_of, ByteSize, Bytes, RoundUpTo};
 }
 
 /// Deserialized module prepared for instantiation.
@@ -452,15 +456,9 @@ impl Module {
 	/// ```
 	pub fn from_parity_wasm_module(module: parity_wasm::elements::Module) -> Result<Module, Error> {
 		use validation::{validate_module, ValidatedModule};
-		let ValidatedModule {
-			code_map,
-			module,
-		} = validate_module(module)?;
+		let ValidatedModule { code_map, module } = validate_module(module)?;
 
-		Ok(Module {
-			code_map,
-			module,
-		})
+		Ok(Module { code_map, module })
 	}
 
 	/// Fail if the module contains any floating-point operations

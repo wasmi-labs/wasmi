@@ -1,14 +1,13 @@
-extern crate wasmi;
 extern crate parity_wasm;
+extern crate wasmi;
 
 use std::env;
 use std::fmt;
 use std::fs::File;
 use wasmi::{
-	Error as InterpreterError, ModuleInstance, ModuleRef,
-	Externals, RuntimeValue, FuncRef, ModuleImportResolver,
-	FuncInstance, HostError, ImportsBuilder, Signature, ValueType,
-	RuntimeArgs, Trap,
+	Error as InterpreterError, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
+	ModuleImportResolver, ModuleInstance, ModuleRef, RuntimeArgs, RuntimeValue, Signature, Trap,
+	ValueType,
 };
 
 #[derive(Debug)]
@@ -64,9 +63,7 @@ mod tictactoe {
 
 	impl Game {
 		pub fn new() -> Game {
-			Game {
-				board: [None; 9],
-			}
+			Game { board: [None; 9] }
 		}
 
 		pub fn set(&mut self, idx: i32, player: Player) -> Result<(), Error> {
@@ -96,12 +93,10 @@ mod tictactoe {
 				(0, 1, 2),
 				(3, 4, 5),
 				(6, 7, 8),
-
 				// Columns
 				(0, 3, 6),
 				(1, 4, 7),
 				(2, 5, 8),
-
 				// Diagonals
 				(0, 4, 8),
 				(2, 4, 6),
@@ -161,7 +156,7 @@ impl<'a> Externals for Runtime<'a> {
 				let val: i32 = tictactoe::Player::into_i32(self.game.get(idx)?);
 				Ok(Some(val.into()))
 			}
-			_ => panic!("unknown function index")
+			_ => panic!("unknown function index"),
 		}
 	}
 }
@@ -175,15 +170,20 @@ impl<'a> ModuleImportResolver for RuntimeModuleImportResolver {
 		_signature: &Signature,
 	) -> Result<FuncRef, InterpreterError> {
 		let func_ref = match field_name {
-			"set" => {
-				FuncInstance::alloc_host(Signature::new(&[ValueType::I32][..], None), SET_FUNC_INDEX)
-			},
-			"get" => FuncInstance::alloc_host(Signature::new(&[ValueType::I32][..], Some(ValueType::I32)), GET_FUNC_INDEX),
-			_ => return Err(
-				InterpreterError::Function(
-					format!("host module doesn't export function with name {}", field_name)
-				)
-			)
+			"set" => FuncInstance::alloc_host(
+				Signature::new(&[ValueType::I32][..], None),
+				SET_FUNC_INDEX,
+			),
+			"get" => FuncInstance::alloc_host(
+				Signature::new(&[ValueType::I32][..], Some(ValueType::I32)),
+				GET_FUNC_INDEX,
+			),
+			_ => {
+				return Err(InterpreterError::Function(format!(
+					"host module doesn't export function with name {}",
+					field_name
+				)))
+			}
 		};
 		Ok(func_ref)
 	}
@@ -201,8 +201,7 @@ fn instantiate(path: &str) -> Result<ModuleRef, Error> {
 	let mut imports = ImportsBuilder::new();
 	imports.push_resolver("env", &RuntimeModuleImportResolver);
 
-	let instance = ModuleInstance::new(&module, &imports)?
-		.assert_no_start();
+	let instance = ModuleInstance::new(&module, &imports)?.assert_no_start();
 
 	Ok(instance)
 }

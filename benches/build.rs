@@ -1,7 +1,6 @@
 use std::env;
 use std::process;
 
-
 fn main() {
 	println!("cargo:rerun-if-changed=./wasm-kernel/");
 
@@ -23,9 +22,9 @@ fn main() {
 	if !output.status.success() {
 		let msg = format!(
 			"status: {status}\nstdout: {stdout}\nstderr: {stderr}\n",
-			status=output.status,
-			stdout=String::from_utf8_lossy(&output.stdout),
-			stderr=String::from_utf8_lossy(&output.stderr),
+			status = output.status,
+			stdout = String::from_utf8_lossy(&output.stdout),
+			stderr = String::from_utf8_lossy(&output.stderr),
 		);
 		panic!("{}", msg);
 	}

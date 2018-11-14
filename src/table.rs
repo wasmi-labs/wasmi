@@ -1,13 +1,13 @@
 #[allow(unused_imports)]
 use alloc::prelude::*;
 use alloc::rc::Rc;
-use core::u32;
-use core::fmt;
 use core::cell::RefCell;
-use parity_wasm::elements::ResizableLimits;
-use Error;
+use core::fmt;
+use core::u32;
 use func::FuncRef;
 use module::check_limits;
+use parity_wasm::elements::ResizableLimits;
+use Error;
 
 /// Reference to a table (See [`TableInstance`] for details).
 ///
@@ -106,21 +106,22 @@ impl TableInstance {
 	pub fn grow(&self, by: u32) -> Result<(), Error> {
 		let mut buffer = self.buffer.borrow_mut();
 		let maximum_size = self.maximum_size().unwrap_or(u32::MAX);
-		let new_size = self.current_size().checked_add(by)
+		let new_size = self
+			.current_size()
+			.checked_add(by)
 			.and_then(|new_size| {
 				if maximum_size < new_size {
 					None
 				} else {
 					Some(new_size)
 				}
-			})
-			.ok_or_else(||
+			}).ok_or_else(|| {
 				Error::Table(format!(
 					"Trying to grow table by {} items when there are already {} items",
 					by,
 					self.current_size(),
 				))
-			)?;
+			})?;
 		buffer.resize(new_size as usize, None);
 		Ok(())
 	}
@@ -129,13 +130,12 @@ impl TableInstance {
 	pub fn get(&self, offset: u32) -> Result<Option<FuncRef>, Error> {
 		let buffer = self.buffer.borrow();
 		let buffer_len = buffer.len();
-		let table_elem = buffer.get(offset as usize).cloned().ok_or_else(||
+		let table_elem = buffer.get(offset as usize).cloned().ok_or_else(|| {
 			Error::Table(format!(
 				"trying to read table item with index {} when there are only {} items",
-				offset,
-				buffer_len
-			)),
-		)?;
+				offset, buffer_len
+			))
+		})?;
 		Ok(table_elem)
 	}
 
@@ -143,13 +143,12 @@ impl TableInstance {
 	pub fn set(&self, offset: u32, value: Option<FuncRef>) -> Result<(), Error> {
 		let mut buffer = self.buffer.borrow_mut();
 		let buffer_len = buffer.len();
-		let table_elem = buffer.get_mut(offset as usize).ok_or_else(||
+		let table_elem = buffer.get_mut(offset as usize).ok_or_else(|| {
 			Error::Table(format!(
 				"trying to update table item with index {} when there are only {} items",
-				offset,
-				buffer_len
+				offset, buffer_len
 			))
-		)?;
+		})?;
 		*table_elem = value;
 		Ok(())
 	}

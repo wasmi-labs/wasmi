@@ -1,11 +1,11 @@
-use {
-	Error, Signature, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
-	MemoryInstance, MemoryRef, TableInstance, TableRef, ModuleImportResolver, ModuleInstance, ModuleRef,
-	RuntimeValue, RuntimeArgs, TableDescriptor, MemoryDescriptor, Trap, TrapKind, ResumableError,
-};
-use types::ValueType;
-use memory_units::Pages;
 use super::parse_wat;
+use memory_units::Pages;
+use types::ValueType;
+use {
+	Error, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder, MemoryDescriptor,
+	MemoryInstance, MemoryRef, ModuleImportResolver, ModuleInstance, ModuleRef, ResumableError,
+	RuntimeArgs, RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef, Trap, TrapKind,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 struct HostErrorWithCode {
@@ -107,9 +107,10 @@ impl Externals for TestHost {
 			INC_MEM_FUNC_INDEX => {
 				let ptr: u32 = args.nth(0);
 
-				let memory = self.memory.as_ref().expect(
-					"Function 'inc_mem' expects attached memory",
-				);
+				let memory = self
+					.memory
+					.as_ref()
+					.expect("Function 'inc_mem' expects attached memory");
 				let mut buf = [0u8; 1];
 				memory.get_into(ptr, &mut buf).unwrap();
 				buf[0] += 1;
@@ -120,18 +121,22 @@ impl Externals for TestHost {
 			GET_MEM_FUNC_INDEX => {
 				let ptr: u32 = args.nth(0);
 
-				let memory = self.memory.as_ref().expect(
-					"Function 'get_mem' expects attached memory",
-				);
+				let memory = self
+					.memory
+					.as_ref()
+					.expect("Function 'get_mem' expects attached memory");
 				let mut buf = [0u8; 1];
 				memory.get_into(ptr, &mut buf).unwrap();
 
 				Ok(Some(RuntimeValue::I32(buf[0] as i32)))
 			}
 			RECURSE_FUNC_INDEX => {
-				let val = args.nth_value_checked(0).expect("Exactly one argument expected");
+				let val = args
+					.nth_value_checked(0)
+					.expect("Exactly one argument expected");
 
-				let instance = self.instance
+				let instance = self
+					.instance
 					.as_ref()
 					.expect("Function 'recurse' expects attached module instance")
 					.clone();
@@ -141,7 +146,9 @@ impl Externals for TestHost {
 					.expect("expected to be Some");
 
 				if val.value_type() != result.value_type() {
-					return Err(TrapKind::Host(Box::new(HostErrorWithCode { error_code: 123 })).into());
+					return Err(
+						TrapKind::Host(Box::new(HostErrorWithCode { error_code: 123 })).into(),
+					);
 				}
 				Ok(Some(result))
 			}
@@ -192,17 +199,17 @@ impl ModuleImportResolver for TestHost {
 			"recurse" => RECURSE_FUNC_INDEX,
 			"trap_sub" => TRAP_SUB_FUNC_INDEX,
 			_ => {
-				return Err(Error::Instantiation(
-					format!("Export {} not found", field_name),
-				))
+				return Err(Error::Instantiation(format!(
+					"Export {} not found",
+					field_name
+				)))
 			}
 		};
 
 		if !self.check_signature(index, signature) {
 			return Err(Error::Instantiation(format!(
 				"Export `{}` doesnt match expected type {:?}",
-				field_name,
-				signature
+				field_name, signature
 			)));
 		}
 
@@ -214,9 +221,10 @@ impl ModuleImportResolver for TestHost {
 		field_name: &str,
 		_memory_type: &MemoryDescriptor,
 	) -> Result<MemoryRef, Error> {
-		Err(Error::Instantiation(
-			format!("Export {} not found", field_name),
-		))
+		Err(Error::Instantiation(format!(
+			"Export {} not found",
+			field_name
+		)))
 	}
 }
 
@@ -244,9 +252,9 @@ fn call_host_func() {
 		.assert_no_start();
 
 	assert_eq!(
-		instance.invoke_export("test", &[], &mut env).expect(
-			"Failed to invoke 'test' function",
-		),
+		instance
+			.invoke_export("test", &[], &mut env)
+			.expect("Failed to invoke 'test' function",),
 		Some(RuntimeValue::I32(-2))
 	);
 }
@@ -280,16 +288,16 @@ fn resume_call_host_func() {
 	let mut invocation = FuncInstance::invoke_resumable(&func_instance, &[]).unwrap();
 	let result = invocation.start_execution(&mut env);
 	match result {
-		Err(ResumableError::Trap(_)) => {},
+		Err(ResumableError::Trap(_)) => {}
 		_ => panic!(),
 	}
 
 	assert!(invocation.is_resumable());
 	let trap_sub_result = env.trap_sub_result.take();
 	assert_eq!(
-		invocation.resume_execution(trap_sub_result, &mut env).expect(
-			"Failed to invoke 'test' function",
-		),
+		invocation
+			.resume_execution(trap_sub_result, &mut env)
+			.expect("Failed to invoke 'test' function",),
 		Some(RuntimeValue::I32(-2))
 	);
 }
@@ -316,13 +324,15 @@ fn host_err() {
 		.expect("Failed to instantiate module")
 		.assert_no_start();
 
-	let error = instance.invoke_export("test", &[], &mut env).expect_err(
-		"`test` expected to return error",
-	);
+	let error = instance
+		.invoke_export("test", &[], &mut env)
+		.expect_err("`test` expected to return error");
 
-	let error_with_code = error.as_host_error().expect("Expected host error").downcast_ref::<HostErrorWithCode>().expect(
-		"Failed to downcast to expected error type",
-	);
+	let error_with_code = error
+		.as_host_error()
+		.expect("Expected host error")
+		.downcast_ref::<HostErrorWithCode>()
+		.expect("Failed to downcast to expected error type");
 	assert_eq!(error_with_code.error_code, 228);
 }
 
@@ -351,9 +361,9 @@ fn modify_mem_with_host_funcs() {
 		.expect("Failed to instantiate module")
 		.assert_no_start();
 
-	instance.invoke_export("modify_mem", &[], &mut env).expect(
-		"Failed to invoke 'test' function",
-	);
+	instance
+		.invoke_export("modify_mem", &[], &mut env)
+		.expect("Failed to invoke 'test' function");
 
 	// Check contents of memory at address 12.
 	let mut buf = [0u8; 1];
@@ -451,9 +461,9 @@ fn recursion() {
 	env.instance = Some(instance.clone());
 
 	assert_eq!(
-		instance.invoke_export("test", &[], &mut env).expect(
-			"Failed to invoke 'test' function",
-		),
+		instance
+			.invoke_export("test", &[], &mut env)
+			.expect("Failed to invoke 'test' function",),
 		// 363 = 321 + 42
 		Some(RuntimeValue::I64(363))
 	);
@@ -472,21 +482,17 @@ fn defer_providing_externals() {
 	}
 
 	impl ModuleImportResolver for HostImportResolver {
-		fn resolve_func(
-			&self,
-			field_name: &str,
-			signature: &Signature,
-		) -> Result<FuncRef, Error> {
+		fn resolve_func(&self, field_name: &str, signature: &Signature) -> Result<FuncRef, Error> {
 			if field_name != "inc" {
-				return Err(Error::Instantiation(
-					format!("Export {} not found", field_name),
-				));
+				return Err(Error::Instantiation(format!(
+					"Export {} not found",
+					field_name
+				)));
 			}
 			if signature.params() != &[ValueType::I32] || signature.return_type() != None {
 				return Err(Error::Instantiation(format!(
 					"Export `{}` doesnt match expected type {:?}",
-					field_name,
-					signature
+					field_name, signature
 				)));
 			}
 
@@ -501,9 +507,10 @@ fn defer_providing_externals() {
 			if field_name == "mem" {
 				Ok(self.mem.clone())
 			} else {
-				Err(Error::Instantiation(
-					format!("Export {} not found", field_name),
-				))
+				Err(Error::Instantiation(format!(
+					"Export {} not found",
+					field_name
+				)))
 			}
 		}
 	}
@@ -547,15 +554,16 @@ fn defer_providing_externals() {
 
 	// Create HostImportResolver with some initialized memory instance.
 	// This memory instance will be provided as 'mem' export.
-	let host_import_resolver =
-		HostImportResolver { mem: MemoryInstance::alloc(Pages(1), Some(Pages(1))).unwrap() };
+	let host_import_resolver = HostImportResolver {
+		mem: MemoryInstance::alloc(Pages(1), Some(Pages(1))).unwrap(),
+	};
 
 	// Instantiate module with `host_import_resolver` as import resolver for "host" module.
 	let instance = ModuleInstance::new(
 		&module,
 		&ImportsBuilder::new().with_resolver("host", &host_import_resolver),
 	).expect("Failed to instantiate module")
-		.assert_no_start();
+	.assert_no_start();
 
 	let mut acc = 89;
 	{
@@ -599,18 +607,15 @@ fn two_envs_one_externals() {
 	struct OrdinaryResolver;
 
 	impl ModuleImportResolver for PrivilegedResolver {
-		fn resolve_func(
-			&self,
-			field_name: &str,
-			signature: &Signature,
-		) -> Result<FuncRef, Error> {
+		fn resolve_func(&self, field_name: &str, signature: &Signature) -> Result<FuncRef, Error> {
 			let index = match field_name {
 				"ordinary" => ORDINARY_FUNC_INDEX,
 				"privileged" => PRIVILEGED_FUNC_INDEX,
 				_ => {
-					return Err(Error::Instantiation(
-						format!("Export {} not found", field_name),
-					))
+					return Err(Error::Instantiation(format!(
+						"Export {} not found",
+						field_name
+					)))
 				}
 			};
 
@@ -619,11 +624,7 @@ fn two_envs_one_externals() {
 	}
 
 	impl ModuleImportResolver for OrdinaryResolver {
-		fn resolve_func(
-			&self,
-			field_name: &str,
-			signature: &Signature,
-		) -> Result<FuncRef, Error> {
+		fn resolve_func(&self, field_name: &str, signature: &Signature) -> Result<FuncRef, Error> {
 			let index = match field_name {
 				"ordinary" => ORDINARY_FUNC_INDEX,
 				"privileged" => {
@@ -632,9 +633,10 @@ fn two_envs_one_externals() {
 					))
 				}
 				_ => {
-					return Err(Error::Instantiation(
-						format!("Export {} not found", field_name),
-					))
+					return Err(Error::Instantiation(format!(
+						"Export {} not found",
+						field_name
+					)))
 				}
 			};
 
@@ -674,7 +676,7 @@ fn two_envs_one_externals() {
 		&trusted_module,
 		&ImportsBuilder::new().with_resolver("env", &PrivilegedResolver),
 	).expect("Failed to instantiate module")
-		.assert_no_start();
+	.assert_no_start();
 
 	let untrusted_instance = ModuleInstance::new(
 		&untrusted_module,
@@ -682,7 +684,7 @@ fn two_envs_one_externals() {
 			.with_resolver("env", &OrdinaryResolver)
 			.with_resolver("trusted", &trusted_instance),
 	).expect("Failed to instantiate module")
-		.assert_no_start();
+	.assert_no_start();
 
 	untrusted_instance
 		.invoke_export("test", &[], &mut HostExternals)
@@ -716,7 +718,8 @@ fn dynamically_add_host_func() {
 						Signature::new(&[][..], Some(ValueType::I32)),
 						host_func_index as usize,
 					);
-					self.table.set(table_index, Some(added_func))
+					self.table
+						.set(table_index, Some(added_func))
 						.map_err(|_| TrapKind::TableAccessOutOfBounds)?;
 
 					Ok(Some(RuntimeValue::I32(table_index as i32)))
@@ -730,17 +733,14 @@ fn dynamically_add_host_func() {
 	}
 
 	impl ModuleImportResolver for HostExternals {
-		fn resolve_func(
-			&self,
-			field_name: &str,
-			signature: &Signature,
-		) -> Result<FuncRef, Error> {
+		fn resolve_func(&self, field_name: &str, signature: &Signature) -> Result<FuncRef, Error> {
 			let index = match field_name {
 				"add_func" => ADD_FUNC_FUNC_INDEX,
 				_ => {
-					return Err(Error::Instantiation(
-						format!("Export {} not found", field_name),
-					))
+					return Err(Error::Instantiation(format!(
+						"Export {} not found",
+						field_name
+					)))
 				}
 			};
 			Ok(FuncInstance::alloc_host(signature.clone(), index))
@@ -754,9 +754,10 @@ fn dynamically_add_host_func() {
 			if field_name == "table" {
 				Ok(self.table.clone())
 			} else {
-				Err(Error::Instantiation(
-					format!("Export {} not found", field_name),
-				))
+				Err(Error::Instantiation(format!(
+					"Export {} not found",
+					field_name
+				)))
 			}
 		}
 	}
@@ -789,7 +790,7 @@ fn dynamically_add_host_func() {
 		&module,
 		&ImportsBuilder::new().with_resolver("env", &host_externals),
 	).expect("Failed to instantiate module")
-		.assert_no_start();
+	.assert_no_start();
 
 	assert_eq!(
 		instance

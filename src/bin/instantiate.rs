@@ -5,12 +5,12 @@ extern crate wasmi;
 
 use std::env::args;
 use std::fs::File;
-use wasmi::{
-	Error, FuncInstance, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef,
-	ImportsBuilder, MemoryDescriptor, MemoryInstance, MemoryRef, Module,
-	ModuleImportResolver, ModuleInstance, NopExternals, RuntimeValue, Signature,
-	TableDescriptor, TableInstance, TableRef};
 use wasmi::memory_units::*;
+use wasmi::{
+	Error, FuncInstance, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef, ImportsBuilder,
+	MemoryDescriptor, MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance,
+	NopExternals, RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef,
+};
 
 fn load_from_file(filename: &str) -> Module {
 	use std::io::prelude::*;
@@ -76,6 +76,6 @@ fn main() {
 			.with_resolver("asm2wasm", &ResolveAll)
 			.with_resolver("spectest", &ResolveAll),
 	).expect("Failed to instantiate module")
-		.run_start(&mut NopExternals)
-		.expect("Failed to run start function in module");
+	.run_start(&mut NopExternals)
+	.expect("Failed to run start function in module");
 }

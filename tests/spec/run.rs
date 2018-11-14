@@ -1,14 +1,16 @@
 #![cfg(test)]
 
-use std::fs::File;
 use std::collections::HashMap;
+use std::fs::File;
 
 use wabt::script::{self, Action, Command, CommandKind, ScriptParser, Value};
 use wasmi::memory_units::Pages;
-use wasmi::{Error as InterpreterError, Externals, FuncInstance, FuncRef, GlobalDescriptor,
-            GlobalInstance, GlobalRef, ImportResolver, ImportsBuilder, MemoryDescriptor,
-            MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance, ModuleRef,
-            RuntimeArgs, RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef, Trap};
+use wasmi::{
+	Error as InterpreterError, Externals, FuncInstance, FuncRef, GlobalDescriptor, GlobalInstance,
+	GlobalRef, ImportResolver, ImportsBuilder, MemoryDescriptor, MemoryInstance, MemoryRef, Module,
+	ModuleImportResolver, ModuleInstance, ModuleRef, RuntimeArgs, RuntimeValue, Signature,
+	TableDescriptor, TableInstance, TableRef, Trap,
+};
 
 fn spec_to_runtime_value(val: Value<u32, u64>) -> RuntimeValue {
 	match val {
@@ -21,30 +23,30 @@ fn spec_to_runtime_value(val: Value<u32, u64>) -> RuntimeValue {
 
 #[derive(Debug)]
 enum Error {
-    Load(String),
-    Start(Trap),
-    Script(script::Error),
-    Interpreter(InterpreterError),
+	Load(String),
+	Start(Trap),
+	Script(script::Error),
+	Interpreter(InterpreterError),
 }
 
 impl From<InterpreterError> for Error {
-    fn from(e: InterpreterError) -> Error {
-        Error::Interpreter(e)
-    }
+	fn from(e: InterpreterError) -> Error {
+		Error::Interpreter(e)
+	}
 }
 
 impl From<script::Error> for Error {
-    fn from(e: script::Error) -> Error {
-        Error::Script(e)
-    }
+	fn from(e: script::Error) -> Error {
+		Error::Script(e)
+	}
 }
 
 struct SpecModule {
-    table: TableRef,
-    memory: MemoryRef,
-    global_i32: GlobalRef,
-    global_f32: GlobalRef,
-    global_f64: GlobalRef,
+	table: TableRef,
+	memory: MemoryRef,
+	global_i32: GlobalRef,
+	global_f32: GlobalRef,
+	global_f64: GlobalRef,
 }
 
 impl SpecModule {
@@ -62,27 +64,27 @@ impl SpecModule {
 const PRINT_FUNC_INDEX: usize = 0;
 
 impl Externals for SpecModule {
-    fn invoke_index(
-        &mut self,
-        index: usize,
-        args: RuntimeArgs,
-    ) -> Result<Option<RuntimeValue>, Trap> {
-        match index {
-            PRINT_FUNC_INDEX => {
-                println!("print: {:?}", args);
-                Ok(None)
-            }
-            _ => panic!("SpecModule doesn't provide function at index {}", index),
-        }
-    }
+	fn invoke_index(
+		&mut self,
+		index: usize,
+		args: RuntimeArgs,
+	) -> Result<Option<RuntimeValue>, Trap> {
+		match index {
+			PRINT_FUNC_INDEX => {
+				println!("print: {:?}", args);
+				Ok(None)
+			}
+			_ => panic!("SpecModule doesn't provide function at index {}", index),
+		}
+	}
 }
 
 impl ModuleImportResolver for SpecModule {
-    fn resolve_func(
-        &self,
-        field_name: &str,
-        func_type: &Signature,
-    ) -> Result<FuncRef, InterpreterError> {
+	fn resolve_func(
+		&self,
+		field_name: &str,
+		func_type: &Signature,
+	) -> Result<FuncRef, InterpreterError> {
 		let index = match field_name {
 			"print" => PRINT_FUNC_INDEX,
 			"print_i32" => PRINT_FUNC_INDEX,
@@ -104,15 +106,15 @@ impl ModuleImportResolver for SpecModule {
 			));
 		}
 
-        let func = FuncInstance::alloc_host(func_type.clone(), index);
+		let func = FuncInstance::alloc_host(func_type.clone(), index);
 		return Ok(func);
-    }
+	}
 
-    fn resolve_global(
-        &self,
-        field_name: &str,
-        _global_type: &GlobalDescriptor,
-    ) -> Result<GlobalRef, InterpreterError> {
+	fn resolve_global(
+		&self,
+		field_name: &str,
+		_global_type: &GlobalDescriptor,
+	) -> Result<GlobalRef, InterpreterError> {
 		match field_name {
 			"global_i32" => Ok(self.global_i32.clone()),
 			"global_f32" => Ok(self.global_f32.clone()),
@@ -190,7 +192,8 @@ impl SpecDriver {
 	fn module_or_last(&self, name: Option<&str>) -> Result<ModuleRef, InterpreterError> {
 		match name {
 			Some(name) => self.module(name),
-			None => self.last_module
+			None => self
+				.last_module
 				.clone()
 				.ok_or_else(|| InterpreterError::Instantiation("No modules registered".into())),
 		}
@@ -301,7 +304,8 @@ fn run_action(
 					"Expected program to have loaded module {:?}",
 					module
 				));
-			let vec_args = args.iter()
+			let vec_args = args
+				.iter()
 				.cloned()
 				.map(spec_to_runtime_value)
 				.collect::<Vec<_>>();
@@ -322,8 +326,7 @@ fn run_action(
 				.export_by_name(&field)
 				.ok_or_else(|| {
 					InterpreterError::Global(format!("Expected to have export with name {}", field))
-				})?
-				.as_global()
+				})?.as_global()
 				.cloned()
 				.ok_or_else(|| {
 					InterpreterError::Global(format!("Expected export {} to be a global", field))
@@ -345,9 +348,12 @@ fn try_spec(name: &str) -> Result<(), Error> {
 	use std::io::Read;
 	let mut spec_source = Vec::new();
 	let mut spec_file = File::open(&spec_script_path).expect("Can't open file");
-	spec_file.read_to_end(&mut spec_source).expect("Can't read file");
+	spec_file
+		.read_to_end(&mut spec_source)
+		.expect("Can't read file");
 
-	let mut parser = ScriptParser::from_source_and_name(&spec_source, &format!("{}.wast", name)).expect("Can't read spec script");
+	let mut parser = ScriptParser::from_source_and_name(&spec_source, &format!("{}.wast", name))
+		.expect("Can't read spec script");
 	let mut errors = vec![];
 
 	while let Some(Command { kind, line }) = parser.next()? {
@@ -435,7 +441,7 @@ fn try_spec(name: &str) -> Result<(), Error> {
 				let result = run_action(&mut spec_driver, &action);
 				match result {
 					Ok(result) => panic!("Expected exhaustion, got result: {:?}", result),
-					Err(_e) => {},
+					Err(_e) => {}
 				}
 			}
 			CommandKind::AssertTrap { action, .. } => {
@@ -456,13 +462,13 @@ fn try_spec(name: &str) -> Result<(), Error> {
 				let module_load = try_load(&module.into_vec(), &mut spec_driver);
 				match module_load {
 					Ok(_) => panic!("Expected invalid module definition, got some module!"),
-					Err(_e) => {},
+					Err(_e) => {}
 				}
 			}
 			CommandKind::AssertUninstantiable { module, .. } => {
 				match try_load(&module.into_vec(), &mut spec_driver) {
 					Ok(_) => panic!("Expected error running start function at line {}", line),
-					Err(_e) => {},
+					Err(_e) => {}
 				}
 			}
 			CommandKind::Register { name, as_name, .. } => {
