@@ -1,12 +1,14 @@
 #[allow(unused_imports)]
 use alloc::prelude::*;
-use core::u32;
-use parity_wasm::elements::{Instruction, BlockType, ValueType, TableElementType, Func, FuncBody};
 use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
+use core::u32;
+use parity_wasm::elements::{
+	BlockType, Func, FuncBody, Instruction, TableElementType, ValueType,
+};
 use validation::context::ModuleContext;
 
-use validation::Error;
 use validation::util::Locals;
+use validation::Error;
 
 use common::stack::StackWithLimit;
 use isa;
@@ -39,13 +41,9 @@ enum BlockFrameType {
 	/// Usual block frame.
 	///
 	/// Can be used for an implicit function block.
-	Block {
-		end_label: LabelId,
-	},
+	Block { end_label: LabelId },
 	/// Loop frame (branching to the beginning of block).
-	Loop {
-		header: LabelId,
-	},
+	Loop { header: LabelId },
 	/// True-subblock of if expression.
 	IfTrue {
 		/// If jump happens inside the if-true block then control will
@@ -58,9 +56,7 @@ enum BlockFrameType {
 		if_not: LabelId,
 	},
 	/// False-subblock of if expression.
-	IfFalse {
-		end_label: LabelId,
-	}
+	IfFalse { end_label: LabelId },
 }
 
 impl BlockFrameType {
@@ -183,9 +179,7 @@ impl FunctionReader {
 
 		let end_label = context.sink.new_label();
 		push_label(
-			BlockFrameType::Block {
-				end_label,
-			},
+			BlockFrameType::Block { end_label },
 			result_ty,
 			context.position,
 			&context.value_stack,
@@ -198,7 +192,10 @@ impl FunctionReader {
 		Ok(context.into_code())
 	}
 
-	fn read_function_body(context: &mut FunctionValidationContext, body: &[Instruction]) -> Result<(), Error> {
+	fn read_function_body(
+		context: &mut FunctionValidationContext,
+		body: &[Instruction],
+	) -> Result<(), Error> {
 		let body_len = body.len();
 		if body_len == 0 {
 			return Err(Error("Non-empty function body expected".into()));
@@ -207,15 +204,19 @@ impl FunctionReader {
 		loop {
 			let instruction = &body[context.position];
 
-			let outcome = FunctionReader::read_instruction(context, instruction)
-				.map_err(|err| Error(format!("At instruction {:?}(@{}): {}", instruction, context.position, err)))?;
+			let outcome =
+				FunctionReader::read_instruction(context, instruction).map_err(|err| {
+					Error(format!(
+						"At instruction {:?}(@{}): {}",
+						instruction, context.position, err
+					))
+				})?;
 
 			match outcome {
 				Outcome::NextInstruction => (),
-				Outcome::Unreachable => make_top_frame_polymorphic(
-					&mut context.value_stack,
-					&mut context.frame_stack
-				),
+				Outcome::Unreachable => {
+					make_top_frame_polymorphic(&mut context.value_stack, &mut context.frame_stack)
+				}
 			}
 
 			context.position += 1;
@@ -225,23 +226,25 @@ impl FunctionReader {
 		}
 	}
 
-	fn read_instruction(context: &mut FunctionValidationContext, instruction: &Instruction) -> Result<Outcome, Error> {
+	fn read_instruction(
+		context: &mut FunctionValidationContext,
+		instruction: &Instruction,
+	) -> Result<Outcome, Error> {
 		use self::Instruction::*;
+
 		match *instruction {
 			// Nop instruction doesn't do anything. It is safe to just skip it.
-			Nop => {},
+			Nop => {}
 
 			Unreachable => {
-				context.sink.emit(isa::Instruction::Unreachable);
+				context.sink.emit(isa::InstructionInternal::Unreachable);
 				return Ok(Outcome::Unreachable);
 			}
 
 			Block(block_type) => {
 				let end_label = context.sink.new_label();
 				push_label(
-					BlockFrameType::Block {
-						end_label
-					},
+					BlockFrameType::Block { end_label },
 					block_type,
 					context.position,
 					&context.value_stack,
@@ -254,9 +257,7 @@ impl FunctionReader {
 				context.sink.resolve_label(header);
 
 				push_label(
-					BlockFrameType::Loop {
-						header,
-					},
+					BlockFrameType::Loop { header },
 					block_type,
 					context.position,
 					&context.value_stack,
@@ -269,12 +270,13 @@ impl FunctionReader {
 				let if_not = context.sink.new_label();
 				let end_label = context.sink.new_label();
 
-				pop_value(&mut context.value_stack, &context.frame_stack, ValueType::I32.into())?;
+				pop_value(
+					&mut context.value_stack,
+					&context.frame_stack,
+					ValueType::I32.into(),
+				)?;
 				push_label(
-					BlockFrameType::IfTrue {
-						if_not,
-						end_label,
-					},
+					BlockFrameType::IfTrue { if_not, end_label },
 					block_type,
 					context.position,
 					&context.value_stack,
@@ -283,14 +285,15 @@ impl FunctionReader {
 
 				context.sink.emit_br_eqz(Target {
 					label: if_not,
-					drop_keep: isa::DropKeep { drop: 0, keep: isa::Keep::None, },
+					drop_keep: isa::DropKeep {
+						drop: 0,
+						keep: isa::Keep::None,
+					},
 				});
 			}
 			Else => {
 				let (block_type, if_not, end_label) = {
-					let top_frame = top_label(
-						&context.frame_stack,
-					);
+					let top_frame = top_label(&context.frame_stack);
 
 					let (if_not, end_label) = match top_frame.frame_type {
 						BlockFrameType::IfTrue { if_not, end_label } => (if_not, end_label),
@@ -303,7 +306,10 @@ impl FunctionReader {
 				// to the "end_label" (it will be resolved at End).
 				context.sink.emit_br(Target {
 					label: end_label,
-					drop_keep: isa::DropKeep { drop: 0, keep: isa::Keep::None, },
+					drop_keep: isa::DropKeep {
+						drop: 0,
+						keep: isa::Keep::None,
+					},
 				});
 
 				// Resolve `if_not` to here so when if condition is unsatisfied control flow
@@ -312,14 +318,9 @@ impl FunctionReader {
 
 				// Then, we pop the current label. It discards all values that pushed in the current
 				// frame.
-				pop_label(
-					&mut context.value_stack,
-					&mut context.frame_stack
-				)?;
+				pop_label(&mut context.value_stack, &mut context.frame_stack)?;
 				push_label(
-					BlockFrameType::IfFalse {
-						end_label,
-					},
+					BlockFrameType::IfFalse { end_label },
 					block_type,
 					context.position,
 					&context.value_stack,
@@ -335,14 +336,10 @@ impl FunctionReader {
 				if let BlockFrameType::IfTrue { if_not, .. } = frame_type {
 					// A `if` without an `else` can't return a result.
 					if block_type != BlockType::NoResult {
-						return Err(
-							Error(
-								format!(
+						return Err(Error(format!(
 									"If block without else required to have NoResult block type. But it has {:?} type",
 									block_type
-								)
-							)
-						);
+								)));
 					}
 
 					// Resolve `if_not` label. If the `if's` condition doesn't hold the control will jump
@@ -365,7 +362,7 @@ impl FunctionReader {
 						tee_value(
 							&mut context.value_stack,
 							&context.frame_stack,
-							value_type.into()
+							value_type.into(),
 						)?;
 					}
 
@@ -375,7 +372,9 @@ impl FunctionReader {
 						&context.value_stack,
 						&context.frame_stack,
 					);
-					context.sink.emit(isa::Instruction::Return(drop_keep));
+					context
+						.sink
+						.emit(isa::InstructionInternal::Return(drop_keep));
 				}
 
 				pop_label(&mut context.value_stack, &mut context.frame_stack)?;
@@ -388,11 +387,7 @@ impl FunctionReader {
 			Br(depth) => {
 				Validator::validate_br(context, depth)?;
 
-				let target = require_target(
-					depth,
-					&context.value_stack,
-					&context.frame_stack,
-				);
+				let target = require_target(depth, &context.value_stack, &context.frame_stack);
 				context.sink.emit_br(target);
 
 				return Ok(Outcome::Unreachable);
@@ -400,11 +395,7 @@ impl FunctionReader {
 			BrIf(depth) => {
 				Validator::validate_br_if(context, depth)?;
 
-				let target = require_target(
-					depth,
-					&context.value_stack,
-					&context.frame_stack,
-				);
+				let target = require_target(depth, &context.value_stack, &context.frame_stack);
 				context.sink.emit_br_nez(target);
 			}
 			BrTable(ref table, default) => {
@@ -412,719 +403,749 @@ impl FunctionReader {
 
 				let mut targets = Vec::new();
 				for depth in table.iter() {
-					let target = require_target(
-						*depth,
-						&context.value_stack,
-						&context.frame_stack,
-					);
+					let target = require_target(*depth, &context.value_stack, &context.frame_stack);
 					targets.push(target);
 				}
-				let default_target = require_target(
-					default,
-					&context.value_stack,
-					&context.frame_stack,
-				);
+				let default_target =
+					require_target(default, &context.value_stack, &context.frame_stack);
 				context.sink.emit_br_table(&targets, default_target);
 
 				return Ok(Outcome::Unreachable);
 			}
 			Return => {
 				if let BlockType::Value(value_type) = context.return_type()? {
-					tee_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
+					tee_value(
+						&mut context.value_stack,
+						&context.frame_stack,
+						value_type.into(),
+					)?;
 				}
 
-				let drop_keep = drop_keep_return(
-					&context.locals,
-					&context.value_stack,
-					&context.frame_stack,
-				);
-				context.sink.emit(isa::Instruction::Return(drop_keep));
+				let drop_keep =
+					drop_keep_return(&context.locals, &context.value_stack, &context.frame_stack);
+				context
+					.sink
+					.emit(isa::InstructionInternal::Return(drop_keep));
 
 				return Ok(Outcome::Unreachable);
 			}
 
 			Call(index) => {
 				Validator::validate_call(context, index)?;
-				context.sink.emit(isa::Instruction::Call(index));
+				context.sink.emit(isa::InstructionInternal::Call(index));
 			}
 			CallIndirect(index, _reserved) => {
 				Validator::validate_call_indirect(context, index)?;
-				context.sink.emit(isa::Instruction::CallIndirect(index));
+				context
+					.sink
+					.emit(isa::InstructionInternal::CallIndirect(index));
 			}
 
 			Drop => {
 				Validator::validate_drop(context)?;
-				context.sink.emit(isa::Instruction::Drop);
+				context.sink.emit(isa::InstructionInternal::Drop);
 			}
 			Select => {
 				Validator::validate_select(context)?;
-				context.sink.emit(isa::Instruction::Select);
+				context.sink.emit(isa::InstructionInternal::Select);
 			}
 
 			GetLocal(index) => {
 				// We need to calculate relative depth before validation since
 				// it will change the value stack size.
-				let depth = relative_local_depth(
-					index,
-					&context.locals,
-					&context.value_stack,
-				)?;
+				let depth = relative_local_depth(index, &context.locals, &context.value_stack)?;
 				Validator::validate_get_local(context, index)?;
-				context.sink.emit(
-					isa::Instruction::GetLocal(depth),
-				);
+				context.sink.emit(isa::InstructionInternal::GetLocal(depth));
 			}
 			SetLocal(index) => {
 				Validator::validate_set_local(context, index)?;
-				let depth = relative_local_depth(
-					index,
-					&context.locals,
-					&context.value_stack,
-				)?;
-				context.sink.emit(
-					isa::Instruction::SetLocal(depth),
-				);
+				let depth = relative_local_depth(index, &context.locals, &context.value_stack)?;
+				context.sink.emit(isa::InstructionInternal::SetLocal(depth));
 			}
 			TeeLocal(index) => {
 				Validator::validate_tee_local(context, index)?;
-				let depth = relative_local_depth(
-					index,
-					&context.locals,
-					&context.value_stack,
-				)?;
-				context.sink.emit(
-					isa::Instruction::TeeLocal(depth),
-				);
+				let depth = relative_local_depth(index, &context.locals, &context.value_stack)?;
+				context.sink.emit(isa::InstructionInternal::TeeLocal(depth));
 			}
 			GetGlobal(index) => {
 				Validator::validate_get_global(context, index)?;
-				context.sink.emit(isa::Instruction::GetGlobal(index));
+				context
+					.sink
+					.emit(isa::InstructionInternal::GetGlobal(index));
 			}
 			SetGlobal(index) => {
 				Validator::validate_set_global(context, index)?;
-				context.sink.emit(isa::Instruction::SetGlobal(index));
+				context
+					.sink
+					.emit(isa::InstructionInternal::SetGlobal(index));
 			}
 
 			I32Load(align, offset) => {
 				Validator::validate_load(context, align, 4, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Load(offset));
+				context.sink.emit(isa::InstructionInternal::I32Load(offset));
 			}
 			I64Load(align, offset) => {
 				Validator::validate_load(context, align, 8, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Load(offset));
+				context.sink.emit(isa::InstructionInternal::I64Load(offset));
 			}
 			F32Load(align, offset) => {
 				Validator::validate_load(context, align, 4, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Load(offset));
+				context.sink.emit(isa::InstructionInternal::F32Load(offset));
 			}
 			F64Load(align, offset) => {
 				Validator::validate_load(context, align, 8, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Load(offset));
+				context.sink.emit(isa::InstructionInternal::F64Load(offset));
 			}
 			I32Load8S(align, offset) => {
 				Validator::validate_load(context, align, 1, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Load8S(offset));
+				context
+					.sink
+					.emit(isa::InstructionInternal::I32Load8S(offset));
 			}
 			I32Load8U(align, offset) => {
 				Validator::validate_load(context, align, 1, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Load8U(offset));
+				context
+					.sink
+					.emit(isa::InstructionInternal::I32Load8U(offset));
 			}
 			I32Load16S(align, offset) => {
 				Validator::validate_load(context, align, 2, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Load16S(offset));
+				context
+					.sink
+					.emit(isa::InstructionInternal::I32Load16S(offset));
 			}
 			I32Load16U(align, offset) => {
 				Validator::validate_load(context, align, 2, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Load16U(offset));
+				context
+					.sink
+					.emit(isa::InstructionInternal::I32Load16U(offset));
 			}
 			I64Load8S(align, offset) => {
 				Validator::validate_load(context, align, 1, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Load8S(offset));
+				context
+					.sink
+					.emit(isa::InstructionInternal::I64Load8S(offset));
 			}
 			I64Load8U(align, offset) => {
 				Validator::validate_load(context, align, 1, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Load8U(offset));
+				context
+					.sink
+					.emit(isa::InstructionInternal::I64Load8U(offset));
 			}
 			I64Load16S(align, offset) => {
 				Validator::validate_load(context, align, 2, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Load16S(offset));
+				context
+					.sink
+					.emit(isa::InstructionInternal::I64Load16S(offset));
 			}
 			I64Load16U(align, offset) => {
 				Validator::validate_load(context, align, 2, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Load16U(offset));
+				context
+					.sink
+					.emit(isa::InstructionInternal::I64Load16U(offset));
 			}
 			I64Load32S(align, offset) => {
 				Validator::validate_load(context, align, 4, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Load32S(offset));
+				context
+					.sink
+					.emit(isa::InstructionInternal::I64Load32S(offset));
 			}
 			I64Load32U(align, offset) => {
 				Validator::validate_load(context, align, 4, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Load32U(offset));
+				context
+					.sink
+					.emit(isa::InstructionInternal::I64Load32U(offset));
 			}
 
 			I32Store(align, offset) => {
 				Validator::validate_store(context, align, 4, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Store(offset));
+				context
+					.sink
+					.emit(isa::InstructionInternal::I32Store(offset));
 			}
 			I64Store(align, offset) => {
 				Validator::validate_store(context, align, 8, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Store(offset));
+				context
+					.sink
+					.emit(isa::InstructionInternal::I64Store(offset));
 			}
 			F32Store(align, offset) => {
 				Validator::validate_store(context, align, 4, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Store(offset));
+				context
+					.sink
+					.emit(isa::InstructionInternal::F32Store(offset));
 			}
 			F64Store(align, offset) => {
 				Validator::validate_store(context, align, 8, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Store(offset));
+				context
+					.sink
+					.emit(isa::InstructionInternal::F64Store(offset));
 			}
 			I32Store8(align, offset) => {
 				Validator::validate_store(context, align, 1, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Store8(offset));
+				context
+					.sink
+					.emit(isa::InstructionInternal::I32Store8(offset));
 			}
 			I32Store16(align, offset) => {
 				Validator::validate_store(context, align, 2, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Store16(offset));
+				context
+					.sink
+					.emit(isa::InstructionInternal::I32Store16(offset));
 			}
 			I64Store8(align, offset) => {
 				Validator::validate_store(context, align, 1, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Store8(offset));
+				context
+					.sink
+					.emit(isa::InstructionInternal::I64Store8(offset));
 			}
 			I64Store16(align, offset) => {
 				Validator::validate_store(context, align, 2, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Store16(offset));
+				context
+					.sink
+					.emit(isa::InstructionInternal::I64Store16(offset));
 			}
 			I64Store32(align, offset) => {
 				Validator::validate_store(context, align, 4, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Store32(offset));
+				context
+					.sink
+					.emit(isa::InstructionInternal::I64Store32(offset));
 			}
 
 			CurrentMemory(_) => {
 				Validator::validate_current_memory(context)?;
-				context.sink.emit(isa::Instruction::CurrentMemory);
+				context.sink.emit(isa::InstructionInternal::CurrentMemory);
 			}
 			GrowMemory(_) => {
 				Validator::validate_grow_memory(context)?;
-				context.sink.emit(isa::Instruction::GrowMemory);
+				context.sink.emit(isa::InstructionInternal::GrowMemory);
 			}
 
 			I32Const(v) => {
 				Validator::validate_const(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Const(v));
+				context.sink.emit(isa::InstructionInternal::I32Const(v));
 			}
 			I64Const(v) => {
 				Validator::validate_const(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Const(v));
+				context.sink.emit(isa::InstructionInternal::I64Const(v));
 			}
 			F32Const(v) => {
 				Validator::validate_const(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Const(v));
+				context.sink.emit(isa::InstructionInternal::F32Const(v));
 			}
 			F64Const(v) => {
 				Validator::validate_const(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Const(v));
+				context.sink.emit(isa::InstructionInternal::F64Const(v));
 			}
 
 			I32Eqz => {
 				Validator::validate_testop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Eqz);
+				context.sink.emit(isa::InstructionInternal::I32Eqz);
 			}
 			I32Eq => {
 				Validator::validate_relop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Eq);
+				context.sink.emit(isa::InstructionInternal::I32Eq);
 			}
 			I32Ne => {
 				Validator::validate_relop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Ne);
+				context.sink.emit(isa::InstructionInternal::I32Ne);
 			}
 			I32LtS => {
 				Validator::validate_relop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32LtS);
+				context.sink.emit(isa::InstructionInternal::I32LtS);
 			}
 			I32LtU => {
 				Validator::validate_relop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32LtU);
+				context.sink.emit(isa::InstructionInternal::I32LtU);
 			}
 			I32GtS => {
 				Validator::validate_relop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32GtS);
+				context.sink.emit(isa::InstructionInternal::I32GtS);
 			}
 			I32GtU => {
 				Validator::validate_relop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32GtU);
+				context.sink.emit(isa::InstructionInternal::I32GtU);
 			}
 			I32LeS => {
 				Validator::validate_relop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32LeS);
+				context.sink.emit(isa::InstructionInternal::I32LeS);
 			}
 			I32LeU => {
 				Validator::validate_relop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32LeU);
+				context.sink.emit(isa::InstructionInternal::I32LeU);
 			}
 			I32GeS => {
 				Validator::validate_relop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32GeS);
+				context.sink.emit(isa::InstructionInternal::I32GeS);
 			}
 			I32GeU => {
 				Validator::validate_relop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32GeU);
+				context.sink.emit(isa::InstructionInternal::I32GeU);
 			}
 
 			I64Eqz => {
 				Validator::validate_testop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Eqz);
+				context.sink.emit(isa::InstructionInternal::I64Eqz);
 			}
 			I64Eq => {
 				Validator::validate_relop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Eq);
+				context.sink.emit(isa::InstructionInternal::I64Eq);
 			}
 			I64Ne => {
 				Validator::validate_relop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Ne);
+				context.sink.emit(isa::InstructionInternal::I64Ne);
 			}
 			I64LtS => {
 				Validator::validate_relop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64LtS);
+				context.sink.emit(isa::InstructionInternal::I64LtS);
 			}
 			I64LtU => {
 				Validator::validate_relop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64LtU);
+				context.sink.emit(isa::InstructionInternal::I64LtU);
 			}
 			I64GtS => {
 				Validator::validate_relop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64GtS);
+				context.sink.emit(isa::InstructionInternal::I64GtS);
 			}
 			I64GtU => {
 				Validator::validate_relop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64GtU);
+				context.sink.emit(isa::InstructionInternal::I64GtU);
 			}
 			I64LeS => {
 				Validator::validate_relop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64LeS);
+				context.sink.emit(isa::InstructionInternal::I64LeS);
 			}
 			I64LeU => {
 				Validator::validate_relop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64LeU);
+				context.sink.emit(isa::InstructionInternal::I64LeU);
 			}
 			I64GeS => {
 				Validator::validate_relop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64GeS);
+				context.sink.emit(isa::InstructionInternal::I64GeS);
 			}
 			I64GeU => {
 				Validator::validate_relop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64GeU);
+				context.sink.emit(isa::InstructionInternal::I64GeU);
 			}
 
 			F32Eq => {
 				Validator::validate_relop(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Eq);
+				context.sink.emit(isa::InstructionInternal::F32Eq);
 			}
 			F32Ne => {
 				Validator::validate_relop(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Ne);
+				context.sink.emit(isa::InstructionInternal::F32Ne);
 			}
 			F32Lt => {
 				Validator::validate_relop(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Lt);
+				context.sink.emit(isa::InstructionInternal::F32Lt);
 			}
 			F32Gt => {
 				Validator::validate_relop(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Gt);
+				context.sink.emit(isa::InstructionInternal::F32Gt);
 			}
 			F32Le => {
 				Validator::validate_relop(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Le);
+				context.sink.emit(isa::InstructionInternal::F32Le);
 			}
 			F32Ge => {
 				Validator::validate_relop(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Ge);
+				context.sink.emit(isa::InstructionInternal::F32Ge);
 			}
 
 			F64Eq => {
 				Validator::validate_relop(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Eq);
+				context.sink.emit(isa::InstructionInternal::F64Eq);
 			}
 			F64Ne => {
 				Validator::validate_relop(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Ne);
+				context.sink.emit(isa::InstructionInternal::F64Ne);
 			}
 			F64Lt => {
 				Validator::validate_relop(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Lt);
+				context.sink.emit(isa::InstructionInternal::F64Lt);
 			}
 			F64Gt => {
 				Validator::validate_relop(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Gt);
+				context.sink.emit(isa::InstructionInternal::F64Gt);
 			}
 			F64Le => {
 				Validator::validate_relop(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Le);
+				context.sink.emit(isa::InstructionInternal::F64Le);
 			}
 			F64Ge => {
 				Validator::validate_relop(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Ge);
+				context.sink.emit(isa::InstructionInternal::F64Ge);
 			}
 
 			I32Clz => {
 				Validator::validate_unop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Clz);
+				context.sink.emit(isa::InstructionInternal::I32Clz);
 			}
 			I32Ctz => {
 				Validator::validate_unop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Ctz);
+				context.sink.emit(isa::InstructionInternal::I32Ctz);
 			}
 			I32Popcnt => {
 				Validator::validate_unop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Popcnt);
+				context.sink.emit(isa::InstructionInternal::I32Popcnt);
 			}
 			I32Add => {
 				Validator::validate_binop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Add);
+				context.sink.emit(isa::InstructionInternal::I32Add);
 			}
 			I32Sub => {
 				Validator::validate_binop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Sub);
+				context.sink.emit(isa::InstructionInternal::I32Sub);
 			}
 			I32Mul => {
 				Validator::validate_binop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Mul);
+				context.sink.emit(isa::InstructionInternal::I32Mul);
 			}
 			I32DivS => {
 				Validator::validate_binop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32DivS);
+				context.sink.emit(isa::InstructionInternal::I32DivS);
 			}
 			I32DivU => {
 				Validator::validate_binop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32DivU);
+				context.sink.emit(isa::InstructionInternal::I32DivU);
 			}
 			I32RemS => {
 				Validator::validate_binop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32RemS);
+				context.sink.emit(isa::InstructionInternal::I32RemS);
 			}
 			I32RemU => {
 				Validator::validate_binop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32RemU);
+				context.sink.emit(isa::InstructionInternal::I32RemU);
 			}
 			I32And => {
 				Validator::validate_binop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32And);
+				context.sink.emit(isa::InstructionInternal::I32And);
 			}
 			I32Or => {
 				Validator::validate_binop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Or);
+				context.sink.emit(isa::InstructionInternal::I32Or);
 			}
 			I32Xor => {
 				Validator::validate_binop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Xor);
+				context.sink.emit(isa::InstructionInternal::I32Xor);
 			}
 			I32Shl => {
 				Validator::validate_binop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Shl);
+				context.sink.emit(isa::InstructionInternal::I32Shl);
 			}
 			I32ShrS => {
 				Validator::validate_binop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32ShrS);
+				context.sink.emit(isa::InstructionInternal::I32ShrS);
 			}
 			I32ShrU => {
 				Validator::validate_binop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32ShrU);
+				context.sink.emit(isa::InstructionInternal::I32ShrU);
 			}
 			I32Rotl => {
 				Validator::validate_binop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Rotl);
+				context.sink.emit(isa::InstructionInternal::I32Rotl);
 			}
 			I32Rotr => {
 				Validator::validate_binop(context, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32Rotr);
+				context.sink.emit(isa::InstructionInternal::I32Rotr);
 			}
 
 			I64Clz => {
 				Validator::validate_unop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Clz);
+				context.sink.emit(isa::InstructionInternal::I64Clz);
 			}
 			I64Ctz => {
 				Validator::validate_unop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Ctz);
+				context.sink.emit(isa::InstructionInternal::I64Ctz);
 			}
 			I64Popcnt => {
 				Validator::validate_unop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Popcnt);
+				context.sink.emit(isa::InstructionInternal::I64Popcnt);
 			}
 			I64Add => {
 				Validator::validate_binop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Add);
+				context.sink.emit(isa::InstructionInternal::I64Add);
 			}
 			I64Sub => {
 				Validator::validate_binop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Sub);
+				context.sink.emit(isa::InstructionInternal::I64Sub);
 			}
 			I64Mul => {
 				Validator::validate_binop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Mul);
+				context.sink.emit(isa::InstructionInternal::I64Mul);
 			}
 			I64DivS => {
 				Validator::validate_binop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64DivS);
+				context.sink.emit(isa::InstructionInternal::I64DivS);
 			}
 			I64DivU => {
 				Validator::validate_binop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64DivU);
+				context.sink.emit(isa::InstructionInternal::I64DivU);
 			}
 			I64RemS => {
 				Validator::validate_binop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64RemS);
+				context.sink.emit(isa::InstructionInternal::I64RemS);
 			}
 			I64RemU => {
 				Validator::validate_binop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64RemU);
+				context.sink.emit(isa::InstructionInternal::I64RemU);
 			}
 			I64And => {
 				Validator::validate_binop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64And);
+				context.sink.emit(isa::InstructionInternal::I64And);
 			}
 			I64Or => {
 				Validator::validate_binop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Or);
+				context.sink.emit(isa::InstructionInternal::I64Or);
 			}
 			I64Xor => {
 				Validator::validate_binop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Xor);
+				context.sink.emit(isa::InstructionInternal::I64Xor);
 			}
 			I64Shl => {
 				Validator::validate_binop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Shl);
+				context.sink.emit(isa::InstructionInternal::I64Shl);
 			}
 			I64ShrS => {
 				Validator::validate_binop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64ShrS);
+				context.sink.emit(isa::InstructionInternal::I64ShrS);
 			}
 			I64ShrU => {
 				Validator::validate_binop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64ShrU);
+				context.sink.emit(isa::InstructionInternal::I64ShrU);
 			}
 			I64Rotl => {
 				Validator::validate_binop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Rotl);
+				context.sink.emit(isa::InstructionInternal::I64Rotl);
 			}
 			I64Rotr => {
 				Validator::validate_binop(context, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64Rotr);
+				context.sink.emit(isa::InstructionInternal::I64Rotr);
 			}
 
 			F32Abs => {
 				Validator::validate_unop(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Abs);
+				context.sink.emit(isa::InstructionInternal::F32Abs);
 			}
 			F32Neg => {
 				Validator::validate_unop(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Neg);
+				context.sink.emit(isa::InstructionInternal::F32Neg);
 			}
 			F32Ceil => {
 				Validator::validate_unop(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Ceil);
+				context.sink.emit(isa::InstructionInternal::F32Ceil);
 			}
 			F32Floor => {
 				Validator::validate_unop(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Floor);
+				context.sink.emit(isa::InstructionInternal::F32Floor);
 			}
 			F32Trunc => {
 				Validator::validate_unop(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Trunc);
+				context.sink.emit(isa::InstructionInternal::F32Trunc);
 			}
 			F32Nearest => {
 				Validator::validate_unop(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Nearest);
+				context.sink.emit(isa::InstructionInternal::F32Nearest);
 			}
 			F32Sqrt => {
 				Validator::validate_unop(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Sqrt);
+				context.sink.emit(isa::InstructionInternal::F32Sqrt);
 			}
 			F32Add => {
 				Validator::validate_binop(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Add);
+				context.sink.emit(isa::InstructionInternal::F32Add);
 			}
 			F32Sub => {
 				Validator::validate_binop(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Sub);
+				context.sink.emit(isa::InstructionInternal::F32Sub);
 			}
 			F32Mul => {
 				Validator::validate_binop(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Mul);
+				context.sink.emit(isa::InstructionInternal::F32Mul);
 			}
 			F32Div => {
 				Validator::validate_binop(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Div);
+				context.sink.emit(isa::InstructionInternal::F32Div);
 			}
 			F32Min => {
 				Validator::validate_binop(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Min);
+				context.sink.emit(isa::InstructionInternal::F32Min);
 			}
 			F32Max => {
 				Validator::validate_binop(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Max);
+				context.sink.emit(isa::InstructionInternal::F32Max);
 			}
 			F32Copysign => {
 				Validator::validate_binop(context, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32Copysign);
+				context.sink.emit(isa::InstructionInternal::F32Copysign);
 			}
 
 			F64Abs => {
 				Validator::validate_unop(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Abs);
+				context.sink.emit(isa::InstructionInternal::F64Abs);
 			}
 			F64Neg => {
 				Validator::validate_unop(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Neg);
+				context.sink.emit(isa::InstructionInternal::F64Neg);
 			}
 			F64Ceil => {
 				Validator::validate_unop(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Ceil);
+				context.sink.emit(isa::InstructionInternal::F64Ceil);
 			}
 			F64Floor => {
 				Validator::validate_unop(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Floor);
+				context.sink.emit(isa::InstructionInternal::F64Floor);
 			}
 			F64Trunc => {
 				Validator::validate_unop(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Trunc);
+				context.sink.emit(isa::InstructionInternal::F64Trunc);
 			}
 			F64Nearest => {
 				Validator::validate_unop(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Nearest);
+				context.sink.emit(isa::InstructionInternal::F64Nearest);
 			}
 			F64Sqrt => {
 				Validator::validate_unop(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Sqrt);
+				context.sink.emit(isa::InstructionInternal::F64Sqrt);
 			}
 			F64Add => {
 				Validator::validate_binop(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Add);
+				context.sink.emit(isa::InstructionInternal::F64Add);
 			}
 			F64Sub => {
 				Validator::validate_binop(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Sub);
+				context.sink.emit(isa::InstructionInternal::F64Sub);
 			}
 			F64Mul => {
 				Validator::validate_binop(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Mul);
+				context.sink.emit(isa::InstructionInternal::F64Mul);
 			}
 			F64Div => {
 				Validator::validate_binop(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Div);
+				context.sink.emit(isa::InstructionInternal::F64Div);
 			}
 			F64Min => {
 				Validator::validate_binop(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Min);
+				context.sink.emit(isa::InstructionInternal::F64Min);
 			}
 			F64Max => {
 				Validator::validate_binop(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Max);
+				context.sink.emit(isa::InstructionInternal::F64Max);
 			}
 			F64Copysign => {
 				Validator::validate_binop(context, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64Copysign);
+				context.sink.emit(isa::InstructionInternal::F64Copysign);
 			}
 
 			I32WrapI64 => {
 				Validator::validate_cvtop(context, ValueType::I64, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32WrapI64);
+				context.sink.emit(isa::InstructionInternal::I32WrapI64);
 			}
 			I32TruncSF32 => {
 				Validator::validate_cvtop(context, ValueType::F32, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32TruncSF32);
+				context.sink.emit(isa::InstructionInternal::I32TruncSF32);
 			}
 			I32TruncUF32 => {
 				Validator::validate_cvtop(context, ValueType::F32, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32TruncUF32);
+				context.sink.emit(isa::InstructionInternal::I32TruncUF32);
 			}
 			I32TruncSF64 => {
 				Validator::validate_cvtop(context, ValueType::F64, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32TruncSF64);
+				context.sink.emit(isa::InstructionInternal::I32TruncSF64);
 			}
 			I32TruncUF64 => {
 				Validator::validate_cvtop(context, ValueType::F64, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32TruncUF64);
+				context.sink.emit(isa::InstructionInternal::I32TruncUF64);
 			}
 			I64ExtendSI32 => {
 				Validator::validate_cvtop(context, ValueType::I32, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64ExtendSI32);
+				context.sink.emit(isa::InstructionInternal::I64ExtendSI32);
 			}
 			I64ExtendUI32 => {
 				Validator::validate_cvtop(context, ValueType::I32, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64ExtendUI32);
+				context.sink.emit(isa::InstructionInternal::I64ExtendUI32);
 			}
 			I64TruncSF32 => {
 				Validator::validate_cvtop(context, ValueType::F32, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64TruncSF32);
+				context.sink.emit(isa::InstructionInternal::I64TruncSF32);
 			}
 			I64TruncUF32 => {
 				Validator::validate_cvtop(context, ValueType::F32, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64TruncUF32);
+				context.sink.emit(isa::InstructionInternal::I64TruncUF32);
 			}
 			I64TruncSF64 => {
 				Validator::validate_cvtop(context, ValueType::F64, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64TruncSF64);
+				context.sink.emit(isa::InstructionInternal::I64TruncSF64);
 			}
 			I64TruncUF64 => {
 				Validator::validate_cvtop(context, ValueType::F64, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64TruncUF64);
+				context.sink.emit(isa::InstructionInternal::I64TruncUF64);
 			}
 			F32ConvertSI32 => {
 				Validator::validate_cvtop(context, ValueType::I32, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32ConvertSI32);
+				context.sink.emit(isa::InstructionInternal::F32ConvertSI32);
 			}
 			F32ConvertUI32 => {
 				Validator::validate_cvtop(context, ValueType::I32, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32ConvertUI32);
+				context.sink.emit(isa::InstructionInternal::F32ConvertUI32);
 			}
 			F32ConvertSI64 => {
 				Validator::validate_cvtop(context, ValueType::I64, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32ConvertSI64);
+				context.sink.emit(isa::InstructionInternal::F32ConvertSI64);
 			}
 			F32ConvertUI64 => {
 				Validator::validate_cvtop(context, ValueType::I64, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32ConvertUI64);
+				context.sink.emit(isa::InstructionInternal::F32ConvertUI64);
 			}
 			F32DemoteF64 => {
 				Validator::validate_cvtop(context, ValueType::F64, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32DemoteF64);
+				context.sink.emit(isa::InstructionInternal::F32DemoteF64);
 			}
 			F64ConvertSI32 => {
 				Validator::validate_cvtop(context, ValueType::I32, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64ConvertSI32);
+				context.sink.emit(isa::InstructionInternal::F64ConvertSI32);
 			}
 			F64ConvertUI32 => {
 				Validator::validate_cvtop(context, ValueType::I32, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64ConvertUI32);
+				context.sink.emit(isa::InstructionInternal::F64ConvertUI32);
 			}
 			F64ConvertSI64 => {
 				Validator::validate_cvtop(context, ValueType::I64, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64ConvertSI64);
+				context.sink.emit(isa::InstructionInternal::F64ConvertSI64);
 			}
 			F64ConvertUI64 => {
 				Validator::validate_cvtop(context, ValueType::I64, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64ConvertUI64);
+				context.sink.emit(isa::InstructionInternal::F64ConvertUI64);
 			}
 			F64PromoteF32 => {
 				Validator::validate_cvtop(context, ValueType::F32, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64PromoteF32);
+				context.sink.emit(isa::InstructionInternal::F64PromoteF32);
 			}
 
 			I32ReinterpretF32 => {
 				Validator::validate_cvtop(context, ValueType::F32, ValueType::I32)?;
-				context.sink.emit(isa::Instruction::I32ReinterpretF32);
+				context
+					.sink
+					.emit(isa::InstructionInternal::I32ReinterpretF32);
 			}
 			I64ReinterpretF64 => {
 				Validator::validate_cvtop(context, ValueType::F64, ValueType::I64)?;
-				context.sink.emit(isa::Instruction::I64ReinterpretF64);
+				context
+					.sink
+					.emit(isa::InstructionInternal::I64ReinterpretF64);
 			}
 			F32ReinterpretI32 => {
 				Validator::validate_cvtop(context, ValueType::I32, ValueType::F32)?;
-				context.sink.emit(isa::Instruction::F32ReinterpretI32);
+				context
+					.sink
+					.emit(isa::InstructionInternal::F32ReinterpretI32);
 			}
 			F64ReinterpretI64 => {
 				Validator::validate_cvtop(context, ValueType::I64, ValueType::F64)?;
-				context.sink.emit(isa::Instruction::F64ReinterpretI64);
+				context
+					.sink
+					.emit(isa::InstructionInternal::F64ReinterpretI64);
 			}
 		}
 
@@ -1136,78 +1157,160 @@ impl FunctionReader {
 struct Validator;
 
 impl Validator {
-	fn validate_const(context: &mut FunctionValidationContext, value_type: ValueType) -> Result<(), Error> {
+	fn validate_const(
+		context: &mut FunctionValidationContext,
+		value_type: ValueType,
+	) -> Result<(), Error> {
 		push_value(&mut context.value_stack, value_type.into())?;
 		Ok(())
 	}
 
-	fn validate_unop(context: &mut FunctionValidationContext, value_type: ValueType) -> Result<(), Error> {
-		pop_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
+	fn validate_unop(
+		context: &mut FunctionValidationContext,
+		value_type: ValueType,
+	) -> Result<(), Error> {
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			value_type.into(),
+		)?;
 		push_value(&mut context.value_stack, value_type.into())?;
 		Ok(())
 	}
 
-	fn validate_binop(context: &mut FunctionValidationContext, value_type: ValueType) -> Result<(), Error> {
-		pop_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
-		pop_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
+	fn validate_binop(
+		context: &mut FunctionValidationContext,
+		value_type: ValueType,
+	) -> Result<(), Error> {
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			value_type.into(),
+		)?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			value_type.into(),
+		)?;
 		push_value(&mut context.value_stack, value_type.into())?;
 		Ok(())
 	}
 
-	fn validate_testop(context: &mut FunctionValidationContext, value_type: ValueType) -> Result<(), Error> {
-		pop_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
+	fn validate_testop(
+		context: &mut FunctionValidationContext,
+		value_type: ValueType,
+	) -> Result<(), Error> {
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			value_type.into(),
+		)?;
 		push_value(&mut context.value_stack, ValueType::I32.into())?;
 		Ok(())
 	}
 
-	fn validate_relop(context: &mut FunctionValidationContext, value_type: ValueType) -> Result<(), Error> {
-		pop_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
-		pop_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
+	fn validate_relop(
+		context: &mut FunctionValidationContext,
+		value_type: ValueType,
+	) -> Result<(), Error> {
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			value_type.into(),
+		)?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			value_type.into(),
+		)?;
 		push_value(&mut context.value_stack, ValueType::I32.into())?;
 		Ok(())
 	}
 
-	fn validate_cvtop(context: &mut FunctionValidationContext, value_type1: ValueType, value_type2: ValueType) -> Result<(), Error> {
-		pop_value(&mut context.value_stack, &context.frame_stack, value_type1.into())?;
+	fn validate_cvtop(
+		context: &mut FunctionValidationContext,
+		value_type1: ValueType,
+		value_type2: ValueType,
+	) -> Result<(), Error> {
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			value_type1.into(),
+		)?;
 		push_value(&mut context.value_stack, value_type2.into())?;
 		Ok(())
 	}
 
 	fn validate_drop(context: &mut FunctionValidationContext) -> Result<(), Error> {
-		pop_value(&mut context.value_stack, &context.frame_stack, StackValueType::Any)?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			StackValueType::Any,
+		)?;
 		Ok(())
 	}
 
 	fn validate_select(context: &mut FunctionValidationContext) -> Result<(), Error> {
-		pop_value(&mut context.value_stack, &context.frame_stack, ValueType::I32.into())?;
-		let select_type = pop_value(&mut context.value_stack, &context.frame_stack, StackValueType::Any)?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			ValueType::I32.into(),
+		)?;
+		let select_type = pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			StackValueType::Any,
+		)?;
 		pop_value(&mut context.value_stack, &context.frame_stack, select_type)?;
 		push_value(&mut context.value_stack, select_type)?;
 		Ok(())
 	}
 
-	fn validate_get_local(context: &mut FunctionValidationContext, index: u32) -> Result<(), Error> {
+	fn validate_get_local(
+		context: &mut FunctionValidationContext,
+		index: u32,
+	) -> Result<(), Error> {
 		let local_type = require_local(&context.locals, index)?;
 		push_value(&mut context.value_stack, local_type.into())?;
 		Ok(())
 	}
 
-	fn validate_set_local(context: &mut FunctionValidationContext, index: u32) -> Result<(), Error> {
+	fn validate_set_local(
+		context: &mut FunctionValidationContext,
+		index: u32,
+	) -> Result<(), Error> {
 		let local_type = require_local(&context.locals, index)?;
-		let value_type = pop_value(&mut context.value_stack, &context.frame_stack, StackValueType::Any)?;
-		if  StackValueType::from(local_type) != value_type {
-			return Err(Error(format!("Trying to update local {} of type {:?} with value of type {:?}", index, local_type, value_type)));
+		let value_type = pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			StackValueType::Any,
+		)?;
+		if StackValueType::from(local_type) != value_type {
+			return Err(Error(format!(
+				"Trying to update local {} of type {:?} with value of type {:?}",
+				index, local_type, value_type
+			)));
 		}
 		Ok(())
 	}
 
-	fn validate_tee_local(context: &mut FunctionValidationContext, index: u32) -> Result<(), Error> {
+	fn validate_tee_local(
+		context: &mut FunctionValidationContext,
+		index: u32,
+	) -> Result<(), Error> {
 		let local_type = require_local(&context.locals, index)?;
-		tee_value(&mut context.value_stack, &context.frame_stack, local_type.into())?;
+		tee_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			local_type.into(),
+		)?;
 		Ok(())
 	}
 
-	fn validate_get_global(context: &mut FunctionValidationContext, index: u32) -> Result<(), Error> {
+	fn validate_get_global(
+		context: &mut FunctionValidationContext,
+		index: u32,
+	) -> Result<(), Error> {
 		let global_type: StackValueType = {
 			let global = context.module.require_global(index, None)?;
 			global.content_type().into()
@@ -1216,37 +1319,75 @@ impl Validator {
 		Ok(())
 	}
 
-	fn validate_set_global(context: &mut FunctionValidationContext, index: u32) -> Result<(), Error> {
+	fn validate_set_global(
+		context: &mut FunctionValidationContext,
+		index: u32,
+	) -> Result<(), Error> {
 		let global_type: StackValueType = {
 			let global = context.module.require_global(index, Some(true))?;
 			global.content_type().into()
 		};
-		let value_type = pop_value(&mut context.value_stack, &context.frame_stack, StackValueType::Any)?;
+		let value_type = pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			StackValueType::Any,
+		)?;
 		if global_type != value_type {
-			return Err(Error(format!("Trying to update global {} of type {:?} with value of type {:?}", index, global_type, value_type)));
+			return Err(Error(format!(
+				"Trying to update global {} of type {:?} with value of type {:?}",
+				index, global_type, value_type
+			)));
 		}
 		Ok(())
 	}
 
-	fn validate_load(context: &mut FunctionValidationContext, align: u32, max_align: u32, value_type: ValueType) -> Result<(), Error> {
+	fn validate_load(
+		context: &mut FunctionValidationContext,
+		align: u32,
+		max_align: u32,
+		value_type: ValueType,
+	) -> Result<(), Error> {
 		if 1u32.checked_shl(align).unwrap_or(u32::MAX) > max_align {
-			return Err(Error(format!("Too large memory alignment 2^{} (expected at most {})", align, max_align)));
+			return Err(Error(format!(
+				"Too large memory alignment 2^{} (expected at most {})",
+				align, max_align
+			)));
 		}
 
-		pop_value(&mut context.value_stack, &context.frame_stack, ValueType::I32.into())?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			ValueType::I32.into(),
+		)?;
 		context.module.require_memory(DEFAULT_MEMORY_INDEX)?;
 		push_value(&mut context.value_stack, value_type.into())?;
 		Ok(())
 	}
 
-	fn validate_store(context: &mut FunctionValidationContext, align: u32, max_align: u32, value_type: ValueType) -> Result<(), Error> {
+	fn validate_store(
+		context: &mut FunctionValidationContext,
+		align: u32,
+		max_align: u32,
+		value_type: ValueType,
+	) -> Result<(), Error> {
 		if 1u32.checked_shl(align).unwrap_or(u32::MAX) > max_align {
-			return Err(Error(format!("Too large memory alignment 2^{} (expected at most {})", align, max_align)));
+			return Err(Error(format!(
+				"Too large memory alignment 2^{} (expected at most {})",
+				align, max_align
+			)));
 		}
 
 		context.module.require_memory(DEFAULT_MEMORY_INDEX)?;
-		pop_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
-		pop_value(&mut context.value_stack, &context.frame_stack, ValueType::I32.into())?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			value_type.into(),
+		)?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			ValueType::I32.into(),
+		)?;
 		Ok(())
 	}
 
@@ -1257,14 +1398,22 @@ impl Validator {
 		};
 		if !frame_type.is_loop() {
 			if let BlockType::Value(value_type) = frame_block_type {
-				tee_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
+				tee_value(
+					&mut context.value_stack,
+					&context.frame_stack,
+					value_type.into(),
+				)?;
 			}
 		}
 		Ok(())
 	}
 
 	fn validate_br_if(context: &mut FunctionValidationContext, depth: u32) -> Result<(), Error> {
-		pop_value(&mut context.value_stack, &context.frame_stack, ValueType::I32.into())?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			ValueType::I32.into(),
+		)?;
 
 		let (frame_type, frame_block_type) = {
 			let frame = require_label(depth, &context.frame_stack)?;
@@ -1272,13 +1421,21 @@ impl Validator {
 		};
 		if !frame_type.is_loop() {
 			if let BlockType::Value(value_type) = frame_block_type {
-				tee_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
+				tee_value(
+					&mut context.value_stack,
+					&context.frame_stack,
+					value_type.into(),
+				)?;
 			}
 		}
 		Ok(())
 	}
 
-	fn validate_br_table(context: &mut FunctionValidationContext, table: &[u32], default: u32) -> Result<(), Error> {
+	fn validate_br_table(
+		context: &mut FunctionValidationContext,
+		table: &[u32],
+		default: u32,
+	) -> Result<(), Error> {
 		let required_block_type: BlockType = {
 			let default_block = require_label(default, &context.frame_stack)?;
 			let required_block_type = if !default_block.frame_type.is_loop() {
@@ -1295,23 +1452,26 @@ impl Validator {
 					BlockType::NoResult
 				};
 				if required_block_type != label_block_type {
-					return Err(
-						Error(
-							format!(
-								"Labels in br_table points to block of different types: {:?} and {:?}",
-								required_block_type,
-								label_block.block_type
-							)
-						)
-					);
+					return Err(Error(format!(
+						"Labels in br_table points to block of different types: {:?} and {:?}",
+						required_block_type, label_block.block_type
+					)));
 				}
 			}
 			required_block_type
 		};
 
-		pop_value(&mut context.value_stack, &context.frame_stack, ValueType::I32.into())?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			ValueType::I32.into(),
+		)?;
 		if let BlockType::Value(value_type) = required_block_type {
-			tee_value(&mut context.value_stack, &context.frame_stack, value_type.into())?;
+			tee_value(
+				&mut context.value_stack,
+				&context.frame_stack,
+				value_type.into(),
+			)?;
 		}
 
 		Ok(())
@@ -1320,7 +1480,11 @@ impl Validator {
 	fn validate_call(context: &mut FunctionValidationContext, idx: u32) -> Result<(), Error> {
 		let (argument_types, return_type) = context.module.require_function(idx)?;
 		for argument_type in argument_types.iter().rev() {
-			pop_value(&mut context.value_stack, &context.frame_stack, (*argument_type).into())?;
+			pop_value(
+				&mut context.value_stack,
+				&context.frame_stack,
+				(*argument_type).into(),
+			)?;
 		}
 		if let BlockType::Value(value_type) = return_type {
 			push_value(&mut context.value_stack, value_type.into())?;
@@ -1328,7 +1492,10 @@ impl Validator {
 		Ok(())
 	}
 
-	fn validate_call_indirect(context: &mut FunctionValidationContext, idx: u32) -> Result<(), Error> {
+	fn validate_call_indirect(
+		context: &mut FunctionValidationContext,
+		idx: u32,
+	) -> Result<(), Error> {
 		{
 			let table = context.module.require_table(DEFAULT_TABLE_INDEX)?;
 			if table.elem_type() != TableElementType::AnyFunc {
@@ -1340,10 +1507,18 @@ impl Validator {
 			}
 		}
 
-		pop_value(&mut context.value_stack, &context.frame_stack, ValueType::I32.into())?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			ValueType::I32.into(),
+		)?;
 		let (argument_types, return_type) = context.module.require_function_type(idx)?;
 		for argument_type in argument_types.iter().rev() {
-			pop_value(&mut context.value_stack, &context.frame_stack, (*argument_type).into())?;
+			pop_value(
+				&mut context.value_stack,
+				&context.frame_stack,
+				(*argument_type).into(),
+			)?;
 		}
 		if let BlockType::Value(value_type) = return_type {
 			push_value(&mut context.value_stack, value_type.into())?;
@@ -1359,7 +1534,11 @@ impl Validator {
 
 	fn validate_grow_memory(context: &mut FunctionValidationContext) -> Result<(), Error> {
 		context.module.require_memory(DEFAULT_MEMORY_INDEX)?;
-		pop_value(&mut context.value_stack, &context.frame_stack, ValueType::I32.into())?;
+		pop_value(
+			&mut context.value_stack,
+			&context.frame_stack,
+			ValueType::I32.into(),
+		)?;
 		push_value(&mut context.value_stack, ValueType::I32.into())?;
 		Ok(())
 	}
@@ -1416,7 +1595,9 @@ fn make_top_frame_polymorphic(
 	value_stack: &mut StackWithLimit<StackValueType>,
 	frame_stack: &mut StackWithLimit<BlockFrame>,
 ) {
-	let frame = frame_stack.top_mut().expect("make_top_frame_polymorphic is called with empty frame stack");
+	let frame = frame_stack
+		.top_mut()
+		.expect("make_top_frame_polymorphic is called with empty frame stack");
 	value_stack.resize(frame.value_stack_len, StackValueType::Any);
 	frame.polymorphic_stack = true;
 }
@@ -1501,7 +1682,11 @@ fn pop_label(
 	match block_type {
 		BlockType::NoResult => (),
 		BlockType::Value(required_value_type) => {
-			let _ = pop_value(value_stack, frame_stack, StackValueType::Specific(required_value_type))?;
+			let _ = pop_value(
+				value_stack,
+				frame_stack,
+				StackValueType::Specific(required_value_type),
+			)?;
 		}
 	}
 
@@ -1518,7 +1703,8 @@ fn pop_label(
 }
 
 fn top_label(frame_stack: &StackWithLimit<BlockFrame>) -> &BlockFrame {
-	frame_stack.top()
+	frame_stack
+		.top()
 		.expect("this function can't be called with empty frame stack")
 }
 
@@ -1534,8 +1720,7 @@ fn require_target(
 	value_stack: &StackWithLimit<StackValueType>,
 	frame_stack: &StackWithLimit<BlockFrame>,
 ) -> Target {
-	let is_stack_polymorphic = top_label(frame_stack)
-		.polymorphic_stack;
+	let is_stack_polymorphic = top_label(frame_stack).polymorphic_stack;
 	let frame =
 		require_label(depth, frame_stack).expect("require_target called with a bogus depth");
 
@@ -1604,7 +1789,7 @@ fn require_local(locals: &Locals, idx: u32) -> Result<ValueType, Error> {
 fn relative_local_depth(
 	idx: u32,
 	locals: &Locals,
-	value_stack: &StackWithLimit<StackValueType>
+	value_stack: &StackWithLimit<StackValueType>,
 ) -> Result<u32, Error> {
 	let value_stack_height = value_stack.len() as u32;
 	let locals_and_params_count = locals.count();
@@ -1612,9 +1797,7 @@ fn relative_local_depth(
 	let depth = value_stack_height
 		.checked_add(locals_and_params_count)
 		.and_then(|x| x.checked_sub(idx))
-		.ok_or_else(||
-			Error(String::from("Locals range not in 32-bit range"))
-		)?;
+		.ok_or_else(|| Error(String::from("Locals range not in 32-bit range")))?;
 	Ok(depth)
 }
 
@@ -1655,85 +1838,81 @@ impl Sink {
 		self.ins.current_pc()
 	}
 
-	fn pc_or_placeholder<F: FnOnce() -> isa::Reloc>(&mut self, label: LabelId, reloc_creator: F) -> u32 {
+	fn pc_or_placeholder<F: FnOnce() -> isa::Reloc>(
+		&mut self,
+		label: LabelId,
+		reloc_creator: F,
+	) -> u32 {
 		match self.labels[label.0] {
 			(Label::Resolved(dst_pc), _) => dst_pc,
 			(Label::NotResolved, ref mut unresolved) => {
-				unresolved
-					.push(reloc_creator());
+				unresolved.push(reloc_creator());
 				u32::max_value()
 			}
 		}
 	}
 
-	fn emit(&mut self, instruction: isa::Instruction) {
+	fn emit(&mut self, instruction: isa::InstructionInternal) {
 		self.ins.push(instruction);
 	}
 
 	fn emit_br(&mut self, target: Target) {
-		let Target {
-			label,
-			drop_keep,
-		} = target;
+		let Target { label, drop_keep } = target;
 		let pc = self.cur_pc();
 		let dst_pc = self.pc_or_placeholder(label, || isa::Reloc::Br { pc });
-		self.ins.push(isa::Instruction::Br(isa::Target {
+		self.ins.push(isa::InstructionInternal::Br(isa::Target {
 			dst_pc,
 			drop_keep: drop_keep.into(),
 		}));
 	}
 
 	fn emit_br_eqz(&mut self, target: Target) {
-		let Target {
-			label,
-			drop_keep,
-		} = target;
+		let Target { label, drop_keep } = target;
 		let pc = self.cur_pc();
 		let dst_pc = self.pc_or_placeholder(label, || isa::Reloc::Br { pc });
-		self.ins.push(isa::Instruction::BrIfEqz(isa::Target {
-			dst_pc,
-			drop_keep: drop_keep.into(),
-		}));
+		self.ins
+			.push(isa::InstructionInternal::BrIfEqz(isa::Target {
+				dst_pc,
+				drop_keep: drop_keep.into(),
+			}));
 	}
 
 	fn emit_br_nez(&mut self, target: Target) {
-		let Target {
-			label,
-			drop_keep,
-		} = target;
+		let Target { label, drop_keep } = target;
 		let pc = self.cur_pc();
 		let dst_pc = self.pc_or_placeholder(label, || isa::Reloc::Br { pc });
-		self.ins.push(isa::Instruction::BrIfNez(isa::Target {
-			dst_pc,
-			drop_keep: drop_keep.into(),
-		}));
+		self.ins
+			.push(isa::InstructionInternal::BrIfNez(isa::Target {
+				dst_pc,
+				drop_keep: drop_keep.into(),
+			}));
 	}
 
 	fn emit_br_table(&mut self, targets: &[Target], default: Target) {
 		use core::iter;
 
 		let pc = self.cur_pc();
-		let mut isa_targets = Vec::new();
-		for (idx, &Target { label, drop_keep }) in targets.iter().chain(iter::once(&default)).enumerate() {
+
+		self.ins.push(isa::InstructionInternal::BrTable {
+			count: targets.len() as u32 + 1,
+		});
+
+		for (idx, &Target { label, drop_keep }) in
+			targets.iter().chain(iter::once(&default)).enumerate()
+		{
 			let dst_pc = self.pc_or_placeholder(label, || isa::Reloc::BrTable { pc, idx });
-			isa_targets.push(
-				isa::Target {
+			self.ins
+				.push(isa::InstructionInternal::BrTableTarget(isa::Target {
 					dst_pc,
 					drop_keep: drop_keep.into(),
-				},
-			);
+				}));
 		}
-		self.ins.push(isa::Instruction::BrTable(
-			isa_targets.into_boxed_slice(),
-		));
 	}
 
 	/// Create a new unresolved label.
 	fn new_label(&mut self) -> LabelId {
 		let label_idx = self.labels.len();
-		self.labels.push(
-			(Label::NotResolved, Vec::new()),
-		);
+		self.labels.push((Label::NotResolved, Vec::new()));
 		LabelId(label_idx)
 	}
 
@@ -1762,14 +1941,19 @@ impl Sink {
 	/// Consume this Sink and returns isa::Instructions.
 	fn into_inner(self) -> isa::Instructions {
 		// At this moment all labels should be resolved.
-		assert!({
-			self.labels.iter().all(|(state, unresolved)|
-				match (state, unresolved) {
-					(Label::Resolved(_), unresolved) if unresolved.is_empty() => true,
-					_ => false,
-				}
-			)
-		}, "there are unresolved labels left: {:?}", self.labels);
+		assert!(
+			{
+				self.labels
+					.iter()
+					.all(|(state, unresolved)| match (state, unresolved) {
+						(Label::Resolved(_), unresolved) if unresolved.is_empty() => true,
+						_ => false,
+					})
+			},
+			"there are unresolved labels left: {:?}",
+			self.labels
+		);
 		self.ins
 	}
 }
+
