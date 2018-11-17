@@ -8,7 +8,7 @@ use validation::context::ModuleContext;
 use validation::util::Locals;
 use validation::Error;
 
-use common::stack::{StackOverflow, StackWithLimit};
+use common::stack::{StackSize, StackWithLimit};
 use isa;
 
 /// Maximum number of entries in value stack per function.
@@ -1348,8 +1348,8 @@ impl<'a> FunctionValidationContext<'a> {
 			module: module,
 			position: 0,
 			locals: locals,
-			value_stack: StackWithLimit::with_limit(value_stack_limit),
-			frame_stack: StackWithLimit::with_limit(frame_stack_limit),
+			value_stack: StackWithLimit::with_size(StackSize::from_element_count(value_stack_limit)),
+			frame_stack: StackWithLimit::with_size(StackSize::from_element_count(frame_stack_limit)),
 			return_type: return_type,
 			sink: Sink::with_instruction_capacity(size_estimate),
 		}
