@@ -116,6 +116,16 @@ impl<T> StackWithLimit<T> {
 		self.stack.get(index)
 	}
 
+	/// mutable version of get_relative_to_top
+	///
+	/// `bstack.get_relative_to_top(0)` gets the top of the stack
+	///
+	/// `bstack.get_relative_to_top(1)` gets the item just below the stack
+	pub(crate) fn get_relative_to_top_mut(&mut self, depth: usize) -> Option<&mut T> {
+		let index = self.stack.len().checked_sub(1)?.checked_sub(depth)?;
+		self.stack.get_mut(index)
+	}
+
 	pub(crate) fn top(&self) -> Option<&T> {
 		self.stack.last()
 	}

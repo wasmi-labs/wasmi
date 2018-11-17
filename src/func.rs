@@ -1,15 +1,19 @@
 #[allow(unused_imports)]
 use alloc::prelude::*;
 use alloc::rc::{Rc, Weak};
+use common::stack::{StackSize, StackWithLimit};
 use core::fmt;
-use parity_wasm::elements::Local;
-use {Trap, Signature};
 use host::Externals;
-use runner::{check_function_args, Interpreter, InterpreterState};
-use value::RuntimeValue;
-use types::ValueType;
-use module::ModuleInstance;
 use isa;
+use module::ModuleInstance;
+use parity_wasm::elements::Local;
+use runner::{
+	check_function_args, FunctionContext, Interpreter, InterpreterState, RuntimeValueInternal,
+	DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT,
+};
+use types::ValueType;
+use value::RuntimeValue;
+use {Signature, Trap};
 
 /// Reference to a function (See [`FuncInstance`] for details).
 ///
@@ -58,21 +62,12 @@ pub(crate) enum FuncInstanceInternal {
 impl fmt::Debug for FuncInstance {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match self.as_internal() {
-			&FuncInstanceInternal::Internal {
-				ref signature,
-				..
-			} => {
+			&FuncInstanceInternal::Internal { ref signature, .. } => {
 				// We can't write description of self.module here, because it generate
 				// debug string for function instances and this will lead to infinite loop.
-				write!(
-					f,
-					"Internal {{ signature={:?} }}",
-					signature,
-				)
+				write!(f, "Internal {{ signature={:?} }}", signature,)
 			}
-			&FuncInstanceInternal::Host { ref signature, .. } => {
-				write!(f, "Host {{ signature={:?} }}", signature)
-			}
+			&FuncInstanceInternal::Host { ref signature, .. } => write!(f, "Host {{ signature={:?} }}", signature),
 		}
 	}
 }
@@ -110,11 +105,7 @@ impl FuncInstance {
 		&self.0
 	}
 
-	pub(crate) fn alloc_internal(
-		module: Weak<ModuleInstance>,
-		signature: Rc<Signature>,
-		body: FuncBody,
-	) -> FuncRef {
+	pub(crate) fn alloc_internal(module: Weak<ModuleInstance>, signature: Rc<Signature>, body: FuncBody) -> FuncRef {
 		let func = FuncInstanceInternal::Internal {
 			signature,
 			module: module,
@@ -127,6 +118,36 @@ impl FuncInstance {
 		match *self.as_internal() {
 			FuncInstanceInternal::Internal { ref body, .. } => Some(Rc::clone(body)),
 			FuncInstanceInternal::Host { .. } => None,
+		}
+	}
+
+	/// Invoke this function with extra configuration parameters.
+	///
+	/// This is an experimental API
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if `args` types is not match function [`signature`] or
+	/// if [`Trap`] at execution time occured.
+	///
+	/// [`signature`]: #method.signature
+	/// [`Trap`]: #enum.Trap.html
+	pub fn invoke_configurable<E: Externals>(
+		func: &FuncRef,
+		args: &[RuntimeValue],
+		externals: &mut E,
+		value_stack: StackWithLimit<RuntimeValueInternal>,
+		call_stack: StackWithLimit<FunctionContext>,
+	) -> Result<Option<RuntimeValue>, Trap> {
+		check_function_args(func.signature(), &args)?;
+		match *func.as_internal() {
+			FuncInstanceInternal::Internal { .. } => {
+				let mut interpreter = Interpreter::new(value_stack, call_stack);
+				interpreter.start_execution(externals, func, args, func.signature().return_type())
+			}
+			FuncInstanceInternal::Host {
+				ref host_func_index, ..
+			} => externals.invoke_index(*host_func_index, args.into()),
 		}
 	}
 
@@ -144,17 +165,9 @@ impl FuncInstance {
 		args: &[RuntimeValue],
 		externals: &mut E,
 	) -> Result<Option<RuntimeValue>, Trap> {
-		check_function_args(func.signature(), &args)?;
-		match *func.as_internal() {
-			FuncInstanceInternal::Internal { .. } => {
-				let mut interpreter = Interpreter::new(func, args)?;
-				interpreter.start_execution(externals)
-			}
-			FuncInstanceInternal::Host {
-				ref host_func_index,
-				..
-			} => externals.invoke_index(*host_func_index, args.into()),
-		}
+		let value_stack = StackWithLimit::with_size(StackSize::from_element_count(DEFAULT_VALUE_STACK_LIMIT));
+		let call_stack = StackWithLimit::with_size(StackSize::from_element_count(DEFAULT_CALL_STACK_LIMIT));
+		Self::invoke_configurable(func, args, externals, value_stack, call_stack)
 	}
 
 	/// Invoke the function, get a resumable handle. This handle can then be used to [`start_execution`]. If a
@@ -171,30 +184,26 @@ impl FuncInstance {
 	/// [`Trap`]: #enum.Trap.html
 	/// [`start_execution`]: struct.FuncInvocation.html#method.start_execution
 	/// [`resume_execution`]: struct.FuncInvocation.html#method.resume_execution
-	pub fn invoke_resumable<'args>(
-		func: &FuncRef,
-		args: &'args [RuntimeValue],
-	) -> Result<FuncInvocation<'args>, Trap> {
+	pub fn invoke_resumable<'args>(func: &FuncRef, args: &'args [RuntimeValue]) -> Result<FuncInvocation<'args>, Trap> {
 		check_function_args(func.signature(), &args)?;
 		match *func.as_internal() {
 			FuncInstanceInternal::Internal { .. } => {
-				let interpreter = Interpreter::new(func, args)?;
+				let value_stack = StackWithLimit::with_size(StackSize::from_element_count(DEFAULT_VALUE_STACK_LIMIT));
+				let call_stack = StackWithLimit::with_size(StackSize::from_element_count(DEFAULT_CALL_STACK_LIMIT));
+				let interpreter = Interpreter::new(value_stack, call_stack);
 				Ok(FuncInvocation {
 					kind: FuncInvocationKind::Internal(interpreter),
 				})
 			}
 			FuncInstanceInternal::Host {
-				ref host_func_index,
-				..
-			} => {
-				Ok(FuncInvocation {
-					kind: FuncInvocationKind::Host {
-						args,
-						host_func_index: *host_func_index,
-						finished: false,
-					},
-				})
-			},
+				ref host_func_index, ..
+			} => Ok(FuncInvocation {
+				kind: FuncInvocationKind::Host {
+					args,
+					host_func_index: *host_func_index,
+					finished: false,
+				},
+			}),
 		}
 	}
 }
@@ -239,7 +248,7 @@ enum FuncInvocationKind<'args> {
 	Host {
 		args: &'args [RuntimeValue],
 		host_func_index: usize,
-		finished: bool
+		finished: bool,
 	},
 }
 
@@ -255,32 +264,40 @@ impl<'args> FuncInvocation<'args> {
 	/// If the invocation is resumable, the expected return value type to be feed back in.
 	pub fn resumable_value_type(&self) -> Option<ValueType> {
 		match &self.kind {
-			&FuncInvocationKind::Internal(ref interpreter) => {
-				match interpreter.state() {
-					&InterpreterState::Resumable(ref value_type) => value_type.clone(),
-					_ => None,
-				}
+			&FuncInvocationKind::Internal(ref interpreter) => match interpreter.state() {
+				&InterpreterState::Resumable(ref value_type) => value_type.clone(),
+				_ => None,
 			},
 			&FuncInvocationKind::Host { .. } => None,
 		}
 	}
 
 	/// Start the invocation execution.
-	pub fn start_execution<'externals, E: Externals + 'externals>(&mut self, externals: &'externals mut E) -> Result<Option<RuntimeValue>, ResumableError> {
+	pub fn start_execution<'externals, E: Externals + 'externals>(
+		&mut self,
+		externals: &'externals mut E,
+		func: &FuncRef,
+		args: &[RuntimeValue],
+		return_type: Option<ValueType>,
+	) -> Result<Option<RuntimeValue>, ResumableError> {
 		match self.kind {
 			FuncInvocationKind::Internal(ref mut interpreter) => {
 				if interpreter.state() != &InterpreterState::Initialized {
 					return Err(ResumableError::AlreadyStarted);
 				}
-				Ok(interpreter.start_execution(externals)?)
-			},
-			FuncInvocationKind::Host { ref args, ref mut finished, ref host_func_index } => {
+				Ok(interpreter.start_execution(externals, func, args, return_type)?)
+			}
+			FuncInvocationKind::Host {
+				ref args,
+				ref mut finished,
+				ref host_func_index,
+			} => {
 				if *finished {
 					return Err(ResumableError::AlreadyStarted);
 				}
 				*finished = true;
 				Ok(externals.invoke_index(*host_func_index, args.clone().into())?)
-			},
+			}
 		}
 	}
 
@@ -292,17 +309,22 @@ impl<'args> FuncInvocation<'args> {
 	///
 	/// [`resumable_value_type`]: #method.resumable_value_type
 	/// [`is_resumable`]: #method.is_resumable
-	pub fn resume_execution<'externals, E: Externals + 'externals>(&mut self, return_val: Option<RuntimeValue>, externals: &'externals mut E) -> Result<Option<RuntimeValue>, ResumableError> {
+	pub fn resume_execution<'externals, E: Externals + 'externals>(
+		&mut self,
+		return_val: Option<RuntimeValue>,
+		externals: &'externals mut E,
+		return_type: Option<ValueType>,
+	) -> Result<Option<RuntimeValue>, ResumableError> {
 		match self.kind {
 			FuncInvocationKind::Internal(ref mut interpreter) => {
 				if !interpreter.state().is_resumable() {
 					return Err(ResumableError::AlreadyStarted);
 				}
-				Ok(interpreter.resume_execution(return_val, externals)?)
-			},
+				Ok(interpreter.resume_execution(return_val, externals, return_type)?)
+			}
 			FuncInvocationKind::Host { .. } => {
 				return Err(ResumableError::NotResumable);
-			},
+			}
 		}
 	}
 }

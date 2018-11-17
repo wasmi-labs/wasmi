@@ -10,7 +10,7 @@ use validation::context::ModuleContext;
 use validation::util::Locals;
 use validation::Error;
 
-use common::stack::StackWithLimit;
+use common::stack::{StackSize, StackWithLimit};
 use isa;
 
 /// Maximum number of entries in value stack per function.
@@ -1575,8 +1575,8 @@ impl<'a> FunctionValidationContext<'a> {
 			module: module,
 			position: 0,
 			locals: locals,
-			value_stack: StackWithLimit::with_limit(value_stack_limit),
-			frame_stack: StackWithLimit::with_limit(frame_stack_limit),
+			value_stack: StackWithLimit::with_size(StackSize::from_element_count(value_stack_limit)),
+			frame_stack: StackWithLimit::with_size(StackSize::from_element_count(frame_stack_limit)),
 			return_type: return_type,
 			sink: Sink::with_instruction_capacity(size_estimate),
 		}
@@ -1598,7 +1598,15 @@ fn make_top_frame_polymorphic(
 	let frame = frame_stack
 		.top_mut()
 		.expect("make_top_frame_polymorphic is called with empty frame stack");
-	value_stack.resize(frame.value_stack_len, StackValueType::Any);
+
+	// shrink value stack to match top frame
+	debug_assert!(frame.value_stack_len <= value_stack.len());
+	while value_stack.len() > frame.value_stack_len {
+		value_stack.pop().expect(
+			"frame.value_stack_len >= 0, value_stack.len() > frame.value_stack_len :. value_stack.len() > 0; qed",
+		);
+	}
+
 	frame.polymorphic_stack = true;
 }
 
@@ -1630,7 +1638,7 @@ fn pop_value(
 		if value_stack.len() <= value_stack_min {
 			return Err(Error("Trying to access parent frame stack values.".into()));
 		}
-		value_stack.pop()?
+		value_stack.pop().ok_or_else(|| Error("non-empty stack expected".into()))?
 	};
 	match actual_value {
 		StackValueType::Specific(stack_value_type) if stack_value_type == value_type => {
@@ -1678,7 +1686,10 @@ fn pop_label(
 	// Don't pop frame yet. This is essential since we still might pop values from the value stack
 	// and this in turn requires current frame to check whether or not we've reached
 	// unreachable.
-	let block_type = frame_stack.top()?.block_type;
+	let block_type = frame_stack
+		.top()
+		.ok_or_else(|| Error("non-empty stack expected".into()))?
+		.block_type;
 	match block_type {
 		BlockType::NoResult => (),
 		BlockType::Value(required_value_type) => {
@@ -1690,7 +1701,9 @@ fn pop_label(
 		}
 	}
 
-	let frame = frame_stack.pop()?;
+	let frame = frame_stack
+		.pop()
+		.ok_or_else(|| Error("non-empty stack expected".into()))?;
 	if value_stack.len() != frame.value_stack_len {
 		return Err(Error(format!(
 			"Unexpected stack height {}, expected {}",
@@ -1712,7 +1725,9 @@ fn require_label(
 	depth: u32,
 	frame_stack: &StackWithLimit<BlockFrame>,
 ) -> Result<&BlockFrame, Error> {
-	Ok(frame_stack.get(depth as usize)?)
+	Ok(frame_stack
+		.get_relative_to_top(depth as usize)
+		.ok_or_else(|| Error("non-empty stack expected".into()))?)
 }
 
 fn require_target(
@@ -1956,4 +1971,3 @@ impl Sink {
 		self.ins
 	}
 }
-
