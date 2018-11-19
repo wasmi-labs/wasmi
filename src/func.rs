@@ -184,26 +184,24 @@ impl FuncInstance {
 	/// [`Trap`]: #enum.Trap.html
 	/// [`start_execution`]: struct.FuncInvocation.html#method.start_execution
 	/// [`resume_execution`]: struct.FuncInvocation.html#method.resume_execution
-	pub fn invoke_resumable<'args>(func: &FuncRef, args: &'args [RuntimeValue]) -> Result<FuncInvocation<'args>, Trap> {
-		check_function_args(func.signature(), &args)?;
+	pub fn invoke_resumable(func: &FuncRef) -> FuncInvocation {
 		match *func.as_internal() {
 			FuncInstanceInternal::Internal { .. } => {
 				let value_stack = StackWithLimit::with_size(StackSize::from_element_count(DEFAULT_VALUE_STACK_LIMIT));
 				let call_stack = StackWithLimit::with_size(StackSize::from_element_count(DEFAULT_CALL_STACK_LIMIT));
 				let interpreter = Interpreter::new(value_stack, call_stack);
-				Ok(FuncInvocation {
+				FuncInvocation {
 					kind: FuncInvocationKind::Internal(interpreter),
-				})
+				}
 			}
 			FuncInstanceInternal::Host {
 				ref host_func_index, ..
-			} => Ok(FuncInvocation {
+			} => FuncInvocation {
 				kind: FuncInvocationKind::Host {
-					args,
 					host_func_index: *host_func_index,
 					finished: false,
 				},
-			}),
+			},
 		}
 	}
 }
@@ -239,20 +237,16 @@ impl From<Trap> for ResumableError {
 }
 
 /// A resumable invocation handle. This struct is returned by `FuncInstance::invoke_resumable`.
-pub struct FuncInvocation<'args> {
-	kind: FuncInvocationKind<'args>,
+pub struct FuncInvocation {
+	kind: FuncInvocationKind,
 }
 
-enum FuncInvocationKind<'args> {
+enum FuncInvocationKind {
 	Internal(Interpreter),
-	Host {
-		args: &'args [RuntimeValue],
-		host_func_index: usize,
-		finished: bool,
-	},
+	Host { host_func_index: usize, finished: bool },
 }
 
-impl<'args> FuncInvocation<'args> {
+impl FuncInvocation {
 	/// Whether this invocation is currently resumable.
 	pub fn is_resumable(&self) -> bool {
 		match &self.kind {
@@ -288,7 +282,6 @@ impl<'args> FuncInvocation<'args> {
 				Ok(interpreter.start_execution(externals, func, args, return_type)?)
 			}
 			FuncInvocationKind::Host {
-				ref args,
 				ref mut finished,
 				ref host_func_index,
 			} => {
