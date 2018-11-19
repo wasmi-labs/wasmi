@@ -78,7 +78,6 @@ impl<T> StackWithLimit<T> {
 	///
 	/// Returns Err(StackOverflow) if stack is already full.
 	pub(crate) fn push(&mut self, value: T) -> Result<(), StackOverflow> {
-		println!("limit {}", self.limit);
 		let ret = if self.stack.len() < self.limit {
 			self.stack.push(value);
 			Ok(())
@@ -92,6 +91,7 @@ impl<T> StackWithLimit<T> {
 		ret
 	}
 
+	#[inline]
 	pub(crate) fn pop(&mut self) -> Option<T> {
 		debug_assert!(
 			self.stack.len() <= self.limit,
