@@ -1255,24 +1255,18 @@ struct ValueStack(StackWithLimit<RuntimeValueInternal>);
 impl ValueStack {
 	#[inline]
 	fn drop_keep(&mut self, drop_keep: isa::DropKeep) {
+		let drop = drop_keep.drop as usize;
+		let len = self.0.len();
 		match drop_keep.keep {
 			isa::Keep::Single => {
-				let top = *self.top(); // takes a copy
-				let pick = self
-					.0
-					.get_relative_to_top_mut(drop_keep.drop as usize)
-					.expect("pre-validated");
-				*pick = top;
+				debug_assert!(drop < len);
+				self.0.swap(len - 1 - drop, len - 1)
 			}
-			isa::Keep::None => {}
+			isa::Keep::None => {
+				debug_assert!(drop <= len, "Attempted to drop more items than were in stack.");
+			}
 		};
-		self.drop_many(drop_keep.drop as usize);
-	}
-
-	fn drop_many(&mut self, count: usize) {
-		debug_assert!(count <= self.len(), "Attempted to drop more items than were in stack.");
-		let new_len = self.0.len().checked_sub(count).unwrap_or(0);
-		self.0.truncate(new_len);
+		self.0.truncate(len - drop);
 	}
 
 	#[inline]
@@ -1310,7 +1304,7 @@ impl ValueStack {
 
 	#[inline]
 	fn pick_mut(&mut self, depth: usize) -> &mut RuntimeValueInternal {
-		self.0.get_relative_to_top_mut(depth - 1).expect("pre-validated")
+		self.0.get_relative_to_top_mut_unchecked(depth - 1)
 	}
 
 	#[inline]

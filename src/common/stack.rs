@@ -92,14 +92,10 @@ impl<T> StackWithLimit<T> {
 	}
 
 	pub(crate) fn pop(&mut self) -> Option<T> {
-		debug_assert!(
-			self.stack.len() <= self.limit,
-			"Stack length should never be larger than stack limit."
-		);
 		self.stack.pop()
 	}
 
-	/// Return optional reference to item in stack
+	/// Return optional reference to item `depth` distance away from top
 	///
 	/// `bstack.get_relative_to_top(0)` gets the top of the stack
 	///
@@ -112,17 +108,44 @@ impl<T> StackWithLimit<T> {
 		// In debug builds, underflow panics, but in release mode, underflow is not checked.
 
 		let index = self.stack.len().checked_sub(1)?.checked_sub(depth)?;
-		self.stack.get(index)
+		debug_assert!(self.stack.len() > index, "guaranteed by previous line");
+		Some(&self.stack[index])
 	}
 
-	/// mutable version of get_relative_to_top
+	/// Return mutable reference to item `depth` distance away from top
 	///
-	/// `bstack.get_relative_to_top(0)` gets the top of the stack
+	/// Does not check whether depth is in range.
+	pub(crate) fn get_relative_to_top_mut_unchecked(&mut self, depth: usize) -> &mut T {
+		let offset = self.stack.len() - 1 - depth;
+		&mut self.stack[offset]
+	}
+
+	/// Swaps two elements in the stack.
 	///
-	/// `bstack.get_relative_to_top(1)` gets the item just below the stack
-	pub(crate) fn get_relative_to_top_mut(&mut self, depth: usize) -> Option<&mut T> {
-		let index = self.stack.len().checked_sub(1)?.checked_sub(depth)?;
-		self.stack.get_mut(index)
+	/// # Arguments
+	///
+	/// * a - The index of the first element
+	/// * b - The index of the second element
+	///
+	/// # Panics
+	///
+	/// Panics if `a` or `b` are out of bound.
+	#[inline]
+	pub(crate) fn swap(&mut self, a: usize, b: usize) {
+		self.stack.swap(a, b)
+	}
+
+	/// Removes an element from the vector and returns it.
+	///
+	/// The removed element is replaced by the last element of the vector.
+	///
+	/// This does not preserve ordering, but is O(1).
+	///
+	/// # Panics
+	///
+	/// Panics if `index` is out of bounds.
+	pub fn swap_remove(&mut self, index: usize) -> T {
+		self.stack.swap_remove(index)
 	}
 
 	pub(crate) fn top(&self) -> Option<&T> {
@@ -138,6 +161,7 @@ impl<T> StackWithLimit<T> {
 		self.stack.truncate(new_size)
 	}
 
+	#[inline]
 	pub(crate) fn len(&self) -> usize {
 		self.stack.len()
 	}
