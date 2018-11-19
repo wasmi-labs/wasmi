@@ -91,7 +91,6 @@ impl<T> StackWithLimit<T> {
 		ret
 	}
 
-	#[inline]
 	pub(crate) fn pop(&mut self) -> Option<T> {
 		debug_assert!(
 			self.stack.len() <= self.limit,
