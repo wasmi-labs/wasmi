@@ -7,10 +7,7 @@ use host::Externals;
 use isa;
 use module::ModuleInstance;
 use parity_wasm::elements::Local;
-use runner::{
-	check_function_args, FunctionContext, Interpreter, InterpreterState, RuntimeValueInternal,
-	DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT,
-};
+use runner::{check_function_args, Interpreter, InterpreterState, DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT};
 use types::ValueType;
 use value::RuntimeValue;
 use {Signature, Trap};
@@ -136,13 +133,11 @@ impl FuncInstance {
 		func: &FuncRef,
 		args: &[RuntimeValue],
 		externals: &mut E,
-		value_stack: StackWithLimit<RuntimeValueInternal>,
-		call_stack: StackWithLimit<FunctionContext>,
+		interpreter: &mut Interpreter,
 	) -> Result<Option<RuntimeValue>, Trap> {
 		check_function_args(func.signature(), &args)?;
 		match *func.as_internal() {
 			FuncInstanceInternal::Internal { .. } => {
-				let mut interpreter = Interpreter::new(value_stack, call_stack);
 				interpreter.start_execution(externals, func, args, func.signature().return_type())
 			}
 			FuncInstanceInternal::Host {
@@ -167,7 +162,8 @@ impl FuncInstance {
 	) -> Result<Option<RuntimeValue>, Trap> {
 		let value_stack = StackWithLimit::with_size(StackSize::from_element_count(DEFAULT_VALUE_STACK_LIMIT));
 		let call_stack = StackWithLimit::with_size(StackSize::from_element_count(DEFAULT_CALL_STACK_LIMIT));
-		Self::invoke_configurable(func, args, externals, value_stack, call_stack)
+		let mut interpreter = Interpreter::new(value_stack, call_stack);
+		Self::invoke_configurable(func, args, externals, &mut interpreter)
 	}
 
 	/// Invoke the function, get a resumable handle. This handle can then be used to [`start_execution`]. If a

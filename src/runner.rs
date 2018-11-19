@@ -172,6 +172,9 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
+	/// Initialize an interpreter that will use `value_stack` and `call_stack`.
+	///
+	/// `value_stack` `call_stack` determine the allowed stack size during later executions.
 	pub fn new(
 		value_stack: StackWithLimit<RuntimeValueInternal>,
 		call_stack: StackWithLimit<FunctionContext>,
@@ -183,11 +186,20 @@ impl Interpreter {
 		}
 	}
 
-	pub fn state(&self) -> &InterpreterState {
+	// Todo, use types to prevent user from calling start_execution on an inretpreter not in Initialized
+	// state.
+	/// Wipe all data in this interpreter, so it can be safely reused.
+	pub fn reset(&mut self) {
+		self.value_stack.truncate(0);
+		self.call_stack.truncate(0);
+		self.state = InterpreterState::Initialized;
+	}
+
+	pub(crate) fn state(&self) -> &InterpreterState {
 		&self.state
 	}
 
-	pub fn start_execution<E: Externals>(
+	pub(crate) fn start_execution<E: Externals>(
 		&mut self,
 		externals: &mut E,
 		func: &FuncRef,
@@ -220,7 +232,7 @@ impl Interpreter {
 		Ok(opt_return_value)
 	}
 
-	pub fn resume_execution<'a, E: Externals + 'a>(
+	pub(crate) fn resume_execution<'a, E: Externals + 'a>(
 		&mut self,
 		return_val: Option<RuntimeValue>,
 		externals: &'a mut E,
@@ -1320,6 +1332,15 @@ impl ValueStack {
 	#[inline]
 	fn len(&self) -> usize {
 		self.0.len()
+	}
+
+	/// Shortens the stack, keeping the first `len` elements and dropping
+	/// the rest.
+	///
+	/// If `len` is greater than the stack's current length, this has no
+	/// effect.
+	fn truncate(&mut self, new_len: usize) {
+		self.0.truncate(new_len)
 	}
 }
 
