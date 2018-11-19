@@ -1,17 +1,10 @@
-#![feature(test)]
-
-extern crate test;
-extern crate wasmi;
-#[macro_use]
-extern crate assert_matches;
-extern crate wabt;
-
 use std::error;
 use std::fs::File;
 use test::Bencher;
-use wasmi::{ImportsBuilder, Module, ModuleInstance, NopExternals, RuntimeValue};
-
-mod reuse;
+use wasmi::{
+	FuncInstance, ImportsBuilder, Interpreter, Module, ModuleInstance, NopExternals, RuntimeValue, StackSize,
+	StackWithLimit,
+};
 
 // Load a module from a file.
 fn load_from_file(filename: &str) -> Result<Module, Box<error::Error>> {
@@ -22,13 +15,23 @@ fn load_from_file(filename: &str) -> Result<Module, Box<error::Error>> {
 	Ok(Module::from_buffer(buf)?)
 }
 
+fn load_kernel() -> Module {
+	load_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
+		.expect("failed to load wasm_kernel. Is `build.rs` broken?")
+}
+
 const REVCOMP_INPUT: &'static [u8] = include_bytes!("./revcomp-input.txt");
 const REVCOMP_OUTPUT: &'static [u8] = include_bytes!("./revcomp-output.txt");
 
+fn new_interpreter() -> Interpreter {
+	let value_stack = StackWithLimit::with_size(StackSize::from_element_count(1024 * 1024));
+	let call_stack = StackWithLimit::with_size(StackSize::from_element_count(1024 * 1024));
+	Interpreter::new(value_stack, call_stack)
+}
+
 #[bench]
 fn bench_tiny_keccak(b: &mut Bencher) {
-	let wasm_kernel = load_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
-		.expect("failed to load wasm_kernel. Is `build.rs` broken?");
+	let wasm_kernel = load_kernel();
 
 	let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
 		.expect("failed to instantiate wasm module")
@@ -39,17 +42,19 @@ fn bench_tiny_keccak(b: &mut Bencher) {
 		Ok(Some(v @ RuntimeValue::I32(_))) => v
 	);
 
+	let func = instance.export_by_name("bench_tiny_keccak").unwrap();
+	let func = func.as_func().unwrap();
+	let mut interpreter = new_interpreter();
+
 	b.iter(|| {
-		instance
-			.invoke_export("bench_tiny_keccak", &[test_data_ptr], &mut NopExternals)
-			.unwrap();
+		interpreter.reset();
+		FuncInstance::invoke_configurable(&func, &[test_data_ptr], &mut NopExternals, &mut interpreter).unwrap()
 	});
 }
 
 #[bench]
 fn bench_rev_comp(b: &mut Bencher) {
-	let wasm_kernel = load_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
-		.expect("failed to load wasm_kernel. Is `build.rs` broken?");
+	let wasm_kernel = load_kernel();
 
 	let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
 		.expect("failed to instantiate wasm module")
@@ -83,10 +88,13 @@ fn bench_rev_comp(b: &mut Bencher) {
 		.set(input_data_mem_offset, REVCOMP_INPUT)
 		.expect("can't load test data into a wasm memory");
 
+	let func = instance.export_by_name("bench_rev_complement").unwrap();
+	let func = func.as_func().unwrap();
+	let mut interpreter = new_interpreter();
+
 	b.iter(|| {
-		instance
-			.invoke_export("bench_rev_complement", &[test_data_ptr], &mut NopExternals)
-			.unwrap();
+		interpreter.reset();
+		FuncInstance::invoke_configurable(&func, &[test_data_ptr], &mut NopExternals, &mut interpreter).unwrap()
 	});
 
 	// Verify the result.
@@ -103,8 +111,7 @@ fn bench_rev_comp(b: &mut Bencher) {
 
 #[bench]
 fn bench_regex_redux(b: &mut Bencher) {
-	let wasm_kernel = load_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
-		.expect("failed to load wasm_kernel. Is `build.rs` broken?");
+	let wasm_kernel = load_kernel();
 
 	let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
 		.expect("failed to instantiate wasm module")
@@ -138,10 +145,13 @@ fn bench_regex_redux(b: &mut Bencher) {
 		.set(input_data_mem_offset, REVCOMP_INPUT)
 		.expect("can't load test data into a wasm memory");
 
+	let func = instance.export_by_name("bench_regex_redux").unwrap();
+	let func = func.as_func().unwrap();
+	let mut interpreter = new_interpreter();
+
 	b.iter(|| {
-		instance
-			.invoke_export("bench_regex_redux", &[test_data_ptr], &mut NopExternals)
-			.unwrap();
+		interpreter.reset();
+		FuncInstance::invoke_configurable(&func, &[test_data_ptr], &mut NopExternals, &mut interpreter).unwrap()
 	});
 }
 
@@ -167,9 +177,16 @@ fn fac_recursive(b: &mut Bencher) {
 		.expect("failed to instantiate wasm module")
 		.assert_no_start();
 
+	let func = instance.export_by_name("fac-rec").unwrap();
+	let func = func.as_func().unwrap();
+	let mut interpreter = new_interpreter();
+
 	b.iter(|| {
-		let value = instance.invoke_export("fac-rec", &[RuntimeValue::I64(25)], &mut NopExternals);
-		assert_matches!(value, Ok(Some(RuntimeValue::I64(7034535277573963776))));
+		interpreter.reset();
+		let value =
+			FuncInstance::invoke_configurable(&func, &[RuntimeValue::I64(25)], &mut NopExternals, &mut interpreter)
+				.unwrap();
+		assert_matches!(value, Some(RuntimeValue::I64(7034535277573963776)));
 	});
 }
 
@@ -200,9 +217,16 @@ fn fac_opt(b: &mut Bencher) {
 		.expect("failed to instantiate wasm module")
 		.assert_no_start();
 
+	let func = instance.export_by_name("fac-opt").unwrap();
+	let func = func.as_func().unwrap();
+	let mut interpreter = new_interpreter();
+
 	b.iter(|| {
-		let value = instance.invoke_export("fac-opt", &[RuntimeValue::I64(25)], &mut NopExternals);
-		assert_matches!(value, Ok(Some(RuntimeValue::I64(7034535277573963776))));
+		interpreter.reset();
+		let value =
+			FuncInstance::invoke_configurable(&func, &[RuntimeValue::I64(25)], &mut NopExternals, &mut interpreter)
+				.unwrap();
+		assert_matches!(value, Some(RuntimeValue::I64(7034535277573963776)));
 	});
 }
 
@@ -234,9 +258,16 @@ fn recursive_ok(b: &mut Bencher) {
 		.expect("failed to instantiate wasm module")
 		.assert_no_start();
 
+	let func = instance.export_by_name("call").unwrap();
+	let func = func.as_func().unwrap();
+	let mut interpreter = new_interpreter();
+
 	b.iter(|| {
-		let value = instance.invoke_export("call", &[RuntimeValue::I32(8000)], &mut NopExternals);
-		assert_matches!(value, Ok(Some(RuntimeValue::I32(0))));
+		interpreter.reset();
+		let value =
+			FuncInstance::invoke_configurable(&func, &[RuntimeValue::I32(8000)], &mut NopExternals, &mut interpreter)
+				.unwrap();
+		assert_matches!(value, Some(RuntimeValue::I32(0)));
 	});
 }
 
@@ -267,8 +298,13 @@ fn recursive_trap(b: &mut Bencher) {
 		.expect("failed to instantiate wasm module")
 		.assert_no_start();
 
+	let func = instance.export_by_name("call").unwrap();
+	let func = func.as_func().unwrap();
+	let mut interpreter = new_interpreter();
+
 	b.iter(|| {
-		let value = instance.invoke_export("call", &[RuntimeValue::I32(1000)], &mut NopExternals);
-		assert_matches!(value, Err(_));
+		interpreter.reset();
+		FuncInstance::invoke_configurable(&func, &[RuntimeValue::I32(1000)], &mut NopExternals, &mut interpreter)
+			.unwrap_err();
 	});
 }
