@@ -204,10 +204,7 @@ impl Interpreter {
 		externals: &mut E,
 		func: &FuncRef,
 		args: &[RuntimeValue],
-		return_type: Option<ValueType>,
 	) -> Result<Option<RuntimeValue>, Trap> {
-		debug_assert_eq!(func.signature().return_type(), return_type);
-
 		// Ensure that the VM has not been executed. This is checked in `FuncInvocation::start_execution`.
 		assert!(self.state == InterpreterState::Initialized);
 
@@ -224,7 +221,10 @@ impl Interpreter {
 		self.state = InterpreterState::Started;
 		self.run_interpreter_loop(externals)?;
 
-		let opt_return_value = return_type.map(|vt| self.value_stack.pop().with_type(vt));
+		let opt_return_value = func
+			.signature()
+			.return_type()
+			.map(|vt| self.value_stack.pop().with_type(vt));
 
 		// Ensure that stack is empty after the execution. This is guaranteed by the validation properties.
 		assert!(self.value_stack.len() == 0);

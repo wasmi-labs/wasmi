@@ -138,7 +138,7 @@ impl FuncInstance {
 		check_function_args(func.signature(), &args)?;
 		match *func.as_internal() {
 			FuncInstanceInternal::Internal { .. } => {
-				interpreter.start_execution(externals, func, args, func.signature().return_type())
+				interpreter.start_execution(externals, func, args)
 			}
 			FuncInstanceInternal::Host {
 				ref host_func_index, ..
@@ -268,14 +268,13 @@ impl FuncInvocation {
 		externals: &'externals mut E,
 		func: &FuncRef,
 		args: &[RuntimeValue],
-		return_type: Option<ValueType>,
 	) -> Result<Option<RuntimeValue>, ResumableError> {
 		match self.kind {
 			FuncInvocationKind::Internal(ref mut interpreter) => {
 				if interpreter.state() != &InterpreterState::Initialized {
 					return Err(ResumableError::AlreadyStarted);
 				}
-				Ok(interpreter.start_execution(externals, func, args, return_type)?)
+				Ok(interpreter.start_execution(externals, func, args)?)
 			}
 			FuncInvocationKind::Host {
 				ref mut finished,
