@@ -1321,7 +1321,7 @@ impl ValueStack {
 
 	#[inline]
 	fn pop(&mut self) -> RuntimeValueInternal {
-		self.0.pop().expect("pre-validated")
+		unsafe { self.0.pop_unchecked() }
 	}
 
 	#[inline]

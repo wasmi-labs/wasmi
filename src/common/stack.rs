@@ -1,4 +1,5 @@
 use core::marker::PhantomData;
+use core::ptr;
 use core::usize;
 
 #[allow(unused_imports)]
@@ -77,22 +78,47 @@ impl<T> StackWithLimit<T> {
 	/// # Errors
 	///
 	/// Returns Err(StackOverflow) if stack is already full.
+	#[inline]
 	pub(crate) fn push(&mut self, value: T) -> Result<(), StackOverflow> {
-		let ret = if self.stack.len() < self.limit {
-			self.stack.push(value);
-			Ok(())
-		} else {
-			Err(StackOverflow)
-		};
-		debug_assert!(
-			self.stack.len() <= self.limit,
-			"Stack length should never be larger than stack limit."
-		);
-		ret
+		if self.stack.len() == self.stack.capacity() {
+			if self.stack.len() == self.limit {
+				return Err(StackOverflow);
+			}
+			// grows exponentially, just like Vec normally does
+			// https://doc.rust-lang.org/1.26.0/src/alloc/raw_vec.rs.html#462
+			let desired_len = self
+				.stack
+				.len()
+				.checked_mul(2)
+				.unwrap_or(usize::MAX)
+				.min(self.limit)
+				.max(1);
+			let additional_len = desired_len - self.stack.len();
+			self.stack.reserve_exact(additional_len);
+		}
+		debug_assert!(self.stack.len() < self.limit);
+		debug_assert!(self.stack.len() < self.stack.capacity());
+		let len = self.stack.len();
+		unsafe {
+			ptr::write(self.stack.get_unchecked_mut(len), value);
+			self.stack.set_len(len + 1);
+		}
+		Ok(())
 	}
 
 	pub(crate) fn pop(&mut self) -> Option<T> {
 		self.stack.pop()
+	}
+
+	/// Remove and Return top element. Does not check for emptyness.
+	/// If this is called on a zero length stack, bad things will happen.
+	/// Do not call this method unless you can prove the stack has length.
+	#[inline]
+	pub(crate) unsafe fn pop_unchecked(&mut self) -> T {
+		debug_assert!(self.stack.len() > 0);
+		let len = self.stack.len();
+		self.stack.set_len(len - 1);
+		ptr::read(self.stack.get_unchecked(self.stack.len()))
 	}
 
 	/// Return optional reference to item `depth` distance away from top
@@ -360,12 +386,34 @@ mod test {
 			StackSizeInitial(StackSize::from_element_count(0)),
 			StackSizeLimit(StackSize::from_element_count(usize::MAX)),
 		);
-		println!(
-			"{}",
-			StackSizeLimit(StackSize::<i32>::from_element_count(usize::MAX))
-				.0
-				.element_count()
-		);
+
 		exersize(bstack);
+	}
+
+	// Make sure the stack resizes properly.
+	#[test]
+	fn must_resize() {
+		let mut bstack = StackWithLimit::<i32>::new(
+			StackSizeInitial(StackSize::from_element_count(2)),
+			StackSizeLimit(StackSize::from_element_count(4)),
+		);
+		bstack.push(2).unwrap();
+		bstack.push(4).unwrap();
+		bstack.push(8).unwrap();
+		bstack.push(16).unwrap();
+		bstack.push(16).unwrap_err();
+		assert_eq!(bstack.pop(), Some(16));
+		assert_eq!(bstack.pop(), Some(8));
+		assert_eq!(bstack.pop(), Some(4));
+		assert_eq!(bstack.pop(), Some(2));
+	}
+
+	#[test]
+	fn pop_unchecked() {
+		let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(20));
+		bstack.push(8).unwrap();
+		bstack.push(0).unwrap();
+		assert_eq!(unsafe { bstack.pop_unchecked() }, 0);
+		assert_eq!(unsafe { bstack.pop_unchecked() }, 8);
 	}
 }
