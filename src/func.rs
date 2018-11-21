@@ -1,13 +1,12 @@
 #[allow(unused_imports)]
 use alloc::prelude::*;
 use alloc::rc::{Rc, Weak};
-use common::stack::{StackSize, StackWithLimit};
 use core::fmt;
 use host::Externals;
 use isa;
 use module::ModuleInstance;
 use parity_wasm::elements::Local;
-use runner::{check_function_args, Interpreter, InterpreterState, DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT};
+use runner::{check_function_args, Interpreter, InterpreterState};
 use types::ValueType;
 use value::RuntimeValue;
 use {Signature, Trap};
@@ -137,9 +136,7 @@ impl FuncInstance {
 	) -> Result<Option<RuntimeValue>, Trap> {
 		check_function_args(func.signature(), &args)?;
 		match *func.as_internal() {
-			FuncInstanceInternal::Internal { .. } => {
-				interpreter.start_execution(externals, func, args)
-			}
+			FuncInstanceInternal::Internal { .. } => interpreter.start_execution(externals, func, args),
 			FuncInstanceInternal::Host {
 				ref host_func_index, ..
 			} => externals.invoke_index(*host_func_index, args.into()),
@@ -160,9 +157,7 @@ impl FuncInstance {
 		args: &[RuntimeValue],
 		externals: &mut E,
 	) -> Result<Option<RuntimeValue>, Trap> {
-		let value_stack = StackWithLimit::with_size(StackSize::from_element_count(DEFAULT_VALUE_STACK_LIMIT));
-		let call_stack = StackWithLimit::with_size(StackSize::from_element_count(DEFAULT_CALL_STACK_LIMIT));
-		let mut interpreter = Interpreter::new(value_stack, call_stack);
+		let mut interpreter = Interpreter::new();
 		Self::invoke_configurable(func, args, externals, &mut interpreter)
 	}
 
@@ -183,9 +178,7 @@ impl FuncInstance {
 	pub fn invoke_resumable(func: &FuncRef) -> FuncInvocation {
 		match *func.as_internal() {
 			FuncInstanceInternal::Internal { .. } => {
-				let value_stack = StackWithLimit::with_size(StackSize::from_element_count(DEFAULT_VALUE_STACK_LIMIT));
-				let call_stack = StackWithLimit::with_size(StackSize::from_element_count(DEFAULT_CALL_STACK_LIMIT));
-				let interpreter = Interpreter::new(value_stack, call_stack);
+				let interpreter = Interpreter::new();
 				FuncInvocation {
 					kind: FuncInvocationKind::Internal(interpreter),
 				}

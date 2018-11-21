@@ -1,10 +1,7 @@
 use std::error;
 use std::fs::File;
 use test::Bencher;
-use wasmi::{
-	FuncInstance, ImportsBuilder, Interpreter, Module, ModuleInstance, NopExternals, RuntimeValue, StackSize,
-	StackWithLimit,
-};
+use wasmi::{FuncInstance, ImportsBuilder, Interpreter, Module, ModuleInstance, NopExternals, RuntimeValue};
 
 // Load a module from a file.
 fn load_from_file(filename: &str) -> Result<Module, Box<error::Error>> {
@@ -23,12 +20,6 @@ fn load_kernel() -> Module {
 const REVCOMP_INPUT: &'static [u8] = include_bytes!("./revcomp-input.txt");
 const REVCOMP_OUTPUT: &'static [u8] = include_bytes!("./revcomp-output.txt");
 
-fn new_interpreter() -> Interpreter {
-	let value_stack = StackWithLimit::with_size(StackSize::from_element_count(1024 * 1024));
-	let call_stack = StackWithLimit::with_size(StackSize::from_element_count(1024 * 1024));
-	Interpreter::new(value_stack, call_stack)
-}
-
 #[bench]
 fn bench_tiny_keccak(b: &mut Bencher) {
 	let wasm_kernel = load_kernel();
@@ -44,7 +35,7 @@ fn bench_tiny_keccak(b: &mut Bencher) {
 
 	let func = instance.export_by_name("bench_tiny_keccak").unwrap();
 	let func = func.as_func().unwrap();
-	let mut interpreter = new_interpreter();
+	let mut interpreter = Interpreter::new();
 
 	b.iter(|| {
 		interpreter.reset();
@@ -90,7 +81,7 @@ fn bench_rev_comp(b: &mut Bencher) {
 
 	let func = instance.export_by_name("bench_rev_complement").unwrap();
 	let func = func.as_func().unwrap();
-	let mut interpreter = new_interpreter();
+	let mut interpreter = Interpreter::new();
 
 	b.iter(|| {
 		interpreter.reset();
@@ -147,7 +138,7 @@ fn bench_regex_redux(b: &mut Bencher) {
 
 	let func = instance.export_by_name("bench_regex_redux").unwrap();
 	let func = func.as_func().unwrap();
-	let mut interpreter = new_interpreter();
+	let mut interpreter = Interpreter::new();
 
 	b.iter(|| {
 		interpreter.reset();
@@ -179,7 +170,7 @@ fn fac_recursive(b: &mut Bencher) {
 
 	let func = instance.export_by_name("fac-rec").unwrap();
 	let func = func.as_func().unwrap();
-	let mut interpreter = new_interpreter();
+	let mut interpreter = Interpreter::new();
 
 	b.iter(|| {
 		interpreter.reset();
@@ -219,7 +210,7 @@ fn fac_opt(b: &mut Bencher) {
 
 	let func = instance.export_by_name("fac-opt").unwrap();
 	let func = func.as_func().unwrap();
-	let mut interpreter = new_interpreter();
+	let mut interpreter = Interpreter::new();
 
 	b.iter(|| {
 		interpreter.reset();
@@ -260,7 +251,7 @@ fn recursive_ok(b: &mut Bencher) {
 
 	let func = instance.export_by_name("call").unwrap();
 	let func = func.as_func().unwrap();
-	let mut interpreter = new_interpreter();
+	let mut interpreter = Interpreter::new();
 
 	b.iter(|| {
 		interpreter.reset();
@@ -300,7 +291,7 @@ fn recursive_trap(b: &mut Bencher) {
 
 	let func = instance.export_by_name("call").unwrap();
 	let func = func.as_func().unwrap();
-	let mut interpreter = new_interpreter();
+	let mut interpreter = Interpreter::new();
 
 	b.iter(|| {
 		interpreter.reset();

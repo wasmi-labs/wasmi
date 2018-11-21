@@ -1,6 +1,6 @@
 #[allow(unused_imports)]
 use alloc::prelude::*;
-use common::stack::{StackOverflow, StackWithLimit};
+use common::stack::{StackOverflow, StackSize, StackWithLimit};
 use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use core::fmt;
 use core::ops;
@@ -172,10 +172,18 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
+	/// Initialize an interpreter with defaults stack sizes.
+	pub fn new() -> Interpreter {
+		Interpreter::with_stacks(
+			StackWithLimit::with_size(StackSize::from_element_count(DEFAULT_VALUE_STACK_LIMIT)),
+			StackWithLimit::with_size(StackSize::from_element_count(DEFAULT_CALL_STACK_LIMIT)),
+		)
+	}
+
 	/// Initialize an interpreter that will use `value_stack` and `call_stack`.
 	///
 	/// `value_stack` `call_stack` determine the allowed stack size during later executions.
-	pub fn new(
+	pub fn with_stacks(
 		value_stack: StackWithLimit<RuntimeValueInternal>,
 		call_stack: StackWithLimit<FunctionContext>,
 	) -> Interpreter {
