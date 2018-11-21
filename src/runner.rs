@@ -183,6 +183,21 @@ impl Interpreter {
 	/// Initialize an interpreter that will use `value_stack` and `call_stack`.
 	///
 	/// `value_stack` `call_stack` determine the allowed stack size during later executions.
+	///
+	/// ```
+	/// # extern crate wasmi;
+	/// use wasmi::{Interpreter, StackWithLimit, StackSize};
+	/// let interpreter = Interpreter::with_stacks(
+	///     StackWithLimit::with_size(StackSize::from_byte_count(8192)),
+	///     StackWithLimit::with_size(StackSize::from_element_count(2048)),
+	/// );
+	/// # let value_stack_size = StackSize::from_byte_count(8192);
+	/// # let value_stack = StackWithLimit::with_size(value_stack_size);
+	/// # let interpreter = Interpreter::with_stacks(
+	/// #     value_stack,
+	/// #     StackWithLimit::with_size(StackSize::from_element_count(2048)),
+	/// # );
+	/// ```
 	pub fn with_stacks(
 		value_stack: StackWithLimit<RuntimeValueInternal>,
 		call_stack: StackWithLimit<FunctionContext>,
