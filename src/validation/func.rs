@@ -1377,7 +1377,9 @@ fn make_top_frame_polymorphic(
 	debug_assert!(frame.value_stack_len <= value_stack.len());
 	while value_stack.len() > frame.value_stack_len {
 		value_stack.pop().expect(
-			"frame.value_stack_len >= 0, value_stack.len() > frame.value_stack_len :. value_stack.len() > 0; qed",
+			"The value stack is empty, this should never happen since \
+			 frame.value_stack_len >= 0 and value_stack.len() > frame.value_stack_len, \
+			 so therefore value_stack.len() must be more than 0",
 		);
 	}
 
@@ -1402,7 +1404,7 @@ fn pop_value(
 	let actual_value = if stack_is_empty && is_stack_polymorphic {
 		StackValueType::Any
 	} else {
-		let value_stack_min = frame_stack.top().expect("at least 1 topmost block").value_stack_len;
+		let value_stack_min = frame_stack.top().expect("Expected a non-empty frame stack.").value_stack_len;
 		if value_stack.len() <= value_stack_min {
 			return Err(Error("Trying to access parent frame stack values.".into()));
 		}
