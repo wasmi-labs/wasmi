@@ -86,13 +86,7 @@ impl<T> StackWithLimit<T> {
 			}
 			// grows exponentially, just like Vec normally does
 			// https://doc.rust-lang.org/1.26.0/src/alloc/raw_vec.rs.html#462
-			let desired_len = self
-				.stack
-				.len()
-				.checked_mul(2)
-				.unwrap_or(usize::MAX)
-				.min(self.limit)
-				.max(1);
+			let desired_len = self.stack.len().saturating_mul(2).min(self.limit).max(1);
 			let additional_len = desired_len - self.stack.len();
 			self.stack.reserve_exact(additional_len);
 		}
@@ -231,6 +225,8 @@ impl<T> StackWithLimit<T> {
 pub struct StackSize<T> {
 	num_elements: usize,
 	// PhantomData is a zero-sized type for keeping track of T without rustc complaining.
+	// *const T or &'a T is recommended when T is not actually owned.
+	// https://doc.rust-lang.org/std/marker/struct.PhantomData.html#ownership-and-the-drop-check
 	phantom: PhantomData<*const T>,
 }
 
