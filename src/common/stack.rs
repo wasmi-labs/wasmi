@@ -46,7 +46,7 @@ impl<T> StackWithLimit<T> {
 	/// );
 	/// ```
 	///
-	/// # Errors
+	/// # Panics
 	///
 	/// In debug mode, panics if `initial_size` is larger than `limit`.
 	pub fn new(initial_size: StackSizeInitial<T>, limit: StackSizeLimit<T>) -> StackWithLimit<T> {
