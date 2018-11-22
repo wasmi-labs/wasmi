@@ -130,10 +130,10 @@ impl<T> StackWithLimit<T> {
 	/// ```
 	/// # extern crate wasmi;
 	/// # use wasmi::{StackWithLimit, StackSize};
-	/// let bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
+	/// let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
 	/// bstack.push(4);
-	/// assert_eq!(bstack.nth_from_top(0, Some(&4));
-	/// assert_eq!(bstack.nth_from_top(1, None);
+	/// assert_eq!(bstack.nth_from_top(0), Some(&4));
+	/// assert_eq!(bstack.nth_from_top(1), None);
 	/// ```
 	pub fn nth_from_top(&self, depth: usize) -> Option<&T> {
 		// Be cognizant of integer underflow and overflow here. Both are possible in this situation.
