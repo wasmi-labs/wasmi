@@ -6,7 +6,7 @@ use host::Externals;
 use isa;
 use module::ModuleInstance;
 use parity_wasm::elements::Local;
-use runner::{check_function_args, Interpreter, InterpreterState};
+use runner::{Interpreter, InterpreterState};
 use types::ValueType;
 use value::RuntimeValue;
 use {Signature, Trap};
@@ -117,50 +117,6 @@ impl FuncInstance {
 		}
 	}
 
-	/// Invoke this function with extra configuration parameters.
-	///
-	/// This is an experimental API
-	///
-	/// # Errors
-	///
-	/// Returns `Err` if `args` types is not match function [`signature`] or
-	/// if [`Trap`] at execution time occured.
-	///
-	/// [`signature`]: #method.signature
-	/// [`Trap`]: #enum.Trap.html
-	pub fn invoke_configurable<E: Externals>(
-		func: &FuncRef,
-		args: &[RuntimeValue],
-		externals: &mut E,
-		interpreter: &mut Interpreter,
-	) -> Result<Option<RuntimeValue>, Trap> {
-		check_function_args(func.signature(), &args)?;
-		match *func.as_internal() {
-			FuncInstanceInternal::Internal { .. } => interpreter.start_execution(externals, func, args),
-			FuncInstanceInternal::Host {
-				ref host_func_index, ..
-			} => externals.invoke_index(*host_func_index, args.into()),
-		}
-	}
-
-	/// Invoke this function.
-	///
-	/// # Errors
-	///
-	/// Returns `Err` if `args` types is not match function [`signature`] or
-	/// if [`Trap`] at execution time occured.
-	///
-	/// [`signature`]: #method.signature
-	/// [`Trap`]: #enum.Trap.html
-	pub fn invoke<E: Externals>(
-		func: &FuncRef,
-		args: &[RuntimeValue],
-		externals: &mut E,
-	) -> Result<Option<RuntimeValue>, Trap> {
-		let mut interpreter = Interpreter::new();
-		Self::invoke_configurable(func, args, externals, &mut interpreter)
-	}
-
 	/// Invoke the function, get a resumable handle. This handle can then be used to [`start_execution`]. If a
 	/// Host trap happens, caller can use [`resume_execution`] to feed the expected return value back in, and then
 	/// continue the execution.
@@ -267,7 +223,7 @@ impl FuncInvocation {
 				if interpreter.state() != &InterpreterState::Initialized {
 					return Err(ResumableError::AlreadyStarted);
 				}
-				Ok(interpreter.start_execution(externals, func, args)?)
+				Ok(interpreter.start_execution(func, args, externals)?)
 			}
 			FuncInvocationKind::Host {
 				ref mut finished,

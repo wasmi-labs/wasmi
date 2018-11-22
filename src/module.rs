@@ -21,6 +21,7 @@ use host::Externals;
 use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use types::{GlobalDescriptor, TableDescriptor, MemoryDescriptor};
 use memory_units::Pages;
+use runner::Interpreter;
 
 /// Reference to a [`ModuleInstance`].
 ///
@@ -629,7 +630,7 @@ impl ModuleInstance {
 			}
 		};
 
-		FuncInstance::invoke(&func_instance, args, externals)
+		Interpreter::new().invoke(&func_instance, args, externals)
 			.map_err(|t| Error::Trap(t))
 	}
 
@@ -688,7 +689,7 @@ impl<'a> NotStartedModuleRef<'a> {
 			let start_func = self.instance.func_by_index(start_fn_idx).expect(
 				"Due to validation start function should exists",
 			);
-			FuncInstance::invoke(&start_func, &[], state)?;
+			Interpreter::new().invoke(&start_func, &[], state)?;
 		}
 		Ok(self.instance)
 	}

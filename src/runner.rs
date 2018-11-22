@@ -5,8 +5,8 @@ use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use core::fmt;
 use core::ops;
 use core::{u32, usize};
-use func::{FuncInstance, FuncInstanceInternal, FuncRef};
-use host::Externals;
+use func::{FuncInstanceInternal, FuncRef};
+use host::{Externals, RuntimeArgs};
 use isa;
 use memory::MemoryRef;
 use memory_units::Pages;
@@ -222,11 +222,35 @@ impl Interpreter {
 		&self.state
 	}
 
-	pub(crate) fn start_execution<E: Externals>(
+	/// Run func using this interpreter.
+	///
+	/// # Errors
+	///
+	/// Returns `Err` if `args` types is not match function [`signature`] or
+	/// if [`Trap`] at execution time occured.
+	///
+	/// [`signature`]: #method.signature
+	/// [`Trap`]: #enum.Trap.html
+	pub fn invoke<E: Externals>(
 		&mut self,
-		externals: &mut E,
 		func: &FuncRef,
 		args: &[RuntimeValue],
+		externals: &mut E,
+	) -> Result<Option<RuntimeValue>, Trap> {
+		check_function_args(func.signature(), &args)?;
+		match *func.as_internal() {
+			FuncInstanceInternal::Internal { .. } => self.start_execution(func, args, externals),
+			FuncInstanceInternal::Host {
+				ref host_func_index, ..
+			} => externals.invoke_index(*host_func_index, args.into()),
+		}
+	}
+
+	pub(crate) fn start_execution<E: Externals>(
+		&mut self,
+		func: &FuncRef,
+		args: &[RuntimeValue],
+		externals: &mut E,
 	) -> Result<Option<RuntimeValue>, Trap> {
 		// Ensure that the VM has not been executed. This is checked in `FuncInvocation::start_execution`.
 		assert!(self.state == InterpreterState::Initialized);
@@ -318,12 +342,17 @@ impl Interpreter {
 							self.call_stack.push(function_context)?;
 							self.call_stack.push(nested_context)?;
 						}
-						FuncInstanceInternal::Host { ref signature, .. } => {
+						FuncInstanceInternal::Host {
+							ref signature,
+							host_func_index,
+						} => {
 							let args = prepare_function_args(signature, &mut self.value_stack);
 							// We push the function context first. If the VM is not resumable, it does no harm. If it is, we then save the context here.
 							self.call_stack.push(function_context)?;
 
-							let return_val = match FuncInstance::invoke(&nested_func, &args, externals) {
+							let return_val = match externals
+								.invoke_index(host_func_index, RuntimeArgs::from(args.as_ref()))
+							{
 								Ok(val) => val,
 								Err(trap) => {
 									if trap.kind().is_host() {

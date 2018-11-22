@@ -1,7 +1,7 @@
 use std::error;
 use std::fs::File;
 use test::Bencher;
-use wasmi::{FuncInstance, ImportsBuilder, Interpreter, Module, ModuleInstance, NopExternals, RuntimeValue};
+use wasmi::{ImportsBuilder, Interpreter, Module, ModuleInstance, NopExternals, RuntimeValue};
 
 // Load a module from a file.
 fn load_from_file(filename: &str) -> Result<Module, Box<error::Error>> {
@@ -39,7 +39,7 @@ fn bench_tiny_keccak(b: &mut Bencher) {
 
 	b.iter(|| {
 		interpreter.reset();
-		FuncInstance::invoke_configurable(&func, &[test_data_ptr], &mut NopExternals, &mut interpreter).unwrap()
+		interpreter.invoke(&func, &[test_data_ptr], &mut NopExternals).unwrap()
 	});
 }
 
@@ -85,7 +85,7 @@ fn bench_rev_comp(b: &mut Bencher) {
 
 	b.iter(|| {
 		interpreter.reset();
-		FuncInstance::invoke_configurable(&func, &[test_data_ptr], &mut NopExternals, &mut interpreter).unwrap()
+		interpreter.invoke(&func, &[test_data_ptr], &mut NopExternals).unwrap()
 	});
 
 	// Verify the result.
@@ -142,7 +142,7 @@ fn bench_regex_redux(b: &mut Bencher) {
 
 	b.iter(|| {
 		interpreter.reset();
-		FuncInstance::invoke_configurable(&func, &[test_data_ptr], &mut NopExternals, &mut interpreter).unwrap()
+		interpreter.invoke(&func, &[test_data_ptr], &mut NopExternals).unwrap()
 	});
 }
 
@@ -174,9 +174,9 @@ fn fac_recursive(b: &mut Bencher) {
 
 	b.iter(|| {
 		interpreter.reset();
-		let value =
-			FuncInstance::invoke_configurable(&func, &[RuntimeValue::I64(25)], &mut NopExternals, &mut interpreter)
-				.unwrap();
+		let value = interpreter
+			.invoke(&func, &[RuntimeValue::I64(25)], &mut NopExternals)
+			.unwrap();
 		assert_matches!(value, Some(RuntimeValue::I64(7034535277573963776)));
 	});
 }
@@ -214,9 +214,9 @@ fn fac_opt(b: &mut Bencher) {
 
 	b.iter(|| {
 		interpreter.reset();
-		let value =
-			FuncInstance::invoke_configurable(&func, &[RuntimeValue::I64(25)], &mut NopExternals, &mut interpreter)
-				.unwrap();
+		let value = interpreter
+			.invoke(&func, &[RuntimeValue::I64(25)], &mut NopExternals)
+			.unwrap();
 		assert_matches!(value, Some(RuntimeValue::I64(7034535277573963776)));
 	});
 }
@@ -255,9 +255,9 @@ fn recursive_ok(b: &mut Bencher) {
 
 	b.iter(|| {
 		interpreter.reset();
-		let value =
-			FuncInstance::invoke_configurable(&func, &[RuntimeValue::I32(8000)], &mut NopExternals, &mut interpreter)
-				.unwrap();
+		let value = interpreter
+			.invoke(&func, &[RuntimeValue::I32(8000)], &mut NopExternals)
+			.unwrap();
 		assert_matches!(value, Some(RuntimeValue::I32(0)));
 	});
 }
@@ -295,7 +295,8 @@ fn recursive_trap(b: &mut Bencher) {
 
 	b.iter(|| {
 		interpreter.reset();
-		FuncInstance::invoke_configurable(&func, &[RuntimeValue::I32(1000)], &mut NopExternals, &mut interpreter)
+		interpreter
+			.invoke(&func, &[RuntimeValue::I32(1000)], &mut NopExternals)
 			.unwrap_err();
 	});
 }
