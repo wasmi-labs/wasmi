@@ -209,7 +209,7 @@ impl Interpreter {
 		}
 	}
 
-	// Todo, use types to prevent user from calling start_execution on an inretpreter not in Initialized
+	// Todo, use types to prevent user from calling start_execution on an interpreter not in Initialized
 	// state.
 	/// Wipe all data in this interpreter, so it can be safely reused.
 	pub fn reset(&mut self) {
