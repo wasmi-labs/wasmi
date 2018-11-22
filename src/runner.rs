@@ -1360,7 +1360,9 @@ impl ValueStack {
 
 	#[inline]
 	fn top(&self) -> &RuntimeValueInternal {
-		self.0.top().expect("pre-validated")
+		self.0
+			.top()
+			.expect("The stack is empty, this should never be possible due to the validation step")
 	}
 
 	#[inline]
