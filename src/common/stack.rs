@@ -80,6 +80,7 @@ impl<T> StackWithLimit<T> {
 	/// Returns Err(StackOverflow) if stack is already full.
 	#[inline]
 	pub fn push(&mut self, value: T) -> Result<(), StackOverflow> {
+		debug_assert!(self.stack.capacity() <= self.limit);
 		if self.stack.len() == self.stack.capacity() {
 			if self.stack.len() == self.limit {
 				return Err(StackOverflow);
@@ -100,6 +101,17 @@ impl<T> StackWithLimit<T> {
 		Ok(())
 	}
 
+	/// Remove item from the top of a stack and return it, or `None` if the stack is empty.
+	///
+	/// ```
+	/// # extern crate wasmi;
+	/// # use wasmi::{StackWithLimit, StackSize};
+	/// let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
+	/// bstack.push(2);
+	/// assert_eq!(bstack.pop(), Some(2));
+	/// assert_eq!(bstack.len(), 0);
+	/// assert_eq!(bstack.pop(), None);
+	/// ```
 	pub fn pop(&mut self) -> Option<T> {
 		self.stack.pop()
 	}
@@ -159,42 +171,96 @@ impl<T> StackWithLimit<T> {
 	/// # Panics
 	///
 	/// Panics if `a` or `b` are out of bound.
+	///
+	/// ```
+	/// # extern crate wasmi;
+	/// # use wasmi::{StackWithLimit, StackSize};
+	/// let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
+	/// bstack.push(1);
+	/// bstack.push(2);
+	/// assert_eq!(bstack.top(), Some(&2));
+	/// stack.swap(0, 1);
+	/// assert_eq!(bstack.top(), Some(&1));
+	/// ```
 	#[inline]
 	pub fn swap(&mut self, a: usize, b: usize) {
 		self.stack.swap(a, b)
 	}
 
-	/// Removes an element from the vector and returns it.
+	/// Removes an element from the stack and returns it.
 	///
-	/// The removed element is replaced by the last element of the vector.
-	///
-	/// This does not preserve ordering, but is O(1).
+	/// The removed element is replaced by the element at the top of the stack.
 	///
 	/// # Panics
 	///
 	/// Panics if `index` is out of bounds.
+	///
+	/// ```
+	/// # extern crate wasmi;
+	/// # use wasmi::{StackWithLimit, StackSize};
+	/// let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
+	/// bstack.push(1);
+	/// bstack.push(2);
+	/// assert_eq!(bstack.top(), Some(&2));
+	/// assert_eq!(stack.swap_remove(0), 1);
+	/// assert_eq!(bstack.top(), Some(&2));
+	/// ```
 	pub fn swap_remove(&mut self, index: usize) -> T {
 		self.stack.swap_remove(index)
 	}
 
+	/// Get a reference to the top of the stack, or `None` if the stack is empty.
+	///
+	/// ```
+	/// # extern crate wasmi;
+	/// # use wasmi::{StackWithLimit, StackSize};
+	/// let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
+	/// assert_eq!(bstack.top(), None);
+	/// bstack.push(2);
+	/// assert_eq!(bstack.top(), Some(&2));
+	/// ```
 	pub fn top(&self) -> Option<&T> {
 		self.stack.last()
 	}
 
+	/// Get a mutable reference to the top of the stack, or `None` if the stack is empty.
 	pub fn top_mut(&mut self) -> Option<&mut T> {
 		self.stack.last_mut()
 	}
 
-	// Same as Vec::[truncate](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.truncate)
+	/// Shorten the stack, keeping the bottom len elements and dropping the rest.
+	///
+	/// If new_size is greater then the current stack size, this has no effect.
 	pub fn truncate(&mut self, new_size: usize) {
 		self.stack.truncate(new_size)
 	}
 
+	/// Get number of items in a stack.
+	///
+	/// ```
+	/// # extern crate wasmi;
+	/// # use wasmi::{StackWithLimit, StackSize};
+	/// let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
+	/// assert_eq!(bstack.len(), 0);
+	/// bstack.push(1);
+	/// bstack.push(2);
+	/// assert_eq!(bstack.len(), 2);
+	/// ```
 	#[inline]
 	pub fn len(&self) -> usize {
 		self.stack.len()
 	}
 
+	/// Check whether the stack is empty.
+	///
+	/// ```
+	/// # extern crate wasmi;
+	/// # use wasmi::{StackWithLimit, StackSize};
+	/// let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
+	/// assert_eq!(bstack.is_empty(), true);
+	/// bstack.push(1);
+	/// assert_eq!(bstack.is_empty(), false);
+	/// ```
 	pub fn is_empty(&self) -> bool {
 		self.stack.is_empty()
 	}

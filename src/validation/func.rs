@@ -1404,13 +1404,14 @@ fn pop_value(
 	let actual_value = if stack_is_empty && is_stack_polymorphic {
 		StackValueType::Any
 	} else {
-		let value_stack_min = frame_stack.top().expect("Expected a non-empty frame stack.").value_stack_len;
+		let value_stack_min = frame_stack
+			.top()
+			.expect("Expected a non-empty frame stack.")
+			.value_stack_len;
 		if value_stack.len() <= value_stack_min {
 			return Err(Error("Trying to access parent frame stack values.".into()));
 		}
-		value_stack
-			.pop()
-			.ok_or_else(|| Error("non-empty stack expected".into()))?
+		value_stack.pop().ok_or_else(underflow_err)?
 	};
 	match actual_value {
 		StackValueType::Specific(stack_value_type) if stack_value_type == value_type => Ok(actual_value),
@@ -1456,10 +1457,7 @@ fn pop_label(
 	// Don't pop frame yet. This is essential since we still might pop values from the value stack
 	// and this in turn requires current frame to check whether or not we've reached
 	// unreachable.
-	let block_type = frame_stack
-		.top()
-		.ok_or_else(|| Error("non-empty stack expected".into()))?
-		.block_type;
+	let block_type = frame_stack.top().ok_or_else(underflow_err)?.block_type;
 	match block_type {
 		BlockType::NoResult => (),
 		BlockType::Value(required_value_type) => {
@@ -1467,9 +1465,7 @@ fn pop_label(
 		}
 	}
 
-	let frame = frame_stack
-		.pop()
-		.ok_or_else(|| Error("non-empty stack expected".into()))?;
+	let frame = frame_stack.pop().ok_or_else(underflow_err)?;
 	if value_stack.len() != frame.value_stack_len {
 		return Err(Error(format!(
 			"Unexpected stack height {}, expected {}",
@@ -1488,9 +1484,7 @@ fn top_label(frame_stack: &StackWithLimit<BlockFrame>) -> &BlockFrame {
 }
 
 fn require_label(depth: u32, frame_stack: &StackWithLimit<BlockFrame>) -> Result<&BlockFrame, Error> {
-	frame_stack
-		.nth_from_top(depth as usize)
-		.ok_or_else(|| Error("non-empty stack expected".into()))
+	frame_stack.nth_from_top(depth as usize).ok_or_else(underflow_err)
 }
 
 fn require_target(
@@ -1717,4 +1711,8 @@ impl Sink {
 		);
 		self.ins
 	}
+}
+
+fn underflow_err() -> Error {
+	Error("non-empty stack expected".into())
 }

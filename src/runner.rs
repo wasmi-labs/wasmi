@@ -216,6 +216,7 @@ impl Interpreter {
 		self.state = InterpreterState::Initialized;
 	}
 
+	/// Get current state of interpreter.
 	pub fn state(&self) -> &InterpreterState {
 		&self.state
 	}
