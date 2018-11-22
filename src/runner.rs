@@ -209,10 +209,8 @@ impl Interpreter {
 		}
 	}
 
-	// Todo, use types to prevent user from calling start_execution on an interpreter not in Initialized
-	// state.
-	/// Wipe all data in this interpreter, so it can be safely reused.
-	pub fn reset(&mut self) {
+	/// Wipe all data in this interpreter so it can be safely reused.
+	fn reset(&mut self) {
 		self.value_stack.truncate(0);
 		self.call_stack.truncate(0);
 		self.state = InterpreterState::Initialized;
@@ -252,8 +250,7 @@ impl Interpreter {
 		args: &[RuntimeValue],
 		externals: &mut E,
 	) -> Result<Option<RuntimeValue>, Trap> {
-		// Ensure that the VM has not been executed. This is checked in `FuncInvocation::start_execution`.
-		assert!(self.state == InterpreterState::Initialized);
+		self.reset();
 
 		// Add initial args to value stack
 		for arg in args {

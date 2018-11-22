@@ -37,10 +37,7 @@ fn bench_tiny_keccak(b: &mut Bencher) {
 	let func = func.as_func().unwrap();
 	let mut interpreter = Interpreter::new();
 
-	b.iter(|| {
-		interpreter.reset();
-		interpreter.invoke(&func, &[test_data_ptr], &mut NopExternals).unwrap()
-	});
+	b.iter(|| interpreter.invoke(&func, &[test_data_ptr], &mut NopExternals).unwrap());
 }
 
 #[bench]
@@ -83,10 +80,7 @@ fn bench_rev_comp(b: &mut Bencher) {
 	let func = func.as_func().unwrap();
 	let mut interpreter = Interpreter::new();
 
-	b.iter(|| {
-		interpreter.reset();
-		interpreter.invoke(&func, &[test_data_ptr], &mut NopExternals).unwrap()
-	});
+	b.iter(|| interpreter.invoke(&func, &[test_data_ptr], &mut NopExternals).unwrap());
 
 	// Verify the result.
 	let output_data_mem_offset = assert_matches!(
@@ -140,10 +134,7 @@ fn bench_regex_redux(b: &mut Bencher) {
 	let func = func.as_func().unwrap();
 	let mut interpreter = Interpreter::new();
 
-	b.iter(|| {
-		interpreter.reset();
-		interpreter.invoke(&func, &[test_data_ptr], &mut NopExternals).unwrap()
-	});
+	b.iter(|| interpreter.invoke(&func, &[test_data_ptr], &mut NopExternals).unwrap());
 }
 
 #[bench]
@@ -173,7 +164,6 @@ fn fac_recursive(b: &mut Bencher) {
 	let mut interpreter = Interpreter::new();
 
 	b.iter(|| {
-		interpreter.reset();
 		let value = interpreter
 			.invoke(&func, &[RuntimeValue::I64(25)], &mut NopExternals)
 			.unwrap();
@@ -213,7 +203,6 @@ fn fac_opt(b: &mut Bencher) {
 	let mut interpreter = Interpreter::new();
 
 	b.iter(|| {
-		interpreter.reset();
 		let value = interpreter
 			.invoke(&func, &[RuntimeValue::I64(25)], &mut NopExternals)
 			.unwrap();
@@ -254,7 +243,6 @@ fn recursive_ok(b: &mut Bencher) {
 	let mut interpreter = Interpreter::new();
 
 	b.iter(|| {
-		interpreter.reset();
 		let value = interpreter
 			.invoke(&func, &[RuntimeValue::I32(8000)], &mut NopExternals)
 			.unwrap();
@@ -294,7 +282,6 @@ fn recursive_trap(b: &mut Bencher) {
 	let mut interpreter = Interpreter::new();
 
 	b.iter(|| {
-		interpreter.reset();
 		interpreter
 			.invoke(&func, &[RuntimeValue::I32(1000)], &mut NopExternals)
 			.unwrap_err();
