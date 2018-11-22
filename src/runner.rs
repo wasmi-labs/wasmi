@@ -1368,7 +1368,7 @@ impl ValueStack {
 
 	#[inline]
 	fn pick_mut(&mut self, depth: usize) -> &mut RuntimeValueInternal {
-		self.0.nth_from_top_mut_unchecked(depth - 1)
+		self.0.nth_from_top_mut(depth - 1)
 	}
 
 	#[inline]

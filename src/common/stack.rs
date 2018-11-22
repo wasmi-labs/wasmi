@@ -156,9 +156,14 @@ impl<T> StackWithLimit<T> {
 	/// Return mutable reference to item `depth` distance away from top
 	///
 	/// Does not check whether depth is in range.
-	pub fn nth_from_top_mut_unchecked(&mut self, depth: usize) -> &mut T {
-		let offset = self.stack.len() - 1 - depth;
-		&mut self.stack[offset]
+	///
+	/// # Panics
+	///
+	/// Panics if depth is out of range.
+	pub fn nth_from_top_mut(&mut self, depth: usize) -> &mut T {
+		assert!(depth + 1 <= self.stack.len());
+		let index = self.stack.len() - 1 - depth;
+		unsafe { self.stack.get_unchecked_mut(index) }
 	}
 
 	/// Swaps two elements in the stack.
@@ -179,7 +184,7 @@ impl<T> StackWithLimit<T> {
 	/// bstack.push(1);
 	/// bstack.push(2);
 	/// assert_eq!(bstack.top(), Some(&2));
-	/// stack.swap(0, 1);
+	/// bstack.swap(0, 1);
 	/// assert_eq!(bstack.top(), Some(&1));
 	/// ```
 	#[inline]
@@ -202,7 +207,7 @@ impl<T> StackWithLimit<T> {
 	/// bstack.push(1);
 	/// bstack.push(2);
 	/// assert_eq!(bstack.top(), Some(&2));
-	/// assert_eq!(stack.swap_remove(0), 1);
+	/// assert_eq!(bstack.swap_remove(0), 1);
 	/// assert_eq!(bstack.top(), Some(&2));
 	/// ```
 	pub fn swap_remove(&mut self, index: usize) -> T {
