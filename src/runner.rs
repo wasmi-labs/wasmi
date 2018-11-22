@@ -216,7 +216,7 @@ impl Interpreter {
 		self.state = InterpreterState::Initialized;
 	}
 
-	pub(crate) fn state(&self) -> &InterpreterState {
+	pub fn state(&self) -> &InterpreterState {
 		&self.state
 	}
 
@@ -1228,7 +1228,7 @@ pub struct FunctionContext {
 }
 
 impl FunctionContext {
-	pub(crate) fn new(function: FuncRef) -> Self {
+	pub fn new(function: FuncRef) -> Self {
 		let module = match function.as_internal() {
 			FuncInstanceInternal::Internal { module, .. } => module.upgrade().expect("module deallocated"),
 			FuncInstanceInternal::Host { .. } => panic!("Host functions can't be called as internally defined functions; Thus FunctionContext can be created only with internally defined functions; qed"),

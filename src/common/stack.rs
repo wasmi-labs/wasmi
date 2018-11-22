@@ -79,7 +79,7 @@ impl<T> StackWithLimit<T> {
 	///
 	/// Returns Err(StackOverflow) if stack is already full.
 	#[inline]
-	pub(crate) fn push(&mut self, value: T) -> Result<(), StackOverflow> {
+	pub fn push(&mut self, value: T) -> Result<(), StackOverflow> {
 		if self.stack.len() == self.stack.capacity() {
 			if self.stack.len() == self.limit {
 				return Err(StackOverflow);
@@ -106,7 +106,7 @@ impl<T> StackWithLimit<T> {
 		Ok(())
 	}
 
-	pub(crate) fn pop(&mut self) -> Option<T> {
+	pub fn pop(&mut self) -> Option<T> {
 		self.stack.pop()
 	}
 
@@ -114,7 +114,7 @@ impl<T> StackWithLimit<T> {
 	/// If this is called on a zero length stack, bad things will happen.
 	/// Do not call this method unless you can prove the stack has length.
 	#[inline]
-	pub(crate) unsafe fn pop_unchecked(&mut self) -> T {
+	pub unsafe fn pop_unchecked(&mut self) -> T {
 		debug_assert!(self.stack.len() > 0);
 		let len = self.stack.len();
 		self.stack.set_len(len - 1);
@@ -126,7 +126,16 @@ impl<T> StackWithLimit<T> {
 	/// `bstack.nth_from_top(0)` gets the top of the stack
 	///
 	/// `bstack.nth_from_top(1)` gets the item just below the stack
-	pub(crate) fn nth_from_top(&self, depth: usize) -> Option<&T> {
+	///
+	/// ```
+	/// # extern crate wasmi;
+	/// # use wasmi::{StackWithLimit, StackSize};
+	/// let bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
+	/// bstack.push(4);
+	/// assert_eq!(bstack.nth_from_top(0, Some(&4));
+	/// assert_eq!(bstack.nth_from_top(1, None);
+	/// ```
+	pub fn nth_from_top(&self, depth: usize) -> Option<&T> {
 		// Be cognizant of integer underflow and overflow here. Both are possible in this situation.
 		// len() is unsigned, so if len() == 0, subtraction is a problem
 		// depth can legally be 2^32. On a 32 bit system, adding may overflow
@@ -141,7 +150,7 @@ impl<T> StackWithLimit<T> {
 	/// Return mutable reference to item `depth` distance away from top
 	///
 	/// Does not check whether depth is in range.
-	pub(crate) fn nth_from_top_mut_unchecked(&mut self, depth: usize) -> &mut T {
+	pub fn nth_from_top_mut_unchecked(&mut self, depth: usize) -> &mut T {
 		let offset = self.stack.len() - 1 - depth;
 		&mut self.stack[offset]
 	}
@@ -157,7 +166,7 @@ impl<T> StackWithLimit<T> {
 	///
 	/// Panics if `a` or `b` are out of bound.
 	#[inline]
-	pub(crate) fn swap(&mut self, a: usize, b: usize) {
+	pub fn swap(&mut self, a: usize, b: usize) {
 		self.stack.swap(a, b)
 	}
 
@@ -174,25 +183,25 @@ impl<T> StackWithLimit<T> {
 		self.stack.swap_remove(index)
 	}
 
-	pub(crate) fn top(&self) -> Option<&T> {
+	pub fn top(&self) -> Option<&T> {
 		self.stack.last()
 	}
 
-	pub(crate) fn top_mut(&mut self) -> Option<&mut T> {
+	pub fn top_mut(&mut self) -> Option<&mut T> {
 		self.stack.last_mut()
 	}
 
 	// Same as Vec::[truncate](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.truncate)
-	pub(crate) fn truncate(&mut self, new_size: usize) {
+	pub fn truncate(&mut self, new_size: usize) {
 		self.stack.truncate(new_size)
 	}
 
 	#[inline]
-	pub(crate) fn len(&self) -> usize {
+	pub fn len(&self) -> usize {
 		self.stack.len()
 	}
 
-	pub(crate) fn is_empty(&self) -> bool {
+	pub fn is_empty(&self) -> bool {
 		self.stack.is_empty()
 	}
 }
