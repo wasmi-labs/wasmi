@@ -1487,7 +1487,7 @@ fn top_label(frame_stack: &StackWithLimit<BlockFrame>) -> &BlockFrame {
 
 fn require_label(depth: u32, frame_stack: &StackWithLimit<BlockFrame>) -> Result<&BlockFrame, Error> {
 	frame_stack
-		.get_relative_to_top(depth as usize)
+		.nth_from_top(depth as usize)
 		.ok_or_else(|| Error("non-empty stack expected".into()))
 }
 

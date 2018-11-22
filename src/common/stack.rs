@@ -123,10 +123,10 @@ impl<T> StackWithLimit<T> {
 
 	/// Return optional reference to item `depth` distance away from top
 	///
-	/// `bstack.get_relative_to_top(0)` gets the top of the stack
+	/// `bstack.nth_from_top(0)` gets the top of the stack
 	///
-	/// `bstack.get_relative_to_top(1)` gets the item just below the stack
-	pub(crate) fn get_relative_to_top(&self, depth: usize) -> Option<&T> {
+	/// `bstack.nth_from_top(1)` gets the item just below the stack
+	pub(crate) fn nth_from_top(&self, depth: usize) -> Option<&T> {
 		// Be cognizant of integer underflow and overflow here. Both are possible in this situation.
 		// len() is unsigned, so if len() == 0, subtraction is a problem
 		// depth can legally be 2^32. On a 32 bit system, adding may overflow
@@ -141,7 +141,7 @@ impl<T> StackWithLimit<T> {
 	/// Return mutable reference to item `depth` distance away from top
 	///
 	/// Does not check whether depth is in range.
-	pub(crate) fn get_relative_to_top_mut_unchecked(&mut self, depth: usize) -> &mut T {
+	pub(crate) fn nth_from_top_mut_unchecked(&mut self, depth: usize) -> &mut T {
 		let offset = self.stack.len() - 1 - depth;
 		&mut self.stack[offset]
 	}
@@ -333,16 +333,16 @@ mod test {
 	use core::usize;
 
 	#[test]
-	fn get_relative_to_top() {
+	fn nth_from_top() {
 		let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
-		assert_eq!(bstack.get_relative_to_top(0), None);
+		assert_eq!(bstack.nth_from_top(0), None);
 		bstack.push(1).unwrap();
 		bstack.push(2).unwrap();
 		bstack.push(3).unwrap_err();
-		assert_eq!(bstack.get_relative_to_top(0), Some(&2));
-		assert_eq!(bstack.get_relative_to_top(1), Some(&1));
-		assert_eq!(bstack.get_relative_to_top(2), None);
-		assert_eq!(bstack.get_relative_to_top(3), None);
+		assert_eq!(bstack.nth_from_top(0), Some(&2));
+		assert_eq!(bstack.nth_from_top(1), Some(&1));
+		assert_eq!(bstack.nth_from_top(2), None);
+		assert_eq!(bstack.nth_from_top(3), None);
 	}
 
 	fn exersize(mut bstack: StackWithLimit<i32>) {
