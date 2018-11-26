@@ -190,7 +190,7 @@ impl HostError {
 ///             }
 ///         };
 /// 
-///         if self.check_signature(index, signature) {
+///         if !self.check_signature(index, signature) {
 ///             return Err(Error::Instantiation(
 ///                 format!("Export {} has a bad signature", field_name)
 ///             ));
