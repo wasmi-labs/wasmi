@@ -26,26 +26,6 @@ impl<T> StackWithLimit<T> {
 	/// Create a StackWithLimit with `limit` max size and `initial_size` of pre-allocated
 	/// memory.
 	///
-	/// ```
-	/// # extern crate wasmi;
-	/// # use wasmi::{StackWithLimit, StackSize, FuncRef};
-	/// StackWithLimit::<FuncRef>::new(
-	/// 	StackSize::from_element_count(1024).into_initial(),
-	/// 	StackSize::from_element_count(2048).into_limit(),
-	/// );
-	/// ```
-	///
-	/// Unlimited
-	///
-	/// ```
-	/// # extern crate wasmi;
-	/// # use wasmi::{StackWithLimit, StackSize, RuntimeValue};
-	/// StackWithLimit::<RuntimeValue>::new(
-	/// 	StackSize::from_element_count(1024).into_initial(),
-	/// 	StackSize::unlimited(),
-	/// );
-	/// ```
-	///
 	/// # Panics
 	///
 	/// In debug mode, panics if `initial_size` is larger than `limit`.
@@ -63,12 +43,6 @@ impl<T> StackWithLimit<T> {
 	}
 
 	/// Create an new StackWithLimit with `limit` max size and `limit` elements pre-allocated
-	///
-	/// ```
-	/// # extern crate wasmi;
-	/// # use wasmi::{StackWithLimit, StackSize};
-	/// let bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
-	/// ```
 	pub fn with_size(size: StackSize<T>) -> StackWithLimit<T> {
 		StackWithLimit::new(StackSizeInitial(size), StackSizeLimit(size))
 	}
@@ -102,21 +76,11 @@ impl<T> StackWithLimit<T> {
 	}
 
 	/// Remove item from the top of a stack and return it, or `None` if the stack is empty.
-	///
-	/// ```
-	/// # extern crate wasmi;
-	/// # use wasmi::{StackWithLimit, StackSize};
-	/// let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
-	/// bstack.push(2);
-	/// assert_eq!(bstack.pop(), Some(2));
-	/// assert_eq!(bstack.len(), 0);
-	/// assert_eq!(bstack.pop(), None);
-	/// ```
 	pub fn pop(&mut self) -> Option<T> {
 		self.stack.pop()
 	}
 
-	/// Remove and Return top element. Does not check for emptyness.
+	/// Remove and return top element. Does not check for emptiness.
 	/// If this is called on a zero length stack, bad things will happen.
 	/// Do not call this method unless you can prove the stack has length.
 	#[inline]
@@ -132,15 +96,6 @@ impl<T> StackWithLimit<T> {
 	/// `bstack.nth_from_top(0)` gets the top of the stack
 	///
 	/// `bstack.nth_from_top(1)` gets the item just below the stack
-	///
-	/// ```
-	/// # extern crate wasmi;
-	/// # use wasmi::{StackWithLimit, StackSize};
-	/// let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
-	/// bstack.push(4);
-	/// assert_eq!(bstack.nth_from_top(0), Some(&4));
-	/// assert_eq!(bstack.nth_from_top(1), None);
-	/// ```
 	pub fn nth_from_top(&self, depth: usize) -> Option<&T> {
 		// Be cognizant of integer underflow and overflow here. Both are possible in this situation.
 		// len() is unsigned, so if len() == 0, subtraction is a problem
@@ -176,54 +131,12 @@ impl<T> StackWithLimit<T> {
 	/// # Panics
 	///
 	/// Panics if `a` or `b` are out of bound.
-	///
-	/// ```
-	/// # extern crate wasmi;
-	/// # use wasmi::{StackWithLimit, StackSize};
-	/// let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
-	/// bstack.push(1);
-	/// bstack.push(2);
-	/// assert_eq!(bstack.top(), Some(&2));
-	/// bstack.swap(0, 1);
-	/// assert_eq!(bstack.top(), Some(&1));
-	/// ```
 	#[inline]
 	pub fn swap(&mut self, a: usize, b: usize) {
 		self.stack.swap(a, b)
 	}
 
-	/// Removes an element from the stack and returns it.
-	///
-	/// The removed element is replaced by the element at the top of the stack.
-	///
-	/// # Panics
-	///
-	/// Panics if `index` is out of bounds.
-	///
-	/// ```
-	/// # extern crate wasmi;
-	/// # use wasmi::{StackWithLimit, StackSize};
-	/// let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
-	/// bstack.push(1);
-	/// bstack.push(2);
-	/// assert_eq!(bstack.top(), Some(&2));
-	/// assert_eq!(bstack.swap_remove(0), 1);
-	/// assert_eq!(bstack.top(), Some(&2));
-	/// ```
-	pub fn swap_remove(&mut self, index: usize) -> T {
-		self.stack.swap_remove(index)
-	}
-
 	/// Get a reference to the top of the stack, or `None` if the stack is empty.
-	///
-	/// ```
-	/// # extern crate wasmi;
-	/// # use wasmi::{StackWithLimit, StackSize};
-	/// let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
-	/// assert_eq!(bstack.top(), None);
-	/// bstack.push(2);
-	/// assert_eq!(bstack.top(), Some(&2));
-	/// ```
 	pub fn top(&self) -> Option<&T> {
 		self.stack.last()
 	}
@@ -241,54 +154,16 @@ impl<T> StackWithLimit<T> {
 	}
 
 	/// Get number of items in a stack.
-	///
-	/// ```
-	/// # extern crate wasmi;
-	/// # use wasmi::{StackWithLimit, StackSize};
-	/// let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
-	/// assert_eq!(bstack.len(), 0);
-	/// bstack.push(1);
-	/// bstack.push(2);
-	/// assert_eq!(bstack.len(), 2);
-	/// ```
 	#[inline]
 	pub fn len(&self) -> usize {
 		self.stack.len()
 	}
 
 	/// Check whether the stack is empty.
-	///
-	/// ```
-	/// # extern crate wasmi;
-	/// # use wasmi::{StackWithLimit, StackSize};
-	/// let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
-	/// assert_eq!(bstack.is_empty(), true);
-	/// bstack.push(1);
-	/// assert_eq!(bstack.is_empty(), false);
-	/// ```
 	pub fn is_empty(&self) -> bool {
 		self.stack.is_empty()
 	}
 }
-
-// Why introduce the extra complexity of StackSizeLimit, StackSizeInitial, and StackSize?
-// We want to make the user to do the correct thing using the type checker.
-// Check out the excellent Rust API Guidelines (linked below) for suggestions
-// about type safety in rust.
-//
-// By introducing the new typed arguments, we turn:
-//
-// ```
-// pub fn new(initial_size: usize, limit: usize) -> StackWithLimit<T> { ... }
-// ```
-//
-// into:
-//
-// ```
-// pub fn new(initial_size: StackSizeInitial<T>, limit: StackSizeLimit<T>) -> StackWithLimit<T> { ... }
-// ```
-//
-// https://rust-lang-nursery.github.io/api-guidelines/type-safety.html#c-custom-type
 
 /// Type for communicating the size of some contigous container.
 /// Used for constructing both [`StackSizeLimit`] and [`StackSizeInitial`].
@@ -314,13 +189,6 @@ impl<T> Copy for StackSize<T> {}
 
 impl<T> StackSize<T> {
 	/// Create StackSize based on number of elements.
-	///
-	/// ```
-	/// # extern crate wasmi;
-	/// # use wasmi::StackSize;
-	/// let ss = StackSize::<(u8, u8)>::from_element_count(10);
-	/// assert_eq!(ss.element_count(), 10);
-	/// ```
 	pub fn from_element_count(num_elements: usize) -> StackSize<T> {
 		StackSize {
 			num_elements,
@@ -328,51 +196,12 @@ impl<T> StackSize<T> {
 		}
 	}
 
-	/// Compute StackSize based on allowable memory.
-	///
-	/// ```
-	/// # extern crate wasmi;
-	/// # use wasmi::StackSize;
-	/// let ss = StackSize::<(u8, u8)>::from_byte_count(10);
-	/// assert_eq!(ss.element_count(), 10 / 2);
-	/// ```
-	///
-	/// # Errors
-	///
-	/// In debug mode, panics if size of `T` is 0.
-	pub fn from_byte_count(num_bytes: usize) -> StackSize<T> {
-		// This debug_assert should catch logical errors.
-		debug_assert!(::core::mem::size_of::<T>() != 0, "That doesn't make sense.");
-
-		// In case a zero sized T still makes it into prod. We assume unlimited stack
-		// size instead of panicking.
-		let element_count = if ::core::mem::size_of::<T>() != 0 {
-			num_bytes / ::core::mem::size_of::<T>()
-		} else {
-			usize::MAX // Semi-relevant fun fact: Vec::<()>::new().capacity() == usize::MAX
-		};
-
-		StackSize::from_element_count(element_count)
-	}
-
 	/// Return number the of elements this StackSize indicates.
-	///
-	/// ```
-	/// # use wasmi::StackSize;
-	/// let ss = StackSize::<(u8, u8)>::from_element_count(10);
-	/// assert_eq!(ss.element_count(), 10);
-	/// ```
-	///
 	pub fn element_count(&self) -> usize {
 		self.num_elements
 	}
 
 	/// Create StackSizeLimit out of self
-	///
-	/// ```
-	/// # use wasmi::{StackSize, StackSizeLimit, RuntimeValue};
-	/// let values_limit: StackSizeLimit<RuntimeValue> = StackSize::from_element_count(1024).into_limit();
-	/// ```
 	pub fn into_limit(self) -> StackSizeLimit<T> {
 		StackSizeLimit(self)
 	}
@@ -380,11 +209,6 @@ impl<T> StackSize<T> {
 	/// Create StackSizeLimit out of self
 	pub fn into_initial(self) -> StackSizeInitial<T> {
 		StackSizeInitial(self)
-	}
-
-	/// Create StackSizeLimit with no upper bound.
-	pub fn unlimited() -> StackSizeLimit<T> {
-		StackSize::from_element_count(usize::MAX).into_limit()
 	}
 }
 
@@ -491,5 +315,62 @@ mod test {
 		bstack.push(0).unwrap();
 		assert_eq!(unsafe { bstack.pop_unchecked() }, 0);
 		assert_eq!(unsafe { bstack.pop_unchecked() }, 8);
+	}
+
+	#[test]
+	fn misc() {
+		// These used to be doctests. They were moved here because StackWithLimit no longer
+		// public. Doctests can't test internal APIs.
+
+		StackWithLimit::<usize>::new(
+			StackSize::from_element_count(1024).into_initial(),
+			StackSize::from_element_count(2048).into_limit(),
+		);
+
+		let bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
+
+		let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
+		bstack.push(2).unwrap();
+		assert_eq!(bstack.pop(), Some(2));
+		assert_eq!(bstack.len(), 0);
+		assert_eq!(bstack.pop(), None);
+
+		let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
+		bstack.push(4).unwrap();
+		assert_eq!(bstack.nth_from_top(0), Some(&4));
+		assert_eq!(bstack.nth_from_top(1), None);
+
+		let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
+		bstack.push(1).unwrap();
+		bstack.push(2).unwrap();
+		assert_eq!(bstack.top(), Some(&2));
+		bstack.swap(0, 1);
+		assert_eq!(bstack.top(), Some(&1));
+
+		let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
+		bstack.push(1).unwrap();
+		bstack.push(2).unwrap();
+		assert_eq!(bstack.top(), Some(&2));
+		bstack.swap(0, 1);
+		assert_eq!(bstack.top(), Some(&1));
+
+		let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
+		assert_eq!(bstack.len(), 0);
+		bstack.push(1).unwrap();
+		bstack.push(2).unwrap();
+		assert_eq!(bstack.len(), 2);
+
+		let mut bstack = StackWithLimit::<i32>::with_size(StackSize::from_element_count(2));
+		assert_eq!(bstack.is_empty(), true);
+		bstack.push(1).unwrap();
+		assert_eq!(bstack.is_empty(), false);
+
+		let ss = StackSize::<(u8, u8)>::from_element_count(10);
+		assert_eq!(ss.element_count(), 10);
+
+		let ss = StackSize::<(u8, u8)>::from_element_count(10);
+		assert_eq!(ss.element_count(), 10);
+
+		let values_limit: StackSizeLimit<usize> = StackSize::from_element_count(1024).into_limit();
 	}
 }

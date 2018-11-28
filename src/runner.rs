@@ -19,11 +19,8 @@ use value::{
 };
 use {Signature, Trap, TrapKind, ValueType};
 
-/// Maximum number of entries in value stack.
-pub const DEFAULT_VALUE_STACK_LIMIT: usize = (1024 * 1024) / ::core::mem::size_of::<RuntimeValue>();
-
-// TODO: Make these parameters changeble.
-pub const DEFAULT_CALL_STACK_LIMIT: usize = 64 * 1024;
+const DEFAULT_VALUE_STACK_LIMIT: usize = (1024 * 1024) / 8;
+const DEFAULT_CALL_STACK_LIMIT: usize = 64 * 1024;
 
 /// This is a wrapper around u64 to allow us to treat runtime values as a tag-free `u64`
 /// (where if the runtime value is <64 bits the upper bits are 0). This is safe, since
@@ -37,7 +34,7 @@ pub const DEFAULT_CALL_STACK_LIMIT: usize = 64 * 1024;
 /// at these boundaries.
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 #[repr(transparent)]
-pub struct RuntimeValueInternal(pub u64);
+struct RuntimeValueInternal(pub u64);
 
 impl RuntimeValueInternal {
 	pub fn with_type(self, ty: ValueType) -> RuntimeValue {
@@ -164,6 +161,54 @@ enum RunResult {
 	NestedCall(FuncRef),
 }
 
+/// Stack pre-allocation and size limit settings for [`Interpreter`].
+///
+/// Sizes indicate number of elements, not number of bytes.
+///
+/// When an interpreter exceeds the size limit on either stack, [`Trapkind::StackOverflow`] is returned.
+///
+/// The following example initializes an Interpreter with space pre-allocated for 1024
+/// values and 1024 function calls. The value stack has a maximum size of
+/// 2048 and the call stack has unlimited size (bounded only by available addressable memory).
+///
+/// ```
+/// # extern crate wasmi;
+/// # use wasmi::{Interpreter, InterpreterStackConfig};
+/// use std::usize;
+/// let config = InterpreterStackConfig {
+///     value_stack_size_initial: 1024,
+///     value_stack_size_limit: 2048,
+///     call_stack_size_initial: 1024,
+///     call_stack_size_limit: usize::MAX,
+/// };
+/// let interpreter = Interpreter::with_stacks(config);
+/// ```
+///
+/// [`Interpreter`]: struct.Interpreter.html
+/// [`Trapkind::StackOverflow`]: enum.TrapKind.html
+#[derive(Clone, PartialEq, PartialOrd, Debug)]
+pub struct InterpreterStackConfig {
+	/// Number of spots to be pre-allocated for the value stack.
+	pub value_stack_size_initial: usize,
+	/// Maximum nuber of elements allowed in the value stack.
+	pub value_stack_size_limit: usize,
+	/// Number of spots to be pre-allocated for the call stack.
+	pub call_stack_size_initial: usize,
+	/// Maximum nuber of elements allowed in the value stack.
+	pub call_stack_size_limit: usize,
+}
+
+impl Default for InterpreterStackConfig {
+	fn default() -> Self {
+		InterpreterStackConfig {
+			value_stack_size_initial: DEFAULT_VALUE_STACK_LIMIT,
+			value_stack_size_limit: DEFAULT_VALUE_STACK_LIMIT,
+			call_stack_size_initial: DEFAULT_CALL_STACK_LIMIT,
+			call_stack_size_limit: DEFAULT_CALL_STACK_LIMIT,
+		}
+	}
+}
+
 /// Function interpreter.
 pub struct Interpreter {
 	value_stack: ValueStack,
@@ -172,36 +217,46 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
-	/// Initialize an interpreter with defaults stack sizes.
+	/// Initialize an interpreter with default stack sizes.
 	pub fn new() -> Interpreter {
-		Interpreter::with_stacks(
-			StackWithLimit::with_size(StackSize::from_element_count(DEFAULT_VALUE_STACK_LIMIT)),
-			StackWithLimit::with_size(StackSize::from_element_count(DEFAULT_CALL_STACK_LIMIT)),
-		)
+		Interpreter::with_stacks(InterpreterStackConfig::default())
 	}
 
-	/// Initialize an interpreter that will use `value_stack` and `call_stack`.
+	/// Initialize an interpreter with value stack and call stack configured according to
+	/// `stack_sizes`.
 	///
-	/// `value_stack` `call_stack` determine the allowed stack size during later executions.
+	/// # Panics
+	///
+	/// In debug mode, panics if `stack_sizes.value_stack_size_initial` is larger than
+	/// `stack_sizes.value_stack_size_limit` or if `stack_sizes.frame_stack_size_initial` is larger
+	/// than `stack_sizes.frame_stack_size_limit`.
 	///
 	/// ```
 	/// # extern crate wasmi;
-	/// use wasmi::{Interpreter, StackWithLimit, StackSize};
-	/// let interpreter = Interpreter::with_stacks(
-	///     StackWithLimit::with_size(StackSize::from_byte_count(8192)),
-	///     StackWithLimit::with_size(StackSize::from_element_count(2048)),
-	/// );
-	/// # let value_stack_size = StackSize::from_byte_count(8192);
-	/// # let value_stack = StackWithLimit::with_size(value_stack_size);
-	/// # let interpreter = Interpreter::with_stacks(
-	/// #     value_stack,
-	/// #     StackWithLimit::with_size(StackSize::from_element_count(2048)),
-	/// # );
+	/// use wasmi::{Interpreter, InterpreterStackConfig};
+	/// let config = InterpreterStackConfig {
+	///     value_stack_size_initial: 8192,
+	///     value_stack_size_limit: 8192,
+	///     call_stack_size_initial: 2048,
+	///     call_stack_size_limit: 2048,
+	/// };
+	/// let interpreter = Interpreter::with_stacks(config);
 	/// ```
-	pub fn with_stacks(
-		value_stack: StackWithLimit<RuntimeValueInternal>,
-		call_stack: StackWithLimit<FunctionContext>,
-	) -> Interpreter {
+	pub fn with_stacks(stack_sizes: InterpreterStackConfig) -> Interpreter {
+		let InterpreterStackConfig {
+			value_stack_size_initial,
+			value_stack_size_limit,
+			call_stack_size_initial,
+			call_stack_size_limit,
+		} = stack_sizes;
+		let value_stack = StackWithLimit::new(
+			StackSize::from_element_count(value_stack_size_initial).into_initial(),
+			StackSize::from_element_count(value_stack_size_limit).into_limit(),
+		); // debug panic may occur here
+		let call_stack = StackWithLimit::new(
+			StackSize::from_element_count(call_stack_size_initial).into_initial(),
+			StackSize::from_element_count(call_stack_size_limit).into_limit(),
+		); // debug panic may occur here
 		Interpreter {
 			value_stack: ValueStack(value_stack),
 			call_stack,
@@ -1217,7 +1272,7 @@ impl Interpreter {
 }
 
 /// Function execution context.
-pub struct FunctionContext {
+struct FunctionContext {
 	/// Is context initialized.
 	pub is_initialized: bool,
 	/// Internal function reference.
