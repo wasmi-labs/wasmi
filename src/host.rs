@@ -189,10 +189,16 @@ impl HostError {
 ///                 ))
 ///             }
 ///         };
-///
+/// 
+///         if !self.check_signature(index, signature) {
+///             return Err(Error::Instantiation(
+///                 format!("Export {} has a bad signature", field_name)
+///             ));
+///         }
+/// 
 ///         Ok(FuncInstance::alloc_host(
 ///             Signature::new(&[ValueType::I32, ValueType::I32][..], Some(ValueType::I32)),
-///             ADD_FUNC_INDEX,
+///             index,
 ///         ))
 ///     }
 /// }
