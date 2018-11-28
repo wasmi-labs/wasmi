@@ -4,8 +4,10 @@ use nan_preserving_float::{F32, F64};
 use types::ValueType;
 use TrapKind;
 
+/// Error for `LittleEndianConvert`
 #[derive(Debug)]
 pub enum Error {
+    /// The buffer is too short for the type being deserialized
 	InvalidLittleEndianBuffer,
 }
 
