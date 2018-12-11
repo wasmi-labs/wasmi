@@ -3,8 +3,8 @@
 #[cfg(not(feature = "std"))]
 use libm::{F32Ext, F64Ext};
 
-use core::ops::{Add, Div, Mul, Neg, Sub, Rem};
 use core::cmp::{Ordering, PartialEq, PartialOrd};
+use core::ops::{Add, Div, Mul, Neg, Rem, Sub};
 
 macro_rules! impl_binop {
     ($for:ident, $is:ident, $op:ident, $func_name:ident) => {
@@ -13,19 +13,22 @@ macro_rules! impl_binop {
 
             fn $func_name(self, other: T) -> Self {
                 $for(
-                    $op::$func_name(
-                        $is::from_bits(self.0),
-                        $is::from_bits(other.into().0)
-                    ).to_bits()
+                    $op::$func_name($is::from_bits(self.0), $is::from_bits(other.into().0))
+                        .to_bits(),
                 )
             }
         }
-    }
+    };
 }
 
 macro_rules! float {
     ($for:ident, $rep:ident, $is:ident) => {
-        float!($for, $rep, $is, 1 << (::core::mem::size_of::<$is>() * 8 - 1));
+        float!(
+            $for,
+            $rep,
+            $is,
+            1 << (::core::mem::size_of::<$is>() * 8 - 1)
+        );
     };
     ($for:ident, $rep:ident, $is:ident, $sign_bit:expr) => {
         #[derive(Copy, Clone)]
@@ -112,7 +115,7 @@ macro_rules! float {
                 $is::from(*self).fmt(f)
             }
         }
-    }
+    };
 }
 
 float!(F32, u32, f32);
@@ -150,9 +153,9 @@ mod tests {
 
     use super::{F32, F64};
 
-    use core::ops::{Add, Div, Mul, Neg, Sub};
     use core::fmt::Debug;
     use core::iter;
+    use core::ops::{Add, Div, Mul, Neg, Sub};
 
     fn test_ops<T, F, I>(iter: I)
     where

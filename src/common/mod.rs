@@ -1,4 +1,3 @@
-
 pub mod stack;
 
 /// Index of default linear memory.
