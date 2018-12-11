@@ -137,7 +137,7 @@ extern crate libm;
 #[derive(Debug)]
 pub struct Trap {
     // Needs to be `pub(crate)` to allow `if let` matching in tests
-    pub(crate) kind: TrapKind,
+    kind: TrapKind,
 }
 
 impl Trap {

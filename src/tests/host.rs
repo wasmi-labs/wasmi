@@ -338,21 +338,24 @@ fn resume_call_host_func_type_mismatch() {
         }
 
         assert!(invocation.is_resumable());
-        match invocation
-            .resume_execution(val, &mut env)
-            .unwrap_err()
-        {
-            ResumableError::Trap(Trap {
-                kind: TrapKind::UnexpectedSignature,
-            }) => {
-                // success
+        let err = invocation.resume_execution(val, &mut env).unwrap_err();
+
+        match &err {
+            ResumableError::Trap(trap) => {
+                if let TrapKind::UnexpectedSignature = trap.kind() {
+                    return;
+                }
             }
-            other => panic!(
-                "Expected `ResumableError::Trap(Trap {{ kind: \
-                 TrapKind::UnexpectedSignature, }})`, got `{:?}`",
-                other
-            ),
-        };
+            _ => {}
+        }
+
+        // If didn't return in the previous `match`...
+
+        panic!(
+            "Expected `ResumableError::Trap(Trap {{ kind: \
+             TrapKind::UnexpectedSignature, }})`, got `{:?}`",
+            err
+        )
     }
 
     resume_with_val(None);
