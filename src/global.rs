@@ -1,9 +1,9 @@
 use alloc::rc::Rc;
 use core::cell::Cell;
+use parity_wasm::elements::ValueType as EValueType;
+use types::ValueType;
 use value::RuntimeValue;
 use Error;
-use types::ValueType;
-use parity_wasm::elements::{ValueType as EValueType};
 
 /// Reference to a global variable (See [`GlobalInstance`] for details).
 ///
@@ -14,10 +14,10 @@ use parity_wasm::elements::{ValueType as EValueType};
 pub struct GlobalRef(Rc<GlobalInstance>);
 
 impl ::core::ops::Deref for GlobalRef {
-	type Target = GlobalInstance;
-	fn deref(&self) -> &GlobalInstance {
-		&self.0
-	}
+    type Target = GlobalInstance;
+    fn deref(&self) -> &GlobalInstance {
+        &self.0
+    }
 }
 
 /// Runtime representation of a global variable (or `global` for short).
@@ -33,57 +33,59 @@ impl ::core::ops::Deref for GlobalRef {
 /// [`I64`]: enum.RuntimeValue.html#variant.I64
 #[derive(Debug)]
 pub struct GlobalInstance {
-	val: Cell<RuntimeValue>,
-	mutable: bool,
+    val: Cell<RuntimeValue>,
+    mutable: bool,
 }
 
 impl GlobalInstance {
-	/// Allocate a global variable instance.
-	///
-	/// Since it is possible to export only immutable globals,
-	/// users likely want to set `mutable` to `false`.
-	pub fn alloc(val: RuntimeValue, mutable: bool) -> GlobalRef {
-		GlobalRef(Rc::new(GlobalInstance {
-			val: Cell::new(val),
-			mutable,
-		}))
-	}
+    /// Allocate a global variable instance.
+    ///
+    /// Since it is possible to export only immutable globals,
+    /// users likely want to set `mutable` to `false`.
+    pub fn alloc(val: RuntimeValue, mutable: bool) -> GlobalRef {
+        GlobalRef(Rc::new(GlobalInstance {
+            val: Cell::new(val),
+            mutable,
+        }))
+    }
 
-	/// Change the value of this global variable.
-	///
-	/// # Errors
-	///
-	/// Returns `Err` if this global isn't mutable or if
-	/// type of `val` doesn't match global's type.
-	pub fn set(&self, val: RuntimeValue) -> Result<(), Error> {
-		if !self.mutable {
-			return Err(Error::Global("Attempt to change an immutable variable".into()));
-		}
-		if self.value_type() != val.value_type() {
-			return Err(Error::Global("Attempt to change variable type".into()));
-		}
-		self.val.set(val);
-		Ok(())
-	}
+    /// Change the value of this global variable.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if this global isn't mutable or if
+    /// type of `val` doesn't match global's type.
+    pub fn set(&self, val: RuntimeValue) -> Result<(), Error> {
+        if !self.mutable {
+            return Err(Error::Global(
+                "Attempt to change an immutable variable".into(),
+            ));
+        }
+        if self.value_type() != val.value_type() {
+            return Err(Error::Global("Attempt to change variable type".into()));
+        }
+        self.val.set(val);
+        Ok(())
+    }
 
-	/// Get the value of this global variable.
-	pub fn get(&self) -> RuntimeValue {
-		self.val.get()
-	}
+    /// Get the value of this global variable.
+    pub fn get(&self) -> RuntimeValue {
+        self.val.get()
+    }
 
-	/// Returns if this global variable is mutable.
-	///
-	/// Note: Imported and/or exported globals are always immutable.
-	pub fn is_mutable(&self) -> bool {
-		self.mutable
-	}
+    /// Returns if this global variable is mutable.
+    ///
+    /// Note: Imported and/or exported globals are always immutable.
+    pub fn is_mutable(&self) -> bool {
+        self.mutable
+    }
 
-	/// Returns value type of this global variable.
-	pub fn value_type(&self) -> ValueType {
-		self.val.get().value_type()
-	}
+    /// Returns value type of this global variable.
+    pub fn value_type(&self) -> ValueType {
+        self.val.get().value_type()
+    }
 
-	pub(crate) fn elements_value_type(&self) -> EValueType {
-		self.value_type().into_elements()
-	}
+    pub(crate) fn elements_value_type(&self) -> EValueType {
+        self.value_type().into_elements()
+    }
 }

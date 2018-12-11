@@ -1,6 +1,6 @@
 use core::any::TypeId;
-use value::{RuntimeValue, FromRuntimeValue};
-use {TrapKind, Trap};
+use value::{FromRuntimeValue, RuntimeValue};
+use {Trap, TrapKind};
 
 /// Wrapper around slice of [`RuntimeValue`] for using it
 /// as an argument list conveniently.
@@ -10,55 +10,64 @@ use {TrapKind, Trap};
 pub struct RuntimeArgs<'a>(&'a [RuntimeValue]);
 
 impl<'a> From<&'a [RuntimeValue]> for RuntimeArgs<'a> {
-	fn from(inner: &'a [RuntimeValue]) -> Self {
-		RuntimeArgs(inner)
-	}
+    fn from(inner: &'a [RuntimeValue]) -> Self {
+        RuntimeArgs(inner)
+    }
 }
 
 impl<'a> AsRef<[RuntimeValue]> for RuntimeArgs<'a> {
-	fn as_ref(&self) -> &[RuntimeValue] {
-		self.0
-	}
+    fn as_ref(&self) -> &[RuntimeValue] {
+        self.0
+    }
 }
 
 impl<'a> RuntimeArgs<'a> {
-	/// Extract argument by index `idx`.
-	///
-	/// # Errors
-	///
-	/// Returns `Err` if cast is invalid or not enough arguments.
-	pub fn nth_checked<T>(&self, idx: usize) -> Result<T, Trap> where T: FromRuntimeValue {
-		Ok(self.nth_value_checked(idx)?.try_into().ok_or_else(|| TrapKind::UnexpectedSignature)?)
-	}
+    /// Extract argument by index `idx`.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if cast is invalid or not enough arguments.
+    pub fn nth_checked<T>(&self, idx: usize) -> Result<T, Trap>
+    where
+        T: FromRuntimeValue,
+    {
+        Ok(self
+            .nth_value_checked(idx)?
+            .try_into()
+            .ok_or_else(|| TrapKind::UnexpectedSignature)?)
+    }
 
-	/// Extract argument as a [`RuntimeValue`] by index `idx`.
-	///
-	/// # Errors
-	///
-	/// Returns `Err` if this list has not enough arguments.
-	///
-	/// [`RuntimeValue`]: enum.RuntimeValue.html
-	pub fn nth_value_checked(&self, idx: usize) -> Result<RuntimeValue, Trap> {
-		if self.0.len() <= idx {
-			return Err(TrapKind::UnexpectedSignature.into());
-		}
-		Ok(self.0[idx])
-	}
+    /// Extract argument as a [`RuntimeValue`] by index `idx`.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if this list has not enough arguments.
+    ///
+    /// [`RuntimeValue`]: enum.RuntimeValue.html
+    pub fn nth_value_checked(&self, idx: usize) -> Result<RuntimeValue, Trap> {
+        if self.0.len() <= idx {
+            return Err(TrapKind::UnexpectedSignature.into());
+        }
+        Ok(self.0[idx])
+    }
 
-	/// Extract argument by index `idx`.
-	///
-	/// # Panics
-	///
-	/// Panics if cast is invalid or not enough arguments.
-	pub fn nth<T>(&self, idx: usize) -> T where T: FromRuntimeValue {
-		let value = self.nth_value_checked(idx).expect("Invalid argument index");
-		value.try_into().expect("Unexpected argument type")
-	}
+    /// Extract argument by index `idx`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if cast is invalid or not enough arguments.
+    pub fn nth<T>(&self, idx: usize) -> T
+    where
+        T: FromRuntimeValue,
+    {
+        let value = self.nth_value_checked(idx).expect("Invalid argument index");
+        value.try_into().expect("Unexpected argument type")
+    }
 
-	/// Total number of arguments
-	pub fn len(&self) -> usize {
-		self.0.len()
-	}
+    /// Total number of arguments
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
 }
 
 /// Trait that allows the host to return custom error.
@@ -99,31 +108,31 @@ impl<'a> RuntimeArgs<'a> {
 /// }
 /// ```
 pub trait HostError: 'static + ::core::fmt::Display + ::core::fmt::Debug + Send + Sync {
-	#[doc(hidden)]
-	fn __private_get_type_id__(&self) -> TypeId {
-		TypeId::of::<Self>()
-	}
+    #[doc(hidden)]
+    fn __private_get_type_id__(&self) -> TypeId {
+        TypeId::of::<Self>()
+    }
 }
 
 impl HostError {
-	/// Attempt to downcast this `HostError` to a concrete type by reference.
-	pub fn downcast_ref<T: HostError>(&self) -> Option<&T> {
-		if self.__private_get_type_id__() == TypeId::of::<T>() {
-			unsafe { Some(&*(self as *const HostError as *const T)) }
-		} else {
-			None
-		}
-	}
+    /// Attempt to downcast this `HostError` to a concrete type by reference.
+    pub fn downcast_ref<T: HostError>(&self) -> Option<&T> {
+        if self.__private_get_type_id__() == TypeId::of::<T>() {
+            unsafe { Some(&*(self as *const HostError as *const T)) }
+        } else {
+            None
+        }
+    }
 
-	/// Attempt to downcast this `HostError` to a concrete type by mutable
-	/// reference.
-	pub fn downcast_mut<T: HostError>(&mut self) -> Option<&mut T> {
-		if self.__private_get_type_id__() == TypeId::of::<T>() {
-			unsafe { Some(&mut *(self as *mut HostError as *mut T)) }
-		} else {
-			None
-		}
-	}
+    /// Attempt to downcast this `HostError` to a concrete type by mutable
+    /// reference.
+    pub fn downcast_mut<T: HostError>(&mut self) -> Option<&mut T> {
+        if self.__private_get_type_id__() == TypeId::of::<T>() {
+            unsafe { Some(&mut *(self as *mut HostError as *mut T)) }
+        } else {
+            None
+        }
+    }
 }
 
 /// Trait that allows to implement host functions.
@@ -189,13 +198,13 @@ impl HostError {
 ///                 ))
 ///             }
 ///         };
-/// 
+///
 ///         if !self.check_signature(index, signature) {
 ///             return Err(Error::Instantiation(
 ///                 format!("Export {} has a bad signature", field_name)
 ///             ));
 ///         }
-/// 
+///
 ///         Ok(FuncInstance::alloc_host(
 ///             Signature::new(&[ValueType::I32, ValueType::I32][..], Some(ValueType::I32)),
 ///             index,
@@ -204,12 +213,12 @@ impl HostError {
 /// }
 /// ```
 pub trait Externals {
-	/// Perform invoke of a host function by specified `index`.
-	fn invoke_index(
-		&mut self,
-		index: usize,
-		args: RuntimeArgs,
-	) -> Result<Option<RuntimeValue>, Trap>;
+    /// Perform invoke of a host function by specified `index`.
+    fn invoke_index(
+        &mut self,
+        index: usize,
+        args: RuntimeArgs,
+    ) -> Result<Option<RuntimeValue>, Trap>;
 }
 
 /// Implementation of [`Externals`] that just traps on [`invoke_index`].
@@ -219,35 +228,34 @@ pub trait Externals {
 pub struct NopExternals;
 
 impl Externals for NopExternals {
-	fn invoke_index(
-		&mut self,
-		_index: usize,
-		_args: RuntimeArgs,
-	) -> Result<Option<RuntimeValue>, Trap> {
-		Err(TrapKind::Unreachable.into())
-	}
+    fn invoke_index(
+        &mut self,
+        _index: usize,
+        _args: RuntimeArgs,
+    ) -> Result<Option<RuntimeValue>, Trap> {
+        Err(TrapKind::Unreachable.into())
+    }
 }
 
 #[cfg(test)]
 mod tests {
 
-	use value::RuntimeValue;
-	use super::{RuntimeArgs, HostError};
+    use super::{HostError, RuntimeArgs};
+    use value::RuntimeValue;
 
-	#[test]
-	fn i32_runtime_args() {
-		let args: RuntimeArgs = (&[RuntimeValue::I32(0)][..]).into();
-		let val: i32 = args.nth_checked(0).unwrap();
-		assert_eq!(val, 0);
-	}
+    #[test]
+    fn i32_runtime_args() {
+        let args: RuntimeArgs = (&[RuntimeValue::I32(0)][..]).into();
+        let val: i32 = args.nth_checked(0).unwrap();
+        assert_eq!(val, 0);
+    }
 
-	#[test]
-	fn i64_invalid_arg_cast() {
-		let args: RuntimeArgs = (&[RuntimeValue::I64(90534534545322)][..]).into();
-		assert!(args.nth_checked::<i32>(0).is_err());
-	}
+    #[test]
+    fn i64_invalid_arg_cast() {
+        let args: RuntimeArgs = (&[RuntimeValue::I64(90534534545322)][..]).into();
+        assert!(args.nth_checked::<i32>(0).is_err());
+    }
 
-	// Tests that `HostError` trait is object safe.
-	fn _host_error_is_object_safe(_: &HostError) {
-	}
+    // Tests that `HostError` trait is object safe.
+    fn _host_error_is_object_safe(_: &HostError) {}
 }
