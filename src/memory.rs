@@ -58,6 +58,7 @@ pub struct MemoryInstance {
     initial: Pages,
     current_size: Cell<usize>,
     maximum: Option<Pages>,
+    lowest_used: Cell<u32>,
 }
 
 impl fmt::Debug for MemoryInstance {
@@ -127,6 +128,7 @@ impl MemoryInstance {
             initial: initial,
             current_size: Cell::new(initial_size.0),
             maximum: maximum,
+            lowest_used: Cell::new(u32::max_value()),
         }
     }
 
@@ -146,6 +148,16 @@ impl MemoryInstance {
     /// Maximum memory size cannot exceed `65536` pages or 4GiB.
     pub fn maximum(&self) -> Option<Pages> {
         self.maximum
+    }
+
+    /// Returns lowest offset ever written or `u32::max_value()` if none.
+    pub fn lowest_used(&self) -> u32 {
+        self.lowest_used.get()
+    }
+
+    /// Resets tracked lowest offset.
+    pub fn reset_lowest_used(&self, addr: u32) {
+        self.lowest_used.set(addr)
     }
 
     /// Returns current linear memory size.
@@ -169,6 +181,11 @@ impl MemoryInstance {
     /// ```
     pub fn current_size(&self) -> Pages {
         Bytes(self.current_size.get()).round_up_to()
+    }
+
+    /// Returns current used memory size in bytes.
+    pub fn used_size(&self) -> Bytes {
+        Bytes(self.buffer.borrow().len())
     }
 
     /// Get value from memory at given offset.
@@ -213,6 +230,9 @@ impl MemoryInstance {
             .checked_region(&mut buffer, offset as usize, value.len())?
             .range();
 
+        if offset < self.lowest_used.get() {
+            self.lowest_used.set(offset);
+        }
         buffer[range].copy_from_slice(value);
 
         Ok(())
@@ -224,6 +244,9 @@ impl MemoryInstance {
         let range = self
             .checked_region(&mut buffer, offset as usize, ::core::mem::size_of::<T>())?
             .range();
+        if offset < self.lowest_used.get() {
+            self.lowest_used.set(offset);
+        }
         value.into_little_endian(&mut buffer[range]);
         Ok(())
     }
@@ -474,7 +497,12 @@ impl MemoryInstance {
     ///
     /// Returns `Err` if the specified region is out of bounds.
     pub fn zero(&self, offset: usize, len: usize) -> Result<(), Error> {
-        self.clear(offset, 0, len)
+        if (offset + len) >= self.buffer.borrow().len() {
+            self.buffer.borrow_mut().resize(offset,  0u8);
+            Ok(())
+        } else {
+            self.clear(offset, 0, len)
+        }
     }
 
     /// Provides direct access to the underlying memory buffer.
