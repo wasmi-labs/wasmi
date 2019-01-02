@@ -184,6 +184,7 @@ impl MemoryInstance {
     }
 
     /// Returns current used memory size in bytes.
+	/// This is the highest memory address that had been written to.
     pub fn used_size(&self) -> Bytes {
         Bytes(self.buffer.borrow().len())
     }
@@ -391,8 +392,8 @@ impl MemoryInstance {
         let (read_region, write_region) =
             self.checked_region_pair(&mut buffer, src_offset, len, dst_offset, len)?;
 
-		if dst_offset < self.lowest_used.get() {
-			self.lowest_used.set(dst_offset);
+		if dst_offset < self.lowest_used.get() as usize {
+			self.lowest_used.set(dst_offset as u32);
 		}
 
         unsafe {
@@ -434,8 +435,8 @@ impl MemoryInstance {
             )));
         }
 
-		if dst_offset < self.lowest_used.get() {
-			self.lowest_used.set(dst_offset);
+		if dst_offset < self.lowest_used.get() as usize {
+			self.lowest_used.set(dst_offset as u32);
 		}
 
         unsafe {
@@ -477,8 +478,8 @@ impl MemoryInstance {
             .checked_region(&mut dst_buffer, dst_offset, len)?
             .range();
 
-		if dst_offset < self.lowest_used.get() {
-			self.lowest_used.set(dst_offset);
+		if dst_offset < dst.lowest_used.get() as usize {
+			dst.lowest_used.set(dst_offset as u32);
 		}
 
         dst_buffer[dst_range].copy_from_slice(&src_buffer[src_range]);
@@ -498,8 +499,8 @@ impl MemoryInstance {
 
         let range = self.checked_region(&mut buffer, offset, len)?.range();
 
-		if dst_offset < self.lowest_used.get() {
-			self.lowest_used.set(dst_offset);
+		if offset < self.lowest_used.get() as usize {
+			self.lowest_used.set(offset as u32);
 		}
 
         for val in &mut buffer[range] {
@@ -514,7 +515,7 @@ impl MemoryInstance {
     ///
     /// Returns `Err` if the specified region is out of bounds.
     pub fn zero(&self, offset: usize, len: usize) -> Result<(), Error> {
-		self.clear(offset, 0, len)
+        self.clear(offset, 0, len)
     }
 
     /// Provides direct access to the underlying memory buffer.
