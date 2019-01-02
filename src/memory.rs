@@ -391,6 +391,10 @@ impl MemoryInstance {
         let (read_region, write_region) =
             self.checked_region_pair(&mut buffer, src_offset, len, dst_offset, len)?;
 
+		if dst_offset < self.lowest_used.get() {
+			self.lowest_used.set(dst_offset);
+		}
+
         unsafe {
             ::core::ptr::copy(
                 buffer[read_region.range()].as_ptr(),
@@ -429,6 +433,10 @@ impl MemoryInstance {
                 "non-overlapping copy is used for overlapping regions"
             )));
         }
+
+		if dst_offset < self.lowest_used.get() {
+			self.lowest_used.set(dst_offset);
+		}
 
         unsafe {
             ::core::ptr::copy_nonoverlapping(
@@ -469,6 +477,10 @@ impl MemoryInstance {
             .checked_region(&mut dst_buffer, dst_offset, len)?
             .range();
 
+		if dst_offset < self.lowest_used.get() {
+			self.lowest_used.set(dst_offset);
+		}
+
         dst_buffer[dst_range].copy_from_slice(&src_buffer[src_range]);
 
         Ok(())
@@ -485,6 +497,11 @@ impl MemoryInstance {
         let mut buffer = self.buffer.borrow_mut();
 
         let range = self.checked_region(&mut buffer, offset, len)?.range();
+
+		if dst_offset < self.lowest_used.get() {
+			self.lowest_used.set(dst_offset);
+		}
+
         for val in &mut buffer[range] {
             *val = new_val
         }
@@ -497,12 +514,7 @@ impl MemoryInstance {
     ///
     /// Returns `Err` if the specified region is out of bounds.
     pub fn zero(&self, offset: usize, len: usize) -> Result<(), Error> {
-        if (offset + len) >= self.buffer.borrow().len() {
-            self.buffer.borrow_mut().resize(offset,  0u8);
-            Ok(())
-        } else {
-            self.clear(offset, 0, len)
-        }
+		self.clear(offset, 0, len)
     }
 
     /// Provides direct access to the underlying memory buffer.
