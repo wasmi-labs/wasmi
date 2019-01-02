@@ -293,16 +293,23 @@ impl<'args> FuncInvocation<'args> {
         return_val: Option<RuntimeValue>,
         externals: &'externals mut E,
     ) -> Result<Option<RuntimeValue>, ResumableError> {
-        match self.kind {
-            FuncInvocationKind::Internal(ref mut interpreter) => {
-                if !interpreter.state().is_resumable() {
-                    return Err(ResumableError::AlreadyStarted);
+        use crate::TrapKind;
+
+        if return_val.map(|v| v.value_type()) != self.resumable_value_type() {
+            return Err(ResumableError::Trap(Trap::new(
+                TrapKind::UnexpectedSignature,
+            )));
+        }
+
+        match &mut self.kind {
+            FuncInvocationKind::Internal(interpreter) => {
+                if interpreter.state().is_resumable() {
+                    Ok(interpreter.resume_execution(return_val, externals)?)
+                } else {
+                    Err(ResumableError::AlreadyStarted)
                 }
-                Ok(interpreter.resume_execution(return_val, externals)?)
             }
-            FuncInvocationKind::Host { .. } => {
-                return Err(ResumableError::NotResumable);
-            }
+            FuncInvocationKind::Host { .. } => Err(ResumableError::NotResumable),
         }
     }
 }

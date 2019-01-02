@@ -303,6 +303,66 @@ fn resume_call_host_func() {
 }
 
 #[test]
+fn resume_call_host_func_type_mismatch() {
+    fn resume_with_val(val: Option<RuntimeValue>) {
+        let module = parse_wat(
+            r#"
+            (module
+                (import "env" "trap_sub" (func $trap_sub (param i32 i32) (result i32)))
+
+                (func (export "test") (result i32)
+                    (call $trap_sub
+                        (i32.const 5)
+                        (i32.const 7)
+                    )
+                )
+            )
+            "#,
+        );
+
+        let mut env = TestHost::new();
+
+        let instance =
+            ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
+                .expect("Failed to instantiate module")
+                .assert_no_start();
+
+        let export = instance.export_by_name("test").unwrap();
+        let func_instance = export.as_func().unwrap();
+
+        let mut invocation = FuncInstance::invoke_resumable(&func_instance, &[]).unwrap();
+        let result = invocation.start_execution(&mut env);
+        match result {
+            Err(ResumableError::Trap(_)) => {}
+            _ => panic!(),
+        }
+
+        assert!(invocation.is_resumable());
+        let err = invocation.resume_execution(val, &mut env).unwrap_err();
+
+        match &err {
+            ResumableError::Trap(trap) => {
+                if let TrapKind::UnexpectedSignature = trap.kind() {
+                    return;
+                }
+            }
+            _ => {}
+        }
+
+        // If didn't return in the previous `match`...
+
+        panic!(
+            "Expected `ResumableError::Trap(Trap {{ kind: \
+             TrapKind::UnexpectedSignature, }})`, got `{:?}`",
+            err
+        )
+    }
+
+    resume_with_val(None);
+    resume_with_val(Some((-1i64).into()));
+}
+
+#[test]
 fn host_err() {
     let module = parse_wat(
         r#"
