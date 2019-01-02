@@ -136,7 +136,6 @@ extern crate libm;
 /// Traps can't be handled by WebAssembly code, but are reported to the embedder.
 #[derive(Debug)]
 pub struct Trap {
-    // Needs to be `pub(crate)` to allow `if let` matching in tests
     kind: TrapKind,
 }
 
