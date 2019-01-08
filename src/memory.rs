@@ -184,7 +184,7 @@ impl MemoryInstance {
     }
 
     /// Returns current used memory size in bytes.
-    /// This is the highest memory address that had been written to.
+    /// This is one more than the highest memory address that had been written to.
     pub fn used_size(&self) -> Bytes {
         Bytes(self.buffer.borrow().len())
     }
