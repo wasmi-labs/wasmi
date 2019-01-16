@@ -11,6 +11,7 @@ use hashmap_core::HashMap;
 use std::collections::HashMap;
 
 use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
+use core::cell::Ref;
 use func::{FuncBody, FuncInstance, FuncRef};
 use global::{GlobalInstance, GlobalRef};
 use host::Externals;
@@ -183,10 +184,7 @@ impl ModuleInstance {
         self.tables.borrow_mut().get(idx as usize).cloned()
     }
 
-    /// Get global by index. Index can be obtained by calling [globals].
-    ///
-    /// [globals]: [#method.globals]
-    pub fn global_by_index(&self, idx: u32) -> Option<GlobalRef> {
+    pub(crate) fn global_by_index(&self, idx: u32) -> Option<GlobalRef> {
         self.globals.borrow_mut().get(idx as usize).cloned()
     }
 
@@ -218,15 +216,10 @@ impl ModuleInstance {
         self.globals.borrow_mut().push(global)
     }
 
-    /// Enumerates over globals, index can be used as an argument to [global_by_index].
-    ///
-    /// [global_by_index]: #method.global_by_index
-    pub fn globals(&self) -> impl Iterator<Item = (u32, GlobalRef)> {
-        let globals = self.globals.borrow().clone();
-        globals
-            .into_iter()
-            .enumerate()
-            .map(|(idx, global)| (idx as u32, global))
+    /// Access all globals. This is a non-standard API so it's unlikely to be
+    /// portable to other engines.
+    pub fn globals<'a>(&self) -> Ref<Vec<GlobalRef>> {
+        self.globals.borrow()
     }
 
     fn insert_export<N: Into<String>>(&self, name: N, extern_val: ExternVal) {
