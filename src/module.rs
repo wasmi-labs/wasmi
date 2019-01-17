@@ -11,6 +11,7 @@ use hashmap_core::HashMap;
 use std::collections::HashMap;
 
 use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
+use core::cell::Ref;
 use func::{FuncBody, FuncInstance, FuncRef};
 use global::{GlobalInstance, GlobalRef};
 use host::Externals;
@@ -213,6 +214,12 @@ impl ModuleInstance {
 
     fn push_global(&self, global: GlobalRef) {
         self.globals.borrow_mut().push(global)
+    }
+
+    /// Access all globals. This is a non-standard API so it's unlikely to be
+    /// portable to other engines.
+    pub fn globals<'a>(&self) -> Ref<Vec<GlobalRef>> {
+        self.globals.borrow()
     }
 
     fn insert_export<N: Into<String>>(&self, name: N, extern_val: ExternVal) {
