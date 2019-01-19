@@ -24,8 +24,12 @@ byteorder = { version = "1.0", default-features = false }
 hashmap_core = { version = "0.1.9", optional = true }
 memory_units = "0.3.0"
 libm = { version = "0.1.2", optional = true }
+wasmi-derive = { version = "0.1", path = "derive" }
 
 [dev-dependencies]
 assert_matches = "1.1"
 rand = "0.4.2"
 wabt = "0.6"
+
+[workspace]
+members = ["derive"]

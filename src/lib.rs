@@ -396,6 +396,9 @@ mod types;
 mod validation;
 mod value;
 
+// TODO: feature
+pub mod derive_support;
+
 #[cfg(test)]
 mod tests;
 
