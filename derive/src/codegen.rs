@@ -23,18 +23,18 @@ pub fn codegen(ext_def: &ExtDefinition, to: &mut TokenStream) {
                 Trap, RuntimeValue, RuntimeArgs, Externals, ValueType, ModuleImportResolver,
                 Signature, FuncRef, Error, FuncInstance,
                 derive_support::{
-                    WasmResult,
-                    ConvertibleToWasm,
+                    IntoWasmResult,
+                    IntoWasmValue,
                 },
             };
 
             #[inline(always)]
-            fn materialize_arg_ty<W: ConvertibleToWasm>(_w: Option<W>) -> ValueType {
+            fn materialize_arg_ty<W: IntoWasmValue>(_w: Option<W>) -> ValueType {
                 W::VALUE_TYPE
             }
 
             #[inline(always)]
-            fn materialize_ret_type<W: WasmResult>(_w: Option<W>) -> Option<ValueType> {
+            fn materialize_ret_type<W: IntoWasmResult>(_w: Option<W>) -> Option<ValueType> {
                 W::VALUE_TYPE
             }
 
@@ -66,7 +66,7 @@ fn emit_dispatch_func_arm(func: &ExternalFunc) -> TokenStream {
         #unmarshall_args
     };
     let epilogue = quote_spanned! {return_ty_span=>
-        WasmResult::to_wasm_result(r)
+        IntoWasmResult::into_wasm_result(r)
     };
 
     let call = {

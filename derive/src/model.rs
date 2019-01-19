@@ -23,8 +23,6 @@ pub struct ExternalFunc {
     // TODO: Rename args to params
     pub args: Vec<Param>,
     pub return_ty: Option<proc_macro2::Span>,
-    // TODO: remove
-    pub arity: usize,
 }
 
 /// The core structure that contains the list of all functions

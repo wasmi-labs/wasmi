@@ -2,7 +2,7 @@ use crate::model::{self, ExtDefinition, ExternalFunc, Param};
 use syn::{ItemImpl, ImplItem, ImplItemMethod, FnArg, ReturnType, Ident};
 use syn::spanned::Spanned;
 
-/// Parse an incoming stream of tokens into a list of external functions.
+/// Parse an incoming stream of tokens into externalities definition.
 pub fn parse(input: proc_macro2::TokenStream) -> Result<ExtDefinition, ()> {
     let item_impl = syn::parse2::<syn::ItemImpl>(input).map_err(|_| ())?;
 
@@ -35,7 +35,6 @@ pub fn parse(input: proc_macro2::TokenStream) -> Result<ExtDefinition, ()> {
                     name: sig.ident.to_string(),
                     args,
                     return_ty,
-                    arity: sig.decl.inputs.len() - 1, // self TODO: handle this properly
                 });
             },
             _ => {},

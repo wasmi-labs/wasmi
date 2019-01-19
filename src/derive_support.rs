@@ -1,53 +1,66 @@
 use {ValueType, RuntimeValue, Trap};
+use nan_preserving_float::{F32, F64};
 
-pub trait ConvertibleToWasm {
+/// A trait that represents a value that can be directly coerced to one of
+/// wasm base value types.
+pub trait IntoWasmValue {
     const VALUE_TYPE: ValueType;
-    type NativeType;
-    fn to_runtime_value(self) -> RuntimeValue;
+    /// Perform the conversion.
+    fn into_wasm_value(self) -> RuntimeValue;
 }
 
-impl ConvertibleToWasm for i32 { type NativeType = i32; const VALUE_TYPE: ValueType = ValueType::I32; fn to_runtime_value(self) -> RuntimeValue { RuntimeValue::I32(self) } }
-impl ConvertibleToWasm for u32 { type NativeType = u32; const VALUE_TYPE: ValueType = ValueType::I32; fn to_runtime_value(self) -> RuntimeValue { RuntimeValue::I32(self as i32) } }
-impl ConvertibleToWasm for i64 { type NativeType = i64; const VALUE_TYPE: ValueType = ValueType::I64; fn to_runtime_value(self) -> RuntimeValue { RuntimeValue::I64(self) } }
-impl ConvertibleToWasm for u64 { type NativeType = u64; const VALUE_TYPE: ValueType = ValueType::I64; fn to_runtime_value(self) -> RuntimeValue { RuntimeValue::I64(self as i64) } }
-impl ConvertibleToWasm for isize { type NativeType = i32; const VALUE_TYPE: ValueType = ValueType::I32; fn to_runtime_value(self) -> RuntimeValue { RuntimeValue::I32(self as i32) } }
-impl ConvertibleToWasm for usize { type NativeType = u32; const VALUE_TYPE: ValueType = ValueType::I32; fn to_runtime_value(self) -> RuntimeValue { RuntimeValue::I32(self as u32 as i32) } }
-impl<T> ConvertibleToWasm for *const T { type NativeType = u32; const VALUE_TYPE: ValueType = ValueType::I32; fn to_runtime_value(self) -> RuntimeValue { RuntimeValue::I32(self as isize as i32) } }
-impl<T> ConvertibleToWasm for *mut T { type NativeType = u32; const VALUE_TYPE: ValueType = ValueType::I32; fn to_runtime_value(self) -> RuntimeValue { RuntimeValue::I32(self as isize as i32) } }
+macro_rules! impl_convertible_to_wasm {
+    // TODO: Replace it to Kleene ? operator
+    ($ty:ty, $wasm_ty:ident $(, as $cast_to:ty)* ) => {
+        impl IntoWasmValue for $ty {
+            const VALUE_TYPE: ValueType = ValueType::$wasm_ty;
+            fn into_wasm_value(self) -> RuntimeValue {
+                RuntimeValue::$wasm_ty(self $( as $cast_to)*)
+            }
+        }
+    };
+}
 
-pub trait WasmResult {
+impl_convertible_to_wasm!(i32, I32);
+impl_convertible_to_wasm!(u32, I32, as i32);
+impl_convertible_to_wasm!(i64, I64);
+impl_convertible_to_wasm!(u64, I64, as i64);
+impl_convertible_to_wasm!(F32, F32);
+impl_convertible_to_wasm!(F64, F64);
+
+pub trait IntoWasmResult {
     const VALUE_TYPE: Option<ValueType>;
-    fn to_wasm_result(self) -> Result<Option<RuntimeValue>, Trap>;
+    fn into_wasm_result(self) -> Result<Option<RuntimeValue>, Trap>;
 }
 
-impl WasmResult for () {
+impl IntoWasmResult for () {
     const VALUE_TYPE: Option<ValueType> = None;
-    fn to_wasm_result(self) -> Result<Option<RuntimeValue>, Trap> {
+    fn into_wasm_result(self) -> Result<Option<RuntimeValue>, Trap> {
         Ok(None)
     }
 }
 
-impl<R: ConvertibleToWasm, E: Into<Trap>> WasmResult for Result<R, E>  {
+impl<R: IntoWasmValue, E: Into<Trap>> IntoWasmResult for Result<R, E>  {
     const VALUE_TYPE: Option<ValueType> = Some(R::VALUE_TYPE);
-    fn to_wasm_result(self) -> Result<Option<RuntimeValue>, Trap> {
+    fn into_wasm_result(self) -> Result<Option<RuntimeValue>, Trap> {
         self
-            .map(|v| Some(v.to_runtime_value()))
+            .map(|v| Some(v.into_wasm_value()))
             .map_err(Into::into)
     }
 }
 
-impl<E: Into<Trap>> WasmResult for Result<(), E>  {
+impl<E: Into<Trap>> IntoWasmResult for Result<(), E>  {
     const VALUE_TYPE: Option<ValueType> = None;
-    fn to_wasm_result(self) -> Result<Option<RuntimeValue>, Trap> {
+    fn into_wasm_result(self) -> Result<Option<RuntimeValue>, Trap> {
         self
             .map(|_| None)
             .map_err(Into::into)
     }
 }
 
-impl<R: ConvertibleToWasm> WasmResult for R {
+impl<R: IntoWasmValue> IntoWasmResult for R {
     const VALUE_TYPE: Option<ValueType> = Some(R::VALUE_TYPE);
-    fn to_wasm_result(self) -> Result<Option<RuntimeValue>, Trap> {
-        Ok(Some(self.to_runtime_value()))
+    fn into_wasm_result(self) -> Result<Option<RuntimeValue>, Trap> {
+        Ok(Some(self.into_wasm_value()))
     }
 }
