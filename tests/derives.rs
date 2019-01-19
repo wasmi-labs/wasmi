@@ -31,10 +31,4 @@ impl<'a> NonStaticExternals<'a> {
     pub fn traps(&self) -> Result<(), NoInfoError> {
         Err(NoInfoError)
     }
-
-    pub fn fart(&self, inbound_fart: Fart) -> Result<Fart, NoInfoError> {
-        Ok(inbound_fart)
-    }
 }
-
-pub struct Fart;

@@ -1,3 +1,5 @@
+#![recursion_limit="128"]
+
 extern crate proc_macro;
 
 mod model;
@@ -28,7 +30,7 @@ pub fn derive_externals(attr: TokenStream, input: TokenStream) -> TokenStream {
     // and we will then need to return both the original implementation and the generated implementation
     // of externals.
 
-    // println!("{:?}", quote::quote! { #input }.to_string());
+    println!("{:?}", quote::quote! { #input }.to_string());
     let input = input.into();
     input
 }

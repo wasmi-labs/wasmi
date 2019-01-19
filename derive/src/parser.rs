@@ -1,5 +1,5 @@
-use crate::model::{self, ExtDefinition, ExternalFunc};
-use syn::{ItemImpl, ImplItem, ImplItemMethod, FnArg, ReturnType};
+use crate::model::{self, ExtDefinition, ExternalFunc, Param};
+use syn::{ItemImpl, ImplItem, ImplItemMethod, FnArg, ReturnType, Ident};
 use syn::spanned::Spanned;
 
 /// Parse an incoming stream of tokens into a list of external functions.
@@ -17,8 +17,12 @@ pub fn parse(input: proc_macro2::TokenStream) -> Result<ExtDefinition, ()> {
                 let index = funcs.len() as u32;
 
                 // self TODO: handle this properly
-                let args = sig.decl.inputs.iter().skip(1).enumerate().map(|input| {
-                    input.span()
+                let args = sig.decl.inputs.iter().skip(1).enumerate().map(|(idx, input)| {
+                    let param_name = format!("arg{}", idx);
+                    let ident = Ident::new(&param_name, input.span());
+                    Param {
+                        ident,
+                    }
                 }).collect::<Vec<_>>();
 
                 let return_ty = match sig.decl.output {

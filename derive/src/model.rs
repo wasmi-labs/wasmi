@@ -10,9 +10,10 @@ pub struct Signature {
     pub return_ty: Option<ValueType>,
 }
 
+#[derive(Clone)]
 pub struct Param {
-    span: proc_macro2::Span,
-    generated_name: String,
+    /// A generated identifier used for temporary variables.
+    pub ident: syn::Ident,
 }
 
 pub struct ExternalFunc {

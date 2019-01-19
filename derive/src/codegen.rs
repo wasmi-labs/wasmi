@@ -20,9 +20,23 @@ pub fn codegen(ext_def: &ExtDefinition, to: &mut TokenStream) {
 			extern crate wasmi as _wasmi;
 
             use _wasmi::{
-                Trap, RuntimeValue, RuntimeArgs, Externals,
-                derive_support::WasmResult,
+                Trap, RuntimeValue, RuntimeArgs, Externals, ValueType, ModuleImportResolver,
+                Signature, FuncRef, Error, FuncInstance,
+                derive_support::{
+                    WasmResult,
+                    ConvertibleToWasm,
+                },
             };
+
+            #[inline(always)]
+            fn materialize_arg_ty<W: ConvertibleToWasm>(_w: Option<W>) -> ValueType {
+                W::VALUE_TYPE
+            }
+
+            #[inline(always)]
+            fn materialize_ret_type<W: WasmResult>(_w: Option<W>) -> Option<ValueType> {
+                W::VALUE_TYPE
+            }
 
             #externals
             #module_resolver
@@ -30,26 +44,21 @@ pub fn codegen(ext_def: &ExtDefinition, to: &mut TokenStream) {
     }).to_tokens(to);
 }
 
-fn gen_dispatch_func_arm(func: &ExternalFunc) -> TokenStream {
+fn emit_dispatch_func_arm(func: &ExternalFunc) -> TokenStream {
     let index = func.index as usize;
-    let name = Ident::new(&func.name, Span::call_site());
     let return_ty_span = func.return_ty.clone().unwrap_or_else(|| Span::call_site());
 
-    let mut args = vec![];
     let mut unmarshall_args = TokenStream::new();
-    for (i, arg_span) in func.args.iter().cloned().enumerate() {
-        let mut arg_name = "arg".to_string();
-        arg_name.push_str(&i.to_string());
-        let arg_name = Ident::new(&arg_name, arg_span.clone());
+    for (i, param) in func.args.iter().enumerate() {
+        let param_span = param.ident.span();
+        let ident = &param.ident;
 
-        (quote_spanned! {arg_span=>
-            let #arg_name =
+        (quote_spanned! {param_span=>
+            let #ident =
                 args.next()
                     .and_then(|rt_val| rt_val.try_into())
                     .unwrap();
         }).to_tokens(&mut unmarshall_args);
-
-        args.push(quote_spanned! {arg_span=> #arg_name });
     }
 
     let prologue = quote! {
@@ -60,21 +69,20 @@ fn gen_dispatch_func_arm(func: &ExternalFunc) -> TokenStream {
         WasmResult::to_wasm_result(r)
     };
 
+    let call = {
+        let args = func.args.iter().map(|param| param.ident.clone());
+        let name = Ident::new(&func.name, Span::call_site());
+        quote! {
+            #name( #(#args),* )
+        }
+    };
     (quote! {
         #index => {
             #prologue
-            let r = self.#name( #(#args),* );
+            let r = self.#call;
             #epilogue
         }
     })
-
-    // let body = $crate::wasm_utils::constrain_closure::<
-    //     <$returns as $crate::wasm_utils::ConvertibleToWasm>::NativeType, _
-    // >(|| {
-    //     unmarshall_args!($body, $objectname, $args_iter, $( $names : $params ),*)
-    // });
-    // let r = body()?;
-    // return Ok(Some({ use $crate::wasm_utils::ConvertibleToWasm; r.to_runtime_value() }))
 }
 
 fn derive_externals(ext_def: &ExtDefinition, to: &mut TokenStream) {
@@ -83,7 +91,7 @@ fn derive_externals(ext_def: &ExtDefinition, to: &mut TokenStream) {
 
     let mut match_arms = vec![];
     for func in &ext_def.funcs {
-        match_arms.push(gen_dispatch_func_arm(func));
+        match_arms.push(emit_dispatch_func_arm(func));
     }
 
     (quote::quote! {
@@ -104,21 +112,95 @@ fn derive_externals(ext_def: &ExtDefinition, to: &mut TokenStream) {
     }).to_tokens(to);
 }
 
-fn derive_module_resolver(ext_def: &ExtDefinition, to: &mut TokenStream) {
-    (quote::quote! {
-        impl #impl_generics ModuleImportResolver for #ty #where_clause {
-            fn invoke_index(
-                &mut self,
-                index: usize,
-                args: RuntimeArgs,
-            ) -> Result<Option<RuntimeValue>, Trap> {
-                match index {
-                    #(#match_arms),*
-                    _ => panic!("fn with index {} is undefined", index),
-                }
+fn emit_resolve_func_arm(func: &ExternalFunc) -> TokenStream {
+    let index = func.index as usize;
+    let string_ident = &func.name;
+    let return_ty_span = func.return_ty.clone().unwrap_or_else(|| Span::call_site());
+
+    let call = {
+        let args = func.args.iter().map(|param| {
+            let ident = param.ident.clone();
+            let span = param.ident.span();
+            quote_spanned! {span=> #ident.unwrap() }
+        });
+        let name = Ident::new(&func.name, Span::call_site());
+        quote! {
+            Self::#name( panic!(), #(#args),* )
+        }
+    };
+
+    let init = func.args.iter().map(|param| {
+        let ident = &param.ident;
+        quote! {
+            let #ident = None;
+        }
+    }).collect::<Vec<_>>();
+
+    let params_materialized_tys = func.args.iter().map(|param| {
+        let ident = &param.ident;
+        let span = param.ident.span();
+        quote_spanned! {span=> materialize_arg_ty(#ident) }
+    }).collect::<Vec<_>>();
+
+    let materialized_return_ty = quote_spanned! { return_ty_span=>
+        materialize_ret_type(return_val)
+    };
+
+    quote! {
+        if name == #string_ident {
+            // initialize variables
+            #(#init)*
+
+            #[allow(unreachable_code)]
+            let return_val = if false {
+                // calling self for typeinference
+                Some(#call)
+            } else {
+                None
+            };
+
+            // at this point types of all variables and return_val are inferred.
+            if signature.params() != &[#(#params_materialized_tys),*] || signature.return_type() != #materialized_return_ty {
+                return Err(Error::Instantiation(
+					format!("Export {} has different signature {:?}", #string_ident, signature),
+				));
             }
 
-            // ...
+            return Ok(FuncInstance::alloc_host(signature.clone(), #index));
+        }
+    }
+}
+
+fn derive_module_resolver(ext_def: &ExtDefinition, to: &mut TokenStream) {
+    let (impl_generics, ty_generics, where_clause) = ext_def.generics.split_for_impl();
+    let ty = &ext_def.ty;
+
+    let mut match_arms = vec![];
+    for func in &ext_def.funcs {
+        match_arms.push(emit_resolve_func_arm(func));
+    }
+
+    (quote::quote! {
+        impl #impl_generics #ty #where_clause {
+            fn resolver() -> impl ModuleImportResolver {
+                // Use a closure to have an ability to use `Self` type
+                let resolve_func = |name: &str, signature: &Signature| -> Result<FuncRef, Error> {
+                    #(#match_arms)*
+
+                    Err(Error::Instantiation(
+                        format!("Export {} not found", name),
+                    ))
+                };
+
+                struct Resolver(fn(&str, &Signature) -> Result<FuncRef, Error>);
+				impl ModuleImportResolver for Resolver {
+                    #[inline(always)]
+					fn resolve_func(&self, name: &str, signature: &Signature) -> Result<FuncRef, Error> {
+                        (self.0)(name, signature)
+					}
+				}
+				Resolver(resolve_func)
+            }
         }
     }).to_tokens(to);
 }
