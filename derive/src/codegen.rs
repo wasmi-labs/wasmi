@@ -1,4 +1,4 @@
-use crate::parser::{ImplBlockDef, FuncDef};
+use crate::parser::{FuncDef, ImplBlockDef};
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::{quote, quote_spanned, ToTokens};
 
