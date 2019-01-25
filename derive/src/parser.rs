@@ -1,6 +1,7 @@
-use syn::{spanned::Spanned, Ident, ImplItem, ImplItemMethod, ReturnType};
+use crate::error::CompileError;
+use syn::{spanned::Spanned, FnArg, Ident, ImplItem, ImplItemMethod, ReturnType};
 
-/// A parameter.
+/// A parameter. This doesn't used for modeling `&self` or `&mut self` parameters.
 #[derive(Clone)]
 pub struct Param {
     /// A generated identifier used to name temporary variables
@@ -15,6 +16,7 @@ pub struct FuncDef {
     /// Assigned index of this function.
     pub index: u32,
     pub name: String,
+    /// The parameter of this function. This excludes the `&self` or `&mut self`.
     pub params: Vec<Param>,
     pub return_ty: Option<proc_macro2::Span>,
 }
@@ -34,8 +36,8 @@ pub struct ImplBlockDef {
 }
 
 /// Parse an incoming stream of tokens into externalities definition.
-pub fn parse(input: proc_macro2::TokenStream) -> Result<ImplBlockDef, ()> {
-    let item_impl = syn::parse2::<syn::ItemImpl>(input).map_err(|_| ())?;
+pub fn parse(input: proc_macro2::TokenStream) -> Result<ImplBlockDef, CompileError> {
+    let item_impl = syn::parse2::<syn::ItemImpl>(input).map_err(|_| CompileError::new("failed to parse".to_string()))?;
 
     let mut funcs = vec![];
 
@@ -44,19 +46,28 @@ pub fn parse(input: proc_macro2::TokenStream) -> Result<ImplBlockDef, ()> {
             ImplItem::Method(ImplItemMethod { sig, .. }) => {
                 let index = funcs.len() as u32;
 
-                // self TODO: handle this properly
                 let params = sig
                     .decl
                     .inputs
                     .iter()
-                    .skip(1)
                     .enumerate()
-                    .map(|(idx, input)| {
+                    .filter_map(|(idx, input)| {
+                        // The first parameter should be either &self or &mut self.
+                        // This makes code generation simpler.
+                        if idx == 0 {
+                            match input {
+                                FnArg::SelfRef(_) => return None,
+                                _ => return Some(
+                                    Err(err_span!(input.span(), "only &self and &mut self supported as first argument"))
+                                ),
+                            }
+                        }
+
                         let param_name = format!("arg{}", idx);
                         let ident = Ident::new(&param_name, input.span());
-                        Param { ident }
+                        Some(Ok(Param { ident }))
                     })
-                    .collect::<Vec<_>>();
+                    .collect::<Result<Vec<Param>, CompileError>>()?;
 
                 let return_ty = match sig.decl.output {
                     ReturnType::Default => None,

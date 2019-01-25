@@ -44,6 +44,8 @@
 
 extern crate proc_macro;
 
+#[macro_use]
+mod error;
 mod codegen;
 mod parser;
 
@@ -53,8 +55,13 @@ use proc_macro::TokenStream;
 pub fn derive_externals(_attr: TokenStream, input: TokenStream) -> TokenStream {
     let mut input: proc_macro2::TokenStream = input.into();
 
-    let ext_def = parser::parse(input.clone()).unwrap();
-    codegen::codegen(&ext_def, &mut input);
-
-    input.into()
+    match parser::parse(input.clone()) {
+        Ok(ext_def) => {
+            codegen::codegen(&ext_def, &mut input);
+            input.into()
+        }
+        Err(err) => {
+            (quote::quote! { #err }).into()
+        }
+    }
 }
