@@ -1,3 +1,8 @@
+//! This module generates a trait implementation for `Externals` on the target type.
+//! It also generates a function called `resolve` that returns a `ModuleImportResolved`.
+//!
+//! The code generation is rather simple but it relies heavily on type inference.
+
 use crate::parser::{FuncDef, ImplBlockDef};
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::{quote, quote_spanned, ToTokens};
@@ -170,7 +175,9 @@ fn emit_resolve_func_arm(func: &FuncDef) -> TokenStream {
             };
 
             // at this point types of all variables and return_val are inferred.
-            if signature.params() != &[#(#params_materialized_tys),*] || signature.return_type() != #materialized_return_ty {
+            if signature.params() != &[#(#params_materialized_tys),*]
+                || signature.return_type() != #materialized_return_ty
+            {
                 return Err(Error::Instantiation(
                     format!("Export {} has different signature {:?}", #string_ident, signature),
                 ));
