@@ -1,17 +1,17 @@
-extern crate wasmi_derive;
 extern crate wasmi;
+extern crate wasmi_derive;
 
-use wasmi_derive::derive_externals;
-use wasmi::HostError;
 use std::fmt;
+use wasmi::HostError;
+use wasmi_derive::derive_externals;
 
 #[derive(Debug)]
 struct NoInfoError;
 impl HostError for NoInfoError {}
 impl fmt::Display for NoInfoError {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "NoInfoError")
-	}
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "NoInfoError")
+    }
 }
 
 struct NonStaticExternals<'a> {

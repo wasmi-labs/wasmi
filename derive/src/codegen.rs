@@ -2,22 +2,21 @@ use crate::model::{ExtDefinition, ExternalFunc};
 use proc_macro2::{Ident, Literal, Span, TokenStream};
 use quote::{quote, quote_spanned, ToTokens};
 
-
 pub fn codegen(ext_def: &ExtDefinition, to: &mut TokenStream) {
     let mut externals = TokenStream::new();
     let mut module_resolver = TokenStream::new();
 
     // TODO: Come up with a name.
     let mut new_name = "_WASMI_IMPLS_".to_string();
-	new_name.push_str("NAME".to_string().trim_start_matches("r#"));
-	let dummy_const = Ident::new(&new_name, Span::call_site());
+    new_name.push_str("NAME".to_string().trim_start_matches("r#"));
+    let dummy_const = Ident::new(&new_name, Span::call_site());
 
     derive_externals(ext_def, &mut externals);
     derive_module_resolver(ext_def, &mut module_resolver);
 
     (quote! {
         const #dummy_const: () = {
-			extern crate wasmi as _wasmi;
+            extern crate wasmi as _wasmi;
 
             use _wasmi::{
                 Trap, RuntimeValue, RuntimeArgs, Externals, ValueType, ModuleImportResolver,
@@ -41,7 +40,8 @@ pub fn codegen(ext_def: &ExtDefinition, to: &mut TokenStream) {
             #externals
             #module_resolver
         };
-    }).to_tokens(to);
+    })
+    .to_tokens(to);
 }
 
 fn emit_dispatch_func_arm(func: &ExternalFunc) -> TokenStream {
@@ -58,7 +58,8 @@ fn emit_dispatch_func_arm(func: &ExternalFunc) -> TokenStream {
                 args.next()
                     .and_then(|rt_val| rt_val.try_into())
                     .unwrap();
-        }).to_tokens(&mut unmarshall_args);
+        })
+        .to_tokens(&mut unmarshall_args);
     }
 
     let prologue = quote! {
@@ -109,7 +110,8 @@ fn derive_externals(ext_def: &ExtDefinition, to: &mut TokenStream) {
 
             // ...
         }
-    }).to_tokens(to);
+    })
+    .to_tokens(to);
 }
 
 fn emit_resolve_func_arm(func: &ExternalFunc) -> TokenStream {
@@ -129,18 +131,26 @@ fn emit_resolve_func_arm(func: &ExternalFunc) -> TokenStream {
         }
     };
 
-    let init = func.args.iter().map(|param| {
-        let ident = &param.ident;
-        quote! {
-            let #ident = None;
-        }
-    }).collect::<Vec<_>>();
+    let init = func
+        .args
+        .iter()
+        .map(|param| {
+            let ident = &param.ident;
+            quote! {
+                let #ident = None;
+            }
+        })
+        .collect::<Vec<_>>();
 
-    let params_materialized_tys = func.args.iter().map(|param| {
-        let ident = &param.ident;
-        let span = param.ident.span();
-        quote_spanned! {span=> materialize_arg_ty(#ident) }
-    }).collect::<Vec<_>>();
+    let params_materialized_tys = func
+        .args
+        .iter()
+        .map(|param| {
+            let ident = &param.ident;
+            let span = param.ident.span();
+            quote_spanned! {span=> materialize_arg_ty(#ident) }
+        })
+        .collect::<Vec<_>>();
 
     let materialized_return_ty = quote_spanned! { return_ty_span=>
         materialize_ret_type(return_val)
@@ -162,8 +172,8 @@ fn emit_resolve_func_arm(func: &ExternalFunc) -> TokenStream {
             // at this point types of all variables and return_val are inferred.
             if signature.params() != &[#(#params_materialized_tys),*] || signature.return_type() != #materialized_return_ty {
                 return Err(Error::Instantiation(
-					format!("Export {} has different signature {:?}", #string_ident, signature),
-				));
+                    format!("Export {} has different signature {:?}", #string_ident, signature),
+                ));
             }
 
             return Ok(FuncInstance::alloc_host(signature.clone(), #index));

@@ -1,10 +1,10 @@
-#![recursion_limit="128"]
+#![recursion_limit = "128"]
 
 extern crate proc_macro;
 
+mod codegen;
 mod model;
 mod parser;
-mod codegen;
 
 use proc_macro::TokenStream;
 

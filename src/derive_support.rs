@@ -1,5 +1,5 @@
-use {ValueType, RuntimeValue, Trap};
 use nan_preserving_float::{F32, F64};
+use {RuntimeValue, Trap, ValueType};
 
 /// A trait that represents a value that can be directly coerced to one of
 /// wasm base value types.
@@ -40,21 +40,17 @@ impl IntoWasmResult for () {
     }
 }
 
-impl<R: IntoWasmValue, E: Into<Trap>> IntoWasmResult for Result<R, E>  {
+impl<R: IntoWasmValue, E: Into<Trap>> IntoWasmResult for Result<R, E> {
     const VALUE_TYPE: Option<ValueType> = Some(R::VALUE_TYPE);
     fn into_wasm_result(self) -> Result<Option<RuntimeValue>, Trap> {
-        self
-            .map(|v| Some(v.into_wasm_value()))
-            .map_err(Into::into)
+        self.map(|v| Some(v.into_wasm_value())).map_err(Into::into)
     }
 }
 
-impl<E: Into<Trap>> IntoWasmResult for Result<(), E>  {
+impl<E: Into<Trap>> IntoWasmResult for Result<(), E> {
     const VALUE_TYPE: Option<ValueType> = None;
     fn into_wasm_result(self) -> Result<Option<RuntimeValue>, Trap> {
-        self
-            .map(|_| None)
-            .map_err(Into::into)
+        self.map(|_| None).map_err(Into::into)
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::model::{self, ExtDefinition, ExternalFunc, Param};
-use syn::{ItemImpl, ImplItem, ImplItemMethod, FnArg, ReturnType, Ident};
 use syn::spanned::Spanned;
+use syn::{FnArg, Ident, ImplItem, ImplItemMethod, ItemImpl, ReturnType};
 
 /// Parse an incoming stream of tokens into externalities definition.
 pub fn parse(input: proc_macro2::TokenStream) -> Result<ExtDefinition, ()> {
@@ -10,20 +10,22 @@ pub fn parse(input: proc_macro2::TokenStream) -> Result<ExtDefinition, ()> {
 
     for item in item_impl.items {
         match item {
-            ImplItem::Method(ImplItemMethod {
-                sig,
-                ..
-            }) => {
+            ImplItem::Method(ImplItemMethod { sig, .. }) => {
                 let index = funcs.len() as u32;
 
                 // self TODO: handle this properly
-                let args = sig.decl.inputs.iter().skip(1).enumerate().map(|(idx, input)| {
-                    let param_name = format!("arg{}", idx);
-                    let ident = Ident::new(&param_name, input.span());
-                    Param {
-                        ident,
-                    }
-                }).collect::<Vec<_>>();
+                let args = sig
+                    .decl
+                    .inputs
+                    .iter()
+                    .skip(1)
+                    .enumerate()
+                    .map(|(idx, input)| {
+                        let param_name = format!("arg{}", idx);
+                        let ident = Ident::new(&param_name, input.span());
+                        Param { ident }
+                    })
+                    .collect::<Vec<_>>();
 
                 let return_ty = match sig.decl.output {
                     ReturnType::Default => None,
@@ -36,8 +38,8 @@ pub fn parse(input: proc_macro2::TokenStream) -> Result<ExtDefinition, ()> {
                     args,
                     return_ty,
                 });
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 
