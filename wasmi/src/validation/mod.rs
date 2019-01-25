@@ -5,7 +5,7 @@ use core::fmt;
 use std::error;
 
 #[cfg(not(feature = "std"))]
-use hashmap_core::HashSet;
+use hashbrown::HashSet;
 #[cfg(feature = "std")]
 use std::collections::HashSet;
 
