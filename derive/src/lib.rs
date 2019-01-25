@@ -3,7 +3,6 @@
 extern crate proc_macro;
 
 mod codegen;
-mod model;
 mod parser;
 
 use proc_macro::TokenStream;
