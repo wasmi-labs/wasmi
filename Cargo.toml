@@ -17,6 +17,7 @@ std = ["parity-wasm/std", "byteorder/std"]
 # Enable for no_std support
 # hashmap_core only works on no_std
 core = ["hashmap_core", "libm"]
+derive = ["wasmi-derive"]
 
 [dependencies]
 parity-wasm = { version = "0.31", default-features = false }
@@ -24,12 +25,13 @@ byteorder = { version = "1.0", default-features = false }
 hashmap_core = { version = "0.1.9", optional = true }
 memory_units = "0.3.0"
 libm = { version = "0.1.2", optional = true }
-wasmi-derive = { version = "0.1", path = "derive" }
+wasmi-derive = { version = "0.1", path = "derive", optional = true }
 
 [dev-dependencies]
 assert_matches = "1.1"
 rand = "0.4.2"
 wabt = "0.6"
+wasmi-derive = { version = "0.1", path = "derive" }
 
 [workspace]
 members = ["derive"]
