@@ -6,40 +6,40 @@ pub fn codegen(ext_def: &ExtDefinition, to: &mut TokenStream) {
     let mut externals = TokenStream::new();
     let mut module_resolver = TokenStream::new();
 
-    // TODO: Come up with a name.
-    let mut new_name = "_WASMI_IMPLS_".to_string();
-    new_name.push_str("NAME".to_string().trim_start_matches("r#"));
-    let dummy_const = Ident::new(&new_name, Span::call_site());
-
     derive_externals(ext_def, &mut externals);
     derive_module_resolver(ext_def, &mut module_resolver);
 
+    let (impl_generics, ty_generics, where_clause) = ext_def.generics.split_for_impl();
+    let ty = &ext_def.ty;
+
     (quote! {
-        const #dummy_const: () = {
-            extern crate wasmi as _wasmi;
+        impl #impl_generics #ty #where_clause {
+            const __WASMI_DERIVE_IMPL: () = {
+                extern crate wasmi as _wasmi;
 
-            use _wasmi::{
-                Trap, RuntimeValue, RuntimeArgs, Externals, ValueType, ModuleImportResolver,
-                Signature, FuncRef, Error, FuncInstance,
-                derive_support::{
-                    IntoWasmResult,
-                    IntoWasmValue,
-                },
+                use _wasmi::{
+                    Trap, RuntimeValue, RuntimeArgs, Externals, ValueType, ModuleImportResolver,
+                    Signature, FuncRef, Error, FuncInstance,
+                    derive_support::{
+                        IntoWasmResult,
+                        IntoWasmValue,
+                    },
+                };
+
+                #[inline(always)]
+                fn materialize_arg_ty<W: IntoWasmValue>(_w: Option<W>) -> ValueType {
+                    W::VALUE_TYPE
+                }
+
+                #[inline(always)]
+                fn materialize_ret_type<W: IntoWasmResult>(_w: Option<W>) -> Option<ValueType> {
+                    W::VALUE_TYPE
+                }
+
+                #externals
+                #module_resolver
             };
-
-            #[inline(always)]
-            fn materialize_arg_ty<W: IntoWasmValue>(_w: Option<W>) -> ValueType {
-                W::VALUE_TYPE
-            }
-
-            #[inline(always)]
-            fn materialize_ret_type<W: IntoWasmResult>(_w: Option<W>) -> Option<ValueType> {
-                W::VALUE_TYPE
-            }
-
-            #externals
-            #module_resolver
-        };
+        }
     })
     .to_tokens(to);
 }
