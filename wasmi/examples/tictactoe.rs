@@ -1,18 +1,23 @@
+//! A simple tic tac toe implementation.
+//!
+//! You specify two wasm modules with a certain ABI and this
+//! program instantiates these modules and runs a module
+//! on turn-by-turn basis.
+//!
+
 extern crate parity_wasm;
 extern crate wasmi;
+extern crate wasmi_derive;
 
 use std::env;
 use std::fmt;
 use std::fs::File;
-use wasmi::{
-    Error as InterpreterError, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
-    ModuleImportResolver, ModuleInstance, ModuleRef, RuntimeArgs, RuntimeValue, Signature, Trap,
-    ValueType,
-};
+use wasmi::{Error as InterpreterError, HostError, ImportsBuilder, ModuleInstance, ModuleRef};
 
 #[derive(Debug)]
 pub enum Error {
     OutOfRange,
+    AlreadyPlayed,
     AlreadyOccupied,
     Interpreter(InterpreterError),
 }
@@ -44,16 +49,6 @@ mod tictactoe {
     pub enum GameResult {
         Draw,
         Won(Player),
-    }
-
-    impl Player {
-        pub fn into_i32(maybe_player: Option<Player>) -> i32 {
-            match maybe_player {
-                None => 0,
-                Some(Player::X) => 1,
-                Some(Player::O) => 2,
-            }
-        }
     }
 
     #[derive(Debug)]
@@ -133,59 +128,40 @@ mod tictactoe {
 
 struct Runtime<'a> {
     player: tictactoe::Player,
+    made_turn: bool,
     game: &'a mut tictactoe::Game,
 }
 
-const SET_FUNC_INDEX: usize = 0;
-const GET_FUNC_INDEX: usize = 1;
-
-impl<'a> Externals for Runtime<'a> {
-    fn invoke_index(
-        &mut self,
-        index: usize,
-        args: RuntimeArgs,
-    ) -> Result<Option<RuntimeValue>, Trap> {
-        match index {
-            SET_FUNC_INDEX => {
-                let idx: i32 = args.nth(0);
-                self.game.set(idx, self.player)?;
-                Ok(None)
-            }
-            GET_FUNC_INDEX => {
-                let idx: i32 = args.nth(0);
-                let val: i32 = tictactoe::Player::into_i32(self.game.get(idx)?);
-                Ok(Some(val.into()))
-            }
-            _ => panic!("unknown function index"),
+#[wasmi_derive::derive_externals]
+impl<'a> Runtime<'a> {
+    /// Puts a mark of the current player on the given cell.
+    ///
+    /// Traps if the index is out of bounds of game field or if the player
+    /// already made it's turn.
+    pub fn set(&mut self, idx: i32) -> Result<(), Error> {
+        if self.made_turn {
+            return Err(Error::AlreadyPlayed);
         }
+
+        self.game.set(idx, self.player)?;
+        Ok(())
     }
-}
 
-struct RuntimeModuleImportResolver;
+    /// Returns the player index at the specified cell.
+    ///
+    /// 0 - unoccupied
+    /// 1 - player X
+    /// 2 - player O
+    ///
+    /// Traps if the index is out of bounds of game field.
+    pub fn get(&self, idx: i32) -> Result<i32, Error> {
+        use tictactoe::Player;
 
-impl<'a> ModuleImportResolver for RuntimeModuleImportResolver {
-    fn resolve_func(
-        &self,
-        field_name: &str,
-        _signature: &Signature,
-    ) -> Result<FuncRef, InterpreterError> {
-        let func_ref = match field_name {
-            "set" => FuncInstance::alloc_host(
-                Signature::new(&[ValueType::I32][..], None),
-                SET_FUNC_INDEX,
-            ),
-            "get" => FuncInstance::alloc_host(
-                Signature::new(&[ValueType::I32][..], Some(ValueType::I32)),
-                GET_FUNC_INDEX,
-            ),
-            _ => {
-                return Err(InterpreterError::Function(format!(
-                    "host module doesn't export function with name {}",
-                    field_name
-                )));
-            }
-        };
-        Ok(func_ref)
+        Ok(match self.game.get(idx)? {
+            None => 0,
+            Some(Player::X) => 1,
+            Some(Player::O) => 2,
+        })
     }
 }
 
@@ -198,10 +174,14 @@ fn instantiate(path: &str) -> Result<ModuleRef, Error> {
         wasmi::Module::from_buffer(&wasm_buf)?
     };
 
-    let mut imports = ImportsBuilder::new();
-    imports.push_resolver("env", &RuntimeModuleImportResolver);
+    let instance = {
+        let resolver = Runtime::resolver();
 
-    let instance = ModuleInstance::new(&module, &imports)?.assert_no_start();
+        let mut imports = ImportsBuilder::new();
+        imports.push_resolver("env", &resolver);
+
+        ModuleInstance::new(&module, &imports)?.assert_no_start()
+    };
 
     Ok(instance)
 }
@@ -222,6 +202,7 @@ fn play(
             let mut runtime = Runtime {
                 player: turn_of,
                 game: game,
+                made_turn: false,
             };
             let _ = instance.invoke_export("mk_turn", &[], &mut runtime)?;
         }
