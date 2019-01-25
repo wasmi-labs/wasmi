@@ -3,3 +3,7 @@ members = [
     "wasmi",
     "derive",
 ]
+
+exclude = [
+    "benches", # uses custom profile
+]
