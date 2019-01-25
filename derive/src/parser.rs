@@ -1,35 +1,40 @@
 use syn::{spanned::Spanned, FnArg, Ident, ImplItem, ImplItemMethod, ItemImpl, ReturnType};
 
+/// A parameter.
 #[derive(Clone)]
 pub struct Param {
     /// A generated identifier used to name temporary variables
     /// used for storing this parameter in generated code.
+    ///
+    /// This ident is used primary used for its' span.
     pub ident: syn::Ident,
 }
 
-pub struct ExternalFunc {
+/// A function definition parsed from an impl block.
+pub struct FuncDef {
     /// Assigned index of this function.
     pub index: u32,
     pub name: String,
-    // TODO: Rename args to params
-    pub args: Vec<Param>,
+    pub params: Vec<Param>,
     pub return_ty: Option<proc_macro2::Span>,
 }
 
-/// The core structure that contains the list of all functions
-/// and the data required for implementing a trait.
-pub struct ExtDefinition {
-    /// List of all external functions.
-    pub funcs: Vec<ExternalFunc>,
+/// This is the core data structure which contains the list of all defined functions
+/// and the data required for the code generator (e.g. for implementing a trait).
+pub struct ImplBlockDef {
+    /// List of all defined external functions.
+    pub funcs: Vec<FuncDef>,
     /// The generics required to implement a trait for this type.
     pub generics: syn::Generics,
-    /// The type declaration to implement to implement a trait, most typically
+    /// The type declaration to implement a trait, most typically
     /// represented by a structure.
+    ///
+    /// E.g.: `Foo<'a>`, `()`
     pub ty: Box<syn::Type>,
 }
 
 /// Parse an incoming stream of tokens into externalities definition.
-pub fn parse(input: proc_macro2::TokenStream) -> Result<ExtDefinition, ()> {
+pub fn parse(input: proc_macro2::TokenStream) -> Result<ImplBlockDef, ()> {
     let item_impl = syn::parse2::<syn::ItemImpl>(input).map_err(|_| ())?;
 
     let mut funcs = vec![];
@@ -40,7 +45,7 @@ pub fn parse(input: proc_macro2::TokenStream) -> Result<ExtDefinition, ()> {
                 let index = funcs.len() as u32;
 
                 // self TODO: handle this properly
-                let args = sig
+                let params = sig
                     .decl
                     .inputs
                     .iter()
@@ -58,10 +63,10 @@ pub fn parse(input: proc_macro2::TokenStream) -> Result<ExtDefinition, ()> {
                     ReturnType::Type(_, ty) => Some(ty.span()),
                 };
 
-                funcs.push(ExternalFunc {
+                funcs.push(FuncDef {
                     index,
                     name: sig.ident.to_string(),
-                    args,
+                    params,
                     return_ty,
                 });
             }
@@ -69,7 +74,7 @@ pub fn parse(input: proc_macro2::TokenStream) -> Result<ExtDefinition, ()> {
         }
     }
 
-    Ok(ExtDefinition {
+    Ok(ImplBlockDef {
         funcs,
         generics: item_impl.generics.clone(),
         ty: item_impl.self_ty.clone(),

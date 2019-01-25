@@ -1,8 +1,8 @@
-use crate::parser::{ExtDefinition, ExternalFunc};
+use crate::parser::{ImplBlockDef, FuncDef};
 use proc_macro2::{Ident, Literal, Span, TokenStream};
 use quote::{quote, quote_spanned, ToTokens};
 
-pub fn codegen(ext_def: &ExtDefinition, to: &mut TokenStream) {
+pub fn codegen(ext_def: &ImplBlockDef, to: &mut TokenStream) {
     let mut externals = TokenStream::new();
     let mut module_resolver = TokenStream::new();
 
@@ -44,12 +44,12 @@ pub fn codegen(ext_def: &ExtDefinition, to: &mut TokenStream) {
     .to_tokens(to);
 }
 
-fn emit_dispatch_func_arm(func: &ExternalFunc) -> TokenStream {
+fn emit_dispatch_func_arm(func: &FuncDef) -> TokenStream {
     let index = func.index as usize;
     let return_ty_span = func.return_ty.clone().unwrap_or_else(|| Span::call_site());
 
     let mut unmarshall_args = TokenStream::new();
-    for (i, param) in func.args.iter().enumerate() {
+    for (i, param) in func.params.iter().enumerate() {
         let param_span = param.ident.span();
         let ident = &param.ident;
 
@@ -71,10 +71,10 @@ fn emit_dispatch_func_arm(func: &ExternalFunc) -> TokenStream {
     };
 
     let call = {
-        let args = func.args.iter().map(|param| param.ident.clone());
+        let params = func.params.iter().map(|param| param.ident.clone());
         let name = Ident::new(&func.name, Span::call_site());
         quote! {
-            #name( #(#args),* )
+            #name( #(#params),* )
         }
     };
     (quote! {
@@ -86,7 +86,7 @@ fn emit_dispatch_func_arm(func: &ExternalFunc) -> TokenStream {
     })
 }
 
-fn derive_externals(ext_def: &ExtDefinition, to: &mut TokenStream) {
+fn derive_externals(ext_def: &ImplBlockDef, to: &mut TokenStream) {
     let (impl_generics, ty_generics, where_clause) = ext_def.generics.split_for_impl();
     let ty = &ext_def.ty;
 
@@ -114,25 +114,25 @@ fn derive_externals(ext_def: &ExtDefinition, to: &mut TokenStream) {
     .to_tokens(to);
 }
 
-fn emit_resolve_func_arm(func: &ExternalFunc) -> TokenStream {
+fn emit_resolve_func_arm(func: &FuncDef) -> TokenStream {
     let index = func.index as usize;
     let string_ident = &func.name;
     let return_ty_span = func.return_ty.clone().unwrap_or_else(|| Span::call_site());
 
     let call = {
-        let args = func.args.iter().map(|param| {
+        let params = func.params.iter().map(|param| {
             let ident = param.ident.clone();
             let span = param.ident.span();
             quote_spanned! {span=> #ident.unwrap() }
         });
         let name = Ident::new(&func.name, Span::call_site());
         quote! {
-            Self::#name( panic!(), #(#args),* )
+            Self::#name( panic!(), #(#params),* )
         }
     };
 
     let init = func
-        .args
+        .params
         .iter()
         .map(|param| {
             let ident = &param.ident;
@@ -143,7 +143,7 @@ fn emit_resolve_func_arm(func: &ExternalFunc) -> TokenStream {
         .collect::<Vec<_>>();
 
     let params_materialized_tys = func
-        .args
+        .params
         .iter()
         .map(|param| {
             let ident = &param.ident;
@@ -181,7 +181,7 @@ fn emit_resolve_func_arm(func: &ExternalFunc) -> TokenStream {
     }
 }
 
-fn derive_module_resolver(ext_def: &ExtDefinition, to: &mut TokenStream) {
+fn derive_module_resolver(ext_def: &ImplBlockDef, to: &mut TokenStream) {
     let (impl_generics, ty_generics, where_clause) = ext_def.generics.split_for_impl();
     let ty = &ext_def.ty;
 
