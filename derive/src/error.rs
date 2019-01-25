@@ -1,4 +1,4 @@
-use proc_macro2::{TokenStream, Span};
+use proc_macro2::{Span, TokenStream};
 use quote::{quote_spanned, ToTokens};
 
 macro_rules! err_span {
@@ -21,10 +21,7 @@ impl CompileError {
     }
 
     pub fn new(msg: String) -> Self {
-        CompileError {
-            span: None,
-            msg,
-        }
+        CompileError { span: None, msg }
     }
 }
 
@@ -34,6 +31,7 @@ impl ToTokens for CompileError {
         let span = self.span.unwrap_or_else(|| Span::call_site());
         (quote_spanned! { span=>
             compile_error!(#msg);
-        }).to_tokens(dst);
+        })
+        .to_tokens(dst);
     }
 }

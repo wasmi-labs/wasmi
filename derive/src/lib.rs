@@ -24,7 +24,7 @@
 //!
 //! #[derive_externals]
 //! impl<'a> NonStaticExternals<'a> {
-//!     pub fn hello(&self, a: u32, b: u32) -> u32 {
+//!     pub fn add(&self, a: u32, b: u32) -> u32 {
 //!         a + b
 //!     }
 //!
@@ -60,8 +60,6 @@ pub fn derive_externals(_attr: TokenStream, input: TokenStream) -> TokenStream {
             codegen::codegen(&ext_def, &mut input);
             input.into()
         }
-        Err(err) => {
-            (quote::quote! { #err }).into()
-        }
+        Err(err) => (quote::quote! { #err }).into(),
     }
 }

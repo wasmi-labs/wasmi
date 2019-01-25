@@ -37,7 +37,8 @@ pub struct ImplBlockDef {
 
 /// Parse an incoming stream of tokens into externalities definition.
 pub fn parse(input: proc_macro2::TokenStream) -> Result<ImplBlockDef, CompileError> {
-    let item_impl = syn::parse2::<syn::ItemImpl>(input).map_err(|_| CompileError::new("failed to parse".to_string()))?;
+    let item_impl = syn::parse2::<syn::ItemImpl>(input)
+        .map_err(|_| CompileError::new("failed to parse".to_string()))?;
 
     let mut funcs = vec![];
 
@@ -57,9 +58,12 @@ pub fn parse(input: proc_macro2::TokenStream) -> Result<ImplBlockDef, CompileErr
                         if idx == 0 {
                             match input {
                                 FnArg::SelfRef(_) => return None,
-                                _ => return Some(
-                                    Err(err_span!(input.span(), "only &self and &mut self supported as first argument"))
-                                ),
+                                _ => {
+                                    return Some(Err(err_span!(
+                                        input.span(),
+                                        "only &self and &mut self supported as first argument"
+                                    )));
+                                }
                             }
                         }
 
