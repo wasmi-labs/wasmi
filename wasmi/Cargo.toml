@@ -1,0 +1,34 @@
+[package]
+name = "wasmi"
+version = "0.4.3"
+authors = ["Nikolay Volf <nikvolf@gmail.com>", "Svyatoslav Nikolsky <svyatonik@yandex.ru>", "Sergey Pepyakin <s.pepyakin@gmail.com>"]
+license = "MIT/Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/paritytech/wasmi"
+documentation = "https://paritytech.github.io/wasmi/"
+description = "WebAssembly interpreter"
+keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
+exclude = [ "/res/*", "/tests/*", "/fuzz/*", "/benches/*" ]
+
+[features]
+default = ["std"]
+# Disable for no_std support
+std = ["parity-wasm/std", "byteorder/std"]
+# Enable for no_std support
+# hashmap_core only works on no_std
+core = ["hashmap_core", "libm"]
+derive = ["wasmi-derive"]
+
+[dependencies]
+parity-wasm = { version = "0.31", default-features = false }
+byteorder = { version = "1.0", default-features = false }
+hashmap_core = { version = "0.1.9", optional = true }
+memory_units = "0.3.0"
+libm = { version = "0.1.2", optional = true }
+wasmi-derive = { version = "0.1", path = "../derive", optional = true }
+
+[dev-dependencies]
+assert_matches = "1.1"
+rand = "0.4.2"
+wabt = "0.6"
+wasmi-derive = { version = "0.1", path = "../derive" }
