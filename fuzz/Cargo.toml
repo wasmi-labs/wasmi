@@ -9,7 +9,7 @@ publish = false
 cargo-fuzz = true
 
 [dependencies]
-wasmi = { path = ".." }
+wasmi = { path = "../wasmi" }
 wabt = "0.6.0"
 wasmparser = "0.14.1"
 tempdir = "0.3.6"
