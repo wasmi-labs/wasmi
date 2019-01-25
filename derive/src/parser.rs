@@ -1,17 +1,4 @@
-use syn::spanned::Spanned;
-use syn::{FnArg, Ident, ImplItem, ImplItemMethod, ItemImpl, ReturnType};
-
-pub enum ValueType {
-    I32,
-    I64,
-    F32,
-    F64,
-}
-
-pub struct Signature {
-    pub params: Vec<ValueType>,
-    pub return_ty: Option<ValueType>,
-}
+use syn::{spanned::Spanned, FnArg, Ident, ImplItem, ImplItemMethod, ItemImpl, ReturnType};
 
 #[derive(Clone)]
 pub struct Param {
