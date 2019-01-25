@@ -1,4 +1,4 @@
-use syn::{spanned::Spanned, FnArg, Ident, ImplItem, ImplItemMethod, ItemImpl, ReturnType};
+use syn::{spanned::Spanned, Ident, ImplItem, ImplItemMethod, ReturnType};
 
 /// A parameter.
 #[derive(Clone)]

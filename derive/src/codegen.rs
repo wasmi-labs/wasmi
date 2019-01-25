@@ -1,5 +1,5 @@
 use crate::parser::{ImplBlockDef, FuncDef};
-use proc_macro2::{Ident, Literal, Span, TokenStream};
+use proc_macro2::{Ident, Span, TokenStream};
 use quote::{quote, quote_spanned, ToTokens};
 
 pub fn codegen(ext_def: &ImplBlockDef, to: &mut TokenStream) {
@@ -9,7 +9,7 @@ pub fn codegen(ext_def: &ImplBlockDef, to: &mut TokenStream) {
     derive_externals(ext_def, &mut externals);
     derive_module_resolver(ext_def, &mut module_resolver);
 
-    let (impl_generics, ty_generics, where_clause) = ext_def.generics.split_for_impl();
+    let (impl_generics, _, where_clause) = ext_def.generics.split_for_impl();
     let ty = &ext_def.ty;
 
     (quote! {
@@ -49,7 +49,7 @@ fn emit_dispatch_func_arm(func: &FuncDef) -> TokenStream {
     let return_ty_span = func.return_ty.clone().unwrap_or_else(|| Span::call_site());
 
     let mut unmarshall_args = TokenStream::new();
-    for (i, param) in func.params.iter().enumerate() {
+    for param in &func.params {
         let param_span = param.ident.span();
         let ident = &param.ident;
 
@@ -87,7 +87,7 @@ fn emit_dispatch_func_arm(func: &FuncDef) -> TokenStream {
 }
 
 fn derive_externals(ext_def: &ImplBlockDef, to: &mut TokenStream) {
-    let (impl_generics, ty_generics, where_clause) = ext_def.generics.split_for_impl();
+    let (impl_generics, _, where_clause) = ext_def.generics.split_for_impl();
     let ty = &ext_def.ty;
 
     let mut match_arms = vec![];
@@ -182,7 +182,7 @@ fn emit_resolve_func_arm(func: &FuncDef) -> TokenStream {
 }
 
 fn derive_module_resolver(ext_def: &ImplBlockDef, to: &mut TokenStream) {
-    let (impl_generics, ty_generics, where_clause) = ext_def.generics.split_for_impl();
+    let (impl_generics, _, where_clause) = ext_def.generics.split_for_impl();
     let ty = &ext_def.ty;
 
     let mut match_arms = vec![];

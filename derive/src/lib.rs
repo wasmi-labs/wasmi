@@ -8,7 +8,7 @@ mod parser;
 use proc_macro::TokenStream;
 
 #[proc_macro_attribute]
-pub fn derive_externals(attr: TokenStream, input: TokenStream) -> TokenStream {
+pub fn derive_externals(_attr: TokenStream, input: TokenStream) -> TokenStream {
     let mut input: proc_macro2::TokenStream = input.into();
 
     let ext_def = parser::parse(input.clone()).unwrap();
