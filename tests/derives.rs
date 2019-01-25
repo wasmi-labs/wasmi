@@ -1,3 +1,5 @@
+// If you are to update this code, make sure you update the example in `wasmi-derive`.
+
 extern crate wasmi;
 extern crate wasmi_derive;
 

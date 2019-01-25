@@ -137,6 +137,8 @@ impl HostError {
 
 /// Trait that allows to implement host functions.
 ///
+/// You can use `wasmi-derive` or you can implement this trait manually.
+///
 /// # Examples
 ///
 /// ```rust
