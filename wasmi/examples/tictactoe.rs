@@ -137,7 +137,7 @@ impl<'a> Runtime<'a> {
     /// Puts a mark of the current player on the given cell.
     ///
     /// Traps if the index is out of bounds of game field or if the player
-    /// already made it's turn.
+    /// already made its turn.
     pub fn set(&mut self, idx: i32) -> Result<(), Error> {
         if self.made_turn {
             return Err(Error::AlreadyPlayed);
