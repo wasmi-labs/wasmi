@@ -2,7 +2,7 @@
 use alloc::prelude::*;
 
 #[cfg(not(feature = "std"))]
-use hashmap_core::HashMap;
+use hashbrown::HashMap;
 #[cfg(feature = "std")]
 use std::collections::HashMap;
 
