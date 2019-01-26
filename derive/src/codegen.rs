@@ -21,7 +21,12 @@ pub fn codegen(ext_def: &ImplBlockDef, to: &mut TokenStream) {
         impl #impl_generics #ty #where_clause {
             const __WASMI_DERIVE_IMPL: () = {
                 extern crate wasmi as _wasmi;
+                extern crate core as _core;
 
+                use _core::{
+                    result::Result,
+                    option::Option,
+                };
                 use _wasmi::{
                     Trap, RuntimeValue, RuntimeArgs, Externals, ValueType, ModuleImportResolver,
                     Signature, FuncRef, Error, FuncInstance,
