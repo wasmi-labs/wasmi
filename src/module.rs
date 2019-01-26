@@ -39,6 +39,9 @@ use {Error, MemoryInstance, Module, RuntimeValue, Signature, TableInstance};
 #[derive(Clone, Debug)]
 pub struct ModuleRef(pub(crate) Rc<ModuleInstance>);
 
+unsafe impl Sync for ModuleRef {}
+unsafe impl Send for ModuleRef {}
+
 impl ::core::ops::Deref for ModuleRef {
     type Target = ModuleInstance;
     fn deref(&self) -> &ModuleInstance {
@@ -163,6 +166,9 @@ pub struct ModuleInstance {
     globals: RefCell<Vec<GlobalRef>>,
     exports: RefCell<HashMap<String, ExternVal>>,
 }
+
+unsafe impl Sync for ModuleInstance {}
+unsafe impl Send for ModuleInstance {}
 
 impl ModuleInstance {
     fn default() -> Self {
