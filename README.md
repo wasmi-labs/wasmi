@@ -3,9 +3,11 @@
 
 # `wasmi`
 
-Wasm interpreter
+`wasmi` - a Wasm interpreter.
 
-Primary purpose of `wasmi` is to be used with [parity](https://github.com/paritytech/parity) (ethereum-like contracts in wasm) and with [Polkadot](https://github.com/paritytech/polkadot). However, `wasmi` is designed to be as flexible as possible and might be suited well for other purposes.
+`wasmi` was conceived as a component of [parity-ethereum](https://github.com/paritytech/parity-ethereum) (ethereum-like contracts in wasm) and [substrate](https://github.com/paritytech/substrate). These projects are related to blockchain and require a high degree of correctness, even if that might be over conservative. This specifically means that we are not trying to be involved in any implementation of any of work-in-progress Wasm proposals. We are also trying to be as close as possible to the spec, which means we are trying to avoid features that is not directly supported by the spec. This means that it is flexible on the one hand and on the other hand there shouldn't be a problem migrating to another spec compilant execution engine.
+
+With all that said, `wasmi` should be a good option for initial prototyping.
 
 # Build & Test
 
