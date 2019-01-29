@@ -3,7 +3,7 @@
 
 # `wasmi`
 
-WASM interpreter
+Wasm interpreter
 
 Primary purpose of `wasmi` is to be used with [parity](https://github.com/paritytech/parity) (ethereum-like contracts in wasm) and with [Polkadot](https://github.com/paritytech/polkadot). However, `wasmi` is designed to be as flexible as possible and might be suited well for other purposes.
 
