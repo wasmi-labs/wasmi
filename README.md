@@ -9,13 +9,6 @@ Primary purpose of `wasmi` is to be used with [parity](https://github.com/parity
 
 At the moment, the API is rather low-level (especially, in the part related to host functions). But some high-level API is on the roadmap.
 
-# License
-
-`wasmi` is primarily distributed under the terms of both the MIT
-license and the Apache License (Version 2.0), at your choice.
-
-See LICENSE-APACHE, and LICENSE-MIT for details.
-
 # Build & Test
 
 As `wasmi` contains a git submodule, you need to use `--recursive` for cloning or to checkout the submodule explicitly, otherwise the testing would fail.
@@ -28,6 +21,7 @@ cargo test
 ```
 
 # `no_std` support
+
 This crate supports `no_std` environments.
 Enable the `core` feature and disable default features:
 ```toml
@@ -44,6 +38,13 @@ Also, code related to `std::error` is disabled.
 
 Floating point operations in `no_std` use [`libm`](https://crates.io/crates/libm), which sometimes panics in debug mode (https://github.com/japaric/libm/issues/4).
 So make sure to either use release builds or avoid WASM with floating point operations, for example by using [`deny_floating_point`](https://docs.rs/wasmi/0.4.0/wasmi/struct.Module.html#method.deny_floating_point).
+
+# License
+
+`wasmi` is primarily distributed under the terms of both the MIT
+license and the Apache License (Version 2.0), at your choice.
+
+See LICENSE-APACHE, and LICENSE-MIT for details.
 
 ## Contribution
 
