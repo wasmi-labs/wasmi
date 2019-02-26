@@ -607,7 +607,7 @@ impl LittleEndianConvert for i16 {
         let mut res = [0u8; 2];
         buffer
             .get(0..2)
-            .map(|s|{
+            .map(|s| {
                 res.copy_from_slice(s);
                 Self::from_le_bytes(res)
             })
@@ -624,7 +624,7 @@ impl LittleEndianConvert for u16 {
         let mut res = [0u8; 2];
         buffer
             .get(0..2)
-            .map(|s|{
+            .map(|s| {
                 res.copy_from_slice(s);
                 Self::from_le_bytes(res)
             })
@@ -641,7 +641,7 @@ impl LittleEndianConvert for i32 {
         let mut res = [0u8; 4];
         buffer
             .get(0..4)
-            .map(|s|{
+            .map(|s| {
                 res.copy_from_slice(s);
                 Self::from_le_bytes(res)
             })
@@ -658,7 +658,7 @@ impl LittleEndianConvert for u32 {
         let mut res = [0u8; 4];
         buffer
             .get(0..4)
-            .map(|s|{
+            .map(|s| {
                 res.copy_from_slice(s);
                 Self::from_le_bytes(res)
             })
@@ -675,7 +675,7 @@ impl LittleEndianConvert for i64 {
         let mut res = [0u8; 8];
         buffer
             .get(0..8)
-            .map(|s|{
+            .map(|s| {
                 res.copy_from_slice(s);
                 Self::from_le_bytes(res)
             })
@@ -692,7 +692,7 @@ impl LittleEndianConvert for f32 {
         let mut res = [0u8; 4];
         buffer
             .get(0..4)
-            .map(|s|{
+            .map(|s| {
                 res.copy_from_slice(s);
                 Self::from_bits(u32::from_le_bytes(res))
             })
@@ -709,7 +709,7 @@ impl LittleEndianConvert for f64 {
         let mut res = [0u8; 8];
         buffer
             .get(0..8)
-            .map(|s|{
+            .map(|s| {
                 res.copy_from_slice(s);
                 Self::from_bits(u64::from_le_bytes(res))
             })
