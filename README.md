@@ -3,18 +3,11 @@
 
 # `wasmi`
 
-WASM interpreter (previously lived in [parity-wasm](https://github.com/paritytech/parity-wasm))
+`wasmi` - a Wasm interpreter.
 
-Primary purpose of `wasmi` is to be used with [parity](https://github.com/paritytech/parity) (ethereum-like contracts in wasm) and with [Polkadot](https://github.com/paritytech/polkadot). However, `wasmi` is designed to be as flexible as possible and might be suited well for other purposes.
+`wasmi` was conceived as a component of [parity-ethereum](https://github.com/paritytech/parity-ethereum) (ethereum-like contracts in wasm) and [substrate](https://github.com/paritytech/substrate). These projects are related to blockchain and require a high degree of correctness, even if that might be over conservative. This specifically means that we are not trying to be involved in any implementation of any of work-in-progress Wasm proposals. We are also trying to be as close as possible to the spec, which means we are trying to avoid features that is not directly supported by the spec. This means that it is flexible on the one hand and on the other hand there shouldn't be a problem migrating to another spec compilant execution engine.
 
-At the moment, the API is rather low-level (especially, in the part related to host functions). But some high-level API is on the roadmap.
-
-# License
-
-`wasmi` is primarily distributed under the terms of both the MIT
-license and the Apache License (Version 2.0), at your choice.
-
-See LICENSE-APACHE, and LICENSE-MIT for details.
+With all that said, `wasmi` should be a good option for initial prototyping.
 
 # Build & Test
 
@@ -28,6 +21,7 @@ cargo test
 ```
 
 # `no_std` support
+
 This crate supports `no_std` environments.
 Enable the `core` feature and disable default features:
 ```toml
@@ -44,6 +38,13 @@ Also, code related to `std::error` is disabled.
 
 Floating point operations in `no_std` use [`libm`](https://crates.io/crates/libm), which sometimes panics in debug mode (https://github.com/japaric/libm/issues/4).
 So make sure to either use release builds or avoid WASM with floating point operations, for example by using [`deny_floating_point`](https://docs.rs/wasmi/0.4.0/wasmi/struct.Module.html#method.deny_floating_point).
+
+# License
+
+`wasmi` is primarily distributed under the terms of both the MIT
+license and the Apache License (Version 2.0), at your choice.
+
+See LICENSE-APACHE, and LICENSE-MIT for details.
 
 ## Contribution
 
