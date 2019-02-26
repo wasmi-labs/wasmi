@@ -13,14 +13,13 @@ exclude = [ "/res/*", "/tests/*", "/fuzz/*", "/benches/*" ]
 [features]
 default = ["std"]
 # Disable for no_std support
-std = ["parity-wasm/std", "byteorder/std"]
+std = ["parity-wasm/std"]
 # Enable for no_std support
 # hashbrown only works on no_std
 core = ["hashbrown", "libm"]
 
 [dependencies]
 parity-wasm = { version = "0.31", default-features = false }
-byteorder = { version = "1.0", default-features = false }
 hashbrown = { version = "0.1.8", optional = true }
 memory_units = "0.3.0"
 libm = { version = "0.1.2", optional = true }

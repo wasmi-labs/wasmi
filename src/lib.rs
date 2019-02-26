@@ -115,7 +115,6 @@ extern crate wabt;
 #[macro_use]
 extern crate assert_matches;
 
-extern crate byteorder;
 #[cfg(not(feature = "std"))]
 extern crate hashbrown;
 extern crate memory_units as memory_units_crate;
