@@ -717,7 +717,6 @@ impl<'a> NotStartedModuleRef<'a> {
 
     /// Whether or not the module has a `start` function.
     ///
-    ///
     /// Returns `true` if it has a `start` function.
     pub fn has_start(&self) -> bool {
         self.loaded_module.module().start_section().is_some()
