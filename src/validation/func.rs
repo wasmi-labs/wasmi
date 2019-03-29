@@ -21,15 +21,17 @@ const DEFAULT_FRAME_STACK_LIMIT: usize = 16384;
 struct BlockFrame {
     /// Frame type.
     frame_type: BlockFrameType,
-    /// A signature, which is a block signature type indicating the number and types of result values of the region.
+    /// A signature, which is a block signature type indicating the number and types of result
+    /// values of the region.
     block_type: BlockType,
     /// A label for reference to block instruction.
     begin_position: usize,
-    /// A limit integer value, which is an index into the value stack indicating where to reset it to on a branch to that label.
+    /// A limit integer value, which is an index into the value stack indicating where to reset it
+    /// to on a branch to that label.
     value_stack_len: usize,
-    /// Boolean which signals whether value stack became polymorphic. Value stack starts in non-polymorphic state and
-    /// becomes polymorphic only after an instruction that never passes control further is executed,
-    /// i.e. `unreachable`, `br` (but not `br_if`!), etc.
+    /// Boolean which signals whether value stack became polymorphic. Value stack starts in
+    /// a non-polymorphic state and becomes polymorphic only after an instruction that never passes
+    /// control further is executed, i.e. `unreachable`, `br` (but not `br_if`!), etc.
     polymorphic_stack: bool,
 }
 
@@ -1783,6 +1785,9 @@ fn require_local(locals: &Locals, idx: u32) -> Result<ValueType, Error> {
     Ok(locals.type_of_local(idx)?)
 }
 
+/// Returns a relative depth on the stack of a local variable specified
+/// by `idx`.
+///
 /// See stack layout definition in mod isa.
 fn relative_local_depth(
     idx: u32,
