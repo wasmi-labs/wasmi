@@ -1703,6 +1703,7 @@ fn pop_label(
 }
 
 fn top_label(frame_stack: &StackWithLimit<BlockFrame>) -> &BlockFrame {
+    // TODO: This actually isn't safe.
     frame_stack
         .top()
         .expect("this function can't be called with empty frame stack")
