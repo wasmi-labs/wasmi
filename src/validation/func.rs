@@ -1153,6 +1153,821 @@ impl FunctionReader {
     }
 }
 
+mod compiler {
+    use super::*;
+
+    struct CompilerFrame {
+        // TODO: Split this type into one that is specific to compilation.
+        frame_type: BlockFrameType,
+        // TODO: Arity should be enough.
+        block_type: BlockType,
+        value_stack_len: u32,
+        polymorphic_stack: bool,
+    }
+
+    struct Compiler {
+        sink: Sink,
+        frames: Vec<CompilerFrame>,
+        value_stack_height: u32,
+    }
+
+    // Requires labels. Labels are typed.
+    // relative_local_depth requires the size of a value stack.
+    // make polymorphic requires to track unreachableness.
+
+    impl Compiler {
+        fn feed_instruction(
+            &mut self,
+            instruction: &Instruction,
+            context: &FunctionValidationContext,
+        ) -> Result<Outcome, Error> {
+            use self::Instruction::*;
+            match *instruction {
+                // Nop instruction doesn't do anything. It is safe to just skip it.
+                Nop => {}
+
+                Unreachable => {
+                    self.sink.emit(isa::InstructionInternal::Unreachable);
+                    self.frames.last_mut().unwrap().polymorphic_stack = true;
+                }
+
+                Block(block_type) => {
+                    let end_label = self.sink.new_label();
+
+                    self.frames.push(CompilerFrame {
+                        frame_type: BlockFrameType::Block { end_label },
+                        block_type,
+                        value_stack_len: self.value_stack_height,
+                    });
+                }
+                Loop(block_type) => {
+                    // Resolve loop header right away.
+                    let header = self.sink.new_label();
+                    self.sink.resolve_label(header);
+
+                    self.frames.push(CompilerFrame {
+                        frame_type: BlockFrameType::Loop { header },
+                        block_type,
+                        value_stack_len: self.value_stack_height,
+                    });
+                }
+                If(block_type) => {
+                    // `if_not` will be resolved whenever `End` or `Else` operator will be met.
+                    // `end_label` will always be resolved at `End`.
+                    let if_not = self.sink.new_label();
+                    let end_label = self.sink.new_label();
+
+                    // TODO: That probably means that we need to drop this value when jumping.
+                    // pop_value(
+                    //     &mut context.value_stack,
+                    //     &context.frame_stack,
+                    //     ValueType::I32.into(),
+                    // )?;
+
+                    self.frames.push(CompilerFrame {
+                        frame_type: BlockFrameType::IfTrue { if_not, end_label },
+                        block_type,
+                        value_stack_len: self.value_stack_height,
+                    });
+
+                    self.sink.emit_br_eqz(Target {
+                        label: if_not,
+                        drop_keep: isa::DropKeep {
+                            drop: 0,
+                            keep: isa::Keep::None,
+                        },
+                    });
+                }
+                Else => {
+                    let (block_type, if_not, end_label) = {
+                        let top_frame = self.frames.last().expect("empty frames stack");
+
+                        let (if_not, end_label) = match top_frame.frame_type {
+                            BlockFrameType::IfTrue { if_not, end_label } => (if_not, end_label),
+                            _ => {
+                                // This should not be possible since we run this code after validation.
+                                unreachable!("Misplaced else instruction")
+                            }
+                        };
+                        (top_frame.block_type, if_not, end_label)
+                    };
+
+                    // First, we need to finish if-true block: add a jump from the end of the if-true block
+                    // to the "end_label" (it will be resolved at End).
+                    self.sink.emit_br(Target {
+                        label: end_label,
+                        drop_keep: isa::DropKeep {
+                            drop: 0,
+                            keep: isa::Keep::None,
+                        },
+                    });
+
+                    // Resolve `if_not` to here so when if condition is unsatisfied control flow
+                    // will jump to this label.
+                    self.sink.resolve_label(if_not);
+
+                    self.frames.pop();
+                    self.frames.push(CompilerFrame {
+                        frame_type: BlockFrameType::IfFalse { end_label },
+                        block_type,
+                        value_stack_len: self.value_stack_height,
+                    });
+                }
+                End => {
+                    let (frame_type, block_type) = {
+                        let top = self.frames.last().expect("empty frames stack");
+                        (top.frame_type, top.block_type)
+                    };
+
+                    if let BlockFrameType::IfTrue { if_not, .. } = frame_type {
+                        // A `if` without an `else` can't return a result.
+                        if block_type != BlockType::NoResult {
+                            return Err(Error(format!(
+									"If block without else required to have NoResult block type. But it has {:?} type",
+									block_type
+								)));
+                        }
+
+                        // Resolve `if_not` label. If the `if's` condition doesn't hold the control will jump
+                        // to here.
+                        self.sink.resolve_label(if_not);
+                    }
+
+                    // Unless it's a loop, resolve the `end_label` position here.
+                    if !frame_type.is_loop() {
+                        let end_label = frame_type.end_label();
+                        self.sink.resolve_label(end_label);
+                    }
+
+                    if context.frame_stack.len() == 1 {
+                        // We are about to close the last frame. Insert
+                        // an explicit return.
+
+                        // Emit the return instruction.
+                        let drop_keep = drop_keep_return(
+                            &context.locals,
+                            &context.value_stack,
+                            &context.frame_stack,
+                        );
+                        self.sink.emit(isa::InstructionInternal::Return(drop_keep));
+                    }
+
+                    // pop_label(&mut context.value_stack, &mut context.frame_stack)?;
+
+                    // Push the result value.
+                    if let BlockType::Value(value_type) = block_type {
+                        // push_value(&mut context.value_stack, value_type.into())?;
+                    }
+                }
+                Br(depth) => {
+                    let target = require_target(depth, self.value_stack_height, &context.frame_stack);
+                    self.sink.emit_br(target);
+
+                    self.polymorphic_stack =
+                    return Ok(Outcome::Unreachable);
+                }
+                BrIf(depth) => {
+                    let target = require_target(depth, self.value_stack_height, &context.frame_stack);
+                    self.sink.emit_br_nez(target);
+                }
+                BrTable(ref table, default) => {
+                    let mut targets = Vec::new();
+                    for depth in table.iter() {
+                        let target =
+                            require_target(*depth, self.value_stack_height, &context.frame_stack);
+                        targets.push(target);
+                    }
+                    let default_target =
+                        require_target(default, self.value_stack_height, &context.frame_stack);
+                    self.sink.emit_br_table(&targets, default_target);
+
+                    return Ok(Outcome::Unreachable);
+                }
+                Return => {
+                    let drop_keep = drop_keep_return(
+                        &context.locals,
+                        &context.value_stack,
+                        &context.frame_stack,
+                    );
+                    self.sink.emit(isa::InstructionInternal::Return(drop_keep));
+                    return Ok(Outcome::Unreachable);
+                }
+                Call(index) => {
+                    self.sink.emit(isa::InstructionInternal::Call(index));
+                }
+                CallIndirect(index, _reserved) => {
+                    self.sink
+                        .emit(isa::InstructionInternal::CallIndirect(index));
+                }
+
+                Drop => {
+                    self.sink.emit(isa::InstructionInternal::Drop);
+                }
+                Select => {
+                    self.sink.emit(isa::InstructionInternal::Select);
+                }
+
+                GetLocal(index) => {
+                    // We need to calculate relative depth before validation since
+                    // it will change the value stack size.
+                    let depth = relative_local_depth(index, &context.locals, self.value_stack_height)?;
+
+                    // TODO: we will need to add a special mode for relative_local_depth for
+                    // adding +-1
+
+                    // Validator::validate_get_local(context, index)?;
+                    self.sink.emit(isa::InstructionInternal::GetLocal(depth));
+                }
+                SetLocal(index) => {
+                    let depth = relative_local_depth(index, &context.locals, self.value_stack_height)?;
+                    self.sink.emit(isa::InstructionInternal::SetLocal(depth));
+                }
+                TeeLocal(index) => {
+                    let depth = relative_local_depth(index, &context.locals, self.value_stack_height)?;
+                    self.sink.emit(isa::InstructionInternal::TeeLocal(depth));
+                }
+                GetGlobal(index) => {
+                    self.sink.emit(isa::InstructionInternal::GetGlobal(index));
+                }
+                SetGlobal(index) => {
+                    self.sink.emit(isa::InstructionInternal::SetGlobal(index));
+                }
+
+                I32Load(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::I32Load(offset));
+                }
+                I64Load(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::I64Load(offset));
+                }
+                F32Load(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::F32Load(offset));
+                }
+                F64Load(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::F64Load(offset));
+                }
+                I32Load8S(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::I32Load8S(offset));
+                }
+                I32Load8U(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::I32Load8U(offset));
+                }
+                I32Load16S(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::I32Load16S(offset));
+                }
+                I32Load16U(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::I32Load16U(offset));
+                }
+                I64Load8S(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::I64Load8S(offset));
+                }
+                I64Load8U(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::I64Load8U(offset));
+                }
+                I64Load16S(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::I64Load16S(offset));
+                }
+                I64Load16U(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::I64Load16U(offset));
+                }
+                I64Load32S(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::I64Load32S(offset));
+                }
+                I64Load32U(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::I64Load32U(offset));
+                }
+
+                I32Store(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::I32Store(offset));
+                }
+                I64Store(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::I64Store(offset));
+                }
+                F32Store(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::F32Store(offset));
+                }
+                F64Store(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::F64Store(offset));
+                }
+                I32Store8(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::I32Store8(offset));
+                }
+                I32Store16(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::I32Store16(offset));
+                }
+                I64Store8(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::I64Store8(offset));
+                }
+                I64Store16(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::I64Store16(offset));
+                }
+                I64Store32(align, offset) => {
+                    self.sink.emit(isa::InstructionInternal::I64Store32(offset));
+                }
+
+                CurrentMemory(_) => {
+                    self.sink.emit(isa::InstructionInternal::CurrentMemory);
+                }
+                GrowMemory(_) => {
+                    self.sink.emit(isa::InstructionInternal::GrowMemory);
+                }
+
+                I32Const(v) => {
+                    self.sink.emit(isa::InstructionInternal::I32Const(v));
+                }
+                I64Const(v) => {
+                    self.sink.emit(isa::InstructionInternal::I64Const(v));
+                }
+                F32Const(v) => {
+                    self.sink.emit(isa::InstructionInternal::F32Const(v));
+                }
+                F64Const(v) => {
+                    self.sink.emit(isa::InstructionInternal::F64Const(v));
+                }
+
+                I32Eqz => {
+                    self.sink.emit(isa::InstructionInternal::I32Eqz);
+                }
+                I32Eq => {
+                    self.sink.emit(isa::InstructionInternal::I32Eq);
+                }
+                I32Ne => {
+                    self.sink.emit(isa::InstructionInternal::I32Ne);
+                }
+                I32LtS => {
+                    self.sink.emit(isa::InstructionInternal::I32LtS);
+                }
+                I32LtU => {
+                    self.sink.emit(isa::InstructionInternal::I32LtU);
+                }
+                I32GtS => {
+                    self.sink.emit(isa::InstructionInternal::I32GtS);
+                }
+                I32GtU => {
+                    self.sink.emit(isa::InstructionInternal::I32GtU);
+                }
+                I32LeS => {
+                    self.sink.emit(isa::InstructionInternal::I32LeS);
+                }
+                I32LeU => {
+                    self.sink.emit(isa::InstructionInternal::I32LeU);
+                }
+                I32GeS => {
+                    self.sink.emit(isa::InstructionInternal::I32GeS);
+                }
+                I32GeU => {
+                    self.sink.emit(isa::InstructionInternal::I32GeU);
+                }
+
+                I64Eqz => {
+                    self.sink.emit(isa::InstructionInternal::I64Eqz);
+                }
+                I64Eq => {
+                    self.sink.emit(isa::InstructionInternal::I64Eq);
+                }
+                I64Ne => {
+                    self.sink.emit(isa::InstructionInternal::I64Ne);
+                }
+                I64LtS => {
+                    self.sink.emit(isa::InstructionInternal::I64LtS);
+                }
+                I64LtU => {
+                    self.sink.emit(isa::InstructionInternal::I64LtU);
+                }
+                I64GtS => {
+                    self.sink.emit(isa::InstructionInternal::I64GtS);
+                }
+                I64GtU => {
+                    self.sink.emit(isa::InstructionInternal::I64GtU);
+                }
+                I64LeS => {
+                    self.sink.emit(isa::InstructionInternal::I64LeS);
+                }
+                I64LeU => {
+                    self.sink.emit(isa::InstructionInternal::I64LeU);
+                }
+                I64GeS => {
+                    self.sink.emit(isa::InstructionInternal::I64GeS);
+                }
+                I64GeU => {
+                    self.sink.emit(isa::InstructionInternal::I64GeU);
+                }
+
+                F32Eq => {
+                    self.sink.emit(isa::InstructionInternal::F32Eq);
+                }
+                F32Ne => {
+                    self.sink.emit(isa::InstructionInternal::F32Ne);
+                }
+                F32Lt => {
+                    self.sink.emit(isa::InstructionInternal::F32Lt);
+                }
+                F32Gt => {
+                    self.sink.emit(isa::InstructionInternal::F32Gt);
+                }
+                F32Le => {
+                    self.sink.emit(isa::InstructionInternal::F32Le);
+                }
+                F32Ge => {
+                    self.sink.emit(isa::InstructionInternal::F32Ge);
+                }
+
+                F64Eq => {
+                    self.sink.emit(isa::InstructionInternal::F64Eq);
+                }
+                F64Ne => {
+                    self.sink.emit(isa::InstructionInternal::F64Ne);
+                }
+                F64Lt => {
+                    self.sink.emit(isa::InstructionInternal::F64Lt);
+                }
+                F64Gt => {
+                    self.sink.emit(isa::InstructionInternal::F64Gt);
+                }
+                F64Le => {
+                    self.sink.emit(isa::InstructionInternal::F64Le);
+                }
+                F64Ge => {
+                    self.sink.emit(isa::InstructionInternal::F64Ge);
+                }
+
+                I32Clz => {
+                    self.sink.emit(isa::InstructionInternal::I32Clz);
+                }
+                I32Ctz => {
+                    self.sink.emit(isa::InstructionInternal::I32Ctz);
+                }
+                I32Popcnt => {
+                    self.sink.emit(isa::InstructionInternal::I32Popcnt);
+                }
+                I32Add => {
+                    self.sink.emit(isa::InstructionInternal::I32Add);
+                }
+                I32Sub => {
+                    self.sink.emit(isa::InstructionInternal::I32Sub);
+                }
+                I32Mul => {
+                    self.sink.emit(isa::InstructionInternal::I32Mul);
+                }
+                I32DivS => {
+                    self.sink.emit(isa::InstructionInternal::I32DivS);
+                }
+                I32DivU => {
+                    self.sink.emit(isa::InstructionInternal::I32DivU);
+                }
+                I32RemS => {
+                    self.sink.emit(isa::InstructionInternal::I32RemS);
+                }
+                I32RemU => {
+                    self.sink.emit(isa::InstructionInternal::I32RemU);
+                }
+                I32And => {
+                    self.sink.emit(isa::InstructionInternal::I32And);
+                }
+                I32Or => {
+                    self.sink.emit(isa::InstructionInternal::I32Or);
+                }
+                I32Xor => {
+                    self.sink.emit(isa::InstructionInternal::I32Xor);
+                }
+                I32Shl => {
+                    self.sink.emit(isa::InstructionInternal::I32Shl);
+                }
+                I32ShrS => {
+                    self.sink.emit(isa::InstructionInternal::I32ShrS);
+                }
+                I32ShrU => {
+                    self.sink.emit(isa::InstructionInternal::I32ShrU);
+                }
+                I32Rotl => {
+                    self.sink.emit(isa::InstructionInternal::I32Rotl);
+                }
+                I32Rotr => {
+                    self.sink.emit(isa::InstructionInternal::I32Rotr);
+                }
+                I64Clz => {
+                    self.sink.emit(isa::InstructionInternal::I64Clz);
+                }
+                I64Ctz => {
+                    self.sink.emit(isa::InstructionInternal::I64Ctz);
+                }
+                I64Popcnt => {
+                    self.sink.emit(isa::InstructionInternal::I64Popcnt);
+                }
+                I64Add => {
+                    self.sink.emit(isa::InstructionInternal::I64Add);
+                }
+                I64Sub => {
+                    self.sink.emit(isa::InstructionInternal::I64Sub);
+                }
+                I64Mul => {
+                    self.sink.emit(isa::InstructionInternal::I64Mul);
+                }
+                I64DivS => {
+                    self.sink.emit(isa::InstructionInternal::I64DivS);
+                }
+                I64DivU => {
+                    self.sink.emit(isa::InstructionInternal::I64DivU);
+                }
+                I64RemS => {
+                    self.sink.emit(isa::InstructionInternal::I64RemS);
+                }
+                I64RemU => {
+                    self.sink.emit(isa::InstructionInternal::I64RemU);
+                }
+                I64And => {
+                    self.sink.emit(isa::InstructionInternal::I64And);
+                }
+                I64Or => {
+                    self.sink.emit(isa::InstructionInternal::I64Or);
+                }
+                I64Xor => {
+                    self.sink.emit(isa::InstructionInternal::I64Xor);
+                }
+                I64Shl => {
+                    self.sink.emit(isa::InstructionInternal::I64Shl);
+                }
+                I64ShrS => {
+                    self.sink.emit(isa::InstructionInternal::I64ShrS);
+                }
+                I64ShrU => {
+                    self.sink.emit(isa::InstructionInternal::I64ShrU);
+                }
+                I64Rotl => {
+                    self.sink.emit(isa::InstructionInternal::I64Rotl);
+                }
+                I64Rotr => {
+                    self.sink.emit(isa::InstructionInternal::I64Rotr);
+                }
+                F32Abs => {
+                    self.sink.emit(isa::InstructionInternal::F32Abs);
+                }
+                F32Neg => {
+                    self.sink.emit(isa::InstructionInternal::F32Neg);
+                }
+                F32Ceil => {
+                    self.sink.emit(isa::InstructionInternal::F32Ceil);
+                }
+                F32Floor => {
+                    self.sink.emit(isa::InstructionInternal::F32Floor);
+                }
+                F32Trunc => {
+                    self.sink.emit(isa::InstructionInternal::F32Trunc);
+                }
+                F32Nearest => {
+                    self.sink.emit(isa::InstructionInternal::F32Nearest);
+                }
+                F32Sqrt => {
+                    self.sink.emit(isa::InstructionInternal::F32Sqrt);
+                }
+                F32Add => {
+                    self.sink.emit(isa::InstructionInternal::F32Add);
+                }
+                F32Sub => {
+                    self.sink.emit(isa::InstructionInternal::F32Sub);
+                }
+                F32Mul => {
+                    self.sink.emit(isa::InstructionInternal::F32Mul);
+                }
+                F32Div => {
+                    self.sink.emit(isa::InstructionInternal::F32Div);
+                }
+                F32Min => {
+                    self.sink.emit(isa::InstructionInternal::F32Min);
+                }
+                F32Max => {
+                    self.sink.emit(isa::InstructionInternal::F32Max);
+                }
+                F32Copysign => {
+                    self.sink.emit(isa::InstructionInternal::F32Copysign);
+                }
+
+                F64Abs => {
+                    self.sink.emit(isa::InstructionInternal::F64Abs);
+                }
+                F64Neg => {
+                    self.sink.emit(isa::InstructionInternal::F64Neg);
+                }
+                F64Ceil => {
+                    self.sink.emit(isa::InstructionInternal::F64Ceil);
+                }
+                F64Floor => {
+                    self.sink.emit(isa::InstructionInternal::F64Floor);
+                }
+                F64Trunc => {
+                    self.sink.emit(isa::InstructionInternal::F64Trunc);
+                }
+                F64Nearest => {
+                    self.sink.emit(isa::InstructionInternal::F64Nearest);
+                }
+                F64Sqrt => {
+                    self.sink.emit(isa::InstructionInternal::F64Sqrt);
+                }
+                F64Add => {
+                    self.sink.emit(isa::InstructionInternal::F64Add);
+                }
+                F64Sub => {
+                    self.sink.emit(isa::InstructionInternal::F64Sub);
+                }
+                F64Mul => {
+                    self.sink.emit(isa::InstructionInternal::F64Mul);
+                }
+                F64Div => {
+                    self.sink.emit(isa::InstructionInternal::F64Div);
+                }
+                F64Min => {
+                    self.sink.emit(isa::InstructionInternal::F64Min);
+                }
+                F64Max => {
+                    self.sink.emit(isa::InstructionInternal::F64Max);
+                }
+                F64Copysign => {
+                    self.sink.emit(isa::InstructionInternal::F64Copysign);
+                }
+
+                I32WrapI64 => {
+                    self.sink.emit(isa::InstructionInternal::I32WrapI64);
+                }
+                I32TruncSF32 => {
+                    self.sink.emit(isa::InstructionInternal::I32TruncSF32);
+                }
+                I32TruncUF32 => {
+                    self.sink.emit(isa::InstructionInternal::I32TruncUF32);
+                }
+                I32TruncSF64 => {
+                    self.sink.emit(isa::InstructionInternal::I32TruncSF64);
+                }
+                I32TruncUF64 => {
+                    self.sink.emit(isa::InstructionInternal::I32TruncUF64);
+                }
+                I64ExtendSI32 => {
+                    self.sink.emit(isa::InstructionInternal::I64ExtendSI32);
+                }
+                I64ExtendUI32 => {
+                    self.sink.emit(isa::InstructionInternal::I64ExtendUI32);
+                }
+                I64TruncSF32 => {
+                    self.sink.emit(isa::InstructionInternal::I64TruncSF32);
+                }
+                I64TruncUF32 => {
+                    self.sink.emit(isa::InstructionInternal::I64TruncUF32);
+                }
+                I64TruncSF64 => {
+                    self.sink.emit(isa::InstructionInternal::I64TruncSF64);
+                }
+                I64TruncUF64 => {
+                    self.sink.emit(isa::InstructionInternal::I64TruncUF64);
+                }
+                F32ConvertSI32 => {
+                    self.sink.emit(isa::InstructionInternal::F32ConvertSI32);
+                }
+                F32ConvertUI32 => {
+                    self.sink.emit(isa::InstructionInternal::F32ConvertUI32);
+                }
+                F32ConvertSI64 => {
+                    self.sink.emit(isa::InstructionInternal::F32ConvertSI64);
+                }
+                F32ConvertUI64 => {
+                    self.sink.emit(isa::InstructionInternal::F32ConvertUI64);
+                }
+                F32DemoteF64 => {
+                    self.sink.emit(isa::InstructionInternal::F32DemoteF64);
+                }
+                F64ConvertSI32 => {
+                    self.sink.emit(isa::InstructionInternal::F64ConvertSI32);
+                }
+                F64ConvertUI32 => {
+                    self.sink.emit(isa::InstructionInternal::F64ConvertUI32);
+                }
+                F64ConvertSI64 => {
+                    self.sink.emit(isa::InstructionInternal::F64ConvertSI64);
+                }
+                F64ConvertUI64 => {
+                    self.sink.emit(isa::InstructionInternal::F64ConvertUI64);
+                }
+                F64PromoteF32 => {
+                    self.sink.emit(isa::InstructionInternal::F64PromoteF32);
+                }
+
+                I32ReinterpretF32 => {
+                    self.sink.emit(isa::InstructionInternal::I32ReinterpretF32);
+                }
+                I64ReinterpretF64 => {
+                    self.sink.emit(isa::InstructionInternal::I64ReinterpretF64);
+                }
+                F32ReinterpretI32 => {
+                    self.sink.emit(isa::InstructionInternal::F32ReinterpretI32);
+                }
+                F64ReinterpretI64 => {
+                    self.sink.emit(isa::InstructionInternal::F64ReinterpretI64);
+                }
+            }
+
+            Ok(Outcome::NextInstruction)
+        }
+    }
+
+    fn top_label(frame_stack: &[CompilerFrame]) -> &CompilerFrame {
+        // TODO: This actually isn't safe.
+        frame_stack
+            .last()
+            .expect("this function can't be called with empty frame stack")
+    }
+
+    fn require_label(
+        depth: u32,
+        frame_stack: &[CompilerFrame],
+    ) -> Result<&CompilerFrame, Error> {
+        // TODO: Remove err
+        Ok(frame_stack.get(depth as usize).expect("unreachable"))
+    }
+
+    fn require_target(
+        depth: u32,
+        value_stack_height: u32,
+        frame_stack: &[CompilerFrame],
+    ) -> Target {
+        let is_stack_polymorphic = top_label(frame_stack).polymorphic_stack;
+        let frame =
+            require_label(depth, frame_stack).expect("require_target called with a bogus depth");
+
+        // Find out how many values we need to keep (copy to the new stack location after the drop).
+        let keep: isa::Keep = match (frame.frame_type, frame.block_type) {
+            // A loop doesn't take a value upon a branch. It can return value
+            // only via reaching it's closing `End` operator.
+            (BlockFrameType::Loop { .. }, _) => isa::Keep::None,
+
+            (_, BlockType::Value(_)) => isa::Keep::Single,
+            (_, BlockType::NoResult) => isa::Keep::None,
+        };
+
+        // Find out how many values we need to discard.
+        let drop = if is_stack_polymorphic {
+            // Polymorphic stack is a weird state. Fortunately, it always about the code that
+            // will not be executed, so we don't bother and return 0 here.
+            0
+        } else {
+            assert!(
+                value_stack_height >= frame.value_stack_len,
+                "Stack underflow detected: value stack height ({}) is lower than minimum stack len ({})",
+                value_stack_height,
+                frame.value_stack_len,
+            );
+            assert!(
+                (value_stack_height as u32 - frame.value_stack_len as u32) >= keep as u32,
+                "Stack underflow detected: asked to keep {:?} values, but there are only {}",
+                keep,
+                value_stack_height as u32 - frame.value_stack_len as u32,
+            );
+            (value_stack_height as u32 - frame.value_stack_len as u32) - keep as u32
+        };
+
+        Target {
+            label: frame.frame_type.br_destination(),
+            drop_keep: isa::DropKeep { drop, keep },
+        }
+    }
+
+    fn drop_keep_return(
+        locals: &Locals,
+        value_stack_height: u32,
+        frame_stack: &[CompilerFrame],
+    ) -> isa::DropKeep {
+        assert!(
+            !frame_stack.is_empty(),
+            "drop_keep_return can't be called with the frame stack empty"
+        );
+
+        let deepest = (frame_stack.len() - 1) as u32;
+        let mut drop_keep = require_target(deepest, value_stack_height, frame_stack).drop_keep;
+
+        // Drop all local variables and parameters upon exit.
+        drop_keep.drop += locals.count();
+
+        drop_keep
+    }
+
+    fn require_local(locals: &Locals, idx: u32) -> Result<ValueType, Error> {
+        Ok(locals.type_of_local(idx)?)
+    }
+
+    /// Returns a relative depth on the stack of a local variable specified
+    /// by `idx`.
+    ///
+    /// See stack layout definition in mod isa.
+    fn relative_local_depth(
+        idx: u32,
+        locals: &Locals,
+        value_stack_height: u32,
+    ) -> Result<u32, Error> {
+        let locals_and_params_count = locals.count();
+        let depth = value_stack_height
+            .checked_add(locals_and_params_count)
+            .and_then(|x| x.checked_sub(idx))
+            .ok_or_else(|| Error(String::from("Locals range not in 32-bit range")))?;
+        Ok(depth)
+    }
+}
+
 /// Function validator.
 struct Validator;
 
