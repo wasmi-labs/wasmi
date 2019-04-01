@@ -358,7 +358,7 @@ impl FunctionReader {
                     // an explicit return.
 
                     // Check the return type.
-                    if let BlockType::Value(value_type) = context.return_type()? {
+                    if let BlockType::Value(value_type) = context.return_type() {
                         tee_value(
                             &mut context.value_stack,
                             &context.frame_stack,
@@ -413,7 +413,7 @@ impl FunctionReader {
                 return Ok(Outcome::Unreachable);
             }
             Return => {
-                if let BlockType::Value(value_type) = context.return_type()? {
+                if let BlockType::Value(value_type) = context.return_type() {
                     tee_value(
                         &mut context.value_stack,
                         &context.frame_stack,
@@ -1582,8 +1582,8 @@ impl<'a> FunctionValidationContext<'a> {
         }
     }
 
-    fn return_type(&self) -> Result<BlockType, Error> {
-        Ok(self.return_type)
+    fn return_type(&self) -> BlockType {
+        self.return_type
     }
 
     fn into_code(self) -> isa::Instructions {
