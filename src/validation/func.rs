@@ -40,7 +40,7 @@ struct BlockFrame {
 /// An opcode that opened the particular frame.
 ///
 /// We need that to ensure proper combinations with `End` instruction.
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum StartedWith {
     Block,
     If,
@@ -472,11 +472,11 @@ impl Validator {
     }
 
     fn validate_br(context: &mut FunctionValidationContext, depth: u32) -> Result<(), Error> {
-        let (frame_type, frame_block_type) = {
+        let (started_with, frame_block_type) = {
             let frame = require_label(depth, &context.frame_stack)?;
-            (frame.frame_type, frame.block_type)
+            (frame.started_with, frame.block_type)
         };
-        if !frame_type.is_loop() {
+        if started_with != StartedWith::Loop {
             if let BlockType::Value(value_type) = frame_block_type {
                 tee_value(
                     &mut context.value_stack,
@@ -495,11 +495,11 @@ impl Validator {
             ValueType::I32.into(),
         )?;
 
-        let (frame_type, frame_block_type) = {
+        let (started_with, frame_block_type) = {
             let frame = require_label(depth, &context.frame_stack)?;
-            (frame.frame_type, frame.block_type)
+            (frame.started_with, frame.block_type)
         };
-        if !frame_type.is_loop() {
+        if started_with != StartedWith::Loop {
             if let BlockType::Value(value_type) = frame_block_type {
                 tee_value(
                     &mut context.value_stack,
@@ -781,9 +781,9 @@ impl<'a> FunctionValidationContext<'a> {
                 )?;
             }
             End => {
-                let (frame_type, block_type) = {
+                let (started_with, frame_type, block_type) = {
                     let top = top_label(&self.frame_stack);
-                    (top.frame_type, top.block_type)
+                    (top.started_with, top.frame_type, top.block_type)
                 };
 
                 if let BlockFrameType::IfTrue { if_not, .. } = frame_type {
@@ -801,7 +801,7 @@ impl<'a> FunctionValidationContext<'a> {
                 }
 
                 // Unless it's a loop, resolve the `end_label` position here.
-                if !frame_type.is_loop() {
+                if started_with != StartedWith::Loop {
                     let end_label = frame_type.end_label();
                     self.sink.resolve_label(end_label);
                 }
@@ -1676,10 +1676,10 @@ fn require_target(
         require_label(depth, frame_stack).expect("require_target called with a bogus depth");
 
     // Find out how many values we need to keep (copy to the new stack location after the drop).
-    let keep: isa::Keep = match (frame.frame_type, frame.block_type) {
+    let keep: isa::Keep = match (frame.started_with, frame.block_type) {
         // A loop doesn't take a value upon a branch. It can return value
         // only via reaching it's closing `End` operator.
-        (BlockFrameType::Loop { .. }, _) => isa::Keep::None,
+        (StartedWith::Loop, _) => isa::Keep::None,
 
         (_, BlockType::Value(_)) => isa::Keep::Single,
         (_, BlockType::NoResult) => isa::Keep::None,
