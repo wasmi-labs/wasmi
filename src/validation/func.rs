@@ -154,7 +154,12 @@ impl PartialEq<StackValueType> for ValueType {
 
 // TODO: This is going to be a compiler.
 
-pub struct FunctionReader;
+pub struct FunctionReader {
+    /// A sink used to emit optimized code.
+    sink: Sink,
+    // TODO: to be moved to the compiler.
+    label_stack: Vec<BlockFrameType>,
+}
 
 impl FunctionReader {
     pub fn read_function(
@@ -171,10 +176,8 @@ impl FunctionReader {
             DEFAULT_VALUE_STACK_LIMIT,
             DEFAULT_FRAME_STACK_LIMIT,
             result_ty,
-            ins_size_estimate,
         );
 
-        let end_label = context.sink.new_label();
         push_label(
             StartedWith::Block,
             result_ty,
@@ -182,17 +185,25 @@ impl FunctionReader {
             &context.value_stack,
             &mut context.frame_stack,
         )?;
-        context
+
+        let mut function_reader = FunctionReader {
+            sink: Sink::with_instruction_capacity(ins_size_estimate),
+            label_stack: Vec::new(),
+        };
+        let end_label = function_reader.sink.new_label();
+        function_reader
             .label_stack
             .push(BlockFrameType::Block { end_label });
-        FunctionReader::read_function_body(&mut context, body.code().elements())?;
+
+        function_reader.read_function_body(&mut context, body.code().elements())?;
 
         assert!(context.frame_stack.is_empty());
 
-        Ok(context.into_code())
+        Ok(function_reader.sink.into_inner())
     }
 
     fn read_function_body(
+        &mut self,
         context: &mut FunctionValidationContext,
         body: &[Instruction],
     ) -> Result<(), Error> {
@@ -204,7 +215,7 @@ impl FunctionReader {
         loop {
             let instruction = &body[context.position];
 
-            FunctionReader::read_instruction(context, instruction).map_err(|err| {
+            self.read_instruction(context, instruction).map_err(|err| {
                 Error(format!(
                     "At instruction {:?}(@{}): {}",
                     instruction, context.position, err
@@ -219,6 +230,7 @@ impl FunctionReader {
     }
 
     fn read_instruction(
+        &mut self,
         context: &mut FunctionValidationContext,
         instruction: &Instruction,
     ) -> Result<(), Error> {
@@ -226,37 +238,34 @@ impl FunctionReader {
 
         match *instruction {
             Unreachable => {
-                context.sink.emit(isa::InstructionInternal::Unreachable);
+                self.sink.emit(isa::InstructionInternal::Unreachable);
                 context.step(instruction)?;
             }
             Block(_) => {
                 context.step(instruction)?;
 
-                let end_label = context.sink.new_label();
-                context
-                    .label_stack
-                    .push(BlockFrameType::Block { end_label });
+                let end_label = self.sink.new_label();
+                self.label_stack.push(BlockFrameType::Block { end_label });
             }
             Loop(_) => {
                 context.step(instruction)?;
 
                 // Resolve loop header right away.
-                let header = context.sink.new_label();
-                context.sink.resolve_label(header);
-                context.label_stack.push(BlockFrameType::Loop { header });
+                let header = self.sink.new_label();
+                self.sink.resolve_label(header);
+                self.label_stack.push(BlockFrameType::Loop { header });
             }
             If(_) => {
                 context.step(instruction)?;
 
                 // `if_not` will be resolved whenever `End` or `Else` operator will be met.
                 // `end_label` will always be resolved at `End`.
-                let if_not = context.sink.new_label();
-                let end_label = context.sink.new_label();
-                context
-                    .label_stack
+                let if_not = self.sink.new_label();
+                let end_label = self.sink.new_label();
+                self.label_stack
                     .push(BlockFrameType::IfTrue { if_not, end_label });
 
-                context.sink.emit_br_eqz(Target {
+                self.sink.emit_br_eqz(Target {
                     label: if_not,
                     drop_keep: isa::DropKeep {
                         drop: 0,
@@ -271,7 +280,7 @@ impl FunctionReader {
                     // TODO: We will have to place this before validation step to ensure that
                     // the block type is indeed if_true.
 
-                    let top_label = context.label_stack.last().unwrap();
+                    let top_label = self.label_stack.last().unwrap();
                     let (if_not, end_label) = match *top_label {
                         BlockFrameType::IfTrue { if_not, end_label } => (if_not, end_label),
                         _ => panic!("validation ensures that the top frame is actually if_true"),
@@ -281,7 +290,7 @@ impl FunctionReader {
 
                 // First, we need to finish if-true block: add a jump from the end of the if-true block
                 // to the "end_label" (it will be resolved at End).
-                context.sink.emit_br(Target {
+                self.sink.emit_br(Target {
                     label: end_label,
                     drop_keep: isa::DropKeep {
                         drop: 0,
@@ -291,12 +300,10 @@ impl FunctionReader {
 
                 // Resolve `if_not` to here so when if condition is unsatisfied control flow
                 // will jump to this label.
-                context.sink.resolve_label(if_not);
+                self.sink.resolve_label(if_not);
 
-                context.label_stack.pop().unwrap();
-                context
-                    .label_stack
-                    .push(BlockFrameType::IfFalse { end_label });
+                self.label_stack.pop().unwrap();
+                self.label_stack.push(BlockFrameType::IfFalse { end_label });
             }
             End => {
                 let started_with = top_label(&context.frame_stack).started_with;
@@ -317,44 +324,42 @@ impl FunctionReader {
 
                 // TODO: We will have to place this before validation step to ensure that
                 // the block type is indeed if_true.
-                let frame_type = context.label_stack.last().cloned().unwrap();
+                let frame_type = self.label_stack.last().cloned().unwrap();
 
                 if let BlockFrameType::IfTrue { if_not, .. } = frame_type {
                     // Resolve `if_not` label. If the `if's` condition doesn't hold the control will jump
                     // to here.
-                    context.sink.resolve_label(if_not);
+                    self.sink.resolve_label(if_not);
                 }
 
                 // Unless it's a loop, resolve the `end_label` position here.
                 if started_with != StartedWith::Loop {
                     let end_label = frame_type.end_label();
-                    context.sink.resolve_label(end_label);
+                    self.sink.resolve_label(end_label);
                 }
 
                 if let Some(drop_keep) = return_drop_keep {
                     // TODO: The last one.
                     // It was the last instruction. Emit the explicit return instruction.
                     let drop_keep = drop_keep.expect("validation should ensure this doesn't fail");
-                    context
-                        .sink
-                        .emit(isa::InstructionInternal::Return(drop_keep));
+                    self.sink.emit(isa::InstructionInternal::Return(drop_keep));
                 }
 
                 // Finally, pop the label.
-                context.label_stack.pop().unwrap();
+                self.label_stack.pop().unwrap();
             }
             Br(depth) => {
                 let target = require_target(
                     depth,
                     context.value_stack.len(),
                     &context.frame_stack,
-                    &context.label_stack,
+                    &self.label_stack,
                 );
 
                 context.step(instruction)?;
 
                 let target = target.expect("validation step should ensure that this doesn't fail");
-                context.sink.emit_br(target);
+                self.sink.emit_br(target);
             }
             BrIf(depth) => {
                 context.step(instruction)?;
@@ -363,11 +368,11 @@ impl FunctionReader {
                     depth,
                     context.value_stack.len(),
                     &context.frame_stack,
-                    &context.label_stack,
+                    &self.label_stack,
                 );
 
                 let target = target.expect("validation step should ensure that this doesn't fail");
-                context.sink.emit_br_nez(target);
+                self.sink.emit_br_nez(target);
             }
             BrTable(ref table, default) => {
                 // At this point, the condition value is at the top of the stack.
@@ -382,7 +387,7 @@ impl FunctionReader {
                             *depth,
                             value_stack_height,
                             &context.frame_stack,
-                            &context.label_stack,
+                            &self.label_stack,
                         )
                     })
                     .collect::<Result<Vec<_>, _>>();
@@ -390,7 +395,7 @@ impl FunctionReader {
                     default,
                     value_stack_height,
                     &context.frame_stack,
-                    &context.label_stack,
+                    &self.label_stack,
                 );
 
                 context.step(instruction)?;
@@ -399,7 +404,7 @@ impl FunctionReader {
                 let targets = targets.unwrap();
                 let default_target = default_target.unwrap();
 
-                context.sink.emit_br_table(&targets, default_target);
+                self.sink.emit_br_table(&targets, default_target);
             }
             Return => {
                 let drop_keep =
@@ -410,28 +415,25 @@ impl FunctionReader {
                 let drop_keep =
                     drop_keep.expect("validation step should ensure that this doesn't fail");
 
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::Return(drop_keep));
+                self.sink.emit(isa::InstructionInternal::Return(drop_keep));
             }
             Call(index) => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::Call(index));
+                self.sink.emit(isa::InstructionInternal::Call(index));
             }
             CallIndirect(index, _reserved) => {
                 context.step(instruction)?;
-                context
-                    .sink
+                self.sink
                     .emit(isa::InstructionInternal::CallIndirect(index));
             }
 
             Drop => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::Drop);
+                self.sink.emit(isa::InstructionInternal::Drop);
             }
             Select => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::Select);
+                self.sink.emit(isa::InstructionInternal::Select);
             }
 
             GetLocal(index) => {
@@ -439,704 +441,654 @@ impl FunctionReader {
                 // it will change the value stack size.
                 let depth = relative_local_depth(index, &context.locals, &context.value_stack)?;
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::GetLocal(depth));
+                self.sink.emit(isa::InstructionInternal::GetLocal(depth));
             }
             SetLocal(index) => {
                 context.step(instruction)?;
                 let depth = relative_local_depth(index, &context.locals, &context.value_stack)?;
-                context.sink.emit(isa::InstructionInternal::SetLocal(depth));
+                self.sink.emit(isa::InstructionInternal::SetLocal(depth));
             }
             TeeLocal(index) => {
                 context.step(instruction)?;
                 let depth = relative_local_depth(index, &context.locals, &context.value_stack)?;
-                context.sink.emit(isa::InstructionInternal::TeeLocal(depth));
+                self.sink.emit(isa::InstructionInternal::TeeLocal(depth));
             }
             GetGlobal(index) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::GetGlobal(index));
+                self.sink.emit(isa::InstructionInternal::GetGlobal(index));
             }
             SetGlobal(index) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::SetGlobal(index));
+                self.sink.emit(isa::InstructionInternal::SetGlobal(index));
             }
 
             I32Load(align, offset) => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32Load(offset));
+                self.sink.emit(isa::InstructionInternal::I32Load(offset));
             }
             I64Load(align, offset) => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64Load(offset));
+                self.sink.emit(isa::InstructionInternal::I64Load(offset));
             }
             F32Load(align, offset) => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Load(offset));
+                self.sink.emit(isa::InstructionInternal::F32Load(offset));
             }
             F64Load(align, offset) => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Load(offset));
+                self.sink.emit(isa::InstructionInternal::F64Load(offset));
             }
             I32Load8S(align, offset) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::I32Load8S(offset));
+                self.sink.emit(isa::InstructionInternal::I32Load8S(offset));
             }
             I32Load8U(align, offset) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::I32Load8U(offset));
+                self.sink.emit(isa::InstructionInternal::I32Load8U(offset));
             }
             I32Load16S(align, offset) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::I32Load16S(offset));
+                self.sink.emit(isa::InstructionInternal::I32Load16S(offset));
             }
             I32Load16U(align, offset) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::I32Load16U(offset));
+                self.sink.emit(isa::InstructionInternal::I32Load16U(offset));
             }
             I64Load8S(align, offset) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::I64Load8S(offset));
+                self.sink.emit(isa::InstructionInternal::I64Load8S(offset));
             }
             I64Load8U(align, offset) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::I64Load8U(offset));
+                self.sink.emit(isa::InstructionInternal::I64Load8U(offset));
             }
             I64Load16S(align, offset) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::I64Load16S(offset));
+                self.sink.emit(isa::InstructionInternal::I64Load16S(offset));
             }
             I64Load16U(align, offset) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::I64Load16U(offset));
+                self.sink.emit(isa::InstructionInternal::I64Load16U(offset));
             }
             I64Load32S(align, offset) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::I64Load32S(offset));
+                self.sink.emit(isa::InstructionInternal::I64Load32S(offset));
             }
             I64Load32U(align, offset) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::I64Load32U(offset));
+                self.sink.emit(isa::InstructionInternal::I64Load32U(offset));
             }
 
             I32Store(align, offset) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::I32Store(offset));
+                self.sink.emit(isa::InstructionInternal::I32Store(offset));
             }
             I64Store(align, offset) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::I64Store(offset));
+                self.sink.emit(isa::InstructionInternal::I64Store(offset));
             }
             F32Store(align, offset) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::F32Store(offset));
+                self.sink.emit(isa::InstructionInternal::F32Store(offset));
             }
             F64Store(align, offset) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::F64Store(offset));
+                self.sink.emit(isa::InstructionInternal::F64Store(offset));
             }
             I32Store8(align, offset) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::I32Store8(offset));
+                self.sink.emit(isa::InstructionInternal::I32Store8(offset));
             }
             I32Store16(align, offset) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::I32Store16(offset));
+                self.sink.emit(isa::InstructionInternal::I32Store16(offset));
             }
             I64Store8(align, offset) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::I64Store8(offset));
+                self.sink.emit(isa::InstructionInternal::I64Store8(offset));
             }
             I64Store16(align, offset) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::I64Store16(offset));
+                self.sink.emit(isa::InstructionInternal::I64Store16(offset));
             }
             I64Store32(align, offset) => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::I64Store32(offset));
+                self.sink.emit(isa::InstructionInternal::I64Store32(offset));
             }
 
             CurrentMemory(_) => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::CurrentMemory);
+                self.sink.emit(isa::InstructionInternal::CurrentMemory);
             }
             GrowMemory(_) => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::GrowMemory);
+                self.sink.emit(isa::InstructionInternal::GrowMemory);
             }
 
             I32Const(v) => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32Const(v));
+                self.sink.emit(isa::InstructionInternal::I32Const(v));
             }
             I64Const(v) => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64Const(v));
+                self.sink.emit(isa::InstructionInternal::I64Const(v));
             }
             F32Const(v) => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Const(v));
+                self.sink.emit(isa::InstructionInternal::F32Const(v));
             }
             F64Const(v) => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Const(v));
+                self.sink.emit(isa::InstructionInternal::F64Const(v));
             }
 
             I32Eqz => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32Eqz);
+                self.sink.emit(isa::InstructionInternal::I32Eqz);
             }
             I32Eq => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32Eq);
+                self.sink.emit(isa::InstructionInternal::I32Eq);
             }
             I32Ne => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32Ne);
+                self.sink.emit(isa::InstructionInternal::I32Ne);
             }
             I32LtS => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32LtS);
+                self.sink.emit(isa::InstructionInternal::I32LtS);
             }
             I32LtU => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32LtU);
+                self.sink.emit(isa::InstructionInternal::I32LtU);
             }
             I32GtS => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32GtS);
+                self.sink.emit(isa::InstructionInternal::I32GtS);
             }
             I32GtU => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32GtU);
+                self.sink.emit(isa::InstructionInternal::I32GtU);
             }
             I32LeS => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32LeS);
+                self.sink.emit(isa::InstructionInternal::I32LeS);
             }
             I32LeU => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32LeU);
+                self.sink.emit(isa::InstructionInternal::I32LeU);
             }
             I32GeS => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32GeS);
+                self.sink.emit(isa::InstructionInternal::I32GeS);
             }
             I32GeU => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32GeU);
+                self.sink.emit(isa::InstructionInternal::I32GeU);
             }
 
             I64Eqz => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64Eqz);
+                self.sink.emit(isa::InstructionInternal::I64Eqz);
             }
             I64Eq => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64Eq);
+                self.sink.emit(isa::InstructionInternal::I64Eq);
             }
             I64Ne => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64Ne);
+                self.sink.emit(isa::InstructionInternal::I64Ne);
             }
             I64LtS => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64LtS);
+                self.sink.emit(isa::InstructionInternal::I64LtS);
             }
             I64LtU => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64LtU);
+                self.sink.emit(isa::InstructionInternal::I64LtU);
             }
             I64GtS => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64GtS);
+                self.sink.emit(isa::InstructionInternal::I64GtS);
             }
             I64GtU => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64GtU);
+                self.sink.emit(isa::InstructionInternal::I64GtU);
             }
             I64LeS => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64LeS);
+                self.sink.emit(isa::InstructionInternal::I64LeS);
             }
             I64LeU => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64LeU);
+                self.sink.emit(isa::InstructionInternal::I64LeU);
             }
             I64GeS => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64GeS);
+                self.sink.emit(isa::InstructionInternal::I64GeS);
             }
             I64GeU => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64GeU);
+                self.sink.emit(isa::InstructionInternal::I64GeU);
             }
 
             F32Eq => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Eq);
+                self.sink.emit(isa::InstructionInternal::F32Eq);
             }
             F32Ne => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Ne);
+                self.sink.emit(isa::InstructionInternal::F32Ne);
             }
             F32Lt => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Lt);
+                self.sink.emit(isa::InstructionInternal::F32Lt);
             }
             F32Gt => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Gt);
+                self.sink.emit(isa::InstructionInternal::F32Gt);
             }
             F32Le => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Le);
+                self.sink.emit(isa::InstructionInternal::F32Le);
             }
             F32Ge => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Ge);
+                self.sink.emit(isa::InstructionInternal::F32Ge);
             }
 
             F64Eq => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Eq);
+                self.sink.emit(isa::InstructionInternal::F64Eq);
             }
             F64Ne => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Ne);
+                self.sink.emit(isa::InstructionInternal::F64Ne);
             }
             F64Lt => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Lt);
+                self.sink.emit(isa::InstructionInternal::F64Lt);
             }
             F64Gt => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Gt);
+                self.sink.emit(isa::InstructionInternal::F64Gt);
             }
             F64Le => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Le);
+                self.sink.emit(isa::InstructionInternal::F64Le);
             }
             F64Ge => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Ge);
+                self.sink.emit(isa::InstructionInternal::F64Ge);
             }
 
             I32Clz => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32Clz);
+                self.sink.emit(isa::InstructionInternal::I32Clz);
             }
             I32Ctz => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32Ctz);
+                self.sink.emit(isa::InstructionInternal::I32Ctz);
             }
             I32Popcnt => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32Popcnt);
+                self.sink.emit(isa::InstructionInternal::I32Popcnt);
             }
             I32Add => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32Add);
+                self.sink.emit(isa::InstructionInternal::I32Add);
             }
             I32Sub => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32Sub);
+                self.sink.emit(isa::InstructionInternal::I32Sub);
             }
             I32Mul => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32Mul);
+                self.sink.emit(isa::InstructionInternal::I32Mul);
             }
             I32DivS => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32DivS);
+                self.sink.emit(isa::InstructionInternal::I32DivS);
             }
             I32DivU => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32DivU);
+                self.sink.emit(isa::InstructionInternal::I32DivU);
             }
             I32RemS => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32RemS);
+                self.sink.emit(isa::InstructionInternal::I32RemS);
             }
             I32RemU => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32RemU);
+                self.sink.emit(isa::InstructionInternal::I32RemU);
             }
             I32And => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32And);
+                self.sink.emit(isa::InstructionInternal::I32And);
             }
             I32Or => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32Or);
+                self.sink.emit(isa::InstructionInternal::I32Or);
             }
             I32Xor => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32Xor);
+                self.sink.emit(isa::InstructionInternal::I32Xor);
             }
             I32Shl => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32Shl);
+                self.sink.emit(isa::InstructionInternal::I32Shl);
             }
             I32ShrS => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32ShrS);
+                self.sink.emit(isa::InstructionInternal::I32ShrS);
             }
             I32ShrU => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32ShrU);
+                self.sink.emit(isa::InstructionInternal::I32ShrU);
             }
             I32Rotl => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32Rotl);
+                self.sink.emit(isa::InstructionInternal::I32Rotl);
             }
             I32Rotr => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32Rotr);
+                self.sink.emit(isa::InstructionInternal::I32Rotr);
             }
 
             I64Clz => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64Clz);
+                self.sink.emit(isa::InstructionInternal::I64Clz);
             }
             I64Ctz => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64Ctz);
+                self.sink.emit(isa::InstructionInternal::I64Ctz);
             }
             I64Popcnt => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64Popcnt);
+                self.sink.emit(isa::InstructionInternal::I64Popcnt);
             }
             I64Add => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64Add);
+                self.sink.emit(isa::InstructionInternal::I64Add);
             }
             I64Sub => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64Sub);
+                self.sink.emit(isa::InstructionInternal::I64Sub);
             }
             I64Mul => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64Mul);
+                self.sink.emit(isa::InstructionInternal::I64Mul);
             }
             I64DivS => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64DivS);
+                self.sink.emit(isa::InstructionInternal::I64DivS);
             }
             I64DivU => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64DivU);
+                self.sink.emit(isa::InstructionInternal::I64DivU);
             }
             I64RemS => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64RemS);
+                self.sink.emit(isa::InstructionInternal::I64RemS);
             }
             I64RemU => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64RemU);
+                self.sink.emit(isa::InstructionInternal::I64RemU);
             }
             I64And => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64And);
+                self.sink.emit(isa::InstructionInternal::I64And);
             }
             I64Or => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64Or);
+                self.sink.emit(isa::InstructionInternal::I64Or);
             }
             I64Xor => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64Xor);
+                self.sink.emit(isa::InstructionInternal::I64Xor);
             }
             I64Shl => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64Shl);
+                self.sink.emit(isa::InstructionInternal::I64Shl);
             }
             I64ShrS => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64ShrS);
+                self.sink.emit(isa::InstructionInternal::I64ShrS);
             }
             I64ShrU => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64ShrU);
+                self.sink.emit(isa::InstructionInternal::I64ShrU);
             }
             I64Rotl => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64Rotl);
+                self.sink.emit(isa::InstructionInternal::I64Rotl);
             }
             I64Rotr => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64Rotr);
+                self.sink.emit(isa::InstructionInternal::I64Rotr);
             }
 
             F32Abs => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Abs);
+                self.sink.emit(isa::InstructionInternal::F32Abs);
             }
             F32Neg => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Neg);
+                self.sink.emit(isa::InstructionInternal::F32Neg);
             }
             F32Ceil => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Ceil);
+                self.sink.emit(isa::InstructionInternal::F32Ceil);
             }
             F32Floor => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Floor);
+                self.sink.emit(isa::InstructionInternal::F32Floor);
             }
             F32Trunc => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Trunc);
+                self.sink.emit(isa::InstructionInternal::F32Trunc);
             }
             F32Nearest => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Nearest);
+                self.sink.emit(isa::InstructionInternal::F32Nearest);
             }
             F32Sqrt => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Sqrt);
+                self.sink.emit(isa::InstructionInternal::F32Sqrt);
             }
             F32Add => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Add);
+                self.sink.emit(isa::InstructionInternal::F32Add);
             }
             F32Sub => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Sub);
+                self.sink.emit(isa::InstructionInternal::F32Sub);
             }
             F32Mul => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Mul);
+                self.sink.emit(isa::InstructionInternal::F32Mul);
             }
             F32Div => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Div);
+                self.sink.emit(isa::InstructionInternal::F32Div);
             }
             F32Min => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Min);
+                self.sink.emit(isa::InstructionInternal::F32Min);
             }
             F32Max => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Max);
+                self.sink.emit(isa::InstructionInternal::F32Max);
             }
             F32Copysign => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32Copysign);
+                self.sink.emit(isa::InstructionInternal::F32Copysign);
             }
 
             F64Abs => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Abs);
+                self.sink.emit(isa::InstructionInternal::F64Abs);
             }
             F64Neg => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Neg);
+                self.sink.emit(isa::InstructionInternal::F64Neg);
             }
             F64Ceil => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Ceil);
+                self.sink.emit(isa::InstructionInternal::F64Ceil);
             }
             F64Floor => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Floor);
+                self.sink.emit(isa::InstructionInternal::F64Floor);
             }
             F64Trunc => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Trunc);
+                self.sink.emit(isa::InstructionInternal::F64Trunc);
             }
             F64Nearest => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Nearest);
+                self.sink.emit(isa::InstructionInternal::F64Nearest);
             }
             F64Sqrt => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Sqrt);
+                self.sink.emit(isa::InstructionInternal::F64Sqrt);
             }
             F64Add => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Add);
+                self.sink.emit(isa::InstructionInternal::F64Add);
             }
             F64Sub => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Sub);
+                self.sink.emit(isa::InstructionInternal::F64Sub);
             }
             F64Mul => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Mul);
+                self.sink.emit(isa::InstructionInternal::F64Mul);
             }
             F64Div => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Div);
+                self.sink.emit(isa::InstructionInternal::F64Div);
             }
             F64Min => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Min);
+                self.sink.emit(isa::InstructionInternal::F64Min);
             }
             F64Max => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Max);
+                self.sink.emit(isa::InstructionInternal::F64Max);
             }
             F64Copysign => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64Copysign);
+                self.sink.emit(isa::InstructionInternal::F64Copysign);
             }
 
             I32WrapI64 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32WrapI64);
+                self.sink.emit(isa::InstructionInternal::I32WrapI64);
             }
             I32TruncSF32 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32TruncSF32);
+                self.sink.emit(isa::InstructionInternal::I32TruncSF32);
             }
             I32TruncUF32 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32TruncUF32);
+                self.sink.emit(isa::InstructionInternal::I32TruncUF32);
             }
             I32TruncSF64 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32TruncSF64);
+                self.sink.emit(isa::InstructionInternal::I32TruncSF64);
             }
             I32TruncUF64 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I32TruncUF64);
+                self.sink.emit(isa::InstructionInternal::I32TruncUF64);
             }
             I64ExtendSI32 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64ExtendSI32);
+                self.sink.emit(isa::InstructionInternal::I64ExtendSI32);
             }
             I64ExtendUI32 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64ExtendUI32);
+                self.sink.emit(isa::InstructionInternal::I64ExtendUI32);
             }
             I64TruncSF32 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64TruncSF32);
+                self.sink.emit(isa::InstructionInternal::I64TruncSF32);
             }
             I64TruncUF32 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64TruncUF32);
+                self.sink.emit(isa::InstructionInternal::I64TruncUF32);
             }
             I64TruncSF64 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64TruncSF64);
+                self.sink.emit(isa::InstructionInternal::I64TruncSF64);
             }
             I64TruncUF64 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::I64TruncUF64);
+                self.sink.emit(isa::InstructionInternal::I64TruncUF64);
             }
             F32ConvertSI32 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32ConvertSI32);
+                self.sink.emit(isa::InstructionInternal::F32ConvertSI32);
             }
             F32ConvertUI32 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32ConvertUI32);
+                self.sink.emit(isa::InstructionInternal::F32ConvertUI32);
             }
             F32ConvertSI64 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32ConvertSI64);
+                self.sink.emit(isa::InstructionInternal::F32ConvertSI64);
             }
             F32ConvertUI64 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32ConvertUI64);
+                self.sink.emit(isa::InstructionInternal::F32ConvertUI64);
             }
             F32DemoteF64 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F32DemoteF64);
+                self.sink.emit(isa::InstructionInternal::F32DemoteF64);
             }
             F64ConvertSI32 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64ConvertSI32);
+                self.sink.emit(isa::InstructionInternal::F64ConvertSI32);
             }
             F64ConvertUI32 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64ConvertUI32);
+                self.sink.emit(isa::InstructionInternal::F64ConvertUI32);
             }
             F64ConvertSI64 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64ConvertSI64);
+                self.sink.emit(isa::InstructionInternal::F64ConvertSI64);
             }
             F64ConvertUI64 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64ConvertUI64);
+                self.sink.emit(isa::InstructionInternal::F64ConvertUI64);
             }
             F64PromoteF32 => {
                 context.step(instruction)?;
-                context.sink.emit(isa::InstructionInternal::F64PromoteF32);
+                self.sink.emit(isa::InstructionInternal::F64PromoteF32);
             }
 
             I32ReinterpretF32 => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::I32ReinterpretF32);
+                self.sink.emit(isa::InstructionInternal::I32ReinterpretF32);
             }
             I64ReinterpretF64 => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::I64ReinterpretF64);
+                self.sink.emit(isa::InstructionInternal::I64ReinterpretF64);
             }
             F32ReinterpretI32 => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::F32ReinterpretI32);
+                self.sink.emit(isa::InstructionInternal::F32ReinterpretI32);
             }
             F64ReinterpretI64 => {
                 context.step(instruction)?;
-                context
-                    .sink
-                    .emit(isa::InstructionInternal::F64ReinterpretI64);
+                self.sink.emit(isa::InstructionInternal::F64ReinterpretI64);
             }
             _ => {
                 context.step(instruction)?;
             }
         };
 
-        assert_eq!(context.label_stack.len(), context.frame_stack.len(),);
+        assert_eq!(self.label_stack.len(), context.frame_stack.len(),);
 
         Ok(())
     }
@@ -1156,11 +1108,6 @@ struct FunctionValidationContext<'a> {
     frame_stack: StackWithLimit<BlockFrame>,
     /// Function return type.
     return_type: BlockType,
-    /// A sink used to emit optimized code.
-    sink: Sink,
-
-    // TODO: to be moved to the compiler.
-    label_stack: Vec<BlockFrameType>,
 }
 
 impl<'a> FunctionValidationContext<'a> {
@@ -1170,7 +1117,6 @@ impl<'a> FunctionValidationContext<'a> {
         value_stack_limit: usize,
         frame_stack_limit: usize,
         return_type: BlockType,
-        size_estimate: usize,
     ) -> Self {
         FunctionValidationContext {
             module: module,
@@ -1179,17 +1125,11 @@ impl<'a> FunctionValidationContext<'a> {
             value_stack: StackWithLimit::with_limit(value_stack_limit),
             frame_stack: StackWithLimit::with_limit(frame_stack_limit),
             return_type: return_type,
-            sink: Sink::with_instruction_capacity(size_estimate),
-            label_stack: Vec::new(),
         }
     }
 
     fn return_type(&self) -> BlockType {
         self.return_type
-    }
-
-    fn into_code(self) -> isa::Instructions {
-        self.sink.into_inner()
     }
 
     fn step(&mut self, instruction: &Instruction) -> Result<(), Error> {
