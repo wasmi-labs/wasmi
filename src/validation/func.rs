@@ -148,15 +148,6 @@ impl PartialEq<StackValueType> for ValueType {
     }
 }
 
-/// Instruction outcome.
-#[derive(Debug, Clone)]
-enum Outcome {
-    /// Continue with next instruction.
-    NextInstruction,
-    /// Unreachable instruction reached.
-    Unreachable,
-}
-
 // TODO: This is going to be a compiler.
 
 pub struct FunctionReader;
@@ -206,20 +197,12 @@ impl FunctionReader {
         loop {
             let instruction = &body[context.position];
 
-            let outcome =
-                FunctionReader::read_instruction(context, instruction).map_err(|err| {
-                    Error(format!(
-                        "At instruction {:?}(@{}): {}",
-                        instruction, context.position, err
-                    ))
-                })?;
-
-            match outcome {
-                Outcome::NextInstruction => (),
-                Outcome::Unreachable => {
-                    make_top_frame_polymorphic(&mut context.value_stack, &mut context.frame_stack)
-                }
-            }
+            FunctionReader::read_instruction(context, instruction).map_err(|err| {
+                Error(format!(
+                    "At instruction {:?}(@{}): {}",
+                    instruction, context.position, err
+                ))
+            })?;
 
             context.position += 1;
             if context.position == body_len {
@@ -231,7 +214,7 @@ impl FunctionReader {
     fn read_instruction(
         context: &mut FunctionValidationContext,
         instruction: &Instruction,
-    ) -> Result<Outcome, Error> {
+    ) -> Result<(), Error> {
         context.step(instruction)
     }
 }
@@ -673,7 +656,7 @@ impl<'a> FunctionValidationContext<'a> {
         self.sink.into_inner()
     }
 
-    fn step(&mut self, instruction: &Instruction) -> Result<Outcome, Error>  {
+    fn step(&mut self, instruction: &Instruction) -> Result<(), Error> {
         use self::Instruction::*;
 
         match *instruction {
@@ -682,7 +665,7 @@ impl<'a> FunctionValidationContext<'a> {
 
             Unreachable => {
                 self.sink.emit(isa::InstructionInternal::Unreachable);
-                return Ok(Outcome::Unreachable);
+                make_top_frame_polymorphic(&mut self.value_stack, &mut self.frame_stack);
             }
 
             Block(block_type) => {
@@ -803,22 +786,13 @@ impl<'a> FunctionValidationContext<'a> {
 
                     // Check the return type.
                     if let BlockType::Value(value_type) = self.return_type() {
-                        tee_value(
-                            &mut self.value_stack,
-                            &self.frame_stack,
-                            value_type.into(),
-                        )?;
+                        tee_value(&mut self.value_stack, &self.frame_stack, value_type.into())?;
                     }
 
                     // Emit the return instruction.
-                    let drop_keep = drop_keep_return(
-                        &self.locals,
-                        &self.value_stack,
-                        &self.frame_stack,
-                    );
-                    self
-                        .sink
-                        .emit(isa::InstructionInternal::Return(drop_keep));
+                    let drop_keep =
+                        drop_keep_return(&self.locals, &self.value_stack, &self.frame_stack);
+                    self.sink.emit(isa::InstructionInternal::Return(drop_keep));
                 }
 
                 pop_label(&mut self.value_stack, &mut self.frame_stack)?;
@@ -834,7 +808,7 @@ impl<'a> FunctionValidationContext<'a> {
                 let target = require_target(depth, &self.value_stack, &self.frame_stack);
                 self.sink.emit_br(target);
 
-                return Ok(Outcome::Unreachable);
+                make_top_frame_polymorphic(&mut self.value_stack, &mut self.frame_stack);
             }
             BrIf(depth) => {
                 Validator::validate_br_if(self, depth)?;
@@ -850,28 +824,21 @@ impl<'a> FunctionValidationContext<'a> {
                     let target = require_target(*depth, &self.value_stack, &self.frame_stack);
                     targets.push(target);
                 }
-                let default_target =
-                    require_target(default, &self.value_stack, &self.frame_stack);
+                let default_target = require_target(default, &self.value_stack, &self.frame_stack);
                 self.sink.emit_br_table(&targets, default_target);
 
-                return Ok(Outcome::Unreachable);
+                make_top_frame_polymorphic(&mut self.value_stack, &mut self.frame_stack);
             }
             Return => {
                 if let BlockType::Value(value_type) = self.return_type() {
-                    tee_value(
-                        &mut self.value_stack,
-                        &self.frame_stack,
-                        value_type.into(),
-                    )?;
+                    tee_value(&mut self.value_stack, &self.frame_stack, value_type.into())?;
                 }
 
                 let drop_keep =
                     drop_keep_return(&self.locals, &self.value_stack, &self.frame_stack);
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::Return(drop_keep));
+                self.sink.emit(isa::InstructionInternal::Return(drop_keep));
 
-                return Ok(Outcome::Unreachable);
+                make_top_frame_polymorphic(&mut self.value_stack, &mut self.frame_stack);
             }
 
             Call(index) => {
@@ -880,8 +847,7 @@ impl<'a> FunctionValidationContext<'a> {
             }
             CallIndirect(index, _reserved) => {
                 Validator::validate_call_indirect(self, index)?;
-                self
-                    .sink
+                self.sink
                     .emit(isa::InstructionInternal::CallIndirect(index));
             }
 
@@ -913,15 +879,11 @@ impl<'a> FunctionValidationContext<'a> {
             }
             GetGlobal(index) => {
                 Validator::validate_get_global(self, index)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::GetGlobal(index));
+                self.sink.emit(isa::InstructionInternal::GetGlobal(index));
             }
             SetGlobal(index) => {
                 Validator::validate_set_global(self, index)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::SetGlobal(index));
+                self.sink.emit(isa::InstructionInternal::SetGlobal(index));
             }
 
             I32Load(align, offset) => {
@@ -942,118 +904,80 @@ impl<'a> FunctionValidationContext<'a> {
             }
             I32Load8S(align, offset) => {
                 Validator::validate_load(self, align, 1, ValueType::I32)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::I32Load8S(offset));
+                self.sink.emit(isa::InstructionInternal::I32Load8S(offset));
             }
             I32Load8U(align, offset) => {
                 Validator::validate_load(self, align, 1, ValueType::I32)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::I32Load8U(offset));
+                self.sink.emit(isa::InstructionInternal::I32Load8U(offset));
             }
             I32Load16S(align, offset) => {
                 Validator::validate_load(self, align, 2, ValueType::I32)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::I32Load16S(offset));
+                self.sink.emit(isa::InstructionInternal::I32Load16S(offset));
             }
             I32Load16U(align, offset) => {
                 Validator::validate_load(self, align, 2, ValueType::I32)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::I32Load16U(offset));
+                self.sink.emit(isa::InstructionInternal::I32Load16U(offset));
             }
             I64Load8S(align, offset) => {
                 Validator::validate_load(self, align, 1, ValueType::I64)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::I64Load8S(offset));
+                self.sink.emit(isa::InstructionInternal::I64Load8S(offset));
             }
             I64Load8U(align, offset) => {
                 Validator::validate_load(self, align, 1, ValueType::I64)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::I64Load8U(offset));
+                self.sink.emit(isa::InstructionInternal::I64Load8U(offset));
             }
             I64Load16S(align, offset) => {
                 Validator::validate_load(self, align, 2, ValueType::I64)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::I64Load16S(offset));
+                self.sink.emit(isa::InstructionInternal::I64Load16S(offset));
             }
             I64Load16U(align, offset) => {
                 Validator::validate_load(self, align, 2, ValueType::I64)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::I64Load16U(offset));
+                self.sink.emit(isa::InstructionInternal::I64Load16U(offset));
             }
             I64Load32S(align, offset) => {
                 Validator::validate_load(self, align, 4, ValueType::I64)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::I64Load32S(offset));
+                self.sink.emit(isa::InstructionInternal::I64Load32S(offset));
             }
             I64Load32U(align, offset) => {
                 Validator::validate_load(self, align, 4, ValueType::I64)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::I64Load32U(offset));
+                self.sink.emit(isa::InstructionInternal::I64Load32U(offset));
             }
 
             I32Store(align, offset) => {
                 Validator::validate_store(self, align, 4, ValueType::I32)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::I32Store(offset));
+                self.sink.emit(isa::InstructionInternal::I32Store(offset));
             }
             I64Store(align, offset) => {
                 Validator::validate_store(self, align, 8, ValueType::I64)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::I64Store(offset));
+                self.sink.emit(isa::InstructionInternal::I64Store(offset));
             }
             F32Store(align, offset) => {
                 Validator::validate_store(self, align, 4, ValueType::F32)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::F32Store(offset));
+                self.sink.emit(isa::InstructionInternal::F32Store(offset));
             }
             F64Store(align, offset) => {
                 Validator::validate_store(self, align, 8, ValueType::F64)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::F64Store(offset));
+                self.sink.emit(isa::InstructionInternal::F64Store(offset));
             }
             I32Store8(align, offset) => {
                 Validator::validate_store(self, align, 1, ValueType::I32)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::I32Store8(offset));
+                self.sink.emit(isa::InstructionInternal::I32Store8(offset));
             }
             I32Store16(align, offset) => {
                 Validator::validate_store(self, align, 2, ValueType::I32)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::I32Store16(offset));
+                self.sink.emit(isa::InstructionInternal::I32Store16(offset));
             }
             I64Store8(align, offset) => {
                 Validator::validate_store(self, align, 1, ValueType::I64)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::I64Store8(offset));
+                self.sink.emit(isa::InstructionInternal::I64Store8(offset));
             }
             I64Store16(align, offset) => {
                 Validator::validate_store(self, align, 2, ValueType::I64)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::I64Store16(offset));
+                self.sink.emit(isa::InstructionInternal::I64Store16(offset));
             }
             I64Store32(align, offset) => {
                 Validator::validate_store(self, align, 4, ValueType::I64)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::I64Store32(offset));
+                self.sink.emit(isa::InstructionInternal::I64Store32(offset));
             }
 
             CurrentMemory(_) => {
@@ -1569,31 +1493,23 @@ impl<'a> FunctionValidationContext<'a> {
 
             I32ReinterpretF32 => {
                 Validator::validate_cvtop(self, ValueType::F32, ValueType::I32)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::I32ReinterpretF32);
+                self.sink.emit(isa::InstructionInternal::I32ReinterpretF32);
             }
             I64ReinterpretF64 => {
                 Validator::validate_cvtop(self, ValueType::F64, ValueType::I64)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::I64ReinterpretF64);
+                self.sink.emit(isa::InstructionInternal::I64ReinterpretF64);
             }
             F32ReinterpretI32 => {
                 Validator::validate_cvtop(self, ValueType::I32, ValueType::F32)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::F32ReinterpretI32);
+                self.sink.emit(isa::InstructionInternal::F32ReinterpretI32);
             }
             F64ReinterpretI64 => {
                 Validator::validate_cvtop(self, ValueType::I64, ValueType::F64)?;
-                self
-                    .sink
-                    .emit(isa::InstructionInternal::F64ReinterpretI64);
+                self.sink.emit(isa::InstructionInternal::F64ReinterpretI64);
             }
         }
 
-        Ok(Outcome::NextInstruction)
+        Ok(())
     }
 }
 
