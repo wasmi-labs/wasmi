@@ -265,14 +265,13 @@ pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
                 .bodies()
                 .get(index as usize)
                 .ok_or(Error(format!("Missing body for function {}", index)))?;
-            let code =
-                Compiler::compile(&context, function, function_body).map_err(|e| {
-                    let Error(ref msg) = e;
-                    Error(format!(
-                        "Function #{} reading/validation error: {}",
-                        index, msg
-                    ))
-                })?;
+            let code = Compiler::compile(&context, function, function_body).map_err(|e| {
+                let Error(ref msg) = e;
+                Error(format!(
+                    "Function #{} reading/validation error: {}",
+                    index, msg
+                ))
+            })?;
             code_map.push(code);
         }
     }

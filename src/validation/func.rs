@@ -211,12 +211,13 @@ impl Compiler {
         loop {
             let instruction = &body[context.position];
 
-            self.compile_instruction(context, instruction).map_err(|err| {
-                Error(format!(
-                    "At instruction {:?}(@{}): {}",
-                    instruction, context.position, err
-                ))
-            })?;
+            self.compile_instruction(context, instruction)
+                .map_err(|err| {
+                    Error(format!(
+                        "At instruction {:?}(@{}): {}",
+                        instruction, context.position, err
+                    ))
+                })?;
 
             context.position += 1;
             if context.position == body_len {
