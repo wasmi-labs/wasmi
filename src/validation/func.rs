@@ -152,17 +152,14 @@ impl PartialEq<StackValueType> for ValueType {
     }
 }
 
-// TODO: This is going to be a compiler.
-
-pub struct FunctionReader {
+pub struct Compiler {
     /// A sink used to emit optimized code.
     sink: Sink,
-    // TODO: to be moved to the compiler.
     label_stack: Vec<BlockFrameType>,
 }
 
-impl FunctionReader {
-    pub fn read_function(
+impl Compiler {
+    pub fn compile(
         module: &ModuleContext,
         func: &Func,
         body: &FuncBody,
@@ -186,23 +183,22 @@ impl FunctionReader {
             &mut context.frame_stack,
         )?;
 
-        let mut function_reader = FunctionReader {
+        let mut compiler = Compiler {
             sink: Sink::with_instruction_capacity(ins_size_estimate),
             label_stack: Vec::new(),
         };
-        let end_label = function_reader.sink.new_label();
-        function_reader
+        let end_label = compiler.sink.new_label();
+        compiler
             .label_stack
             .push(BlockFrameType::Block { end_label });
-
-        function_reader.read_function_body(&mut context, body.code().elements())?;
+        compiler.compile_function_body(&mut context, body.code().elements())?;
 
         assert!(context.frame_stack.is_empty());
 
-        Ok(function_reader.sink.into_inner())
+        Ok(compiler.sink.into_inner())
     }
 
-    fn read_function_body(
+    fn compile_function_body(
         &mut self,
         context: &mut FunctionValidationContext,
         body: &[Instruction],
@@ -215,7 +211,7 @@ impl FunctionReader {
         loop {
             let instruction = &body[context.position];
 
-            self.read_instruction(context, instruction).map_err(|err| {
+            self.compile_instruction(context, instruction).map_err(|err| {
                 Error(format!(
                     "At instruction {:?}(@{}): {}",
                     instruction, context.position, err
@@ -229,7 +225,7 @@ impl FunctionReader {
         }
     }
 
-    fn read_instruction(
+    fn compile_instruction(
         &mut self,
         context: &mut FunctionValidationContext,
         instruction: &Instruction,
@@ -462,96 +458,96 @@ impl FunctionReader {
                 self.sink.emit(isa::InstructionInternal::SetGlobal(index));
             }
 
-            I32Load(align, offset) => {
+            I32Load(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::I32Load(offset));
             }
-            I64Load(align, offset) => {
+            I64Load(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::I64Load(offset));
             }
-            F32Load(align, offset) => {
+            F32Load(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::F32Load(offset));
             }
-            F64Load(align, offset) => {
+            F64Load(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::F64Load(offset));
             }
-            I32Load8S(align, offset) => {
+            I32Load8S(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::I32Load8S(offset));
             }
-            I32Load8U(align, offset) => {
+            I32Load8U(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::I32Load8U(offset));
             }
-            I32Load16S(align, offset) => {
+            I32Load16S(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::I32Load16S(offset));
             }
-            I32Load16U(align, offset) => {
+            I32Load16U(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::I32Load16U(offset));
             }
-            I64Load8S(align, offset) => {
+            I64Load8S(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::I64Load8S(offset));
             }
-            I64Load8U(align, offset) => {
+            I64Load8U(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::I64Load8U(offset));
             }
-            I64Load16S(align, offset) => {
+            I64Load16S(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::I64Load16S(offset));
             }
-            I64Load16U(align, offset) => {
+            I64Load16U(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::I64Load16U(offset));
             }
-            I64Load32S(align, offset) => {
+            I64Load32S(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::I64Load32S(offset));
             }
-            I64Load32U(align, offset) => {
+            I64Load32U(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::I64Load32U(offset));
             }
 
-            I32Store(align, offset) => {
+            I32Store(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::I32Store(offset));
             }
-            I64Store(align, offset) => {
+            I64Store(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::I64Store(offset));
             }
-            F32Store(align, offset) => {
+            F32Store(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::F32Store(offset));
             }
-            F64Store(align, offset) => {
+            F64Store(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::F64Store(offset));
             }
-            I32Store8(align, offset) => {
+            I32Store8(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::I32Store8(offset));
             }
-            I32Store16(align, offset) => {
+            I32Store16(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::I32Store16(offset));
             }
-            I64Store8(align, offset) => {
+            I64Store8(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::I64Store8(offset));
             }
-            I64Store16(align, offset) => {
+            I64Store16(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::I64Store16(offset));
             }
-            I64Store32(align, offset) => {
+            I64Store32(_, offset) => {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::I64Store32(offset));
             }
@@ -1196,7 +1192,7 @@ impl<'a> FunctionValidationContext<'a> {
                 )?;
             }
             End => {
-                let (started_with, block_type) = {
+                let block_type = {
                     let top = top_label(&self.frame_stack);
 
                     if top.started_with == StartedWith::If && top.block_type != BlockType::NoResult
@@ -1208,7 +1204,7 @@ impl<'a> FunctionValidationContext<'a> {
                         )));
                     }
 
-                    (top.started_with, top.block_type)
+                    top.block_type
                 };
 
                 if self.frame_stack.len() == 1 {
@@ -1261,18 +1257,13 @@ impl<'a> FunctionValidationContext<'a> {
             }
 
             GetLocal(index) => {
-                // We need to calculate relative depth before validation since
-                // it will change the value stack size.
-                let depth = relative_local_depth(index, &self.locals, &self.value_stack)?;
                 self.validate_get_local(index)?;
             }
             SetLocal(index) => {
                 self.validate_set_local(index)?;
-                let depth = relative_local_depth(index, &self.locals, &self.value_stack)?;
             }
             TeeLocal(index) => {
                 self.validate_tee_local(index)?;
-                let depth = relative_local_depth(index, &self.locals, &self.value_stack)?;
             }
             GetGlobal(index) => {
                 self.validate_get_global(index)?;
@@ -1281,74 +1272,74 @@ impl<'a> FunctionValidationContext<'a> {
                 self.validate_set_global(index)?;
             }
 
-            I32Load(align, offset) => {
+            I32Load(align, _) => {
                 self.validate_load(align, 4, ValueType::I32)?;
             }
-            I64Load(align, offset) => {
+            I64Load(align, _) => {
                 self.validate_load(align, 8, ValueType::I64)?;
             }
-            F32Load(align, offset) => {
+            F32Load(align, _) => {
                 self.validate_load(align, 4, ValueType::F32)?;
             }
-            F64Load(align, offset) => {
+            F64Load(align, _) => {
                 self.validate_load(align, 8, ValueType::F64)?;
             }
-            I32Load8S(align, offset) => {
+            I32Load8S(align, _) => {
                 self.validate_load(align, 1, ValueType::I32)?;
             }
-            I32Load8U(align, offset) => {
+            I32Load8U(align, _) => {
                 self.validate_load(align, 1, ValueType::I32)?;
             }
-            I32Load16S(align, offset) => {
+            I32Load16S(align, _) => {
                 self.validate_load(align, 2, ValueType::I32)?;
             }
-            I32Load16U(align, offset) => {
+            I32Load16U(align, _) => {
                 self.validate_load(align, 2, ValueType::I32)?;
             }
-            I64Load8S(align, offset) => {
+            I64Load8S(align, _) => {
                 self.validate_load(align, 1, ValueType::I64)?;
             }
-            I64Load8U(align, offset) => {
+            I64Load8U(align, _) => {
                 self.validate_load(align, 1, ValueType::I64)?;
             }
-            I64Load16S(align, offset) => {
+            I64Load16S(align, _) => {
                 self.validate_load(align, 2, ValueType::I64)?;
             }
-            I64Load16U(align, offset) => {
+            I64Load16U(align, _) => {
                 self.validate_load(align, 2, ValueType::I64)?;
             }
-            I64Load32S(align, offset) => {
+            I64Load32S(align, _) => {
                 self.validate_load(align, 4, ValueType::I64)?;
             }
-            I64Load32U(align, offset) => {
+            I64Load32U(align, _) => {
                 self.validate_load(align, 4, ValueType::I64)?;
             }
 
-            I32Store(align, offset) => {
+            I32Store(align, _) => {
                 self.validate_store(align, 4, ValueType::I32)?;
             }
-            I64Store(align, offset) => {
+            I64Store(align, _) => {
                 self.validate_store(align, 8, ValueType::I64)?;
             }
-            F32Store(align, offset) => {
+            F32Store(align, _) => {
                 self.validate_store(align, 4, ValueType::F32)?;
             }
-            F64Store(align, offset) => {
+            F64Store(align, _) => {
                 self.validate_store(align, 8, ValueType::F64)?;
             }
-            I32Store8(align, offset) => {
+            I32Store8(align, _) => {
                 self.validate_store(align, 1, ValueType::I32)?;
             }
-            I32Store16(align, offset) => {
+            I32Store16(align, _) => {
                 self.validate_store(align, 2, ValueType::I32)?;
             }
-            I64Store8(align, offset) => {
+            I64Store8(align, _) => {
                 self.validate_store(align, 1, ValueType::I64)?;
             }
-            I64Store16(align, offset) => {
+            I64Store16(align, _) => {
                 self.validate_store(align, 2, ValueType::I64)?;
             }
-            I64Store32(align, offset) => {
+            I64Store32(align, _) => {
                 self.validate_store(align, 4, ValueType::I64)?;
             }
 
@@ -1359,16 +1350,16 @@ impl<'a> FunctionValidationContext<'a> {
                 self.validate_grow_memory()?;
             }
 
-            I32Const(v) => {
+            I32Const(_) => {
                 self.validate_const(ValueType::I32)?;
             }
-            I64Const(v) => {
+            I64Const(_) => {
                 self.validate_const(ValueType::I64)?;
             }
-            F32Const(v) => {
+            F32Const(_) => {
                 self.validate_const(ValueType::F32)?;
             }
-            F64Const(v) => {
+            F64Const(_) => {
                 self.validate_const(ValueType::F64)?;
             }
 

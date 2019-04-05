@@ -10,7 +10,7 @@ use hashbrown::HashSet;
 use std::collections::HashSet;
 
 use self::context::ModuleContextBuilder;
-use self::func::FunctionReader;
+use self::func::Compiler;
 use common::stack;
 use isa;
 use memory_units::Pages;
@@ -266,7 +266,7 @@ pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
                 .get(index as usize)
                 .ok_or(Error(format!("Missing body for function {}", index)))?;
             let code =
-                FunctionReader::read_function(&context, function, function_body).map_err(|e| {
+                Compiler::compile(&context, function, function_body).map_err(|e| {
                     let Error(ref msg) = e;
                     Error(format!(
                         "Function #{} reading/validation error: {}",
