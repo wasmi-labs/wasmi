@@ -521,18 +521,18 @@ impl Validator {
     ) -> Result<(), Error> {
         let required_block_type: BlockType = {
             let default_block = require_label(default, &context.frame_stack)?;
-            let required_block_type = if !default_block.frame_type.is_loop() {
-                default_block.block_type
-            } else {
+            let required_block_type = if default_block.started_with == StartedWith::Loop {
                 BlockType::NoResult
+            } else {
+                default_block.block_type
             };
 
             for label in table {
                 let label_block = require_label(*label, &context.frame_stack)?;
-                let label_block_type = if !label_block.frame_type.is_loop() {
-                    label_block.block_type
-                } else {
+                let label_block_type = if label_block.started_with == StartedWith::Loop {
                     BlockType::NoResult
+                } else {
+                    label_block.block_type
                 };
                 if required_block_type != label_block_type {
                     return Err(Error(format!(
@@ -849,7 +849,7 @@ impl<'a> FunctionValidationContext<'a> {
 
                     // Emit the return instruction.
                     let drop_keep =
-                        drop_keep_return(&self.locals, &self.value_stack, &self.frame_stack);
+                        drop_keep_return(&self.locals, &self.value_stack, &self.frame_stack, &self.label_stack);
                     self.sink.emit(isa::InstructionInternal::Return(drop_keep));
                 }
 
@@ -864,7 +864,7 @@ impl<'a> FunctionValidationContext<'a> {
             Br(depth) => {
                 Validator::validate_br(self, depth)?;
 
-                let target = require_target(depth, &self.value_stack, &self.frame_stack);
+                let target = require_target(depth, &self.value_stack, &self.frame_stack, &self.label_stack);
                 self.sink.emit_br(target);
 
                 make_top_frame_polymorphic(&mut self.value_stack, &mut self.frame_stack);
@@ -872,7 +872,7 @@ impl<'a> FunctionValidationContext<'a> {
             BrIf(depth) => {
                 Validator::validate_br_if(self, depth)?;
 
-                let target = require_target(depth, &self.value_stack, &self.frame_stack);
+                let target = require_target(depth, &self.value_stack, &self.frame_stack, &self.label_stack);
                 self.sink.emit_br_nez(target);
             }
             BrTable(ref table, default) => {
@@ -880,10 +880,10 @@ impl<'a> FunctionValidationContext<'a> {
 
                 let mut targets = Vec::new();
                 for depth in table.iter() {
-                    let target = require_target(*depth, &self.value_stack, &self.frame_stack);
+                    let target = require_target(*depth, &self.value_stack, &self.frame_stack, &self.label_stack);
                     targets.push(target);
                 }
-                let default_target = require_target(default, &self.value_stack, &self.frame_stack);
+                let default_target = require_target(default, &self.value_stack, &self.frame_stack, &self.label_stack);
                 self.sink.emit_br_table(&targets, default_target);
 
                 make_top_frame_polymorphic(&mut self.value_stack, &mut self.frame_stack);
@@ -894,7 +894,7 @@ impl<'a> FunctionValidationContext<'a> {
                 }
 
                 let drop_keep =
-                    drop_keep_return(&self.locals, &self.value_stack, &self.frame_stack);
+                    drop_keep_return(&self.locals, &self.value_stack, &self.frame_stack, &self.label_stack);
                 self.sink.emit(isa::InstructionInternal::Return(drop_keep));
 
                 make_top_frame_polymorphic(&mut self.value_stack, &mut self.frame_stack);
@@ -1568,6 +1568,11 @@ impl<'a> FunctionValidationContext<'a> {
             }
         }
 
+        assert_eq!(
+            self.label_stack.len(),
+            self.frame_stack.len(),
+        );
+
         Ok(())
     }
 }
@@ -1703,10 +1708,14 @@ fn require_target(
     depth: u32,
     value_stack: &StackWithLimit<StackValueType>,
     frame_stack: &StackWithLimit<BlockFrame>,
+    label_stack: &[BlockFrameType],
 ) -> Target {
     let is_stack_polymorphic = top_label(frame_stack).polymorphic_stack;
     let frame =
         require_label(depth, frame_stack).expect("require_target called with a bogus depth");
+
+    // TODO: Clean this mess.
+    let label = label_stack.get(label_stack.len() - 1 - (depth as usize)).expect("require_target called with a bogus depth");
 
     // Find out how many values we need to keep (copy to the new stack location after the drop).
     let keep: isa::Keep = match (frame.started_with, frame.block_type) {
@@ -1741,7 +1750,7 @@ fn require_target(
     };
 
     Target {
-        label: frame.frame_type.br_destination(),
+        label: label.br_destination(),
         drop_keep: isa::DropKeep { drop, keep },
     }
 }
@@ -1750,6 +1759,7 @@ fn drop_keep_return(
     locals: &Locals,
     value_stack: &StackWithLimit<StackValueType>,
     frame_stack: &StackWithLimit<BlockFrame>,
+    label_stack: &[BlockFrameType],
 ) -> isa::DropKeep {
     assert!(
         !frame_stack.is_empty(),
@@ -1757,7 +1767,9 @@ fn drop_keep_return(
     );
 
     let deepest = (frame_stack.len() - 1) as u32;
-    let mut drop_keep = require_target(deepest, value_stack, frame_stack).drop_keep;
+    // TODO: This looks messy. We require `label_stack` here, however, we only use
+    // drop_keep which technically doesn't require `label_stack` here.
+    let mut drop_keep = require_target(deepest, value_stack, frame_stack, label_stack).drop_keep;
 
     // Drop all local variables and parameters upon exit.
     drop_keep.drop += locals.count();
