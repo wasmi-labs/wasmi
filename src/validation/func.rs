@@ -21,8 +21,6 @@ const DEFAULT_FRAME_STACK_LIMIT: usize = 16384;
 struct BlockFrame {
     /// The opcode that started this block frame.
     started_with: StartedWith,
-    /// Frame type.
-    frame_type: BlockFrameType,
     /// A signature, which is a block signature type indicating the number and types of result
     /// values of the region.
     block_type: BlockType,
@@ -186,7 +184,6 @@ impl FunctionReader {
         let end_label = context.sink.new_label();
         push_label(
             StartedWith::Block,
-            BlockFrameType::Block { end_label },
             result_ty,
             context.position,
             &context.value_stack,
@@ -702,7 +699,6 @@ impl<'a> FunctionValidationContext<'a> {
 
                 push_label(
                     StartedWith::Block,
-                    BlockFrameType::Block { end_label },
                     block_type,
                     self.position,
                     &self.value_stack,
@@ -717,7 +713,6 @@ impl<'a> FunctionValidationContext<'a> {
 
                 push_label(
                     StartedWith::Loop,
-                    BlockFrameType::Loop { header },
                     block_type,
                     self.position,
                     &self.value_stack,
@@ -738,7 +733,6 @@ impl<'a> FunctionValidationContext<'a> {
                 )?;
                 push_label(
                     StartedWith::If,
-                    BlockFrameType::IfTrue { if_not, end_label },
                     block_type,
                     self.position,
                     &self.value_stack,
@@ -795,7 +789,6 @@ impl<'a> FunctionValidationContext<'a> {
                 pop_label(&mut self.value_stack, &mut self.frame_stack)?;
                 push_label(
                     StartedWith::Else,
-                    BlockFrameType::IfFalse { end_label },
                     block_type,
                     self.position,
                     &self.value_stack,
@@ -1642,7 +1635,6 @@ fn tee_value(
 
 fn push_label(
     started_with: StartedWith,
-    frame_type: BlockFrameType,
     block_type: BlockType,
     position: usize,
     value_stack: &StackWithLimit<StackValueType>,
@@ -1650,7 +1642,6 @@ fn push_label(
 ) -> Result<(), Error> {
     Ok(frame_stack.push(BlockFrame {
         started_with,
-        frame_type: frame_type,
         block_type: block_type,
         begin_position: position,
         value_stack_len: value_stack.len(),
