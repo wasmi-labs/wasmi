@@ -832,17 +832,10 @@ fn spec_as_br_if_value_cond() {
     assert_eq!(
         code,
         vec![
-        I32Const(
-            6
-        ),
-        I32Const(
-            9
-        ),
-        I32Const(
-            0
-        ),
-        isa::Instruction::BrTable(
-            targets![
+            I32Const(6),
+            I32Const(9),
+            I32Const(0),
+            isa::Instruction::BrTable(targets![
                 isa::Target {
                     dst_pc: 9,
                     drop_keep: isa::DropKeep {
@@ -857,29 +850,22 @@ fn spec_as_br_if_value_cond() {
                         keep: isa::Keep::Single
                     }
                 }
-
-            ]
-        ),
-        BrIfNez(
-            isa::Target {
+            ]),
+            BrIfNez(isa::Target {
                 dst_pc: 9,
                 drop_keep: isa::DropKeep {
                     drop: 0,
                     keep: isa::Keep::Single
                 }
-            }
-        ),
-        Drop,
-        I32Const(
-            7
-        ),
-        Return(
-            isa::DropKeep {
+            }),
+            Drop,
+            I32Const(7),
+            Return(isa::DropKeep {
                 drop: 0,
                 keep: isa::Keep::Single
-            }
-        )
-    ]);
+            })
+        ]
+    );
 }
 
 #[test]
