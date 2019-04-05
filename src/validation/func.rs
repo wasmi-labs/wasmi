@@ -19,6 +19,8 @@ const DEFAULT_FRAME_STACK_LIMIT: usize = 16384;
 /// Control stack frame.
 #[derive(Debug, Clone)]
 struct BlockFrame {
+    /// The opcode that started this block frame.
+    started_with: StartedWith,
     /// Frame type.
     frame_type: BlockFrameType,
     /// A signature, which is a block signature type indicating the number and types of result
@@ -33,6 +35,17 @@ struct BlockFrame {
     /// a non-polymorphic state and becomes polymorphic only after an instruction that never passes
     /// control further is executed, i.e. `unreachable`, `br` (but not `br_if`!), etc.
     polymorphic_stack: bool,
+}
+
+/// An opcode that opened the particular frame.
+///
+/// We need that to ensure proper combinations with `End` instruction.
+#[derive(Debug, Clone)]
+enum StartedWith {
+    Block,
+    If,
+    Else,
+    Loop,
 }
 
 /// Type of block frame.
@@ -172,6 +185,7 @@ impl FunctionReader {
 
         let end_label = context.sink.new_label();
         push_label(
+            StartedWith::Block,
             BlockFrameType::Block { end_label },
             result_ty,
             context.position,
@@ -610,6 +624,14 @@ impl Validator {
     }
 }
 
+// # Refactoring plan
+//
+// So the main goal is to extract compilation logic out of validation. There are some complications
+// though. For example, compilation logic is intertwined with the validation and shares the same data.
+//
+// ## Make BlockFrame independendt of labels.
+// ## Remove sink from `FunctionValidationContext`
+
 /// Function validation context.
 struct FunctionValidationContext<'a> {
     /// Wasm module
@@ -671,6 +693,7 @@ impl<'a> FunctionValidationContext<'a> {
             Block(block_type) => {
                 let end_label = self.sink.new_label();
                 push_label(
+                    StartedWith::Block,
                     BlockFrameType::Block { end_label },
                     block_type,
                     self.position,
@@ -684,6 +707,7 @@ impl<'a> FunctionValidationContext<'a> {
                 self.sink.resolve_label(header);
 
                 push_label(
+                    StartedWith::Loop,
                     BlockFrameType::Loop { header },
                     block_type,
                     self.position,
@@ -703,6 +727,7 @@ impl<'a> FunctionValidationContext<'a> {
                     ValueType::I32.into(),
                 )?;
                 push_label(
+                    StartedWith::If,
                     BlockFrameType::IfTrue { if_not, end_label },
                     block_type,
                     self.position,
@@ -747,6 +772,7 @@ impl<'a> FunctionValidationContext<'a> {
                 // frame.
                 pop_label(&mut self.value_stack, &mut self.frame_stack)?;
                 push_label(
+                    StartedWith::Else,
                     BlockFrameType::IfFalse { end_label },
                     block_type,
                     self.position,
@@ -1577,6 +1603,7 @@ fn tee_value(
 }
 
 fn push_label(
+    started_with: StartedWith,
     frame_type: BlockFrameType,
     block_type: BlockType,
     position: usize,
@@ -1584,6 +1611,7 @@ fn push_label(
     frame_stack: &mut StackWithLimit<BlockFrame>,
 ) -> Result<(), Error> {
     Ok(frame_stack.push(BlockFrame {
+        started_with,
         frame_type: frame_type,
         block_type: block_type,
         begin_position: position,
