@@ -93,13 +93,6 @@ impl BlockFrameType {
             BlockFrameType::Loop { .. } => panic!("loop doesn't use end label"),
         }
     }
-
-    fn is_loop(&self) -> bool {
-        match *self {
-            BlockFrameType::Loop { .. } => true,
-            _ => false,
-        }
-    }
 }
 
 /// Value type on the stack.
@@ -229,7 +222,203 @@ impl FunctionReader {
         context: &mut FunctionValidationContext,
         instruction: &Instruction,
     ) -> Result<(), Error> {
-        context.step(instruction)
+        use self::Instruction::*;
+
+        match *instruction {
+            Unreachable => {
+                context.sink.emit(isa::InstructionInternal::Unreachable);
+                context.step(instruction)?;
+            }
+            Block(_) => {
+                context.step(instruction)?;
+
+                let end_label = context.sink.new_label();
+                context
+                    .label_stack
+                    .push(BlockFrameType::Block { end_label });
+            }
+            Loop(_) => {
+                context.step(instruction)?;
+
+                // Resolve loop header right away.
+                let header = context.sink.new_label();
+                context.sink.resolve_label(header);
+                context.label_stack.push(BlockFrameType::Loop { header });
+            }
+            If(_) => {
+                context.step(instruction)?;
+
+                // `if_not` will be resolved whenever `End` or `Else` operator will be met.
+                // `end_label` will always be resolved at `End`.
+                let if_not = context.sink.new_label();
+                let end_label = context.sink.new_label();
+                context
+                    .label_stack
+                    .push(BlockFrameType::IfTrue { if_not, end_label });
+
+                context.sink.emit_br_eqz(Target {
+                    label: if_not,
+                    drop_keep: isa::DropKeep {
+                        drop: 0,
+                        keep: isa::Keep::None,
+                    },
+                });
+            }
+            Else => {
+                context.step(instruction)?;
+
+                let (if_not, end_label) = {
+                    // TODO: We will have to place this before validation step to ensure that
+                    // the block type is indeed if_true.
+
+                    let top_label = context.label_stack.last().unwrap();
+                    let (if_not, end_label) = match *top_label {
+                        BlockFrameType::IfTrue { if_not, end_label } => (if_not, end_label),
+                        _ => panic!("validation ensures that the top frame is actually if_true"),
+                    };
+                    (if_not, end_label)
+                };
+
+                // First, we need to finish if-true block: add a jump from the end of the if-true block
+                // to the "end_label" (it will be resolved at End).
+                context.sink.emit_br(Target {
+                    label: end_label,
+                    drop_keep: isa::DropKeep {
+                        drop: 0,
+                        keep: isa::Keep::None,
+                    },
+                });
+
+                // Resolve `if_not` to here so when if condition is unsatisfied control flow
+                // will jump to this label.
+                context.sink.resolve_label(if_not);
+
+                context.label_stack.pop().unwrap();
+                context
+                    .label_stack
+                    .push(BlockFrameType::IfFalse { end_label });
+            }
+            End => {
+                let started_with = top_label(&context.frame_stack).started_with;
+                let return_drop_keep = if context.frame_stack.len() == 1 {
+                    // We are about to close the last frame.
+                    Some(drop_keep_return(
+                        &context.locals,
+                        &context.value_stack,
+                        &context.frame_stack,
+                    ))
+                } else {
+                    None
+                };
+
+                context.step(instruction)?;
+
+                // let started_with = started_with.expect("validation ensures that it is ok");
+
+                // TODO: We will have to place this before validation step to ensure that
+                // the block type is indeed if_true.
+                let frame_type = context.label_stack.last().cloned().unwrap();
+
+                if let BlockFrameType::IfTrue { if_not, .. } = frame_type {
+                    // Resolve `if_not` label. If the `if's` condition doesn't hold the control will jump
+                    // to here.
+                    context.sink.resolve_label(if_not);
+                }
+
+                // Unless it's a loop, resolve the `end_label` position here.
+                if started_with != StartedWith::Loop {
+                    let end_label = frame_type.end_label();
+                    context.sink.resolve_label(end_label);
+                }
+
+                if let Some(drop_keep) = return_drop_keep {
+                    // TODO: The last one.
+                    // It was the last instruction. Emit the explicit return instruction.
+                    let drop_keep = drop_keep.expect("validation should ensure this doesn't fail");
+                    context
+                        .sink
+                        .emit(isa::InstructionInternal::Return(drop_keep));
+                }
+
+                // Finally, pop the label.
+                context.label_stack.pop().unwrap();
+            }
+            Br(depth) => {
+                let target = require_target(
+                    depth,
+                    context.value_stack.len(),
+                    &context.frame_stack,
+                    &context.label_stack,
+                );
+
+                context.step(instruction)?;
+
+                let target = target.expect("validation step should ensure that this doesn't fail");
+                context.sink.emit_br(target);
+            }
+            BrIf(depth) => {
+                context.step(instruction)?;
+
+                let target = require_target(
+                    depth,
+                    context.value_stack.len(),
+                    &context.frame_stack,
+                    &context.label_stack,
+                );
+
+                let target = target.expect("validation step should ensure that this doesn't fail");
+                context.sink.emit_br_nez(target);
+            }
+            BrTable(ref table, default) => {
+                // At this point, the condition value is at the top of the stack.
+                // But at the point of actual jump the condition will already be
+                // popped off.
+                let value_stack_height = context.value_stack.len().saturating_sub(1);
+
+                let mut targets = table.iter().map(|depth|
+                    require_target(
+                        *depth,
+                        value_stack_height,
+                        &context.frame_stack,
+                        &context.label_stack,
+                    )
+                ).collect::<Result<Vec<_>, _>>();
+                let default_target = require_target(
+                    default,
+                    value_stack_height,
+                    &context.frame_stack,
+                    &context.label_stack,
+                );
+
+                context.step(instruction)?;
+
+                // These two unwraps are guaranteed to succeed by validation.
+                let targets = targets.unwrap();
+                let default_target = default_target.unwrap();
+
+                context.sink.emit_br_table(&targets, default_target);
+            }
+            Return => {
+                let drop_keep =
+                    drop_keep_return(&context.locals, &context.value_stack, &context.frame_stack);
+
+                context.step(instruction)?;
+
+                let drop_keep =
+                    drop_keep.expect("validation step should ensure that this doesn't fail");
+
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::Return(drop_keep));
+            }
+            _ => {
+                context.step(instruction)?;
+            }
+        };
+
+        assert_eq!(context.label_stack.len(), context.frame_stack.len(),);
+
+        Ok(())
     }
 }
 
@@ -237,6 +426,8 @@ impl FunctionReader {
 struct Validator;
 
 impl Validator {
+    // TODO: Move all functions to methods
+
     fn validate_const(
         context: &mut FunctionValidationContext,
         value_type: ValueType,
@@ -690,13 +881,10 @@ impl<'a> FunctionValidationContext<'a> {
             Nop => {}
 
             Unreachable => {
-                self.sink.emit(isa::InstructionInternal::Unreachable);
                 make_top_frame_polymorphic(&mut self.value_stack, &mut self.frame_stack);
             }
 
             Block(block_type) => {
-                let end_label = self.sink.new_label();
-
                 push_label(
                     StartedWith::Block,
                     block_type,
@@ -704,13 +892,8 @@ impl<'a> FunctionValidationContext<'a> {
                     &self.value_stack,
                     &mut self.frame_stack,
                 )?;
-                self.label_stack.push(BlockFrameType::Block { end_label });
             }
             Loop(block_type) => {
-                // Resolve loop header right away.
-                let header = self.sink.new_label();
-                self.sink.resolve_label(header);
-
                 push_label(
                     StartedWith::Loop,
                     block_type,
@@ -718,14 +901,8 @@ impl<'a> FunctionValidationContext<'a> {
                     &self.value_stack,
                     &mut self.frame_stack,
                 )?;
-                self.label_stack.push(BlockFrameType::Loop { header });
             }
             If(block_type) => {
-                // `if_not` will be resolved whenever `End` or `Else` operator will be met.
-                // `end_label` will always be resolved at `End`.
-                let if_not = self.sink.new_label();
-                let end_label = self.sink.new_label();
-
                 pop_value(
                     &mut self.value_stack,
                     &self.frame_stack,
@@ -738,16 +915,6 @@ impl<'a> FunctionValidationContext<'a> {
                     &self.value_stack,
                     &mut self.frame_stack,
                 )?;
-                self.label_stack
-                    .push(BlockFrameType::IfTrue { if_not, end_label });
-
-                self.sink.emit_br_eqz(Target {
-                    label: if_not,
-                    drop_keep: isa::DropKeep {
-                        drop: 0,
-                        keep: isa::Keep::None,
-                    },
-                });
             }
             Else => {
                 let block_type = {
@@ -757,32 +924,6 @@ impl<'a> FunctionValidationContext<'a> {
                     }
                     top.block_type
                 };
-
-                let (if_not, end_label) = {
-                    // TODO: We will have to place this before validation step to ensure that
-                    // the block type is indeed if_true.
-
-                    let top_label = self.label_stack.last().unwrap();
-                    let (if_not, end_label) = match *top_label {
-                        BlockFrameType::IfTrue { if_not, end_label } => (if_not, end_label),
-                        _ => panic!("validation ensures that the top frame is actually if_true"),
-                    };
-                    (if_not, end_label)
-                };
-
-                // First, we need to finish if-true block: add a jump from the end of the if-true block
-                // to the "end_label" (it will be resolved at End).
-                self.sink.emit_br(Target {
-                    label: end_label,
-                    drop_keep: isa::DropKeep {
-                        drop: 0,
-                        keep: isa::Keep::None,
-                    },
-                });
-
-                // Resolve `if_not` to here so when if condition is unsatisfied control flow
-                // will jump to this label.
-                self.sink.resolve_label(if_not);
 
                 // Then, we pop the current label. It discards all values that pushed in the current
                 // frame.
@@ -794,15 +935,13 @@ impl<'a> FunctionValidationContext<'a> {
                     &self.value_stack,
                     &mut self.frame_stack,
                 )?;
-
-                self.label_stack.pop().unwrap();
-                self.label_stack.push(BlockFrameType::IfFalse { end_label });
             }
             End => {
                 let (started_with, block_type) = {
                     let top = top_label(&self.frame_stack);
 
-                    if top.started_with == StartedWith::If && top.block_type != BlockType::NoResult {
+                    if top.started_with == StartedWith::If && top.block_type != BlockType::NoResult
+                    {
                         // A `if` without an `else` can't return a result.
                         return Err(Error(format!(
                             "If block without else required to have NoResult block type. But it has {:?} type",
@@ -813,24 +952,6 @@ impl<'a> FunctionValidationContext<'a> {
                     (top.started_with, top.block_type)
                 };
 
-                {
-                    // TODO: We will have to place this before validation step to ensure that
-                    // the block type is indeed if_true.
-                    let frame_type = self.label_stack.last().unwrap();
-
-                    if let BlockFrameType::IfTrue { if_not, .. } = *frame_type {
-                        // Resolve `if_not` label. If the `if's` condition doesn't hold the control will jump
-                        // to here.
-                        self.sink.resolve_label(if_not);
-                    }
-
-                    // Unless it's a loop, resolve the `end_label` position here.
-                    if started_with != StartedWith::Loop {
-                        let end_label = frame_type.end_label();
-                        self.sink.resolve_label(end_label);
-                    }
-                }
-
                 if self.frame_stack.len() == 1 {
                     // We are about to close the last frame. Insert
                     // an explicit return.
@@ -839,15 +960,9 @@ impl<'a> FunctionValidationContext<'a> {
                     if let BlockType::Value(value_type) = self.return_type() {
                         tee_value(&mut self.value_stack, &self.frame_stack, value_type.into())?;
                     }
-
-                    // Emit the return instruction.
-                    let drop_keep =
-                        drop_keep_return(&self.locals, &self.value_stack, &self.frame_stack, &self.label_stack);
-                    self.sink.emit(isa::InstructionInternal::Return(drop_keep));
                 }
 
                 pop_label(&mut self.value_stack, &mut self.frame_stack)?;
-                self.label_stack.pop().unwrap();
 
                 // Push the result value.
                 if let BlockType::Value(value_type) = block_type {
@@ -856,40 +971,19 @@ impl<'a> FunctionValidationContext<'a> {
             }
             Br(depth) => {
                 Validator::validate_br(self, depth)?;
-
-                let target = require_target(depth, &self.value_stack, &self.frame_stack, &self.label_stack);
-                self.sink.emit_br(target);
-
                 make_top_frame_polymorphic(&mut self.value_stack, &mut self.frame_stack);
             }
             BrIf(depth) => {
                 Validator::validate_br_if(self, depth)?;
-
-                let target = require_target(depth, &self.value_stack, &self.frame_stack, &self.label_stack);
-                self.sink.emit_br_nez(target);
             }
             BrTable(ref table, default) => {
                 Validator::validate_br_table(self, table, default)?;
-
-                let mut targets = Vec::new();
-                for depth in table.iter() {
-                    let target = require_target(*depth, &self.value_stack, &self.frame_stack, &self.label_stack);
-                    targets.push(target);
-                }
-                let default_target = require_target(default, &self.value_stack, &self.frame_stack, &self.label_stack);
-                self.sink.emit_br_table(&targets, default_target);
-
                 make_top_frame_polymorphic(&mut self.value_stack, &mut self.frame_stack);
             }
             Return => {
                 if let BlockType::Value(value_type) = self.return_type() {
                     tee_value(&mut self.value_stack, &self.frame_stack, value_type.into())?;
                 }
-
-                let drop_keep =
-                    drop_keep_return(&self.locals, &self.value_stack, &self.frame_stack, &self.label_stack);
-                self.sink.emit(isa::InstructionInternal::Return(drop_keep));
-
                 make_top_frame_polymorphic(&mut self.value_stack, &mut self.frame_stack);
             }
 
@@ -1561,11 +1655,6 @@ impl<'a> FunctionValidationContext<'a> {
             }
         }
 
-        assert_eq!(
-            self.label_stack.len(),
-            self.frame_stack.len(),
-        );
-
         Ok(())
     }
 }
@@ -1695,21 +1784,15 @@ fn require_label(
     Ok(frame_stack.get(depth as usize)?)
 }
 
-fn require_target(
-    depth: u32,
-    value_stack: &StackWithLimit<StackValueType>,
-    frame_stack: &StackWithLimit<BlockFrame>,
-    label_stack: &[BlockFrameType],
-) -> Target {
-    let is_stack_polymorphic = top_label(frame_stack).polymorphic_stack;
-    let frame =
-        require_label(depth, frame_stack).expect("require_target called with a bogus depth");
-
-    // TODO: Clean this mess.
-    let label = label_stack.get(label_stack.len() - 1 - (depth as usize)).expect("require_target called with a bogus depth");
-
+fn compute_drop_keep(
+    in_stack_polymorphic_state: bool,
+    started_with: StartedWith,
+    block_type: BlockType,
+    actual_value_stack_height: usize,
+    start_value_stack_height: usize,
+) -> Result<isa::DropKeep, Error> {
     // Find out how many values we need to keep (copy to the new stack location after the drop).
-    let keep: isa::Keep = match (frame.started_with, frame.block_type) {
+    let keep: isa::Keep = match (started_with, block_type) {
         // A loop doesn't take a value upon a branch. It can return value
         // only via reaching it's closing `End` operator.
         (StartedWith::Loop, _) => isa::Keep::None,
@@ -1719,53 +1802,89 @@ fn require_target(
     };
 
     // Find out how many values we need to discard.
-    let drop = if is_stack_polymorphic {
-        // Polymorphic stack is a weird state. Fortunately, it always about the code that
+    let drop = if in_stack_polymorphic_state {
+        // Polymorphic stack is a weird state. Fortunately, it is always about the code that
         // will not be executed, so we don't bother and return 0 here.
         0
     } else {
-        let value_stack_height = value_stack.len();
-        assert!(
-			value_stack_height >= frame.value_stack_len,
-			"Stack underflow detected: value stack height ({}) is lower than minimum stack len ({})",
-			value_stack_height,
-			frame.value_stack_len,
-		);
-        assert!(
-            (value_stack_height as u32 - frame.value_stack_len as u32) >= keep as u32,
-            "Stack underflow detected: asked to keep {:?} values, but there are only {}",
-            keep,
-            value_stack_height as u32 - frame.value_stack_len as u32,
-        );
-        (value_stack_height as u32 - frame.value_stack_len as u32) - keep as u32
+        if actual_value_stack_height < start_value_stack_height {
+            return Err(Error(format!(
+                "Stack underflow detected: value stack height ({}) is lower than minimum stack len ({})",
+                actual_value_stack_height,
+                start_value_stack_height,
+            )));
+        }
+        if (actual_value_stack_height as u32 - start_value_stack_height as u32) < keep as u32 {
+            return Err(Error(format!(
+                "Stack underflow detected: asked to keep {:?} values, but there are only {}",
+                keep,
+                actual_value_stack_height as u32 - start_value_stack_height as u32,
+            )));
+        }
+        (actual_value_stack_height as u32 - start_value_stack_height as u32) - keep as u32
     };
 
-    Target {
-        label: label.br_destination(),
-        drop_keep: isa::DropKeep { drop, keep },
-    }
+    Ok(isa::DropKeep { drop, keep })
 }
 
+fn require_target(
+    depth: u32,
+    value_stack_height: usize,
+    frame_stack: &StackWithLimit<BlockFrame>,
+    label_stack: &[BlockFrameType],
+) -> Result<Target, Error> {
+    let is_stack_polymorphic = top_label(frame_stack).polymorphic_stack;
+    let frame = require_label(depth, frame_stack)?;
+
+    // TODO: Clean this mess.
+    let label = label_stack
+        .get(label_stack.len() - 1 - (depth as usize))
+        .expect("this is ensured by `require_label` above");
+
+    let drop_keep = compute_drop_keep(
+        is_stack_polymorphic,
+        frame.started_with,
+        frame.block_type,
+        value_stack_height,
+        frame.value_stack_len,
+    )?;
+
+    Ok(Target {
+        label: label.br_destination(),
+        drop_keep,
+    })
+}
+
+/// Compute drop/keep for the return statement.
+///
+/// This function is a bit of unusual since it is called before validation and thus
+/// should deal with invalid code.
 fn drop_keep_return(
     locals: &Locals,
     value_stack: &StackWithLimit<StackValueType>,
     frame_stack: &StackWithLimit<BlockFrame>,
-    label_stack: &[BlockFrameType],
-) -> isa::DropKeep {
-    assert!(
-        !frame_stack.is_empty(),
-        "drop_keep_return can't be called with the frame stack empty"
-    );
+) -> Result<isa::DropKeep, Error> {
+    if frame_stack.is_empty() {
+        return Err(Error(
+            "drop_keep_return can't be called with the frame stack empty".into(),
+        ));
+    }
 
+    let is_stack_polymorphic = top_label(frame_stack).polymorphic_stack;
     let deepest = (frame_stack.len() - 1) as u32;
-    // TODO: This looks messy. We require `label_stack` here, however, we only use
-    // drop_keep which technically doesn't require `label_stack` here.
-    let mut drop_keep = require_target(deepest, value_stack, frame_stack, label_stack).drop_keep;
+    let frame = require_label(deepest, frame_stack).expect("frame_stack is not empty");
+    let mut drop_keep = compute_drop_keep(
+        is_stack_polymorphic,
+        frame.started_with,
+        frame.block_type,
+        value_stack.len(),
+        frame.value_stack_len,
+    )?;
 
     // Drop all local variables and parameters upon exit.
     drop_keep.drop += locals.count();
 
-    drop_keep
+    Ok(drop_keep)
 }
 
 fn require_local(locals: &Locals, idx: u32) -> Result<ValueType, Error> {

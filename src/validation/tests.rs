@@ -807,6 +807,82 @@ fn loop_empty() {
 }
 
 #[test]
+fn spec_as_br_if_value_cond() {
+    use self::isa::Instruction::*;
+
+    let module = validate(
+        r#"
+		  (func (export "as-br_if-value-cond") (result i32)
+            (block (result i32)
+              (drop
+                (br_if 0
+                  (i32.const 6)
+                  (br_table 0 0
+                    (i32.const 9)
+                    (i32.const 0)
+                  )
+                )
+              )
+            (i32.const 7)
+          )
+        )
+	"#,
+    );
+    let (code, _) = compile(&module);
+    assert_eq!(
+        code,
+        vec![
+        I32Const(
+            6
+        ),
+        I32Const(
+            9
+        ),
+        I32Const(
+            0
+        ),
+        isa::Instruction::BrTable(
+            targets![
+                isa::Target {
+                    dst_pc: 9,
+                    drop_keep: isa::DropKeep {
+                        drop: 1,
+                        keep: isa::Keep::Single
+                    }
+                },
+                isa::Target {
+                    dst_pc: 9,
+                    drop_keep: isa::DropKeep {
+                        drop: 1,
+                        keep: isa::Keep::Single
+                    }
+                }
+
+            ]
+        ),
+        BrIfNez(
+            isa::Target {
+                dst_pc: 9,
+                drop_keep: isa::DropKeep {
+                    drop: 0,
+                    keep: isa::Keep::Single
+                }
+            }
+        ),
+        Drop,
+        I32Const(
+            7
+        ),
+        Return(
+            isa::DropKeep {
+                drop: 0,
+                keep: isa::Keep::Single
+            }
+        )
+    ]);
+}
+
+#[test]
 fn brtable() {
     let module = validate(
         r#"
