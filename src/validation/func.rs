@@ -192,6 +192,9 @@ impl FunctionReader {
             &context.value_stack,
             &mut context.frame_stack,
         )?;
+        context
+            .label_stack
+            .push(BlockFrameType::Block { end_label });
         FunctionReader::read_function_body(&mut context, body.code().elements())?;
 
         assert!(context.frame_stack.is_empty());
@@ -648,6 +651,9 @@ struct FunctionValidationContext<'a> {
     return_type: BlockType,
     /// A sink used to emit optimized code.
     sink: Sink,
+
+    // TODO: to be moved to the compiler.
+    label_stack: Vec<BlockFrameType>,
 }
 
 impl<'a> FunctionValidationContext<'a> {
@@ -667,6 +673,7 @@ impl<'a> FunctionValidationContext<'a> {
             frame_stack: StackWithLimit::with_limit(frame_stack_limit),
             return_type: return_type,
             sink: Sink::with_instruction_capacity(size_estimate),
+            label_stack: Vec::new(),
         }
     }
 
@@ -692,6 +699,7 @@ impl<'a> FunctionValidationContext<'a> {
 
             Block(block_type) => {
                 let end_label = self.sink.new_label();
+
                 push_label(
                     StartedWith::Block,
                     BlockFrameType::Block { end_label },
@@ -700,6 +708,7 @@ impl<'a> FunctionValidationContext<'a> {
                     &self.value_stack,
                     &mut self.frame_stack,
                 )?;
+                self.label_stack.push(BlockFrameType::Block { end_label });
             }
             Loop(block_type) => {
                 // Resolve loop header right away.
@@ -714,6 +723,7 @@ impl<'a> FunctionValidationContext<'a> {
                     &self.value_stack,
                     &mut self.frame_stack,
                 )?;
+                self.label_stack.push(BlockFrameType::Loop { header });
             }
             If(block_type) => {
                 // `if_not` will be resolved whenever `End` or `Else` operator will be met.
@@ -734,6 +744,8 @@ impl<'a> FunctionValidationContext<'a> {
                     &self.value_stack,
                     &mut self.frame_stack,
                 )?;
+                self.label_stack
+                    .push(BlockFrameType::IfTrue { if_not, end_label });
 
                 self.sink.emit_br_eqz(Target {
                     label: if_not,
@@ -744,14 +756,24 @@ impl<'a> FunctionValidationContext<'a> {
                 });
             }
             Else => {
-                let (block_type, if_not, end_label) = {
-                    let top_frame = top_label(&self.frame_stack);
+                let block_type = {
+                    let top = top_label(&self.frame_stack);
+                    if top.started_with != StartedWith::If {
+                        return Err(Error("Misplaced else instruction".into()));
+                    }
+                    top.block_type
+                };
 
-                    let (if_not, end_label) = match top_frame.frame_type {
+                let (if_not, end_label) = {
+                    // TODO: We will have to place this before validation step to ensure that
+                    // the block type is indeed if_true.
+
+                    let top_label = self.label_stack.last().unwrap();
+                    let (if_not, end_label) = match *top_label {
                         BlockFrameType::IfTrue { if_not, end_label } => (if_not, end_label),
-                        _ => return Err(Error("Misplaced else instruction".into())),
+                        _ => panic!("validation ensures that the top frame is actually if_true"),
                     };
-                    (top_frame.block_type, if_not, end_label)
+                    (if_not, end_label)
                 };
 
                 // First, we need to finish if-true block: add a jump from the end of the if-true block
@@ -779,31 +801,41 @@ impl<'a> FunctionValidationContext<'a> {
                     &self.value_stack,
                     &mut self.frame_stack,
                 )?;
+
+                self.label_stack.pop().unwrap();
+                self.label_stack.push(BlockFrameType::IfFalse { end_label });
             }
             End => {
-                let (started_with, frame_type, block_type) = {
+                let (started_with, block_type) = {
                     let top = top_label(&self.frame_stack);
-                    (top.started_with, top.frame_type, top.block_type)
-                };
 
-                if let BlockFrameType::IfTrue { if_not, .. } = frame_type {
-                    // A `if` without an `else` can't return a result.
-                    if block_type != BlockType::NoResult {
+                    if top.started_with == StartedWith::If && top.block_type != BlockType::NoResult {
+                        // A `if` without an `else` can't return a result.
                         return Err(Error(format!(
-									"If block without else required to have NoResult block type. But it has {:?} type",
-									block_type
-								)));
+                            "If block without else required to have NoResult block type. But it has {:?} type",
+                            top.block_type
+                        )));
                     }
 
-                    // Resolve `if_not` label. If the `if's` condition doesn't hold the control will jump
-                    // to here.
-                    self.sink.resolve_label(if_not);
-                }
+                    (top.started_with, top.block_type)
+                };
 
-                // Unless it's a loop, resolve the `end_label` position here.
-                if started_with != StartedWith::Loop {
-                    let end_label = frame_type.end_label();
-                    self.sink.resolve_label(end_label);
+                {
+                    // TODO: We will have to place this before validation step to ensure that
+                    // the block type is indeed if_true.
+                    let frame_type = self.label_stack.last().unwrap();
+
+                    if let BlockFrameType::IfTrue { if_not, .. } = *frame_type {
+                        // Resolve `if_not` label. If the `if's` condition doesn't hold the control will jump
+                        // to here.
+                        self.sink.resolve_label(if_not);
+                    }
+
+                    // Unless it's a loop, resolve the `end_label` position here.
+                    if started_with != StartedWith::Loop {
+                        let end_label = frame_type.end_label();
+                        self.sink.resolve_label(end_label);
+                    }
                 }
 
                 if self.frame_stack.len() == 1 {
@@ -822,6 +854,7 @@ impl<'a> FunctionValidationContext<'a> {
                 }
 
                 pop_label(&mut self.value_stack, &mut self.frame_stack)?;
+                self.label_stack.pop().unwrap();
 
                 // Push the result value.
                 if let BlockType::Value(value_type) = block_type {
