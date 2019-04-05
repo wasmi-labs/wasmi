@@ -375,14 +375,17 @@ impl FunctionReader {
                 // popped off.
                 let value_stack_height = context.value_stack.len().saturating_sub(1);
 
-                let mut targets = table.iter().map(|depth|
-                    require_target(
-                        *depth,
-                        value_stack_height,
-                        &context.frame_stack,
-                        &context.label_stack,
-                    )
-                ).collect::<Result<Vec<_>, _>>();
+                let mut targets = table
+                    .iter()
+                    .map(|depth| {
+                        require_target(
+                            *depth,
+                            value_stack_height,
+                            &context.frame_stack,
+                            &context.label_stack,
+                        )
+                    })
+                    .collect::<Result<Vec<_>, _>>();
                 let default_target = require_target(
                     default,
                     value_stack_height,
@@ -410,6 +413,723 @@ impl FunctionReader {
                 context
                     .sink
                     .emit(isa::InstructionInternal::Return(drop_keep));
+            }
+            Call(index) => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::Call(index));
+            }
+            CallIndirect(index, _reserved) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::CallIndirect(index));
+            }
+
+            Drop => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::Drop);
+            }
+            Select => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::Select);
+            }
+
+            GetLocal(index) => {
+                // We need to calculate relative depth before validation since
+                // it will change the value stack size.
+                let depth = relative_local_depth(index, &context.locals, &context.value_stack)?;
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::GetLocal(depth));
+            }
+            SetLocal(index) => {
+                context.step(instruction)?;
+                let depth = relative_local_depth(index, &context.locals, &context.value_stack)?;
+                context.sink.emit(isa::InstructionInternal::SetLocal(depth));
+            }
+            TeeLocal(index) => {
+                context.step(instruction)?;
+                let depth = relative_local_depth(index, &context.locals, &context.value_stack)?;
+                context.sink.emit(isa::InstructionInternal::TeeLocal(depth));
+            }
+            GetGlobal(index) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::GetGlobal(index));
+            }
+            SetGlobal(index) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::SetGlobal(index));
+            }
+
+            I32Load(align, offset) => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32Load(offset));
+            }
+            I64Load(align, offset) => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64Load(offset));
+            }
+            F32Load(align, offset) => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Load(offset));
+            }
+            F64Load(align, offset) => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Load(offset));
+            }
+            I32Load8S(align, offset) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::I32Load8S(offset));
+            }
+            I32Load8U(align, offset) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::I32Load8U(offset));
+            }
+            I32Load16S(align, offset) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::I32Load16S(offset));
+            }
+            I32Load16U(align, offset) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::I32Load16U(offset));
+            }
+            I64Load8S(align, offset) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::I64Load8S(offset));
+            }
+            I64Load8U(align, offset) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::I64Load8U(offset));
+            }
+            I64Load16S(align, offset) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::I64Load16S(offset));
+            }
+            I64Load16U(align, offset) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::I64Load16U(offset));
+            }
+            I64Load32S(align, offset) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::I64Load32S(offset));
+            }
+            I64Load32U(align, offset) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::I64Load32U(offset));
+            }
+
+            I32Store(align, offset) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::I32Store(offset));
+            }
+            I64Store(align, offset) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::I64Store(offset));
+            }
+            F32Store(align, offset) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::F32Store(offset));
+            }
+            F64Store(align, offset) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::F64Store(offset));
+            }
+            I32Store8(align, offset) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::I32Store8(offset));
+            }
+            I32Store16(align, offset) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::I32Store16(offset));
+            }
+            I64Store8(align, offset) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::I64Store8(offset));
+            }
+            I64Store16(align, offset) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::I64Store16(offset));
+            }
+            I64Store32(align, offset) => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::I64Store32(offset));
+            }
+
+            CurrentMemory(_) => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::CurrentMemory);
+            }
+            GrowMemory(_) => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::GrowMemory);
+            }
+
+            I32Const(v) => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32Const(v));
+            }
+            I64Const(v) => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64Const(v));
+            }
+            F32Const(v) => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Const(v));
+            }
+            F64Const(v) => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Const(v));
+            }
+
+            I32Eqz => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32Eqz);
+            }
+            I32Eq => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32Eq);
+            }
+            I32Ne => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32Ne);
+            }
+            I32LtS => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32LtS);
+            }
+            I32LtU => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32LtU);
+            }
+            I32GtS => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32GtS);
+            }
+            I32GtU => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32GtU);
+            }
+            I32LeS => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32LeS);
+            }
+            I32LeU => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32LeU);
+            }
+            I32GeS => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32GeS);
+            }
+            I32GeU => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32GeU);
+            }
+
+            I64Eqz => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64Eqz);
+            }
+            I64Eq => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64Eq);
+            }
+            I64Ne => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64Ne);
+            }
+            I64LtS => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64LtS);
+            }
+            I64LtU => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64LtU);
+            }
+            I64GtS => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64GtS);
+            }
+            I64GtU => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64GtU);
+            }
+            I64LeS => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64LeS);
+            }
+            I64LeU => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64LeU);
+            }
+            I64GeS => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64GeS);
+            }
+            I64GeU => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64GeU);
+            }
+
+            F32Eq => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Eq);
+            }
+            F32Ne => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Ne);
+            }
+            F32Lt => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Lt);
+            }
+            F32Gt => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Gt);
+            }
+            F32Le => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Le);
+            }
+            F32Ge => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Ge);
+            }
+
+            F64Eq => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Eq);
+            }
+            F64Ne => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Ne);
+            }
+            F64Lt => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Lt);
+            }
+            F64Gt => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Gt);
+            }
+            F64Le => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Le);
+            }
+            F64Ge => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Ge);
+            }
+
+            I32Clz => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32Clz);
+            }
+            I32Ctz => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32Ctz);
+            }
+            I32Popcnt => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32Popcnt);
+            }
+            I32Add => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32Add);
+            }
+            I32Sub => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32Sub);
+            }
+            I32Mul => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32Mul);
+            }
+            I32DivS => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32DivS);
+            }
+            I32DivU => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32DivU);
+            }
+            I32RemS => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32RemS);
+            }
+            I32RemU => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32RemU);
+            }
+            I32And => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32And);
+            }
+            I32Or => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32Or);
+            }
+            I32Xor => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32Xor);
+            }
+            I32Shl => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32Shl);
+            }
+            I32ShrS => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32ShrS);
+            }
+            I32ShrU => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32ShrU);
+            }
+            I32Rotl => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32Rotl);
+            }
+            I32Rotr => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32Rotr);
+            }
+
+            I64Clz => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64Clz);
+            }
+            I64Ctz => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64Ctz);
+            }
+            I64Popcnt => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64Popcnt);
+            }
+            I64Add => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64Add);
+            }
+            I64Sub => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64Sub);
+            }
+            I64Mul => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64Mul);
+            }
+            I64DivS => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64DivS);
+            }
+            I64DivU => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64DivU);
+            }
+            I64RemS => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64RemS);
+            }
+            I64RemU => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64RemU);
+            }
+            I64And => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64And);
+            }
+            I64Or => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64Or);
+            }
+            I64Xor => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64Xor);
+            }
+            I64Shl => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64Shl);
+            }
+            I64ShrS => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64ShrS);
+            }
+            I64ShrU => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64ShrU);
+            }
+            I64Rotl => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64Rotl);
+            }
+            I64Rotr => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64Rotr);
+            }
+
+            F32Abs => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Abs);
+            }
+            F32Neg => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Neg);
+            }
+            F32Ceil => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Ceil);
+            }
+            F32Floor => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Floor);
+            }
+            F32Trunc => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Trunc);
+            }
+            F32Nearest => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Nearest);
+            }
+            F32Sqrt => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Sqrt);
+            }
+            F32Add => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Add);
+            }
+            F32Sub => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Sub);
+            }
+            F32Mul => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Mul);
+            }
+            F32Div => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Div);
+            }
+            F32Min => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Min);
+            }
+            F32Max => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Max);
+            }
+            F32Copysign => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32Copysign);
+            }
+
+            F64Abs => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Abs);
+            }
+            F64Neg => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Neg);
+            }
+            F64Ceil => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Ceil);
+            }
+            F64Floor => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Floor);
+            }
+            F64Trunc => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Trunc);
+            }
+            F64Nearest => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Nearest);
+            }
+            F64Sqrt => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Sqrt);
+            }
+            F64Add => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Add);
+            }
+            F64Sub => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Sub);
+            }
+            F64Mul => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Mul);
+            }
+            F64Div => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Div);
+            }
+            F64Min => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Min);
+            }
+            F64Max => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Max);
+            }
+            F64Copysign => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64Copysign);
+            }
+
+            I32WrapI64 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32WrapI64);
+            }
+            I32TruncSF32 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32TruncSF32);
+            }
+            I32TruncUF32 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32TruncUF32);
+            }
+            I32TruncSF64 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32TruncSF64);
+            }
+            I32TruncUF64 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I32TruncUF64);
+            }
+            I64ExtendSI32 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64ExtendSI32);
+            }
+            I64ExtendUI32 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64ExtendUI32);
+            }
+            I64TruncSF32 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64TruncSF32);
+            }
+            I64TruncUF32 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64TruncUF32);
+            }
+            I64TruncSF64 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64TruncSF64);
+            }
+            I64TruncUF64 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::I64TruncUF64);
+            }
+            F32ConvertSI32 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32ConvertSI32);
+            }
+            F32ConvertUI32 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32ConvertUI32);
+            }
+            F32ConvertSI64 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32ConvertSI64);
+            }
+            F32ConvertUI64 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32ConvertUI64);
+            }
+            F32DemoteF64 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F32DemoteF64);
+            }
+            F64ConvertSI32 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64ConvertSI32);
+            }
+            F64ConvertUI32 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64ConvertUI32);
+            }
+            F64ConvertSI64 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64ConvertSI64);
+            }
+            F64ConvertUI64 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64ConvertUI64);
+            }
+            F64PromoteF32 => {
+                context.step(instruction)?;
+                context.sink.emit(isa::InstructionInternal::F64PromoteF32);
+            }
+
+            I32ReinterpretF32 => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::I32ReinterpretF32);
+            }
+            I64ReinterpretF64 => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::I64ReinterpretF64);
+            }
+            F32ReinterpretI32 => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::F32ReinterpretI32);
+            }
+            F64ReinterpretI64 => {
+                context.step(instruction)?;
+                context
+                    .sink
+                    .emit(isa::InstructionInternal::F64ReinterpretI64);
             }
             _ => {
                 context.step(instruction)?;
@@ -588,21 +1308,16 @@ impl<'a> FunctionValidationContext<'a> {
 
             Call(index) => {
                 self.validate_call(index)?;
-                self.sink.emit(isa::InstructionInternal::Call(index));
             }
             CallIndirect(index, _reserved) => {
                 self.validate_call_indirect(index)?;
-                self.sink
-                    .emit(isa::InstructionInternal::CallIndirect(index));
             }
 
             Drop => {
                 self.validate_drop()?;
-                self.sink.emit(isa::InstructionInternal::Drop);
             }
             Select => {
                 self.validate_select()?;
-                self.sink.emit(isa::InstructionInternal::Select);
             }
 
             GetLocal(index) => {
@@ -610,719 +1325,523 @@ impl<'a> FunctionValidationContext<'a> {
                 // it will change the value stack size.
                 let depth = relative_local_depth(index, &self.locals, &self.value_stack)?;
                 self.validate_get_local(index)?;
-                self.sink.emit(isa::InstructionInternal::GetLocal(depth));
             }
             SetLocal(index) => {
                 self.validate_set_local(index)?;
                 let depth = relative_local_depth(index, &self.locals, &self.value_stack)?;
-                self.sink.emit(isa::InstructionInternal::SetLocal(depth));
             }
             TeeLocal(index) => {
                 self.validate_tee_local(index)?;
                 let depth = relative_local_depth(index, &self.locals, &self.value_stack)?;
-                self.sink.emit(isa::InstructionInternal::TeeLocal(depth));
             }
             GetGlobal(index) => {
                 self.validate_get_global(index)?;
-                self.sink.emit(isa::InstructionInternal::GetGlobal(index));
             }
             SetGlobal(index) => {
                 self.validate_set_global(index)?;
-                self.sink.emit(isa::InstructionInternal::SetGlobal(index));
             }
 
             I32Load(align, offset) => {
                 self.validate_load(align, 4, ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Load(offset));
             }
             I64Load(align, offset) => {
                 self.validate_load(align, 8, ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Load(offset));
             }
             F32Load(align, offset) => {
                 self.validate_load(align, 4, ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Load(offset));
             }
             F64Load(align, offset) => {
                 self.validate_load(align, 8, ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Load(offset));
             }
             I32Load8S(align, offset) => {
                 self.validate_load(align, 1, ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Load8S(offset));
             }
             I32Load8U(align, offset) => {
                 self.validate_load(align, 1, ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Load8U(offset));
             }
             I32Load16S(align, offset) => {
                 self.validate_load(align, 2, ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Load16S(offset));
             }
             I32Load16U(align, offset) => {
                 self.validate_load(align, 2, ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Load16U(offset));
             }
             I64Load8S(align, offset) => {
                 self.validate_load(align, 1, ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Load8S(offset));
             }
             I64Load8U(align, offset) => {
                 self.validate_load(align, 1, ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Load8U(offset));
             }
             I64Load16S(align, offset) => {
                 self.validate_load(align, 2, ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Load16S(offset));
             }
             I64Load16U(align, offset) => {
                 self.validate_load(align, 2, ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Load16U(offset));
             }
             I64Load32S(align, offset) => {
                 self.validate_load(align, 4, ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Load32S(offset));
             }
             I64Load32U(align, offset) => {
                 self.validate_load(align, 4, ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Load32U(offset));
             }
 
             I32Store(align, offset) => {
                 self.validate_store(align, 4, ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Store(offset));
             }
             I64Store(align, offset) => {
                 self.validate_store(align, 8, ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Store(offset));
             }
             F32Store(align, offset) => {
                 self.validate_store(align, 4, ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Store(offset));
             }
             F64Store(align, offset) => {
                 self.validate_store(align, 8, ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Store(offset));
             }
             I32Store8(align, offset) => {
                 self.validate_store(align, 1, ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Store8(offset));
             }
             I32Store16(align, offset) => {
                 self.validate_store(align, 2, ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Store16(offset));
             }
             I64Store8(align, offset) => {
                 self.validate_store(align, 1, ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Store8(offset));
             }
             I64Store16(align, offset) => {
                 self.validate_store(align, 2, ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Store16(offset));
             }
             I64Store32(align, offset) => {
                 self.validate_store(align, 4, ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Store32(offset));
             }
 
             CurrentMemory(_) => {
                 self.validate_current_memory()?;
-                self.sink.emit(isa::InstructionInternal::CurrentMemory);
             }
             GrowMemory(_) => {
                 self.validate_grow_memory()?;
-                self.sink.emit(isa::InstructionInternal::GrowMemory);
             }
 
             I32Const(v) => {
                 self.validate_const(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Const(v));
             }
             I64Const(v) => {
                 self.validate_const(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Const(v));
             }
             F32Const(v) => {
                 self.validate_const(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Const(v));
             }
             F64Const(v) => {
                 self.validate_const(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Const(v));
             }
 
             I32Eqz => {
                 self.validate_testop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Eqz);
             }
             I32Eq => {
                 self.validate_relop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Eq);
             }
             I32Ne => {
                 self.validate_relop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Ne);
             }
             I32LtS => {
                 self.validate_relop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32LtS);
             }
             I32LtU => {
                 self.validate_relop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32LtU);
             }
             I32GtS => {
                 self.validate_relop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32GtS);
             }
             I32GtU => {
                 self.validate_relop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32GtU);
             }
             I32LeS => {
                 self.validate_relop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32LeS);
             }
             I32LeU => {
                 self.validate_relop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32LeU);
             }
             I32GeS => {
                 self.validate_relop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32GeS);
             }
             I32GeU => {
                 self.validate_relop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32GeU);
             }
 
             I64Eqz => {
                 self.validate_testop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Eqz);
             }
             I64Eq => {
                 self.validate_relop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Eq);
             }
             I64Ne => {
                 self.validate_relop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Ne);
             }
             I64LtS => {
                 self.validate_relop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64LtS);
             }
             I64LtU => {
                 self.validate_relop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64LtU);
             }
             I64GtS => {
                 self.validate_relop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64GtS);
             }
             I64GtU => {
                 self.validate_relop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64GtU);
             }
             I64LeS => {
                 self.validate_relop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64LeS);
             }
             I64LeU => {
                 self.validate_relop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64LeU);
             }
             I64GeS => {
                 self.validate_relop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64GeS);
             }
             I64GeU => {
                 self.validate_relop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64GeU);
             }
 
             F32Eq => {
                 self.validate_relop(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Eq);
             }
             F32Ne => {
                 self.validate_relop(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Ne);
             }
             F32Lt => {
                 self.validate_relop(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Lt);
             }
             F32Gt => {
                 self.validate_relop(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Gt);
             }
             F32Le => {
                 self.validate_relop(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Le);
             }
             F32Ge => {
                 self.validate_relop(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Ge);
             }
 
             F64Eq => {
                 self.validate_relop(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Eq);
             }
             F64Ne => {
                 self.validate_relop(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Ne);
             }
             F64Lt => {
                 self.validate_relop(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Lt);
             }
             F64Gt => {
                 self.validate_relop(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Gt);
             }
             F64Le => {
                 self.validate_relop(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Le);
             }
             F64Ge => {
                 self.validate_relop(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Ge);
             }
 
             I32Clz => {
                 self.validate_unop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Clz);
             }
             I32Ctz => {
                 self.validate_unop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Ctz);
             }
             I32Popcnt => {
                 self.validate_unop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Popcnt);
             }
             I32Add => {
                 self.validate_binop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Add);
             }
             I32Sub => {
                 self.validate_binop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Sub);
             }
             I32Mul => {
                 self.validate_binop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Mul);
             }
             I32DivS => {
                 self.validate_binop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32DivS);
             }
             I32DivU => {
                 self.validate_binop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32DivU);
             }
             I32RemS => {
                 self.validate_binop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32RemS);
             }
             I32RemU => {
                 self.validate_binop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32RemU);
             }
             I32And => {
                 self.validate_binop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32And);
             }
             I32Or => {
                 self.validate_binop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Or);
             }
             I32Xor => {
                 self.validate_binop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Xor);
             }
             I32Shl => {
                 self.validate_binop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Shl);
             }
             I32ShrS => {
                 self.validate_binop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32ShrS);
             }
             I32ShrU => {
                 self.validate_binop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32ShrU);
             }
             I32Rotl => {
                 self.validate_binop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Rotl);
             }
             I32Rotr => {
                 self.validate_binop(ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32Rotr);
             }
 
             I64Clz => {
                 self.validate_unop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Clz);
             }
             I64Ctz => {
                 self.validate_unop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Ctz);
             }
             I64Popcnt => {
                 self.validate_unop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Popcnt);
             }
             I64Add => {
                 self.validate_binop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Add);
             }
             I64Sub => {
                 self.validate_binop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Sub);
             }
             I64Mul => {
                 self.validate_binop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Mul);
             }
             I64DivS => {
                 self.validate_binop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64DivS);
             }
             I64DivU => {
                 self.validate_binop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64DivU);
             }
             I64RemS => {
                 self.validate_binop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64RemS);
             }
             I64RemU => {
                 self.validate_binop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64RemU);
             }
             I64And => {
                 self.validate_binop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64And);
             }
             I64Or => {
                 self.validate_binop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Or);
             }
             I64Xor => {
                 self.validate_binop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Xor);
             }
             I64Shl => {
                 self.validate_binop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Shl);
             }
             I64ShrS => {
                 self.validate_binop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64ShrS);
             }
             I64ShrU => {
                 self.validate_binop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64ShrU);
             }
             I64Rotl => {
                 self.validate_binop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Rotl);
             }
             I64Rotr => {
                 self.validate_binop(ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64Rotr);
             }
 
             F32Abs => {
                 self.validate_unop(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Abs);
             }
             F32Neg => {
                 self.validate_unop(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Neg);
             }
             F32Ceil => {
                 self.validate_unop(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Ceil);
             }
             F32Floor => {
                 self.validate_unop(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Floor);
             }
             F32Trunc => {
                 self.validate_unop(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Trunc);
             }
             F32Nearest => {
                 self.validate_unop(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Nearest);
             }
             F32Sqrt => {
                 self.validate_unop(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Sqrt);
             }
             F32Add => {
                 self.validate_binop(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Add);
             }
             F32Sub => {
                 self.validate_binop(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Sub);
             }
             F32Mul => {
                 self.validate_binop(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Mul);
             }
             F32Div => {
                 self.validate_binop(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Div);
             }
             F32Min => {
                 self.validate_binop(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Min);
             }
             F32Max => {
                 self.validate_binop(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Max);
             }
             F32Copysign => {
                 self.validate_binop(ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32Copysign);
             }
 
             F64Abs => {
                 self.validate_unop(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Abs);
             }
             F64Neg => {
                 self.validate_unop(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Neg);
             }
             F64Ceil => {
                 self.validate_unop(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Ceil);
             }
             F64Floor => {
                 self.validate_unop(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Floor);
             }
             F64Trunc => {
                 self.validate_unop(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Trunc);
             }
             F64Nearest => {
                 self.validate_unop(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Nearest);
             }
             F64Sqrt => {
                 self.validate_unop(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Sqrt);
             }
             F64Add => {
                 self.validate_binop(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Add);
             }
             F64Sub => {
                 self.validate_binop(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Sub);
             }
             F64Mul => {
                 self.validate_binop(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Mul);
             }
             F64Div => {
                 self.validate_binop(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Div);
             }
             F64Min => {
                 self.validate_binop(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Min);
             }
             F64Max => {
                 self.validate_binop(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Max);
             }
             F64Copysign => {
                 self.validate_binop(ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64Copysign);
             }
 
             I32WrapI64 => {
                 self.validate_cvtop(ValueType::I64, ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32WrapI64);
             }
             I32TruncSF32 => {
                 self.validate_cvtop(ValueType::F32, ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32TruncSF32);
             }
             I32TruncUF32 => {
                 self.validate_cvtop(ValueType::F32, ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32TruncUF32);
             }
             I32TruncSF64 => {
                 self.validate_cvtop(ValueType::F64, ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32TruncSF64);
             }
             I32TruncUF64 => {
                 self.validate_cvtop(ValueType::F64, ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32TruncUF64);
             }
             I64ExtendSI32 => {
                 self.validate_cvtop(ValueType::I32, ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64ExtendSI32);
             }
             I64ExtendUI32 => {
                 self.validate_cvtop(ValueType::I32, ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64ExtendUI32);
             }
             I64TruncSF32 => {
                 self.validate_cvtop(ValueType::F32, ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64TruncSF32);
             }
             I64TruncUF32 => {
                 self.validate_cvtop(ValueType::F32, ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64TruncUF32);
             }
             I64TruncSF64 => {
                 self.validate_cvtop(ValueType::F64, ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64TruncSF64);
             }
             I64TruncUF64 => {
                 self.validate_cvtop(ValueType::F64, ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64TruncUF64);
             }
             F32ConvertSI32 => {
                 self.validate_cvtop(ValueType::I32, ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32ConvertSI32);
             }
             F32ConvertUI32 => {
                 self.validate_cvtop(ValueType::I32, ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32ConvertUI32);
             }
             F32ConvertSI64 => {
                 self.validate_cvtop(ValueType::I64, ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32ConvertSI64);
             }
             F32ConvertUI64 => {
                 self.validate_cvtop(ValueType::I64, ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32ConvertUI64);
             }
             F32DemoteF64 => {
                 self.validate_cvtop(ValueType::F64, ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32DemoteF64);
             }
             F64ConvertSI32 => {
                 self.validate_cvtop(ValueType::I32, ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64ConvertSI32);
             }
             F64ConvertUI32 => {
                 self.validate_cvtop(ValueType::I32, ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64ConvertUI32);
             }
             F64ConvertSI64 => {
                 self.validate_cvtop(ValueType::I64, ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64ConvertSI64);
             }
             F64ConvertUI64 => {
                 self.validate_cvtop(ValueType::I64, ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64ConvertUI64);
             }
             F64PromoteF32 => {
                 self.validate_cvtop(ValueType::F32, ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64PromoteF32);
             }
 
             I32ReinterpretF32 => {
                 self.validate_cvtop(ValueType::F32, ValueType::I32)?;
-                self.sink.emit(isa::InstructionInternal::I32ReinterpretF32);
             }
             I64ReinterpretF64 => {
                 self.validate_cvtop(ValueType::F64, ValueType::I64)?;
-                self.sink.emit(isa::InstructionInternal::I64ReinterpretF64);
             }
             F32ReinterpretI32 => {
                 self.validate_cvtop(ValueType::I32, ValueType::F32)?;
-                self.sink.emit(isa::InstructionInternal::F32ReinterpretI32);
             }
             F64ReinterpretI64 => {
                 self.validate_cvtop(ValueType::I64, ValueType::F64)?;
-                self.sink.emit(isa::InstructionInternal::F64ReinterpretI64);
             }
         }
 
         Ok(())
     }
 
-    fn validate_const(
-        &mut self,
-        value_type: ValueType,
-    ) -> Result<(), Error> {
+    fn validate_const(&mut self, value_type: ValueType) -> Result<(), Error> {
         push_value(&mut self.value_stack, value_type.into())?;
         Ok(())
     }
 
-    fn validate_unop(
-        &mut self,
-        value_type: ValueType,
-    ) -> Result<(), Error> {
-        pop_value(
-            &mut self.value_stack,
-            &self.frame_stack,
-            value_type.into(),
-        )?;
+    fn validate_unop(&mut self, value_type: ValueType) -> Result<(), Error> {
+        pop_value(&mut self.value_stack, &self.frame_stack, value_type.into())?;
         push_value(&mut self.value_stack, value_type.into())?;
         Ok(())
     }
 
-    fn validate_binop(
-        &mut self,
-        value_type: ValueType,
-    ) -> Result<(), Error> {
-        pop_value(
-            &mut self.value_stack,
-            &self.frame_stack,
-            value_type.into(),
-        )?;
-        pop_value(
-            &mut self.value_stack,
-            &self.frame_stack,
-            value_type.into(),
-        )?;
+    fn validate_binop(&mut self, value_type: ValueType) -> Result<(), Error> {
+        pop_value(&mut self.value_stack, &self.frame_stack, value_type.into())?;
+        pop_value(&mut self.value_stack, &self.frame_stack, value_type.into())?;
         push_value(&mut self.value_stack, value_type.into())?;
         Ok(())
     }
 
-    fn validate_testop(
-        &mut self,
-        value_type: ValueType,
-    ) -> Result<(), Error> {
-        pop_value(
-            &mut self.value_stack,
-            &self.frame_stack,
-            value_type.into(),
-        )?;
+    fn validate_testop(&mut self, value_type: ValueType) -> Result<(), Error> {
+        pop_value(&mut self.value_stack, &self.frame_stack, value_type.into())?;
         push_value(&mut self.value_stack, ValueType::I32.into())?;
         Ok(())
     }
 
-    fn validate_relop(
-        &mut self,
-        value_type: ValueType,
-    ) -> Result<(), Error> {
-        pop_value(
-            &mut self.value_stack,
-            &self.frame_stack,
-            value_type.into(),
-        )?;
-        pop_value(
-            &mut self.value_stack,
-            &self.frame_stack,
-            value_type.into(),
-        )?;
+    fn validate_relop(&mut self, value_type: ValueType) -> Result<(), Error> {
+        pop_value(&mut self.value_stack, &self.frame_stack, value_type.into())?;
+        pop_value(&mut self.value_stack, &self.frame_stack, value_type.into())?;
         push_value(&mut self.value_stack, ValueType::I32.into())?;
         Ok(())
     }
@@ -1332,11 +1851,7 @@ impl<'a> FunctionValidationContext<'a> {
         value_type1: ValueType,
         value_type2: ValueType,
     ) -> Result<(), Error> {
-        pop_value(
-            &mut self.value_stack,
-            &self.frame_stack,
-            value_type1.into(),
-        )?;
+        pop_value(&mut self.value_stack, &self.frame_stack, value_type1.into())?;
         push_value(&mut self.value_stack, value_type2.into())?;
         Ok(())
     }
@@ -1366,19 +1881,13 @@ impl<'a> FunctionValidationContext<'a> {
         Ok(())
     }
 
-    fn validate_get_local(
-        &mut self,
-        index: u32,
-    ) -> Result<(), Error> {
+    fn validate_get_local(&mut self, index: u32) -> Result<(), Error> {
         let local_type = require_local(&self.locals, index)?;
         push_value(&mut self.value_stack, local_type.into())?;
         Ok(())
     }
 
-    fn validate_set_local(
-        &mut self,
-        index: u32,
-    ) -> Result<(), Error> {
+    fn validate_set_local(&mut self, index: u32) -> Result<(), Error> {
         let local_type = require_local(&self.locals, index)?;
         let value_type = pop_value(
             &mut self.value_stack,
@@ -1394,23 +1903,13 @@ impl<'a> FunctionValidationContext<'a> {
         Ok(())
     }
 
-    fn validate_tee_local(
-        &mut self,
-        index: u32,
-    ) -> Result<(), Error> {
+    fn validate_tee_local(&mut self, index: u32) -> Result<(), Error> {
         let local_type = require_local(&self.locals, index)?;
-        tee_value(
-            &mut self.value_stack,
-            &self.frame_stack,
-            local_type.into(),
-        )?;
+        tee_value(&mut self.value_stack, &self.frame_stack, local_type.into())?;
         Ok(())
     }
 
-    fn validate_get_global(
-        &mut self,
-        index: u32,
-    ) -> Result<(), Error> {
+    fn validate_get_global(&mut self, index: u32) -> Result<(), Error> {
         let global_type: StackValueType = {
             let global = self.module.require_global(index, None)?;
             global.content_type().into()
@@ -1419,10 +1918,7 @@ impl<'a> FunctionValidationContext<'a> {
         Ok(())
     }
 
-    fn validate_set_global(
-        &mut self,
-        index: u32,
-    ) -> Result<(), Error> {
+    fn validate_set_global(&mut self, index: u32) -> Result<(), Error> {
         let global_type: StackValueType = {
             let global = self.module.require_global(index, Some(true))?;
             global.content_type().into()
@@ -1478,11 +1974,7 @@ impl<'a> FunctionValidationContext<'a> {
         }
 
         self.module.require_memory(DEFAULT_MEMORY_INDEX)?;
-        pop_value(
-            &mut self.value_stack,
-            &self.frame_stack,
-            value_type.into(),
-        )?;
+        pop_value(&mut self.value_stack, &self.frame_stack, value_type.into())?;
         pop_value(
             &mut self.value_stack,
             &self.frame_stack,
@@ -1498,11 +1990,7 @@ impl<'a> FunctionValidationContext<'a> {
         };
         if started_with != StartedWith::Loop {
             if let BlockType::Value(value_type) = frame_block_type {
-                tee_value(
-                    &mut self.value_stack,
-                    &self.frame_stack,
-                    value_type.into(),
-                )?;
+                tee_value(&mut self.value_stack, &self.frame_stack, value_type.into())?;
             }
         }
         Ok(())
@@ -1521,21 +2009,13 @@ impl<'a> FunctionValidationContext<'a> {
         };
         if started_with != StartedWith::Loop {
             if let BlockType::Value(value_type) = frame_block_type {
-                tee_value(
-                    &mut self.value_stack,
-                    &self.frame_stack,
-                    value_type.into(),
-                )?;
+                tee_value(&mut self.value_stack, &self.frame_stack, value_type.into())?;
             }
         }
         Ok(())
     }
 
-    fn validate_br_table(
-        &mut self,
-        table: &[u32],
-        default: u32,
-    ) -> Result<(), Error> {
+    fn validate_br_table(&mut self, table: &[u32], default: u32) -> Result<(), Error> {
         let required_block_type: BlockType = {
             let default_block = require_label(default, &self.frame_stack)?;
             let required_block_type = if default_block.started_with == StartedWith::Loop {
@@ -1567,11 +2047,7 @@ impl<'a> FunctionValidationContext<'a> {
             ValueType::I32.into(),
         )?;
         if let BlockType::Value(value_type) = required_block_type {
-            tee_value(
-                &mut self.value_stack,
-                &self.frame_stack,
-                value_type.into(),
-            )?;
+            tee_value(&mut self.value_stack, &self.frame_stack, value_type.into())?;
         }
 
         Ok(())
@@ -1592,10 +2068,7 @@ impl<'a> FunctionValidationContext<'a> {
         Ok(())
     }
 
-    fn validate_call_indirect(
-        &mut self,
-        idx: u32,
-    ) -> Result<(), Error> {
+    fn validate_call_indirect(&mut self, idx: u32) -> Result<(), Error> {
         {
             let table = self.module.require_table(DEFAULT_TABLE_INDEX)?;
             if table.elem_type() != TableElementType::AnyFunc {
