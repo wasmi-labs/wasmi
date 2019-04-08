@@ -18,15 +18,18 @@ use parity_wasm::elements::{
     Module, ResizableLimits, TableType, Type, ValueType,
 };
 
-mod context;
-mod func;
-mod util;
+pub mod context;
+pub mod func;
+pub mod util;
 
-#[cfg(test)]
-mod tests;
+// TODO: Uncomment
+// #[cfg(test)]
+// mod tests;
 
+// TODO: Consider using a type other than String, because
+// of formatting machinary is not welcomed in substrate runtimes.
 #[derive(Debug)]
-pub struct Error(String);
+pub struct Error(pub String);
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -197,31 +200,6 @@ pub trait FunctionValidator {
     fn finish(self) -> Self::Output;
 }
 
-pub struct WasmiValidation {
-    code_map: Vec<isa::Instructions>,
-}
-
-impl Validation for WasmiValidation {
-    type Output = Vec<isa::Instructions>;
-    type FunctionValidator = func::Compiler;
-    fn new(_module: &Module) -> Self {
-        WasmiValidation {
-            // TODO: with capacity?
-            code_map: Vec::new(),
-        }
-    }
-    fn on_function_validated(
-        &mut self,
-        _index: u32,
-        output: isa::Instructions,
-    ) {
-        self.code_map.push(output);
-    }
-    fn finish(self) -> Vec<isa::Instructions> {
-        self.code_map
-    }
-}
-
 // TODO: Rename to validate_module
 pub fn validate_module2<V: Validation>(module: &Module) -> Result<V::Output, Error> {
     let mut context_builder = ModuleContextBuilder::new();
@@ -314,14 +292,13 @@ pub fn validate_module2<V: Validation>(module: &Module) -> Result<V::Output, Err
                 .get(index as usize)
                 .ok_or(Error(format!("Missing body for function {}", index)))?;
 
-            let output = func::drive::<V::FunctionValidator>(&context, function, function_body).map_err(
-                |Error(ref msg)| {
+            let output = func::drive::<V::FunctionValidator>(&context, function, function_body)
+                .map_err(|Error(ref msg)| {
                     Error(format!(
                         "Function #{} reading/validation error: {}",
                         index, msg
                     ))
-                },
-            )?;
+                })?;
             validation.on_function_validated(index as u32, output);
         }
     }
@@ -431,11 +408,6 @@ pub fn validate_module2<V: Validation>(module: &Module) -> Result<V::Output, Err
     }
 
     Ok(validation.finish())
-}
-
-pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
-    let code_map = validate_module2::<WasmiValidation>(&module)?;
-    Ok(ValidatedModule { module, code_map })
 }
 
 fn validate_limits(limits: &ResizableLimits) -> Result<(), Error> {

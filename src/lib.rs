@@ -389,6 +389,7 @@ mod isa;
 mod memory;
 mod module;
 pub mod nan_preserving_float;
+mod prepare;
 mod runner;
 mod table;
 mod types;
@@ -454,8 +455,7 @@ impl Module {
     /// }
     /// ```
     pub fn from_parity_wasm_module(module: parity_wasm::elements::Module) -> Result<Module, Error> {
-        use validation::{validate_module, ValidatedModule};
-        let ValidatedModule { code_map, module } = validate_module(module)?;
+        let prepare::CompiledModule { code_map, module } = prepare::compile_module(module)?;
 
         Ok(Module { code_map, module })
     }
