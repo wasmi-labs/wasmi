@@ -6,7 +6,7 @@ use parity_wasm::elements::{BlockType, Func, FuncBody, Instruction, TableElement
 use validation::context::ModuleContext;
 
 use validation::util::Locals;
-use validation::Error;
+use validation::{Error, FunctionValidator};
 
 use common::stack::StackWithLimit;
 use isa;
@@ -150,6 +150,61 @@ impl PartialEq<StackValueType> for ValueType {
     fn eq(&self, other: &StackValueType) -> bool {
         other == self
     }
+}
+
+pub fn drive<T: FunctionValidator>(
+    module: &ModuleContext,
+    func: &Func,
+    body: &FuncBody,
+    validator: T,
+) -> Result<T::Output, Error> {
+    let (params, result_ty) = module.require_function_type(func.type_ref())?;
+
+    let ins_size_estimate = body.code().elements().len();
+    let mut context = FunctionValidationContext::new(
+        &module,
+        Locals::new(params, body.locals())?,
+        DEFAULT_VALUE_STACK_LIMIT,
+        DEFAULT_FRAME_STACK_LIMIT,
+        result_ty,
+    );
+
+    let mut compiler = Compiler {
+        sink: Sink::with_instruction_capacity(ins_size_estimate),
+        label_stack: Vec::new(),
+    };
+    let end_label = compiler.sink.new_label();
+    compiler
+        .label_stack
+        .push(BlockFrameType::Block { end_label });
+
+    assert!(context.frame_stack.is_empty());
+
+    let body = body.code().elements();
+    let body_len = body.len();
+    if body_len == 0 {
+        return Err(Error("Non-empty function body expected".into()));
+    }
+
+    loop {
+        let instruction = &body[context.position];
+
+        compiler
+            .compile_instruction(&mut context, instruction)
+            .map_err(|err| {
+                Error(format!(
+                    "At instruction {:?}(@{}): {}",
+                    instruction, context.position, err
+                ))
+            })?;
+
+        context.position += 1;
+        if context.position == body_len {
+            break;
+        }
+    }
+
+    Ok(validator.finish())
 }
 
 pub struct Compiler {
