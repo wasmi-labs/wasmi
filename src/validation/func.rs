@@ -175,14 +175,6 @@ impl Compiler {
             result_ty,
         );
 
-        push_label(
-            StartedWith::Block,
-            result_ty,
-            context.position,
-            &context.value_stack,
-            &mut context.frame_stack,
-        )?;
-
         let mut compiler = Compiler {
             sink: Sink::with_instruction_capacity(ins_size_estimate),
             label_stack: Vec::new(),
@@ -1115,14 +1107,25 @@ impl<'a> FunctionValidationContext<'a> {
         frame_stack_limit: usize,
         return_type: BlockType,
     ) -> Self {
-        FunctionValidationContext {
+        let mut ctx = FunctionValidationContext {
             module: module,
             position: 0,
             locals: locals,
             value_stack: StackWithLimit::with_limit(value_stack_limit),
             frame_stack: StackWithLimit::with_limit(frame_stack_limit),
             return_type: return_type,
-        }
+        };
+        // push_label overflows only if the frame stack overflow happens. We assume that
+        // the limit is greater than 0 here. We don't expect `push_label` getting any other
+        // new errors.
+        let _ = push_label(
+            StartedWith::Block,
+            return_type,
+            ctx.position,
+            &ctx.value_stack,
+            &mut ctx.frame_stack,
+        );
+        ctx
     }
 
     fn return_type(&self) -> BlockType {
