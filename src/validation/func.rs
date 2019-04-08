@@ -24,8 +24,6 @@ struct BlockFrame {
     /// A signature, which is a block signature type indicating the number and types of result
     /// values of the region.
     block_type: BlockType,
-    /// A label for reference to block instruction.
-    begin_position: usize,
     /// A limit integer value, which is an index into the value stack indicating where to reset it
     /// to on a branch to that label.
     value_stack_len: usize,
@@ -156,11 +154,15 @@ pub fn drive<T: FunctionValidator>(
     module: &ModuleContext,
     func: &Func,
     body: &FuncBody,
-    validator: T,
 ) -> Result<T::Output, Error> {
     let (params, result_ty) = module.require_function_type(func.type_ref())?;
 
-    let ins_size_estimate = body.code().elements().len();
+    let code = body.code().elements();
+    let code_len = code.len();
+    if code_len == 0 {
+        return Err(Error("Non-empty function body expected".into()));
+    }
+
     let mut context = FunctionValidationContext::new(
         &module,
         Locals::new(params, body.locals())?,
@@ -169,110 +171,62 @@ pub fn drive<T: FunctionValidator>(
         result_ty,
     );
 
-    let mut compiler = Compiler {
-        sink: Sink::with_instruction_capacity(ins_size_estimate),
-        label_stack: Vec::new(),
-    };
-    let end_label = compiler.sink.new_label();
-    compiler
-        .label_stack
-        .push(BlockFrameType::Block { end_label });
+    let mut validator = T::new(&context);
 
-    assert!(context.frame_stack.is_empty());
-
-    let body = body.code().elements();
-    let body_len = body.len();
-    if body_len == 0 {
-        return Err(Error("Non-empty function body expected".into()));
-    }
-
-    loop {
-        let instruction = &body[context.position];
-
-        compiler
-            .compile_instruction(&mut context, instruction)
+    for (position, instruction) in code.iter().enumerate() {
+        validator
+            .next_instruction(&mut context, instruction)
             .map_err(|err| {
                 Error(format!(
                     "At instruction {:?}(@{}): {}",
-                    instruction, context.position, err
+                    instruction, position, err
                 ))
             })?;
-
-        context.position += 1;
-        if context.position == body_len {
-            break;
-        }
     }
+
+    // The last `end` opcode should pop last instruction.
+    // TODO: This looks like it should be returned as an error?
+    assert!(context.frame_stack.is_empty());
 
     Ok(validator.finish())
 }
 
+// TODO: Move under prepare
 pub struct Compiler {
     /// A sink used to emit optimized code.
     sink: Sink,
     label_stack: Vec<BlockFrameType>,
 }
 
-impl Compiler {
-    pub fn compile(
-        module: &ModuleContext,
-        func: &Func,
-        body: &FuncBody,
-    ) -> Result<isa::Instructions, Error> {
-        let (params, result_ty) = module.require_function_type(func.type_ref())?;
-
-        let ins_size_estimate = body.code().elements().len();
-        let mut context = FunctionValidationContext::new(
-            &module,
-            Locals::new(params, body.locals())?,
-            DEFAULT_VALUE_STACK_LIMIT,
-            DEFAULT_FRAME_STACK_LIMIT,
-            result_ty,
-        );
-
+impl FunctionValidator for Compiler {
+    type Output = isa::Instructions;
+    fn new(_module: &FunctionValidationContext) -> Self {
         let mut compiler = Compiler {
-            sink: Sink::with_instruction_capacity(ins_size_estimate),
+            sink: Sink::with_instruction_capacity(0), // TODO: Estimate instruction number.
             label_stack: Vec::new(),
         };
+
+        // Push implicit frame for the outer function block.
         let end_label = compiler.sink.new_label();
         compiler
             .label_stack
             .push(BlockFrameType::Block { end_label });
-        compiler.compile_function_body(&mut context, body.code().elements())?;
 
-        assert!(context.frame_stack.is_empty());
-
-        Ok(compiler.sink.into_inner())
+        compiler
     }
-
-    fn compile_function_body(
+    fn next_instruction(
         &mut self,
-        context: &mut FunctionValidationContext,
-        body: &[Instruction],
+        ctx: &mut FunctionValidationContext,
+        instruction: &Instruction,
     ) -> Result<(), Error> {
-        let body_len = body.len();
-        if body_len == 0 {
-            return Err(Error("Non-empty function body expected".into()));
-        }
-
-        loop {
-            let instruction = &body[context.position];
-
-            self.compile_instruction(context, instruction)
-                .map_err(|err| {
-                    Error(format!(
-                        "At instruction {:?}(@{}): {}",
-                        instruction, context.position, err
-                    ))
-                })?;
-
-            context.position += 1;
-            if context.position == body_len {
-                return Ok(());
-            }
-        }
+        self.compile_instruction(ctx, instruction)
     }
+    fn finish(self) -> Self::Output {
+        self.sink.into_inner()
+    }
+}
 
+impl Compiler {
     fn compile_instruction(
         &mut self,
         context: &mut FunctionValidationContext,
@@ -1139,11 +1093,9 @@ impl Compiler {
 }
 
 /// Function validation context.
-struct FunctionValidationContext<'a> {
+pub struct FunctionValidationContext<'a> {
     /// Wasm module
     module: &'a ModuleContext,
-    /// Current instruction position.
-    position: usize,
     /// Local variables.
     locals: Locals<'a>,
     /// Value stack.
@@ -1164,7 +1116,6 @@ impl<'a> FunctionValidationContext<'a> {
     ) -> Self {
         let mut ctx = FunctionValidationContext {
             module: module,
-            position: 0,
             locals: locals,
             value_stack: StackWithLimit::with_limit(value_stack_limit),
             frame_stack: StackWithLimit::with_limit(frame_stack_limit),
@@ -1176,7 +1127,6 @@ impl<'a> FunctionValidationContext<'a> {
         let _ = push_label(
             StartedWith::Block,
             return_type,
-            ctx.position,
             &ctx.value_stack,
             &mut ctx.frame_stack,
         );
@@ -1187,7 +1137,7 @@ impl<'a> FunctionValidationContext<'a> {
         self.return_type
     }
 
-    fn step(&mut self, instruction: &Instruction) -> Result<(), Error> {
+    pub fn step(&mut self, instruction: &Instruction) -> Result<(), Error> {
         use self::Instruction::*;
 
         match *instruction {
@@ -1202,7 +1152,6 @@ impl<'a> FunctionValidationContext<'a> {
                 push_label(
                     StartedWith::Block,
                     block_type,
-                    self.position,
                     &self.value_stack,
                     &mut self.frame_stack,
                 )?;
@@ -1211,7 +1160,6 @@ impl<'a> FunctionValidationContext<'a> {
                 push_label(
                     StartedWith::Loop,
                     block_type,
-                    self.position,
                     &self.value_stack,
                     &mut self.frame_stack,
                 )?;
@@ -1225,7 +1173,6 @@ impl<'a> FunctionValidationContext<'a> {
                 push_label(
                     StartedWith::If,
                     block_type,
-                    self.position,
                     &self.value_stack,
                     &mut self.frame_stack,
                 )?;
@@ -1245,7 +1192,6 @@ impl<'a> FunctionValidationContext<'a> {
                 push_label(
                     StartedWith::Else,
                     block_type,
-                    self.position,
                     &self.value_stack,
                     &mut self.frame_stack,
                 )?;
@@ -2173,14 +2119,12 @@ fn tee_value(
 fn push_label(
     started_with: StartedWith,
     block_type: BlockType,
-    position: usize,
     value_stack: &StackWithLimit<StackValueType>,
     frame_stack: &mut StackWithLimit<BlockFrame>,
 ) -> Result<(), Error> {
     Ok(frame_stack.push(BlockFrame {
         started_with,
         block_type: block_type,
-        begin_position: position,
         value_stack_len: value_stack.len(),
         polymorphic_stack: false,
     })?)

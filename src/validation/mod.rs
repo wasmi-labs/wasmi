@@ -10,7 +10,6 @@ use hashbrown::HashSet;
 use std::collections::HashSet;
 
 use self::context::ModuleContextBuilder;
-use self::func::Compiler;
 use common::stack;
 use isa;
 use memory_units::Pages;
@@ -179,22 +178,52 @@ pub trait Validation {
     type Output;
     type FunctionValidator: FunctionValidator;
     fn new(module: &Module) -> Self;
-    fn create_function_validator(&mut self) -> Self::FunctionValidator;
-    fn on_function_validated(&mut self, index: u32,
-        output: <<Self as Validation>::FunctionValidator as FunctionValidator>::Output
-        );
+    fn on_function_validated(
+        &mut self,
+        index: u32,
+        output: <<Self as Validation>::FunctionValidator as FunctionValidator>::Output,
+    );
     fn finish(self) -> Self::Output;
 }
 
 pub trait FunctionValidator {
     type Output;
-    fn new() -> Self;
-    fn next_instruction(&mut self, instruction: &Instruction) -> Result<(), ()>;
+    fn new(ctx: &func::FunctionValidationContext) -> Self;
+    fn next_instruction(
+        &mut self,
+        ctx: &mut func::FunctionValidationContext,
+        instruction: &Instruction,
+    ) -> Result<(), Error>;
     fn finish(self) -> Self::Output;
 }
 
+pub struct WasmiValidation {
+    code_map: Vec<isa::Instructions>,
+}
+
+impl Validation for WasmiValidation {
+    type Output = Vec<isa::Instructions>;
+    type FunctionValidator = func::Compiler;
+    fn new(_module: &Module) -> Self {
+        WasmiValidation {
+            // TODO: with capacity?
+            code_map: Vec::new(),
+        }
+    }
+    fn on_function_validated(
+        &mut self,
+        _index: u32,
+        output: isa::Instructions,
+    ) {
+        self.code_map.push(output);
+    }
+    fn finish(self) -> Vec<isa::Instructions> {
+        self.code_map
+    }
+}
+
 // TODO: Rename to validate_module
-pub fn validate_module2<V: Validation>(module: &mut Module) -> Result<V::Output, Error> {
+pub fn validate_module2<V: Validation>(module: &Module) -> Result<V::Output, Error> {
     let mut context_builder = ModuleContextBuilder::new();
     let mut imported_globals = Vec::new();
     let mut validation = V::new(&module);
@@ -285,8 +314,7 @@ pub fn validate_module2<V: Validation>(module: &mut Module) -> Result<V::Output,
                 .get(index as usize)
                 .ok_or(Error(format!("Missing body for function {}", index)))?;
 
-            let func_validator = validation.create_function_validator();
-            let output = func::drive(&context, function, function_body, func_validator).map_err(
+            let output = func::drive::<V::FunctionValidator>(&context, function, function_body).map_err(
                 |Error(ref msg)| {
                     Error(format!(
                         "Function #{} reading/validation error: {}",
@@ -406,210 +434,7 @@ pub fn validate_module2<V: Validation>(module: &mut Module) -> Result<V::Output,
 }
 
 pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
-    let mut context_builder = ModuleContextBuilder::new();
-    let mut imported_globals = Vec::new();
-    let mut code_map = Vec::new();
-
-    // Copy types from module as is.
-    context_builder.set_types(
-        module
-            .type_section()
-            .map(|ts| {
-                ts.types()
-                    .into_iter()
-                    .map(|&Type::Function(ref ty)| ty)
-                    .cloned()
-                    .collect()
-            })
-            .unwrap_or_default(),
-    );
-
-    // Fill elements with imported values.
-    for import_entry in module
-        .import_section()
-        .map(|i| i.entries())
-        .unwrap_or_default()
-    {
-        match *import_entry.external() {
-            External::Function(idx) => context_builder.push_func_type_index(idx),
-            External::Table(ref table) => context_builder.push_table(table.clone()),
-            External::Memory(ref memory) => context_builder.push_memory(memory.clone()),
-            External::Global(ref global) => {
-                context_builder.push_global(global.clone());
-                imported_globals.push(global.clone());
-            }
-        }
-    }
-
-    // Concatenate elements with defined in the module.
-    if let Some(function_section) = module.function_section() {
-        for func_entry in function_section.entries() {
-            context_builder.push_func_type_index(func_entry.type_ref())
-        }
-    }
-    if let Some(table_section) = module.table_section() {
-        for table_entry in table_section.entries() {
-            validate_table_type(table_entry)?;
-            context_builder.push_table(table_entry.clone());
-        }
-    }
-    if let Some(mem_section) = module.memory_section() {
-        for mem_entry in mem_section.entries() {
-            validate_memory_type(mem_entry)?;
-            context_builder.push_memory(mem_entry.clone());
-        }
-    }
-    if let Some(global_section) = module.global_section() {
-        for global_entry in global_section.entries() {
-            validate_global_entry(global_entry, &imported_globals)?;
-            context_builder.push_global(global_entry.global_type().clone());
-        }
-    }
-
-    let context = context_builder.build();
-
-    let function_section_len = module
-        .function_section()
-        .map(|s| s.entries().len())
-        .unwrap_or(0);
-    let code_section_len = module.code_section().map(|s| s.bodies().len()).unwrap_or(0);
-    if function_section_len != code_section_len {
-        return Err(Error(format!(
-            "length of function section is {}, while len of code section is {}",
-            function_section_len, code_section_len
-        )));
-    }
-
-    // validate every function body in user modules
-    if function_section_len != 0 {
-        // tests use invalid code
-        let function_section = module
-            .function_section()
-            .expect("function_section_len != 0; qed");
-        let code_section = module
-            .code_section()
-            .expect("function_section_len != 0; function_section_len == code_section_len; qed");
-        // check every function body
-        for (index, function) in function_section.entries().iter().enumerate() {
-            let function_body = code_section
-                .bodies()
-                .get(index as usize)
-                .ok_or(Error(format!("Missing body for function {}", index)))?;
-            let code = Compiler::compile(&context, function, function_body).map_err(|e| {
-                let Error(ref msg) = e;
-                Error(format!(
-                    "Function #{} reading/validation error: {}",
-                    index, msg
-                ))
-            })?;
-            code_map.push(code);
-        }
-    }
-
-    // validate start section
-    if let Some(start_fn_idx) = module.start_section() {
-        let (params, return_ty) = context.require_function(start_fn_idx)?;
-        if return_ty != BlockType::NoResult || params.len() != 0 {
-            return Err(Error(
-                "start function expected to have type [] -> []".into(),
-            ));
-        }
-    }
-
-    // validate export section
-    if let Some(export_section) = module.export_section() {
-        let mut export_names = HashSet::with_capacity(export_section.entries().len());
-        for export in export_section.entries() {
-            // HashSet::insert returns false if item already in set.
-            let duplicate = export_names.insert(export.field()) == false;
-            if duplicate {
-                return Err(Error(format!("duplicate export {}", export.field())));
-            }
-            match *export.internal() {
-                Internal::Function(function_index) => {
-                    context.require_function(function_index)?;
-                }
-                Internal::Global(global_index) => {
-                    context.require_global(global_index, Some(false))?;
-                }
-                Internal::Memory(memory_index) => {
-                    context.require_memory(memory_index)?;
-                }
-                Internal::Table(table_index) => {
-                    context.require_table(table_index)?;
-                }
-            }
-        }
-    }
-
-    // validate import section
-    if let Some(import_section) = module.import_section() {
-        for import in import_section.entries() {
-            match *import.external() {
-                External::Function(function_type_index) => {
-                    context.require_function_type(function_type_index)?;
-                }
-                External::Global(ref global_type) => {
-                    if global_type.is_mutable() {
-                        return Err(Error(format!(
-                            "trying to import mutable global {}",
-                            import.field()
-                        )));
-                    }
-                }
-                External::Memory(ref memory_type) => {
-                    validate_memory_type(memory_type)?;
-                }
-                External::Table(ref table_type) => {
-                    validate_table_type(table_type)?;
-                }
-            }
-        }
-    }
-
-    // there must be no greater than 1 table in tables index space
-    if context.tables().len() > 1 {
-        return Err(Error(format!(
-            "too many tables in index space: {}",
-            context.tables().len()
-        )));
-    }
-
-    // there must be no greater than 1 linear memory in memory index space
-    if context.memories().len() > 1 {
-        return Err(Error(format!(
-            "too many memory regions in index space: {}",
-            context.memories().len()
-        )));
-    }
-
-    // use data section to initialize linear memory regions
-    if let Some(data_section) = module.data_section() {
-        for data_segment in data_section.entries() {
-            context.require_memory(data_segment.index())?;
-            let init_ty = expr_const_type(data_segment.offset(), context.globals())?;
-            if init_ty != ValueType::I32 {
-                return Err(Error("segment offset should return I32".into()));
-            }
-        }
-    }
-
-    // use element section to fill tables
-    if let Some(element_section) = module.elements_section() {
-        for element_segment in element_section.entries() {
-            context.require_table(element_segment.index())?;
-
-            let init_ty = expr_const_type(element_segment.offset(), context.globals())?;
-            if init_ty != ValueType::I32 {
-                return Err(Error("segment offset should return I32".into()));
-            }
-
-            for function_index in element_segment.members() {
-                context.require_function(*function_index)?;
-            }
-        }
-    }
-
+    let code_map = validate_module2::<WasmiValidation>(&module)?;
     Ok(ValidatedModule { module, code_map })
 }
 
