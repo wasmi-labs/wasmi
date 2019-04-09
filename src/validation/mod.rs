@@ -1,5 +1,5 @@
 #[allow(unused_imports)]
-use crate::alloc::prelude::*;
+use crate::alloc::prelude::v1::*;
 use core::fmt;
 #[cfg(feature = "std")]
 use std::error;
@@ -150,8 +150,6 @@ pub fn deny_floating_point(module: &Module) -> Result<(), Error> {
     }
 
     if let (Some(sec), Some(types)) = (module.function_section(), module.type_section()) {
-        use parity_wasm::elements::{Type, ValueType};
-
         let types = types.types();
 
         for sig in sec.entries() {

@@ -1,5 +1,5 @@
 #[allow(unused_imports)]
-use crate::alloc::prelude::*;
+use crate::alloc::prelude::v1::*;
 use crate::common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use core::fmt;
 use core::ops;

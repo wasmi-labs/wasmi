@@ -1,5 +1,5 @@
 #[allow(unused_imports)]
-use crate::alloc::prelude::*;
+use crate::alloc::prelude::v1::*;
 use crate::alloc::rc::Rc;
 use core::cell::{Cell, RefCell};
 use core::cmp;

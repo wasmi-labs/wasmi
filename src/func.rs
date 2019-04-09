@@ -1,5 +1,5 @@
 #[allow(unused_imports)]
-use crate::alloc::prelude::*;
+use crate::alloc::prelude::v1::*;
 use crate::alloc::rc::{Rc, Weak};
 use core::fmt;
 use crate::host::Externals;

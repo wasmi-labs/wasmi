@@ -98,6 +98,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 //// alloc is required in no_std
 #![cfg_attr(not(feature = "std"), feature(alloc))]
+#![cfg_attr(not(feature = "std"), feature(alloc_prelude))]
 
 #[cfg(not(feature = "std"))]
 #[macro_use]
@@ -121,7 +122,7 @@ extern crate memory_units as memory_units_crate;
 extern crate parity_wasm;
 
 #[allow(unused_imports)]
-use crate::alloc::prelude::*;
+use crate::alloc::prelude::v1::*;
 use core::fmt;
 #[cfg(feature = "std")]
 use std::error;

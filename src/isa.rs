@@ -68,7 +68,7 @@
 //!
 
 #[allow(unused_imports)]
-use crate::alloc::prelude::*;
+use crate::alloc::prelude::v1::*;
 
 /// Should we keep a value before "discarding" a stack frame?
 ///
