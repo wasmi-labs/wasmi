@@ -59,7 +59,6 @@ impl BlockFrameType {
     }
 }
 
-// TODO: Move under prepare
 pub struct Compiler {
     /// A sink used to emit optimized code.
     sink: Sink,
@@ -70,7 +69,7 @@ impl FunctionValidator for Compiler {
     type Output = isa::Instructions;
     fn new(_module: &FunctionValidationContext) -> Self {
         let mut compiler = Compiler {
-            sink: Sink::with_instruction_capacity(0), // TODO: Estimate instruction number.
+            sink: Sink::with_instruction_capacity(0), // TODO: Estimate instruction count.
             label_stack: Vec::new(),
         };
 
