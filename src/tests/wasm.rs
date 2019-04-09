@@ -1,10 +1,10 @@
 use crate::memory_units::Pages;
-use std::fs::File;
 use crate::{
     Error, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef, ImportsBuilder, MemoryDescriptor,
     MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance, NopExternals,
     RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef,
 };
+use std::fs::File;
 
 struct Env {
     table_base: GlobalRef,

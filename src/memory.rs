@@ -1,15 +1,15 @@
 #[allow(unused_imports)]
 use crate::alloc::prelude::v1::*;
 use crate::alloc::rc::Rc;
+use crate::memory_units::{Bytes, Pages, RoundUpTo};
+use crate::value::LittleEndianConvert;
+use crate::Error;
 use core::cell::{Cell, RefCell};
 use core::cmp;
 use core::fmt;
 use core::ops::Range;
 use core::u32;
-use crate::memory_units::{Bytes, Pages, RoundUpTo};
 use parity_wasm::elements::ResizableLimits;
-use crate::value::LittleEndianConvert;
-use crate::Error;
 
 /// Size of a page of [linear memory][`MemoryInstance`] - 64KiB.
 ///
@@ -579,8 +579,8 @@ mod tests {
 
     use super::{MemoryInstance, MemoryRef, LINEAR_MEMORY_PAGE_SIZE};
     use crate::memory_units::Pages;
-    use std::rc::Rc;
     use crate::Error;
+    use std::rc::Rc;
 
     #[test]
     fn alloc() {

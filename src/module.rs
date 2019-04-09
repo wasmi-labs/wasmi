@@ -1,9 +1,9 @@
 #[allow(unused_imports)]
 use crate::alloc::prelude::v1::*;
 use crate::alloc::rc::Rc;
+use crate::Trap;
 use core::cell::RefCell;
 use core::fmt;
-use crate::Trap;
 
 #[cfg(not(feature = "std"))]
 use hashbrown::HashMap;
@@ -11,17 +11,17 @@ use hashbrown::HashMap;
 use std::collections::HashMap;
 
 use crate::common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
-use core::cell::Ref;
 use crate::func::{FuncBody, FuncInstance, FuncRef};
 use crate::global::{GlobalInstance, GlobalRef};
 use crate::host::Externals;
 use crate::imports::ImportResolver;
 use crate::memory::MemoryRef;
 use crate::memory_units::Pages;
-use parity_wasm::elements::{External, InitExpr, Instruction, Internal, ResizableLimits, Type};
 use crate::table::TableRef;
 use crate::types::{GlobalDescriptor, MemoryDescriptor, TableDescriptor};
 use crate::{Error, MemoryInstance, Module, RuntimeValue, Signature, TableInstance};
+use core::cell::Ref;
+use parity_wasm::elements::{External, InitExpr, Instruction, Internal, ResizableLimits, Type};
 
 /// Reference to a [`ModuleInstance`].
 ///

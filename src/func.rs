@@ -1,15 +1,15 @@
 #[allow(unused_imports)]
 use crate::alloc::prelude::v1::*;
 use crate::alloc::rc::{Rc, Weak};
-use core::fmt;
 use crate::host::Externals;
 use crate::isa;
 use crate::module::ModuleInstance;
-use parity_wasm::elements::Local;
 use crate::runner::{check_function_args, Interpreter, InterpreterState};
 use crate::types::ValueType;
 use crate::value::RuntimeValue;
 use crate::{Signature, Trap};
+use core::fmt;
+use parity_wasm::elements::Local;
 
 /// Reference to a function (See [`FuncInstance`] for details).
 ///

@@ -1,9 +1,9 @@
 #[allow(unused_imports)]
 use crate::alloc::prelude::v1::*;
 use crate::common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
+use crate::validation::context::ModuleContext;
 use core::u32;
 use parity_wasm::elements::{BlockType, Func, FuncBody, Instruction, TableElementType, ValueType};
-use crate::validation::context::ModuleContext;
 
 use crate::validation::util::Locals;
 use crate::validation::Error;

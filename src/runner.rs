@@ -1,9 +1,6 @@
 #[allow(unused_imports)]
 use crate::alloc::prelude::v1::*;
 use crate::common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
-use core::fmt;
-use core::ops;
-use core::{u32, usize};
 use crate::func::{FuncInstance, FuncInstanceInternal, FuncRef};
 use crate::host::Externals;
 use crate::isa;
@@ -11,12 +8,15 @@ use crate::memory::MemoryRef;
 use crate::memory_units::Pages;
 use crate::module::ModuleRef;
 use crate::nan_preserving_float::{F32, F64};
-use parity_wasm::elements::Local;
 use crate::value::{
     ArithmeticOps, ExtendInto, Float, Integer, LittleEndianConvert, RuntimeValue, TransmuteInto,
     TryTruncateInto, WrapInto,
 };
 use crate::{Signature, Trap, TrapKind, ValueType};
+use core::fmt;
+use core::ops;
+use core::{u32, usize};
+use parity_wasm::elements::Local;
 
 /// Maximum number of entries in value stack.
 pub const DEFAULT_VALUE_STACK_LIMIT: usize = (1024 * 1024) / ::core::mem::size_of::<RuntimeValue>();
