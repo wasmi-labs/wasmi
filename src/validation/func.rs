@@ -1,15 +1,15 @@
 #[allow(unused_imports)]
-use alloc::prelude::*;
-use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
+use crate::alloc::prelude::*;
+use crate::common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use core::u32;
 use parity_wasm::elements::{BlockType, Func, FuncBody, Instruction, TableElementType, ValueType};
-use validation::context::ModuleContext;
+use crate::validation::context::ModuleContext;
 
-use validation::util::Locals;
-use validation::Error;
+use crate::validation::util::Locals;
+use crate::validation::Error;
 
-use common::stack::StackWithLimit;
-use isa;
+use crate::common::stack::StackWithLimit;
+use crate::isa;
 
 /// Maximum number of entries in value stack per function.
 const DEFAULT_VALUE_STACK_LIMIT: usize = 16384;

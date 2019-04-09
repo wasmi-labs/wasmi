@@ -9,6 +9,7 @@ documentation = "https://paritytech.github.io/wasmi/"
 description = "WebAssembly interpreter"
 keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
 exclude = [ "/res/*", "/tests/*", "/fuzz/*", "/benches/*" ]
+edition = "2018"
 
 [features]
 default = ["std"]

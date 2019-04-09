@@ -1,5 +1,5 @@
 #[allow(unused_imports)]
-use alloc::prelude::*;
+use crate::alloc::prelude::*;
 use core::fmt;
 #[cfg(feature = "std")]
 use std::error;
@@ -11,9 +11,9 @@ use std::collections::HashSet;
 
 use self::context::ModuleContextBuilder;
 use self::func::FunctionReader;
-use common::stack;
-use isa;
-use memory_units::Pages;
+use crate::common::stack;
+use crate::isa;
+use crate::memory_units::Pages;
 use parity_wasm::elements::{
     BlockType, External, GlobalEntry, GlobalType, InitExpr, Instruction, Internal, MemoryType,
     Module, ResizableLimits, TableType, Type, ValueType,
@@ -400,7 +400,7 @@ fn validate_limits(limits: &ResizableLimits) -> Result<(), Error> {
 fn validate_memory_type(memory_type: &MemoryType) -> Result<(), Error> {
     let initial: Pages = Pages(memory_type.limits().initial() as usize);
     let maximum: Option<Pages> = memory_type.limits().maximum().map(|m| Pages(m as usize));
-    ::memory::validate_memory(initial, maximum).map_err(Error)
+    crate::memory::validate_memory(initial, maximum).map_err(Error)
 }
 
 fn validate_table_type(table_type: &TableType) -> Result<(), Error> {

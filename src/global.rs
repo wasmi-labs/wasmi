@@ -1,9 +1,9 @@
-use alloc::rc::Rc;
+use crate::alloc::rc::Rc;
 use core::cell::Cell;
 use parity_wasm::elements::ValueType as EValueType;
-use types::ValueType;
-use value::RuntimeValue;
-use Error;
+use crate::types::ValueType;
+use crate::value::RuntimeValue;
+use crate::Error;
 
 /// Reference to a global variable (See [`GlobalInstance`] for details).
 ///

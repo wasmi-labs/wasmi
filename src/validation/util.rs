@@ -1,7 +1,7 @@
 #[allow(unused_imports)]
-use alloc::prelude::*;
+use crate::alloc::prelude::*;
 use parity_wasm::elements::{Local, ValueType};
-use validation::Error;
+use crate::validation::Error;
 
 /// Locals are the concatenation of a slice of function parameters
 /// with function declared local variables.

@@ -1,27 +1,27 @@
 #[allow(unused_imports)]
-use alloc::prelude::*;
-use alloc::rc::Rc;
+use crate::alloc::prelude::*;
+use crate::alloc::rc::Rc;
 use core::cell::RefCell;
 use core::fmt;
-use Trap;
+use crate::Trap;
 
 #[cfg(not(feature = "std"))]
 use hashbrown::HashMap;
 #[cfg(feature = "std")]
 use std::collections::HashMap;
 
-use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
+use crate::common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use core::cell::Ref;
-use func::{FuncBody, FuncInstance, FuncRef};
-use global::{GlobalInstance, GlobalRef};
-use host::Externals;
-use imports::ImportResolver;
-use memory::MemoryRef;
-use memory_units::Pages;
+use crate::func::{FuncBody, FuncInstance, FuncRef};
+use crate::global::{GlobalInstance, GlobalRef};
+use crate::host::Externals;
+use crate::imports::ImportResolver;
+use crate::memory::MemoryRef;
+use crate::memory_units::Pages;
 use parity_wasm::elements::{External, InitExpr, Instruction, Internal, ResizableLimits, Type};
-use table::TableRef;
-use types::{GlobalDescriptor, MemoryDescriptor, TableDescriptor};
-use {Error, MemoryInstance, Module, RuntimeValue, Signature, TableInstance};
+use crate::table::TableRef;
+use crate::types::{GlobalDescriptor, MemoryDescriptor, TableDescriptor};
+use crate::{Error, MemoryInstance, Module, RuntimeValue, Signature, TableInstance};
 
 /// Reference to a [`ModuleInstance`].
 ///
@@ -785,10 +785,10 @@ pub fn check_limits(limits: &ResizableLimits) -> Result<(), Error> {
 #[cfg(test)]
 mod tests {
     use super::{ExternVal, ModuleInstance};
-    use func::FuncInstance;
-    use imports::ImportsBuilder;
-    use tests::parse_wat;
-    use types::{Signature, ValueType};
+    use crate::func::FuncInstance;
+    use crate::imports::ImportsBuilder;
+    use crate::tests::parse_wat;
+    use crate::types::{Signature, ValueType};
 
     #[should_panic]
     #[test]

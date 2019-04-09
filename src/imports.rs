@@ -1,18 +1,18 @@
 #[allow(unused_imports)]
-use alloc::prelude::*;
+use crate::alloc::prelude::*;
 
 #[cfg(not(feature = "std"))]
 use hashbrown::HashMap;
 #[cfg(feature = "std")]
 use std::collections::HashMap;
 
-use func::FuncRef;
-use global::GlobalRef;
-use memory::MemoryRef;
-use module::ModuleRef;
-use table::TableRef;
-use types::{GlobalDescriptor, MemoryDescriptor, TableDescriptor};
-use {Error, Signature};
+use crate::func::FuncRef;
+use crate::global::GlobalRef;
+use crate::memory::MemoryRef;
+use crate::module::ModuleRef;
+use crate::table::TableRef;
+use crate::types::{GlobalDescriptor, MemoryDescriptor, TableDescriptor};
+use crate::{Error, Signature};
 
 /// Resolver of a module's dependencies.
 ///

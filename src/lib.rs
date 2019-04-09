@@ -121,7 +121,7 @@ extern crate memory_units as memory_units_crate;
 extern crate parity_wasm;
 
 #[allow(unused_imports)]
-use alloc::prelude::*;
+use crate::alloc::prelude::*;
 use core::fmt;
 #[cfg(feature = "std")]
 use std::error;
@@ -410,8 +410,8 @@ pub use self::value::{Error as ValueError, FromRuntimeValue, LittleEndianConvert
 
 /// WebAssembly-specific sizes and units.
 pub mod memory_units {
-    pub use memory_units_crate::wasm32::*;
-    pub use memory_units_crate::{size_of, ByteSize, Bytes, RoundUpTo};
+    pub use crate::memory_units_crate::wasm32::*;
+    pub use crate::memory_units_crate::{size_of, ByteSize, Bytes, RoundUpTo};
 }
 
 /// Deserialized module prepared for instantiation.
@@ -454,7 +454,7 @@ impl Module {
     /// }
     /// ```
     pub fn from_parity_wasm_module(module: parity_wasm::elements::Module) -> Result<Module, Error> {
-        use validation::{validate_module, ValidatedModule};
+        use crate::validation::{validate_module, ValidatedModule};
         let ValidatedModule { code_map, module } = validate_module(module)?;
 
         Ok(Module { code_map, module })

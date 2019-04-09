@@ -1,7 +1,7 @@
 use core::{f32, i32, i64, u32, u64};
-use nan_preserving_float::{F32, F64};
-use types::ValueType;
-use TrapKind;
+use crate::nan_preserving_float::{F32, F64};
+use crate::types::ValueType;
+use crate::TrapKind;
 
 /// Error for `LittleEndianConvert`
 #[derive(Debug)]

@@ -1,5 +1,5 @@
 use super::{validate_module, ValidatedModule};
-use isa;
+use crate::isa;
 use parity_wasm::builder::module;
 use parity_wasm::elements::{
     deserialize_buffer, BlockType, External, GlobalEntry, GlobalType, ImportEntry, InitExpr,
@@ -299,10 +299,10 @@ fn compile(module: &ValidatedModule) -> (Vec<isa::Instruction>, Vec<u32>) {
 
 macro_rules! targets {
 	($($target:expr),*) => {
-		::isa::BrTargets::from_internal(
+		crate::isa::BrTargets::from_internal(
 			&[$($target,)*]
 				.iter()
-				.map(|&target| ::isa::InstructionInternal::BrTableTarget(target))
+				.map(|&target| crate::isa::InstructionInternal::BrTableTarget(target))
 				.collect::<Vec<_>>()[..]
 		)
 	};

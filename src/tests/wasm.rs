@@ -1,6 +1,6 @@
-use memory_units::Pages;
+use crate::memory_units::Pages;
 use std::fs::File;
-use {
+use crate::{
     Error, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef, ImportsBuilder, MemoryDescriptor,
     MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance, NopExternals,
     RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef,

@@ -1,13 +1,13 @@
 #[allow(unused_imports)]
-use alloc::prelude::*;
-use alloc::rc::Rc;
+use crate::alloc::prelude::*;
+use crate::alloc::rc::Rc;
 use core::cell::RefCell;
 use core::fmt;
 use core::u32;
-use func::FuncRef;
-use module::check_limits;
+use crate::func::FuncRef;
+use crate::module::check_limits;
 use parity_wasm::elements::ResizableLimits;
-use Error;
+use crate::Error;
 
 /// Reference to a table (See [`TableInstance`] for details).
 ///
