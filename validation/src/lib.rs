@@ -18,6 +18,9 @@ pub const DEFAULT_MEMORY_INDEX: u32 = 0;
 /// Index of default table.
 pub const DEFAULT_TABLE_INDEX: u32 = 0;
 
+/// Maximal number of pages that a wasm instance supports.
+pub const LINEAR_MEMORY_MAX_PAGES: Pages = Pages(65536);
+
 #[allow(unused_imports)]
 use alloc::prelude::*;
 use core::fmt;
@@ -440,9 +443,6 @@ fn validate_memory_type(memory_type: &MemoryType) -> Result<(), Error> {
     let maximum: Option<Pages> = memory_type.limits().maximum().map(|m| Pages(m as usize));
     validate_memory(initial, maximum).map_err(Error)
 }
-
-/// Maximal number of pages that a wasm instance supports.
-pub const LINEAR_MEMORY_MAX_PAGES: Pages = Pages(65536);
 
 pub fn validate_memory(initial: Pages, maximum: Option<Pages>) -> Result<(), String> {
     if initial > LINEAR_MEMORY_MAX_PAGES {
