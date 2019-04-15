@@ -100,16 +100,19 @@ pub trait FunctionValidator {
     fn finish(self) -> Self::Output;
 }
 
-impl Validation for () {
+pub struct SimpleValidation;
+pub struct SimpleFunctionValidator;
+
+impl Validation for SimpleValidation {
     type Output = ();
-    type FunctionValidator = ();
-    fn new(module: &Module) -> () {
-        ()
+    type FunctionValidator = SimpleFunctionValidator;
+    fn new(_module: &Module) -> SimpleValidation {
+        SimpleValidation
     }
     fn on_function_validated(
         &mut self,
-        index: u32,
-        output: <<Self as Validation>::FunctionValidator as FunctionValidator>::Output,
+        _index: u32,
+        _output: <<Self as Validation>::FunctionValidator as FunctionValidator>::Output,
     ) -> () {
         ()
     }
@@ -118,11 +121,11 @@ impl Validation for () {
     }
 }
 
-impl FunctionValidator for () {
+impl FunctionValidator for SimpleFunctionValidator {
     type Output = ();
 
-    fn new(ctx: &func::FunctionValidationContext) -> () {
-        ()
+    fn new(_ctx: &func::FunctionValidationContext) -> SimpleFunctionValidator {
+        SimpleFunctionValidator
     }
 
     fn next_instruction(
@@ -130,7 +133,7 @@ impl FunctionValidator for () {
         ctx: &mut func::FunctionValidationContext,
         instruction: &Instruction,
     ) -> Result<(), Error> {
-        Ok(())
+        ctx.step(instruction)
     }
 
     fn finish(self) -> () {

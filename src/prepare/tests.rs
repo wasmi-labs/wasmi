@@ -1,14 +1,17 @@
+use super::{compile_module, CompiledModule};
+use parity_wasm::{deserialize_buffer, elements::Module};
 
+use isa;
+use wabt;
 
-
-fn validate(wat: &str) -> ValidatedModule {
+fn validate(wat: &str) -> CompiledModule {
     let wasm = wabt::wat2wasm(wat).unwrap();
     let module = deserialize_buffer::<Module>(&wasm).unwrap();
-    let validated_module = validate_module(module).unwrap();
-    validated_module
+    let compiled_module = compile_module(module).unwrap();
+    compiled_module
 }
 
-fn compile(module: &ValidatedModule) -> (Vec<isa::Instruction>, Vec<u32>) {
+fn compile(module: &CompiledModule) -> (Vec<isa::Instruction>, Vec<u32>) {
     let code = &module.code_map[0];
     let mut instructions = Vec::new();
     let mut pcs = Vec::new();

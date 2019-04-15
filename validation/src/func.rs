@@ -134,7 +134,8 @@ pub fn drive<T: FunctionValidator>(
     }
 
     // The last `end` opcode should pop last instruction.
-    // TODO: This looks like it should be returned as an error?
+    // parity-wasm ensures that there is always `End` opcode at
+    // the end of the function body.
     assert!(context.frame_stack.is_empty());
 
     Ok(validator.finish())

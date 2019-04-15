@@ -1,4 +1,4 @@
-use crate::Error;
+use crate::{Error, SimpleValidation};
 use parity_wasm::builder::module;
 use parity_wasm::elements::{
     BlockType, External, GlobalEntry, GlobalType, ImportEntry, InitExpr, Instruction, Instructions,
@@ -6,7 +6,7 @@ use parity_wasm::elements::{
 };
 
 fn validate_module(module: &Module) -> Result<(), Error> {
-    super::validate_module::<()>(module)
+    super::validate_module::<SimpleValidation>(module)
 }
 
 #[test]

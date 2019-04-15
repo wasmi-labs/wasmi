@@ -9,6 +9,9 @@ use parity_wasm::elements::Module;
 
 mod compile;
 
+#[cfg(test)]
+mod tests;
+
 #[derive(Clone)]
 pub struct CompiledModule {
     pub code_map: Vec<isa::Instructions>,
