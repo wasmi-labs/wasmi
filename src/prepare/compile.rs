@@ -1,5 +1,4 @@
-use parity_wasm::elements::{BlockType, Func, FuncBody, Instruction, TableElementType, ValueType};
-use validation::context::ModuleContext;
+use parity_wasm::elements::{BlockType, Instruction};
 
 use validation::func::{
     require_label, top_label, BlockFrame, FunctionValidationContext, StackValueType, StartedWith,
