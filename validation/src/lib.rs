@@ -101,8 +101,7 @@ pub trait FunctionValidator {
     fn finish(self) -> Self::Output;
 }
 
-// TODO: Rename to validate_module
-pub fn validate_module2<V: Validation>(module: &Module) -> Result<V::Output, Error> {
+pub fn validate_module<V: Validation>(module: &Module) -> Result<V::Output, Error> {
     let mut context_builder = ModuleContextBuilder::new();
     let mut imported_globals = Vec::new();
     let mut validation = V::new(&module);

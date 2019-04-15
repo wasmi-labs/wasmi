@@ -3,7 +3,7 @@ use alloc::prelude::v1::*;
 
 use crate::{
     isa,
-    validation::{validate_module2, Error, Validation},
+    validation::{validate_module, Error, Validation},
 };
 use parity_wasm::elements::Module;
 
@@ -19,6 +19,8 @@ pub struct WasmiValidation {
     code_map: Vec<isa::Instructions>,
 }
 
+// This implementation of `Validation` is compiling wasm code at the
+// validation time.
 impl Validation for WasmiValidation {
     type Output = Vec<isa::Instructions>;
     type FunctionValidator = compile::Compiler;
@@ -38,7 +40,7 @@ impl Validation for WasmiValidation {
 
 /// Validate a module and compile it to the internal representation.
 pub fn compile_module(module: Module) -> Result<CompiledModule, Error> {
-    let code_map = validate_module2::<WasmiValidation>(&module)?;
+    let code_map = validate_module::<WasmiValidation>(&module)?;
     Ok(CompiledModule { module, code_map })
 }
 
