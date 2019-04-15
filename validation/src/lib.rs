@@ -30,6 +30,12 @@ use hashbrown::HashSet;
 #[cfg(feature = "std")]
 use std::collections::HashSet;
 
+/// WebAssembly-specific sizes and units.
+pub mod memory_units {
+    pub use memory_units_crate::wasm32::*;
+    pub use memory_units_crate::{size_of, ByteSize, Bytes, RoundUpTo};
+}
+
 use memory_units::Pages;
 
 use self::context::ModuleContextBuilder;
@@ -437,7 +443,7 @@ fn validate_memory_type(memory_type: &MemoryType) -> Result<(), Error> {
 }
 
 /// Maximal number of pages that a wasm instance supports.
-const LINEAR_MEMORY_MAX_PAGES: Pages = Pages(65536);
+pub const LINEAR_MEMORY_MAX_PAGES: Pages = Pages(65536);
 
 pub fn validate_memory(initial: Pages, maximum: Option<Pages>) -> Result<(), String> {
     if initial > LINEAR_MEMORY_MAX_PAGES {

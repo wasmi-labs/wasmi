@@ -10,7 +10,7 @@ use hashbrown::HashMap;
 #[cfg(feature = "std")]
 use std::collections::HashMap;
 
-use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
+use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use core::cell::Ref;
 use func::{FuncBody, FuncInstance, FuncRef};
 use global::{GlobalInstance, GlobalRef};

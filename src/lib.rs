@@ -120,6 +120,8 @@ extern crate hashbrown;
 extern crate memory_units as memory_units_crate;
 extern crate parity_wasm;
 
+extern crate wasmi_validation as validation;
+
 #[allow(unused_imports)]
 use alloc::prelude::*;
 use core::fmt;
@@ -392,7 +394,6 @@ mod prepare;
 mod runner;
 mod table;
 mod types;
-mod validation;
 mod value;
 
 #[cfg(test)]

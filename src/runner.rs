@@ -1,6 +1,6 @@
 #[allow(unused_imports)]
 use alloc::prelude::*;
-use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
+use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use core::fmt;
 use core::ops;
 use core::{u32, usize};

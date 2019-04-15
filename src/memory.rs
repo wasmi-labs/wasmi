@@ -108,7 +108,7 @@ impl MemoryInstance {
     ///
     /// [`LINEAR_MEMORY_PAGE_SIZE`]: constant.LINEAR_MEMORY_PAGE_SIZE.html
     pub fn alloc(initial: Pages, maximum: Option<Pages>) -> Result<MemoryRef, Error> {
-        validate_memory(initial, maximum).map_err(Error::Memory)?;
+        validation::validate_memory(initial, maximum).map_err(Error::Memory)?;
 
         let memory = MemoryInstance::new(initial, maximum);
         Ok(MemoryRef(Rc::new(memory)))
@@ -268,7 +268,7 @@ impl MemoryInstance {
         }
 
         let new_size: Pages = size_before_grow + additional;
-        let maximum = self.maximum.unwrap_or(LINEAR_MEMORY_MAX_PAGES);
+        let maximum = self.maximum.unwrap_or(validation::LINEAR_MEMORY_MAX_PAGES);
         if new_size > maximum {
             return Err(Error::Memory(format!(
                 "Trying to grow memory by {} pages when already have {}",

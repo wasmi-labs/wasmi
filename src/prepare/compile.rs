@@ -6,8 +6,8 @@ use validation::func::{
 };
 use validation::util::Locals;
 use validation::{Error, FunctionValidator};
+use validation::stack::StackWithLimit;
 
-use common::stack::StackWithLimit;
 use isa;
 
 /// Type of block frame.
