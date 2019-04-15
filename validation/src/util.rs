@@ -3,6 +3,9 @@ use crate::Error;
 use alloc::prelude::v1::*;
 use parity_wasm::elements::{Local, ValueType};
 
+#[cfg(test)]
+use assert_matches::assert_matches;
+
 /// Locals are the concatenation of a slice of function parameters
 /// with function declared local variables.
 ///

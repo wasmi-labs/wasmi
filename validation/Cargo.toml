@@ -9,6 +9,9 @@ parity-wasm = { version = "0.31", default-features = false }
 memory_units_crate = { package = "memory_units", version = "0.3.0" }
 hashbrown = { version = "0.1.8", optional = true }
 
+[dev-dependencies]
+assert_matches = "1.1"
+
 [features]
 default = ["std"]
 std = ["parity-wasm/std"]

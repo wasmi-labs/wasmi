@@ -50,9 +50,8 @@ pub mod context;
 pub mod func;
 pub mod util;
 
-// TODO: Uncomment
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod tests;
 
 // TODO: Consider using a type other than String, because
 // of formatting machinary is not welcomed in substrate runtimes.
@@ -99,6 +98,44 @@ pub trait FunctionValidator {
         instruction: &Instruction,
     ) -> Result<(), Error>;
     fn finish(self) -> Self::Output;
+}
+
+impl Validation for () {
+    type Output = ();
+    type FunctionValidator = ();
+    fn new(module: &Module) -> () {
+        ()
+    }
+    fn on_function_validated(
+        &mut self,
+        index: u32,
+        output: <<Self as Validation>::FunctionValidator as FunctionValidator>::Output,
+    ) -> () {
+        ()
+    }
+    fn finish(self) -> () {
+        ()
+    }
+}
+
+impl FunctionValidator for () {
+    type Output = ();
+
+    fn new(ctx: &func::FunctionValidationContext) -> () {
+        ()
+    }
+
+    fn next_instruction(
+        &mut self,
+        ctx: &mut func::FunctionValidationContext,
+        instruction: &Instruction,
+    ) -> Result<(), Error> {
+        Ok(())
+    }
+
+    fn finish(self) -> () {
+        ()
+    }
 }
 
 pub fn validate_module<V: Validation>(module: &Module) -> Result<V::Output, Error> {
