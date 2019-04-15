@@ -3,7 +3,7 @@ use alloc::prelude::*;
 use parity_wasm::elements::{
     BlockType, FunctionType, GlobalType, MemoryType, TableType, ValueType,
 };
-use validation::Error;
+use crate::Error;
 
 #[derive(Default, Debug)]
 pub struct ModuleContext {
