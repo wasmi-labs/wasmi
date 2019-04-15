@@ -26,7 +26,7 @@ pub struct WasmiValidation {
 // validation time.
 impl Validation for WasmiValidation {
     type Output = Vec<isa::Instructions>;
-    type FunctionValidator = compile::Compiler;
+    type FuncValidator = compile::Compiler;
     fn new(_module: &Module) -> Self {
         WasmiValidation {
             // TODO: with capacity?

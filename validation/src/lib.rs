@@ -79,17 +79,17 @@ impl From<stack::Error> for Error {
 
 pub trait Validation {
     type Output;
-    type FunctionValidator: FunctionValidator;
+    type FuncValidator: FuncValidator;
     fn new(module: &Module) -> Self;
     fn on_function_validated(
         &mut self,
         index: u32,
-        output: <<Self as Validation>::FunctionValidator as FunctionValidator>::Output,
+        output: <<Self as Validation>::FuncValidator as FuncValidator>::Output,
     );
     fn finish(self) -> Self::Output;
 }
 
-pub trait FunctionValidator {
+pub trait FuncValidator {
     type Output;
     fn new(ctx: &func::FunctionValidationContext) -> Self;
     fn next_instruction(
@@ -100,19 +100,19 @@ pub trait FunctionValidator {
     fn finish(self) -> Self::Output;
 }
 
-pub struct SimpleValidation;
-pub struct SimpleFunctionValidator;
+/// A module validator that just validates modules and produces no result.
+pub struct PlainValidator;
 
-impl Validation for SimpleValidation {
+impl Validation for PlainValidator {
     type Output = ();
-    type FunctionValidator = SimpleFunctionValidator;
-    fn new(_module: &Module) -> SimpleValidation {
-        SimpleValidation
+    type FuncValidator = PlainFuncValidator;
+    fn new(_module: &Module) -> PlainValidator {
+        PlainValidator
     }
     fn on_function_validated(
         &mut self,
         _index: u32,
-        _output: <<Self as Validation>::FunctionValidator as FunctionValidator>::Output,
+        _output: <<Self as Validation>::FuncValidator as FuncValidator>::Output,
     ) -> () {
         ()
     }
@@ -121,11 +121,14 @@ impl Validation for SimpleValidation {
     }
 }
 
-impl FunctionValidator for SimpleFunctionValidator {
+/// A function validator that just validates modules and produces no result.
+pub struct PlainFuncValidator;
+
+impl FuncValidator for PlainFuncValidator {
     type Output = ();
 
-    fn new(_ctx: &func::FunctionValidationContext) -> SimpleFunctionValidator {
-        SimpleFunctionValidator
+    fn new(_ctx: &func::FunctionValidationContext) -> PlainFuncValidator {
+        PlainFuncValidator
     }
 
     fn next_instruction(
@@ -232,7 +235,7 @@ pub fn validate_module<V: Validation>(module: &Module) -> Result<V::Output, Erro
                 .get(index as usize)
                 .ok_or(Error(format!("Missing body for function {}", index)))?;
 
-            let output = func::drive::<V::FunctionValidator>(&context, function, function_body)
+            let output = func::drive::<V::FuncValidator>(&context, function, function_body)
                 .map_err(|Error(ref msg)| {
                     Error(format!(
                         "Function #{} reading/validation error: {}",

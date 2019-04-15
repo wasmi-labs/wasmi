@@ -8,7 +8,7 @@ use validation::func::{
 };
 use validation::stack::StackWithLimit;
 use validation::util::Locals;
-use validation::{Error, FunctionValidator};
+use validation::{Error, FuncValidator};
 
 use isa;
 
@@ -67,7 +67,7 @@ pub struct Compiler {
     label_stack: Vec<BlockFrameType>,
 }
 
-impl FunctionValidator for Compiler {
+impl FuncValidator for Compiler {
     type Output = isa::Instructions;
     fn new(_module: &FunctionValidationContext) -> Self {
         let mut compiler = Compiler {

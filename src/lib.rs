@@ -112,7 +112,6 @@ extern crate core;
 #[cfg(test)]
 extern crate wabt;
 #[cfg(test)]
-#[macro_use]
 extern crate assert_matches;
 
 #[cfg(not(feature = "std"))]
