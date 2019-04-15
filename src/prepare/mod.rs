@@ -1,4 +1,7 @@
-use crate::{isa, validation::{Error, validate_module2, Validation}};
+use crate::{
+    isa,
+    validation::{validate_module2, Error, Validation},
+};
 use parity_wasm::elements::Module;
 
 mod compile;

@@ -1,6 +1,5 @@
 #[allow(unused_imports)]
 use alloc::prelude::*;
-use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use core::fmt;
 use core::ops;
 use core::{u32, usize};
@@ -12,6 +11,7 @@ use memory_units::Pages;
 use module::ModuleRef;
 use nan_preserving_float::{F32, F64};
 use parity_wasm::elements::Local;
+use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use value::{
     ArithmeticOps, ExtendInto, Float, Integer, LittleEndianConvert, RuntimeValue, TransmuteInto,
     TryTruncateInto, WrapInto,

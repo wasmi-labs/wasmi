@@ -2,13 +2,8 @@
 use alloc::prelude::*;
 
 use crate::{
-    DEFAULT_MEMORY_INDEX,
-    DEFAULT_TABLE_INDEX,
-    Error,
-    FunctionValidator,
-    stack::StackWithLimit,
-    util::Locals,
-    context::ModuleContext,
+    context::ModuleContext, stack::StackWithLimit, util::Locals, Error, FunctionValidator,
+    DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX,
 };
 
 use core::u32;

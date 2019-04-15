@@ -4,9 +4,9 @@ use validation::context::ModuleContext;
 use validation::func::{
     require_label, top_label, BlockFrame, FunctionValidationContext, StackValueType, StartedWith,
 };
+use validation::stack::StackWithLimit;
 use validation::util::Locals;
 use validation::{Error, FunctionValidator};
-use validation::stack::StackWithLimit;
 
 use isa;
 

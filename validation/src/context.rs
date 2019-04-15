@@ -1,9 +1,9 @@
+use crate::Error;
 #[allow(unused_imports)]
 use alloc::prelude::*;
 use parity_wasm::elements::{
     BlockType, FunctionType, GlobalType, MemoryType, TableType, ValueType,
 };
-use crate::Error;
 
 #[derive(Default, Debug)]
 pub struct ModuleContext {

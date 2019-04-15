@@ -10,7 +10,6 @@ use hashbrown::HashMap;
 #[cfg(feature = "std")]
 use std::collections::HashMap;
 
-use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use core::cell::Ref;
 use func::{FuncBody, FuncInstance, FuncRef};
 use global::{GlobalInstance, GlobalRef};
@@ -21,6 +20,7 @@ use memory_units::Pages;
 use parity_wasm::elements::{External, InitExpr, Instruction, Internal, ResizableLimits, Type};
 use table::TableRef;
 use types::{GlobalDescriptor, MemoryDescriptor, TableDescriptor};
+use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use {Error, MemoryInstance, Module, RuntimeValue, Signature, TableInstance};
 
 /// Reference to a [`ModuleInstance`].

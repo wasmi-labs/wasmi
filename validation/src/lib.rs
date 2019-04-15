@@ -1,7 +1,6 @@
 // TODO: Uncomment
 // #![warn(missing_docs)]
 
-
 #![cfg_attr(not(feature = "std"), no_std)]
 //// alloc is required in no_std
 #![cfg_attr(not(feature = "std"), feature(alloc))]
