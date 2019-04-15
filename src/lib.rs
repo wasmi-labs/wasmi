@@ -517,7 +517,7 @@ impl Module {
     /// assert!(module.deny_floating_point().is_err());
     /// ```
     pub fn deny_floating_point(&self) -> Result<(), Error> {
-        validation::deny_floating_point(&self.module).map_err(Into::into)
+        prepare::deny_floating_point(&self.module).map_err(Into::into)
     }
 
     /// Create `Module` from a given buffer.
