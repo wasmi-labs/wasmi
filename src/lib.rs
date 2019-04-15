@@ -97,7 +97,7 @@
 #![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 //// alloc is required in no_std
-#![cfg_attr(not(feature = "std"), feature(alloc))]
+#![cfg_attr(not(feature = "std"), feature(alloc, alloc_prelude))]
 
 #[cfg(not(feature = "std"))]
 #[macro_use]
@@ -123,7 +123,7 @@ extern crate parity_wasm;
 extern crate wasmi_validation as validation;
 
 #[allow(unused_imports)]
-use alloc::prelude::*;
+use alloc::prelude::v1::*;
 use core::fmt;
 #[cfg(feature = "std")]
 use std::error;

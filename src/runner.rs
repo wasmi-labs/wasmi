@@ -1,5 +1,5 @@
 #[allow(unused_imports)]
-use alloc::prelude::*;
+use alloc::prelude::v1::*;
 use core::fmt;
 use core::ops;
 use core::{u32, usize};

@@ -1,3 +1,6 @@
+#[allow(unused_imports)]
+use alloc::prelude::v1::*;
+
 use parity_wasm::elements::{BlockType, Instruction};
 
 use validation::func::{

@@ -1,5 +1,5 @@
 #[allow(unused_imports)]
-use alloc::prelude::*;
+use alloc::prelude::v1::*;
 use alloc::rc::Rc;
 use core::cell::{Cell, RefCell};
 use core::cmp;

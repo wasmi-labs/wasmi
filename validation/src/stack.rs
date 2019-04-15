@@ -1,5 +1,5 @@
 #[allow(unused_imports)]
-use alloc::prelude::*;
+use alloc::prelude::v1::*;
 
 use core::fmt;
 #[cfg(feature = "std")]

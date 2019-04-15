@@ -1,6 +1,6 @@
 use crate::Error;
 #[allow(unused_imports)]
-use alloc::prelude::*;
+use alloc::prelude::v1::*;
 use parity_wasm::elements::{Local, ValueType};
 
 /// Locals are the concatenation of a slice of function parameters

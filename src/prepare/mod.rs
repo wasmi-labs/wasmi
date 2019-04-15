@@ -1,3 +1,6 @@
+#[allow(unused_imports)]
+use alloc::prelude::v1::*;
+
 use crate::{
     isa,
     validation::{validate_module2, Error, Validation},

@@ -3,7 +3,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 //// alloc is required in no_std
-#![cfg_attr(not(feature = "std"), feature(alloc))]
+#![cfg_attr(not(feature = "std"), feature(alloc, alloc_prelude))]
 
 #[cfg(not(feature = "std"))]
 #[macro_use]
@@ -22,7 +22,7 @@ pub const DEFAULT_TABLE_INDEX: u32 = 0;
 pub const LINEAR_MEMORY_MAX_PAGES: Pages = Pages(65536);
 
 #[allow(unused_imports)]
-use alloc::prelude::*;
+use alloc::prelude::v1::*;
 use core::fmt;
 #[cfg(feature = "std")]
 use std::error;
@@ -167,8 +167,6 @@ pub fn deny_floating_point(module: &Module) -> Result<(), Error> {
     }
 
     if let (Some(sec), Some(types)) = (module.function_section(), module.type_section()) {
-        use parity_wasm::elements::{Type, ValueType};
-
         let types = types.types();
 
         for sig in sec.entries() {
