@@ -380,7 +380,6 @@ impl From<validation::Error> for Error {
     }
 }
 
-mod common;
 mod func;
 mod global;
 mod host;
