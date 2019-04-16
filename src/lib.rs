@@ -110,9 +110,9 @@ extern crate std as alloc;
 extern crate core;
 
 #[cfg(test)]
-extern crate wabt;
-#[cfg(test)]
 extern crate assert_matches;
+#[cfg(test)]
+extern crate wabt;
 
 #[cfg(not(feature = "std"))]
 extern crate hashbrown;

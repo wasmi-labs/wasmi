@@ -108,7 +108,23 @@ impl MemoryInstance {
     ///
     /// [`LINEAR_MEMORY_PAGE_SIZE`]: constant.LINEAR_MEMORY_PAGE_SIZE.html
     pub fn alloc(initial: Pages, maximum: Option<Pages>) -> Result<MemoryRef, Error> {
-        validation::validate_memory(initial, maximum).map_err(Error::Memory)?;
+        {
+            use std::convert::TryInto;
+            let initial_u32: u32 = initial
+                .0
+                .try_into()
+                .map_err(|_| Error::Memory("initial can't be coerced to u32".into()))?;
+            let maximum_u32: Option<u32> = match maximum {
+                Some(pages) => Some(
+                    pages
+                        .0
+                        .try_into()
+                        .map_err(|_| Error::Memory("maximum can't be coerced to u32".into()))?,
+                ),
+                None => None,
+            };
+            validation::validate_memory(initial_u32, maximum_u32).map_err(Error::Memory)?;
+        }
 
         let memory = MemoryInstance::new(initial, maximum);
         Ok(MemoryRef(Rc::new(memory)))
@@ -268,7 +284,9 @@ impl MemoryInstance {
         }
 
         let new_size: Pages = size_before_grow + additional;
-        let maximum = self.maximum.unwrap_or(validation::LINEAR_MEMORY_MAX_PAGES);
+        let maximum = self
+            .maximum
+            .unwrap_or(Pages(validation::LINEAR_MEMORY_MAX_PAGES as usize));
         if new_size > maximum {
             return Err(Error::Memory(format!(
                 "Trying to grow memory by {} pages when already have {}",
