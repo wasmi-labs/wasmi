@@ -1,7 +1,7 @@
 #[allow(unused_imports)]
 use alloc::prelude::v1::*;
 
-use parity_wasm::elements::{BlockType, Instruction, FuncBody};
+use parity_wasm::elements::{BlockType, FuncBody, Instruction};
 
 use validation::func::{
     require_label, top_label, BlockFrame, FunctionValidationContext, StackValueType, StartedWith,
