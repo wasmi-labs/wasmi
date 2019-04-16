@@ -1012,7 +1012,7 @@ fn require_target(
     let is_stack_polymorphic = top_label(frame_stack).polymorphic_stack;
     let frame = require_label(depth, frame_stack)?;
 
-    // TODO: Clean this mess.
+    // Get the label by the given `depth`.
     let label = label_stack
         .get(label_stack.len() - 1 - (depth as usize))
         .expect("this is ensured by `require_label` above");
