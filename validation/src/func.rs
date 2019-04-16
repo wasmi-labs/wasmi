@@ -1212,8 +1212,14 @@ fn pop_label(
     Ok(())
 }
 
+/// Returns the top most frame from the frame stack.
+///
+/// # Panics
+///
+/// Can be called only when the frame stack is not empty: that is, it is ok to call this function
+/// after initialization of the validation and until the validation reached the latest `End`
+/// operator.
 pub fn top_label(frame_stack: &StackWithLimit<BlockFrame>) -> &BlockFrame {
-    // TODO: This actually isn't safe.
     frame_stack
         .top()
         .expect("this function can't be called with empty frame stack")
