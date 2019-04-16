@@ -120,7 +120,7 @@ pub fn drive<T: FuncValidator>(
         result_ty,
     );
 
-    let mut validator = T::new(&context);
+    let mut validator = T::new(&context, body);
 
     for (position, instruction) in code.iter().enumerate() {
         validator

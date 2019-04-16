@@ -1,7 +1,7 @@
 #[allow(unused_imports)]
 use alloc::prelude::v1::*;
 
-use parity_wasm::elements::{BlockType, Instruction};
+use parity_wasm::elements::{BlockType, Instruction, FuncBody};
 
 use validation::func::{
     require_label, top_label, BlockFrame, FunctionValidationContext, StackValueType, StartedWith,
@@ -69,9 +69,10 @@ pub struct Compiler {
 
 impl FuncValidator for Compiler {
     type Output = isa::Instructions;
-    fn new(_module: &FunctionValidationContext) -> Self {
+    fn new(_ctx: &FunctionValidationContext, body: &FuncBody) -> Self {
+        let code_len = body.code().elements().len();
         let mut compiler = Compiler {
-            sink: Sink::with_instruction_capacity(0), // TODO: Estimate instruction count.
+            sink: Sink::with_instruction_capacity(code_len),
             label_stack: Vec::new(),
         };
 

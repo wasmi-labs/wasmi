@@ -35,7 +35,7 @@ use std::collections::HashSet;
 use self::context::ModuleContextBuilder;
 use parity_wasm::elements::{
     BlockType, External, GlobalEntry, GlobalType, InitExpr, Instruction, Internal, MemoryType,
-    Module, ResizableLimits, TableType, Type, ValueType,
+    Module, ResizableLimits, TableType, Type, ValueType, FuncBody,
 };
 
 pub mod context;
@@ -83,7 +83,10 @@ pub trait Validator {
 
 pub trait FuncValidator {
     type Output;
-    fn new(ctx: &func::FunctionValidationContext) -> Self;
+    fn new(
+        ctx: &func::FunctionValidationContext,
+        body: &FuncBody,
+    ) -> Self;
     fn next_instruction(
         &mut self,
         ctx: &mut func::FunctionValidationContext,
@@ -119,7 +122,7 @@ pub struct PlainFuncValidator;
 impl FuncValidator for PlainFuncValidator {
     type Output = ();
 
-    fn new(_ctx: &func::FunctionValidationContext) -> PlainFuncValidator {
+    fn new(_ctx: &func::FunctionValidationContext, _body: &FuncBody) -> PlainFuncValidator {
         PlainFuncValidator
     }
 
