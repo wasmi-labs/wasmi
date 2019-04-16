@@ -1121,11 +1121,10 @@ fn push_value(
     Ok(value_stack.push(value_type.into())?)
 }
 
-// TODO: Rename value_type -> expected_value_ty
 fn pop_value(
     value_stack: &mut StackWithLimit<StackValueType>,
     frame_stack: &StackWithLimit<BlockFrame>,
-    value_type: StackValueType,
+    expected_value_ty: StackValueType,
 ) -> Result<StackValueType, Error> {
     let (is_stack_polymorphic, label_value_stack_len) = {
         let frame = top_label(frame_stack);
@@ -1145,13 +1144,13 @@ fn pop_value(
         value_stack.pop()?
     };
     match actual_value {
-        StackValueType::Specific(stack_value_type) if stack_value_type == value_type => {
+        StackValueType::Specific(stack_value_type) if stack_value_type == expected_value_ty => {
             Ok(actual_value)
         }
         StackValueType::Any => Ok(actual_value),
         stack_value_type @ _ => Err(Error(format!(
             "Expected value of type {:?} on top of stack. Got {:?}",
-            value_type, stack_value_type
+            expected_value_ty, stack_value_type
         ))),
     }
 }
