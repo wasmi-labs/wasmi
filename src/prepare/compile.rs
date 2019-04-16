@@ -144,10 +144,10 @@ impl Compiler {
                 context.step(instruction)?;
 
                 let (if_not, end_label) = {
-                    // TODO: We will have to place this before validation step to ensure that
-                    // the block type is indeed if_true.
-
-                    let top_label = self.label_stack.last().unwrap();
+                    let top_label = self.label_stack.last().expect(
+                        "label_stack should reflect the frame stack;
+                        frame stack is never empty while being processed; qed",
+                    );
                     let (if_not, end_label) = match *top_label {
                         BlockFrameType::IfTrue { if_not, end_label } => (if_not, end_label),
                         _ => panic!("validation ensures that the top frame is actually if_true"),
@@ -187,11 +187,10 @@ impl Compiler {
 
                 context.step(instruction)?;
 
-                // let started_with = started_with.expect("validation ensures that it is ok");
-
-                // TODO: We will have to place this before validation step to ensure that
-                // the block type is indeed if_true.
-                let frame_type = self.label_stack.last().cloned().unwrap();
+                let frame_type = self.label_stack.last().cloned().expect(
+                    "label_stack should reflect the frame stack;
+                    frame stack is never empty while being processed; qed",
+                );
 
                 if let BlockFrameType::IfTrue { if_not, .. } = frame_type {
                     // Resolve `if_not` label. If the `if's` condition doesn't hold the control will jump
@@ -206,7 +205,6 @@ impl Compiler {
                 }
 
                 if let Some(drop_keep) = return_drop_keep {
-                    // TODO: The last one.
                     // It was the last instruction. Emit the explicit return instruction.
                     let drop_keep = drop_keep.expect("validation should ensure this doesn't fail");
                     self.sink.emit(isa::InstructionInternal::Return(drop_keep));
