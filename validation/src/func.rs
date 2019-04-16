@@ -258,20 +258,25 @@ impl<'a> FunctionValidationContext<'a> {
                 };
 
                 if self.frame_stack.len() == 1 {
-                    // We are about to close the last frame. Insert
-                    // an explicit return.
+                    // We are about to close the last frame.
 
                     // Check the return type.
                     if let BlockType::Value(value_type) = self.return_type {
                         tee_value(&mut self.value_stack, &self.frame_stack, value_type.into())?;
                     }
-                }
 
-                pop_label(&mut self.value_stack, &mut self.frame_stack)?;
+                    pop_label(&mut self.value_stack, &mut self.frame_stack)?;
 
-                // Push the result value.
-                if let BlockType::Value(value_type) = block_type {
-                    push_value(&mut self.value_stack, value_type.into())?;
+                    // We just poped the last frame. To avoid some difficulties
+                    // we prefer to keep this branch explicit and bail out here.
+                    ()
+                } else {
+                    pop_label(&mut self.value_stack, &mut self.frame_stack)?;
+
+                    // Push the result value.
+                    if let BlockType::Value(value_type) = block_type {
+                        push_value(&mut self.value_stack, value_type.into())?;
+                    }
                 }
             }
             Br(depth) => {
