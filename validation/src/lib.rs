@@ -69,14 +69,14 @@ impl From<stack::Error> for Error {
     }
 }
 
-pub trait Validation {
+pub trait Validator {
     type Output;
     type FuncValidator: FuncValidator;
     fn new(module: &Module) -> Self;
     fn on_function_validated(
         &mut self,
         index: u32,
-        output: <<Self as Validation>::FuncValidator as FuncValidator>::Output,
+        output: <<Self as Validator>::FuncValidator as FuncValidator>::Output,
     );
     fn finish(self) -> Self::Output;
 }
@@ -95,7 +95,7 @@ pub trait FuncValidator {
 /// A module validator that just validates modules and produces no result.
 pub struct PlainValidator;
 
-impl Validation for PlainValidator {
+impl Validator for PlainValidator {
     type Output = ();
     type FuncValidator = PlainFuncValidator;
     fn new(_module: &Module) -> PlainValidator {
@@ -104,7 +104,7 @@ impl Validation for PlainValidator {
     fn on_function_validated(
         &mut self,
         _index: u32,
-        _output: <<Self as Validation>::FuncValidator as FuncValidator>::Output,
+        _output: <<Self as Validator>::FuncValidator as FuncValidator>::Output,
     ) -> () {
         ()
     }
@@ -136,7 +136,7 @@ impl FuncValidator for PlainFuncValidator {
     }
 }
 
-pub fn validate_module<V: Validation>(module: &Module) -> Result<V::Output, Error> {
+pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error> {
     let mut context_builder = ModuleContextBuilder::new();
     let mut imported_globals = Vec::new();
     let mut validation = V::new(&module);
