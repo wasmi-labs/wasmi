@@ -13,7 +13,7 @@ use validation::{Error, FuncValidator};
 use isa;
 
 /// Type of block frame.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy)]
 enum BlockFrameType {
     /// Usual block frame.
     ///
