@@ -72,7 +72,7 @@ impl FuncValidator for Compiler {
     fn new(_ctx: &FunctionValidationContext, body: &FuncBody) -> Self {
         let code_len = body.code().elements().len();
         let mut compiler = Compiler {
-            sink: Sink::with_instruction_capacity(code_len),
+            sink: Sink::with_capacity(code_len),
             label_stack: Vec::new(),
         };
 
@@ -1108,7 +1108,7 @@ struct Sink {
 }
 
 impl Sink {
-    fn with_instruction_capacity(capacity: usize) -> Sink {
+    fn with_capacity(capacity: usize) -> Sink {
         Sink {
             ins: isa::Instructions::with_capacity(capacity),
             labels: Vec::new(),
