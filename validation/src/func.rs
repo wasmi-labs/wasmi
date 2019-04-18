@@ -51,22 +51,6 @@ pub enum StackValueType {
     Specific(ValueType),
 }
 
-impl StackValueType {
-    fn is_any(&self) -> bool {
-        match self {
-            &StackValueType::Any => true,
-            _ => false,
-        }
-    }
-
-    fn value_type(&self) -> ValueType {
-        match self {
-            &StackValueType::Any => unreachable!("must be checked by caller"),
-            &StackValueType::Specific(value_type) => value_type,
-        }
-    }
-}
-
 impl From<ValueType> for StackValueType {
     fn from(value_type: ValueType) -> Self {
         StackValueType::Specific(value_type)
@@ -75,20 +59,22 @@ impl From<ValueType> for StackValueType {
 
 impl PartialEq<StackValueType> for StackValueType {
     fn eq(&self, other: &StackValueType) -> bool {
-        if self.is_any() || other.is_any() {
-            true
-        } else {
-            self.value_type() == other.value_type()
+        match (*self, *other) {
+            // Any type is equal with any other type.
+            (StackValueType::Any, _) => true,
+            (_, StackValueType::Any) => true,
+            (StackValueType::Specific(self_ty), StackValueType::Specific(other_ty)) => {
+                self_ty == other_ty
+            }
         }
     }
 }
 
 impl PartialEq<ValueType> for StackValueType {
     fn eq(&self, other: &ValueType) -> bool {
-        if self.is_any() {
-            true
-        } else {
-            self.value_type() == *other
+        match *self {
+            StackValueType::Any => true,
+            StackValueType::Specific(value_ty) => value_ty == *other,
         }
     }
 }
