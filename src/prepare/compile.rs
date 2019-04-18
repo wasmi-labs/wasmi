@@ -144,16 +144,14 @@ impl Compiler {
             Else => {
                 context.step(instruction)?;
 
-                let (if_not, end_label) = {
-                    let top_label = self.label_stack.last().expect(
-                        "label_stack should reflect the frame stack;
-                        frame stack is never empty while being processed; qed",
-                    );
-                    let (if_not, end_label) = match *top_label {
-                        BlockFrameType::IfTrue { if_not, end_label } => (if_not, end_label),
-                        _ => panic!("validation ensures that the top frame is actually if_true"),
-                    };
-                    (if_not, end_label)
+                let top_label = self.label_stack.pop().expect(
+                    "label_stack should reflect the frame stack;
+                    frame stack is never empty while being processed; qed",
+                );
+
+                let (if_not, end_label) = match top_label {
+                    BlockFrameType::IfTrue { if_not, end_label } => (if_not, end_label),
+                    _ => panic!("validation ensures that the top frame is actually if_true"),
                 };
 
                 // First, we need to finish if-true block: add a jump from the end of the if-true block
@@ -170,7 +168,6 @@ impl Compiler {
                 // will jump to this label.
                 self.sink.resolve_label(if_not);
 
-                self.label_stack.pop().unwrap();
                 self.label_stack.push(BlockFrameType::IfFalse { end_label });
             }
             End => {
@@ -188,12 +185,12 @@ impl Compiler {
 
                 context.step(instruction)?;
 
-                let frame_type = self.label_stack.last().cloned().expect(
+                let top_frame_type = self.label_stack.pop().expect(
                     "label_stack should reflect the frame stack;
                     frame stack is never empty while being processed; qed",
                 );
 
-                if let BlockFrameType::IfTrue { if_not, .. } = frame_type {
+                if let BlockFrameType::IfTrue { if_not, .. } = top_frame_type {
                     // Resolve `if_not` label. If the `if's` condition doesn't hold the control will jump
                     // to here.
                     self.sink.resolve_label(if_not);
@@ -201,18 +198,20 @@ impl Compiler {
 
                 // Unless it's a loop, resolve the `end_label` position here.
                 if started_with != StartedWith::Loop {
-                    let end_label = frame_type.end_label();
+                    let end_label = top_frame_type.end_label();
                     self.sink.resolve_label(end_label);
                 }
 
                 if let Some(drop_keep) = return_drop_keep {
                     // It was the last instruction. Emit the explicit return instruction.
-                    let drop_keep = drop_keep.expect("validation should ensure this doesn't fail");
+                    let drop_keep = drop_keep.expect(
+                        "validation step ensures that the value stack underflows;
+                        validation also ensures that the frame stack is not empty;
+                        `drop_keep_return` can't fail;
+                        qed",
+                    );
                     self.sink.emit(isa::InstructionInternal::Return(drop_keep));
                 }
-
-                // Finally, pop the label.
-                self.label_stack.pop().unwrap();
             }
             Br(depth) => {
                 let target = require_target(
@@ -224,7 +223,12 @@ impl Compiler {
 
                 context.step(instruction)?;
 
-                let target = target.expect("validation step should ensure that this doesn't fail");
+                let target = target.expect(
+                    "validation step ensures that the value stack underflows;
+                    validation also ensures that the depth is correct;
+                    require_target doesn't fail;
+                    qed",
+                );
                 self.sink.emit_br(target);
             }
             BrIf(depth) => {
@@ -235,9 +239,13 @@ impl Compiler {
                     context.value_stack.len(),
                     &context.frame_stack,
                     &self.label_stack,
+                )
+                .expect(
+                    "validation step ensures that the value stack underflows;
+                    validation also ensures that the depth is correct;
+                    require_target doesn't fail;
+                    qed",
                 );
-
-                let target = target.expect("validation step should ensure that this doesn't fail");
                 self.sink.emit_br_nez(target);
             }
             BrTable(ref table, default) => {
@@ -267,8 +275,12 @@ impl Compiler {
                 context.step(instruction)?;
 
                 // These two unwraps are guaranteed to succeed by validation.
-                let targets = targets.unwrap();
-                let default_target = default_target.unwrap();
+                const REQUIRE_TARGET_PROOF: &'static str =
+                    "validation step ensures that the value stack underflows;
+                    validation also ensures that the depth is correct;
+                    qed";
+                let targets = targets.expect(REQUIRE_TARGET_PROOF);
+                let default_target = default_target.expect(REQUIRE_TARGET_PROOF);
 
                 self.sink.emit_br_table(&targets, default_target);
             }
@@ -278,9 +290,12 @@ impl Compiler {
 
                 context.step(instruction)?;
 
-                let drop_keep =
-                    drop_keep.expect("validation step should ensure that this doesn't fail");
-
+                let drop_keep = drop_keep.expect(
+                    "validation step ensures that the value stack underflows;
+                    validation also ensures that the frame stack is not empty;
+                    `drop_keep_return` can't fail;
+                    qed",
+                );
                 self.sink.emit(isa::InstructionInternal::Return(drop_keep));
             }
             Call(index) => {
@@ -960,6 +975,9 @@ impl Compiler {
     }
 }
 
+/// Computes how many values should be dropped and kept for the specific branch.
+///
+/// Returns `Err` if underflow of the value stack detected.
 fn compute_drop_keep(
     in_stack_polymorphic_state: bool,
     started_with: StartedWith,
@@ -1003,6 +1021,11 @@ fn compute_drop_keep(
     Ok(isa::DropKeep { drop, keep })
 }
 
+/// Returns the requested target for branch referred by `depth`.
+///
+/// Returns `Err` if
+/// - if the `depth` is greater than the current height of the frame stack
+/// - if underflow of the value stack detected.
 fn require_target(
     depth: u32,
     value_stack_height: usize,
@@ -1033,8 +1056,9 @@ fn require_target(
 
 /// Compute drop/keep for the return statement.
 ///
-/// This function is a bit of unusual since it is called before validation and thus
-/// should deal with invalid code.
+/// Returns `Err` if:
+/// - frame stack is empty.
+/// - underflow of the value stack detected.
 fn drop_keep_return(
     locals: &Locals,
     value_stack: &StackWithLimit<StackValueType>,
