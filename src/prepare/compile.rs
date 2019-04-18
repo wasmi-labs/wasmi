@@ -148,10 +148,14 @@ impl Compiler {
                     "label_stack should reflect the frame stack;
                     frame stack is never empty while being processed; qed",
                 );
-
                 let (if_not, end_label) = match top_label {
                     BlockFrameType::IfTrue { if_not, end_label } => (if_not, end_label),
-                    _ => panic!("validation ensures that the top frame is actually if_true"),
+                    _ => unreachable!(
+                        "validation ensures that the top frame was opened by If block;
+                        `top_label` should be `IfTrue` at this point;
+                        this statement is unreachable;
+                        qed"
+                    ),
                 };
 
                 // First, we need to finish if-true block: add a jump from the end of the if-true block
