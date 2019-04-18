@@ -1,8 +1,10 @@
 use crate::{Error, PlainValidator};
-use parity_wasm::builder::module;
-use parity_wasm::elements::{
-    BlockType, External, GlobalEntry, GlobalType, ImportEntry, InitExpr, Instruction, Instructions,
-    MemoryType, Module, TableType, ValueType,
+use parity_wasm::{
+    builder::module,
+    elements::{
+        BlockType, External, GlobalEntry, GlobalType, ImportEntry, InitExpr, Instruction,
+        Instructions, MemoryType, Module, TableType, ValueType,
+    },
 };
 
 fn validate_module(module: &Module) -> Result<(), Error> {

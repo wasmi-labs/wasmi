@@ -153,9 +153,11 @@ mod tests {
 
     use super::{F32, F64};
 
-    use core::fmt::Debug;
-    use core::iter;
-    use core::ops::{Add, Div, Mul, Neg, Sub};
+    use core::{
+        fmt::Debug,
+        iter,
+        ops::{Add, Div, Mul, Neg, Sub},
+    };
 
     fn test_ops<T, F, I>(iter: I)
     where

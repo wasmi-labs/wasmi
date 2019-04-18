@@ -1,11 +1,12 @@
 #[allow(unused_imports)]
 use alloc::prelude::v1::*;
 use alloc::rc::Rc;
-use core::cell::{Cell, RefCell};
-use core::cmp;
-use core::fmt;
-use core::ops::Range;
-use core::u32;
+use core::{
+    cell::{Cell, RefCell},
+    cmp, fmt,
+    ops::Range,
+    u32,
+};
 use memory_units::{Bytes, Pages, RoundUpTo};
 use parity_wasm::elements::ResizableLimits;
 use value::LittleEndianConvert;
