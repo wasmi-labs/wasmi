@@ -1040,8 +1040,14 @@ fn require_target(
     let frame = require_label(depth, frame_stack)?;
 
     // Get the label by the given `depth`.
+    let idx = label_stack
+        .len()
+        .checked_sub(1)
+        .expect("this is ensured by `require_label` above")
+        .checked_sub(depth as usize)
+        .expect("this is ensured by `require_label` above");
     let label = label_stack
-        .get(label_stack.len() - 1 - (depth as usize))
+        .get(idx)
         .expect("this is ensured by `require_label` above");
 
     let drop_keep = compute_drop_keep(
@@ -1075,7 +1081,10 @@ fn drop_keep_return(
     }
 
     let is_stack_polymorphic = top_label(frame_stack).polymorphic_stack;
-    let deepest = (frame_stack.len() - 1) as u32;
+    let deepest = frame_stack
+        .len()
+        .checked_sub(1)
+        .expect("frame_stack is not empty") as u32;
     let frame = require_label(deepest, frame_stack).expect("frame_stack is not empty");
     let mut drop_keep = compute_drop_keep(
         is_stack_polymorphic,
