@@ -104,7 +104,7 @@ pub fn drive<T: FuncValidator>(
         DEFAULT_VALUE_STACK_LIMIT,
         DEFAULT_FRAME_STACK_LIMIT,
         result_ty,
-    );
+    )?;
 
     let mut validator = T::new(&context, body);
 
@@ -148,7 +148,7 @@ impl<'a> FunctionValidationContext<'a> {
         value_stack_limit: usize,
         frame_stack_limit: usize,
         return_type: BlockType,
-    ) -> Self {
+    ) -> Result<Self, Error> {
         let mut ctx = FunctionValidationContext {
             module: module,
             locals: locals,
@@ -156,16 +156,13 @@ impl<'a> FunctionValidationContext<'a> {
             frame_stack: StackWithLimit::with_limit(frame_stack_limit),
             return_type: return_type,
         };
-        // push_label overflows only if the frame stack overflow happens. We assume that
-        // the limit is greater than 0 here. We don't expect `push_label` getting any other
-        // new errors.
-        let _ = push_label(
+        push_label(
             StartedWith::Block,
             return_type,
             &ctx.value_stack,
             &mut ctx.frame_stack,
-        );
-        ctx
+        )?;
+        Ok(ctx)
     }
 
     pub fn step(&mut self, instruction: &Instruction) -> Result<(), Error> {
