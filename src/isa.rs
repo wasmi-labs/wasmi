@@ -82,6 +82,16 @@ pub enum Keep {
     Single,
 }
 
+impl Keep {
+    /// Reutrns a number of items that should be kept on the stack.
+    pub fn count(&self) -> u32 {
+        match *self {
+            Keep::None => 0,
+            Keep::Single => 1,
+        }
+    }
+}
+
 /// Specifies how many values we should keep and how many we should drop.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct DropKeep {
