@@ -1,11 +1,12 @@
 #[allow(unused_imports)]
-use alloc::prelude::*;
+use alloc::prelude::v1::*;
 use alloc::rc::Rc;
-use core::cell::{Cell, RefCell};
-use core::cmp;
-use core::fmt;
-use core::ops::Range;
-use core::u32;
+use core::{
+    cell::{Cell, RefCell},
+    cmp, fmt,
+    ops::Range,
+    u32,
+};
 use memory_units::{Bytes, Pages, RoundUpTo};
 use parity_wasm::elements::ResizableLimits;
 use value::LittleEndianConvert;
@@ -17,9 +18,6 @@ use Error;
 ///
 /// [`MemoryInstance`]: struct.MemoryInstance.html
 pub const LINEAR_MEMORY_PAGE_SIZE: Bytes = Bytes(65536);
-
-/// Maximal number of pages.
-const LINEAR_MEMORY_MAX_PAGES: Pages = Pages(65536);
 
 /// Reference to a memory (See [`MemoryInstance`] for details).
 ///
@@ -111,7 +109,22 @@ impl MemoryInstance {
     ///
     /// [`LINEAR_MEMORY_PAGE_SIZE`]: constant.LINEAR_MEMORY_PAGE_SIZE.html
     pub fn alloc(initial: Pages, maximum: Option<Pages>) -> Result<MemoryRef, Error> {
-        validate_memory(initial, maximum).map_err(Error::Memory)?;
+        {
+            use std::convert::TryInto;
+            let initial_u32: u32 = initial.0.try_into().map_err(|_| {
+                Error::Memory(format!("initial ({}) can't be coerced to u32", initial.0))
+            })?;
+            let maximum_u32: Option<u32> = match maximum {
+                Some(maximum_pages) => Some(maximum_pages.0.try_into().map_err(|_| {
+                    Error::Memory(format!(
+                        "maximum ({}) can't be coerced to u32",
+                        maximum_pages.0
+                    ))
+                })?),
+                None => None,
+            };
+            validation::validate_memory(initial_u32, maximum_u32).map_err(Error::Memory)?;
+        }
 
         let memory = MemoryInstance::new(initial, maximum);
         Ok(MemoryRef(Rc::new(memory)))
@@ -271,7 +284,9 @@ impl MemoryInstance {
         }
 
         let new_size: Pages = size_before_grow + additional;
-        let maximum = self.maximum.unwrap_or(LINEAR_MEMORY_MAX_PAGES);
+        let maximum = self
+            .maximum
+            .unwrap_or(Pages(validation::LINEAR_MEMORY_MAX_PAGES as usize));
         if new_size > maximum {
             return Err(Error::Memory(format!(
                 "Trying to grow memory by {} pages when already have {}",
@@ -547,31 +562,6 @@ impl MemoryInstance {
         let mut buf = self.buffer.borrow_mut();
         f(&mut buf)
     }
-}
-
-pub fn validate_memory(initial: Pages, maximum: Option<Pages>) -> Result<(), String> {
-    if initial > LINEAR_MEMORY_MAX_PAGES {
-        return Err(format!(
-            "initial memory size must be at most {} pages",
-            LINEAR_MEMORY_MAX_PAGES.0
-        ));
-    }
-    if let Some(maximum) = maximum {
-        if initial > maximum {
-            return Err(format!(
-                "maximum limit {} is less than minimum {}",
-                maximum.0, initial.0,
-            ));
-        }
-
-        if maximum > LINEAR_MEMORY_MAX_PAGES {
-            return Err(format!(
-                "maximum memory size must be at most {} pages",
-                LINEAR_MEMORY_MAX_PAGES.0
-            ));
-        }
-    }
-    Ok(())
 }
 
 #[cfg(test)]

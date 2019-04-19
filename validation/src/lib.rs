@@ -1,5 +1,28 @@
+// TODO: Uncomment
+// #![warn(missing_docs)]
+
+#![cfg_attr(not(feature = "std"), no_std)]
+//// alloc is required in no_std
+#![cfg_attr(not(feature = "std"), feature(alloc, alloc_prelude))]
+
+#[cfg(not(feature = "std"))]
+#[macro_use]
+extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std as alloc;
+
+pub mod stack;
+
+/// Index of default linear memory.
+pub const DEFAULT_MEMORY_INDEX: u32 = 0;
+/// Index of default table.
+pub const DEFAULT_TABLE_INDEX: u32 = 0;
+
+/// Maximal number of pages that a wasm instance supports.
+pub const LINEAR_MEMORY_MAX_PAGES: u32 = 65536;
+
 #[allow(unused_imports)]
-use alloc::prelude::*;
+use alloc::prelude::v1::*;
 use core::fmt;
 #[cfg(feature = "std")]
 use std::error;
@@ -10,24 +33,22 @@ use hashbrown::HashSet;
 use std::collections::HashSet;
 
 use self::context::ModuleContextBuilder;
-use self::func::FunctionReader;
-use common::stack;
-use isa;
-use memory_units::Pages;
 use parity_wasm::elements::{
-    BlockType, External, GlobalEntry, GlobalType, InitExpr, Instruction, Internal, MemoryType,
-    Module, ResizableLimits, TableType, Type, ValueType,
+    BlockType, External, FuncBody, GlobalEntry, GlobalType, InitExpr, Instruction, Internal,
+    MemoryType, Module, ResizableLimits, TableType, Type, ValueType,
 };
 
-mod context;
-mod func;
-mod util;
+pub mod context;
+pub mod func;
+pub mod util;
 
 #[cfg(test)]
 mod tests;
 
+// TODO: Consider using a type other than String, because
+// of formatting machinary is not welcomed in substrate runtimes.
 #[derive(Debug)]
-pub struct Error(String);
+pub struct Error(pub String);
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -48,137 +69,77 @@ impl From<stack::Error> for Error {
     }
 }
 
-#[derive(Clone)]
-pub struct ValidatedModule {
-    pub code_map: Vec<isa::Instructions>,
-    pub module: Module,
+pub trait Validator {
+    type Output;
+    type FuncValidator: FuncValidator;
+    fn new(module: &Module) -> Self;
+    fn on_function_validated(
+        &mut self,
+        index: u32,
+        output: <<Self as Validator>::FuncValidator as FuncValidator>::Output,
+    );
+    fn finish(self) -> Self::Output;
 }
 
-impl ::core::ops::Deref for ValidatedModule {
-    type Target = Module;
-    fn deref(&self) -> &Module {
-        &self.module
+pub trait FuncValidator {
+    type Output;
+    fn new(ctx: &func::FunctionValidationContext, body: &FuncBody) -> Self;
+    fn next_instruction(
+        &mut self,
+        ctx: &mut func::FunctionValidationContext,
+        instruction: &Instruction,
+    ) -> Result<(), Error>;
+    fn finish(self) -> Self::Output;
+}
+
+/// A module validator that just validates modules and produces no result.
+pub struct PlainValidator;
+
+impl Validator for PlainValidator {
+    type Output = ();
+    type FuncValidator = PlainFuncValidator;
+    fn new(_module: &Module) -> PlainValidator {
+        PlainValidator
+    }
+    fn on_function_validated(
+        &mut self,
+        _index: u32,
+        _output: <<Self as Validator>::FuncValidator as FuncValidator>::Output,
+    ) -> () {
+        ()
+    }
+    fn finish(self) -> () {
+        ()
     }
 }
 
-pub fn deny_floating_point(module: &Module) -> Result<(), Error> {
-    if let Some(code) = module.code_section() {
-        for op in code.bodies().iter().flat_map(|body| body.code().elements()) {
-            use parity_wasm::elements::Instruction::*;
+/// A function validator that just validates modules and produces no result.
+pub struct PlainFuncValidator;
 
-            macro_rules! match_eq {
-                ($pattern:pat) => {
-                    |val| if let $pattern = *val { true } else { false }
-                };
-            }
+impl FuncValidator for PlainFuncValidator {
+    type Output = ();
 
-            const DENIED: &[fn(&Instruction) -> bool] = &[
-                match_eq!(F32Load(_, _)),
-                match_eq!(F64Load(_, _)),
-                match_eq!(F32Store(_, _)),
-                match_eq!(F64Store(_, _)),
-                match_eq!(F32Const(_)),
-                match_eq!(F64Const(_)),
-                match_eq!(F32Eq),
-                match_eq!(F32Ne),
-                match_eq!(F32Lt),
-                match_eq!(F32Gt),
-                match_eq!(F32Le),
-                match_eq!(F32Ge),
-                match_eq!(F64Eq),
-                match_eq!(F64Ne),
-                match_eq!(F64Lt),
-                match_eq!(F64Gt),
-                match_eq!(F64Le),
-                match_eq!(F64Ge),
-                match_eq!(F32Abs),
-                match_eq!(F32Neg),
-                match_eq!(F32Ceil),
-                match_eq!(F32Floor),
-                match_eq!(F32Trunc),
-                match_eq!(F32Nearest),
-                match_eq!(F32Sqrt),
-                match_eq!(F32Add),
-                match_eq!(F32Sub),
-                match_eq!(F32Mul),
-                match_eq!(F32Div),
-                match_eq!(F32Min),
-                match_eq!(F32Max),
-                match_eq!(F32Copysign),
-                match_eq!(F64Abs),
-                match_eq!(F64Neg),
-                match_eq!(F64Ceil),
-                match_eq!(F64Floor),
-                match_eq!(F64Trunc),
-                match_eq!(F64Nearest),
-                match_eq!(F64Sqrt),
-                match_eq!(F64Add),
-                match_eq!(F64Sub),
-                match_eq!(F64Mul),
-                match_eq!(F64Div),
-                match_eq!(F64Min),
-                match_eq!(F64Max),
-                match_eq!(F64Copysign),
-                match_eq!(F32ConvertSI32),
-                match_eq!(F32ConvertUI32),
-                match_eq!(F32ConvertSI64),
-                match_eq!(F32ConvertUI64),
-                match_eq!(F32DemoteF64),
-                match_eq!(F64ConvertSI32),
-                match_eq!(F64ConvertUI32),
-                match_eq!(F64ConvertSI64),
-                match_eq!(F64ConvertUI64),
-                match_eq!(F64PromoteF32),
-                match_eq!(F32ReinterpretI32),
-                match_eq!(F64ReinterpretI64),
-                match_eq!(I32TruncSF32),
-                match_eq!(I32TruncUF32),
-                match_eq!(I32TruncSF64),
-                match_eq!(I32TruncUF64),
-                match_eq!(I64TruncSF32),
-                match_eq!(I64TruncUF32),
-                match_eq!(I64TruncSF64),
-                match_eq!(I64TruncUF64),
-                match_eq!(I32ReinterpretF32),
-                match_eq!(I64ReinterpretF64),
-            ];
-
-            if DENIED.iter().any(|is_denied| is_denied(op)) {
-                return Err(Error(format!("Floating point operation denied: {:?}", op)));
-            }
-        }
+    fn new(_ctx: &func::FunctionValidationContext, _body: &FuncBody) -> PlainFuncValidator {
+        PlainFuncValidator
     }
 
-    if let (Some(sec), Some(types)) = (module.function_section(), module.type_section()) {
-        use parity_wasm::elements::{Type, ValueType};
-
-        let types = types.types();
-
-        for sig in sec.entries() {
-            if let Some(typ) = types.get(sig.type_ref() as usize) {
-                match *typ {
-                    Type::Function(ref func) => {
-                        if func
-                            .params()
-                            .iter()
-                            .chain(func.return_type().as_ref())
-                            .any(|&typ| typ == ValueType::F32 || typ == ValueType::F64)
-                        {
-                            return Err(Error(format!("Use of floating point types denied")));
-                        }
-                    }
-                }
-            }
-        }
+    fn next_instruction(
+        &mut self,
+        ctx: &mut func::FunctionValidationContext,
+        instruction: &Instruction,
+    ) -> Result<(), Error> {
+        ctx.step(instruction)
     }
 
-    Ok(())
+    fn finish(self) -> () {
+        ()
+    }
 }
 
-pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
+pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error> {
     let mut context_builder = ModuleContextBuilder::new();
     let mut imported_globals = Vec::new();
-    let mut code_map = Vec::new();
+    let mut validation = V::new(&module);
 
     // Copy types from module as is.
     context_builder.set_types(
@@ -265,15 +226,15 @@ pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
                 .bodies()
                 .get(index as usize)
                 .ok_or(Error(format!("Missing body for function {}", index)))?;
-            let code =
-                FunctionReader::read_function(&context, function, function_body).map_err(|e| {
-                    let Error(ref msg) = e;
+
+            let output = func::drive::<V::FuncValidator>(&context, function, function_body)
+                .map_err(|Error(ref msg)| {
                     Error(format!(
                         "Function #{} reading/validation error: {}",
                         index, msg
                     ))
                 })?;
-            code_map.push(code);
+            validation.on_function_validated(index as u32, output);
         }
     }
 
@@ -381,7 +342,7 @@ pub fn validate_module(module: Module) -> Result<ValidatedModule, Error> {
         }
     }
 
-    Ok(ValidatedModule { module, code_map })
+    Ok(validation.finish())
 }
 
 fn validate_limits(limits: &ResizableLimits) -> Result<(), Error> {
@@ -398,9 +359,34 @@ fn validate_limits(limits: &ResizableLimits) -> Result<(), Error> {
 }
 
 fn validate_memory_type(memory_type: &MemoryType) -> Result<(), Error> {
-    let initial: Pages = Pages(memory_type.limits().initial() as usize);
-    let maximum: Option<Pages> = memory_type.limits().maximum().map(|m| Pages(m as usize));
-    ::memory::validate_memory(initial, maximum).map_err(Error)
+    let initial = memory_type.limits().initial();
+    let maximum: Option<u32> = memory_type.limits().maximum();
+    validate_memory(initial, maximum).map_err(Error)
+}
+
+pub fn validate_memory(initial: u32, maximum: Option<u32>) -> Result<(), String> {
+    if initial > LINEAR_MEMORY_MAX_PAGES {
+        return Err(format!(
+            "initial memory size must be at most {} pages",
+            LINEAR_MEMORY_MAX_PAGES
+        ));
+    }
+    if let Some(maximum) = maximum {
+        if initial > maximum {
+            return Err(format!(
+                "maximum limit {} is less than minimum {}",
+                maximum, initial,
+            ));
+        }
+
+        if maximum > LINEAR_MEMORY_MAX_PAGES {
+            return Err(format!(
+                "maximum memory size must be at most {} pages",
+                LINEAR_MEMORY_MAX_PAGES
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn validate_table_type(table_type: &TableType) -> Result<(), Error> {

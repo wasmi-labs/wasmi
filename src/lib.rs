@@ -97,7 +97,7 @@
 #![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 //// alloc is required in no_std
-#![cfg_attr(not(feature = "std"), feature(alloc))]
+#![cfg_attr(not(feature = "std"), feature(alloc, alloc_prelude))]
 
 #[cfg(not(feature = "std"))]
 #[macro_use]
@@ -110,18 +110,19 @@ extern crate std as alloc;
 extern crate core;
 
 #[cfg(test)]
-extern crate wabt;
-#[cfg(test)]
-#[macro_use]
 extern crate assert_matches;
+#[cfg(test)]
+extern crate wabt;
 
 #[cfg(not(feature = "std"))]
 extern crate hashbrown;
 extern crate memory_units as memory_units_crate;
 extern crate parity_wasm;
 
+extern crate wasmi_validation as validation;
+
 #[allow(unused_imports)]
-use alloc::prelude::*;
+use alloc::prelude::v1::*;
 use core::fmt;
 #[cfg(feature = "std")]
 use std::error;
@@ -380,7 +381,6 @@ impl From<validation::Error> for Error {
     }
 }
 
-mod common;
 mod func;
 mod global;
 mod host;
@@ -389,10 +389,10 @@ mod isa;
 mod memory;
 mod module;
 pub mod nan_preserving_float;
+mod prepare;
 mod runner;
 mod table;
 mod types;
-mod validation;
 mod value;
 
 #[cfg(test)]
@@ -454,8 +454,7 @@ impl Module {
     /// }
     /// ```
     pub fn from_parity_wasm_module(module: parity_wasm::elements::Module) -> Result<Module, Error> {
-        use validation::{validate_module, ValidatedModule};
-        let ValidatedModule { code_map, module } = validate_module(module)?;
+        let prepare::CompiledModule { code_map, module } = prepare::compile_module(module)?;
 
         Ok(Module { code_map, module })
     }
@@ -517,7 +516,7 @@ impl Module {
     /// assert!(module.deny_floating_point().is_err());
     /// ```
     pub fn deny_floating_point(&self) -> Result<(), Error> {
-        validation::deny_floating_point(&self.module).map_err(Into::into)
+        prepare::deny_floating_point(&self.module).map_err(Into::into)
     }
 
     /// Create `Module` from a given buffer.

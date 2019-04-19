@@ -1,0 +1,19 @@
+[package]
+name = "wasmi-validation"
+version = "0.1.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2018"
+
+[dependencies]
+parity-wasm = { version = "0.31", default-features = false }
+hashbrown = { version = "0.1.8", optional = true }
+
+[dev-dependencies]
+assert_matches = "1.1"
+
+[features]
+default = ["std"]
+std = ["parity-wasm/std"]
+core = [
+    "hashbrown/nightly"
+]

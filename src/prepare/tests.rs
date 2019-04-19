@@ -1,285 +1,17 @@
-use super::{validate_module, ValidatedModule};
+use super::{compile_module, CompiledModule};
+use parity_wasm::{deserialize_buffer, elements::Module};
+
 use isa;
-use parity_wasm::builder::module;
-use parity_wasm::elements::{
-    deserialize_buffer, BlockType, External, GlobalEntry, GlobalType, ImportEntry, InitExpr,
-    Instruction, Instructions, MemoryType, Module, TableType, ValueType,
-};
 use wabt;
 
-#[test]
-fn empty_is_valid() {
-    let module = module().build();
-    assert!(validate_module(module).is_ok());
-}
-
-#[test]
-fn limits() {
-    let test_cases = vec![
-        // min > max
-        (10, Some(9), false),
-        // min = max
-        (10, Some(10), true),
-        // table/memory is always valid without max
-        (10, None, true),
-    ];
-
-    for (min, max, is_valid) in test_cases {
-        // defined table
-        let m = module().table().with_min(min).with_max(max).build().build();
-        assert_eq!(validate_module(m).is_ok(), is_valid);
-
-        // imported table
-        let m = module()
-            .with_import(ImportEntry::new(
-                "core".into(),
-                "table".into(),
-                External::Table(TableType::new(min, max)),
-            ))
-            .build();
-        assert_eq!(validate_module(m).is_ok(), is_valid);
-
-        // defined memory
-        let m = module()
-            .memory()
-            .with_min(min)
-            .with_max(max)
-            .build()
-            .build();
-        assert_eq!(validate_module(m).is_ok(), is_valid);
-
-        // imported table
-        let m = module()
-            .with_import(ImportEntry::new(
-                "core".into(),
-                "memory".into(),
-                External::Memory(MemoryType::new(min, max)),
-            ))
-            .build();
-        assert_eq!(validate_module(m).is_ok(), is_valid);
-    }
-}
-
-#[test]
-fn global_init_const() {
-    let m = module()
-        .with_global(GlobalEntry::new(
-            GlobalType::new(ValueType::I32, true),
-            InitExpr::new(vec![Instruction::I32Const(42), Instruction::End]),
-        ))
-        .build();
-    assert!(validate_module(m).is_ok());
-
-    // init expr type differs from declared global type
-    let m = module()
-        .with_global(GlobalEntry::new(
-            GlobalType::new(ValueType::I64, true),
-            InitExpr::new(vec![Instruction::I32Const(42), Instruction::End]),
-        ))
-        .build();
-    assert!(validate_module(m).is_err());
-}
-
-#[test]
-fn global_init_global() {
-    let m = module()
-        .with_import(ImportEntry::new(
-            "env".into(),
-            "ext_global".into(),
-            External::Global(GlobalType::new(ValueType::I32, false)),
-        ))
-        .with_global(GlobalEntry::new(
-            GlobalType::new(ValueType::I32, true),
-            InitExpr::new(vec![Instruction::GetGlobal(0), Instruction::End]),
-        ))
-        .build();
-    assert!(validate_module(m).is_ok());
-
-    // get_global can reference only previously defined globals
-    let m = module()
-        .with_global(GlobalEntry::new(
-            GlobalType::new(ValueType::I32, true),
-            InitExpr::new(vec![Instruction::GetGlobal(0), Instruction::End]),
-        ))
-        .build();
-    assert!(validate_module(m).is_err());
-
-    // get_global can reference only const globals
-    let m = module()
-        .with_import(ImportEntry::new(
-            "env".into(),
-            "ext_global".into(),
-            External::Global(GlobalType::new(ValueType::I32, true)),
-        ))
-        .with_global(GlobalEntry::new(
-            GlobalType::new(ValueType::I32, true),
-            InitExpr::new(vec![Instruction::GetGlobal(0), Instruction::End]),
-        ))
-        .build();
-    assert!(validate_module(m).is_err());
-
-    // get_global in init_expr can only refer to imported globals.
-    let m = module()
-        .with_global(GlobalEntry::new(
-            GlobalType::new(ValueType::I32, false),
-            InitExpr::new(vec![Instruction::I32Const(0), Instruction::End]),
-        ))
-        .with_global(GlobalEntry::new(
-            GlobalType::new(ValueType::I32, true),
-            InitExpr::new(vec![Instruction::GetGlobal(0), Instruction::End]),
-        ))
-        .build();
-    assert!(validate_module(m).is_err());
-}
-
-#[test]
-fn global_init_misc() {
-    // without delimiting End opcode
-    let m = module()
-        .with_global(GlobalEntry::new(
-            GlobalType::new(ValueType::I32, true),
-            InitExpr::new(vec![Instruction::I32Const(42)]),
-        ))
-        .build();
-    assert!(validate_module(m).is_err());
-
-    // empty init expr
-    let m = module()
-        .with_global(GlobalEntry::new(
-            GlobalType::new(ValueType::I32, true),
-            InitExpr::new(vec![Instruction::End]),
-        ))
-        .build();
-    assert!(validate_module(m).is_err());
-
-    // not an constant opcode used
-    let m = module()
-        .with_global(GlobalEntry::new(
-            GlobalType::new(ValueType::I32, true),
-            InitExpr::new(vec![Instruction::Unreachable, Instruction::End]),
-        ))
-        .build();
-    assert!(validate_module(m).is_err());
-}
-
-#[test]
-fn module_limits_validity() {
-    // module cannot contain more than 1 memory atm.
-    let m = module()
-        .with_import(ImportEntry::new(
-            "core".into(),
-            "memory".into(),
-            External::Memory(MemoryType::new(10, None)),
-        ))
-        .memory()
-        .with_min(10)
-        .build()
-        .build();
-    assert!(validate_module(m).is_err());
-
-    // module cannot contain more than 1 table atm.
-    let m = module()
-        .with_import(ImportEntry::new(
-            "core".into(),
-            "table".into(),
-            External::Table(TableType::new(10, None)),
-        ))
-        .table()
-        .with_min(10)
-        .build()
-        .build();
-    assert!(validate_module(m).is_err());
-}
-
-#[test]
-fn funcs() {
-    // recursive function calls is legal.
-    let m = module()
-        .function()
-        .signature()
-        .return_type()
-        .i32()
-        .build()
-        .body()
-        .with_instructions(Instructions::new(vec![
-            Instruction::Call(1),
-            Instruction::End,
-        ]))
-        .build()
-        .build()
-        .function()
-        .signature()
-        .return_type()
-        .i32()
-        .build()
-        .body()
-        .with_instructions(Instructions::new(vec![
-            Instruction::Call(0),
-            Instruction::End,
-        ]))
-        .build()
-        .build()
-        .build();
-    assert!(validate_module(m).is_ok());
-}
-
-#[test]
-fn globals() {
-    // import immutable global is legal.
-    let m = module()
-        .with_import(ImportEntry::new(
-            "env".into(),
-            "ext_global".into(),
-            External::Global(GlobalType::new(ValueType::I32, false)),
-        ))
-        .build();
-    assert!(validate_module(m).is_ok());
-
-    // import mutable global is invalid.
-    let m = module()
-        .with_import(ImportEntry::new(
-            "env".into(),
-            "ext_global".into(),
-            External::Global(GlobalType::new(ValueType::I32, true)),
-        ))
-        .build();
-    assert!(validate_module(m).is_err());
-}
-
-#[test]
-fn if_else_with_return_type_validation() {
-    let m = module()
-        .function()
-        .signature()
-        .build()
-        .body()
-        .with_instructions(Instructions::new(vec![
-            Instruction::I32Const(1),
-            Instruction::If(BlockType::NoResult),
-            Instruction::I32Const(1),
-            Instruction::If(BlockType::Value(ValueType::I32)),
-            Instruction::I32Const(1),
-            Instruction::Else,
-            Instruction::I32Const(2),
-            Instruction::End,
-            Instruction::Drop,
-            Instruction::End,
-            Instruction::End,
-        ]))
-        .build()
-        .build()
-        .build();
-    validate_module(m).unwrap();
-}
-
-fn validate(wat: &str) -> ValidatedModule {
+fn validate(wat: &str) -> CompiledModule {
     let wasm = wabt::wat2wasm(wat).unwrap();
     let module = deserialize_buffer::<Module>(&wasm).unwrap();
-    let validated_module = validate_module(module).unwrap();
-    validated_module
+    let compiled_module = compile_module(module).unwrap();
+    compiled_module
 }
 
-fn compile(module: &ValidatedModule) -> (Vec<isa::Instruction>, Vec<u32>) {
+fn compile(module: &CompiledModule) -> (Vec<isa::Instruction>, Vec<u32>) {
     let code = &module.code_map[0];
     let mut instructions = Vec::new();
     let mut pcs = Vec::new();
@@ -804,6 +536,68 @@ fn loop_empty() {
             keep: isa::Keep::None,
         }),]
     )
+}
+
+#[test]
+fn spec_as_br_if_value_cond() {
+    use self::isa::Instruction::*;
+
+    let module = validate(
+        r#"
+		  (func (export "as-br_if-value-cond") (result i32)
+            (block (result i32)
+              (drop
+                (br_if 0
+                  (i32.const 6)
+                  (br_table 0 0
+                    (i32.const 9)
+                    (i32.const 0)
+                  )
+                )
+              )
+            (i32.const 7)
+          )
+        )
+	"#,
+    );
+    let (code, _) = compile(&module);
+    assert_eq!(
+        code,
+        vec![
+            I32Const(6),
+            I32Const(9),
+            I32Const(0),
+            isa::Instruction::BrTable(targets![
+                isa::Target {
+                    dst_pc: 9,
+                    drop_keep: isa::DropKeep {
+                        drop: 1,
+                        keep: isa::Keep::Single
+                    }
+                },
+                isa::Target {
+                    dst_pc: 9,
+                    drop_keep: isa::DropKeep {
+                        drop: 1,
+                        keep: isa::Keep::Single
+                    }
+                }
+            ]),
+            BrIfNez(isa::Target {
+                dst_pc: 9,
+                drop_keep: isa::DropKeep {
+                    drop: 0,
+                    keep: isa::Keep::Single
+                }
+            }),
+            Drop,
+            I32Const(7),
+            Return(isa::DropKeep {
+                drop: 0,
+                keep: isa::Keep::Single
+            })
+        ]
+    );
 }
 
 #[test]

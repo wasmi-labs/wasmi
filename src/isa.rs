@@ -68,7 +68,7 @@
 //!
 
 #[allow(unused_imports)]
-use alloc::prelude::*;
+use alloc::prelude::v1::*;
 
 /// Should we keep a value before "discarding" a stack frame?
 ///
@@ -80,6 +80,16 @@ pub enum Keep {
     /// Pop one value from the yet-to-be-discarded stack frame to the
     /// current stack frame.
     Single,
+}
+
+impl Keep {
+    /// Reutrns a number of items that should be kept on the stack.
+    pub fn count(&self) -> u32 {
+        match *self {
+            Keep::None => 0,
+            Keep::Single => 1,
+        }
+    }
 }
 
 /// Specifies how many values we should keep and how many we should drop.
