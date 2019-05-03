@@ -258,7 +258,7 @@ impl Compiler {
                 // popped off.
                 let value_stack_height = context.value_stack.len().saturating_sub(1);
 
-                let mut targets = table
+                let targets = table
                     .iter()
                     .map(|depth| {
                         require_target(
