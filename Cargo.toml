@@ -39,3 +39,4 @@ core = [
 
 [workspace]
 members = ["validation"]
+exclude = ["benches"]
