@@ -6,9 +6,6 @@ language:
 rust:
   - nightly
   - stable
-matrix:
-  allow_failures:
-    - rust: nightly
 addons:
   apt:
     sources:
