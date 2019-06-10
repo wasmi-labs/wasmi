@@ -1,25 +1,24 @@
-dist: trusty
-sudo: required
+dist: xenial
+
 language:
 - rust
 - cpp
-rust:
-  - nightly
-  - stable
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-    - gcc-8
-    - g++-8
-    - cmake
-env:
-- CC=/usr/bin/gcc-8 CXX=/usr/bin/g++-8
+
+matrix:
+  fast_finish: true
+  include:
+  - rust: nightly
+  - rust: stable
+  - rust: stable
+    env: TARGET=armv7-unknown-linux-gnueabihf
 
 install:
 - if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then rustup target add wasm32-unknown-unknown; fi
+- if [ -n "$TARGET" ]; then rustup target add "$TARGET" && sudo apt-get install --yes qemu-user-static; fi
+- if [ "$TARGET" == "armv7-unknown-linux-gnueabihf" ]; then sudo apt-get install --yes crossbuild-essential-armhf && export QEMU_LD_PREFIX=/usr/arm-linux-gnueabihf; fi
 - rustup component add rustfmt
+- sudo apt-get install --yes cmake
+
 script:
 - cargo fmt --all -- --check
 # Make sure nightly targets are not broken.
@@ -27,8 +26,9 @@ script:
 - if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then cargo check --benches --manifest-path=benches/Cargo.toml; fi
 # Make sure `no_std` version checks.
 - if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then cargo +nightly check --no-default-features --features core; fi
-- ./test.sh
+- travis_wait 60 ./test.sh
 - ./doc.sh
+
 after_success: |
   # Build documentation and deploy it to github pages.
   [ $TRAVIS_BRANCH = master ] &&
@@ -37,6 +37,7 @@ after_success: |
   sudo pip install ghp-import &&
   ghp-import -n target/doc &&
   git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
+
 cache: cargo
 before_cache:
   # Travis can't cache files that are not readable by "others"
