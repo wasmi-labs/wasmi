@@ -27,10 +27,7 @@ use core::fmt;
 #[cfg(feature = "std")]
 use std::error;
 
-#[cfg(not(feature = "std"))]
 use hashbrown::HashSet;
-#[cfg(feature = "std")]
-use std::collections::HashSet;
 
 use self::context::ModuleContextBuilder;
 use parity_wasm::elements::{

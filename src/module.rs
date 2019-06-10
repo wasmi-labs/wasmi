@@ -5,10 +5,7 @@ use core::cell::RefCell;
 use core::fmt;
 use Trap;
 
-#[cfg(not(feature = "std"))]
 use hashbrown::HashMap;
-#[cfg(feature = "std")]
-use std::collections::HashMap;
 
 use core::cell::Ref;
 use func::{FuncBody, FuncInstance, FuncRef};

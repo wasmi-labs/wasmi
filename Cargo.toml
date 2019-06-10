@@ -13,7 +13,7 @@ exclude = [ "/res/*", "/tests/*", "/fuzz/*", "/benches/*" ]
 [dependencies]
 wasmi-validation = { version = "0.1", path = "validation", default-features = false }
 parity-wasm = { version = "0.31", default-features = false }
-hashbrown = { version = "0.1.8", optional = true }
+hashbrown = "0.4.0"
 memory_units = "0.3.0"
 libm = { version = "0.1.2", optional = true }
 
@@ -30,7 +30,6 @@ std = [
     "wasmi-validation/std",
 ]
 # Enable for no_std support
-# hashbrown only works on no_std
 core = [
     "wasmi-validation/core",
     "hashbrown/nightly",

@@ -114,7 +114,6 @@ extern crate assert_matches;
 #[cfg(test)]
 extern crate wabt;
 
-#[cfg(not(feature = "std"))]
 extern crate hashbrown;
 extern crate memory_units as memory_units_crate;
 extern crate parity_wasm;
