@@ -1,10 +1,7 @@
 #[allow(unused_imports)]
 use alloc::prelude::v1::*;
 
-#[cfg(not(feature = "std"))]
-use hashbrown::HashMap;
-#[cfg(feature = "std")]
-use std::collections::HashMap;
+use alloc::collections::BTreeMap;
 
 use func::FuncRef;
 use global::GlobalRef;
@@ -106,7 +103,7 @@ pub trait ImportResolver {
 /// [`ImportResolver`]: trait.ImportResolver.html
 /// [`ModuleImportResolver`]: trait.ModuleImportResolver.html
 pub struct ImportsBuilder<'a> {
-    modules: HashMap<String, &'a ModuleImportResolver>,
+    modules: BTreeMap<String, &'a ModuleImportResolver>,
 }
 
 impl<'a> Default for ImportsBuilder<'a> {
@@ -119,7 +116,7 @@ impl<'a> ImportsBuilder<'a> {
     /// Create an empty `ImportsBuilder`.
     pub fn new() -> ImportsBuilder<'a> {
         ImportsBuilder {
-            modules: HashMap::new(),
+            modules: BTreeMap::new(),
         }
     }
 

@@ -27,10 +27,7 @@ use core::fmt;
 #[cfg(feature = "std")]
 use std::error;
 
-#[cfg(not(feature = "std"))]
-use hashbrown::HashSet;
-#[cfg(feature = "std")]
-use std::collections::HashSet;
+use alloc::collections::BTreeSet;
 
 use self::context::ModuleContextBuilder;
 use parity_wasm::elements::{
@@ -250,9 +247,9 @@ pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error
 
     // validate export section
     if let Some(export_section) = module.export_section() {
-        let mut export_names = HashSet::with_capacity(export_section.entries().len());
+        let mut export_names = BTreeSet::new();
         for export in export_section.entries() {
-            // HashSet::insert returns false if item already in set.
+            // BTreeSet::insert returns false if item already in set.
             let duplicate = export_names.insert(export.field()) == false;
             if duplicate {
                 return Err(Error(format!("duplicate export {}", export.field())));
