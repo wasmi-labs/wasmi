@@ -27,15 +27,10 @@ use core::fmt;
 #[cfg(feature = "std")]
 use std::error;
 
-#[cfg(not(feature = "std"))]
-use hashbrown::HashSet;
-#[cfg(feature = "std")]
-use std::collections::HashSet;
-
 use self::context::ModuleContextBuilder;
 use parity_wasm::elements::{
-    BlockType, External, FuncBody, GlobalEntry, GlobalType, InitExpr, Instruction, Internal,
-    MemoryType, Module, ResizableLimits, TableType, Type, ValueType,
+    BlockType, ExportEntry, External, FuncBody, GlobalEntry, GlobalType, InitExpr, Instruction,
+    Internal, MemoryType, Module, ResizableLimits, TableType, Type, ValueType,
 };
 
 pub mod context;
@@ -250,13 +245,21 @@ pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error
 
     // validate export section
     if let Some(export_section) = module.export_section() {
-        let mut export_names = HashSet::with_capacity(export_section.entries().len());
-        for export in export_section.entries() {
-            // HashSet::insert returns false if item already in set.
-            let duplicate = export_names.insert(export.field()) == false;
-            if duplicate {
-                return Err(Error(format!("duplicate export {}", export.field())));
+        let mut export_names = export_section
+            .entries()
+            .iter()
+            .map(ExportEntry::field)
+            .collect::<Vec<_>>();
+
+        export_names.sort_unstable();
+
+        for (fst, snd) in export_names.iter().zip(export_names.iter().skip(1)) {
+            if fst == snd {
+                return Err(Error(format!("duplicate export {}", fst)));
             }
+        }
+
+        for export in export_section.entries() {
             match *export.internal() {
                 Internal::Function(function_index) => {
                     context.require_function(function_index)?;

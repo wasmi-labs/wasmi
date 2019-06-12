@@ -5,10 +5,7 @@ use core::cell::RefCell;
 use core::fmt;
 use Trap;
 
-#[cfg(not(feature = "std"))]
-use hashbrown::HashMap;
-#[cfg(feature = "std")]
-use std::collections::HashMap;
+use alloc::collections::BTreeMap;
 
 use core::cell::Ref;
 use func::{FuncBody, FuncInstance, FuncRef};
@@ -162,7 +159,7 @@ pub struct ModuleInstance {
     funcs: RefCell<Vec<FuncRef>>,
     memories: RefCell<Vec<MemoryRef>>,
     globals: RefCell<Vec<GlobalRef>>,
-    exports: RefCell<HashMap<String, ExternVal>>,
+    exports: RefCell<BTreeMap<String, ExternVal>>,
 }
 
 impl ModuleInstance {
@@ -173,7 +170,7 @@ impl ModuleInstance {
             tables: RefCell::new(Vec::new()),
             memories: RefCell::new(Vec::new()),
             globals: RefCell::new(Vec::new()),
-            exports: RefCell::new(HashMap::new()),
+            exports: RefCell::new(BTreeMap::new()),
         }
     }
 
