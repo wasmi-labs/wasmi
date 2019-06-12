@@ -6,7 +6,7 @@ use host::Externals;
 use isa;
 use module::ModuleInstance;
 use parity_wasm::elements::Local;
-use runner::{check_function_args, Interpreter, InterpreterState};
+use runner::{check_function_args, Interpreter, InterpreterState, StackRecycler};
 use types::ValueType;
 use value::RuntimeValue;
 use {Signature, Trap};
@@ -140,8 +140,36 @@ impl FuncInstance {
         check_function_args(func.signature(), &args)?;
         match *func.as_internal() {
             FuncInstanceInternal::Internal { .. } => {
-                let mut interpreter = Interpreter::new(func, args)?;
+                let mut interpreter = Interpreter::new(func, args, None)?;
                 interpreter.start_execution(externals)
+            }
+            FuncInstanceInternal::Host {
+                ref host_func_index,
+                ..
+            } => externals.invoke_index(*host_func_index, args.into()),
+        }
+    }
+
+    /// Invoke this function using recycled stacks.
+    ///
+    /// # Errors
+    ///
+    /// Same as [`invoke`].
+    ///
+    /// [`invoke`]: #method.invoke
+    pub fn invoke_with_stack<E: Externals>(
+        func: &FuncRef,
+        args: &[RuntimeValue],
+        externals: &mut E,
+        stack_recycler: &mut StackRecycler,
+    ) -> Result<Option<RuntimeValue>, Trap> {
+        check_function_args(func.signature(), &args)?;
+        match *func.as_internal() {
+            FuncInstanceInternal::Internal { .. } => {
+                let mut interpreter = Interpreter::new(func, args, Some(stack_recycler))?;
+                let return_value = interpreter.start_execution(externals);
+                stack_recycler.recycle(interpreter);
+                return_value
             }
             FuncInstanceInternal::Host {
                 ref host_func_index,
@@ -171,7 +199,7 @@ impl FuncInstance {
         check_function_args(func.signature(), &args)?;
         match *func.as_internal() {
             FuncInstanceInternal::Internal { .. } => {
-                let interpreter = Interpreter::new(func, args)?;
+                let interpreter = Interpreter::new(func, args, None)?;
                 Ok(FuncInvocation {
                     kind: FuncInvocationKind::Internal(interpreter),
                 })

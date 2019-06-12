@@ -18,10 +18,10 @@ use value::{
 };
 use {Signature, Trap, TrapKind, ValueType};
 
-/// Maximum number of entries in value stack.
-pub const DEFAULT_VALUE_STACK_LIMIT: usize = (1024 * 1024) / ::core::mem::size_of::<RuntimeValue>();
+/// Maximum number of bytes on the value stack.
+pub const DEFAULT_VALUE_STACK_LIMIT: usize = 1024 * 1024;
 
-// TODO: Make these parameters changeble.
+/// Maximum number of levels on the call stack.
 pub const DEFAULT_CALL_STACK_LIMIT: usize = 64 * 1024;
 
 /// This is a wrapper around u64 to allow us to treat runtime values as a tag-free `u64`
@@ -166,14 +166,18 @@ enum RunResult {
 /// Function interpreter.
 pub struct Interpreter {
     value_stack: ValueStack,
-    call_stack: Vec<FunctionContext>,
+    call_stack: CallStack,
     return_type: Option<ValueType>,
     state: InterpreterState,
 }
 
 impl Interpreter {
-    pub fn new(func: &FuncRef, args: &[RuntimeValue]) -> Result<Interpreter, Trap> {
-        let mut value_stack = ValueStack::with_limit(DEFAULT_VALUE_STACK_LIMIT);
+    pub fn new(
+        func: &FuncRef,
+        args: &[RuntimeValue],
+        mut stack_recycler: Option<&mut StackRecycler>,
+    ) -> Result<Interpreter, Trap> {
+        let mut value_stack = StackRecycler::recreate_value_stack(&mut stack_recycler);
         for &arg in args {
             let arg = arg.into();
             value_stack.push(arg).map_err(
@@ -183,7 +187,7 @@ impl Interpreter {
             )?;
         }
 
-        let mut call_stack = Vec::new();
+        let mut call_stack = StackRecycler::recreate_call_stack(&mut stack_recycler);
         let initial_frame = FunctionContext::new(func.clone());
         call_stack.push(initial_frame);
 
@@ -278,14 +282,14 @@ impl Interpreter {
 
             match function_return {
                 RunResult::Return => {
-                    if self.call_stack.last().is_none() {
+                    if self.call_stack.is_empty() {
                         // This was the last frame in the call stack. This means we
                         // are done executing.
                         return Ok(());
                     }
                 }
                 RunResult::NestedCall(nested_func) => {
-                    if self.call_stack.len() + 1 >= DEFAULT_CALL_STACK_LIMIT {
+                    if self.call_stack.is_full() {
                         return Err(TrapKind::StackOverflow.into());
                     }
 
@@ -1363,16 +1367,6 @@ struct ValueStack {
 }
 
 impl ValueStack {
-    fn with_limit(limit: usize) -> ValueStack {
-        let mut buf = Vec::new();
-        buf.resize(limit, RuntimeValueInternal(0));
-
-        ValueStack {
-            buf: buf.into_boxed_slice(),
-            sp: 0,
-        }
-    }
-
     #[inline]
     fn drop_keep(&mut self, drop_keep: isa::DropKeep) {
         if drop_keep.keep == isa::Keep::Single {
@@ -1452,5 +1446,99 @@ impl ValueStack {
     #[inline]
     fn len(&self) -> usize {
         self.sp
+    }
+}
+
+struct CallStack {
+    buf: Vec<FunctionContext>,
+    limit: usize,
+}
+
+impl CallStack {
+    fn push(&mut self, ctx: FunctionContext) {
+        self.buf.push(ctx);
+    }
+
+    fn pop(&mut self) -> Option<FunctionContext> {
+        self.buf.pop()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.buf.is_empty()
+    }
+
+    fn is_full(&self) -> bool {
+        self.buf.len() + 1 >= self.limit
+    }
+}
+
+/// Used to recycle stacks instead of allocating them repeatedly.
+pub struct StackRecycler {
+    value_stack_buf: Option<Box<[RuntimeValueInternal]>>,
+    value_stack_limit: usize,
+    call_stack_buf: Option<Vec<FunctionContext>>,
+    call_stack_limit: usize,
+}
+
+impl StackRecycler {
+    /// Limit stacks created by this recycler to
+    /// - `value_stack_limit` bytes for values and
+    /// - `call_stack_limit` levels for calls.
+    pub fn with_limits(value_stack_limit: usize, call_stack_limit: usize) -> Self {
+        Self {
+            value_stack_buf: None,
+            value_stack_limit,
+            call_stack_buf: None,
+            call_stack_limit,
+        }
+    }
+
+    fn recreate_value_stack(this: &mut Option<&mut Self>) -> ValueStack {
+        let limit = this
+            .as_ref()
+            .map_or(DEFAULT_VALUE_STACK_LIMIT, |this| this.value_stack_limit)
+            / ::core::mem::size_of::<RuntimeValueInternal>();
+
+        let buf = this
+            .as_mut()
+            .and_then(|this| this.value_stack_buf.take())
+            .unwrap_or_else(|| {
+                let mut buf = Vec::new();
+                buf.reserve_exact(limit);
+                buf.resize(limit, RuntimeValueInternal(0));
+                buf.into_boxed_slice()
+            });
+
+        ValueStack { buf, sp: 0 }
+    }
+
+    fn recreate_call_stack(this: &mut Option<&mut Self>) -> CallStack {
+        let limit = this
+            .as_ref()
+            .map_or(DEFAULT_CALL_STACK_LIMIT, |this| this.call_stack_limit);
+
+        let buf = this
+            .as_mut()
+            .and_then(|this| this.call_stack_buf.take())
+            .unwrap_or_default();
+
+        CallStack { buf, limit }
+    }
+
+    pub(crate) fn recycle(&mut self, mut interpreter: Interpreter) {
+        for cell in interpreter.value_stack.buf.iter_mut() {
+            *cell = RuntimeValueInternal(0);
+        }
+
+        interpreter.call_stack.buf.clear();
+
+        self.value_stack_buf = Some(interpreter.value_stack.buf);
+        self.call_stack_buf = Some(interpreter.call_stack.buf);
+    }
+}
+
+impl Default for StackRecycler {
+    fn default() -> Self {
+        Self::with_limits(DEFAULT_VALUE_STACK_LIMIT, DEFAULT_CALL_STACK_LIMIT)
     }
 }
