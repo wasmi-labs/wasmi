@@ -15,6 +15,8 @@ wasmi-validation = { version = "0.1", path = "validation", default-features = fa
 parity-wasm = { version = "0.31", default-features = false }
 memory_units = "0.3.0"
 libm = { version = "0.1.2", optional = true }
+num-rational = "0.2.2"
+num-traits = "0.2.8"
 
 [dev-dependencies]
 assert_matches = "1.1"
@@ -27,6 +29,8 @@ default = ["std"]
 std = [
     "parity-wasm/std",
     "wasmi-validation/std",
+    "num-rational/std",
+    "num-traits/std"
 ]
 # Enable for no_std support
 core = [
