@@ -366,27 +366,18 @@ impl WrapInto<F32> for F64 {
 }
 
 macro_rules! impl_try_truncate_into {
-    ($from: ident, $into: ident) => {
+    (@primitive $from: ident, $into: ident, $to_primitive:path) => {
         impl TryTruncateInto<$into, TrapKind> for $from {
             fn try_truncate_into(self) -> Result<$into, TrapKind> {
                 // Casting from a float to an integer will round the float towards zero
-                // NOTE: currently this will cause Undefined Behavior if the rounded value cannot be represented by the
-                // target integer type. This includes Inf and NaN. This is a bug and will be fixed.
-                if self.is_nan() || self.is_infinite() {
-                    return Err(TrapKind::InvalidConversionToInt);
-                }
-
-                // range check
-                let result = self as $into;
-                if result as $from != self.trunc() {
-                    return Err(TrapKind::InvalidConversionToInt);
-                }
-
-                Ok(self as $into)
+                num_rational::BigRational::from_float(self)
+                    .map(|val| val.to_integer())
+                    .and_then(|val| $to_primitive(&val))
+                    .ok_or(TrapKind::InvalidConversionToInt)
             }
         }
     };
-    ($from:ident, $intermediate:ident, $into:ident) => {
+    (@wrapped $from:ident, $intermediate:ident, $into:ident) => {
         impl TryTruncateInto<$into, TrapKind> for $from {
             fn try_truncate_into(self) -> Result<$into, TrapKind> {
                 $intermediate::from(self).try_truncate_into()
@@ -395,22 +386,22 @@ macro_rules! impl_try_truncate_into {
     };
 }
 
-impl_try_truncate_into!(f32, i32);
-impl_try_truncate_into!(f32, i64);
-impl_try_truncate_into!(f64, i32);
-impl_try_truncate_into!(f64, i64);
-impl_try_truncate_into!(f32, u32);
-impl_try_truncate_into!(f32, u64);
-impl_try_truncate_into!(f64, u32);
-impl_try_truncate_into!(f64, u64);
-impl_try_truncate_into!(F32, f32, i32);
-impl_try_truncate_into!(F32, f32, i64);
-impl_try_truncate_into!(F64, f64, i32);
-impl_try_truncate_into!(F64, f64, i64);
-impl_try_truncate_into!(F32, f32, u32);
-impl_try_truncate_into!(F32, f32, u64);
-impl_try_truncate_into!(F64, f64, u32);
-impl_try_truncate_into!(F64, f64, u64);
+impl_try_truncate_into!(@primitive f32, i32, num_traits::cast::ToPrimitive::to_i32);
+impl_try_truncate_into!(@primitive f32, i64, num_traits::cast::ToPrimitive::to_i64);
+impl_try_truncate_into!(@primitive f64, i32, num_traits::cast::ToPrimitive::to_i32);
+impl_try_truncate_into!(@primitive f64, i64, num_traits::cast::ToPrimitive::to_i64);
+impl_try_truncate_into!(@primitive f32, u32, num_traits::cast::ToPrimitive::to_u32);
+impl_try_truncate_into!(@primitive f32, u64, num_traits::cast::ToPrimitive::to_u64);
+impl_try_truncate_into!(@primitive f64, u32, num_traits::cast::ToPrimitive::to_u32);
+impl_try_truncate_into!(@primitive f64, u64, num_traits::cast::ToPrimitive::to_u64);
+impl_try_truncate_into!(@wrapped F32, f32, i32);
+impl_try_truncate_into!(@wrapped F32, f32, i64);
+impl_try_truncate_into!(@wrapped F64, f64, i32);
+impl_try_truncate_into!(@wrapped F64, f64, i64);
+impl_try_truncate_into!(@wrapped F32, f32, u32);
+impl_try_truncate_into!(@wrapped F32, f32, u64);
+impl_try_truncate_into!(@wrapped F64, f64, u32);
+impl_try_truncate_into!(@wrapped F64, f64, u64);
 
 macro_rules! impl_extend_into {
     ($from:ident, $into:ident) => {
