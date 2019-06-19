@@ -16,4 +16,6 @@ cd $(dirname $0)
 
 time cargo test --all ${EXTRA_ARGS}
 
+time cargo test --all --features threadsafe
+
 cd -
