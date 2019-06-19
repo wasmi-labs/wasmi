@@ -1,10 +1,6 @@
 #[allow(unused_imports)]
 use alloc::prelude::v1::*;
-use core::{
-    cmp, fmt,
-    ops::Range,
-    u32,
-};
+use core::{cmp, fmt, ops::Range, u32};
 use memory_units::{Bytes, Pages, RoundUpTo};
 use parity_wasm::elements::ResizableLimits;
 use value::LittleEndianConvert;
@@ -202,8 +198,7 @@ impl MemoryInstance {
 
     /// Get value from memory at given offset.
     pub fn get_value<T: LittleEndianConvert>(&self, offset: u32) -> Result<T, Error> {
-        let region =
-            self.checked_region(offset as usize, ::core::mem::size_of::<T>())?;
+        let region = self.checked_region(offset as usize, ::core::mem::size_of::<T>())?;
 
         let buffer = self.buffer.borrow();
         Ok(T::from_little_endian(&buffer[region.range()]).expect("Slice size is checked"))
@@ -238,9 +233,7 @@ impl MemoryInstance {
 
     /// Copy data in the memory at given offset.
     pub fn set(&self, offset: u32, value: &[u8]) -> Result<(), Error> {
-        let range = self
-            .checked_region(offset as usize, value.len())?
-            .range();
+        let range = self.checked_region(offset as usize, value.len())?.range();
 
         if offset < self.lowest_used.get() {
             self.lowest_used.set(offset);
@@ -298,11 +291,7 @@ impl MemoryInstance {
         Ok(size_before_grow)
     }
 
-    fn checked_region(
-        &self,
-        offset: usize,
-        size: usize,
-    ) -> Result<CheckedRegion, Error> {
+    fn checked_region(&self, offset: usize, size: usize) -> Result<CheckedRegion, Error> {
         let mut buffer = self.buffer.borrow_mut();
         let end = offset.checked_add(size).ok_or_else(|| {
             Error::Memory(format!(
@@ -472,12 +461,8 @@ impl MemoryInstance {
             return src.copy(src_offset, dst_offset, len);
         }
 
-        let src_range = src
-            .checked_region(src_offset, len)?
-            .range();
-        let dst_range = dst
-            .checked_region(dst_offset, len)?
-            .range();
+        let src_range = src.checked_region(src_offset, len)?.range();
+        let dst_range = dst.checked_region(dst_offset, len)?.range();
 
         if dst_offset < dst.lowest_used.get() as usize {
             dst.lowest_used.set(dst_offset as u32);

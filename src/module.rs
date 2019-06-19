@@ -323,8 +323,11 @@ impl ModuleInstance {
                     locals: body.locals().to_vec(),
                     code: code,
                 };
-                let func_instance =
-                    FuncInstance::alloc_internal(::MyRc::downgrade(&instance.0), signature, func_body);
+                let func_instance = FuncInstance::alloc_internal(
+                    ::MyRc::downgrade(&instance.0),
+                    signature,
+                    func_body,
+                );
                 instance.push_func(func_instance);
             }
         }

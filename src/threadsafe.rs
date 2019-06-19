@@ -2,12 +2,8 @@ extern crate atomic;
 
 use alloc::sync::{Arc, Mutex};
 
-pub use alloc::sync::{
-    Arc as MyRc, Weak as MyWeak, MutexGuard as MyRef,
-};
-pub use self::atomic::{
-    Atomic, Ordering::Relaxed as Ordering,
-};
+pub use self::atomic::{Atomic, Ordering::Relaxed as Ordering};
+pub use alloc::sync::{Arc as MyRc, MutexGuard as MyRef, Weak as MyWeak};
 
 /// Thread-safe wrapper which can be used in place of a `RefCell`.
 #[derive(Debug)]
@@ -32,9 +28,14 @@ impl<T> MyRefCell<T> {
 
 /// Thread-safe wrapper which can be used in place of a `Cell`.
 #[derive(Debug)]
-pub struct MyCell<T>(Atomic<T>) where T: Copy;
+pub struct MyCell<T>(Atomic<T>)
+where
+    T: Copy;
 
-impl<T> MyCell<T> where T: Copy {
+impl<T> MyCell<T>
+where
+    T: Copy,
+{
     /// Create new wrapper object.
     pub fn new(obj: T) -> MyCell<T> {
         MyCell(Atomic::new(obj))
