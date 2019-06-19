@@ -17,12 +17,16 @@ impl<T> MyRefCell<T> {
 
     /// Borrow a `MyRef` to the inner value.
     pub fn borrow(&self) -> ::MyRef<T> {
-        self.0.lock().expect("bar")
+        self.0
+            .lock()
+            .expect("failed to acquire lock while trying to borrow")
     }
 
     /// Borrow a mutable `MyRef` to the inner value.
     pub fn borrow_mut(&self) -> ::MyRef<T> {
-        self.0.lock().expect("bar")
+        self.0
+            .lock()
+            .expect("failed to acquire lock while trying to borrow mutably")
     }
 }
 
