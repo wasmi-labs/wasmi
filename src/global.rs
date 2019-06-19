@@ -1,5 +1,3 @@
-use alloc::rc::Rc;
-use core::cell::Cell;
 use parity_wasm::elements::ValueType as EValueType;
 use types::ValueType;
 use value::RuntimeValue;
@@ -11,7 +9,7 @@ use Error;
 ///
 /// [`GlobalInstance`]: struct.GlobalInstance.html
 #[derive(Clone, Debug)]
-pub struct GlobalRef(Rc<GlobalInstance>);
+pub struct GlobalRef(::MyRc<GlobalInstance>);
 
 impl ::core::ops::Deref for GlobalRef {
     type Target = GlobalInstance;
@@ -33,7 +31,7 @@ impl ::core::ops::Deref for GlobalRef {
 /// [`I64`]: enum.RuntimeValue.html#variant.I64
 #[derive(Debug)]
 pub struct GlobalInstance {
-    val: Cell<RuntimeValue>,
+    val: ::MyCell<RuntimeValue>,
     mutable: bool,
 }
 
@@ -43,8 +41,8 @@ impl GlobalInstance {
     /// Since it is possible to export only immutable globals,
     /// users likely want to set `mutable` to `false`.
     pub fn alloc(val: RuntimeValue, mutable: bool) -> GlobalRef {
-        GlobalRef(Rc::new(GlobalInstance {
-            val: Cell::new(val),
+        GlobalRef(::MyRc::new(GlobalInstance {
+            val: ::MyCell::new(val),
             mutable,
         }))
     }

@@ -1,8 +1,6 @@
 #[allow(unused_imports)]
 use alloc::prelude::v1::*;
-use alloc::rc::Rc;
 use core::{
-    cell::{Cell, RefCell},
     cmp, fmt,
     ops::Range,
     u32,
@@ -26,7 +24,7 @@ pub const LINEAR_MEMORY_PAGE_SIZE: Bytes = Bytes(65536);
 /// [`MemoryInstance`]: struct.MemoryInstance.html
 ///
 #[derive(Clone, Debug)]
-pub struct MemoryRef(Rc<MemoryInstance>);
+pub struct MemoryRef(::MyRc<MemoryInstance>);
 
 impl ::core::ops::Deref for MemoryRef {
     type Target = MemoryInstance;
@@ -52,11 +50,11 @@ pub struct MemoryInstance {
     /// Memory limits.
     limits: ResizableLimits,
     /// Linear memory buffer with lazy allocation.
-    buffer: RefCell<Vec<u8>>,
+    buffer: ::MyRefCell<Vec<u8>>,
     initial: Pages,
-    current_size: Cell<usize>,
+    current_size: ::MyCell<usize>,
     maximum: Option<Pages>,
-    lowest_used: Cell<u32>,
+    lowest_used: ::MyCell<u32>,
 }
 
 impl fmt::Debug for MemoryInstance {
@@ -127,7 +125,7 @@ impl MemoryInstance {
         }
 
         let memory = MemoryInstance::new(initial, maximum);
-        Ok(MemoryRef(Rc::new(memory)))
+        Ok(MemoryRef(::MyRc::new(memory)))
     }
 
     /// Create new linear memory instance.
@@ -137,11 +135,11 @@ impl MemoryInstance {
         let initial_size: Bytes = initial.into();
         MemoryInstance {
             limits: limits,
-            buffer: RefCell::new(Vec::with_capacity(4096)),
+            buffer: ::MyRefCell::new(Vec::with_capacity(4096)),
             initial: initial,
-            current_size: Cell::new(initial_size.0),
+            current_size: ::MyCell::new(initial_size.0),
             maximum: maximum,
-            lowest_used: Cell::new(u32::max_value()),
+            lowest_used: ::MyCell::new(u32::max_value()),
         }
     }
 
@@ -558,7 +556,6 @@ mod tests {
 
     use super::{MemoryInstance, MemoryRef, LINEAR_MEMORY_PAGE_SIZE};
     use memory_units::Pages;
-    use std::rc::Rc;
     use Error;
 
     #[test]
@@ -660,8 +657,8 @@ mod tests {
 
     #[test]
     fn transfer_works() {
-        let src = MemoryRef(Rc::new(create_memory(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])));
-        let dst = MemoryRef(Rc::new(create_memory(&[
+        let src = MemoryRef(::MyRc::new(create_memory(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])));
+        let dst = MemoryRef(::MyRc::new(create_memory(&[
             10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
         ])));
 
@@ -676,7 +673,7 @@ mod tests {
 
     #[test]
     fn transfer_still_works_with_same_memory() {
-        let src = MemoryRef(Rc::new(create_memory(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])));
+        let src = MemoryRef(::MyRc::new(create_memory(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])));
 
         MemoryInstance::transfer(&src, 4, &src, 0, 3).unwrap();
 
@@ -685,7 +682,7 @@ mod tests {
 
     #[test]
     fn transfer_oob_with_same_memory_errors() {
-        let src = MemoryRef(Rc::new(create_memory(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])));
+        let src = MemoryRef(::MyRc::new(create_memory(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])));
         assert!(MemoryInstance::transfer(&src, 65535, &src, 0, 3).is_err());
 
         // Check that memories content left untouched
@@ -694,8 +691,8 @@ mod tests {
 
     #[test]
     fn transfer_oob_errors() {
-        let src = MemoryRef(Rc::new(create_memory(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])));
-        let dst = MemoryRef(Rc::new(create_memory(&[
+        let src = MemoryRef(::MyRc::new(create_memory(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])));
+        let dst = MemoryRef(::MyRc::new(create_memory(&[
             10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
         ])));
 

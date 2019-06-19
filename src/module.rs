@@ -1,13 +1,10 @@
 #[allow(unused_imports)]
 use alloc::prelude::v1::*;
-use alloc::rc::Rc;
-use core::cell::RefCell;
 use core::fmt;
 use Trap;
 
 use alloc::collections::BTreeMap;
 
-use core::cell::Ref;
 use func::{FuncBody, FuncInstance, FuncRef};
 use global::{GlobalInstance, GlobalRef};
 use host::Externals;
@@ -35,7 +32,7 @@ use {Error, MemoryInstance, Module, RuntimeValue, Signature, TableInstance};
 ///
 /// [`ModuleInstance`]: struct.ModuleInstance.html
 #[derive(Clone, Debug)]
-pub struct ModuleRef(pub(crate) Rc<ModuleInstance>);
+pub struct ModuleRef(pub(crate) ::MyRc<ModuleInstance>);
 
 impl ::core::ops::Deref for ModuleRef {
     type Target = ModuleInstance;
@@ -154,23 +151,23 @@ impl ExternVal {
 /// [`invoke_export`]: #method.invoke_export
 #[derive(Debug)]
 pub struct ModuleInstance {
-    signatures: RefCell<Vec<Rc<Signature>>>,
-    tables: RefCell<Vec<TableRef>>,
-    funcs: RefCell<Vec<FuncRef>>,
-    memories: RefCell<Vec<MemoryRef>>,
-    globals: RefCell<Vec<GlobalRef>>,
-    exports: RefCell<BTreeMap<String, ExternVal>>,
+    signatures: ::MyRefCell<Vec<::MyRc<Signature>>>,
+    tables: ::MyRefCell<Vec<TableRef>>,
+    funcs: ::MyRefCell<Vec<FuncRef>>,
+    memories: ::MyRefCell<Vec<MemoryRef>>,
+    globals: ::MyRefCell<Vec<GlobalRef>>,
+    exports: ::MyRefCell<BTreeMap<String, ExternVal>>,
 }
 
 impl ModuleInstance {
     fn default() -> Self {
         ModuleInstance {
-            funcs: RefCell::new(Vec::new()),
-            signatures: RefCell::new(Vec::new()),
-            tables: RefCell::new(Vec::new()),
-            memories: RefCell::new(Vec::new()),
-            globals: RefCell::new(Vec::new()),
-            exports: RefCell::new(BTreeMap::new()),
+            funcs: ::MyRefCell::new(Vec::new()),
+            signatures: ::MyRefCell::new(Vec::new()),
+            tables: ::MyRefCell::new(Vec::new()),
+            memories: ::MyRefCell::new(Vec::new()),
+            globals: ::MyRefCell::new(Vec::new()),
+            exports: ::MyRefCell::new(BTreeMap::new()),
         }
     }
 
@@ -190,7 +187,7 @@ impl ModuleInstance {
         self.funcs.borrow().get(idx as usize).cloned()
     }
 
-    pub(crate) fn signature_by_index(&self, idx: u32) -> Option<Rc<Signature>> {
+    pub(crate) fn signature_by_index(&self, idx: u32) -> Option<::MyRc<Signature>> {
         self.signatures.borrow().get(idx as usize).cloned()
     }
 
@@ -198,7 +195,7 @@ impl ModuleInstance {
         self.funcs.borrow_mut().push(func);
     }
 
-    fn push_signature(&self, signature: Rc<Signature>) {
+    fn push_signature(&self, signature: ::MyRc<Signature>) {
         self.signatures.borrow_mut().push(signature)
     }
 
@@ -216,7 +213,7 @@ impl ModuleInstance {
 
     /// Access all globals. This is a non-standard API so it's unlikely to be
     /// portable to other engines.
-    pub fn globals<'a>(&self) -> Ref<Vec<GlobalRef>> {
+    pub fn globals<'a>(&self) -> ::MyRef<Vec<GlobalRef>> {
         self.globals.borrow()
     }
 
@@ -229,10 +226,10 @@ impl ModuleInstance {
         extern_vals: I,
     ) -> Result<ModuleRef, Error> {
         let module = loaded_module.module();
-        let instance = ModuleRef(Rc::new(ModuleInstance::default()));
+        let instance = ModuleRef(::MyRc::new(ModuleInstance::default()));
 
         for &Type::Function(ref ty) in module.type_section().map(|ts| ts.types()).unwrap_or(&[]) {
-            let signature = Rc::new(Signature::from_elements(ty));
+            let signature = ::MyRc::new(Signature::from_elements(ty));
             instance.push_signature(signature);
         }
 
@@ -327,7 +324,7 @@ impl ModuleInstance {
                     code: code,
                 };
                 let func_instance =
-                    FuncInstance::alloc_internal(Rc::downgrade(&instance.0), signature, func_body);
+                    FuncInstance::alloc_internal(::MyRc::downgrade(&instance.0), signature, func_body);
                 instance.push_func(func_instance);
             }
         }

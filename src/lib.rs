@@ -396,6 +396,12 @@ mod table;
 mod types;
 mod value;
 
+#[cfg(feature = "threadsafe")]
+mod threadsafe;
+
+#[cfg(not(feature = "threadsafe"))]
+mod not_threadsafe;
+
 #[cfg(test)]
 mod tests;
 
@@ -409,6 +415,12 @@ pub use self::runner::{StackRecycler, DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_ST
 pub use self::table::{TableInstance, TableRef};
 pub use self::types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor, ValueType};
 pub use self::value::{Error as ValueError, FromRuntimeValue, LittleEndianConvert, RuntimeValue};
+
+#[cfg(feature = "threadsafe")]
+pub use self::threadsafe::*;
+
+#[cfg(not(feature = "threadsafe"))]
+pub use self::not_threadsafe::*;
 
 /// WebAssembly-specific sizes and units.
 pub mod memory_units {

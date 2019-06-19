@@ -1,6 +1,5 @@
 #[allow(unused_imports)]
 use alloc::prelude::v1::*;
-use alloc::rc::{Rc, Weak};
 use core::fmt;
 use host::Externals;
 use isa;
@@ -17,7 +16,7 @@ use {Signature, Trap};
 ///
 /// [`FuncInstance`]: struct.FuncInstance.html
 #[derive(Clone, Debug)]
-pub struct FuncRef(Rc<FuncInstance>);
+pub struct FuncRef(::MyRc<FuncInstance>);
 
 impl ::core::ops::Deref for FuncRef {
     type Target = FuncInstance;
@@ -45,9 +44,9 @@ pub struct FuncInstance(FuncInstanceInternal);
 #[derive(Clone)]
 pub(crate) enum FuncInstanceInternal {
     Internal {
-        signature: Rc<Signature>,
-        module: Weak<ModuleInstance>,
-        body: Rc<FuncBody>,
+        signature: ::MyRc<Signature>,
+        module: ::MyWeak<ModuleInstance>,
+        body: ::MyRc<FuncBody>,
     },
     Host {
         signature: Signature,
@@ -84,7 +83,7 @@ impl FuncInstance {
             signature,
             host_func_index,
         };
-        FuncRef(Rc::new(FuncInstance(func)))
+        FuncRef(::MyRc::new(FuncInstance(func)))
     }
 
     /// Returns [signature] of this function instance.
@@ -104,21 +103,21 @@ impl FuncInstance {
     }
 
     pub(crate) fn alloc_internal(
-        module: Weak<ModuleInstance>,
-        signature: Rc<Signature>,
+        module: ::MyWeak<ModuleInstance>,
+        signature: ::MyRc<Signature>,
         body: FuncBody,
     ) -> FuncRef {
         let func = FuncInstanceInternal::Internal {
             signature,
             module: module,
-            body: Rc::new(body),
+            body: ::MyRc::new(body),
         };
-        FuncRef(Rc::new(FuncInstance(func)))
+        FuncRef(::MyRc::new(FuncInstance(func)))
     }
 
-    pub(crate) fn body(&self) -> Option<Rc<FuncBody>> {
+    pub(crate) fn body(&self) -> Option<::MyRc<FuncBody>> {
         match *self.as_internal() {
-            FuncInstanceInternal::Internal { ref body, .. } => Some(Rc::clone(body)),
+            FuncInstanceInternal::Internal { ref body, .. } => Some(::MyRc::clone(body)),
             FuncInstanceInternal::Host { .. } => None,
         }
     }
