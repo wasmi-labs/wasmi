@@ -742,6 +742,8 @@ mod tests {
         });
     }
 
+    // this test works only in the non-thread-safe variant, it deadlocks otherwise.
+    #[cfg(not(feature = "threadsafe"))]
     #[should_panic]
     #[test]
     fn zero_copy_panics_on_nested_access() {
