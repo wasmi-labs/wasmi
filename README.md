@@ -18,6 +18,7 @@ git clone https://github.com/paritytech/wasmi.git --recursive
 cd wasmi
 cargo build
 cargo test
+cargo test --features threadsafe
 ```
 
 # `no_std` support
@@ -38,6 +39,19 @@ Also, code related to `std::error` is disabled.
 
 Floating point operations in `no_std` use [`libm`](https://crates.io/crates/libm), which sometimes panics in debug mode (https://github.com/japaric/libm/issues/4).
 So make sure to either use release builds or avoid WASM with floating point operations, for example by using [`deny_floating_point`](https://docs.rs/wasmi/0.4.0/wasmi/struct.Module.html#method.deny_floating_point).
+
+# Thread-safe support
+
+This crate supports thread-safe environments.
+Enable the `threadsafe` feature and Rust's thread-safe data structures will be used.
+```toml
+[dependencies]
+parity-wasm = {
+	version = "0.31",
+	default-features = true,
+	features = "threadsafe"
+}
+```
 
 # License
 
