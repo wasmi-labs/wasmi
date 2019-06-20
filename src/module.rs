@@ -213,7 +213,7 @@ impl ModuleInstance {
 
     /// Access all globals. This is a non-standard API so it's unlikely to be
     /// portable to other engines.
-    pub fn globals<'a>(&self) -> ::MyRef<Vec<GlobalRef>> {
+    pub fn globals<'a>(&self) -> ::MyRefRead<Vec<GlobalRef>> {
         self.globals.borrow()
     }
 

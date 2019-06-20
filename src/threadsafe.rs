@@ -1,31 +1,33 @@
 extern crate atomic;
 
-use alloc::sync::{Arc, Mutex};
+use alloc::sync::{Arc, RwLock};
 
 pub use self::atomic::{Atomic, Ordering::Relaxed as Ordering};
-pub use alloc::sync::{Arc as MyRc, MutexGuard as MyRef, Weak as MyWeak};
+pub use alloc::sync::{
+    Arc as MyRc, RwLockReadGuard as MyRefRead, RwLockWriteGuard as MyRefWrite, Weak as MyWeak,
+};
 
 /// Thread-safe wrapper which can be used in place of a `RefCell`.
 #[derive(Debug)]
-pub struct MyRefCell<T>(Arc<Mutex<T>>);
+pub struct MyRefCell<T>(Arc<RwLock<T>>);
 
 impl<T> MyRefCell<T> {
     /// Create new wrapper object.
     pub fn new(obj: T) -> MyRefCell<T> {
-        MyRefCell(Arc::new(Mutex::new(obj)))
+        MyRefCell(Arc::new(RwLock::new(obj)))
     }
 
     /// Borrow a `MyRef` to the inner value.
-    pub fn borrow(&self) -> ::MyRef<T> {
+    pub fn borrow(&self) -> ::MyRefRead<T> {
         self.0
-            .lock()
+            .read()
             .expect("failed to acquire lock while trying to borrow")
     }
 
     /// Borrow a mutable `MyRef` to the inner value.
-    pub fn borrow_mut(&self) -> ::MyRef<T> {
+    pub fn borrow_mut(&self) -> ::MyRefWrite<T> {
         self.0
-            .lock()
+            .write()
             .expect("failed to acquire lock while trying to borrow mutably")
     }
 }
