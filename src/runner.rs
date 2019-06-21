@@ -1493,6 +1493,22 @@ impl StackRecycler {
         }
     }
 
+    /// Clears any values left on the stack to avoid
+    /// leaking them to future export invocations.
+    ///
+    /// This is a secondary defense to prevent modules from
+    /// exploiting faulty stack handling in the interpreter.
+    ///
+    /// Do note that there are additional channels that
+    /// can leak information into an untrusted module.
+    pub fn clear(&mut self) {
+        if let Some(buf) = &mut self.value_stack_buf {
+            for cell in buf.iter_mut() {
+                *cell = RuntimeValueInternal(0);
+            }
+        }
+    }
+
     fn recreate_value_stack(this: &mut Option<&mut Self>) -> ValueStack {
         let limit = this
             .as_ref()
@@ -1526,10 +1542,6 @@ impl StackRecycler {
     }
 
     pub(crate) fn recycle(&mut self, mut interpreter: Interpreter) {
-        for cell in interpreter.value_stack.buf.iter_mut() {
-            *cell = RuntimeValueInternal(0);
-        }
-
         interpreter.call_stack.buf.clear();
 
         self.value_stack_buf = Some(interpreter.value_stack.buf);
