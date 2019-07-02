@@ -69,8 +69,12 @@ impl fmt::Debug for MemoryInstance {
     }
 }
 
-mod rust_alloc;
+mod rust_alloc as byte_buf;
 use self::rust_alloc::ByteBuf;
+
+// mod vec_backed;
+// use self::vec_backed::ByteBuf;
+
 
 struct CheckedRegion {
     offset: usize,
@@ -512,9 +516,10 @@ mod tests {
             (0, Some(1), true),
             (1, Some(0), false),
             (0, Some(65536), true),
-            (65536, Some(65536), true),
-            (65536, Some(0), false),
-            (65536, None, true),
+            // TODO: Only use it for rust-alloc/mmap
+            // (65536, Some(65536), true),
+            // (65536, Some(0), false),
+            // (65536, None, true),
         ];
 
         #[cfg(target_pointer_width = "32")]
