@@ -12,9 +12,6 @@ use parity_wasm::elements::ResizableLimits;
 use value::LittleEndianConvert;
 use Error;
 
-use std::alloc::{System, Layout, GlobalAlloc};
-use std::{slice, ptr};
-
 /// Size of a page of [linear memory][`MemoryInstance`] - 64KiB.
 ///
 /// The size of a memory is always a integer multiple of a page size.
@@ -72,100 +69,8 @@ impl fmt::Debug for MemoryInstance {
     }
 }
 
-struct ByteBuf {
-    ptr: *mut u8,
-    len: usize,
-}
-
-impl ByteBuf {
-    fn layout(len: usize) -> Layout {
-        Layout::from_size_align(len, 1).expect("")
-    }
-
-    pub fn new(len: usize) -> Self {
-        let ptr = if len == 0 {
-            ptr::null_mut()
-        } else {
-            // Alignment of byte is 1.
-            // TODO: proof
-
-            let ptr = unsafe {
-                // TODO: proof
-                System.alloc_zeroed(Self::layout(len))
-            };
-
-            // TODO: proof
-            assert!(!ptr.is_null());
-
-            ptr
-        };
-
-        Self {
-            ptr,
-            len,
-        }
-    }
-
-    pub fn realloc(&mut self, new_len: usize) {
-        let new_ptr = if self.len == 0 {
-            // special case, when the memory wasn't allocated before.
-            // Alignment of byte is 1.
-            // TODO: proof
-            let ptr = unsafe {
-                // TODO: proof
-                System.alloc_zeroed(Self::layout(new_len))
-            };
-
-            // TODO: proof
-            assert!(!ptr.is_null());
-
-            ptr
-        } else {
-            // TODO: proof
-            let cur_layout = Self::layout(self.len);
-            let new_ptr = unsafe {
-                System.realloc(self.ptr, cur_layout, new_len)
-            };
-            assert!(!new_ptr.is_null());
-
-            unsafe {
-                let new_area = new_ptr.offset(self.len as isize);
-                ptr::write_bytes(new_area, 0, new_len - self.len);
-            }
-
-            new_ptr
-        };
-
-        self.ptr = new_ptr;
-        self.len = new_len;
-    }
-
-    pub fn len(&self) -> usize {
-        self.len
-    }
-
-    pub fn as_slice(&self) -> &[u8] {
-        unsafe {
-            slice::from_raw_parts(self.ptr, self.len)
-        }
-    }
-
-    pub fn as_slice_mut(&mut self) -> &mut [u8] {
-        unsafe {
-            slice::from_raw_parts_mut(self.ptr, self.len)
-        }
-    }
-}
-
-impl Drop for ByteBuf {
-    fn drop(&mut self) {
-        if self.len != 0 {
-            unsafe {
-                System.dealloc(self.ptr, Self::layout(self.len))
-            }
-        }
-    }
-}
+mod rust_alloc;
+use self::rust_alloc::ByteBuf;
 
 struct CheckedRegion {
     offset: usize,
@@ -579,6 +484,9 @@ impl MemoryInstance {
         self.clear(offset, 0, len)
     }
 
+    /// Set every byte in the entire linear memory to 0.
+    ///
+    /// Might be useful for some optimization shenanigans.
     pub fn erase(&self) {
         let cur_size = self.buffer.borrow().len();
         *self.buffer.borrow_mut() = ByteBuf::new(cur_size);
