@@ -69,8 +69,15 @@ impl fmt::Debug for MemoryInstance {
     }
 }
 
-mod mmap;
-use self::mmap::ByteBuf;
+#[cfg(all(unix, not(feature="vec_memory")))]
+#[path="mmap_bytebuf.rs"]
+mod bytebuf;
+
+#[cfg(any(not(unix), feature="vec_memory"))]
+#[path="vec_bytebuf.rs"]
+mod bytebuf;
+
+use self::bytebuf::ByteBuf;
 
 // mod rust_alloc as byte_buf;
 // use self::rust_alloc::ByteBuf;
