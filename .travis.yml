@@ -11,6 +11,8 @@ matrix:
   - rust: stable
   - rust: stable
     env: TARGET=armv7-unknown-linux-gnueabihf
+  allow_failures:
+  - rust: nightly
 
 install:
 - if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then rustup target add wasm32-unknown-unknown; fi
