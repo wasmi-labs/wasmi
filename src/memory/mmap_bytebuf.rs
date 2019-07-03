@@ -63,8 +63,7 @@ impl Mmap {
             // memory.
             libc::MAP_FAILED => Err("mmap returned an error"),
             _ => {
-                let ptr = NonNull::new(ptr_or_err as *mut u8)
-                    .ok_or("mmap returned 0")?;
+                let ptr = NonNull::new(ptr_or_err as *mut u8).ok_or("mmap returned 0")?;
                 Ok(Self { ptr, len })
             }
         }
@@ -130,31 +129,16 @@ impl ByteBuf {
         let new_mmap = if new_len == 0 {
             None
         } else {
-            if self.len() == 0 {
-                Some(Mmap::new(new_len)?)
-            } else {
-                let mut new_mmap = Mmap::new(new_len)?;
-
-                {
-                    let src = self
-                        .mmap
-                        .as_ref()
-                        .expect(
-                            "self.len() != 0;
-                            self.mmap is created if self.len() != 0;
-                            self.mmap is not `None`;
-                            qed",
-                        )
-                        .as_slice();
-                    let dst = new_mmap.as_slice_mut();
-                    let amount = src.len().min(dst.len());
-                    dst[..amount].copy_from_slice(&src[..amount]);
-
-                }
-
-                Some(new_mmap)
+            let mut new_mmap = Mmap::new(new_len)?;
+            if let Some(cur_mmap) = self.mmap.take() {
+                let src = cur_mmap.as_slice();
+                let dst = new_mmap.as_slice_mut();
+                let amount = src.len().min(dst.len());
+                dst[..amount].copy_from_slice(&src[..amount]);
             }
+            Some(new_mmap)
         };
+
         self.mmap = new_mmap;
         Ok(())
     }
