@@ -69,21 +69,15 @@ impl fmt::Debug for MemoryInstance {
     }
 }
 
-#[cfg(all(unix, not(feature="vec_memory")))]
-#[path="mmap_bytebuf.rs"]
+#[cfg(all(unix, not(feature = "vec_memory")))]
+#[path = "mmap_bytebuf.rs"]
 mod bytebuf;
 
-#[cfg(any(not(unix), feature="vec_memory"))]
-#[path="vec_bytebuf.rs"]
+#[cfg(any(not(unix), feature = "vec_memory"))]
+#[path = "vec_bytebuf.rs"]
 mod bytebuf;
 
 use self::bytebuf::ByteBuf;
-
-// mod rust_alloc as byte_buf;
-// use self::rust_alloc::ByteBuf;
-
-// mod vec_backed;
-// use self::vec_backed::ByteBuf;
 
 struct CheckedRegion {
     offset: usize,
@@ -141,22 +135,24 @@ impl MemoryInstance {
             validation::validate_memory(initial_u32, maximum_u32).map_err(Error::Memory)?;
         }
 
-        let memory = MemoryInstance::new(initial, maximum);
+        let memory = MemoryInstance::new(initial, maximum)?;
         Ok(MemoryRef(Rc::new(memory)))
     }
 
     /// Create new linear memory instance.
-    fn new(initial: Pages, maximum: Option<Pages>) -> Self {
+    fn new(initial: Pages, maximum: Option<Pages>) -> Result<Self, Error> {
         let limits = ResizableLimits::new(initial.0 as u32, maximum.map(|p| p.0 as u32));
 
         let initial_size: Bytes = initial.into();
-        MemoryInstance {
+        Ok(MemoryInstance {
             limits: limits,
-            buffer: RefCell::new(ByteBuf::new(initial_size.0)),
+            buffer: RefCell::new(
+                ByteBuf::new(initial_size.0).map_err(|err| Error::Memory(err.to_string()))?,
+            ),
             initial: initial,
             current_size: Cell::new(initial_size.0),
             maximum: maximum,
-        }
+        })
     }
 
     /// Return linear memory limits.
@@ -290,8 +286,12 @@ impl MemoryInstance {
         }
 
         let new_buffer_length: Bytes = new_size.into();
+        self.buffer
+            .borrow_mut()
+            .realloc(new_buffer_length.0)
+            .map_err(|err| Error::Memory(err.to_string()))?;
+
         self.current_size.set(new_buffer_length.0);
-        self.buffer.borrow_mut().realloc(new_buffer_length.0);
 
         Ok(size_before_grow)
     }
@@ -499,12 +499,14 @@ impl MemoryInstance {
         self.clear(offset, 0, len)
     }
 
-    /// Set every byte in the entire linear memory to 0.
+    /// Set every byte in the entire linear memory to 0, preserving its size.
     ///
     /// Might be useful for some optimization shenanigans.
-    pub fn erase(&self) {
-        let cur_size = self.buffer.borrow().len();
-        *self.buffer.borrow_mut() = ByteBuf::new(cur_size);
+    pub fn erase(&self) -> Result<(), Error> {
+        self.buffer
+            .borrow_mut()
+            .erase()
+            .map_err(|err| Error::Memory(err.to_string()))
     }
 }
 
@@ -518,30 +520,22 @@ mod tests {
 
     #[test]
     fn alloc() {
-        #[cfg(target_pointer_width = "64")]
-        let fixtures = &[
+        let mut fixtures = vec![
             (0, None, true),
             (0, Some(0), true),
             (1, None, true),
             (1, Some(1), true),
             (0, Some(1), true),
             (1, Some(0), false),
-            (0, Some(65536), true),
-            // TODO: Only use it for rust-alloc/mmap
-            // (65536, Some(65536), true),
-            // (65536, Some(0), false),
-            // (65536, None, true),
         ];
 
-        #[cfg(target_pointer_width = "32")]
-        let fixtures = &[
-            (0, None, true),
-            (0, Some(0), true),
-            (1, None, true),
-            (1, Some(1), true),
-            (0, Some(1), true),
-            (1, Some(0), false),
-        ];
+        #[cfg(target_pointer_width = "64")]
+        fixtures.extend(&[
+
+            (65536, Some(65536), true),
+            (65536, Some(0), false),
+            (65536, None, true),
+        ]);
 
         for (index, &(initial, maybe_max, expected_ok)) in fixtures.iter().enumerate() {
             let initial: Pages = Pages(initial);
@@ -563,7 +557,7 @@ mod tests {
     }
 
     fn create_memory(initial_content: &[u8]) -> MemoryInstance {
-        let mem = MemoryInstance::new(Pages(1), Some(Pages(1)));
+        let mem = MemoryInstance::new(Pages(1), Some(Pages(1))).unwrap();
         mem.set(0, initial_content)
             .expect("Successful initialize the memory");
         mem
@@ -676,7 +670,7 @@ mod tests {
 
     #[test]
     fn get_into() {
-        let mem = MemoryInstance::new(Pages(1), None);
+        let mem = MemoryInstance::new(Pages(1), None).unwrap();
         mem.set(6, &[13, 17, 129])
             .expect("memory set should not fail");
 

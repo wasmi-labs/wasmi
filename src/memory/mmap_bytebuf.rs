@@ -3,7 +3,7 @@
 //! This implementation uses `mmap` on POSIX systems (and should use `VirtualAlloc` on windows).
 //! There are possibilities to improve the performance for the reallocating case by reserving
 //! memory up to maximum. This might be a problem for systems that don't have a lot of virtual
-//! memory.
+//! memory (i.e. 32-bit platforms).
 
 use std::ptr::{self, NonNull};
 use std::slice;
@@ -20,9 +20,20 @@ struct Mmap {
 }
 
 impl Mmap {
-    fn new(len: usize) -> Self {
-        assert!(len < isize::max_value() as usize);
-        assert!(len > 0);
+    /// Create a new mmap mapping
+    ///
+    /// Returns `Err` if:
+    /// - `len` should not exceed `isize::max_value()`
+    /// - `len` should be greater than 0.
+    /// - `mmap` returns an error (almost certainly means out of memory).
+    fn new(len: usize) -> Result<Self, &'static str> {
+        if len >= isize::max_value() as usize {
+            return Err("`len` should not exceed `isize::max_value()`");
+        }
+        if len == 0 {
+            return Err("`len` should be greater than 0");
+        }
+
         let ptr_or_err = unsafe {
             // Safety Proof:
             // There are not specific safety proofs are required for this call, since the call
@@ -48,15 +59,19 @@ impl Mmap {
         };
 
         match ptr_or_err as usize {
-            // `mmap` shouldn't return 0 since it has a special meaning.
-            x if x == 0 || x as isize == -1 => panic!(),
+            // `mmap` returns -1 in case of an error.
+            // `mmap` shouldn't return 0 since it has a special meaning for compilers.
+            //
+            // With the current parameters, the error can only be returned in case of insufficient
+            // memory.
+            x if x == 0 || x as isize == -1 => Err("mmap returned error"),
             _ => {
                 let ptr = unsafe {
                     // Safety Proof:
                     // the ptr cannot be null as checked within the enclosing match.
                     NonNull::new_unchecked(ptr_or_err as *mut u8)
                 };
-                Self { ptr, len }
+                Ok(Self { ptr, len })
             }
         }
     }
@@ -108,19 +123,23 @@ pub struct ByteBuf {
 }
 
 impl ByteBuf {
-    pub fn new(len: usize) -> Self {
-        let mmap = if len == 0 { None } else { Some(Mmap::new(len)) };
-        Self { mmap }
+    pub fn new(len: usize) -> Result<Self, &'static str> {
+        let mmap = if len == 0 {
+            None
+        } else {
+            Some(Mmap::new(len)?)
+        };
+        Ok(Self { mmap })
     }
 
-    pub fn realloc(&mut self, new_len: usize) {
+    pub fn realloc(&mut self, new_len: usize) -> Result<(), &'static str> {
         let new_mmap = if new_len == 0 {
             None
         } else {
             if self.len() == 0 {
-                Some(Mmap::new(new_len))
+                Some(Mmap::new(new_len)?)
             } else {
-                let mut new_mmap = Mmap::new(new_len);
+                let mut new_mmap = Mmap::new(new_len)?;
 
                 {
                     let src = self.mmap.as_ref().unwrap().as_slice();
@@ -131,8 +150,8 @@ impl ByteBuf {
                 Some(new_mmap)
             }
         };
-
         self.mmap = new_mmap;
+        Ok(())
     }
 
     pub fn len(&self) -> usize {
@@ -148,5 +167,24 @@ impl ByteBuf {
             .as_mut()
             .map(|m| m.as_slice_mut())
             .unwrap_or(&mut [])
+    }
+
+    pub fn erase(&mut self) -> Result<(), &'static str> {
+        let cur_len = match self.mmap {
+            // Nothing to do here...
+            None => return Ok(()),
+            Some(Mmap { len: cur_len, .. }) => cur_len,
+        };
+
+        // The order is important.
+        //
+        // 1. First we clear, and thus drop, the current mmap if any.
+        // 2. And then we create a new one.
+        //
+        // Otherwise we double the peak memory consumption.
+        self.mmap = None;
+        self.mmap = Some(Mmap::new(cur_len)?);
+
+        Ok(())
     }
 }
