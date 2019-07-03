@@ -12,6 +12,16 @@ use parity_wasm::elements::ResizableLimits;
 use value::LittleEndianConvert;
 use Error;
 
+#[cfg(all(unix, not(feature = "vec_memory")))]
+#[path = "mmap_bytebuf.rs"]
+mod bytebuf;
+
+#[cfg(any(not(unix), feature = "vec_memory"))]
+#[path = "vec_bytebuf.rs"]
+mod bytebuf;
+
+use self::bytebuf::ByteBuf;
+
 /// Size of a page of [linear memory][`MemoryInstance`] - 64KiB.
 ///
 /// The size of a memory is always a integer multiple of a page size.
@@ -68,16 +78,6 @@ impl fmt::Debug for MemoryInstance {
             .finish()
     }
 }
-
-#[cfg(all(unix, not(feature = "vec_memory")))]
-#[path = "mmap_bytebuf.rs"]
-mod bytebuf;
-
-#[cfg(any(not(unix), feature = "vec_memory"))]
-#[path = "vec_bytebuf.rs"]
-mod bytebuf;
-
-use self::bytebuf::ByteBuf;
 
 struct CheckedRegion {
     offset: usize,
@@ -531,7 +531,6 @@ mod tests {
 
         #[cfg(target_pointer_width = "64")]
         fixtures.extend(&[
-
             (65536, Some(65536), true),
             (65536, Some(0), false),
             (65536, None, true),
