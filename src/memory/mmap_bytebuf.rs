@@ -142,7 +142,16 @@ impl ByteBuf {
                 let mut new_mmap = Mmap::new(new_len)?;
 
                 {
-                    let src = self.mmap.as_ref().unwrap().as_slice();
+                    let src = self
+                        .mmap
+                        .as_ref()
+                        .expect(
+                            "self.len() != 0;
+                            self.mmap is created if self.len() != 0;
+                            self.mmap is not `None`;
+                            qed",
+                        )
+                        .as_slice();
                     let dst = new_mmap.as_slice_mut();
                     dst[..src.len()].copy_from_slice(src);
                 }
