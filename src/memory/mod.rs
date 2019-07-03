@@ -69,12 +69,14 @@ impl fmt::Debug for MemoryInstance {
     }
 }
 
-mod rust_alloc as byte_buf;
-use self::rust_alloc::ByteBuf;
+mod mmap;
+use self::mmap::ByteBuf;
+
+// mod rust_alloc as byte_buf;
+// use self::rust_alloc::ByteBuf;
 
 // mod vec_backed;
 // use self::vec_backed::ByteBuf;
-
 
 struct CheckedRegion {
     offset: usize,
@@ -196,7 +198,10 @@ impl MemoryInstance {
         let mut buffer = self.buffer.borrow_mut();
         let region =
             self.checked_region(&mut buffer, offset as usize, ::core::mem::size_of::<T>())?;
-        Ok(T::from_little_endian(&buffer.as_slice_mut()[region.range()]).expect("Slice size is checked"))
+        Ok(
+            T::from_little_endian(&buffer.as_slice_mut()[region.range()])
+                .expect("Slice size is checked"),
+        )
     }
 
     /// Copy data from memory at given offset.
@@ -289,8 +294,7 @@ impl MemoryInstance {
         buffer: &mut ByteBuf,
         offset: usize,
         size: usize,
-    ) -> Result<CheckedRegion, Error>
-    {
+    ) -> Result<CheckedRegion, Error> {
         let end = offset.checked_add(size).ok_or_else(|| {
             Error::Memory(format!(
                 "trying to access memory block of size {} from offset {}",
