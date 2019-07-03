@@ -153,7 +153,9 @@ impl ByteBuf {
                         )
                         .as_slice();
                     let dst = new_mmap.as_slice_mut();
-                    dst[..src.len()].copy_from_slice(src);
+                    let amount = src.len().min(dst.len());
+                    dst[..amount].copy_from_slice(&src[..amount]);
+
                 }
 
                 Some(new_mmap)
@@ -195,5 +197,19 @@ impl ByteBuf {
         self.mmap = Some(Mmap::new(cur_len)?);
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ByteBuf;
+
+    const PAGE_SIZE: usize = 4096;
+
+    // This is not required since wasm memories can only grow but nice to have.
+    #[test]
+    fn byte_buf_shrink() {
+        let mut byte_buf = ByteBuf::new(PAGE_SIZE * 3).unwrap();
+        byte_buf.realloc(PAGE_SIZE * 2).unwrap();
     }
 }
