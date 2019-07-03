@@ -58,19 +58,13 @@ impl Mmap {
             )
         };
 
-        match ptr_or_err as usize {
-            // `mmap` returns -1 in case of an error.
-            // `mmap` shouldn't return 0 since it has a special meaning for compilers.
-            //
+        match ptr_or_err {
             // With the current parameters, the error can only be returned in case of insufficient
             // memory.
-            x if x == 0 || x as isize == -1 => Err("mmap returned error"),
+            libc::MAP_FAILED => Err("mmap returned an error"),
             _ => {
-                let ptr = unsafe {
-                    // Safety Proof:
-                    // the ptr cannot be null as checked within the enclosing match.
-                    NonNull::new_unchecked(ptr_or_err as *mut u8)
-                };
+                let ptr = NonNull::new(ptr_or_err as *mut u8)
+                    .ok_or("mmap returned 0")?;
                 Ok(Self { ptr, len })
             }
         }
