@@ -27,7 +27,7 @@ impl Mmap {
     /// - `len` should be greater than 0.
     /// - `mmap` returns an error (almost certainly means out of memory).
     fn new(len: usize) -> Result<Self, &'static str> {
-        if len >= isize::max_value() as usize {
+        if len > isize::max_value() as usize {
             return Err("`len` should not exceed `isize::max_value()`");
         }
         if len == 0 {
