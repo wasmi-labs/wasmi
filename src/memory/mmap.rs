@@ -89,6 +89,9 @@ impl ByteBuf {
     }
 
     pub fn as_slice_mut(&mut self) -> &mut [u8] {
-        self.mmap.as_mut().map(|m| m.as_slice_mut()).unwrap_or(&mut [])
+        self.mmap
+            .as_mut()
+            .map(|m| m.as_slice_mut())
+            .unwrap_or(&mut [])
     }
 }
