@@ -713,11 +713,19 @@ mod tests {
         let mem = MemoryInstance::alloc(Pages(1), None).unwrap();
         mem.set(100, &[0]).expect("memory set should not fail");
         mem.with_direct_access_mut(|buf| {
-            assert_eq!(buf.len(), 65536, "the buffer length is expected to be 1 page long");
+            assert_eq!(
+                buf.len(),
+                65536,
+                "the buffer length is expected to be 1 page long"
+            );
             buf[..10].copy_from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
         });
         mem.with_direct_access(|buf| {
-            assert_eq!(buf.len(), 65536, "the buffer length is expected to be 1 page long");
+            assert_eq!(
+                buf.len(),
+                65536,
+                "the buffer length is expected to be 1 page long"
+            );
             assert_eq!(&buf[..10], &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
         });
     }
