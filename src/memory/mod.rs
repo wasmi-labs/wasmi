@@ -508,6 +508,34 @@ impl MemoryInstance {
             .erase()
             .map_err(|err| Error::Memory(err.to_string()))
     }
+
+    /// Provides direct access to the underlying memory buffer.
+    ///
+    /// # Panics
+    ///
+    /// Any call that requires write access to memory (such as [`set`], [`clear`], etc) made within
+    /// the closure will panic.
+    ///
+    /// [`set`]: #method.get
+    /// [`clear`]: #method.set
+    pub fn with_direct_access<R, F: FnOnce(&[u8]) -> R>(&self, f: F) -> R {
+        let buf = self.buffer.borrow();
+        f(buf.as_slice())
+    }
+
+    /// Provides direct mutable access to the underlying memory buffer.
+    ///
+    /// # Panics
+    ///
+    /// Any calls that requires either read or write access to memory (such as [`get`], [`set`], [`copy`], etc) made
+    /// within the closure will panic. Proceed with caution.
+    ///
+    /// [`get`]: #method.get
+    /// [`set`]: #method.set
+    pub fn with_direct_access_mut<R, F: FnOnce(&mut [u8]) -> R>(&self, f: F) -> R {
+        let mut buf = self.buffer.borrow_mut();
+        f(buf.as_slice_mut())
+    }
 }
 
 #[cfg(test)]
@@ -678,5 +706,29 @@ mod tests {
             .expect("get_into should not fail");
 
         assert_eq!(data, [17, 129]);
+    }
+
+    #[test]
+    fn zero_copy() {
+        let mem = MemoryInstance::alloc(Pages(1), None).unwrap();
+        mem.set(100, &[0]).expect("memory set should not fail");
+        mem.with_direct_access_mut(|buf| {
+            assert_eq!(buf.len(), 65536, "the buffer length is expected to be 1 page long");
+            buf[..10].copy_from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        });
+        mem.with_direct_access(|buf| {
+            assert_eq!(buf.len(), 65536, "the buffer length is expected to be 1 page long");
+            assert_eq!(&buf[..10], &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        });
+    }
+
+    #[should_panic]
+    #[test]
+    fn zero_copy_panics_on_nested_access() {
+        let mem = MemoryInstance::alloc(Pages(1), None).unwrap();
+        let mem_inner = mem.clone();
+        mem.with_direct_access(move |_| {
+            let _ = mem_inner.set(0, &[11, 12, 13]);
+        });
     }
 }
