@@ -159,21 +159,17 @@ impl ByteBuf {
     }
 
     pub fn erase(&mut self) -> Result<(), &'static str> {
-        let cur_len = match self.mmap {
-            // Nothing to do here...
-            None => return Ok(()),
-            Some(Mmap { len: cur_len, .. }) => cur_len,
-        };
-
-        // The order is important.
-        //
-        // 1. First we clear, and thus drop, the current mmap if any.
-        // 2. And then we create a new one.
-        //
-        // Otherwise we double the peak memory consumption.
-        self.mmap = None;
-        self.mmap = Some(Mmap::new(cur_len)?);
-
+        let len = self.len();
+        if len > 0 {
+            // The order is important.
+            //
+            // 1. First we clear, and thus drop, the current mmap if any.
+            // 2. And then we create a new one.
+            //
+            // Otherwise we double the peak memory consumption.
+            self.mmap = None;
+            self.mmap = Some(Mmap::new(len)?);
+        }
         Ok(())
     }
 }
