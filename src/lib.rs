@@ -239,7 +239,7 @@ pub enum TrapKind {
     /// Typically returned from an implementation of [`Externals`].
     ///
     /// [`Externals`]: trait.Externals.html
-    Host(Box<host::HostError>),
+    Host(Box<dyn host::HostError>),
 }
 
 impl TrapKind {
@@ -273,7 +273,7 @@ pub enum Error {
     /// Trap.
     Trap(Trap),
     /// Custom embedder error.
-    Host(Box<host::HostError>),
+    Host(Box<dyn host::HostError>),
 }
 
 impl Error {
@@ -285,7 +285,7 @@ impl Error {
     /// [`Host`]: enum.Error.html#variant.Host
     /// [`Trap`]: enum.Error.html#variant.Trap
     /// [`TrapKind::Host`]: enum.TrapKind.html#variant.Host
-    pub fn as_host_error(&self) -> Option<&host::HostError> {
+    pub fn as_host_error(&self) -> Option<&dyn host::HostError> {
         match *self {
             Error::Host(ref host_err) => Some(&**host_err),
             Error::Trap(ref trap) => match *trap.kind() {
