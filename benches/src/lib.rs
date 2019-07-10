@@ -13,7 +13,7 @@ use wasmi::{ImportsBuilder, Module, ModuleInstance, NopExternals, RuntimeValue};
 use test::Bencher;
 
 // Load a module from a file.
-fn load_from_file(filename: &str) -> Result<Module, Box<error::Error>> {
+fn load_from_file(filename: &str) -> Result<Module, Box<dyn error::Error>> {
 	use std::io::prelude::*;
 	let mut file = File::open(filename)?;
 	let mut buf = Vec::new();
