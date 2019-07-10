@@ -1,6 +1,7 @@
-#[allow(unused_imports)]
-use alloc::prelude::v1::*;
-use alloc::rc::{Rc, Weak};
+use alloc::{
+    rc::{Rc, Weak},
+    vec::Vec,
+};
 use core::fmt;
 use host::Externals;
 use isa;

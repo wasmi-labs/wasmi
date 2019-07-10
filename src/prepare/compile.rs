@@ -1,5 +1,4 @@
-#[allow(unused_imports)]
-use alloc::prelude::v1::*;
+use alloc::{string::String, vec::Vec};
 
 use parity_wasm::elements::{BlockType, FuncBody, Instruction};
 

@@ -1,5 +1,4 @@
-#[allow(unused_imports)]
-use alloc::prelude::v1::*;
+use alloc::vec::Vec;
 
 use crate::{
     isa,

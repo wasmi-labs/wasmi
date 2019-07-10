@@ -1,7 +1,4 @@
-#[allow(unused_imports)]
-use alloc::prelude::v1::*;
-
-use alloc::collections::BTreeMap;
+use alloc::{collections::BTreeMap, string::String};
 
 use func::FuncRef;
 use global::GlobalRef;

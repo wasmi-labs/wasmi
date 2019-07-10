@@ -35,6 +35,8 @@ std = [
 ]
 # Enable for no_std support
 core = [
+    # `core` doesn't support vec_memory
+    "vec_memory",
     "wasmi-validation/core",
     "libm"
 ]

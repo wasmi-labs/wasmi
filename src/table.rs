@@ -1,6 +1,4 @@
-#[allow(unused_imports)]
-use alloc::prelude::v1::*;
-use alloc::rc::Rc;
+use alloc::{rc::Rc, vec::Vec};
 use core::cell::RefCell;
 use core::fmt;
 use core::u32;
