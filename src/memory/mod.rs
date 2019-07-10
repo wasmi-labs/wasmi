@@ -1,6 +1,4 @@
-#[allow(unused_imports)]
-use alloc::prelude::v1::*;
-use alloc::rc::Rc;
+use alloc::{rc::Rc, string::ToString, vec::Vec};
 use core::{
     cell::{Cell, RefCell},
     cmp, fmt,

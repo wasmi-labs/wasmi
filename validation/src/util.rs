@@ -1,6 +1,5 @@
 use crate::Error;
-#[allow(unused_imports)]
-use alloc::prelude::v1::*;
+use alloc::string::String;
 use parity_wasm::elements::{Local, ValueType};
 
 #[cfg(test)]

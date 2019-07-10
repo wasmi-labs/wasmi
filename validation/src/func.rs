@@ -1,6 +1,3 @@
-#[allow(unused_imports)]
-use alloc::prelude::v1::*;
-
 use crate::{
     context::ModuleContext, stack::StackWithLimit, util::Locals, Error, FuncValidator,
     DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX,

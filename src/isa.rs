@@ -67,8 +67,7 @@
 //! - Reserved immediates are ignored for `call_indirect`, `current_memory`, `grow_memory`.
 //!
 
-#[allow(unused_imports)]
-use alloc::prelude::v1::*;
+use alloc::vec::Vec;
 
 /// Should we keep a value before "discarding" a stack frame?
 ///

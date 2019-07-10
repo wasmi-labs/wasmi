@@ -1,7 +1,4 @@
-#[allow(unused_imports)]
-use alloc::prelude::v1::*;
-
-use alloc::collections::BTreeMap;
+use alloc::{collections::BTreeMap, string::String};
 
 use func::FuncRef;
 use global::GlobalRef;
@@ -103,7 +100,7 @@ pub trait ImportResolver {
 /// [`ImportResolver`]: trait.ImportResolver.html
 /// [`ModuleImportResolver`]: trait.ModuleImportResolver.html
 pub struct ImportsBuilder<'a> {
-    modules: BTreeMap<String, &'a ModuleImportResolver>,
+    modules: BTreeMap<String, &'a dyn ModuleImportResolver>,
 }
 
 impl<'a> Default for ImportsBuilder<'a> {
@@ -124,7 +121,7 @@ impl<'a> ImportsBuilder<'a> {
     pub fn with_resolver<N: Into<String>>(
         mut self,
         name: N,
-        resolver: &'a ModuleImportResolver,
+        resolver: &'a dyn ModuleImportResolver,
     ) -> Self {
         self.modules.insert(name.into(), resolver);
         self
@@ -133,11 +130,15 @@ impl<'a> ImportsBuilder<'a> {
     /// Register an resolver by a name.
     ///
     /// Mutable borrowed version.
-    pub fn push_resolver<N: Into<String>>(&mut self, name: N, resolver: &'a ModuleImportResolver) {
+    pub fn push_resolver<N: Into<String>>(
+        &mut self,
+        name: N,
+        resolver: &'a dyn ModuleImportResolver,
+    ) {
         self.modules.insert(name.into(), resolver);
     }
 
-    fn resolver(&self, name: &str) -> Option<&ModuleImportResolver> {
+    fn resolver(&self, name: &str) -> Option<&dyn ModuleImportResolver> {
         self.modules.get(name).cloned()
     }
 }

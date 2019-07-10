@@ -114,11 +114,11 @@ pub trait HostError: 'static + ::core::fmt::Display + ::core::fmt::Debug + Send 
     }
 }
 
-impl HostError {
+impl dyn HostError {
     /// Attempt to downcast this `HostError` to a concrete type by reference.
     pub fn downcast_ref<T: HostError>(&self) -> Option<&T> {
         if self.__private_get_type_id__() == TypeId::of::<T>() {
-            unsafe { Some(&*(self as *const HostError as *const T)) }
+            unsafe { Some(&*(self as *const dyn HostError as *const T)) }
         } else {
             None
         }
@@ -128,7 +128,7 @@ impl HostError {
     /// reference.
     pub fn downcast_mut<T: HostError>(&mut self) -> Option<&mut T> {
         if self.__private_get_type_id__() == TypeId::of::<T>() {
-            unsafe { Some(&mut *(self as *mut HostError as *mut T)) }
+            unsafe { Some(&mut *(self as *mut dyn HostError as *mut T)) }
         } else {
             None
         }
@@ -257,5 +257,5 @@ mod tests {
     }
 
     // Tests that `HostError` trait is object safe.
-    fn _host_error_is_object_safe(_: &HostError) {}
+    fn _host_error_is_object_safe(_: &dyn HostError) {}
 }
