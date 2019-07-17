@@ -319,7 +319,11 @@ pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error
     if let Some(data_section) = module.data_section() {
         for data_segment in data_section.entries() {
             context.require_memory(data_segment.index())?;
-            let init_ty = expr_const_type(data_segment.offset(), context.globals())?;
+            let offset = data_segment
+                .offset()
+                .as_ref()
+                .ok_or_else(|| Error("passive memory segments are not supported".into()))?;
+            let init_ty = expr_const_type(&offset, context.globals())?;
             if init_ty != ValueType::I32 {
                 return Err(Error("segment offset should return I32".into()));
             }
@@ -330,8 +334,11 @@ pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error
     if let Some(element_section) = module.elements_section() {
         for element_segment in element_section.entries() {
             context.require_table(element_segment.index())?;
-
-            let init_ty = expr_const_type(element_segment.offset(), context.globals())?;
+            let offset = element_segment
+                .offset()
+                .as_ref()
+                .ok_or_else(|| Error("passive element segments are not supported".into()))?;
+            let init_ty = expr_const_type(&offset, context.globals())?;
             if init_ty != ValueType::I32 {
                 return Err(Error("segment offset should return I32".into()));
             }

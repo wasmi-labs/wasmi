@@ -421,7 +421,11 @@ impl ModuleInstance {
             .map(|es| es.entries())
             .unwrap_or(&[])
         {
-            let offset_val = match eval_init_expr(element_segment.offset(), &module_ref) {
+            let offset = element_segment
+                .offset()
+                .as_ref()
+                .expect("passive segments are rejected due to validation");
+            let offset_val = match eval_init_expr(offset, &module_ref) {
                 RuntimeValue::I32(v) => v as u32,
                 _ => panic!("Due to validation elem segment offset should evaluate to i32"),
             };
@@ -450,7 +454,11 @@ impl ModuleInstance {
         }
 
         for data_segment in module.data_section().map(|ds| ds.entries()).unwrap_or(&[]) {
-            let offset_val = match eval_init_expr(data_segment.offset(), &module_ref) {
+            let offset = data_segment
+                .offset()
+                .as_ref()
+                .expect("passive segments are rejected due to validation");
+            let offset_val = match eval_init_expr(offset, &module_ref) {
                 RuntimeValue::I32(v) => v as u32,
                 _ => panic!("Due to validation data segment offset should evaluate to i32"),
             };
