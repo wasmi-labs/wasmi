@@ -26,8 +26,8 @@ This crate supports `no_std` environments.
 Enable the `core` feature and disable default features:
 ```toml
 [dependencies]
-parity-wasm = {
-	version = "0.31",
+wasmi = {
+	version = "*",
 	default-features = false,
 	features = "core"
 }
