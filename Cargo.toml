@@ -12,7 +12,7 @@ exclude = [ "/res/*", "/tests/*", "/fuzz/*", "/benches/*" ]
 
 [dependencies]
 wasmi-validation = { version = "0.1", path = "validation", default-features = false }
-parity-wasm = { version = "0.39", default-features = false }
+parity-wasm = { version = "0.40.1", default-features = false }
 memory_units = "0.3.0"
 libm = { version = "0.1.2", optional = true }
 num-rational = "0.2.2"
