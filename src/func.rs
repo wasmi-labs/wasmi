@@ -1,4 +1,5 @@
 use alloc::{
+    borrow::Cow,
     rc::{Rc, Weak},
     vec::Vec,
 };
@@ -195,12 +196,13 @@ impl FuncInstance {
     /// [`resume_execution`]: struct.FuncInvocation.html#method.resume_execution
     pub fn invoke_resumable<'args>(
         func: &FuncRef,
-        args: &'args [RuntimeValue],
+        args: impl Into<Cow<'args, [RuntimeValue]>>,
     ) -> Result<FuncInvocation<'args>, Trap> {
+        let args = args.into();
         check_function_args(func.signature(), &args)?;
         match *func.as_internal() {
             FuncInstanceInternal::Internal { .. } => {
-                let interpreter = Interpreter::new(func, args, None)?;
+                let interpreter = Interpreter::new(func, &*args, None)?;
                 Ok(FuncInvocation {
                     kind: FuncInvocationKind::Internal(interpreter),
                 })
@@ -257,7 +259,7 @@ pub struct FuncInvocation<'args> {
 enum FuncInvocationKind<'args> {
     Internal(Interpreter),
     Host {
-        args: &'args [RuntimeValue],
+        args: Cow<'args, [RuntimeValue]>,
         host_func_index: usize,
         finished: bool,
     },
@@ -304,7 +306,7 @@ impl<'args> FuncInvocation<'args> {
                     return Err(ResumableError::AlreadyStarted);
                 }
                 *finished = true;
-                Ok(externals.invoke_index(*host_func_index, args.clone().into())?)
+                Ok(externals.invoke_index(*host_func_index, args.as_ref().into())?)
             }
         }
     }
