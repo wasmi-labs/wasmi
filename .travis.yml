@@ -40,7 +40,17 @@ after_success: |
   ghp-import -n target/doc &&
   git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
 
-cache: cargo
+cache:
+  # Don't use `cache: cargo` since it adds the `target` directory and that can be huge.
+  # Saving and loading this directory dwarfes actual compilation and test times. But what is more
+  # important, is that travis timeouts the build since the job doesn't produce any output for more
+  # than 10 minutes.
+  #
+  # So we just cache ~/.cargo directory
+  directories:
+    - /home/travis/.cargo
 before_cache:
   # Travis can't cache files that are not readable by "others"
   - chmod -R a+r $HOME/.cargo
+  # According to the Travis CI docs for building Rust project this is done by,
+  - rm -rf /home/travis/.cargo/registry
