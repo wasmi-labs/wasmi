@@ -18,6 +18,7 @@ fn spec_to_runtime_value(val: Value<u32, u64>) -> RuntimeValue {
         Value::I64(v) => RuntimeValue::I64(v),
         Value::F32(v) => RuntimeValue::F32(v.into()),
         Value::F64(v) => RuntimeValue::F64(v.into()),
+        Value::V128(_) => panic!("v128 is not supported"),
     }
 }
 

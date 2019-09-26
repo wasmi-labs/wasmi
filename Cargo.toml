@@ -22,7 +22,7 @@ libc = "0.2.58"
 [dev-dependencies]
 assert_matches = "1.1"
 rand = "0.4.2"
-wabt = "0.6"
+wabt = "0.9"
 
 [features]
 default = ["std"]
