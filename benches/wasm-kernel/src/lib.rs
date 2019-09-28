@@ -33,7 +33,7 @@ pub extern "C" fn prepare_tiny_keccak() -> *const TinyKeccakTestData {
 }
 
 #[no_mangle]
-pub extern "C" fn bench_tiny_keccak(test_data: *const TinyKeccakTestData) {
+pub extern "C" fn bench_tiny_keccak(test_data: *mut TinyKeccakTestData) {
 	unsafe {
 		let mut keccak = Keccak::new_keccak256();
 		keccak.update((*test_data).data);
