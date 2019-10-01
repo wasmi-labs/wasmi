@@ -8,13 +8,13 @@
 //!
 //! NOTE: Pages in this source file refer to wasm32 pages which are defined by the spec as 64KiB in size.
 
-use winapi::shared::ntdef::NULL;
-use winapi::shared::minwindef::LPVOID;
 use winapi::shared::basetsd::SIZE_T;
-use winapi::um::winnt::{MEM_RESERVE, MEM_RELEASE, MEM_COMMIT, PAGE_READWRITE};
+use winapi::shared::minwindef::LPVOID;
+use winapi::shared::ntdef::NULL;
 use winapi::um::memoryapi::{VirtualAlloc, VirtualFree};
+use winapi::um::winnt::{MEM_COMMIT, MEM_RELEASE, MEM_RESERVE, PAGE_READWRITE};
 
-use std::ptr::{NonNull};
+use std::ptr::NonNull;
 use std::slice;
 
 struct VAlloc {
@@ -97,14 +97,12 @@ impl VAlloc {
 
         // Checking if there is an error with allocating memory pages.
         if ptr == NULL {
-            return Err("VirtualAlloc couldn't commit initial pages")
+            return Err("VirtualAlloc couldn't commit initial pages");
         }
 
         let base_ptr = NonNull::new(base_ptr).ok_or("VirtualAlloc returned an error")?;
 
-        Ok(
-            Self { ptr: base_ptr, len }
-        )
+        Ok(Self { ptr: base_ptr, len })
     }
 
     /// Commits more pages  `new_len` to be used by
@@ -136,7 +134,7 @@ impl VAlloc {
 
         // Checking if there is an error with allocating memory pages.
         if ptr == NULL {
-            return Err("VirtualAlloc couldn't commit pages on grow")
+            return Err("VirtualAlloc couldn't commit pages on grow");
         }
 
         Ok(())
