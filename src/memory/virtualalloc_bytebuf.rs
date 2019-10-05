@@ -41,8 +41,6 @@ impl VAlloc {
     /// - `VirtualAlloc` returns an error when committing pages.
     /// - `initial pages` cannot be committed.
     fn new(len: usize) -> Result<Self, &'static str> {
-        println!("windows vm new = {:?}", len);
-
         if len > isize::max_value() as usize {
             return Err("`len` should not exceed `isize::max_value()`");
         }
@@ -95,7 +93,7 @@ impl VAlloc {
             )
         };
 
-        // Checking if there is an error with allocating memory pages.
+        // Checking if there is an error with committing memory pages.
         if ptr == NULL {
             return Err("VirtualAlloc couldn't commit initial pages");
         }
@@ -105,13 +103,12 @@ impl VAlloc {
         Ok(Self { ptr: base_ptr, len })
     }
 
-    /// Commits more pages  `new_len` to be used by
-    ///
+    /// Commits more pages
     fn grow(&mut self, new_len: usize) -> Result<(), &'static str> {
         // Pointer to memory base
         let base_ptr = self.ptr.as_ptr() as LPVOID;
 
-        // Commit initial pages.
+        // Commit pages.
         let ptr = unsafe {
             // Even though we are committing, actual physical pages are not allocated until
             // they are accessed.
@@ -132,10 +129,13 @@ impl VAlloc {
             )
         };
 
-        // Checking if there is an error with allocating memory pages.
+        // Checking if there is an error with committing memory pages.
         if ptr == NULL {
             return Err("VirtualAlloc couldn't commit pages on grow");
         }
+
+        // Update length.
+        self.len = new_len;
 
         Ok(())
     }
@@ -195,7 +195,11 @@ pub struct ByteBuf {
 
 impl ByteBuf {
     pub fn new(len: usize) -> Result<Self, &'static str> {
-        let region = Some(VAlloc::new(len)?);
+        let region = if len == 0 {
+            None
+        } else {
+            Some(VAlloc::new(len)?)
+        };
 
         Ok(Self { region })
     }
@@ -218,6 +222,12 @@ impl ByteBuf {
             // specified maximum or `WASM_MAX_PAGES`.
             if new_len > region.len {
                 region.grow(new_len)?;
+            }
+        } else {
+            // On the other hand, if region has not been allocated and new length
+            // is greater than zero, then a new memory needs to be allocated.
+            if new_len > 0 {
+                self.region = Some(VAlloc::new(new_len)?);
             }
         }
 
