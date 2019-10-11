@@ -1290,9 +1290,7 @@ impl FunctionContext {
 
         let num_locals = locals.iter().map(|l| l.count() as usize).sum();
 
-        for _ in 0..num_locals {
-            value_stack.push(Default::default())?;
-        }
+        value_stack.extend(num_locals)?;
 
         self.is_initialized = true;
         Ok(())
@@ -1435,6 +1433,18 @@ impl ValueStack {
             .ok_or_else(|| TrapKind::StackOverflow)?;
         *cell = value;
         self.sp += 1;
+        Ok(())
+    }
+
+    fn extend(&mut self, len: usize) -> Result<(), TrapKind> {
+        let cells = self
+            .buf
+            .get_mut(self.sp..self.sp + len)
+            .ok_or_else(|| TrapKind::StackOverflow)?;
+        for cell in cells {
+            *cell = Default::default();
+        }
+        self.sp += len;
         Ok(())
     }
 
