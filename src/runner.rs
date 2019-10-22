@@ -1289,14 +1289,8 @@ impl FunctionContext {
         debug_assert!(!self.is_initialized);
 
         let num_locals = locals.iter().map(|l| l.count() as usize).sum();
-        let locals = vec![Default::default(); num_locals];
 
-        // TODO: Replace with extend.
-        for local in locals {
-            value_stack
-                .push(local)
-                .map_err(|_| TrapKind::StackOverflow)?;
-        }
+        value_stack.extend(num_locals)?;
 
         self.is_initialized = true;
         Ok(())
@@ -1439,6 +1433,18 @@ impl ValueStack {
             .ok_or_else(|| TrapKind::StackOverflow)?;
         *cell = value;
         self.sp += 1;
+        Ok(())
+    }
+
+    fn extend(&mut self, len: usize) -> Result<(), TrapKind> {
+        let cells = self
+            .buf
+            .get_mut(self.sp..self.sp + len)
+            .ok_or_else(|| TrapKind::StackOverflow)?;
+        for cell in cells {
+            *cell = Default::default();
+        }
+        self.sp += len;
         Ok(())
     }
 
