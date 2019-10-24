@@ -7,15 +7,18 @@ language:
 matrix:
   fast_finish: true
   include:
-  - rust: nightly
-  - rust: stable
+#  - rust: nightly
+#  - rust: stable
   - rust: stable
     env: TARGET=armv7-unknown-linux-gnueabihf
+  - rust: stable
+    env: TARGET=powerpc64-unknown-linux-gnu
 
 install:
 - if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then rustup target add wasm32-unknown-unknown; fi
 - if [ -n "$TARGET" ]; then rustup target add "$TARGET" && sudo apt-get install --yes qemu-user-static; fi
 - if [ "$TARGET" == "armv7-unknown-linux-gnueabihf" ]; then sudo apt-get install --yes crossbuild-essential-armhf && export QEMU_LD_PREFIX=/usr/arm-linux-gnueabihf; fi
+- if [ "$TARGET" == "powerpc64-unknown-linux-gnu" ]; then sudo apt-get install --yes crossbuild-essential-powerpc && export QEMU_LD_PREFIX=/usr/powerpc-linux-gnu/; fi
 - rustup component add rustfmt
 - sudo apt-get install --yes cmake
 
