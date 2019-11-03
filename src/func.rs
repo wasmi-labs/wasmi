@@ -4,7 +4,7 @@ use alloc::{
     vec::Vec,
 };
 use core::fmt;
-use host::Externals;
+use host::{Externals,AsyncExternals};
 use isa;
 use module::ModuleInstance;
 use parity_wasm::elements::Local;
@@ -12,6 +12,7 @@ use runner::{check_function_args, Interpreter, InterpreterState, StackRecycler};
 use types::ValueType;
 use value::RuntimeValue;
 use {Signature, Trap};
+use futures::Future;
 
 /// Reference to a function (See [`FuncInstance`] for details).
 ///
@@ -150,6 +151,39 @@ impl FuncInstance {
                 ..
             } => externals.invoke_index(*host_func_index, args.into()),
         }
+    }
+
+    /// Invoke this function asynchronously.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if `args` types is not match function [`signature`] or
+    /// if [`Trap`] at execution time occured.
+    ///
+    /// [`signature`]: #method.signature
+    /// [`Trap`]: #enum.Trap.html
+    pub fn invoke_async<'a>(
+        func: FuncRef,
+        args: Vec<RuntimeValue>,
+        externals: Rc<dyn AsyncExternals>,
+    ) -> Box<(dyn Future<Item = Option<RuntimeValue>,Error= Trap>+'a)> 
+    {
+
+            check_function_args(func.signature(), &args).unwrap();
+            match *func.as_internal() {
+                FuncInstanceInternal::Internal { .. } => {
+                    let interpreter = Interpreter::new(&func, &args, None).unwrap();
+                    interpreter.start_execution_async(externals)
+                }
+                FuncInstanceInternal::Host {
+                    ref host_func_index,
+                    ..
+                } => {
+                    externals
+                        .invoke_index_async(*host_func_index, args.into())
+                        
+                }
+            }
     }
 
     /// Invoke this function using recycled stacks.

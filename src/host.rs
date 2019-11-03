@@ -1,6 +1,7 @@
 use core::any::TypeId;
 use value::{FromRuntimeValue, RuntimeValue};
 use {Trap, TrapKind};
+use futures::Future;
 
 /// Wrapper around slice of [`RuntimeValue`] for using it
 /// as an argument list conveniently.
@@ -11,6 +12,11 @@ pub struct RuntimeArgs<'a>(&'a [RuntimeValue]);
 
 impl<'a> From<&'a [RuntimeValue]> for RuntimeArgs<'a> {
     fn from(inner: &'a [RuntimeValue]) -> Self {
+        RuntimeArgs(inner)
+    }
+}
+impl<'a> From<&'a Vec<RuntimeValue>> for RuntimeArgs<'a> {
+    fn from(inner: &'a Vec<RuntimeValue>) -> Self {
         RuntimeArgs(inner)
     }
 }
@@ -219,6 +225,18 @@ pub trait Externals {
         index: usize,
         args: RuntimeArgs,
     ) -> Result<Option<RuntimeValue>, Trap>;
+}
+
+
+/// Trait that allows to implement asynchronous host functions.
+/// Async version of [`Externals`]
+pub trait AsyncExternals {
+    /// Perform invoke of a host function by specified `index`.
+    fn invoke_index_async<'a>(
+        & self,
+        index: usize,
+        args: Vec<RuntimeValue>,
+    ) -> Box<dyn Future<Item=Option<RuntimeValue>,Error= Trap>+'a>;
 }
 
 /// Implementation of [`Externals`] that just traps on [`invoke_index`].
