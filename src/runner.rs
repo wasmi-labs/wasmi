@@ -231,19 +231,11 @@ impl Interpreter {
         externals: Rc<dyn AsyncExternals>,
     ) -> Box<dyn Future<Item = Option<RuntimeValue>, Error = Trap>+'a> 
     {
-        // Box<dyn Future<Item = (), Error = Trap> + 'a>
         // Ensure that the VM has not been executed. This is checked in `FuncInvocation::start_execution`.
         assert!(self.state == InterpreterState::Initialized);
 
         self.state = InterpreterState::Started;
         Box::new(self.run_interpreter_loop_async(externals))
-        // self.run_interpreter_loop_async(externals).await?;
-
-        // // Ensure that stack is empty after the execution. This is guaranteed by the validation properties.
-        //
-
-        // Ok(opt_return_value)
-        // Box::new(futures::future::ok(None))
     }
 
     pub fn resume_execution<'a, E: Externals + 'a>(
@@ -412,15 +404,21 @@ impl Interpreter {
 
                 if !function_context.is_initialized() {
                     // Initialize stack frame for the function call.
-                    function_context
-                        .initialize(&function_body.locals, &mut rs.borrow_mut().value_stack)
-                        .unwrap();
+                    if let Err(err)= function_context
+                        .initialize(&function_body.locals, &mut rs.borrow_mut().value_stack){
+                            return future::Either::A(future::err(err.into()))
+                        }
+                        
                 }
 
-                let function_return = rs.borrow_mut()
+                let function_return = match rs.borrow_mut()
                     .do_run_function(&mut function_context, &function_body.code)
-                    .map_err(Trap::new)
-                    .unwrap();
+                    .map_err(Trap::new){
+                        Ok(f)=>f,
+                        Err(err)=>{
+                            return future::Either::A(future::err(err.into()))
+                        }
+                    };
                 match function_return {
                     RunResult::Return => {
                         if rs.borrow().call_stack.is_empty() {
@@ -475,10 +473,12 @@ impl Interpreter {
                                             );
                                         }
                                         if let Some(return_val) = return_val {
-                                            s.borrow_mut().value_stack
+                                            if let Err(err)=s.borrow_mut().value_stack
                                                 .push(return_val.into())
-                                                .map_err(Trap::new)
-                                                .unwrap();
+                                                .map_err(Trap::new){
+                                                    return future::err(err)
+                                                }
+
                                         }
                                         future::ok(future::Loop::Continue(Rc::clone(&rs)))
                                     });

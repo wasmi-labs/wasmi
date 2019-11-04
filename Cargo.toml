@@ -24,6 +24,7 @@ futures = "0.1.29"
 assert_matches = "1.1"
 rand = "0.4.2"
 wabt = "0.9"
+tokio = "0.1.22"
 
 [features]
 default = ["std"]

@@ -12,7 +12,7 @@ use runner::{check_function_args, Interpreter, InterpreterState, StackRecycler};
 use types::ValueType;
 use value::RuntimeValue;
 use {Signature, Trap};
-use futures::Future;
+use futures::{Future, future};
 
 /// Reference to a function (See [`FuncInstance`] for details).
 ///
@@ -169,11 +169,21 @@ impl FuncInstance {
     ) -> Box<(dyn Future<Item = Option<RuntimeValue>,Error= Trap>+'a)> 
     {
 
-            check_function_args(func.signature(), &args).unwrap();
+            if let Err(err)=check_function_args(func.signature(), &args){
+                return Box::new(future::err(err))
+            }
             match *func.as_internal() {
                 FuncInstanceInternal::Internal { .. } => {
-                    let interpreter = Interpreter::new(&func, &args, None).unwrap();
-                    interpreter.start_execution_async(externals)
+                    let interpreter = Interpreter::new(&func, &args, None);
+                    match interpreter{
+                        Ok(i)=>{
+                            i.start_execution_async(externals)
+                        },
+                        Err(err)=>{
+                            Box::new(future::err(err))
+                        }
+                    }
+                    
                 }
                 FuncInstanceInternal::Host {
                     ref host_func_index,

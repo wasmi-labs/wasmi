@@ -1,7 +1,7 @@
 use core::any::TypeId;
 use value::{FromRuntimeValue, RuntimeValue};
 use {Trap, TrapKind};
-use futures::Future;
+use futures::{Future,future};
 
 /// Wrapper around slice of [`RuntimeValue`] for using it
 /// as an argument list conveniently.
@@ -17,7 +17,7 @@ impl<'a> From<&'a [RuntimeValue]> for RuntimeArgs<'a> {
 }
 impl<'a> From<&'a Vec<RuntimeValue>> for RuntimeArgs<'a> {
     fn from(inner: &'a Vec<RuntimeValue>) -> Self {
-        RuntimeArgs(inner)
+        RuntimeArgs(&inner)
     }
 }
 
@@ -227,18 +227,6 @@ pub trait Externals {
     ) -> Result<Option<RuntimeValue>, Trap>;
 }
 
-
-/// Trait that allows to implement asynchronous host functions.
-/// Async version of [`Externals`]
-pub trait AsyncExternals {
-    /// Perform invoke of a host function by specified `index`.
-    fn invoke_index_async<'a>(
-        & self,
-        index: usize,
-        args: Vec<RuntimeValue>,
-    ) -> Box<dyn Future<Item=Option<RuntimeValue>,Error= Trap>+'a>;
-}
-
 /// Implementation of [`Externals`] that just traps on [`invoke_index`].
 ///
 /// [`Externals`]: trait.Externals.html
@@ -254,6 +242,33 @@ impl Externals for NopExternals {
         Err(TrapKind::Unreachable.into())
     }
 }
+
+/// Trait that allows to implement asynchronous host functions.
+/// Async version of [`Externals`]
+pub trait AsyncExternals {
+    /// Perform invoke of a host function by specified `index`.
+    fn invoke_index_async<'a>(
+        & self,
+        index: usize,
+        args: Vec<RuntimeValue>,
+    ) -> Box<dyn Future<Item=Option<RuntimeValue>,Error= Trap>+'a>;
+}
+/// Implementation of [`Externals`] that just traps on [`invoke_index`].
+///
+/// [`Externals`]: trait.Externals.html
+/// [`invoke_index`]: trait.Externals.html#tymethod.invoke_index
+pub struct NopExternalsAsync;
+
+impl AsyncExternals for NopExternalsAsync {
+    fn invoke_index_async<'a>(
+        & self,
+        _index: usize,
+        _args: Vec<RuntimeValue>,
+    ) -> Box<dyn Future<Item=Option<RuntimeValue>,Error= Trap>+'a>{
+        Box::new(future::err(TrapKind::Unreachable.into()))
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

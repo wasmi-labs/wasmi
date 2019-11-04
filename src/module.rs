@@ -23,7 +23,7 @@ use table::TableRef;
 use types::{GlobalDescriptor, MemoryDescriptor, TableDescriptor};
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 use {Error, MemoryInstance, Module, RuntimeValue, Signature, TableInstance};
-use futures::Future;
+use futures::{Future, future};
 
 /// Reference to a [`ModuleInstance`].
 ///
@@ -653,16 +653,27 @@ impl ModuleInstance {
     /// - given arguments doesn't match to function signature,
     /// - trap occurred at the execution time,
     ///
-    pub fn invoke_export_async<'a>(
+    pub fn invoke_export_async<'a,E>(
         &self,
         func_name: &str,
         args: Vec<RuntimeValue>,
-        externals: Rc<dyn AsyncExternals>,
-    ) -> Box<dyn Future<Item=Option<RuntimeValue>,Error= Trap>+'a>
+        externals: Rc<E>,
+    ) -> impl Future<Item=Option<RuntimeValue>,Error= Error>
+    where E:AsyncExternals +'static 
     {
-        let func_instance = self.func_by_name(func_name).unwrap();
+        let func_instance = self.func_by_name(func_name);
 
-        FuncInstance::invoke_async(func_instance, args, externals)
+        match func_instance{
+            Ok(func)=>{
+                future::Either::A(FuncInstance::invoke_async(func, args, externals).from_err())
+
+            },
+            Err(err)=>{
+                future::Either::B(future::err(err))
+            }
+        }
+
+        
     }
 
     /// Invoke exported function by a name using recycled stacks.
