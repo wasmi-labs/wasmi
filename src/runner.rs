@@ -226,9 +226,9 @@ impl Interpreter {
         Ok(opt_return_value)
     }
 
-    pub fn start_execution_async<'a>(
+    pub fn start_execution_async<'a,E:AsyncExternals +'a>(
         mut self,
-        externals: Rc<dyn AsyncExternals>,
+        externals: Rc<E>,
     ) -> Box<dyn Future<Item = Option<RuntimeValue>, Error = Trap>+'a> 
     {
         // Ensure that the VM has not been executed. This is checked in `FuncInvocation::start_execution`.
@@ -384,9 +384,9 @@ impl Interpreter {
     }
 
 
-    fn run_interpreter_loop_async<'a>(
+    fn run_interpreter_loop_async<'a,E:AsyncExternals +'a>(
         self,
-        externals: Rc<dyn AsyncExternals>,
+        externals: Rc<E>,
     ) -> Box<dyn Future<Item = Option<RuntimeValue>, Error = Trap> +'a>   
     {
         //return loop?

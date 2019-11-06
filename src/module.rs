@@ -777,13 +777,13 @@ impl<'a> NotStartedModuleRef<'a> {
     /// # Errors
     ///
     /// Returns `Err` if start function traps.
-    pub fn run_start_async_block(self, state: Rc<dyn AsyncExternals>) -> Result<ModuleRef, Trap> {
+    pub fn run_start_async_block<E:AsyncExternals +'a>(self, state: &Rc<E>) -> Result<ModuleRef, Trap> {
         if let Some(start_fn_idx) = self.loaded_module.module().start_section() {
             let start_func = self
                 .instance
                 .func_by_index(start_fn_idx)
                 .expect("Due to validation start function should exists");
-            FuncInstance::invoke_async(start_func, Vec::new(), state).wait()?;
+            FuncInstance::invoke_async(start_func, Vec::new(), Rc::clone(state)).wait()?;
         }
         Ok(self.instance)
     }

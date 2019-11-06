@@ -162,10 +162,10 @@ impl FuncInstance {
     ///
     /// [`signature`]: #method.signature
     /// [`Trap`]: #enum.Trap.html
-    pub fn invoke_async<'a>(
+    pub fn invoke_async<'a,E: AsyncExternals +'a>(
         func: FuncRef,
         args: Vec<RuntimeValue>,
-        externals: Rc<dyn AsyncExternals>,
+        externals: Rc<E>,
     ) -> Box<(dyn Future<Item = Option<RuntimeValue>,Error= Trap>+'a)> 
     {
 
