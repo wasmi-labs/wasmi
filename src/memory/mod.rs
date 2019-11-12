@@ -504,7 +504,7 @@ impl MemoryInstance {
         self.buffer
             .borrow_mut()
             .erase()
-            .map_err(|err| Error::Memory(err.to_string()))
+            .map_err(|err| Error::Memory(err))
     }
 
     /// Provides direct access to the underlying memory buffer.

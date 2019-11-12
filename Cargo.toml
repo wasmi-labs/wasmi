@@ -18,6 +18,7 @@ libm = { version = "0.1.2", optional = true }
 num-rational = "0.2.2"
 num-traits = "0.2.8"
 libc = "0.2.58"
+errno = "0.2.4"
 
 [dev-dependencies]
 assert_matches = "1.1"
