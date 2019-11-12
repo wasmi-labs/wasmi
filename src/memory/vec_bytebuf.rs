@@ -1,6 +1,6 @@
 //! An implementation of `ByteBuf` based on a plain `Vec`.
 
-use alloc::vec::Vec;
+use alloc::{string::String, vec::Vec};
 
 pub struct ByteBuf {
     buf: Vec<u8>,
