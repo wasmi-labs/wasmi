@@ -1,19 +1,19 @@
 //! An implementation of `ByteBuf` based on a plain `Vec`.
 
-use alloc::vec::Vec;
+use alloc::{string::String, vec::Vec};
 
 pub struct ByteBuf {
     buf: Vec<u8>,
 }
 
 impl ByteBuf {
-    pub fn new(len: usize) -> Result<Self, &'static str> {
+    pub fn new(len: usize) -> Result<Self, String> {
         let mut buf = Vec::new();
         buf.resize(len, 0u8);
         Ok(Self { buf })
     }
 
-    pub fn realloc(&mut self, new_len: usize) -> Result<(), &'static str> {
+    pub fn realloc(&mut self, new_len: usize) -> Result<(), String> {
         self.buf.resize(new_len, 0u8);
         Ok(())
     }
@@ -30,7 +30,7 @@ impl ByteBuf {
         self.buf.as_mut()
     }
 
-    pub fn erase(&mut self) -> Result<(), &'static str> {
+    pub fn erase(&mut self) -> Result<(), String> {
         for v in &mut self.buf {
             *v = 0;
         }
