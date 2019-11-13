@@ -70,9 +70,7 @@ impl Mmap {
                 Err(format!("mmap returned an error ({}): {}", errno.0, errno))
             }
             #[cfg(not(feature = "errno"))]
-            libc::MAP_FAILED => {
-                Err("mmap returned an error".into())
-            }
+            libc::MAP_FAILED => Err("mmap returned an error".into()),
             _ => {
                 let ptr = NonNull::new(ptr_or_err as *mut u8)
                     .ok_or_else(|| "mmap returned 0".to_string())?;
