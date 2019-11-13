@@ -1,6 +1,6 @@
 [package]
 name = "wasmi"
-version = "0.6.1"
+version = "0.6.2"
 authors = ["Nikolay Volf <nikvolf@gmail.com>", "Svyatoslav Nikolsky <svyatonik@yandex.ru>", "Sergey Pepyakin <s.pepyakin@gmail.com>"]
 license = "MIT/Apache-2.0"
 readme = "README.md"
@@ -18,7 +18,7 @@ libm = { version = "0.1.2", optional = true }
 num-rational = "0.2.2"
 num-traits = "0.2.8"
 libc = "0.2.58"
-errno = "0.2.4"
+errno = { version = "0.2.4", optional = true }
 
 [dev-dependencies]
 assert_matches = "1.1"
