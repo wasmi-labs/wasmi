@@ -61,9 +61,17 @@ impl Mmap {
         match ptr_or_err {
             // With the current parameters, the error can only be returned in case of insufficient
             // memory.
+            //
+            // If we have `errno` linked in augement the error message with the one that was
+            // provided by errno.
+            #[cfg(feature = "errno")]
             libc::MAP_FAILED => {
                 let errno = errno::errno();
                 Err(format!("mmap returned an error ({}): {}", errno.0, errno))
+            }
+            #[cfg(not(feature = "errno"))]
+            libc::MAP_FAILED => {
+                Err("mmap returned an error".into())
             }
             _ => {
                 let ptr = NonNull::new(ptr_or_err as *mut u8)
