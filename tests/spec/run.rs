@@ -69,6 +69,7 @@ impl Externals for SpecModule {
         &mut self,
         index: usize,
         args: RuntimeArgs,
+        _module: &ModuleRef,
     ) -> Result<Option<RuntimeValue>, Trap> {
         match index {
             PRINT_FUNC_INDEX => {

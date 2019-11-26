@@ -2,7 +2,7 @@ use core::any::TypeId;
 use value::{FromRuntimeValue, RuntimeValue};
 use {Trap, TrapKind};
 use futures::{Future,future};
-
+use module::{ModuleRef};
 /// Wrapper around slice of [`RuntimeValue`] for using it
 /// as an argument list conveniently.
 ///
@@ -224,6 +224,7 @@ pub trait Externals {
         &mut self,
         index: usize,
         args: RuntimeArgs,
+        module: &ModuleRef,
     ) -> Result<Option<RuntimeValue>, Trap>;
 }
 
@@ -238,6 +239,7 @@ impl Externals for NopExternals {
         &mut self,
         _index: usize,
         _args: RuntimeArgs,
+        _module: &ModuleRef,
     ) -> Result<Option<RuntimeValue>, Trap> {
         Err(TrapKind::Unreachable.into())
     }
@@ -251,6 +253,7 @@ pub trait AsyncExternals {
         & self,
         index: usize,
         args: Vec<RuntimeValue>,
+        module:&ModuleRef,
     ) -> Box<dyn Future<Item=Option<RuntimeValue>,Error= Trap>+'a>;
 }
 /// Implementation of [`Externals`] that just traps on [`invoke_index`].
@@ -264,6 +267,7 @@ impl AsyncExternals for NopExternalsAsync {
         & self,
         _index: usize,
         _args: Vec<RuntimeValue>,
+        _module:&ModuleRef,
     ) -> Box<dyn Future<Item=Option<RuntimeValue>,Error= Trap>+'a>{
         Box::new(future::err(TrapKind::Unreachable.into()))
     }

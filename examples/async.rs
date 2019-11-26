@@ -96,6 +96,7 @@ impl AsyncExternals for Env {
         &self,
         index: usize,
         _args: Vec<RuntimeValue>,
+        _module:&ModuleRef,
     ) -> Box<dyn Future<Item = Option<RuntimeValue>, Error = Trap> + 'b> {
         match index {
             0 => {

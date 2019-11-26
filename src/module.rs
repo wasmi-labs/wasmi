@@ -41,6 +41,120 @@ use futures::{Future, future};
 #[derive(Clone, Debug)]
 pub struct ModuleRef(pub(crate) Rc<ModuleInstance>);
 
+impl ModuleRef{
+/// Invoke exported function by a name asynchronously.
+    ///
+    /// This function finds exported function by a name, and calls it with provided arguments and
+    /// external state.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if:
+    ///
+    /// - there are no export with a given name or this export is not a function,
+    /// - given arguments doesn't match to function signature,
+    /// - trap occurred at the execution time,
+    ///
+    pub fn invoke_export_async<'a,E>(
+        &self,
+        func_name: &str,
+        args: Vec<RuntimeValue>,
+        externals: Rc<E>,
+    ) -> impl Future<Item=Option<RuntimeValue>,Error= Error>
+    where E:AsyncExternals +'static 
+    {
+        let func_instance = self.func_by_name(func_name);
+
+        match func_instance{
+            Ok(func)=>{
+                future::Either::A(FuncInstance::invoke_async(func, args, externals,self).from_err())
+
+            },
+            Err(err)=>{
+                future::Either::B(future::err(err))
+            }
+        }
+    }
+     /// Invoke exported function by a name.
+    ///
+    /// This function finds exported function by a name, and calls it with provided arguments and
+    /// external state.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if:
+    ///
+    /// - there are no export with a given name or this export is not a function,
+    /// - given arguments doesn't match to function signature,
+    /// - trap occurred at the execution time,
+    ///
+    /// # Examples
+    ///
+    /// Invoke a function that takes two numbers and returns sum of them.
+    ///
+    /// ```rust
+    /// # extern crate wasmi;
+    /// # extern crate wabt;
+    /// # use wasmi::{ModuleInstance, ImportsBuilder, NopExternals, RuntimeValue};
+    /// # fn main() {
+    /// # let wasm_binary: Vec<u8> = wabt::wat2wasm(
+    /// #   r#"
+    /// #   (module
+    /// #       (func (export "add") (param i32 i32) (result i32)
+    /// #           get_local 0
+    /// #           get_local 1
+    /// #           i32.add
+    /// #       )
+    /// #   )
+    /// #   "#,
+    /// # ).expect("failed to parse wat");
+    /// # let module = wasmi::Module::from_buffer(&wasm_binary).expect("failed to load wasm");
+    /// # let instance = ModuleInstance::new(
+    /// # &module,
+    /// # &ImportsBuilder::default()
+    /// # ).expect("failed to instantiate wasm module").assert_no_start();
+    /// assert_eq!(
+    ///     instance.invoke_export(
+    ///         "add",
+    ///         &[RuntimeValue::I32(5), RuntimeValue::I32(3)],
+    ///         &mut NopExternals,
+    ///     ).expect("failed to execute export"),
+    ///     Some(RuntimeValue::I32(8)),
+    /// );
+    /// # }
+    /// ```
+    pub fn invoke_export<E: Externals>(
+        &self,
+        func_name: &str,
+        args: &[RuntimeValue],
+        externals: &mut E,
+    ) -> Result<Option<RuntimeValue>, Error> {
+        let func_instance = self.func_by_name(func_name)?;
+
+        FuncInstance::invoke(&func_instance, args, externals,self).map_err(|t| Error::Trap(t))
+    }
+
+    /// Invoke exported function by a name using recycled stacks.
+    ///
+    /// # Errors
+    ///
+    /// Same as [`invoke_export`].
+    ///
+    /// [`invoke_export`]: #method.invoke_export
+    pub fn invoke_export_with_stack<E: Externals>(
+        &self,
+        func_name: &str,
+        args: &[RuntimeValue],
+        externals: &mut E,
+        stack_recycler: &mut StackRecycler,
+    ) -> Result<Option<RuntimeValue>, Error> {
+        let func_instance = self.func_by_name(func_name)?;
+
+        FuncInstance::invoke_with_stack(&func_instance, args, externals, stack_recycler,self)
+            .map_err(|t| Error::Trap(t))
+    }
+}
+
 impl ::core::ops::Deref for ModuleRef {
     type Target = ModuleInstance;
     fn deref(&self) -> &ModuleInstance {
@@ -581,121 +695,6 @@ impl ModuleInstance {
         Self::with_externvals(loaded_module, extern_vals.iter())
     }
 
-    /// Invoke exported function by a name.
-    ///
-    /// This function finds exported function by a name, and calls it with provided arguments and
-    /// external state.
-    ///
-    /// # Errors
-    ///
-    /// Returns `Err` if:
-    ///
-    /// - there are no export with a given name or this export is not a function,
-    /// - given arguments doesn't match to function signature,
-    /// - trap occurred at the execution time,
-    ///
-    /// # Examples
-    ///
-    /// Invoke a function that takes two numbers and returns sum of them.
-    ///
-    /// ```rust
-    /// # extern crate wasmi;
-    /// # extern crate wabt;
-    /// # use wasmi::{ModuleInstance, ImportsBuilder, NopExternals, RuntimeValue};
-    /// # fn main() {
-    /// # let wasm_binary: Vec<u8> = wabt::wat2wasm(
-    /// #   r#"
-    /// #   (module
-    /// #       (func (export "add") (param i32 i32) (result i32)
-    /// #           get_local 0
-    /// #           get_local 1
-    /// #           i32.add
-    /// #       )
-    /// #   )
-    /// #   "#,
-    /// # ).expect("failed to parse wat");
-    /// # let module = wasmi::Module::from_buffer(&wasm_binary).expect("failed to load wasm");
-    /// # let instance = ModuleInstance::new(
-    /// # &module,
-    /// # &ImportsBuilder::default()
-    /// # ).expect("failed to instantiate wasm module").assert_no_start();
-    /// assert_eq!(
-    ///     instance.invoke_export(
-    ///         "add",
-    ///         &[RuntimeValue::I32(5), RuntimeValue::I32(3)],
-    ///         &mut NopExternals,
-    ///     ).expect("failed to execute export"),
-    ///     Some(RuntimeValue::I32(8)),
-    /// );
-    /// # }
-    /// ```
-    pub fn invoke_export<E: Externals>(
-        &self,
-        func_name: &str,
-        args: &[RuntimeValue],
-        externals: &mut E,
-    ) -> Result<Option<RuntimeValue>, Error> {
-        let func_instance = self.func_by_name(func_name)?;
-
-        FuncInstance::invoke(&func_instance, args, externals).map_err(|t| Error::Trap(t))
-    }
-
-    /// Invoke exported function by a name asynchronously.
-    ///
-    /// This function finds exported function by a name, and calls it with provided arguments and
-    /// external state.
-    ///
-    /// # Errors
-    ///
-    /// Returns `Err` if:
-    ///
-    /// - there are no export with a given name or this export is not a function,
-    /// - given arguments doesn't match to function signature,
-    /// - trap occurred at the execution time,
-    ///
-    pub fn invoke_export_async<'a,E>(
-        &self,
-        func_name: &str,
-        args: Vec<RuntimeValue>,
-        externals: Rc<E>,
-    ) -> impl Future<Item=Option<RuntimeValue>,Error= Error>
-    where E:AsyncExternals +'static 
-    {
-        let func_instance = self.func_by_name(func_name);
-
-        match func_instance{
-            Ok(func)=>{
-                future::Either::A(FuncInstance::invoke_async(func, args, externals).from_err())
-
-            },
-            Err(err)=>{
-                future::Either::B(future::err(err))
-            }
-        }
-
-        
-    }
-
-    /// Invoke exported function by a name using recycled stacks.
-    ///
-    /// # Errors
-    ///
-    /// Same as [`invoke_export`].
-    ///
-    /// [`invoke_export`]: #method.invoke_export
-    pub fn invoke_export_with_stack<E: Externals>(
-        &self,
-        func_name: &str,
-        args: &[RuntimeValue],
-        externals: &mut E,
-        stack_recycler: &mut StackRecycler,
-    ) -> Result<Option<RuntimeValue>, Error> {
-        let func_instance = self.func_by_name(func_name)?;
-
-        FuncInstance::invoke_with_stack(&func_instance, args, externals, stack_recycler)
-            .map_err(|t| Error::Trap(t))
-    }
-
     fn func_by_name(&self, func_name: &str) -> Result<FuncRef, Error> {
         let extern_val = self
             .export_by_name(func_name)
@@ -766,7 +765,7 @@ impl<'a> NotStartedModuleRef<'a> {
                 .instance
                 .func_by_index(start_fn_idx)
                 .expect("Due to validation start function should exists");
-            FuncInstance::invoke(&start_func, &[], state)?;
+            FuncInstance::invoke(&start_func, &[], state,&self.instance)?;
         }
         Ok(self.instance)
     }
@@ -783,7 +782,7 @@ impl<'a> NotStartedModuleRef<'a> {
                 .instance
                 .func_by_index(start_fn_idx)
                 .expect("Due to validation start function should exists");
-            FuncInstance::invoke_async(start_func, Vec::new(), Rc::clone(state)).wait()?;
+            FuncInstance::invoke_async(start_func, Vec::new(), Rc::clone(state),&self.instance).wait()?;
         }
         Ok(self.instance)
     }

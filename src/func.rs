@@ -6,7 +6,7 @@ use alloc::{
 use core::fmt;
 use host::{Externals,AsyncExternals};
 use isa;
-use module::ModuleInstance;
+use module::{ModuleInstance, ModuleRef};
 use parity_wasm::elements::Local;
 use runner::{check_function_args, Interpreter, InterpreterState, StackRecycler};
 use types::ValueType;
@@ -102,6 +102,18 @@ impl FuncInstance {
         }
     }
 
+    /// Returns [module] of this function instance. 
+    ///
+    /// If internal and available.
+    ///
+    /// [module]: module.ModuleRef.html
+    pub fn module(&self) -> Option<ModuleRef> {
+        match *self.as_internal() {
+            FuncInstanceInternal::Internal { ref module, .. } => Some(ModuleRef(module.upgrade()?)),
+            FuncInstanceInternal::Host { .. } => None,
+        }
+    }
+
     pub(crate) fn as_internal(&self) -> &FuncInstanceInternal {
         &self.0
     }
@@ -139,17 +151,18 @@ impl FuncInstance {
         func: &FuncRef,
         args: &[RuntimeValue],
         externals: &mut E,
+        module: &ModuleRef,
     ) -> Result<Option<RuntimeValue>, Trap> {
         check_function_args(func.signature(), &args)?;
         match *func.as_internal() {
             FuncInstanceInternal::Internal { .. } => {
                 let mut interpreter = Interpreter::new(func, args, None)?;
-                interpreter.start_execution(externals)
+                interpreter.start_execution(externals,module)
             }
             FuncInstanceInternal::Host {
                 ref host_func_index,
                 ..
-            } => externals.invoke_index(*host_func_index, args.into()),
+            } => externals.invoke_index(*host_func_index, args.into(),module),
         }
     }
 
@@ -166,6 +179,7 @@ impl FuncInstance {
         func: FuncRef,
         args: Vec<RuntimeValue>,
         externals: Rc<E>,
+        module:&ModuleRef,
     ) -> Box<(dyn Future<Item = Option<RuntimeValue>,Error= Trap>+'a)> 
     {
 
@@ -177,7 +191,7 @@ impl FuncInstance {
                     let interpreter = Interpreter::new(&func, &args, None);
                     match interpreter{
                         Ok(i)=>{
-                            i.start_execution_async(externals)
+                            i.start_execution_async(externals,module)
                         },
                         Err(err)=>{
                             Box::new(future::err(err))
@@ -190,7 +204,7 @@ impl FuncInstance {
                     ..
                 } => {
                     externals
-                        .invoke_index_async(*host_func_index, args.into())
+                        .invoke_index_async(*host_func_index, args.into(),module)
                         
                 }
             }
@@ -208,19 +222,20 @@ impl FuncInstance {
         args: &[RuntimeValue],
         externals: &mut E,
         stack_recycler: &mut StackRecycler,
+        module:&ModuleRef,
     ) -> Result<Option<RuntimeValue>, Trap> {
         check_function_args(func.signature(), &args)?;
         match *func.as_internal() {
             FuncInstanceInternal::Internal { .. } => {
                 let mut interpreter = Interpreter::new(func, args, Some(stack_recycler))?;
-                let return_value = interpreter.start_execution(externals);
+                let return_value = interpreter.start_execution(externals,module);
                 stack_recycler.recycle(interpreter);
                 return_value
             }
             FuncInstanceInternal::Host {
                 ref host_func_index,
                 ..
-            } => externals.invoke_index(*host_func_index, args.into()),
+            } => externals.invoke_index(*host_func_index, args.into(),module),
         }
     }
 
@@ -333,13 +348,14 @@ impl<'args> FuncInvocation<'args> {
     pub fn start_execution<'externals, E: Externals + 'externals>(
         &mut self,
         externals: &'externals mut E,
+        module: &ModuleRef,
     ) -> Result<Option<RuntimeValue>, ResumableError> {
         match self.kind {
             FuncInvocationKind::Internal(ref mut interpreter) => {
                 if interpreter.state() != &InterpreterState::Initialized {
                     return Err(ResumableError::AlreadyStarted);
                 }
-                Ok(interpreter.start_execution(externals)?)
+                Ok(interpreter.start_execution(externals,module)?)
             }
             FuncInvocationKind::Host {
                 ref args,
@@ -350,7 +366,7 @@ impl<'args> FuncInvocation<'args> {
                     return Err(ResumableError::AlreadyStarted);
                 }
                 *finished = true;
-                Ok(externals.invoke_index(*host_func_index, args.as_ref().into())?)
+                Ok(externals.invoke_index(*host_func_index, args.as_ref().into(),module)?)
             }
         }
     }
@@ -367,6 +383,7 @@ impl<'args> FuncInvocation<'args> {
         &mut self,
         return_val: Option<RuntimeValue>,
         externals: &'externals mut E,
+        module: &ModuleRef,
     ) -> Result<Option<RuntimeValue>, ResumableError> {
         use crate::TrapKind;
 
@@ -379,7 +396,7 @@ impl<'args> FuncInvocation<'args> {
         match &mut self.kind {
             FuncInvocationKind::Internal(interpreter) => {
                 if interpreter.state().is_resumable() {
-                    Ok(interpreter.resume_execution(return_val, externals)?)
+                    Ok(interpreter.resume_execution(return_val, externals,module)?)
                 } else {
                     Err(ResumableError::AlreadyStarted)
                 }

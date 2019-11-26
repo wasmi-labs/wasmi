@@ -209,12 +209,13 @@ impl Interpreter {
     pub fn start_execution<'a, E: Externals + 'a>(
         &mut self,
         externals: &'a mut E,
+        module: &ModuleRef,
     ) -> Result<Option<RuntimeValue>, Trap> {
         // Ensure that the VM has not been executed. This is checked in `FuncInvocation::start_execution`.
         assert!(self.state == InterpreterState::Initialized);
 
         self.state = InterpreterState::Started;
-        self.run_interpreter_loop(externals)?;
+        self.run_interpreter_loop(externals,module)?;
 
         let opt_return_value = self
             .return_type
@@ -229,19 +230,21 @@ impl Interpreter {
     pub fn start_execution_async<'a,E:AsyncExternals +'a>(
         mut self,
         externals: Rc<E>,
+        module:&ModuleRef,
     ) -> Box<dyn Future<Item = Option<RuntimeValue>, Error = Trap>+'a> 
     {
         // Ensure that the VM has not been executed. This is checked in `FuncInvocation::start_execution`.
         assert!(self.state == InterpreterState::Initialized);
 
         self.state = InterpreterState::Started;
-        Box::new(self.run_interpreter_loop_async(externals))
+        Box::new(self.run_interpreter_loop_async(externals,module))
     }
 
     pub fn resume_execution<'a, E: Externals + 'a>(
         &mut self,
         return_val: Option<RuntimeValue>,
         externals: &'a mut E,
+        module: &ModuleRef
     ) -> Result<Option<RuntimeValue>, Trap> {
         use core::mem::swap;
 
@@ -257,7 +260,7 @@ impl Interpreter {
                 .map_err(Trap::new)?;
         }
 
-        self.run_interpreter_loop(externals)?;
+        self.run_interpreter_loop(externals,module)?;
 
         let opt_return_value = self
             .return_type
@@ -272,6 +275,7 @@ impl Interpreter {
     fn run_interpreter_loop<'a, E: Externals + 'a>(
         &mut self,
         externals: &'a mut E,
+        module: &ModuleRef,
     ) -> Result<(), Trap> {
         loop {
             let mut function_context = self.call_stack.pop().expect(
@@ -318,7 +322,7 @@ impl Interpreter {
                             self.call_stack.push(function_context);
 
                             let return_val =
-                                match FuncInstance::invoke(&nested_func, &args, externals) {
+                                match FuncInstance::invoke(&nested_func, &args, externals,module) {
                                     Ok(val) => val,
                                     Err(trap) => {
                                         if trap.kind().is_host() {
@@ -387,11 +391,14 @@ impl Interpreter {
     fn run_interpreter_loop_async<'a,E:AsyncExternals +'a>(
         self,
         externals: Rc<E>,
+        module:&ModuleRef,
     ) -> Box<dyn Future<Item = Option<RuntimeValue>, Error = Trap> +'a>   
     {
+        let module=module.clone();
         //return loop?
         Box::new(
             future::loop_fn(Rc::new(RefCell::new(self)),move |rs| {
+
                 let mut function_context = rs.borrow_mut().call_stack.pop().expect(
                     "on loop entry - not empty; on loop continue - checking for emptiness; qed",
                 );
@@ -449,7 +456,7 @@ impl Interpreter {
                                 // We push the function context first. If the VM is not resumable, it does no harm. If it is, we then save the context here.
                                 rs.borrow_mut().call_stack.push(function_context);
                                 let nf=nested_func.clone();
-                                let f = FuncInstance::invoke_async(nested_func.clone(), args, Rc::clone(&externals))
+                                let f = FuncInstance::invoke_async(nested_func.clone(), args, Rc::clone(&externals),&module)
                                     .then(move |ret| {
                                         let s=Rc::clone(&rs);
                                         let return_val = match ret {
