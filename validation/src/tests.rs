@@ -239,7 +239,7 @@ fn globals() {
         .build();
     assert!(validate_module(&m).is_ok());
 
-    // import mutable global is invalid.
+    // import mutable global is legal.
     let m = module()
         .with_import(ImportEntry::new(
             "env".into(),
@@ -247,7 +247,7 @@ fn globals() {
             External::Global(GlobalType::new(ValueType::I32, true)),
         ))
         .build();
-    assert!(validate_module(&m).is_err());
+    assert!(validate_module(&m).is_ok());
 }
 
 #[test]
