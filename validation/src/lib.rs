@@ -262,7 +262,7 @@ pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error
                     context.require_function(function_index)?;
                 }
                 Internal::Global(global_index) => {
-                    context.require_global(global_index, Some(false))?;
+                    context.require_global(global_index, None)?;
                 }
                 Internal::Memory(memory_index) => {
                     context.require_memory(memory_index)?;
@@ -281,14 +281,7 @@ pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error
                 External::Function(function_type_index) => {
                     context.require_function_type(function_type_index)?;
                 }
-                External::Global(ref global_type) => {
-                    if global_type.is_mutable() {
-                        return Err(Error(format!(
-                            "trying to import mutable global {}",
-                            import.field()
-                        )));
-                    }
-                }
+                External::Global(_) => {}
                 External::Memory(ref memory_type) => {
                     validate_memory_type(memory_type)?;
                 }
