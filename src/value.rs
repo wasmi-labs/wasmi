@@ -368,12 +368,21 @@ impl WrapInto<F32> for F64 {
 macro_rules! impl_try_truncate_into {
     (@primitive $from: ident, $into: ident, $to_primitive:path) => {
         impl TryTruncateInto<$into, TrapKind> for $from {
+            // FIXME: BigRational uses the num-bigint crate, which requires std
+            // as of version `0.2.6`. `num-bigint` 0.3 will have no_std support.
+            #[cfg(feature = "std")]
             fn try_truncate_into(self) -> Result<$into, TrapKind> {
                 // Casting from a float to an integer will round the float towards zero
                 num_rational::BigRational::from_float(self)
                     .map(|val| val.to_integer())
                     .and_then(|val| $to_primitive(&val))
                     .ok_or(TrapKind::InvalidConversionToInt)
+            }
+
+            #[cfg(not(feature = "std"))]
+            fn try_truncate_into(self) -> Result<$into, TrapKind> {
+                // Casting from a float to an integer will round the float towards zero
+                $to_primitive(&self).ok_or(TrapKind::InvalidConversionToInt)
             }
         }
     };

@@ -15,8 +15,8 @@ wasmi-validation = { version = "0.3", path = "validation", default-features = fa
 parity-wasm = { version = "0.41.0", default-features = false }
 memory_units = "0.3.0"
 libm = { version = "0.1.2", optional = true }
-num-rational = "0.2.2"
-num-traits = "0.2.8"
+num-rational = { version = "0.2.2", default-features = false }
+num-traits = { version = "0.2.8", default-features = false }
 libc = "0.2.58"
 errno = { version = "0.2.4", optional = true }
 
@@ -32,6 +32,7 @@ std = [
     "parity-wasm/std",
     "wasmi-validation/std",
     "num-rational/std",
+    "num-rational/bigint-std",
     "num-traits/std"
 ]
 # Enable for no_std support
