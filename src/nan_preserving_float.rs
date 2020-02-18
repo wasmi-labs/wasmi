@@ -2,6 +2,7 @@
 
 use core::cmp::{Ordering, PartialEq, PartialOrd};
 use core::ops::{Add, Div, Mul, Neg, Rem, Sub};
+use num_traits::float::FloatCore;
 
 macro_rules! impl_binop {
     ($for:ident, $is:ident, $op:ident, $func_name:ident) => {
@@ -63,7 +64,7 @@ macro_rules! float {
             }
 
             pub fn fract(self) -> Self {
-                self.to_float().fract().into()
+                FloatCore::fract(self.to_float()).into()
             }
 
             pub fn min(self, other: Self) -> Self {
