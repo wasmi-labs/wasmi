@@ -17,7 +17,7 @@ memory_units = "0.3.0"
 libm = { version = "0.1.2", optional = true }
 num-rational = { version = "0.2.2", default-features = false }
 num-traits = { version = "0.2.8", default-features = false }
-libc = "0.2.58"
+libc = { version = "0.2.58", optional = true}
 errno = { version = "0.2.4", optional = true }
 
 [dev-dependencies]
@@ -33,7 +33,8 @@ std = [
     "wasmi-validation/std",
     "num-rational/std",
     "num-rational/bigint-std",
-    "num-traits/std"
+    "num-traits/std",
+    "libc"
 ]
 # Enable for no_std support
 core = [
