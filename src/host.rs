@@ -241,7 +241,7 @@ impl Externals for NopExternals {
 mod tests {
 
     use super::{HostError, RuntimeArgs};
-    use value::RuntimeValue;
+    use crate::value::RuntimeValue;
 
     #[test]
     fn i32_runtime_args() {

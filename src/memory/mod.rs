@@ -540,9 +540,9 @@ impl MemoryInstance {
 mod tests {
 
     use super::{MemoryInstance, MemoryRef, LINEAR_MEMORY_PAGE_SIZE};
-    use memory_units::Pages;
+    use crate::memory_units::Pages;
+    use crate::Error;
     use std::rc::Rc;
-    use Error;
 
     #[test]
     fn alloc() {

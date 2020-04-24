@@ -812,10 +812,10 @@ pub fn check_limits(limits: &ResizableLimits) -> Result<(), Error> {
 #[cfg(test)]
 mod tests {
     use super::{ExternVal, ModuleInstance};
-    use func::FuncInstance;
-    use imports::ImportsBuilder;
-    use tests::parse_wat;
-    use types::{Signature, ValueType};
+    use crate::func::FuncInstance;
+    use crate::imports::ImportsBuilder;
+    use crate::tests::parse_wat;
+    use crate::types::{Signature, ValueType};
 
     #[should_panic]
     #[test]
