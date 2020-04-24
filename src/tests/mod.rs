@@ -1,5 +1,5 @@
+use crate::Module;
 use wabt;
-use Module;
 
 mod host;
 mod wasm;

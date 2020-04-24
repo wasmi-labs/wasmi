@@ -1,6 +1,7 @@
 [package]
 name = "wasmi"
 version = "0.6.2"
+edition = "2018"
 authors = ["Nikolay Volf <nikvolf@gmail.com>", "Svyatoslav Nikolsky <svyatonik@yandex.ru>", "Sergey Pepyakin <s.pepyakin@gmail.com>"]
 license = "MIT/Apache-2.0"
 readme = "README.md"
@@ -11,7 +12,7 @@ keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
 exclude = [ "/res/*", "/tests/*", "/fuzz/*", "/benches/*" ]
 
 [dependencies]
-wasmi-validation = { version = "0.3", path = "validation", default-features = false }
+validation = { package = "wasmi-validation", version = "0.3", path = "validation", default-features = false }
 parity-wasm = { version = "0.41.0", default-features = false }
 memory_units = "0.3.0"
 libm = { version = "0.1.2", optional = true }
@@ -30,7 +31,7 @@ default = ["std"]
 # Disable for no_std support
 std = [
     "parity-wasm/std",
-    "wasmi-validation/std",
+    "validation/std",
     "num-rational/std",
     "num-rational/bigint-std",
     "num-traits/std",
@@ -40,7 +41,7 @@ std = [
 core = [
     # `core` doesn't support vec_memory
     "vec_memory",
-    "wasmi-validation/core",
+    "validation/core",
     "libm"
 ]
 # Enforce using the linear memory implementation based on `Vec` instead of

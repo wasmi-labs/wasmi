@@ -1,7 +1,7 @@
 use super::parse_wat;
-use memory_units::Pages;
-use types::ValueType;
-use {
+use crate::memory_units::Pages;
+use crate::types::ValueType;
+use crate::{
     Error, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder, MemoryDescriptor,
     MemoryInstance, MemoryRef, ModuleImportResolver, ModuleInstance, ModuleRef, ResumableError,
     RuntimeArgs, RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef, Trap, TrapKind,

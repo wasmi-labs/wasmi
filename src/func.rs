@@ -1,17 +1,17 @@
+use crate::host::Externals;
+use crate::isa;
+use crate::module::ModuleInstance;
+use crate::runner::{check_function_args, Interpreter, InterpreterState, StackRecycler};
+use crate::types::ValueType;
+use crate::value::RuntimeValue;
+use crate::{Signature, Trap};
 use alloc::{
     borrow::Cow,
     rc::{Rc, Weak},
     vec::Vec,
 };
 use core::fmt;
-use host::Externals;
-use isa;
-use module::ModuleInstance;
 use parity_wasm::elements::Local;
-use runner::{check_function_args, Interpreter, InterpreterState, StackRecycler};
-use types::ValueType;
-use value::RuntimeValue;
-use {Signature, Trap};
 
 /// Reference to a function (See [`FuncInstance`] for details).
 ///

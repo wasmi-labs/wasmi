@@ -112,11 +112,6 @@ extern crate assert_matches;
 #[cfg(test)]
 extern crate wabt;
 
-extern crate memory_units as memory_units_crate;
-extern crate parity_wasm;
-
-extern crate wasmi_validation as validation;
-
 use alloc::{
     boxed::Box,
     string::{String, ToString},
@@ -413,8 +408,8 @@ pub use self::value::{Error as ValueError, FromRuntimeValue, LittleEndianConvert
 
 /// WebAssembly-specific sizes and units.
 pub mod memory_units {
-    pub use memory_units_crate::wasm32::*;
-    pub use memory_units_crate::{size_of, ByteSize, Bytes, RoundUpTo};
+    pub use memory_units::wasm32::*;
+    pub use memory_units::{size_of, ByteSize, Bytes, RoundUpTo};
 }
 
 /// Deserialized module prepared for instantiation.

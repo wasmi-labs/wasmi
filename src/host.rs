@@ -1,6 +1,6 @@
+use crate::value::{FromRuntimeValue, RuntimeValue};
+use crate::{Trap, TrapKind};
 use core::any::TypeId;
-use value::{FromRuntimeValue, RuntimeValue};
-use {Trap, TrapKind};
 
 /// Wrapper around slice of [`RuntimeValue`] for using it
 /// as an argument list conveniently.
@@ -241,7 +241,7 @@ impl Externals for NopExternals {
 mod tests {
 
     use super::{HostError, RuntimeArgs};
-    use value::RuntimeValue;
+    use crate::value::RuntimeValue;
 
     #[test]
     fn i32_runtime_args() {

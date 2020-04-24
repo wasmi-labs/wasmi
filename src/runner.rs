@@ -1,21 +1,21 @@
+use crate::func::{FuncInstance, FuncInstanceInternal, FuncRef};
+use crate::host::Externals;
+use crate::isa;
+use crate::memory::MemoryRef;
+use crate::memory_units::Pages;
+use crate::module::ModuleRef;
+use crate::nan_preserving_float::{F32, F64};
+use crate::value::{
+    ArithmeticOps, ExtendInto, Float, Integer, LittleEndianConvert, RuntimeValue, TransmuteInto,
+    TryTruncateInto, WrapInto,
+};
+use crate::{Signature, Trap, TrapKind, ValueType};
 use alloc::{boxed::Box, vec::Vec};
 use core::fmt;
 use core::ops;
 use core::{u32, usize};
-use func::{FuncInstance, FuncInstanceInternal, FuncRef};
-use host::Externals;
-use isa;
-use memory::MemoryRef;
-use memory_units::Pages;
-use module::ModuleRef;
-use nan_preserving_float::{F32, F64};
 use parity_wasm::elements::Local;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
-use value::{
-    ArithmeticOps, ExtendInto, Float, Integer, LittleEndianConvert, RuntimeValue, TransmuteInto,
-    TryTruncateInto, WrapInto,
-};
-use {Signature, Trap, TrapKind, ValueType};
 
 /// Maximum number of bytes on the value stack.
 pub const DEFAULT_VALUE_STACK_LIMIT: usize = 1024 * 1024;

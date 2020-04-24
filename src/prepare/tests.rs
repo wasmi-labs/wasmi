@@ -1,7 +1,7 @@
 use super::{compile_module, CompiledModule};
+use crate::isa;
 use parity_wasm::{deserialize_buffer, elements::Module};
 
-use isa;
 use wabt;
 
 fn validate(wat: &str) -> CompiledModule {
@@ -31,10 +31,10 @@ fn compile(module: &CompiledModule) -> (Vec<isa::Instruction>, Vec<u32>) {
 
 macro_rules! targets {
 	($($target:expr),*) => {
-		::isa::BrTargets::from_internal(
+		crate::isa::BrTargets::from_internal(
 			&[$($target,)*]
 				.iter()
-				.map(|&target| ::isa::InstructionInternal::BrTableTarget(target))
+				.map(|&target| crate::isa::InstructionInternal::BrTableTarget(target))
 				.collect::<Vec<_>>()[..]
 		)
 	};

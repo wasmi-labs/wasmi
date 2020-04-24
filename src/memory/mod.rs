@@ -1,3 +1,6 @@
+use crate::memory_units::{Bytes, Pages, RoundUpTo};
+use crate::value::LittleEndianConvert;
+use crate::Error;
 use alloc::{rc::Rc, string::ToString, vec::Vec};
 use core::{
     cell::{Cell, RefCell},
@@ -5,10 +8,7 @@ use core::{
     ops::Range,
     u32,
 };
-use memory_units::{Bytes, Pages, RoundUpTo};
 use parity_wasm::elements::ResizableLimits;
-use value::LittleEndianConvert;
-use Error;
 
 #[cfg(all(unix, not(feature = "vec_memory")))]
 #[path = "mmap_bytebuf.rs"]
@@ -540,9 +540,9 @@ impl MemoryInstance {
 mod tests {
 
     use super::{MemoryInstance, MemoryRef, LINEAR_MEMORY_PAGE_SIZE};
-    use memory_units::Pages;
+    use crate::memory_units::Pages;
+    use crate::Error;
     use std::rc::Rc;
-    use Error;
 
     #[test]
     fn alloc() {
