@@ -1,3 +1,6 @@
+use crate::value::LittleEndianConvert;
+use crate::Error;
+use crate::memory_units::{Bytes, Pages, RoundUpTo};
 use alloc::{rc::Rc, string::ToString, vec::Vec};
 use core::{
     cell::{Cell, RefCell},
@@ -5,10 +8,7 @@ use core::{
     ops::Range,
     u32,
 };
-use memory_units::{Bytes, Pages, RoundUpTo};
 use parity_wasm::elements::ResizableLimits;
-use value::LittleEndianConvert;
-use Error;
 
 #[cfg(all(unix, not(feature = "vec_memory")))]
 #[path = "mmap_bytebuf.rs"]

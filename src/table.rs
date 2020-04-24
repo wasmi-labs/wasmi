@@ -1,11 +1,11 @@
+use crate::Error;
+use crate::func::FuncRef;
+use crate::module::check_limits;
 use alloc::{rc::Rc, vec::Vec};
 use core::cell::RefCell;
 use core::fmt;
 use core::u32;
-use func::FuncRef;
-use module::check_limits;
 use parity_wasm::elements::ResizableLimits;
-use Error;
 
 /// Reference to a table (See [`TableInstance`] for details).
 ///

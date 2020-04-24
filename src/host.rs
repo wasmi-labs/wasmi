@@ -1,6 +1,6 @@
 use core::any::TypeId;
-use value::{FromRuntimeValue, RuntimeValue};
-use {Trap, TrapKind};
+use crate::value::{FromRuntimeValue, RuntimeValue};
+use crate::{Trap, TrapKind};
 
 /// Wrapper around slice of [`RuntimeValue`] for using it
 /// as an argument list conveniently.

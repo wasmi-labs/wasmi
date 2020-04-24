@@ -1,28 +1,24 @@
+use crate::runner::StackRecycler;
+use crate::table::TableRef;
+use crate::types::{GlobalDescriptor, MemoryDescriptor, TableDescriptor};
+use crate::{Trap, Error, MemoryInstance, Module, RuntimeValue, Signature, TableInstance};
+use crate::func::{FuncBody, FuncInstance, FuncRef};
+use crate::global::{GlobalInstance, GlobalRef};
+use crate::host::Externals;
+use crate::imports::ImportResolver;
+use crate::memory::MemoryRef;
+use crate::memory_units::Pages;
 use alloc::{
     borrow::ToOwned,
     rc::Rc,
     string::{String, ToString},
     vec::Vec,
 };
-use core::cell::RefCell;
+use core::cell::{RefCell, Ref};
 use core::fmt;
-use Trap;
-
 use alloc::collections::BTreeMap;
-
-use core::cell::Ref;
-use func::{FuncBody, FuncInstance, FuncRef};
-use global::{GlobalInstance, GlobalRef};
-use host::Externals;
-use imports::ImportResolver;
-use memory::MemoryRef;
-use memory_units::Pages;
-use parity_wasm::elements::{External, InitExpr, Instruction, Internal, ResizableLimits, Type};
-use runner::StackRecycler;
-use table::TableRef;
-use types::{GlobalDescriptor, MemoryDescriptor, TableDescriptor};
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
-use {Error, MemoryInstance, Module, RuntimeValue, Signature, TableInstance};
+use parity_wasm::elements::{External, InitExpr, Instruction, Internal, ResizableLimits, Type};
 
 /// Reference to a [`ModuleInstance`].
 ///

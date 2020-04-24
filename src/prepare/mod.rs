@@ -1,9 +1,6 @@
+use validation::{validate_module, Error, Validator};
 use alloc::vec::Vec;
-
-use crate::{
-    isa,
-    validation::{validate_module, Error, Validator},
-};
+use crate::isa;
 use parity_wasm::elements::Module;
 
 mod compile;
