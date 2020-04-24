@@ -1,10 +1,10 @@
 use crate::host::Externals;
 use crate::isa;
+use crate::module::ModuleInstance;
+use crate::runner::{check_function_args, Interpreter, InterpreterState, StackRecycler};
 use crate::types::ValueType;
 use crate::value::RuntimeValue;
 use crate::{Signature, Trap};
-use crate::module::ModuleInstance;
-use crate::runner::{check_function_args, Interpreter, InterpreterState, StackRecycler};
 use alloc::{
     borrow::Cow,
     rc::{Rc, Weak},

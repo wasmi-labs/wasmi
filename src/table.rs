@@ -1,6 +1,6 @@
-use crate::Error;
 use crate::func::FuncRef;
 use crate::module::check_limits;
+use crate::Error;
 use alloc::{rc::Rc, vec::Vec};
 use core::cell::RefCell;
 use core::fmt;
