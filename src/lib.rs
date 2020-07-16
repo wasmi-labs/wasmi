@@ -146,6 +146,11 @@ impl Trap {
     pub fn kind(&self) -> &TrapKind {
         &self.kind
     }
+
+    /// Converts into kind of this trap.
+    pub fn into_kind(self) -> TrapKind {
+        self.kind
+    }
 }
 
 impl fmt::Display for Trap {
@@ -273,7 +278,7 @@ pub enum Error {
 }
 
 impl Error {
-    /// Returns [`HostError`] if this `Error` represents some host error.
+    /// Returns a reference to a [`HostError`] if this `Error` represents some host error.
     ///
     /// I.e. if this error have variant [`Host`] or [`Trap`][`Trap`] with [host][`TrapKind::Host`] error.
     ///
@@ -282,10 +287,29 @@ impl Error {
     /// [`Trap`]: enum.Error.html#variant.Trap
     /// [`TrapKind::Host`]: enum.TrapKind.html#variant.Host
     pub fn as_host_error(&self) -> Option<&dyn host::HostError> {
-        match *self {
-            Error::Host(ref host_err) => Some(&**host_err),
-            Error::Trap(ref trap) => match *trap.kind() {
-                TrapKind::Host(ref host_err) => Some(&**host_err),
+        match self {
+            Error::Host(host_err) => Some(&**host_err),
+            Error::Trap(trap) => match trap.kind() {
+                TrapKind::Host(host_err) => Some(&**host_err),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+
+    /// Returns [`HostError`] if this `Error` represents some host error.
+    ///
+    /// I.e. if this error have variant [`Host`] or [`Trap`][`Trap`] with [host][`TrapKind::Host`] error.
+    ///
+    /// [`HostError`]: trait.HostError.html
+    /// [`Host`]: enum.Error.html#variant.Host
+    /// [`Trap`]: enum.Error.html#variant.Trap
+    /// [`TrapKind::Host`]: enum.TrapKind.html#variant.Host
+    pub fn into_host_error(self) -> Option<Box<dyn host::HostError>> {
+        match self {
+            Error::Host(host_err) => Some(host_err),
+            Error::Trap(trap) => match trap.into_kind() {
+                TrapKind::Host(host_err) => Some(host_err),
                 _ => None,
             },
             _ => None,
