@@ -76,6 +76,10 @@ impl<'a> RuntimeArgs<'a> {
 /// It should be useful for representing custom traps,
 /// troubles at instantiation time or other host specific conditions.
 ///
+/// Types that implement this trait can automatically be converted to `wasmi::Error` and `wasmi::Trap`
+/// and will be represented as a boxed `HostError`. You can then use the various methods on `wasmi::Error`
+/// to get your custom error type back
+///
 /// # Examples
 ///
 /// ```rust
@@ -97,7 +101,8 @@ impl<'a> RuntimeArgs<'a> {
 ///
 /// fn failable_fn() -> Result<(), Error> {
 ///     let my_error = MyError { code: 1312 };
-///     Err(Error::Host(Box::new(my_error)))
+///     // Note how you can just convert your errors to `wasmi::Error`
+///     Err(my_error.into())
 /// }
 ///
 /// // Get a reference to the concrete error
