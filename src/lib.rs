@@ -315,6 +315,25 @@ impl Error {
             _ => None,
         }
     }
+
+    /// Returns [`HostError`] if this `Error` represents some host error, otherwise returns the original error.
+    ///
+    /// I.e. if this error have variant [`Host`] or [`Trap`][`Trap`] with [host][`TrapKind::Host`] error.
+    ///
+    /// [`HostError`]: trait.HostError.html
+    /// [`Host`]: enum.Error.html#variant.Host
+    /// [`Trap`]: enum.Error.html#variant.Trap
+    /// [`TrapKind::Host`]: enum.TrapKind.html#variant.Host
+    pub fn try_into_host_error(self) -> Result<Box<dyn host::HostError>, Self> {
+        match self {
+            Error::Host(host_err) => Ok(host_err),
+            Error::Trap(trap) => match trap.into_kind() {
+                TrapKind::Host(host_err) => Ok(host_err),
+                other => Err(Error::Trap(Trap::new(other))),
+            },
+            other => Err(other),
+        }
+    }
 }
 
 impl Into<String> for Error {
