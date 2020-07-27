@@ -289,7 +289,9 @@ impl Error {
     pub fn as_host_error(&self) -> Option<&dyn host::HostError> {
         match self {
             Error::Host(host_err) => Some(&**host_err),
-            Error::Trap(Trap { kind: TrapKind::Host(host_err) }) => Some(&**host_err),
+            Error::Trap(Trap {
+                kind: TrapKind::Host(host_err),
+            }) => Some(&**host_err),
             _ => None,
         }
     }
@@ -305,7 +307,9 @@ impl Error {
     pub fn into_host_error(self) -> Option<Box<dyn host::HostError>> {
         match self {
             Error::Host(host_err) => Some(host_err),
-            Error::Trap(Trap { kind: TrapKind::Host(host_err) }) => Some(host_err),
+            Error::Trap(Trap {
+                kind: TrapKind::Host(host_err),
+            }) => Some(host_err),
             _ => None,
         }
     }
@@ -321,7 +325,9 @@ impl Error {
     pub fn try_into_host_error(self) -> Result<Box<dyn host::HostError>, Self> {
         match self {
             Error::Host(host_err) => Ok(host_err),
-            Error::Trap(Trap { kind: TrapKind::Host(host_err) }) => Ok(host_err),
+            Error::Trap(Trap {
+                kind: TrapKind::Host(host_err),
+            }) => Ok(host_err),
             other => Err(other),
         }
     }

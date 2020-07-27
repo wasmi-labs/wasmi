@@ -1,7 +1,7 @@
 use crate::value::{FromRuntimeValue, RuntimeValue};
 use crate::{Trap, TrapKind};
 
-use downcast_rs::{DowncastSync, impl_downcast};
+use downcast_rs::{impl_downcast, DowncastSync};
 
 /// Wrapper around slice of [`RuntimeValue`] for using it
 /// as an argument list conveniently.
