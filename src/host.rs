@@ -1,6 +1,7 @@
 use crate::value::{FromRuntimeValue, RuntimeValue};
 use crate::{Trap, TrapKind};
-use core::any::TypeId;
+
+use downcast_rs::{impl_downcast, DowncastSync};
 
 /// Wrapper around slice of [`RuntimeValue`] for using it
 /// as an argument list conveniently.
@@ -75,6 +76,10 @@ impl<'a> RuntimeArgs<'a> {
 /// It should be useful for representing custom traps,
 /// troubles at instantiation time or other host specific conditions.
 ///
+/// Types that implement this trait can automatically be converted to `wasmi::Error` and `wasmi::Trap`
+/// and will be represented as a boxed `HostError`. You can then use the various methods on `wasmi::Error`
+/// to get your custom error type back
+///
 /// # Examples
 ///
 /// ```rust
@@ -96,44 +101,31 @@ impl<'a> RuntimeArgs<'a> {
 ///
 /// fn failable_fn() -> Result<(), Error> {
 ///     let my_error = MyError { code: 1312 };
-///     Err(Error::Host(Box::new(my_error)))
+///     // Note how you can just convert your errors to `wasmi::Error`
+///     Err(my_error.into())
 /// }
 ///
+/// // Get a reference to the concrete error
 /// match failable_fn() {
 ///     Err(Error::Host(host_error)) => {
-///         let my_error = host_error.downcast_ref::<MyError>().unwrap();
+///         let my_error: &MyError = host_error.downcast_ref::<MyError>().unwrap();
 ///         assert_eq!(my_error.code, 1312);
 ///     }
 ///     _ => panic!(),
 /// }
+///
+/// // get the concrete error itself
+/// match failable_fn() {
+///     Err(err) => {
+///         let my_error: Box<MyError> = err.try_into_host_error().unwrap().downcast::<MyError>().unwrap();
+///         assert_eq!(my_error.code, 1312);
+///     }
+///     _ => panic!(),
+/// }
+///
 /// ```
-pub trait HostError: 'static + ::core::fmt::Display + ::core::fmt::Debug + Send + Sync {
-    #[doc(hidden)]
-    fn __private_get_type_id__(&self) -> TypeId {
-        TypeId::of::<Self>()
-    }
-}
-
-impl dyn HostError {
-    /// Attempt to downcast this `HostError` to a concrete type by reference.
-    pub fn downcast_ref<T: HostError>(&self) -> Option<&T> {
-        if self.__private_get_type_id__() == TypeId::of::<T>() {
-            unsafe { Some(&*(self as *const dyn HostError as *const T)) }
-        } else {
-            None
-        }
-    }
-
-    /// Attempt to downcast this `HostError` to a concrete type by mutable
-    /// reference.
-    pub fn downcast_mut<T: HostError>(&mut self) -> Option<&mut T> {
-        if self.__private_get_type_id__() == TypeId::of::<T>() {
-            unsafe { Some(&mut *(self as *mut dyn HostError as *mut T)) }
-        } else {
-            None
-        }
-    }
-}
+pub trait HostError: 'static + ::core::fmt::Display + ::core::fmt::Debug + DowncastSync {}
+impl_downcast!(HostError);
 
 /// Trait that allows to implement host functions.
 ///
