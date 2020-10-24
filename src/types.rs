@@ -65,7 +65,10 @@ impl Signature {
                 .cloned()
                 .map(ValueType::from_elements)
                 .collect(),
-            return_type: func_type.return_type().map(ValueType::from_elements),
+            return_type: func_type
+                .results()
+                .first()
+                .map(|vty| ValueType::from_elements(*vty)),
         }
     }
 }
