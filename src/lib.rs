@@ -554,7 +554,17 @@ impl Module {
     /// assert!(module.deny_floating_point().is_err());
     /// ```
     pub fn deny_floating_point(&self) -> Result<(), Error> {
-        prepare::deny_floating_point(&self.module).map_err(Into::into)
+        prepare::deny_floating_point(&self.module, false).map_err(Into::into)
+    }
+
+    /// Same as `deny_floating_point` but deny only f64 operations, allowing f32.
+    pub fn deny_floating_point_64(&self) -> Result<(), Error> {
+        prepare::deny_floating_point(&self.module, true).map_err(Into::into)
+    }
+
+    /// Check if the
+    pub fn validate_memory_size(&self, max_pages: u32) -> Result<(), Error> {
+        prepare::validate_memory_size(&self.module, max_pages).map_err(Into::into)
     }
 
     /// Create `Module` from a given buffer.

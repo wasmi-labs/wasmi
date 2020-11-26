@@ -43,14 +43,14 @@ pub fn compile_module(module: Module) -> Result<CompiledModule, Error> {
     Ok(CompiledModule { module, code_map })
 }
 
-/// Verify that the module doesn't use floating point instructions or types.
+/// Verify that the module doesn't use f32 and/or f64 floating point instructions or types
 ///
 /// Returns `Err` if
 ///
 /// - Any of function bodies uses a floating pointer instruction (an instruction that
 ///   consumes or produces a value of a floating point type)
 /// - If a floating point type used in a definition of a function.
-pub fn deny_floating_point(module: &Module) -> Result<(), Error> {
+pub fn deny_floating_point(module: &Module, allow_f32: bool) -> Result<(), Error> {
     use parity_wasm::elements::{
         Instruction::{self, *},
         Type, ValueType,
@@ -64,25 +64,16 @@ pub fn deny_floating_point(module: &Module) -> Result<(), Error> {
                 };
             }
 
-            const DENIED: &[fn(&Instruction) -> bool] = &[
+            const DENIED_32: &[fn(&Instruction) -> bool] = &[
                 match_eq!(F32Load(_, _)),
-                match_eq!(F64Load(_, _)),
                 match_eq!(F32Store(_, _)),
-                match_eq!(F64Store(_, _)),
                 match_eq!(F32Const(_)),
-                match_eq!(F64Const(_)),
                 match_eq!(F32Eq),
                 match_eq!(F32Ne),
                 match_eq!(F32Lt),
                 match_eq!(F32Gt),
                 match_eq!(F32Le),
                 match_eq!(F32Ge),
-                match_eq!(F64Eq),
-                match_eq!(F64Ne),
-                match_eq!(F64Lt),
-                match_eq!(F64Gt),
-                match_eq!(F64Le),
-                match_eq!(F64Ge),
                 match_eq!(F32Abs),
                 match_eq!(F32Neg),
                 match_eq!(F32Ceil),
@@ -97,6 +88,28 @@ pub fn deny_floating_point(module: &Module) -> Result<(), Error> {
                 match_eq!(F32Min),
                 match_eq!(F32Max),
                 match_eq!(F32Copysign),
+                match_eq!(F32ConvertSI32),
+                match_eq!(F32ConvertUI32),
+                match_eq!(F32ConvertSI64),
+                match_eq!(F32ConvertUI64),
+                match_eq!(F32DemoteF64),
+                match_eq!(I32TruncSF32),
+                match_eq!(I32TruncUF32),
+                match_eq!(I32TruncSF64),
+                match_eq!(I32TruncUF64),
+                match_eq!(F32ReinterpretI32),
+                match_eq!(I32ReinterpretF32),
+            ];
+            const DENIED_64: &[fn(&Instruction) -> bool] = &[
+                match_eq!(F64Load(_, _)),
+                match_eq!(F64Store(_, _)),
+                match_eq!(F64Const(_)),
+                match_eq!(F64Eq),
+                match_eq!(F64Ne),
+                match_eq!(F64Lt),
+                match_eq!(F64Gt),
+                match_eq!(F64Le),
+                match_eq!(F64Ge),
                 match_eq!(F64Abs),
                 match_eq!(F64Neg),
                 match_eq!(F64Ceil),
@@ -111,32 +124,31 @@ pub fn deny_floating_point(module: &Module) -> Result<(), Error> {
                 match_eq!(F64Min),
                 match_eq!(F64Max),
                 match_eq!(F64Copysign),
-                match_eq!(F32ConvertSI32),
-                match_eq!(F32ConvertUI32),
-                match_eq!(F32ConvertSI64),
-                match_eq!(F32ConvertUI64),
-                match_eq!(F32DemoteF64),
                 match_eq!(F64ConvertSI32),
                 match_eq!(F64ConvertUI32),
                 match_eq!(F64ConvertSI64),
                 match_eq!(F64ConvertUI64),
                 match_eq!(F64PromoteF32),
-                match_eq!(F32ReinterpretI32),
                 match_eq!(F64ReinterpretI64),
-                match_eq!(I32TruncSF32),
-                match_eq!(I32TruncUF32),
-                match_eq!(I32TruncSF64),
-                match_eq!(I32TruncUF64),
                 match_eq!(I64TruncSF32),
                 match_eq!(I64TruncUF32),
                 match_eq!(I64TruncSF64),
                 match_eq!(I64TruncUF64),
-                match_eq!(I32ReinterpretF32),
                 match_eq!(I64ReinterpretF64),
             ];
 
-            if DENIED.iter().any(|is_denied| is_denied(op)) {
-                return Err(Error(format!("Floating point operation denied: {:?}", op)));
+            if DENIED_64.iter().any(|is_denied| is_denied(op)) {
+                return Err(Error(format!(
+                    "f64 Floating point operation denied: {:?}",
+                    op
+                )));
+            }
+
+            if allow_f32 && DENIED_32.iter().any(|is_denied| is_denied(op)) {
+                return Err(Error(format!(
+                    "f32 Floating point operation denied: {:?}",
+                    op
+                )));
             }
         }
     }
@@ -152,7 +164,13 @@ pub fn deny_floating_point(module: &Module) -> Result<(), Error> {
                             .params()
                             .iter()
                             .chain(func.results().first())
-                            .any(|&typ| typ == ValueType::F32 || typ == ValueType::F64)
+                            .any(|&typ| {
+                                if allow_f32 {
+                                    typ == ValueType::F64
+                                } else {
+                                    typ == ValueType::F32 || typ == ValueType::F64
+                                }
+                            })
                         {
                             return Err(Error(format!("Use of floating point types denied")));
                         }
@@ -160,6 +178,28 @@ pub fn deny_floating_point(module: &Module) -> Result<(), Error> {
                 }
             }
         }
+    }
+
+    Ok(())
+}
+
+/// Check if the
+pub fn validate_memory_size(module: &Module, max_pages: u32) -> Result<(), Error> {
+    let sum_pages: u32 = module
+        .memory_section()
+        .map(|ms| ms.entries())
+        .map(|entries| {
+            let initials = entries.iter().map(|entry| entry.limits().initial());
+
+            initials.sum()
+        })
+        .unwrap_or(0);
+
+    if sum_pages > max_pages {
+        return Err(Error(format!(
+            "The WASM module is not allowed to have more than {} pages of memory",
+            max_pages
+        )));
     }
 
     Ok(())
