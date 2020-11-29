@@ -1,3 +1,8 @@
+// Test-only code importing std for no-std testing
+extern crate std;
+
+use std::println;
+use alloc::boxed::Box;
 use super::parse_wat;
 use crate::memory_units::Pages;
 use crate::types::ValueType;

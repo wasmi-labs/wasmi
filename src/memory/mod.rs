@@ -542,7 +542,7 @@ mod tests {
     use super::{MemoryInstance, MemoryRef, LINEAR_MEMORY_PAGE_SIZE};
     use crate::memory_units::Pages;
     use crate::Error;
-    use std::rc::Rc;
+    use alloc::rc::Rc;
 
     #[test]
     fn alloc() {
