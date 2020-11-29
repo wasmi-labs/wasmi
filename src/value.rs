@@ -828,48 +828,42 @@ impl_integer!(u32);
 impl_integer!(i64);
 impl_integer!(u64);
 
-// Use std float functions in std environment.
-// And libm's implementation in no_std
 #[cfg(feature = "std")]
-macro_rules! call_math {
-    ($op:ident, $e:expr, $fXX:ident, $FXXExt:ident) => {
-        $fXX::$op($e)
-    };
-}
-#[cfg(not(feature = "std"))]
-macro_rules! call_math {
-    ($op:ident, $e:expr, $fXX:ident, $FXXExt:ident) => {
-        ::libm::$FXXExt::$op($e)
-    };
+mod fmath {
+    pub use f32;
+    pub use f64;
 }
 
-// We cannot call the math functions directly, because there are multiple available implementaitons in no_std.
-// In std, there are only `Value::$op` and `std::$fXX:$op`.
-// The `std` ones are preferred, because they are not from a trait.
-// For `no_std`, the implementations are `Value::$op` and `libm::FXXExt::$op`,
-// both of which are trait implementations and hence ambiguous.
-// So we have to use a full path, which is what `call_math!` does.
+#[cfg(not(feature = "std"))]
+mod fmath {
+    pub use super::libm_adapters::f32;
+    pub use super::libm_adapters::f64;
+}
+
+// We cannot call the math functions directly, because they are not all available in `core`.
+// In no-std cases we instead rely on `libm`.
+// These wrappers handle that delegation.
 macro_rules! impl_float {
-    ($type:ident, $fXX:ident, $FXXExt:ident, $iXX:ident) => {
+    ($type:ident, $fXX:ident, $iXX:ident) => {
         impl Float<$type> for $type {
             fn abs(self) -> $type {
-                call_math!(abs, $fXX::from(self), $fXX, $FXXExt).into()
+                fmath::$fXX::abs($fXX::from(self)).into()
             }
             fn floor(self) -> $type {
-                call_math!(floor, $fXX::from(self), $fXX, $FXXExt).into()
+                fmath::$fXX::floor($fXX::from(self)).into()
             }
             fn ceil(self) -> $type {
-                call_math!(ceil, $fXX::from(self), $fXX, $FXXExt).into()
+                fmath::$fXX::ceil($fXX::from(self)).into()
             }
             fn trunc(self) -> $type {
-                call_math!(trunc, $fXX::from(self), $fXX, $FXXExt).into()
+                fmath::$fXX::trunc($fXX::from(self)).into()
             }
             fn round(self) -> $type {
-                call_math!(round, $fXX::from(self), $fXX, $FXXExt).into()
+                fmath::$fXX::round($fXX::from(self)).into()
             }
             fn nearest(self) -> $type {
                 let round = self.round();
-                if call_math!(fract, $fXX::from(self), $fXX, $FXXExt).abs() != 0.5 {
+                if fmath::$fXX::fract($fXX::from(self)).abs() != 0.5 {
                     return round;
                 }
 
@@ -883,7 +877,7 @@ macro_rules! impl_float {
                 }
             }
             fn sqrt(self) -> $type {
-                call_math!(sqrt, $fXX::from(self), $fXX, $FXXExt).into()
+                fmath::$fXX::sqrt($fXX::from(self)).into()
             }
             // This instruction corresponds to what is sometimes called "minNaN" in other languages.
             fn min(self, other: $type) -> $type {
@@ -931,7 +925,70 @@ macro_rules! impl_float {
     };
 }
 
-impl_float!(f32, f32, F32Ext, i32);
-impl_float!(f64, f64, F64Ext, i64);
-impl_float!(F32, f32, F32Ext, i32);
-impl_float!(F64, f64, F64Ext, i64);
+impl_float!(f32, f32, i32);
+impl_float!(f64, f64, i64);
+impl_float!(F32, f32, i32);
+impl_float!(F64, f64, i64);
+
+#[cfg(not(feature = "std"))]
+mod libm_adapters {
+    pub mod f32 {
+        pub fn abs(v: f32) -> f32 {
+            libm::fabsf(v)
+        }
+
+        pub fn floor(v: f32) -> f32 {
+            libm::floorf(v)
+        }
+
+        pub fn ceil(v: f32) -> f32 {
+            libm::ceilf(v)
+        }
+
+        pub fn trunc(v: f32) -> f32 {
+            libm::truncf(v)
+        }
+
+        pub fn round(v: f32) -> f32 {
+            libm::roundf(v)
+        }
+
+        pub fn fract(v: f32) -> f32 {
+            v - trunc(v)
+        }
+
+        pub fn sqrt(v: f32) -> f32 {
+            libm::sqrtf(v)
+        }
+    }
+
+    pub mod f64 {
+        pub fn abs(v: f64) -> f64 {
+            libm::fabs(v)
+        }
+
+        pub fn floor(v: f64) -> f64 {
+            libm::floor(v)
+        }
+
+        pub fn ceil(v: f64) -> f64 {
+            libm::ceil(v)
+        }
+
+        pub fn trunc(v: f64) -> f64 {
+            libm::trunc(v)
+        }
+
+        pub fn round(v: f64) -> f64 {
+            libm::round(v)
+        }
+
+        pub fn fract(v: f64) -> f64 {
+            v - trunc(v)
+        }
+
+        pub fn sqrt(v: f64) -> f64 {
+            libm::sqrt(v)
+        }
+    }
+}
