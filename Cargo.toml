@@ -41,7 +41,7 @@ std = [
 ]
 # Enable for no_std support
 core = [
-    # `core` doesn't support vec_memory
+    # `core` doesn't support mmaped memory
     "vec_memory",
     "validation/core",
     "libm"
