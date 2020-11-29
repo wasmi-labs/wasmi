@@ -1,13 +1,13 @@
 // Test-only code importing std for no-std testing
 extern crate std;
 
-use alloc::vec::Vec;
 use crate::memory_units::Pages;
 use crate::{
     Error, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef, ImportsBuilder, MemoryDescriptor,
     MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance, NopExternals,
     RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef,
 };
+use alloc::vec::Vec;
 use std::fs::File;
 
 struct Env {
