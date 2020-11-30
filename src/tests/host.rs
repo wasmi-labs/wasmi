@@ -1,3 +1,6 @@
+// Test-only code importing std for no-std testing
+extern crate std;
+
 use super::parse_wat;
 use crate::memory_units::Pages;
 use crate::types::ValueType;
@@ -6,6 +9,8 @@ use crate::{
     MemoryInstance, MemoryRef, ModuleImportResolver, ModuleInstance, ModuleRef, ResumableError,
     RuntimeArgs, RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef, Trap, TrapKind,
 };
+use alloc::boxed::Box;
+use std::println;
 
 #[derive(Debug, Clone, PartialEq)]
 struct HostErrorWithCode {

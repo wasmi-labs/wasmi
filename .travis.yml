@@ -30,6 +30,7 @@ script:
 # Check that `vec_memory` feature works.
 - cargo check --features vec_memory
 - travis_wait 60 ./test.sh
+- TEST_NO_STD=1 travis_wait 60 ./test.sh
 - ./doc.sh
 
 after_success: |

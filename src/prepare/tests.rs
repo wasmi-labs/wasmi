@@ -1,3 +1,9 @@
+// Test-only code importing std for no-std testing
+extern crate std;
+
+use alloc::vec::Vec;
+use std::println;
+
 use super::{compile_module, CompiledModule};
 use crate::isa;
 use parity_wasm::{deserialize_buffer, elements::Module};

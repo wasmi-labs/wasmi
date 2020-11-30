@@ -3,6 +3,7 @@
 set -eux
 
 EXTRA_ARGS=""
+NO_STD_ARGS=""
 
 if [ -n "${TARGET-}" ]; then
     # Tests build in debug mode are prohibitively
@@ -12,8 +13,12 @@ if [ -n "${TARGET-}" ]; then
     export RUSTFLAGS="--cfg debug_assertions"
 fi
 
+if [ -n "${TEST_NO_STD-}" ]; then
+    NO_STD_ARGS="--no-default-features --features=core"
+fi
+
 cd $(dirname $0)
 
-time cargo test --all ${EXTRA_ARGS}
+time cargo test --all ${EXTRA_ARGS} ${NO_STD_ARGS}
 
 cd -

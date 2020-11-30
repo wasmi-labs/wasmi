@@ -8,7 +8,10 @@ use super::Error;
 
 fn assert_send<T: Send>() {}
 fn assert_sync<T: Sync>() {}
+#[cfg(feature = "std")]
 fn assert_std_err_impl<T: ::std::error::Error>() {}
+#[cfg(not(feature = "std"))]
+fn assert_std_err_impl<T>() {}
 
 #[test]
 fn assert_error_properties() {

@@ -3,7 +3,7 @@ extern crate wasmi;
 
 use std::env::args;
 
-use parity_wasm::elements::{External, FunctionType, Internal, Type, ValueType};
+use parity_wasm::elements::{External, FunctionType, Internal, Module, Type, ValueType};
 use wasmi::{ImportsBuilder, ModuleInstance, NopExternals, RuntimeValue};
 
 fn main() {
@@ -15,7 +15,7 @@ fn main() {
     let func_name = &args[2];
     let (_, program_args) = args.split_at(3);
 
-    let module = parity_wasm::deserialize_file(&args[1]).expect("File to be deserialized");
+    let module = load_module(&args[1]);
 
     // Extracts call arguments from command-line arguments
     let args = {
@@ -117,4 +117,15 @@ fn main() {
         main.invoke_export(func_name, &args, &mut NopExternals)
             .expect("")
     );
+}
+
+#[cfg(feature = "std")]
+fn load_module(file: &str) -> Module {
+    parity_wasm::deserialize_file(file).expect("File to be deserialized")
+}
+
+#[cfg(not(feature = "std"))]
+fn load_module(file: &str) -> Module {
+    let mut buf = std::fs::read(file).expect("Read file");
+    parity_wasm::deserialize_buffer(&mut buf).expect("Deserialize module")
 }
