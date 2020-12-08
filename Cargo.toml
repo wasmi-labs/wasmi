@@ -11,6 +11,10 @@ description = "WebAssembly interpreter"
 keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
 exclude = [ "/res/*", "/tests/*", "/fuzz/*", "/benches/*" ]
 
+[[bin]]
+path = "src/bin/instantiate.rs"
+name = "wasmi"
+
 [dependencies]
 validation = { package = "wasmi-validation", version = "0.3", path = "validation", default-features = false }
 parity-wasm = { version = "0.41.0", default-features = false }

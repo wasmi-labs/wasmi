@@ -300,6 +300,15 @@ impl ModuleInstance {
             }
         }
 
+        // TODO: Error Handling
+        let function_names = loaded_module
+            .module()
+            .names_section()
+            .expect("Could not find name section")
+            .functions()
+            .expect("No functions in name section")
+            .names();
+
         let code = loaded_module.code();
         {
             let funcs = module
@@ -315,6 +324,7 @@ impl ModuleInstance {
             for (index, (ty, body)) in
                 Iterator::zip(funcs.into_iter(), bodies.into_iter()).enumerate()
             {
+                println!("{:?}", function_names.get(index as u32));
                 let signature = instance
                     .signature_by_index(ty.type_ref())
                     .expect("Due to validation type should exists");

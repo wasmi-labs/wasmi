@@ -492,7 +492,13 @@ impl Module {
     /// }
     /// ```
     pub fn from_parity_wasm_module(module: parity_wasm::elements::Module) -> Result<Module, Error> {
-        let prepare::CompiledModule { code_map, module } = prepare::compile_module(module)?;
+        let prepare::CompiledModule {
+            code_map,
+            mut module,
+        } = prepare::compile_module(module)?;
+
+        // TODO: Error Handling
+        module = module.parse_names().unwrap();
 
         Ok(Module { code_map, module })
     }

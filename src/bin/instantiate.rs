@@ -79,5 +79,7 @@ fn main() {
     )
     .expect("Failed to instantiate module")
     .run_start(&mut NopExternals)
-    .expect("Failed to run start function in module");
+    .expect("Failed to run start function in module")
+    .invoke_export("_start", &[], &mut NopExternals)
+    .unwrap();
 }
