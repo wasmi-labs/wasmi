@@ -19,12 +19,27 @@ use parity_wasm::elements::Local;
 ///
 /// [`FuncInstance`]: struct.FuncInstance.html
 #[derive(Clone, Debug)]
-pub struct FuncRef(Rc<FuncInstance>);
+pub struct FuncRef {
+    /// Function Instance
+    instance: Rc<FuncInstance>,
+    /// Function name
+    pub name: Option<String>,
+}
+
+impl FuncRef {
+    /// Mark the name of the function
+    pub fn name(mut self, name: Option<&String>) -> Self {
+        if let Some(name) = name {
+            self.name = Some(name.clone());
+        }
+        self
+    }
+}
 
 impl ::core::ops::Deref for FuncRef {
     type Target = FuncInstance;
     fn deref(&self) -> &FuncInstance {
-        &self.0
+        &self.instance
     }
 }
 
@@ -86,7 +101,10 @@ impl FuncInstance {
             signature,
             host_func_index,
         };
-        FuncRef(Rc::new(FuncInstance(func)))
+        FuncRef {
+            name: None,
+            instance: Rc::new(FuncInstance(func)),
+        }
     }
 
     /// Returns [signature] of this function instance.
@@ -115,7 +133,10 @@ impl FuncInstance {
             module: module,
             body: Rc::new(body),
         };
-        FuncRef(Rc::new(FuncInstance(func)))
+        FuncRef {
+            name: None,
+            instance: Rc::new(FuncInstance(func)),
+        }
     }
 
     pub(crate) fn body(&self) -> Option<Rc<FuncBody>> {
@@ -143,7 +164,18 @@ impl FuncInstance {
         match *func.as_internal() {
             FuncInstanceInternal::Internal { .. } => {
                 let mut interpreter = Interpreter::new(func, args, None)?;
-                interpreter.start_execution(externals)
+                let res = interpreter.start_execution(externals);
+                if res.is_err() {
+                    let mut stack = interpreter
+                        .call_stack
+                        .buf
+                        .iter()
+                        .map(|f| f.function.name.as_ref().unwrap())
+                        .collect::<Vec<_>>();
+                    stack.reverse();
+                    println!("{:#?}", stack);
+                }
+                res
             }
             FuncInstanceInternal::Host {
                 ref host_func_index,

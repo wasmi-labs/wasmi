@@ -324,7 +324,6 @@ impl ModuleInstance {
             for (index, (ty, body)) in
                 Iterator::zip(funcs.into_iter(), bodies.into_iter()).enumerate()
             {
-                println!("{:?}", function_names.get(index as u32));
                 let signature = instance
                     .signature_by_index(ty.type_ref())
                     .expect("Due to validation type should exists");
@@ -337,7 +336,7 @@ impl ModuleInstance {
                 };
                 let func_instance =
                     FuncInstance::alloc_internal(Rc::downgrade(&instance.0), signature, func_body);
-                instance.push_func(func_instance);
+                instance.push_func(func_instance.name(function_names.get(index as u32)));
             }
         }
 

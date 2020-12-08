@@ -165,7 +165,7 @@ enum RunResult {
 /// Function interpreter.
 pub struct Interpreter {
     value_stack: ValueStack,
-    call_stack: CallStack,
+    pub call_stack: CallStack,
     return_type: Option<ValueType>,
     state: InterpreterState,
 }
@@ -1250,7 +1250,7 @@ impl Interpreter {
 }
 
 /// Function execution context.
-struct FunctionContext {
+pub struct FunctionContext {
     /// Is context initialized.
     pub is_initialized: bool,
     /// Internal function reference.
@@ -1353,7 +1353,7 @@ pub fn check_function_args(signature: &Signature, args: &[RuntimeValue]) -> Resu
 }
 
 #[derive(Debug)]
-struct ValueStack {
+pub struct ValueStack {
     buf: Box<[RuntimeValueInternal]>,
     /// Index of the first free place in the stack.
     sp: usize,
@@ -1454,8 +1454,8 @@ impl ValueStack {
     }
 }
 
-struct CallStack {
-    buf: Vec<FunctionContext>,
+pub struct CallStack {
+    pub buf: Vec<FunctionContext>,
     limit: usize,
 }
 
