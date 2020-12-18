@@ -170,9 +170,10 @@ impl FuncInstance {
                         .call_stack
                         .buf
                         .iter()
-                        .map(|f| f.function.name.as_ref().unwrap())
+                        .map(|f| rustc_demangle::demangle(f.function.name.as_ref().unwrap()))
                         .collect::<Vec<_>>();
                     stack.reverse();
+
                     println!("{:#?}", stack);
                 }
                 res

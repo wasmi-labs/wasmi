@@ -304,7 +304,7 @@ impl ModuleInstance {
         let function_names = loaded_module
             .module()
             .names_section()
-            .expect("Could not find name section")
+            .expect("Could not parse name section")
             .functions()
             .expect("No functions in name section")
             .names();
