@@ -601,6 +601,16 @@ impl Module {
         Ok(self)
     }
 
+    /// Same as `parse_names`, but without error returns.
+    pub fn try_parse_names(mut self) -> Module {
+        self.module = match self.module.parse_names() {
+            Ok(module) => module,
+            Err((_, module)) => module,
+        };
+
+        self
+    }
+
     pub(crate) fn module(&self) -> &parity_wasm::elements::Module {
         &self.module
     }
