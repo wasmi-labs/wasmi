@@ -167,10 +167,9 @@ impl FuncInstance {
                 let res = interpreter.start_execution(externals);
                 if res.is_err() {
                     let mut stack = interpreter
-                        .call_stack
-                        .buf
+                        .trace_stack()
                         .iter()
-                        .map(|f| rustc_demangle::demangle(f.function.name.as_ref().unwrap()))
+                        .map(|f| rustc_demangle::demangle(f.unwrap()))
                         .collect::<Vec<_>>();
                     stack.reverse();
 

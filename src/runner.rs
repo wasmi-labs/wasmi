@@ -165,7 +165,7 @@ enum RunResult {
 /// Function interpreter.
 pub struct Interpreter {
     value_stack: ValueStack,
-    pub call_stack: CallStack,
+    call_stack: CallStack,
     return_type: Option<ValueType>,
     state: InterpreterState,
 }
@@ -217,11 +217,15 @@ impl Interpreter {
         let opt_return_value = self
             .return_type
             .map(|vt| self.value_stack.pop().with_type(vt));
-
         // Ensure that stack is empty after the execution. This is guaranteed by the validation properties.
         assert!(self.value_stack.len() == 0);
 
         Ok(opt_return_value)
+    }
+
+    /// Get the stack functions
+    pub fn trace_stack(&self) -> Vec<Option<&String>> {
+        self.call_stack.trace()
     }
 
     pub fn resume_execution<'a, E: Externals + 'a>(
@@ -1250,7 +1254,7 @@ impl Interpreter {
 }
 
 /// Function execution context.
-pub struct FunctionContext {
+struct FunctionContext {
     /// Is context initialized.
     pub is_initialized: bool,
     /// Internal function reference.
@@ -1303,6 +1307,11 @@ impl FunctionContext {
     pub fn memory(&self) -> Option<&MemoryRef> {
         self.memory.as_ref()
     }
+
+    /// Get the function name
+    pub fn name(&self) -> Option<&String> {
+        self.function.name.as_ref()
+    }
 }
 
 impl fmt::Debug for FunctionContext {
@@ -1353,7 +1362,7 @@ pub fn check_function_args(signature: &Signature, args: &[RuntimeValue]) -> Resu
 }
 
 #[derive(Debug)]
-pub struct ValueStack {
+struct ValueStack {
     buf: Box<[RuntimeValueInternal]>,
     /// Index of the first free place in the stack.
     sp: usize,
@@ -1454,9 +1463,16 @@ impl ValueStack {
     }
 }
 
-pub struct CallStack {
-    pub buf: Vec<FunctionContext>,
+struct CallStack {
+    buf: Vec<FunctionContext>,
     limit: usize,
+}
+
+impl CallStack {
+    /// Get the functions of current the stack
+    pub fn trace(&self) -> Vec<Option<&String>> {
+        self.buf.iter().map(|f| f.name()).collect::<Vec<_>>()
+    }
 }
 
 impl CallStack {
