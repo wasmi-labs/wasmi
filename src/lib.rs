@@ -492,14 +492,7 @@ impl Module {
     /// }
     /// ```
     pub fn from_parity_wasm_module(module: parity_wasm::elements::Module) -> Result<Module, Error> {
-        let prepare::CompiledModule {
-            code_map,
-            mut module,
-        } = prepare::compile_module(module)?;
-
-        // TODO: Error Handling
-        module = module.parse_names().unwrap();
-
+        let prepare::CompiledModule { code_map, module } = prepare::compile_module(module)?;
         Ok(Module { code_map, module })
     }
 
@@ -593,6 +586,19 @@ impl Module {
         let module = parity_wasm::elements::deserialize_buffer(buffer.as_ref())
             .map_err(|e: parity_wasm::elements::Error| Error::Validation(e.to_string()))?;
         Module::from_parity_wasm_module(module)
+    }
+
+    /// Try to parse name section in place.
+    ///
+    /// Corresponding custom section with proper header will convert to name sections
+    /// If some of them will fail to be decoded, Err variant is returned with the list of
+    /// (index, Error) tuples of failed sections.
+    pub fn parse_names(mut self) -> Result<Module, Error> {
+        self.module = self
+            .module
+            .parse_names()
+            .map_err(|_| Error::Instantiation("Failed to parse name sections".into()))?;
+        Ok(self)
     }
 
     pub(crate) fn module(&self) -> &parity_wasm::elements::Module {

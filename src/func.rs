@@ -4,7 +4,7 @@ use crate::module::ModuleInstance;
 use crate::runner::{check_function_args, Interpreter, InterpreterState, StackRecycler};
 use crate::types::ValueType;
 use crate::value::RuntimeValue;
-use crate::{Signature, Trap};
+use crate::{Signature, Trap, TrapKind};
 use alloc::{
     borrow::Cow,
     rc::{Rc, Weak},
@@ -169,11 +169,15 @@ impl FuncInstance {
                     let mut stack = interpreter
                         .trace_stack()
                         .iter()
-                        .map(|f| rustc_demangle::demangle(f.unwrap()))
+                        .map(|n| n.ok_or(Trap::new(TrapKind::Unreachable)))
+                        .collect::<Result<Vec<_>, Trap>>()?
+                        .iter()
+                        .map(|n| rustc_demangle::demangle(n))
                         .collect::<Vec<_>>();
                     stack.reverse();
 
-                    println!("{:#?}", stack);
+                    // Embed this info into the trap
+                    println!("{:?}", stack);
                 }
                 res
             }
@@ -356,8 +360,6 @@ impl<'args> FuncInvocation<'args> {
         return_val: Option<RuntimeValue>,
         externals: &'externals mut E,
     ) -> Result<Option<RuntimeValue>, ResumableError> {
-        use crate::TrapKind;
-
         if return_val.map(|v| v.value_type()) != self.resumable_value_type() {
             return Err(ResumableError::Trap(Trap::new(
                 TrapKind::UnexpectedSignature,
