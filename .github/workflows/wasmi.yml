@@ -1,0 +1,26 @@
+name: wasmi
+
+on:
+  push:
+    branches: [ features/backtrace ]
+  pull_request:
+    branches: [ features/backtrace ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the source code
+        uses: actions/checkout@v1
+      - name: Set rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          override: true
+      - name: Build
+        run: cargo build --all -vv
+      - name: Test
+        run: |
+          git submodule update --init
+          cargo test --all -vv

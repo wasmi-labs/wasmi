@@ -217,11 +217,15 @@ impl Interpreter {
         let opt_return_value = self
             .return_type
             .map(|vt| self.value_stack.pop().with_type(vt));
-
         // Ensure that stack is empty after the execution. This is guaranteed by the validation properties.
         assert!(self.value_stack.len() == 0);
 
         Ok(opt_return_value)
+    }
+
+    /// Get the stack functions
+    pub fn trace_stack(&self) -> Vec<Option<&String>> {
+        self.call_stack.trace()
     }
 
     pub fn resume_execution<'a, E: Externals + 'a>(
@@ -1303,6 +1307,11 @@ impl FunctionContext {
     pub fn memory(&self) -> Option<&MemoryRef> {
         self.memory.as_ref()
     }
+
+    /// Get the function name
+    pub fn name(&self) -> Option<&String> {
+        self.function.name()
+    }
 }
 
 impl fmt::Debug for FunctionContext {
@@ -1457,6 +1466,13 @@ impl ValueStack {
 struct CallStack {
     buf: Vec<FunctionContext>,
     limit: usize,
+}
+
+impl CallStack {
+    /// Get the functions of current the stack
+    pub fn trace(&self) -> Vec<Option<&String>> {
+        self.buf.iter().map(|f| f.name()).collect::<Vec<_>>()
+    }
 }
 
 impl CallStack {

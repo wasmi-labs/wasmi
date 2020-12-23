@@ -134,12 +134,27 @@ extern crate num_traits;
 #[derive(Debug)]
 pub struct Trap {
     kind: TrapKind,
+    wasm_trace: Vec<String>,
 }
 
 impl Trap {
     /// Create new trap.
     pub fn new(kind: TrapKind) -> Trap {
-        Trap { kind }
+        Trap {
+            kind,
+            wasm_trace: vec![],
+        }
+    }
+
+    /// Returns wasm trace
+    pub fn wasm_trace(&self) -> &Vec<String> {
+        &self.wasm_trace
+    }
+
+    /// Returns wasm trace
+    pub fn set_wasm_trace(mut self, trace: Vec<String>) -> Self {
+        self.wasm_trace = trace;
+        self
     }
 
     /// Returns kind of this trap.
@@ -291,6 +306,7 @@ impl Error {
             Error::Host(host_err) => Some(&**host_err),
             Error::Trap(Trap {
                 kind: TrapKind::Host(host_err),
+                ..
             }) => Some(&**host_err),
             _ => None,
         }
@@ -309,6 +325,7 @@ impl Error {
             Error::Host(host_err) => Some(host_err),
             Error::Trap(Trap {
                 kind: TrapKind::Host(host_err),
+                ..
             }) => Some(host_err),
             _ => None,
         }
@@ -327,6 +344,7 @@ impl Error {
             Error::Host(host_err) => Ok(host_err),
             Error::Trap(Trap {
                 kind: TrapKind::Host(host_err),
+                ..
             }) => Ok(host_err),
             other => Err(other),
         }
@@ -493,7 +511,6 @@ impl Module {
     /// ```
     pub fn from_parity_wasm_module(module: parity_wasm::elements::Module) -> Result<Module, Error> {
         let prepare::CompiledModule { code_map, module } = prepare::compile_module(module)?;
-
         Ok(Module { code_map, module })
     }
 
@@ -587,6 +604,33 @@ impl Module {
         let module = parity_wasm::elements::deserialize_buffer(buffer.as_ref())
             .map_err(|e: parity_wasm::elements::Error| Error::Validation(e.to_string()))?;
         Module::from_parity_wasm_module(module)
+    }
+
+    /// Try to parse name section in place.
+    ///
+    /// Corresponding custom section with proper header will convert to name sections
+    /// If some of them will fail to be decoded, Err variant is returned with the list of
+    /// (index, Error) tuples of failed sections.
+    pub fn parse_names(mut self) -> Result<Module, Error> {
+        self.module = self
+            .module
+            .parse_names()
+            .map_err(|_| Error::Instantiation("Failed to parse name sections".into()))?;
+        Ok(self)
+    }
+
+    /// Same as `parse_names`, but without error returns.
+    pub fn try_parse_names(mut self) -> Module {
+        self.module = match self.module.parse_names() {
+            Ok(module) => module,
+            Err((_, module)) => module,
+        };
+
+        self
+    }
+
+    pub(crate) fn name_map(&self) -> Option<&parity_wasm::elements::NameMap> {
+        Some(self.module().names_section()?.functions()?.names())
     }
 
     pub(crate) fn module(&self) -> &parity_wasm::elements::Module {

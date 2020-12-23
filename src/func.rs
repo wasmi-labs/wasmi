@@ -4,7 +4,7 @@ use crate::module::ModuleInstance;
 use crate::runner::{check_function_args, Interpreter, InterpreterState, StackRecycler};
 use crate::types::ValueType;
 use crate::value::RuntimeValue;
-use crate::{Signature, Trap};
+use crate::{Signature, Trap, TrapKind};
 use alloc::{
     borrow::Cow,
     rc::{Rc, Weak},
@@ -19,12 +19,32 @@ use parity_wasm::elements::Local;
 ///
 /// [`FuncInstance`]: struct.FuncInstance.html
 #[derive(Clone, Debug)]
-pub struct FuncRef(Rc<FuncInstance>);
+pub struct FuncRef {
+    /// Function Instance
+    instance: Rc<FuncInstance>,
+    /// Function name
+    name: Option<String>,
+}
+
+impl FuncRef {
+    /// Return the name of function
+    pub fn name(&self) -> Option<&String> {
+        self.name.as_ref()
+    }
+
+    /// Mark the name of the function
+    pub fn set_name(mut self, name: Option<&String>) -> Self {
+        if let Some(name) = name {
+            self.name = Some(name.clone());
+        }
+        self
+    }
+}
 
 impl ::core::ops::Deref for FuncRef {
     type Target = FuncInstance;
     fn deref(&self) -> &FuncInstance {
-        &self.0
+        &self.instance
     }
 }
 
@@ -86,7 +106,10 @@ impl FuncInstance {
             signature,
             host_func_index,
         };
-        FuncRef(Rc::new(FuncInstance(func)))
+        FuncRef {
+            name: None,
+            instance: Rc::new(FuncInstance(func)),
+        }
     }
 
     /// Returns [signature] of this function instance.
@@ -115,7 +138,10 @@ impl FuncInstance {
             module: module,
             body: Rc::new(body),
         };
-        FuncRef(Rc::new(FuncInstance(func)))
+        FuncRef {
+            name: None,
+            instance: Rc::new(FuncInstance(func)),
+        }
     }
 
     pub(crate) fn body(&self) -> Option<Rc<FuncBody>> {
@@ -143,7 +169,21 @@ impl FuncInstance {
         match *func.as_internal() {
             FuncInstanceInternal::Internal { .. } => {
                 let mut interpreter = Interpreter::new(func, args, None)?;
-                interpreter.start_execution(externals)
+                let res = interpreter.start_execution(externals);
+                if res.is_err() {
+                    let mut stack = interpreter
+                        .trace_stack()
+                        .iter()
+                        .filter_map(|n| n.as_ref())
+                        .map(|n| rustc_demangle::demangle(n).to_string())
+                        .collect::<Vec<_>>();
+                    stack.reverse();
+
+                    // Embed this info into the trap
+                    res.map_err(|e| e.set_wasm_trace(stack))
+                } else {
+                    res
+                }
             }
             FuncInstanceInternal::Host {
                 ref host_func_index,
@@ -324,8 +364,6 @@ impl<'args> FuncInvocation<'args> {
         return_val: Option<RuntimeValue>,
         externals: &'externals mut E,
     ) -> Result<Option<RuntimeValue>, ResumableError> {
-        use crate::TrapKind;
-
         if return_val.map(|v| v.value_type()) != self.resumable_value_type() {
             return Err(ResumableError::Trap(Trap::new(
                 TrapKind::UnexpectedSignature,

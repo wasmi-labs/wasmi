@@ -65,7 +65,9 @@ fn main() {
         println!("Usage: {} <wasm file>", args[0]);
         return;
     }
-    let module = load_from_file(&args[1]);
+
+    let module = load_from_file(&args[1]).try_parse_names();
+
     let _ = ModuleInstance::new(
         &module,
         &ImportsBuilder::default()
@@ -79,5 +81,7 @@ fn main() {
     )
     .expect("Failed to instantiate module")
     .run_start(&mut NopExternals)
-    .expect("Failed to run start function in module");
+    .expect("Failed to run start function in module")
+    .invoke_export("_start", &[], &mut NopExternals)
+    .unwrap();
 }
