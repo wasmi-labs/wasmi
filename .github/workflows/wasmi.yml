@@ -22,5 +22,5 @@ jobs:
         run: cargo build --all -vv
       - name: Test
         run: |
-          git submodule update --init --remote
+          git submodule update --init
           cargo test --all -vv
