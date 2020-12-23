@@ -23,12 +23,17 @@ pub struct FuncRef {
     /// Function Instance
     instance: Rc<FuncInstance>,
     /// Function name
-    pub name: Option<String>,
+    name: Option<String>,
 }
 
 impl FuncRef {
+    /// Return the name of function
+    pub fn name(&self) -> Option<&String> {
+        self.name.as_ref()
+    }
+
     /// Mark the name of the function
-    pub fn name(mut self, name: Option<&String>) -> Self {
+    pub fn set_name(mut self, name: Option<&String>) -> Self {
         if let Some(name) = name {
             self.name = Some(name.clone());
         }
@@ -170,14 +175,15 @@ impl FuncInstance {
                         .trace_stack()
                         .iter()
                         .filter_map(|n| n.as_ref())
-                        .map(|n| rustc_demangle::demangle(n))
+                        .map(|n| rustc_demangle::demangle(n).to_string())
                         .collect::<Vec<_>>();
                     stack.reverse();
 
                     // Embed this info into the trap
-                    println!("{:?}", stack);
+                    res.map_err(|e| e.set_wasm_trace(stack))
+                } else {
+                    res
                 }
-                res
             }
             FuncInstanceInternal::Host {
                 ref host_func_index,

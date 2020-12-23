@@ -1310,7 +1310,7 @@ impl FunctionContext {
 
     /// Get the function name
     pub fn name(&self) -> Option<&String> {
-        self.function.name.as_ref()
+        self.function.name()
     }
 }
 

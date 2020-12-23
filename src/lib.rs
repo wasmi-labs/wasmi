@@ -134,12 +134,27 @@ extern crate num_traits;
 #[derive(Debug)]
 pub struct Trap {
     kind: TrapKind,
+    wasm_trace: Vec<String>,
 }
 
 impl Trap {
     /// Create new trap.
     pub fn new(kind: TrapKind) -> Trap {
-        Trap { kind }
+        Trap {
+            kind,
+            wasm_trace: vec![],
+        }
+    }
+
+    /// Returns wasm trace
+    pub fn wasm_trace(&self) -> &Vec<String> {
+        &self.wasm_trace
+    }
+
+    /// Returns wasm trace
+    pub fn set_wasm_trace(mut self, trace: Vec<String>) -> Self {
+        self.wasm_trace = trace;
+        self
     }
 
     /// Returns kind of this trap.
@@ -291,6 +306,7 @@ impl Error {
             Error::Host(host_err) => Some(&**host_err),
             Error::Trap(Trap {
                 kind: TrapKind::Host(host_err),
+                ..
             }) => Some(&**host_err),
             _ => None,
         }
@@ -309,6 +325,7 @@ impl Error {
             Error::Host(host_err) => Some(host_err),
             Error::Trap(Trap {
                 kind: TrapKind::Host(host_err),
+                ..
             }) => Some(host_err),
             _ => None,
         }
@@ -327,6 +344,7 @@ impl Error {
             Error::Host(host_err) => Ok(host_err),
             Error::Trap(Trap {
                 kind: TrapKind::Host(host_err),
+                ..
             }) => Ok(host_err),
             other => Err(other),
         }

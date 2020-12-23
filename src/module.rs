@@ -338,7 +338,7 @@ impl ModuleInstance {
                 let mut func_instance =
                     FuncInstance::alloc_internal(Rc::downgrade(&instance.0), signature, func_body);
                 if has_name_section {
-                    func_instance = func_instance.name(function_names.get(index as u32));
+                    func_instance = func_instance.set_name(function_names.get(index as u32));
                 }
                 instance.push_func(func_instance);
             }
