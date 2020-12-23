@@ -19,6 +19,6 @@ jobs:
           target: wasm32-unknown-unknown
           override: true
       - name: Build
-        run: cargo build -all -vv
+        run: cargo build --all -vv
       - name: Test
-        run: cargo test -all -vv
+        run: cargo test --all -vv
