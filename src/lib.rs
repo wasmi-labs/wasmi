@@ -170,7 +170,12 @@ impl Trap {
 
 impl fmt::Display for Trap {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Trap: {:?}", self.kind)
+        write!(
+            f,
+            "Trap: {:?} \n \
+             WASM Trace: {:?}",
+            self.kind, self.wasm_trace,
+        )
     }
 }
 
