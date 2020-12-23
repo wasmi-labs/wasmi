@@ -2,9 +2,9 @@ name: wasmi
 
 on:
   push:
-    branches: [ master ]
+    branches: [ features/backtrace ]
   pull_request:
-    branches: [ master ]
+    branches: [ features/backtrace ]
 
 jobs:
   build:
