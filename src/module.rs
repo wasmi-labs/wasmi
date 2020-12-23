@@ -17,7 +17,9 @@ use alloc::{
 };
 use core::cell::{Ref, RefCell};
 use core::fmt;
-use parity_wasm::elements::{External, InitExpr, Instruction, Internal, ResizableLimits, Type};
+use parity_wasm::elements::{
+    External, IndexMap, InitExpr, Instruction, Internal, ResizableLimits, Type,
+};
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 
 /// Reference to a [`ModuleInstance`].
@@ -300,14 +302,13 @@ impl ModuleInstance {
             }
         }
 
-        // TODO: Error Handling
-        let function_names = loaded_module
-            .module()
-            .names_section()
-            .expect("Could not parse name section")
-            .functions()
-            .expect("No functions in name section")
-            .names();
+        // If has names section
+        let mut has_name_section = true;
+        let empty_index_map = IndexMap::with_capacity(0);
+        let function_names = loaded_module.name_map().unwrap_or_else(|| {
+            has_name_section = false;
+            &empty_index_map
+        });
 
         let code = loaded_module.code();
         {
@@ -334,9 +335,12 @@ impl ModuleInstance {
                     locals: body.locals().to_vec(),
                     code: code,
                 };
-                let func_instance =
+                let mut func_instance =
                     FuncInstance::alloc_internal(Rc::downgrade(&instance.0), signature, func_body);
-                instance.push_func(func_instance.name(function_names.get(index as u32)));
+                if has_name_section {
+                    func_instance = func_instance.name(function_names.get(index as u32));
+                }
+                instance.push_func(func_instance);
             }
         }
 

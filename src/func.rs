@@ -169,9 +169,7 @@ impl FuncInstance {
                     let mut stack = interpreter
                         .trace_stack()
                         .iter()
-                        .map(|n| n.ok_or(Trap::new(TrapKind::Unreachable)))
-                        .collect::<Result<Vec<_>, Trap>>()?
-                        .iter()
+                        .filter_map(|n| n.as_ref())
                         .map(|n| rustc_demangle::demangle(n))
                         .collect::<Vec<_>>();
                     stack.reverse();

@@ -611,6 +611,10 @@ impl Module {
         self
     }
 
+    pub(crate) fn name_map(&self) -> Option<&parity_wasm::elements::NameMap> {
+        Some(self.module().names_section()?.functions()?.names())
+    }
+
     pub(crate) fn module(&self) -> &parity_wasm::elements::Module {
         &self.module
     }
