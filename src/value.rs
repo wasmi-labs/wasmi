@@ -581,7 +581,7 @@ impl LittleEndianConvert for i8 {
         buffer
             .get(0)
             .map(|v| *v as i8)
-            .ok_or_else(|| Error::InvalidLittleEndianBuffer)
+            .ok_or(Error::InvalidLittleEndianBuffer)
     }
 }
 
@@ -594,7 +594,7 @@ impl LittleEndianConvert for u8 {
         buffer
             .get(0)
             .cloned()
-            .ok_or_else(|| Error::InvalidLittleEndianBuffer)
+            .ok_or(Error::InvalidLittleEndianBuffer)
     }
 }
 
@@ -611,7 +611,7 @@ impl LittleEndianConvert for i16 {
                 res.copy_from_slice(s);
                 Self::from_le_bytes(res)
             })
-            .ok_or_else(|| Error::InvalidLittleEndianBuffer)
+            .ok_or(Error::InvalidLittleEndianBuffer)
     }
 }
 
@@ -628,7 +628,7 @@ impl LittleEndianConvert for u16 {
                 res.copy_from_slice(s);
                 Self::from_le_bytes(res)
             })
-            .ok_or_else(|| Error::InvalidLittleEndianBuffer)
+            .ok_or(Error::InvalidLittleEndianBuffer)
     }
 }
 
@@ -645,7 +645,7 @@ impl LittleEndianConvert for i32 {
                 res.copy_from_slice(s);
                 Self::from_le_bytes(res)
             })
-            .ok_or_else(|| Error::InvalidLittleEndianBuffer)
+            .ok_or(Error::InvalidLittleEndianBuffer)
     }
 }
 
@@ -662,7 +662,7 @@ impl LittleEndianConvert for u32 {
                 res.copy_from_slice(s);
                 Self::from_le_bytes(res)
             })
-            .ok_or_else(|| Error::InvalidLittleEndianBuffer)
+            .ok_or(Error::InvalidLittleEndianBuffer)
     }
 }
 
@@ -679,7 +679,7 @@ impl LittleEndianConvert for i64 {
                 res.copy_from_slice(s);
                 Self::from_le_bytes(res)
             })
-            .ok_or_else(|| Error::InvalidLittleEndianBuffer)
+            .ok_or(Error::InvalidLittleEndianBuffer)
     }
 }
 
@@ -696,7 +696,7 @@ impl LittleEndianConvert for f32 {
                 res.copy_from_slice(s);
                 Self::from_bits(u32::from_le_bytes(res))
             })
-            .ok_or_else(|| Error::InvalidLittleEndianBuffer)
+            .ok_or(Error::InvalidLittleEndianBuffer)
     }
 }
 
@@ -713,7 +713,7 @@ impl LittleEndianConvert for f64 {
                 res.copy_from_slice(s);
                 Self::from_bits(u64::from_le_bytes(res))
             })
-            .ok_or_else(|| Error::InvalidLittleEndianBuffer)
+            .ok_or(Error::InvalidLittleEndianBuffer)
     }
 }
 
@@ -845,6 +845,8 @@ mod fmath {
 // These wrappers handle that delegation.
 macro_rules! impl_float {
     ($type:ident, $fXX:ident, $iXX:ident) => {
+        // In this particular instance we want to directly compare floating point numbers.
+        #[allow(clippy::float_cmp)]
         impl Float<$type> for $type {
             fn abs(self) -> $type {
                 fmath::$fXX::abs($fXX::from(self)).into()

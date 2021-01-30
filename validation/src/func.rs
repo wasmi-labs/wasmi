@@ -147,11 +147,11 @@ impl<'a> FunctionValidationContext<'a> {
         return_type: BlockType,
     ) -> Result<Self, Error> {
         let mut ctx = FunctionValidationContext {
-            module: module,
-            locals: locals,
+            module,
+            locals,
             value_stack: StackWithLimit::with_limit(value_stack_limit),
             frame_stack: StackWithLimit::with_limit(frame_stack_limit),
-            return_type: return_type,
+            return_type,
         };
         push_label(
             StartedWith::Block,
@@ -247,9 +247,9 @@ impl<'a> FunctionValidationContext<'a> {
 
                     pop_label(&mut self.value_stack, &mut self.frame_stack)?;
 
-                    // We just poped the last frame. To avoid some difficulties
-                    // we prefer to keep this branch explicit and bail out here.
-                    ()
+                    // We just popped the last frame. To avoid some difficulties
+                    // we prefer to keep this branch explicit, bail out here, thus
+                    // returning `()`.
                 } else {
                     pop_label(&mut self.value_stack, &mut self.frame_stack)?;
 
@@ -1098,7 +1098,7 @@ fn push_value(
     value_stack: &mut StackWithLimit<StackValueType>,
     value_type: StackValueType,
 ) -> Result<(), Error> {
-    Ok(value_stack.push(value_type.into())?)
+    Ok(value_stack.push(value_type)?)
 }
 
 fn pop_value(
@@ -1128,7 +1128,7 @@ fn pop_value(
             Ok(actual_value)
         }
         StackValueType::Any => Ok(actual_value),
-        stack_value_type @ _ => Err(Error(format!(
+        stack_value_type => Err(Error(format!(
             "Expected value of type {:?} on top of stack. Got {:?}",
             expected_value_ty, stack_value_type
         ))),
@@ -1153,7 +1153,7 @@ fn push_label(
 ) -> Result<(), Error> {
     Ok(frame_stack.push(BlockFrame {
         started_with,
-        block_type: block_type,
+        block_type,
         value_stack_len: value_stack.len(),
         polymorphic_stack: false,
     })?)
@@ -1212,5 +1212,5 @@ pub fn require_label(
 }
 
 fn require_local(locals: &Locals, idx: u32) -> Result<ValueType, Error> {
-    Ok(locals.type_of_local(idx)?)
+    locals.type_of_local(idx)
 }

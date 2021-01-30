@@ -595,11 +595,7 @@ impl<'a> Iterator for InstructionIter<'a> {
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        let internal = if let Some(i) = self.instructions.get(self.position as usize) {
-            i
-        } else {
-            return None;
-        };
+        let internal = self.instructions.get(self.position as usize)?;
 
         let out = match *internal {
             InstructionInternal::GetLocal(x) => Instruction::GetLocal(x),

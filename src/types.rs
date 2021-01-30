@@ -43,7 +43,7 @@ impl Signature {
     ) -> Signature {
         Signature {
             params: params.into(),
-            return_type: return_type,
+            return_type,
         }
     }
 

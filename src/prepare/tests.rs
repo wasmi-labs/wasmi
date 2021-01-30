@@ -8,13 +8,10 @@ use super::{compile_module, CompiledModule};
 use crate::isa;
 use parity_wasm::{deserialize_buffer, elements::Module};
 
-use wabt;
-
 fn validate(wat: &str) -> CompiledModule {
     let wasm = wabt::wat2wasm(wat).unwrap();
     let module = deserialize_buffer::<Module>(&wasm).unwrap();
-    let compiled_module = compile_module(module).unwrap();
-    compiled_module
+    compile_module(module).unwrap()
 }
 
 fn compile(module: &CompiledModule) -> (Vec<isa::Instruction>, Vec<u32>) {

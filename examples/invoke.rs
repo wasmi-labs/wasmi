@@ -34,11 +34,11 @@ fn main() {
             .entries()
             .iter()
             .find(|entry| func_name == entry.field())
-            .expect(&format!("No export with name {} found", func_name));
+            .unwrap_or_else(|| panic!("No export with name {} found", func_name));
 
         // Function index in the function index space (internally-defined + imported)
         let function_index: usize = match found_entry.internal() {
-            &Internal::Function(index) => index as usize,
+            Internal::Function(index) => *index as usize,
             _ => panic!("Founded export is not a function"),
         };
 
@@ -48,10 +48,7 @@ fn main() {
             Some(import) => import
                 .entries()
                 .iter()
-                .filter(|entry| match entry.external() {
-                    &External::Function(_) => true,
-                    _ => false,
-                })
+                .filter(|entry| matches!(entry.external(), External::Function(_)))
                 .count(),
             None => 0,
         };
@@ -64,8 +61,9 @@ fn main() {
             function_section.entries()[function_index_in_section].type_ref() as usize;
 
         // Use the reference to get an actual function type
+        #[allow(clippy::infallible_destructuring_match)]
         let function_type: &FunctionType = match &type_section.types()[func_type_ref] {
-            &Type::Function(ref func_type) => func_type,
+            Type::Function(ref func_type) => func_type,
         };
 
         // Parses arguments and constructs runtime values in correspondence of their types
@@ -74,26 +72,26 @@ fn main() {
             .iter()
             .enumerate()
             .map(|(i, value)| match value {
-                &ValueType::I32 => RuntimeValue::I32(
+                ValueType::I32 => RuntimeValue::I32(
                     program_args[i]
                         .parse::<i32>()
-                        .expect(&format!("Can't parse arg #{} as i32", program_args[i])),
+                        .unwrap_or_else(|_| panic!("Can't parse arg #{} as i32", program_args[i])),
                 ),
-                &ValueType::I64 => RuntimeValue::I64(
+                ValueType::I64 => RuntimeValue::I64(
                     program_args[i]
                         .parse::<i64>()
-                        .expect(&format!("Can't parse arg #{} as i64", program_args[i])),
+                        .unwrap_or_else(|_| panic!("Can't parse arg #{} as i64", program_args[i])),
                 ),
-                &ValueType::F32 => RuntimeValue::F32(
+                ValueType::F32 => RuntimeValue::F32(
                     program_args[i]
                         .parse::<f32>()
-                        .expect(&format!("Can't parse arg #{} as f32", program_args[i]))
+                        .unwrap_or_else(|_| panic!("Can't parse arg #{} as f32", program_args[i]))
                         .into(),
                 ),
-                &ValueType::F64 => RuntimeValue::F64(
+                ValueType::F64 => RuntimeValue::F64(
                     program_args[i]
                         .parse::<f64>()
-                        .expect(&format!("Can't parse arg #{} as f64", program_args[i]))
+                        .unwrap_or_else(|_| panic!("Can't parse arg #{} as f64", program_args[i]))
                         .into(),
                 ),
             })
