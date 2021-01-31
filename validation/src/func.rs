@@ -247,9 +247,9 @@ impl<'a> FunctionValidationContext<'a> {
 
                     pop_label(&mut self.value_stack, &mut self.frame_stack)?;
 
-                    // We just popped the last frame. To avoid some difficulties
-                    // we prefer to keep this branch explicit, bail out here, thus
-                    // returning `()`.
+                // We just popped the last frame. To avoid some difficulties
+                // we prefer to keep this branch explicit, bail out here, thus
+                // returning `()`.
                 } else {
                     pop_label(&mut self.value_stack, &mut self.frame_stack)?;
 
