@@ -53,6 +53,7 @@ jobs:
           RUSTFLAGS: '--cfg debug_assertions'
         with:
           command: test
+          args: --release
 
   fmt:
     name: Formatting
