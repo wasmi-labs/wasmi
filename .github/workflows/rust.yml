@@ -49,6 +49,8 @@ jobs:
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - uses: actions-rs/cargo@v1
+        env:
+          RUSTFLAGS: '--cfg debug_assertions'
         with:
           command: test
 
