@@ -70,7 +70,7 @@ mod tictactoe {
 
         pub fn set(&mut self, idx: i32, player: Player) -> Result<(), Error> {
             if !(0..9).contains(&idx) {
-                return Err(Error::OutOfRange)
+                return Err(Error::OutOfRange);
             }
             if self.board[idx as usize] != None {
                 return Err(Error::AlreadyOccupied);
@@ -230,7 +230,7 @@ fn play(
         }
 
         if let Some(game_result) = game.game_result() {
-            break game_result
+            break game_result;
         }
 
         turn_of = next_turn_of;

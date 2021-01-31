@@ -144,9 +144,7 @@ impl MemoryInstance {
         let initial_size: Bytes = initial.into();
         Ok(MemoryInstance {
             limits,
-            buffer: RefCell::new(
-                ByteBuf::new(initial_size.0).map_err(Error::Memory)?,
-            ),
+            buffer: RefCell::new(ByteBuf::new(initial_size.0).map_err(Error::Memory)?),
             initial,
             current_size: Cell::new(initial_size.0),
             maximum,
@@ -267,7 +265,9 @@ impl MemoryInstance {
             return Ok(size_before_grow);
         }
         if additional > Pages(65536) {
-            return Err(Error::Memory("Trying to grow memory by more than 65536 pages".to_string()));
+            return Err(Error::Memory(
+                "Trying to grow memory by more than 65536 pages".to_string(),
+            ));
         }
 
         let new_size: Pages = size_before_grow + additional;
@@ -314,10 +314,7 @@ impl MemoryInstance {
             )));
         }
 
-        Ok(CheckedRegion {
-            offset,
-            size,
-        })
+        Ok(CheckedRegion { offset, size })
     }
 
     fn checked_region_pair(
@@ -419,7 +416,9 @@ impl MemoryInstance {
             self.checked_region_pair(&mut buffer, src_offset, len, dst_offset, len)?;
 
         if read_region.intersects(&write_region) {
-            return Err(Error::Memory("non-overlapping copy is used for overlapping regions".to_string()));
+            return Err(Error::Memory(
+                "non-overlapping copy is used for overlapping regions".to_string(),
+            ));
         }
 
         unsafe {
@@ -497,10 +496,7 @@ impl MemoryInstance {
     ///
     /// Might be useful for some optimization shenanigans.
     pub fn erase(&self) -> Result<(), Error> {
-        self.buffer
-            .borrow_mut()
-            .erase()
-            .map_err(Error::Memory)
+        self.buffer.borrow_mut().erase().map_err(Error::Memory)
     }
 
     /// Provides direct access to the underlying memory buffer.

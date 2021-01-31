@@ -1339,9 +1339,7 @@ pub fn check_function_args(signature: &Signature, args: &[RuntimeValue]) -> Resu
     if signature
         .params()
         .iter()
-        .zip(
-            args.iter().map(|param_value| param_value.value_type())
-        )
+        .zip(args.iter().map(|param_value| param_value.value_type()))
         .any(|(expected_type, actual_type)| &actual_type != expected_type)
     {
         return Err(TrapKind::UnexpectedSignature.into());
@@ -1425,10 +1423,7 @@ impl ValueStack {
 
     #[inline]
     fn push(&mut self, value: RuntimeValueInternal) -> Result<(), TrapKind> {
-        let cell = self
-            .buf
-            .get_mut(self.sp)
-            .ok_or(TrapKind::StackOverflow)?;
+        let cell = self.buf.get_mut(self.sp).ok_or(TrapKind::StackOverflow)?;
         *cell = value;
         self.sp += 1;
         Ok(())

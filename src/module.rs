@@ -312,9 +312,7 @@ impl ModuleInstance {
                 "Due to validation func and body counts must match"
             );
 
-            for (index, (ty, body)) in
-                Iterator::zip(funcs.iter(), bodies.iter()).enumerate()
-            {
+            for (index, (ty, body)) in Iterator::zip(funcs.iter(), bodies.iter()).enumerate() {
                 let signature = instance
                     .signature_by_index(ty.type_ref())
                     .expect("Due to validation type should exists");

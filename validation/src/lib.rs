@@ -97,7 +97,8 @@ impl Validator for PlainValidator {
         &mut self,
         _index: u32,
         _output: <<Self as Validator>::FuncValidator as FuncValidator>::Output,
-    ) {}
+    ) {
+    }
     fn finish(self) {}
 }
 

@@ -316,10 +316,7 @@ fn run_action(
         } => {
             let module = program
                 .module_or_last(module.as_ref().map(|x| x.as_ref()))
-                .unwrap_or_else(|_| panic!(
-                    "Expected program to have loaded module {:?}",
-                    module
-                ));
+                .unwrap_or_else(|_| panic!("Expected program to have loaded module {:?}", module));
             let global = module
                 .export_by_name(&field)
                 .ok_or_else(|| {
