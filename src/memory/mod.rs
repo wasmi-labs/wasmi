@@ -143,13 +143,11 @@ impl MemoryInstance {
 
         let initial_size: Bytes = initial.into();
         Ok(MemoryInstance {
-            limits: limits,
-            buffer: RefCell::new(
-                ByteBuf::new(initial_size.0).map_err(|err| Error::Memory(err.to_string()))?,
-            ),
-            initial: initial,
+            limits,
+            buffer: RefCell::new(ByteBuf::new(initial_size.0).map_err(Error::Memory)?),
+            initial,
             current_size: Cell::new(initial_size.0),
-            maximum: maximum,
+            maximum,
         })
     }
 
@@ -267,9 +265,9 @@ impl MemoryInstance {
             return Ok(size_before_grow);
         }
         if additional > Pages(65536) {
-            return Err(Error::Memory(format!(
-                "Trying to grow memory by more than 65536 pages"
-            )));
+            return Err(Error::Memory(
+                "Trying to grow memory by more than 65536 pages".to_string(),
+            ));
         }
 
         let new_size: Pages = size_before_grow + additional;
@@ -287,7 +285,7 @@ impl MemoryInstance {
         self.buffer
             .borrow_mut()
             .realloc(new_buffer_length.0)
-            .map_err(|err| Error::Memory(err.to_string()))?;
+            .map_err(Error::Memory)?;
 
         self.current_size.set(new_buffer_length.0);
 
@@ -316,10 +314,7 @@ impl MemoryInstance {
             )));
         }
 
-        Ok(CheckedRegion {
-            offset: offset,
-            size: size,
-        })
+        Ok(CheckedRegion { offset, size })
     }
 
     fn checked_region_pair(
@@ -421,9 +416,9 @@ impl MemoryInstance {
             self.checked_region_pair(&mut buffer, src_offset, len, dst_offset, len)?;
 
         if read_region.intersects(&write_region) {
-            return Err(Error::Memory(format!(
-                "non-overlapping copy is used for overlapping regions"
-            )));
+            return Err(Error::Memory(
+                "non-overlapping copy is used for overlapping regions".to_string(),
+            ));
         }
 
         unsafe {
@@ -501,10 +496,7 @@ impl MemoryInstance {
     ///
     /// Might be useful for some optimization shenanigans.
     pub fn erase(&self) -> Result<(), Error> {
-        self.buffer
-            .borrow_mut()
-            .erase()
-            .map_err(|err| Error::Memory(err))
+        self.buffer.borrow_mut().erase().map_err(Error::Memory)
     }
 
     /// Provides direct access to the underlying memory buffer.
@@ -564,7 +556,7 @@ mod tests {
 
         for (index, &(initial, maybe_max, expected_ok)) in fixtures.iter().enumerate() {
             let initial: Pages = Pages(initial);
-            let maximum: Option<Pages> = maybe_max.map(|m| Pages(m));
+            let maximum: Option<Pages> = maybe_max.map(Pages);
             let result = MemoryInstance::alloc(initial, maximum);
             if result.is_ok() != expected_ok {
                 panic!(

@@ -1,3 +1,5 @@
+#![allow(clippy::wrong_self_convention)]
+
 extern crate parity_wasm;
 extern crate wasmi;
 
@@ -67,7 +69,7 @@ mod tictactoe {
         }
 
         pub fn set(&mut self, idx: i32, player: Player) -> Result<(), Error> {
-            if idx < 0 || idx > 9 {
+            if !(0..9).contains(&idx) {
                 return Err(Error::OutOfRange);
             }
             if self.board[idx as usize] != None {
@@ -78,7 +80,7 @@ mod tictactoe {
         }
 
         pub fn get(&self, idx: i32) -> Result<Option<Player>, Error> {
-            if idx < 0 || idx > 9 {
+            if !(0..9).contains(&idx) {
                 return Err(Error::OutOfRange);
             }
             Ok(self.board[idx as usize])
@@ -103,6 +105,7 @@ mod tictactoe {
             ];
 
             // Returns Some(player) if all cells contain same Player.
+            #[allow(clippy::question_mark)]
             let all_same = |i1: usize, i2: usize, i3: usize| -> Option<Player> {
                 if self.board[i1].is_none() {
                     return None;
@@ -221,14 +224,13 @@ fn play(
         {
             let mut runtime = Runtime {
                 player: turn_of,
-                game: game,
+                game,
             };
             let _ = instance.invoke_export("mk_turn", &[], &mut runtime)?;
         }
 
-        match game.game_result() {
-            Some(game_result) => break game_result,
-            None => {}
+        if let Some(game_result) = game.game_result() {
+            break game_result;
         }
 
         turn_of = next_turn_of;

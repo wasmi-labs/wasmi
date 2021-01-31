@@ -108,7 +108,7 @@ impl ModuleImportResolver for SpecModule {
         }
 
         let func = FuncInstance::alloc_host(func_type.clone(), index);
-        return Ok(func);
+        Ok(func)
     }
 
     fn resolve_global(
@@ -268,7 +268,7 @@ fn try_load(wasm: &[u8], spec_driver: &mut SpecDriver) -> Result<(), Error> {
     let instance = ModuleInstance::new(&module, &ImportsBuilder::default())?;
     instance
         .run_start(spec_driver.spec_module())
-        .map_err(|trap| Error::Start(trap))?;
+        .map_err(Error::Start)?;
     Ok(())
 }
 
@@ -281,7 +281,7 @@ fn load_module(
     let instance = ModuleInstance::new(&module, spec_driver)
         .map_err(|e| Error::Load(e.to_string()))?
         .run_start(spec_driver.spec_module())
-        .map_err(|trap| Error::Start(trap))?;
+        .map_err(Error::Start)?;
 
     let module_name = name.clone();
     spec_driver.add_module(module_name, instance.clone());
@@ -301,10 +301,7 @@ fn run_action(
         } => {
             let module = program
                 .module_or_last(module.as_ref().map(|x| x.as_ref()))
-                .expect(&format!(
-                    "Expected program to have loaded module {:?}",
-                    module
-                ));
+                .unwrap_or_else(|_| panic!("Expected program to have loaded module {:?}", module));
             let vec_args = args
                 .iter()
                 .cloned()
@@ -319,10 +316,7 @@ fn run_action(
         } => {
             let module = program
                 .module_or_last(module.as_ref().map(|x| x.as_ref()))
-                .expect(&format!(
-                    "Expected program to have loaded module {:?}",
-                    module
-                ));
+                .unwrap_or_else(|_| panic!("Expected program to have loaded module {:?}", module));
             let global = module
                 .export_by_name(&field)
                 .ok_or_else(|| {
@@ -398,15 +392,15 @@ fn try_spec(name: &str) -> Result<(), Error> {
                             assert_eq!(actual_result.value_type(), spec_expected.value_type());
                             // f32::NAN != f32::NAN
                             match spec_expected {
-                                &RuntimeValue::F32(val) if val.is_nan() => match actual_result {
-                                    &RuntimeValue::F32(val) => assert!(val.is_nan()),
+                                RuntimeValue::F32(val) if val.is_nan() => match actual_result {
+                                    RuntimeValue::F32(val) => assert!(val.is_nan()),
                                     _ => unreachable!(), // checked above that types are same
                                 },
-                                &RuntimeValue::F64(val) if val.is_nan() => match actual_result {
-                                    &RuntimeValue::F64(val) => assert!(val.is_nan()),
+                                RuntimeValue::F64(val) if val.is_nan() => match actual_result {
+                                    RuntimeValue::F64(val) => assert!(val.is_nan()),
                                     _ => unreachable!(), // checked above that types are same
                                 },
-                                spec_expected @ _ => assert_eq!(actual_result, spec_expected),
+                                spec_expected => assert_eq!(actual_result, spec_expected),
                             }
                         }
                     }
@@ -432,7 +426,7 @@ fn try_spec(name: &str) -> Result<(), Error> {
                                         panic!("Expected nan value, got {:?}", val)
                                     }
                                 }
-                                val @ _ => {
+                                val => {
                                     panic!("Expected action to return float value, got {:?}", val)
                                 }
                             }

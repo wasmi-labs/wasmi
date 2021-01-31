@@ -255,14 +255,11 @@ pub trait ModuleImportResolver {
 
 impl ModuleImportResolver for ModuleRef {
     fn resolve_func(&self, field_name: &str, _signature: &Signature) -> Result<FuncRef, Error> {
-        Ok(self
-            .export_by_name(field_name)
+        self.export_by_name(field_name)
             .ok_or_else(|| Error::Instantiation(format!("Export {} not found", field_name)))?
             .as_func()
             .cloned()
-            .ok_or_else(|| {
-                Error::Instantiation(format!("Export {} is not a function", field_name))
-            })?)
+            .ok_or_else(|| Error::Instantiation(format!("Export {} is not a function", field_name)))
     }
 
     fn resolve_global(
@@ -270,14 +267,11 @@ impl ModuleImportResolver for ModuleRef {
         field_name: &str,
         _global_type: &GlobalDescriptor,
     ) -> Result<GlobalRef, Error> {
-        Ok(self
-            .export_by_name(field_name)
+        self.export_by_name(field_name)
             .ok_or_else(|| Error::Instantiation(format!("Export {} not found", field_name)))?
             .as_global()
             .cloned()
-            .ok_or_else(|| {
-                Error::Instantiation(format!("Export {} is not a global", field_name))
-            })?)
+            .ok_or_else(|| Error::Instantiation(format!("Export {} is not a global", field_name)))
     }
 
     fn resolve_memory(
@@ -285,14 +279,11 @@ impl ModuleImportResolver for ModuleRef {
         field_name: &str,
         _memory_type: &MemoryDescriptor,
     ) -> Result<MemoryRef, Error> {
-        Ok(self
-            .export_by_name(field_name)
+        self.export_by_name(field_name)
             .ok_or_else(|| Error::Instantiation(format!("Export {} not found", field_name)))?
             .as_memory()
             .cloned()
-            .ok_or_else(|| {
-                Error::Instantiation(format!("Export {} is not a memory", field_name))
-            })?)
+            .ok_or_else(|| Error::Instantiation(format!("Export {} is not a memory", field_name)))
     }
 
     fn resolve_table(
@@ -300,11 +291,10 @@ impl ModuleImportResolver for ModuleRef {
         field_name: &str,
         _table_type: &TableDescriptor,
     ) -> Result<TableRef, Error> {
-        Ok(self
-            .export_by_name(field_name)
+        self.export_by_name(field_name)
             .ok_or_else(|| Error::Instantiation(format!("Export {} not found", field_name)))?
             .as_table()
             .cloned()
-            .ok_or_else(|| Error::Instantiation(format!("Export {} is not a table", field_name)))?)
+            .ok_or_else(|| Error::Instantiation(format!("Export {} is not a table", field_name)))
     }
 }
