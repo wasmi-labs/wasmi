@@ -31,6 +31,8 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
+      - name: Checkout Submodules
+        run: git submodule update --init --recursive
       - uses: actions-rs/cargo@v1
         with:
           command: test
