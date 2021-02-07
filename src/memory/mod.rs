@@ -3,7 +3,7 @@ use crate::value::LittleEndianConvert;
 use crate::Error;
 use alloc::{rc::Rc, string::ToString, vec::Vec};
 use core::{
-    cell::{Cell, RefCell, Ref, RefMut},
+    cell::{Cell, Ref, RefCell, RefMut},
     cmp, fmt,
     ops::Range,
     u32,
