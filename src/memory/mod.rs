@@ -3,7 +3,7 @@ use crate::value::LittleEndianConvert;
 use crate::Error;
 use alloc::{rc::Rc, string::ToString, vec::Vec};
 use core::{
-    cell::{Cell, RefCell},
+    cell::{Cell, Ref, RefCell, RefMut},
     cmp, fmt,
     ops::Range,
     u32,
@@ -525,6 +525,46 @@ impl MemoryInstance {
     pub fn with_direct_access_mut<R, F: FnOnce(&mut [u8]) -> R>(&self, f: F) -> R {
         let mut buf = self.buffer.borrow_mut();
         f(buf.as_slice_mut())
+    }
+
+    /// Provides direct access to the underlying memory buffer.
+    ///
+    /// # Panics
+    ///
+    /// Any call that requires write access to memory (such as [`set`], [`clear`], etc) made while
+    /// the returned value is alive will panic.
+    ///
+    /// [`set`]: #method.get
+    /// [`clear`]: #method.set
+    pub fn direct_access<'a>(&'a self) -> impl AsRef<[u8]> + 'a {
+        struct Buffer<'a>(Ref<'a, ByteBuf>);
+        impl<'a> AsRef<[u8]> for Buffer<'a> {
+            fn as_ref(&self) -> &[u8] {
+                self.0.as_slice()
+            }
+        }
+
+        Buffer(self.buffer.borrow())
+    }
+
+    /// Provides direct mutable access to the underlying memory buffer.
+    ///
+    /// # Panics
+    ///
+    /// Any call that requires either read or write access to memory (such as [`get`], [`set`],
+    /// [`copy`], etc) made while the returned value is alive will panic. Proceed with caution.
+    ///
+    /// [`get`]: #method.get
+    /// [`set`]: #method.set
+    pub fn direct_access_mut<'a>(&'a self) -> impl AsMut<[u8]> + 'a {
+        struct Buffer<'a>(RefMut<'a, ByteBuf>);
+        impl<'a> AsMut<[u8]> for Buffer<'a> {
+            fn as_mut(&mut self) -> &mut [u8] {
+                self.0.as_slice_mut()
+            }
+        }
+
+        Buffer(self.buffer.borrow_mut())
     }
 }
 
