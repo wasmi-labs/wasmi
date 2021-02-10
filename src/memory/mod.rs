@@ -536,6 +536,7 @@ impl MemoryInstance {
     ///
     /// [`set`]: #method.get
     /// [`clear`]: #method.set
+    #[allow(clippy::clippy::needless_lifetimes)]
     pub fn direct_access<'a>(&'a self) -> impl AsRef<[u8]> + 'a {
         struct Buffer<'a>(Ref<'a, ByteBuf>);
         impl<'a> AsRef<[u8]> for Buffer<'a> {
@@ -556,6 +557,7 @@ impl MemoryInstance {
     ///
     /// [`get`]: #method.get
     /// [`set`]: #method.set
+    #[allow(clippy::clippy::needless_lifetimes)]
     pub fn direct_access_mut<'a>(&'a self) -> impl AsMut<[u8]> + 'a {
         struct Buffer<'a>(RefMut<'a, ByteBuf>);
         impl<'a> AsMut<[u8]> for Buffer<'a> {
