@@ -215,7 +215,7 @@ impl ModuleInstance {
 
     /// Access all globals. This is a non-standard API so it's unlikely to be
     /// portable to other engines.
-    pub fn globals<'a>(&self) -> Ref<Vec<GlobalRef>> {
+    pub fn globals(&self) -> Ref<Vec<GlobalRef>> {
         self.globals.borrow()
     }
 
@@ -240,7 +240,7 @@ impl ModuleInstance {
                 .import_section()
                 .map(|is| is.entries())
                 .unwrap_or(&[])
-                .into_iter();
+                .iter();
             let mut extern_vals = extern_vals;
             loop {
                 // Iterate on imports and extern_vals in lockstep, a-la `Iterator:zip`.
@@ -312,9 +312,7 @@ impl ModuleInstance {
                 "Due to validation func and body counts must match"
             );
 
-            for (index, (ty, body)) in
-                Iterator::zip(funcs.into_iter(), bodies.into_iter()).enumerate()
-            {
+            for (index, (ty, body)) in Iterator::zip(funcs.iter(), bodies.iter()).enumerate() {
                 let signature = instance
                     .signature_by_index(ty.type_ref())
                     .expect("Due to validation type should exists");
@@ -323,7 +321,7 @@ impl ModuleInstance {
 				).clone();
                 let func_body = FuncBody {
                     locals: body.locals().to_vec(),
-                    code: code,
+                    code,
                 };
                 let func_instance =
                     FuncInstance::alloc_internal(Rc::downgrade(&instance.0), signature, func_body);
@@ -440,7 +438,7 @@ impl ModuleInstance {
                 ));
             }
 
-            for (j, func_idx) in element_segment.members().into_iter().enumerate() {
+            for (j, func_idx) in element_segment.members().iter().enumerate() {
                 let func = module_ref
                     .func_by_index(*func_idx)
                     .expect("Due to validation funcs from element segments should exists");
@@ -632,7 +630,7 @@ impl ModuleInstance {
     ) -> Result<Option<RuntimeValue>, Error> {
         let func_instance = self.func_by_name(func_name)?;
 
-        FuncInstance::invoke(&func_instance, args, externals).map_err(|t| Error::Trap(t))
+        FuncInstance::invoke(&func_instance, args, externals).map_err(Error::Trap)
     }
 
     /// Invoke exported function by a name using recycled stacks.
@@ -652,7 +650,7 @@ impl ModuleInstance {
         let func_instance = self.func_by_name(func_name)?;
 
         FuncInstance::invoke_with_stack(&func_instance, args, externals, stack_recycler)
-            .map_err(|t| Error::Trap(t))
+            .map_err(Error::Trap)
     }
 
     fn func_by_name(&self, func_name: &str) -> Result<FuncRef, Error> {
@@ -726,6 +724,26 @@ impl<'a> NotStartedModuleRef<'a> {
                 .func_by_index(start_fn_idx)
                 .expect("Due to validation start function should exists");
             FuncInstance::invoke(&start_func, &[], state)?;
+        }
+        Ok(self.instance)
+    }
+
+    /// Executes `start` function (if any) and returns fully instantiated module.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if start function traps.
+    pub fn run_start_with_stack<E: Externals>(
+        self,
+        state: &mut E,
+        stack_recycler: &mut StackRecycler,
+    ) -> Result<ModuleRef, Trap> {
+        if let Some(start_fn_idx) = self.loaded_module.module().start_section() {
+            let start_func = self
+                .instance
+                .func_by_index(start_fn_idx)
+                .expect("Due to validation start function should exists");
+            FuncInstance::invoke_with_stack(&start_func, &[], state, stack_recycler)?;
         }
         Ok(self.instance)
     }

@@ -3,6 +3,9 @@ use alloc::vec::Vec;
 use parity_wasm::elements::Module;
 use validation::{validate_module, Error, Validator};
 
+#[cfg(feature = "core")]
+use crate::alloc::string::ToString;
+
 mod compile;
 
 #[cfg(test)]
@@ -172,7 +175,7 @@ pub fn deny_floating_point(module: &Module, allow_f32: bool) -> Result<(), Error
                                 }
                             })
                         {
-                            return Err(Error(format!("Use of floating point types denied")));
+                            return Err(Error("Use of floating point types denied".to_string()));
                         }
                     }
                 }

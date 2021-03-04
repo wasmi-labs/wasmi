@@ -278,7 +278,7 @@ impl Compiler {
                 context.step(instruction)?;
 
                 // These two unwraps are guaranteed to succeed by validation.
-                const REQUIRE_TARGET_PROOF: &'static str =
+                const REQUIRE_TARGET_PROOF: &str =
                     "validation step ensures that the value stack underflows;
                     validation also ensures that the depth is correct;
                     qed";
@@ -1179,7 +1179,7 @@ impl Sink {
         let dst_pc = self.pc_or_placeholder(label, || isa::Reloc::Br { pc });
         self.ins.push(isa::InstructionInternal::Br(isa::Target {
             dst_pc,
-            drop_keep: drop_keep.into(),
+            drop_keep,
         }));
     }
 
@@ -1190,7 +1190,7 @@ impl Sink {
         self.ins
             .push(isa::InstructionInternal::BrIfEqz(isa::Target {
                 dst_pc,
-                drop_keep: drop_keep.into(),
+                drop_keep,
             }));
     }
 
@@ -1201,7 +1201,7 @@ impl Sink {
         self.ins
             .push(isa::InstructionInternal::BrIfNez(isa::Target {
                 dst_pc,
-                drop_keep: drop_keep.into(),
+                drop_keep,
             }));
     }
 
@@ -1221,7 +1221,7 @@ impl Sink {
             self.ins
                 .push(isa::InstructionInternal::BrTableTarget(isa::Target {
                     dst_pc,
-                    drop_keep: drop_keep.into(),
+                    drop_keep,
                 }));
         }
     }
@@ -1262,9 +1262,8 @@ impl Sink {
             {
                 self.labels
                     .iter()
-                    .all(|(state, unresolved)| match (state, unresolved) {
-                        (Label::Resolved(_), unresolved) if unresolved.is_empty() => true,
-                        _ => false,
+                    .all(|(state, unresolved)| {
+                        matches!((state, unresolved), (Label::Resolved(_), unresolved) if unresolved.is_empty())
                     })
             },
             "there are unresolved labels left: {:?}",

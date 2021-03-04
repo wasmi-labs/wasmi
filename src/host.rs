@@ -32,10 +32,10 @@ impl<'a> RuntimeArgs<'a> {
     where
         T: FromRuntimeValue,
     {
-        Ok(self
-            .nth_value_checked(idx)?
+        self.nth_value_checked(idx)?
             .try_into()
-            .ok_or_else(|| TrapKind::UnexpectedSignature)?)
+            .ok_or(TrapKind::UnexpectedSignature)
+            .map_err(Into::into)
     }
 
     /// Extract argument as a [`RuntimeValue`] by index `idx`.

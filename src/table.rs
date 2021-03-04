@@ -72,7 +72,7 @@ impl TableInstance {
         check_limits(&limits)?;
         Ok(TableInstance {
             buffer: RefCell::new(vec![None; limits.initial() as usize]),
-            limits: limits,
+            limits,
         })
     }
 

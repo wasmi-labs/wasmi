@@ -97,12 +97,9 @@ impl Validator for PlainValidator {
         &mut self,
         _index: u32,
         _output: <<Self as Validator>::FuncValidator as FuncValidator>::Output,
-    ) -> () {
-        ()
+    ) {
     }
-    fn finish(self) -> () {
-        ()
-    }
+    fn finish(self) {}
 }
 
 /// A function validator that just validates modules and produces no result.
@@ -123,9 +120,7 @@ impl FuncValidator for PlainFuncValidator {
         ctx.step(instruction)
     }
 
-    fn finish(self) -> () {
-        ()
-    }
+    fn finish(self) {}
 }
 
 pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error> {
@@ -139,7 +134,7 @@ pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error
             .type_section()
             .map(|ts| {
                 ts.types()
-                    .into_iter()
+                    .iter()
                     .map(|&Type::Function(ref ty)| ty)
                     .cloned()
                     .collect()
@@ -155,11 +150,11 @@ pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error
     {
         match *import_entry.external() {
             External::Function(idx) => context_builder.push_func_type_index(idx),
-            External::Table(ref table) => context_builder.push_table(table.clone()),
-            External::Memory(ref memory) => context_builder.push_memory(memory.clone()),
+            External::Table(ref table) => context_builder.push_table(*table),
+            External::Memory(ref memory) => context_builder.push_memory(*memory),
             External::Global(ref global) => {
-                context_builder.push_global(global.clone());
-                imported_globals.push(global.clone());
+                context_builder.push_global(*global);
+                imported_globals.push(*global);
             }
         }
     }
@@ -173,19 +168,19 @@ pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error
     if let Some(table_section) = module.table_section() {
         for table_entry in table_section.entries() {
             validate_table_type(table_entry)?;
-            context_builder.push_table(table_entry.clone());
+            context_builder.push_table(*table_entry);
         }
     }
     if let Some(mem_section) = module.memory_section() {
         for mem_entry in mem_section.entries() {
             validate_memory_type(mem_entry)?;
-            context_builder.push_memory(mem_entry.clone());
+            context_builder.push_memory(*mem_entry);
         }
     }
     if let Some(global_section) = module.global_section() {
         for global_entry in global_section.entries() {
             validate_global_entry(global_entry, &imported_globals)?;
-            context_builder.push_global(global_entry.global_type().clone());
+            context_builder.push_global(*global_entry.global_type());
         }
     }
 
@@ -217,7 +212,7 @@ pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error
             let function_body = code_section
                 .bodies()
                 .get(index as usize)
-                .ok_or(Error(format!("Missing body for function {}", index)))?;
+                .ok_or_else(|| Error(format!("Missing body for function {}", index)))?;
 
             let output = func::drive::<V::FuncValidator>(&context, function, function_body)
                 .map_err(|Error(ref msg)| {
@@ -233,7 +228,7 @@ pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error
     // validate start section
     if let Some(start_fn_idx) = module.start_section() {
         let (params, return_ty) = context.require_function(start_fn_idx)?;
-        if return_ty != BlockType::NoResult || params.len() != 0 {
+        if return_ty != BlockType::NoResult || !params.is_empty() {
             return Err(Error(
                 "start function expected to have type [] -> []".into(),
             ));

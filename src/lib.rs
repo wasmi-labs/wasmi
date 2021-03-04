@@ -96,6 +96,8 @@
 
 #![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(clippy::len_without_is_empty)]
+#![allow(clippy::new_ret_no_self)]
 
 #[cfg(not(feature = "std"))]
 #[macro_use]
@@ -246,10 +248,7 @@ pub enum TrapKind {
 impl TrapKind {
     /// Whether this trap is specified by the host.
     pub fn is_host(&self) -> bool {
-        match self {
-            &TrapKind::Host(_) => true,
-            _ => false,
-        }
+        matches!(self, TrapKind::Host(_))
     }
 }
 
@@ -333,6 +332,7 @@ impl Error {
     }
 }
 
+#[allow(clippy::from_over_into)]
 impl Into<String> for Error {
     fn into(self) -> String {
         match self {

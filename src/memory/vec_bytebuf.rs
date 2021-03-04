@@ -8,8 +8,7 @@ pub struct ByteBuf {
 
 impl ByteBuf {
     pub fn new(len: usize) -> Result<Self, String> {
-        let mut buf = Vec::new();
-        buf.resize(len, 0u8);
+        let buf = vec![0; len];
         Ok(Self { buf })
     }
 
