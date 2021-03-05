@@ -43,7 +43,7 @@ impl Validator for WasmiValidation {
 /// Validate a module and compile it to the internal representation.
 pub fn compile_module(module: Module) -> Result<CompiledModule, Error> {
     let code_map = validate_module::<WasmiValidation>(&module)?;
-    Ok(CompiledModule { module, code_map })
+    Ok(CompiledModule { code_map, module })
 }
 
 /// Verify that the module doesn't use floating point instructions or types.
