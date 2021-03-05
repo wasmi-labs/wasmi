@@ -121,15 +121,16 @@ impl MemoryInstance {
             let initial_u32: u32 = initial.0.try_into().map_err(|_| {
                 Error::Memory(format!("initial ({}) can't be coerced to u32", initial.0))
             })?;
-            let maximum_u32: Option<u32> = match maximum {
-                Some(maximum_pages) => Some(maximum_pages.0.try_into().map_err(|_| {
-                    Error::Memory(format!(
-                        "maximum ({}) can't be coerced to u32",
-                        maximum_pages.0
-                    ))
-                })?),
-                None => None,
-            };
+            let maximum_u32: Option<u32> = maximum
+                .map(|maximum_pages| {
+                    maximum_pages.0.try_into().map_err(|_| {
+                        Error::Memory(format!(
+                            "maximum ({}) can't be coerced to u32",
+                            maximum_pages.0
+                        ))
+                    })
+                })
+                .transpose()?;
             validation::validate_memory(initial_u32, maximum_u32).map_err(Error::Memory)?;
         }
 
