@@ -147,7 +147,7 @@ pub fn deny_floating_point(module: &Module, allow_f32: bool) -> Result<(), Error
                 )));
             }
 
-            if allow_f32 && DENIED_32.iter().any(|is_denied| is_denied(op)) {
+            if !allow_f32 && DENIED_32.iter().any(|is_denied| is_denied(op)) {
                 return Err(Error(format!(
                     "f32 Floating point operation denied: {:?}",
                     op
