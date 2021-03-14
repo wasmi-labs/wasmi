@@ -63,8 +63,9 @@ impl ModuleContext {
 
         let params = ty.params();
         let return_ty = ty
-            .return_type()
-            .map(BlockType::Value)
+            .results()
+            .first()
+            .map(|vty| BlockType::Value(*vty))
             .unwrap_or(BlockType::NoResult);
         Ok((params, return_ty))
     }

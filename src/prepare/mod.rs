@@ -154,7 +154,7 @@ pub fn deny_floating_point(module: &Module) -> Result<(), Error> {
                         if func
                             .params()
                             .iter()
-                            .chain(func.return_type().as_ref())
+                            .chain(func.results())
                             .any(|&typ| typ == ValueType::F32 || typ == ValueType::F64)
                         {
                             return Err(Error("Use of floating point types denied".to_string()));
