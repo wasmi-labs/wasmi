@@ -1,6 +1,6 @@
 [package]
 name = "wasmi-validation"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
@@ -8,7 +8,7 @@ repository = "https://github.com/paritytech/wasmi"
 description = "Wasm code validator"
 
 [dependencies]
-parity-wasm = { version = "0.41.0", default-features = false }
+parity-wasm = { version = "0.42.0", default-features = false }
 
 [dev-dependencies]
 assert_matches = "1.1"
