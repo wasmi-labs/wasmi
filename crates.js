@@ -1,0 +1,1 @@
+window.ALL_CRATES = ["downcast_rs","instantiate","libc","memory_units","num_bigint","num_integer","num_rational","num_traits","parity_wasm","wasmi","wasmi_validation"];

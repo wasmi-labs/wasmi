@@ -1,0 +1,131 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="wasmi"><meta name="keywords" content="rust, rustlang, rust-lang, wasmi"><title>wasmi - Rust</title><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../ayu.css" disabled ><script id="default-settings"></script><script src="../storage.js"></script><script src="../crates.js"></script><noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="alternate icon" type="image/png" href="../favicon-16x16.png">
+<link rel="alternate icon" type="image/png" href="../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../down-arrow.svg");}</style></head><body class="rustdoc mod"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../wasmi/index.html'><div class='logo-container rust-logo'><img src='../rust-logo.png' alt='logo'></div></a><p class="location">Crate wasmi</p><div class="block version"><p>Version 0.9.0</p></div><div class="sidebar-elems"><a id="all-types" href="all.html"><p>See all wasmi's items</p></a><div class="block items"><ul><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#constants">Constants</a></li><li><a href="#traits">Traits</a></li></ul></div><p class="location"></p><div id="sidebar-vars" data-name="wasmi" data-ty="mod" data-relpath="../"></div></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
+                <a id="settings-menu" href="../settings.html"><img src="../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="in-band">Crate <a class="mod" href="">wasmi</a></span><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../src/wasmi/lib.rs.html#1-599" title="goto source code">[src]</a></span></h1><div class="docblock"><h1 id="wasmi" class="section-header"><a href="#wasmi">wasmi</a></h1>
+<p>This library allows WebAssembly modules to be loaded in binary format and their functions invoked.</p>
+<h1 id="introduction" class="section-header"><a href="#introduction">Introduction</a></h1>
+<p>WebAssembly (wasm) is a safe, portable and compact format that is designed for efficient execution.</p>
+<p>Wasm code is distributed in the form of modules that contains definitions of:</p>
+<ul>
+<li>functions,</li>
+<li>global variables,</li>
+<li>linear memory instances and</li>
+<li>tables.</li>
+</ul>
+<p>Each of these definitions can be imported and exported.</p>
+<p>In addition to these definitions, modules can define initialization data for their memory or tables. This initialization data can take the
+form of segments, copied to given offsets. They can also define a <code>start</code> function that is automatically executed when the module is loaded.</p>
+<h2 id="loading-and-validation" class="section-header"><a href="#loading-and-validation">Loading and Validation</a></h2>
+<p>Before execution, a module must be validated. This process checks that the module is well-formed
+and makes only allowed operations.</p>
+<p>A valid module can’t access memory outside its sandbox, can’t cause stack underflows
+and can only call functions with correct signatures.</p>
+<h2 id="instantiation" class="section-header"><a href="#instantiation">Instantiation</a></h2>
+<p>In order to execute code from a wasm module, it must be instantiated.
+Instantiation includes the following steps:</p>
+<ol>
+<li>Creating an empty module instance.</li>
+<li>Resolving the definition instances for each declared import in the module.</li>
+<li>Instantiating definitions declared in the module (e.g. allocate global variables, allocate linear memory, etc.).</li>
+<li>Initializing memory and table contents by copying segments into them.</li>
+<li>Executing the <code>start</code> function, if any.</li>
+</ol>
+<p>After these steps, the module instance is ready to execute functions.</p>
+<h2 id="execution" class="section-header"><a href="#execution">Execution</a></h2>
+<p>It only is allowed to call functions which are exported by the module.
+Functions can either return a result or trap (e.g. there can’t be linking error in the middle of the function execution).
+This property is ensured by the validation process.</p>
+<h1 id="examples" class="section-header"><a href="#examples">Examples</a></h1>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">wasmi</span>;
+<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">wabt</span>;
+
+<span class="kw">use</span> <span class="ident">wasmi</span>::{<span class="ident">ModuleInstance</span>, <span class="ident">ImportsBuilder</span>, <span class="ident">NopExternals</span>, <span class="ident">RuntimeValue</span>};
+
+<span class="kw">fn</span> <span class="ident">main</span>() {
+    <span class="comment">// Parse WAT (WebAssembly Text format) into wasm bytecode.</span>
+    <span class="kw">let</span> <span class="ident">wasm_binary</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span>
+        <span class="ident">wabt</span>::<span class="ident">wat2wasm</span>(
+            <span class="string">r#&quot;
+            (module
+                (func (export &quot;test&quot;) (result i32)
+                    i32.const 1337
+                )
+            )
+            &quot;#</span>,
+        )
+        .<span class="ident">expect</span>(<span class="string">&quot;failed to parse wat&quot;</span>);
+
+    <span class="comment">// Load wasm binary and prepare it for instantiation.</span>
+    <span class="kw">let</span> <span class="ident">module</span> <span class="op">=</span> <span class="ident">wasmi</span>::<span class="ident">Module</span>::<span class="ident">from_buffer</span>(<span class="kw-2">&amp;</span><span class="ident">wasm_binary</span>)
+        .<span class="ident">expect</span>(<span class="string">&quot;failed to load wasm&quot;</span>);
+
+    <span class="comment">// Instantiate a module with empty imports and</span>
+    <span class="comment">// assert that there is no `start` function.</span>
+    <span class="kw">let</span> <span class="ident">instance</span> <span class="op">=</span>
+        <span class="ident">ModuleInstance</span>::<span class="ident">new</span>(
+            <span class="kw-2">&amp;</span><span class="ident">module</span>,
+            <span class="kw-2">&amp;</span><span class="ident">ImportsBuilder</span>::<span class="ident">default</span>()
+        )
+        .<span class="ident">expect</span>(<span class="string">&quot;failed to instantiate wasm module&quot;</span>)
+        .<span class="ident">assert_no_start</span>();
+
+    <span class="comment">// Finally, invoke the exported function &quot;test&quot; with no parameters</span>
+    <span class="comment">// and empty external function executor.</span>
+    <span class="macro">assert_eq</span><span class="macro">!</span>(
+        <span class="ident">instance</span>.<span class="ident">invoke_export</span>(
+            <span class="string">&quot;test&quot;</span>,
+            <span class="kw-2">&amp;</span>[],
+            <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">NopExternals</span>,
+        ).<span class="ident">expect</span>(<span class="string">&quot;failed to execute export&quot;</span>),
+        <span class="prelude-val">Some</span>(<span class="ident">RuntimeValue</span>::<span class="ident">I32</span>(<span class="number">1337</span>)),
+    );
+}</pre></div>
+</div><h2 id="modules" class="section-header"><a href="#modules">Modules</a></h2>
+<table><tr class="module-item"><td><a class="mod" href="memory_units/index.html" title="wasmi::memory_units mod">memory_units</a></td><td class="docblock-short"><p>WebAssembly-specific sizes and units.</p>
+</td></tr><tr class="module-item"><td><a class="mod" href="nan_preserving_float/index.html" title="wasmi::nan_preserving_float mod">nan_preserving_float</a></td><td class="docblock-short"></td></tr></table><h2 id="structs" class="section-header"><a href="#structs">Structs</a></h2>
+<table><tr class="module-item"><td><a class="struct" href="struct.FuncInstance.html" title="wasmi::FuncInstance struct">FuncInstance</a></td><td class="docblock-short"><p>Runtime representation of a function.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.FuncInvocation.html" title="wasmi::FuncInvocation struct">FuncInvocation</a></td><td class="docblock-short"><p>A resumable invocation handle. This struct is returned by <code>FuncInstance::invoke_resumable</code>.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.FuncRef.html" title="wasmi::FuncRef struct">FuncRef</a></td><td class="docblock-short"><p>Reference to a function (See <a href="struct.FuncInstance.html"><code>FuncInstance</code></a> for details).</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.GlobalDescriptor.html" title="wasmi::GlobalDescriptor struct">GlobalDescriptor</a></td><td class="docblock-short"><p>Description of a global variable.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.GlobalInstance.html" title="wasmi::GlobalInstance struct">GlobalInstance</a></td><td class="docblock-short"><p>Runtime representation of a global variable (or <code>global</code> for short).</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.GlobalRef.html" title="wasmi::GlobalRef struct">GlobalRef</a></td><td class="docblock-short"><p>Reference to a global variable (See <a href="struct.GlobalInstance.html"><code>GlobalInstance</code></a> for details).</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.ImportsBuilder.html" title="wasmi::ImportsBuilder struct">ImportsBuilder</a></td><td class="docblock-short"><p>Convenience builder of <a href="trait.ImportResolver.html"><code>ImportResolver</code></a>.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.MemoryDescriptor.html" title="wasmi::MemoryDescriptor struct">MemoryDescriptor</a></td><td class="docblock-short"><p>Description of a linear memory.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.MemoryInstance.html" title="wasmi::MemoryInstance struct">MemoryInstance</a></td><td class="docblock-short"><p>Runtime representation of a linear memory (or <code>memory</code> for short).</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.MemoryRef.html" title="wasmi::MemoryRef struct">MemoryRef</a></td><td class="docblock-short"><p>Reference to a memory (See <a href="struct.MemoryInstance.html"><code>MemoryInstance</code></a> for details).</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.Module.html" title="wasmi::Module struct">Module</a></td><td class="docblock-short"><p>Deserialized module prepared for instantiation.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.ModuleInstance.html" title="wasmi::ModuleInstance struct">ModuleInstance</a></td><td class="docblock-short"><p>A module instance is the runtime representation of a <a href="struct.Module.html">module</a>.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.ModuleRef.html" title="wasmi::ModuleRef struct">ModuleRef</a></td><td class="docblock-short"><p>Reference to a <a href="struct.ModuleInstance.html"><code>ModuleInstance</code></a>.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.NopExternals.html" title="wasmi::NopExternals struct">NopExternals</a></td><td class="docblock-short"><p>Implementation of <a href="trait.Externals.html"><code>Externals</code></a> that just traps on <a href="trait.Externals.html#tymethod.invoke_index"><code>invoke_index</code></a>.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.NotStartedModuleRef.html" title="wasmi::NotStartedModuleRef struct">NotStartedModuleRef</a></td><td class="docblock-short"><p>Mostly instantiated <a href="struct.ModuleRef.html"><code>ModuleRef</code></a>.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.RuntimeArgs.html" title="wasmi::RuntimeArgs struct">RuntimeArgs</a></td><td class="docblock-short"><p>Wrapper around slice of <a href="enum.RuntimeValue.html"><code>RuntimeValue</code></a> for using it
+as an argument list conveniently.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.Signature.html" title="wasmi::Signature struct">Signature</a></td><td class="docblock-short"><p>Signature of a <a href="struct.FuncInstance.html">function</a>.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.StackRecycler.html" title="wasmi::StackRecycler struct">StackRecycler</a></td><td class="docblock-short"><p>Used to recycle stacks instead of allocating them repeatedly.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.TableDescriptor.html" title="wasmi::TableDescriptor struct">TableDescriptor</a></td><td class="docblock-short"><p>Description of a table.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.TableInstance.html" title="wasmi::TableInstance struct">TableInstance</a></td><td class="docblock-short"><p>Runtime representation of a table.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.TableRef.html" title="wasmi::TableRef struct">TableRef</a></td><td class="docblock-short"><p>Reference to a table (See <a href="struct.TableInstance.html"><code>TableInstance</code></a> for details).</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.Trap.html" title="wasmi::Trap struct">Trap</a></td><td class="docblock-short"><p>Error type which can be thrown by wasm code or by host environment.</p>
+</td></tr></table><h2 id="enums" class="section-header"><a href="#enums">Enums</a></h2>
+<table><tr class="module-item"><td><a class="enum" href="enum.Error.html" title="wasmi::Error enum">Error</a></td><td class="docblock-short"><p>Internal interpreter error.</p>
+</td></tr><tr class="module-item"><td><a class="enum" href="enum.ExternVal.html" title="wasmi::ExternVal enum">ExternVal</a></td><td class="docblock-short"><p>An external value is the runtime representation of an entity
+that can be imported or exported.</p>
+</td></tr><tr class="module-item"><td><a class="enum" href="enum.ResumableError.html" title="wasmi::ResumableError enum">ResumableError</a></td><td class="docblock-short"><p>A resumable invocation error.</p>
+</td></tr><tr class="module-item"><td><a class="enum" href="enum.RuntimeValue.html" title="wasmi::RuntimeValue enum">RuntimeValue</a></td><td class="docblock-short"><p>Runtime representation of a value.</p>
+</td></tr><tr class="module-item"><td><a class="enum" href="enum.TrapKind.html" title="wasmi::TrapKind enum">TrapKind</a></td><td class="docblock-short"><p>Error type which can be thrown by wasm code or by host environment.</p>
+</td></tr><tr class="module-item"><td><a class="enum" href="enum.ValueError.html" title="wasmi::ValueError enum">ValueError</a></td><td class="docblock-short"><p>Error for <code>LittleEndianConvert</code></p>
+</td></tr><tr class="module-item"><td><a class="enum" href="enum.ValueType.html" title="wasmi::ValueType enum">ValueType</a></td><td class="docblock-short"><p>Type of a value.</p>
+</td></tr></table><h2 id="constants" class="section-header"><a href="#constants">Constants</a></h2>
+<table><tr class="module-item"><td><a class="constant" href="constant.DEFAULT_CALL_STACK_LIMIT.html" title="wasmi::DEFAULT_CALL_STACK_LIMIT constant">DEFAULT_CALL_STACK_LIMIT</a></td><td class="docblock-short"><p>Maximum number of levels on the call stack.</p>
+</td></tr><tr class="module-item"><td><a class="constant" href="constant.DEFAULT_VALUE_STACK_LIMIT.html" title="wasmi::DEFAULT_VALUE_STACK_LIMIT constant">DEFAULT_VALUE_STACK_LIMIT</a></td><td class="docblock-short"><p>Maximum number of bytes on the value stack.</p>
+</td></tr><tr class="module-item"><td><a class="constant" href="constant.LINEAR_MEMORY_PAGE_SIZE.html" title="wasmi::LINEAR_MEMORY_PAGE_SIZE constant">LINEAR_MEMORY_PAGE_SIZE</a></td><td class="docblock-short"><p>Size of a page of <a href="struct.MemoryInstance.html">linear memory</a> - 64KiB.</p>
+</td></tr></table><h2 id="traits" class="section-header"><a href="#traits">Traits</a></h2>
+<table><tr class="module-item"><td><a class="trait" href="trait.Externals.html" title="wasmi::Externals trait">Externals</a></td><td class="docblock-short"><p>Trait that allows to implement host functions.</p>
+</td></tr><tr class="module-item"><td><a class="trait" href="trait.FromRuntimeValue.html" title="wasmi::FromRuntimeValue trait">FromRuntimeValue</a></td><td class="docblock-short"><p>Trait for creating value from a <a href="enum.RuntimeValue.html"><code>RuntimeValue</code></a>.</p>
+</td></tr><tr class="module-item"><td><a class="trait" href="trait.HostError.html" title="wasmi::HostError trait">HostError</a></td><td class="docblock-short"><p>Trait that allows the host to return custom error.</p>
+</td></tr><tr class="module-item"><td><a class="trait" href="trait.ImportResolver.html" title="wasmi::ImportResolver trait">ImportResolver</a></td><td class="docblock-short"><p>Resolver of a module’s dependencies.</p>
+</td></tr><tr class="module-item"><td><a class="trait" href="trait.LittleEndianConvert.html" title="wasmi::LittleEndianConvert trait">LittleEndianConvert</a></td><td class="docblock-short"><p>Convert from and to little endian.</p>
+</td></tr><tr class="module-item"><td><a class="trait" href="trait.ModuleImportResolver.html" title="wasmi::ModuleImportResolver trait">ModuleImportResolver</a></td><td class="docblock-short"><p>Version of <a href="trait.ImportResolver.html"><code>ImportResolver</code></a> specialized for a single module.</p>
+</td></tr></table></section><section id="search" class="content hidden"></section><section class="footer"></section><div id="rustdoc-vars" data-root-path="../" data-current-crate="wasmi" data-search-js="../search-index.js"></div>
+    <script src="../main.js"></script></body></html>

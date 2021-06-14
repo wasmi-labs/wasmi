@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["peek_size","Returns size of the module in the provided stream."]],"mod":[["builder","Various builders to generate/alter wasm components"],["elements","Elements of the WebAssembly binary format."]]});
