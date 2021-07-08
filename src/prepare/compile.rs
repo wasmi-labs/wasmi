@@ -1246,7 +1246,7 @@ impl Sink {
 
         // Patch all relocations that was previously recorded for this
         // particular label.
-        let unresolved_rels = mem::replace(&mut self.labels[label.0].1, Vec::new());
+        let unresolved_rels = mem::take(&mut self.labels[label.0].1);
         for reloc in unresolved_rels {
             self.ins.patch_relocation(reloc, dst_pc);
         }
