@@ -139,7 +139,7 @@ impl FuncInstance {
         args: &[RuntimeValue],
         externals: &mut E,
     ) -> Result<Option<RuntimeValue>, Trap> {
-        check_function_args(func.signature(), &args)?;
+        check_function_args(func.signature(), args)?;
         match *func.as_internal() {
             FuncInstanceInternal::Internal { .. } => {
                 let mut interpreter = Interpreter::new(func, args, None)?;
@@ -165,7 +165,7 @@ impl FuncInstance {
         externals: &mut E,
         stack_recycler: &mut StackRecycler,
     ) -> Result<Option<RuntimeValue>, Trap> {
-        check_function_args(func.signature(), &args)?;
+        check_function_args(func.signature(), args)?;
         match *func.as_internal() {
             FuncInstanceInternal::Internal { .. } => {
                 let mut interpreter = Interpreter::new(func, args, Some(stack_recycler))?;

@@ -49,7 +49,7 @@ impl Signature {
 
     /// Returns parameter types of this signature.
     pub fn params(&self) -> &[ValueType] {
-        &self.params.as_ref()
+        self.params.as_ref()
     }
 
     /// Returns return type of this signature.
