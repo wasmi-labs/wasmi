@@ -96,6 +96,7 @@ macro_rules! float {
             }
         }
 
+        // clippy suggestion would fail some tests
         #[allow(clippy::cmp_owned)]
         impl<T: Into<$for> + Copy> PartialEq<T> for $for {
             fn eq(&self, other: &T) -> bool {
