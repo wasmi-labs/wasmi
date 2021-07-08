@@ -96,7 +96,7 @@ pub fn drive<T: FuncValidator>(
     }
 
     let mut context = FunctionValidationContext::new(
-        &module,
+        module,
         Locals::new(params, body.locals())?,
         DEFAULT_VALUE_STACK_LIMIT,
         DEFAULT_FRAME_STACK_LIMIT,
@@ -237,6 +237,7 @@ impl<'a> FunctionValidationContext<'a> {
                     top.block_type
                 };
 
+                #[allow(clippy::branches_sharing_code)]
                 if self.frame_stack.len() == 1 {
                     // We are about to close the last frame.
 
@@ -860,7 +861,7 @@ impl<'a> FunctionValidationContext<'a> {
             &self.frame_stack,
             StackValueType::Any,
         )?;
-        if StackValueType::from(local_type) != value_type {
+        if local_type != value_type {
             return Err(Error(format!(
                 "Trying to update local {} of type {:?} with value of type {:?}",
                 index, local_type, value_type

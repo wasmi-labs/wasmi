@@ -96,6 +96,7 @@ macro_rules! float {
             }
         }
 
+        #[allow(clippy::cmp_owned)]
         impl<T: Into<$for> + Copy> PartialEq<T> for $for {
             fn eq(&self, other: &T) -> bool {
                 $is::from(*self) == $is::from((*other).into())
