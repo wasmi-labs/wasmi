@@ -119,6 +119,7 @@ fn loader_on_inc_i32() {
         fn load_function_body(&self, index: usize) -> Option<crate::func::FuncBody> {
             println!("Loading function body index {}", index);
 
+            // In a real setup these should be loaded from an external resource
             let locals = self.bodies.get(index)?.locals().to_vec();
             let code = self.code_map.get(index)?.clone();
 

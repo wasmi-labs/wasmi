@@ -312,19 +312,24 @@ impl ModuleInstance {
                 "Due to validation func and body counts must match"
             );
 
-            for (index, (ty, body)) in Iterator::zip(funcs.iter(), bodies.iter()).enumerate() {
+            for (index, ty) in funcs.iter().enumerate() {
                 let signature = instance
                     .signature_by_index(ty.type_ref())
                     .expect("Due to validation type should exists");
-                let code = code.get(index).expect(
-					"At func validation time labels are collected; Collected labels are added by index; qed",
-				).clone();
-                let func_body = FuncBody {
-                    locals: body.locals().to_vec(),
-                    code,
-                };
+
+                let locals = bodies.get(index).map(|b| b.locals().to_vec());
+                let body =
+                    locals.and_then(|locals| {
+                        code
+                            .get(index)
+                            .map(|code| FuncBody {
+                                locals,
+                                code: code.clone(),
+                            })
+                    });
+
                 let func_instance =
-                    FuncInstance::alloc_internal(Rc::downgrade(&instance.0), signature, None, index);
+                    FuncInstance::alloc_internal(Rc::downgrade(&instance.0), signature, body, index);
                 instance.push_func(func_instance);
             }
         }
