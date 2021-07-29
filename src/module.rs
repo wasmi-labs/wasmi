@@ -324,7 +324,7 @@ impl ModuleInstance {
                     code,
                 };
                 let func_instance =
-                    FuncInstance::alloc_internal(Rc::downgrade(&instance.0), signature, func_body);
+                    FuncInstance::alloc_internal(Rc::downgrade(&instance.0), signature, None, index);
                 instance.push_func(func_instance);
             }
         }

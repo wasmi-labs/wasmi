@@ -1,7 +1,7 @@
 use crate::host::Externals;
 use crate::isa;
 use crate::module::ModuleInstance;
-use crate::runner::{check_function_args, Interpreter, InterpreterState, StackRecycler};
+use crate::runner::{check_function_args, Interpreter, InterpreterState, StackRecycler, Loader};
 use crate::types::ValueType;
 use crate::value::RuntimeValue;
 use crate::{Signature, Trap};
@@ -11,6 +11,8 @@ use alloc::{
     vec::Vec,
 };
 use core::fmt;
+use std::borrow::Borrow;
+use std::cell::RefCell;
 use parity_wasm::elements::Local;
 
 /// Reference to a function (See [`FuncInstance`] for details).
@@ -49,7 +51,8 @@ pub(crate) enum FuncInstanceInternal {
     Internal {
         signature: Rc<Signature>,
         module: Weak<ModuleInstance>,
-        body: Rc<FuncBody>,
+        body: RefCell<Option<Rc<FuncBody>>>,
+        function_index: usize,
     },
     Host {
         signature: Signature,
@@ -108,19 +111,37 @@ impl FuncInstance {
     pub(crate) fn alloc_internal(
         module: Weak<ModuleInstance>,
         signature: Rc<Signature>,
-        body: FuncBody,
+        body: Option<FuncBody>,
+        function_index: usize,
     ) -> FuncRef {
         let func = FuncInstanceInternal::Internal {
             signature,
             module,
-            body: Rc::new(body),
+            body: RefCell::new(body.map(Rc::new)),
+            function_index,
         };
         FuncRef(Rc::new(FuncInstance(func)))
     }
 
-    pub(crate) fn body(&self) -> Option<Rc<FuncBody>> {
+    pub(crate) fn get_body_or_load(&self, loader: &impl Loader) -> Option<Rc<FuncBody>> {
         match *self.as_internal() {
-            FuncInstanceInternal::Internal { ref body, .. } => Some(Rc::clone(body)),
+            FuncInstanceInternal::Internal { ref body, function_index, .. } => {
+                let slot = &mut *body.borrow_mut();
+
+                match slot {
+                    Some(body) => Some(body.clone()),
+
+                    None => {
+                        let body = loader
+                            .load_function_body(function_index)
+                            .map(Rc::new)?;
+
+                        *slot = Some(body.clone());
+                        Some(body)
+                    },
+                }
+            }
+
             FuncInstanceInternal::Host { .. } => None,
         }
     }
@@ -143,7 +164,35 @@ impl FuncInstance {
         match *func.as_internal() {
             FuncInstanceInternal::Internal { .. } => {
                 let mut interpreter = Interpreter::new(func, args, None)?;
-                interpreter.start_execution(externals)
+                interpreter.start_execution(externals, &())
+            }
+            FuncInstanceInternal::Host {
+                ref host_func_index,
+                ..
+            } => externals.invoke_index(*host_func_index, args.into()),
+        }
+    }
+
+    /// Invoke this function using provided resource loader
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if `args` types is not match function [`signature`] or
+    /// if [`Trap`] at execution time occured.
+    ///
+    /// [`signature`]: #method.signature
+    /// [`Trap`]: #enum.Trap.html
+    pub fn invoke_with_loader<E: Externals, L: Loader>(
+        func: &FuncRef,
+        args: &[RuntimeValue],
+        externals: &mut E,
+        loader: &L,
+    ) -> Result<Option<RuntimeValue>, Trap> {
+        check_function_args(func.signature(), args)?;
+        match *func.as_internal() {
+            FuncInstanceInternal::Internal { .. } => {
+                let mut interpreter = Interpreter::new(func, args, None)?;
+                interpreter.start_execution(externals, loader)
             }
             FuncInstanceInternal::Host {
                 ref host_func_index,
@@ -169,7 +218,7 @@ impl FuncInstance {
         match *func.as_internal() {
             FuncInstanceInternal::Internal { .. } => {
                 let mut interpreter = Interpreter::new(func, args, Some(stack_recycler))?;
-                let return_value = interpreter.start_execution(externals);
+                let return_value = interpreter.start_execution(externals, &());
                 stack_recycler.recycle(interpreter);
                 return_value
             }
@@ -295,7 +344,7 @@ impl<'args> FuncInvocation<'args> {
                 if interpreter.state() != &InterpreterState::Initialized {
                     return Err(ResumableError::AlreadyStarted);
                 }
-                Ok(interpreter.start_execution(externals)?)
+                Ok(interpreter.start_execution(externals, &())?)
             }
             FuncInvocationKind::Host {
                 ref args,

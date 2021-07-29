@@ -1,8 +1,8 @@
 #![allow(clippy::unnecessary_wraps)]
 
-use crate::func::{FuncInstance, FuncInstanceInternal, FuncRef};
+use crate::func::{FuncBody, FuncInstance, FuncInstanceInternal, FuncRef};
 use crate::host::Externals;
-use crate::isa;
+use crate::{ModuleInstance, isa};
 use crate::memory::MemoryRef;
 use crate::memory_units::Pages;
 use crate::module::ModuleRef;
@@ -16,6 +16,7 @@ use alloc::{boxed::Box, vec::Vec};
 use core::fmt;
 use core::ops;
 use core::{u32, usize};
+use std::rc::Rc;
 use parity_wasm::elements::Local;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 
@@ -161,6 +162,17 @@ enum RunResult {
     NestedCall(FuncRef),
 }
 
+pub trait Loader {
+    fn load_function_body(&self, index: usize) -> Option<FuncBody>;
+}
+
+// Dummy loader that always fails
+impl Loader for () {
+    fn load_function_body(&self, _index: usize) -> Option<FuncBody> {
+        None
+    }
+}
+
 /// Function interpreter.
 pub struct Interpreter {
     value_stack: ValueStack,
@@ -203,15 +215,16 @@ impl Interpreter {
         &self.state
     }
 
-    pub fn start_execution<'a, E: Externals + 'a>(
+    pub fn start_execution<'a, E: Externals + 'a, L: Loader + 'a>(
         &mut self,
         externals: &'a mut E,
+        loader: &'a L,
     ) -> Result<Option<RuntimeValue>, Trap> {
         // Ensure that the VM has not been executed. This is checked in `FuncInvocation::start_execution`.
         assert!(self.state == InterpreterState::Initialized);
 
         self.state = InterpreterState::Started;
-        self.run_interpreter_loop(externals)?;
+        self.run_interpreter_loop(externals, loader)?;
 
         let opt_return_value = self
             .return_type
@@ -223,7 +236,7 @@ impl Interpreter {
         Ok(opt_return_value)
     }
 
-    pub fn resume_execution<'a, E: Externals + 'a>(
+    pub fn resume_execution<'a, E: Externals + 'a, >(
         &mut self,
         return_val: Option<RuntimeValue>,
         externals: &'a mut E,
@@ -242,7 +255,7 @@ impl Interpreter {
                 .map_err(Trap::new)?;
         }
 
-        self.run_interpreter_loop(externals)?;
+        self.run_interpreter_loop(externals, &())?; // TODO loader
 
         let opt_return_value = self
             .return_type
@@ -254,20 +267,22 @@ impl Interpreter {
         Ok(opt_return_value)
     }
 
-    fn run_interpreter_loop<'a, E: Externals + 'a>(
+    fn run_interpreter_loop<'a, E: Externals + 'a, L: Loader + 'a>(
         &mut self,
         externals: &'a mut E,
+        loader: &'a L,
     ) -> Result<(), Trap> {
         loop {
             let mut function_context = self.call_stack.pop().expect(
                 "on loop entry - not empty; on loop continue - checking for emptiness; qed",
             );
             let function_ref = function_context.function.clone();
+
             let function_body = function_ref
-				.body()
-				.expect(
-					"Host functions checked in function_return below; Internal functions always have a body; qed"
-				);
+                .get_body_or_load(loader)
+                .expect(
+                    "Host functions checked in function_return below; Internal functions always have a body; qed"
+                );
 
             if !function_context.is_initialized() {
                 // Initialize stack frame for the function call.
