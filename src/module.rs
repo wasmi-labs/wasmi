@@ -4,7 +4,7 @@ use crate::host::Externals;
 use crate::imports::ImportResolver;
 use crate::memory::MemoryRef;
 use crate::memory_units::Pages;
-use crate::runner::StackRecycler;
+use crate::runner::{Loader, StackRecycler};
 use crate::table::TableRef;
 use crate::types::{GlobalDescriptor, MemoryDescriptor, TableDescriptor};
 use crate::{Error, MemoryInstance, Module, RuntimeValue, Signature, TableInstance, Trap};
@@ -631,6 +631,19 @@ impl ModuleInstance {
         let func_instance = self.func_by_name(func_name)?;
 
         FuncInstance::invoke(&func_instance, args, externals).map_err(Error::Trap)
+    }
+
+    /// Invoke export function with loader
+    pub fn invoke_export_with_loader<E: Externals, L: Loader>(
+        &self,
+        func_name: &str,
+        args: &[RuntimeValue],
+        externals: &mut E,
+        loader: &L,
+    ) -> Result<Option<RuntimeValue>, Error> {
+        let func_instance = self.func_by_name(func_name)?;
+
+        FuncInstance::invoke_with_loader(&func_instance, args, externals, loader).map_err(Error::Trap)
     }
 
     /// Invoke exported function by a name using recycled stacks.
