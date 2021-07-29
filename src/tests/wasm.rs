@@ -1,12 +1,9 @@
 // Test-only code importing std for no-std testing
 extern crate std;
 
+use crate::isa::Instructions;
 use crate::memory_units::Pages;
-use crate::{
-    Error, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef, ImportsBuilder, MemoryDescriptor,
-    MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance, NopExternals,
-    RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef,
-};
+use crate::{Error, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef, ImportsBuilder, MemoryDescriptor, MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance, NopExternals, RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef, runner};
 use alloc::vec::Vec;
 use std::fs::File;
 
@@ -86,6 +83,59 @@ fn load_from_file(filename: &str) -> Module {
     file.read_to_end(&mut buf).unwrap();
     let wasm_buf = ::wabt::wat2wasm(&buf).unwrap();
     Module::from_buffer(wasm_buf).unwrap()
+}
+
+#[test]
+fn loader_on_inc_i32() {
+    // Name of function contained in WASM file (note the leading underline)
+    const FUNCTION_NAME: &str = "_inc_i32";
+    // The WASM file containing the module and function
+    const WASM_FILE: &str = &"res/fixtures/inc_i32.wast";
+
+    let mut module = load_from_file(WASM_FILE);
+
+    // To simulate absent function bodies we extract the code and clearing code map,
+    // so that functions will be created without bodies during module instantiation.
+    let code_map = module.code_map.clone();
+    module.code_map.clear();
+
+    let env = Env::new();
+
+    let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
+        .expect("Failed to instantiate module")
+        .assert_no_start();
+
+    let i32_val = 42;
+    // the functions expects a single i32 parameter
+    let args = &[RuntimeValue::I32(i32_val)];
+    let exp_retval = Some(RuntimeValue::I32(i32_val + 1));
+
+    struct Loader<'a> {
+        bodies: &'a [parity_wasm::elements::FuncBody],
+        code_map: Vec<Instructions>,
+    }
+
+    impl<'a> runner::Loader for Loader<'a> {
+        fn load_function_body(&self, index: usize) -> Option<crate::func::FuncBody> {
+            println!("Loading function body index {}", index);
+
+            let locals = self.bodies.get(index)?.locals().to_vec();
+            let code = self.code_map.get(index)?.clone();
+
+            Some(crate::func::FuncBody {
+                locals,
+                code,
+            })
+        }
+    }
+
+    let retval = instance
+        .invoke_export_with_loader(FUNCTION_NAME, args, &mut NopExternals, &Loader {
+            bodies: module.module.code_section().unwrap().bodies(),
+            code_map,
+        })
+        .expect("");
+    assert_eq!(exp_retval, retval);
 }
 
 #[test]
