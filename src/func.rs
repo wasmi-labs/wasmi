@@ -1,7 +1,7 @@
 use crate::host::Externals;
 use crate::isa;
 use crate::module::ModuleInstance;
-use crate::runner::{check_function_args, Interpreter, InterpreterState, StackRecycler, Loader};
+use crate::runner::{InstructionChunk, Interpreter, InterpreterState, Loader, StackRecycler, check_function_args};
 use crate::types::ValueType;
 use crate::value::RuntimeValue;
 use crate::{Signature, Trap};
@@ -11,7 +11,7 @@ use alloc::{
     vec::Vec,
 };
 use core::fmt;
-use std::borrow::Borrow;
+use std::borrow::BorrowMut;
 use std::cell::RefCell;
 use parity_wasm::elements::Local;
 
@@ -397,5 +397,12 @@ impl<'args> FuncInvocation<'args> {
 #[derive(Clone, Debug)]
 pub struct FuncBody {
     pub locals: Vec<Local>,
-    pub code: isa::Instructions,
+    pub code: RefCell<isa::Instructions>,
 }
+
+impl FuncBody {
+    pub(crate) fn patch(&self, chunk: InstructionChunk) {
+        self.code.borrow_mut().patch_region(chunk.start_offset as usize, &chunk.instructions);
+    }
+}
+

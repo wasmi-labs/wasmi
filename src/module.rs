@@ -324,7 +324,7 @@ impl ModuleInstance {
                             .get(index)
                             .map(|code| FuncBody {
                                 locals,
-                                code: code.clone(),
+                                code: RefCell::new(code.clone()),
                             })
                     });
 

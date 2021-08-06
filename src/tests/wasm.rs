@@ -128,6 +128,10 @@ fn loader_on_inc_i32() {
                 code,
             })
         }
+
+        fn load_instruction_region(&self, function_index: usize, offset: u32) -> Option<runner::InstructionRegion> {
+            None
+        }
     }
 
     let retval = instance

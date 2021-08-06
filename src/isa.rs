@@ -139,6 +139,10 @@ impl<'a> BrTargets<'a> {
 #[derive(Debug, Clone, PartialEq)]
 #[allow(clippy::upper_case_acronyms)]
 pub enum Instruction<'a> {
+    /// Bogus instruction that marks the not-yet-loaded instruction region within the function body.
+    /// Should not appear inside the loaded section.
+    NotLoaded,
+
     /// Push a local variable or an argument from the specified depth.
     GetLocal(u32),
 
@@ -352,6 +356,10 @@ pub enum Instruction<'a> {
 #[derive(Copy, Debug, Clone, PartialEq, Eq)]
 #[allow(clippy::upper_case_acronyms)]
 pub(crate) enum InstructionInternal {
+    /// Bogus instruction that marks the not-yet-loaded instruction region within the function body.
+    /// Should not appear inside the loaded section.
+    NotLoaded,
+
     GetLocal(u32),
     SetLocal(u32),
     TeeLocal(u32),
@@ -572,6 +580,10 @@ impl Instructions {
         }
     }
 
+    pub fn patch_region(&mut self, offset: usize, patch: &Instructions) {
+        self.vec[offset .. offset + patch.vec.len()].copy_from_slice(&patch.vec);
+    }
+
     pub fn iterate_from(&self, position: u32) -> InstructionIter {
         InstructionIter {
             instructions: &self.vec,
@@ -600,6 +612,8 @@ impl<'a> Iterator for InstructionIter<'a> {
         let internal = self.instructions.get(self.position as usize)?;
 
         let out = match *internal {
+            InstructionInternal::NotLoaded => Instruction::NotLoaded,
+            
             InstructionInternal::GetLocal(x) => Instruction::GetLocal(x),
             InstructionInternal::SetLocal(x) => Instruction::SetLocal(x),
             InstructionInternal::TeeLocal(x) => Instruction::TeeLocal(x),

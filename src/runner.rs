@@ -2,6 +2,7 @@
 
 use crate::func::{FuncBody, FuncInstance, FuncInstanceInternal, FuncRef};
 use crate::host::Externals;
+use crate::isa::{Instruction, Instructions};
 use crate::{ModuleInstance, isa};
 use crate::memory::MemoryRef;
 use crate::memory_units::Pages;
@@ -16,8 +17,9 @@ use alloc::{boxed::Box, vec::Vec};
 use core::fmt;
 use core::ops;
 use core::{u32, usize};
+use std::io::Cursor;
 use std::rc::Rc;
-use parity_wasm::elements::Local;
+use parity_wasm::elements::{self, Deserialize, Local};
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 
 /// Maximum number of bytes on the value stack.
@@ -134,6 +136,8 @@ pub enum InstructionOutcome {
     ExecuteCall(FuncRef),
     /// Return from current function block.
     Return(isa::DropKeep),
+    /// Load instruction chunk and retry current instruction.
+    LoadInstruction,
 }
 
 #[derive(PartialEq, Eq)]
@@ -162,8 +166,14 @@ enum RunResult {
     NestedCall(FuncRef),
 }
 
+pub struct InstructionChunk {
+    pub start_offset: u32,
+    pub instructions: Instructions,
+}
+
 pub trait Loader {
     fn load_function_body(&self, index: usize) -> Option<FuncBody>;
+    fn load_instruction_chunk(&self, function_index: usize, offset: u32) -> Option<InstructionChunk>;
 }
 
 // Dummy loader that always fails
@@ -171,7 +181,30 @@ impl Loader for () {
     fn load_function_body(&self, _index: usize) -> Option<FuncBody> {
         None
     }
+
+    fn load_instruction_chunk(&self, _function_index: usize, _offset: u32) -> Option<InstructionChunk> {
+        None
+    }
 }
+
+// struct DeserializingLoader<'a>(Fn(usize) -> &'a [u8]);
+
+// impl<'a> Loader for DeserializingLoader<'a> {
+//     fn load_function_body(&self, index: usize) -> Option<FuncBody> {
+//         let buffer = self.0(index);
+//         let mut reader = Cursor::new(buffer);
+//         let deserialized_body = elements::FuncBody::deserialize(&mut reader).ok()?;
+
+//         Some(FuncBody {
+//             locals: deserialized_body.locals().to_vec(),
+//             code: todo!(),
+//         })
+//     }
+
+//     fn load_instruction_region(&self, function_index: usize, offset: u32) -> Option<InstructionChunk> {
+//         todo!()
+//     }
+// }
 
 /// Function interpreter.
 pub struct Interpreter {
@@ -290,7 +323,7 @@ impl Interpreter {
             }
 
             let function_return = self
-                .do_run_function(&mut function_context, &function_body.code)
+                .do_run_function(&mut function_context, &function_body.code.borrow(), loader)
                 .map_err(Trap::new)?;
 
             match function_return {
@@ -353,6 +386,7 @@ impl Interpreter {
         &mut self,
         function_context: &mut FunctionContext,
         instructions: &isa::Instructions,
+        loader: &impl Loader,
     ) -> Result<RunResult, TrapKind> {
         let mut iter = instructions.iterate_from(function_context.position);
 
@@ -377,6 +411,20 @@ impl Interpreter {
                     self.value_stack.drop_keep(drop_keep);
                     break;
                 }
+                InstructionOutcome::LoadInstruction => {
+                    let (index, body) = match function_context.function.as_internal() {
+                        FuncInstanceInternal::Internal { function_index, body, .. } => (*function_index, body),
+                        FuncInstanceInternal::Host { .. } => unreachable!("must be internal"),
+                    };
+
+                    // Load the chunk, patch the function body
+                    let chunk = loader.load_instruction_chunk(index, iter.position()).ok_or(TrapKind::Unreachable)?;
+                    body.borrow_mut().as_ref().expect("body must already be loaded").patch(chunk);
+
+                    // Reset execution to the patched position
+                    function_context.position = iter.position();
+                    iter = instructions.iterate_from(function_context.position);
+                }
             }
         }
 
@@ -390,6 +438,8 @@ impl Interpreter {
         instruction: &isa::Instruction,
     ) -> Result<InstructionOutcome, TrapKind> {
         match instruction {
+            isa::Instruction::NotLoaded => Ok(InstructionOutcome::LoadInstruction),
+
             isa::Instruction::Unreachable => self.run_unreachable(context),
 
             isa::Instruction::Br(target) => self.run_br(context, *target),
