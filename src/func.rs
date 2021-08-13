@@ -401,13 +401,6 @@ pub struct FuncBody {
 
     /// The actual code of the function.
     ///
-    /// Can be empty. See [`crate::runner::Loader`] for details.
+    /// Can be loaded on-demand. See [`crate::runner::Loader`] for details.
     pub code: RefCell<isa::Instructions>,
 }
-
-impl FuncBody {
-    pub(crate) fn patch(&self, chunk: InstructionChunk) {
-        self.code.borrow_mut().patch_region(chunk.start_offset as usize, &chunk.instructions);
-    }
-}
-

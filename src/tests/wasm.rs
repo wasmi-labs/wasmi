@@ -121,9 +121,14 @@ fn loader_on_inc_i32() {
 
             // In a real setup these should be loaded from an external resource
             let locals = self.bodies.get(index)?.locals().to_vec();
+            let code = self.code_map.get(index)?;
 
-            let mut stub = Instructions::with_capacity(1);
-            stub.push(crate::InstructionInternal::NotLoaded);
+            // Allocating body filled with placeholder instructions to be patched later
+            let len = code.instructions().len();
+            let mut stub = Instructions::with_capacity(len);
+            for _ in 0 .. len {
+                stub.push(crate::InstructionInternal::NotLoaded);
+            }
 
             Some(crate::func::FuncBody {
                 locals,
@@ -137,6 +142,8 @@ fn loader_on_inc_i32() {
             // In a real setup these should be loaded from an external resource
             let code = self.code_map.get(function_index)?;
 
+            // Here we load instructions one at a time, just for fun.
+            // More practical approach would be to load several instructions at once.
             let mut chunk = Instructions::with_capacity(1);
             chunk.push(code.instructions()[offset as usize]);
 

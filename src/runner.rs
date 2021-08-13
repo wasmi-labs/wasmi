@@ -313,8 +313,9 @@ impl Interpreter {
                 function_context.initialize(&function_body.locals, &mut self.value_stack)?;
             }
 
+            let instructions = &mut *function_body.code.borrow_mut();
             let function_return = self
-                .do_run_function(&mut function_context, &function_body.code.borrow(), loader)
+                .do_run_function(&mut function_context, instructions, loader)
                 .map_err(Trap::new)?;
 
             match function_return {
@@ -376,7 +377,7 @@ impl Interpreter {
     fn do_run_function(
         &mut self,
         function_context: &mut FunctionContext,
-        instructions: &isa::Instructions,
+        instructions: &mut isa::Instructions,
         loader: &impl Loader,
     ) -> Result<RunResult, TrapKind> {
         let mut iter = instructions.iterate_from(function_context.position);
@@ -403,17 +404,20 @@ impl Interpreter {
                     break;
                 }
                 InstructionOutcome::LoadInstruction => {
-                    let (index, body) = match function_context.function.as_internal() {
+                    let (index, _body) = match function_context.function.as_internal() {
                         FuncInstanceInternal::Internal { function_index, body, .. } => (*function_index, body),
                         FuncInstanceInternal::Host { .. } => unreachable!("must be internal"),
                     };
 
-                    // Load the chunk, patch the function body
-                    let chunk = loader.load_instruction_chunk(index, iter.position() - 1).ok_or(TrapKind::Unreachable)?;
-                    body.borrow_mut().as_ref().expect("body must already be loaded").patch(chunk);
+                    // Store current position to reset the execution later
+                    function_context.position = iter.position() - 1;
+
+                    let chunk = loader.load_instruction_chunk(index, function_context.position).ok_or(TrapKind::Unreachable)?;
+                    instructions.patch_region(chunk.start_offset as usize, &chunk.instructions);
+
+                    // dbg!(function_context.position, &chunk.instructions);
 
                     // Reset execution to the patched position
-                    function_context.position = iter.position();
                     iter = instructions.iterate_from(function_context.position);
                 }
             }
