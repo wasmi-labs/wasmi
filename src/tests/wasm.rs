@@ -3,7 +3,11 @@ extern crate std;
 
 use crate::isa::Instructions;
 use crate::memory_units::Pages;
-use crate::{Error, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef, ImportsBuilder, MemoryDescriptor, MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance, NopExternals, RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef, runner};
+use crate::{
+    runner, Error, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef, ImportsBuilder,
+    MemoryDescriptor, MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance,
+    NopExternals, RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef,
+};
 use alloc::vec::Vec;
 use std::fs::File;
 
@@ -126,7 +130,7 @@ fn loader_on_inc_i32() {
             // Allocating body filled with placeholder instructions to be patched later
             let len = code.instructions().len();
             let mut stub = Instructions::with_capacity(len);
-            for _ in 0 .. len {
+            for _ in 0..len {
                 stub.push(crate::InstructionInternal::NotLoaded);
             }
 
@@ -136,8 +140,15 @@ fn loader_on_inc_i32() {
             })
         }
 
-        fn load_instruction_chunk(&self, function_index: usize, offset: u32) -> Option<runner::InstructionChunk> {
-            println!("Loading instruction chunk for function index {} at offset {}", function_index, offset);
+        fn load_instruction_chunk(
+            &self,
+            function_index: usize,
+            offset: u32,
+        ) -> Option<runner::InstructionChunk> {
+            println!(
+                "Loading instruction chunk for function index {} at offset {}",
+                function_index, offset
+            );
 
             // In a real setup these should be loaded from an external resource
             let code = self.code_map.get(function_index)?;
@@ -155,10 +166,15 @@ fn loader_on_inc_i32() {
     }
 
     let retval = instance
-        .invoke_export_with_loader(FUNCTION_NAME, args, &mut NopExternals, &Loader {
-            bodies: module.module.code_section().unwrap().bodies(),
-            code_map,
-        })
+        .invoke_export_with_loader(
+            FUNCTION_NAME,
+            args,
+            &mut NopExternals,
+            &Loader {
+                bodies: module.module.code_section().unwrap().bodies(),
+                code_map,
+            },
+        )
         .expect("");
     assert_eq!(exp_retval, retval);
 }

@@ -366,7 +366,9 @@ pub enum InstructionInternal {
     Br(Target),
     BrIfEqz(Target),
     BrIfNez(Target),
-    BrTable { count: u32 },
+    BrTable {
+        count: u32,
+    },
     BrTableTarget(Target),
 
     Unreachable,
@@ -585,7 +587,7 @@ impl Instructions {
     }
 
     pub fn patch_region(&mut self, offset: usize, patch: &Instructions) {
-        self.vec[offset .. offset + patch.vec.len()].copy_from_slice(&patch.vec);
+        self.vec[offset..offset + patch.vec.len()].copy_from_slice(&patch.vec);
     }
 
     pub fn iterate_from(&self, position: u32) -> InstructionIter {
@@ -617,7 +619,7 @@ impl<'a> Iterator for InstructionIter<'a> {
 
         let out = match *internal {
             InstructionInternal::NotLoaded => Instruction::NotLoaded,
-            
+
             InstructionInternal::GetLocal(x) => Instruction::GetLocal(x),
             InstructionInternal::SetLocal(x) => Instruction::SetLocal(x),
             InstructionInternal::TeeLocal(x) => Instruction::TeeLocal(x),

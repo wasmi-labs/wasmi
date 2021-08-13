@@ -435,17 +435,19 @@ mod value;
 #[cfg(test)]
 mod tests;
 
-pub use self::func::{FuncInstance, FuncInvocation, FuncRef, ResumableError, FuncBody};
+pub use self::func::{FuncBody, FuncInstance, FuncInvocation, FuncRef, ResumableError};
 pub use self::global::{GlobalInstance, GlobalRef};
 pub use self::host::{Externals, HostError, NopExternals, RuntimeArgs};
 pub use self::imports::{ImportResolver, ImportsBuilder, ModuleImportResolver};
+pub use self::isa::InstructionInternal;
 pub use self::memory::{MemoryInstance, MemoryRef, LINEAR_MEMORY_PAGE_SIZE};
 pub use self::module::{ExternVal, ModuleInstance, ModuleRef, NotStartedModuleRef};
-pub use self::runner::{StackRecycler, Loader, DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT};
+pub use self::runner::{
+    Loader, StackRecycler, DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT,
+};
 pub use self::table::{TableInstance, TableRef};
 pub use self::types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor, ValueType};
 pub use self::value::{Error as ValueError, FromRuntimeValue, LittleEndianConvert, RuntimeValue};
-pub use self::isa::InstructionInternal;
 
 /// WebAssembly-specific sizes and units.
 pub mod memory_units {

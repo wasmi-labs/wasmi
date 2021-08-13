@@ -183,7 +183,11 @@ pub trait Loader {
     /// Loader does not put any restrictions on the size of the loaded
     /// chunk or its starting offset. The only requirement is that the
     /// chunk must contain an instruction that maps to the specified offset.
-    fn load_instruction_chunk(&self, function_index: usize, offset: u32) -> Option<InstructionChunk>;
+    fn load_instruction_chunk(
+        &self,
+        function_index: usize,
+        offset: u32,
+    ) -> Option<InstructionChunk>;
 }
 
 // Dummy loader that always fails
@@ -192,7 +196,11 @@ impl Loader for () {
         None
     }
 
-    fn load_instruction_chunk(&self, _function_index: usize, _offset: u32) -> Option<InstructionChunk> {
+    fn load_instruction_chunk(
+        &self,
+        _function_index: usize,
+        _offset: u32,
+    ) -> Option<InstructionChunk> {
         None
     }
 }
@@ -260,7 +268,7 @@ impl Interpreter {
         Ok(opt_return_value)
     }
 
-    pub fn resume_execution<'a, E: Externals + 'a, >(
+    pub fn resume_execution<'a, E: Externals + 'a>(
         &mut self,
         return_val: Option<RuntimeValue>,
         externals: &'a mut E,
@@ -412,7 +420,9 @@ impl Interpreter {
                     // Store current position to reset the execution later
                     function_context.position = iter.position() - 1;
 
-                    let chunk = loader.load_instruction_chunk(index, function_context.position).ok_or(TrapKind::Unreachable)?;
+                    let chunk = loader
+                        .load_instruction_chunk(index, function_context.position)
+                        .ok_or(TrapKind::Unreachable)?;
                     instructions.patch_region(chunk.start_offset as usize, &chunk.instructions);
 
                     // dbg!(function_context.position, &chunk.instructions);

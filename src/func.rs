@@ -1,7 +1,7 @@
 use crate::host::Externals;
 use crate::isa;
 use crate::module::ModuleInstance;
-use crate::runner::{Interpreter, InterpreterState, Loader, StackRecycler, check_function_args};
+use crate::runner::{check_function_args, Interpreter, InterpreterState, Loader, StackRecycler};
 use crate::types::ValueType;
 use crate::value::RuntimeValue;
 use crate::{Signature, Trap};
@@ -10,8 +10,8 @@ use alloc::{
     rc::{Rc, Weak},
     vec::Vec,
 };
-use core::fmt;
 use core::cell::RefCell;
+use core::fmt;
 use parity_wasm::elements::Local;
 
 /// Reference to a function (See [`FuncInstance`] for details).
@@ -124,20 +124,22 @@ impl FuncInstance {
 
     pub(crate) fn get_body_or_load(&self, loader: &impl Loader) -> Option<Rc<FuncBody>> {
         match *self.as_internal() {
-            FuncInstanceInternal::Internal { ref body, function_index, .. } => {
+            FuncInstanceInternal::Internal {
+                ref body,
+                function_index,
+                ..
+            } => {
                 let slot = &mut *body.borrow_mut();
 
                 match slot {
                     Some(body) => Some(body.clone()),
 
                     None => {
-                        let body = loader
-                            .load_function_body(function_index)
-                            .map(Rc::new)?;
+                        let body = loader.load_function_body(function_index).map(Rc::new)?;
 
                         *slot = Some(body.clone());
                         Some(body)
-                    },
+                    }
                 }
             }
 

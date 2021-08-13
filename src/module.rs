@@ -318,18 +318,19 @@ impl ModuleInstance {
                     .expect("Due to validation type should exists");
 
                 let locals = bodies.get(index).map(|b| b.locals().to_vec());
-                let body =
-                    locals.and_then(|locals| {
-                        code
-                            .get(index)
-                            .map(|code| FuncBody {
-                                locals,
-                                code: RefCell::new(code.clone()),
-                            })
-                    });
+                let body = locals.and_then(|locals| {
+                    code.get(index).map(|code| FuncBody {
+                        locals,
+                        code: RefCell::new(code.clone()),
+                    })
+                });
 
-                let func_instance =
-                    FuncInstance::alloc_internal(Rc::downgrade(&instance.0), signature, body, index);
+                let func_instance = FuncInstance::alloc_internal(
+                    Rc::downgrade(&instance.0),
+                    signature,
+                    body,
+                    index,
+                );
                 instance.push_func(func_instance);
             }
         }
@@ -648,7 +649,8 @@ impl ModuleInstance {
     ) -> Result<Option<RuntimeValue>, Error> {
         let func_instance = self.func_by_name(func_name)?;
 
-        FuncInstance::invoke_with_loader(&func_instance, args, externals, loader).map_err(Error::Trap)
+        FuncInstance::invoke_with_loader(&func_instance, args, externals, loader)
+            .map_err(Error::Trap)
     }
 
     /// Invoke exported function by a name using recycled stacks.
