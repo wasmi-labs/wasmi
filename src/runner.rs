@@ -2,8 +2,7 @@
 
 use crate::func::{FuncBody, FuncInstance, FuncInstanceInternal, FuncRef};
 use crate::host::Externals;
-use crate::isa::{Instruction, Instructions};
-use crate::{ModuleInstance, isa};
+use crate::isa::{self, Instructions};
 use crate::memory::MemoryRef;
 use crate::memory_units::Pages;
 use crate::module::ModuleRef;
@@ -17,9 +16,7 @@ use alloc::{boxed::Box, vec::Vec};
 use core::fmt;
 use core::ops;
 use core::{u32, usize};
-use std::io::Cursor;
-use std::rc::Rc;
-use parity_wasm::elements::{self, Deserialize, Local};
+use parity_wasm::elements::Local;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 
 /// Maximum number of bytes on the value stack.
@@ -171,8 +168,21 @@ pub struct InstructionChunk {
     pub instructions: Instructions,
 }
 
+/// Handler for on-demand loading of function instructions.
+///
+/// Intended to be used in scenarios where module contents are not available fully.
+/// In that case, during a function execution, interpreter will ask for a function
+/// body or an instruction chunk when it hits a function with not-yet-loaded body
+/// or a region where instructions were not mapped.
 pub trait Loader {
+    /// Load function body by its function index
     fn load_function_body(&self, index: usize) -> Option<FuncBody>;
+
+    /// Load instruction chunk that contains specified offset.
+    ///
+    /// Loader does not put any restrictions on the size of the loaded
+    /// chunk or its starting offset. The only requirement is that the
+    /// chunk must contain an instruction that maps to the specified offset.
     fn load_instruction_chunk(&self, function_index: usize, offset: u32) -> Option<InstructionChunk>;
 }
 
@@ -186,25 +196,6 @@ impl Loader for () {
         None
     }
 }
-
-// struct DeserializingLoader<'a>(Fn(usize) -> &'a [u8]);
-
-// impl<'a> Loader for DeserializingLoader<'a> {
-//     fn load_function_body(&self, index: usize) -> Option<FuncBody> {
-//         let buffer = self.0(index);
-//         let mut reader = Cursor::new(buffer);
-//         let deserialized_body = elements::FuncBody::deserialize(&mut reader).ok()?;
-
-//         Some(FuncBody {
-//             locals: deserialized_body.locals().to_vec(),
-//             code: todo!(),
-//         })
-//     }
-
-//     fn load_instruction_region(&self, function_index: usize, offset: u32) -> Option<InstructionChunk> {
-//         todo!()
-//     }
-// }
 
 /// Function interpreter.
 pub struct Interpreter {
@@ -418,7 +409,7 @@ impl Interpreter {
                     };
 
                     // Load the chunk, patch the function body
-                    let chunk = loader.load_instruction_chunk(index, iter.position()).ok_or(TrapKind::Unreachable)?;
+                    let chunk = loader.load_instruction_chunk(index, iter.position() - 1).ok_or(TrapKind::Unreachable)?;
                     body.borrow_mut().as_ref().expect("body must already be loaded").patch(chunk);
 
                     // Reset execution to the patched position

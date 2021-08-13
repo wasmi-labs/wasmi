@@ -354,8 +354,8 @@ pub enum Instruction<'a> {
 /// When returning instructions we convert to `Instruction`, whose `BrTable` variant internally
 /// borrows the list of instructions and returns targets by reading it.
 #[derive(Copy, Debug, Clone, PartialEq, Eq)]
-#[allow(clippy::upper_case_acronyms)]
-pub(crate) enum InstructionInternal {
+#[allow(clippy::upper_case_acronyms, missing_docs)]
+pub enum InstructionInternal {
     /// Bogus instruction that marks the not-yet-loaded instruction region within the function body.
     /// Should not appear inside the loaded section.
     NotLoaded,
@@ -551,6 +551,10 @@ pub struct Instructions {
 }
 
 impl Instructions {
+    pub fn instructions(&self) -> &[InstructionInternal] {
+        &self.vec
+    }
+
     pub fn with_capacity(capacity: usize) -> Self {
         Instructions {
             vec: Vec::with_capacity(capacity),

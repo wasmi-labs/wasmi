@@ -121,16 +121,29 @@ fn loader_on_inc_i32() {
 
             // In a real setup these should be loaded from an external resource
             let locals = self.bodies.get(index)?.locals().to_vec();
-            let code = self.code_map.get(index)?.clone();
+
+            let mut stub = Instructions::with_capacity(1);
+            stub.push(crate::InstructionInternal::NotLoaded);
 
             Some(crate::func::FuncBody {
                 locals,
-                code,
+                code: std::cell::RefCell::new(stub),
             })
         }
 
-        fn load_instruction_region(&self, function_index: usize, offset: u32) -> Option<runner::InstructionRegion> {
-            None
+        fn load_instruction_chunk(&self, function_index: usize, offset: u32) -> Option<runner::InstructionChunk> {
+            println!("Loading instruction chunk for function index {} at offset {}", function_index, offset);
+
+            // In a real setup these should be loaded from an external resource
+            let code = self.code_map.get(function_index)?;
+
+            let mut chunk = Instructions::with_capacity(1);
+            chunk.push(code.instructions()[offset as usize]);
+
+            Some(runner::InstructionChunk {
+                start_offset: offset,
+                instructions: chunk,
+            })
         }
     }
 

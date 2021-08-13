@@ -11,7 +11,6 @@ use alloc::{
     vec::Vec,
 };
 use core::fmt;
-use std::borrow::BorrowMut;
 use std::cell::RefCell;
 use parity_wasm::elements::Local;
 
@@ -394,9 +393,15 @@ impl<'args> FuncInvocation<'args> {
     }
 }
 
+/// Function body containing compiled instructions suitable for immediate interpretation
 #[derive(Clone, Debug)]
 pub struct FuncBody {
+    /// Definition of locals that should be allocated during function execution
     pub locals: Vec<Local>,
+
+    /// The actual code of the function.
+    ///
+    /// Can be empty. See [`crate::runner::Loader`] for details.
     pub code: RefCell<isa::Instructions>,
 }
 
