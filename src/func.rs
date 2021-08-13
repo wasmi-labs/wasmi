@@ -1,7 +1,7 @@
 use crate::host::Externals;
 use crate::isa;
 use crate::module::ModuleInstance;
-use crate::runner::{InstructionChunk, Interpreter, InterpreterState, Loader, StackRecycler, check_function_args};
+use crate::runner::{Interpreter, InterpreterState, Loader, StackRecycler, check_function_args};
 use crate::types::ValueType;
 use crate::value::RuntimeValue;
 use crate::{Signature, Trap};
@@ -11,7 +11,7 @@ use alloc::{
     vec::Vec,
 };
 use core::fmt;
-use std::cell::RefCell;
+use core::cell::RefCell;
 use parity_wasm::elements::Local;
 
 /// Reference to a function (See [`FuncInstance`] for details).

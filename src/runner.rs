@@ -404,8 +404,8 @@ impl Interpreter {
                     break;
                 }
                 InstructionOutcome::LoadInstruction => {
-                    let (index, _body) = match function_context.function.as_internal() {
-                        FuncInstanceInternal::Internal { function_index, body, .. } => (*function_index, body),
+                    let index = match function_context.function.as_internal() {
+                        FuncInstanceInternal::Internal { function_index, .. } => *function_index,
                         FuncInstanceInternal::Host { .. } => unreachable!("must be internal"),
                     };
 
