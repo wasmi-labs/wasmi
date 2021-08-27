@@ -77,8 +77,8 @@ impl<'a> Locals<'a> {
 
 #[cfg(test)]
 mod tests {
-    use assert_matches::assert_matches;
     use super::*;
+    use assert_matches::assert_matches;
 
     #[test]
     fn locals_it_works() {
