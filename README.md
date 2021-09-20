@@ -26,11 +26,7 @@ This crate supports `no_std` environments.
 Enable the `core` feature and disable default features:
 ```toml
 [dependencies]
-wasmi = {
-	version = "*",
-	default-features = false,
-	features = "core"
-}
+wasmi = { version = "*", default-features = false, features = ["core"] }
 ```
 
 When the `core` feature is enabled, code related to `std::error` is disabled.
