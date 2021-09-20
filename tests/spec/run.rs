@@ -491,7 +491,7 @@ fn try_spec(name: &str) -> Result<(), Error> {
         for err in errors {
             write!(out, "{}", err).expect("Error formatting errors");
         }
-        panic!(out);
+        panic!("{}", out);
     }
 
     Ok(())

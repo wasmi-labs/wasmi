@@ -126,7 +126,7 @@ impl FuncValidator for PlainFuncValidator {
 pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error> {
     let mut context_builder = ModuleContextBuilder::new();
     let mut imported_globals = Vec::new();
-    let mut validation = V::new(&module);
+    let mut validation = V::new(module);
 
     // Copy types from module as is.
     context_builder.set_types(
@@ -311,7 +311,7 @@ pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error
                 .offset()
                 .as_ref()
                 .ok_or_else(|| Error("passive memory segments are not supported".into()))?;
-            let init_ty = expr_const_type(&offset, context.globals())?;
+            let init_ty = expr_const_type(offset, context.globals())?;
             if init_ty != ValueType::I32 {
                 return Err(Error("segment offset should return I32".into()));
             }
@@ -326,7 +326,7 @@ pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error
                 .offset()
                 .as_ref()
                 .ok_or_else(|| Error("passive element segments are not supported".into()))?;
-            let init_ty = expr_const_type(&offset, context.globals())?;
+            let init_ty = expr_const_type(offset, context.globals())?;
             if init_ty != ValueType::I32 {
                 return Err(Error("segment offset should return I32".into()));
             }

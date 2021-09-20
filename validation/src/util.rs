@@ -2,9 +2,6 @@ use crate::Error;
 use alloc::string::String;
 use parity_wasm::elements::{Local, ValueType};
 
-#[cfg(test)]
-use assert_matches::assert_matches;
-
 /// Locals are the concatenation of a slice of function parameters
 /// with function declared local variables.
 ///
@@ -81,6 +78,7 @@ impl<'a> Locals<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use assert_matches::assert_matches;
 
     #[test]
     fn locals_it_works() {
