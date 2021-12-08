@@ -5,181 +5,128 @@
 //! memory up to maximum. This might be a problem for systems that don't have a lot of virtual
 //! memory (i.e. 32-bit platforms).
 
-use core::ptr::{self, NonNull};
 use core::slice;
+use region::{Allocation, Protection};
 
-struct Mmap {
-    /// The pointer that points to the start of the mapping.
-    ///
-    /// This value doesn't change after creation.
-    ptr: NonNull<u8>,
-    /// The length of this mapping.
-    ///
-    /// Cannot be more than `isize::max_value()`. This value doesn't change after creation.
-    len: usize,
+/// A virtual memory buffer.
+struct VirtualMemory {
+    /// The virtual memory allocation.
+    allocation: Allocation,
 }
 
-impl Mmap {
-    /// Create a new mmap mapping
+impl VirtualMemory {
+    /// Create a new virtual memory allocation.
     ///
-    /// Returns `Err` if:
-    /// - `len` should not exceed `isize::max_value()`
-    /// - `len` should be greater than 0.
-    /// - `mmap` returns an error (almost certainly means out of memory).
-    fn new(len: usize) -> Result<Self, String> {
+    /// # Note
+    ///
+    /// The allocated virtual memory allows for read and write operations.
+    ///
+    /// # Errors
+    ///
+    /// - If `len` should not exceed `isize::max_value()`
+    /// - If `len` should be greater than 0.
+    /// - If the operating system returns an error upon virtual memory allocation.
+    pub fn new(len: usize) -> Result<Self, String> {
         if len > isize::max_value() as usize {
             return Err("`len` should not exceed `isize::max_value()`".into());
         }
         if len == 0 {
             return Err("`len` should be greater than 0".into());
         }
-
-        let ptr_or_err = unsafe {
-            // Safety Proof:
-            // There are not specific safety proofs are required for this call, since the call
-            // by itself can't invoke any safety problems (however, misusing its result can).
-            libc::mmap(
-                // `addr` - let the system to choose the address at which to create the mapping.
-                ptr::null_mut(),
-                // the length of the mapping in bytes.
-                len,
-                // `prot` - protection flags: READ WRITE !EXECUTE
-                libc::PROT_READ | libc::PROT_WRITE,
-                // `flags`
-                // `MAP_ANON` - mapping is not backed by any file and initial contents are
-                // initialized to zero.
-                // `MAP_PRIVATE` - the mapping is private to this process.
-                libc::MAP_ANON | libc::MAP_PRIVATE,
-                // `fildes` - a file descriptor. Pass -1 as this is required for some platforms
-                // when the `MAP_ANON` is passed.
-                -1,
-                // `offset` - offset from the file.
-                0,
-            )
-        };
-
-        match ptr_or_err {
-            // With the current parameters, the error can only be returned in case of insufficient
-            // memory.
-            //
-            // If we have `errno` linked in augement the error message with the one that was
-            // provided by errno.
-            #[cfg(feature = "errno")]
-            libc::MAP_FAILED => {
-                let errno = errno::errno();
-                Err(format!("mmap returned an error ({}): {}", errno.0, errno))
-            }
-            #[cfg(not(feature = "errno"))]
-            libc::MAP_FAILED => Err("mmap returned an error".into()),
-            _ => {
-                let ptr = NonNull::new(ptr_or_err as *mut u8)
-                    .ok_or_else(|| "mmap returned 0".to_string())?;
-                Ok(Self { ptr, len })
-            }
-        }
+        let allocation =
+            region::alloc(len, Protection::READ_WRITE).map_err(|error| error.to_string())?;
+        Ok(Self { allocation })
     }
 
-    fn as_slice(&self) -> &[u8] {
-        unsafe {
-            // Safety Proof:
-            // - Aliasing guarantees of `self.ptr` are not violated since `self` is the only owner.
-            // - This pointer was allocated for `self.len` bytes and thus is a valid slice.
-            // - `self.len` doesn't change throughout the lifetime of `self`.
-            // - The value is returned valid for the duration of lifetime of `self`.
-            //   `self` cannot be destroyed while the returned slice is alive.
-            // - `self.ptr` is of `NonNull` type and thus `.as_ptr()` can never return NULL.
-            // - `self.len` cannot be larger than `isize::max_value()`.
-            slice::from_raw_parts(self.ptr.as_ptr(), self.len)
-        }
+    /// Returns a shared slice over the bytes of the virtual memory allocation.
+    #[inline]
+    pub fn as_slice(&self) -> &[u8] {
+        // # SAFETY
+        //
+        // The operation is safe since we assume that the virtual memory allocation
+        // has been successful and allocated exactly `self.allocation.len()` bytes.
+        // Therefore creating a slice with `self.len` elements is valid.
+        // Aliasing guarantees are not violated since `self` is the only owner
+        // of the underlying virtual memory allocation.
+        unsafe { slice::from_raw_parts(self.allocation.as_ptr(), self.allocation.len()) }
     }
 
-    fn as_slice_mut(&mut self) -> &mut [u8] {
-        unsafe {
-            // Safety Proof:
-            // - See the proof for `Self::as_slice`
-            // - Additionally, it is not possible to obtain two mutable references for `self.ptr`
-            slice::from_raw_parts_mut(self.ptr.as_ptr(), self.len)
-        }
+    /// Returns an exclusive slice over the bytes of the virtual memory allocation.
+    #[inline]
+    pub fn as_slice_mut(&mut self) -> &mut [u8] {
+        // # SAFETY
+        //
+        // See safety proof of `Mmap::as_slice`.
+        // Additionally, it is not possible to obtain two mutable references for the same memory area.
+        unsafe { slice::from_raw_parts_mut(self.allocation.as_mut_ptr(), self.allocation.len()) }
     }
 }
 
-impl Drop for Mmap {
-    fn drop(&mut self) {
-        let ret_val = unsafe {
-            // Safety proof:
-            // - `self.ptr` was allocated by a call to `mmap`.
-            // - `self.len` was saved at the same time and it doesn't change throughout the lifetime
-            //   of `self`.
-            libc::munmap(self.ptr.as_ptr() as *mut libc::c_void, self.len)
-        };
-
-        // There is no reason for `munmap` to fail to deallocate a private annonymous mapping
-        // allocated by `mmap`.
-        // However, for the cases when it actually fails prefer to fail, in order to not leak
-        // and exhaust the virtual memory.
-        assert_eq!(ret_val, 0, "munmap failed");
-    }
-}
-
+/// A virtually allocated byte buffer.
 pub struct ByteBuf {
-    mmap: Option<Mmap>,
+    /// The underlying virtual memory allocation.
+    mem: VirtualMemory,
+    /// The current size of the used parts of the virtual memory allocation.
+    len: usize,
 }
 
 impl ByteBuf {
+    /// Determines the initial size of the virtual memory allocation.
+    ///
+    /// # Note
+    ///
+    /// In this implementation we won't reallocate the virtually allocated
+    /// buffer and instead simply adjust the `len` field of the `ByteBuf`
+    /// wrapper in order to efficiently grow the virtual memory.
+    const ALLOCATION_SIZE: usize = u32::MAX as usize;
+
+    /// Creates a new byte buffer with the given initial length.
     pub fn new(len: usize) -> Result<Self, String> {
-        let mmap = if len == 0 {
-            None
-        } else {
-            Some(Mmap::new(len)?)
-        };
-        Ok(Self { mmap })
+        if len > isize::max_value() as usize {
+            return Err("`len` should not exceed `isize::max_value()`".into());
+        }
+        let mem = VirtualMemory::new(Self::ALLOCATION_SIZE)?;
+        Ok(Self { mem, len })
     }
 
+    /// Reallocates the virtual memory with the new length in bytes.
     pub fn realloc(&mut self, new_len: usize) -> Result<(), String> {
-        let new_mmap = if new_len == 0 {
-            None
-        } else {
-            let mut new_mmap = Mmap::new(new_len)?;
-            if let Some(cur_mmap) = self.mmap.take() {
-                let src = cur_mmap.as_slice();
-                let dst = new_mmap.as_slice_mut();
-                let amount = src.len().min(dst.len());
-                dst[..amount].copy_from_slice(&src[..amount]);
-            }
-            Some(new_mmap)
-        };
-
-        self.mmap = new_mmap;
+        // This operation is only actually needed in order to make the
+        // Vec-based implementation less inefficient. In the case of a
+        // virtual memory with preallocated 4GB of virtual memory pages
+        // we only need to adjust the `len` field.
+        self.len = new_len;
         Ok(())
     }
 
+    /// Returns the current length of the virtual memory.
+    #[inline]
     pub fn len(&self) -> usize {
-        self.mmap.as_ref().map(|m| m.len).unwrap_or(0)
+        self.len
     }
 
+    /// Returns a shared slice over the bytes of the virtual memory allocation.
+    #[inline]
     pub fn as_slice(&self) -> &[u8] {
-        self.mmap.as_ref().map(|m| m.as_slice()).unwrap_or(&[])
+        &self.mem.as_slice()[..self.len]
     }
 
+    /// Returns an exclusive slice over the bytes of the virtual memory allocation.
+    #[inline]
     pub fn as_slice_mut(&mut self) -> &mut [u8] {
-        self.mmap
-            .as_mut()
-            .map(|m| m.as_slice_mut())
-            .unwrap_or(&mut [])
+        &mut self.mem.as_slice_mut()[..self.len]
     }
 
+    /// Writes zero to the used bits of the virtual memory.
+    ///
+    /// # Note
+    ///
+    /// If possible this API should not exist.
     pub fn erase(&mut self) -> Result<(), String> {
-        let len = self.len();
-        if len > 0 {
-            // The order is important.
-            //
-            // 1. First we clear, and thus drop, the current mmap if any.
-            // 2. And then we create a new one.
-            //
-            // Otherwise we double the peak memory consumption.
-            self.mmap = None;
-            self.mmap = Some(Mmap::new(len)?);
-        }
+        // We might need to actually reallocate the virtual memory
+        // if we find that filling the used parts of a virtual memory
+        // allocation is still too costly.
+        self.as_slice_mut().fill(0);
         Ok(())
     }
 }
