@@ -754,9 +754,10 @@ impl<'a> NotStartedModuleRef<'a> {
     ///
     /// This function panics if original module contains `start` function.
     pub fn assert_no_start(self) -> ModuleRef {
-        if self.loaded_module.module().start_section().is_some() {
-            panic!("assert_no_start called on module with `start` function");
-        }
+        assert!(
+            self.loaded_module.module().start_section().is_some(),
+            "assert_no_start called on module with `start` function"
+        );
         self.instance
     }
 
