@@ -3,7 +3,7 @@ use alloc::vec::Vec;
 use parity_wasm::elements::Module;
 use validation::{validate_module, Error, Validator};
 
-#[cfg(feature = "core")]
+#[cfg(not(feature = "std"))]
 use crate::alloc::string::ToString;
 
 mod compile;

@@ -34,7 +34,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --no-default-features --features core
+          args: --no-default-features --features vec_memory
 
   test:
     name: Test
@@ -54,6 +54,12 @@ jobs:
         with:
           command: test
           args: --release
+      - uses: actions-rs/cargo@v1
+        env:
+          RUSTFLAGS: '--cfg debug_assertions'
+        with:
+          command: test
+          args: --release --features vec_memory
 
   fmt:
     name: Formatting
@@ -101,4 +107,4 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --no-default-features --features core -- -D warnings
+          args: --no-default-features --features vec_memory -- -D warnings

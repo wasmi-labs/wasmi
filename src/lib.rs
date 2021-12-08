@@ -105,14 +105,7 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std as alloc;
 
-#[cfg(feature = "std")]
-#[macro_use]
-extern crate core;
 
-#[cfg(test)]
-extern crate assert_matches;
-#[cfg(test)]
-extern crate wabt;
 
 use alloc::{
     boxed::Box,
