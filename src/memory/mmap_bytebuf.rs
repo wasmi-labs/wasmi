@@ -5,7 +5,6 @@
 //! memory up to maximum. This might be a problem for systems that don't have a lot of virtual
 //! memory (i.e. 32-bit platforms).
 
-use alloc::string::{String, ToString};
 use core::ptr::{self, NonNull};
 use core::slice;
 
