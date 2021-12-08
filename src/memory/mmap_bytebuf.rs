@@ -5,8 +5,8 @@
 //! memory up to maximum. This might be a problem for systems that don't have a lot of virtual
 //! memory (i.e. 32-bit platforms).
 
-use std::ptr::{self, NonNull};
-use std::slice;
+use core::ptr::{self, NonNull};
+use core::slice;
 
 struct Mmap {
     /// The pointer that points to the start of the mapping.

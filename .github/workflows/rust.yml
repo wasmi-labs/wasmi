@@ -20,6 +20,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: check
+          args: --features virtual_memory
 
   check_no_std:
     name: Check (no_std)
@@ -33,8 +34,8 @@ jobs:
           override: true
       - uses: actions-rs/cargo@v1
         with:
-          command: build
-          args: --no-default-features --features core
+          command: check
+          args: --no-default-features
 
   test:
     name: Test
@@ -54,6 +55,12 @@ jobs:
         with:
           command: test
           args: --release
+      - uses: actions-rs/cargo@v1
+        env:
+          RUSTFLAGS: '--cfg debug_assertions'
+        with:
+          command: test
+          args: --release --features virtual_memory
 
   fmt:
     name: Formatting
@@ -86,6 +93,10 @@ jobs:
         with:
           command: clippy
           args: -- -D warnings
+      - uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --features virtual_memory -- -D warnings
 
   clippy_no_std:
     name: Clippy (no_std)
@@ -101,4 +112,4 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --no-default-features --features core -- -D warnings
+          args: --no-default-features -- -D warnings
