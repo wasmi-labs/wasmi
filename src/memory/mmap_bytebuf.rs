@@ -123,10 +123,7 @@ impl ByteBuf {
     ///
     /// If possible this API should not exist.
     pub fn erase(&mut self) -> Result<(), String> {
-        // We might need to actually reallocate the virtual memory
-        // if we find that filling the used parts of a virtual memory
-        // allocation is still too costly.
-        self.as_slice_mut().fill(0);
+        self.mem = VirtualMemory::new(Self::ALLOCATION_SIZE)?;
         Ok(())
     }
 }
