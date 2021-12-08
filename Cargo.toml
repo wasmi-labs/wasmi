@@ -18,7 +18,7 @@ memory_units = "0.3.0"
 libm = "0.2.1"
 num-rational = { version = "0.4", default-features = false, features = ["num-bigint"] }
 num-traits = { version = "0.2.8", default-features = false }
-libc = { version = "0.2.58",  optional = true }
+libc = { version = "0.2.58", optional = true }
 errno = { version = "0.2.4", optional = true }
 downcast-rs = { version = "1.2.0", default-features = false }
 
