@@ -19,7 +19,8 @@ jobs:
           override: true
       - uses: actions-rs/cargo@v1
         with:
-          command: check --features virtual_memory
+          command: check
+          args: --features virtual_memory
 
   check_no_std:
     name: Check (no_std)
