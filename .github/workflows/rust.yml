@@ -47,8 +47,8 @@ jobs:
       - name: Configure Pagefile for Windows
         if: matrix.os == 'windows-latest'
         uses: al-cheb/configure-pagefile-action@v1.2
-        with:
-          minimum-size: 8
+        # with:
+        #   minimum-size: 8
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
