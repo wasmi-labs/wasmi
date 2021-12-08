@@ -56,7 +56,7 @@ impl VirtualMemory {
     pub fn as_slice_mut(&mut self) -> &mut [u8] {
         // # SAFETY
         //
-        // See safety proof of `Mmap::as_slice`.
+        // See safety proof of the `as_slice` method.
         // Additionally, it is not possible to obtain two mutable references for the same memory area.
         unsafe { slice::from_raw_parts_mut(self.allocation.as_mut_ptr(), self.allocation.len()) }
     }
