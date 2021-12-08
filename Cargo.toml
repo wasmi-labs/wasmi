@@ -16,7 +16,7 @@ validation = { package = "wasmi-validation", version = "0.4", path = "validation
 parity-wasm = { version = "0.42.0", default-features = false }
 memory_units = "0.3.0"
 libm = "0.2.1"
-num-rational = { version = "0.2.2", default-features = false }
+num-rational = { version = "0.4", default-features = false, features = ["num-bigint"] }
 num-traits = { version = "0.2.8", default-features = false }
 libc = { version = "0.2.58", default-features = false, optional = true }
 errno = { version = "0.2.4", optional = true }
@@ -34,7 +34,7 @@ std = [
     "parity-wasm/std",
     "validation/std",
     "num-rational/std",
-    "num-rational/bigint-std",
+    "num-rational/num-bigint-std",
     "num-traits/std",
     "libc/std",
     "downcast-rs/std"
