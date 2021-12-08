@@ -43,7 +43,6 @@ std = [
 core = [
     # `core` doesn't support mmaped memory
     "vec_memory",
-    "validation/core",
     "libm"
 ]
 # Enforce using the linear memory implementation based on `Vec` instead of
