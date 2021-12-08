@@ -18,7 +18,7 @@ memory_units = "0.3.0"
 libm = "0.2.1"
 num-rational = { version = "0.2.2", default-features = false }
 num-traits = { version = "0.2.8", default-features = false }
-libc = { version = "0.2.58", default-features = false }
+libc = { version = "0.2.58", default-features = false, optional = true }
 errno = { version = "0.2.4", optional = true }
 downcast-rs = { version = "1.2.0", default-features = false }
 
@@ -29,7 +29,7 @@ wabt = "0.9"
 
 [features]
 default = ["std"]
-# Disable for no_std support
+# Use `no-default-features` for a `no_std` build.
 std = [
     "parity-wasm/std",
     "validation/std",
@@ -39,12 +39,13 @@ std = [
     "libc/std",
     "downcast-rs/std"
 ]
-# Enforce using the linear memory implementation based on `Vec` instead of
-# mmap on unix systems.
+# Enables OS supported virtual memory.
 #
-# Useful for tests and if you need to minimize unsafe usage at the cost of performance on some
-# workloads.
-vec_memory = []
+# Note
+#
+# - The default is to fall back is an inefficient vector based implementation.
+# - By nature this feature requires `libc` and the Rust standard library.
+virtual_memory = ["libc", "std"]
 
 reduced-stack-buffer = [ "parity-wasm/reduced-stack-buffer" ]
 

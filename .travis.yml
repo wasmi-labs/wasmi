@@ -27,8 +27,8 @@ script:
 - if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then cargo check --benches --manifest-path=benches/Cargo.toml; fi
 # Make sure `no_std` version checks.
 - if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then cargo no-std-check --no-default-features --features core; fi
-# Check that `vec_memory` feature works.
-- cargo check --features vec_memory
+# Check that `virtual_memory` feature works.
+- cargo check --features virtual_memory
 - travis_wait 60 ./test.sh
 - TEST_NO_STD=1 travis_wait 60 ./test.sh
 - ./doc.sh
