@@ -46,7 +46,7 @@ jobs:
     steps:
       - name: Configure Pagefile for Windows
         uses: al-cheb/configure-pagefile-action@v1.2
-        on: windows-latest
+        os: windows-latest
         with:
           minimum-size: 8
       - uses: actions/checkout@v2
