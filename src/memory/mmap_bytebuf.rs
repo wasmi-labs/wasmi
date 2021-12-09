@@ -106,13 +106,11 @@ impl ByteBuf {
     }
 
     /// Returns a shared slice over the bytes of the virtual memory allocation.
-    #[inline]
     pub fn as_slice(&self) -> &[u8] {
         &self.mem.as_slice()[..self.len]
     }
 
     /// Returns an exclusive slice over the bytes of the virtual memory allocation.
-    #[inline]
     pub fn as_slice_mut(&mut self) -> &mut [u8] {
         &mut self.mem.as_slice_mut()[..self.len]
     }
