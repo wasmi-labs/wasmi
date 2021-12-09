@@ -69,7 +69,7 @@ jobs:
           RUSTFLAGS: '--cfg debug_assertions'
         with:
           command: test
-          args: --release --features virtual_memory
+          args: --release --features virtual_memory -- --test-threads 1
 
   fmt:
     name: Formatting
