@@ -8,7 +8,7 @@ on:
 
 jobs:
   check:
-    name: Check
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -17,13 +17,15 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - uses: actions-rs/cargo@v1
+      - name: Build (std + virtual_memory)
+        uses: actions-rs/cargo@v1
         with:
-          command: check
+          command: build
           args: --features virtual_memory
-      - uses: actions-rs/cargo@v1
+      - name: Build (no_std)
+        uses: actions-rs/cargo@v1
         with:
-          command: check
+          command: build
           args: --no-default-features
 
   test:
