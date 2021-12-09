@@ -42,6 +42,12 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          # Include a new variable `rustc-args` with `-- --test-threads 1`
+          # for windows-latest to be used with virtual_memory crate feature
+          # enabled while testing.
+          - os: windows-latest
+            test-args: "--test-threads 1"
     runs-on: ${{ matrix.os }}
     steps:
       - name: Configure Pagefile for Windows
@@ -67,9 +73,10 @@ jobs:
       - uses: actions-rs/cargo@v1
         env:
           RUSTFLAGS: '--cfg debug_assertions'
+          TEST_FLAGS: ${{ matrix.test-args }}
         with:
           command: test
-          args: --release --features virtual_memory -- --test-threads 1
+          args: --release --features virtual_memory -- $TEST_FLAGS
 
   fmt:
     name: Formatting
