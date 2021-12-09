@@ -39,7 +39,6 @@ impl VirtualMemory {
     }
 
     /// Returns a shared slice over the bytes of the virtual memory allocation.
-    #[inline]
     pub fn as_slice(&self) -> &[u8] {
         // # SAFETY
         //
@@ -52,7 +51,6 @@ impl VirtualMemory {
     }
 
     /// Returns an exclusive slice over the bytes of the virtual memory allocation.
-    #[inline]
     pub fn as_slice_mut(&mut self) -> &mut [u8] {
         // # SAFETY
         //
