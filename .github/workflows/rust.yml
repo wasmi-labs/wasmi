@@ -50,6 +50,12 @@ jobs:
             test-args: "--test-threads 1"
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Configure Pagefile for Windows
+        if: matrix.os == 'windows-latest'
+        uses: al-cheb/configure-pagefile-action@v1.2
+        with:
+          minimum-size: 6GB
+          maximum-size: 32GB
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
