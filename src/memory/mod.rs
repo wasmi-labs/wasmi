@@ -210,6 +210,7 @@ impl MemoryInstance {
     /// If you can provide a mutable slice you can use [`get_into`].
     ///
     /// [`get_into`]: #method.get_into
+    #[deprecated(since = "0.10", note = "use get_into method instead")]
     pub fn get(&self, offset: u32, size: usize) -> Result<Vec<u8>, Error> {
         let mut buffer = self.buffer.borrow_mut();
         let region = self.checked_region(&mut buffer, offset as usize, size)?;
