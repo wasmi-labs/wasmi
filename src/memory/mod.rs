@@ -523,6 +523,7 @@ impl MemoryInstance {
     ///
     /// [`get`]: #method.get
     /// [`set`]: #method.set
+    /// [`copy`]: #method.copy
     pub fn with_direct_access_mut<R, F: FnOnce(&mut [u8]) -> R>(&self, f: F) -> R {
         let mut buf = self.buffer.borrow_mut();
         f(buf.as_slice_mut())
@@ -558,6 +559,7 @@ impl MemoryInstance {
     ///
     /// [`get`]: #method.get
     /// [`set`]: #method.set
+    /// [`copy`]: #method.copy
     #[allow(clippy::needless_lifetimes)]
     pub fn direct_access_mut<'a>(&'a self) -> impl AsMut<[u8]> + 'a {
         struct Buffer<'a>(RefMut<'a, ByteBuf>);
