@@ -88,6 +88,24 @@ jobs:
           command: fmt
           args: --all -- --check
 
+  doc:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rust-docs, rust-src
+      - uses: actions-rs/cargo@v1
+        env:
+          RUSTDOCFLAGS: '-D warnings'
+        with:
+          command: doc
+          args: --no-deps --document-private-items
+
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
