@@ -50,6 +50,12 @@ jobs:
             test-args: "--test-threads 1"
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Configure Pagefile for Windows
+        if: matrix.os == 'windows-latest'
+        uses: al-cheb/configure-pagefile-action@v1.2
+        with:
+          minimum-size: 6GB
+          maximum-size: 32GB
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
@@ -87,6 +93,24 @@ jobs:
         with:
           command: fmt
           args: --all -- --check
+
+  doc:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rust-docs, rust-src
+      - uses: actions-rs/cargo@v1
+        env:
+          RUSTDOCFLAGS: '-D warnings'
+        with:
+          command: doc
+          args: --no-deps --document-private-items
 
   audit:
     name: Audit
