@@ -210,6 +210,7 @@ impl MemoryInstance {
     /// If you can provide a mutable slice you can use [`get_into`].
     ///
     /// [`get_into`]: #method.get_into
+    #[deprecated(since = "0.10.0", note = "use get_into or get_value method instead")]
     pub fn get(&self, offset: u32, size: usize) -> Result<Vec<u8>, Error> {
         let mut buffer = self.buffer.borrow_mut();
         let region = self.checked_region(&mut buffer, offset as usize, size)?;
@@ -625,11 +626,23 @@ mod tests {
         mem
     }
 
+    fn get_into_vec(mem: &MemoryInstance, offset: u32, size: usize) -> Vec<u8> {
+        let mut buffer = vec![0x00; size];
+        mem.get_into(offset, &mut buffer[..])
+            .unwrap_or_else(|error| {
+                panic!(
+                    "failed to retrieve data from linear memory at offset {} with size {}: {}",
+                    offset, size, error
+                )
+            });
+        buffer
+    }
+
     #[test]
     fn copy_overlaps_1() {
         let mem = create_memory(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
         mem.copy(0, 4, 6).expect("Successfully copy the elements");
-        let result = mem.get(0, 10).expect("Successfully retrieve the result");
+        let result = get_into_vec(&mem, 0, 10);
         assert_eq!(result, &[0, 1, 2, 3, 0, 1, 2, 3, 4, 5]);
     }
 
@@ -637,7 +650,7 @@ mod tests {
     fn copy_overlaps_2() {
         let mem = create_memory(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
         mem.copy(4, 0, 6).expect("Successfully copy the elements");
-        let result = mem.get(0, 10).expect("Successfully retrieve the result");
+        let result = get_into_vec(&mem, 0, 10);
         assert_eq!(result, &[4, 5, 6, 7, 8, 9, 6, 7, 8, 9]);
     }
 
@@ -646,7 +659,7 @@ mod tests {
         let mem = create_memory(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
         mem.copy_nonoverlapping(0, 10, 10)
             .expect("Successfully copy the elements");
-        let result = mem.get(10, 10).expect("Successfully retrieve the result");
+        let result = get_into_vec(&mem, 10, 10);
         assert_eq!(result, &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     }
 
@@ -679,9 +692,9 @@ mod tests {
 
         MemoryInstance::transfer(&src, 4, &dst, 0, 3).unwrap();
 
-        assert_eq!(src.get(0, 10).unwrap(), &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        assert_eq!(get_into_vec(&src, 0, 10), &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
         assert_eq!(
-            dst.get(0, 10).unwrap(),
+            get_into_vec(&dst, 0, 10),
             &[4, 5, 6, 13, 14, 15, 16, 17, 18, 19]
         );
     }
@@ -692,7 +705,7 @@ mod tests {
 
         MemoryInstance::transfer(&src, 4, &src, 0, 3).unwrap();
 
-        assert_eq!(src.get(0, 10).unwrap(), &[4, 5, 6, 3, 4, 5, 6, 7, 8, 9]);
+        assert_eq!(get_into_vec(&src, 0, 10), &[4, 5, 6, 3, 4, 5, 6, 7, 8, 9]);
     }
 
     #[test]
@@ -701,7 +714,7 @@ mod tests {
         assert!(MemoryInstance::transfer(&src, 65535, &src, 0, 3).is_err());
 
         // Check that memories content left untouched
-        assert_eq!(src.get(0, 10).unwrap(), &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        assert_eq!(get_into_vec(&src, 0, 10), &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     }
 
     #[test]
@@ -714,9 +727,9 @@ mod tests {
         assert!(MemoryInstance::transfer(&src, 65535, &dst, 0, 3).is_err());
 
         // Check that memories content left untouched
-        assert_eq!(src.get(0, 10).unwrap(), &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        assert_eq!(get_into_vec(&src, 0, 10), &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
         assert_eq!(
-            dst.get(0, 10).unwrap(),
+            get_into_vec(&dst, 0, 10),
             &[10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
         );
     }
@@ -726,7 +739,7 @@ mod tests {
         let mem = create_memory(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
         mem.clear(0, 0x4A, 10)
             .expect("To successfully clear the memory");
-        let result = mem.get(0, 10).expect("To successfully retrieve the result");
+        let result = get_into_vec(&mem, 0, 10);
         assert_eq!(result, &[0x4A; 10]);
     }
 
