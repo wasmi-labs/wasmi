@@ -47,7 +47,7 @@ jobs:
           # for windows-latest to be used with virtual_memory crate feature
           # enabled while testing.
           - os: windows-latest
-            rustc-args: "-- --test-threads 1"
+            rustc-args: "--test-threads 1"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -67,9 +67,10 @@ jobs:
       - uses: actions-rs/cargo@v1
         env:
           RUSTFLAGS: '--cfg debug_assertions'
+          RUSTC_FLAGS: ${{ matrix.rustc-args }}
         with:
           command: test
-          args: --release --features virtual_memory ${{ matrix.rustc-args }}
+          args: --release --features virtual_memory -- $RUSTC_FLAGS
 
   fmt:
     name: Formatting
