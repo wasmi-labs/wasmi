@@ -67,10 +67,10 @@ jobs:
       - uses: actions-rs/cargo@v1
         env:
           RUSTFLAGS: '--cfg debug_assertions'
-          RUSTC_FLAGS: ${{ matrix.rustc-args }}
+          TEST_FLAGS: ${{ matrix.rustc-args }}
         with:
           command: test
-          args: --release --features virtual_memory -- $RUSTC_FLAGS
+          args: --release --features virtual_memory -- $TEST_FLAGS
 
   fmt:
     name: Formatting
