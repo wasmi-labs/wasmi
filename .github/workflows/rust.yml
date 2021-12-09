@@ -16,6 +16,7 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
+          target: wasm32-unknown-unknown
           override: true
       - name: Build (std + virtual_memory)
         uses: actions-rs/cargo@v1
