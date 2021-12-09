@@ -100,18 +100,6 @@ jobs:
         with:
           command: clippy
           args: --features virtual_memory -- -D warnings
-
-  clippy_no_std:
-    name: Clippy (no_std)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-          components: clippy
       - uses: actions-rs/cargo@v1
         with:
           command: clippy
