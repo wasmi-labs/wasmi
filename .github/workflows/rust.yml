@@ -123,6 +123,8 @@ jobs:
         with:
           toolchain: stable
           override: true
+      - name: Checkout Submodules
+        run: git submodule update --init --recursive
       - name: Run cargo-tarpaulin
         uses: actions-rs/tarpaulin@v0.1
         with:
