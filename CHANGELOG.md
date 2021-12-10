@@ -16,6 +16,7 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 ### Changed
 
+- The `wasmi` and `wasmi-validation` crates now both use Rust edition 2021.
 - The `README` now better teaches how to test and benchmark the crate.
 - Updated `num-rational` from version `0.2.2` -> `0.4.0`.
 
