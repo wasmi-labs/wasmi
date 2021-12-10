@@ -117,7 +117,6 @@ impl MemoryInstance {
     /// [`LINEAR_MEMORY_PAGE_SIZE`]: constant.LINEAR_MEMORY_PAGE_SIZE.html
     pub fn alloc(initial: Pages, maximum: Option<Pages>) -> Result<MemoryRef, Error> {
         {
-            use core::convert::TryInto;
             let initial_u32: u32 = initial.0.try_into().map_err(|_| {
                 Error::Memory(format!("initial ({}) can't be coerced to u32", initial.0))
             })?;
