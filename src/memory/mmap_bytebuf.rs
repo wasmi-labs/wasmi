@@ -93,6 +93,13 @@ impl ByteBuf {
         // Vec-based implementation less inefficient. In the case of a
         // virtual memory with preallocated 4GB of virtual memory pages
         // we only need to adjust the `len` field.
+        if new_len > Self::ALLOCATION_SIZE {
+            return Err(format!(
+                "tried to realloc virtual memory to a size of {} whereas the maximum is {} bytes",
+                new_len,
+                Self::ALLOCATION_SIZE,
+            ));
+        }
         self.len = new_len;
         Ok(())
     }
@@ -135,5 +142,11 @@ mod tests {
     fn byte_buf_shrink() {
         let mut byte_buf = ByteBuf::new(PAGE_SIZE * 3).unwrap();
         byte_buf.realloc(PAGE_SIZE * 2).unwrap();
+    }
+
+    #[test]
+    fn regression_realloc_too_big() {
+        let mut byte_buf = ByteBuf::new(100).unwrap();
+        assert!(byte_buf.realloc(ByteBuf::ALLOCATION_SIZE + 1).is_err());
     }
 }
