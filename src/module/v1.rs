@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 use crate::func::{FuncBody, FuncInstance, FuncRef};
 use crate::global::{GlobalInstance, GlobalRef};
 use crate::host::Externals;
