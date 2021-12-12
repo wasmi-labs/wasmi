@@ -1,0 +1,331 @@
+use super::{
+    Arena, GlobalEntity, GlobalIdx, MemoryEntity, MemoryIdx, SignatureEntity, SignatureIdx,
+    TableEntity, TableIdx,
+};
+use super::{Global, Memory, Signature, Table};
+use core::fmt;
+use core::sync::atomic::{AtomicUsize, Ordering};
+
+/// A unique store index.
+///
+/// # Note
+///
+/// Used to protect against invalid entity indices.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct StoreIdx(usize);
+
+/// A stored entity.
+#[derive(Debug, Copy, Clone)]
+pub struct Stored<Idx> {
+    store_idx: StoreIdx,
+    entity_idx: Idx,
+}
+
+impl<Idx> Stored<Idx> {
+    /// Creates a new store entity.
+    pub fn new(store_idx: StoreIdx, entity_idx: Idx) -> Self {
+        Self {
+            store_idx,
+            entity_idx,
+        }
+    }
+
+    /// Returns the store index of the store entity.
+    pub fn store_index(&self) -> StoreIdx {
+        self.store_idx
+    }
+
+    /// Returns the index of the entity.
+    pub fn entity_index(&self) -> &Idx {
+        &self.entity_idx
+    }
+}
+
+/// Returns the next store index.
+fn next_store_index() -> StoreIdx {
+    /// A static store index counter.
+    ///
+    /// TODO: make this usable in WebAssembly.
+    ///       This should be fairly easy if we assume that WebAssembly targets are
+    ///       always single threaded. Therefore we can replace this conditionally
+    ///       with a simple static usize and unsafely mutate it.
+    static CURRENT_STORE_IDX: AtomicUsize = AtomicUsize::new(0);
+    let next_idx = CURRENT_STORE_IDX.fetch_add(1, Ordering::AcqRel);
+    StoreIdx(next_idx)
+}
+
+/// The store that owns all data associated to Wasm modules.
+#[derive(Debug)]
+pub struct Store<T> {
+    /// The unique store index.
+    ///
+    /// Used to protect against invalid entity indices.
+    idx: StoreIdx,
+    /// Stored function signatures.
+    signatures: Arena<SignatureIdx, SignatureEntity>,
+    /// Stored linear memories.
+    memories: Arena<MemoryIdx, MemoryEntity>,
+    /// Stored tables.
+    tables: Arena<TableIdx, TableEntity>,
+    /// Stored global variables.
+    globals: Arena<GlobalIdx, GlobalEntity>,
+    /// User provided state.
+    user_state: T,
+}
+
+impl<T> Store<T> {
+    /// Creates a new store.
+    pub fn new(user_state: T) -> Self {
+        Self {
+            idx: next_store_index(),
+            signatures: Arena::new(),
+            memories: Arena::new(),
+            tables: Arena::new(),
+            globals: Arena::new(),
+            user_state,
+        }
+    }
+
+    /// Returns a shared reference to the user provided state.
+    pub fn state(&self) -> &T {
+        &self.user_state
+    }
+
+    /// Returns a shared reference to the user provided state.
+    pub fn state_mut(&mut self) -> &mut T {
+        &mut self.user_state
+    }
+
+    /// Consumes `self` and returns its user provided state.
+    pub fn into_state(self) -> T {
+        self.user_state
+    }
+
+    /// Allocates a new function signature to the store.
+    pub(super) fn alloc_signature(&mut self, signature: SignatureEntity) -> Signature {
+        Signature::from_inner(Stored::new(self.idx, self.signatures.alloc(signature)))
+    }
+
+    /// Allocates a new global variable to the store.
+    pub(super) fn alloc_global(&mut self, global: GlobalEntity) -> Global {
+        Global::from_inner(Stored::new(self.idx, self.globals.alloc(global)))
+    }
+
+    /// Allocates a new table to the store.
+    pub(super) fn alloc_table(&mut self, table: TableEntity) -> Table {
+        Table::from_inner(Stored::new(self.idx, self.tables.alloc(table)))
+    }
+
+    /// Allocates a new linear memory to the store.
+    pub(super) fn alloc_memory(&mut self, memory: MemoryEntity) -> Memory {
+        Memory::from_inner(Stored::new(self.idx, self.memories.alloc(memory)))
+    }
+
+    /// Unpacks and checks the stored entity index.
+    ///
+    /// # Panics
+    ///
+    /// If the stored entity does not originate from this store.
+    fn unwrap_index<Idx>(&self, stored: Stored<Idx>) -> Idx
+    where
+        Idx: fmt::Debug,
+    {
+        assert_eq!(
+            self.idx,
+            stored.store_index(),
+            "tried to access entity {:?} of store {:?} at store {:?}",
+            stored.entity_index(),
+            stored.store_index(),
+            self.idx,
+        );
+        stored.entity_idx
+    }
+
+    /// Returns a shared reference to the associated entity of the signature.
+    ///
+    /// # Panics
+    ///
+    /// - If the signature does not originate from this store.
+    /// - If the signature cannot be resolved to its entity.
+    pub(super) fn resolve_signature(&self, signature: Signature) -> &SignatureEntity {
+        let entity_index = self.unwrap_index(signature.into_inner());
+        self.signatures
+            .get(entity_index)
+            .unwrap_or_else(|| panic!("failed to resolve stored signature: {:?}", entity_index,))
+    }
+
+    /// Returns a shared reference to the associated entity of the global variable.
+    ///
+    /// # Panics
+    ///
+    /// - If the global variable does not originate from this store.
+    /// - If the global variable cannot be resolved to its entity.
+    pub(super) fn resolve_global(&self, global: Global) -> &GlobalEntity {
+        let entity_index = self.unwrap_index(global.into_inner());
+        self.globals.get(entity_index).unwrap_or_else(|| {
+            panic!(
+                "failed to resolve stored global variable: {:?}",
+                entity_index,
+            )
+        })
+    }
+
+    /// Returns an exclusive reference to the associated entity of the global variable.
+    ///
+    /// # Panics
+    ///
+    /// - If the global variable does not originate from this store.
+    /// - If the global variable cannot be resolved to its entity.
+    pub(super) fn resolve_global_mut(&mut self, global: Global) -> &mut GlobalEntity {
+        let entity_index = self.unwrap_index(global.into_inner());
+        self.globals.get_mut(entity_index).unwrap_or_else(|| {
+            panic!(
+                "failed to resolve stored global variable: {:?}",
+                entity_index,
+            )
+        })
+    }
+
+    /// Returns a shared reference to the associated entity of the table.
+    ///
+    /// # Panics
+    ///
+    /// - If the table does not originate from this store.
+    /// - If the table cannot be resolved to its entity.
+    pub(super) fn resolve_table(&self, table: Table) -> &TableEntity {
+        let entity_index = self.unwrap_index(table.into_inner());
+        self.tables
+            .get(entity_index)
+            .unwrap_or_else(|| panic!("failed to resolve stored table: {:?}", entity_index,))
+    }
+
+    /// Returns an exclusive reference to the associated entity of the table.
+    ///
+    /// # Panics
+    ///
+    /// - If the table does not originate from this store.
+    /// - If the table cannot be resolved to its entity.
+    pub(super) fn resolve_table_mut(&mut self, table: Table) -> &mut TableEntity {
+        let entity_index = self.unwrap_index(table.into_inner());
+        self.tables
+            .get_mut(entity_index)
+            .unwrap_or_else(|| panic!("failed to resolve stored table: {:?}", entity_index,))
+    }
+
+    /// Returns a shared reference to the associated entity of the linear memory.
+    ///
+    /// # Panics
+    ///
+    /// - If the linear memory does not originate from this store.
+    /// - If the linear memory cannot be resolved to its entity.
+    pub(super) fn resolve_memory(&self, memory: Memory) -> &MemoryEntity {
+        let entity_index = self.unwrap_index(memory.into_inner());
+        self.memories.get(entity_index).unwrap_or_else(|| {
+            panic!("failed to resolve stored linear memory: {:?}", entity_index,)
+        })
+    }
+
+    /// Returns an exclusive reference to the associated entity of the linear memory.
+    ///
+    /// # Panics
+    ///
+    /// - If the linear memory does not originate from this store.
+    /// - If the linear memory cannot be resolved to its entity.
+    pub(super) fn resolve_memory_mut(&mut self, memory: Memory) -> &mut MemoryEntity {
+        let entity_index = self.unwrap_index(memory.into_inner());
+        self.memories.get_mut(entity_index).unwrap_or_else(|| {
+            panic!("failed to resolve stored linear memory: {:?}", entity_index,)
+        })
+    }
+}
+
+/// A trait used to get shared access to a [`Store`] in `wasmi`.
+pub trait AsContext {
+    /// The user state associated with the [`Store`], aka the `T` in `Store<T>`.
+    type UserState;
+
+    /// Returns the store context that this type provides access to.
+    fn as_context(&self) -> StoreContext<Self::UserState>;
+}
+
+/// A trait used to get exclusive access to a [`Store`] in `wasmi`.
+pub trait AsContextMut: AsContext {
+    /// Returns the store context that this type provides access to.
+    fn as_context_mut(&mut self) -> StoreContextMut<Self::UserState>;
+}
+
+/// A temporary handle to a `&Store<T>`.
+///
+/// This type is sutable for [`AsContext`] trait bounds on methods if desired.
+/// For more information, see [`Store`].
+#[derive(Debug, Copy, Clone)]
+#[repr(transparent)]
+pub struct StoreContext<'a, T> {
+    pub(super) store: &'a Store<T>,
+}
+
+impl<'a, T: AsContext> From<&'a T> for StoreContext<'a, T::UserState> {
+    fn from(t: &'a T) -> StoreContext<'a, T::UserState> {
+        t.as_context()
+    }
+}
+
+impl<'a, T: AsContext> From<&'a mut T> for StoreContext<'a, T::UserState> {
+    fn from(t: &'a mut T) -> StoreContext<'a, T::UserState> {
+        T::as_context(t)
+    }
+}
+
+impl<'a, T: AsContextMut> From<&'a mut T> for StoreContextMut<'a, T::UserState> {
+    fn from(t: &'a mut T) -> StoreContextMut<'a, T::UserState> {
+        t.as_context_mut()
+    }
+}
+
+/// A temporary handle to a `&mut Store<T>`.
+///
+/// This type is sutable for [`AsContextMut`] or [`AsContext`] trait bounds on methods if desired.
+/// For more information, see [`Store`].
+#[derive(Debug)]
+#[repr(transparent)]
+pub struct StoreContextMut<'a, T> {
+    pub(super) store: &'a mut Store<T>,
+}
+
+impl<'a, T> AsContext for StoreContext<'_, T> {
+    type UserState = T;
+
+    fn as_context(&self) -> StoreContext<'_, Self::UserState> {
+        StoreContext { store: self.store }
+    }
+}
+
+impl<'a, T> AsContext for StoreContextMut<'_, T> {
+    type UserState = T;
+
+    fn as_context(&self) -> StoreContext<'_, Self::UserState> {
+        StoreContext { store: self.store }
+    }
+}
+
+impl<'a, T> AsContextMut for StoreContextMut<'_, T> {
+    fn as_context_mut(&mut self) -> StoreContextMut<'_, Self::UserState> {
+        StoreContextMut {
+            store: &mut *self.store,
+        }
+    }
+}
+
+impl<T> AsContext for Store<T> {
+    type UserState = T;
+
+    fn as_context(&self) -> StoreContext<'_, Self::UserState> {
+        StoreContext { store: self }
+    }
+}
+
+impl<'a, T> AsContextMut for Store<T> {
+    fn as_context_mut(&mut self) -> StoreContextMut<'_, Self::UserState> {
+        StoreContextMut { store: self }
+    }
+}
