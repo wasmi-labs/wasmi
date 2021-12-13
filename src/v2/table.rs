@@ -4,6 +4,7 @@ use super::{AsContext, AsContextMut, Store, Stored};
 use crate::FuncRef;
 use core::fmt;
 use core::fmt::Display;
+use alloc::vec::Vec;
 
 /// A raw index to a table entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

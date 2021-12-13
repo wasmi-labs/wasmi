@@ -2,6 +2,7 @@ use core::iter;
 use core::iter::{DoubleEndedIterator, ExactSizeIterator};
 use core::marker::PhantomData;
 use core::slice;
+use alloc::vec::Vec;
 
 /// An arena allocator with a given index and entity type.
 ///
