@@ -29,7 +29,7 @@ impl Index for SignatureIdx {
 #[derive(Debug)]
 pub struct SignatureEntity {
     /// The ordered and merged inputs and outputs of the function signature.
-    inputs_outputs: Vec<ValueType>,
+    inputs_outputs: Box<[ValueType]>,
     /// The number of inputs.
     len_inputs: usize,
 }
@@ -44,7 +44,7 @@ impl SignatureEntity {
     {
         let inputs = inputs.into_iter();
         let len_inputs = inputs.len();
-        let inputs_outputs = inputs.chain(outputs).collect::<Vec<_>>();
+        let inputs_outputs = inputs.chain(outputs).collect::<Vec<_>>().into_boxed_slice();
         Self {
             inputs_outputs,
             len_inputs,
