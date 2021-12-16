@@ -10,7 +10,6 @@ use super::Signature;
 use super::Stored;
 use super::{AsContextMut, StoreContextMut};
 use crate::RuntimeValue;
-use crate::TrapKind;
 use crate::ValueType;
 use crate::{isa, Trap};
 use core::fmt;
@@ -40,67 +39,6 @@ pub struct FuncEntity<T> {
 }
 
 impl<T> FuncEntity<T> {
-    /// Create a new host function with the given signature.
-    ///
-    /// # Note
-    ///
-    /// Dynamically checks upon calling the host function if the given inputs
-    /// and the resulting outputs match the host function signature.
-    /// This dynamic checking is kind of costly compared to a statically typed
-    /// version of the host function.
-    pub fn new_host<'a, F>(signature: Signature, func: F) -> Self
-    where
-        T: 'a,
-        F: Fn(Caller<'_, T>, &[RuntimeValue], &mut [RuntimeValue]) -> Result<(), Trap>
-            + Send
-            + Sync
-            + 'static,
-    {
-        #[rustfmt::skip]
-        let trampoline = move |
-            mut caller: Caller<T>,
-            inputs: &[RuntimeValue],
-            outputs: &mut [RuntimeValue],
-        | -> Result<(), Trap> {
-            let ctx = caller.as_context_mut();
-            let expected_inputs = signature.inputs(&ctx);
-            // Need to put expected outputs into `Vec` to avoid lifetime issues.
-            let expected_outputs = signature.outputs(&ctx).to_vec();
-            let inputs_match = inputs
-                .iter()
-                .map(RuntimeValue::value_type)
-                .ne(expected_inputs.iter().copied());
-            let outputs_match = outputs.len() == expected_outputs.len();
-            if !(inputs_match && outputs_match) {
-                // Bail out due to one of the following cases:
-                //
-                // - The length of the given inputs do not match the signature.
-                // - The length of the given outputs do not match the signature.
-                // - The type of the inputs do not match the signature.
-                return Err(Trap::new(TrapKind::UnexpectedSignature))
-            }
-            func(caller, inputs, outputs)?;
-            let outputs_match = outputs
-                .iter()
-                .map(RuntimeValue::value_type)
-                .ne(expected_outputs);
-            if !outputs_match {
-                // The returned output types do not match the function signature.
-                // This is likely a bug in the provided host function closure.
-                return Err(Trap::new(TrapKind::UnexpectedSignature))
-            }
-            Ok(())
-        };
-        Self {
-            internal: FuncEntityInternal::Host(HostFuncEntity {
-                signature,
-                trampoline: HostFuncTrampoline {
-                    closure: Box::new(trampoline),
-                },
-            }),
-        }
-    }
-
     /// Creates a new host function from the given closure.
     pub fn wrap<Params, Results>(
         ctx: impl AsContextMut<UserState = T>,
@@ -207,31 +145,6 @@ impl Func {
     /// Returns the underlying stored representation.
     pub(super) fn into_inner(self) -> Stored<FuncIdx> {
         self.0
-    }
-
-    /// Create a new host function with the given signature.
-    ///
-    /// # Note
-    ///
-    /// Dynamically checks upon calling the host function if the given inputs
-    /// and the resulting outputs match the host function signature.
-    /// This dynamic checking is kind of costly compared to a statically typed
-    /// version of the host function.
-    pub fn new_host<'a, F, T>(
-        mut ctx: impl AsContextMut<UserState = T>,
-        signature: Signature,
-        func: F,
-    ) -> Self
-    where
-        T: 'a,
-        F: Fn(Caller<'_, T>, &[RuntimeValue], &mut [RuntimeValue]) -> Result<(), Trap>
-            + Send
-            + Sync
-            + 'static,
-    {
-        ctx.as_context_mut()
-            .store
-            .alloc_func(FuncEntity::new_host(signature, func))
     }
 
     /// Creates a new host function from the given closure.
