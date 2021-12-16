@@ -1,8 +1,7 @@
 use super::{
-    Arena, GlobalEntity, GlobalIdx, MemoryEntity, MemoryIdx, SignatureEntity, SignatureIdx,
-    TableEntity, TableIdx,
+    Arena, Func, FuncEntity, FuncIdx, Global, GlobalEntity, GlobalIdx, Memory, MemoryEntity,
+    MemoryIdx, Signature, SignatureEntity, SignatureIdx, Table, TableEntity, TableIdx,
 };
-use super::{Global, Memory, Signature, Table};
 use core::fmt;
 use core::sync::atomic::{AtomicUsize, Ordering};
 
@@ -69,6 +68,8 @@ pub struct Store<T> {
     tables: Arena<TableIdx, TableEntity>,
     /// Stored global variables.
     globals: Arena<GlobalIdx, GlobalEntity>,
+    /// Stored Wasm or host functions.
+    funcs: Arena<FuncIdx, FuncEntity<T>>,
     /// User provided state.
     user_state: T,
 }
@@ -82,6 +83,7 @@ impl<T> Store<T> {
             memories: Arena::new(),
             tables: Arena::new(),
             globals: Arena::new(),
+            funcs: Arena::new(),
             user_state,
         }
     }
@@ -119,6 +121,11 @@ impl<T> Store<T> {
     /// Allocates a new linear memory to the store.
     pub(super) fn alloc_memory(&mut self, memory: MemoryEntity) -> Memory {
         Memory::from_inner(Stored::new(self.idx, self.memories.alloc(memory)))
+    }
+
+    /// Allocates a new Wasm or host function to the store.
+    pub(super) fn alloc_func(&mut self, func: FuncEntity<T>) -> Func {
+        Func::from_inner(Stored::new(self.idx, self.funcs.alloc(func)))
     }
 
     /// Unpacks and checks the stored entity index.
@@ -196,7 +203,7 @@ impl<T> Store<T> {
         let entity_index = self.unwrap_index(table.into_inner());
         self.tables
             .get(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored table: {:?}", entity_index,))
+            .unwrap_or_else(|| panic!("failed to resolve stored table: {:?}", entity_index))
     }
 
     /// Returns an exclusive reference to the associated entity of the table.
@@ -209,7 +216,7 @@ impl<T> Store<T> {
         let entity_index = self.unwrap_index(table.into_inner());
         self.tables
             .get_mut(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored table: {:?}", entity_index,))
+            .unwrap_or_else(|| panic!("failed to resolve stored table: {:?}", entity_index))
     }
 
     /// Returns a shared reference to the associated entity of the linear memory.
@@ -220,9 +227,9 @@ impl<T> Store<T> {
     /// - If the linear memory cannot be resolved to its entity.
     pub(super) fn resolve_memory(&self, memory: Memory) -> &MemoryEntity {
         let entity_index = self.unwrap_index(memory.into_inner());
-        self.memories.get(entity_index).unwrap_or_else(|| {
-            panic!("failed to resolve stored linear memory: {:?}", entity_index,)
-        })
+        self.memories
+            .get(entity_index)
+            .unwrap_or_else(|| panic!("failed to resolve stored linear memory: {:?}", entity_index))
     }
 
     /// Returns an exclusive reference to the associated entity of the linear memory.
@@ -233,8 +240,24 @@ impl<T> Store<T> {
     /// - If the linear memory cannot be resolved to its entity.
     pub(super) fn resolve_memory_mut(&mut self, memory: Memory) -> &mut MemoryEntity {
         let entity_index = self.unwrap_index(memory.into_inner());
-        self.memories.get_mut(entity_index).unwrap_or_else(|| {
-            panic!("failed to resolve stored linear memory: {:?}", entity_index,)
+        self.memories
+            .get_mut(entity_index)
+            .unwrap_or_else(|| panic!("failed to resolve stored linear memory: {:?}", entity_index))
+    }
+
+    /// Returns a shared reference to the associated entity of the Wasm or host function.
+    ///
+    /// # Panics
+    ///
+    /// - If the Wasm or host function does not originate from this store.
+    /// - If the Wasm or host function cannot be resolved to its entity.
+    pub(super) fn resolve_func(&self, func: Func) -> &FuncEntity<T> {
+        let entity_index = self.unwrap_index(func.into_inner());
+        self.funcs.get(entity_index).unwrap_or_else(|| {
+            panic!(
+                "failed to resolve stored Wasm or host function: {:?}",
+                entity_index
+            )
         })
     }
 }

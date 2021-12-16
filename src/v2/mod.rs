@@ -5,6 +5,7 @@
 //! machine architecture.
 
 mod arena;
+mod func;
 mod global;
 mod limits;
 mod memory;
@@ -14,6 +15,7 @@ mod store;
 mod table;
 
 use self::arena::{Arena, Index};
+use self::func::{FuncEntity, FuncIdx};
 use self::global::{GlobalEntity, GlobalError, GlobalIdx};
 use self::limits::{LimitsError, ResizableLimits};
 use self::memory::{MemoryEntity, MemoryError, MemoryIdx};
@@ -21,6 +23,7 @@ use self::signature::{SignatureEntity, SignatureIdx};
 use self::store::Stored;
 use self::table::{TableEntity, TableError, TableIdx};
 pub use self::{
+    func::Func,
     global::Global,
     memory::{Memory, MemoryType},
     module::Extern,

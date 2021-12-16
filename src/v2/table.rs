@@ -1,8 +1,8 @@
+use super::Func;
 use super::Index;
 use super::ResizableLimits;
 use super::{AsContext, AsContextMut, Store, Stored};
 use alloc::vec::Vec;
-use crate::FuncRef;
 use core::fmt;
 use core::fmt::Display;
 
@@ -64,7 +64,7 @@ impl Display for TableError {
 #[derive(Debug)]
 pub struct TableEntity {
     limits: ResizableLimits,
-    elements: Vec<Option<FuncRef>>,
+    elements: Vec<Option<Func>>,
 }
 
 impl TableEntity {
@@ -120,7 +120,7 @@ impl TableEntity {
     /// # Errors
     ///
     /// If the accesses element is out of bounds of the table.
-    pub fn get(&self, offset: usize) -> Result<Option<FuncRef>, TableError> {
+    pub fn get(&self, offset: usize) -> Result<Option<Func>, TableError> {
         let element = self
             .elements
             .get(offset)
@@ -137,7 +137,7 @@ impl TableEntity {
     /// # Errors
     ///
     /// If the accesses element is out of bounds of the table.
-    pub fn set(&mut self, offset: usize, new_value: Option<FuncRef>) -> Result<(), TableError> {
+    pub fn set(&mut self, offset: usize, new_value: Option<Func>) -> Result<(), TableError> {
         let current = self.len();
         let element = self
             .elements
@@ -205,7 +205,7 @@ impl Table {
     /// # Errors
     ///
     /// If the accesses element is out of bounds of the table.
-    pub fn get(&self, ctx: impl AsContext, offset: usize) -> Result<Option<FuncRef>, TableError> {
+    pub fn get(&self, ctx: impl AsContext, offset: usize) -> Result<Option<Func>, TableError> {
         ctx.as_context().store.resolve_table(*self).get(offset)
     }
 
@@ -218,7 +218,7 @@ impl Table {
         &mut self,
         mut ctx: impl AsContextMut,
         offset: usize,
-        new_value: Option<FuncRef>,
+        new_value: Option<Func>,
     ) -> Result<(), TableError> {
         ctx.as_context_mut()
             .store
