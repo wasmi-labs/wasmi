@@ -418,8 +418,8 @@ mod prepare;
 mod runner;
 mod table;
 mod types;
-mod value;
 pub mod v2;
+mod value;
 
 #[cfg(test)]
 mod tests;
