@@ -5,10 +5,10 @@ mod locals;
 pub use self::caller::Caller;
 pub use self::into_func::IntoFunc;
 use self::locals::{Local, Locals, LocalsBuilder};
+use super::{AsContext, AsContextMut};
 use super::Index;
 use super::Signature;
 use super::Stored;
-use super::{AsContextMut, StoreContextMut};
 use crate::RuntimeValue;
 use crate::ValueType;
 use crate::{isa, Trap};
@@ -154,5 +154,10 @@ impl Func {
     ) -> Self {
         let func = FuncEntity::wrap(ctx.as_context_mut(), func);
         ctx.as_context_mut().store.alloc_func(func)
+    }
+
+    /// Returns the signature of the function.
+    pub fn signature(&self, ctx: impl AsContext) -> Signature {
+        *ctx.as_context().store.resolve_func(*self).signature()
     }
 }
