@@ -23,6 +23,7 @@ use self::table::{TableEntity, TableError, TableIdx};
 pub use self::{
     global::Global,
     memory::{Memory, MemoryType},
+    module::Extern,
     signature::Signature,
     store::Store,
     store::{AsContext, AsContextMut, StoreContext, StoreContextMut},
