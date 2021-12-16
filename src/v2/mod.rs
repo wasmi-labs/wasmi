@@ -8,6 +8,7 @@ mod arena;
 mod global;
 mod limits;
 mod memory;
+mod module;
 mod signature;
 mod store;
 mod table;
