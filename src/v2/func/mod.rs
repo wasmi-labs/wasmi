@@ -65,6 +65,23 @@ impl<T> FuncEntity<T> {
             FuncEntityInternal::Host(func) => func.signature(),
         }
     }
+
+    /// Calls the Wasm or host function with the given inputs.
+    ///
+    /// The result is written back into the `outputs` buffer.
+    pub fn call(
+        &self,
+        ctx: impl AsContextMut<UserState = T>,
+        inputs: &[RuntimeValue],
+        outputs: &mut [RuntimeValue],
+    ) -> Result<(), Trap> {
+        match &self.internal {
+            FuncEntityInternal::Wasm(_wasm_func) => {
+                panic!("calling Wasm function is not yet supported")
+            }
+            FuncEntityInternal::Host(host_func) => host_func.call(ctx, inputs, outputs),
+        }
+    }
 }
 
 /// The internal representation of a function instance.
@@ -164,6 +181,19 @@ impl<T> HostFuncEntity<T> {
     pub fn signature(&self) -> &Signature {
         &self.signature
     }
+
+    /// Calls the host function with the given inputs.
+    ///
+    /// The result is written back into the `outputs` buffer.
+    pub fn call(
+        &self,
+        mut ctx: impl AsContextMut<UserState = T>,
+        inputs: &[RuntimeValue],
+        outputs: &mut [RuntimeValue],
+    ) -> Result<(), Trap> {
+        let caller = <Caller<T>>::from(&mut ctx);
+        (self.trampoline.closure)(caller, inputs, outputs)
+    }
 }
 
 /// A Wasm or host function reference.
@@ -194,5 +224,29 @@ impl Func {
     /// Returns the signature of the function.
     pub fn signature(&self, ctx: impl AsContext) -> Signature {
         *ctx.as_context().store.resolve_func(*self).signature()
+    }
+
+    /// Calls the Wasm or host function with the given inputs.
+    ///
+    /// The result is written back into the `outputs` buffer.
+    pub fn call<T>(
+        &self,
+        ctx: impl AsContextMut<UserState = T>,
+        inputs: &[RuntimeValue],
+        outputs: &mut [RuntimeValue],
+    ) -> Result<(), Trap> {
+        ctx.as_context()
+            .store
+            .resolve_func(*self)
+            // TODO: try removing this clone
+            //
+            // - Note that removing this `clone` will require
+            //   unsafe Rust code with the current design.
+            // - The invariant without clone is still safe since
+            //   we safe guard the access to the underlying
+            //   entities of the store in a fashion that cannot
+            //   allow shared mutable access.
+            .clone()
+            .call(ctx, inputs, outputs)
     }
 }
