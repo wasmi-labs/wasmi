@@ -1,9 +1,13 @@
 use crate::ValueType;
+use alloc::rc::Rc;
 
 /// The local variables of a Wasm function instance.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Locals {
-    locals: Box<[Local]>,
+    // We are using an `Rc` instead of a `Box` here to make `clone` cheap.
+    // We currently need cloning to prevent `unsafe` Rust usage when calling
+    // a Wasm or host function.
+    locals: Rc<[Local]>,
 }
 
 impl Locals {
@@ -26,7 +30,7 @@ pub struct LocalsBuilder {
 }
 
 /// A group of local variables in a Wasm function.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Local {
     value_type: ValueType,
     amount: usize,
@@ -59,7 +63,7 @@ impl LocalsBuilder {
     /// Finishes constructing local variable group definition.
     pub fn finish(self) -> Locals {
         Locals {
-            locals: self.locals.into_boxed_slice(),
+            locals: self.locals.into(),
         }
     }
 }

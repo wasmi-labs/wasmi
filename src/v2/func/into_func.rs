@@ -1,6 +1,7 @@
 use super::{super::SignatureEntity, Caller, HostFuncTrampoline, RuntimeValue, ValueType};
 use crate::nan_preserving_float::{F32, F64};
 use crate::{FromRuntimeValue, Trap, TrapKind};
+use alloc::rc::Rc;
 
 pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {
     #[doc(hidden)]
@@ -88,7 +89,10 @@ macro_rules! impl_into_func {
                     result.write_outputs(outputs)?;
                     Ok(())
                 };
-                (signature, HostFuncTrampoline { closure: Box::new(trampoline) })
+                // We are using an `Rc` instead of a `Box` here to make `clone` cheap.
+                // We currently need cloning to prevent `unsafe` Rust usage when calling
+                // a Wasm or host function.
+                (signature, HostFuncTrampoline { closure: Rc::new(trampoline) })
             }
         }
     }

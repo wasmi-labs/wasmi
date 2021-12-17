@@ -12,6 +12,7 @@ use super::{AsContext, AsContextMut};
 use crate::RuntimeValue;
 use crate::ValueType;
 use crate::{isa, Trap};
+use alloc::rc::Rc;
 use core::fmt;
 use core::fmt::Debug;
 
@@ -36,6 +37,14 @@ pub struct FuncEntity<T> {
     /// variants private. This is advantageous since they are
     /// implementation details and not important to the user.
     internal: FuncEntityInternal<T>,
+}
+
+impl<T> Clone for FuncEntity<T> {
+    fn clone(&self) -> Self {
+        Self {
+            internal: self.internal.clone(),
+        }
+    }
 }
 
 impl<T> FuncEntity<T> {
@@ -69,8 +78,17 @@ enum FuncEntityInternal<T> {
     Host(HostFuncEntity<T>),
 }
 
+impl<T> Clone for FuncEntityInternal<T> {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Wasm(func) => Self::Wasm(func.clone()),
+            Self::Host(func) => Self::Host(func.clone()),
+        }
+    }
+}
+
 /// A Wasm function instance.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct WasmFuncEntity {
     signature: Signature,
     body: FuncBody,
@@ -84,7 +102,7 @@ impl WasmFuncEntity {
 }
 
 /// The function body of a Wasm function.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct FuncBody {
     locals: Locals,
     code: isa::Instructions,
@@ -96,13 +114,30 @@ struct HostFuncEntity<T> {
     trampoline: HostFuncTrampoline<T>,
 }
 
+impl<T> Clone for HostFuncEntity<T> {
+    fn clone(&self) -> Self {
+        Self {
+            signature: self.signature,
+            trampoline: self.trampoline.clone(),
+        }
+    }
+}
+
 pub struct HostFuncTrampoline<T> {
-    closure: Box<
+    closure: Rc<
         dyn Fn(Caller<T>, &[RuntimeValue], &mut [RuntimeValue]) -> Result<(), Trap>
             + Send
             + Sync
             + 'static,
     >,
+}
+
+impl<T> Clone for HostFuncTrampoline<T> {
+    fn clone(&self) -> Self {
+        Self {
+            closure: self.closure.clone(),
+        }
+    }
 }
 
 impl<T> Debug for HostFuncEntity<T> {
