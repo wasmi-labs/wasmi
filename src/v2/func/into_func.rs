@@ -10,23 +10,23 @@ pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {
 macro_rules! for_each_function_signature {
     ($mac:ident) => {
         $mac!( 0 );
-        $mac!( 1 A1);
-        $mac!( 2 A1 A2);
-        $mac!( 3 A1 A2 A3);
-        $mac!( 4 A1 A2 A3 A4);
-        $mac!( 5 A1 A2 A3 A4 A5);
-        $mac!( 6 A1 A2 A3 A4 A5 A6);
-        $mac!( 7 A1 A2 A3 A4 A5 A6 A7);
-        $mac!( 8 A1 A2 A3 A4 A5 A6 A7 A8);
-        $mac!( 9 A1 A2 A3 A4 A5 A6 A7 A8 A9);
-        $mac!(10 A1 A2 A3 A4 A5 A6 A7 A8 A9 A10);
-        $mac!(11 A1 A2 A3 A4 A5 A6 A7 A8 A9 A10 A11);
-        $mac!(12 A1 A2 A3 A4 A5 A6 A7 A8 A9 A10 A11 A12);
-        $mac!(13 A1 A2 A3 A4 A5 A6 A7 A8 A9 A10 A11 A12 A13);
-        $mac!(14 A1 A2 A3 A4 A5 A6 A7 A8 A9 A10 A11 A12 A13 A14);
-        $mac!(15 A1 A2 A3 A4 A5 A6 A7 A8 A9 A10 A11 A12 A13 A14 A15);
-        $mac!(16 A1 A2 A3 A4 A5 A6 A7 A8 A9 A10 A11 A12 A13 A14 A15 A16);
-    };
+        $mac!( 1 T1);
+        $mac!( 2 T1 T2);
+        $mac!( 3 T1 T2 T3);
+        $mac!( 4 T1 T2 T3 T4);
+        $mac!( 5 T1 T2 T3 T4 T5);
+        $mac!( 6 T1 T2 T3 T4 T5 T6);
+        $mac!( 7 T1 T2 T3 T4 T5 T6 T7);
+        $mac!( 8 T1 T2 T3 T4 T5 T6 T7 T8);
+        $mac!( 9 T1 T2 T3 T4 T5 T6 T7 T8 T9);
+        $mac!(10 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10);
+        $mac!(11 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11);
+        $mac!(12 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12);
+        $mac!(13 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13);
+        $mac!(14 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13 T14);
+        $mac!(15 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13 T14 T15);
+        $mac!(16 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13 T14 T15 T16);
+    }
 }
 
 macro_rules! impl_into_func {
@@ -99,9 +99,9 @@ pub trait WriteOutputs {
     fn write_outputs(self, outputs: &mut [RuntimeValue]) -> Result<(), Trap>;
 }
 
-impl<A1> WriteOutputs for A1
+impl<T1> WriteOutputs for T1
 where
-    A1: Into<RuntimeValue>,
+    T1: Into<RuntimeValue>,
 {
     fn write_outputs(self, outputs: &mut [RuntimeValue]) -> Result<(), Trap> {
         if outputs.len() != 1 {
@@ -142,15 +142,15 @@ pub trait ReadInputs: Sized {
     fn read_inputs(inputs: &[RuntimeValue]) -> Result<Self, Trap>;
 }
 
-impl<A1> ReadInputs for A1
+impl<T1> ReadInputs for T1
 where
-    A1: FromRuntimeValue,
+    T1: FromRuntimeValue,
 {
     fn read_inputs(inputs: &[RuntimeValue]) -> Result<Self, Trap> {
         if inputs.len() != 1 {
             return Err(Trap::new(TrapKind::UnexpectedSignature));
         }
-        RuntimeValue::try_into::<A1>(inputs[0]).ok_or(Trap::new(TrapKind::UnexpectedSignature))
+        RuntimeValue::try_into::<T1>(inputs[0]).ok_or(Trap::new(TrapKind::UnexpectedSignature))
     }
 }
 
@@ -235,11 +235,11 @@ pub trait WasmReturnType {
     fn into_fallible(self) -> Result<Self::Abi, Trap>;
 }
 
-impl<A1> WasmReturnType for A1
+impl<T1> WasmReturnType for T1
 where
-    A1: WasmType,
+    T1: WasmType,
 {
-    type Abi = A1;
+    type Abi = T1;
 
     fn signature<I>(inputs: I) -> SignatureEntity
     where
@@ -254,18 +254,18 @@ where
     }
 }
 
-impl<A1> WasmReturnType for Result<A1, Trap>
+impl<T1> WasmReturnType for Result<T1, Trap>
 where
-    A1: WasmType,
+    T1: WasmType,
 {
-    type Abi = A1;
+    type Abi = T1;
 
     fn signature<I>(inputs: I) -> SignatureEntity
     where
         I: IntoIterator<Item = ValueType>,
         I::IntoIter: ExactSizeIterator,
     {
-        SignatureEntity::new(inputs, [<A1 as WasmType>::value_type()])
+        SignatureEntity::new(inputs, [<T1 as WasmType>::value_type()])
     }
 
     fn into_fallible(self) -> Result<Self::Abi, Trap> {
