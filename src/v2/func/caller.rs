@@ -21,6 +21,8 @@ impl<'a, T> AsContextMut for Caller<'a, T> {
 
 impl<'a, T: AsContextMut> From<&'a mut T> for Caller<'a, T::UserState> {
     fn from(ctx: &'a mut T) -> Self {
-        Self { store: ctx.as_context_mut() }
+        Self {
+            store: ctx.as_context_mut(),
+        }
     }
 }
