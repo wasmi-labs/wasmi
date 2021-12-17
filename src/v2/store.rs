@@ -288,20 +288,20 @@ pub struct StoreContext<'a, T> {
 }
 
 impl<'a, T: AsContext> From<&'a T> for StoreContext<'a, T::UserState> {
-    fn from(t: &'a T) -> StoreContext<'a, T::UserState> {
-        t.as_context()
+    fn from(ctx: &'a T) -> Self {
+        ctx.as_context()
     }
 }
 
 impl<'a, T: AsContext> From<&'a mut T> for StoreContext<'a, T::UserState> {
-    fn from(t: &'a mut T) -> StoreContext<'a, T::UserState> {
-        T::as_context(t)
+    fn from(ctx: &'a mut T) -> Self {
+        T::as_context(ctx)
     }
 }
 
 impl<'a, T: AsContextMut> From<&'a mut T> for StoreContextMut<'a, T::UserState> {
-    fn from(t: &'a mut T) -> StoreContextMut<'a, T::UserState> {
-        t.as_context_mut()
+    fn from(ctx: &'a mut T) -> Self {
+        ctx.as_context_mut()
     }
 }
 
