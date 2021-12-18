@@ -47,25 +47,34 @@ impl Display for GlobalError {
     }
 }
 
+/// The mutability of a global variable.
+#[derive(Debug, Copy, Clone)]
+pub enum Mutability {
+    /// The value of the global variable is a constant.
+    Const,
+    /// The value of the global variable is mutable.
+    Mutable,
+}
+
 /// A global variable entitiy.
 #[derive(Debug)]
 pub struct GlobalEntity {
     value: RuntimeValue,
-    mutable: bool,
+    mutability: Mutability,
 }
 
 impl GlobalEntity {
     /// Creates a new global entity with the given initial value and mutability.
-    pub fn new(initial_value: RuntimeValue, mutable: bool) -> Self {
+    pub fn new(initial_value: RuntimeValue, mutability: Mutability) -> Self {
         Self {
             value: initial_value,
-            mutable,
+            mutability,
         }
     }
 
     /// Returns `true` if the global variable is mutable.
     pub fn is_mutable(&self) -> bool {
-        self.mutable
+        matches!(self.mutability, Mutability::Mutable)
     }
 
     /// Returns the type of the global variable value.
@@ -120,10 +129,14 @@ impl Global {
     }
 
     /// Creates a new global variable to the store.
-    pub fn new(mut ctx: impl AsContextMut, initial_value: RuntimeValue, mutable: bool) -> Self {
+    pub fn new(
+        mut ctx: impl AsContextMut,
+        initial_value: RuntimeValue,
+        mutability: Mutability,
+    ) -> Self {
         ctx.as_context_mut()
             .store
-            .alloc_global(GlobalEntity::new(initial_value, mutable))
+            .alloc_global(GlobalEntity::new(initial_value, mutability))
     }
 
     /// Returns `true` if the global variable is mutable.

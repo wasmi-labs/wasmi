@@ -27,7 +27,7 @@ use self::table::{TableEntity, TableError, TableIdx};
 pub use self::{
     error::Error,
     func::Func,
-    global::Global,
+    global::{Global, Mutability},
     linker::{Linker, LinkerError},
     memory::{Memory, MemoryType},
     module::Extern,
