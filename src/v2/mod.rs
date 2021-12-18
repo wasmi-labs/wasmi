@@ -5,6 +5,7 @@
 //! machine architecture.
 
 mod arena;
+mod error;
 mod func;
 mod global;
 mod limits;
@@ -24,6 +25,7 @@ use self::signature::{SignatureEntity, SignatureIdx};
 use self::store::Stored;
 use self::table::{TableEntity, TableError, TableIdx};
 pub use self::{
+    error::Error,
     func::Func,
     global::Global,
     linker::{Linker, LinkerError},
@@ -34,17 +36,3 @@ pub use self::{
     store::{AsContext, AsContextMut, StoreContext, StoreContextMut},
     table::Table,
 };
-
-/// An error that may occur upon operating on Wasm modules or module instances.
-#[derive(Debug)]
-#[non_exhaustive]
-pub enum Error {
-    /// A global variable error.
-    Global(GlobalError),
-    /// A resizable limits errors.
-    Limits(LimitsError),
-    /// A linear memory error.
-    Memory(MemoryError),
-    /// A table error.
-    Table(TableError),
-}
