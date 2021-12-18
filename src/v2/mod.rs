@@ -8,6 +8,7 @@ mod arena;
 mod func;
 mod global;
 mod limits;
+mod linker;
 mod memory;
 mod module;
 mod signature;
@@ -25,6 +26,7 @@ use self::table::{TableEntity, TableError, TableIdx};
 pub use self::{
     func::Func,
     global::Global,
+    linker::{Linker, LinkerError},
     memory::{Memory, MemoryType},
     module::Extern,
     signature::Signature,
