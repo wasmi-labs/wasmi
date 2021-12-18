@@ -140,13 +140,13 @@ impl<T> Clone for HostFuncEntity<T> {
     }
 }
 
+type HostFuncTrampolineFn<T> = dyn Fn(Caller<T>, &[RuntimeValue], &mut [RuntimeValue]) -> Result<(), Trap>
+    + Send
+    + Sync
+    + 'static;
+
 pub struct HostFuncTrampoline<T> {
-    closure: Rc<
-        dyn Fn(Caller<T>, &[RuntimeValue], &mut [RuntimeValue]) -> Result<(), Trap>
-            + Send
-            + Sync
-            + 'static,
-    >,
+    closure: Rc<HostFuncTrampolineFn<T>>,
 }
 
 impl<T> Clone for HostFuncTrampoline<T> {

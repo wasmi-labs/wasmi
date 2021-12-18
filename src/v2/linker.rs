@@ -92,7 +92,7 @@ impl StringInterner {
     /// Returns the symbol of the string and interns it if necessary.
     pub fn get_or_intern(&mut self, string: &str) -> Symbol {
         match self.string2idx.get(string) {
-            Some(symbol) => return *symbol,
+            Some(symbol) => *symbol,
             None => {
                 let symbol = self.next_symbol();
                 let rc_string: Rc<str> = Rc::from(string);
@@ -146,6 +146,12 @@ impl<T> Clone for Linker<T> {
             definitions: self.definitions.clone(),
             _marker: self._marker,
         }
+    }
+}
+
+impl<T> Default for Linker<T> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
