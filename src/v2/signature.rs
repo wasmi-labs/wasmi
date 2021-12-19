@@ -1,6 +1,7 @@
 use super::Index;
 use super::{Store, StoreContext, Stored};
 use crate::ValueType;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 
 /// A raw index to a function signature entity.
@@ -29,7 +30,7 @@ impl Index for SignatureIdx {
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub struct SignatureEntity {
     /// The ordered and merged inputs and outputs of the function signature.
-    inputs_outputs: Box<[ValueType]>,
+    inputs_outputs: Arc<[ValueType]>,
     /// The number of inputs.
     len_inputs: usize,
 }
@@ -44,7 +45,7 @@ impl SignatureEntity {
     {
         let inputs = inputs.into_iter();
         let len_inputs = inputs.len();
-        let inputs_outputs = inputs.chain(outputs).collect::<Vec<_>>().into_boxed_slice();
+        let inputs_outputs = Arc::from(inputs.chain(outputs).collect::<Vec<_>>());
         Self {
             inputs_outputs,
             len_inputs,
