@@ -16,7 +16,7 @@ mod signature;
 mod store;
 mod table;
 
-use self::arena::{Arena, Index};
+use self::arena::{Arena, DedupArena, Index};
 use self::func::{FuncEntity, FuncIdx};
 use self::global::{GlobalEntity, GlobalError, GlobalIdx};
 use self::limits::LimitsError;

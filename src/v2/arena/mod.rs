@@ -1,3 +1,6 @@
+mod dedup;
+
+pub use self::dedup::DedupArena;
 use alloc::vec::Vec;
 use core::iter::{DoubleEndedIterator, ExactSizeIterator};
 use core::marker::PhantomData;
@@ -14,7 +17,7 @@ pub struct Arena<Idx, T> {
 }
 
 /// Types that can be used as indices for arenas.
-pub trait Index {
+pub trait Index: Copy {
     fn into_usize(self) -> usize;
     fn from_usize(value: usize) -> Self;
 }
