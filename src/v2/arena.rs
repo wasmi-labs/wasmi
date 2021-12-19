@@ -21,7 +21,7 @@ pub trait Index {
 
 impl<Idx, T> Default for Arena<Idx, T> {
     fn default() -> Self {
-        Arena::new()
+        Self::new()
     }
 }
 
