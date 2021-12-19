@@ -6,12 +6,12 @@
 
 mod arena;
 mod error;
+mod external;
 mod func;
 mod global;
 mod limits;
 mod linker;
 mod memory;
-mod external;
 mod signature;
 mod store;
 mod table;
@@ -26,12 +26,12 @@ use self::store::Stored;
 use self::table::{TableEntity, TableError, TableIdx};
 pub use self::{
     error::Error,
+    external::Extern,
     func::Func,
     global::{Global, Mutability},
     limits::ResizableLimits,
     linker::{Linker, LinkerError},
     memory::{Memory, MemoryType},
-    external::Extern,
     signature::Signature,
     store::Store,
     store::{AsContext, AsContextMut, StoreContext, StoreContextMut},
