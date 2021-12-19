@@ -19,7 +19,7 @@ mod table;
 use self::arena::{Arena, Index};
 use self::func::{FuncEntity, FuncIdx};
 use self::global::{GlobalEntity, GlobalError, GlobalIdx};
-use self::limits::{LimitsError, ResizableLimits};
+use self::limits::LimitsError;
 use self::memory::{MemoryEntity, MemoryError, MemoryIdx};
 use self::signature::{SignatureEntity, SignatureIdx};
 use self::store::Stored;
@@ -28,6 +28,7 @@ pub use self::{
     error::Error,
     func::Func,
     global::{Global, Mutability},
+    limits::ResizableLimits,
     linker::{Linker, LinkerError},
     memory::{Memory, MemoryType},
     module::Extern,
