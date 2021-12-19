@@ -26,7 +26,7 @@ impl Index for SignatureIdx {
 /// up with the outputs.
 /// The `len_inputs` field denotes how many inputs there are in
 /// the head of the vector.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub struct SignatureEntity {
     /// The ordered and merged inputs and outputs of the function signature.
     inputs_outputs: Box<[ValueType]>,

@@ -79,7 +79,7 @@ impl Signature {
 /// See [`RuntimeValue`] for details.
 ///
 /// [`RuntimeValue`]: enum.RuntimeValue.html
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ValueType {
     /// 32-bit signed or unsigned integer.
     I32,

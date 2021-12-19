@@ -1,3 +1,4 @@
+use super::arena::DedupArena;
 use super::{
     Arena, Func, FuncEntity, FuncIdx, Global, GlobalEntity, GlobalIdx, Memory, MemoryEntity,
     MemoryIdx, Signature, SignatureEntity, SignatureIdx, Table, TableEntity, TableIdx,
@@ -61,7 +62,7 @@ pub struct Store<T> {
     /// Used to protect against invalid entity indices.
     idx: StoreIdx,
     /// Stored function signatures.
-    signatures: Arena<SignatureIdx, SignatureEntity>,
+    signatures: DedupArena<SignatureIdx, SignatureEntity>,
     /// Stored linear memories.
     memories: Arena<MemoryIdx, MemoryEntity>,
     /// Stored tables.
@@ -79,7 +80,7 @@ impl<T> Store<T> {
     pub fn new(user_state: T) -> Self {
         Self {
             idx: next_store_index(),
-            signatures: Arena::new(),
+            signatures: DedupArena::new(),
             memories: Arena::new(),
             tables: Arena::new(),
             globals: Arena::new(),
