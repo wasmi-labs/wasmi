@@ -1,7 +1,7 @@
-use super::arena::DedupArena;
 use super::{
-    Arena, Func, FuncEntity, FuncIdx, Global, GlobalEntity, GlobalIdx, Memory, MemoryEntity,
-    MemoryIdx, Signature, SignatureEntity, SignatureIdx, Table, TableEntity, TableIdx,
+    Arena, DedupArena, Func, FuncEntity, FuncIdx, Global, GlobalEntity, GlobalIdx, Memory,
+    MemoryEntity, MemoryIdx, Signature, SignatureEntity, SignatureIdx, Table, TableEntity,
+    TableIdx,
 };
 use core::fmt;
 use core::sync::atomic::{AtomicUsize, Ordering};
