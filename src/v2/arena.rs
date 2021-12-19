@@ -204,3 +204,33 @@ where
         self.iter.len()
     }
 }
+
+impl<Idx, T> ops::Index<Idx> for Arena<Idx, T>
+where
+    Idx: Index,
+{
+    type Output = T;
+
+    fn index(&self, index: Idx) -> &Self::Output {
+        self.get(index).unwrap_or_else(|| {
+            panic!(
+                "tried to access out of bounds arena entity at {}",
+                index.into_usize()
+            )
+        })
+    }
+}
+
+impl<Idx, T> ops::IndexMut<Idx> for Arena<Idx, T>
+where
+    Idx: Index,
+{
+    fn index_mut(&mut self, index: Idx) -> &mut Self::Output {
+        self.get_mut(index).unwrap_or_else(|| {
+            panic!(
+                "tried to access out of bounds arena entity at {}",
+                index.into_usize()
+            )
+        })
+    }
+}
