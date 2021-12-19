@@ -1,7 +1,7 @@
 use super::Extern;
 use alloc::collections::btree_map::Entry;
 use alloc::collections::BTreeMap;
-use alloc::rc::Rc;
+use alloc::sync::Arc;
 use core::fmt;
 use core::fmt::{Debug, Display};
 use core::marker::PhantomData;
@@ -79,8 +79,8 @@ impl Symbol {
 /// Efficiently interns strings and distributes symbols.
 #[derive(Debug, Default, Clone)]
 pub struct StringInterner {
-    string2idx: BTreeMap<Rc<str>, Symbol>,
-    strings: Vec<Rc<str>>,
+    string2idx: BTreeMap<Arc<str>, Symbol>,
+    strings: Vec<Arc<str>>,
 }
 
 impl StringInterner {
@@ -95,7 +95,7 @@ impl StringInterner {
             Some(symbol) => *symbol,
             None => {
                 let symbol = self.next_symbol();
-                let rc_string: Rc<str> = Rc::from(string);
+                let rc_string: Arc<str> = Arc::from(string);
                 self.string2idx.insert(rc_string.clone(), symbol);
                 self.strings.push(rc_string);
                 symbol

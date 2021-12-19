@@ -1,13 +1,13 @@
 use crate::ValueType;
-use alloc::rc::Rc;
+use alloc::sync::Arc;
 
 /// The local variables of a Wasm function instance.
 #[derive(Debug, Clone)]
 pub struct Locals {
-    // We are using an `Rc` instead of a `Box` here to make `clone` cheap.
+    // We are using an `Arc` instead of a `Box` here to make `clone` cheap.
     // We currently need cloning to prevent `unsafe` Rust usage when calling
     // a Wasm or host function.
-    locals: Rc<[Local]>,
+    locals: Arc<[Local]>,
 }
 
 impl Locals {

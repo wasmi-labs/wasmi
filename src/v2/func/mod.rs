@@ -12,7 +12,7 @@ use super::{AsContext, AsContextMut};
 use crate::RuntimeValue;
 use crate::ValueType;
 use crate::{isa, Trap};
-use alloc::rc::Rc;
+use alloc::sync::Arc;
 use core::fmt;
 use core::fmt::Debug;
 
@@ -146,7 +146,7 @@ type HostFuncTrampolineFn<T> = dyn Fn(Caller<T>, &[RuntimeValue], &mut [RuntimeV
     + 'static;
 
 pub struct HostFuncTrampoline<T> {
-    closure: Rc<HostFuncTrampolineFn<T>>,
+    closure: Arc<HostFuncTrampolineFn<T>>,
 }
 
 impl<T> Clone for HostFuncTrampoline<T> {
