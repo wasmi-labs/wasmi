@@ -11,7 +11,7 @@ mod global;
 mod limits;
 mod linker;
 mod memory;
-mod module;
+mod external;
 mod signature;
 mod store;
 mod table;
@@ -31,7 +31,7 @@ pub use self::{
     limits::ResizableLimits,
     linker::{Linker, LinkerError},
     memory::{Memory, MemoryType},
-    module::Extern,
+    external::Extern,
     signature::Signature,
     store::Store,
     store::{AsContext, AsContextMut, StoreContext, StoreContextMut},

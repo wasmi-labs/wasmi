@@ -1,4 +1,4 @@
-use super::super::{Func, Global, Memory, Table};
+use super::{Func, Global, Memory, Table};
 
 /// An external reference.
 #[derive(Debug, Copy, Clone)]
