@@ -2,6 +2,7 @@
 
 use crate::ValueType;
 use alloc::sync::Arc;
+use alloc::vec::Vec;
 
 /// The local variables of a Wasm function instance.
 #[derive(Debug, Clone)]

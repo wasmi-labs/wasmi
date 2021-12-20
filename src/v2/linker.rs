@@ -7,6 +7,7 @@ use core::fmt::{Debug, Display};
 use core::marker::PhantomData;
 use core::num::NonZeroUsize;
 use core::ops::Deref;
+use alloc::{vec::Vec, string::{String, ToString}};
 
 /// An error that may occur upon operating with [`Linker`] instances.
 #[derive(Debug)]

@@ -7,6 +7,7 @@ use crate::{
 use core::fmt;
 use core::fmt::Debug;
 use core::{iter, mem};
+use alloc::vec::Vec;
 
 /// A single entry or register in the value stack.
 ///
