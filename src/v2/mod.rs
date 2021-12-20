@@ -9,6 +9,7 @@ mod error;
 mod external;
 mod func;
 mod global;
+pub mod interpreter;
 mod limits;
 mod linker;
 mod memory;
