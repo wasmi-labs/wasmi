@@ -1,3 +1,9 @@
+//! Fast arena allocators for different usage purposes.
+//!
+//! They cannot deallocate single allocated entities for extra efficiency.
+//! These allocators mainly serve as the backbone for an efficient Wasm store
+//! implementation.
+
 mod dedup;
 
 pub use self::dedup::DedupArena;
