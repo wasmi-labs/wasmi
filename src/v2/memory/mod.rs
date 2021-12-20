@@ -29,10 +29,15 @@ impl Index for MemoryIdx {
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum MemoryError {
+    /// Tried to allocate a virtual memory with zero length.
     ZeroLengthVirtualMemory,
+    /// Tried to allocate more virtual memory than technically possible.
     OutOfBoundsAllocation,
+    /// Tried to grow linear memory out of its set bounds.
     OutOfBoundsGrowth,
+    /// Tried to access linear memory out of bounds.
     OutOfBoundsAccess,
+    /// A generic virtual memory error.
     Vmem(byte_buffer::VmemError),
 }
 

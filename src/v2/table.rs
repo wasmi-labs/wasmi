@@ -24,13 +24,20 @@ impl Index for TableIdx {
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum TableError {
+    /// Occurs when growing a table out of its set bounds.
     GrowOutOfBounds {
+        /// The maximum allowed table size.
         maximum: usize,
+        /// The current table size before the growth operation.
         current: usize,
+        /// The amount of requested invalid growth.
         grow_by: usize,
     },
+    /// Occurs when accessing the table out of bounds.
     AccessOutOfBounds {
+        /// The current size of the table.
         current: usize,
+        /// The accessed index that is out of bounds.
         offset: usize,
     },
 }

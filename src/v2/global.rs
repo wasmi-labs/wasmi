@@ -22,9 +22,13 @@ impl Index for GlobalIdx {
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum GlobalError {
+    /// Occurs when trying to write to an immutable global variable.
     ImmutableWrite,
+    /// Occurs when trying writing a value with mismatching type to a global variable.
     TypeMismatch {
+        /// The type of the global variable.
         expected: ValueType,
+        /// The type of the new value that mismatches the type of the global variable.
         encountered: ValueType,
     },
 }
