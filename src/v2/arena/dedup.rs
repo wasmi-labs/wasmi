@@ -17,6 +17,17 @@ impl<Idx, T> Default for DedupArena<Idx, T> {
     }
 }
 
+impl<Idx, T> PartialEq for DedupArena<Idx, T>
+where
+    T: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.entities.eq(&other.entities)
+    }
+}
+
+impl<Idx, T> Eq for DedupArena<Idx, T> where T: Eq {}
+
 impl<Idx, T> DedupArena<Idx, T> {
     /// Creates a new empty deduplicating entity arena.
     pub fn new() -> Self {
@@ -82,6 +93,27 @@ where
     /// Returns an exclusive reference to the entity at the given index if any.
     pub fn get_mut(&mut self, index: Idx) -> Option<&mut T> {
         self.entities.get_mut(index)
+    }
+}
+
+impl<Idx, T> FromIterator<T> for DedupArena<Idx, T>
+where
+    Idx: Index,
+    T: Clone + Ord,
+{
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = T>,
+    {
+        let entities = Arena::from_iter(iter);
+        let entity2idx = entities
+            .iter()
+            .map(|(idx, entity)| (entity.clone(), idx))
+            .collect::<BTreeMap<_, _>>();
+        Self {
+            entity2idx,
+            entities,
+        }
     }
 }
 
