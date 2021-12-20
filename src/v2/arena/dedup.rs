@@ -117,6 +117,30 @@ where
     }
 }
 
+impl<'a, Idx, T> IntoIterator for &'a DedupArena<Idx, T>
+where
+    Idx: Index,
+{
+    type IntoIter = Iter<'a, Idx, T>;
+    type Item = (Idx, &'a T);
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<'a, Idx, T> IntoIterator for &'a mut DedupArena<Idx, T>
+where
+    Idx: Index,
+{
+    type IntoIter = IterMut<'a, Idx, T>;
+    type Item = (Idx, &'a mut T);
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
+    }
+}
+
 impl<Idx, T> ops::Index<Idx> for DedupArena<Idx, T>
 where
     Idx: Index,
