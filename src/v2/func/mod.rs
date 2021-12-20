@@ -1,10 +1,12 @@
+#![allow(dead_code)] // TODO: remove
+
 mod caller;
 mod into_func;
 mod locals;
 
 pub use self::caller::Caller;
 pub use self::into_func::IntoFunc;
-use self::locals::{Local, Locals, LocalsBuilder};
+use self::locals::Locals;
 use super::Index;
 use super::Signature;
 use super::Stored;
