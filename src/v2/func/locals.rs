@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(dead_code)] // TODO: remove
 
 use crate::ValueType;
 use alloc::sync::Arc;
