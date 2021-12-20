@@ -7,6 +7,12 @@ use core::marker::PhantomData;
 use core::slice;
 use core::{iter, ops};
 
+/// Types that can be used as indices for arenas.
+pub trait Index: Copy {
+    fn into_usize(self) -> usize;
+    fn from_usize(value: usize) -> Self;
+}
+
 /// An arena allocator with a given index and entity type.
 ///
 /// For performance reasons the arena cannot deallocate single entities.
@@ -14,12 +20,6 @@ use core::{iter, ops};
 pub struct Arena<Idx, T> {
     entities: Vec<T>,
     __marker: PhantomData<fn() -> Idx>,
-}
-
-/// Types that can be used as indices for arenas.
-pub trait Index: Copy {
-    fn into_usize(self) -> usize;
-    fn from_usize(value: usize) -> Self;
 }
 
 impl<Idx, T> Default for Arena<Idx, T> {
