@@ -6,6 +6,9 @@
 
 mod dedup;
 
+#[cfg(test)]
+mod tests;
+
 pub use self::dedup::DedupArena;
 use alloc::vec::Vec;
 use core::iter::{DoubleEndedIterator, ExactSizeIterator};
@@ -266,77 +269,5 @@ where
                 index.into_usize()
             )
         })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    impl Index for usize {
-        fn into_usize(self) -> usize {
-            self
-        }
-
-        fn from_usize(value: usize) -> Self {
-            value
-        }
-    }
-
-    fn alloc_arena(entities: &[&'static str]) -> Arena<usize, &'static str> {
-        let mut arena = <Arena<usize, &'static str>>::new();
-        // Check that the given arena is actually empty.
-        assert_eq!(arena.len(), 0);
-        assert!(arena.is_empty());
-        // Fill arena and check invariants while doing so.
-        for idx in 0..entities.len() {
-            assert!(arena.get(idx).is_none());
-        }
-        for (n, str) in entities.iter().enumerate() {
-            assert_eq!(arena.alloc(str), n);
-        }
-        // Check state of filled arena.
-        assert_eq!(arena.len(), entities.len());
-        assert!(!arena.is_empty());
-        for (n, str) in entities.iter().enumerate() {
-            assert_eq!(arena.get(n), Some(str));
-            assert_eq!(&arena[n], str);
-        }
-        assert_eq!(arena.get(arena.len()), None);
-        // Return filled arena.
-        arena
-    }
-
-    const TEST_ENTITIES: &[&'static str] = &["a", "b", "c", "d"];
-
-    #[test]
-    fn alloc_works() {
-        alloc_arena(TEST_ENTITIES);
-    }
-
-    #[test]
-    fn clear_works() {
-        let mut arena = alloc_arena(TEST_ENTITIES);
-        // Clear the arena and check if all elements are removed.
-        arena.clear();
-        assert_eq!(arena.len(), 0);
-        assert!(arena.is_empty());
-        for idx in 0..arena.len() {
-            assert_eq!(arena.get(idx), None);
-        }
-        assert_eq!(arena.get(arena.len()), None);
-    }
-
-    #[test]
-    fn iter_works() {
-        let arena = alloc_arena(TEST_ENTITIES);
-        assert!(arena.iter().eq(TEST_ENTITIES.iter().enumerate()));
-    }
-
-    #[test]
-    fn from_iter_works() {
-        let expected = alloc_arena(TEST_ENTITIES);
-        let actual = TEST_ENTITIES.iter().copied().collect::<Arena<_, _>>();
-        assert_eq!(actual, expected);
     }
 }
