@@ -16,10 +16,19 @@ mod signature;
 mod store;
 mod table;
 
+/// Defines some errors that may occur upon interaction with `wasmi`.
+pub mod errors {
+    pub use super::{
+        global::GlobalError, limits::LimitsError, linker::LinkerError, memory::MemoryError,
+        table::TableError,
+    };
+}
+
 use self::arena::{Arena, DedupArena, Index};
 use self::func::{FuncEntity, FuncIdx};
 use self::global::{GlobalEntity, GlobalError, GlobalIdx};
 use self::limits::LimitsError;
+use self::linker::LinkerError;
 use self::memory::{MemoryEntity, MemoryError, MemoryIdx};
 use self::signature::{SignatureEntity, SignatureIdx};
 use self::store::Stored;
@@ -30,7 +39,7 @@ pub use self::{
     func::Func,
     global::{Global, Mutability},
     limits::ResizableLimits,
-    linker::{Linker, LinkerError},
+    linker::Linker,
     memory::{Memory, MemoryType},
     signature::Signature,
     store::Store,
