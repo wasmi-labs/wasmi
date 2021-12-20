@@ -227,15 +227,20 @@ impl ValueStack {
         }
     }
 
-    /// Drops some amount of entries and keeps some amount of them at the top.
+    /// Drops some amount of entries and keeps some amount of them at the new top.
     ///
     /// # Note
     ///
     /// For an amount of entries to keep `k` and an amount of entries to drop `d`
-    /// this has the following effect on stack `s`.
+    /// this has the following effect on stack `s` and stack pointer `sp`.
     ///
-    /// 1) Copy `k` elements from `s[(s.len - d - k)..(s.len - d)]`.
-    /// 2) Set new stack pointer to `s.len - d`.
+    /// 1) Copy `k` elements from indices starting at `sp - k` to `sp - k - d`.
+    /// 2) Adjust stack pointer: `sp -= d`
+    ///
+    /// After this operation the value stack will have `d` fewer entries and the
+    /// top `k` entries are the top `k` entries before this operation.
+    ///
+    /// Note that `k + d` cannot be greater than the stack length.
     pub fn drop_keep(&mut self, drop_keep: DropKeep) {
         let drop = drop_keep.drop();
         if drop == 0 {
@@ -257,7 +262,7 @@ impl ValueStack {
     ///
     /// # Note
     ///
-    /// This has the same effect as [`ValueStack::peek`](0).
+    /// This has the same effect as [`ValueStack::peek`]`(0)`.
     pub fn last(&self) -> StackEntry {
         self.entries[self.stack_ptr - 1]
     }
@@ -266,7 +271,7 @@ impl ValueStack {
     ///
     /// # Note
     ///
-    /// This has the same effect as [`ValueStack::peek`](0).
+    /// This has the same effect as [`ValueStack::peek`]`(0)`.
     pub fn last_mut(&mut self) -> &mut StackEntry {
         &mut self.entries[self.stack_ptr - 1]
     }
@@ -281,6 +286,10 @@ impl ValueStack {
     }
 
     /// Peeks the `&mut` entry at the given depth from the last entry.
+    ///
+    /// # Note
+    ///
+    /// Given a `depth` of 0 has the same effect as [`ValueStack::last_mut`].
     pub fn peek_mut(&mut self, depth: usize) -> &mut StackEntry {
         &mut self.entries[self.stack_ptr - depth - 1]
     }
