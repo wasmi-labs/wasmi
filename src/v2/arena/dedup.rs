@@ -47,6 +47,12 @@ impl<Idx, T> DedupArena<Idx, T> {
         self.len() == 0
     }
 
+    /// Clears all entities from the arena.
+    pub fn clear(&mut self) {
+        self.entity2idx.clear();
+        self.entities.clear();
+    }
+
     /// Returns an iterator over the shared reference of the [`Arena`] entities.
     pub fn iter(&self) -> Iter<Idx, T> {
         self.entities.iter()
