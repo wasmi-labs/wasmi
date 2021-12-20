@@ -1,5 +1,7 @@
 //! Data structures to represent the Wasm value stack during execution.
 
+#![allow(dead_code)] // TODO: remove
+
 use crate::{
     nan_preserving_float::{F32, F64},
     RuntimeValue, ValueType, DEFAULT_VALUE_STACK_LIMIT,
