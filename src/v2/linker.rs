@@ -2,12 +2,15 @@ use super::Extern;
 use alloc::collections::btree_map::Entry;
 use alloc::collections::BTreeMap;
 use alloc::sync::Arc;
+use alloc::{
+    string::{String, ToString},
+    vec::Vec,
+};
 use core::fmt;
 use core::fmt::{Debug, Display};
 use core::marker::PhantomData;
 use core::num::NonZeroUsize;
 use core::ops::Deref;
-use alloc::{vec::Vec, string::{String, ToString}};
 
 /// An error that may occur upon operating with [`Linker`] instances.
 #[derive(Debug)]

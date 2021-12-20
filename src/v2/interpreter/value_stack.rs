@@ -6,10 +6,10 @@ use crate::{
     nan_preserving_float::{F32, F64},
     RuntimeValue, ValueType, DEFAULT_VALUE_STACK_LIMIT,
 };
+use alloc::vec::Vec;
 use core::fmt;
 use core::fmt::Debug;
 use core::{iter, mem};
-use alloc::vec::Vec;
 
 /// A single entry or register in the value stack.
 ///
