@@ -28,6 +28,17 @@ impl<Idx, T> Default for Arena<Idx, T> {
     }
 }
 
+impl<Idx, T> PartialEq for Arena<Idx, T>
+where
+    T: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.entities.eq(&other.entities)
+    }
+}
+
+impl<Idx, T> Eq for Arena<Idx, T> where T: Eq {}
+
 impl<Idx, T> Arena<Idx, T> {
     /// Creates a new empty entity arena.
     pub fn new() -> Self {
@@ -93,6 +104,18 @@ where
     /// Returns an exclusive reference to the entity at the given index if any.
     pub fn get_mut(&mut self, index: Idx) -> Option<&mut T> {
         self.entities.get_mut(index.into_usize())
+    }
+}
+
+impl<Idx, T> FromIterator<T> for Arena<Idx, T> {
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = T>,
+    {
+        Self {
+            entities: Vec::from_iter(iter),
+            __marker: PhantomData,
+        }
     }
 }
 
