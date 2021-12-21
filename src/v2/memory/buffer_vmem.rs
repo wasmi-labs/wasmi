@@ -1,7 +1,5 @@
 use super::max_memory_len;
 use super::MemoryError;
-use alloc::vec;
-use alloc::vec::Vec;
 use core::fmt;
 use core::fmt::{Debug, Display};
 use core::slice;
