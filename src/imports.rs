@@ -117,6 +117,7 @@ impl<'a> ImportsBuilder<'a> {
     }
 
     /// Register an resolver by a name.
+    #[must_use]
     pub fn with_resolver<N: Into<String>>(
         mut self,
         name: N,
