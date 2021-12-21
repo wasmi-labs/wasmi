@@ -177,7 +177,7 @@ impl Debug for ValueStack {
 impl PartialEq for ValueStack {
     fn eq(&self, other: &Self) -> bool {
         self.stack_ptr == other.stack_ptr
-            && &self.entries[..self.stack_ptr] == &other.entries[..other.stack_ptr]
+            && self.entries[..self.stack_ptr] == other.entries[..other.stack_ptr]
     }
 }
 
@@ -194,8 +194,7 @@ impl Extend<StackEntry> for ValueStack {
     where
         I: IntoIterator<Item = StackEntry>,
     {
-        let mut iter = iter.into_iter();
-        while let Some(item) = iter.next() {
+        for item in iter {
             self.push(item)
         }
     }
