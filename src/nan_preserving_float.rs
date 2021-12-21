@@ -59,18 +59,22 @@ macro_rules! float {
                 self.to_float().is_nan()
             }
 
+            #[must_use]
             pub fn abs(self) -> Self {
                 $for(self.0 & !$sign_bit)
             }
 
+            #[must_use]
             pub fn fract(self) -> Self {
                 FloatCore::fract(self.to_float()).into()
             }
 
+            #[must_use]
             pub fn min(self, other: Self) -> Self {
                 Self::from(self.to_float().min(other.to_float()))
             }
 
+            #[must_use]
             pub fn max(self, other: Self) -> Self {
                 Self::from(self.to_float().max(other.to_float()))
             }
