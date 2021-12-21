@@ -9,6 +9,7 @@ mod error;
 mod external;
 mod func;
 mod global;
+mod instance;
 mod interpreter;
 mod limits;
 mod linker;
@@ -28,6 +29,7 @@ pub mod errors {
 use self::arena::{Arena, DedupArena, Index};
 use self::func::{FuncEntity, FuncIdx};
 use self::global::{GlobalEntity, GlobalError, GlobalIdx};
+// use self::instance::{InstanceEntity, InstanceIdx};
 use self::limits::LimitsError;
 use self::linker::LinkerError;
 use self::memory::{MemoryEntity, MemoryError, MemoryIdx};
@@ -39,6 +41,7 @@ pub use self::{
     external::Extern,
     func::Func,
     global::{Global, Mutability},
+    instance::Instance,
     limits::ResizableLimits,
     linker::Linker,
     memory::{Memory, MemoryType},
