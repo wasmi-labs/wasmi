@@ -34,6 +34,8 @@ pub struct InstructionsBuilder {
     insts: Vec<Instruction>,
 }
 
+/// A reference to an instruction of the partially
+/// constructed function body of the [`InstructionsBuilder`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct InstructionIdx(usize);
 
@@ -102,30 +104,37 @@ impl InstructionsBuilder {
 }
 
 impl InstructionsBuilder {
+    /// Creates an instruction equivalent to `local.get` from Wasm.
     pub fn get_local(&mut self, local_idx: LocalIdx) -> InstructionIdx {
         self.push_inst(Instruction::GetLocal(local_idx))
     }
 
+    /// Creates an instruction equivalent to `local.set` from Wasm.
     pub fn set_local(&mut self, local_idx: LocalIdx) -> InstructionIdx {
         self.push_inst(Instruction::SetLocal(local_idx))
     }
 
+    /// Creates an instruction equivalent to `local.tee` from Wasm.
     pub fn tee_local(&mut self, local_idx: LocalIdx) -> InstructionIdx {
         self.push_inst(Instruction::TeeLocal(local_idx))
     }
 
+    /// Creates an instruction equivalent to `br` from Wasm.
     pub fn branch(&mut self, target: Target) -> InstructionIdx {
         self.push_inst(Instruction::Br(target))
     }
 
+    /// Creates an instruction equivalent to `br_if` from Wasm.
     pub fn branch_eqz(&mut self, target: Target) -> InstructionIdx {
         self.push_inst(Instruction::BrIfEqz(target))
     }
 
+    /// Creates an instruction equivalent to `br_if` from Wasm with negation.
     pub fn branch_nez(&mut self, target: Target) -> InstructionIdx {
         self.push_inst(Instruction::BrIfNez(target))
     }
 
+    /// Creates an instruction equivalent to `br_table` from Wasm.
     pub fn branch_table<I>(&mut self, default_target: Target, targets: I) -> InstructionIdx
     where
         I: IntoIterator<Item = Target>,
@@ -143,38 +152,52 @@ impl InstructionsBuilder {
         head
     }
 
+    /// Creates an instruction equivalent to `unreachable` from Wasm.
     pub fn unreachable(&mut self) -> InstructionIdx {
         self.push_inst(Instruction::Unreachable)
     }
 
+    /// Creates an instruction equivalent to `return` from Wasm.
     pub fn ret(&mut self, drop_keep: DropKeep) -> InstructionIdx {
         self.push_inst(Instruction::Return(drop_keep))
     }
 
+    /// Creates an instruction equivalent to `call` from Wasm.
     pub fn call(&mut self, func_idx: FuncIdx) -> InstructionIdx {
         self.push_inst(Instruction::Call(func_idx))
     }
 
+    /// Creates an instruction equivalent to `call_indirect` from Wasm.
     pub fn call_indirect(&mut self, signature_idx: SignatureIdx) -> InstructionIdx {
         self.push_inst(Instruction::CallIndirect(signature_idx))
     }
 
+    /// Creates an instruction equivalent to `drop` from Wasm.
     pub fn drop(&mut self) -> InstructionIdx {
         self.push_inst(Instruction::Drop)
     }
 
+    /// Creates an instruction equivalent to `select` from Wasm.
     pub fn select(&mut self) -> InstructionIdx {
         self.push_inst(Instruction::Select)
     }
 
+    /// Creates an instruction equivalent to `global.get` from Wasm.
     pub fn get_global(&mut self, global_idx: GlobalIdx) -> InstructionIdx {
         self.push_inst(Instruction::GetGlobal(global_idx))
     }
 
+    /// Creates an instruction equivalent to `global.set` from Wasm.
     pub fn set_global(&mut self, global_idx: GlobalIdx) -> InstructionIdx {
         self.push_inst(Instruction::SetGlobal(global_idx))
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.load`
+    /// - `i64.load`
+    /// - `f32.load`
+    /// - `f64.load`
     pub fn load(&mut self, value_type: ValueType, offset: Offset) -> InstructionIdx {
         let inst = match value_type {
             ValueType::I32 => Instruction::I32Load(offset),
@@ -185,6 +208,18 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.load8_s`
+    /// - `i32.load8_u`
+    /// - `i32.load16_s`
+    /// - `i32.load16_u`
+    /// - `i64.load8_s`
+    /// - `i64.load8_u`
+    /// - `i64.load16_s`
+    /// - `i64.load16_u`
+    /// - `i64.load32_s`
+    /// - `i64.load32_u`
     pub fn load_extend<T, S>(&mut self, offset: Offset) -> InstructionIdx
     where
         T: ExtendFrom<S>,
@@ -208,6 +243,12 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.store`
+    /// - `i64.store`
+    /// - `f32.store`
+    /// - `f64.store`
     pub fn store(&mut self, value_type: ValueType, offset: Offset) -> InstructionIdx {
         let inst = match value_type {
             ValueType::I32 => Instruction::I32Store(offset),
@@ -218,6 +259,13 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.store8`
+    /// - `i32.store16`
+    /// - `i64.store8`
+    /// - `i64.store16`
+    /// - `i64.store32`
     pub fn store_truncate<T, S>(&mut self, offset: Offset) -> InstructionIdx
     where
         T: TruncateInto<S>,
@@ -236,14 +284,22 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to `memory.size` from Wasm.
     pub fn memory_size(&mut self) -> InstructionIdx {
         self.push_inst(Instruction::GrowMemory)
     }
 
+    /// Creates an instruction equivalent to `memory.grow` from Wasm.
     pub fn memory_grow(&mut self) -> InstructionIdx {
         self.push_inst(Instruction::CurrentMemory)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.const`
+    /// - `i64.const`
+    /// - `f32.const`
+    /// - `f64.const`
     pub fn constant(&mut self, value: RuntimeValue) -> InstructionIdx {
         let inst = match value {
             RuntimeValue::I32(value) => Instruction::I32Const(value),
@@ -254,6 +310,12 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.eq`
+    /// - `i64.eq`
+    /// - `f32.eq`
+    /// - `f64.eq`
     pub fn eq(&mut self, value_type: ValueType) -> InstructionIdx {
         let inst = match value_type {
             ValueType::I32 => Instruction::I32Eq,
@@ -264,6 +326,12 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.ne`
+    /// - `i64.ne`
+    /// - `f32.ne`
+    /// - `f64.ne`
     pub fn ne(&mut self, value_type: ValueType) -> InstructionIdx {
         let inst = match value_type {
             ValueType::I32 => Instruction::I32Ne,
@@ -274,6 +342,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.eqz`
+    /// - `i64.eqz`
     pub fn int_eqz(&mut self, int_type: WasmIntType) -> InstructionIdx {
         let inst = match int_type {
             WasmIntType::I32 => Instruction::I32Eqz,
@@ -282,6 +354,12 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.lt_s`
+    /// - `i32.lt_u`
+    /// - `i64.lt_s`
+    /// - `i64.lt_u`
     pub fn int_lt(&mut self, int_type: WasmIntType, signedness: Signedness) -> InstructionIdx {
         let inst = match (int_type, signedness) {
             (WasmIntType::I32, Signedness::Signed) => Instruction::I32LtS,
@@ -292,6 +370,12 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.gt_s`
+    /// - `i32.gt_u`
+    /// - `i64.gt_s`
+    /// - `i64.gt_u`
     pub fn int_gt(&mut self, int_type: WasmIntType, signedness: Signedness) -> InstructionIdx {
         let inst = match (int_type, signedness) {
             (WasmIntType::I32, Signedness::Signed) => Instruction::I32GtS,
@@ -302,6 +386,12 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.le_s`
+    /// - `i32.le_u`
+    /// - `i64.le_s`
+    /// - `i64.le_u`
     pub fn int_le(&mut self, int_type: WasmIntType, signedness: Signedness) -> InstructionIdx {
         let inst = match (int_type, signedness) {
             (WasmIntType::I32, Signedness::Signed) => Instruction::I32LeS,
@@ -312,6 +402,12 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.ge_s`
+    /// - `i32.ge_u`
+    /// - `i64.ge_s`
+    /// - `i64.ge_u`
     pub fn int_ge(&mut self, int_type: WasmIntType, signedness: Signedness) -> InstructionIdx {
         let inst = match (int_type, signedness) {
             (WasmIntType::I32, Signedness::Signed) => Instruction::I32GeS,
@@ -322,6 +418,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `f32.lt`
+    /// - `f64.lt`
     pub fn float_lt(&mut self, float_type: WasmFloatType) -> InstructionIdx {
         let inst = match float_type {
             WasmFloatType::F32 => Instruction::F32Lt,
@@ -330,6 +430,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `f32.gt`
+    /// - `f64.gt`
     pub fn float_gt(&mut self, float_type: WasmFloatType) -> InstructionIdx {
         let inst = match float_type {
             WasmFloatType::F32 => Instruction::F32Gt,
@@ -338,6 +442,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `f32.le`
+    /// - `f64.le`
     pub fn float_le(&mut self, float_type: WasmFloatType) -> InstructionIdx {
         let inst = match float_type {
             WasmFloatType::F32 => Instruction::F32Le,
@@ -346,6 +454,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `f32.ge`
+    /// - `f64.ge`
     pub fn float_ge(&mut self, float_type: WasmFloatType) -> InstructionIdx {
         let inst = match float_type {
             WasmFloatType::F32 => Instruction::F32Ge,
@@ -354,6 +466,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.clz`
+    /// - `i64.clz`
     pub fn int_clz(&mut self, int_type: WasmIntType) -> InstructionIdx {
         let inst = match int_type {
             WasmIntType::I32 => Instruction::I32Clz,
@@ -362,6 +478,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.ctz`
+    /// - `i64.ctz`
     pub fn int_ctz(&mut self, int_type: WasmIntType) -> InstructionIdx {
         let inst = match int_type {
             WasmIntType::I32 => Instruction::I32Ctz,
@@ -370,6 +490,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.clz`
+    /// - `i64.clz`
     pub fn int_popcnt(&mut self, int_type: WasmIntType) -> InstructionIdx {
         let inst = match int_type {
             WasmIntType::I32 => Instruction::I32Popcnt,
@@ -378,6 +502,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.add`
+    /// - `i64.add`
     pub fn int_add(&mut self, int_type: WasmIntType) -> InstructionIdx {
         let inst = match int_type {
             WasmIntType::I32 => Instruction::I32Add,
@@ -386,6 +514,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.sub`
+    /// - `i64.sub`
     pub fn int_sub(&mut self, int_type: WasmIntType) -> InstructionIdx {
         let inst = match int_type {
             WasmIntType::I32 => Instruction::I32Sub,
@@ -394,6 +526,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.mul`
+    /// - `i64.mul`
     pub fn int_mul(&mut self, int_type: WasmIntType) -> InstructionIdx {
         let inst = match int_type {
             WasmIntType::I32 => Instruction::I32Mul,
@@ -402,6 +538,12 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.div_s`
+    /// - `i32.div_u`
+    /// - `i64.div_s`
+    /// - `i64.div_u`
     pub fn int_div(&mut self, int_type: WasmIntType, signedness: Signedness) -> InstructionIdx {
         let inst = match (int_type, signedness) {
             (WasmIntType::I32, Signedness::Signed) => Instruction::I32DivS,
@@ -412,6 +554,12 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.rem_s`
+    /// - `i32.rem_u`
+    /// - `i64.rem_s`
+    /// - `i64.rem_u`
     pub fn int_rem(&mut self, int_type: WasmIntType, signedness: Signedness) -> InstructionIdx {
         let inst = match (int_type, signedness) {
             (WasmIntType::I32, Signedness::Signed) => Instruction::I32RemS,
@@ -422,6 +570,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.and`
+    /// - `i64.and`
     pub fn int_and(&mut self, int_type: WasmIntType) -> InstructionIdx {
         let inst = match int_type {
             WasmIntType::I32 => Instruction::I32And,
@@ -430,6 +582,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.or`
+    /// - `i64.or`
     pub fn int_or(&mut self, int_type: WasmIntType) -> InstructionIdx {
         let inst = match int_type {
             WasmIntType::I32 => Instruction::I32Or,
@@ -438,6 +594,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.xor`
+    /// - `i64.xor`
     pub fn int_xor(&mut self, int_type: WasmIntType) -> InstructionIdx {
         let inst = match int_type {
             WasmIntType::I32 => Instruction::I32Xor,
@@ -446,6 +606,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.shl`
+    /// - `i64.shl`
     pub fn int_shl(&mut self, int_type: WasmIntType) -> InstructionIdx {
         let inst = match int_type {
             WasmIntType::I32 => Instruction::I32Shl,
@@ -454,6 +618,12 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.shr_s`
+    /// - `i32.shr_u`
+    /// - `i64.shr_s`
+    /// - `i64.shr_u`
     pub fn int_shr(&mut self, int_type: WasmIntType, signedness: Signedness) -> InstructionIdx {
         let inst = match (int_type, signedness) {
             (WasmIntType::I32, Signedness::Signed) => Instruction::I32ShrS,
@@ -464,6 +634,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.rotl`
+    /// - `i64.rotl`
     pub fn int_rotl(&mut self, int_type: WasmIntType) -> InstructionIdx {
         let inst = match int_type {
             WasmIntType::I32 => Instruction::I32Rotl,
@@ -472,6 +646,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.rotr`
+    /// - `i64.rotr`
     pub fn int_rotr(&mut self, int_type: WasmIntType) -> InstructionIdx {
         let inst = match int_type {
             WasmIntType::I32 => Instruction::I32Rotr,
@@ -480,6 +658,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `f32.abs`
+    /// - `f64.abs`
     pub fn float_abs(&mut self, float_type: WasmFloatType) -> InstructionIdx {
         let inst = match float_type {
             WasmFloatType::F32 => Instruction::F32Abs,
@@ -488,6 +670,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `f32.neg`
+    /// - `f64.neg`
     pub fn float_neg(&mut self, float_type: WasmFloatType) -> InstructionIdx {
         let inst = match float_type {
             WasmFloatType::F32 => Instruction::F32Neg,
@@ -496,6 +682,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `f32.ceil`
+    /// - `f64.ceil`
     pub fn float_ceil(&mut self, float_type: WasmFloatType) -> InstructionIdx {
         let inst = match float_type {
             WasmFloatType::F32 => Instruction::F32Ceil,
@@ -504,6 +694,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `f32.floor`
+    /// - `f64.floor`
     pub fn float_floor(&mut self, float_type: WasmFloatType) -> InstructionIdx {
         let inst = match float_type {
             WasmFloatType::F32 => Instruction::F32Floor,
@@ -512,6 +706,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `f32.trunc`
+    /// - `f64.trunc`
     pub fn float_trunc(&mut self, float_type: WasmFloatType) -> InstructionIdx {
         let inst = match float_type {
             WasmFloatType::F32 => Instruction::F32Trunc,
@@ -520,6 +718,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `f32.nearest`
+    /// - `f64.nearest`
     pub fn float_nearest(&mut self, float_type: WasmFloatType) -> InstructionIdx {
         let inst = match float_type {
             WasmFloatType::F32 => Instruction::F32Nearest,
@@ -528,6 +730,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `f32.sqrt`
+    /// - `f64.sqrt`
     pub fn float_sqrt(&mut self, float_type: WasmFloatType) -> InstructionIdx {
         let inst = match float_type {
             WasmFloatType::F32 => Instruction::F32Sqrt,
@@ -536,6 +742,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `f32.add`
+    /// - `f64.add`
     pub fn float_add(&mut self, float_type: WasmFloatType) -> InstructionIdx {
         let inst = match float_type {
             WasmFloatType::F32 => Instruction::F32Add,
@@ -544,6 +754,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `f32.sub`
+    /// - `f64.sub`
     pub fn float_sub(&mut self, float_type: WasmFloatType) -> InstructionIdx {
         let inst = match float_type {
             WasmFloatType::F32 => Instruction::F32Sub,
@@ -552,6 +766,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `f32.mul`
+    /// - `f64.mul`
     pub fn float_mul(&mut self, float_type: WasmFloatType) -> InstructionIdx {
         let inst = match float_type {
             WasmFloatType::F32 => Instruction::F32Mul,
@@ -560,6 +778,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `f32.div`
+    /// - `f64.div`
     pub fn float_div(&mut self, float_type: WasmFloatType) -> InstructionIdx {
         let inst = match float_type {
             WasmFloatType::F32 => Instruction::F32Div,
@@ -568,6 +790,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `f32.min`
+    /// - `f64.min`
     pub fn float_min(&mut self, float_type: WasmFloatType) -> InstructionIdx {
         let inst = match float_type {
             WasmFloatType::F32 => Instruction::F32Min,
@@ -576,6 +802,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `f32.max`
+    /// - `f64.max`
     pub fn float_max(&mut self, float_type: WasmFloatType) -> InstructionIdx {
         let inst = match float_type {
             WasmFloatType::F32 => Instruction::F32Max,
@@ -584,6 +814,10 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `f32.copysign`
+    /// - `f64.copysign`
     pub fn float_copysign(&mut self, float_type: WasmFloatType) -> InstructionIdx {
         let inst = match float_type {
             WasmFloatType::F32 => Instruction::F32Copysign,
@@ -592,10 +826,15 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to `i32.wrap_i64` from Wasm.
     pub fn wrap(&mut self) -> InstructionIdx {
         self.push_inst(Instruction::I32WrapI64)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i64.extend_i32_s`
+    /// - `i64.extend_i32_u`
     pub fn extend(&mut self, signedness: Signedness) -> InstructionIdx {
         let inst = match signedness {
             Signedness::Signed => Instruction::I64ExtendSI32,
@@ -604,6 +843,16 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.trunc_f32_s`
+    /// - `i32.trunc_f32_u`
+    /// - `i32.trunc_f64_s`
+    /// - `i32.trunc_f64_u`
+    /// - `i64.trunc_f32_s`
+    /// - `i64.trunc_f32_u`
+    /// - `i64.trunc_f64_s`
+    /// - `i64.trunc_f64_u`
     pub fn float_truncate_to_int(
         &mut self,
         float_type: WasmFloatType,
@@ -625,14 +874,26 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to `f32.demote_f64` from Wasm.
     pub fn demote(&mut self) -> InstructionIdx {
         self.push_inst(Instruction::F32DemoteF64)
     }
 
+    /// Creates an instruction equivalent to `f64.promote_f32` from Wasm.
     pub fn promote(&mut self) -> InstructionIdx {
         self.push_inst(Instruction::F64PromoteF32)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `f32.convert_i32_s`
+    /// - `f32.convert_i32_u`
+    /// - `f32.convert_i64_s`
+    /// - `f32.convert_i64_u`
+    /// - `f64.convert_i32_s`
+    /// - `f64.convert_i32_u`
+    /// - `f64.convert_i64_s`
+    /// - `f64.convert_i64_u`
     pub fn int_convert_to_float(
         &mut self,
         int_type: WasmIntType,
@@ -654,6 +915,12 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
+    /// Creates an instruction equivalent to one of the following Wasm instructins:
+    ///
+    /// - `i32.reinterpret_f32`
+    /// - `i64.reinterpret_f64`
+    /// - `f32.reinterpret_i32`
+    /// - `f64.reinterpret_i64`
     pub fn reinterpret<S, T>(&mut self) -> InstructionIdx
     where
         S: ReinterpretAs<T>,
