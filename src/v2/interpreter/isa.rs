@@ -2,9 +2,9 @@
 
 #![allow(dead_code, missing_docs)] // TODO: remove
 
+use super::InstructionIdx;
 use crate::nan_preserving_float::{F32, F64};
 use core::cmp;
-use super::InstructionIdx;
 
 /// Defines how many stack values are going to be dropped and kept after branching.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

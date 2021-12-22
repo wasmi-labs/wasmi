@@ -7,9 +7,9 @@ use super::{
     Instruction,
 };
 use crate::{RuntimeValue, ValueType};
+use alloc::vec::Vec;
 use core::fmt;
 use core::fmt::Display;
-use alloc::vec::Vec;
 
 /// A relocation entry that specifies.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
