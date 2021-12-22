@@ -7,13 +7,14 @@ mod locals;
 pub use self::caller::Caller;
 pub use self::into_func::IntoFunc;
 use self::locals::Locals;
+use super::interpreter::FuncBody;
 use super::Index;
 use super::Signature;
 use super::Stored;
 use super::{AsContext, AsContextMut};
 use crate::RuntimeValue;
+use crate::Trap;
 use crate::ValueType;
-use crate::{isa, Trap};
 use alloc::sync::Arc;
 use core::fmt;
 use core::fmt::Debug;
@@ -110,6 +111,7 @@ impl<T> Clone for FuncEntityInternal<T> {
 #[derive(Debug, Clone)]
 struct WasmFuncEntity {
     signature: Signature,
+    locals: Locals,
     body: FuncBody,
 }
 
@@ -118,13 +120,6 @@ impl WasmFuncEntity {
     pub fn signature(&self) -> &Signature {
         &self.signature
     }
-}
-
-/// The function body of a Wasm function.
-#[derive(Debug, Clone)]
-struct FuncBody {
-    locals: Locals,
-    code: isa::Instructions,
 }
 
 /// A host function instance.
