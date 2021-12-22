@@ -1,3 +1,5 @@
+//! Abstractions to build up instructions forming Wasm function bodies.
+
 #![allow(dead_code, missing_docs)] // TODO: remove
 
 use super::{
