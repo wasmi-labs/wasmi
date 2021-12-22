@@ -5,6 +5,7 @@
 use super::super::{Func, Instance};
 use core::fmt;
 use core::fmt::Display;
+use alloc::vec::Vec;
 
 /// Errors that may occur when operating with the [`CallStack`].
 #[derive(Debug)]

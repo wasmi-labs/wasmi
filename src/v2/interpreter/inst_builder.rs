@@ -9,6 +9,7 @@ use super::{
 use crate::{RuntimeValue, ValueType};
 use core::fmt;
 use core::fmt::Display;
+use alloc::vec::Vec;
 
 #[derive(Debug)]
 pub struct Instructions {
