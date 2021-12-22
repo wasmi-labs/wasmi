@@ -1,6 +1,6 @@
 //! The instruction architecture of the `wasmi` interpreter.
 
-#![allow(dead_code)] // TODO: remove
+#![allow(dead_code, missing_docs)] // TODO: remove
 
 use crate::nan_preserving_float::{F32, F64};
 use core::cmp;

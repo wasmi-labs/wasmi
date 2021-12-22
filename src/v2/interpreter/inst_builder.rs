@@ -1,4 +1,4 @@
-#![allow(dead_code)] // TODO: remove
+#![allow(dead_code, missing_docs)] // TODO: remove
 
 use super::{
     isa::{DropKeep, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, Target},
