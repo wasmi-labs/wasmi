@@ -65,8 +65,11 @@ impl Interpreter {
 /// The internal state of the `wasmi` interpreter.
 #[derive(Debug)]
 pub struct InterpreterInner {
+    /// Stores the value stack of live values on the Wasm stack.
     value_stack: ValueStack,
+    /// Stores the call stack of live function invocations.
     call_stack: CallStack,
+    /// Stores all Wasm function bodies that the interpreter is aware of.
     code_map: CodeMap,
 }
 
