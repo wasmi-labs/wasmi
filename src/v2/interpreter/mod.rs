@@ -12,18 +12,13 @@ pub mod value_stack;
 use self::{
     call_stack::{CallStack, CallStackError, FunctionFrame},
     code_map::{CodeMap, FuncBody, ResolvedFuncBody},
-    inst_builder::{InstructionIdx, Instructions, InstructionsBuilder},
+    inst_builder::{InstructionIdx, InstructionsBuilder},
     isa::{DropKeep, Instruction, Target},
     value_stack::{FromStackEntry, StackEntry, ValueStack},
 };
 use super::Func;
 use alloc::sync::Arc;
-
-#[cfg(not(feature = "std"))]
 use spin::mutex::Mutex;
-
-#[cfg(feature = "std")]
-use std::sync::Mutex;
 
 /// The outcome of a `wasmi` instruction execution.
 ///
@@ -53,7 +48,18 @@ pub struct Interpreter {
     inner: Arc<Mutex<InterpreterInner>>,
 }
 
-impl Interpreter {}
+impl Interpreter {
+    /// Allocates the instructions of a Wasm function body to the [`Interpreter`].
+    ///
+    /// Returns a [`FuncBody`] reference to the allocated function body.
+    pub(super) fn alloc_func_body<I>(&self, insts: I) -> FuncBody
+    where
+        I: IntoIterator<Item = Instruction>,
+        I::IntoIter: ExactSizeIterator,
+    {
+        self.inner.lock().alloc_func_body(insts)
+    }
+}
 
 /// The internal state of the `wasmi` interpreter.
 #[derive(Debug)]
@@ -61,4 +67,17 @@ pub struct InterpreterInner {
     value_stack: ValueStack,
     call_stack: CallStack,
     code_map: CodeMap,
+}
+
+impl InterpreterInner {
+    /// Allocates the instructions of a Wasm function body to the [`Interpreter`].
+    ///
+    /// Returns a [`FuncBody`] reference to the allocated function body.
+    pub fn alloc_func_body<I>(&mut self, insts: I) -> FuncBody
+    where
+        I: IntoIterator<Item = Instruction>,
+        I::IntoIter: ExactSizeIterator,
+    {
+        self.code_map.alloc(insts)
+    }
 }

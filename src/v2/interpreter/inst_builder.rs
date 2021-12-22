@@ -4,7 +4,7 @@
 
 use super::{
     isa::{DropKeep, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, Target},
-    Instruction,
+    FuncBody, Instruction, Interpreter,
 };
 use crate::{RuntimeValue, ValueType};
 use alloc::vec::Vec;
@@ -23,19 +23,14 @@ pub enum Reloc {
     },
 }
 
-#[derive(Debug)]
-pub struct Instructions {
-    insts: Vec<Instruction>,
-}
-
-impl Instructions {
-    pub fn build() -> InstructionsBuilder {
-        InstructionsBuilder { insts: Vec::new() }
-    }
-}
-
-#[derive(Debug)]
+/// An instruction builder.
+///
+/// Allows to incrementally and efficiently build up the instructions
+/// of a Wasm function body.
+/// Can be reused to build multiple functions consecutively.
+#[derive(Debug, Default)]
 pub struct InstructionsBuilder {
+    /// The instructions of the partially constructed function body.
     insts: Vec<Instruction>,
 }
 
@@ -43,16 +38,31 @@ pub struct InstructionsBuilder {
 pub struct InstructionIdx(usize);
 
 impl InstructionsBuilder {
+    /// Creates a new [`InstructionsBuilder`].
+    ///
+    /// This utility allows to incrementally build up a Wasm function body.
+    /// After finishing construction of a Wasm function body using
+    /// [`InstructionsBuilder::finish`] it can be used to build another
+    /// reusing its internal state.
+    pub fn new() -> Self {
+        Self { insts: Vec::new() }
+    }
+
+    /// Returns the next instruction index.
     fn next_idx(&self) -> InstructionIdx {
         InstructionIdx(self.insts.len())
     }
 
+    /// Pushes the internal instruction bytecode to the [`InstructionsBuilder`].
+    ///
+    /// Returns an [`InstructionIdx`] to refer to the pushed instruction.
     fn push_inst(&mut self, inst: Instruction) -> InstructionIdx {
         let idx = self.next_idx();
         self.insts.push(inst);
         idx
     }
 
+    /// Allows to patch the branch target of branch instructions.
     pub fn patch_relocation(&mut self, reloc: Reloc, dst_pc: InstructionIdx) {
         match reloc {
             Reloc::Br { inst_idx } => match &mut self.insts[inst_idx.0] {
@@ -77,9 +87,17 @@ impl InstructionsBuilder {
         }
     }
 
+    /// Finishes construction of the function body instructions.
+    ///
+    /// # Note
+    ///
+    /// This feeds the built-up instructions of the function body
+    /// into the [`Interpreter`] so that the [`Interpreter`] is
+    /// aware of the Wasm function existance. Returns a `FuncBody`
+    /// reference that allows to retrieve the instructions.
     #[must_use]
-    pub fn finish(self) -> Instructions {
-        Instructions { insts: self.insts }
+    pub fn finish(&mut self, engine: &Interpreter) -> FuncBody {
+        engine.alloc_func_body(self.insts.drain(..))
     }
 }
 
