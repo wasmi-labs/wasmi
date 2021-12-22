@@ -3,6 +3,7 @@
 use super::super::Index;
 use super::Instruction;
 use core::iter;
+use alloc::vec::Vec;
 
 /// A reference to a Wasm function body stored in the [`CodeMap`].
 #[derive(Debug, Copy, Clone)]
