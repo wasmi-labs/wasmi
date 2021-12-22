@@ -8,10 +8,11 @@ pub mod inst_builder;
 pub mod isa;
 pub mod value_stack;
 
+pub use self::code_map::FuncBody;
 #[allow(unused_imports)]
 use self::{
     call_stack::{CallStack, CallStackError, FunctionFrame},
-    code_map::{CodeMap, FuncBody, ResolvedFuncBody},
+    code_map::{CodeMap, ResolvedFuncBody},
     inst_builder::{InstructionIdx, InstructionsBuilder},
     isa::{DropKeep, Instruction, Target},
     value_stack::{FromStackEntry, StackEntry, ValueStack},
