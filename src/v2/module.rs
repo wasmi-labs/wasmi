@@ -4,7 +4,9 @@ use super::Engine;
 
 /// A compiled and validated WebAssembly module.
 ///
-/// Can be used to create new [`Instances`].
+/// Can be used to create new [`Instance`] instantiations.
+///
+/// [`Instance`]: [`super::Instance`]
 pub struct Module {
     module: parity_wasm::elements::Module,
 }
