@@ -309,4 +309,23 @@ pub enum Instruction {
     I64ReinterpretF64,
     F32ReinterpretI32,
     F64ReinterpretI64,
+
+    /// The start of a Wasm function body.
+    ///
+    /// Also stores the `wasmi` bytecode length of the function body.
+    /// Note that the length of the `wasmi` bytecode might differ from the length
+    /// of the original WebAssembly bytecode.
+    ///
+    /// # Note
+    ///
+    /// This is a non-WebAssembly instruction that is specific to how the `wasmi`
+    /// interpreter organizes its internal bytecode.
+    FuncBodyStart(usize),
+    /// The end of a Wasm function body.
+    ///
+    /// # Note
+    ///
+    /// This is a non-WebAssembly instruction that is specific to how the `wasmi`
+    /// interpreter organizes its internal bytecode.
+    FuncBodyEnd,
 }
