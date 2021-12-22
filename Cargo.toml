@@ -20,6 +20,7 @@ num-rational = { version = "0.4", default-features = false, features = ["num-big
 num-traits = { version = "0.2.8", default-features = false }
 region = { version = "3.0.0", optional = true }
 downcast-rs = { version = "1.2.0", default-features = false }
+spin = { version = "0.9", default-features = false, features = ["mutex", "spin_mutex"] }
 
 [dev-dependencies]
 assert_matches = "1.1"
@@ -35,7 +36,8 @@ std = [
     "num-rational/std",
     "num-rational/num-bigint-std",
     "num-traits/std",
-    "downcast-rs/std"
+    "downcast-rs/std",
+    "spin/std",
 ]
 # Enables OS supported virtual memory.
 #
