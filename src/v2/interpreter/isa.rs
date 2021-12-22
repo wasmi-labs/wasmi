@@ -145,7 +145,9 @@ pub enum Instruction {
     Br(Target),
     BrIfEqz(Target),
     BrIfNez(Target),
-    BrTable { count: usize },
+    BrTable {
+        count: usize,
+    },
     BrTableTarget(Target),
     Unreachable,
     Return(DropKeep),
