@@ -14,6 +14,7 @@ mod interpreter;
 mod limits;
 mod linker;
 mod memory;
+mod module;
 mod signature;
 mod store;
 mod table;
@@ -29,6 +30,7 @@ pub mod errors {
 use self::arena::{Arena, DedupArena, Index};
 use self::func::{FuncEntity, FuncIdx};
 use self::global::{GlobalEntity, GlobalError, GlobalIdx};
+use self::interpreter::Interpreter as Engine;
 // use self::instance::{InstanceEntity, InstanceIdx};
 use self::limits::LimitsError;
 use self::linker::LinkerError;
