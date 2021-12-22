@@ -5,7 +5,7 @@
 pub mod call_stack;
 pub mod code_map;
 pub mod inst_builder;
-pub mod isa;
+pub mod bytecode;
 pub mod value_stack;
 
 pub use self::code_map::FuncBody;
@@ -14,7 +14,7 @@ use self::{
     call_stack::{CallStack, CallStackError, FunctionFrame},
     code_map::{CodeMap, ResolvedFuncBody},
     inst_builder::{InstructionIdx, InstructionsBuilder},
-    isa::{DropKeep, Instruction, Target},
+    bytecode::{DropKeep, Instruction, Target},
     value_stack::{FromStackEntry, StackEntry, ValueStack},
 };
 use super::Func;

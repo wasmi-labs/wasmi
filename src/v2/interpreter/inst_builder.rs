@@ -3,7 +3,7 @@
 #![allow(dead_code, missing_docs)] // TODO: remove
 
 use super::{
-    isa::{DropKeep, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, Target},
+    bytecode::{DropKeep, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, Target},
     FuncBody, Instruction, Interpreter,
 };
 use crate::{RuntimeValue, ValueType};
