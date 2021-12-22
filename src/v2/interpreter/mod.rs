@@ -26,6 +26,7 @@ use spin::mutex::Mutex;
 ///
 /// This signals to the `wasmi` interpreter what to do after the
 /// instruction has been successfully executed.
+#[derive(Debug, Copy, Clone)]
 pub enum ExecutionOutcome {
     /// Continue with next instruction.
     Continue,
