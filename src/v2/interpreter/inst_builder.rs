@@ -11,6 +11,18 @@ use core::fmt;
 use core::fmt::Display;
 use alloc::vec::Vec;
 
+/// A relocation entry that specifies.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Reloc {
+    /// Patch the target of the `br`, `br_eqz` or `br_nez` instruction.
+    Br { inst_idx: InstructionIdx },
+    /// Patch the specified target index inside of a Wasm `br_table` instruction.
+    BrTable {
+        inst_idx: InstructionIdx,
+        target_idx: usize,
+    },
+}
+
 #[derive(Debug)]
 pub struct Instructions {
     insts: Vec<Instruction>,
@@ -27,7 +39,7 @@ pub struct InstructionsBuilder {
     insts: Vec<Instruction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct InstructionIdx(usize);
 
 impl InstructionsBuilder {
@@ -39,6 +51,30 @@ impl InstructionsBuilder {
         let idx = self.next_idx();
         self.insts.push(inst);
         idx
+    }
+
+    pub fn patch_relocation(&mut self, reloc: Reloc, dst_pc: InstructionIdx) {
+        match reloc {
+            Reloc::Br { inst_idx } => match &mut self.insts[inst_idx.0] {
+                Instruction::Br(target)
+                | Instruction::BrIfEqz(target)
+                | Instruction::BrIfNez(target) => target.dst_pc = dst_pc,
+                _ => panic!(
+                    "branch relocation points to a non-branch instruction: {:?}",
+                    reloc
+                ),
+            },
+            Reloc::BrTable {
+                inst_idx,
+                target_idx,
+            } => match &mut self.insts[inst_idx.0 + target_idx + 1] {
+                Instruction::BrTableTarget(target) => target.dst_pc = dst_pc,
+                _ => panic!(
+                    "branch table relocation points to a non branch table instruction: {:?}",
+                    reloc
+                ),
+            },
+        }
     }
 
     #[must_use]

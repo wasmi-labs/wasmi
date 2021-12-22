@@ -4,6 +4,7 @@
 
 use crate::nan_preserving_float::{F32, F64};
 use core::cmp;
+use super::InstructionIdx;
 
 /// Defines how many stack values are going to be dropped and kept after branching.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -39,7 +40,7 @@ impl DropKeep {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Target {
     /// The destination program counter.
-    pub dst_pc: u32,
+    pub dst_pc: InstructionIdx,
     /// How many values on the stack need to be dropped and kept.
     pub drop_keep: DropKeep,
 }
