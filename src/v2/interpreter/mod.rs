@@ -1,3 +1,7 @@
+//! The `wasmi` interpreter.
+
+#![allow(dead_code)] // TODO: remove
+
 pub mod call_stack;
 pub mod code_map;
 pub mod inst_builder;
