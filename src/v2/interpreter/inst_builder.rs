@@ -116,10 +116,12 @@ impl InstructionsBuilder {
         let targets = targets.into_iter();
         let count = targets.len() + 1;
         let head = self.push_inst(Instruction::BrTable { count });
-        for target in targets {
-            self.push_inst(Instruction::BrTableTarget(target));
-        }
-        self.push_inst(Instruction::BrTableTarget(default_target));
+        // Append branching targets followed by the default target.
+        self.insts.extend(
+            targets
+                .map(Instruction::BrTableTarget)
+                .chain(core::iter::once(Instruction::BrTableTarget(default_target))),
+        );
         head
     }
 
