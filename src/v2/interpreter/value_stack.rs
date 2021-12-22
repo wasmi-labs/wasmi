@@ -2,11 +2,11 @@
 
 #![allow(dead_code)] // TODO: remove
 
+use super::DropKeep;
 use crate::{
     nan_preserving_float::{F32, F64},
     RuntimeValue, ValueType, DEFAULT_VALUE_STACK_LIMIT,
 };
-use super::DropKeep;
 use alloc::vec::Vec;
 use core::fmt;
 use core::fmt::Debug;
