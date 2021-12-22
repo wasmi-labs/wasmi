@@ -236,12 +236,12 @@ impl InstructionsBuilder {
         self.push_inst(inst)
     }
 
-    pub fn memory_grow(&mut self) -> InstructionIdx {
-        self.push_inst(Instruction::CurrentMemory)
-    }
-
     pub fn memory_size(&mut self) -> InstructionIdx {
         self.push_inst(Instruction::GrowMemory)
+    }
+
+    pub fn memory_grow(&mut self) -> InstructionIdx {
+        self.push_inst(Instruction::CurrentMemory)
     }
 
     pub fn constant(&mut self, value: RuntimeValue) -> InstructionIdx {
