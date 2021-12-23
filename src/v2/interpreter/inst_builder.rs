@@ -15,6 +15,17 @@ use core::fmt::Display;
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct InstructionIdx(usize);
 
+impl InstructionIdx {
+    /// An invalid instruction index.
+    ///
+    /// # Note
+    ///
+    /// This can be used to represent temporarily invalid [`InstructionIdx`]
+    /// without major performance implications for the bytecode itself, e.g.
+    /// when representing invalid [`InstructionIdx`] by wrapping them in an
+    /// `Option`.
+    pub const INVALID: Self = Self(usize::MAX);
+}
 
 /// A relocation entry that specifies.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
