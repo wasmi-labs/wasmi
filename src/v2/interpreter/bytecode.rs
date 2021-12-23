@@ -40,9 +40,42 @@ impl DropKeep {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Target {
     /// The destination program counter.
-    pub dst_pc: InstructionIdx,
+    dst_pc: InstructionIdx,
     /// How many values on the stack need to be dropped and kept.
-    pub drop_keep: DropKeep,
+    drop_keep: DropKeep,
+}
+
+impl Target {
+    /// Creates a new `wasmi` branching target.
+    pub fn new(dst_pc: InstructionIdx, drop_keep: DropKeep) -> Self {
+        Self { dst_pc, drop_keep }
+    }
+
+    /// Returns the destination program counter (as index).
+    pub fn destination_pc(self) -> InstructionIdx {
+        self.dst_pc
+    }
+
+    /// Updates the destination program counter (as index).
+    ///
+    /// # Panics
+    ///
+    /// If the old destination program counter was not [`InstructionIdx::INVALID`].
+    pub fn update_destination_pc(&mut self, new_destination_pc: InstructionIdx) {
+        assert_ne!(
+            self.destination_pc(),
+            InstructionIdx::INVALID,
+            "can only update the destination pc of a target with an invalid \
+            destination pc but found a valid one: {:?}",
+            self.destination_pc(),
+        );
+        self.dst_pc = new_destination_pc;
+    }
+
+    /// Returns the amount of stack values to drop and keep upon taking the branch.
+    pub fn drop_keep(self) -> DropKeep {
+        self.drop_keep
+    }
 }
 
 /// A function index.
