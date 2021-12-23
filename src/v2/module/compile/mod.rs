@@ -107,42 +107,42 @@ impl FuncBodyTranslator {
     fn translate_instruction(
         &mut self,
         validator: &mut FunctionValidationContext,
-        instruction: &Instruction,
+        inst: &Instruction,
     ) -> Result<(), TranslationError> {
         use Instruction as Inst;
-        match instruction {
+        match inst {
             Inst::Unreachable => {
-                self.validate_translate(validator, instruction, InstructionsBuilder::unreachable)?;
+                self.validate_translate(validator, inst, InstructionsBuilder::unreachable)?;
             }
             Inst::Nop => {
-                validator.step(instruction)?;
+                validator.step(inst)?;
             }
             Inst::Block(_block_type) => {
-                self.translate_block(validator, instruction)?;
+                self.translate_block(validator, inst)?;
             }
             Inst::Loop(_block_type) => {
-                self.translate_loop(validator, instruction)?;
+                self.translate_loop(validator, inst)?;
             }
             Inst::If(_block_type) => {
-                self.translate_if(validator, instruction)?;
+                self.translate_if(validator, inst)?;
             }
             Inst::Else => {
-                self.translate_else(validator, instruction)?;
+                self.translate_else(validator, inst)?;
             }
             Inst::End => {
-                self.translate_end(validator, instruction)?;
+                self.translate_end(validator, inst)?;
             }
             Inst::Br(depth) => {
-                self.translate_br(depth, validator, instruction)?;
+                self.translate_br(depth, validator, inst)?;
             }
             Inst::BrIf(depth) => {
-                self.translate_br_if(validator, instruction, depth)?;
+                self.translate_br_if(validator, inst, depth)?;
             }
             Inst::BrTable(br_table) => {
-                self.translate_br_table(validator, br_table, instruction)?;
+                self.translate_br_table(validator, br_table, inst)?;
             }
             Inst::Return => {
-                self.translate_return(validator, instruction)?;
+                self.translate_return(validator, inst)?;
             }
             Inst::Call(_func_idx) => todo!(),
             Inst::CallIndirect(_signature_idx, _table_ref) => todo!(),
@@ -313,9 +313,9 @@ impl FuncBodyTranslator {
     fn translate_block(
         &mut self,
         validator: &mut FunctionValidationContext,
-        instruction: &Instruction,
+        inst: &Instruction,
     ) -> Result<(), TranslationError> {
-        validator.step(instruction)?;
+        validator.step(inst)?;
         let end_label = self.inst_builder.new_label();
         self.control_frames.push(ControlFrame::Block { end_label });
         Ok(())
@@ -325,9 +325,9 @@ impl FuncBodyTranslator {
     fn translate_loop(
         &mut self,
         validator: &mut FunctionValidationContext,
-        instruction: &Instruction,
+        inst: &Instruction,
     ) -> Result<(), TranslationError> {
-        validator.step(instruction)?;
+        validator.step(inst)?;
         let header = self.inst_builder.new_label();
         self.inst_builder.resolve_label(header);
         self.control_frames.push(ControlFrame::Loop { header });
@@ -338,9 +338,9 @@ impl FuncBodyTranslator {
     fn translate_if(
         &mut self,
         validator: &mut FunctionValidationContext,
-        instruction: &Instruction,
+        inst: &Instruction,
     ) -> Result<(), TranslationError> {
-        validator.step(instruction)?;
+        validator.step(inst)?;
         let else_label = self.inst_builder.new_label();
         let end_label = self.inst_builder.new_label();
         self.control_frames.push(ControlFrame::If {
@@ -357,9 +357,9 @@ impl FuncBodyTranslator {
     fn translate_else(
         &mut self,
         validator: &mut FunctionValidationContext,
-        instruction: &Instruction,
+        inst: &Instruction,
     ) -> Result<(), TranslationError> {
-        validator.step(instruction)?;
+        validator.step(inst)?;
         let top_frame = self.pop_control_frame();
         let (else_label, end_label) = match top_frame {
             ControlFrame::If { else_label, end_label } => (else_label, end_label),
@@ -380,7 +380,7 @@ impl FuncBodyTranslator {
     fn translate_end(
         &mut self,
         validator: &mut FunctionValidationContext,
-        instruction: &Instruction,
+        inst: &Instruction,
     ) -> Result<(), TranslationError> {
         let started_with = top_label(&validator.frame_stack).started_with;
         let return_drop_keep = if validator.frame_stack.len() == 1 {
@@ -393,7 +393,7 @@ impl FuncBodyTranslator {
         } else {
             None
         };
-        validator.step(instruction)?;
+        validator.step(inst)?;
         let top_frame = self.pop_control_frame();
         if let ControlFrame::If { else_label, .. } = top_frame {
             // At this point we can resolve the `Else` label.
@@ -422,7 +422,7 @@ impl FuncBodyTranslator {
         &mut self,
         depth: &u32,
         validator: &mut FunctionValidationContext,
-        instruction: &Instruction,
+        inst: &Instruction,
     ) -> Result<(), TranslationError> {
         let target = utils::require_target(
             *depth,
@@ -430,7 +430,7 @@ impl FuncBodyTranslator {
             &validator.frame_stack,
             &self.control_frames,
         );
-        validator.step(instruction)?;
+        validator.step(inst)?;
         let (end_label, drop_keep) = target.unwrap_or_else(|error| {
             panic!(
                 "due to validation the value stack must not underflow \
@@ -447,10 +447,10 @@ impl FuncBodyTranslator {
     fn translate_br_if(
         &mut self,
         validator: &mut FunctionValidationContext,
-        instruction: &Instruction,
+        inst: &Instruction,
         depth: &u32,
     ) -> Result<(), TranslationError> {
-        validator.step(instruction)?;
+        validator.step(inst)?;
         let (end_label, drop_keep) = utils::require_target(
             *depth,
             validator.value_stack.len(),
@@ -474,7 +474,7 @@ impl FuncBodyTranslator {
         &mut self,
         validator: &mut FunctionValidationContext,
         br_table: &pwasm::BrTableData,
-        instruction: &Instruction,
+        inst: &Instruction,
     ) -> Result<(), TranslationError> {
         // At this point, the condition value is at the top of the stack.
         // But at the point of actual jump the condition will already be
@@ -498,7 +498,7 @@ impl FuncBodyTranslator {
             &validator.frame_stack,
             &self.control_frames,
         );
-        validator.step(instruction)?;
+        validator.step(inst)?;
         const REQUIRE_TARGET_PROOF: &str = "could not resolve targets or default target of the \
                     `br_table` even though it validated properly";
         let targets = targets.unwrap_or_else(|error| panic!("{}: {}", REQUIRE_TARGET_PROOF, error));
@@ -528,14 +528,14 @@ impl FuncBodyTranslator {
     fn translate_return(
         &mut self,
         validator: &mut FunctionValidationContext,
-        instruction: &Instruction,
+        inst: &Instruction,
     ) -> Result<(), TranslationError> {
         let drop_keep = utils::drop_keep_return(
             &validator.locals,
             &validator.value_stack,
             &validator.frame_stack,
         );
-        validator.step(instruction)?;
+        validator.step(inst)?;
         let drop_keep = drop_keep.unwrap_or_else(|error| {
             panic!(
                 "due to validation the value stack must not have underflowed. \
