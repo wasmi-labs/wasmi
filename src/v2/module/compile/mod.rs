@@ -448,14 +448,30 @@ impl FuncBodyTranslator {
             Inst::I32RemU => self.validate_translate(validator, inst, |inst_builder| {
                 inst_builder.int_rem(WasmIntType::I32, Signedness::Unsigned)
             })?,
-            Inst::I32And => todo!(),
-            Inst::I32Or => todo!(),
-            Inst::I32Xor => todo!(),
-            Inst::I32Shl => todo!(),
-            Inst::I32ShrS => todo!(),
-            Inst::I32ShrU => todo!(),
-            Inst::I32Rotl => todo!(),
-            Inst::I32Rotr => todo!(),
+            Inst::I32And => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_and(WasmIntType::I32)
+            })?,
+            Inst::I32Or => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_or(WasmIntType::I32)
+            })?,
+            Inst::I32Xor => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_xor(WasmIntType::I32)
+            })?,
+            Inst::I32Shl => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_shl(WasmIntType::I32)
+            })?,
+            Inst::I32ShrS => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_shr(WasmIntType::I32, Signedness::Signed)
+            })?,
+            Inst::I32ShrU => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_shr(WasmIntType::I32, Signedness::Unsigned)
+            })?,
+            Inst::I32Rotl => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_rotl(WasmIntType::I32)
+            })?,
+            Inst::I32Rotr => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_rotr(WasmIntType::I32)
+            })?,
             Inst::I64Clz => self.validate_translate(validator, inst, |inst_builder| {
                 inst_builder.int_clz(WasmIntType::I64)
             })?,
@@ -465,21 +481,51 @@ impl FuncBodyTranslator {
             Inst::I64Popcnt => self.validate_translate(validator, inst, |inst_builder| {
                 inst_builder.int_popcnt(WasmIntType::I64)
             })?,
-            Inst::I64Add => todo!(),
-            Inst::I64Sub => todo!(),
-            Inst::I64Mul => todo!(),
-            Inst::I64DivS => todo!(),
-            Inst::I64DivU => todo!(),
-            Inst::I64RemS => todo!(),
-            Inst::I64RemU => todo!(),
-            Inst::I64And => todo!(),
-            Inst::I64Or => todo!(),
-            Inst::I64Xor => todo!(),
-            Inst::I64Shl => todo!(),
-            Inst::I64ShrS => todo!(),
-            Inst::I64ShrU => todo!(),
-            Inst::I64Rotl => todo!(),
-            Inst::I64Rotr => todo!(),
+            Inst::I64Add => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_add(WasmIntType::I64)
+            })?,
+            Inst::I64Sub => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_sub(WasmIntType::I64)
+            })?,
+            Inst::I64Mul => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_mul(WasmIntType::I64)
+            })?,
+            Inst::I64DivS => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_div(WasmIntType::I64, Signedness::Signed)
+            })?,
+            Inst::I64DivU => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_div(WasmIntType::I64, Signedness::Unsigned)
+            })?,
+            Inst::I64RemS => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_rem(WasmIntType::I64, Signedness::Signed)
+            })?,
+            Inst::I64RemU => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_rem(WasmIntType::I64, Signedness::Unsigned)
+            })?,
+            Inst::I64And => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_and(WasmIntType::I64)
+            })?,
+            Inst::I64Or => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_or(WasmIntType::I64)
+            })?,
+            Inst::I64Xor => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_xor(WasmIntType::I64)
+            })?,
+            Inst::I64Shl => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_shl(WasmIntType::I64)
+            })?,
+            Inst::I64ShrS => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_shr(WasmIntType::I64, Signedness::Signed)
+            })?,
+            Inst::I64ShrU => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_shr(WasmIntType::I64, Signedness::Unsigned)
+            })?,
+            Inst::I64Rotl => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_rotl(WasmIntType::I64)
+            })?,
+            Inst::I64Rotr => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_rotr(WasmIntType::I64)
+            })?,
             Inst::F32Abs => todo!(),
             Inst::F32Neg => todo!(),
             Inst::F32Ceil => todo!(),
