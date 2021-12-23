@@ -39,10 +39,34 @@ pub struct FuncBodyTranslator {
     control_frames: Vec<ControlFrame>,
 }
 
+impl FuncValidator for FuncBodyTranslator {
+    type Input = (Engine, InstructionsBuilder);
+    type Output = InstructionsBuilder;
+
+    fn new(
+        _ctx: &FunctionValidationContext,
+        _body: &pwasm::FuncBody,
+        (engine, inst_builder): Self::Input,
+    ) -> Self {
+        FuncBodyTranslator::new(&engine, inst_builder)
+    }
+
+    fn next_instruction(
+        &mut self,
+        ctx: &mut FunctionValidationContext,
+        instruction: &Instruction,
+    ) -> Result<(), Error> {
+        self.translate_instruction(ctx, instruction)
+    }
+
+    fn finish(self) -> Self::Output {
+        self.inst_builder
+    }
+}
+
 impl FuncBodyTranslator {
     /// Creates a new Wasm function body translator for the given [`Engine`].
-    pub fn new(engine: &Engine) -> Self {
-        let mut inst_builder = InstructionsBuilder::default();
+    pub fn new(engine: &Engine, mut inst_builder: InstructionsBuilder) -> Self {
         // Push implicit frame for the whole function block.
         let end_label = inst_builder.new_label();
         let control_frames = vec![ControlFrame::Block { end_label }];
