@@ -1,4 +1,6 @@
-use super::{GlobalError, LimitsError, LinkerError, MemoryError, TableError};
+use super::{GlobalError, LimitsError, LinkerError, MemoryError, TableError, TranslationError};
+use core::fmt;
+use core::fmt::Display;
 
 /// An error that may occur upon operating on Wasm modules or module instances.
 #[derive(Debug)]
@@ -14,6 +16,21 @@ pub enum Error {
     Table(TableError),
     /// A linker error.
     Linker(LinkerError),
+    /// A Wasm to `wasmi` bytecode translation error.
+    Translation(TranslationError),
+}
+
+impl Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Error::Global(error) => Display::fmt(error, f),
+            Error::Limits(error) => Display::fmt(error, f),
+            Error::Memory(error) => Display::fmt(error, f),
+            Error::Table(error) => Display::fmt(error, f),
+            Error::Linker(error) => Display::fmt(error, f),
+            Error::Translation(error) => Display::fmt(error, f),
+        }
+    }
 }
 
 impl From<GlobalError> for Error {
@@ -43,5 +60,11 @@ impl From<TableError> for Error {
 impl From<LinkerError> for Error {
     fn from(error: LinkerError) -> Self {
         Self::Linker(error)
+    }
+}
+
+impl From<TranslationError> for Error {
+    fn from(error: TranslationError) -> Self {
+        Self::Translation(error)
     }
 }
