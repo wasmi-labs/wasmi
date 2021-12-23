@@ -45,7 +45,7 @@ pub enum ExecutionOutcome {
 ///
 /// This structure is intentionally cheap to copy.
 /// Most of its API has a `&self` receiver, so can be shared easily.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Interpreter {
     inner: Arc<Mutex<InterpreterInner>>,
 }
