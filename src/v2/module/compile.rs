@@ -15,7 +15,7 @@ pub enum TranslationError {
     Validation,
 }
 
-/// A unique [`Label`] identifier.
+/// A unique label identifier.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct LabelIdx(usize);
 
