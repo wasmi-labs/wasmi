@@ -4,7 +4,7 @@ mod compile;
 mod error;
 
 use self::compile::FuncBodyTranslator;
-use self::error::TranslationError;
+pub use self::error::TranslationError;
 use super::interpreter::InstructionsBuilder;
 use super::Engine;
 use core::mem;
