@@ -2,10 +2,10 @@
 
 #![allow(dead_code)] // TODO: remove
 
+pub mod bytecode;
 pub mod call_stack;
 pub mod code_map;
 pub mod inst_builder;
-pub mod bytecode;
 pub mod value_stack;
 
 pub use self::code_map::FuncBody;
