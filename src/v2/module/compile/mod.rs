@@ -17,7 +17,7 @@ use crate::{
         interpreter::bytecode::{FuncIdx, GlobalIdx, LocalIdx, SignatureIdx},
         interpreter::{
             bytecode::Offset,
-            inst_builder::{Reloc, Signedness, WasmIntType},
+            inst_builder::{Reloc, Signedness, WasmFloatType, WasmIntType},
         },
     },
     RuntimeValue, ValueType,
@@ -382,18 +382,42 @@ impl FuncBodyTranslator {
             Inst::I64GeU => self.validate_translate(validator, inst, |inst_builder| {
                 inst_builder.int_ge(WasmIntType::I64, Signedness::Unsigned)
             })?,
-            Inst::F32Eq => todo!(),
-            Inst::F32Ne => todo!(),
-            Inst::F32Lt => todo!(),
-            Inst::F32Gt => todo!(),
-            Inst::F32Le => todo!(),
-            Inst::F32Ge => todo!(),
-            Inst::F64Eq => todo!(),
-            Inst::F64Ne => todo!(),
-            Inst::F64Lt => todo!(),
-            Inst::F64Gt => todo!(),
-            Inst::F64Le => todo!(),
-            Inst::F64Ge => todo!(),
+            Inst::F32Eq => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.eq(ValueType::F32)
+            })?,
+            Inst::F32Ne => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.ne(ValueType::F32)
+            })?,
+            Inst::F32Lt => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_lt(WasmFloatType::F32)
+            })?,
+            Inst::F32Gt => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_gt(WasmFloatType::F32)
+            })?,
+            Inst::F32Le => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_le(WasmFloatType::F32)
+            })?,
+            Inst::F32Ge => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_ge(WasmFloatType::F32)
+            })?,
+            Inst::F64Eq => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.eq(ValueType::F64)
+            })?,
+            Inst::F64Ne => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.ne(ValueType::F64)
+            })?,
+            Inst::F64Lt => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_lt(WasmFloatType::F64)
+            })?,
+            Inst::F64Gt => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_gt(WasmFloatType::F64)
+            })?,
+            Inst::F64Le => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_le(WasmFloatType::F64)
+            })?,
+            Inst::F64Ge => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_ge(WasmFloatType::F64)
+            })?,
             Inst::I32Clz => todo!(),
             Inst::I32Ctz => todo!(),
             Inst::I32Popcnt => todo!(),
