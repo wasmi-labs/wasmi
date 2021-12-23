@@ -70,7 +70,9 @@ impl InstructionsBuilder {
             Reloc::Br { inst_idx } => match &mut self.insts[inst_idx.0] {
                 Instruction::Br(target)
                 | Instruction::BrIfEqz(target)
-                | Instruction::BrIfNez(target) => target.dst_pc = dst_pc,
+                | Instruction::BrIfNez(target) => {
+                    target.update_destination_pc(dst_pc);
+                }
                 _ => panic!(
                     "branch relocation points to a non-branch instruction: {:?}",
                     reloc
@@ -80,7 +82,9 @@ impl InstructionsBuilder {
                 inst_idx,
                 target_idx,
             } => match &mut self.insts[inst_idx.0 + target_idx + 1] {
-                Instruction::BrTableTarget(target) => target.dst_pc = dst_pc,
+                Instruction::BrTableTarget(target) => {
+                    target.update_destination_pc(dst_pc);
+                }
                 _ => panic!(
                     "branch table relocation points to a non branch table instruction: {:?}",
                     reloc
