@@ -10,6 +10,11 @@ use crate::{RuntimeValue, ValueType};
 use alloc::vec::Vec;
 use core::fmt;
 use core::fmt::Display;
+/// A reference to an instruction of the partially
+/// constructed function body of the [`InstructionsBuilder`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct InstructionIdx(usize);
+
 
 /// A relocation entry that specifies.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -33,11 +38,6 @@ pub struct InstructionsBuilder {
     /// The instructions of the partially constructed function body.
     insts: Vec<Instruction>,
 }
-
-/// A reference to an instruction of the partially
-/// constructed function body of the [`InstructionsBuilder`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct InstructionIdx(usize);
 
 impl InstructionsBuilder {
     /// Creates a new [`InstructionsBuilder`].
