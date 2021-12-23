@@ -61,8 +61,8 @@ impl InstructionsBuilder {
         Self { insts: Vec::new() }
     }
 
-    /// Returns the next instruction index.
-    fn next_idx(&self) -> InstructionIdx {
+    /// Returns the current instruction pointer as index.
+    pub fn current_pc(&self) -> InstructionIdx {
         InstructionIdx(self.insts.len())
     }
 
@@ -70,7 +70,7 @@ impl InstructionsBuilder {
     ///
     /// Returns an [`InstructionIdx`] to refer to the pushed instruction.
     fn push_inst(&mut self, inst: Instruction) -> InstructionIdx {
-        let idx = self.next_idx();
+        let idx = self.current_pc();
         self.insts.push(inst);
         idx
     }
