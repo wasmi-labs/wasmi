@@ -41,7 +41,7 @@ pub struct FuncBodyTranslator {
 
 impl FuncValidator for FuncBodyTranslator {
     type Input = (Engine, InstructionsBuilder);
-    type Output = InstructionsBuilder;
+    type Output = (FuncBody, InstructionsBuilder);
 
     fn new(
         _ctx: &FunctionValidationContext,
@@ -59,8 +59,9 @@ impl FuncValidator for FuncBodyTranslator {
         self.translate_instruction(ctx, instruction)
     }
 
-    fn finish(self) -> Self::Output {
-        self.inst_builder
+    fn finish(mut self) -> Self::Output {
+        let func_body = self.inst_builder.finish(&self.engine);
+        (func_body, self.inst_builder)
     }
 }
 

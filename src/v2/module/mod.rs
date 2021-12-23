@@ -5,7 +5,7 @@ mod error;
 
 use self::compile::FuncBodyTranslator;
 pub use self::error::TranslationError;
-use super::interpreter::InstructionsBuilder;
+use super::interpreter::{FuncBody, InstructionsBuilder};
 use super::Engine;
 use core::mem;
 use parity_wasm::elements as pwasm;
@@ -19,36 +19,41 @@ use validation::{validate_module, FuncValidator, Validator};
 #[derive(Debug)]
 pub struct Module {
     module: pwasm::Module,
+    engine: Engine,
+    func_bodies: Vec<FuncBody>,
 }
 
 #[derive(Debug)]
 pub struct ModuleValidation {
     engine: Engine,
     inst_builder: InstructionsBuilder,
+    func_bodies: Vec<FuncBody>,
 }
 
 impl Validator for ModuleValidation {
     type Input = Engine;
-    type Output = Self;
+    type Output = Vec<FuncBody>;
     type FuncValidator = FuncBodyTranslator;
 
     fn new(_module: &pwasm::Module, engine: Self::Input) -> Self {
         ModuleValidation {
             engine,
             inst_builder: InstructionsBuilder::default(),
+            func_bodies: Vec::new(),
         }
     }
 
     fn on_function_validated(
         &mut self,
         _index: u32,
-        inst_builder: <Self::FuncValidator as FuncValidator>::Output,
+        (func_body, inst_builder): <Self::FuncValidator as FuncValidator>::Output,
     ) {
         self.inst_builder = inst_builder;
+        self.func_bodies.push(func_body);
     }
 
     fn finish(self) -> Self::Output {
-        self
+        self.func_bodies
     }
 
     fn func_validator_input(
@@ -63,7 +68,11 @@ impl Module {
     /// Create a new module from the binary Wasm encoded bytes.
     pub fn new(engine: &Engine, bytes: impl AsRef<[u8]>) -> Result<Module, TranslationError> {
         let module = pwasm::deserialize_buffer(bytes.as_ref())?;
-        validate_module::<ModuleValidation>(&module, engine.clone())?;
-        Ok(Self { module })
+        let func_bodies = validate_module::<ModuleValidation>(&module, engine.clone())?;
+        Ok(Self {
+            module,
+            engine: engine.clone(),
+            func_bodies,
+        })
     }
 }
