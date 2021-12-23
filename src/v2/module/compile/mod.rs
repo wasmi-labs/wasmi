@@ -12,7 +12,16 @@ use super::{
     super::{DropKeep, FuncBody, InstructionIdx, InstructionsBuilder, LabelIdx, Target},
     Engine,
 };
-use crate::v2::interpreter::inst_builder::Reloc;
+use crate::{
+    v2::{
+        interpreter::bytecode::{FuncIdx, GlobalIdx, LocalIdx, SignatureIdx},
+        interpreter::{
+            bytecode::Offset,
+            inst_builder::{Reloc, Signedness, WasmIntType},
+        },
+    },
+    RuntimeValue, ValueType,
+};
 use alloc::vec::Vec;
 use parity_wasm::elements::{self as pwasm, Instruction};
 use validation::func::{top_label, FunctionValidationContext, StartedWith};
@@ -145,66 +154,234 @@ impl FuncBodyTranslator {
             Inst::Return => {
                 self.translate_return(validator, inst)?;
             }
-            Inst::Call(_func_idx) => todo!(),
-            Inst::CallIndirect(_signature_idx, _table_ref) => todo!(),
-            Inst::Drop => todo!(),
-            Inst::Select => todo!(),
-            Inst::GetLocal(_local_idx) => todo!(),
-            Inst::SetLocal(_local_idx) => todo!(),
-            Inst::TeeLocal(_local_idx) => todo!(),
-            Inst::GetGlobal(_global_idx) => todo!(),
-            Inst::SetGlobal(_global_idx) => todo!(),
-            Inst::I32Load(_, _) => todo!(),
-            Inst::I64Load(_, _) => todo!(),
-            Inst::F32Load(_, _) => todo!(),
-            Inst::F64Load(_, _) => todo!(),
-            Inst::I32Load8S(_, _) => todo!(),
-            Inst::I32Load8U(_, _) => todo!(),
-            Inst::I32Load16S(_, _) => todo!(),
-            Inst::I32Load16U(_, _) => todo!(),
-            Inst::I64Load8S(_, _) => todo!(),
-            Inst::I64Load8U(_, _) => todo!(),
-            Inst::I64Load16S(_, _) => todo!(),
-            Inst::I64Load16U(_, _) => todo!(),
-            Inst::I64Load32S(_, _) => todo!(),
-            Inst::I64Load32U(_, _) => todo!(),
-            Inst::I32Store(_, _) => todo!(),
-            Inst::I64Store(_, _) => todo!(),
-            Inst::F32Store(_, _) => todo!(),
-            Inst::F64Store(_, _) => todo!(),
-            Inst::I32Store8(_, _) => todo!(),
-            Inst::I32Store16(_, _) => todo!(),
-            Inst::I64Store8(_, _) => todo!(),
-            Inst::I64Store16(_, _) => todo!(),
-            Inst::I64Store32(_, _) => todo!(),
-            Inst::CurrentMemory(_) => todo!(),
-            Inst::GrowMemory(_) => todo!(),
-            Inst::I32Const(_) => todo!(),
-            Inst::I64Const(_) => todo!(),
-            Inst::F32Const(_) => todo!(),
-            Inst::F64Const(_) => todo!(),
-            Inst::I32Eqz => todo!(),
-            Inst::I32Eq => todo!(),
-            Inst::I32Ne => todo!(),
-            Inst::I32LtS => todo!(),
-            Inst::I32LtU => todo!(),
-            Inst::I32GtS => todo!(),
-            Inst::I32GtU => todo!(),
-            Inst::I32LeS => todo!(),
-            Inst::I32LeU => todo!(),
-            Inst::I32GeS => todo!(),
-            Inst::I32GeU => todo!(),
-            Inst::I64Eqz => todo!(),
-            Inst::I64Eq => todo!(),
-            Inst::I64Ne => todo!(),
-            Inst::I64LtS => todo!(),
-            Inst::I64LtU => todo!(),
-            Inst::I64GtS => todo!(),
-            Inst::I64GtU => todo!(),
-            Inst::I64LeS => todo!(),
-            Inst::I64LeU => todo!(),
-            Inst::I64GeS => todo!(),
-            Inst::I64GeU => todo!(),
+            Inst::Call(func_idx) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.call(FuncIdx::from(*func_idx))
+                })?;
+            }
+            Inst::CallIndirect(signature_idx, _table_ref) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.call_indirect(SignatureIdx::from(*signature_idx))
+                })?;
+            }
+            Inst::Drop => self.validate_translate(validator, inst, InstructionsBuilder::drop)?,
+            Inst::Select => {
+                self.validate_translate(validator, inst, InstructionsBuilder::select)?
+            }
+            Inst::GetLocal(index) => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.get_local(LocalIdx::from(*index))
+            })?,
+            Inst::SetLocal(index) => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.set_local(LocalIdx::from(*index))
+            })?,
+            Inst::TeeLocal(index) => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.tee_local(LocalIdx::from(*index))
+            })?,
+            Inst::GetGlobal(index) => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.get_global(GlobalIdx::from(*index))
+            })?,
+            Inst::SetGlobal(index) => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.set_global(GlobalIdx::from(*index))
+            })?,
+            Inst::I32Load(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.load(ValueType::I32, Offset::from(*offset))
+                })?
+            }
+            Inst::I64Load(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.load(ValueType::I64, Offset::from(*offset))
+                })?
+            }
+            Inst::F32Load(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.load(ValueType::F32, Offset::from(*offset))
+                })?
+            }
+            Inst::F64Load(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.load(ValueType::F64, Offset::from(*offset))
+                })?
+            }
+            Inst::I32Load8S(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.load_extend::<i32, i8>(Offset::from(*offset))
+                })?
+            }
+            Inst::I32Load8U(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.load_extend::<i32, u8>(Offset::from(*offset))
+                })?
+            }
+            Inst::I32Load16S(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.load_extend::<i32, i16>(Offset::from(*offset))
+                })?
+            }
+            Inst::I32Load16U(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.load_extend::<i32, u16>(Offset::from(*offset))
+                })?
+            }
+            Inst::I64Load8S(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.load_extend::<i64, i8>(Offset::from(*offset))
+                })?
+            }
+            Inst::I64Load8U(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.load_extend::<i64, u8>(Offset::from(*offset))
+                })?
+            }
+            Inst::I64Load16S(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.load_extend::<i64, i16>(Offset::from(*offset))
+                })?
+            }
+            Inst::I64Load16U(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.load_extend::<i64, u16>(Offset::from(*offset))
+                })?
+            }
+            Inst::I64Load32S(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.load_extend::<i64, i32>(Offset::from(*offset))
+                })?
+            }
+            Inst::I64Load32U(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.load_extend::<i64, u32>(Offset::from(*offset))
+                })?
+            }
+            Inst::I32Store(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.store(ValueType::I32, Offset::from(*offset))
+                })?
+            }
+            Inst::I64Store(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.store(ValueType::I64, Offset::from(*offset))
+                })?
+            }
+            Inst::F32Store(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.store(ValueType::F32, Offset::from(*offset))
+                })?
+            }
+            Inst::F64Store(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.store(ValueType::F64, Offset::from(*offset))
+                })?
+            }
+            Inst::I32Store8(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.store_truncate::<i32, i8>(Offset::from(*offset))
+                })?
+            }
+            Inst::I32Store16(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.store_truncate::<i32, i16>(Offset::from(*offset))
+                })?
+            }
+            Inst::I64Store8(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.store_truncate::<i64, i8>(Offset::from(*offset))
+                })?
+            }
+            Inst::I64Store16(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.store_truncate::<i64, i16>(Offset::from(*offset))
+                })?
+            }
+            Inst::I64Store32(_memory_idx, offset) => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.store_truncate::<i64, i32>(Offset::from(*offset))
+                })?
+            }
+            Inst::CurrentMemory(_) => {
+                self.validate_translate(validator, inst, InstructionsBuilder::memory_size)?
+            }
+            Inst::GrowMemory(_) => {
+                self.validate_translate(validator, inst, InstructionsBuilder::memory_grow)?
+            }
+            Inst::I32Const(value) => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.constant(RuntimeValue::from(*value))
+            })?,
+            Inst::I64Const(value) => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.constant(RuntimeValue::from(*value))
+            })?,
+            Inst::F32Const(value) => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.constant(RuntimeValue::from(*value))
+            })?,
+            Inst::F64Const(value) => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.constant(RuntimeValue::from(*value))
+            })?,
+            Inst::I32Eqz => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_eqz(WasmIntType::I32)
+            })?,
+            Inst::I32Eq => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.eq(ValueType::I32)
+            })?,
+            Inst::I32Ne => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.ne(ValueType::I32)
+            })?,
+            Inst::I32LtS => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_lt(WasmIntType::I32, Signedness::Signed)
+            })?,
+            Inst::I32LtU => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_lt(WasmIntType::I32, Signedness::Unsigned)
+            })?,
+            Inst::I32GtS => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_gt(WasmIntType::I32, Signedness::Signed)
+            })?,
+            Inst::I32GtU => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_gt(WasmIntType::I32, Signedness::Unsigned)
+            })?,
+            Inst::I32LeS => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_le(WasmIntType::I32, Signedness::Signed)
+            })?,
+            Inst::I32LeU => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_le(WasmIntType::I32, Signedness::Unsigned)
+            })?,
+            Inst::I32GeS => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_ge(WasmIntType::I32, Signedness::Signed)
+            })?,
+            Inst::I32GeU => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_ge(WasmIntType::I32, Signedness::Unsigned)
+            })?,
+            Inst::I64Eqz => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_eqz(WasmIntType::I64)
+            })?,
+            Inst::I64Eq => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.eq(ValueType::I64)
+            })?,
+            Inst::I64Ne => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.ne(ValueType::I64)
+            })?,
+            Inst::I64LtS => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_lt(WasmIntType::I64, Signedness::Signed)
+            })?,
+            Inst::I64LtU => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_lt(WasmIntType::I64, Signedness::Unsigned)
+            })?,
+            Inst::I64GtS => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_gt(WasmIntType::I64, Signedness::Signed)
+            })?,
+            Inst::I64GtU => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_gt(WasmIntType::I64, Signedness::Unsigned)
+            })?,
+            Inst::I64LeS => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_le(WasmIntType::I64, Signedness::Signed)
+            })?,
+            Inst::I64LeU => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_le(WasmIntType::I64, Signedness::Unsigned)
+            })?,
+            Inst::I64GeS => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_ge(WasmIntType::I64, Signedness::Signed)
+            })?,
+            Inst::I64GeU => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_ge(WasmIntType::I64, Signedness::Unsigned)
+            })?,
             Inst::F32Eq => todo!(),
             Inst::F32Ne => todo!(),
             Inst::F32Lt => todo!(),
