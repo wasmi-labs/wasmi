@@ -526,34 +526,90 @@ impl FuncBodyTranslator {
             Inst::I64Rotr => self.validate_translate(validator, inst, |inst_builder| {
                 inst_builder.int_rotr(WasmIntType::I64)
             })?,
-            Inst::F32Abs => todo!(),
-            Inst::F32Neg => todo!(),
-            Inst::F32Ceil => todo!(),
-            Inst::F32Floor => todo!(),
-            Inst::F32Trunc => todo!(),
-            Inst::F32Nearest => todo!(),
-            Inst::F32Sqrt => todo!(),
-            Inst::F32Add => todo!(),
-            Inst::F32Sub => todo!(),
-            Inst::F32Mul => todo!(),
-            Inst::F32Div => todo!(),
-            Inst::F32Min => todo!(),
-            Inst::F32Max => todo!(),
-            Inst::F32Copysign => todo!(),
-            Inst::F64Abs => todo!(),
-            Inst::F64Neg => todo!(),
-            Inst::F64Ceil => todo!(),
-            Inst::F64Floor => todo!(),
-            Inst::F64Trunc => todo!(),
-            Inst::F64Nearest => todo!(),
-            Inst::F64Sqrt => todo!(),
-            Inst::F64Add => todo!(),
-            Inst::F64Sub => todo!(),
-            Inst::F64Mul => todo!(),
-            Inst::F64Div => todo!(),
-            Inst::F64Min => todo!(),
-            Inst::F64Max => todo!(),
-            Inst::F64Copysign => todo!(),
+            Inst::F32Abs => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_abs(WasmFloatType::F32)
+            })?,
+            Inst::F32Neg => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_neg(WasmFloatType::F32)
+            })?,
+            Inst::F32Ceil => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_ceil(WasmFloatType::F32)
+            })?,
+            Inst::F32Floor => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_floor(WasmFloatType::F32)
+            })?,
+            Inst::F32Trunc => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_trunc(WasmFloatType::F32)
+            })?,
+            Inst::F32Nearest => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_nearest(WasmFloatType::F32)
+            })?,
+            Inst::F32Sqrt => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_sqrt(WasmFloatType::F32)
+            })?,
+            Inst::F32Add => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_add(WasmFloatType::F32)
+            })?,
+            Inst::F32Sub => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_sub(WasmFloatType::F32)
+            })?,
+            Inst::F32Mul => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_mul(WasmFloatType::F32)
+            })?,
+            Inst::F32Div => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_div(WasmFloatType::F32)
+            })?,
+            Inst::F32Min => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_min(WasmFloatType::F32)
+            })?,
+            Inst::F32Max => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_max(WasmFloatType::F32)
+            })?,
+            Inst::F32Copysign => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_copysign(WasmFloatType::F32)
+            })?,
+            Inst::F64Abs => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_abs(WasmFloatType::F64)
+            })?,
+            Inst::F64Neg => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_neg(WasmFloatType::F64)
+            })?,
+            Inst::F64Ceil => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_ceil(WasmFloatType::F64)
+            })?,
+            Inst::F64Floor => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_floor(WasmFloatType::F64)
+            })?,
+            Inst::F64Trunc => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_trunc(WasmFloatType::F64)
+            })?,
+            Inst::F64Nearest => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_nearest(WasmFloatType::F64)
+            })?,
+            Inst::F64Sqrt => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_sqrt(WasmFloatType::F64)
+            })?,
+            Inst::F64Add => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_add(WasmFloatType::F64)
+            })?,
+            Inst::F64Sub => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_sub(WasmFloatType::F64)
+            })?,
+            Inst::F64Mul => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_mul(WasmFloatType::F64)
+            })?,
+            Inst::F64Div => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_div(WasmFloatType::F64)
+            })?,
+            Inst::F64Min => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_min(WasmFloatType::F64)
+            })?,
+            Inst::F64Max => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_max(WasmFloatType::F64)
+            })?,
+            Inst::F64Copysign => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_copysign(WasmFloatType::F64)
+            })?,
             Inst::I32WrapI64 => todo!(),
             Inst::I32TruncSF32 => todo!(),
             Inst::I32TruncUF32 => todo!(),
