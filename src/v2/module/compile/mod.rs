@@ -84,8 +84,8 @@ impl FuncBodyTranslator {
             .try_resolve_label(label, || reloc_provider(pc))
     }
 
-    /// Validate the Wasm `inst` and build the respective `wasmi` bytecode.
-    fn validate_and_build<F, R>(
+    /// Validate the Wasm `inst` and translate the respective `wasmi` bytecode.
+    fn validate_translate<F, R>(
         &mut self,
         validator: &mut FunctionValidationContext,
         inst: &Instruction,
@@ -112,7 +112,7 @@ impl FuncBodyTranslator {
         use Instruction as Inst;
         match instruction {
             Inst::Unreachable => {
-                self.validate_and_build(validator, instruction, InstructionsBuilder::unreachable)?;
+                self.validate_translate(validator, instruction, InstructionsBuilder::unreachable)?;
             }
             Inst::Nop => {
                 validator.step(instruction)?;
