@@ -83,10 +83,22 @@ impl Target {
 #[repr(transparent)]
 pub struct FuncIdx(u32);
 
+impl From<u32> for FuncIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
+
 /// An index of a unique function signature.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct SignatureIdx(u32);
+
+impl From<u32> for SignatureIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
 
 /// A local variable index.
 ///
@@ -96,6 +108,12 @@ pub struct SignatureIdx(u32);
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct LocalIdx(u32);
+
+impl From<u32> for LocalIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
 
 /// A global variable index.
 ///
@@ -108,6 +126,12 @@ pub struct LocalIdx(u32);
 #[repr(transparent)]
 pub struct GlobalIdx(u32);
 
+impl From<u32> for GlobalIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
+
 /// A linear memory access offset.
 ///
 /// # Note
@@ -116,6 +140,12 @@ pub struct GlobalIdx(u32);
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct Offset(u32);
+
+impl From<u32> for Offset {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
 
 /// A resolved Wasm `br_table` instruction.
 ///
