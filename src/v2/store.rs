@@ -44,11 +44,6 @@ impl<Idx> Stored<Idx> {
 /// Returns the next store index.
 fn next_store_index() -> StoreIdx {
     /// A static store index counter.
-    ///
-    /// TODO: make this usable in WebAssembly.
-    ///       This should be fairly easy if we assume that WebAssembly targets are
-    ///       always single threaded. Therefore we can replace this conditionally
-    ///       with a simple static usize and unsafely mutate it.
     static CURRENT_STORE_IDX: AtomicUsize = AtomicUsize::new(0);
     let next_idx = CURRENT_STORE_IDX.fetch_add(1, Ordering::AcqRel);
     StoreIdx(next_idx)
