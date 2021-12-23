@@ -442,8 +442,12 @@ impl FuncBodyTranslator {
             Inst::I32DivU => self.validate_translate(validator, inst, |inst_builder| {
                 inst_builder.int_div(WasmIntType::I32, Signedness::Unsigned)
             })?,
-            Inst::I32RemS => todo!(),
-            Inst::I32RemU => todo!(),
+            Inst::I32RemS => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_rem(WasmIntType::I32, Signedness::Signed)
+            })?,
+            Inst::I32RemU => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_rem(WasmIntType::I32, Signedness::Unsigned)
+            })?,
             Inst::I32And => todo!(),
             Inst::I32Or => todo!(),
             Inst::I32Xor => todo!(),
