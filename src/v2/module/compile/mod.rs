@@ -4,10 +4,9 @@
 //! framework used by `wasmi` which currently is `parity_wasm`.
 
 mod control_frame;
-mod error;
 mod utils;
 
-use self::{control_frame::ControlFrame, error::TranslationError};
+use self::control_frame::ControlFrame;
 use super::{
     super::{DropKeep, FuncBody, InstructionIdx, InstructionsBuilder, LabelIdx, Target},
     Engine,
@@ -24,7 +23,10 @@ use crate::{
 };
 use alloc::vec::Vec;
 use parity_wasm::elements::{self as pwasm, Instruction};
-use validation::func::{top_label, FunctionValidationContext, StartedWith};
+use validation::{
+    func::{top_label, FunctionValidationContext, StartedWith},
+    Error, FuncValidator,
+};
 
 /// Allows to translate a Wasm functions into `wasmi` bytecode.
 #[derive(Debug)]
@@ -58,7 +60,7 @@ impl FuncBodyTranslator {
         &mut self,
         validator: &mut FunctionValidationContext,
         instructions: I,
-    ) -> Result<FuncBody, TranslationError>
+    ) -> Result<FuncBody, Error>
     where
         I: IntoIterator<Item = &'a pwasm::Instruction>,
         I::IntoIter: ExactSizeIterator,
@@ -99,7 +101,7 @@ impl FuncBodyTranslator {
         validator: &mut FunctionValidationContext,
         inst: &Instruction,
         f: F,
-    ) -> Result<(), TranslationError>
+    ) -> Result<(), Error>
     where
         F: FnOnce(&mut InstructionsBuilder) -> R,
     {
@@ -117,7 +119,7 @@ impl FuncBodyTranslator {
         &mut self,
         validator: &mut FunctionValidationContext,
         inst: &Instruction,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         use Instruction as Inst;
         match inst {
             Inst::Unreachable => {
@@ -766,7 +768,7 @@ impl FuncBodyTranslator {
         &mut self,
         validator: &mut FunctionValidationContext,
         inst: &Instruction,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         validator.step(inst)?;
         let end_label = self.inst_builder.new_label();
         self.control_frames.push(ControlFrame::Block { end_label });
@@ -778,7 +780,7 @@ impl FuncBodyTranslator {
         &mut self,
         validator: &mut FunctionValidationContext,
         inst: &Instruction,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         validator.step(inst)?;
         let header = self.inst_builder.new_label();
         self.inst_builder.resolve_label(header);
@@ -791,7 +793,7 @@ impl FuncBodyTranslator {
         &mut self,
         validator: &mut FunctionValidationContext,
         inst: &Instruction,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         validator.step(inst)?;
         let else_label = self.inst_builder.new_label();
         let end_label = self.inst_builder.new_label();
@@ -810,7 +812,7 @@ impl FuncBodyTranslator {
         &mut self,
         validator: &mut FunctionValidationContext,
         inst: &Instruction,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         validator.step(inst)?;
         let top_frame = self.pop_control_frame();
         let (else_label, end_label) = match top_frame {
@@ -833,7 +835,7 @@ impl FuncBodyTranslator {
         &mut self,
         validator: &mut FunctionValidationContext,
         inst: &Instruction,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         let started_with = top_label(&validator.frame_stack).started_with;
         let return_drop_keep = if validator.frame_stack.len() == 1 {
             // We are about to close the last frame.
@@ -875,7 +877,7 @@ impl FuncBodyTranslator {
         depth: &u32,
         validator: &mut FunctionValidationContext,
         inst: &Instruction,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         let target = utils::require_target(
             *depth,
             validator.value_stack.len(),
@@ -901,7 +903,7 @@ impl FuncBodyTranslator {
         validator: &mut FunctionValidationContext,
         inst: &Instruction,
         depth: &u32,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         validator.step(inst)?;
         let (end_label, drop_keep) = utils::require_target(
             *depth,
@@ -927,7 +929,7 @@ impl FuncBodyTranslator {
         validator: &mut FunctionValidationContext,
         br_table: &pwasm::BrTableData,
         inst: &Instruction,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         // At this point, the condition value is at the top of the stack.
         // But at the point of actual jump the condition will already be
         // popped off.
@@ -981,7 +983,7 @@ impl FuncBodyTranslator {
         &mut self,
         validator: &mut FunctionValidationContext,
         inst: &Instruction,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         let drop_keep = utils::drop_keep_return(
             &validator.locals,
             &validator.value_stack,
