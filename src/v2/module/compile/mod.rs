@@ -418,14 +418,30 @@ impl FuncBodyTranslator {
             Inst::F64Ge => self.validate_translate(validator, inst, |inst_builder| {
                 inst_builder.float_ge(WasmFloatType::F64)
             })?,
-            Inst::I32Clz => todo!(),
-            Inst::I32Ctz => todo!(),
-            Inst::I32Popcnt => todo!(),
-            Inst::I32Add => todo!(),
-            Inst::I32Sub => todo!(),
-            Inst::I32Mul => todo!(),
-            Inst::I32DivS => todo!(),
-            Inst::I32DivU => todo!(),
+            Inst::I32Clz => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_clz(WasmIntType::I32)
+            })?,
+            Inst::I32Ctz => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_ctz(WasmIntType::I32)
+            })?,
+            Inst::I32Popcnt => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_popcnt(WasmIntType::I32)
+            })?,
+            Inst::I32Add => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_add(WasmIntType::I32)
+            })?,
+            Inst::I32Sub => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_sub(WasmIntType::I32)
+            })?,
+            Inst::I32Mul => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_mul(WasmIntType::I32)
+            })?,
+            Inst::I32DivS => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_div(WasmIntType::I32, Signedness::Signed)
+            })?,
+            Inst::I32DivU => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_div(WasmIntType::I32, Signedness::Unsigned)
+            })?,
             Inst::I32RemS => todo!(),
             Inst::I32RemU => todo!(),
             Inst::I32And => todo!(),
@@ -436,9 +452,15 @@ impl FuncBodyTranslator {
             Inst::I32ShrU => todo!(),
             Inst::I32Rotl => todo!(),
             Inst::I32Rotr => todo!(),
-            Inst::I64Clz => todo!(),
-            Inst::I64Ctz => todo!(),
-            Inst::I64Popcnt => todo!(),
+            Inst::I64Clz => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_clz(WasmIntType::I64)
+            })?,
+            Inst::I64Ctz => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_ctz(WasmIntType::I64)
+            })?,
+            Inst::I64Popcnt => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_popcnt(WasmIntType::I64)
+            })?,
             Inst::I64Add => todo!(),
             Inst::I64Sub => todo!(),
             Inst::I64Mul => todo!(),
