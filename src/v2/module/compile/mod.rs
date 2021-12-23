@@ -610,31 +610,153 @@ impl FuncBodyTranslator {
             Inst::F64Copysign => self.validate_translate(validator, inst, |inst_builder| {
                 inst_builder.float_copysign(WasmFloatType::F64)
             })?,
-            Inst::I32WrapI64 => todo!(),
-            Inst::I32TruncSF32 => todo!(),
-            Inst::I32TruncUF32 => todo!(),
-            Inst::I32TruncSF64 => todo!(),
-            Inst::I32TruncUF64 => todo!(),
-            Inst::I64ExtendSI32 => todo!(),
-            Inst::I64ExtendUI32 => todo!(),
-            Inst::I64TruncSF32 => todo!(),
-            Inst::I64TruncUF32 => todo!(),
-            Inst::I64TruncSF64 => todo!(),
-            Inst::I64TruncUF64 => todo!(),
-            Inst::F32ConvertSI32 => todo!(),
-            Inst::F32ConvertUI32 => todo!(),
-            Inst::F32ConvertSI64 => todo!(),
-            Inst::F32ConvertUI64 => todo!(),
-            Inst::F32DemoteF64 => todo!(),
-            Inst::F64ConvertSI32 => todo!(),
-            Inst::F64ConvertUI32 => todo!(),
-            Inst::F64ConvertSI64 => todo!(),
-            Inst::F64ConvertUI64 => todo!(),
-            Inst::F64PromoteF32 => todo!(),
-            Inst::I32ReinterpretF32 => todo!(),
-            Inst::I64ReinterpretF64 => todo!(),
-            Inst::F32ReinterpretI32 => todo!(),
-            Inst::F64ReinterpretI64 => todo!(),
+            Inst::I32WrapI64 => {
+                self.validate_translate(validator, inst, InstructionsBuilder::wrap)?
+            }
+            Inst::I32TruncSF32 => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_truncate_to_int(
+                    WasmFloatType::F32,
+                    WasmIntType::I32,
+                    Signedness::Signed,
+                )
+            })?,
+            Inst::I32TruncUF32 => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_truncate_to_int(
+                    WasmFloatType::F32,
+                    WasmIntType::I32,
+                    Signedness::Unsigned,
+                )
+            })?,
+            Inst::I32TruncSF64 => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_truncate_to_int(
+                    WasmFloatType::F64,
+                    WasmIntType::I32,
+                    Signedness::Signed,
+                )
+            })?,
+            Inst::I32TruncUF64 => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_truncate_to_int(
+                    WasmFloatType::F64,
+                    WasmIntType::I32,
+                    Signedness::Unsigned,
+                )
+            })?,
+            Inst::I64ExtendSI32 => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.extend(Signedness::Signed)
+            })?,
+            Inst::I64ExtendUI32 => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.extend(Signedness::Unsigned)
+            })?,
+            Inst::I64TruncSF32 => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_truncate_to_int(
+                    WasmFloatType::F32,
+                    WasmIntType::I64,
+                    Signedness::Signed,
+                )
+            })?,
+            Inst::I64TruncUF32 => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_truncate_to_int(
+                    WasmFloatType::F32,
+                    WasmIntType::I64,
+                    Signedness::Unsigned,
+                )
+            })?,
+            Inst::I64TruncSF64 => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_truncate_to_int(
+                    WasmFloatType::F64,
+                    WasmIntType::I64,
+                    Signedness::Signed,
+                )
+            })?,
+            Inst::I64TruncUF64 => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.float_truncate_to_int(
+                    WasmFloatType::F64,
+                    WasmIntType::I64,
+                    Signedness::Unsigned,
+                )
+            })?,
+            Inst::F32ConvertSI32 => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_convert_to_float(
+                    WasmIntType::I32,
+                    Signedness::Signed,
+                    WasmFloatType::F32,
+                )
+            })?,
+            Inst::F32ConvertUI32 => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_convert_to_float(
+                    WasmIntType::I32,
+                    Signedness::Unsigned,
+                    WasmFloatType::F32,
+                )
+            })?,
+            Inst::F32ConvertSI64 => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_convert_to_float(
+                    WasmIntType::I64,
+                    Signedness::Signed,
+                    WasmFloatType::F32,
+                )
+            })?,
+            Inst::F32ConvertUI64 => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_convert_to_float(
+                    WasmIntType::I64,
+                    Signedness::Unsigned,
+                    WasmFloatType::F32,
+                )
+            })?,
+            Inst::F32DemoteF64 => {
+                self.validate_translate(validator, inst, InstructionsBuilder::demote)?
+            }
+            Inst::F64ConvertSI32 => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_convert_to_float(
+                    WasmIntType::I32,
+                    Signedness::Signed,
+                    WasmFloatType::F64,
+                )
+            })?,
+            Inst::F64ConvertUI32 => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_convert_to_float(
+                    WasmIntType::I32,
+                    Signedness::Unsigned,
+                    WasmFloatType::F64,
+                )
+            })?,
+            Inst::F64ConvertSI64 => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_convert_to_float(
+                    WasmIntType::I64,
+                    Signedness::Signed,
+                    WasmFloatType::F64,
+                )
+            })?,
+            Inst::F64ConvertUI64 => self.validate_translate(validator, inst, |inst_builder| {
+                inst_builder.int_convert_to_float(
+                    WasmIntType::I64,
+                    Signedness::Unsigned,
+                    WasmFloatType::F64,
+                )
+            })?,
+            Inst::F64PromoteF32 => {
+                self.validate_translate(validator, inst, InstructionsBuilder::promote)?
+            }
+            Inst::I32ReinterpretF32 => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.reinterpret::<f32, i32>()
+                })?
+            }
+            Inst::I64ReinterpretF64 => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.reinterpret::<f64, i64>()
+                })?
+            }
+            Inst::F32ReinterpretI32 => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.reinterpret::<i32, f32>()
+                })?
+            }
+            Inst::F64ReinterpretI64 => {
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.reinterpret::<i64, f64>()
+                })?
+            }
         }
         Ok(())
     }
