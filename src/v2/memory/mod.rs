@@ -10,6 +10,8 @@ use self::byte_buffer::{ByteBuffer, VmemError};
 use super::Index;
 use super::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut, Stored};
 use crate::memory_units::{Bytes, Pages};
+use core::fmt;
+use core::fmt::Display;
 
 /// A raw index to a linear memory entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -39,6 +41,26 @@ pub enum MemoryError {
     OutOfBoundsAccess,
     /// A generic virtual memory error.
     Vmem(byte_buffer::VmemError),
+}
+
+impl Display for MemoryError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            MemoryError::ZeroLengthVirtualMemory => {
+                write!(f, "tried to allocate zero length virtual memory")
+            }
+            MemoryError::OutOfBoundsAllocation => {
+                write!(f, "tried to allocate too much virtual memory")
+            }
+            MemoryError::OutOfBoundsGrowth => {
+                write!(f, "tried to grow virtual memory out of bounds")
+            }
+            MemoryError::OutOfBoundsAccess => {
+                write!(f, "tried to access virtual memory out of bounds")
+            }
+            MemoryError::Vmem(error) => Display::fmt(error, f),
+        }
+    }
 }
 
 impl From<VmemError> for MemoryError {

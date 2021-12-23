@@ -1,9 +1,17 @@
 use parity_wasm as pwasm;
+use core::fmt;
+use core::fmt::Display;
 
 /// Errors that can occur upon operating with resizable limits.
 #[derive(Debug)]
 #[non_exhaustive]
 pub struct LimitsError;
+
+impl Display for LimitsError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "encountered invalid resizable limit")
+    }
+}
 
 /// Memory and table limits.
 #[derive(Debug, Copy, Clone, PartialEq)]
