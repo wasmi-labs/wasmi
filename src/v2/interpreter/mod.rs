@@ -10,13 +10,16 @@ pub mod value_stack;
 
 #[allow(unused_imports)]
 use self::{
-    bytecode::{DropKeep, Instruction, Target},
+    bytecode::Instruction,
     call_stack::{CallStack, CallStackError, FunctionFrame},
     code_map::{CodeMap, ResolvedFuncBody},
-    inst_builder::InstructionIdx,
     value_stack::{FromStackEntry, StackEntry, ValueStack},
 };
-pub use self::{code_map::FuncBody, inst_builder::InstructionsBuilder};
+pub use self::{
+    bytecode::{DropKeep, Target},
+    code_map::FuncBody,
+    inst_builder::{InstructionIdx, InstructionsBuilder, LabelIdx, Reloc},
+};
 use super::Func;
 use alloc::sync::Arc;
 use spin::mutex::Mutex;
