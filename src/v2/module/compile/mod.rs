@@ -4,17 +4,13 @@
 //! framework used by `wasmi` which currently is `parity_wasm`.
 
 mod control_frame;
+mod error;
+use self::{control_frame::ControlFrame, error::TranslationError};
 use super::{
     super::{FuncBody, InstructionsBuilder},
     Engine,
 };
 use parity_wasm::elements::{self as pwasm, Instruction};
-
-/// An error that may occur upon translating Wasm to `wasmi` bytecode.
-#[derive(Debug)]
-pub enum TranslationError {
-    Validation,
-}
 
 /// A unique label identifier.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
