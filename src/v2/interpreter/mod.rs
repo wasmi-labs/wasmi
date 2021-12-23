@@ -8,15 +8,15 @@ pub mod code_map;
 pub mod inst_builder;
 pub mod value_stack;
 
-pub use self::code_map::FuncBody;
 #[allow(unused_imports)]
 use self::{
     bytecode::{DropKeep, Instruction, Target},
     call_stack::{CallStack, CallStackError, FunctionFrame},
     code_map::{CodeMap, ResolvedFuncBody},
-    inst_builder::{InstructionIdx, InstructionsBuilder},
+    inst_builder::InstructionIdx,
     value_stack::{FromStackEntry, StackEntry, ValueStack},
 };
+pub use self::{code_map::FuncBody, inst_builder::InstructionsBuilder};
 use super::Func;
 use alloc::sync::Arc;
 use spin::mutex::Mutex;

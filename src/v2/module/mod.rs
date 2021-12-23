@@ -1,5 +1,7 @@
 #![allow(missing_docs, dead_code)] // TODO: remove
 
+mod compile;
+
 use super::Engine;
 
 /// A compiled and validated WebAssembly module.
