@@ -11,10 +11,10 @@ pub mod value_stack;
 pub use self::code_map::FuncBody;
 #[allow(unused_imports)]
 use self::{
+    bytecode::{DropKeep, Instruction, Target},
     call_stack::{CallStack, CallStackError, FunctionFrame},
     code_map::{CodeMap, ResolvedFuncBody},
     inst_builder::{InstructionIdx, InstructionsBuilder},
-    bytecode::{DropKeep, Instruction, Target},
     value_stack::{FromStackEntry, StackEntry, ValueStack},
 };
 use super::Func;
