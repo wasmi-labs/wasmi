@@ -7,6 +7,7 @@ use self::compile::FuncBodyTranslator;
 pub use self::error::TranslationError;
 use super::interpreter::{FuncBody, InstructionsBuilder};
 use super::Engine;
+use alloc::vec::Vec;
 use core::mem;
 use parity_wasm::elements as pwasm;
 use validation::{validate_module, FuncValidator, Validator};
