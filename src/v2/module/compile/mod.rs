@@ -115,6 +115,7 @@ impl FuncBodyTranslator {
                 self.validate_translate(validator, inst, InstructionsBuilder::unreachable)?;
             }
             Inst::Nop => {
+                // No need to translate a no-op into `wasmi` bytecode.
                 validator.step(inst)?;
             }
             Inst::Block(_block_type) => {
