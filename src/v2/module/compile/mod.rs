@@ -12,11 +12,6 @@ use super::{
 };
 use parity_wasm::elements::{self as pwasm, Instruction};
 
-/// A unique label identifier.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct LabelIdx(usize);
-
-
 /// Allows to translate a Wasm functions into `wasmi` bytecode.
 #[derive(Debug)]
 pub struct FuncBodyTranslator {
