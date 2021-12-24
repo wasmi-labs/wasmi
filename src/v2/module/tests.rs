@@ -15,14 +15,13 @@ fn compile(bytes: impl AsRef<[u8]>) -> (Engine, Vec<FuncBody>) {
 }
 
 fn assert_func_body(engine: &Engine, func_body: FuncBody, expected: &[Instruction]) {
-    // let resolved = engine.resolve_func_body(func_body);
     for (index, actual, expected) in expected
         .iter()
         .enumerate()
-        .map(|(index, actual)| (index, actual, engine.resolve_inst(func_body, index)))
+        .map(|(index, expected)| (index, engine.resolve_inst(func_body, index), *expected))
     {
         assert_eq!(
-            actual, &expected,
+            actual, expected,
             "encountered instruction mismatch at position {}",
             index
         );
