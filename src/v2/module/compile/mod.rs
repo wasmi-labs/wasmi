@@ -195,6 +195,8 @@ impl FuncBodyTranslator {
                 self.validate_translate(validator, inst, InstructionsBuilder::select)?
             }
             Inst::GetLocal(index) => {
+                // Note: We need to calculate relative depth _before_ validation
+                //       since it will change the value stack size.
                 let local_depth =
                     utils::relative_local_depth(*index, &validator.locals, &validator.value_stack)?;
                 self.validate_translate(validator, inst, |inst_builder| {
@@ -202,18 +204,20 @@ impl FuncBodyTranslator {
                 })?
             }
             Inst::SetLocal(index) => {
+                // Note: We need to calculate relative depth _after_ validation
+                //       since it will change the value stack size.
+                validator.step(inst)?;
                 let local_depth =
                     utils::relative_local_depth(*index, &validator.locals, &validator.value_stack)?;
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.set_local(LocalIdx::from(local_depth))
-                })?
+                self.inst_builder.set_local(LocalIdx::from(local_depth));
             }
             Inst::TeeLocal(index) => {
+                // Note: We need to calculate relative depth _after_ validation
+                //       since it will change the value stack size.
+                validator.step(inst)?;
                 let local_depth =
                     utils::relative_local_depth(*index, &validator.locals, &validator.value_stack)?;
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.tee_local(LocalIdx::from(local_depth))
-                })?
+                self.inst_builder.tee_local(LocalIdx::from(local_depth));
             }
             Inst::GetGlobal(index) => self.validate_translate(validator, inst, |inst_builder| {
                 inst_builder.get_global(GlobalIdx::from(*index))
