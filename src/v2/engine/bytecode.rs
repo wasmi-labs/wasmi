@@ -62,7 +62,7 @@ impl Target {
     ///
     /// If the old destination program counter was not [`InstructionIdx::INVALID`].
     pub fn update_destination_pc(&mut self, new_destination_pc: InstructionIdx) {
-        assert_ne!(
+        assert_eq!(
             self.destination_pc(),
             InstructionIdx::INVALID,
             "can only update the destination pc of a target with an invalid \
