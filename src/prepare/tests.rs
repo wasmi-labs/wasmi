@@ -132,6 +132,34 @@ fn get_local() {
 }
 
 #[test]
+fn get_local_2() {
+    let module = validate(
+        r#"
+		(module
+			(func (export "call") (param i32) (param i32) (result i32)
+				get_local 0
+                get_local 1
+                drop
+			)
+		)
+	"#,
+    );
+    let (code, _) = compile(&module);
+    assert_eq!(
+        code,
+        vec![
+            isa::Instruction::GetLocal(2),
+            isa::Instruction::GetLocal(2),
+            isa::Instruction::Drop,
+            isa::Instruction::Return(isa::DropKeep {
+                drop: 2,
+                keep: isa::Keep::Single,
+            }),
+        ]
+    )
+}
+
+#[test]
 fn explicit_return() {
     let module = validate(
         r#"

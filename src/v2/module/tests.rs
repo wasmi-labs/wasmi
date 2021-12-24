@@ -114,3 +114,30 @@ fn get_local() {
         ],
     );
 }
+
+#[test]
+fn get_local_2() {
+    let wasm = wat2wasm(
+        r#"
+		(module
+			(func (export "call") (param i32) (param i32) (result i32)
+				get_local 0
+                get_local 1
+                drop
+			)
+		)
+	"#,
+    );
+    let (engine, func_bodies) = compile(&wasm);
+    assert_eq!(func_bodies.len(), 1);
+    assert_func_body(
+        &engine,
+        func_bodies[0],
+        &[
+            Instruction::GetLocal(LocalIdx::from(2)),
+            Instruction::GetLocal(LocalIdx::from(2)),
+            Instruction::Drop,
+            Instruction::Return(DropKeep::new(2, 1))
+        ],
+    );
+}
