@@ -166,3 +166,35 @@ fn explicit_return() {
         ],
     );
 }
+
+#[test]
+fn add_params() {
+    let wasm = wat2wasm(
+        r#"
+		(module
+			(func (export "call") (param i32) (param i32) (result i32)
+				get_local 0
+				get_local 1
+				i32.add
+			)
+		)
+	"#,
+    );
+    let (engine, func_bodies) = compile(&wasm);
+    assert_eq!(func_bodies.len(), 1);
+    assert_func_body(
+        &engine,
+        func_bodies[0],
+        &[
+            // This is tricky. Locals are now loaded from the stack. The load
+            // happens from address relative of the current stack pointer. The first load
+            // takes the value below the previous one (i.e the second argument) and then, it increments
+            // the stack pointer. And then the same thing hapens with the value below the previous one
+            // (which happens to be the value loaded by the first get_local).
+            Instruction::GetLocal(LocalIdx::from(2)),
+            Instruction::GetLocal(LocalIdx::from(2)),
+            Instruction::I32Add,
+            Instruction::Return(DropKeep::new(2, 1)),
+        ],
+    );
+}
