@@ -54,7 +54,20 @@ pub struct Engine {
     inner: Arc<Mutex<EngineInner>>,
 }
 
+impl Default for Engine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Engine {
+    /// Creates a new [`Engine`] with default configuration.
+    pub fn new() -> Self {
+        Self {
+            inner: Arc::new(Mutex::new(EngineInner::default())),
+        }
+    }
+
     /// Allocates the instructions of a Wasm function body to the [`Engine`].
     ///
     /// Returns a [`FuncBody`] reference to the allocated function body.
