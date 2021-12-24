@@ -40,7 +40,7 @@ use self::signature::{SignatureEntity, SignatureIdx};
 use self::store::Stored;
 use self::table::{TableEntity, TableError, TableIdx};
 pub use self::{
-    engine::Interpreter as Engine,
+    engine::Engine,
     error::Error,
     external::Extern,
     func::Func,

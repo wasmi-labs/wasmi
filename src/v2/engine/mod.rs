@@ -46,14 +46,15 @@ pub enum ExecutionOutcome {
 ///
 /// # Note
 ///
-/// This structure is intentionally cheap to copy.
-/// Most of its API has a `&self` receiver, so can be shared easily.
+/// - The current `wasmi` engine implements a bytecode interpreter.
+/// - This structure is intentionally cheap to copy.
+///   Most of its API has a `&self` receiver, so can be shared easily.
 #[derive(Debug, Clone)]
-pub struct Interpreter {
-    inner: Arc<Mutex<InterpreterInner>>,
+pub struct Engine {
+    inner: Arc<Mutex<EngineInner>>,
 }
 
-impl Interpreter {
+impl Engine {
     /// Allocates the instructions of a Wasm function body to the [`Interpreter`].
     ///
     /// Returns a [`FuncBody`] reference to the allocated function body.
@@ -66,9 +67,9 @@ impl Interpreter {
     }
 }
 
-/// The internal state of the `wasmi` interpreter.
+/// The internal state of the `wasmi` engine.
 #[derive(Debug)]
-pub struct InterpreterInner {
+pub struct EngineInner {
     /// Stores the value stack of live values on the Wasm stack.
     value_stack: ValueStack,
     /// Stores the call stack of live function invocations.
@@ -77,7 +78,7 @@ pub struct InterpreterInner {
     code_map: CodeMap,
 }
 
-impl InterpreterInner {
+impl EngineInner {
     /// Allocates the instructions of a Wasm function body to the [`Interpreter`].
     ///
     /// Returns a [`FuncBody`] reference to the allocated function body.

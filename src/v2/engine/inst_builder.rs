@@ -4,7 +4,7 @@
 
 use super::{
     bytecode::{DropKeep, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, Target},
-    FuncBody, Instruction, Interpreter,
+    Engine, FuncBody, Instruction,
 };
 use crate::{RuntimeValue, ValueType};
 use alloc::vec::Vec;
@@ -196,7 +196,7 @@ impl InstructionsBuilder {
     /// aware of the Wasm function existance. Returns a `FuncBody`
     /// reference that allows to retrieve the instructions.
     #[must_use]
-    pub fn finish(&mut self, engine: &Interpreter) -> FuncBody {
+    pub fn finish(&mut self, engine: &Engine) -> FuncBody {
         engine.alloc_func_body(self.insts.drain(..))
     }
 }
