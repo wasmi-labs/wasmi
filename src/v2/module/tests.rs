@@ -177,3 +177,26 @@ fn add_params() {
         ],
     );
 }
+
+#[test]
+fn drop_locals() {
+    let wasm = wat2wasm(
+        r#"
+		(module
+			(func (export "call") (param i32)
+				(local i32)
+				get_local 0
+				set_local 1
+			)
+		)
+	"#,
+    );
+    assert_single_func_body(
+        &wasm,
+        &[
+            Instruction::GetLocal(LocalIdx::from(2)),
+            Instruction::SetLocal(LocalIdx::from(1)),
+            Instruction::Return(DropKeep::new(2, 0)),
+        ],
+    );
+}
