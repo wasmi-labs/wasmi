@@ -93,9 +93,9 @@ pub fn drop_keep_return(
         frame.value_stack_len,
     )?;
     Ok(DropKeep::new(
-        drop_keep.drop(),
         // Drop all local variables and parameters upon exit.
-        drop_keep.keep() + locals.count() as usize,
+        drop_keep.drop() + locals.count() as usize,
+        drop_keep.keep(),
     ))
 }
 
