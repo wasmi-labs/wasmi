@@ -579,3 +579,38 @@ fn br_table_returns_result() {
         ],
     );
 }
+
+#[test]
+fn wabt_example() {
+    let wasm = wat2wasm(
+        r#"
+		(module
+			(func (export "call") (param i32) (result i32)
+				block $exit
+					get_local 0
+					br_if $exit
+					i32.const 1
+					return
+				end
+				i32.const 2
+				return
+			)
+		)
+	"#,
+    );
+    assert_single_func_body(
+        &wasm,
+        &[
+            Instruction::GetLocal(LocalIdx::from(1)),
+            Instruction::BrIfNez(Target::new(
+                InstructionIdx::from_usize(4),
+                DropKeep::new(0, 0),
+            )),
+            Instruction::I32Const(1),
+            Instruction::Return(DropKeep::new(1, 1)),
+            Instruction::I32Const(2),
+            Instruction::Return(DropKeep::new(1, 1)),
+            Instruction::Return(DropKeep::new(1, 1)),
+        ],
+    );
+}
