@@ -69,3 +69,22 @@ fn implicit_return_with_value() {
         ],
     );
 }
+
+#[test]
+fn implicit_return_param() {
+    let wasm = wat2wasm(
+        r#"
+		(module
+			(func (export "call") (param i32)
+			)
+		)
+	"#,
+    );
+    let (engine, func_bodies) = compile(&wasm);
+    assert_eq!(func_bodies.len(), 1);
+    assert_func_body(
+        &engine,
+        func_bodies[0],
+        &[Instruction::Return(DropKeep::new(1, 0))],
+    );
+}
