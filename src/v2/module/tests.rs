@@ -280,3 +280,182 @@ fn if_else() {
         ],
     );
 }
+
+#[test]
+fn if_else_returns_result() {
+    let wasm = wat2wasm(
+        r#"
+		(module
+			(func (export "call")
+				i32.const 1
+				if (result i32)
+					i32.const 2
+				else
+					i32.const 3
+				end
+				drop
+			)
+		)
+	"#,
+    );
+    assert_single_func_body(
+        &wasm,
+        &[
+            Instruction::I32Const(1),
+            Instruction::BrIfEqz(Target::new(
+                InstructionIdx::from_usize(4),
+                DropKeep::new(0, 0),
+            )),
+            Instruction::I32Const(2),
+            Instruction::Br(Target::new(
+                InstructionIdx::from_usize(5),
+                DropKeep::new(0, 0),
+            )),
+            Instruction::I32Const(3),
+            Instruction::Drop,
+            Instruction::Return(DropKeep::new(0, 0)),
+        ],
+    );
+}
+
+#[test]
+fn if_else_branch_from_true_branch() {
+    let wasm = wat2wasm(
+        r#"
+		(module
+			(func (export "call")
+				i32.const 1
+				if (result i32)
+					i32.const 1
+					i32.const 1
+					br_if 0
+					drop
+					i32.const 2
+				else
+					i32.const 3
+				end
+				drop
+			)
+		)
+	"#,
+    );
+    assert_single_func_body(
+        &wasm,
+        &[
+            Instruction::I32Const(1),
+            Instruction::BrIfEqz(Target::new(
+                InstructionIdx::from_usize(8),
+                DropKeep::new(0, 0),
+            )),
+            Instruction::I32Const(1),
+            Instruction::I32Const(1),
+            Instruction::BrIfNez(Target::new(
+                InstructionIdx::from_usize(9),
+                DropKeep::new(0, 1),
+            )),
+            Instruction::Drop,
+            Instruction::I32Const(2),
+            Instruction::Br(Target::new(
+                InstructionIdx::from_usize(9),
+                DropKeep::new(0, 0),
+            )),
+            Instruction::I32Const(3),
+            Instruction::Drop,
+            Instruction::Return(DropKeep::new(0, 0)),
+        ],
+    );
+}
+
+#[test]
+fn if_else_branch_from_false_branch() {
+    let wasm = wat2wasm(
+        r#"
+		(module
+			(func (export "call")
+				i32.const 1
+				if (result i32)
+					i32.const 1
+				else
+					i32.const 2
+					i32.const 1
+					br_if 0
+					drop
+					i32.const 3
+				end
+				drop
+			)
+		)
+	"#,
+    );
+    assert_single_func_body(
+        &wasm,
+        &[
+            Instruction::I32Const(1),
+            Instruction::BrIfEqz(Target::new(
+                InstructionIdx::from_usize(4),
+                DropKeep::new(0, 0),
+            )),
+            Instruction::I32Const(1),
+            Instruction::Br(Target::new(
+                InstructionIdx::from_usize(9),
+                DropKeep::new(0, 0),
+            )),
+            Instruction::I32Const(2),
+            Instruction::I32Const(1),
+            Instruction::BrIfNez(Target::new(
+                InstructionIdx::from_usize(9),
+                DropKeep::new(0, 1),
+            )),
+            Instruction::Drop,
+            Instruction::I32Const(3),
+            Instruction::Drop,
+            Instruction::Return(DropKeep::new(0, 0)),
+        ],
+    );
+}
+
+#[test]
+fn loop_() {
+    let wasm = wat2wasm(
+        r#"
+		(module
+			(func (export "call")
+				loop (result i32)
+					i32.const 1
+					br_if 0
+					i32.const 2
+				end
+				drop
+			)
+		)
+	"#,
+    );
+    assert_single_func_body(
+        &wasm,
+        &[
+            Instruction::I32Const(1),
+            Instruction::BrIfNez(Target::new(
+                InstructionIdx::from_usize(0),
+                DropKeep::new(0, 0),
+            )),
+            Instruction::I32Const(2),
+            Instruction::Drop,
+            Instruction::Return(DropKeep::new(0, 0)),
+        ],
+    );
+}
+
+#[test]
+fn loop_empty() {
+    let wasm = wat2wasm(
+        r#"
+		(module
+			(func (export "call")
+				loop
+				end
+			)
+		)
+	"#,
+    );
+    assert_single_func_body(&wasm, &[Instruction::Return(DropKeep::new(0, 0))]);
+}
