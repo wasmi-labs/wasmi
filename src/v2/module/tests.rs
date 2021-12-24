@@ -137,7 +137,7 @@ fn get_local_2() {
             Instruction::GetLocal(LocalIdx::from(2)),
             Instruction::GetLocal(LocalIdx::from(2)),
             Instruction::Drop,
-            Instruction::Return(DropKeep::new(2, 1))
+            Instruction::Return(DropKeep::new(2, 1)),
         ],
     );
 }
