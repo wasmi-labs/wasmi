@@ -1,7 +1,9 @@
 #![allow(missing_docs)]
 
-use core::cmp::{Ordering, PartialEq, PartialOrd};
-use core::ops::{Add, Div, Mul, Neg, Rem, Sub};
+use core::{
+    cmp::{Ordering, PartialEq, PartialOrd},
+    ops::{Add, Div, Mul, Neg, Rem, Sub},
+};
 use num_traits::float::FloatCore;
 
 macro_rules! impl_binop {

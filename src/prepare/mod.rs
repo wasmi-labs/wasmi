@@ -63,7 +63,8 @@ pub fn compile_module(module: Module) -> Result<CompiledModule, Error> {
 pub fn deny_floating_point(module: &Module) -> Result<(), Error> {
     use parity_wasm::elements::{
         Instruction::{self, *},
-        Type, ValueType,
+        Type,
+        ValueType,
     };
 
     if let Some(code) = module.code_section() {

@@ -424,21 +424,22 @@ mod value;
 #[cfg(test)]
 mod tests;
 
-pub use self::func::{FuncInstance, FuncInvocation, FuncRef, ResumableError};
-pub use self::global::{GlobalInstance, GlobalRef};
-pub use self::host::{Externals, HostError, NopExternals, RuntimeArgs};
-pub use self::imports::{ImportResolver, ImportsBuilder, ModuleImportResolver};
-pub use self::memory::{MemoryInstance, MemoryRef, LINEAR_MEMORY_PAGE_SIZE};
-pub use self::module::{ExternVal, ModuleInstance, ModuleRef, NotStartedModuleRef};
-pub use self::runner::{StackRecycler, DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT};
-pub use self::table::{TableInstance, TableRef};
-pub use self::types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor, ValueType};
-pub use self::value::{Error as ValueError, FromRuntimeValue, LittleEndianConvert, RuntimeValue};
+pub use self::{
+    func::{FuncInstance, FuncInvocation, FuncRef, ResumableError},
+    global::{GlobalInstance, GlobalRef},
+    host::{Externals, HostError, NopExternals, RuntimeArgs},
+    imports::{ImportResolver, ImportsBuilder, ModuleImportResolver},
+    memory::{MemoryInstance, MemoryRef, LINEAR_MEMORY_PAGE_SIZE},
+    module::{ExternVal, ModuleInstance, ModuleRef, NotStartedModuleRef},
+    runner::{StackRecycler, DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT},
+    table::{TableInstance, TableRef},
+    types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor, ValueType},
+    value::{Error as ValueError, FromRuntimeValue, LittleEndianConvert, RuntimeValue},
+};
 
 /// WebAssembly-specific sizes and units.
 pub mod memory_units {
-    pub use memory_units::wasm32::*;
-    pub use memory_units::{size_of, ByteSize, Bytes, RoundUpTo};
+    pub use memory_units::{size_of, wasm32::*, ByteSize, Bytes, RoundUpTo};
 }
 
 /// Deserialized module prepared for instantiation.

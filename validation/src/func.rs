@@ -1,6 +1,11 @@
 use crate::{
-    context::ModuleContext, stack::StackWithLimit, util::Locals, Error, FuncValidator,
-    DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX,
+    context::ModuleContext,
+    stack::StackWithLimit,
+    util::Locals,
+    Error,
+    FuncValidator,
+    DEFAULT_MEMORY_INDEX,
+    DEFAULT_TABLE_INDEX,
 };
 
 use core::u32;

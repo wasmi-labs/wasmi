@@ -1,6 +1,8 @@
-use crate::nan_preserving_float::{F32, F64};
-use crate::types::ValueType;
-use crate::TrapKind;
+use crate::{
+    nan_preserving_float::{F32, F64},
+    types::ValueType,
+    TrapKind,
+};
 use core::{f32, i32, i64, u32, u64};
 
 /// Error for `LittleEndianConvert`
@@ -827,8 +829,7 @@ mod fmath {
 
 #[cfg(not(feature = "std"))]
 mod fmath {
-    pub use super::libm_adapters::f32;
-    pub use super::libm_adapters::f64;
+    pub use super::libm_adapters::{f32, f64};
 }
 
 // We cannot call the math functions directly, because they are not all available in `core`.
