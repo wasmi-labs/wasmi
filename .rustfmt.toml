@@ -1,0 +1,2 @@
+imports_granularity = "Crate"
+edition = "2021"
