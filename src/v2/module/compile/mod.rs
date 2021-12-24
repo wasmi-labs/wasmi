@@ -194,15 +194,27 @@ impl FuncBodyTranslator {
             Inst::Select => {
                 self.validate_translate(validator, inst, InstructionsBuilder::select)?
             }
-            Inst::GetLocal(index) => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.get_local(LocalIdx::from(*index))
-            })?,
-            Inst::SetLocal(index) => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.set_local(LocalIdx::from(*index))
-            })?,
-            Inst::TeeLocal(index) => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.tee_local(LocalIdx::from(*index))
-            })?,
+            Inst::GetLocal(index) => {
+                let local_depth =
+                    utils::relative_local_depth(*index, &validator.locals, &validator.value_stack)?;
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.get_local(LocalIdx::from(local_depth))
+                })?
+            }
+            Inst::SetLocal(index) => {
+                let local_depth =
+                    utils::relative_local_depth(*index, &validator.locals, &validator.value_stack)?;
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.set_local(LocalIdx::from(local_depth))
+                })?
+            }
+            Inst::TeeLocal(index) => {
+                let local_depth =
+                    utils::relative_local_depth(*index, &validator.locals, &validator.value_stack)?;
+                self.validate_translate(validator, inst, |inst_builder| {
+                    inst_builder.tee_local(LocalIdx::from(local_depth))
+                })?
+            }
             Inst::GetGlobal(index) => self.validate_translate(validator, inst, |inst_builder| {
                 inst_builder.get_global(GlobalIdx::from(*index))
             })?,

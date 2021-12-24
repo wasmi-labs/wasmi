@@ -99,6 +99,25 @@ pub fn drop_keep_return(
     ))
 }
 
+/// Returns the relative depth on the stack of the local variable.
+///
+/// # Note
+///
+/// See stack layout definition in `isa.rs`.
+pub fn relative_local_depth(
+    local_idx: u32,
+    locals: &Locals,
+    value_stack: &StackWithLimit<StackValueType>,
+) -> Result<u32, Error> {
+    let value_stack_height = value_stack.len() as u32;
+    let locals_and_params_count = locals.count();
+    let depth = value_stack_height
+        .checked_add(locals_and_params_count)
+        .and_then(|x| x.checked_sub(local_idx))
+        .ok_or_else(|| Error("local range not in 32-bit range".into()))?;
+    Ok(depth)
+}
+
 /// Returns the requested target for branch referred by `depth`.
 ///
 /// # Errors
