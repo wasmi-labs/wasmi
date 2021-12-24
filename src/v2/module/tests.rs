@@ -1,6 +1,9 @@
 use super::*;
 use crate::v2::{
-    engine::{bytecode::{Instruction, LocalIdx}, DropKeep},
+    engine::{
+        bytecode::{Instruction, LocalIdx},
+        DropKeep,
+    },
     Engine,
 };
 
