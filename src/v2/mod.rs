@@ -5,12 +5,12 @@
 //! machine architecture.
 
 mod arena;
+mod engine;
 mod error;
 mod external;
 mod func;
 mod global;
 mod instance;
-mod interpreter;
 mod limits;
 mod linker;
 mod memory;
@@ -28,11 +28,9 @@ pub mod errors {
 }
 
 use self::arena::{Arena, DedupArena, Index};
+use self::engine::{DropKeep, FuncBody, InstructionIdx, InstructionsBuilder, LabelIdx, Target};
 use self::func::{FuncEntity, FuncIdx};
 use self::global::{GlobalEntity, GlobalError, GlobalIdx};
-use self::interpreter::{
-    DropKeep, FuncBody, InstructionIdx, InstructionsBuilder, LabelIdx, Target,
-};
 // use self::instance::{InstanceEntity, InstanceIdx};
 use self::limits::LimitsError;
 use self::linker::LinkerError;
@@ -42,12 +40,12 @@ use self::signature::{SignatureEntity, SignatureIdx};
 use self::store::Stored;
 use self::table::{TableEntity, TableError, TableIdx};
 pub use self::{
+    engine::Interpreter as Engine,
     error::Error,
     external::Extern,
     func::Func,
     global::{Global, Mutability},
     instance::Instance,
-    interpreter::Interpreter as Engine,
     limits::ResizableLimits,
     linker::Linker,
     memory::{Memory, MemoryType},

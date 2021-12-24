@@ -12,12 +12,9 @@ use super::{
     Engine,
 };
 use crate::{
-    v2::{
-        interpreter::bytecode::{FuncIdx, GlobalIdx, LocalIdx, SignatureIdx},
-        interpreter::{
-            bytecode::Offset,
-            inst_builder::{Reloc, Signedness, WasmFloatType, WasmIntType},
-        },
+    v2::engine::{
+        bytecode::{FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx},
+        inst_builder::{Reloc, Signedness, WasmFloatType, WasmIntType},
     },
     RuntimeValue, ValueType,
 };

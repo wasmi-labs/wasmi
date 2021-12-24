@@ -5,7 +5,7 @@ mod error;
 
 use self::compile::FuncBodyTranslator;
 pub use self::error::TranslationError;
-use super::interpreter::{FuncBody, InstructionsBuilder};
+use super::engine::{FuncBody, InstructionsBuilder};
 use super::Engine;
 use alloc::vec::Vec;
 use core::mem;

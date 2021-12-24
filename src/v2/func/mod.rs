@@ -7,7 +7,7 @@ mod locals;
 pub use self::caller::Caller;
 pub use self::into_func::IntoFunc;
 use self::locals::Locals;
-use super::interpreter::FuncBody;
+use super::engine::FuncBody;
 use super::Index;
 use super::Signature;
 use super::Stored;
