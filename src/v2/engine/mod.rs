@@ -55,7 +55,7 @@ pub struct Engine {
 }
 
 impl Engine {
-    /// Allocates the instructions of a Wasm function body to the [`Interpreter`].
+    /// Allocates the instructions of a Wasm function body to the [`Engine`].
     ///
     /// Returns a [`FuncBody`] reference to the allocated function body.
     pub(super) fn alloc_func_body<I>(&self, insts: I) -> FuncBody
@@ -79,7 +79,7 @@ pub struct EngineInner {
 }
 
 impl EngineInner {
-    /// Allocates the instructions of a Wasm function body to the [`Interpreter`].
+    /// Allocates the instructions of a Wasm function body to the [`Engine`].
     ///
     /// Returns a [`FuncBody`] reference to the allocated function body.
     pub fn alloc_func_body<I>(&mut self, insts: I) -> FuncBody

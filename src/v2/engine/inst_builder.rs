@@ -192,7 +192,7 @@ impl InstructionsBuilder {
     /// # Note
     ///
     /// This feeds the built-up instructions of the function body
-    /// into the [`Interpreter`] so that the [`Interpreter`] is
+    /// into the [`Engine`] so that the [`Engine`] is
     /// aware of the Wasm function existance. Returns a `FuncBody`
     /// reference that allows to retrieve the instructions.
     #[must_use]
