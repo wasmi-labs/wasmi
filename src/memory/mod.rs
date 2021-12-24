@@ -1,6 +1,8 @@
-use crate::memory_units::{Bytes, Pages, RoundUpTo};
-use crate::value::LittleEndianConvert;
-use crate::Error;
+use crate::{
+    memory_units::{Bytes, Pages, RoundUpTo},
+    value::LittleEndianConvert,
+    Error,
+};
 use alloc::{rc::Rc, string::ToString, vec::Vec};
 use core::{
     cell::{Cell, Ref, RefCell, RefMut},
@@ -577,8 +579,7 @@ impl MemoryInstance {
 mod tests {
 
     use super::{MemoryInstance, MemoryRef, LINEAR_MEMORY_PAGE_SIZE};
-    use crate::memory_units::Pages;
-    use crate::Error;
+    use crate::{memory_units::Pages, Error};
     use alloc::rc::Rc;
 
     #[test]

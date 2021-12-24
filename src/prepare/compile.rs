@@ -3,12 +3,15 @@ use alloc::{string::String, vec::Vec};
 use parity_wasm::elements::{BlockType, FuncBody, Instruction};
 
 use crate::isa;
-use validation::func::{
-    require_label, top_label, BlockFrame, FunctionValidationContext, StackValueType, StartedWith,
+use validation::{
+    func::{
+        require_label, top_label, BlockFrame, FunctionValidationContext, StackValueType,
+        StartedWith,
+    },
+    stack::StackWithLimit,
+    util::Locals,
+    Error, FuncValidator,
 };
-use validation::stack::StackWithLimit;
-use validation::util::Locals;
-use validation::{Error, FuncValidator};
 
 /// Type of block frame.
 #[derive(Debug, Clone, Copy)]

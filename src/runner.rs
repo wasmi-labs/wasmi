@@ -1,21 +1,21 @@
 #![allow(clippy::unnecessary_wraps)]
 
-use crate::func::{FuncInstance, FuncInstanceInternal, FuncRef};
-use crate::host::Externals;
-use crate::isa;
-use crate::memory::MemoryRef;
-use crate::memory_units::Pages;
-use crate::module::ModuleRef;
-use crate::nan_preserving_float::{F32, F64};
-use crate::value::{
-    ArithmeticOps, ExtendInto, Float, Integer, LittleEndianConvert, RuntimeValue, TransmuteInto,
-    TryTruncateInto, WrapInto,
+use crate::{
+    func::{FuncInstance, FuncInstanceInternal, FuncRef},
+    host::Externals,
+    isa,
+    memory::MemoryRef,
+    memory_units::Pages,
+    module::ModuleRef,
+    nan_preserving_float::{F32, F64},
+    value::{
+        ArithmeticOps, ExtendInto, Float, Integer, LittleEndianConvert, RuntimeValue,
+        TransmuteInto, TryTruncateInto, WrapInto,
+    },
+    Signature, Trap, TrapKind, ValueType,
 };
-use crate::{Signature, Trap, TrapKind, ValueType};
 use alloc::{boxed::Box, vec::Vec};
-use core::fmt;
-use core::ops;
-use core::{u32, usize};
+use core::{fmt, ops, u32, usize};
 use parity_wasm::elements::Local;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 

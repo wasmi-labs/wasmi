@@ -3,9 +3,7 @@
 extern crate parity_wasm;
 extern crate wasmi;
 
-use std::env;
-use std::fmt;
-use std::fs::File;
+use std::{env, fmt, fs::File};
 use wasmi::{
     Error as InterpreterError, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
     ModuleImportResolver, ModuleInstance, ModuleRef, RuntimeArgs, RuntimeValue, Signature, Trap,

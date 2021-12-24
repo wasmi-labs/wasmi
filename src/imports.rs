@@ -1,10 +1,12 @@
-use crate::func::FuncRef;
-use crate::global::GlobalRef;
-use crate::memory::MemoryRef;
-use crate::module::ModuleRef;
-use crate::table::TableRef;
-use crate::types::{GlobalDescriptor, MemoryDescriptor, TableDescriptor};
-use crate::{Error, Signature};
+use crate::{
+    func::FuncRef,
+    global::GlobalRef,
+    memory::MemoryRef,
+    module::ModuleRef,
+    table::TableRef,
+    types::{GlobalDescriptor, MemoryDescriptor, TableDescriptor},
+    Error, Signature,
+};
 use alloc::{collections::BTreeMap, string::String};
 
 /// Resolver of a module's dependencies.
