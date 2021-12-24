@@ -54,7 +54,8 @@ impl CodeMap {
         // We are inserting an artificial `unreachable` Wasm instruction
         // in between instructions of different function bodies as a small
         // safety precaution.
-        let len = self.insts.len();
+        let insts = insts.into_iter();
+        let len = insts.len();
         let start = iter::once(Instruction::FuncBodyStart(len));
         let end = iter::once(Instruction::FuncBodyEnd);
         self.insts.extend(start.chain(insts).chain(end));
