@@ -3,6 +3,8 @@ use crate::v2::{
     engine::{
         bytecode::{Instruction, LocalIdx},
         DropKeep,
+        InstructionIdx,
+        Target,
     },
     Engine,
 };
@@ -197,6 +199,44 @@ fn drop_locals() {
             Instruction::GetLocal(LocalIdx::from(2)),
             Instruction::SetLocal(LocalIdx::from(1)),
             Instruction::Return(DropKeep::new(2, 0)),
+        ],
+    );
+}
+
+#[test]
+fn if_without_else() {
+    let wasm = wat2wasm(
+        r#"
+		(module
+			(func (export "call") (param i32) (result i32)
+				i32.const 1
+				if
+					i32.const 2
+					return
+				end
+				i32.const 3
+			)
+		)
+	"#,
+    );
+    assert_single_func_body(
+        &wasm,
+        &[
+            // 0
+            Instruction::I32Const(1),
+            // 1
+            Instruction::BrIfEqz(Target::new(
+                InstructionIdx::from_usize(4),
+                DropKeep::new(0, 0),
+            )),
+            // 2
+            Instruction::I32Const(2),
+            // 3
+            Instruction::Return(DropKeep::new(1, 1)),
+            // 4
+            Instruction::I32Const(3),
+            // 5
+            Instruction::Return(DropKeep::new(1, 1)),
         ],
     );
 }
