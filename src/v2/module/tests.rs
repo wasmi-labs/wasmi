@@ -565,11 +565,17 @@ fn br_table_returns_result() {
             Instruction::I32Const(0),
             Instruction::I32Const(1),
             Instruction::BrTable { count: 2 },
-            Instruction::BrTableTarget(Target::new(InstructionIdx::from_usize(5), DropKeep::new(0, 1))),
-            Instruction::BrTableTarget(Target::new(InstructionIdx::from_usize(6), DropKeep::new(0, 1))),
+            Instruction::BrTableTarget(Target::new(
+                InstructionIdx::from_usize(5),
+                DropKeep::new(0, 1),
+            )),
+            Instruction::BrTableTarget(Target::new(
+                InstructionIdx::from_usize(6),
+                DropKeep::new(0, 1),
+            )),
             Instruction::Unreachable,
             Instruction::Drop,
             Instruction::Return(DropKeep::new(0, 0)),
-        ]
+        ],
     );
 }
