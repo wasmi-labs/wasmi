@@ -4,13 +4,13 @@
 
 use super::{
     bytecode::{DropKeep, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, Target},
-    Engine, FuncBody, Instruction,
+    Engine,
+    FuncBody,
+    Instruction,
 };
 use crate::{RuntimeValue, ValueType};
 use alloc::vec::Vec;
-use core::fmt;
-use core::fmt::Display;
-use core::mem;
+use core::{fmt, fmt::Display, mem};
 
 /// A reference to an instruction of the partially
 /// constructed function body of the [`InstructionsBuilder`].

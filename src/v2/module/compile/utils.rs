@@ -1,9 +1,14 @@
-use super::super::super::{DropKeep, LabelIdx};
-use super::ControlFrame;
+use super::{
+    super::super::{DropKeep, LabelIdx},
+    ControlFrame,
+};
 use parity_wasm::elements::BlockType;
-use validation::func::{require_label, top_label, BlockFrame, StackValueType, StartedWith};
-use validation::stack::StackWithLimit;
-use validation::{util::Locals, Error};
+use validation::{
+    func::{require_label, top_label, BlockFrame, StackValueType, StartedWith},
+    stack::StackWithLimit,
+    util::Locals,
+    Error,
+};
 
 /// Computes how many values should be dropped and kept for the specific branch.
 ///

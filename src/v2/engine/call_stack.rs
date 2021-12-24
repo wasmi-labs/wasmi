@@ -4,8 +4,7 @@
 
 use super::super::{Func, Instance};
 use alloc::vec::Vec;
-use core::fmt;
-use core::fmt::Display;
+use core::{fmt, fmt::Display};
 
 /// Errors that may occur when operating with the [`CallStack`].
 #[derive(Debug)]

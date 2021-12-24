@@ -1,8 +1,6 @@
-use super::Index;
-use super::{AsContext, AsContextMut, Stored};
+use super::{AsContext, AsContextMut, Index, Stored};
 use crate::{RuntimeValue, ValueType};
-use core::fmt;
-use core::fmt::Display;
+use core::{fmt, fmt::Display};
 
 /// A raw index to a global variable entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

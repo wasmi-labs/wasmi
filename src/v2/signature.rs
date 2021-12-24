@@ -1,8 +1,6 @@
-use super::Index;
-use super::{Store, StoreContext, Stored};
+use super::{Index, Store, StoreContext, Stored};
 use crate::ValueType;
-use alloc::sync::Arc;
-use alloc::vec::Vec;
+use alloc::{sync::Arc, vec::Vec};
 
 /// A raw index to a function signature entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

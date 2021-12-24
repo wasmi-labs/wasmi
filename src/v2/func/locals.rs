@@ -1,8 +1,7 @@
 #![allow(dead_code)] // TODO: remove
 
 use crate::ValueType;
-use alloc::sync::Arc;
-use alloc::vec::Vec;
+use alloc::{sync::Arc, vec::Vec};
 
 /// The local variables of a Wasm function instance.
 #[derive(Debug, Clone)]

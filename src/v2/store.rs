@@ -1,10 +1,26 @@
 use super::{
-    Arena, DedupArena, Func, FuncEntity, FuncIdx, Global, GlobalEntity, GlobalIdx, Memory,
-    MemoryEntity, MemoryIdx, Signature, SignatureEntity, SignatureIdx, Table, TableEntity,
+    Arena,
+    DedupArena,
+    Func,
+    FuncEntity,
+    FuncIdx,
+    Global,
+    GlobalEntity,
+    GlobalIdx,
+    Memory,
+    MemoryEntity,
+    MemoryIdx,
+    Signature,
+    SignatureEntity,
+    SignatureIdx,
+    Table,
+    TableEntity,
     TableIdx,
 };
-use core::fmt;
-use core::sync::atomic::{AtomicUsize, Ordering};
+use core::{
+    fmt,
+    sync::atomic::{AtomicUsize, Ordering},
+};
 
 /// A unique store index.
 ///

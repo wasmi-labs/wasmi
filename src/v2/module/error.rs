@@ -1,5 +1,4 @@
-use core::fmt;
-use core::fmt::Display;
+use core::{fmt, fmt::Display};
 use parity_wasm::elements as pwasm;
 
 /// An error that may occur upon translating Wasm to `wasmi` bytecode.

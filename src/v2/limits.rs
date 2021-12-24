@@ -1,5 +1,4 @@
-use core::fmt;
-use core::fmt::Display;
+use core::{fmt, fmt::Display};
 use parity_wasm as pwasm;
 
 /// Errors that can occur upon operating with resizable limits.

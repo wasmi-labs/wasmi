@@ -4,20 +4,12 @@ mod caller;
 mod into_func;
 mod locals;
 
-pub use self::caller::Caller;
-pub use self::into_func::IntoFunc;
 use self::locals::Locals;
-use super::engine::FuncBody;
-use super::Index;
-use super::Signature;
-use super::Stored;
-use super::{AsContext, AsContextMut};
-use crate::RuntimeValue;
-use crate::Trap;
-use crate::ValueType;
+pub use self::{caller::Caller, into_func::IntoFunc};
+use super::{engine::FuncBody, AsContext, AsContextMut, Index, Signature, Stored};
+use crate::{RuntimeValue, Trap, ValueType};
 use alloc::sync::Arc;
-use core::fmt;
-use core::fmt::Debug;
+use core::{fmt, fmt::Debug};
 
 /// A raw index to a function entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

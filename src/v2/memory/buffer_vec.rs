@@ -1,9 +1,6 @@
-use super::max_memory_len;
-use super::MemoryError;
-use alloc::vec;
-use alloc::vec::Vec;
-use core::fmt;
-use core::fmt::Display;
+use super::{max_memory_len, MemoryError};
+use alloc::{vec, vec::Vec};
+use core::{fmt, fmt::Display};
 
 /// Dummy error for fallible `Vec`-based virtual memory operations.
 #[derive(Debug)]

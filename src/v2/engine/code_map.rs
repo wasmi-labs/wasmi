@@ -1,7 +1,6 @@
 //! Datastructure to efficiently store function bodies and their instructions.
 
-use super::super::Index;
-use super::Instruction;
+use super::{super::Index, Instruction};
 use alloc::vec::Vec;
 use core::iter;
 

@@ -1,6 +1,10 @@
 use super::{super::SignatureEntity, Caller, HostFuncTrampoline, RuntimeValue, ValueType};
-use crate::nan_preserving_float::{F32, F64};
-use crate::{FromRuntimeValue, Trap, TrapKind};
+use crate::{
+    nan_preserving_float::{F32, F64},
+    FromRuntimeValue,
+    Trap,
+    TrapKind,
+};
 use alloc::sync::Arc;
 
 pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {

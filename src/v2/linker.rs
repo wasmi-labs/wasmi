@@ -1,16 +1,17 @@
 use super::Extern;
-use alloc::collections::btree_map::Entry;
-use alloc::collections::BTreeMap;
-use alloc::sync::Arc;
 use alloc::{
+    collections::{btree_map::Entry, BTreeMap},
     string::{String, ToString},
+    sync::Arc,
     vec::Vec,
 };
-use core::fmt;
-use core::fmt::{Debug, Display};
-use core::marker::PhantomData;
-use core::num::NonZeroUsize;
-use core::ops::Deref;
+use core::{
+    fmt,
+    fmt::{Debug, Display},
+    marker::PhantomData,
+    num::NonZeroUsize,
+    ops::Deref,
+};
 
 /// An error that may occur upon operating with [`Linker`] instances.
 #[derive(Debug)]

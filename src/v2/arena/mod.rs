@@ -11,10 +11,13 @@ mod tests;
 
 pub use self::dedup::DedupArena;
 use alloc::vec::Vec;
-use core::iter::{DoubleEndedIterator, ExactSizeIterator};
-use core::marker::PhantomData;
-use core::slice;
-use core::{iter, ops};
+use core::{
+    iter,
+    iter::{DoubleEndedIterator, ExactSizeIterator},
+    marker::PhantomData,
+    ops,
+    slice,
+};
 
 /// Types that can be used as indices for arenas.
 pub trait Index: Copy {

@@ -22,23 +22,22 @@ mod table;
 /// Defines some errors that may occur upon interaction with `wasmi`.
 pub mod errors {
     pub use super::{
-        global::GlobalError, limits::LimitsError, linker::LinkerError, memory::MemoryError,
-        module::TranslationError, table::TableError,
+        global::GlobalError,
+        limits::LimitsError,
+        linker::LinkerError,
+        memory::MemoryError,
+        module::TranslationError,
+        table::TableError,
     };
 }
 
-use self::arena::{Arena, DedupArena, Index};
-use self::engine::{DropKeep, FuncBody, InstructionIdx, InstructionsBuilder, LabelIdx, Target};
-use self::func::{FuncEntity, FuncIdx};
-use self::global::{GlobalEntity, GlobalError, GlobalIdx};
+use self::{
+    arena::{Arena, DedupArena, Index},
+    engine::{DropKeep, FuncBody, InstructionIdx, InstructionsBuilder, LabelIdx, Target},
+    func::{FuncEntity, FuncIdx},
+    global::{GlobalEntity, GlobalError, GlobalIdx},
+};
 // use self::instance::{InstanceEntity, InstanceIdx};
-use self::limits::LimitsError;
-use self::linker::LinkerError;
-use self::memory::{MemoryEntity, MemoryError, MemoryIdx};
-use self::module::TranslationError;
-use self::signature::{SignatureEntity, SignatureIdx};
-use self::store::Stored;
-use self::table::{TableEntity, TableError, TableIdx};
 pub use self::{
     engine::Engine,
     error::Error,
@@ -51,7 +50,15 @@ pub use self::{
     memory::{Memory, MemoryType},
     module::Module,
     signature::Signature,
-    store::Store,
-    store::{AsContext, AsContextMut, StoreContext, StoreContextMut},
+    store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::Table,
+};
+use self::{
+    limits::LimitsError,
+    linker::LinkerError,
+    memory::{MemoryEntity, MemoryError, MemoryIdx},
+    module::TranslationError,
+    signature::{SignatureEntity, SignatureIdx},
+    store::Stored,
+    table::{TableEntity, TableError, TableIdx},
 };

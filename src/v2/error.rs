@@ -1,6 +1,5 @@
 use super::{GlobalError, LimitsError, LinkerError, MemoryError, TableError, TranslationError};
-use core::fmt;
-use core::fmt::Display;
+use core::{fmt, fmt::Display};
 
 /// An error that may occur upon operating on Wasm modules or module instances.
 #[derive(Debug)]

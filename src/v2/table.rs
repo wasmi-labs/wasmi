@@ -1,10 +1,6 @@
-use super::Func;
-use super::Index;
-use super::ResizableLimits;
-use super::{AsContext, AsContextMut, Store, Stored};
+use super::{AsContext, AsContextMut, Func, Index, ResizableLimits, Store, Stored};
 use alloc::vec::Vec;
-use core::fmt;
-use core::fmt::Display;
+use core::{fmt, fmt::Display};
 
 /// A raw index to a table entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

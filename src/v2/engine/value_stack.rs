@@ -5,12 +5,12 @@
 use super::DropKeep;
 use crate::{
     nan_preserving_float::{F32, F64},
-    RuntimeValue, ValueType, DEFAULT_VALUE_STACK_LIMIT,
+    RuntimeValue,
+    ValueType,
+    DEFAULT_VALUE_STACK_LIMIT,
 };
 use alloc::vec::Vec;
-use core::fmt;
-use core::fmt::Debug;
-use core::{iter, mem};
+use core::{fmt, fmt::Debug, iter, mem};
 
 /// A single entry or register in the value stack.
 ///

@@ -8,8 +8,10 @@ mod tests;
 
 use self::compile::FuncBodyTranslator;
 pub use self::error::TranslationError;
-use super::engine::{FuncBody, InstructionsBuilder};
-use super::Engine;
+use super::{
+    engine::{FuncBody, InstructionsBuilder},
+    Engine,
+};
 use alloc::vec::Vec;
 use core::mem;
 use parity_wasm::elements as pwasm;

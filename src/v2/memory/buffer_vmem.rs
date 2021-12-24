@@ -1,8 +1,9 @@
-use super::max_memory_len;
-use super::MemoryError;
-use core::fmt;
-use core::fmt::{Debug, Display};
-use core::slice;
+use super::{max_memory_len, MemoryError};
+use core::{
+    fmt,
+    fmt::{Debug, Display},
+    slice,
+};
 use region::{Allocation, Protection};
 
 /// Dummy error for fallible `Vec`-based virtual memory operations.

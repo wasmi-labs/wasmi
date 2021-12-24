@@ -7,11 +7,9 @@ mod byte_buffer;
 mod byte_buffer;
 
 use self::byte_buffer::{ByteBuffer, VmemError};
-use super::Index;
-use super::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut, Stored};
+use super::{AsContext, AsContextMut, Index, Store, StoreContext, StoreContextMut, Stored};
 use crate::memory_units::{Bytes, Pages};
-use core::fmt;
-use core::fmt::Display;
+use core::{fmt, fmt::Display};
 
 /// A raw index to a linear memory entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

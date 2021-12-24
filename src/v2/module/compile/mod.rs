@@ -16,13 +16,15 @@ use crate::{
         bytecode::{FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx},
         inst_builder::{Reloc, Signedness, WasmFloatType, WasmIntType},
     },
-    RuntimeValue, ValueType,
+    RuntimeValue,
+    ValueType,
 };
 use alloc::vec::Vec;
 use parity_wasm::elements::{self as pwasm, Instruction};
 use validation::{
     func::{top_label, FunctionValidationContext, StartedWith},
-    Error, FuncValidator,
+    Error,
+    FuncValidator,
 };
 
 /// Allows to translate a Wasm functions into `wasmi` bytecode.
