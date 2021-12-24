@@ -27,6 +27,16 @@ impl InstructionIdx {
     /// when representing invalid [`InstructionIdx`] by wrapping them in an
     /// `Option`.
     pub const INVALID: Self = Self(usize::MAX);
+
+    /// Creates an [`InstructionIdx`] from the given `usize` value.
+    ///
+    /// # Note
+    ///
+    /// This intentionally is an API intended for test purposes only.
+    #[cfg(test)]
+    pub fn from_usize(value: usize) -> Self {
+        Self(value)
+    }
 }
 
 /// A resolved or unresolved label.
