@@ -1,5 +1,4 @@
-use std::env;
-use std::process;
+use std::{env, process};
 
 fn main() {
     println!("cargo:rerun-if-changed=./wasm-kernel/");

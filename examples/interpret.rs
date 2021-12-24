@@ -2,8 +2,7 @@
 
 extern crate wasmi;
 
-use std::env::args;
-use std::fs::File;
+use std::{env::args, fs::File};
 use wasmi::{ImportsBuilder, Module, ModuleInstance, NopExternals, RuntimeValue};
 
 fn load_from_file(filename: &str) -> Module {

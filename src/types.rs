@@ -1,7 +1,11 @@
 use alloc::borrow::Cow;
 
 use parity_wasm::elements::{
-    FunctionType, GlobalType, MemoryType, TableType, ValueType as EValueType,
+    FunctionType,
+    GlobalType,
+    MemoryType,
+    TableType,
+    ValueType as EValueType,
 };
 
 /// Signature of a [function].

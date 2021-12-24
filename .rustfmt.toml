@@ -1,0 +1,3 @@
+imports_granularity = "Crate"
+imports_layout = "HorizontalVertical"
+edition = "2021"

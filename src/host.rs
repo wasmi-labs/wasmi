@@ -1,5 +1,8 @@
-use crate::value::{FromRuntimeValue, RuntimeValue};
-use crate::{Trap, TrapKind};
+use crate::{
+    value::{FromRuntimeValue, RuntimeValue},
+    Trap,
+    TrapKind,
+};
 
 use downcast_rs::{impl_downcast, DowncastSync};
 
