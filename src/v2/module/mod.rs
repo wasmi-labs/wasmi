@@ -3,6 +3,9 @@
 mod compile;
 mod error;
 
+#[cfg(test)]
+mod tests;
+
 use self::compile::FuncBodyTranslator;
 pub use self::error::TranslationError;
 use super::engine::{FuncBody, InstructionsBuilder};

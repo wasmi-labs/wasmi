@@ -78,6 +78,27 @@ impl Engine {
     {
         self.inner.lock().alloc_func_body(insts)
     }
+
+    /// Resolves the [`FuncBody`] to the underlying `wasmi` bytecode instructions.
+    ///
+    /// # Note
+    ///
+    /// - This API is mainly intended for unit testing purposes and shall not be used
+    ///   outside of this context. The function bodies are intended to be data private
+    ///   to the `wasmi` interpreter.
+    ///
+    /// # Panics
+    ///
+    /// If the [`FuncBody`] is invalid for the [`Engine`].
+    #[cfg(test)]
+    pub(crate) fn resolve_inst(&self, func_body: FuncBody, index: usize) -> Instruction {
+        self.inner
+            .lock()
+            .code_map
+            .resolve(func_body)
+            .get(index)
+            .clone()
+    }
 }
 
 /// The internal state of the `wasmi` engine.
