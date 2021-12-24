@@ -459,3 +459,117 @@ fn loop_empty() {
     );
     assert_single_func_body(&wasm, &[Instruction::Return(DropKeep::new(0, 0))]);
 }
+
+#[test]
+fn spec_as_br_if_value_cond() {
+    let wasm = wat2wasm(
+        r#"
+		  (func (export "as-br_if-value-cond") (result i32)
+            (block (result i32)
+              (drop
+                (br_if 0
+                  (i32.const 6)
+                  (br_table 0 0
+                    (i32.const 9)
+                    (i32.const 0)
+                  )
+                )
+              )
+            (i32.const 7)
+          )
+        )
+	"#,
+    );
+    assert_single_func_body(
+        &wasm,
+        &[
+            Instruction::I32Const(6),
+            Instruction::I32Const(9),
+            Instruction::I32Const(0),
+            Instruction::BrTable { count: 2 },
+            Instruction::BrTableTarget(Target::new(
+                InstructionIdx::from_usize(9),
+                DropKeep::new(1, 1),
+            )),
+            Instruction::BrTableTarget(Target::new(
+                InstructionIdx::from_usize(9),
+                DropKeep::new(1, 1),
+            )),
+            Instruction::BrIfNez(Target::new(
+                InstructionIdx::from_usize(9),
+                DropKeep::new(0, 1),
+            )),
+            Instruction::Drop,
+            Instruction::I32Const(7),
+            Instruction::Return(DropKeep::new(0, 1)),
+        ],
+    );
+}
+
+#[test]
+fn br_table() {
+    let wasm = wat2wasm(
+        r#"
+		(module
+			(func (export "call")
+				block $1
+					loop $2
+						i32.const 0
+						br_table $2 $1
+					end
+				end
+			)
+		)
+	"#,
+    );
+    assert_single_func_body(
+        &wasm,
+        &[
+            Instruction::I32Const(0),
+            Instruction::BrTable { count: 2 },
+            Instruction::BrTableTarget(Target::new(
+                InstructionIdx::from_usize(0),
+                DropKeep::new(0, 0),
+            )),
+            Instruction::BrTableTarget(Target::new(
+                InstructionIdx::from_usize(4),
+                DropKeep::new(0, 0),
+            )),
+            Instruction::Return(DropKeep::new(0, 0)),
+        ],
+    );
+}
+
+#[test]
+fn br_table_returns_result() {
+    let wasm = wat2wasm(
+        r#"
+		(module
+			(func (export "call")
+				block $1 (result i32)
+					block $2 (result i32)
+						i32.const 0
+						i32.const 1
+						br_table $2 $1
+					end
+					unreachable
+				end
+				drop
+			)
+		)
+	"#,
+    );
+    assert_single_func_body(
+        &wasm,
+        &[
+            Instruction::I32Const(0),
+            Instruction::I32Const(1),
+            Instruction::BrTable { count: 2 },
+            Instruction::BrTableTarget(Target::new(InstructionIdx::from_usize(5), DropKeep::new(0, 1))),
+            Instruction::BrTableTarget(Target::new(InstructionIdx::from_usize(6), DropKeep::new(0, 1))),
+            Instruction::Unreachable,
+            Instruction::Drop,
+            Instruction::Return(DropKeep::new(0, 0)),
+        ]
+    );
+}
