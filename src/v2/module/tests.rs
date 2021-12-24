@@ -240,3 +240,43 @@ fn if_without_else() {
         ],
     );
 }
+
+#[test]
+fn if_else() {
+    let wasm = wat2wasm(
+        r#"
+		(module
+			(func (export "call")
+				(local i32)
+				i32.const 1
+				if
+					i32.const 2
+					set_local 0
+				else
+					i32.const 3
+					set_local 0
+				end
+			)
+		)
+	"#,
+    );
+    assert_single_func_body(
+        &wasm,
+        &[
+            Instruction::I32Const(1),
+            Instruction::BrIfEqz(Target::new(
+                InstructionIdx::from_usize(5),
+                DropKeep::new(0, 0),
+            )),
+            Instruction::I32Const(2),
+            Instruction::SetLocal(LocalIdx::from(1)),
+            Instruction::Br(Target::new(
+                InstructionIdx::from_usize(7),
+                DropKeep::new(0, 0),
+            )),
+            Instruction::I32Const(3),
+            Instruction::SetLocal(LocalIdx::from(1)),
+            Instruction::Return(DropKeep::new(1, 0)),
+        ],
+    );
+}
