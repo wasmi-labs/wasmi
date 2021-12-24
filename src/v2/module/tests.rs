@@ -1,6 +1,6 @@
 use super::*;
 use crate::v2::{
-    engine::{bytecode::Instruction, DropKeep},
+    engine::{bytecode::{Instruction, LocalIdx}, DropKeep},
     Engine,
 };
 
@@ -86,5 +86,28 @@ fn implicit_return_param() {
         &engine,
         func_bodies[0],
         &[Instruction::Return(DropKeep::new(1, 0))],
+    );
+}
+
+#[test]
+fn get_local() {
+    let wasm = wat2wasm(
+        r#"
+		(module
+			(func (export "call") (param i32) (result i32)
+				get_local 0
+			)
+		)
+	"#,
+    );
+    let (engine, func_bodies) = compile(&wasm);
+    assert_eq!(func_bodies.len(), 1);
+    assert_func_body(
+        &engine,
+        func_bodies[0],
+        &[
+            Instruction::GetLocal(LocalIdx::from(1)),
+            Instruction::Return(DropKeep::new(1, 1)),
+        ],
     );
 }
