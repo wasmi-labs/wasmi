@@ -2,9 +2,24 @@
 extern crate std;
 
 use crate::{
-    memory_units::Pages, Error, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef,
-    ImportsBuilder, MemoryDescriptor, MemoryInstance, MemoryRef, Module, ModuleImportResolver,
-    ModuleInstance, NopExternals, RuntimeValue, Signature, TableDescriptor, TableInstance,
+    memory_units::Pages,
+    Error,
+    FuncRef,
+    GlobalDescriptor,
+    GlobalInstance,
+    GlobalRef,
+    ImportsBuilder,
+    MemoryDescriptor,
+    MemoryInstance,
+    MemoryRef,
+    Module,
+    ModuleImportResolver,
+    ModuleInstance,
+    NopExternals,
+    RuntimeValue,
+    Signature,
+    TableDescriptor,
+    TableInstance,
     TableRef,
 };
 use alloc::vec::Vec;

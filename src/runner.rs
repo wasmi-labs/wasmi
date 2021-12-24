@@ -9,10 +9,20 @@ use crate::{
     module::ModuleRef,
     nan_preserving_float::{F32, F64},
     value::{
-        ArithmeticOps, ExtendInto, Float, Integer, LittleEndianConvert, RuntimeValue,
-        TransmuteInto, TryTruncateInto, WrapInto,
+        ArithmeticOps,
+        ExtendInto,
+        Float,
+        Integer,
+        LittleEndianConvert,
+        RuntimeValue,
+        TransmuteInto,
+        TryTruncateInto,
+        WrapInto,
     },
-    Signature, Trap, TrapKind, ValueType,
+    Signature,
+    Trap,
+    TrapKind,
+    ValueType,
 };
 use alloc::{boxed::Box, vec::Vec};
 use core::{fmt, ops, u32, usize};

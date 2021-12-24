@@ -4,10 +4,30 @@ use std::{collections::HashMap, fs::File};
 
 use wabt::script::{self, Action, Command, CommandKind, ScriptParser, Value};
 use wasmi::{
-    memory_units::Pages, Error as InterpreterError, Externals, FuncInstance, FuncRef,
-    GlobalDescriptor, GlobalInstance, GlobalRef, ImportResolver, ImportsBuilder, MemoryDescriptor,
-    MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance, ModuleRef,
-    RuntimeArgs, RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef, Trap,
+    memory_units::Pages,
+    Error as InterpreterError,
+    Externals,
+    FuncInstance,
+    FuncRef,
+    GlobalDescriptor,
+    GlobalInstance,
+    GlobalRef,
+    ImportResolver,
+    ImportsBuilder,
+    MemoryDescriptor,
+    MemoryInstance,
+    MemoryRef,
+    Module,
+    ModuleImportResolver,
+    ModuleInstance,
+    ModuleRef,
+    RuntimeArgs,
+    RuntimeValue,
+    Signature,
+    TableDescriptor,
+    TableInstance,
+    TableRef,
+    Trap,
 };
 
 fn spec_to_runtime_value(val: Value<u32, u64>) -> RuntimeValue {

@@ -3,10 +3,29 @@ extern crate std;
 
 use super::parse_wat;
 use crate::{
-    memory_units::Pages, types::ValueType, Error, Externals, FuncInstance, FuncRef, HostError,
-    ImportsBuilder, MemoryDescriptor, MemoryInstance, MemoryRef, ModuleImportResolver,
-    ModuleInstance, ModuleRef, ResumableError, RuntimeArgs, RuntimeValue, Signature,
-    TableDescriptor, TableInstance, TableRef, Trap, TrapKind,
+    memory_units::Pages,
+    types::ValueType,
+    Error,
+    Externals,
+    FuncInstance,
+    FuncRef,
+    HostError,
+    ImportsBuilder,
+    MemoryDescriptor,
+    MemoryInstance,
+    MemoryRef,
+    ModuleImportResolver,
+    ModuleInstance,
+    ModuleRef,
+    ResumableError,
+    RuntimeArgs,
+    RuntimeValue,
+    Signature,
+    TableDescriptor,
+    TableInstance,
+    TableRef,
+    Trap,
+    TrapKind,
 };
 use alloc::boxed::Box;
 use std::println;

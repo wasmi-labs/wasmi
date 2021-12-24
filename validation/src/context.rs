@@ -1,7 +1,12 @@
 use crate::Error;
 use alloc::vec::Vec;
 use parity_wasm::elements::{
-    BlockType, FunctionType, GlobalType, MemoryType, TableType, ValueType,
+    BlockType,
+    FunctionType,
+    GlobalType,
+    MemoryType,
+    TableType,
+    ValueType,
 };
 
 #[derive(Default, Debug)]

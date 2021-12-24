@@ -5,7 +5,8 @@ use crate::{
     runner::{check_function_args, Interpreter, InterpreterState, StackRecycler},
     types::ValueType,
     value::RuntimeValue,
-    Signature, Trap,
+    Signature,
+    Trap,
 };
 use alloc::{
     borrow::Cow,
