@@ -81,7 +81,7 @@ impl Engine {
 }
 
 /// The internal state of the `wasmi` engine.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct EngineInner {
     /// Stores the value stack of live values on the Wasm stack.
     value_stack: ValueStack,

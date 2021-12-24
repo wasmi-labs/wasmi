@@ -20,7 +20,7 @@ impl Index for FuncBody {
 }
 
 /// Datastructure to efficiently store Wasm function bodies.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct CodeMap {
     /// The instructions of all allocated function bodies.
     ///

@@ -65,6 +65,12 @@ pub struct CallStack {
     recursion_limit: usize,
 }
 
+impl Default for CallStack {
+    fn default() -> Self {
+        Self::new(usize::MAX)
+    }
+}
+
 impl CallStack {
     /// Creates a new [`CallStack`] using the given recursion limit.
     pub fn new(recursion_limit: usize) -> Self {
