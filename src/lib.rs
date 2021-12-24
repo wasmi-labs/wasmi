@@ -412,7 +412,7 @@ mod host;
 mod imports;
 mod isa;
 mod memory;
-pub mod module;
+mod module;
 pub mod nan_preserving_float;
 mod prepare;
 mod runner;
