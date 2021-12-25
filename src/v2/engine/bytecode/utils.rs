@@ -162,7 +162,7 @@ impl<'a> BrTable<'a> {
     ///
     /// The `targets` slice must contain the default target at its end.
     ///
-    /// # Panics
+    /// # Panics (Debug Mode)
     ///
     /// If the `targets` slice does not represent a `wasmi` bytecode `br_table`.
     pub fn new(targets: &'a [Instruction]) -> Self {
@@ -171,7 +171,7 @@ impl<'a> BrTable<'a> {
             "the targets slice must not be empty since the \
             default target must be included at least",
         );
-        assert!(
+        debug_assert!(
             targets
                 .iter()
                 .all(|inst| matches!(inst, Instruction::BrTableTarget(_))),
