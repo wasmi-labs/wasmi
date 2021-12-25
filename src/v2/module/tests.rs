@@ -99,7 +99,7 @@ fn get_local() {
     assert_single_func_body(
         &wasm,
         &[
-            Instruction::GetLocal(LocalIdx::from(1)),
+            Instruction::GetLocal { local_depth: LocalIdx::from(1) },
             Instruction::Return(DropKeep::new(1, 1)),
         ],
     );
@@ -121,8 +121,8 @@ fn get_local_2() {
     assert_single_func_body(
         &wasm,
         &[
-            Instruction::GetLocal(LocalIdx::from(2)),
-            Instruction::GetLocal(LocalIdx::from(2)),
+            Instruction::GetLocal { local_depth: LocalIdx::from(2) },
+            Instruction::GetLocal { local_depth: LocalIdx::from(2) },
             Instruction::Drop,
             Instruction::Return(DropKeep::new(2, 1)),
         ],
@@ -144,7 +144,7 @@ fn explicit_return() {
     assert_single_func_body(
         &wasm,
         &[
-            Instruction::GetLocal(LocalIdx::from(1)),
+            Instruction::GetLocal { local_depth: LocalIdx::from(1) },
             Instruction::Return(DropKeep::new(1, 1)),
             Instruction::Return(DropKeep::new(1, 1)),
         ],
@@ -172,8 +172,8 @@ fn add_params() {
             // takes the value below the previous one (i.e the second argument) and then, it increments
             // the stack pointer. And then the same thing hapens with the value below the previous one
             // (which happens to be the value loaded by the first get_local).
-            Instruction::GetLocal(LocalIdx::from(2)),
-            Instruction::GetLocal(LocalIdx::from(2)),
+            Instruction::GetLocal { local_depth: LocalIdx::from(2) },
+            Instruction::GetLocal { local_depth: LocalIdx::from(2) },
             Instruction::I32Add,
             Instruction::Return(DropKeep::new(2, 1)),
         ],
@@ -196,8 +196,8 @@ fn drop_locals() {
     assert_single_func_body(
         &wasm,
         &[
-            Instruction::GetLocal(LocalIdx::from(2)),
-            Instruction::SetLocal(LocalIdx::from(1)),
+            Instruction::GetLocal { local_depth: LocalIdx::from(2) },
+            Instruction::SetLocal { local_depth: LocalIdx::from(1) },
             Instruction::Return(DropKeep::new(2, 0)),
         ],
     );
@@ -269,13 +269,13 @@ fn if_else() {
                 DropKeep::new(0, 0),
             )),
             Instruction::I32Const(2),
-            Instruction::SetLocal(LocalIdx::from(1)),
+            Instruction::SetLocal { local_depth: LocalIdx::from(1) },
             Instruction::Br(Target::new(
                 InstructionIdx::from_usize(7),
                 DropKeep::new(0, 0),
             )),
             Instruction::I32Const(3),
-            Instruction::SetLocal(LocalIdx::from(1)),
+            Instruction::SetLocal { local_depth: LocalIdx::from(1) },
             Instruction::Return(DropKeep::new(1, 0)),
         ],
     );
@@ -486,7 +486,7 @@ fn spec_as_br_if_value_cond() {
             Instruction::I32Const(6),
             Instruction::I32Const(9),
             Instruction::I32Const(0),
-            Instruction::BrTable { count: 2 },
+            Instruction::BrTable { len_targets: 2 },
             Instruction::BrTableTarget(Target::new(
                 InstructionIdx::from_usize(9),
                 DropKeep::new(1, 1),
@@ -526,7 +526,7 @@ fn br_table() {
         &wasm,
         &[
             Instruction::I32Const(0),
-            Instruction::BrTable { count: 2 },
+            Instruction::BrTable { len_targets: 2 },
             Instruction::BrTableTarget(Target::new(
                 InstructionIdx::from_usize(0),
                 DropKeep::new(0, 0),
@@ -564,7 +564,7 @@ fn br_table_returns_result() {
         &[
             Instruction::I32Const(0),
             Instruction::I32Const(1),
-            Instruction::BrTable { count: 2 },
+            Instruction::BrTable { len_targets: 2 },
             Instruction::BrTableTarget(Target::new(
                 InstructionIdx::from_usize(5),
                 DropKeep::new(0, 1),
@@ -601,7 +601,7 @@ fn wabt_example() {
     assert_single_func_body(
         &wasm,
         &[
-            Instruction::GetLocal(LocalIdx::from(1)),
+            Instruction::GetLocal { local_depth: LocalIdx::from(1) },
             Instruction::BrIfNez(Target::new(
                 InstructionIdx::from_usize(4),
                 DropKeep::new(0, 0),
