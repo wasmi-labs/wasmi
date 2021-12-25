@@ -8,17 +8,17 @@ pub mod code_map;
 pub mod inst_builder;
 pub mod value_stack;
 
+pub use self::{
+    bytecode::{DropKeep, Target},
+    code_map::FuncBody,
+    inst_builder::{InstructionIdx, InstructionsBuilder, LabelIdx, Reloc},
+};
 #[allow(unused_imports)]
 use self::{
     bytecode::{Instruction, VisitInstruction},
     call_stack::{CallStack, CallStackError, FunctionFrame},
     code_map::{CodeMap, ResolvedFuncBody},
     value_stack::{FromStackEntry, StackEntry, ValueStack},
-};
-pub use self::{
-    bytecode::{DropKeep, Target},
-    code_map::FuncBody,
-    inst_builder::{InstructionIdx, InstructionsBuilder, LabelIdx, Reloc},
 };
 use super::Func;
 use alloc::sync::Arc;
