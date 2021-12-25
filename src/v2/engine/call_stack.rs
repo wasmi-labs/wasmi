@@ -2,6 +2,8 @@
 
 #![allow(dead_code)] // TODO: remove
 
+use crate::v2::{Memory, Table};
+
 use super::super::{Func, Instance};
 use alloc::vec::Vec;
 use core::{fmt, fmt::Display};
@@ -46,6 +48,22 @@ pub struct FunctionFrame {
     /// non-local to the function such as linear memories, global variables
     /// and tables.
     pub instance: Instance,
+    /// The default linear memory (index 0) of the `instance`.
+    ///
+    /// # Note
+    ///
+    /// This is just an optimization for the common case of manipulating
+    /// the default linear memory and avoids one indirection to look-up
+    /// the linear memory in the `Instance`.
+    pub default_memory: Option<Memory>,
+    /// The default table (index 0) of the `instance`.
+    ///
+    /// # Note
+    ///
+    /// This is just an optimization for the common case of indirectly
+    /// calling functions using the default table and avoids one indirection
+    /// to look-up the table in the `Instance`.
+    pub default_table: Option<Table>,
     /// The current value of the instruction pointer.
     ///
     /// # Note
