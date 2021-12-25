@@ -381,9 +381,13 @@ pub enum Instruction {
 
     /// The start of a Wasm function body.
     ///
-    /// Also stores the `wasmi` bytecode length of the function body.
-    /// Note that the length of the `wasmi` bytecode might differ from the length
-    /// of the original WebAssembly bytecode.
+    /// - This stores the `wasmi` bytecode length of the function body as well
+    ///   as the amount of local variables.
+    /// - Note that the length of the `wasmi` bytecode might differ from the length
+    ///   of the original WebAssembly bytecode.
+    /// - The types of the local variables do not matter since all stack values
+    ///   are equally sized with 64-bits per value. Storing the amount of local
+    ///   variables eliminates one indirection when calling a Wasm function.
     ///
     /// # Note
     ///
@@ -391,9 +395,17 @@ pub enum Instruction {
     /// interpreter organizes its internal bytecode.
     FuncBodyStart {
         /// This field represents the amount of instruction of the function body.
+        ///
         /// Note: This does not include any meta instructions such as
         /// [`Instruction::FuncBodyStart`] or [`Instruction::FuncBodyEnd`].
         len_instructions: usize,
+        /// Represents the number of local variables of the function body.
+        ///
+        /// Note: The types of the locals do not matter since all stack values
+        ///       use 64-bit encoding in the `wasmi` bytecode interpreter.
+        /// Note: Storing the amount of locals inline with the rest of the
+        ///       function body eliminates one indirection when calling a function.
+        len_locals: usize,
     },
     /// The end of a Wasm function body.
     ///

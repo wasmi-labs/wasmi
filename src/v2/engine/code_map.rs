@@ -44,7 +44,7 @@ impl CodeMap {
     /// Returns a reference to the allocated function body that can
     /// be used with [`CodeMap::resolve`] in order to resolve its
     /// instructions.
-    pub fn alloc<I>(&mut self, insts: I) -> FuncBody
+    pub fn alloc<I>(&mut self, len_locals: usize, insts: I) -> FuncBody
     where
         I: IntoIterator<Item = Instruction>,
         I::IntoIter: ExactSizeIterator,
@@ -54,9 +54,10 @@ impl CodeMap {
         // in between instructions of different function bodies as a small
         // safety precaution.
         let insts = insts.into_iter();
-        let len = insts.len();
+        let len_instructions = insts.len();
         let start = iter::once(Instruction::FuncBodyStart {
-            len_instructions: len,
+            len_instructions,
+            len_locals,
         });
         let end = iter::once(Instruction::FuncBodyEnd);
         self.insts.extend(start.chain(insts).chain(end));
@@ -70,8 +71,11 @@ impl CodeMap {
     /// If the given `func_body` is invalid for this [`CodeMap`].
     pub fn resolve(&self, func_body: FuncBody) -> ResolvedFuncBody {
         let offset = func_body.into_usize();
-        let len_instructions = match &self.insts[offset] {
-            Instruction::FuncBodyStart { len_instructions } => len_instructions,
+        let (len_instructions, len_locals) = match &self.insts[offset] {
+            Instruction::FuncBodyStart {
+                len_instructions,
+                len_locals,
+            } => (*len_instructions, *len_locals),
             unexpected => panic!(
                 "expected function start instruction but found: {:?}",
                 unexpected
@@ -94,7 +98,7 @@ impl CodeMap {
             );
         }
         let insts = &self.insts[first_inst..(first_inst + len_instructions)];
-        ResolvedFuncBody { insts }
+        ResolvedFuncBody { insts, len_locals }
     }
 }
 
@@ -111,6 +115,7 @@ impl CodeMap {
 #[derive(Debug, Copy, Clone)]
 pub struct ResolvedFuncBody<'a> {
     insts: &'a [Instruction],
+    len_locals: usize,
 }
 
 impl ResolvedFuncBody<'_> {
@@ -121,5 +126,10 @@ impl ResolvedFuncBody<'_> {
     /// If there is no instruction at the given index.
     pub fn get(&self, index: usize) -> &Instruction {
         &self.insts[index]
+    }
+
+    /// Returns the amount of local variable of the function.
+    pub fn len_locals(&self) -> usize {
+        self.len_locals
     }
 }

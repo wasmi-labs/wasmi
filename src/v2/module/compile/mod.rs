@@ -36,6 +36,8 @@ pub struct FuncBodyTranslator {
     inst_builder: InstructionsBuilder,
     /// The underlying control flow frames representing Wasm control flow.
     control_frames: Vec<ControlFrame>,
+    /// The amount of local variables of the currently compiled function.
+    len_locals: usize,
 }
 
 impl FuncValidator for FuncBodyTranslator {
@@ -44,10 +46,15 @@ impl FuncValidator for FuncBodyTranslator {
 
     fn new(
         _ctx: &FunctionValidationContext,
-        _body: &pwasm::FuncBody,
+        body: &pwasm::FuncBody,
         (engine, inst_builder): Self::Input,
     ) -> Self {
-        FuncBodyTranslator::new(&engine, inst_builder)
+        let len_locals = body
+            .locals()
+            .iter()
+            .map(|local| local.count() as usize)
+            .sum();
+        FuncBodyTranslator::new(&engine, inst_builder, len_locals)
     }
 
     fn next_instruction(
@@ -59,14 +66,14 @@ impl FuncValidator for FuncBodyTranslator {
     }
 
     fn finish(mut self) -> Self::Output {
-        let func_body = self.inst_builder.finish(&self.engine);
+        let func_body = self.inst_builder.finish(&self.engine, self.len_locals);
         (func_body, self.inst_builder)
     }
 }
 
 impl FuncBodyTranslator {
     /// Creates a new Wasm function body translator for the given [`Engine`].
-    pub fn new(engine: &Engine, mut inst_builder: InstructionsBuilder) -> Self {
+    pub fn new(engine: &Engine, mut inst_builder: InstructionsBuilder, len_locals: usize) -> Self {
         // Push implicit frame for the whole function block.
         let end_label = inst_builder.new_label();
         let control_frames = vec![ControlFrame::Block { end_label }];
@@ -74,6 +81,7 @@ impl FuncBodyTranslator {
             engine: engine.clone(),
             inst_builder,
             control_frames,
+            len_locals,
         }
     }
 
@@ -92,7 +100,7 @@ impl FuncBodyTranslator {
         for instruction in instructions {
             self.translate_instruction(validator, instruction)?;
         }
-        let func_body = self.inst_builder.finish(&self.engine);
+        let func_body = self.inst_builder.finish(&self.engine, self.len_locals);
         Ok(func_body)
     }
 

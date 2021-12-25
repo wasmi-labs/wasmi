@@ -71,12 +71,12 @@ impl Engine {
     /// Allocates the instructions of a Wasm function body to the [`Engine`].
     ///
     /// Returns a [`FuncBody`] reference to the allocated function body.
-    pub(super) fn alloc_func_body<I>(&self, insts: I) -> FuncBody
+    pub(super) fn alloc_func_body<I>(&self, len_locals: usize, insts: I) -> FuncBody
     where
         I: IntoIterator<Item = Instruction>,
         I::IntoIter: ExactSizeIterator,
     {
-        self.inner.lock().alloc_func_body(insts)
+        self.inner.lock().alloc_func_body(len_locals, insts)
     }
 
     /// Resolves the [`FuncBody`] to the underlying `wasmi` bytecode instructions.
@@ -116,11 +116,11 @@ impl EngineInner {
     /// Allocates the instructions of a Wasm function body to the [`Engine`].
     ///
     /// Returns a [`FuncBody`] reference to the allocated function body.
-    pub fn alloc_func_body<I>(&mut self, insts: I) -> FuncBody
+    pub fn alloc_func_body<I>(&mut self, len_locals: usize, insts: I) -> FuncBody
     where
         I: IntoIterator<Item = Instruction>,
         I::IntoIter: ExactSizeIterator,
     {
-        self.code_map.alloc(insts)
+        self.code_map.alloc(len_locals, insts)
     }
 }

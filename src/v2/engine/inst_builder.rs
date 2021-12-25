@@ -206,8 +206,8 @@ impl InstructionsBuilder {
     /// aware of the Wasm function existance. Returns a `FuncBody`
     /// reference that allows to retrieve the instructions.
     #[must_use]
-    pub fn finish(&mut self, engine: &Engine) -> FuncBody {
-        engine.alloc_func_body(self.insts.drain(..))
+    pub fn finish(&mut self, engine: &Engine, len_locals: usize) -> FuncBody {
+        engine.alloc_func_body(len_locals, self.insts.drain(..))
     }
 }
 
