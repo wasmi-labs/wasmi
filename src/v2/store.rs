@@ -1,6 +1,7 @@
 use super::{
     Arena,
     DedupArena,
+    Engine,
     Func,
     FuncEntity,
     FuncIdx,
@@ -82,13 +83,17 @@ pub struct Store<T> {
     globals: Arena<GlobalIdx, GlobalEntity>,
     /// Stored Wasm or host functions.
     funcs: Arena<FuncIdx, FuncEntity<T>>,
+    /// The [`Engine`] in use by the [`Store`].
+    ///
+    /// Amongst others the [`Engine`] stores the Wasm function definitions.
+    engine: Engine,
     /// User provided state.
     user_state: T,
 }
 
 impl<T> Store<T> {
     /// Creates a new store.
-    pub fn new(user_state: T) -> Self {
+    pub fn new(engine: &Engine, user_state: T) -> Self {
         Self {
             idx: next_store_index(),
             signatures: DedupArena::new(),
@@ -96,8 +101,14 @@ impl<T> Store<T> {
             tables: Arena::new(),
             globals: Arena::new(),
             funcs: Arena::new(),
+            engine: engine.clone(),
             user_state,
         }
+    }
+
+    /// Returns the [`Engine`] that this store is associated with.
+    pub fn engine(&self) -> &Engine {
+        &self.engine
     }
 
     /// Returns a shared reference to the user provided state.
