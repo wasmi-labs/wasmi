@@ -4,6 +4,8 @@
 
 mod utils;
 
+#[cfg(test)]
+mod tests;
 
 pub use self::{
     utils::{BrTable, DropKeep, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, Target},
