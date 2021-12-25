@@ -10,7 +10,7 @@ pub mod value_stack;
 
 #[allow(unused_imports)]
 use self::{
-    bytecode::Instruction,
+    bytecode::{Instruction, VisitInstruction},
     call_stack::{CallStack, CallStackError, FunctionFrame},
     code_map::{CodeMap, ResolvedFuncBody},
     value_stack::{FromStackEntry, StackEntry, ValueStack},
