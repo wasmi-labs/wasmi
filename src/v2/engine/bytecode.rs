@@ -403,3 +403,13 @@ pub enum Instruction {
     /// interpreter organizes its internal bytecode.
     FuncBodyEnd,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn size_of_instruction() {
+        assert_eq!(core::mem::size_of::<Instruction>(), 32,)
+    }
+}
