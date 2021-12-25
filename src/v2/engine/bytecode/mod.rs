@@ -3,6 +3,7 @@
 #![allow(dead_code, missing_docs)] // TODO: remove
 
 mod utils;
+mod visitor;
 
 #[cfg(test)]
 mod tests;
