@@ -6,6 +6,7 @@ pub mod bytecode;
 pub mod call_stack;
 pub mod code_map;
 pub mod inst_builder;
+pub mod runner;
 pub mod value_stack;
 
 pub use self::{
