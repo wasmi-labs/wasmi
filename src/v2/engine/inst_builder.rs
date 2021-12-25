@@ -211,6 +211,7 @@ impl InstructionsBuilder {
     }
 }
 
+/// The API to incrementally build up `wasmi` bytecode instructions.
 impl InstructionsBuilder {
     /// Creates an instruction equivalent to `local.get` from Wasm.
     pub fn get_local(&mut self, local_depth: LocalIdx) -> InstructionIdx {
