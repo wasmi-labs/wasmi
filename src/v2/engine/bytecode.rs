@@ -202,14 +202,20 @@ impl<'a> BrTargets<'a> {
 /// each representing either the `BrTable` head or one of its branching targets.
 #[derive(Copy, Debug, Clone, PartialEq)]
 pub enum Instruction {
-    GetLocal(LocalIdx),
-    SetLocal(LocalIdx),
-    TeeLocal(LocalIdx),
+    GetLocal {
+        local_depth: LocalIdx,
+    },
+    SetLocal {
+        local_depth: LocalIdx,
+    },
+    TeeLocal {
+        local_depth: LocalIdx,
+    },
     Br(Target),
     BrIfEqz(Target),
     BrIfNez(Target),
     BrTable {
-        count: usize,
+        len_targets: usize,
     },
     BrTableTarget(Target),
     Unreachable,
@@ -383,7 +389,12 @@ pub enum Instruction {
     ///
     /// This is a non-WebAssembly instruction that is specific to how the `wasmi`
     /// interpreter organizes its internal bytecode.
-    FuncBodyStart(usize),
+    FuncBodyStart {
+        /// This field represents the amount of instruction of the function body.
+        /// Note: This does not include any meta instructions such as
+        /// [`Instruction::FuncBodyStart`] or [`Instruction::FuncBodyEnd`].
+        len_instructions: usize,
+    },
     /// The end of a Wasm function body.
     ///
     /// # Note

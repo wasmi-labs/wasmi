@@ -55,7 +55,9 @@ impl CodeMap {
         // safety precaution.
         let insts = insts.into_iter();
         let len = insts.len();
-        let start = iter::once(Instruction::FuncBodyStart(len));
+        let start = iter::once(Instruction::FuncBodyStart {
+            len_instructions: len,
+        });
         let end = iter::once(Instruction::FuncBodyEnd);
         self.insts.extend(start.chain(insts).chain(end));
         idx
@@ -68,8 +70,8 @@ impl CodeMap {
     /// If the given `func_body` is invalid for this [`CodeMap`].
     pub fn resolve(&self, func_body: FuncBody) -> ResolvedFuncBody {
         let offset = func_body.into_usize();
-        let len = match &self.insts[offset] {
-            Instruction::FuncBodyStart(len) => len,
+        let len_instructions = match &self.insts[offset] {
+            Instruction::FuncBodyStart { len_instructions } => len_instructions,
             unexpected => panic!(
                 "expected function start instruction but found: {:?}",
                 unexpected
@@ -84,14 +86,14 @@ impl CodeMap {
             // This check is not needed to validate the integrity of
             // the resolution procedure and therefore the below assertion
             // is only performed in debug mode.
-            let end = &self.insts[first_inst + len];
+            let end = &self.insts[first_inst + len_instructions];
             debug_assert!(
                 matches!(end, Instruction::FuncBodyEnd),
                 "expected function end instruction but found: {:?}",
                 end,
             );
         }
-        let insts = &self.insts[first_inst..(first_inst + len)];
+        let insts = &self.insts[first_inst..(first_inst + len_instructions)];
         ResolvedFuncBody { insts }
     }
 }

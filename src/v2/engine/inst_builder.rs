@@ -213,18 +213,18 @@ impl InstructionsBuilder {
 
 impl InstructionsBuilder {
     /// Creates an instruction equivalent to `local.get` from Wasm.
-    pub fn get_local(&mut self, local_idx: LocalIdx) -> InstructionIdx {
-        self.push_inst(Instruction::GetLocal(local_idx))
+    pub fn get_local(&mut self, local_depth: LocalIdx) -> InstructionIdx {
+        self.push_inst(Instruction::GetLocal { local_depth })
     }
 
     /// Creates an instruction equivalent to `local.set` from Wasm.
-    pub fn set_local(&mut self, local_idx: LocalIdx) -> InstructionIdx {
-        self.push_inst(Instruction::SetLocal(local_idx))
+    pub fn set_local(&mut self, local_depth: LocalIdx) -> InstructionIdx {
+        self.push_inst(Instruction::SetLocal { local_depth })
     }
 
     /// Creates an instruction equivalent to `local.tee` from Wasm.
-    pub fn tee_local(&mut self, local_idx: LocalIdx) -> InstructionIdx {
-        self.push_inst(Instruction::TeeLocal(local_idx))
+    pub fn tee_local(&mut self, local_depth: LocalIdx) -> InstructionIdx {
+        self.push_inst(Instruction::TeeLocal { local_depth })
     }
 
     /// Creates an instruction equivalent to `br` from Wasm.
@@ -249,8 +249,8 @@ impl InstructionsBuilder {
         I::IntoIter: ExactSizeIterator,
     {
         let targets = targets.into_iter();
-        let count = targets.len() + 1;
-        let head = self.push_inst(Instruction::BrTable { count });
+        let len_targets = targets.len() + 1;
+        let head = self.push_inst(Instruction::BrTable { len_targets });
         // Append branching targets followed by the default target.
         self.insts.extend(
             targets
