@@ -167,13 +167,17 @@ impl<'a> BrTable<'a> {
     /// If the `targets` slice does not represent a `wasmi` bytecode `br_table`.
     pub fn new(targets: &'a [Instruction]) -> Self {
         assert!(
+            !targets.is_empty(),
+            "the targets slice must not be empty since the \
+            default target must be included at least",
+        );
+        assert!(
             targets
                 .iter()
                 .all(|inst| matches!(inst, Instruction::BrTableTarget(_))),
             "the targets slice contains non br_table instructions: {:?}",
             targets,
         );
-        assert!(targets.len() >= 1);
         Self { targets }
     }
 
