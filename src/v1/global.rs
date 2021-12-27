@@ -160,7 +160,7 @@ impl Global {
     /// - If the global variable is immutable.
     /// - If there is a type mismatch between the global variable and the new value.
     pub fn set(
-        &mut self,
+        &self,
         mut ctx: impl AsContextMut,
         new_value: RuntimeValue,
     ) -> Result<(), GlobalError> {
