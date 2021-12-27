@@ -42,6 +42,13 @@ impl<T> Clone for FuncEntity<T> {
 }
 
 impl<T> FuncEntity<T> {
+    /// Creates a new Wasm function from the given raw parts.
+    pub(crate) fn new_wasm(signature: Signature, body: FuncBody) -> Self {
+        Self {
+            internal: FuncEntityInternal::Wasm(WasmFuncEntity::new(signature, body)),
+        }
+    }
+
     /// Creates a new host function from the given closure.
     pub fn wrap<Params, Results>(
         ctx: impl AsContextMut<UserState = T>,
@@ -106,6 +113,11 @@ struct WasmFuncEntity {
 }
 
 impl WasmFuncEntity {
+    /// Creates a new Wasm function from the given raw parts.
+    pub(crate) fn new(signature: Signature, body: FuncBody) -> Self {
+        Self { signature, body }
+    }
+
     /// Returns the signature of the Wasm function.
     pub fn signature(&self) -> &Signature {
         &self.signature
