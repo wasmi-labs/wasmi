@@ -35,7 +35,7 @@ use self::{
     arena::{Arena, DedupArena, Index},
     engine::{DropKeep, FuncBody, InstructionIdx, InstructionsBuilder, LabelIdx, Target},
     func::{FuncEntity, FuncIdx},
-    global::{GlobalEntity, GlobalError, GlobalIdx},
+    global::{GlobalEntity, GlobalIdx},
 };
 pub use self::{
     engine::Engine,
@@ -51,13 +51,4 @@ pub use self::{
     signature::Signature,
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::Table,
-};
-use self::{
-    limits::LimitsError,
-    linker::LinkerError,
-    memory::{MemoryEntity, MemoryError, MemoryIdx},
-    module::TranslationError,
-    signature::{SignatureEntity, SignatureIdx},
-    store::Stored,
-    table::{TableEntity, TableError, TableIdx},
 };
