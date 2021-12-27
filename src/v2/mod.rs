@@ -45,7 +45,7 @@ pub use self::{
     func::Func,
     global::{Global, Mutability},
     instance::Instance,
-    limits::ResizableLimits,
+    limits::TableType,
     linker::Linker,
     memory::{Memory, MemoryType},
     module::Module,
