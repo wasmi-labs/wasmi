@@ -37,7 +37,6 @@ use self::{
     func::{FuncEntity, FuncIdx},
     global::{GlobalEntity, GlobalError, GlobalIdx},
 };
-// use self::instance::{InstanceEntity, InstanceIdx};
 pub use self::{
     engine::Engine,
     error::Error,
