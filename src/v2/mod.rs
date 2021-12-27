@@ -36,6 +36,7 @@ use self::{
     engine::{DropKeep, FuncBody, InstructionIdx, InstructionsBuilder, LabelIdx, Target},
     func::{FuncEntity, FuncIdx},
     global::{GlobalEntity, GlobalIdx},
+    instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
 };
 pub use self::{
     engine::Engine,

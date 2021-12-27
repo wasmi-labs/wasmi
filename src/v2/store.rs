@@ -8,6 +8,9 @@ use super::{
     Global,
     GlobalEntity,
     GlobalIdx,
+    Instance,
+    InstanceEntity,
+    InstanceIdx,
     Memory,
     MemoryEntity,
     MemoryIdx,
@@ -83,6 +86,8 @@ pub struct Store<T> {
     globals: Arena<GlobalIdx, GlobalEntity>,
     /// Stored Wasm or host functions.
     funcs: Arena<FuncIdx, FuncEntity<T>>,
+    /// Stored module instances.
+    instances: Arena<InstanceIdx, InstanceEntity>,
     /// The [`Engine`] in use by the [`Store`].
     ///
     /// Amongst others the [`Engine`] stores the Wasm function definitions.
@@ -101,6 +106,7 @@ impl<T> Store<T> {
             tables: Arena::new(),
             globals: Arena::new(),
             funcs: Arena::new(),
+            instances: Arena::new(),
             engine: engine.clone(),
             user_state,
         }
@@ -151,6 +157,11 @@ impl<T> Store<T> {
         Func::from_inner(Stored::new(self.idx, self.funcs.alloc(func)))
     }
 
+    /// Allocates a new [`Instance`] to the store.
+    pub(super) fn alloc_instance(&mut self, instance: InstanceEntity) -> Instance {
+        Instance::from_inner(Stored::new(self.idx, self.instances.alloc(instance)))
+    }
+
     /// Unpacks and checks the stored entity index.
     ///
     /// # Panics
@@ -181,7 +192,7 @@ impl<T> Store<T> {
         let entity_index = self.unwrap_index(signature.into_inner());
         self.signatures
             .get(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored signature: {:?}", entity_index,))
+            .unwrap_or_else(|| panic!("failed to resolve stored signature: {:?}", entity_index))
     }
 
     /// Returns a shared reference to the associated entity of the global variable.
@@ -279,6 +290,22 @@ impl<T> Store<T> {
         self.funcs.get(entity_index).unwrap_or_else(|| {
             panic!(
                 "failed to resolve stored Wasm or host function: {:?}",
+                entity_index
+            )
+        })
+    }
+
+    /// Returns a shared reference to the associated entity of the [`Instance`].
+    ///
+    /// # Panics
+    ///
+    /// - If the Wasm or host function does not originate from this store.
+    /// - If the Wasm or host function cannot be resolved to its entity.
+    pub(super) fn resolve_instance(&self, instance: Instance) -> &InstanceEntity {
+        let entity_index = self.unwrap_index(instance.into_inner());
+        self.instances.get(entity_index).unwrap_or_else(|| {
+            panic!(
+                "failed to resolve stored module instance: {:?}",
                 entity_index
             )
         })
