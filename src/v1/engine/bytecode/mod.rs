@@ -1,7 +1,5 @@
 //! The instruction architecture of the `wasmi` interpreter.
 
-#![allow(dead_code, missing_docs)] // TODO: remove
-
 mod utils;
 mod visitor;
 

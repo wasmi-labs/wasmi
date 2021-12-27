@@ -1,4 +1,4 @@
-#![allow(missing_docs, dead_code)] // TODO: remove
+#![allow(dead_code)] // TODO: remove
 
 mod compile;
 mod error;

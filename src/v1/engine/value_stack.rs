@@ -1,7 +1,5 @@
 //! Data structures to represent the Wasm value stack during execution.
 
-#![allow(dead_code)] // TODO: remove
-
 use super::DropKeep;
 use crate::{
     nan_preserving_float::{F32, F64},

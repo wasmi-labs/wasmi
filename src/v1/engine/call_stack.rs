@@ -1,7 +1,5 @@
 //! Data structures to represent the Wasm call stack during execution.
 
-#![allow(dead_code)] // TODO: remove
-
 use super::super::{Func, Instance, Memory, Table};
 use alloc::vec::Vec;
 use core::{fmt, fmt::Display};

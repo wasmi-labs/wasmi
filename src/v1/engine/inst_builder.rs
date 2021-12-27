@@ -1,7 +1,5 @@
 //! Abstractions to build up instructions forming Wasm function bodies.
 
-#![allow(dead_code, missing_docs)] // TODO: remove
-
 use super::{
     bytecode::{DropKeep, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, Target},
     Engine,
