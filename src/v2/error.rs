@@ -1,5 +1,6 @@
 use super::errors::{
     GlobalError,
+    InstantiationError,
     LimitsError,
     LinkerError,
     MemoryError,
@@ -24,6 +25,8 @@ pub enum Error {
     Linker(LinkerError),
     /// A Wasm to `wasmi` bytecode translation error.
     Translation(TranslationError),
+    /// A module instantiation error.
+    Instantiation(InstantiationError),
 }
 
 impl Display for Error {
@@ -35,6 +38,7 @@ impl Display for Error {
             Error::Table(error) => Display::fmt(error, f),
             Error::Linker(error) => Display::fmt(error, f),
             Error::Translation(error) => Display::fmt(error, f),
+            Error::Instantiation(error) => Display::fmt(error, f),
         }
     }
 }
@@ -72,5 +76,11 @@ impl From<LinkerError> for Error {
 impl From<TranslationError> for Error {
     fn from(error: TranslationError) -> Self {
         Self::Translation(error)
+    }
+}
+
+impl From<InstantiationError> for Error {
+    fn from(error: InstantiationError) -> Self {
+        Self::Instantiation(error)
     }
 }

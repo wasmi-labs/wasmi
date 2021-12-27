@@ -26,7 +26,7 @@ pub mod errors {
         limits::LimitsError,
         linker::LinkerError,
         memory::MemoryError,
-        module::TranslationError,
+        module::{InstantiationError, TranslationError},
         table::TableError,
     };
 }
@@ -37,6 +37,10 @@ use self::{
     func::{FuncEntity, FuncIdx},
     global::{GlobalEntity, GlobalIdx},
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
+    memory::{MemoryEntity, MemoryIdx},
+    signature::{SignatureEntity, SignatureIdx},
+    store::Stored,
+    table::{TableEntity, TableIdx},
 };
 pub use self::{
     engine::Engine,

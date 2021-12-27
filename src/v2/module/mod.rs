@@ -2,12 +2,13 @@
 
 mod compile;
 mod error;
+mod instantiate;
 
 #[cfg(test)]
 mod tests;
 
 use self::compile::FuncBodyTranslator;
-pub use self::error::TranslationError;
+pub use self::{error::TranslationError, instantiate::InstantiationError};
 use super::{
     engine::{FuncBody, InstructionsBuilder},
     Engine,
