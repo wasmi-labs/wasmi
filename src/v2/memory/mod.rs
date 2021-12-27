@@ -259,7 +259,7 @@ impl Memory {
     /// If the linear memory would grow beyond its maximum limit after
     /// the grow operation.
     pub fn grow(
-        &mut self,
+        &self,
         mut ctx: impl AsContextMut,
         additional: Pages,
     ) -> Result<Pages, MemoryError> {
@@ -275,7 +275,7 @@ impl Memory {
     }
 
     /// Returns an exclusive slice to the bytes underlying to the byte buffer.
-    pub fn data_mut<'a, T: 'a>(&mut self, ctx: impl Into<StoreContextMut<'a, T>>) -> &'a mut [u8] {
+    pub fn data_mut<'a, T: 'a>(&self, ctx: impl Into<StoreContextMut<'a, T>>) -> &'a mut [u8] {
         ctx.into().store.resolve_memory_mut(*self).data_mut()
     }
 
@@ -304,7 +304,7 @@ impl Memory {
     ///
     /// If this operation accesses out of bounds linear memory.
     pub fn write(
-        &mut self,
+        &self,
         mut ctx: impl AsContextMut,
         offset: usize,
         buffer: &[u8],
