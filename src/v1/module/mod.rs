@@ -28,7 +28,7 @@ use validation::{validate_module, FuncValidator, Validator};
 /// [`Instance`]: [`super::Instance`]
 #[derive(Debug)]
 pub struct Module {
-    module: pwasm::Module,
+    pub(crate) module: pwasm::Module,
     engine: Engine,
     func_bodies: Vec<FuncBody>,
 }

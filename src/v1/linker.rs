@@ -1,4 +1,5 @@
-use super::Extern;
+use super::{AsContextMut, Error, Extern, InstancePre, MemoryType, Module, Signature, TableType};
+use crate::ValueType;
 use alloc::{
     collections::{btree_map::Entry, BTreeMap},
     string::{String, ToString},
@@ -12,6 +13,7 @@ use core::{
     num::NonZeroUsize,
     ops::Deref,
 };
+use parity_wasm::elements as pwasm;
 
 /// An error that may occur upon operating with [`Linker`] instances.
 #[derive(Debug)]
@@ -24,6 +26,51 @@ pub enum LinkerError {
         ///
         /// This refers to the second inserted item.
         import_item: Extern,
+    },
+    /// Encountered when no definition for an import is found.
+    CannotFindDefinitionForImport {
+        /// The module import that had no definition in the linker.
+        import: pwasm::ImportEntry,
+    },
+    /// Encountered when a function signature does not match the expected signature.
+    SignatureMismatch {
+        /// The function import that had a mismatching signature.
+        import: pwasm::ImportEntry,
+        /// The expected function type.
+        expected: pwasm::FunctionType,
+        /// The actual function signature found.
+        actual: Signature,
+    },
+    /// Encountered when an imported table has a mismatching table type.
+    TableTypeMismatch {
+        /// The table import that had a mismatching table type.
+        import: pwasm::ImportEntry,
+        /// The expected table type.
+        expected: TableType,
+        /// The actual table type.
+        actual: TableType,
+    },
+    /// Encountered when an imported linear memory has a mismatching memory type.
+    MemoryTypeMismatch {
+        /// The table import that had a mismatching table type.
+        import: pwasm::ImportEntry,
+        /// The expected linear memory type.
+        expected: MemoryType,
+        /// The actual linear memory type.
+        actual: MemoryType,
+    },
+    /// Encountered when an imported global variable has a mismatching global variable type.
+    GlobalTypeMismatch {
+        /// The global variable import that had a mismatching global variable type.
+        import: pwasm::ImportEntry,
+        /// The expected global variable memory type.
+        expected_value_type: ValueType,
+        /// The expected global variable mutability.
+        expected_mutability: bool,
+        /// The actual global variable memory type.
+        actual_value_type: ValueType,
+        /// The actual global variable mutability.
+        actual_mutability: bool,
     },
 }
 
@@ -38,6 +85,83 @@ impl Display for LinkerError {
                     f,
                     "encountered duplicate definition `{}` of {:?}",
                     import_name, import_item
+                )
+            }
+            Self::CannotFindDefinitionForImport { import } => {
+                let module_name = import.module();
+                let field_name = import.field();
+                write!(
+                    f,
+                    "cannot find definition for import {}::{}: {:?}",
+                    module_name, field_name, import
+                )
+            }
+            Self::SignatureMismatch {
+                import,
+                expected,
+                actual,
+            } => {
+                let module_name = import.module();
+                let field_name = import.field();
+                write!(
+                    f,
+                    "expected {:?} function type for import {:?} at {}::{} but found {:?}",
+                    expected, import, module_name, field_name, actual
+                )
+            }
+            Self::TableTypeMismatch {
+                import,
+                expected,
+                actual,
+            } => {
+                let module_name = import.module();
+                let field_name = import.field();
+                write!(
+                    f,
+                    "expected {:?} table type for import {:?} at {}::{} but found {:?}",
+                    expected, import, module_name, field_name, actual
+                )
+            }
+            Self::MemoryTypeMismatch {
+                import,
+                expected,
+                actual,
+            } => {
+                let module_name = import.module();
+                let field_name = import.field();
+                write!(
+                    f,
+                    "expected {:?} linear memory type for import {:?} at {}::{} but found {:?}",
+                    expected, import, module_name, field_name, actual
+                )
+            }
+            Self::GlobalTypeMismatch {
+                import,
+                expected_value_type,
+                expected_mutability,
+                actual_value_type,
+                actual_mutability,
+            } => {
+                let module_name = import.module();
+                let field_name = import.field();
+                fn bool_to_mutability_str(is_mutable: bool) -> &'static str {
+                    match is_mutable {
+                        true => "mutable",
+                        false => "immutable",
+                    }
+                }
+                let expected_mutability = bool_to_mutability_str(*expected_mutability);
+                let actual_mutability = bool_to_mutability_str(*actual_mutability);
+                write!(
+                    f,
+                    "expected {} {:?} global variable for import {:?} at {}::{} but found {} {:?}",
+                    expected_mutability,
+                    expected_value_type,
+                    import,
+                    module_name,
+                    field_name,
+                    actual_mutability,
+                    actual_value_type
                 )
             }
         }
@@ -130,8 +254,15 @@ struct ImportKey {
 
 /// A linker used to define module imports and instantiate module instances.
 pub struct Linker<T> {
+    /// Allows to efficiently store strings and deduplicate them..
     strings: StringInterner,
+    /// Stores the definitions given their names.
     definitions: BTreeMap<ImportKey, Extern>,
+    /// Reusable buffer to be used for module instantiations.
+    ///
+    /// Helps to avoid heap memory allocations at the cost of a small
+    /// memory overhead.
+    externals: Vec<Extern>,
     _marker: PhantomData<fn() -> T>,
 }
 
@@ -149,6 +280,7 @@ impl<T> Clone for Linker<T> {
         Self {
             strings: self.strings.clone(),
             definitions: self.definitions.clone(),
+            externals: Vec::new(),
             _marker: self._marker,
         }
     }
@@ -166,6 +298,7 @@ impl<T> Linker<T> {
         Self {
             strings: StringInterner::default(),
             definitions: BTreeMap::default(),
+            externals: Vec::new(),
             _marker: PhantomData,
         }
     }
@@ -232,7 +365,7 @@ impl<T> Linker<T> {
     ///
     /// Returns `None` if this name was not previously defined in this
     /// [`Linker`].
-    pub fn get(&self, module: &str, name: Option<&str>) -> Option<Extern> {
+    pub fn resolve(&self, module: &str, name: Option<&str>) -> Option<Extern> {
         let key = ImportKey {
             module: self.strings.get(module)?,
             name: match name {
@@ -241,5 +374,142 @@ impl<T> Linker<T> {
             },
         };
         self.definitions.get(&key).copied()
+    }
+
+    /// Instantiates the given [`Module`] using the definitions in the [`Linker`].
+    pub fn instantiate<'a>(
+        &mut self,
+        context: impl AsContextMut,
+        wasmi_module: &'a Module,
+    ) -> Result<InstancePre<'a>, Error> {
+        let wasm_module = &wasmi_module.module;
+
+        // Clear the cached externals buffer.
+        self.externals.clear();
+
+        let imports = wasm_module
+            .import_section()
+            .map(pwasm::ImportSection::entries)
+            .unwrap_or(&[]);
+        let signatures = wasm_module
+            .type_section()
+            .map(pwasm::TypeSection::types)
+            .unwrap_or(&[]);
+        for import in imports {
+            let module_name = import.module();
+            let field_name = import.field();
+            let external = match *import.external() {
+                pwasm::External::Function(signature_index) => {
+                    let pwasm::Type::Function(func_type) =
+                        signatures.get(signature_index as usize).unwrap_or_else(|| {
+                            panic!(
+                                "missing expected function signature at index {}",
+                                signature_index
+                            )
+                        });
+                    let func = self
+                        .resolve(module_name, Some(field_name))
+                        .and_then(Extern::into_func)
+                        .ok_or_else(|| LinkerError::CannotFindDefinitionForImport {
+                            import: import.clone(),
+                        })?;
+                    let expected_inputs = func_type
+                        .params()
+                        .iter()
+                        .copied()
+                        .map(ValueType::from_elements);
+                    let expected_outputs = func_type
+                        .results()
+                        .iter()
+                        .copied()
+                        .map(ValueType::from_elements);
+                    let signature = func.signature(context.as_context());
+                    if expected_inputs.ne(signature.inputs(context.as_context()).iter().copied())
+                        || expected_outputs
+                            .ne(signature.outputs(context.as_context()).iter().copied())
+                    {
+                        return Err(LinkerError::SignatureMismatch {
+                            import: import.clone(),
+                            expected: func_type.clone(),
+                            actual: signature,
+                        })
+                        .map_err(Into::into);
+                    }
+                    Extern::Func(func)
+                }
+                pwasm::External::Table(table_type) => {
+                    let initial = table_type.limits().initial() as usize;
+                    let maximum = table_type
+                        .limits()
+                        .maximum()
+                        .map(|maximum| maximum as usize);
+                    let expected_table_type = TableType::new(initial, maximum);
+                    let table = self
+                        .resolve(module_name, Some(field_name))
+                        .and_then(Extern::into_table)
+                        .ok_or_else(|| LinkerError::CannotFindDefinitionForImport {
+                            import: import.clone(),
+                        })?;
+                    let actual_table_type = table.table_type(context.as_context());
+                    if expected_table_type != actual_table_type {
+                        return Err(LinkerError::TableTypeMismatch {
+                            import: import.clone(),
+                            expected: expected_table_type,
+                            actual: actual_table_type,
+                        })
+                        .map_err(Into::into);
+                    }
+                    Extern::Table(table)
+                }
+                pwasm::External::Memory(memory_type) => {
+                    let initial = memory_type.limits().initial();
+                    let maximum = memory_type.limits().maximum();
+                    let expected_memory_type = MemoryType::new(initial, maximum);
+                    let memory = self
+                        .resolve(module_name, Some(field_name))
+                        .and_then(Extern::into_memory)
+                        .ok_or_else(|| LinkerError::CannotFindDefinitionForImport {
+                            import: import.clone(),
+                        })?;
+                    let actual_memory_type = memory.memory_type(context.as_context());
+                    if expected_memory_type != actual_memory_type {
+                        return Err(LinkerError::MemoryTypeMismatch {
+                            import: import.clone(),
+                            expected: expected_memory_type,
+                            actual: actual_memory_type,
+                        })
+                        .map_err(Into::into);
+                    }
+                    Extern::Memory(memory)
+                }
+                pwasm::External::Global(global_type) => {
+                    let global = self
+                        .resolve(module_name, Some(field_name))
+                        .and_then(Extern::into_global)
+                        .ok_or_else(|| LinkerError::CannotFindDefinitionForImport {
+                            import: import.clone(),
+                        })?;
+                    let expected_value_type = ValueType::from_elements(global_type.content_type());
+                    let expected_mutability = global_type.is_mutable();
+                    let actual_value_type = global.value_type(context.as_context());
+                    let actual_mutability = global.is_mutable(context.as_context());
+                    if expected_value_type != actual_value_type
+                        || expected_mutability != actual_mutability
+                    {
+                        return Err(LinkerError::GlobalTypeMismatch {
+                            import: import.clone(),
+                            expected_value_type,
+                            expected_mutability,
+                            actual_value_type,
+                            actual_mutability,
+                        })
+                        .map_err(Into::into);
+                    }
+                    Extern::Global(global)
+                }
+            };
+            self.externals.push(external);
+        }
+        wasmi_module.instantiate(context, self.externals.drain(..))
     }
 }
