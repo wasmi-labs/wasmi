@@ -1,4 +1,4 @@
-use super::{AsContext, AsContextMut, Func, Index, ResizableLimits, Store, Stored};
+use super::{AsContext, AsContextMut, Func, Index, Stored, TableType};
 use alloc::vec::Vec;
 use core::{fmt, fmt::Display};
 
@@ -66,22 +66,22 @@ impl Display for TableError {
 /// A Wasm table entity.
 #[derive(Debug)]
 pub struct TableEntity {
-    limits: ResizableLimits,
+    ty: TableType,
     elements: Vec<Option<Func>>,
 }
 
 impl TableEntity {
     /// Creates a new table entity with the given resizable limits.
-    pub fn new(limits: ResizableLimits) -> Self {
+    pub fn new(limits: TableType) -> Self {
         Self {
             elements: vec![None; limits.initial()],
-            limits,
+            ty: limits,
         }
     }
 
     /// Returns the resizable limits of the table.
-    pub fn limits(&self) -> ResizableLimits {
-        self.limits
+    pub fn table_type(&self) -> TableType {
+        self.ty
     }
 
     /// Returns the current length of the table.
@@ -104,7 +104,7 @@ impl TableEntity {
     ///
     /// If the table is grown beyond its maximum limits.
     pub fn grow(&mut self, grow_by: usize) -> Result<(), TableError> {
-        let maximum = self.limits.maximum().unwrap_or(u32::MAX as usize);
+        let maximum = self.ty.maximum().unwrap_or(u32::MAX as usize);
         let current = self.len();
         let new_len = current
             .checked_add(grow_by)
@@ -168,13 +168,15 @@ impl Table {
     }
 
     /// Creates a new table to the store.
-    pub fn new<T>(ctx: &mut Store<T>, limits: ResizableLimits) -> Self {
-        ctx.alloc_table(TableEntity::new(limits))
+    pub fn new(mut ctx: impl AsContextMut, table_type: TableType) -> Self {
+        ctx.as_context_mut()
+            .store
+            .alloc_table(TableEntity::new(table_type))
     }
 
-    /// Returns the resizable limits of the table.
-    pub fn limits(&self, ctx: impl AsContext) -> ResizableLimits {
-        ctx.as_context().store.resolve_table(*self).limits()
+    /// Returns the type and limits of the table.
+    pub fn table_type(&self, ctx: impl AsContext) -> TableType {
+        ctx.as_context().store.resolve_table(*self).table_type()
     }
 
     /// Returns the current length of the table.
