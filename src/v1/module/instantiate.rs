@@ -84,6 +84,10 @@ pub enum InstantiationError {
         /// The amount of elements with which the table is initialized at the `offset`.
         amount: usize,
     },
+    FoundStartFn {
+        /// The index of the found `start` function.
+        index: u32,
+    },
 }
 
 impl Display for InstantiationError {
@@ -139,7 +143,56 @@ impl Display for InstantiationError {
                 "table {:?} does not fit {} elements starting from offset {}",
                 table, offset, amount,
             ),
+            Self::FoundStartFn { index } => {
+                write!(f, "found an unexpected start function with index {}", index)
+            }
         }
+    }
+}
+
+/// A partially instantiated [`Instance`] where the `start` function has not yet been executed.
+///
+/// # Note
+///
+/// Some users require Wasm modules to not have a `start` function that is required for
+/// conformant module instantiation. This API provides control over the precise instantiation
+/// process with regard to this need.
+#[derive(Debug)]
+pub struct InstancePre<'a> {
+    module: &'a Module,
+    builder: InstanceEntityBuilder,
+}
+
+impl<'a> InstancePre<'a> {
+    /// Returns `true` if the [`Module`] has a `start` function.
+    fn has_start_fn(&self) -> bool {
+        self.start_fn().is_some()
+    }
+
+    /// Returns the index of the `start` function if any.
+    ///
+    /// Returns `None` if the [`Module`] does not have a `start` function.
+    fn start_fn(&self) -> Option<u32> {
+        self.module.module.start_section()
+    }
+
+    /// Finishes instantiation ensuring that no `start` function exists.
+    ///
+    /// # Errors
+    ///
+    /// If a `start` function exists that needs to be called for conformant module instantiation.
+    pub fn ensure_no_start_fn(
+        self,
+        mut context: impl AsContextMut,
+    ) -> Result<Instance, InstantiationError> {
+        if let Some(index) = self.start_fn() {
+            return Err(InstantiationError::FoundStartFn { index });
+        }
+        let instance = context
+            .as_context_mut()
+            .store
+            .alloc_instance(self.builder.finish());
+        Ok(instance)
     }
 }
 
@@ -165,7 +218,7 @@ impl Module {
         &self,
         mut context: impl AsContextMut,
         externals: I,
-    ) -> Result<Instance, Error>
+    ) -> Result<InstancePre, Error>
     where
         I: IntoIterator<Item = Extern>,
     {
@@ -182,12 +235,13 @@ impl Module {
         self.initialize_table_elements(&mut context, &mut builder)?;
         self.initialize_memory_data(&mut context, &mut builder)?;
 
-        let instance = context
-            .as_context_mut()
-            .store
-            .alloc_instance(builder.finish());
+        // At this point the module instantiation is nearly done.
+        // The only thing that is missing is to run the `start` function.
 
-        Ok(instance)
+        Ok(InstancePre {
+            module: self,
+            builder,
+        })
     }
 
     /// Extracts the Wasm function signatures from the module and stores them into the [`Store`].
