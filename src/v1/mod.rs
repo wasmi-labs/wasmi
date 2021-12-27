@@ -52,7 +52,7 @@ pub use self::{
     limits::TableType,
     linker::Linker,
     memory::{Memory, MemoryType},
-    module::Module,
+    module::{InstancePre, Module},
     signature::Signature,
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::Table,

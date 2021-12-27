@@ -8,7 +8,10 @@ mod instantiate;
 mod tests;
 
 use self::compile::FuncBodyTranslator;
-pub use self::{error::TranslationError, instantiate::InstantiationError};
+pub use self::{
+    error::TranslationError,
+    instantiate::{InstancePre, InstantiationError},
+};
 use super::{
     engine::{FuncBody, InstructionsBuilder},
     Engine,
