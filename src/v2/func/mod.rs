@@ -4,7 +4,6 @@ mod caller;
 mod into_func;
 mod locals;
 
-use self::locals::Locals;
 pub use self::{caller::Caller, into_func::IntoFunc};
 use super::{engine::FuncBody, AsContext, AsContextMut, Index, Signature, Stored};
 use crate::{RuntimeValue, Trap, ValueType};
@@ -103,7 +102,6 @@ impl<T> Clone for FuncEntityInternal<T> {
 #[derive(Debug, Clone)]
 struct WasmFuncEntity {
     signature: Signature,
-    locals: Locals,
     body: FuncBody,
 }
 
