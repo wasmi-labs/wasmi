@@ -37,31 +37,39 @@ use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 /// An error that may occur upon instantiation of a Wasm module.
 #[derive(Debug)]
 pub enum InstantiationError {
+    /// Caused when the number of required imports does not match
+    /// the number of given externals upon module instantiation.
     ImportsExternalsLenMismatch,
+    /// Caused when a given external value does not match the
+    /// type of the required import for module instantiation.
     ImportsExternalsMismatch {
         /// The expected external value for the module import.
         expected: pwasm::External,
         /// The actually found external value for the module import.
         actual: Extern,
     },
+    /// Caused when a function has a mismatching signature.
     SignatureMismatch {
         /// The expected function signature for the function import.
         expected: Signature,
         /// The actual function signature for the function import.
         actual: Signature,
     },
+    /// Caused when a table has a mismatching table type.
     TableTypeMismatch {
         /// The expected table type for the table import.
         expected: pwasm::ResizableLimits,
         /// The actual table type for the table import.
         actual: TableType,
     },
+    /// Caused when a linear memory has a mismatching linear memory type.
     MemoryTypeMismatch {
         /// The expected memory type for the linear memory import.
         expected: pwasm::ResizableLimits,
         /// The actual memory type for the linear memory import.
         actual: MemoryType,
     },
+    /// Caused when a global variable has a mismatching global variable type and mutability.
     GlobalTypeMismatch {
         /// The expected global type for the global variable import.
         ///
@@ -76,7 +84,8 @@ pub enum InstantiationError {
         /// This is `true` if the global variable is mutable.
         actual_mutability: bool,
     },
-    ElemengSegmentDoesNotFit {
+    /// Caused when an element segment does not fit into the specified table instance.
+    ElementSegmentDoesNotFit {
         /// The table of the element segment.
         table: Table,
         /// The offset to store the `amount` of elements into the table.
@@ -84,6 +93,7 @@ pub enum InstantiationError {
         /// The amount of elements with which the table is initialized at the `offset`.
         amount: usize,
     },
+    /// Caused when the `start` function was unexpectedly found in the instantiated module.
     FoundStartFn {
         /// The index of the found `start` function.
         index: u32,
@@ -134,7 +144,7 @@ impl Display for InstantiationError {
                 },
                 actual_type
             ),
-            Self::ElemengSegmentDoesNotFit {
+            Self::ElementSegmentDoesNotFit {
                 table,
                 offset,
                 amount,
@@ -657,7 +667,7 @@ impl Module {
             //       fit into the table at the given offset but also that the element segment
             //       consists of at least 1 element member.
             if offset + element_segment.members().len() > table.len(context.as_context()) {
-                return Err(InstantiationError::ElemengSegmentDoesNotFit {
+                return Err(InstantiationError::ElementSegmentDoesNotFit {
                     table,
                     offset: offset as usize,
                     amount: table.len(context.as_context()),
