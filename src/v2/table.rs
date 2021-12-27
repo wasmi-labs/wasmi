@@ -198,7 +198,7 @@ impl Table {
     /// # Errors
     ///
     /// If the table is grown beyond its maximum limits.
-    pub fn grow(&mut self, mut ctx: impl AsContextMut, grow_by: usize) -> Result<(), TableError> {
+    pub fn grow(&self, mut ctx: impl AsContextMut, grow_by: usize) -> Result<(), TableError> {
         ctx.as_context_mut()
             .store
             .resolve_table_mut(*self)
@@ -220,7 +220,7 @@ impl Table {
     ///
     /// If the accesses element is out of bounds of the table.
     pub fn set(
-        &mut self,
+        &self,
         mut ctx: impl AsContextMut,
         offset: usize,
         new_value: Option<Func>,
