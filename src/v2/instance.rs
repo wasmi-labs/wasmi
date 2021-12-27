@@ -3,7 +3,11 @@
 use core::ops::Deref;
 
 use super::{AsContext, Extern, Func, Global, Index, Memory, Signature, Stored, Table};
-use alloc::{collections::BTreeMap, string::ToString, vec::Vec};
+use alloc::{
+    collections::BTreeMap,
+    string::{String, ToString},
+    vec::Vec,
+};
 
 /// A raw index to a module instance entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
