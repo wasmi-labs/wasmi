@@ -473,12 +473,7 @@ impl Module {
                 .limits()
                 .maximum()
                 .map(|maximum| maximum as usize);
-            let table_type = TableType::new(initial, maximum).unwrap_or_else(|error| {
-                panic!(
-                    "encountered unexpected invalid table type {:?} after Wasm validation: {}",
-                    table_type, error,
-                )
-            });
+            let table_type = TableType::new(initial, maximum);
             let table = Table::new(context.as_context_mut(), table_type);
             builder.push_table(table);
         }

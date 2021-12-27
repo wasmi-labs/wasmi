@@ -1,5 +1,4 @@
 use core::{fmt, fmt::Display};
-use parity_wasm::elements as pwasm;
 
 /// Errors that can occur upon operating with resizable limits.
 #[derive(Debug)]
@@ -19,25 +18,17 @@ pub struct TableType {
     maximum: Option<usize>,
 }
 
-impl TryFrom<pwasm::ResizableLimits> for TableType {
-    type Error = LimitsError;
-
-    fn try_from(limits: pwasm::ResizableLimits) -> Result<Self, Self::Error> {
-        let initial = limits.initial() as usize;
-        let maximum = limits.maximum().map(|maximum| maximum as usize);
-        Self::new(initial, maximum)
-    }
-}
-
 impl TableType {
     /// Creates a new resizable limit.
-    pub fn new(initial: usize, maximum: Option<usize>) -> Result<Self, LimitsError> {
+    ///
+    /// # Panics
+    ///
+    /// - If the `initial` limit is greater than the `maximum` limit if any.
+    pub fn new(initial: usize, maximum: Option<usize>) -> Self {
         if let Some(maximum) = maximum {
-            if initial > maximum {
-                return Err(LimitsError);
-            }
+            assert!(initial <= maximum);
         }
-        Ok(Self { initial, maximum })
+        Self { initial, maximum }
     }
 
     /// Returns the initial limit.
