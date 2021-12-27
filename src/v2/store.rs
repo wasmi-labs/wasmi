@@ -32,7 +32,7 @@ use core::{
 pub struct StoreIdx(usize);
 
 /// A stored entity.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Stored<Idx> {
     store_idx: StoreIdx,
     entity_idx: Idx,
