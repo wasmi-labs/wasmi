@@ -73,7 +73,7 @@ fn max_memory_len() -> usize {
 }
 
 /// The memory type of a linear memory.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct MemoryType {
     initial_pages: Pages,
     maximum_pages: Option<Pages>,
