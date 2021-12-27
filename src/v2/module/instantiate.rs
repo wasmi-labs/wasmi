@@ -160,6 +160,7 @@ impl Module {
     /// provided [`Func`] has a different function signature than required by the module import.
     ///
     /// [`Linker`]: struct.Linker.html
+    /// [`Func`]: [`crate::v2::Func`]
     pub(crate) fn instantiate<I>(
         &self,
         mut context: impl AsContextMut,
@@ -192,6 +193,8 @@ impl Module {
     /// Extracts the Wasm function signatures from the module and stores them into the [`Store`].
     ///
     /// This also stores [`Signature`] references into the [`Instance`] under construction.
+    ///
+    /// [`Store`]: struct.Store.html
     fn extract_signatures(
         &self,
         context: &mut impl AsContextMut,
@@ -233,6 +236,8 @@ impl Module {
     ///   variable external value.
     /// - If the externally provided [`Table`], [`Memory`], [`Func`] or [`Global`] has a type
     ///   mismatch with the expected module import type.
+    ///
+    /// [`Func`]: [`crate::v2::Func`]
     fn extract_imports<I>(
         &self,
         context: &mut impl AsContextMut,
@@ -338,6 +343,9 @@ impl Module {
     /// Extracts the Wasm functions from the module and stores them into the [`Store`].
     ///
     /// This also stores [`Func`] references into the [`Instance`] under construction.
+    ///
+    /// [`Store`]: struct.Store.html
+    /// [`Func`]: [`crate::v2::Func`]
     fn extract_functions(
         &self,
         context: &mut impl AsContextMut,
@@ -387,6 +395,8 @@ impl Module {
     /// Extracts the Wasm tables from the module and stores them into the [`Store`].
     ///
     /// This also stores [`Table`] references into the [`Instance`] under construction.
+    ///
+    /// [`Store`]: struct.Store.html
     fn extract_tables(&self, context: &mut impl AsContextMut, builder: &mut InstanceEntityBuilder) {
         let table_types = self
             .module
@@ -413,6 +423,8 @@ impl Module {
     /// Extracts the Wasm linear memories from the module and stores them into the [`Store`].
     ///
     /// This also stores [`Memory`] references into the [`Instance`] under construction.
+    ///
+    /// [`Store`]: struct.Store.html
     fn extract_memories(
         &self,
         context: &mut impl AsContextMut,
@@ -441,6 +453,8 @@ impl Module {
     /// Extracts the Wasm global variables from the module and stores them into the [`Store`].
     ///
     /// This also stores [`Global`] references into the [`Instance`] under construction.
+    ///
+    /// [`Store`]: struct.Store.html
     fn extract_globals(
         &self,
         context: &mut impl AsContextMut,
