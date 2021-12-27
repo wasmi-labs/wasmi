@@ -2,9 +2,7 @@
 
 #![allow(dead_code)] // TODO: remove
 
-use crate::v2::{Memory, Table};
-
-use super::super::{Func, Instance};
+use super::super::{Func, Instance, Memory, Table};
 use alloc::vec::Vec;
 use core::{fmt, fmt::Display};
 

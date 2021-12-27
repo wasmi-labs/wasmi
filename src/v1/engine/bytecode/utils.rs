@@ -1,6 +1,4 @@
-use crate::v2::engine::InstructionIdx;
-
-use super::Instruction;
+use super::{super::super::engine::InstructionIdx, Instruction};
 use core::cmp;
 
 /// Defines how many stack values are going to be dropped and kept after branching.

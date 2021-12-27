@@ -8,16 +8,20 @@ mod utils;
 
 use self::control_frame::ControlFrame;
 use super::{
-    super::{DropKeep, FuncBody, InstructionIdx, InstructionsBuilder, LabelIdx, Target},
-    Engine,
-};
-use crate::{
-    v2::engine::{
-        bytecode::{FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx},
-        inst_builder::{Reloc, Signedness, WasmFloatType, WasmIntType},
+    super::{
+        super::{RuntimeValue, ValueType},
+        engine::{
+            bytecode::{FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx},
+            inst_builder::{Reloc, Signedness, WasmFloatType, WasmIntType},
+        },
+        DropKeep,
+        FuncBody,
+        InstructionIdx,
+        InstructionsBuilder,
+        LabelIdx,
+        Target,
     },
-    RuntimeValue,
-    ValueType,
+    Engine,
 };
 use alloc::vec::Vec;
 use parity_wasm::elements::{self as pwasm, Instruction};
