@@ -418,6 +418,77 @@ where
             .map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
         Ok(ExecutionOutcome::Continue)
     }
+
+    fn execute_eqz<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        T: FromStackEntry,
+        T: PartialEq<T> + Default,
+    {
+        let entry = self.value_stack.last_mut();
+        let value = T::from_stack_entry(*entry);
+        let zero = Default::default();
+        let result = value == zero;
+        *entry = result.into();
+        Ok(ExecutionOutcome::Continue)
+    }
+
+    /// Executes a relative operation given the top two stack values.
+    ///
+    /// After success the top of the stack will store the result.
+    fn execute_relop<T, F>(&mut self, f: F) -> Result<ExecutionOutcome, TrapKind>
+    where
+        T: FromStackEntry,
+        F: FnOnce(T, T) -> bool,
+    {
+        let right = self.value_stack.pop_as::<T>();
+        let entry = self.value_stack.last_mut();
+        let left = T::from_stack_entry(*entry);
+        let result = f(left, right);
+        *entry = result.into();
+        Ok(ExecutionOutcome::Continue)
+    }
+
+    fn execute_eq<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        T: FromStackEntry + PartialEq,
+    {
+        self.execute_relop(|left: T, right: T| left == right)
+    }
+
+    fn execute_ne<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        T: FromStackEntry + PartialEq,
+    {
+        self.execute_relop(|left: T, right: T| left != right)
+    }
+
+    fn execute_lt<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        T: FromStackEntry + PartialOrd,
+    {
+        self.execute_relop(|left: T, right: T| left < right)
+    }
+
+    fn execute_le<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        T: FromStackEntry + PartialOrd,
+    {
+        self.execute_relop(|left: T, right: T| left <= right)
+    }
+
+    fn execute_gt<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        T: FromStackEntry + PartialOrd,
+    {
+        self.execute_relop(|left: T, right: T| left > right)
+    }
+
+    fn execute_ge<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        T: FromStackEntry + PartialOrd,
+    {
+        self.execute_relop(|left: T, right: T| left >= right)
+    }
 }
 
 impl<'engine, 'func, Ctx> VisitInstruction for InstructionExecutionContext<'engine, 'func, Ctx>
@@ -686,107 +757,141 @@ where
     }
 
     fn visit_i32_eqz(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_eqz::<i32>()
     }
+
     fn visit_i32_eq(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_eq::<i32>()
     }
+
     fn visit_i32_ne(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_ne::<i32>()
     }
+
     fn visit_i32_lt_s(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_lt::<i32>()
     }
+
     fn visit_i32_lt_u(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_lt::<u32>()
     }
+
     fn visit_i32_gt_s(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_gt::<i32>()
     }
+
     fn visit_i32_gt_u(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_gt::<u32>()
     }
+
     fn visit_i32_le_s(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_le::<i32>()
     }
+
     fn visit_i32_le_u(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_le::<u32>()
     }
+
     fn visit_i32_ge_s(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_ge::<i32>()
     }
+
     fn visit_i32_ge_u(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_ge::<u32>()
     }
+
     fn visit_i64_eqz(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_eqz::<i64>()
     }
+
     fn visit_i64_eq(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_eq::<i64>()
     }
+
     fn visit_i64_ne(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_ne::<i64>()
     }
+
     fn visit_i64_lt_s(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_lt::<i64>()
     }
+
     fn visit_i64_lt_u(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_lt::<u64>()
     }
+
     fn visit_i64_gt_s(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_gt::<i64>()
     }
+
     fn visit_i64_gt_u(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_gt::<u64>()
     }
+
     fn visit_i64_le_s(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_le::<i64>()
     }
+
     fn visit_i64_le_u(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_le::<u64>()
     }
+
     fn visit_i64_ge_s(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_ge::<i64>()
     }
+
     fn visit_i64_ge_u(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_ge::<u64>()
     }
+
     fn visit_f32_eq(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_eq::<F32>()
     }
+
     fn visit_f32_ne(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_ne::<F32>()
     }
+
     fn visit_f32_lt(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_lt::<F32>()
     }
+
     fn visit_f32_gt(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_gt::<F32>()
     }
+
     fn visit_f32_le(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_le::<F32>()
     }
+
     fn visit_f32_ge(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_ge::<F32>()
     }
+
     fn visit_f64_eq(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_eq::<F64>()
     }
+
     fn visit_f64_ne(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_ne::<F64>()
     }
+
     fn visit_f64_lt(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_lt::<F64>()
     }
+
     fn visit_f64_gt(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_gt::<F64>()
     }
+
     fn visit_f64_le(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_le::<F64>()
     }
+
     fn visit_f64_ge(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_ge::<F64>()
     }
+
     fn visit_i32_clz(&mut self) -> Self::Outcome {
         todo!()
     }
