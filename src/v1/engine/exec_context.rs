@@ -16,8 +16,9 @@ use super::{
 };
 use crate::{
     nan_preserving_float::{F32, F64},
+    value::Integer,
     Trap,
-    TrapKind, value::Integer,
+    TrapKind,
 };
 use memory_units::wasm32::Pages;
 
