@@ -428,6 +428,74 @@ where
     {
         self.execute_unop(|v: T| v.count_ones())
     }
+
+    fn execute_binop<T, F>(&mut self, f: F) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: FromStackEntry,
+        F: FnOnce(T, T) -> T,
+    {
+        let right = self.value_stack.pop_as::<T>();
+        let entry = self.value_stack.last_mut();
+        let left = T::from_stack_entry(*entry);
+        let result = f(left, right);
+        *entry = result.into();
+        Ok(ExecutionOutcome::Continue)
+    }
+
+    fn execute_add<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: FromStackEntry + ArithmeticOps<T>,
+    {
+        self.execute_binop(|left, right| left.add(right))
+    }
+
+    fn execute_sub<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: FromStackEntry + ArithmeticOps<T>,
+    {
+        self.execute_binop(|left, right| left.sub(right))
+    }
+
+    fn execute_mul<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: FromStackEntry + ArithmeticOps<T>,
+    {
+        self.execute_binop(|left, right| left.mul(right))
+    }
+
+    fn try_execute_binop<T, F>(&mut self, f: F) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: FromStackEntry,
+        F: FnOnce(T, T) -> Result<T, TrapKind>,
+    {
+        let right = self.value_stack.pop_as::<T>();
+        let entry = self.value_stack.last_mut();
+        let left = T::from_stack_entry(*entry);
+        let result = f(left, right)?;
+        *entry = result.into();
+        Ok(ExecutionOutcome::Continue)
+    }
+
+    fn execute_div<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: FromStackEntry + ArithmeticOps<T>,
+    {
+        self.try_execute_binop(|left, right| left.div(right))
+    }
+
+    fn execute_rem<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: FromStackEntry + Integer<T>,
+    {
+        self.try_execute_binop(|left, right| left.rem(right))
+    }
 }
 
 impl<'engine, 'func, Ctx> VisitInstruction for InstructionExecutionContext<'engine, 'func, Ctx>
@@ -844,26 +912,33 @@ where
     }
 
     fn visit_i32_add(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_add::<i32>()
     }
+
     fn visit_i32_sub(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_sub::<i32>()
     }
+
     fn visit_i32_mul(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_mul::<i32>()
     }
+
     fn visit_i32_div_s(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_div::<i32>()
     }
+
     fn visit_i32_div_u(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_div::<u32>()
     }
+
     fn visit_i32_rem_s(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_rem::<i32>()
     }
+
     fn visit_i32_rem_u(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_rem::<u32>()
     }
+
     fn visit_i32_and(&mut self) -> Self::Outcome {
         todo!()
     }
@@ -902,26 +977,33 @@ where
     }
 
     fn visit_i64_add(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_add::<i64>()
     }
+
     fn visit_i64_sub(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_sub::<i64>()
     }
+
     fn visit_i64_mul(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_mul::<i64>()
     }
+
     fn visit_i64_div_s(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_div::<i64>()
     }
+
     fn visit_i64_div_u(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_div::<u64>()
     }
+
     fn visit_i64_rem_s(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_rem::<i64>()
     }
+
     fn visit_i64_rem_u(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_rem::<u64>()
     }
+
     fn visit_i64_and(&mut self) -> Self::Outcome {
         todo!()
     }
