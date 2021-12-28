@@ -84,6 +84,13 @@ impl From<u32> for FuncIdx {
     }
 }
 
+impl FuncIdx {
+    /// Returns the inner `u32` index.
+    pub fn into_inner(self) -> u32 {
+        self.0
+    }
+}
+
 /// An index of a unique function signature.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
@@ -92,6 +99,13 @@ pub struct SignatureIdx(u32);
 impl From<u32> for SignatureIdx {
     fn from(index: u32) -> Self {
         Self(index)
+    }
+}
+
+impl SignatureIdx {
+    /// Returns the inner `u32` index.
+    pub fn into_inner(self) -> u32 {
+        self.0
     }
 }
 
@@ -110,6 +124,13 @@ impl From<u32> for LocalIdx {
     }
 }
 
+impl LocalIdx {
+    /// Returns the inner `u32` index.
+    pub fn into_inner(self) -> u32 {
+        self.0
+    }
+}
+
 /// A global variable index.
 ///
 /// # Note
@@ -124,6 +145,13 @@ pub struct GlobalIdx(u32);
 impl From<u32> for GlobalIdx {
     fn from(index: u32) -> Self {
         Self(index)
+    }
+}
+
+impl GlobalIdx {
+    /// Returns the inner `u32` index.
+    pub fn into_inner(self) -> u32 {
+        self.0
     }
 }
 
