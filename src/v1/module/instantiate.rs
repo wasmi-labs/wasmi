@@ -169,6 +169,7 @@ impl Display for InstantiationError {
 /// process with regard to this need.
 #[derive(Debug)]
 pub struct InstancePre<'a> {
+    handle: Instance,
     module: &'a Module,
     builder: InstanceEntityBuilder,
 }
@@ -198,11 +199,11 @@ impl<'a> InstancePre<'a> {
         if let Some(index) = self.start_fn() {
             return Err(InstantiationError::FoundStartFn { index });
         }
-        let instance = context
+        context
             .as_context_mut()
             .store
-            .alloc_instance(self.builder.finish());
-        Ok(instance)
+            .initialize_instance(self.handle, self.builder.finish());
+        Ok(self.handle)
     }
 }
 
@@ -232,11 +233,12 @@ impl Module {
     where
         I: IntoIterator<Item = Extern>,
     {
+        let handle = context.as_context_mut().store.alloc_instance();
         let mut builder = InstanceEntity::build();
 
         self.extract_signatures(&mut context, &mut builder);
         self.extract_imports(&mut context, &mut builder, externals)?;
-        self.extract_functions(&mut context, &mut builder);
+        self.extract_functions(&mut context, &mut builder, handle);
         self.extract_tables(&mut context, &mut builder);
         self.extract_memories(&mut context, &mut builder);
         self.extract_globals(&mut context, &mut builder);
@@ -249,6 +251,7 @@ impl Module {
         // The only thing that is missing is to run the `start` function.
 
         Ok(InstancePre {
+            handle,
             module: self,
             builder,
         })
@@ -414,6 +417,7 @@ impl Module {
         &self,
         context: &mut impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
+        handle: Instance,
     ) {
         let func_bodies = &self.func_bodies[..];
         let funcs = self
@@ -451,7 +455,7 @@ impl Module {
             let func = context
                 .as_context_mut()
                 .store
-                .alloc_func(FuncEntity::new_wasm(signature, *func_body));
+                .alloc_func(FuncEntity::new_wasm(signature, *func_body, handle));
             builder.push_func(func);
         }
     }

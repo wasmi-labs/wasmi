@@ -158,8 +158,50 @@ impl<T> Store<T> {
     }
 
     /// Allocates a new [`Instance`] to the store.
-    pub(super) fn alloc_instance(&mut self, instance: InstanceEntity) -> Instance {
-        Instance::from_inner(Stored::new(self.idx, self.instances.alloc(instance)))
+    ///
+    /// # Note
+    ///
+    /// The resulting uninitialized [`Instance`] can be used to initialize [`Instance`] entities
+    /// that require an [`Instance`] handle upon construction such as [`Func`].
+    /// Using the [`Instance`] before fully initializing it using [`Store::initialize_instance`]
+    /// will cause an execution panic.
+    pub(super) fn alloc_instance(&mut self) -> Instance {
+        Instance::from_inner(Stored::new(
+            self.idx,
+            self.instances.alloc(InstanceEntity::uninitialized()),
+        ))
+    }
+
+    /// Fully initializes the [`Instance`].
+    ///
+    /// # Note
+    ///
+    /// After this operation the [`Instance`] can be used.
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Instance`] does not belong to the [`Store`].
+    /// - If the [`Instance`] is unknown to the [`Store`].
+    /// - If the [`Instance`] already has been fully initialized.
+    pub(super) fn initialize_instance(&mut self, instance: Instance, initialized: InstanceEntity) {
+        let entity_index = self.unwrap_index(instance.into_inner());
+        let entity = self.instances.get_mut(entity_index).unwrap_or_else(|| {
+            panic!(
+                "the store has no reference to the given instance: {:?}",
+                instance,
+            )
+        });
+        assert!(
+            !entity.is_initialized(),
+            "encountered an already initialized instance: {:?}",
+            entity
+        );
+        assert!(
+            initialized.is_initialized(),
+            "encountered an uninitialized new instance entity: {:?}",
+            initialized,
+        );
+        *entity = initialized;
     }
 
     /// Unpacks and checks the stored entity index.

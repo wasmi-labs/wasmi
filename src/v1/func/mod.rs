@@ -5,7 +5,7 @@ mod into_func;
 mod locals;
 
 pub use self::{caller::Caller, into_func::IntoFunc};
-use super::{engine::FuncBody, AsContext, AsContextMut, Index, Signature, Stored};
+use super::{engine::FuncBody, AsContext, AsContextMut, Index, Instance, Signature, Stored};
 use crate::{RuntimeValue, Trap, ValueType};
 use alloc::sync::Arc;
 use core::{fmt, fmt::Debug};
@@ -43,9 +43,9 @@ impl<T> Clone for FuncEntity<T> {
 
 impl<T> FuncEntity<T> {
     /// Creates a new Wasm function from the given raw parts.
-    pub(crate) fn new_wasm(signature: Signature, body: FuncBody) -> Self {
+    pub(crate) fn new_wasm(signature: Signature, body: FuncBody, instance: Instance) -> Self {
         Self {
-            internal: FuncEntityInternal::Wasm(WasmFuncEntity::new(signature, body)),
+            internal: FuncEntityInternal::Wasm(WasmFuncEntity::new(signature, body, instance)),
         }
     }
 
@@ -110,12 +110,17 @@ impl<T> Clone for FuncEntityInternal<T> {
 struct WasmFuncEntity {
     signature: Signature,
     body: FuncBody,
+    instance: Instance,
 }
 
 impl WasmFuncEntity {
     /// Creates a new Wasm function from the given raw parts.
-    pub(crate) fn new(signature: Signature, body: FuncBody) -> Self {
-        Self { signature, body }
+    pub(crate) fn new(signature: Signature, body: FuncBody, instance: Instance) -> Self {
+        Self {
+            signature,
+            body,
+            instance,
+        }
     }
 
     /// Returns the signature of the Wasm function.

@@ -1,13 +1,12 @@
 #![allow(dead_code)] // TODO: remove
 
-use core::ops::Deref;
-
 use super::{AsContext, Extern, Func, Global, Index, Memory, Signature, Stored, Table};
 use alloc::{
     collections::BTreeMap,
     string::{String, ToString},
     vec::Vec,
 };
+use core::ops::Deref;
 
 /// A raw index to a module instance entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -26,6 +25,7 @@ impl Index for InstanceIdx {
 /// A module instance entity.
 #[derive(Debug)]
 pub struct InstanceEntity {
+    initialized: bool,
     signatures: Vec<Signature>,
     tables: Vec<Table>,
     funcs: Vec<Func>,
@@ -35,10 +35,24 @@ pub struct InstanceEntity {
 }
 
 impl InstanceEntity {
+    /// Creates an uninitialized [`InstanceEntity`].
+    pub(crate) fn uninitialized() -> InstanceEntity {
+        Self {
+            initialized: false,
+            signatures: Vec::new(),
+            tables: Vec::new(),
+            funcs: Vec::new(),
+            memories: Vec::new(),
+            globals: Vec::new(),
+            exports: BTreeMap::new(),
+        }
+    }
+
     /// Creates a new [`InstanceEntityBuilder`].
     pub(crate) fn build() -> InstanceEntityBuilder {
         InstanceEntityBuilder {
             instance: Self {
+                initialized: false,
                 signatures: Vec::default(),
                 tables: Vec::default(),
                 funcs: Vec::default(),
@@ -47,6 +61,11 @@ impl InstanceEntity {
                 exports: BTreeMap::default(),
             },
         }
+    }
+
+    /// Returns `true` if the [`InstanceEntity`] has been fully initialized.
+    pub(crate) fn is_initialized(&self) -> bool {
+        self.initialized
     }
 
     /// Returns the linear memory at the `index` if any.
@@ -129,7 +148,8 @@ impl InstanceEntityBuilder {
     }
 
     /// Finishes constructing the [`InstanceEntity`].
-    pub(crate) fn finish(self) -> InstanceEntity {
+    pub(crate) fn finish(mut self) -> InstanceEntity {
+        self.instance.initialized = true;
         self.instance
     }
 }
