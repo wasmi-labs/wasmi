@@ -233,6 +233,31 @@ where
         *entry = value.into();
         Ok(ExecutionOutcome::Continue)
     }
+
+    /// Stores a value of type `T` into the default memory at the given address offset.
+    ///
+    /// # Note
+    ///
+    /// This can be used to emulate the following Wasm operands:
+    ///
+    /// - `i32.store`
+    /// - `i64.store`
+    /// - `f32.store`
+    /// - `f64.store`
+    fn store<T>(&mut self, offset: Offset) -> Result<ExecutionOutcome, TrapKind>
+    where
+        T: LittleEndianConvert + FromStackEntry,
+    {
+        let stack_value = self.value_stack.pop_as::<T>();
+        let raw_address = self.value_stack.pop_as::<u32>();
+        let address = Self::effective_address(offset, raw_address)?;
+        let memory = self.default_memory();
+        let bytes = <T as LittleEndianConvert>::into_le_bytes(stack_value);
+        memory
+            .write(self.ctx.as_context_mut(), address, bytes.as_ref())
+            .map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
+        Ok(ExecutionOutcome::Continue)
+    }
 }
 
 impl<'engine, 'func, Ctx> VisitInstruction for InstructionExecutionContext<'engine, 'func, Ctx>
@@ -454,18 +479,23 @@ where
     fn visit_i64_load_u32(&mut self, _offset: Offset) -> Self::Outcome {
         todo!()
     }
-    fn visit_i32_store(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+
+    fn visit_i32_store(&mut self, offset: Offset) -> Self::Outcome {
+        self.store::<i32>(offset)
     }
-    fn visit_i64_store(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+
+    fn visit_i64_store(&mut self, offset: Offset) -> Self::Outcome {
+        self.store::<i64>(offset)
     }
-    fn visit_f32_store(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+
+    fn visit_f32_store(&mut self, offset: Offset) -> Self::Outcome {
+        self.store::<F32>(offset)
     }
-    fn visit_f64_store(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+
+    fn visit_f64_store(&mut self, offset: Offset) -> Self::Outcome {
+        self.store::<F64>(offset)
     }
+
     fn visit_i32_store_8(&mut self, _offset: Offset) -> Self::Outcome {
         todo!()
     }
