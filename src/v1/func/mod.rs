@@ -2,7 +2,6 @@
 
 mod caller;
 mod into_func;
-mod locals;
 
 pub use self::{caller::Caller, into_func::IntoFunc};
 use super::{engine::FuncBody, AsContext, AsContextMut, Index, Instance, Signature, Stored};
