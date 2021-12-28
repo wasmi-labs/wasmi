@@ -170,6 +170,13 @@ impl From<u32> for Offset {
     }
 }
 
+impl Offset {
+    /// Returns the inner `u32` index.
+    pub fn into_inner(self) -> u32 {
+        self.0
+    }
+}
+
 /// A reference to a `wasmi` bytecode `br_table`.
 #[derive(Debug)]
 pub struct BrTable<'a> {

@@ -10,6 +10,7 @@ use super::{
     FunctionExecutionOutcome,
     FunctionFrame,
     ResolvedFuncBody,
+    StackEntry,
     Target,
     ValueStack,
 };
@@ -19,6 +20,59 @@ use crate::{
     TrapKind,
 };
 use memory_units::wasm32::Pages;
+
+/// Types that can be converted from and to little endian bytes.
+pub trait LittleEndianConvert {
+    /// The little endian bytes representation.
+    type Bytes: Default + AsRef<[u8]> + AsMut<[u8]>;
+
+    /// Converts `self` into little endian bytes.
+    fn into_le_bytes(self) -> Self::Bytes;
+
+    /// Converts little endian bytes into `Self`.
+    fn from_le_bytes(bytes: Self::Bytes) -> Self;
+}
+
+macro_rules! impl_little_endian_convert_primitive {
+    ( $($primitive:ty),* $(,)? ) => {
+        $(
+            impl LittleEndianConvert for $primitive {
+                type Bytes = [::core::primitive::u8; ::core::mem::size_of::<$primitive>()];
+
+                fn into_le_bytes(self) -> Self::Bytes {
+                    <$primitive>::to_le_bytes(self)
+                }
+
+                fn from_le_bytes(bytes: Self::Bytes) -> Self {
+                    <$primitive>::from_le_bytes(bytes)
+                }
+            }
+        )*
+    };
+}
+impl_little_endian_convert_primitive!(u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, f32, f64);
+
+macro_rules! impl_little_endian_convert_float {
+    ( $( struct $float_ty:ident($uint_ty:ty); )* $(,)? ) => {
+        $(
+            impl LittleEndianConvert for $float_ty {
+                type Bytes = <$uint_ty as LittleEndianConvert>::Bytes;
+
+                fn into_le_bytes(self) -> Self::Bytes {
+                    <$uint_ty>::into_le_bytes(self.to_bits())
+                }
+
+                fn from_le_bytes(bytes: Self::Bytes) -> Self {
+                    Self::from_bits(<$uint_ty>::from_le_bytes(bytes))
+                }
+            }
+        )*
+    };
+}
+impl_little_endian_convert_float!(
+    struct F32(u32);
+    struct F64(u64);
+);
 
 /// State that is used during Wasm function execution.
 #[derive(Debug)]
@@ -137,6 +191,47 @@ where
     fn convert_local_depth(local_depth: LocalIdx) -> usize {
         // TODO: calculate the -1 offset at module compilation time.
         (local_depth.into_inner() - 1) as usize
+    }
+
+    /// Calculates the effective address of a linear memory access.
+    ///
+    /// # Errors
+    ///
+    /// If the resulting effective address overflows.
+    fn effective_address(offset: Offset, address: u32) -> Result<usize, TrapKind> {
+        offset
+            .into_inner()
+            .checked_add(address)
+            .map(|address| address as usize)
+            .ok_or(TrapKind::MemoryAccessOutOfBounds)
+    }
+
+    /// Loads a value of type `T` from the default memory at the given address offset.
+    ///
+    /// # Note
+    ///
+    /// This can be used to emulate the following Wasm operands:
+    ///
+    /// - `i32.load`
+    /// - `i64.load`
+    /// - `f32.load`
+    /// - `f64.load`
+    fn load<T>(&mut self, offset: Offset) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: LittleEndianConvert,
+    {
+        let memory = self.default_memory();
+        let entry = self.value_stack.last_mut();
+        let raw_address = u32::from_stack_entry(*entry);
+        let address = Self::effective_address(offset, raw_address)?;
+        let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
+        memory
+            .read(self.ctx.as_context(), address, bytes.as_mut())
+            .map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
+        let value = <T as LittleEndianConvert>::from_le_bytes(bytes);
+        *entry = value.into();
+        Ok(ExecutionOutcome::Continue)
     }
 }
 
@@ -313,18 +408,22 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
-    fn visit_i32_load(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+    fn visit_i32_load(&mut self, offset: Offset) -> Self::Outcome {
+        self.load::<i32>(offset)
     }
-    fn visit_i64_load(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+
+    fn visit_i64_load(&mut self, offset: Offset) -> Self::Outcome {
+        self.load::<i64>(offset)
     }
-    fn visit_f32_load(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+
+    fn visit_f32_load(&mut self, offset: Offset) -> Self::Outcome {
+        self.load::<F32>(offset)
     }
-    fn visit_f64_load(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+
+    fn visit_f64_load(&mut self, offset: Offset) -> Self::Outcome {
+        self.load::<F64>(offset)
     }
+
     fn visit_i32_load_i8(&mut self, _offset: Offset) -> Self::Outcome {
         todo!()
     }
