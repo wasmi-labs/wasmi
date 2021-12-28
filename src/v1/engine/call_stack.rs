@@ -108,9 +108,9 @@ impl FunctionFrame {
     }
 
     /// Initializes the function frame.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// Does nothing if the function frame has already been initialized.
     pub fn initialize(
         &mut self,
