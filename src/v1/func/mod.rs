@@ -126,6 +126,11 @@ impl WasmFuncEntity {
     pub fn signature(&self) -> Signature {
         self.signature
     }
+
+    /// Returns the instance where the [`Func`] belong to.
+    pub fn instance(&self) -> Instance {
+        self.instance
+    }
 }
 
 /// A host function instance.
