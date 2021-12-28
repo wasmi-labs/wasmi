@@ -18,7 +18,7 @@ use crate::{
     Trap,
     TrapKind,
 };
-use memory_units::Pages;
+use memory_units::wasm32::Pages;
 
 /// State that is used during Wasm function execution.
 #[derive(Debug)]
