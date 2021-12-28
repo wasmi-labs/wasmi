@@ -151,14 +151,28 @@ where
         Ok(ExecutionOutcome::Return(drop_keep))
     }
 
-    fn visit_get_local(&mut self, _local_depth: LocalIdx) -> Self::Outcome {
-        todo!()
+    fn visit_get_local(&mut self, local_depth: LocalIdx) -> Self::Outcome {
+        // TODO: calculate the -1 offset at module compilation time.
+        let local_depth = (local_depth.into_inner() - 1) as usize;
+        let value = self.value_stack.peek(local_depth);
+        self.value_stack.push(value);
+        Ok(ExecutionOutcome::Continue)
     }
-    fn visit_set_local(&mut self, _local_depth: LocalIdx) -> Self::Outcome {
-        todo!()
+
+    fn visit_set_local(&mut self, local_depth: LocalIdx) -> Self::Outcome {
+        // TODO: calculate the -1 offset at module compilation time.
+        let local_depth = (local_depth.into_inner() - 1) as usize;
+        let new_value = self.value_stack.pop();
+        *self.value_stack.peek_mut(local_depth) = new_value;
+        Ok(ExecutionOutcome::Continue)
     }
-    fn visit_tee_local(&mut self, _local_depth: LocalIdx) -> Self::Outcome {
-        todo!()
+
+    fn visit_tee_local(&mut self, local_depth: LocalIdx) -> Self::Outcome {
+        // TODO: calculate the -1 offset at module compilation time.
+        let local_depth = (local_depth.into_inner() - 1) as usize;
+        let new_value = self.value_stack.last();
+        *self.value_stack.peek_mut(local_depth) = new_value;
+        Ok(ExecutionOutcome::Continue)
     }
 
     fn visit_get_global(&mut self, global_index: GlobalIdx) -> Self::Outcome {
