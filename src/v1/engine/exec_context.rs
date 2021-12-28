@@ -17,7 +17,7 @@ use super::{
 use crate::{
     nan_preserving_float::{F32, F64},
     Trap,
-    TrapKind,
+    TrapKind, value::Integer,
 };
 use memory_units::wasm32::Pages;
 
@@ -489,6 +489,43 @@ where
     {
         self.execute_relop(|left: T, right: T| left >= right)
     }
+
+    fn execute_unop<T, U, F>(&mut self, f: F) -> Result<ExecutionOutcome, TrapKind>
+    where
+        F: FnOnce(T) -> U,
+        T: FromStackEntry,
+        StackEntry: From<U>,
+    {
+        let entry = self.value_stack.last_mut();
+        let value = T::from_stack_entry(*entry);
+        let result = f(value);
+        *entry = result.into();
+        Ok(ExecutionOutcome::Continue)
+    }
+
+    fn execute_clz<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: Integer<T> + FromStackEntry,
+    {
+        self.execute_unop(|v: T| v.leading_zeros())
+    }
+
+    fn execute_ctz<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: Integer<T> + FromStackEntry,
+    {
+        self.execute_unop(|v: T| v.trailing_zeros())
+    }
+
+    fn execute_popcnt<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: Integer<T> + FromStackEntry,
+    {
+        self.execute_unop(|v: T| v.count_ones())
+    }
 }
 
 impl<'engine, 'func, Ctx> VisitInstruction for InstructionExecutionContext<'engine, 'func, Ctx>
@@ -893,14 +930,17 @@ where
     }
 
     fn visit_i32_clz(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_clz::<i32>()
     }
+
     fn visit_i32_ctz(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_ctz::<i32>()
     }
+
     fn visit_i32_popcnt(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_popcnt::<i32>()
     }
+
     fn visit_i32_add(&mut self) -> Self::Outcome {
         todo!()
     }
@@ -946,15 +986,19 @@ where
     fn visit_i32_rotr(&mut self) -> Self::Outcome {
         todo!()
     }
+
     fn visit_i64_clz(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_clz::<i64>()
     }
+
     fn visit_i64_ctz(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_ctz::<i64>()
     }
+
     fn visit_i64_popcnt(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_popcnt::<i64>()
     }
+
     fn visit_i64_add(&mut self) -> Self::Outcome {
         todo!()
     }
