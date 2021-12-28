@@ -16,7 +16,7 @@ use super::{
 };
 use crate::{
     nan_preserving_float::{F32, F64},
-    value::Integer,
+    value::{ArithmeticOps, ExtendInto, Integer, WrapInto},
     Trap,
     TrapKind,
 };
@@ -75,105 +75,6 @@ impl_little_endian_convert_float!(
     struct F64(u64);
 );
 
-/// Convert one type to another by wrapping.
-pub trait WrapInto<T> {
-    /// Convert one type to another by wrapping.
-    fn wrap_into(self) -> T;
-}
-
-macro_rules! impl_wrap_into {
-    ($from:ident, $into:ident) => {
-        impl WrapInto<$into> for $from {
-            fn wrap_into(self) -> $into {
-                self as $into
-            }
-        }
-    };
-    ($from:ident, $intermediate:ident, $into:ident) => {
-        impl WrapInto<$into> for $from {
-            fn wrap_into(self) -> $into {
-                <$into>::from(self as $intermediate)
-            }
-        }
-    };
-}
-
-impl_wrap_into!(i32, i8);
-impl_wrap_into!(i32, i16);
-impl_wrap_into!(i64, i8);
-impl_wrap_into!(i64, i16);
-impl_wrap_into!(i64, i32);
-impl_wrap_into!(i64, f32, F32);
-impl_wrap_into!(u64, f32, F32);
-// Casting from an f64 to an f32 will produce the closest possible value.
-//
-// Note:
-// - The rounding strategy is unspecified.
-// - Currently this will cause Undefined Behavior if the value is finite
-//   but larger or smaller than the largest or smallest finite value
-//   representable by f32. This is a bug and will be fixed.
-impl_wrap_into!(f64, f32);
-
-impl WrapInto<F32> for F64 {
-    fn wrap_into(self) -> F32 {
-        (f64::from(self) as f32).into()
-    }
-}
-
-/// Convert one type to another by extending with leading zeroes.
-pub trait ExtendInto<T> {
-    /// Convert one type to another by extending with leading zeroes.
-    fn extend_into(self) -> T;
-}
-macro_rules! impl_extend_into {
-    ($from:ident, $into:ident) => {
-        impl ExtendInto<$into> for $from {
-            fn extend_into(self) -> $into {
-                self as $into
-            }
-        }
-    };
-    ($from:ident, $intermediate:ident, $into:ident) => {
-        impl ExtendInto<$into> for $from {
-            fn extend_into(self) -> $into {
-                $into::from(self as $intermediate)
-            }
-        }
-    };
-}
-
-impl_extend_into!(i8, i32);
-impl_extend_into!(u8, i32);
-impl_extend_into!(i16, i32);
-impl_extend_into!(u16, i32);
-impl_extend_into!(i8, i64);
-impl_extend_into!(u8, i64);
-impl_extend_into!(i16, i64);
-impl_extend_into!(u16, i64);
-impl_extend_into!(i32, i64);
-impl_extend_into!(u32, i64);
-impl_extend_into!(u32, u64);
-impl_extend_into!(i32, f32);
-impl_extend_into!(i32, f64);
-impl_extend_into!(u32, f32);
-impl_extend_into!(u32, f64);
-impl_extend_into!(i64, f64);
-impl_extend_into!(u64, f64);
-impl_extend_into!(f32, f64);
-
-impl_extend_into!(i32, f32, F32);
-impl_extend_into!(i32, f64, F64);
-impl_extend_into!(u32, f32, F32);
-impl_extend_into!(u32, f64, F64);
-impl_extend_into!(i64, f64, F64);
-impl_extend_into!(u64, f64, F64);
-impl_extend_into!(f32, f64, F64);
-
-impl ExtendInto<F64> for F32 {
-    fn extend_into(self) -> F64 {
-        (f32::from(self) as f64).into()
-    }
-}
 /// State that is used during Wasm function execution.
 #[derive(Debug)]
 pub struct ExecutionContext<'engine, 'func> {
