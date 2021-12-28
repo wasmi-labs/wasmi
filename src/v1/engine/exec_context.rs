@@ -74,6 +74,51 @@ impl_little_endian_convert_float!(
     struct F64(u64);
 );
 
+/// Convert one type to another by wrapping.
+pub trait WrapInto<T> {
+    /// Convert one type to another by wrapping.
+    fn wrap_into(self) -> T;
+}
+
+macro_rules! impl_wrap_into {
+    ($from:ident, $into:ident) => {
+        impl WrapInto<$into> for $from {
+            fn wrap_into(self) -> $into {
+                self as $into
+            }
+        }
+    };
+    ($from:ident, $intermediate:ident, $into:ident) => {
+        impl WrapInto<$into> for $from {
+            fn wrap_into(self) -> $into {
+                <$into>::from(self as $intermediate)
+            }
+        }
+    };
+}
+
+impl_wrap_into!(i32, i8);
+impl_wrap_into!(i32, i16);
+impl_wrap_into!(i64, i8);
+impl_wrap_into!(i64, i16);
+impl_wrap_into!(i64, i32);
+impl_wrap_into!(i64, f32, F32);
+impl_wrap_into!(u64, f32, F32);
+// Casting from an f64 to an f32 will produce the closest possible value.
+//
+// Note:
+// - The rounding strategy is unspecified.
+// - Currently this will cause Undefined Behavior if the value is finite
+//   but larger or smaller than the largest or smallest finite value
+//   representable by f32. This is a bug and will be fixed.
+impl_wrap_into!(f64, f32);
+
+impl WrapInto<F32> for F64 {
+    fn wrap_into(self) -> F32 {
+        (f64::from(self) as f32).into()
+    }
+}
+
 /// State that is used during Wasm function execution.
 #[derive(Debug)]
 pub struct ExecutionContext<'engine, 'func> {
@@ -253,6 +298,33 @@ where
         let address = Self::effective_address(offset, raw_address)?;
         let memory = self.default_memory();
         let bytes = <T as LittleEndianConvert>::into_le_bytes(stack_value);
+        memory
+            .write(self.ctx.as_context_mut(), address, bytes.as_ref())
+            .map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
+        Ok(ExecutionOutcome::Continue)
+    }
+
+    /// Stores a value of type `T` wrapped to type `U` into the default memory at the given address offset.
+    ///
+    /// # Note
+    ///
+    /// This can be used to emulate the following Wasm operands:
+    ///
+    /// - `i32.store8`
+    /// - `i32.store16`
+    /// - `i64.store8`
+    /// - `i64.store16`
+    /// - `i64.store32`
+    fn store_wrap<T, U>(&mut self, offset: Offset) -> Result<ExecutionOutcome, TrapKind>
+    where
+        T: WrapInto<U> + FromStackEntry,
+        U: LittleEndianConvert,
+    {
+        let wrapped_value = self.value_stack.pop_as::<T>().wrap_into();
+        let raw_address = self.value_stack.pop_as::<u32>();
+        let address = Self::effective_address(offset, raw_address)?;
+        let memory = self.default_memory();
+        let bytes = <U as LittleEndianConvert>::into_le_bytes(wrapped_value);
         memory
             .write(self.ctx.as_context_mut(), address, bytes.as_ref())
             .map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
@@ -496,21 +568,26 @@ where
         self.store::<F64>(offset)
     }
 
-    fn visit_i32_store_8(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+    fn visit_i32_store_8(&mut self, offset: Offset) -> Self::Outcome {
+        self.store_wrap::<i32, i8>(offset)
     }
-    fn visit_i32_store_16(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+
+    fn visit_i32_store_16(&mut self, offset: Offset) -> Self::Outcome {
+        self.store_wrap::<i32, i16>(offset)
     }
-    fn visit_i64_store_8(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+
+    fn visit_i64_store_8(&mut self, offset: Offset) -> Self::Outcome {
+        self.store_wrap::<i64, i8>(offset)
     }
-    fn visit_i64_store_16(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+
+    fn visit_i64_store_16(&mut self, offset: Offset) -> Self::Outcome {
+        self.store_wrap::<i64, i16>(offset)
     }
-    fn visit_i64_store_32(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+
+    fn visit_i64_store_32(&mut self, offset: Offset) -> Self::Outcome {
+        self.store_wrap::<i64, i32>(offset)
     }
+
     fn visit_i32_eqz(&mut self) -> Self::Outcome {
         todo!()
     }
