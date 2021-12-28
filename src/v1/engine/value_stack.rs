@@ -164,29 +164,27 @@ impl Default for ValueStack {
     }
 }
 
-// impl Extend<StackEntry> for ValueStack {
-//     fn extend<I>(&mut self, iter: I)
-//     where
-//         I: IntoIterator<Item = StackEntry>,
-//         I::IntoIter: ExactSizeIterator,
-//     {
-//         for item in iter {
-//             self.push(item)
-//         }
-//     }
-// }
+impl Extend<StackEntry> for ValueStack {
+    fn extend<I>(&mut self, iter: I)
+    where
+        I: IntoIterator<Item = StackEntry>,
+    {
+        for item in iter {
+            self.push(item)
+        }
+    }
+}
 
-// impl FromIterator<StackEntry> for ValueStack {
-//     fn from_iter<I>(iter: I) -> Self
-//     where
-//         I: IntoIterator<Item = StackEntry>,
-//         I::IntoIter: ExactSizeIterator,
-//     {
-//         let mut stack = ValueStack::default();
-//         stack.extend(iter);
-//         stack
-//     }
-// }
+impl FromIterator<StackEntry> for ValueStack {
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = StackEntry>,
+    {
+        let mut stack = ValueStack::default();
+        stack.extend(iter);
+        stack
+    }
+}
 
 impl ValueStack {
     /// Creates a new empty [`ValueStack`].
