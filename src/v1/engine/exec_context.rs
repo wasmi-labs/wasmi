@@ -1,15 +1,117 @@
 use super::{
     bytecode::{BrTable, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, VisitInstruction},
+    AsContextMut,
+    CallStack,
     DropKeep,
     EngineInner,
     ExecutionOutcome,
+    FunctionExecutionOutcome,
+    FunctionFrame,
+    ResolvedFuncBody,
     Target,
+    ValueStack,
 };
-use crate::nan_preserving_float::{F32, F64};
+use crate::{
+    nan_preserving_float::{F32, F64},
+    Trap,
+    TrapKind,
+};
+
+/// State that is used during Wasm function execution.
+#[derive(Debug)]
+pub struct ExecutionContext<'engine, 'func> {
+    /// Stores the value stack of live values on the Wasm stack.
+    value_stack: &'engine mut ValueStack,
+    /// Stores the call stack of live function invocations.
+    call_stack: &'engine mut CallStack,
+    /// The function frame that is being executed.
+    frame: &'func mut FunctionFrame,
+    /// The resolved function body of the executed function frame.
+    func_body: ResolvedFuncBody<'engine>,
+}
+
+impl<'engine, 'func> ExecutionContext<'engine, 'func> {
+    /// Creates an execution context for the given [`FunctionFrame`].
+    pub fn new(engine: &'engine mut EngineInner, frame: &'func mut FunctionFrame) -> Self {
+        let resolved = engine.code_map.resolve(frame.func_body);
+        frame.initialize(resolved, &mut engine.value_stack);
+        Self {
+            value_stack: &mut engine.value_stack,
+            call_stack: &mut engine.call_stack,
+            frame,
+            func_body: resolved,
+        }
+    }
+
+    pub fn execute_frame(
+        &mut self,
+        mut ctx: impl AsContextMut,
+    ) -> Result<FunctionExecutionOutcome, Trap> {
+        'outer: loop {
+            let pc = self.frame.inst_ptr;
+            let inst_context = InstructionExecutionContext::new(
+                self.value_stack,
+                self.call_stack,
+                self.frame,
+                ctx.as_context_mut(),
+            );
+            match self.func_body.visit(pc, inst_context)? {
+                ExecutionOutcome::Continue => {}
+                ExecutionOutcome::Branch(target) => {
+                    self.value_stack.drop_keep(target.drop_keep());
+                }
+                ExecutionOutcome::ExecuteCall(func) => {
+                    return Ok(FunctionExecutionOutcome::NestedCall(func));
+                }
+                ExecutionOutcome::Return(drop_keep) => {
+                    self.value_stack.drop_keep(drop_keep);
+                    break 'outer;
+                }
+            }
+        }
+        Ok(FunctionExecutionOutcome::Return)
+    }
+}
+
+/// An execution context for executing a single `wasmi` bytecode instruction.
+#[derive(Debug)]
+struct InstructionExecutionContext<'engine, 'func, Ctx> {
+    /// Stores the value stack of live values on the Wasm stack.
+    value_stack: &'engine mut ValueStack,
+    /// Stores the call stack of live function invocations.
+    call_stack: &'engine mut CallStack,
+    /// The function frame that is being executed.
+    frame: &'func mut FunctionFrame,
+    /// A mutable [`Store`] context.
+    ctx: Ctx,
+}
+
+impl<'engine, 'func, Ctx> InstructionExecutionContext<'engine, 'func, Ctx>
+where
+    Ctx: AsContextMut,
+{
+    /// Creates a new [`InstructionExecutionContext`] for executing a single `wasmi` bytecode instruction.
+    pub fn new(
+        value_stack: &'engine mut ValueStack,
+        call_stack: &'engine mut CallStack,
+        frame: &'func mut FunctionFrame,
+        ctx: Ctx,
+    ) -> Self {
+        Self {
+            value_stack,
+            call_stack,
+            frame,
+            ctx,
+        }
+    }
+}
 
 #[rustfmt::skip]
-impl VisitInstruction for EngineInner {
-    type Outcome = ExecutionOutcome;
+impl<'engine, 'func, Ctx> VisitInstruction for InstructionExecutionContext<'engine, 'func, Ctx>
+where
+    Ctx: AsContextMut,
+{
+    type Outcome = Result<ExecutionOutcome, TrapKind>;
 
     fn visit_br(&mut self, _target: Target) -> Self::Outcome { todo!() }
     fn visit_br_if_eqz(&mut self, _target: Target) -> Self::Outcome { todo!() }
@@ -27,7 +129,9 @@ impl VisitInstruction for EngineInner {
     fn visit_i64_const(&mut self, _value: i64) -> Self::Outcome { todo!() }
     fn visit_f32_const(&mut self, _value: F32) -> Self::Outcome { todo!() }
     fn visit_f64_const(&mut self, _value: F64) -> Self::Outcome { todo!() }
-    fn visit_unreachable(&mut self) -> Self::Outcome { todo!() }
+    fn visit_unreachable(&mut self) -> Self::Outcome {
+        Err(TrapKind::Unreachable)
+    }
     fn visit_drop(&mut self) -> Self::Outcome { todo!() }
     fn visit_select(&mut self) -> Self::Outcome { todo!() }
     fn visit_current_memory(&mut self) -> Self::Outcome { todo!() }

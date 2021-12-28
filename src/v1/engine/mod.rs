@@ -5,10 +5,11 @@
 pub mod bytecode;
 pub mod call_stack;
 pub mod code_map;
+pub mod exec_context;
 pub mod inst_builder;
-pub mod runner;
 pub mod value_stack;
 
+use self::exec_context::ExecutionContext;
 pub use self::{
     bytecode::{DropKeep, Target},
     code_map::FuncBody,
@@ -21,7 +22,8 @@ use self::{
     code_map::{CodeMap, ResolvedFuncBody},
     value_stack::{FromStackEntry, StackEntry, ValueStack},
 };
-use super::Func;
+use super::{AsContext, AsContextMut, Func, Signature};
+use crate::{RuntimeValue, Trap, TrapKind};
 use alloc::sync::Arc;
 use spin::mutex::Mutex;
 
@@ -41,6 +43,15 @@ pub enum ExecutionOutcome {
     ExecuteCall(Func),
     /// Return from current function block.
     Return(DropKeep),
+}
+
+/// The outcome of a `wasmi` function execution.
+#[derive(Debug, Copy, Clone)]
+pub enum FunctionExecutionOutcome {
+    /// The function has returned.
+    Return,
+    /// The function called another function.
+    NestedCall(Func),
 }
 
 /// The `wasmi` interpreter.
@@ -123,5 +134,85 @@ impl EngineInner {
         I::IntoIter: ExactSizeIterator,
     {
         self.code_map.alloc(len_locals, insts)
+    }
+
+    /// Executes the given [`Func`] using the given arguments `args` and stores the result into `results`.
+    ///
+    /// # Errors
+    ///
+    /// - If the given `func` is not a Wasm function, e.g. if it is a host function.
+    /// - If the given arguments `args` do not match the expected parameters of `func`.
+    /// - If the given `results` do not match the the length of the expected results of `func`.
+    /// - When encountering a Wasm trap during the execution of `func`.
+    pub fn execute_func(
+        &mut self,
+        mut ctx: impl AsContextMut,
+        func: Func,
+        args: &[RuntimeValue],
+        results: &mut [RuntimeValue],
+    ) -> Result<(), Trap> {
+        let signature = func.signature(ctx.as_context());
+        Self::check_signature(ctx.as_context(), signature, args, results)?;
+        self.initialize_args(args);
+        let frame = FunctionFrame::new(ctx.as_context(), func);
+        self.call_stack
+            .push(frame)
+            .map_err(|_error| Trap::from(TrapKind::StackOverflow))?;
+        self.execute_until_done(ctx.as_context_mut())?;
+        // write results back
+        todo!()
+    }
+
+    fn execute_until_done(&mut self, mut ctx: impl AsContextMut) -> Result<(), Trap> {
+        'outer: loop {
+            let mut frame = match self.call_stack.pop() {
+                Some(frame) => frame,
+                None => return Ok(()),
+            };
+            let result =
+                ExecutionContext::new(self, &mut frame).execute_frame(ctx.as_context_mut())?;
+            match result {
+                FunctionExecutionOutcome::Return => {
+                    continue 'outer;
+                }
+                FunctionExecutionOutcome::NestedCall(_func) => {
+                    todo!()
+                }
+            }
+        }
+    }
+
+    /// Initializes the value stack with the given arguments `args`.
+    fn initialize_args(&mut self, args: &[RuntimeValue]) {
+        assert!(
+            self.value_stack.is_empty(),
+            "encountered non-empty value stack upon function execution initialization",
+        );
+        for &arg in args {
+            self.value_stack.push(arg);
+        }
+    }
+
+    /// Checks if the `signature` and the given `params` and `results` slices match.
+    ///
+    /// # Errors
+    ///
+    /// - If the given `signature` inputs and `params` do not have matching length and value types.
+    /// - If the given `signature` outputs and `results` do not have the same lengths.
+    fn check_signature(
+        ctx: impl AsContext,
+        signature: Signature,
+        params: &[RuntimeValue],
+        results: &[RuntimeValue],
+    ) -> Result<(), Trap> {
+        let expected_inputs = signature.inputs(ctx.as_context());
+        let expected_outputs = signature.outputs(ctx.as_context());
+        let actual_inputs = params.iter().map(|value| value.value_type());
+        if expected_inputs.iter().copied().ne(actual_inputs)
+            || expected_outputs.len() != results.len()
+        {
+            return Err(Trap::from(TrapKind::UnexpectedSignature));
+        }
+        Ok(())
     }
 }

@@ -1,8 +1,13 @@
 //! Data structures to represent the Wasm call stack during execution.
 
-use super::super::{Func, Instance, Memory, Table};
+use super::{
+    super::{AsContext, Func, FuncBody, Instance, Memory, Table},
+    ResolvedFuncBody,
+    ValueStack,
+};
 use alloc::vec::Vec;
 use core::{fmt, fmt::Display};
+use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 
 /// Errors that may occur when operating with the [`CallStack`].
 #[derive(Debug)]
@@ -35,7 +40,14 @@ pub struct FunctionFrame {
     /// the function stack and prepares for its immediate execution.
     pub instantiated: bool,
     /// The function that is being executed.
-    pub function: Func,
+    pub func: Func,
+    /// The function body of the function that is being executed.
+    ///
+    /// # Note
+    ///
+    /// This is just an optimization since function body is always required
+    /// to be loaded and for nested calls it is loaded multiple times.
+    pub func_body: FuncBody,
     /// The instance in which the function has been defined.
     ///
     /// # Note
@@ -69,6 +81,56 @@ pub struct FunctionFrame {
     pub inst_ptr: usize,
 }
 
+impl FunctionFrame {
+    /// Creates a new [`FunctionFrame`] from the given `func`.
+    ///
+    /// # Panics
+    ///
+    /// If the `func` has no instance handle, i.e. is not a Wasm function.
+    pub fn new(ctx: impl AsContext, func: Func) -> Self {
+        let instance = func
+            .instance(ctx.as_context())
+            .unwrap_or_else(|| panic!("encountered function without instance handle: {:?}", func));
+        let func_body = func
+            .func_body(ctx.as_context())
+            .unwrap_or_else(|| panic!("encountered function without function body: {:?}", func));
+        let default_memory = instance.get_memory(ctx.as_context(), DEFAULT_MEMORY_INDEX);
+        let default_table = instance.get_table(ctx.as_context(), DEFAULT_TABLE_INDEX);
+        Self {
+            instantiated: false,
+            func,
+            func_body,
+            instance,
+            default_memory,
+            default_table,
+            inst_ptr: 0,
+        }
+    }
+
+    /// Initializes the function frame.
+    /// 
+    /// # Note
+    /// 
+    /// Does nothing if the function frame has already been initialized.
+    pub fn initialize(
+        &mut self,
+        resolved_func_body: ResolvedFuncBody,
+        value_stack: &mut ValueStack,
+    ) {
+        if self.instantiated {
+            // Nothing to do if the function frame has already been initialized.
+            return;
+        }
+        let len_locals = resolved_func_body.len_locals();
+        value_stack
+            .extend_zeros(len_locals)
+            .unwrap_or_else(|error| {
+                panic!("encountered stack overlow while pushing locals: {}", error)
+            });
+        self.instantiated = true;
+    }
+}
+
 /// The live function call stack storing the live function activation frames.
 #[derive(Debug)]
 pub struct CallStack {
@@ -98,7 +160,7 @@ impl CallStack {
     /// # Errors
     ///
     /// If the [`FunctionFrame`] is at the set recursion limit.
-    fn push(&mut self, frame: FunctionFrame) -> Result<(), CallStackError> {
+    pub fn push(&mut self, frame: FunctionFrame) -> Result<(), CallStackError> {
         if self.len() == self.recursion_limit {
             return Err(CallStackError::StackOverflow(self.recursion_limit));
         }
@@ -107,17 +169,17 @@ impl CallStack {
     }
 
     /// Pops the last [`FunctionFrame`] from the [`CallStack`] if any.
-    fn pop(&mut self) -> Option<FunctionFrame> {
+    pub fn pop(&mut self) -> Option<FunctionFrame> {
         self.frames.pop()
     }
 
     /// Returns the amount of function frames on the [`CallStack`].
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.frames.len()
     }
 
     /// Returns `true` if the [`CallStack`] is empty.
-    fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.frames.is_empty()
     }
 }

@@ -4,6 +4,8 @@ use super::DropKeep;
 use crate::{
     nan_preserving_float::{F32, F64},
     RuntimeValue,
+    Trap,
+    TrapKind,
     ValueType,
     DEFAULT_VALUE_STACK_LIMIT,
 };
@@ -25,7 +27,7 @@ use core::{fmt, fmt::Debug, iter, mem};
 /// stack entry value into the required `RuntimeValue` type which can then be matched on.
 /// It is only possible to convert a [`StackEntry`] into a [`RuntimeValue`] if and only if
 /// the type is statically known which always is the case at these boundaries.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct StackEntry(u64);
 
@@ -162,27 +164,29 @@ impl Default for ValueStack {
     }
 }
 
-impl Extend<StackEntry> for ValueStack {
-    fn extend<I>(&mut self, iter: I)
-    where
-        I: IntoIterator<Item = StackEntry>,
-    {
-        for item in iter {
-            self.push(item)
-        }
-    }
-}
+// impl Extend<StackEntry> for ValueStack {
+//     fn extend<I>(&mut self, iter: I)
+//     where
+//         I: IntoIterator<Item = StackEntry>,
+//         I::IntoIter: ExactSizeIterator,
+//     {
+//         for item in iter {
+//             self.push(item)
+//         }
+//     }
+// }
 
-impl FromIterator<StackEntry> for ValueStack {
-    fn from_iter<I>(iter: I) -> Self
-    where
-        I: IntoIterator<Item = StackEntry>,
-    {
-        let mut stack = ValueStack::default();
-        stack.extend(iter);
-        stack
-    }
-}
+// impl FromIterator<StackEntry> for ValueStack {
+//     fn from_iter<I>(iter: I) -> Self
+//     where
+//         I: IntoIterator<Item = StackEntry>,
+//         I::IntoIter: ExactSizeIterator,
+//     {
+//         let mut stack = ValueStack::default();
+//         stack.extend(iter);
+//         stack
+//     }
+// }
 
 impl ValueStack {
     /// Creates a new empty [`ValueStack`].
@@ -200,6 +204,21 @@ impl ValueStack {
             entries,
             stack_ptr: 0,
         }
+    }
+
+    /// Extends the value stack by the `additional` amount of zeros.
+    ///
+    /// # Errors
+    ///
+    /// If the value stack cannot fit `additional` stack values.
+    pub fn extend_zeros(&mut self, additional: usize) -> Result<(), Trap> {
+        let cells = self
+            .entries
+            .get_mut(self.stack_ptr..self.stack_ptr + additional)
+            .ok_or(Trap::from(TrapKind::StackOverflow))?;
+        cells.fill(Default::default());
+        self.stack_ptr += additional;
+        Ok(())
     }
 
     /// Drops some amount of entries and keeps some amount of them at the new top.

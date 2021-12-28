@@ -82,6 +82,30 @@ impl<T> FuncEntity<T> {
             FuncEntityInternal::Host(host_func) => host_func.call(ctx, inputs, outputs),
         }
     }
+
+    /// Returns the associated [`Instance`] of the [`Func`] if any.
+    ///
+    /// # Note
+    ///
+    /// All Wasm functions have an associated [`Instance`].
+    pub(crate) fn instance(&self) -> Option<Instance> {
+        match &self.internal {
+            FuncEntityInternal::Wasm(func) => func.instance().into(),
+            FuncEntityInternal::Host(_) => None,
+        }
+    }
+
+    /// Returns the associated Wasm function body of the [`Func`] if any.
+    ///
+    /// # Note
+    ///
+    /// All Wasm functions have an associated Wasm function body.
+    pub(crate) fn func_body(&self) -> Option<FuncBody> {
+        match &self.internal {
+            FuncEntityInternal::Wasm(func) => func.func_body().into(),
+            FuncEntityInternal::Host(_) => None,
+        }
+    }
 }
 
 /// The internal representation of a function instance.
@@ -130,6 +154,11 @@ impl WasmFuncEntity {
     /// Returns the instance where the [`Func`] belong to.
     pub fn instance(&self) -> Instance {
         self.instance
+    }
+
+    /// Returns the Wasm function body of the [`Func`].
+    pub fn func_body(&self) -> FuncBody {
+        self.body
     }
 }
 
@@ -232,6 +261,24 @@ impl Func {
     /// Returns the signature of the function.
     pub fn signature(&self, ctx: impl AsContext) -> Signature {
         ctx.as_context().store.resolve_func(*self).signature()
+    }
+
+    /// Returns the associated [`Instance`] of the [`Func`] if any.
+    ///
+    /// # Note
+    ///
+    /// All Wasm functions have an associated [`Instance`].
+    pub(crate) fn instance(&self, ctx: impl AsContext) -> Option<Instance> {
+        ctx.as_context().store.resolve_func(*self).instance()
+    }
+
+    /// Returns the associated Wasm function body of the [`Func`] if any.
+    ///
+    /// # Note
+    ///
+    /// All Wasm functions have an associated Wasm function body.
+    pub(crate) fn func_body(&self, ctx: impl AsContext) -> Option<FuncBody> {
+        ctx.as_context().store.resolve_func(*self).func_body()
     }
 
     /// Calls the Wasm or host function with the given inputs.
