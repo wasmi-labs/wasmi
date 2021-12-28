@@ -107,6 +107,24 @@ where
             ctx,
         }
     }
+
+    /// Returns the global variable at the given index.
+    ///
+    /// # Panics
+    ///
+    /// If there is no global variable at the given index.
+    fn global(&self, global_index: GlobalIdx) -> Global {
+        self.frame
+            .instance
+            .get_global(self.ctx.as_context(), global_index.into_inner())
+            .unwrap_or_else(|| panic!("missing global at index {:?}", global_index))
+    }
+
+    /// Returns the local depth as `usize`.
+    fn convert_local_depth(local_depth: LocalIdx) -> usize {
+        // TODO: calculate the -1 offset at module compilation time.
+        (local_depth.into_inner() - 1) as usize
+    }
 }
 
 impl<'engine, 'func, Ctx> VisitInstruction for InstructionExecutionContext<'engine, 'func, Ctx>
@@ -152,46 +170,34 @@ where
     }
 
     fn visit_get_local(&mut self, local_depth: LocalIdx) -> Self::Outcome {
-        // TODO: calculate the -1 offset at module compilation time.
-        let local_depth = (local_depth.into_inner() - 1) as usize;
+        let local_depth = Self::convert_local_depth(local_depth);
         let value = self.value_stack.peek(local_depth);
         self.value_stack.push(value);
         Ok(ExecutionOutcome::Continue)
     }
 
     fn visit_set_local(&mut self, local_depth: LocalIdx) -> Self::Outcome {
-        // TODO: calculate the -1 offset at module compilation time.
-        let local_depth = (local_depth.into_inner() - 1) as usize;
+        let local_depth = Self::convert_local_depth(local_depth);
         let new_value = self.value_stack.pop();
         *self.value_stack.peek_mut(local_depth) = new_value;
         Ok(ExecutionOutcome::Continue)
     }
 
     fn visit_tee_local(&mut self, local_depth: LocalIdx) -> Self::Outcome {
-        // TODO: calculate the -1 offset at module compilation time.
-        let local_depth = (local_depth.into_inner() - 1) as usize;
+        let local_depth = Self::convert_local_depth(local_depth);
         let new_value = self.value_stack.last();
         *self.value_stack.peek_mut(local_depth) = new_value;
         Ok(ExecutionOutcome::Continue)
     }
 
     fn visit_get_global(&mut self, global_index: GlobalIdx) -> Self::Outcome {
-        let global_value = self
-            .frame
-            .instance
-            .get_global(self.ctx.as_context(), global_index.into_inner())
-            .unwrap_or_else(|| panic!("missing global at index {:?}", global_index))
-            .get(self.ctx.as_context());
+        let global_value = self.global(global_index).get(self.ctx.as_context());
         self.value_stack.push(global_value);
         Ok(ExecutionOutcome::Continue)
     }
 
     fn visit_set_global(&mut self, global_index: GlobalIdx) -> Self::Outcome {
-        let global = self
-            .frame
-            .instance
-            .get_global(self.ctx.as_context(), global_index.into_inner())
-            .unwrap_or_else(|| panic!("missing global at index {:?}", global_index));
+        let global = self.global(global_index);
         let new_value = self
             .value_stack
             .pop()
