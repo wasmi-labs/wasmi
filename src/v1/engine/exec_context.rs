@@ -119,6 +119,60 @@ impl WrapInto<F32> for F64 {
     }
 }
 
+/// Convert one type to another by extending with leading zeroes.
+pub trait ExtendInto<T> {
+    /// Convert one type to another by extending with leading zeroes.
+    fn extend_into(self) -> T;
+}
+macro_rules! impl_extend_into {
+    ($from:ident, $into:ident) => {
+        impl ExtendInto<$into> for $from {
+            fn extend_into(self) -> $into {
+                self as $into
+            }
+        }
+    };
+    ($from:ident, $intermediate:ident, $into:ident) => {
+        impl ExtendInto<$into> for $from {
+            fn extend_into(self) -> $into {
+                $into::from(self as $intermediate)
+            }
+        }
+    };
+}
+
+impl_extend_into!(i8, i32);
+impl_extend_into!(u8, i32);
+impl_extend_into!(i16, i32);
+impl_extend_into!(u16, i32);
+impl_extend_into!(i8, i64);
+impl_extend_into!(u8, i64);
+impl_extend_into!(i16, i64);
+impl_extend_into!(u16, i64);
+impl_extend_into!(i32, i64);
+impl_extend_into!(u32, i64);
+impl_extend_into!(u32, u64);
+impl_extend_into!(i32, f32);
+impl_extend_into!(i32, f64);
+impl_extend_into!(u32, f32);
+impl_extend_into!(u32, f64);
+impl_extend_into!(i64, f64);
+impl_extend_into!(u64, f64);
+impl_extend_into!(f32, f64);
+
+impl_extend_into!(i32, f32, F32);
+impl_extend_into!(i32, f64, F64);
+impl_extend_into!(u32, f32, F32);
+impl_extend_into!(u32, f64, F64);
+impl_extend_into!(i64, f64, F64);
+impl_extend_into!(u64, f64, F64);
+impl_extend_into!(f32, f64, F64);
+
+impl ExtendInto<F64> for F32 {
+    fn extend_into(self) -> F64 {
+        (f32::from(self) as f64).into()
+    }
+}
 /// State that is used during Wasm function execution.
 #[derive(Debug)]
 pub struct ExecutionContext<'engine, 'func> {
@@ -276,6 +330,40 @@ where
             .map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
         let value = <T as LittleEndianConvert>::from_le_bytes(bytes);
         *entry = value.into();
+        Ok(ExecutionOutcome::Continue)
+    }
+
+    /// Loads a vaoue of type `U` from the default memory at the given address offset and extends it into `T`.
+    ///
+    /// # Note
+    ///
+    /// This can be used to emuate the following Wasm operands:
+    ///
+    /// - `i32.load_8s`
+    /// - `i32.load_8u`
+    /// - `i32.load_16s`
+    /// - `i32.load_16u`
+    /// - `i64.load_8s`
+    /// - `i64.load_8u`
+    /// - `i64.load_16s`
+    /// - `i64.load_16u`
+    /// - `i64.load_32s`
+    /// - `i64.load_32u`
+    fn load_extend<T, U>(&mut self, offset: Offset) -> Result<ExecutionOutcome, TrapKind>
+    where
+        T: ExtendInto<U> + LittleEndianConvert,
+        StackEntry: From<U>,
+    {
+        let memory = self.default_memory();
+        let entry = self.value_stack.last_mut();
+        let raw_address = u32::from_stack_entry(*entry);
+        let address = Self::effective_address(offset, raw_address)?;
+        let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
+        memory
+            .read(self.ctx.as_context(), address, bytes.as_mut())
+            .map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
+        let extended = <T as LittleEndianConvert>::from_le_bytes(bytes).extend_into();
+        *entry = extended.into();
         Ok(ExecutionOutcome::Continue)
     }
 
@@ -521,35 +609,44 @@ where
         self.load::<F64>(offset)
     }
 
-    fn visit_i32_load_i8(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+    fn visit_i32_load_i8(&mut self, offset: Offset) -> Self::Outcome {
+        self.load_extend::<i8, i32>(offset)
     }
-    fn visit_i32_load_u8(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+
+    fn visit_i32_load_u8(&mut self, offset: Offset) -> Self::Outcome {
+        self.load_extend::<u8, i32>(offset)
     }
-    fn visit_i32_load_i16(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+
+    fn visit_i32_load_i16(&mut self, offset: Offset) -> Self::Outcome {
+        self.load_extend::<i16, i32>(offset)
     }
-    fn visit_i32_load_u16(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+
+    fn visit_i32_load_u16(&mut self, offset: Offset) -> Self::Outcome {
+        self.load_extend::<u16, i32>(offset)
     }
-    fn visit_i64_load_i8(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+
+    fn visit_i64_load_i8(&mut self, offset: Offset) -> Self::Outcome {
+        self.load_extend::<i8, i64>(offset)
     }
-    fn visit_i64_load_u8(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+
+    fn visit_i64_load_u8(&mut self, offset: Offset) -> Self::Outcome {
+        self.load_extend::<u8, i64>(offset)
     }
-    fn visit_i64_load_i16(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+
+    fn visit_i64_load_i16(&mut self, offset: Offset) -> Self::Outcome {
+        self.load_extend::<i16, i64>(offset)
     }
-    fn visit_i64_load_u16(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+
+    fn visit_i64_load_u16(&mut self, offset: Offset) -> Self::Outcome {
+        self.load_extend::<u16, i64>(offset)
     }
-    fn visit_i64_load_i32(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+
+    fn visit_i64_load_i32(&mut self, offset: Offset) -> Self::Outcome {
+        self.load_extend::<i32, i64>(offset)
     }
-    fn visit_i64_load_u32(&mut self, _offset: Offset) -> Self::Outcome {
-        todo!()
+
+    fn visit_i64_load_u32(&mut self, offset: Offset) -> Self::Outcome {
+        self.load_extend::<u32, i64>(offset)
     }
 
     fn visit_i32_store(&mut self, offset: Offset) -> Self::Outcome {
