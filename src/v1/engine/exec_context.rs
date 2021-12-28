@@ -1,4 +1,5 @@
 use super::{
+    super::{Global, Memory},
     bytecode::{BrTable, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, VisitInstruction},
     AsContextMut,
     CallStack,
@@ -17,6 +18,7 @@ use crate::{
     Trap,
     TrapKind,
 };
+use memory_units::Pages;
 
 /// State that is used during Wasm function execution.
 #[derive(Debug)]
@@ -106,6 +108,17 @@ where
             frame,
             ctx,
         }
+    }
+
+    /// Returns the default linear memory.
+    ///
+    /// # Panics
+    ///
+    /// If there is no default linear memory.
+    fn default_memory(&self) -> Memory {
+        self.frame
+            .default_memory
+            .expect("missing default memory for function frame")
     }
 
     /// Returns the global variable at the given index.
@@ -279,11 +292,27 @@ where
     }
 
     fn visit_current_memory(&mut self) -> Self::Outcome {
-        todo!()
+        let memory = self.default_memory();
+        let result = memory.current_pages(self.ctx.as_context()).0 as u32;
+        self.value_stack.push(result);
+        Ok(ExecutionOutcome::Continue)
     }
+
     fn visit_grow_memory(&mut self) -> Self::Outcome {
-        todo!()
+        let pages: u32 = self.value_stack.pop_as();
+        let memory = self.default_memory();
+        let new_size = match memory.grow(self.ctx.as_context_mut(), Pages(pages as usize)) {
+            Ok(Pages(old_size)) => old_size as u32,
+            Err(_) => {
+                // Note: The WebAssembly spec demands to return `0xFFFF_FFFF`
+                //       in case of failure for this instruction.
+                u32::MAX
+            }
+        };
+        self.value_stack.push(new_size);
+        Ok(ExecutionOutcome::Continue)
     }
+
     fn visit_i32_load(&mut self, _offset: Offset) -> Self::Outcome {
         todo!()
     }
