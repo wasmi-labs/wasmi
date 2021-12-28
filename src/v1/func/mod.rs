@@ -60,7 +60,7 @@ impl<T> FuncEntity<T> {
     }
 
     /// Returns the signature of the Wasm function.
-    pub fn signature(&self) -> &Signature {
+    pub fn signature(&self) -> Signature {
         match &self.internal {
             FuncEntityInternal::Wasm(func) => func.signature(),
             FuncEntityInternal::Host(func) => func.signature(),
@@ -119,8 +119,8 @@ impl WasmFuncEntity {
     }
 
     /// Returns the signature of the Wasm function.
-    pub fn signature(&self) -> &Signature {
-        &self.signature
+    pub fn signature(&self) -> Signature {
+        self.signature
     }
 }
 
@@ -177,8 +177,8 @@ impl<T> HostFuncEntity<T> {
     }
 
     /// Returns the signature of the host function.
-    pub fn signature(&self) -> &Signature {
-        &self.signature
+    pub fn signature(&self) -> Signature {
+        self.signature
     }
 
     /// Calls the host function with the given inputs.
@@ -222,7 +222,7 @@ impl Func {
 
     /// Returns the signature of the function.
     pub fn signature(&self, ctx: impl AsContext) -> Signature {
-        *ctx.as_context().store.resolve_func(*self).signature()
+        ctx.as_context().store.resolve_func(*self).signature()
     }
 
     /// Calls the Wasm or host function with the given inputs.
