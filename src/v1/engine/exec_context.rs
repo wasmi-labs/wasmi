@@ -609,6 +609,30 @@ where
     {
         self.execute_unop(|v: T| v.sqrt())
     }
+
+    fn execute_min<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: Float<T> + FromStackEntry,
+    {
+        self.execute_binop(|left: T, right: T| left.min(right))
+    }
+
+    fn execute_max<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: Float<T> + FromStackEntry,
+    {
+        self.execute_binop(|left: T, right: T| left.max(right))
+    }
+
+    fn execute_copysign<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: Float<T> + FromStackEntry,
+    {
+        self.execute_binop(|left: T, right: T| left.copysign(right))
+    }
 }
 
 impl<'engine, 'func, Ctx> VisitInstruction for InstructionExecutionContext<'engine, 'func, Ctx>
@@ -1201,13 +1225,15 @@ where
     }
 
     fn visit_f32_min(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_min::<F32>()
     }
+
     fn visit_f32_max(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_max::<F32>()
     }
+
     fn visit_f32_copysign(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_copysign::<F32>()
     }
 
     fn visit_f64_abs(&mut self) -> Self::Outcome {
@@ -1255,14 +1281,17 @@ where
     }
 
     fn visit_f64_min(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_min::<F64>()
     }
+
     fn visit_f64_max(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_max::<F64>()
     }
+
     fn visit_f64_copysign(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_copysign::<F64>()
     }
+
     fn visit_i32_wrap_i64(&mut self) -> Self::Outcome {
         todo!()
     }
