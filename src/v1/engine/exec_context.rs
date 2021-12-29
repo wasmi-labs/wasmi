@@ -218,7 +218,7 @@ where
     /// - `i64.load`
     /// - `f32.load`
     /// - `f64.load`
-    fn load<T>(&mut self, offset: Offset) -> Result<ExecutionOutcome, TrapKind>
+    fn execute_load<T>(&mut self, offset: Offset) -> Result<ExecutionOutcome, TrapKind>
     where
         StackEntry: From<T>,
         T: LittleEndianConvert,
@@ -252,7 +252,7 @@ where
     /// - `i64.load_16u`
     /// - `i64.load_32s`
     /// - `i64.load_32u`
-    fn load_extend<T, U>(&mut self, offset: Offset) -> Result<ExecutionOutcome, TrapKind>
+    fn execute_load_extend<T, U>(&mut self, offset: Offset) -> Result<ExecutionOutcome, TrapKind>
     where
         T: ExtendInto<U> + LittleEndianConvert,
         StackEntry: From<U>,
@@ -280,7 +280,7 @@ where
     /// - `i64.store`
     /// - `f32.store`
     /// - `f64.store`
-    fn store<T>(&mut self, offset: Offset) -> Result<ExecutionOutcome, TrapKind>
+    fn execute_store<T>(&mut self, offset: Offset) -> Result<ExecutionOutcome, TrapKind>
     where
         T: LittleEndianConvert + FromStackEntry,
     {
@@ -306,7 +306,7 @@ where
     /// - `i64.store8`
     /// - `i64.store16`
     /// - `i64.store32`
-    fn store_wrap<T, U>(&mut self, offset: Offset) -> Result<ExecutionOutcome, TrapKind>
+    fn execute_store_wrap<T, U>(&mut self, offset: Offset) -> Result<ExecutionOutcome, TrapKind>
     where
         T: WrapInto<U> + FromStackEntry,
         U: LittleEndianConvert,
@@ -825,95 +825,95 @@ where
     }
 
     fn visit_i32_load(&mut self, offset: Offset) -> Self::Outcome {
-        self.load::<i32>(offset)
+        self.execute_load::<i32>(offset)
     }
 
     fn visit_i64_load(&mut self, offset: Offset) -> Self::Outcome {
-        self.load::<i64>(offset)
+        self.execute_load::<i64>(offset)
     }
 
     fn visit_f32_load(&mut self, offset: Offset) -> Self::Outcome {
-        self.load::<F32>(offset)
+        self.execute_load::<F32>(offset)
     }
 
     fn visit_f64_load(&mut self, offset: Offset) -> Self::Outcome {
-        self.load::<F64>(offset)
+        self.execute_load::<F64>(offset)
     }
 
     fn visit_i32_load_i8(&mut self, offset: Offset) -> Self::Outcome {
-        self.load_extend::<i8, i32>(offset)
+        self.execute_load_extend::<i8, i32>(offset)
     }
 
     fn visit_i32_load_u8(&mut self, offset: Offset) -> Self::Outcome {
-        self.load_extend::<u8, i32>(offset)
+        self.execute_load_extend::<u8, i32>(offset)
     }
 
     fn visit_i32_load_i16(&mut self, offset: Offset) -> Self::Outcome {
-        self.load_extend::<i16, i32>(offset)
+        self.execute_load_extend::<i16, i32>(offset)
     }
 
     fn visit_i32_load_u16(&mut self, offset: Offset) -> Self::Outcome {
-        self.load_extend::<u16, i32>(offset)
+        self.execute_load_extend::<u16, i32>(offset)
     }
 
     fn visit_i64_load_i8(&mut self, offset: Offset) -> Self::Outcome {
-        self.load_extend::<i8, i64>(offset)
+        self.execute_load_extend::<i8, i64>(offset)
     }
 
     fn visit_i64_load_u8(&mut self, offset: Offset) -> Self::Outcome {
-        self.load_extend::<u8, i64>(offset)
+        self.execute_load_extend::<u8, i64>(offset)
     }
 
     fn visit_i64_load_i16(&mut self, offset: Offset) -> Self::Outcome {
-        self.load_extend::<i16, i64>(offset)
+        self.execute_load_extend::<i16, i64>(offset)
     }
 
     fn visit_i64_load_u16(&mut self, offset: Offset) -> Self::Outcome {
-        self.load_extend::<u16, i64>(offset)
+        self.execute_load_extend::<u16, i64>(offset)
     }
 
     fn visit_i64_load_i32(&mut self, offset: Offset) -> Self::Outcome {
-        self.load_extend::<i32, i64>(offset)
+        self.execute_load_extend::<i32, i64>(offset)
     }
 
     fn visit_i64_load_u32(&mut self, offset: Offset) -> Self::Outcome {
-        self.load_extend::<u32, i64>(offset)
+        self.execute_load_extend::<u32, i64>(offset)
     }
 
     fn visit_i32_store(&mut self, offset: Offset) -> Self::Outcome {
-        self.store::<i32>(offset)
+        self.execute_store::<i32>(offset)
     }
 
     fn visit_i64_store(&mut self, offset: Offset) -> Self::Outcome {
-        self.store::<i64>(offset)
+        self.execute_store::<i64>(offset)
     }
 
     fn visit_f32_store(&mut self, offset: Offset) -> Self::Outcome {
-        self.store::<F32>(offset)
+        self.execute_store::<F32>(offset)
     }
 
     fn visit_f64_store(&mut self, offset: Offset) -> Self::Outcome {
-        self.store::<F64>(offset)
+        self.execute_store::<F64>(offset)
     }
 
     fn visit_i32_store_8(&mut self, offset: Offset) -> Self::Outcome {
-        self.store_wrap::<i32, i8>(offset)
+        self.execute_store_wrap::<i32, i8>(offset)
     }
 
     fn visit_i32_store_16(&mut self, offset: Offset) -> Self::Outcome {
-        self.store_wrap::<i32, i16>(offset)
+        self.execute_store_wrap::<i32, i16>(offset)
     }
 
     fn visit_i64_store_8(&mut self, offset: Offset) -> Self::Outcome {
-        self.store_wrap::<i64, i8>(offset)
+        self.execute_store_wrap::<i64, i8>(offset)
     }
 
     fn visit_i64_store_16(&mut self, offset: Offset) -> Self::Outcome {
-        self.store_wrap::<i64, i16>(offset)
+        self.execute_store_wrap::<i64, i16>(offset)
     }
 
     fn visit_i64_store_32(&mut self, offset: Offset) -> Self::Outcome {
-        self.store_wrap::<i64, i32>(offset)
+        self.execute_store_wrap::<i64, i32>(offset)
     }
 
     fn visit_i32_eqz(&mut self) -> Self::Outcome {
