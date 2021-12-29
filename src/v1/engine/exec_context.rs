@@ -633,6 +633,22 @@ where
     {
         self.execute_binop(|left: T, right: T| left.copysign(right))
     }
+
+    fn execute_wrap<T, U>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<U>,
+        T: WrapInto<U> + FromStackEntry,
+    {
+        self.execute_unop(|value: T| value.wrap_into())
+    }
+
+    fn execute_extend<T, U>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<U>,
+        T: ExtendInto<U> + FromStackEntry,
+    {
+        self.execute_unop(|value: T| value.extend_into())
+    }
 }
 
 impl<'engine, 'func, Ctx> VisitInstruction for InstructionExecutionContext<'engine, 'func, Ctx>
@@ -1293,77 +1309,101 @@ where
     }
 
     fn visit_i32_wrap_i64(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_wrap::<i64, i32>()
     }
+
     fn visit_i32_trunc_f32(&mut self) -> Self::Outcome {
         todo!()
     }
+
     fn visit_u32_trunc_f32(&mut self) -> Self::Outcome {
         todo!()
     }
+
     fn visit_i32_trunc_f64(&mut self) -> Self::Outcome {
         todo!()
     }
+
     fn visit_u32_trunc_f64(&mut self) -> Self::Outcome {
         todo!()
     }
+
     fn visit_i64_extend_i32(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_extend::<i32, i64>()
     }
+
     fn visit_i64_extend_u32(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_extend::<u32, u64>()
     }
+
     fn visit_i64_trunc_f32(&mut self) -> Self::Outcome {
         todo!()
     }
+
     fn visit_u64_trunc_f32(&mut self) -> Self::Outcome {
         todo!()
     }
+
     fn visit_i64_trunc_f64(&mut self) -> Self::Outcome {
         todo!()
     }
+
     fn visit_u64_trunc_f64(&mut self) -> Self::Outcome {
         todo!()
     }
+
     fn visit_f32_convert_i32(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_extend::<i32, F32>()
     }
+
     fn visit_f32_convert_u32(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_extend::<u32, F32>()
     }
+
     fn visit_f32_convert_i64(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_wrap::<i64, F32>()
     }
+
     fn visit_f32_convert_u64(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_wrap::<u64, F32>()
     }
+
     fn visit_f32_demote_f64(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_wrap::<F64, F32>()
     }
+
     fn visit_f64_convert_i32(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_extend::<i32, F64>()
     }
+
     fn visit_f64_convert_u32(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_extend::<u32, F64>()
     }
+
     fn visit_f64_convert_i64(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_extend::<i64, F64>()
     }
+
     fn visit_f64_convert_u64(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_extend::<u64, F64>()
     }
+
     fn visit_f64_promote_f32(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_extend::<F32, F64>()
     }
+
     fn visit_i32_reinterpret_f32(&mut self) -> Self::Outcome {
         todo!()
     }
+
     fn visit_i64_reinterpret_f64(&mut self) -> Self::Outcome {
         todo!()
     }
+
     fn visit_f32_reinterpret_i32(&mut self) -> Self::Outcome {
         todo!()
     }
+
     fn visit_f64_reinterpret_i64(&mut self) -> Self::Outcome {
         todo!()
     }
