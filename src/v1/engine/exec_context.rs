@@ -67,7 +67,7 @@ impl<'engine, 'func> ExecutionContext<'engine, 'func> {
                 self.value_stack,
                 self.call_stack,
                 self.frame,
-                ctx.as_context_mut(),
+                &mut ctx,
             );
             match self.func_body.visit(pc, inst_context)? {
                 ExecutionOutcome::Continue => {
