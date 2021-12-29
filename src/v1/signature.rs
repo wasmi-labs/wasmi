@@ -59,6 +59,11 @@ impl SignatureEntity {
     pub fn outputs(&self) -> &[ValueType] {
         &self.inputs_outputs[self.len_inputs..]
     }
+
+    /// Returns the pair of inputs and outputs of the function signature.
+    pub fn inputs_outputs(&self) -> (&[ValueType], &[ValueType]) {
+        self.inputs_outputs.split_at(self.len_inputs)
+    }
 }
 
 /// A Wasm function signature reference.
@@ -95,5 +100,13 @@ impl Signature {
     /// Returns the outputs of the function signature.
     pub fn outputs<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a [ValueType] {
         ctx.into().store.resolve_signature(*self).outputs()
+    }
+
+    /// Returns the outputs of the function signature.
+    pub fn inputs_outputs<'a, T: 'a>(
+        &self,
+        ctx: impl Into<StoreContext<'a, T>>,
+    ) -> (&'a [ValueType], &'a [ValueType]) {
+        ctx.into().store.resolve_signature(*self).inputs_outputs()
     }
 }
