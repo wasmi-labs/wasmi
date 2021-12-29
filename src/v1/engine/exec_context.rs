@@ -20,6 +20,7 @@ use crate::{
     Trap,
     TrapKind,
 };
+use core::ops::{BitAnd, BitOr, BitXor};
 use memory_units::wasm32::Pages;
 
 /// Types that can be converted from and to little endian bytes.
@@ -429,11 +430,11 @@ where
         self.execute_unop(|v: T| v.count_ones())
     }
 
-    fn execute_binop<T, F>(&mut self, f: F) -> Result<ExecutionOutcome, TrapKind>
+    fn execute_binop<T, R, F>(&mut self, f: F) -> Result<ExecutionOutcome, TrapKind>
     where
-        StackEntry: From<T>,
+        StackEntry: From<R>,
         T: FromStackEntry,
-        F: FnOnce(T, T) -> T,
+        F: FnOnce(T, T) -> R,
     {
         let right = self.value_stack.pop_as::<T>();
         let entry = self.value_stack.last_mut();
@@ -448,7 +449,7 @@ where
         StackEntry: From<T>,
         T: FromStackEntry + ArithmeticOps<T>,
     {
-        self.execute_binop(|left, right| left.add(right))
+        self.execute_binop(|left: T, right: T| left.add(right))
     }
 
     fn execute_sub<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
@@ -456,7 +457,7 @@ where
         StackEntry: From<T>,
         T: FromStackEntry + ArithmeticOps<T>,
     {
-        self.execute_binop(|left, right| left.sub(right))
+        self.execute_binop(|left: T, right: T| left.sub(right))
     }
 
     fn execute_mul<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
@@ -464,7 +465,7 @@ where
         StackEntry: From<T>,
         T: FromStackEntry + ArithmeticOps<T>,
     {
-        self.execute_binop(|left, right| left.mul(right))
+        self.execute_binop(|left: T, right: T| left.mul(right))
     }
 
     fn try_execute_binop<T, F>(&mut self, f: F) -> Result<ExecutionOutcome, TrapKind>
@@ -495,6 +496,30 @@ where
         T: FromStackEntry + Integer<T>,
     {
         self.try_execute_binop(|left, right| left.rem(right))
+    }
+
+    fn execute_and<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<<T as BitAnd>::Output>,
+        T: FromStackEntry + BitAnd<T>,
+    {
+        self.execute_binop(|left: T, right: T| left.bitand(right))
+    }
+
+    fn execute_or<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<<T as BitOr>::Output>,
+        T: FromStackEntry + BitOr<T>,
+    {
+        self.execute_binop(|left: T, right: T| left.bitor(right))
+    }
+
+    fn execute_xor<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<<T as BitXor>::Output>,
+        T: FromStackEntry + BitXor<T>,
+    {
+        self.execute_binop(|left: T, right: T| left.bitxor(right))
     }
 }
 
@@ -940,14 +965,17 @@ where
     }
 
     fn visit_i32_and(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_and::<i32>()
     }
+
     fn visit_i32_or(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_or::<i32>()
     }
+
     fn visit_i32_xor(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_xor::<i32>()
     }
+
     fn visit_i32_shl(&mut self) -> Self::Outcome {
         todo!()
     }
@@ -1005,14 +1033,17 @@ where
     }
 
     fn visit_i64_and(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_and::<i64>()
     }
+
     fn visit_i64_or(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_or::<i64>()
     }
+
     fn visit_i64_xor(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_xor::<i64>()
     }
+
     fn visit_i64_shl(&mut self) -> Self::Outcome {
         todo!()
     }
