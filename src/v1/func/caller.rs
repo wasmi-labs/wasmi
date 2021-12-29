@@ -1,11 +1,12 @@
 use super::super::{AsContext, AsContextMut, StoreContext, StoreContextMut};
 
+/// Represents the caller’s context when creating a host function via [`Func::wrap`].
 pub struct Caller<'a, T> {
     pub(crate) store: StoreContextMut<'a, T>,
-    // caller: &'a InstanceHandle,
+    // TODO: add instance handle
 }
 
-impl<'a, T> AsContext for Caller<'a, T> {
+impl<T> AsContext for Caller<'_, T> {
     type UserState = T;
 
     fn as_context(&self) -> StoreContext<'_, Self::UserState> {
@@ -13,7 +14,7 @@ impl<'a, T> AsContext for Caller<'a, T> {
     }
 }
 
-impl<'a, T> AsContextMut for Caller<'a, T> {
+impl<T> AsContextMut for Caller<'_, T> {
     fn as_context_mut(&mut self) -> StoreContextMut<'_, Self::UserState> {
         self.store.as_context_mut()
     }
