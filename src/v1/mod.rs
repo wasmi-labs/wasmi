@@ -46,7 +46,7 @@ pub use self::{
     engine::Engine,
     error::Error,
     external::Extern,
-    func::Func,
+    func::{Caller, Func},
     global::{Global, Mutability},
     instance::Instance,
     limits::TableType,
