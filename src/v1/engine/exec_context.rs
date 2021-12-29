@@ -20,7 +20,7 @@ use crate::{
     Trap,
     TrapKind,
 };
-use core::ops::{BitAnd, BitOr, BitXor};
+use core::ops::{BitAnd, BitOr, BitXor, Shl, Shr};
 use memory_units::wasm32::Pages;
 
 /// Types that can be converted from and to little endian bytes.
@@ -521,6 +521,38 @@ where
     {
         self.execute_binop(|left: T, right: T| left.bitxor(right))
     }
+
+    fn execute_shl<T>(&mut self, mask: T) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<<T as Shl>::Output>,
+        T: FromStackEntry + Shl<T> + BitAnd<T, Output = T>,
+    {
+        self.execute_binop(|left: T, right: T| left.shl(right & mask))
+    }
+
+    fn execute_shr<T>(&mut self, mask: T) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<<T as Shr>::Output>,
+        T: FromStackEntry + Shr<T> + BitAnd<T, Output = T>,
+    {
+        self.execute_binop(|left: T, right: T| left.shr(right & mask))
+    }
+
+    fn execute_rotl<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: Integer<T> + FromStackEntry,
+    {
+        self.execute_binop(|left: T, right: T| left.rotl(right))
+    }
+
+    fn execute_rotr<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: Integer<T> + FromStackEntry,
+    {
+        self.execute_binop(|left: T, right: T| left.rotr(right))
+    }
 }
 
 impl<'engine, 'func, Ctx> VisitInstruction for InstructionExecutionContext<'engine, 'func, Ctx>
@@ -977,19 +1009,23 @@ where
     }
 
     fn visit_i32_shl(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_shl::<i32>(0x1F)
     }
+
     fn visit_i32_shr_s(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_shr::<i32>(0x1F)
     }
+
     fn visit_i32_shr_u(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_shr::<u32>(0x1F)
     }
+
     fn visit_i32_rotl(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_rotl::<i32>()
     }
+
     fn visit_i32_rotr(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_rotr::<i32>()
     }
 
     fn visit_i64_clz(&mut self) -> Self::Outcome {
@@ -1045,20 +1081,25 @@ where
     }
 
     fn visit_i64_shl(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_shl::<i64>(0x3F)
     }
+
     fn visit_i64_shr_s(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_shr::<i64>(0x3F)
     }
+
     fn visit_i64_shr_u(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_shr::<u64>(0x3F)
     }
+
     fn visit_i64_rotl(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_rotl::<i64>()
     }
+
     fn visit_i64_rotr(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_rotr::<i64>()
     }
+
     fn visit_f32_abs(&mut self) -> Self::Outcome {
         todo!()
     }
