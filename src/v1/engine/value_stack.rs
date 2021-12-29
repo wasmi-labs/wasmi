@@ -9,7 +9,7 @@ use crate::{
     ValueType,
     DEFAULT_VALUE_STACK_LIMIT,
 };
-use alloc::vec::Vec;
+use alloc::vec::{Drain, Vec};
 use core::{fmt, fmt::Debug, iter, mem};
 
 /// A single entry or register in the value stack.
@@ -457,6 +457,16 @@ impl ValueStack {
             self.entries
                 .extend(iter::repeat(StackEntry(0x00)).take(new_len));
         }
+    }
+
+    /// Drains the remaining value stack.
+    ///
+    /// # Note
+    ///
+    /// This API is mostly used when writing results back to the
+    /// caller after function execution has finished.
+    pub fn drain(&mut self) -> Drain<StackEntry> {
+        self.entries.drain(..)
     }
 }
 
