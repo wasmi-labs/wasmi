@@ -1,7 +1,7 @@
 //! Data structures to represent the Wasm call stack during execution.
 
 use super::{
-    super::{AsContext, Func, FuncBody, Instance, Memory, Table},
+    super::{AsContext, Func, FuncBody, FuncEntityInternal, Instance, Memory, Table},
     ResolvedFuncBody,
     ValueStack,
 };
@@ -63,7 +63,7 @@ pub struct FunctionFrame {
     /// This is just an optimization for the common case of manipulating
     /// the default linear memory and avoids one indirection to look-up
     /// the linear memory in the `Instance`.
-    pub default_memory: Option<Memory>,
+    default_memory: Option<Memory>,
     /// The default table (index 0) of the `instance`.
     ///
     /// # Note
@@ -71,7 +71,7 @@ pub struct FunctionFrame {
     /// This is just an optimization for the common case of indirectly
     /// calling functions using the default table and avoids one indirection
     /// to look-up the table in the `Instance`.
-    pub default_table: Option<Table>,
+    default_table: Option<Table>,
     /// The current value of the instruction pointer.
     ///
     /// # Note
@@ -88,22 +88,71 @@ impl FunctionFrame {
     ///
     /// If the `func` has no instance handle, i.e. is not a Wasm function.
     pub fn new(ctx: impl AsContext, func: Func) -> Self {
-        let instance = func
-            .instance(ctx.as_context())
-            .unwrap_or_else(|| panic!("encountered function without instance handle: {:?}", func));
-        let func_body = func
-            .func_body(ctx.as_context())
-            .unwrap_or_else(|| panic!("encountered function without function body: {:?}", func));
-        let default_memory = instance.get_memory(ctx.as_context(), DEFAULT_MEMORY_INDEX);
-        let default_table = instance.get_table(ctx.as_context(), DEFAULT_TABLE_INDEX);
+        let (instance, func_body) = match func.as_internal(ctx.as_context()) {
+            FuncEntityInternal::Wasm(wasm_func) => (wasm_func.instance(), wasm_func.func_body()),
+            FuncEntityInternal::Host(_) => panic!(
+                "cannot execute host functions using Wasm interpreter: {:?}",
+                func
+            ),
+        };
         Self {
             instantiated: false,
             func,
             func_body,
             instance,
-            default_memory,
-            default_table,
+            default_memory: None,
+            default_table: None,
             inst_ptr: 0,
+        }
+    }
+
+    /// Returns the default linear memory of the function frame if any.
+    ///
+    /// # Note
+    ///
+    /// This API allows to lazily and efficiently load the default linear memory if available.
+    ///
+    /// # Panics
+    ///
+    /// If there is no default linear memory.
+    pub fn default_memory(&mut self, ctx: impl AsContext) -> Memory {
+        match self.default_memory {
+            Some(default_memory) => default_memory,
+            None => {
+                // Try to lazily load the default memory.
+                let default_memory = self
+                    .instance
+                    .get_memory(ctx.as_context(), DEFAULT_MEMORY_INDEX)
+                    .unwrap_or_else(|| {
+                        panic!("func does not have default linear memory: {:?}", self.func)
+                    });
+                self.default_memory = Some(default_memory);
+                default_memory
+            }
+        }
+    }
+
+    /// Returns the default table of the function frame if any.
+    ///
+    /// # Note
+    ///
+    /// This API allows to lazily and efficiently load the default table if available.
+    ///
+    /// # Panics
+    ///
+    /// If there is no default table.
+    pub fn default_table(&mut self, ctx: impl AsContext) -> Table {
+        match self.default_table {
+            Some(default_table) => default_table,
+            None => {
+                // Try to lazily load the default memory.
+                let default_table = self
+                    .instance
+                    .get_table(ctx.as_context(), DEFAULT_TABLE_INDEX)
+                    .unwrap_or_else(|| panic!("func does not have default table: {:?}", self.func));
+                self.default_table = Some(default_table);
+                default_table
+            }
         }
     }
 

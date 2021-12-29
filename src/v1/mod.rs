@@ -34,7 +34,7 @@ pub mod errors {
 use self::{
     arena::{Arena, DedupArena, Index},
     engine::{DropKeep, FuncBody, InstructionIdx, InstructionsBuilder, LabelIdx, Target},
-    func::{FuncEntity, FuncIdx},
+    func::{FuncEntity, FuncEntityInternal, FuncIdx},
     global::{GlobalEntity, GlobalIdx},
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
     memory::{MemoryEntity, MemoryIdx},

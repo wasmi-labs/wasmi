@@ -1,5 +1,5 @@
 use super::{
-    super::{Global, Memory},
+    super::{Global, Memory, Table},
     bytecode::{BrTable, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, VisitInstruction},
     AsContextMut,
     CallStack,
@@ -171,10 +171,17 @@ where
     /// # Panics
     ///
     /// If there is no default linear memory.
-    fn default_memory(&self) -> Memory {
-        self.frame
-            .default_memory
-            .expect("missing default memory for function frame")
+    fn default_memory(&mut self) -> Memory {
+        self.frame.default_memory(self.ctx.as_context())
+    }
+
+    /// Returns the default linear memory.
+    ///
+    /// # Panics
+    ///
+    /// If there is no default linear memory.
+    fn default_table(&mut self) -> Table {
+        self.frame.default_table(self.ctx.as_context())
     }
 
     /// Returns the global variable at the given index.
@@ -763,10 +770,7 @@ where
 
     fn visit_call_indirect(&mut self, signature_index: SignatureIdx) -> Self::Outcome {
         let func_index: u32 = self.value_stack.pop_as();
-        let table = self
-            .frame
-            .default_table
-            .expect("encountered call_indirect without table");
+        let table = self.default_table();
         let func = table
             .get(self.ctx.as_context(), func_index as usize)
             .map_err(|_| TrapKind::TableAccessOutOfBounds)?

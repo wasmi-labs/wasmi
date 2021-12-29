@@ -4,7 +4,16 @@ mod caller;
 mod into_func;
 
 pub use self::{caller::Caller, into_func::IntoFunc};
-use super::{engine::FuncBody, AsContext, AsContextMut, Index, Instance, Signature, Stored};
+use super::{
+    engine::FuncBody,
+    AsContext,
+    AsContextMut,
+    Index,
+    Instance,
+    Signature,
+    StoreContext,
+    Stored,
+};
 use crate::{RuntimeValue, Trap, ValueType};
 use alloc::sync::Arc;
 use core::{fmt, fmt::Debug};
@@ -106,13 +115,23 @@ impl<T> FuncEntity<T> {
             FuncEntityInternal::Host(_) => None,
         }
     }
+
+    /// Returns the internal function entity.
+    ///
+    /// # Note
+    ///
+    /// This can be used to efficiently match against host or Wasm
+    /// function entities and efficiently extract their properties.
+    pub(crate) fn as_internal(&self) -> &FuncEntityInternal<T> {
+        &self.internal
+    }
 }
 
 /// The internal representation of a function instance.
 ///
 /// This can either be a host function or a Wasm function.
 #[derive(Debug)]
-enum FuncEntityInternal<T> {
+pub(crate) enum FuncEntityInternal<T> {
     /// A Wasm function instance.
     Wasm(WasmFuncEntity),
     /// A host function instance.
@@ -130,7 +149,7 @@ impl<T> Clone for FuncEntityInternal<T> {
 
 /// A Wasm function instance.
 #[derive(Debug, Clone)]
-struct WasmFuncEntity {
+pub(crate) struct WasmFuncEntity {
     signature: Signature,
     body: FuncBody,
     instance: Instance,
@@ -138,7 +157,7 @@ struct WasmFuncEntity {
 
 impl WasmFuncEntity {
     /// Creates a new Wasm function from the given raw parts.
-    pub(crate) fn new(signature: Signature, body: FuncBody, instance: Instance) -> Self {
+    pub fn new(signature: Signature, body: FuncBody, instance: Instance) -> Self {
         Self {
             signature,
             body,
@@ -163,7 +182,7 @@ impl WasmFuncEntity {
 }
 
 /// A host function instance.
-struct HostFuncEntity<T> {
+pub(crate) struct HostFuncEntity<T> {
     signature: Signature,
     trampoline: HostFuncTrampoline<T>,
 }
@@ -263,24 +282,6 @@ impl Func {
         ctx.as_context().store.resolve_func(*self).signature()
     }
 
-    /// Returns the associated [`Instance`] of the [`Func`] if any.
-    ///
-    /// # Note
-    ///
-    /// All Wasm functions have an associated [`Instance`].
-    pub(crate) fn instance(&self, ctx: impl AsContext) -> Option<Instance> {
-        ctx.as_context().store.resolve_func(*self).instance()
-    }
-
-    /// Returns the associated Wasm function body of the [`Func`] if any.
-    ///
-    /// # Note
-    ///
-    /// All Wasm functions have an associated Wasm function body.
-    pub(crate) fn func_body(&self, ctx: impl AsContext) -> Option<FuncBody> {
-        ctx.as_context().store.resolve_func(*self).func_body()
-    }
-
     /// Calls the Wasm or host function with the given inputs.
     ///
     /// The result is written back into the `outputs` buffer.
@@ -303,5 +304,18 @@ impl Func {
             //   allow shared mutable access.
             .clone()
             .call(ctx, inputs, outputs)
+    }
+
+    /// Returns the internal representation of the [`Func`] instance.
+    ///
+    /// # Note
+    ///
+    /// This is intentionally a private API and mainly provided for efficient
+    /// execution of the `wasmi` interpreter upon function dispatch.
+    pub(crate) fn as_internal<'a, T: 'a>(
+        &self,
+        ctx: impl Into<StoreContext<'a, T>>,
+    ) -> &'a FuncEntityInternal<T> {
+        ctx.into().store.resolve_func(*self).as_internal()
     }
 }
