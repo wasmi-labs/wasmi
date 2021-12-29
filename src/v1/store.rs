@@ -429,7 +429,7 @@ where
     }
 }
 
-impl<'a, T> AsContext for StoreContext<'_, T> {
+impl<T> AsContext for StoreContext<'_, T> {
     type UserState = T;
 
     fn as_context(&self) -> StoreContext<'_, Self::UserState> {
@@ -437,7 +437,7 @@ impl<'a, T> AsContext for StoreContext<'_, T> {
     }
 }
 
-impl<'a, T> AsContext for StoreContextMut<'_, T> {
+impl<T> AsContext for StoreContextMut<'_, T> {
     type UserState = T;
 
     fn as_context(&self) -> StoreContext<'_, Self::UserState> {
@@ -445,7 +445,7 @@ impl<'a, T> AsContext for StoreContextMut<'_, T> {
     }
 }
 
-impl<'a, T> AsContextMut for StoreContextMut<'_, T> {
+impl<T> AsContextMut for StoreContextMut<'_, T> {
     fn as_context_mut(&mut self) -> StoreContextMut<'_, Self::UserState> {
         StoreContextMut {
             store: &mut *self.store,
@@ -461,7 +461,7 @@ impl<T> AsContext for Store<T> {
     }
 }
 
-impl<'a, T> AsContextMut for Store<T> {
+impl<T> AsContextMut for Store<T> {
     fn as_context_mut(&mut self) -> StoreContextMut<'_, Self::UserState> {
         StoreContextMut { store: self }
     }
