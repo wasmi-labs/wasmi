@@ -52,7 +52,7 @@ macro_rules! impl_little_endian_convert_primitive {
         )*
     };
 }
-impl_little_endian_convert_primitive!(u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, f32, f64);
+impl_little_endian_convert_primitive!(u8, u16, u32, u64, i8, i16, i32, i64, f32, f64);
 
 macro_rules! impl_little_endian_convert_float {
     ( $( struct $float_ty:ident($uint_ty:ty); )* $(,)? ) => {
