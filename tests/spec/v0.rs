@@ -1,10 +1,8 @@
-mod run;
-
 macro_rules! run_test {
     ($label: expr, $test_name: ident) => {
         #[test]
         fn $test_name() {
-            self::run::spec($label)
+            super::run::spec($label)
         }
     };
 }
