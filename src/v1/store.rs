@@ -407,6 +407,28 @@ pub struct StoreContextMut<'a, T> {
     pub(super) store: &'a mut Store<T>,
 }
 
+impl<T> AsContext for &'_ mut T
+where
+    T: AsContext,
+{
+    type UserState = T::UserState;
+
+    #[inline]
+    fn as_context(&self) -> StoreContext<'_, T::UserState> {
+        T::as_context(*self)
+    }
+}
+
+impl<T> AsContextMut for &'_ mut T
+where
+    T: AsContextMut,
+{
+    #[inline]
+    fn as_context_mut(&mut self) -> StoreContextMut<'_, T::UserState> {
+        T::as_context_mut(*self)
+    }
+}
+
 impl<'a, T> AsContext for StoreContext<'_, T> {
     type UserState = T;
 
