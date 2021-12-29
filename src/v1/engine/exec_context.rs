@@ -1185,17 +1185,21 @@ where
     }
 
     fn visit_f32_add(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_add::<F32>()
     }
+
     fn visit_f32_sub(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_sub::<F32>()
     }
+
     fn visit_f32_mul(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_mul::<F32>()
     }
+
     fn visit_f32_div(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_div::<F32>()
     }
+
     fn visit_f32_min(&mut self) -> Self::Outcome {
         todo!()
     }
@@ -1235,17 +1239,21 @@ where
     }
 
     fn visit_f64_add(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_add::<F64>()
     }
+
     fn visit_f64_sub(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_sub::<F64>()
     }
+
     fn visit_f64_mul(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_mul::<F64>()
     }
+
     fn visit_f64_div(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_div::<F64>()
     }
+
     fn visit_f64_min(&mut self) -> Self::Outcome {
         todo!()
     }
