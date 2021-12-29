@@ -13,6 +13,30 @@ pub enum Extern {
     Func(Func),
 }
 
+impl From<Global> for Extern {
+    fn from(global: Global) -> Self {
+        Self::Global(global)
+    }
+}
+
+impl From<Table> for Extern {
+    fn from(table: Table) -> Self {
+        Self::Table(table)
+    }
+}
+
+impl From<Memory> for Extern {
+    fn from(memory: Memory) -> Self {
+        Self::Memory(memory)
+    }
+}
+
+impl From<Func> for Extern {
+    fn from(func: Func) -> Self {
+        Self::Func(func)
+    }
+}
+
 impl Extern {
     /// Returns the underlying global variable if `self` is a global variable.
     ///
