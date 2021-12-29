@@ -468,6 +468,21 @@ impl ValueStack {
     pub fn drain(&mut self) -> Drain<StackEntry> {
         self.entries.drain(..)
     }
+
+    /// Pops the last `depth` stack entries and returns them as slice.
+    ///
+    /// Stack entries are returned in the order in which they got pushed
+    /// onto the value stack.
+    ///
+    /// # Panics
+    ///
+    /// If the value stack does not have at least `depth` stack entries.
+    pub fn pop_as_slice(&mut self, depth: usize) -> &[StackEntry] {
+        self.stack_ptr -= depth;
+        let start = self.stack_ptr;
+        let end = self.stack_ptr + depth;
+        &self.entries[start..end]
+    }
 }
 
 #[cfg(test)]

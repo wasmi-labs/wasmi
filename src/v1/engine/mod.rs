@@ -23,8 +23,8 @@ use self::{
     value_stack::{FromStackEntry, StackEntry, ValueStack},
 };
 use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func, Signature};
-use crate::{RuntimeValue, Trap, TrapKind};
-use alloc::sync::Arc;
+use crate::{RuntimeValue, Trap, TrapKind, ValueType};
+use alloc::{sync::Arc, vec::Vec};
 use spin::mutex::Mutex;
 
 /// The outcome of a `wasmi` instruction execution.
@@ -122,6 +122,8 @@ pub struct EngineInner {
     call_stack: CallStack,
     /// Stores all Wasm function bodies that the interpreter is aware of.
     code_map: CodeMap,
+    /// Scratch buffer for intermediate results and data.
+    scratch: Vec<RuntimeValue>,
 }
 
 impl EngineInner {
@@ -190,12 +192,12 @@ impl EngineInner {
     /// - If any of the executed instructions yield an error.
     fn execute_until_done(&mut self, mut ctx: impl AsContextMut) -> Result<(), Trap> {
         'outer: loop {
-            let mut frame = match self.call_stack.pop() {
+            let mut function_frame = match self.call_stack.pop() {
                 Some(frame) => frame,
                 None => return Ok(()),
             };
-            let result =
-                ExecutionContext::new(self, &mut frame).execute_frame(ctx.as_context_mut())?;
+            let result = ExecutionContext::new(self, &mut function_frame)
+                .execute_frame(ctx.as_context_mut())?;
             match result {
                 FunctionExecutionOutcome::Return => {
                     continue 'outer;
@@ -205,19 +207,87 @@ impl EngineInner {
                         FuncEntityInternal::Wasm(wasm_func) => {
                             let nested_frame = FunctionFrame::new_wasm(func, wasm_func);
                             self.call_stack
-                                .push(frame)
+                                .push(function_frame)
                                 .map_err(|_| TrapKind::StackOverflow)?;
                             self.call_stack
                                 .push(nested_frame)
                                 .map_err(|_| TrapKind::StackOverflow)?;
                         }
-                        FuncEntityInternal::Host(_host_func) => {
-                            todo!()
+                        FuncEntityInternal::Host(host_func) => {
+                            let signature = host_func.signature();
+                            let (input_types, output_types) =
+                                signature.inputs_outputs(ctx.as_context());
+                            Self::prepare_host_function_args(
+                                input_types,
+                                &mut self.value_stack,
+                                &mut self.scratch,
+                            );
+                            // Note: We push the function context before calling the host function.
+                            //       If the VM is not resumable, it does no harm.
+                            //       If it is, we then save the context here.
+                            self.call_stack
+                                .push(function_frame)
+                                .map_err(|_| TrapKind::StackOverflow)?;
+                            // Prepare scratch buffer to hold both, inputs and outputs of the call.
+                            // We are going to split the scratch buffer in the middle right before the call.
+                            debug_assert_eq!(self.scratch.len(), input_types.len());
+                            let len_inputs = input_types.len();
+                            let len_outputs = output_types.len();
+                            let zeros = output_types.iter().copied().map(RuntimeValue::default);
+                            self.scratch.extend(zeros);
+                            // At this point the scratch buffer holds the host function input arguments
+                            // as well as a zero initialized entry per expected host function output value.
+                            let (inputs, outputs) = self.scratch.split_at_mut(len_inputs);
+                            debug_assert_eq!(inputs.len(), len_inputs);
+                            debug_assert_eq!(outputs.len(), len_outputs);
+                            // Now we are ready to perform the host function call.
+                            // Note: We need to clone the host function due to some borrowing issues.
+                            //       This should not be a big deal since host functions usually are cheap to clone.
+                            host_func
+                                .clone()
+                                .call(ctx.as_context_mut(), inputs, outputs)?;
+                            // Check if the returned values match their expected types.
+                            let output_types = signature.outputs(ctx.as_context());
+                            for (required_type, output_value) in
+                                output_types.iter().copied().zip(&*outputs)
+                            {
+                                if required_type != output_value.value_type() {
+                                    return Err(TrapKind::UnexpectedSignature).map_err(Into::into);
+                                }
+                            }
+                            // Copy host function output values to the value stack.
+                            self.value_stack
+                                .extend(outputs.iter().copied().map(|value| value.into()));
                         }
                     }
                 }
             }
         }
+    }
+
+    /// Prepares the inputs arguments to the host function execution.
+    ///
+    /// # Note
+    ///
+    /// This will pop the last `n` values from the `value_stack` where
+    /// `n` is the number of required input arguments to the host function
+    /// and equal to the number of elements in `input_types`.
+    /// The `input_types` slice represents the value types required by the
+    /// host function that is about to be called.
+    fn prepare_host_function_args(
+        input_types: &[ValueType],
+        value_stack: &mut ValueStack,
+        host_args: &mut Vec<RuntimeValue>,
+    ) {
+        let len_args = input_types.len();
+        let stack_args = value_stack.pop_as_slice(len_args);
+        assert_eq!(len_args, stack_args.len());
+        host_args.clear();
+        let prepared_args = input_types
+            .iter()
+            .zip(stack_args)
+            .map(|(input_type, host_arg)| host_arg.with_type(*input_type));
+        host_args.extend(prepared_args);
     }
 
     /// Initializes the value stack with the given arguments `args`.
