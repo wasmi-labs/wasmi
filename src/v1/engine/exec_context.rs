@@ -16,11 +16,11 @@ use super::{
 };
 use crate::{
     nan_preserving_float::{F32, F64},
-    value::{ArithmeticOps, ExtendInto, Integer, WrapInto},
+    value::{ArithmeticOps, ExtendInto, Float, Integer, WrapInto},
     Trap,
     TrapKind,
 };
-use core::ops::{BitAnd, BitOr, BitXor, Shl, Shr};
+use core::ops::{BitAnd, BitOr, BitXor, Neg, Shl, Shr};
 use memory_units::wasm32::Pages;
 
 /// Types that can be converted from and to little endian bytes.
@@ -552,6 +552,62 @@ where
         T: Integer<T> + FromStackEntry,
     {
         self.execute_binop(|left: T, right: T| left.rotr(right))
+    }
+
+    fn execute_abs<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: Float<T> + FromStackEntry,
+    {
+        self.execute_unop(|v: T| v.abs())
+    }
+
+    fn execute_neg<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<<T as Neg>::Output>,
+        T: Neg + FromStackEntry,
+    {
+        self.execute_unop(|v: T| v.neg())
+    }
+
+    fn execute_ceil<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: Float<T> + FromStackEntry,
+    {
+        self.execute_unop(|v: T| v.ceil())
+    }
+
+    fn execute_floor<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: Float<T> + FromStackEntry,
+    {
+        self.execute_unop(|v: T| v.floor())
+    }
+
+    fn execute_trunc<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: Float<T> + FromStackEntry,
+    {
+        self.execute_unop(|v: T| v.trunc())
+    }
+
+    fn execute_nearest<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: Float<T> + FromStackEntry,
+    {
+        self.execute_unop(|v: T| v.nearest())
+    }
+
+    fn execute_sqrt<T>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<T>,
+        T: Float<T> + FromStackEntry,
+    {
+        self.execute_unop(|v: T| v.sqrt())
     }
 }
 
@@ -1101,26 +1157,33 @@ where
     }
 
     fn visit_f32_abs(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_abs::<F32>()
     }
+
     fn visit_f32_neg(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_neg::<F32>()
     }
+
     fn visit_f32_ceil(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_ceil::<F32>()
     }
+
     fn visit_f32_floor(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_floor::<F32>()
     }
+
     fn visit_f32_trunc(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_trunc::<F32>()
     }
+
     fn visit_f32_nearest(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_nearest::<F32>()
     }
+
     fn visit_f32_sqrt(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_sqrt::<F32>()
     }
+
     fn visit_f32_add(&mut self) -> Self::Outcome {
         todo!()
     }
@@ -1142,27 +1205,35 @@ where
     fn visit_f32_copysign(&mut self) -> Self::Outcome {
         todo!()
     }
+
     fn visit_f64_abs(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_abs::<F64>()
     }
+
     fn visit_f64_neg(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_neg::<F64>()
     }
+
     fn visit_f64_ceil(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_ceil::<F64>()
     }
+
     fn visit_f64_floor(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_floor::<F64>()
     }
+
     fn visit_f64_trunc(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_trunc::<F64>()
     }
+
     fn visit_f64_nearest(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_nearest::<F64>()
     }
+
     fn visit_f64_sqrt(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_sqrt::<F64>()
     }
+
     fn visit_f64_add(&mut self) -> Self::Outcome {
         todo!()
     }
