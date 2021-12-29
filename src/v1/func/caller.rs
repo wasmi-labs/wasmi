@@ -1,6 +1,8 @@
 use super::super::{AsContext, AsContextMut, StoreContext, StoreContextMut};
 
 /// Represents the caller’s context when creating a host function via [`Func::wrap`].
+///
+/// [`Func::wrap`]: struct.Func.html#method.wrap
 pub struct Caller<'a, T> {
     pub(crate) store: StoreContextMut<'a, T>,
     // TODO: add instance handle
