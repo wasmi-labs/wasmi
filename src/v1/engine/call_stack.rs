@@ -1,7 +1,16 @@
 //! Data structures to represent the Wasm call stack during execution.
 
 use super::{
-    super::{AsContext, Func, FuncBody, FuncEntityInternal, Instance, Memory, Table},
+    super::{
+        func::WasmFuncEntity,
+        AsContext,
+        Func,
+        FuncBody,
+        FuncEntityInternal,
+        Instance,
+        Memory,
+        Table,
+    },
     ResolvedFuncBody,
     ValueStack,
 };
@@ -88,13 +97,19 @@ impl FunctionFrame {
     ///
     /// If the `func` has no instance handle, i.e. is not a Wasm function.
     pub fn new(ctx: impl AsContext, func: Func) -> Self {
-        let (instance, func_body) = match func.as_internal(ctx.as_context()) {
-            FuncEntityInternal::Wasm(wasm_func) => (wasm_func.instance(), wasm_func.func_body()),
-            FuncEntityInternal::Host(_) => panic!(
+        match func.as_internal(ctx.as_context()) {
+            FuncEntityInternal::Wasm(wasm_func) => Self::new_wasm(func, wasm_func),
+            FuncEntityInternal::Host(host_func) => panic!(
                 "cannot execute host functions using Wasm interpreter: {:?}",
-                func
+                host_func
             ),
-        };
+        }
+    }
+
+    /// Creates a new [`FunctionFrame`] from the given Wasm function entity.
+    pub(super) fn new_wasm(func: Func, wasm_func: &WasmFuncEntity) -> Self {
+        let instance = wasm_func.instance();
+        let func_body = wasm_func.func_body();
         Self {
             instantiated: false,
             func,

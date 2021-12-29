@@ -22,7 +22,7 @@ use self::{
     code_map::{CodeMap, ResolvedFuncBody},
     value_stack::{FromStackEntry, StackEntry, ValueStack},
 };
-use super::{AsContext, AsContextMut, Func, Signature};
+use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func, Signature};
 use crate::{RuntimeValue, Trap, TrapKind};
 use alloc::sync::Arc;
 use spin::mutex::Mutex;
@@ -200,8 +200,21 @@ impl EngineInner {
                 FunctionExecutionOutcome::Return => {
                     continue 'outer;
                 }
-                FunctionExecutionOutcome::NestedCall(_func) => {
-                    todo!()
+                FunctionExecutionOutcome::NestedCall(func) => {
+                    match func.as_internal(ctx.as_context()) {
+                        FuncEntityInternal::Wasm(wasm_func) => {
+                            let nested_frame = FunctionFrame::new_wasm(func, wasm_func);
+                            self.call_stack
+                                .push(frame)
+                                .map_err(|_| TrapKind::StackOverflow)?;
+                            self.call_stack
+                                .push(nested_frame)
+                                .map_err(|_| TrapKind::StackOverflow)?;
+                        }
+                        FuncEntityInternal::Host(_host_func) => {
+                            todo!()
+                        }
+                    }
                 }
             }
         }
