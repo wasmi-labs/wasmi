@@ -35,6 +35,11 @@ impl InstructionIdx {
     pub fn from_usize(value: usize) -> Self {
         Self(value)
     }
+
+    /// Returns the underlying `usize` value of the instruction index.
+    pub fn into_usize(self) -> usize {
+        self.0
+    }
 }
 
 /// A resolved or unresolved label.

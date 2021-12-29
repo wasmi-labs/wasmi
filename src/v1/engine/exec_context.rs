@@ -70,11 +70,18 @@ impl<'engine, 'func> ExecutionContext<'engine, 'func> {
                 ctx.as_context_mut(),
             );
             match self.func_body.visit(pc, inst_context)? {
-                ExecutionOutcome::Continue => {}
+                ExecutionOutcome::Continue => {
+                    // Advance instruction pointer.
+                    self.frame.inst_ptr += 1;
+                }
                 ExecutionOutcome::Branch(target) => {
                     self.value_stack.drop_keep(target.drop_keep());
+                    // Set instruction pointer to the branch target.
+                    self.frame.inst_ptr = target.destination_pc().into_usize();
                 }
                 ExecutionOutcome::ExecuteCall(func) => {
+                    // Advance instruction pointer.
+                    self.frame.inst_ptr += 1;
                     return Ok(FunctionExecutionOutcome::NestedCall(func));
                 }
                 ExecutionOutcome::Return(drop_keep) => {
