@@ -197,13 +197,10 @@ impl MemoryInstance {
 
     /// Get value from memory at given offset.
     pub fn get_value<T: LittleEndianConvert>(&self, offset: u32) -> Result<T, Error> {
-        let mut buffer = self.buffer.borrow_mut();
-        let region =
-            self.checked_region(&mut buffer, offset as usize, ::core::mem::size_of::<T>())?;
-        Ok(
-            T::from_little_endian(&buffer.as_slice_mut()[region.range()])
-                .expect("Slice size is checked"),
-        )
+        let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
+        self.get_into(offset, bytes.as_mut())?;
+        let value = T::from_le_bytes(bytes);
+        Ok(value)
     }
 
     /// Copy data from memory at given offset.
@@ -248,11 +245,8 @@ impl MemoryInstance {
 
     /// Copy value in the memory at given offset.
     pub fn set_value<T: LittleEndianConvert>(&self, offset: u32, value: T) -> Result<(), Error> {
-        let mut buffer = self.buffer.borrow_mut();
-        let range = self
-            .checked_region(&mut buffer, offset as usize, ::core::mem::size_of::<T>())?
-            .range();
-        value.into_little_endian(&mut buffer.as_slice_mut()[range]);
+        let bytes = T::into_le_bytes(value);
+        self.set(offset, bytes.as_ref())?;
         Ok(())
     }
 

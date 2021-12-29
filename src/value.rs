@@ -77,16 +77,58 @@ pub trait TransmuteInto<T> {
     fn transmute_into(self) -> T;
 }
 
-/// Convert from and to little endian.
-pub trait LittleEndianConvert
-where
-    Self: Sized,
-{
-    /// Convert to little endian buffer.
-    fn into_little_endian(self, buffer: &mut [u8]);
-    /// Convert from little endian buffer.
-    fn from_little_endian(buffer: &[u8]) -> Result<Self, Error>;
+/// Types that can be converted from and to little endian bytes.
+pub trait LittleEndianConvert {
+    /// The little endian bytes representation.
+    type Bytes: Default + AsRef<[u8]> + AsMut<[u8]>;
+
+    /// Converts `self` into little endian bytes.
+    fn into_le_bytes(self) -> Self::Bytes;
+
+    /// Converts little endian bytes into `Self`.
+    fn from_le_bytes(bytes: Self::Bytes) -> Self;
 }
+
+macro_rules! impl_little_endian_convert_primitive {
+    ( $($primitive:ty),* $(,)? ) => {
+        $(
+            impl LittleEndianConvert for $primitive {
+                type Bytes = [::core::primitive::u8; ::core::mem::size_of::<$primitive>()];
+
+                fn into_le_bytes(self) -> Self::Bytes {
+                    <$primitive>::to_le_bytes(self)
+                }
+
+                fn from_le_bytes(bytes: Self::Bytes) -> Self {
+                    <$primitive>::from_le_bytes(bytes)
+                }
+            }
+        )*
+    };
+}
+impl_little_endian_convert_primitive!(u8, u16, u32, u64, i8, i16, i32, i64, f32, f64);
+
+macro_rules! impl_little_endian_convert_float {
+    ( $( struct $float_ty:ident($uint_ty:ty); )* $(,)? ) => {
+        $(
+            impl LittleEndianConvert for $float_ty {
+                type Bytes = <$uint_ty as LittleEndianConvert>::Bytes;
+
+                fn into_le_bytes(self) -> Self::Bytes {
+                    <$uint_ty>::into_le_bytes(self.to_bits())
+                }
+
+                fn from_le_bytes(bytes: Self::Bytes) -> Self {
+                    Self::from_bits(<$uint_ty>::from_le_bytes(bytes))
+                }
+            }
+        )*
+    };
+}
+impl_little_endian_convert_float!(
+    struct F32(u32);
+    struct F64(u64);
+);
 
 /// Arithmetic operations.
 pub trait ArithmeticOps<T> {
@@ -562,171 +604,6 @@ impl TransmuteInto<i32> for u32 {
 impl TransmuteInto<i64> for u64 {
     fn transmute_into(self) -> i64 {
         self as _
-    }
-}
-
-impl LittleEndianConvert for i8 {
-    fn into_little_endian(self, buffer: &mut [u8]) {
-        buffer[0] = self as u8;
-    }
-
-    fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-        buffer
-            .get(0)
-            .map(|v| *v as i8)
-            .ok_or(Error::InvalidLittleEndianBuffer)
-    }
-}
-
-impl LittleEndianConvert for u8 {
-    fn into_little_endian(self, buffer: &mut [u8]) {
-        buffer[0] = self;
-    }
-
-    fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-        buffer
-            .get(0)
-            .cloned()
-            .ok_or(Error::InvalidLittleEndianBuffer)
-    }
-}
-
-impl LittleEndianConvert for i16 {
-    fn into_little_endian(self, buffer: &mut [u8]) {
-        buffer.copy_from_slice(&self.to_le_bytes());
-    }
-
-    fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-        let mut res = [0u8; 2];
-        buffer
-            .get(0..2)
-            .map(|s| {
-                res.copy_from_slice(s);
-                Self::from_le_bytes(res)
-            })
-            .ok_or(Error::InvalidLittleEndianBuffer)
-    }
-}
-
-impl LittleEndianConvert for u16 {
-    fn into_little_endian(self, buffer: &mut [u8]) {
-        buffer.copy_from_slice(&self.to_le_bytes());
-    }
-
-    fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-        let mut res = [0u8; 2];
-        buffer
-            .get(0..2)
-            .map(|s| {
-                res.copy_from_slice(s);
-                Self::from_le_bytes(res)
-            })
-            .ok_or(Error::InvalidLittleEndianBuffer)
-    }
-}
-
-impl LittleEndianConvert for i32 {
-    fn into_little_endian(self, buffer: &mut [u8]) {
-        buffer.copy_from_slice(&self.to_le_bytes());
-    }
-
-    fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-        let mut res = [0u8; 4];
-        buffer
-            .get(0..4)
-            .map(|s| {
-                res.copy_from_slice(s);
-                Self::from_le_bytes(res)
-            })
-            .ok_or(Error::InvalidLittleEndianBuffer)
-    }
-}
-
-impl LittleEndianConvert for u32 {
-    fn into_little_endian(self, buffer: &mut [u8]) {
-        buffer.copy_from_slice(&self.to_le_bytes());
-    }
-
-    fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-        let mut res = [0u8; 4];
-        buffer
-            .get(0..4)
-            .map(|s| {
-                res.copy_from_slice(s);
-                Self::from_le_bytes(res)
-            })
-            .ok_or(Error::InvalidLittleEndianBuffer)
-    }
-}
-
-impl LittleEndianConvert for i64 {
-    fn into_little_endian(self, buffer: &mut [u8]) {
-        buffer.copy_from_slice(&self.to_le_bytes());
-    }
-
-    fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-        let mut res = [0u8; 8];
-        buffer
-            .get(0..8)
-            .map(|s| {
-                res.copy_from_slice(s);
-                Self::from_le_bytes(res)
-            })
-            .ok_or(Error::InvalidLittleEndianBuffer)
-    }
-}
-
-impl LittleEndianConvert for f32 {
-    fn into_little_endian(self, buffer: &mut [u8]) {
-        buffer.copy_from_slice(&self.to_bits().to_le_bytes());
-    }
-
-    fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-        let mut res = [0u8; 4];
-        buffer
-            .get(0..4)
-            .map(|s| {
-                res.copy_from_slice(s);
-                Self::from_bits(u32::from_le_bytes(res))
-            })
-            .ok_or(Error::InvalidLittleEndianBuffer)
-    }
-}
-
-impl LittleEndianConvert for f64 {
-    fn into_little_endian(self, buffer: &mut [u8]) {
-        buffer.copy_from_slice(&self.to_bits().to_le_bytes());
-    }
-
-    fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-        let mut res = [0u8; 8];
-        buffer
-            .get(0..8)
-            .map(|s| {
-                res.copy_from_slice(s);
-                Self::from_bits(u64::from_le_bytes(res))
-            })
-            .ok_or(Error::InvalidLittleEndianBuffer)
-    }
-}
-
-impl LittleEndianConvert for F32 {
-    fn into_little_endian(self, buffer: &mut [u8]) {
-        (self.to_bits() as i32).into_little_endian(buffer)
-    }
-
-    fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-        i32::from_little_endian(buffer).map(|val| Self::from_bits(val as _))
-    }
-}
-
-impl LittleEndianConvert for F64 {
-    fn into_little_endian(self, buffer: &mut [u8]) {
-        (self.to_bits() as i64).into_little_endian(buffer)
-    }
-
-    fn from_little_endian(buffer: &[u8]) -> Result<Self, Error> {
-        i64::from_little_endian(buffer).map(|val| Self::from_bits(val as _))
     }
 }
 
