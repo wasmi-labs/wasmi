@@ -16,7 +16,7 @@ use super::{
 };
 use crate::{
     nan_preserving_float::{F32, F64},
-    value::{ArithmeticOps, ExtendInto, Float, Integer, WrapInto},
+    value::{ArithmeticOps, ExtendInto, Float, Integer, TryTruncateInto, WrapInto},
     Trap,
     TrapKind,
 };
@@ -648,6 +648,26 @@ where
         T: ExtendInto<U> + FromStackEntry,
     {
         self.execute_unop(|value: T| value.extend_into())
+    }
+
+    fn execute_trunc_to_int<T, U>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<U>,
+        T: TryTruncateInto<U, TrapKind> + FromStackEntry,
+    {
+        let entry = self.value_stack.last_mut();
+        let value = T::from_stack_entry(*entry).try_truncate_into()?;
+        *entry = value.into();
+        Ok(ExecutionOutcome::Continue)
+    }
+
+    fn execute_reinterpret<T, U>(&mut self) -> Result<ExecutionOutcome, TrapKind>
+    where
+        StackEntry: From<U>,
+        T: FromStackEntry,
+    {
+        // Nothing to do for `wasmi` bytecode.
+        Ok(ExecutionOutcome::Continue)
     }
 }
 
@@ -1313,19 +1333,19 @@ where
     }
 
     fn visit_i32_trunc_f32(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_trunc_to_int::<F32, i32>()
     }
 
     fn visit_u32_trunc_f32(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_trunc_to_int::<F32, u32>()
     }
 
     fn visit_i32_trunc_f64(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_trunc_to_int::<F64, i32>()
     }
 
     fn visit_u32_trunc_f64(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_trunc_to_int::<F64, u32>()
     }
 
     fn visit_i64_extend_i32(&mut self) -> Self::Outcome {
@@ -1337,19 +1357,19 @@ where
     }
 
     fn visit_i64_trunc_f32(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_trunc_to_int::<F32, i64>()
     }
 
     fn visit_u64_trunc_f32(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_trunc_to_int::<F32, u64>()
     }
 
     fn visit_i64_trunc_f64(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_trunc_to_int::<F64, i64>()
     }
 
     fn visit_u64_trunc_f64(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_trunc_to_int::<F64, u64>()
     }
 
     fn visit_f32_convert_i32(&mut self) -> Self::Outcome {
@@ -1393,18 +1413,18 @@ where
     }
 
     fn visit_i32_reinterpret_f32(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_reinterpret::<F32, i32>()
     }
 
     fn visit_i64_reinterpret_f64(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_reinterpret::<F64, i64>()
     }
 
     fn visit_f32_reinterpret_i32(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_reinterpret::<i32, F32>()
     }
 
     fn visit_f64_reinterpret_i64(&mut self) -> Self::Outcome {
-        todo!()
+        self.execute_reinterpret::<i64, F64>()
     }
 }
