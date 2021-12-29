@@ -16,65 +16,20 @@ use super::{
 };
 use crate::{
     nan_preserving_float::{F32, F64},
-    value::{ArithmeticOps, ExtendInto, Float, Integer, TryTruncateInto, WrapInto},
+    value::{
+        ArithmeticOps,
+        ExtendInto,
+        Float,
+        Integer,
+        LittleEndianConvert,
+        TryTruncateInto,
+        WrapInto,
+    },
     Trap,
     TrapKind,
 };
 use core::ops::{BitAnd, BitOr, BitXor, Neg, Shl, Shr};
 use memory_units::wasm32::Pages;
-
-/// Types that can be converted from and to little endian bytes.
-pub trait LittleEndianConvert {
-    /// The little endian bytes representation.
-    type Bytes: Default + AsRef<[u8]> + AsMut<[u8]>;
-
-    /// Converts `self` into little endian bytes.
-    fn into_le_bytes(self) -> Self::Bytes;
-
-    /// Converts little endian bytes into `Self`.
-    fn from_le_bytes(bytes: Self::Bytes) -> Self;
-}
-
-macro_rules! impl_little_endian_convert_primitive {
-    ( $($primitive:ty),* $(,)? ) => {
-        $(
-            impl LittleEndianConvert for $primitive {
-                type Bytes = [::core::primitive::u8; ::core::mem::size_of::<$primitive>()];
-
-                fn into_le_bytes(self) -> Self::Bytes {
-                    <$primitive>::to_le_bytes(self)
-                }
-
-                fn from_le_bytes(bytes: Self::Bytes) -> Self {
-                    <$primitive>::from_le_bytes(bytes)
-                }
-            }
-        )*
-    };
-}
-impl_little_endian_convert_primitive!(u8, u16, u32, u64, i8, i16, i32, i64, f32, f64);
-
-macro_rules! impl_little_endian_convert_float {
-    ( $( struct $float_ty:ident($uint_ty:ty); )* $(,)? ) => {
-        $(
-            impl LittleEndianConvert for $float_ty {
-                type Bytes = <$uint_ty as LittleEndianConvert>::Bytes;
-
-                fn into_le_bytes(self) -> Self::Bytes {
-                    <$uint_ty>::into_le_bytes(self.to_bits())
-                }
-
-                fn from_le_bytes(bytes: Self::Bytes) -> Self {
-                    Self::from_bits(<$uint_ty>::from_le_bytes(bytes))
-                }
-            }
-        )*
-    };
-}
-impl_little_endian_convert_float!(
-    struct F32(u32);
-    struct F64(u64);
-);
 
 /// State that is used during Wasm function execution.
 #[derive(Debug)]
