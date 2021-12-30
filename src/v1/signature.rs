@@ -93,16 +93,28 @@ impl Signature {
     }
 
     /// Returns the inputs of the function signature.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Signature`].
     pub fn inputs<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a [ValueType] {
         ctx.into().store.resolve_signature(*self).inputs()
     }
 
     /// Returns the outputs of the function signature.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Signature`].
     pub fn outputs<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a [ValueType] {
         ctx.into().store.resolve_signature(*self).outputs()
     }
 
     /// Returns the outputs of the function signature.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Signature`].
     pub fn inputs_outputs<'a, T: 'a>(
         &self,
         ctx: impl Into<StoreContext<'a, T>>,
