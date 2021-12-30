@@ -1,7 +1,6 @@
 use super::{
     super::{Global, Memory, Table},
     bytecode::{BrTable, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx},
-    VisitInstruction,
     AsContextMut,
     CallStack,
     DropKeep,
@@ -14,6 +13,7 @@ use super::{
     StackEntry,
     Target,
     ValueStack,
+    VisitInstruction,
 };
 use crate::{
     nan_preserving_float::{F32, F64},
