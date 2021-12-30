@@ -67,9 +67,19 @@ impl<T> FuncEntity<T> {
         }
     }
 
+    /// Returns the internal function entity.
+    ///
+    /// # Note
+    ///
+    /// This can be used to efficiently match against host or Wasm
+    /// function entities and efficiently extract their properties.
+    pub(crate) fn as_internal(&self) -> &FuncEntityInternal<T> {
+        &self.internal
+    }
+
     /// Returns the signature of the Wasm function.
     pub fn signature(&self) -> Signature {
-        match &self.internal {
+        match self.as_internal() {
             FuncEntityInternal::Wasm(func) => func.signature(),
             FuncEntityInternal::Host(func) => func.signature(),
         }
@@ -84,7 +94,7 @@ impl<T> FuncEntity<T> {
         inputs: &[RuntimeValue],
         outputs: &mut [RuntimeValue],
     ) -> Result<(), Trap> {
-        match &self.internal {
+        match self.as_internal() {
             FuncEntityInternal::Wasm(_wasm_func) => {
                 panic!("calling Wasm function is not yet supported")
             }
@@ -98,7 +108,7 @@ impl<T> FuncEntity<T> {
     ///
     /// All Wasm functions have an associated [`Instance`].
     pub(crate) fn instance(&self) -> Option<Instance> {
-        match &self.internal {
+        match self.as_internal() {
             FuncEntityInternal::Wasm(func) => func.instance().into(),
             FuncEntityInternal::Host(_) => None,
         }
@@ -110,20 +120,10 @@ impl<T> FuncEntity<T> {
     ///
     /// All Wasm functions have an associated Wasm function body.
     pub(crate) fn func_body(&self) -> Option<FuncBody> {
-        match &self.internal {
+        match self.as_internal() {
             FuncEntityInternal::Wasm(func) => func.func_body().into(),
             FuncEntityInternal::Host(_) => None,
         }
-    }
-
-    /// Returns the internal function entity.
-    ///
-    /// # Note
-    ///
-    /// This can be used to efficiently match against host or Wasm
-    /// function entities and efficiently extract their properties.
-    pub(crate) fn as_internal(&self) -> &FuncEntityInternal<T> {
-        &self.internal
     }
 }
 
