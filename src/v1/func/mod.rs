@@ -85,23 +85,6 @@ impl<T> FuncEntity<T> {
         }
     }
 
-    /// Calls the Wasm or host function with the given inputs.
-    ///
-    /// The result is written back into the `outputs` buffer.
-    pub fn call(
-        &self,
-        ctx: impl AsContextMut<UserState = T>,
-        inputs: &[RuntimeValue],
-        outputs: &mut [RuntimeValue],
-    ) -> Result<(), Trap> {
-        match self.as_internal() {
-            FuncEntityInternal::Wasm(_wasm_func) => {
-                panic!("calling Wasm function is not yet supported")
-            }
-            FuncEntityInternal::Host(host_func) => host_func.call(ctx, inputs, outputs),
-        }
-    }
-
     /// Returns the associated [`Instance`] of the [`Func`] if any.
     ///
     /// # Note
@@ -287,23 +270,17 @@ impl Func {
     /// The result is written back into the `outputs` buffer.
     pub fn call<T>(
         &self,
-        ctx: impl AsContextMut<UserState = T>,
+        mut ctx: impl AsContextMut<UserState = T>,
         inputs: &[RuntimeValue],
         outputs: &mut [RuntimeValue],
     ) -> Result<(), Trap> {
-        ctx.as_context()
-            .store
-            .resolve_func(*self)
-            // TODO: try removing this clone
-            //
-            // - Note that removing this `clone` will require
-            //   unsafe Rust code with the current design.
-            // - The invariant without clone is still safe since
-            //   we safe guard the access to the underlying
-            //   entities of the store in a fashion that cannot
-            //   allow shared mutable access.
-            .clone()
-            .call(ctx, inputs, outputs)
+        // Cloning an engine is a cheap operation.
+        ctx.as_context().store.engine().clone().execute_func(
+            ctx.as_context_mut(),
+            *self,
+            inputs,
+            outputs,
+        )
     }
 
     /// Returns the internal representation of the [`Func`] instance.

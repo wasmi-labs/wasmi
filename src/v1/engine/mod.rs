@@ -114,6 +114,24 @@ impl Engine {
             .get(index)
             .clone()
     }
+
+    /// Executes the given [`Func`] using the given arguments `args` and stores the result into `results`.
+    ///
+    /// # Errors
+    ///
+    /// - If the given `func` is not a Wasm function, e.g. if it is a host function.
+    /// - If the given arguments `args` do not match the expected parameters of `func`.
+    /// - If the given `results` do not match the the length of the expected results of `func`.
+    /// - When encountering a Wasm trap during the execution of `func`.
+    pub(crate) fn execute_func(
+        &mut self,
+        ctx: impl AsContextMut,
+        func: Func,
+        args: &[RuntimeValue],
+        results: &mut [RuntimeValue],
+    ) -> Result<(), Trap> {
+        self.inner.lock().execute_func(ctx, func, args, results)
+    }
 }
 
 /// The internal state of the `wasmi` engine.
@@ -145,7 +163,6 @@ impl EngineInner {
     ///
     /// # Errors
     ///
-    /// - If the given `func` is not a Wasm function, e.g. if it is a host function.
     /// - If the given arguments `args` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm trap during the execution of `func`.
@@ -156,7 +173,39 @@ impl EngineInner {
         args: &[RuntimeValue],
         results: &mut [RuntimeValue],
     ) -> Result<(), Trap> {
-        let signature = func.signature(ctx.as_context());
+        match func.as_internal(&ctx) {
+            FuncEntityInternal::Wasm(wasm_func) => {
+                let signature = wasm_func.signature();
+                self.execute_wasm_func(&mut ctx, signature, args, results, func)?;
+            }
+            FuncEntityInternal::Host(host_func) => {
+                let signature = host_func.signature();
+                Self::check_signature(ctx.as_context(), signature, args, results)?;
+                host_func.clone().call(&mut ctx, args, results)?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Executes the given Wasm [`Func`] using the given arguments `args` and stores the result into `results`.
+    ///
+    /// # Note
+    ///
+    /// The caller is required to ensure that the given `func` actually is a Wasm function.
+    ///
+    /// # Errors
+    ///
+    /// - If the given arguments `args` do not match the expected parameters of `func`.
+    /// - If the given `results` do not match the the length of the expected results of `func`.
+    /// - When encountering a Wasm trap during the execution of `func`.
+    fn execute_wasm_func(
+        &mut self,
+        mut ctx: impl AsContextMut,
+        signature: Signature,
+        args: &[RuntimeValue],
+        results: &mut [RuntimeValue],
+        func: Func,
+    ) -> Result<(), Trap> {
         Self::check_signature(ctx.as_context(), signature, args, results)?;
         self.initialize_args(args);
         let frame = FunctionFrame::new(ctx.as_context(), func);
