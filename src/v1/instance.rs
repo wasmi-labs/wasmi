@@ -243,6 +243,10 @@ impl Instance {
     }
 
     /// Returns the linear memory at the `index` if any.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `store` does not own this [`Instance`].
     pub(crate) fn get_memory(&self, store: impl AsContext, index: u32) -> Option<Memory> {
         store
             .as_context()
@@ -252,6 +256,10 @@ impl Instance {
     }
 
     /// Returns the table at the `index` if any.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `store` does not own this [`Instance`].
     pub(crate) fn get_table(&self, store: impl AsContext, index: u32) -> Option<Table> {
         store
             .as_context()
@@ -261,6 +269,10 @@ impl Instance {
     }
 
     /// Returns the global variable at the `index` if any.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `store` does not own this [`Instance`].
     pub(crate) fn get_global(&self, store: impl AsContext, index: u32) -> Option<Global> {
         store
             .as_context()
@@ -270,6 +282,10 @@ impl Instance {
     }
 
     /// Returns the function at the `index` if any.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `store` does not own this [`Instance`].
     pub(crate) fn get_func(&self, store: impl AsContext, index: u32) -> Option<Func> {
         store
             .as_context()
@@ -279,6 +295,10 @@ impl Instance {
     }
 
     /// Returns the signature at the `index` if any.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `store` does not own this [`Instance`].
     pub(crate) fn get_signature(&self, store: impl AsContext, index: u32) -> Option<Signature> {
         store
             .as_context()
@@ -288,6 +308,10 @@ impl Instance {
     }
 
     /// Returns the value exported to the given `name` if any.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `store` does not own this [`Instance`].
     pub fn get_export(&self, store: impl AsContext, name: &str) -> Option<Extern> {
         store
             .as_context()
@@ -299,6 +323,10 @@ impl Instance {
     /// Returns an iterator over the exports of the [`Instance`].
     ///
     /// The order of the yielded exports is not specified.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `store` does not own this [`Instance`].
     pub fn exports<'a, T: 'a>(&self, store: impl Into<StoreContext<'a, T>>) -> ExportsIter<'a> {
         store.into().store.resolve_instance(*self).exports()
     }
