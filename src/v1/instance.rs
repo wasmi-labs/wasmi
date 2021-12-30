@@ -288,7 +288,7 @@ impl Instance {
     }
 
     /// Returns the value exported to the given `name` if any.
-    pub(crate) fn get_export(&self, store: impl AsContext, name: &str) -> Option<Extern> {
+    pub fn get_export(&self, store: impl AsContext, name: &str) -> Option<Extern> {
         store
             .as_context()
             .store
