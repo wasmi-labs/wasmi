@@ -11,7 +11,6 @@ mod external;
 mod func;
 mod global;
 mod instance;
-mod limits;
 mod linker;
 mod memory;
 mod module;
@@ -23,7 +22,6 @@ mod table;
 pub mod errors {
     pub use super::{
         global::GlobalError,
-        limits::LimitsError,
         linker::LinkerError,
         memory::MemoryError,
         module::{InstantiationError, TranslationError},
@@ -49,11 +47,10 @@ pub use self::{
     func::{Caller, Func},
     global::{Global, Mutability},
     instance::{ExportsIter, Instance},
-    limits::TableType,
     linker::Linker,
     memory::{Memory, MemoryType},
     module::{InstancePre, Module},
     signature::Signature,
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
-    table::Table,
+    table::{Table, TableType},
 };

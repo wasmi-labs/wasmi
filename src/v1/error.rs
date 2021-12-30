@@ -1,7 +1,6 @@
 use super::errors::{
     GlobalError,
     InstantiationError,
-    LimitsError,
     LinkerError,
     MemoryError,
     TableError,
@@ -15,8 +14,6 @@ use core::{fmt, fmt::Display};
 pub enum Error {
     /// A global variable error.
     Global(GlobalError),
-    /// A resizable limits errors.
-    Limits(LimitsError),
     /// A linear memory error.
     Memory(MemoryError),
     /// A table error.
@@ -33,7 +30,6 @@ impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Error::Global(error) => Display::fmt(error, f),
-            Error::Limits(error) => Display::fmt(error, f),
             Error::Memory(error) => Display::fmt(error, f),
             Error::Table(error) => Display::fmt(error, f),
             Error::Linker(error) => Display::fmt(error, f),
@@ -46,12 +42,6 @@ impl Display for Error {
 impl From<GlobalError> for Error {
     fn from(error: GlobalError) -> Self {
         Self::Global(error)
-    }
-}
-
-impl From<LimitsError> for Error {
-    fn from(error: LimitsError) -> Self {
-        Self::Limits(error)
     }
 }
 

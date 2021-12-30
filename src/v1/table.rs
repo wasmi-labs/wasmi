@@ -1,4 +1,4 @@
-use super::{AsContext, AsContextMut, Func, Index, Stored, TableType};
+use super::{AsContext, AsContextMut, Func, Index, Stored};
 use alloc::vec::Vec;
 use core::{fmt, fmt::Display};
 
@@ -60,6 +60,37 @@ impl Display for TableError {
                 )
             }
         }
+    }
+}
+
+/// Memory and table limits.
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct TableType {
+    initial: usize,
+    maximum: Option<usize>,
+}
+
+impl TableType {
+    /// Creates a new resizable limit.
+    ///
+    /// # Panics
+    ///
+    /// - If the `initial` limit is greater than the `maximum` limit if any.
+    pub fn new(initial: usize, maximum: Option<usize>) -> Self {
+        if let Some(maximum) = maximum {
+            assert!(initial <= maximum);
+        }
+        Self { initial, maximum }
+    }
+
+    /// Returns the initial limit.
+    pub fn initial(self) -> usize {
+        self.initial
+    }
+
+    /// Returns the maximum limit if any.
+    pub fn maximum(self) -> Option<usize> {
+        self.maximum
     }
 }
 
