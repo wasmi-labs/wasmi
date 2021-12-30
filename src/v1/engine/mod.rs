@@ -74,7 +74,11 @@ impl Default for Engine {
 
 impl Engine {
     /// Creates a new [`Engine`] with default configuration.
-    pub fn new() -> Self {
+    ///
+    /// # Note
+    ///
+    /// Users should ues [`Engine::default`] to construct a default [`Engine`].
+    fn new() -> Self {
         Self {
             inner: Arc::new(Mutex::new(EngineInner::default())),
         }
