@@ -48,7 +48,7 @@ pub use self::{
     external::Extern,
     func::{Caller, Func},
     global::{Global, Mutability},
-    instance::Instance,
+    instance::{ExportsIter, Instance},
     limits::TableType,
     linker::Linker,
     memory::{Memory, MemoryType},

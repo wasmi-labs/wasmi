@@ -1,12 +1,23 @@
 #![allow(dead_code)] // TODO: remove
 
-use super::{AsContext, Extern, Func, Global, Index, Memory, Signature, Stored, Table};
+use super::{
+    AsContext,
+    Extern,
+    Func,
+    Global,
+    Index,
+    Memory,
+    Signature,
+    StoreContext,
+    Stored,
+    Table,
+};
 use alloc::{
-    collections::BTreeMap,
+    collections::{btree_map, BTreeMap},
     string::{String, ToString},
     vec::Vec,
 };
-use core::ops::Deref;
+use core::{iter::FusedIterator, ops::Deref};
 
 /// A raw index to a module instance entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -97,7 +108,54 @@ impl InstanceEntity {
     pub(crate) fn get_export(&self, name: &str) -> Option<Extern> {
         self.exports.get(name).copied()
     }
+
+    /// Returns an iterator over the exports of the [`Instance`].
+    ///
+    /// The order of the yielded exports is not specified.
+    pub fn exports(&self) -> ExportsIter {
+        ExportsIter::new(self.exports.iter())
+    }
 }
+
+/// An iterator over the [`Extern`] declarations of an [`Instance`].
+#[derive(Debug)]
+pub struct ExportsIter<'a> {
+    iter: btree_map::Iter<'a, String, Extern>,
+}
+
+impl<'a> ExportsIter<'a> {
+    /// Creates a new [`ExportsIter`].
+    fn new(iter: btree_map::Iter<'a, String, Extern>) -> Self {
+        Self { iter }
+    }
+
+    /// Prepares an item to match the expected iterator `Item` signature.
+    fn convert_item((name, export): (&'a String, &'a Extern)) -> (&'a str, &'a Extern) {
+        (name.as_str(), export)
+    }
+}
+
+impl<'a> Iterator for ExportsIter<'a> {
+    type Item = (&'a str, &'a Extern);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(Self::convert_item)
+    }
+}
+
+impl DoubleEndedIterator for ExportsIter<'_> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back().map(Self::convert_item)
+    }
+}
+
+impl ExactSizeIterator for ExportsIter<'_> {
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
+impl FusedIterator for ExportsIter<'_> {}
 
 /// A module instance entitiy builder.
 #[derive(Debug)]
@@ -236,5 +294,12 @@ impl Instance {
             .store
             .resolve_instance(*self)
             .get_export(name)
+    }
+
+    /// Returns an iterator over the exports of the [`Instance`].
+    ///
+    /// The order of the yielded exports is not specified.
+    pub fn exports<'a, T: 'a>(&self, store: impl Into<StoreContext<'a, T>>) -> ExportsIter<'a> {
+        store.into().store.resolve_instance(*self).exports()
     }
 }
