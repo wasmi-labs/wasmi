@@ -1,5 +1,3 @@
-#![allow(dead_code)] // TODO: remove
-
 mod caller;
 mod into_func;
 
@@ -82,30 +80,6 @@ impl<T> FuncEntity<T> {
         match self.as_internal() {
             FuncEntityInternal::Wasm(func) => func.signature(),
             FuncEntityInternal::Host(func) => func.signature(),
-        }
-    }
-
-    /// Returns the associated [`Instance`] of the [`Func`] if any.
-    ///
-    /// # Note
-    ///
-    /// All Wasm functions have an associated [`Instance`].
-    pub(crate) fn instance(&self) -> Option<Instance> {
-        match self.as_internal() {
-            FuncEntityInternal::Wasm(func) => func.instance().into(),
-            FuncEntityInternal::Host(_) => None,
-        }
-    }
-
-    /// Returns the associated Wasm function body of the [`Func`] if any.
-    ///
-    /// # Note
-    ///
-    /// All Wasm functions have an associated Wasm function body.
-    pub(crate) fn func_body(&self) -> Option<FuncBody> {
-        match self.as_internal() {
-            FuncEntityInternal::Wasm(func) => func.func_body().into(),
-            FuncEntityInternal::Host(_) => None,
         }
     }
 }
