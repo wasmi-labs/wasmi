@@ -1,6 +1,7 @@
 use super::{
     super::{Global, Memory, Table},
-    bytecode::{BrTable, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, VisitInstruction},
+    bytecode::{BrTable, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx},
+    VisitInstruction,
     AsContextMut,
     CallStack,
     DropKeep,

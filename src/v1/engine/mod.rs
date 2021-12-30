@@ -15,10 +15,9 @@ pub use self::{
     code_map::FuncBody,
     inst_builder::{InstructionIdx, InstructionsBuilder, LabelIdx, Reloc},
 };
-#[allow(unused_imports)]
 use self::{
     bytecode::{Instruction, VisitInstruction},
-    call_stack::{CallStack, CallStackError, FunctionFrame},
+    call_stack::{CallStack, FunctionFrame},
     code_map::{CodeMap, ResolvedFuncBody},
     value_stack::{FromStackEntry, StackEntry, ValueStack},
 };
