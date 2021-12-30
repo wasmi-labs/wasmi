@@ -175,6 +175,10 @@ impl Table {
     }
 
     /// Returns the type and limits of the table.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Table`].
     pub fn table_type(&self, ctx: impl AsContext) -> TableType {
         ctx.as_context().store.resolve_table(*self).table_type()
     }
@@ -185,6 +189,10 @@ impl Table {
     ///
     /// The returned length must be valid within the
     /// resizable limits of the table entity.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Table`].
     pub fn len(&self, ctx: impl AsContext) -> usize {
         ctx.as_context().store.resolve_table(*self).len()
     }
@@ -198,6 +206,10 @@ impl Table {
     /// # Errors
     ///
     /// If the table is grown beyond its maximum limits.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Table`].
     pub fn grow(&self, mut ctx: impl AsContextMut, grow_by: usize) -> Result<(), TableError> {
         ctx.as_context_mut()
             .store
@@ -210,6 +222,10 @@ impl Table {
     /// # Errors
     ///
     /// If the accesses element is out of bounds of the table.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Table`].
     pub fn get(&self, ctx: impl AsContext, offset: usize) -> Result<Option<Func>, TableError> {
         ctx.as_context().store.resolve_table(*self).get(offset)
     }
@@ -219,6 +235,10 @@ impl Table {
     /// # Errors
     ///
     /// If the accesses element is out of bounds of the table.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Table`].
     pub fn set(
         &self,
         mut ctx: impl AsContextMut,
