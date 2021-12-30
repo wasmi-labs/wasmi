@@ -63,15 +63,17 @@ impl Display for TableError {
     }
 }
 
-/// Memory and table limits.
+/// A descriptor for a [`Table`] instance.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct TableType {
+    /// The initial size of the [`Table`].
     initial: usize,
+    /// The optional maximum size fo the [`Table`].
     maximum: Option<usize>,
 }
 
 impl TableType {
-    /// Creates a new resizable limit.
+    /// Creates a new [`TableType`].
     ///
     /// # Panics
     ///
@@ -83,12 +85,12 @@ impl TableType {
         Self { initial, maximum }
     }
 
-    /// Returns the initial limit.
+    /// Returns the initial size.
     pub fn initial(self) -> usize {
         self.initial
     }
 
-    /// Returns the maximum limit if any.
+    /// Returns the maximum size if any.
     pub fn maximum(self) -> Option<usize> {
         self.maximum
     }
