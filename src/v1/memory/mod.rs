@@ -241,11 +241,19 @@ impl Memory {
     }
 
     /// Returns the memory type of the linear memory.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Memory`].
     pub fn memory_type(&self, ctx: impl AsContext) -> MemoryType {
         ctx.as_context().store.resolve_memory(*self).memory_type()
     }
 
     /// Returns the amount of pages in use by the linear memory.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Memory`].
     pub fn current_pages(&self, ctx: impl AsContext) -> Pages {
         ctx.as_context().store.resolve_memory(*self).current_pages()
     }
@@ -258,6 +266,10 @@ impl Memory {
     ///
     /// If the linear memory would grow beyond its maximum limit after
     /// the grow operation.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Memory`].
     pub fn grow(
         &self,
         mut ctx: impl AsContextMut,
@@ -270,11 +282,19 @@ impl Memory {
     }
 
     /// Returns a shared slice to the bytes underlying to the byte buffer.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Memory`].
     pub fn data<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a [u8] {
         ctx.into().store.resolve_memory(*self).data()
     }
 
     /// Returns an exclusive slice to the bytes underlying to the byte buffer.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Memory`].
     pub fn data_mut<'a, T: 'a>(&self, ctx: impl Into<StoreContextMut<'a, T>>) -> &'a mut [u8] {
         ctx.into().store.resolve_memory_mut(*self).data_mut()
     }
@@ -285,6 +305,10 @@ impl Memory {
     /// # Errors
     ///
     /// If this operation accesses out of bounds linear memory.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Memory`].
     pub fn read(
         &self,
         ctx: impl AsContext,
@@ -303,6 +327,10 @@ impl Memory {
     /// # Errors
     ///
     /// If this operation accesses out of bounds linear memory.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Memory`].
     pub fn write(
         &self,
         mut ctx: impl AsContextMut,
