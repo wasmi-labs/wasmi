@@ -144,11 +144,19 @@ impl Global {
     }
 
     /// Returns `true` if the global variable is mutable.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Global`].
     pub fn is_mutable(&self, ctx: impl AsContext) -> bool {
         ctx.as_context().store.resolve_global(*self).is_mutable()
     }
 
     /// Returns the type of the global variable value.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Global`].
     pub fn value_type(&self, ctx: impl AsContext) -> ValueType {
         ctx.as_context().store.resolve_global(*self).value_type()
     }
@@ -159,6 +167,10 @@ impl Global {
     ///
     /// - If the global variable is immutable.
     /// - If there is a type mismatch between the global variable and the new value.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Global`].
     pub fn set(
         &self,
         mut ctx: impl AsContextMut,
@@ -171,6 +183,10 @@ impl Global {
     }
 
     /// Returns the current value of the global variable.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Global`].
     pub fn get(&self, ctx: impl AsContext) -> RuntimeValue {
         ctx.as_context().store.resolve_global(*self).get()
     }
