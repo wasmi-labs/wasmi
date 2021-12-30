@@ -9,7 +9,6 @@ pub mod exec_context;
 pub mod inst_builder;
 pub mod value_stack;
 
-use self::exec_context::ExecutionContext;
 pub use self::{
     bytecode::{DropKeep, Target},
     code_map::FuncBody,
@@ -19,6 +18,7 @@ use self::{
     bytecode::{Instruction, VisitInstruction},
     call_stack::{CallStack, FunctionFrame},
     code_map::{CodeMap, ResolvedFuncBody},
+    exec_context::ExecutionContext,
     value_stack::{FromStackEntry, StackEntry, ValueStack},
 };
 use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func, Signature};
