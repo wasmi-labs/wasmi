@@ -1,4 +1,4 @@
-use super::{error::TestError, TestContext, TestDescriptor};
+use super::{TestContext, TestDescriptor};
 use anyhow::Result;
 use wasmi::{
     nan_preserving_float::{F32, F64},
@@ -160,10 +160,7 @@ fn execute_wast_execute(
     }
 }
 
-fn execute_wast_invoke(
-    context: &mut TestContext,
-    invoke: WastInvoke,
-) -> Result<Vec<RuntimeValue>, TestError> {
+fn execute_wast_invoke(context: &mut TestContext, invoke: WastInvoke) -> Result<Vec<RuntimeValue>> {
     let module_name = invoke.module.map(|id| id.name());
     let field_name = invoke.name;
     let mut args = <Vec<RuntimeValue>>::new();
@@ -189,4 +186,5 @@ fn execute_wast_invoke(
     context
         .invoke(module_name, field_name, &args)
         .map(|results| results.to_vec())
+        .map_err(Into::into)
 }
