@@ -188,4 +188,28 @@ impl TestContext {
         func.call(&mut self.store, args, &mut self.results)?;
         Ok(&self.results)
     }
+
+    /// Returns the current value of the [`Global`] identifier by the given `module_name` and `global_name`.
+    ///
+    /// # Errors
+    ///
+    /// - If no module instances can be found.
+    /// - If no global variable identifier with `global_name` can be found.
+    pub fn get_global(
+        &self,
+        module_name: Option<Id>,
+        global_name: &str,
+    ) -> Result<RuntimeValue, TestError> {
+        let module_name = module_name.map(|id| id.name());
+        let instance = self.instance_by_name_or_last(module_name)?;
+        let global = instance
+            .get_export(&self.store, global_name)
+            .and_then(Extern::into_global)
+            .ok_or_else(|| TestError::GlobalNotFound {
+                module_name: module_name.map(|name| name.to_string()),
+                global_name: global_name.to_string(),
+            })?;
+        let value = global.get(&self.store);
+        Ok(value)
+    }
 }
