@@ -398,12 +398,12 @@ impl InstructionsBuilder {
 
     /// Creates an instruction equivalent to `memory.size` from Wasm.
     pub fn memory_size(&mut self) -> InstructionIdx {
-        self.push_inst(Instruction::GrowMemory)
+        self.push_inst(Instruction::CurrentMemory)
     }
 
     /// Creates an instruction equivalent to `memory.grow` from Wasm.
     pub fn memory_grow(&mut self) -> InstructionIdx {
-        self.push_inst(Instruction::CurrentMemory)
+        self.push_inst(Instruction::GrowMemory)
     }
 
     /// Creates an instruction equivalent to one of the following Wasm instructins:
