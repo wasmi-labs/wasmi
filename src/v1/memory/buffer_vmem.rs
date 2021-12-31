@@ -55,9 +55,7 @@ impl VirtualMemory {
     /// - If `len` should be greater than 0.
     /// - If the operating system returns an error upon virtual memory allocation.
     pub fn new(len: usize) -> Result<Self, MemoryError> {
-        if len == 0 {
-            return Err(MemoryError::ZeroLengthVirtualMemory);
-        }
+        assert_ne!(len, 0, "cannot allocate empty virtual memory");
         if len > max_memory_len() {
             return Err(MemoryError::OutOfBoundsAllocation);
         }

@@ -32,9 +32,6 @@ impl ByteBuffer {
     /// - If the initial length is 0.
     /// - If the initial length exceeds the maximum supported limit.
     pub fn new(initial_len: usize) -> Result<Self, MemoryError> {
-        if initial_len == 0 {
-            return Err(MemoryError::ZeroLengthVirtualMemory);
-        }
         if initial_len > max_memory_len() {
             return Err(MemoryError::OutOfBoundsAllocation);
         }

@@ -29,8 +29,6 @@ impl Index for MemoryIdx {
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum MemoryError {
-    /// Tried to allocate a virtual memory with zero length.
-    ZeroLengthVirtualMemory,
     /// Tried to allocate more virtual memory than technically possible.
     OutOfBoundsAllocation,
     /// Tried to grow linear memory out of its set bounds.
@@ -44,9 +42,6 @@ pub enum MemoryError {
 impl Display for MemoryError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            MemoryError::ZeroLengthVirtualMemory => {
-                write!(f, "tried to allocate zero length virtual memory")
-            }
             MemoryError::OutOfBoundsAllocation => {
                 write!(f, "tried to allocate too much virtual memory")
             }
