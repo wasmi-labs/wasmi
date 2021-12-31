@@ -1,8 +1,15 @@
+mod context;
 mod descriptor;
+mod error;
 mod profile;
 mod run;
 
-use self::{descriptor::TestDescriptor, profile::TestProfile};
+use self::{
+    context::TestContext,
+    descriptor::TestDescriptor,
+    error::TestError,
+    profile::TestProfile,
+};
 use anyhow::Result;
 
 macro_rules! run_test {
