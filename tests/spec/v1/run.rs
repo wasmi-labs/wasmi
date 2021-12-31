@@ -1,27 +1,6 @@
-#![allow(unused)]
-
-use super::{TestContext, TestDescriptor, TestProfile};
+use super::{TestContext, TestDescriptor};
 use anyhow::Result;
-use std::{collections::HashMap, error::Error, fmt, fmt::Display, fs};
-use wasmi::{
-    nan_preserving_float::{F32, F64},
-    v1::{
-        Engine,
-        Func,
-        Global,
-        Instance,
-        Linker,
-        Memory,
-        MemoryType,
-        Module,
-        Mutability,
-        Store,
-        Table,
-        TableType,
-    },
-    RuntimeValue,
-};
-use wast::{parser::ParseBuffer, Id, Wast, WastDirective};
+use wast::{parser::ParseBuffer, Wast, WastDirective};
 
 /// Runs the Wasm test spec identified by the given name.
 pub fn run_wasm_spec_test(name: &str) -> Result<()> {
@@ -60,61 +39,60 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                 test_context.compile_and_instantiate(module.id, &wasm_bytes)?;
                 test_context.profile().bump_module();
             }
-            WastDirective::QuoteModule { span, source } => {
+            WastDirective::QuoteModule { span: _, source: _ } => {
                 test_context.profile().bump_quote_module();
             }
             WastDirective::AssertMalformed {
-                span,
-                module,
-                message,
+                span: _,
+                module: _,
+                message: _,
             } => {
                 test_context.profile().bump_assert_malformed();
             }
             WastDirective::AssertInvalid {
-                span,
-                module,
-                message,
+                span: _,
+                module: _,
+                message: _,
             } => {
                 test_context.profile().bump_assert_invalid();
             }
-            WastDirective::Register { span, name, module } => {
+            WastDirective::Register { span: _, name: _, module: _ } => {
                 test_context.profile().bump_register();
             }
             WastDirective::Invoke(_wast_invoke) => {
                 test_context.profile().bump_invoke();
             }
             WastDirective::AssertTrap {
-                span,
-                exec,
-                message,
+                span: _,
+                exec: _,
+                message: _,
             } => {
                 test_context.profile().bump_assert_trap();
             }
             WastDirective::AssertReturn {
-                span,
-                exec,
-                results,
+                span: _,
+                exec: _,
+                results: _,
             } => {
                 test_context.profile().bump_assert_return();
             }
             WastDirective::AssertExhaustion {
-                span,
-                call,
-                message,
+                span: _,
+                call: _,
+                message: _,
             } => {
                 test_context.profile().bump_assert_exhaustion();
             }
             WastDirective::AssertUnlinkable {
-                span,
-                module,
-                message,
+                span: _,
+                module: _,
+                message: _,
             } => {
                 test_context.profile().bump_assert_unlinkable();
             }
-            WastDirective::AssertException { span, exec } => {
+            WastDirective::AssertException { span: _, exec: _ } => {
                 test_context.profile().bump_assert_exception();
             }
-            _unknown => panic!("encountered unknown `.wast` directive"),
         }
     }
     Ok(())
