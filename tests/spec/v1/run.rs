@@ -1,7 +1,7 @@
 #![allow(unused)]
 
 use anyhow::Result;
-use std::fs;
+use std::{collections::HashMap, error::Error, fmt, fmt::Display, fs};
 use wasmi::{
     nan_preserving_float::{F32, F64},
     v1::{
@@ -20,7 +20,7 @@ use wasmi::{
     },
     RuntimeValue,
 };
-use wast::{parser::ParseBuffer, Wast, WastDirective};
+use wast::{parser::ParseBuffer, Id, Wast, WastDirective};
 
 /// The desciptor of a Wasm spec test suite run.
 #[derive(Debug)]
@@ -74,11 +74,33 @@ pub struct TestContext {
     /// The list of all encountered Wasm modules belonging to the test.
     modules: Vec<Module>,
     /// The list of all instantiated modules.
-    instances: Vec<Instance>,
+    instances: HashMap<String, Instance>,
     /// The last touched module instance.
     last_instance: Option<Instance>,
     /// Profiling during the Wasm spec test run.
     profile: TestProfile,
+}
+
+/// Errors that may occur upon Wasm spec test suite execution.
+#[derive(Debug)]
+pub enum TestError {
+    InstanceNotRegistered(String),
+    NoModuleInstancesFound,
+}
+
+impl Error for TestError {}
+
+impl fmt::Display for TestError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InstanceNotRegistered(name) => {
+                write!(f, "missing module instance with name: {}", name)
+            }
+            Self::NoModuleInstancesFound => {
+                write!(f, "found no module instances registered so far")
+            }
+        }
+    }
 }
 
 impl Default for TestContext {
@@ -121,7 +143,7 @@ impl Default for TestContext {
             linker,
             store,
             modules: Vec::new(),
-            instances: Vec::new(),
+            instances: HashMap::new(),
             last_instance: None,
             profile: TestProfile::default(),
         }
@@ -139,14 +161,45 @@ impl TestContext {
     /// # Errors
     ///
     /// If creating the [`Module`] fails.
-    pub fn compile_and_instantiate(&mut self, wasm: impl AsRef<[u8]>) -> Result<Instance> {
+    pub fn compile_and_instantiate(
+        &mut self,
+        id: Option<Id>,
+        wasm: impl AsRef<[u8]>,
+    ) -> Result<Instance> {
         let module = Module::new(self.engine(), wasm.as_ref())?;
         let instance_pre = self.linker.instantiate(&mut self.store, &module)?;
         let instance = instance_pre.ensure_no_start_fn(&mut self.store)?;
         self.modules.push(module);
-        self.instances.push(instance);
+        if let Some(name) = id.map(|id| id.name()) {
+            self.instances.insert(name.to_string(), instance);
+        }
         self.last_instance = Some(instance);
         Ok(instance)
+    }
+
+    /// Loads the Wasm module instance with the given name.
+    ///
+    /// # Errors
+    ///
+    /// If there is no registered module instance with the given name.
+    pub fn instance_by_name(&self, name: &str) -> Result<Instance, TestError> {
+        self.instances
+            .get(name)
+            .copied()
+            .ok_or_else(|| TestError::InstanceNotRegistered(name.to_owned()))
+    }
+
+    /// Loads the Wasm module instance with the given name or the last instantiated one.
+    ///
+    /// # Errors
+    ///
+    /// If there have been no Wasm module instances registered so far.
+    pub fn instance_by_name_or_last(&self, name: Option<&str>) -> Result<Instance, TestError> {
+        name.map(|name| self.instance_by_name(name))
+            .unwrap_or_else(|| {
+                self.last_instance
+                    .ok_or_else(|| TestError::NoModuleInstancesFound)
+            })
     }
 }
 
@@ -211,7 +264,7 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
         match directive {
             WastDirective::Module(mut module) => {
                 let wasm_bytes = module.encode()?;
-                test_context.compile_and_instantiate(&wasm_bytes)?;
+                test_context.compile_and_instantiate(module.id, &wasm_bytes)?;
                 test_context.profile.module += 1;
             }
             WastDirective::QuoteModule { span, source } => {
