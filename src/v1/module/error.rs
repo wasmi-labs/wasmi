@@ -10,6 +10,9 @@ pub enum TranslationError {
     Compilation(pwasm::Error),
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for TranslationError {}
+
 impl Display for TranslationError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {

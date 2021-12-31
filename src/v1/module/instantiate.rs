@@ -100,6 +100,9 @@ pub enum InstantiationError {
     },
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for InstantiationError {}
+
 impl Display for InstantiationError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
