@@ -74,6 +74,9 @@ pub enum LinkerError {
     },
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for LinkerError {}
+
 impl Display for LinkerError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
