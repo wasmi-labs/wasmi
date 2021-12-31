@@ -1,10 +1,19 @@
 use std::{error::Error, fmt, fmt::Display};
 
+use wasmi::Trap;
+
 /// Errors that may occur upon Wasm spec test suite execution.
 #[derive(Debug)]
 pub enum TestError {
-    InstanceNotRegistered { name: String },
+    Trap(Trap),
+    InstanceNotRegistered {
+        name: String,
+    },
     NoModuleInstancesFound,
+    FuncNotFound {
+        module_name: Option<String>,
+        field_name: String,
+    },
 }
 
 impl Error for TestError {}
@@ -18,6 +27,23 @@ impl Display for TestError {
             Self::NoModuleInstancesFound => {
                 write!(f, "found no module instances registered so far")
             }
+            Self::FuncNotFound {
+                module_name,
+                field_name,
+            } => {
+                write!(
+                    f,
+                    "missing func instance exported as: {:?}::{}",
+                    module_name, field_name
+                )
+            }
+            Self::Trap(trap) => Display::fmt(trap, f),
         }
+    }
+}
+
+impl From<Trap> for TestError {
+    fn from(error: Trap) -> Self {
+        Self::Trap(error)
     }
 }
