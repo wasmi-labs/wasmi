@@ -208,6 +208,10 @@ impl EngineInner {
     ) -> Result<(), Trap> {
         self.value_stack.clear();
         self.call_stack.clear();
+        // TODO: calculate proper stack heights per function
+        //
+        // The current solution is a work around, not scalable, wasteful and bug prone.
+        self.value_stack.reserve(100);
         Self::check_signature(ctx.as_context(), signature, args, results)?;
         self.initialize_args(args);
         let frame = FunctionFrame::new(ctx.as_context(), func);
