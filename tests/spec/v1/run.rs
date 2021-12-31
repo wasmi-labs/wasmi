@@ -255,6 +255,7 @@ pub fn run_wasm_spec_test(name: &str) -> Result<()> {
     };
 
     execute_directives(wast, &mut context)?;
+    println!("profiles: {:?}", context.profile);
     Ok(())
 }
 
