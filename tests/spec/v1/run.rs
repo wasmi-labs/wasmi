@@ -45,7 +45,7 @@ pub struct TestContext {
 /// Errors that may occur upon Wasm spec test suite execution.
 #[derive(Debug)]
 pub enum TestError {
-    InstanceNotRegistered(String),
+    InstanceNotRegistered { name: String },
     NoModuleInstancesFound,
 }
 
@@ -54,7 +54,7 @@ impl Error for TestError {}
 impl fmt::Display for TestError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InstanceNotRegistered(name) => {
+            Self::InstanceNotRegistered { name } => {
                 write!(f, "missing module instance with name: {}", name)
             }
             Self::NoModuleInstancesFound => {
@@ -147,7 +147,9 @@ impl TestContext {
         self.instances
             .get(name)
             .copied()
-            .ok_or_else(|| TestError::InstanceNotRegistered(name.to_owned()))
+            .ok_or_else(|| TestError::InstanceNotRegistered {
+                name: name.to_owned(),
+            })
     }
 
     /// Loads the Wasm module instance with the given name or the last instantiated one.
