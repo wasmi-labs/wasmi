@@ -28,7 +28,7 @@ use super::{
     },
     Module,
 };
-use crate::{RuntimeValue, ValueType};
+use crate::{RuntimeValue, Trap, ValueType};
 use core::{fmt, fmt::Display};
 use memory_units::wasm32::Pages;
 use parity_wasm::elements as pwasm;
@@ -98,6 +98,8 @@ pub enum InstantiationError {
         /// The index of the found `start` function.
         index: u32,
     },
+    /// Encountered when the `start` function trapped.
+    Trap(Trap),
 }
 
 #[cfg(feature = "std")]
@@ -159,7 +161,18 @@ impl Display for InstantiationError {
             Self::FoundStartFn { index } => {
                 write!(f, "found an unexpected start function with index {}", index)
             }
+            Self::Trap(trap) => write!(
+                f,
+                "encountered a trap while running `start` function: {}",
+                trap
+            ),
         }
+    }
+}
+
+impl From<Trap> for InstantiationError {
+    fn from(trap: Trap) -> Self {
+        InstantiationError::Trap(trap)
     }
 }
 
@@ -188,6 +201,40 @@ impl<'a> InstancePre<'a> {
     /// Returns `None` if the [`Module`] does not have a `start` function.
     fn start_fn(&self) -> Option<u32> {
         self.module.module.start_section()
+    }
+
+    /// Runs the `start` function of the [`Instance`] and returns its handle.
+    ///
+    /// # Note
+    ///
+    /// This finishes the instantiation procedure.
+    ///
+    /// # Errors
+    ///
+    /// If executing the `start` function traps.
+    ///
+    /// # Panics
+    ///
+    /// If the `start` function is invalid albeit successful validation.
+    pub fn start(self, mut context: impl AsContextMut) -> Result<Instance, InstantiationError> {
+        if let Some(start_index) = self.start_fn() {
+            println!("executing start {} ...", start_index);
+            let start_func = self
+                .handle
+                .get_func(context.as_context(), start_index)
+                .unwrap_or_else(|| {
+                    panic!(
+                        "encountered invalid start function after validation: {}",
+                        start_index
+                    )
+                });
+            start_func.call(context.as_context_mut(), &[], &mut [])?
+        }
+        context
+            .as_context_mut()
+            .store
+            .initialize_instance(self.handle, self.builder.finish());
+        Ok(self.handle)
     }
 
     /// Finishes instantiation ensuring that no `start` function exists.
