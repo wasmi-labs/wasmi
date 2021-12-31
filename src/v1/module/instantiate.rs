@@ -241,7 +241,7 @@ impl<'a> InstancePre<'a> {
     /// # Errors
     ///
     /// If a `start` function exists that needs to be called for conformant module instantiation.
-    pub fn ensure_no_start_fn(
+    pub fn ensure_no_start(
         self,
         mut context: impl AsContextMut,
     ) -> Result<Instance, InstantiationError> {
