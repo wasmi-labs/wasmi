@@ -12,7 +12,7 @@ pub enum TestError {
     NoModuleInstancesFound,
     FuncNotFound {
         module_name: Option<String>,
-        field_name: String,
+        func_name: String,
     },
 }
 
@@ -29,12 +29,12 @@ impl Display for TestError {
             }
             Self::FuncNotFound {
                 module_name,
-                field_name,
+                func_name,
             } => {
                 write!(
                     f,
-                    "missing func instance exported as: {:?}::{}",
-                    module_name, field_name
+                    "missing func exported as: {:?}::{}",
+                    module_name, func_name
                 )
             }
             Self::Trap(trap) => Display::fmt(trap, f),
