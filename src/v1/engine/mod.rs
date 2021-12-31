@@ -215,7 +215,8 @@ impl EngineInner {
             .push(frame)
             .map_err(|_error| Trap::from(TrapKind::StackOverflow))?;
         self.execute_until_done(ctx.as_context_mut())?;
-        self.write_results_back(results)?;
+        let result_types = signature.outputs(&ctx);
+        self.write_results_back(result_types, results)?;
         Ok(())
     }
 
@@ -228,13 +229,20 @@ impl EngineInner {
     /// # Errors
     ///
     /// - If the `results` buffer length does not match the remaining amount of stack values.
-    fn write_results_back(&mut self, results: &mut [RuntimeValue]) -> Result<(), Trap> {
-        if self.value_stack.len() != results.len() {
+    fn write_results_back(
+        &mut self,
+        result_types: &[ValueType],
+        results: &mut [RuntimeValue],
+    ) -> Result<(), Trap> {
+        if self.value_stack.len() != results.len() || results.len() != result_types.len() {
             // The remaining stack values must match the expected results.
             return Err(Trap::from(TrapKind::UnexpectedSignature));
         }
-        for (result, value) in results.iter_mut().zip(self.value_stack.drain()) {
-            *result = value.with_type(result.value_type());
+        for (result, (value, value_type)) in results
+            .iter_mut()
+            .zip(self.value_stack.drain().zip(result_types))
+        {
+            *result = value.with_type(*value_type);
         }
         Ok(())
     }
