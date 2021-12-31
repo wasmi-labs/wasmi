@@ -1,10 +1,11 @@
-use super::{TestContext, TestDescriptor};
+use super::{error::TestError, TestContext, TestDescriptor};
 use anyhow::Result;
+use wabt::wat2wasm;
 use wasmi::{
     nan_preserving_float::{F32, F64},
     RuntimeValue,
 };
-use wast::{parser::ParseBuffer, Wast, WastDirective, WastInvoke};
+use wast::{parser::ParseBuffer, QuoteModule, Wast, WastDirective, WastExecute, WastInvoke};
 
 /// Runs the Wasm test spec identified by the given name.
 pub fn run_wasm_spec_test(name: &str) -> Result<()> {
@@ -35,30 +36,40 @@ pub fn run_wasm_spec_test(name: &str) -> Result<()> {
 }
 
 fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> {
-    for directive in wast.directives {
+    'outer: for directive in wast.directives {
         test_context.profile().bump_directives();
         match directive {
             WastDirective::Module(mut module) => {
-                let wasm_bytes = module.encode()?;
-                test_context.compile_and_instantiate(module.id, &wasm_bytes)?;
+                test_context.compile_and_instantiate(module)?;
                 test_context.profile().bump_module();
             }
-            WastDirective::QuoteModule { span: _, source: _ } => {
+            WastDirective::QuoteModule { span: _, source } => {
                 test_context.profile().bump_quote_module();
+                println!("WastDirective::QuoteModule = {:#?}", source);
             }
             WastDirective::AssertMalformed {
                 span: _,
-                module: _,
-                message: _,
+                module,
+                message,
             } => {
                 test_context.profile().bump_assert_malformed();
+                let module = match extract_module(module) {
+                    Some(module) => module,
+                    None => continue 'outer,
+                };
+                module_compilation_fails(test_context, module, message);
             }
             WastDirective::AssertInvalid {
                 span: _,
-                module: _,
-                message: _,
+                module,
+                message,
             } => {
                 test_context.profile().bump_assert_invalid();
+                let module = match extract_module(module) {
+                    Some(module) => module,
+                    None => continue 'outer,
+                };
+                module_compilation_fails(test_context, module, message);
             }
             WastDirective::Register {
                 span: _,
@@ -69,7 +80,8 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
             }
             WastDirective::Invoke(wast_invoke) => {
                 test_context.profile().bump_invoke();
-                execute_invoke(test_context, wast_invoke)
+                let result = execute_wast_invoke(test_context, wast_invoke);
+                assert!(result.is_ok());
             }
             WastDirective::AssertTrap {
                 span: _,
@@ -94,10 +106,11 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
             }
             WastDirective::AssertUnlinkable {
                 span: _,
-                module: _,
-                message: _,
+                module,
+                message,
             } => {
                 test_context.profile().bump_assert_unlinkable();
+                module_compilation_fails(test_context, module, message);
             }
             WastDirective::AssertException { span: _, exec: _ } => {
                 test_context.profile().bump_assert_exception();
@@ -107,7 +120,51 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
     Ok(())
 }
 
-fn execute_invoke(context: &mut TestContext, invoke: WastInvoke) {
+fn extract_module(quoted_module: QuoteModule) -> Option<wast::Module> {
+    match quoted_module {
+        QuoteModule::Module(module) => Some(module),
+        QuoteModule::Quote(wat_lines) => {
+            // We currently do not allow parsing `.wat` Wasm modules in `v1`
+            // therefore checks based on malformed `.wat` modules are uninteresting
+            // to us at the moment.
+            // This might become interesting once `v1` starts support parsing `.wat`
+            // Wasm modules.
+            None
+        }
+    }
+}
+
+fn module_compilation_fails(
+    context: &mut TestContext,
+    mut module: wast::Module,
+    expected_message: &str,
+) {
+    let result = context.compile_and_instantiate(module);
+    assert!(
+        result.is_err(),
+        "succeeded to instantiate module but should have failed with: {}",
+        expected_message
+    );
+}
+
+fn execute_wast_execute(
+    context: &mut TestContext,
+    execute: WastExecute,
+) -> Result<Vec<RuntimeValue>> {
+    match execute {
+        WastExecute::Invoke(invoke) => execute_wast_invoke(context, invoke).map_err(Into::into),
+        WastExecute::Module(module) => context.compile_and_instantiate(module).map(|_| Vec::new()),
+        WastExecute::Get { module, global } => context
+            .get_global(module, global)
+            .map(|result| vec![result])
+            .map_err(Into::into),
+    }
+}
+
+fn execute_wast_invoke(
+    context: &mut TestContext,
+    invoke: WastInvoke,
+) -> Result<Vec<RuntimeValue>, TestError> {
     let module_name = invoke.module.map(|id| id.name());
     let field_name = invoke.name;
     let mut args = <Vec<RuntimeValue>>::new();
@@ -132,10 +189,5 @@ fn execute_invoke(context: &mut TestContext, invoke: WastInvoke) {
     }
     context
         .invoke(module_name, field_name, &args)
-        .unwrap_or_else(|error| {
-            panic!(
-                "expected invoke to run successfully but encountered error: {}",
-                error
-            )
-        });
+        .map(|results| results.to_vec())
 }
