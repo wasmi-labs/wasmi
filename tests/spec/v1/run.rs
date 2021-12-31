@@ -4,7 +4,16 @@ use wasmi::{
     nan_preserving_float::{F32, F64},
     RuntimeValue,
 };
-use wast::{parser::ParseBuffer, QuoteModule, Wast, WastDirective, WastExecute, WastInvoke};
+use wast::{
+    parser::ParseBuffer,
+    AssertExpression,
+    NanPattern,
+    QuoteModule,
+    Wast,
+    WastDirective,
+    WastExecute,
+    WastInvoke,
+};
 
 /// Runs the Wasm test spec identified by the given name.
 pub fn run_wasm_spec_test(name: &str) -> Result<()> {
@@ -42,9 +51,11 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                 test_context.compile_and_instantiate(module)?;
                 test_context.profile().bump_module();
             }
-            WastDirective::QuoteModule { span: _, source } => {
+            WastDirective::QuoteModule { span: _, source: _ } => {
                 test_context.profile().bump_quote_module();
-                println!("WastDirective::QuoteModule = {:#?}", source);
+                // We are currently not interested in parsing `.wat` files,
+                // therefore we silently ignore this case for now.
+                continue 'outer;
             }
             WastDirective::AssertMalformed {
                 span: _,
@@ -84,24 +95,53 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
             }
             WastDirective::AssertTrap {
                 span: _,
-                exec: _,
-                message: _,
+                exec,
+                message,
             } => {
                 test_context.profile().bump_assert_trap();
+                match execute_wast_execute(test_context, exec) {
+                    Ok(results) => panic!(
+                        "expected to trap with message '{}' but succeeded with: {:?}",
+                        message, results
+                    ),
+                    Err(_) => {
+                        // TODO: ideally we check if the error is caused by a trap.
+                    }
+                }
             }
             WastDirective::AssertReturn {
                 span: _,
-                exec: _,
-                results: _,
+                exec,
+                results,
             } => {
                 test_context.profile().bump_assert_return();
+                let expected = extract_assert_expression(&results);
+                let results = execute_wast_execute(test_context, exec).unwrap_or_else(|error| {
+                    panic!(
+                        "encountered unexpected failure to execute `AssertReturn`: {}",
+                        error
+                    )
+                });
+                assert_eq!(results, expected);
             }
             WastDirective::AssertExhaustion {
                 span: _,
-                call: _,
-                message: _,
+                call,
+                message,
             } => {
                 test_context.profile().bump_assert_exhaustion();
+                match execute_wast_invoke(test_context, call) {
+                    Ok(results) => {
+                        panic!(
+                            "expected to fail due to resource exhaustion '{}' but succeeded with: {:?}",
+                            message,
+                            results
+                        )
+                    }
+                    Err(_) => {
+                        // TODO: ideally we check that the error was caused by a resource exhaustion
+                    }
+                }
             }
             WastDirective::AssertUnlinkable {
                 span: _,
@@ -111,12 +151,49 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                 test_context.profile().bump_assert_unlinkable();
                 module_compilation_fails(test_context, module, message);
             }
-            WastDirective::AssertException { span: _, exec: _ } => {
+            WastDirective::AssertException { span: _, exec } => {
                 test_context.profile().bump_assert_exception();
+                match execute_wast_execute(test_context, exec) {
+                    Ok(results) => panic!(
+                        "expected to fail due to exception but succeeded with: {:?}",
+                        results
+                    ),
+                    Err(_) => {}
+                }
             }
         }
     }
     Ok(())
+}
+
+fn extract_assert_expression(assert_expr: &[AssertExpression]) -> Vec<RuntimeValue> {
+    let mut result = Vec::new();
+    for expr in assert_expr {
+        let extracted = match expr {
+            AssertExpression::I32(value) => RuntimeValue::I32(*value),
+            AssertExpression::I64(value) => RuntimeValue::I64(*value),
+            AssertExpression::F32(NanPattern::CanonicalNan)
+            | AssertExpression::F32(NanPattern::ArithmeticNan) => {
+                RuntimeValue::F32(F32::from_bits(f32::NAN.to_bits()))
+            }
+            AssertExpression::F32(NanPattern::Value(value)) => {
+                RuntimeValue::F32(F32::from_bits(value.bits))
+            }
+            AssertExpression::F64(NanPattern::CanonicalNan)
+            | AssertExpression::F64(NanPattern::ArithmeticNan) => {
+                RuntimeValue::F64(F64::from_bits(f64::NAN.to_bits()))
+            }
+            AssertExpression::F64(NanPattern::Value(value)) => {
+                RuntimeValue::F64(F64::from_bits(value.bits))
+            }
+            unsupported => panic!(
+                "encountered unsupported assert expression: {:?}",
+                unsupported
+            ),
+        };
+        result.push(extracted);
+    }
+    result
 }
 
 fn extract_module(quoted_module: QuoteModule) -> Option<wast::Module> {
