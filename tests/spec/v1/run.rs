@@ -1,6 +1,10 @@
 use super::{TestContext, TestDescriptor};
 use anyhow::Result;
-use wast::{parser::ParseBuffer, Wast, WastDirective};
+use wasmi::{
+    nan_preserving_float::{F32, F64},
+    RuntimeValue,
+};
+use wast::{parser::ParseBuffer, Wast, WastDirective, WastInvoke};
 
 /// Runs the Wasm test spec identified by the given name.
 pub fn run_wasm_spec_test(name: &str) -> Result<()> {
@@ -63,8 +67,9 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
             } => {
                 test_context.profile().bump_register();
             }
-            WastDirective::Invoke(_wast_invoke) => {
+            WastDirective::Invoke(wast_invoke) => {
                 test_context.profile().bump_invoke();
+                execute_invoke(test_context, wast_invoke)
             }
             WastDirective::AssertTrap {
                 span: _,
@@ -100,4 +105,37 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
         }
     }
     Ok(())
+}
+
+fn execute_invoke(context: &mut TestContext, invoke: WastInvoke) {
+    let module_name = invoke.module.map(|id| id.name());
+    let field_name = invoke.name;
+    let mut args = <Vec<RuntimeValue>>::new();
+    for arg in invoke.args {
+        assert_eq!(
+            arg.instrs.len(),
+            1,
+            "only single invoke instructions are supported as invoke arguments but found: {:?}",
+            arg.instrs
+        );
+        let arg = match &arg.instrs[0] {
+            wast::Instruction::I32Const(value) => RuntimeValue::I32(*value),
+            wast::Instruction::I64Const(value) => RuntimeValue::I64(*value),
+            wast::Instruction::F32Const(value) => RuntimeValue::F32(F32::from_bits(value.bits)),
+            wast::Instruction::F64Const(value) => RuntimeValue::F64(F64::from_bits(value.bits)),
+            unsupported => panic!(
+                "encountered unsupported invoke instruction: {:?}",
+                unsupported
+            ),
+        };
+        args.push(arg);
+    }
+    context
+        .invoke(module_name, field_name, &args)
+        .unwrap_or_else(|error| {
+            panic!(
+                "expected invoke to run successfully but encountered error: {}",
+                error
+            )
+        });
 }
