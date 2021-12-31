@@ -246,4 +246,16 @@ impl CallStack {
     pub fn is_empty(&self) -> bool {
         self.frames.is_empty()
     }
+
+    /// Clears the [`CallStack`] entirely.
+    ///
+    /// # Note
+    ///
+    /// This is required since sometimes execution can halt in the middle of
+    /// function execution which leaves the [`CallStack`] in an unspecified
+    /// state. Therefore the [`CallStack`] is required to be reset before
+    /// function execution happens.
+    pub fn clear(&mut self) {
+        self.frames.clear();
+    }
 }

@@ -206,6 +206,8 @@ impl EngineInner {
         results: &mut [RuntimeValue],
         func: Func,
     ) -> Result<(), Trap> {
+        self.value_stack.clear();
+        self.call_stack.clear();
         Self::check_signature(ctx.as_context(), signature, args, results)?;
         self.initialize_args(args);
         let frame = FunctionFrame::new(ctx.as_context(), func);

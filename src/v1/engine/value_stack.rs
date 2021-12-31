@@ -483,6 +483,19 @@ impl ValueStack {
         let end = self.stack_ptr + depth;
         &self.entries[start..end]
     }
+
+    /// Clears the [`ValueStack`] entirely.
+    ///
+    /// # Note
+    ///
+    /// This is required since sometimes execution can halt in the middle of
+    /// function execution which leaves the [`ValueStack`] in an unspecified
+    /// state. Therefore the [`ValueStack`] is required to be reset before
+    /// function execution happens.
+    pub fn clear(&mut self) {
+        self.entries.clear();
+        self.stack_ptr = 0;
+    }
 }
 
 #[cfg(test)]
