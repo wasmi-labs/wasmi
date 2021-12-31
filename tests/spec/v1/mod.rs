@@ -1,6 +1,8 @@
-use anyhow::Result;
-
+mod descriptor;
 mod run;
+
+use self::descriptor::TestDescriptor;
+use anyhow::Result;
 
 macro_rules! run_test {
     ($label: expr, $test_name: ident) => {
