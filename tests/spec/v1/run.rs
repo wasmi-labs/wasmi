@@ -112,17 +112,16 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
             WastDirective::AssertReturn {
                 span: _,
                 exec,
-                results,
+                results: expected,
             } => {
                 test_context.profile().bump_assert_return();
-                let expected = extract_assert_expression(&results);
                 let results = execute_wast_execute(test_context, exec).unwrap_or_else(|error| {
                     panic!(
                         "encountered unexpected failure to execute `AssertReturn`: {}",
                         error
                     )
                 });
-                assert_eq!(results, expected);
+                assert_results(&results, &expected);
             }
             WastDirective::AssertExhaustion {
                 span: _,
@@ -166,34 +165,47 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
     Ok(())
 }
 
-fn extract_assert_expression(assert_expr: &[AssertExpression]) -> Vec<RuntimeValue> {
-    let mut result = Vec::new();
-    for expr in assert_expr {
-        let extracted = match expr {
-            AssertExpression::I32(value) => RuntimeValue::I32(*value),
-            AssertExpression::I64(value) => RuntimeValue::I64(*value),
-            AssertExpression::F32(NanPattern::CanonicalNan)
-            | AssertExpression::F32(NanPattern::ArithmeticNan) => {
-                RuntimeValue::F32(F32::from_bits(f32::NAN.to_bits()))
+/// Asserts that `results` match the `expected` values.
+fn assert_results(results: &[RuntimeValue], expected: &[AssertExpression]) {
+    assert_eq!(results.len(), expected.len());
+    for (result, expected) in results.iter().zip(expected) {
+        match (result, expected) {
+            (RuntimeValue::I32(result), AssertExpression::I32(expected)) => {
+                assert_eq!(result, expected)
             }
-            AssertExpression::F32(NanPattern::Value(value)) => {
-                RuntimeValue::F32(F32::from_bits(value.bits))
+            (RuntimeValue::I64(result), AssertExpression::I64(expected)) => {
+                assert_eq!(result, expected)
             }
-            AssertExpression::F64(NanPattern::CanonicalNan)
-            | AssertExpression::F64(NanPattern::ArithmeticNan) => {
-                RuntimeValue::F64(F64::from_bits(f64::NAN.to_bits()))
+            (RuntimeValue::F32(result), AssertExpression::F32(expected)) => match expected {
+                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => assert!(result.is_nan()),
+                NanPattern::Value(expected) => {
+                    assert_eq!(result.to_bits(), expected.bits);
+                }
+            },
+            (RuntimeValue::F32(result), AssertExpression::LegacyArithmeticNaN) => {
+                assert!(result.is_nan())
             }
-            AssertExpression::F64(NanPattern::Value(value)) => {
-                RuntimeValue::F64(F64::from_bits(value.bits))
+            (RuntimeValue::F32(result), AssertExpression::LegacyCanonicalNaN) => {
+                assert!(result.is_nan())
             }
-            unsupported => panic!(
-                "encountered unsupported assert expression: {:?}",
-                unsupported
+            (RuntimeValue::F64(result), AssertExpression::F64(expected)) => match expected {
+                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => assert!(result.is_nan()),
+                NanPattern::Value(expected) => {
+                    assert_eq!(result.to_bits(), expected.bits);
+                }
+            },
+            (RuntimeValue::F64(result), AssertExpression::LegacyArithmeticNaN) => {
+                assert!(result.is_nan())
+            }
+            (RuntimeValue::F64(result), AssertExpression::LegacyCanonicalNaN) => {
+                assert!(result.is_nan())
+            }
+            (result, expected) => panic!(
+                "encountered mismatch in evaluation. expected {:?} but found {:?}",
+                expected, result
             ),
-        };
-        result.push(extracted);
+        }
     }
-    result
 }
 
 fn extract_module(quoted_module: QuoteModule) -> Option<wast::Module> {
