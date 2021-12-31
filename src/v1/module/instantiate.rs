@@ -218,7 +218,6 @@ impl<'a> InstancePre<'a> {
     /// If the `start` function is invalid albeit successful validation.
     pub fn start(self, mut context: impl AsContextMut) -> Result<Instance, InstantiationError> {
         if let Some(start_index) = self.start_fn() {
-            println!("executing start {} ...", start_index);
             let start_func = self
                 .handle
                 .get_func(context.as_context(), start_index)
