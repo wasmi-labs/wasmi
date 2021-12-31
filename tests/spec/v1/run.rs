@@ -1,6 +1,5 @@
 use super::{error::TestError, TestContext, TestDescriptor};
 use anyhow::Result;
-use wabt::wat2wasm;
 use wasmi::{
     nan_preserving_float::{F32, F64},
     RuntimeValue,
@@ -39,7 +38,7 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
     'outer: for directive in wast.directives {
         test_context.profile().bump_directives();
         match directive {
-            WastDirective::Module(mut module) => {
+            WastDirective::Module(module) => {
                 test_context.compile_and_instantiate(module)?;
                 test_context.profile().bump_module();
             }
@@ -123,7 +122,7 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
 fn extract_module(quoted_module: QuoteModule) -> Option<wast::Module> {
     match quoted_module {
         QuoteModule::Module(module) => Some(module),
-        QuoteModule::Quote(wat_lines) => {
+        QuoteModule::Quote(_wat_lines) => {
             // We currently do not allow parsing `.wat` Wasm modules in `v1`
             // therefore checks based on malformed `.wat` modules are uninteresting
             // to us at the moment.
@@ -136,7 +135,7 @@ fn extract_module(quoted_module: QuoteModule) -> Option<wast::Module> {
 
 fn module_compilation_fails(
     context: &mut TestContext,
-    mut module: wast::Module,
+    module: wast::Module,
     expected_message: &str,
 ) {
     let result = context.compile_and_instantiate(module);
