@@ -238,14 +238,14 @@ impl EngineInner {
         result_types: &[ValueType],
         results: &mut [RuntimeValue],
     ) -> Result<(), Trap> {
-        if self.value_stack.len() != results.len() || results.len() != result_types.len() {
-            // The remaining stack values must match the expected results.
-            panic!(
-                "expected {} values on the stack after function execution but found {}",
-                results.len(),
-                self.value_stack.len()
-            );
-        }
+        assert_eq!(
+            self.value_stack.len(),
+            results.len(),
+            "expected {} values on the stack after function execution but found {}",
+            results.len(),
+            self.value_stack.len(),
+        );
+        assert_eq!(results.len(), result_types.len());
         for (result, (value, value_type)) in results
             .iter_mut()
             .zip(self.value_stack.drain().zip(result_types))
