@@ -119,10 +119,13 @@ impl TestContext {
         });
         let module = Module::new(self.engine(), wasm)?;
         let instance_pre = self.linker.instantiate(&mut self.store, &module)?;
-        let instance = instance_pre.ensure_no_start_fn(&mut self.store)?;
+        let instance = instance_pre.start(&mut self.store)?;
         self.modules.push(module);
         if let Some(module_name) = module_name {
             self.instances.insert(module_name.to_string(), instance);
+            for (field_name, export) in instance.exports(&self.store) {
+                self.linker.define(module_name, field_name, *export)?;
+            }
         }
         self.last_instance = Some(instance);
         Ok(instance)
