@@ -230,7 +230,7 @@ impl EngineInner {
     ///
     /// The value stack is empty after this operation.
     ///
-    /// # Errors
+    /// # Panics
     ///
     /// - If the `results` buffer length does not match the remaining amount of stack values.
     fn write_results_back(
@@ -240,7 +240,11 @@ impl EngineInner {
     ) -> Result<(), Trap> {
         if self.value_stack.len() != results.len() || results.len() != result_types.len() {
             // The remaining stack values must match the expected results.
-            return Err(Trap::from(TrapKind::UnexpectedSignature));
+            panic!(
+                "expected {} values on the stack after function execution but found {}",
+                results.len(),
+                self.value_stack.len()
+            );
         }
         for (result, (value, value_type)) in results
             .iter_mut()
