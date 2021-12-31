@@ -7,6 +7,7 @@ use wasmi::{
     nan_preserving_float::{F32, F64},
     v1::{
         Engine,
+        Extern,
         Func,
         Global,
         Instance,
@@ -40,6 +41,8 @@ pub struct TestContext {
     last_instance: Option<Instance>,
     /// Profiling during the Wasm spec test run.
     profile: TestProfile,
+    /// Intermediate results buffer that can be reused for calling Wasm functions.
+    results: Vec<RuntimeValue>,
 }
 
 impl Default for TestContext {
@@ -85,6 +88,7 @@ impl Default for TestContext {
             instances: HashMap::new(),
             last_instance: None,
             profile: TestProfile::default(),
+            results: Vec::new(),
         }
     }
 }
@@ -146,5 +150,39 @@ impl TestContext {
                 self.last_instance
                     .ok_or_else(|| TestError::NoModuleInstancesFound)
             })
+    }
+
+    /// Invokes the [`Func`] identified by `field_name` in [`Instance`] identified by `module_name`.
+    ///
+    /// If no [`Instance`] under `module_name` is found then invoke [`Func`] on the last instantiated [`Instance`].
+    ///
+    /// # Note
+    ///
+    /// Returns the results of the function invocation.
+    ///
+    /// # Errors
+    ///
+    /// - If no module instances can be found.
+    /// - If no function identified with `field_name` can be found.
+    /// - If function invokation returned an error.
+    pub fn invoke(
+        &mut self,
+        module_name: Option<&str>,
+        field_name: &str,
+        args: &[RuntimeValue],
+    ) -> Result<&[RuntimeValue], TestError> {
+        let instance = self.instance_by_name_or_last(module_name)?;
+        let func = instance
+            .get_export(&mut self.store, field_name)
+            .and_then(Extern::into_func)
+            .ok_or_else(|| TestError::FuncNotFound {
+                module_name: module_name.map(|name| name.to_string()),
+                field_name: field_name.to_string(),
+            })?;
+        let len_results = func.signature(&self.store).outputs(&self.store).len();
+        self.results.clear();
+        self.results.resize(len_results, RuntimeValue::I32(0));
+        func.call(&mut self.store, args, &mut self.results)?;
+        Ok(&self.results)
     }
 }
