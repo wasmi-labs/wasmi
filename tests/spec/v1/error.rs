@@ -14,6 +14,10 @@ pub enum TestError {
         module_name: Option<String>,
         func_name: String,
     },
+    GlobalNotFound {
+        module_name: Option<String>,
+        global_name: String,
+    },
 }
 
 impl Error for TestError {}
@@ -35,6 +39,16 @@ impl Display for TestError {
                     f,
                     "missing func exported as: {:?}::{}",
                     module_name, func_name
+                )
+            }
+            Self::GlobalNotFound {
+                module_name,
+                global_name,
+            } => {
+                write!(
+                    f,
+                    "missing global variable exported as: {:?}::{}",
+                    module_name, global_name
                 )
             }
             Self::Trap(trap) => Display::fmt(trap, f),
