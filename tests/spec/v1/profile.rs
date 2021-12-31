@@ -1,4 +1,3 @@
-
 /// Test profiles collected during the Wasm spec test run.
 #[derive(Debug, Default)]
 pub struct TestProfile {

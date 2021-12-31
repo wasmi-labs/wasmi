@@ -56,7 +56,11 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
             } => {
                 test_context.profile().bump_assert_invalid();
             }
-            WastDirective::Register { span: _, name: _, module: _ } => {
+            WastDirective::Register {
+                span: _,
+                name: _,
+                module: _,
+            } => {
                 test_context.profile().bump_register();
             }
             WastDirective::Invoke(_wast_invoke) => {
