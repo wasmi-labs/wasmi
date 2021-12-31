@@ -207,7 +207,7 @@ impl TestContext {
 #[derive(Debug, Default)]
 pub struct TestProfile {
     /// The total amount of executed `.wast` directives.
-    len_directives: usize,
+    directives: usize,
     /// The amount of executed [`WasmDirective::Module`].
     module: usize,
     /// The amount of executed [`WasmDirective::QuoteModule`].
@@ -230,6 +230,68 @@ pub struct TestProfile {
     assert_unlinkable: usize,
     /// The amount of executed [`WasmDirective::AssertException`].
     assert_exception: usize,
+}
+
+impl TestProfile {
+    /// Bumps the amount of directives.
+    pub fn bump_directives(&mut self) {
+        self.directives += 1;
+    }
+
+    /// Bumps the amount of [`WasmDirective::Module`] directives.
+    pub fn bump_module(&mut self) {
+        self.module += 1;
+    }
+
+    /// Bumps the amount of [`WasmDirective::QuoteModule`] directives.
+    pub fn bump_quote_module(&mut self) {
+        self.quote_module += 1;
+    }
+
+    /// Bumps the amount of [`WasmDirective::AssertMalformed`] directives.
+    pub fn bump_assert_malformed(&mut self) {
+        self.assert_malformed += 1;
+    }
+
+    /// Bumps the amount of [`WasmDirective::AssertInvalid`] directives.
+    pub fn bump_assert_invalid(&mut self) {
+        self.assert_invalid += 1;
+    }
+
+    /// Bumps the amount of [`WasmDirective::Register`] directives.
+    pub fn bump_register(&mut self) {
+        self.register += 1;
+    }
+
+    /// Bumps the amount of [`WasmDirective::Invoke`] directives.
+    pub fn bump_invoke(&mut self) {
+        self.invoke += 1;
+    }
+
+    /// Bumps the amount of [`WasmDirective::AssertTrap`] directives.
+    pub fn bump_assert_trap(&mut self) {
+        self.assert_trap += 1;
+    }
+
+    /// Bumps the amount of [`WasmDirective::AssertReturn`] directives.
+    pub fn bump_assert_return(&mut self) {
+        self.assert_return += 1;
+    }
+
+    /// Bumps the amount of [`WasmDirective::AssertExhaustion`] directives.
+    pub fn bump_assert_exhaustion(&mut self) {
+        self.assert_exhaustion += 1;
+    }
+
+    /// Bumps the amount of [`WasmDirective::AssertUnlinkable`] directives.
+    pub fn bump_assert_unlinkable(&mut self) {
+        self.assert_unlinkable += 1;
+    }
+
+    /// Bumps the amount of [`WasmDirective::AssertException`] directives.
+    pub fn bump_assert_exception(&mut self) {
+        self.assert_exception += 1;
+    }
 }
 
 /// Runs the Wasm test spec identified by the given name.
@@ -255,72 +317,73 @@ pub fn run_wasm_spec_test(name: &str) -> Result<()> {
     };
 
     execute_directives(wast, &mut context)?;
+
     println!("profiles: {:?}", context.profile);
     Ok(())
 }
 
 fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> {
     for directive in wast.directives {
-        test_context.profile.len_directives += 1;
+        test_context.profile.bump_directives();
         match directive {
             WastDirective::Module(mut module) => {
                 let wasm_bytes = module.encode()?;
                 test_context.compile_and_instantiate(module.id, &wasm_bytes)?;
-                test_context.profile.module += 1;
+                test_context.profile.bump_module();
             }
             WastDirective::QuoteModule { span, source } => {
-                test_context.profile.quote_module += 1;
+                test_context.profile.bump_quote_module();
             }
             WastDirective::AssertMalformed {
                 span,
                 module,
                 message,
             } => {
-                test_context.profile.assert_malformed += 1;
+                test_context.profile.bump_assert_malformed();
             }
             WastDirective::AssertInvalid {
                 span,
                 module,
                 message,
             } => {
-                test_context.profile.assert_invalid += 1;
+                test_context.profile.bump_assert_invalid();
             }
             WastDirective::Register { span, name, module } => {
-                test_context.profile.register += 1;
+                test_context.profile.bump_register();
             }
             WastDirective::Invoke(_wast_invoke) => {
-                test_context.profile.invoke += 1;
+                test_context.profile.bump_invoke();
             }
             WastDirective::AssertTrap {
                 span,
                 exec,
                 message,
             } => {
-                test_context.profile.assert_trap += 1;
+                test_context.profile.bump_assert_trap();
             }
             WastDirective::AssertReturn {
                 span,
                 exec,
                 results,
             } => {
-                test_context.profile.assert_return += 1;
+                test_context.profile.bump_assert_return();
             }
             WastDirective::AssertExhaustion {
                 span,
                 call,
                 message,
             } => {
-                test_context.profile.assert_exhaustion += 1;
+                test_context.profile.bump_assert_exhaustion();
             }
             WastDirective::AssertUnlinkable {
                 span,
                 module,
                 message,
             } => {
-                test_context.profile.assert_unlinkable += 1;
+                test_context.profile.bump_assert_unlinkable();
             }
             WastDirective::AssertException { span, exec } => {
-                test_context.profile.assert_exception += 1;
+                test_context.profile.bump_assert_exception();
             }
             _unknown => panic!("encountered unknown `.wast` directive"),
         }
