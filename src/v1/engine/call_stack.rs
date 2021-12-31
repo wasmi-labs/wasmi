@@ -189,7 +189,7 @@ impl FunctionFrame {
         value_stack
             .extend_zeros(len_locals)
             .unwrap_or_else(|error| {
-                panic!("encountered stack overlow while pushing locals: {}", error)
+                panic!("encountered stack overflow while pushing locals: {}", error)
             });
         self.instantiated = true;
     }
