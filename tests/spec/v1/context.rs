@@ -109,17 +109,20 @@ impl TestContext {
     /// # Errors
     ///
     /// If creating the [`Module`] fails.
-    pub fn compile_and_instantiate(
-        &mut self,
-        id: Option<Id>,
-        wasm: impl AsRef<[u8]>,
-    ) -> Result<Instance> {
-        let module = Module::new(self.engine(), wasm.as_ref())?;
+    pub fn compile_and_instantiate(&mut self, mut module: wast::Module) -> Result<Instance> {
+        let module_name = module.id.map(|id| id.name());
+        let wasm = module.encode().unwrap_or_else(|error| {
+            panic!(
+                "encountered unexpected failure to encode `.wast` module into `.wasm`: {}",
+                error
+            )
+        });
+        let module = Module::new(self.engine(), wasm)?;
         let instance_pre = self.linker.instantiate(&mut self.store, &module)?;
         let instance = instance_pre.ensure_no_start_fn(&mut self.store)?;
         self.modules.push(module);
-        if let Some(name) = id.map(|id| id.name()) {
-            self.instances.insert(name.to_string(), instance);
+        if let Some(module_name) = module_name {
+            self.instances.insert(module_name.to_string(), instance);
         }
         self.last_instance = Some(instance);
         Ok(instance)
