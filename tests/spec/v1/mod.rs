@@ -1,7 +1,8 @@
 mod descriptor;
+mod profile;
 mod run;
 
-use self::descriptor::TestDescriptor;
+use self::{descriptor::TestDescriptor, profile::TestProfile};
 use anyhow::Result;
 
 macro_rules! run_test {
