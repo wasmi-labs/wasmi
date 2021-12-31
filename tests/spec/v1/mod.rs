@@ -15,6 +15,7 @@ use anyhow::Result;
 macro_rules! run_test {
     ($label: expr, $test_name: ident) => {
         #[test]
+        #[ignore]
         fn $test_name() -> Result<()> {
             self::run::run_wasm_spec_test($label)
         }
