@@ -1,5 +1,7 @@
+#![allow(unused)]
+
 use anyhow::Result;
-use std::{fs, io};
+use std::fs;
 use wasmi::{
     nan_preserving_float::{F32, F64},
     v1::{
@@ -266,7 +268,7 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
             WastDirective::AssertException { span, exec } => {
                 test_context.profile.assert_exception += 1;
             }
-            unknown => panic!("encountered unknown `.wast` directive"),
+            _unknown => panic!("encountered unknown `.wast` directive"),
         }
     }
     Ok(())
