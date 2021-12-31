@@ -155,7 +155,7 @@ impl TestContext {
             })
     }
 
-    /// Invokes the [`Func`] identified by `field_name` in [`Instance`] identified by `module_name`.
+    /// Invokes the [`Func`] identified by `func_name` in [`Instance`] identified by `module_name`.
     ///
     /// If no [`Instance`] under `module_name` is found then invoke [`Func`] on the last instantiated [`Instance`].
     ///
@@ -166,21 +166,21 @@ impl TestContext {
     /// # Errors
     ///
     /// - If no module instances can be found.
-    /// - If no function identified with `field_name` can be found.
+    /// - If no function identified with `func_name` can be found.
     /// - If function invokation returned an error.
     pub fn invoke(
         &mut self,
         module_name: Option<&str>,
-        field_name: &str,
+        func_name: &str,
         args: &[RuntimeValue],
     ) -> Result<&[RuntimeValue], TestError> {
         let instance = self.instance_by_name_or_last(module_name)?;
         let func = instance
-            .get_export(&mut self.store, field_name)
+            .get_export(&self.store, func_name)
             .and_then(Extern::into_func)
             .ok_or_else(|| TestError::FuncNotFound {
                 module_name: module_name.map(|name| name.to_string()),
-                field_name: field_name.to_string(),
+                func_name: func_name.to_string(),
             })?;
         let len_results = func.signature(&self.store).outputs(&self.store).len();
         self.results.clear();
