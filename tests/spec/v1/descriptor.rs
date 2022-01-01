@@ -1,5 +1,3 @@
-#![allow(dead_code)] // TODO: remove
-
 use std::{
     fmt::{self, Display},
     fs,
@@ -8,8 +6,6 @@ use std::{
 /// The desciptor of a Wasm spec test suite run.
 #[derive(Debug)]
 pub struct TestDescriptor {
-    /// The name of the Wasm spec test.
-    name: String,
     /// The path of the Wasm spec test `.wast` file.
     path: String,
     /// The contents of the Wasm spec test `.wast` file.
@@ -27,13 +23,7 @@ impl TestDescriptor {
         let file = fs::read_to_string(&path).unwrap_or_else(|error| {
             panic!("{}, failed to read `.wast` test file: {}", path, error)
         });
-        let name = name.to_string();
-        Self { name, path, file }
-    }
-
-    /// Returns the name of the Wasm spec test.
-    pub fn name(&self) -> &str {
-        &self.name
+        Self { path, file }
     }
 
     /// Returns the path of the Wasm spec test `.wast` file.
