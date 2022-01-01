@@ -159,7 +159,7 @@ impl MemoryEntity {
         let new_pages = current_pages
             .0
             .checked_add(additional.0)
-            .filter(|&new_pages| new_pages < maximum_pages.0)
+            .filter(|&new_pages| new_pages <= maximum_pages.0)
             .map(Pages)
             .ok_or(MemoryError::OutOfBoundsGrowth)?;
         // At this point it is okay to grow the underlying virtual memory
