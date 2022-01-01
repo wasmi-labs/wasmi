@@ -175,6 +175,44 @@ r#"
 }
 
 #[bench]
+fn fac_recursive_v1(b: &mut Bencher) {
+	let wasm = wabt::wat2wasm(
+r#"
+	;; Recursive factorial
+(func (export "fac-rec") (param i64) (result i64)
+	(if (result i64) (i64.eq (get_local 0) (i64.const 0))
+		(then (i64.const 1))
+		(else
+			(i64.mul (get_local 0) (call 0 (i64.sub (get_local 0) (i64.const 1))))
+		)
+	)
+)
+"#
+	).unwrap();
+
+    let engine = v1::Engine::default();
+    let module = v1::Module::new(&engine, &wasm).unwrap();
+    let mut linker = <v1::Linker<()>>::default();
+    let mut store = v1::Store::new(&engine, ());
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let fac = instance
+        .get_export(&store, "fac-rec")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    let mut result = [RuntimeValue::I64(0)];
+
+    b.iter(|| {
+        fac.call(&mut store, &[RuntimeValue::I64(25)], &mut result)
+            .unwrap();
+        assert_matches!(result, [RuntimeValue::I64(7034535277573963776)]);
+    });
+}
+
+#[bench]
 fn fac_opt(b: &mut Bencher) {
 	let wasm = wabt::wat2wasm(
 r#"
