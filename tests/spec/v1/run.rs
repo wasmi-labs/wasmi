@@ -16,8 +16,8 @@ use wast::{
 };
 
 /// Runs the Wasm test spec identified by the given name.
-pub fn run_wasm_spec_test(name: &str) -> Result<()> {
-    let test = TestDescriptor::new(name)?;
+pub fn run_wasm_spec_test(name: &str) {
+    let test = TestDescriptor::new(name);
     let mut context = TestContext::new(&test);
 
     let parse_buffer = match ParseBuffer::new(test.file()) {
@@ -37,10 +37,15 @@ pub fn run_wasm_spec_test(name: &str) -> Result<()> {
         ),
     };
 
-    execute_directives(wast, &mut context)?;
+    execute_directives(wast, &mut context).unwrap_or_else(|error| {
+        panic!(
+            "{}: failed to execute `.wast` directive: {}",
+            test.path(),
+            error
+        )
+    });
 
     println!("profiles: {:#?}", context.profile());
-    Ok(())
 }
 
 fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> {
@@ -90,9 +95,15 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                 test_context.profile().bump_register();
             }
             WastDirective::Invoke(wast_invoke) => {
+                let span = wast_invoke.span;
                 test_context.profile().bump_invoke();
-                let result = execute_wast_invoke(test_context, wast_invoke);
-                assert!(result.is_ok());
+                execute_wast_invoke(test_context, wast_invoke).unwrap_or_else(|error| {
+                    panic!(
+                        "{}: failed to invoke `.wast` directive: {}",
+                        test_context.spanned(span),
+                        error
+                    )
+                });
             }
             WastDirective::AssertTrap {
                 span,
