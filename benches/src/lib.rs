@@ -10,7 +10,22 @@ use std::error;
 use std::io::Read as _;
 use std::fs::File;
 use wasmi::{ImportsBuilder, Module, ModuleInstance, NopExternals, RuntimeValue, v1};
-
+use wasmi::{
+	Error,
+    Externals,
+    FuncInstance,
+    FuncRef,
+    GlobalDescriptor,
+    GlobalRef,
+    ImportResolver,
+    MemoryDescriptor,
+    MemoryRef,
+    RuntimeArgs,
+    Signature,
+    TableDescriptor,
+    TableRef,
+    Trap,
+};
 use test::Bencher;
 
 fn load_wasm_from_file(filename: &str) -> Result<Vec<u8>, Box<dyn error::Error>> {
@@ -397,4 +412,206 @@ fn recursive_trap(b: &mut Bencher) {
 			.invoke_export("call", &[RuntimeValue::I32(1000)], &mut NopExternals);
 		assert_matches!(value, Err(_));
 	});
+}
+
+#[bench]
+fn host_calls(b: &mut Bencher) {
+    // The below `.wat` file exports a function `call` that takes a `n` of type `i64`.
+    // It will iterate `n` times and call the imported function `host_call` every time.
+    //
+    // This benchmarks tests the performance of host calls.
+    //
+    // After successful execution the `call` function will return `0`.
+    let wasm = wabt::wat2wasm(
+        r#"
+(module
+  (import "benchmark" "host_call" (func $host_call (param i64) (result i64)))
+  (func $call (export "call") (param i64) (result i64)
+	(block
+		(loop
+			(br_if
+				1
+				(i64.eq (get_local 0) (i64.const 0))
+			)
+			(set_local 0
+				(i64.sub
+					(call $host_call (get_local 0))
+					(i64.const 1)
+				)
+			)
+			(br 0)
+		)
+	)
+	(get_local 0)
+  )
+)
+		"#,
+    )
+    .unwrap();
+    let module = Module::from_buffer(&wasm).unwrap();
+
+    let instance = ModuleInstance::new(&module, &BenchExternals)
+        .expect("failed to instantiate wasm module")
+        .assert_no_start();
+
+    /// The benchmark externals provider.
+    pub struct BenchExternals;
+
+    /// The index of the host function that is about to be called a lot.
+    const HOST_CALL_INDEX: usize = 0;
+
+    /// How often the `host_call` should be called per Wasm invocation.
+    const REPETITIONS: i64 = 1000;
+
+    impl Externals for BenchExternals {
+        fn invoke_index(
+            &mut self,
+            index: usize,
+            args: RuntimeArgs,
+        ) -> Result<Option<RuntimeValue>, Trap> {
+            match index {
+                HOST_CALL_INDEX => {
+					let arg = args.nth_value_checked(0)?;
+                    Ok(Some(arg))
+                }
+                _ => panic!("BenchExternals do not provide function at index {}", index),
+            }
+        }
+    }
+
+    impl ImportResolver for BenchExternals {
+        fn resolve_func(
+            &self,
+            _module_name: &str,
+            field_name: &str,
+            func_type: &Signature,
+        ) -> Result<FuncRef, Error> {
+            let index = match field_name {
+                "host_call" => HOST_CALL_INDEX,
+                _ => {
+                    return Err(Error::Instantiation(format!(
+                        "Unknown host func import {}",
+                        field_name
+                    )));
+                }
+            };
+            // We skip signature checks in this benchmarks since we are
+            // not interested in testing this here.
+            let func = FuncInstance::alloc_host(func_type.clone(), index);
+            Ok(func)
+        }
+
+        fn resolve_global(
+            &self,
+            module_name: &str,
+            field_name: &str,
+            _global_type: &GlobalDescriptor,
+        ) -> Result<GlobalRef, Error> {
+            Err(Error::Instantiation(format!(
+                "Export {}::{} not found",
+                module_name, field_name
+            )))
+        }
+
+        fn resolve_memory(
+            &self,
+            module_name: &str,
+            field_name: &str,
+            _memory_type: &MemoryDescriptor,
+        ) -> Result<MemoryRef, Error> {
+            Err(Error::Instantiation(format!(
+                "Export {}::{} not found",
+                module_name, field_name
+            )))
+        }
+
+        fn resolve_table(
+            &self,
+            module_name: &str,
+            field_name: &str,
+            _table_type: &TableDescriptor,
+        ) -> Result<TableRef, Error> {
+            Err(Error::Instantiation(format!(
+                "Export {}::{} not found",
+                module_name, field_name
+            )))
+        }
+    }
+
+    b.iter(|| {
+        let value = instance.invoke_export(
+            "call",
+            &[RuntimeValue::I64(REPETITIONS)],
+            &mut BenchExternals,
+        );
+        assert_matches!(value, Ok(Some(RuntimeValue::I64(0))));
+    });
+}
+
+#[bench]
+fn host_calls_v1(b: &mut Bencher) {
+    // The below `.wat` file exports a function `call` that takes a `n` of type `i64`.
+    // It will iterate `n` times and call the imported function `host_call` every time.
+    //
+    // This benchmarks tests the performance of host calls.
+    //
+    // After successful execution the `call` function will return `0`.
+    let wasm = wabt::wat2wasm(
+        r#"
+(module
+  (import "benchmark" "host_call" (func $host_call (param i64) (result i64)))
+  (func $call (export "call") (param i64) (result i64)
+	(block
+		(loop
+			(br_if
+				1
+				(i64.eq (get_local 0) (i64.const 0))
+			)
+			(set_local 0
+				(i64.sub
+					(call $host_call (get_local 0))
+					(i64.const 1)
+				)
+			)
+			(br 0)
+		)
+	)
+	(get_local 0)
+  )
+)
+		"#,
+    )
+    .unwrap();
+
+    /// The index of the host function that is about to be called a lot.
+    const HOST_CALL_INDEX: usize = 0;
+
+    /// How often the `host_call` should be called per Wasm invocation.
+    const REPETITIONS: i64 = 1000;
+
+    let engine = v1::Engine::default();
+    let module = v1::Module::new(&engine, &wasm).unwrap();
+    let mut linker = <v1::Linker<()>>::default();
+    let mut store = v1::Store::new(&engine, ());
+	let host_call = v1::Func::wrap(&mut store, |value: i64| value);
+	linker.define("benchmark", "host_call", host_call).unwrap();
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let call = instance
+        .get_export(&store, "call")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    let mut result = [RuntimeValue::I64(0)];
+
+    b.iter(|| {
+        call.call(
+            &mut store,
+            &[RuntimeValue::I64(REPETITIONS)],
+			&mut result,
+        ).unwrap();
+        assert_matches!(result, [RuntimeValue::I64(0)]);
+    });
 }
