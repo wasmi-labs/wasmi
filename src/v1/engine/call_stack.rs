@@ -14,6 +14,7 @@ use super::{
     ResolvedFuncBody,
     ValueStack,
 };
+use crate::DEFAULT_CALL_STACK_LIMIT;
 use alloc::vec::Vec;
 use core::{fmt, fmt::Display};
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
@@ -206,7 +207,10 @@ pub struct CallStack {
 
 impl Default for CallStack {
     fn default() -> Self {
-        Self::new(usize::MAX)
+        Self {
+            frames: Vec::new(),
+            recursion_limit: DEFAULT_CALL_STACK_LIMIT,
+        }
     }
 }
 
