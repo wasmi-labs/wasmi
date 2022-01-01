@@ -86,6 +86,7 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                 name: _,
                 module: _,
             } => {
+                // TODO: figure out what this does and properly implement it ...
                 test_context.profile().bump_register();
             }
             WastDirective::Invoke(wast_invoke) => {
