@@ -106,7 +106,7 @@ impl TestContext<'_> {
     }
 
     /// Returns the [`TestDescriptor`] of the test context.
-    fn spanned(&self, span: wast::Span) -> TestSpan {
+    pub fn spanned(&self, span: wast::Span) -> TestSpan {
         self.descriptor.spanned(span)
     }
 

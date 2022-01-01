@@ -150,11 +150,12 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                 test_context.profile().bump_assert_unlinkable();
                 module_compilation_fails(test_context, module, message);
             }
-            WastDirective::AssertException { span: _, exec } => {
+            WastDirective::AssertException { span, exec } => {
                 test_context.profile().bump_assert_exception();
                 match execute_wast_execute(test_context, exec) {
                     Ok(results) => panic!(
-                        "expected to fail due to exception but succeeded with: {:?}",
+                        "expected to fail due to exception but succeeded with:{}: {:?}",
+                        test_context.spanned(span),
                         results
                     ),
                     Err(_) => {}
