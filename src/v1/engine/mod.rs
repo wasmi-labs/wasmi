@@ -1,7 +1,5 @@
 //! The `wasmi` interpreter.
 
-#![allow(dead_code)] // TODO: remove
-
 pub mod bytecode;
 pub mod call_stack;
 pub mod code_map;

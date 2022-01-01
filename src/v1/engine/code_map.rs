@@ -128,6 +128,7 @@ impl ResolvedFuncBody<'_> {
     /// # Panics
     ///
     /// If there is no instruction at the given index.
+    #[cfg(test)]
     pub fn get(&self, index: usize) -> &Instruction {
         &self.insts[index]
     }

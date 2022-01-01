@@ -309,22 +309,6 @@ impl ValueStack {
         T::from_stack_entry(self.pop())
     }
 
-    /// Evaluates `f` on the top two stack entries.
-    ///
-    /// In summary this procedure does the following:
-    ///
-    /// - Pop entry `r`.
-    /// - Peek entry `&mut l`.
-    /// - Evaluate `f(l, r)`.
-    pub fn pop_eval<F>(&mut self, f: F)
-    where
-        F: FnOnce(&mut StackEntry, StackEntry),
-    {
-        let rhs = self.pop();
-        let lhs = self.last_mut();
-        f(lhs, rhs)
-    }
-
     /// Pops the last pair of [`StackEntry`] from the [`ValueStack`].
     ///
     /// # Note
@@ -376,7 +360,7 @@ impl ValueStack {
     }
 
     /// Returns the capacity of the [`ValueStack`].
-    pub fn capacity(&self) -> usize {
+    fn capacity(&self) -> usize {
         self.entries.len()
     }
 
@@ -403,6 +387,7 @@ impl ValueStack {
     /// For this to be working we need a stack-depth analysis during Wasm
     /// compilation so that we are aware of all stack-depths for every
     /// functions.
+    #[allow(dead_code)] // TODO: decide how to utilize this
     pub fn reserve(&mut self, additional: usize) {
         let required_len = self.len() + additional;
         if required_len > self.capacity() {

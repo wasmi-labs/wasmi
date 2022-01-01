@@ -94,19 +94,6 @@ pub struct InstructionsBuilder {
 }
 
 impl InstructionsBuilder {
-    /// Creates a new [`InstructionsBuilder`].
-    ///
-    /// This utility allows to incrementally build up a Wasm function body.
-    /// After finishing construction of a Wasm function body using
-    /// [`InstructionsBuilder::finish`] it can be used to build another
-    /// reusing its internal state.
-    pub fn new() -> Self {
-        Self {
-            insts: Vec::new(),
-            labels: Vec::new(),
-        }
-    }
-
     /// Returns the current instruction pointer as index.
     pub fn current_pc(&self) -> InstructionIdx {
         InstructionIdx(self.insts.len())

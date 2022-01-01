@@ -2,7 +2,6 @@ use super::{
     super::{Global, Memory, Table},
     bytecode::{BrTable, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx},
     AsContextMut,
-    CallStack,
     DropKeep,
     EngineInner,
     ExecutionOutcome,
@@ -37,8 +36,6 @@ use memory_units::wasm32::Pages;
 pub struct ExecutionContext<'engine, 'func> {
     /// Stores the value stack of live values on the Wasm stack.
     value_stack: &'engine mut ValueStack,
-    /// Stores the call stack of live function invocations.
-    call_stack: &'engine mut CallStack,
     /// The function frame that is being executed.
     frame: &'func mut FunctionFrame,
     /// The resolved function body of the executed function frame.
@@ -52,7 +49,6 @@ impl<'engine, 'func> ExecutionContext<'engine, 'func> {
         frame.initialize(resolved, &mut engine.value_stack);
         Self {
             value_stack: &mut engine.value_stack,
-            call_stack: &mut engine.call_stack,
             frame,
             func_body: resolved,
         }
@@ -66,7 +62,6 @@ impl<'engine, 'func> ExecutionContext<'engine, 'func> {
             let pc = self.frame.inst_ptr;
             let inst_context = InstructionExecutionContext::new(
                 self.value_stack,
-                self.call_stack,
                 self.frame,
                 &mut ctx,
             );
@@ -100,8 +95,6 @@ impl<'engine, 'func> ExecutionContext<'engine, 'func> {
 struct InstructionExecutionContext<'engine, 'func, Ctx> {
     /// Stores the value stack of live values on the Wasm stack.
     value_stack: &'engine mut ValueStack,
-    /// Stores the call stack of live function invocations.
-    call_stack: &'engine mut CallStack,
     /// The function frame that is being executed.
     frame: &'func mut FunctionFrame,
     /// A mutable [`Store`] context.
@@ -117,13 +110,11 @@ where
     /// Creates a new [`InstructionExecutionContext`] for executing a single `wasmi` bytecode instruction.
     pub fn new(
         value_stack: &'engine mut ValueStack,
-        call_stack: &'engine mut CallStack,
         frame: &'func mut FunctionFrame,
         ctx: Ctx,
     ) -> Self {
         Self {
             value_stack,
-            call_stack,
             frame,
             ctx,
         }

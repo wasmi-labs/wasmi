@@ -207,10 +207,7 @@ pub struct CallStack {
 
 impl Default for CallStack {
     fn default() -> Self {
-        Self {
-            frames: Vec::new(),
-            recursion_limit: DEFAULT_CALL_STACK_LIMIT,
-        }
+        Self::new(DEFAULT_CALL_STACK_LIMIT)
     }
 }
 
@@ -247,6 +244,7 @@ impl CallStack {
     }
 
     /// Returns `true` if the [`CallStack`] is empty.
+    #[allow(dead_code)] // TODO: decide how to remove this
     pub fn is_empty(&self) -> bool {
         self.frames.is_empty()
     }

@@ -203,7 +203,7 @@ impl TableEntity {
         let element = self
             .elements
             .get(offset)
-            .cloned() // TODO: change to .copied()
+            .copied()
             .ok_or_else(|| TableError::AccessOutOfBounds {
                 current: self.len(),
                 offset,

@@ -1,5 +1,3 @@
-#![allow(dead_code)] // TODO: remove
-
 use super::{
     AsContext,
     Extern,
