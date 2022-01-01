@@ -9,7 +9,7 @@ use crate::{
     ValueType,
     DEFAULT_VALUE_STACK_LIMIT,
 };
-use alloc::vec::{Drain, Vec};
+use alloc::vec::Vec;
 use core::{fmt, fmt::Debug, iter, mem};
 
 /// A single entry or register in the value stack.
@@ -465,8 +465,10 @@ impl ValueStack {
     ///
     /// This API is mostly used when writing results back to the
     /// caller after function execution has finished.
-    pub fn drain(&mut self) -> Drain<StackEntry> {
-        self.entries.drain(..)
+    pub fn drain<'a>(&'a mut self) -> &[StackEntry] {
+        let len = self.stack_ptr;
+        self.stack_ptr = 0;
+        &self.entries[0..len]
     }
 
     /// Pops the last `depth` stack entries and returns them as slice.
