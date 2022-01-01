@@ -121,7 +121,7 @@ impl MemoryType {
     ///
     /// - If the initial limits of the `required` [`MemoryType`] are greater than `self`.
     /// - If the maximum limits of the `required` [`MemoryType`] are greater than `self`.
-    pub fn satisfies(&self, required: &MemoryType) -> Result<(), MemoryError> {
+    pub(crate) fn satisfies(&self, required: &MemoryType) -> Result<(), MemoryError> {
         if required.initial_pages() > self.initial_pages() {
             return Err(MemoryError::UnsatisfyingMemoryType {
                 unsatisfying: *self,
