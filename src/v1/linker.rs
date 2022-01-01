@@ -1,4 +1,14 @@
-use super::{AsContextMut, Error, Extern, InstancePre, MemoryType, Module, Signature, TableType};
+use super::{
+    errors::{MemoryError, TableError},
+    AsContextMut,
+    Error,
+    Extern,
+    InstancePre,
+    MemoryType,
+    Module,
+    Signature,
+    TableType,
+};
 use crate::ValueType;
 use alloc::{
     collections::{btree_map::Entry, BTreeMap},
@@ -41,24 +51,10 @@ pub enum LinkerError {
         /// The actual function signature found.
         actual: Signature,
     },
-    /// Encountered when an imported table has a mismatching table type.
-    TableTypeMismatch {
-        /// The table import that had a mismatching table type.
-        import: pwasm::ImportEntry,
-        /// The expected table type.
-        expected: TableType,
-        /// The actual table type.
-        actual: TableType,
-    },
-    /// Encountered when an imported linear memory has a mismatching memory type.
-    MemoryTypeMismatch {
-        /// The table import that had a mismatching table type.
-        import: pwasm::ImportEntry,
-        /// The expected linear memory type.
-        expected: MemoryType,
-        /// The actual linear memory type.
-        actual: MemoryType,
-    },
+    /// Occurs when an imported table does not satisfy the required table type.
+    Table(TableError),
+    /// Occurs when an imported memory does not satisfy the required memory type.
+    Memory(MemoryError),
     /// Encountered when an imported global variable has a mismatching global variable type.
     GlobalTypeMismatch {
         /// The global variable import that had a mismatching global variable type.
@@ -72,6 +68,18 @@ pub enum LinkerError {
         /// The actual global variable mutability.
         actual_mutability: bool,
     },
+}
+
+impl From<TableError> for LinkerError {
+    fn from(error: TableError) -> Self {
+        Self::Table(error)
+    }
+}
+
+impl From<MemoryError> for LinkerError {
+    fn from(error: MemoryError) -> Self {
+        Self::Memory(error)
+    }
 }
 
 #[cfg(feature = "std")]
@@ -112,32 +120,6 @@ impl Display for LinkerError {
                     expected, import, module_name, field_name, actual
                 )
             }
-            Self::TableTypeMismatch {
-                import,
-                expected,
-                actual,
-            } => {
-                let module_name = import.module();
-                let field_name = import.field();
-                write!(
-                    f,
-                    "expected {:?} table type for import {:?} at {}::{} but found {:?}",
-                    expected, import, module_name, field_name, actual
-                )
-            }
-            Self::MemoryTypeMismatch {
-                import,
-                expected,
-                actual,
-            } => {
-                let module_name = import.module();
-                let field_name = import.field();
-                write!(
-                    f,
-                    "expected {:?} linear memory type for import {:?} at {}::{} but found {:?}",
-                    expected, import, module_name, field_name, actual
-                )
-            }
             Self::GlobalTypeMismatch {
                 import,
                 expected_value_type,
@@ -167,6 +149,8 @@ impl Display for LinkerError {
                     actual_value_type
                 )
             }
+            Self::Table(error) => Display::fmt(error, f),
+            Self::Memory(error) => Display::fmt(error, f),
         }
     }
 }
@@ -454,14 +438,7 @@ impl<T> Linker<T> {
                             import: import.clone(),
                         })?;
                     let actual_table_type = table.table_type(context.as_context());
-                    if expected_table_type != actual_table_type {
-                        return Err(LinkerError::TableTypeMismatch {
-                            import: import.clone(),
-                            expected: expected_table_type,
-                            actual: actual_table_type,
-                        })
-                        .map_err(Into::into);
-                    }
+                    actual_table_type.satisfies(&expected_table_type)?;
                     Extern::Table(table)
                 }
                 pwasm::External::Memory(memory_type) => {
@@ -475,14 +452,7 @@ impl<T> Linker<T> {
                             import: import.clone(),
                         })?;
                     let actual_memory_type = memory.memory_type(context.as_context());
-                    if expected_memory_type != actual_memory_type {
-                        return Err(LinkerError::MemoryTypeMismatch {
-                            import: import.clone(),
-                            expected: expected_memory_type,
-                            actual: actual_memory_type,
-                        })
-                        .map_err(Into::into);
-                    }
+                    actual_memory_type.satisfies(&expected_memory_type)?;
                     Extern::Memory(memory)
                 }
                 pwasm::External::Global(global_type) => {

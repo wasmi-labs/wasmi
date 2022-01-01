@@ -9,6 +9,7 @@
 
 use super::{
     super::{
+        errors::{MemoryError, TableError},
         AsContext,
         AsContextMut,
         Error,
@@ -30,7 +31,6 @@ use super::{
 };
 use crate::{RuntimeValue, Trap, ValueType};
 use core::{fmt, fmt::Display};
-use memory_units::wasm32::Pages;
 use parity_wasm::elements as pwasm;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 
@@ -55,20 +55,10 @@ pub enum InstantiationError {
         /// The actual function signature for the function import.
         actual: Signature,
     },
-    /// Caused when a table has a mismatching table type.
-    TableTypeMismatch {
-        /// The expected table type for the table import.
-        expected: pwasm::ResizableLimits,
-        /// The actual table type for the table import.
-        actual: TableType,
-    },
-    /// Caused when a linear memory has a mismatching linear memory type.
-    MemoryTypeMismatch {
-        /// The expected memory type for the linear memory import.
-        expected: pwasm::ResizableLimits,
-        /// The actual memory type for the linear memory import.
-        actual: MemoryType,
-    },
+    /// Occurs when an imported table does not satisfy the required table type.
+    Table(TableError),
+    /// Occurs when an imported memory does not satisfy the required memory type.
+    Memory(MemoryError),
     /// Caused when a global variable has a mismatching global variable type and mutability.
     GlobalTypeMismatch {
         /// The expected global type for the global variable import.
@@ -124,16 +114,6 @@ impl Display for InstantiationError {
                     expected, actual
                 )
             }
-            Self::TableTypeMismatch { expected, actual } => write!(
-                f,
-                "expected {:?} table type but found {:?}",
-                expected, actual
-            ),
-            Self::MemoryTypeMismatch { expected, actual } => write!(
-                f,
-                "expected {:?} memory type but found {:?}",
-                expected, actual
-            ),
             Self::GlobalTypeMismatch {
                 expected,
                 actual_type,
@@ -166,6 +146,8 @@ impl Display for InstantiationError {
                 "encountered a trap while running `start` function: {}",
                 trap
             ),
+            Self::Table(error) => Display::fmt(error, f),
+            Self::Memory(error) => Display::fmt(error, f),
         }
     }
 }
@@ -173,6 +155,18 @@ impl Display for InstantiationError {
 impl From<Trap> for InstantiationError {
     fn from(trap: Trap) -> Self {
         InstantiationError::Trap(trap)
+    }
+}
+
+impl From<TableError> for InstantiationError {
+    fn from(error: TableError) -> Self {
+        Self::Table(error)
+    }
+}
+
+impl From<MemoryError> for InstantiationError {
+    fn from(error: MemoryError) -> Self {
+        Self::Memory(error)
     }
 }
 
@@ -405,29 +399,20 @@ impl Module {
                     builder.push_func(func);
                 }
                 (pwasm::External::Table(table_type), Extern::Table(table)) => {
-                    let expected = *table_type.limits();
-                    let expected_initial = expected.initial() as usize;
-                    let expected_maximum = expected.maximum().map(|maximum| maximum as usize);
-                    let actual = table.table_type(context.as_context());
-                    if expected_initial != actual.initial() || expected_maximum != actual.maximum()
-                    {
-                        return Err(InstantiationError::TableTypeMismatch { expected, actual });
-                    }
+                    let limits = *table_type.limits();
+                    let required = TableType::new(
+                        limits.initial() as usize,
+                        limits.maximum().map(|maximum| maximum as usize),
+                    );
+                    let imported = table.table_type(context.as_context());
+                    imported.satisfies(&required)?;
                     builder.push_table(table);
                 }
                 (pwasm::External::Memory(memory_type), Extern::Memory(memory)) => {
-                    let expected = *memory_type.limits();
-                    let expected_initial = Pages(expected.initial() as usize);
-                    let expected_maximum = expected
-                        .maximum()
-                        .map(|maximum| maximum as usize)
-                        .map(Pages);
-                    let actual = memory.memory_type(context.as_context());
-                    if expected_initial != actual.initial_pages()
-                        || expected_maximum != actual.maximum_pages()
-                    {
-                        return Err(InstantiationError::MemoryTypeMismatch { expected, actual });
-                    }
+                    let limits = *memory_type.limits();
+                    let required = MemoryType::new(limits.initial(), limits.maximum());
+                    let imported = memory.memory_type(context.as_context());
+                    imported.satisfies(&required)?;
                     builder.push_memory(memory);
                 }
                 (pwasm::External::Global(global_type), Extern::Global(global)) => {
