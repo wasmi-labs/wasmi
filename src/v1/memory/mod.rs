@@ -39,9 +39,9 @@ pub enum MemoryError {
     Vmem(byte_buffer::VmemError),
     /// Occurs when a memory type does not satisfy the constraints of another.
     UnsatisfyingMemoryType {
-        /// The unsatisfying [`TableType`].
+        /// The unsatisfying [`MemoryType`].
         unsatisfying: MemoryType,
-        /// The required [`TableType`].
+        /// The required [`MemoryType`].
         required: MemoryType,
     },
 }
