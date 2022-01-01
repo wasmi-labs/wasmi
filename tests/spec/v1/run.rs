@@ -103,7 +103,7 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
             WastDirective::Invoke(wast_invoke) => {
                 let span = wast_invoke.span;
                 test_context.profile().bump_invoke();
-                execute_wast_invoke(test_context, wast_invoke).unwrap_or_else(|error| {
+                execute_wast_invoke(test_context, span, wast_invoke).unwrap_or_else(|error| {
                     panic!(
                         "{}: failed to invoke `.wast` directive: {}",
                         test_context.spanned(span),
@@ -117,7 +117,7 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                 message,
             } => {
                 test_context.profile().bump_assert_trap();
-                match execute_wast_execute(test_context, exec) {
+                match execute_wast_execute(test_context, span, exec) {
                     Ok(results) => panic!(
                         "{}: expected to trap with message '{}' but succeeded with: {:?}",
                         test_context.spanned(span),
@@ -135,13 +135,14 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                 results: expected,
             } => {
                 test_context.profile().bump_assert_return();
-                let results = execute_wast_execute(test_context, exec).unwrap_or_else(|error| {
-                    panic!(
-                        "{}: encountered unexpected failure to execute `AssertReturn`: {}",
-                        test_context.spanned(span),
-                        error
-                    )
-                });
+                let results =
+                    execute_wast_execute(test_context, span, exec).unwrap_or_else(|error| {
+                        panic!(
+                            "{}: encountered unexpected failure to execute `AssertReturn`: {}",
+                            test_context.spanned(span),
+                            error
+                        )
+                    });
                 assert_results(&test_context, span, &results, &expected);
             }
             WastDirective::AssertExhaustion {
@@ -150,7 +151,7 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                 message,
             } => {
                 test_context.profile().bump_assert_exhaustion();
-                match execute_wast_invoke(test_context, call) {
+                match execute_wast_invoke(test_context, span, call) {
                     Ok(results) => {
                         panic!(
                             "{}: expected to fail due to resource exhaustion '{}' but succeeded with: {:?}",
@@ -174,7 +175,7 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
             }
             WastDirective::AssertException { span, exec } => {
                 test_context.profile().bump_assert_exception();
-                match execute_wast_execute(test_context, exec) {
+                match execute_wast_execute(test_context, span, exec) {
                     Ok(results) => panic!(
                         "{}: expected to fail due to exception but succeeded with: {:?}",
                         test_context.spanned(span),
@@ -281,10 +282,13 @@ fn module_compilation_fails(
 
 fn execute_wast_execute(
     context: &mut TestContext,
+    span: wast::Span,
     execute: WastExecute,
 ) -> Result<Vec<RuntimeValue>> {
     match execute {
-        WastExecute::Invoke(invoke) => execute_wast_invoke(context, invoke).map_err(Into::into),
+        WastExecute::Invoke(invoke) => {
+            execute_wast_invoke(context, span, invoke).map_err(Into::into)
+        }
         WastExecute::Module(module) => context.compile_and_instantiate(module).map(|_| Vec::new()),
         WastExecute::Get { module, global } => context
             .get_global(module, global)
@@ -293,7 +297,11 @@ fn execute_wast_execute(
     }
 }
 
-fn execute_wast_invoke(context: &mut TestContext, invoke: WastInvoke) -> Result<Vec<RuntimeValue>> {
+fn execute_wast_invoke(
+    context: &mut TestContext,
+    span: wast::Span,
+    invoke: WastInvoke,
+) -> Result<Vec<RuntimeValue>> {
     let module_name = invoke.module.map(|id| id.name());
     let field_name = invoke.name;
     let mut args = <Vec<RuntimeValue>>::new();
@@ -301,7 +309,8 @@ fn execute_wast_invoke(context: &mut TestContext, invoke: WastInvoke) -> Result<
         assert_eq!(
             arg.instrs.len(),
             1,
-            "only single invoke instructions are supported as invoke arguments but found: {:?}",
+            "{}: only single invoke instructions are supported as invoke arguments but found: {:?}",
+            context.spanned(span),
             arg.instrs
         );
         let arg = match &arg.instrs[0] {
@@ -310,7 +319,8 @@ fn execute_wast_invoke(context: &mut TestContext, invoke: WastInvoke) -> Result<
             wast::Instruction::F32Const(value) => RuntimeValue::F32(F32::from_bits(value.bits)),
             wast::Instruction::F64Const(value) => RuntimeValue::F64(F64::from_bits(value.bits)),
             unsupported => panic!(
-                "encountered unsupported invoke instruction: {:?}",
+                "{}: encountered unsupported invoke instruction: {:?}",
+                context.spanned(span),
                 unsupported
             ),
         };
