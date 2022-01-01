@@ -1,6 +1,6 @@
 #![allow(dead_code)] // TODO: remove
 
-use super::{TestError, TestProfile};
+use super::{TestDescriptor, TestError, TestProfile, TestSpan};
 use anyhow::Result;
 use std::collections::HashMap;
 use wasmi::{
@@ -26,7 +26,7 @@ use wast::Id;
 
 /// The context of a single Wasm test spec suite run.
 #[derive(Debug)]
-pub struct TestContext {
+pub struct TestContext<'a> {
     /// The `wasmi` engine used for executing functions used during the test.
     engine: Engine,
     /// The linker for linking together Wasm test modules.
@@ -43,10 +43,15 @@ pub struct TestContext {
     profile: TestProfile,
     /// Intermediate results buffer that can be reused for calling Wasm functions.
     results: Vec<RuntimeValue>,
+    /// The descriptor of the test.
+    ///
+    /// Useful for printing better debug messages in case of failure.
+    descriptor: &'a TestDescriptor,
 }
 
-impl Default for TestContext {
-    fn default() -> Self {
+impl<'a> TestContext<'a> {
+    /// Creates a new [`TestContext`] with the given [`TestDescriptor`].
+    pub fn new(descriptor: &'a TestDescriptor) -> Self {
         let engine = Engine::default();
         let mut linker = Linker::default();
         let mut store = Store::new(&engine, ());
@@ -89,11 +94,17 @@ impl Default for TestContext {
             last_instance: None,
             profile: TestProfile::default(),
             results: Vec::new(),
+            descriptor,
         }
     }
 }
 
-impl TestContext {
+impl TestContext<'_> {
+    /// Returns the [`TestDescriptor`] of the test context.
+    fn spanned(&self, span: wast::Span) -> TestSpan {
+        self.descriptor.spanned(span)
+    }
+
     /// Returns the [`Engine`] of the [`TestContext`].
     fn engine(&self) -> &Engine {
         &self.engine

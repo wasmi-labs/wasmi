@@ -18,7 +18,7 @@ use wast::{
 /// Runs the Wasm test spec identified by the given name.
 pub fn run_wasm_spec_test(name: &str) -> Result<()> {
     let test = TestDescriptor::new(name)?;
-    let mut context = TestContext::default();
+    let mut context = TestContext::new(&test);
 
     let parse_buffer = match ParseBuffer::new(test.file()) {
         Ok(buffer) => buffer,

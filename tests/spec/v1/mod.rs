@@ -6,7 +6,7 @@ mod run;
 
 use self::{
     context::TestContext,
-    descriptor::TestDescriptor,
+    descriptor::{TestDescriptor, TestSpan},
     error::TestError,
     profile::TestProfile,
 };
