@@ -37,6 +37,13 @@ pub enum MemoryError {
     OutOfBoundsAccess,
     /// A generic virtual memory error.
     Vmem(byte_buffer::VmemError),
+    /// Occurs when a memory type does not satisfy the constraints of another.
+    UnsatisfyingMemoryType {
+        /// The unsatisfying [`TableType`].
+        unsatisfying: MemoryType,
+        /// The required [`TableType`].
+        required: MemoryType,
+    },
 }
 
 impl Display for MemoryError {
@@ -52,6 +59,16 @@ impl Display for MemoryError {
                 write!(f, "tried to access virtual memory out of bounds")
             }
             MemoryError::Vmem(error) => Display::fmt(error, f),
+            Self::UnsatisfyingMemoryType {
+                unsatisfying,
+                required,
+            } => {
+                write!(
+                    f,
+                    "memory type {:?} does not satisfy requirements of {:?}",
+                    unsatisfying, required,
+                )
+            }
         }
     }
 }
@@ -96,6 +113,32 @@ impl MemoryType {
     /// - Maximum memory size cannot exceed `65536` pages or 4GiB.
     pub fn maximum_pages(self) -> Option<Pages> {
         self.maximum_pages
+    }
+
+    /// Checks if `self` satisfies the given `MemoryType`.
+    ///
+    /// # Errors
+    ///
+    /// - If the initial limits of the `required` [`MemoryType`] are greater than `self`.
+    /// - If the maximum limits of the `required` [`MemoryType`] are greater than `self`.
+    pub fn satisfies(&self, required: &MemoryType) -> Result<(), MemoryError> {
+        if required.initial_pages() > self.initial_pages() {
+            return Err(MemoryError::UnsatisfyingMemoryType {
+                unsatisfying: *self,
+                required: *required,
+            });
+        }
+        match (required.maximum_pages(), self.maximum_pages()) {
+            (None, _) => (),
+            (Some(max_required), Some(max)) if max_required >= max => (),
+            _ => {
+                return Err(MemoryError::UnsatisfyingMemoryType {
+                    unsatisfying: *self,
+                    required: *required,
+                });
+            }
+        }
+        Ok(())
     }
 }
 
