@@ -244,7 +244,7 @@ impl EngineInner {
         assert_eq!(results.len(), result_types.len());
         for (result, (value, value_type)) in results
             .iter_mut()
-            .zip(self.value_stack.drain().zip(result_types))
+            .zip(self.value_stack.drain().iter().zip(result_types))
         {
             *result = value.with_type(*value_type);
         }
