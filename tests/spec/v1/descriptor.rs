@@ -1,6 +1,5 @@
 #![allow(dead_code)] // TODO: remove
 
-use anyhow::Result;
 use std::{
     fmt::{self, Display},
     fs,

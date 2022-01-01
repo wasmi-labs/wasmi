@@ -10,7 +10,6 @@ use self::{
     error::TestError,
     profile::TestProfile,
 };
-use anyhow::Result;
 
 macro_rules! run_test {
     ($label: expr, $test_name: ident) => {
