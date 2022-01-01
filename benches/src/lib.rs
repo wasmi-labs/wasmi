@@ -8,7 +8,7 @@ extern crate wabt;
 
 use std::error;
 use std::fs::File;
-use wasmi::{ImportsBuilder, Module, ModuleInstance, NopExternals, RuntimeValue};
+use wasmi::{ImportsBuilder, Module, ModuleInstance, NopExternals, RuntimeValue, v1};
 
 use test::Bencher;
 
@@ -206,6 +206,50 @@ r#"
 			.invoke_export("fac-opt", &[RuntimeValue::I64(25)], &mut NopExternals);
 		assert_matches!(value, Ok(Some(RuntimeValue::I64(7034535277573963776))));
 	});
+}
+
+#[bench]
+fn fac_opt_v1(b: &mut Bencher) {
+    let wasm = wabt::wat2wasm(
+        r#"
+;; Optimized factorial.
+(func (export "fac-opt") (param i64) (result i64)
+	(local i64)
+	(set_local 1 (i64.const 1))
+	(block
+		(br_if 0 (i64.lt_s (get_local 0) (i64.const 2)))
+		(loop
+			(set_local 1 (i64.mul (get_local 1) (get_local 0)))
+			(set_local 0 (i64.add (get_local 0) (i64.const -1)))
+			(br_if 0 (i64.gt_s (get_local 0) (i64.const 1)))
+		)
+	)
+	(get_local 1)
+)
+"#,
+    )
+    .unwrap();
+
+    let engine = v1::Engine::default();
+    let module = v1::Module::new(&engine, &wasm).unwrap();
+    let mut linker = <v1::Linker<()>>::default();
+    let mut store = v1::Store::new(&engine, ());
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let fac = instance
+        .get_export(&store, "fac-opt")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    let mut result = [RuntimeValue::I64(0)];
+
+    b.iter(|| {
+        fac.call(&mut store, &[RuntimeValue::I64(25)], &mut result)
+            .unwrap();
+        assert_matches!(result, [RuntimeValue::I64(7034535277573963776)]);
+    });
 }
 
 // This is used for testing overhead of a function call
