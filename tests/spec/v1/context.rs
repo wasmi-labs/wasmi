@@ -100,6 +100,11 @@ impl<'a> TestContext<'a> {
 }
 
 impl TestContext<'_> {
+    /// Returns the file path of the associated `.wast` test file.
+    fn test_path(&self) -> &str {
+        self.descriptor.path()
+    }
+
     /// Returns the [`TestDescriptor`] of the test context.
     fn spanned(&self, span: wast::Span) -> TestSpan {
         self.descriptor.spanned(span)
@@ -124,7 +129,8 @@ impl TestContext<'_> {
         let module_name = module.id.map(|id| id.name());
         let wasm = module.encode().unwrap_or_else(|error| {
             panic!(
-                "encountered unexpected failure to encode `.wast` module into `.wasm`: {}",
+                "encountered unexpected failure to encode `.wast` module into `.wasm`:{}: {}",
+                self.test_path(),
                 error
             )
         });
