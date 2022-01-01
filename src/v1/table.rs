@@ -200,14 +200,14 @@ impl TableEntity {
     ///
     /// If the accesses element is out of bounds of the table.
     pub fn get(&self, offset: usize) -> Result<Option<Func>, TableError> {
-        let element = self
-            .elements
-            .get(offset)
-            .copied()
-            .ok_or_else(|| TableError::AccessOutOfBounds {
-                current: self.len(),
-                offset,
-            })?;
+        let element =
+            self.elements
+                .get(offset)
+                .copied()
+                .ok_or_else(|| TableError::AccessOutOfBounds {
+                    current: self.len(),
+                    offset,
+                })?;
         Ok(element)
     }
 

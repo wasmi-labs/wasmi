@@ -60,11 +60,8 @@ impl<'engine, 'func> ExecutionContext<'engine, 'func> {
     ) -> Result<FunctionExecutionOutcome, Trap> {
         'outer: loop {
             let pc = self.frame.inst_ptr;
-            let inst_context = InstructionExecutionContext::new(
-                self.value_stack,
-                self.frame,
-                &mut ctx,
-            );
+            let inst_context =
+                InstructionExecutionContext::new(self.value_stack, self.frame, &mut ctx);
             match self.func_body.visit(pc, inst_context)? {
                 ExecutionOutcome::Continue => {
                     // Advance instruction pointer.
