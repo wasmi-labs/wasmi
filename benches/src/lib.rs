@@ -7,10 +7,20 @@ extern crate assert_matches;
 extern crate wabt;
 
 use std::error;
+use std::io::Read as _;
 use std::fs::File;
 use wasmi::{ImportsBuilder, Module, ModuleInstance, NopExternals, RuntimeValue, v1};
 
 use test::Bencher;
+
+fn load_wasm_from_file(filename: &str) -> Result<Vec<u8>, Box<dyn error::Error>> {
+	let mut file = File::open(
+		"./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm"
+	)?;
+	let mut wasm = Vec::new();
+	file.read_to_end(&mut wasm)?;
+	Ok(wasm)
+}
 
 // Load a module from a file.
 fn load_from_file(filename: &str) -> Result<Module, Box<dyn error::Error>> {
@@ -44,6 +54,39 @@ fn bench_tiny_keccak(b: &mut Bencher) {
 			.invoke_export("bench_tiny_keccak", &[test_data_ptr], &mut NopExternals)
 			.unwrap();
 	});
+}
+
+#[bench]
+fn bench_tiny_keccak_v1(b: &mut Bencher) {
+	let wasm = load_wasm_from_file(
+		"./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm"
+	).unwrap();
+    let engine = v1::Engine::default();
+    let module = v1::Module::new(&engine, &wasm).unwrap();
+    let mut linker = <v1::Linker<()>>::default();
+    let mut store = v1::Store::new(&engine, ());
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let prepare = instance
+        .get_export(&store, "prepare_tiny_keccak")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+	let keccak = instance
+		.get_export(&store, "bench_tiny_keccak")
+		.and_then(v1::Extern::into_func)
+		.unwrap();
+	let mut test_data_ptr = RuntimeValue::I32(0);
+    let mut result = [RuntimeValue::I64(0)];
+
+	prepare.call(&mut store, &[], std::slice::from_mut(&mut test_data_ptr)).unwrap();
+	assert!(matches!(test_data_ptr, RuntimeValue::I32(_)));
+    b.iter(|| {
+        keccak.call(&mut store, std::slice::from_ref(&test_data_ptr), &mut [])
+            .unwrap();
+    });
 }
 
 #[bench]
