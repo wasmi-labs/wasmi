@@ -46,7 +46,7 @@ impl TestDescriptor {
     }
 
     /// Creates a [`TestSpan`] which can be used to print the location within the `.wast` test file.
-    pub fn spanned(&self, span: Span) -> TestSpan {
+    pub fn spanned(&self, span: wast::Span) -> TestSpan {
         TestSpan {
             path: self.path(),
             contents: self.file(),
@@ -68,7 +68,7 @@ pub struct TestSpan<'a> {
 
 impl Display for TestSpan<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let (line, col) = span.linecol_in(self.contents);
-        write!(f, "{}:{}:{}", path, line, col)
+        let (line, col) = self.span.linecol_in(self.contents);
+        write!(f, "{}:{}:{}", self.path, line, col)
     }
 }
