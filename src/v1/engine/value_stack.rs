@@ -469,7 +469,7 @@ impl ValueStack {
     ///
     /// This API is mostly used when writing results back to the
     /// caller after function execution has finished.
-    pub fn drain<'a>(&'a mut self) -> &[StackEntry] {
+    pub fn drain(&mut self) -> &[StackEntry] {
         let len = self.stack_ptr;
         self.stack_ptr = 0;
         &self.entries[0..len]
