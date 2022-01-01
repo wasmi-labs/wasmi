@@ -58,7 +58,7 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                 continue 'outer;
             }
             WastDirective::AssertMalformed {
-                span: _,
+                span,
                 module,
                 message,
             } => {
@@ -67,10 +67,10 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                     Some(module) => module,
                     None => continue 'outer,
                 };
-                module_compilation_fails(test_context, module, message);
+                module_compilation_fails(test_context, span, module, message);
             }
             WastDirective::AssertInvalid {
-                span: _,
+                span,
                 module,
                 message,
             } => {
@@ -79,7 +79,7 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                     Some(module) => module,
                     None => continue 'outer,
                 };
-                module_compilation_fails(test_context, module, message);
+                module_compilation_fails(test_context, span, module, message);
             }
             WastDirective::Register {
                 span: _,
@@ -95,15 +95,15 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                 assert!(result.is_ok());
             }
             WastDirective::AssertTrap {
-                span: _,
+                span,
                 exec,
                 message,
             } => {
                 test_context.profile().bump_assert_trap();
                 match execute_wast_execute(test_context, exec) {
                     Ok(results) => panic!(
-                        "expected to trap with message '{}' but succeeded with: {:?}",
-                        message, results
+                        "{}: expected to trap with message '{}' but succeeded with: {:?}",
+                        test_context.spanned(span), message, results
                     ),
                     Err(_) => {
                         // TODO: ideally we check if the error is caused by a trap.
@@ -111,21 +111,22 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                 }
             }
             WastDirective::AssertReturn {
-                span: _,
+                span,
                 exec,
                 results: expected,
             } => {
                 test_context.profile().bump_assert_return();
                 let results = execute_wast_execute(test_context, exec).unwrap_or_else(|error| {
                     panic!(
-                        "encountered unexpected failure to execute `AssertReturn`: {}",
+                        "{}: encountered unexpected failure to execute `AssertReturn`: {}",
+                        test_context.spanned(span),
                         error
                     )
                 });
                 assert_results(&results, &expected);
             }
             WastDirective::AssertExhaustion {
-                span: _,
+                span,
                 call,
                 message,
             } => {
@@ -133,7 +134,8 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                 match execute_wast_invoke(test_context, call) {
                     Ok(results) => {
                         panic!(
-                            "expected to fail due to resource exhaustion '{}' but succeeded with: {:?}",
+                            "{}: expected to fail due to resource exhaustion '{}' but succeeded with: {:?}",
+                            test_context.spanned(span),
                             message,
                             results
                         )
@@ -144,18 +146,18 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                 }
             }
             WastDirective::AssertUnlinkable {
-                span: _,
+                span,
                 module,
                 message,
             } => {
                 test_context.profile().bump_assert_unlinkable();
-                module_compilation_fails(test_context, module, message);
+                module_compilation_fails(test_context, span, module, message);
             }
             WastDirective::AssertException { span, exec } => {
                 test_context.profile().bump_assert_exception();
                 match execute_wast_execute(test_context, exec) {
                     Ok(results) => panic!(
-                        "expected to fail due to exception but succeeded with:{}: {:?}",
+                        "{}: expected to fail due to exception but succeeded with: {:?}",
                         test_context.spanned(span),
                         results
                     ),
@@ -226,13 +228,15 @@ fn extract_module(quoted_module: QuoteModule) -> Option<wast::Module> {
 
 fn module_compilation_fails(
     context: &mut TestContext,
+    span: wast::Span,
     module: wast::Module,
     expected_message: &str,
 ) {
     let result = context.compile_and_instantiate(module);
     assert!(
         result.is_err(),
-        "succeeded to instantiate module but should have failed with: {}",
+        "{}: succeeded to instantiate module but should have failed with: {}",
+        context.spanned(span),
         expected_message
     );
 }
