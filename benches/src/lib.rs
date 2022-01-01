@@ -14,9 +14,7 @@ use wasmi::{ImportsBuilder, Module, ModuleInstance, NopExternals, RuntimeValue, 
 use test::Bencher;
 
 fn load_wasm_from_file(filename: &str) -> Result<Vec<u8>, Box<dyn error::Error>> {
-	let mut file = File::open(
-		"./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm"
-	)?;
+	let mut file = File::open(filename)?;
 	let mut wasm = Vec::new();
 	file.read_to_end(&mut wasm)?;
 	Ok(wasm)
@@ -79,7 +77,6 @@ fn bench_tiny_keccak_v1(b: &mut Bencher) {
 		.and_then(v1::Extern::into_func)
 		.unwrap();
 	let mut test_data_ptr = RuntimeValue::I32(0);
-    let mut result = [RuntimeValue::I64(0)];
 
 	prepare.call(&mut store, &[], std::slice::from_mut(&mut test_data_ptr)).unwrap();
 	assert!(matches!(test_data_ptr, RuntimeValue::I32(_)));
