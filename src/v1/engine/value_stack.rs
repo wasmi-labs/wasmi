@@ -325,28 +325,6 @@ impl ValueStack {
         f(lhs, rhs)
     }
 
-    /// Evaluates `f` on the top two stack entries.
-    ///
-    /// In summary this procedure does the following:
-    ///
-    /// - Pop entry `r` and reinterpret it as type `T`.
-    /// - Peek entry `&mut l_ptr`.
-    /// - Reinterpret `l_ptr` as type `T` and store it as `l`.
-    /// - Evaluate `f(l, r)` with result `r`.
-    /// - Store `r` back into `l_ptr`.
-    pub fn pop_eval_as<T, F>(&mut self, f: F)
-    where
-        F: FnOnce(T, T) -> T,
-        T: FromStackEntry + Into<StackEntry>,
-    {
-        self.pop_eval(|lhs, rhs| {
-            let l = T::from_stack_entry(*lhs);
-            let r = T::from_stack_entry(rhs);
-            let result = f(l, r);
-            *lhs = result.into();
-        });
-    }
-
     /// Pops the last pair of [`StackEntry`] from the [`ValueStack`].
     ///
     /// # Note
@@ -378,33 +356,6 @@ impl ValueStack {
         let (e2, e3) = self.pop2();
         let e1 = self.last_mut();
         f(e1, e2, e3)
-    }
-
-    /// Evaluates `f` on the top three stack entries.
-    ///
-    /// In summary this procedure does the following:
-    ///
-    /// - Pop entry `e3` and reinterpret it as type `T3`.
-    /// - Pop entry `e2` and reinterpret it as type `T2`.
-    /// - Peek entry `&mut e1_ptr`.
-    /// - Reinterpret `e1_ptr` as type `T1` and store it as `e1`.
-    /// - Evaluate `f(e1, e2, e3)` with result `r`.
-    /// - Store `r` back into `e1_ptr`.
-    pub fn pop2_eval_as<T1, T2, T3, R, F>(&mut self, f: F)
-    where
-        F: FnOnce(T1, T2, T3) -> R,
-        T1: FromStackEntry,
-        T2: FromStackEntry,
-        T3: FromStackEntry,
-        R: Into<StackEntry>,
-    {
-        self.pop2_eval(|e1, e2, e3| {
-            let v1 = T1::from_stack_entry(*e1);
-            let v2 = T2::from_stack_entry(e2);
-            let v3 = T3::from_stack_entry(e3);
-            let result = f(v1, v2, v3);
-            *e1 = result.into();
-        });
     }
 
     /// Pushes the [`StackEntry`] to the end of the [`ValueStack`].
