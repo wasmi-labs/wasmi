@@ -36,6 +36,13 @@ pub enum TableError {
         /// The accessed index that is out of bounds.
         offset: usize,
     },
+    /// Occurs when a table type does not satisfy the constraints of another.
+    UnsatisfyingTableType {
+        /// The unsatisfying [`TableType`].
+        unsatisfying: TableType,
+        /// The required [`TableType`].
+        required: TableType,
+    },
 }
 
 impl Display for TableError {
@@ -57,6 +64,16 @@ impl Display for TableError {
                     f,
                     "out of bounds access of table element {} of table with size {}",
                     offset, current,
+                )
+            }
+            Self::UnsatisfyingTableType {
+                unsatisfying,
+                required,
+            } => {
+                write!(
+                    f,
+                    "table type {:?} does not satisfy requirements of {:?}",
+                    unsatisfying, required,
                 )
             }
         }
@@ -93,6 +110,32 @@ impl TableType {
     /// Returns the maximum size if any.
     pub fn maximum(self) -> Option<usize> {
         self.maximum
+    }
+
+    /// Checks if `self` satisfies the given `TableType`.
+    ///
+    /// # Errors
+    ///
+    /// - If the initial limits of the `required` [`TableType`] are greater than `self`.
+    /// - If the maximum limits of the `required` [`TableType`] are greater than `self`.
+    pub(crate) fn satisfies(&self, required: &TableType) -> Result<(), TableError> {
+        if required.initial() > self.initial() {
+            return Err(TableError::UnsatisfyingTableType {
+                unsatisfying: *self,
+                required: *required,
+            });
+        }
+        match (required.maximum(), self.maximum()) {
+            (None, _) => (),
+            (Some(max_required), Some(max)) if max_required >= max => (),
+            _ => {
+                return Err(TableError::UnsatisfyingTableType {
+                    unsatisfying: *self,
+                    required: *required,
+                });
+            }
+        }
+        Ok(())
     }
 }
 
