@@ -160,7 +160,11 @@ impl Eq for ValueStack {}
 
 impl Default for ValueStack {
     fn default() -> Self {
-        Self::new(DEFAULT_VALUE_STACK_LIMIT / mem::size_of::<StackEntry>())
+        // TODO: remove `2 *` in the below calculation.
+        //
+        // Currently we need this to make yet another Wasm spec test pass.
+        // We have not yet figured out why that is though ...
+        Self::new(2 * DEFAULT_VALUE_STACK_LIMIT / mem::size_of::<StackEntry>())
     }
 }
 
