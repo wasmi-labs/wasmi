@@ -15,7 +15,6 @@ macro_rules! define_tests {
     ( $( $(#[$attr:meta])* fn $test_name:ident($file_name:expr); )* ) => {
         $(
             #[test]
-            #[ignore]
             $( #[$attr] )*
             fn $test_name() {
                 self::run::run_wasm_spec_test($file_name)
@@ -43,17 +42,17 @@ define_tests! {
     fn wasm_elem("elem");
     fn wasm_endianness("endianness");
     fn wasm_exports("exports");
-    fn wasm_f32("f32");
-    fn wasm_f32_bitwise("f32_bitwise");
+    #[ignore] fn wasm_f32("f32");
+    #[ignore] fn wasm_f32_bitwise("f32_bitwise");
     fn wasm_f32_cmp("f32_cmp");
-    fn wasm_f64("f64");
-    fn wasm_f64_bitwise("f64_bitwise");
+    #[ignore] fn wasm_f64("f64");
+    #[ignore] fn wasm_f64_bitwise("f64_bitwise");
     fn wasm_f64_cmp("f64_cmp");
     fn wasm_fac("fac");
     fn wasm_float_exprs("float_exprs");
     fn wasm_float_literals("float_literals");
     fn wasm_float_memory("float_memory");
-    fn wasm_float_misc("float_misc");
+    #[ignore] fn wasm_float_misc("float_misc");
     fn wasm_forward("forward");
     fn wasm_func("func");
     fn wasm_func_ptrs("func_ptrs");
@@ -62,13 +61,13 @@ define_tests! {
     fn wasm_i32("i32");
     fn wasm_i64("i64");
     fn wasm_if("if");
-    fn wasm_imports("imports");
+    #[ignore] fn wasm_imports("imports");
     fn inline_module("inline-module");
     fn wasm_int_exprs("int_exprs");
     fn wasm_int_literals("int_literals");
     fn wasm_labels("labels");
     fn wasm_left_to_right("left-to-right");
-    fn wasm_linking("linking");
+    #[ignore] fn wasm_linking("linking");
     fn wasm_loop("loop");
     fn wasm_memory("memory");
     fn wasm_memory_redundancy("memory_redundancy");
@@ -79,9 +78,9 @@ define_tests! {
     fn wasm_return("return");
     fn wasm_select("select");
     fn wasm_set_local("set_local");
-    fn wasm_skip_stack_guard_page("skip-stack-guard-page");
+    #[ignore] fn wasm_skip_stack_guard_page("skip-stack-guard-page");
     fn wasm_stack("stack");
-    fn wasm_start("start");
+    #[ignore] fn wasm_start("start");
     fn wasm_store_retval("store_retval");
     fn wasm_switch("switch");
     fn wasm_tee_local("tee_local");
