@@ -103,7 +103,9 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                 match execute_wast_execute(test_context, exec) {
                     Ok(results) => panic!(
                         "{}: expected to trap with message '{}' but succeeded with: {:?}",
-                        test_context.spanned(span), message, results
+                        test_context.spanned(span),
+                        message,
+                        results
                     ),
                     Err(_) => {
                         // TODO: ideally we check if the error is caused by a trap.
@@ -123,7 +125,7 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                         error
                     )
                 });
-                assert_results(&results, &expected);
+                assert_results(&test_context, span, &results, &expected);
             }
             WastDirective::AssertExhaustion {
                 span,
@@ -170,43 +172,62 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
 }
 
 /// Asserts that `results` match the `expected` values.
-fn assert_results(results: &[RuntimeValue], expected: &[AssertExpression]) {
+fn assert_results(
+    context: &TestContext,
+    span: wast::Span,
+    results: &[RuntimeValue],
+    expected: &[AssertExpression],
+) {
     assert_eq!(results.len(), expected.len());
     for (result, expected) in results.iter().zip(expected) {
         match (result, expected) {
             (RuntimeValue::I32(result), AssertExpression::I32(expected)) => {
-                assert_eq!(result, expected)
+                assert_eq!(result, expected, "in {}", context.spanned(span))
             }
             (RuntimeValue::I64(result), AssertExpression::I64(expected)) => {
-                assert_eq!(result, expected)
+                assert_eq!(result, expected, "in {}", context.spanned(span))
             }
             (RuntimeValue::F32(result), AssertExpression::F32(expected)) => match expected {
                 NanPattern::CanonicalNan | NanPattern::ArithmeticNan => assert!(result.is_nan()),
                 NanPattern::Value(expected) => {
-                    assert_eq!(result.to_bits(), expected.bits);
+                    assert_eq!(
+                        result.to_bits(),
+                        expected.bits,
+                        "in {}",
+                        context.spanned(span)
+                    );
                 }
             },
             (RuntimeValue::F32(result), AssertExpression::LegacyArithmeticNaN) => {
-                assert!(result.is_nan())
+                assert!(result.is_nan(), "in {}", context.spanned(span))
             }
             (RuntimeValue::F32(result), AssertExpression::LegacyCanonicalNaN) => {
-                assert!(result.is_nan())
+                assert!(result.is_nan(), "in {}", context.spanned(span))
             }
             (RuntimeValue::F64(result), AssertExpression::F64(expected)) => match expected {
-                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => assert!(result.is_nan()),
+                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => {
+                    assert!(result.is_nan(), "in {}", context.spanned(span))
+                }
                 NanPattern::Value(expected) => {
-                    assert_eq!(result.to_bits(), expected.bits);
+                    assert_eq!(
+                        result.to_bits(),
+                        expected.bits,
+                        "in {}",
+                        context.spanned(span)
+                    );
                 }
             },
             (RuntimeValue::F64(result), AssertExpression::LegacyArithmeticNaN) => {
-                assert!(result.is_nan())
+                assert!(result.is_nan(), "in {}", context.spanned(span))
             }
             (RuntimeValue::F64(result), AssertExpression::LegacyCanonicalNaN) => {
-                assert!(result.is_nan())
+                assert!(result.is_nan(), "in {}", context.spanned(span))
             }
             (result, expected) => panic!(
-                "encountered mismatch in evaluation. expected {:?} but found {:?}",
-                expected, result
+                "{}: encountered mismatch in evaluation. expected {:?} but found {:?}",
+                context.spanned(span),
+                expected,
+                result
             ),
         }
     }
