@@ -175,6 +175,12 @@ impl TestContext<'_> {
             })
     }
 
+    /// Registers the given [`Instance`] with the given `name` and sets it as the last instance.
+    pub fn register_instance(&mut self, name: &str, instance: Instance) {
+        self.instances.insert(name.to_string(), instance);
+        self.last_instance = Some(instance);
+    }
+
     /// Invokes the [`Func`] identified by `func_name` in [`Instance`] identified by `module_name`.
     ///
     /// If no [`Instance`] under `module_name` is found then invoke [`Func`] on the last instantiated [`Instance`].

@@ -86,13 +86,19 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                 };
                 module_compilation_fails(test_context, span, module, message);
             }
-            WastDirective::Register {
-                span: _,
-                name: _,
-                module: _,
-            } => {
-                // TODO: figure out what this does and properly implement it ...
+            WastDirective::Register { span, name, module } => {
                 test_context.profile().bump_register();
+                let module_name = module.map(|id| id.name());
+                let instance = test_context
+                    .instance_by_name_or_last(module_name)
+                    .unwrap_or_else(|error| {
+                        panic!(
+                            "{}: failed to load module: {}",
+                            test_context.spanned(span),
+                            error
+                        )
+                    });
+                test_context.register_instance(name, instance);
             }
             WastDirective::Invoke(wast_invoke) => {
                 let span = wast_invoke.span;
