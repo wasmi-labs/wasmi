@@ -81,7 +81,7 @@ macro_rules! impl_from_stack_entry_integer {
 		$(
 			impl FromStackEntry for $t {
 				fn from_stack_entry(entry: StackEntry) -> Self {
-					entry.to_bits() as $t
+					entry.to_bits() as _
 				}
 			}
 
@@ -100,7 +100,7 @@ macro_rules! impl_from_stack_entry_float {
 		$(
 			impl FromStackEntry for $t {
 				fn from_stack_entry(entry: StackEntry) -> Self {
-					<$t>::from_bits(entry.to_bits() as _)
+					Self::from_bits(entry.to_bits() as _)
 				}
 			}
 
