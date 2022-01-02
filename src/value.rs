@@ -5,13 +5,6 @@ use crate::{
 };
 use core::{f32, i32, i64, u32, u64};
 
-/// Error for `LittleEndianConvert`
-#[derive(Debug)]
-pub enum Error {
-    /// The buffer is too short for the type being deserialized
-    InvalidLittleEndianBuffer,
-}
-
 /// Runtime representation of a value.
 ///
 /// Wasm code manipulate values of the four basic value types:
