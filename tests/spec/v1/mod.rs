@@ -80,7 +80,7 @@ define_tests! {
     fn wasm_set_local("set_local");
     #[ignore] fn wasm_skip_stack_guard_page("skip-stack-guard-page");
     fn wasm_stack("stack");
-    #[ignore] fn wasm_start("start");
+    fn wasm_start("start");
     fn wasm_store_retval("store_retval");
     fn wasm_switch("switch");
     fn wasm_tee_local("tee_local");
