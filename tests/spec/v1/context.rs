@@ -66,6 +66,9 @@ impl<'a> TestContext<'a> {
             RuntimeValue::F64(666.0.into()),
             Mutability::Const,
         );
+        let print = Func::wrap(&mut store, || {
+            println!("print");
+        });
         let print_i32 = Func::wrap(&mut store, |value: i32| {
             println!("print: {}", value);
         });
@@ -86,6 +89,7 @@ impl<'a> TestContext<'a> {
         linker.define("spectest", "global_i32", global_i32).unwrap();
         linker.define("spectest", "global_f32", global_f32).unwrap();
         linker.define("spectest", "global_f64", global_f64).unwrap();
+        linker.define("spectest", "print", print).unwrap();
         linker.define("spectest", "print_i32", print_i32).unwrap();
         linker.define("spectest", "print_f32", print_f32).unwrap();
         linker.define("spectest", "print_f64", print_f64).unwrap();
