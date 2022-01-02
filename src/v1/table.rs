@@ -142,22 +142,22 @@ impl TableType {
 /// A Wasm table entity.
 #[derive(Debug)]
 pub struct TableEntity {
-    ty: TableType,
+    table_type: TableType,
     elements: Vec<Option<Func>>,
 }
 
 impl TableEntity {
     /// Creates a new table entity with the given resizable limits.
-    pub fn new(limits: TableType) -> Self {
+    pub fn new(table_type: TableType) -> Self {
         Self {
-            elements: vec![None; limits.initial()],
-            ty: limits,
+            elements: vec![None; table_type.initial()],
+            table_type,
         }
     }
 
     /// Returns the resizable limits of the table.
     pub fn table_type(&self) -> TableType {
-        self.ty
+        self.table_type
     }
 
     /// Returns the current length of the table.
@@ -180,11 +180,11 @@ impl TableEntity {
     ///
     /// If the table is grown beyond its maximum limits.
     pub fn grow(&mut self, grow_by: usize) -> Result<(), TableError> {
-        let maximum = self.ty.maximum().unwrap_or(u32::MAX as usize);
+        let maximum = self.table_type.maximum().unwrap_or(u32::MAX as usize);
         let current = self.len();
         let new_len = current
             .checked_add(grow_by)
-            .filter(|&new_len| new_len < maximum)
+            .filter(|&new_len| new_len <= maximum)
             .ok_or(TableError::GrowOutOfBounds {
                 maximum,
                 current,
