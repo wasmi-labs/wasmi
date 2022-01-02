@@ -211,10 +211,15 @@ impl<'a> InstancePre<'a> {
     ///
     /// If the `start` function is invalid albeit successful validation.
     pub fn start(self, mut context: impl AsContextMut) -> Result<Instance, InstantiationError> {
-        if let Some(start_index) = self.start_fn() {
+        let opt_start_index = self.start_fn();
+        context
+            .as_context_mut()
+            .store
+            .initialize_instance(self.handle, self.builder.finish());
+        if let Some(start_index) = opt_start_index {
             let start_func = self
                 .handle
-                .get_func(context.as_context(), start_index)
+                .get_func(&mut context, start_index)
                 .unwrap_or_else(|| {
                     panic!(
                         "encountered invalid start function after validation: {}",
@@ -223,10 +228,6 @@ impl<'a> InstancePre<'a> {
                 });
             start_func.call(context.as_context_mut(), &[], &mut [])?
         }
-        context
-            .as_context_mut()
-            .store
-            .initialize_instance(self.handle, self.builder.finish());
         Ok(self.handle)
     }
 
