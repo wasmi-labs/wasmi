@@ -61,7 +61,7 @@ define_tests! {
     fn wasm_i32("i32");
     fn wasm_i64("i64");
     fn wasm_if("if");
-    #[ignore] fn wasm_imports("imports");
+    fn wasm_imports("imports");
     fn inline_module("inline-module");
     fn wasm_int_exprs("int_exprs");
     fn wasm_int_literals("int_literals");
