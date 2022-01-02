@@ -1358,11 +1358,19 @@ pub fn check_function_args(signature: &Signature, args: &[RuntimeValue]) -> Resu
     Ok(())
 }
 
-#[derive(Debug)]
 struct ValueStack {
     buf: Box<[RuntimeValueInternal]>,
     /// Index of the first free place in the stack.
     sp: usize,
+}
+
+impl core::fmt::Debug for ValueStack {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ValueStack")
+            .field("entries", &&self.buf[..self.sp])
+            .field("stack_ptr", &self.sp)
+            .finish()
+    }
 }
 
 impl ValueStack {
