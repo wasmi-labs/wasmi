@@ -218,14 +218,14 @@ pub enum Instruction {
         ///
         /// Note: This does not include any meta instructions such as
         /// [`Instruction::FuncBodyStart`] or [`Instruction::FuncBodyEnd`].
-        len_instructions: usize,
+        len_instructions: u32,
         /// Represents the number of local variables of the function body.
         ///
         /// Note: The types of the locals do not matter since all stack values
         ///       use 64-bit encoding in the `wasmi` bytecode interpreter.
         /// Note: Storing the amount of locals inline with the rest of the
         ///       function body eliminates one indirection when calling a function.
-        len_locals: usize,
+        len_locals: u32,
     },
     /// The end of a Wasm function body.
     ///

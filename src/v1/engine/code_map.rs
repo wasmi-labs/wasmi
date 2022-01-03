@@ -58,7 +58,18 @@ impl CodeMap {
         // in between instructions of different function bodies as a small
         // safety precaution.
         let insts = insts.into_iter();
-        let len_instructions = insts.len();
+        let len_instructions = insts.len().try_into().unwrap_or_else(|error| {
+            panic!(
+                "encountered too many instructions (= {}) for function: {}",
+                insts.len(), error
+            )
+        });
+        let len_locals = len_locals.try_into().unwrap_or_else(|error| {
+            panic!(
+                "encountered too many local variables (= {}) for function: {}",
+                len_locals, error
+            )
+        });
         let start = iter::once(Instruction::FuncBodyStart {
             len_instructions,
             len_locals,
@@ -85,6 +96,8 @@ impl CodeMap {
                 unexpected
             ),
         };
+        let len_instructions = len_instructions as usize;
+        let len_locals = len_locals as usize;
         // The index of the first instruction in the function body.
         let first_inst = offset + 1;
         {
