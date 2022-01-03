@@ -5,25 +5,35 @@ use core::cmp;
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct DropKeep {
     /// The amount of stack values dropped.
-    drop: usize,
+    drop: u32,
     /// The amount of stack values kept.
-    keep: usize,
+    keep: u32,
 }
 
 impl DropKeep {
     /// Creates a new [`DropKeep`] with the given amounts to drop and keep.
+    ///
+    /// # Panics
+    ///
+    /// - If `drop` or `keep` values do not respect their limitations.
     pub fn new(drop: usize, keep: usize) -> Self {
+        let drop = drop.try_into().unwrap_or_else(|error| {
+            panic!("encountered invalid `drop` amount of {}: {}", drop, error)
+        });
+        let keep = keep.try_into().unwrap_or_else(|error| {
+            panic!("encountered invalid `keep` amount of {}: {}", keep, error)
+        });
         Self { drop, keep }
     }
 
     /// Returns the amount of stack values to drop.
     pub fn drop(self) -> usize {
-        self.drop
+        self.drop as usize
     }
 
     /// Returns the amount of stack values to keep.
     pub fn keep(self) -> usize {
-        self.keep
+        self.keep as usize
     }
 }
 
