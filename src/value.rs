@@ -167,6 +167,12 @@ pub trait Float<T>: ArithmeticOps<T> {
     fn nearest(self) -> T;
     /// Takes the square root of a number.
     fn sqrt(self) -> T;
+    /// Returns `true` if the sign of the number is positive.
+    #[allow(clippy::wrong_self_convention)]
+    fn is_sign_positive(self) -> bool;
+    /// Returns `true` if the sign of the number is negative.
+    #[allow(clippy::wrong_self_convention)]
+    fn is_sign_negative(self) -> bool;
     /// Returns the minimum of the two numbers.
     fn min(self, other: T) -> T;
     /// Returns the maximum of the two numbers.
@@ -743,27 +749,41 @@ macro_rules! impl_float {
             fn sqrt(self) -> $type {
                 fmath::$fXX::sqrt($fXX::from(self)).into()
             }
-            // This instruction corresponds to what is sometimes called "minNaN" in other languages.
-            fn min(self, other: $type) -> $type {
-                if self.is_nan() {
-                    return self;
-                }
-                if other.is_nan() {
-                    return other;
-                }
-
-                self.min(other)
+            fn is_sign_positive(self) -> bool {
+                $fXX::is_sign_positive($fXX::from(self)).into()
             }
-            // This instruction corresponds to what is sometimes called "maxNaN" in other languages.
+            fn is_sign_negative(self) -> bool {
+                $fXX::is_sign_negative($fXX::from(self)).into()
+            }
+            fn min(self, other: $type) -> $type {
+                // The implementation strictly adheres to the mandated behavior for the Wasm specification.
+                // Note: In other contexts this API is also known as: `nan_min`.
+                match (self.is_nan(), other.is_nan()) {
+                    (true, false) => self,
+                    (false, true) => other,
+                    _ => {
+                        // Case: Both values are NaN; OR both values are non-NaN.
+                        if other.is_sign_negative() {
+                            return other.min(self);
+                        }
+                        self.min(other)
+                    }
+                }
+            }
             fn max(self, other: $type) -> $type {
-                if self.is_nan() {
-                    return self;
+                // The implementation strictly adheres to the mandated behavior for the Wasm specification.
+                // Note: In other contexts this API is also known as: `nan_max`.
+                match (self.is_nan(), other.is_nan()) {
+                    (true, false) => self,
+                    (false, true) => other,
+                    _ => {
+                        // Case: Both values are NaN; OR both values are non-NaN.
+                        if other.is_sign_positive() {
+                            return other.max(self);
+                        }
+                        self.max(other)
+                    }
                 }
-                if other.is_nan() {
-                    return other;
-                }
-
-                self.max(other)
             }
             fn copysign(self, other: $type) -> $type {
                 use core::mem::size_of;
@@ -782,6 +802,30 @@ macro_rules! impl_float {
             }
         }
     };
+}
+
+#[test]
+fn wasm_float_min_regression_works() {
+    assert_eq!(
+        Float::min(F32::from(-0.0), F32::from(0.0)).to_bits(),
+        0x8000_0000,
+    );
+    assert_eq!(
+        Float::min(F32::from(0.0), F32::from(-0.0)).to_bits(),
+        0x8000_0000,
+    );
+}
+
+#[test]
+fn wasm_float_max_regression_works() {
+    assert_eq!(
+        Float::max(F32::from(-0.0), F32::from(0.0)).to_bits(),
+        0x0000_0000,
+    );
+    assert_eq!(
+        Float::max(F32::from(0.0), F32::from(-0.0)).to_bits(),
+        0x0000_0000,
+    );
 }
 
 impl_float!(f32, f32, i32);
