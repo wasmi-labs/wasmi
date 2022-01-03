@@ -787,11 +787,6 @@ macro_rules! impl_float {
             }
             fn copysign(self, other: $type) -> $type {
                 use core::mem::size_of;
-
-                if self.is_nan() {
-                    return self;
-                }
-
                 let sign_mask: $iXX = 1 << ((size_of::<$iXX>() << 3) - 1);
                 let self_int: $iXX = self.transmute_into();
                 let other_int: $iXX = other.transmute_into();
@@ -837,6 +832,19 @@ impl_float!(f32, f32, i32);
 impl_float!(f64, f64, i64);
 impl_float!(F32, f32, i32);
 impl_float!(F64, f64, i64);
+
+#[test]
+fn copysign_regression_works() {
+    // This test has been directly extracted from a WebAssembly Specification assertion.
+    use Float as _;
+    assert!(F32::from_bits(0xFFC00000).is_nan());
+    assert_eq!(
+        F32::from_bits(0xFFC00000)
+            .copysign(F32::from_bits(0x0000_0000))
+            .to_bits(),
+        F32::from_bits(0x7FC00000).to_bits()
+    )
+}
 
 #[cfg(not(feature = "std"))]
 mod libm_adapters {
