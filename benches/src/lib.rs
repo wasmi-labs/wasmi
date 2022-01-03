@@ -167,23 +167,8 @@ fn bench_regex_redux(b: &mut Bencher) {
 
 #[bench]
 fn fac_recursive(b: &mut Bencher) {
-    let wasm = wabt::wat2wasm(
-        r#"
-	;; Recursive factorial
-(func (export "fac-rec") (param i64) (result i64)
-	(if (result i64) (i64.eq (get_local 0) (i64.const 0))
-		(then (i64.const 1))
-		(else
-			(i64.mul (get_local 0) (call 0 (i64.sub (get_local 0) (i64.const 1))))
-		)
-	)
-)
-"#,
-    )
-    .unwrap();
-
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/recursive_factorial.wat")).unwrap();
     let module = Module::from_buffer(&wasm).unwrap();
-
     let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
         .assert_no_start();
@@ -196,28 +181,8 @@ fn fac_recursive(b: &mut Bencher) {
 
 #[bench]
 fn fac_opt(b: &mut Bencher) {
-    let wasm = wabt::wat2wasm(
-        r#"
-;; Optimized factorial.
-(func (export "fac-opt") (param i64) (result i64)
-	(local i64)
-	(set_local 1 (i64.const 1))
-	(block
-		(br_if 0 (i64.lt_s (get_local 0) (i64.const 2)))
-		(loop
-			(set_local 1 (i64.mul (get_local 1) (get_local 0)))
-			(set_local 0 (i64.add (get_local 0) (i64.const -1)))
-			(br_if 0 (i64.gt_s (get_local 0) (i64.const 1)))
-		)
-	)
-	(get_local 1)
-)
-"#,
-    )
-    .unwrap();
-
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/optimized_factorial.wat")).unwrap();
     let module = Module::from_buffer(&wasm).unwrap();
-
     let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
         .assert_no_start();
@@ -228,31 +193,10 @@ fn fac_opt(b: &mut Bencher) {
     });
 }
 
-// This is used for testing overhead of a function call
-// is not too large.
 #[bench]
 fn recursive_ok(b: &mut Bencher) {
-    let wasm = wabt::wat2wasm(
-        r#"
-(module
-  (func $call (export "call") (param i32) (result i32)
-	block (result i32)
-	  get_local 0
-	  get_local 0
-	  i32.eqz
-	  br_if 0
-
-	  i32.const 1
-	  i32.sub
-	  call $call
-	end
-  )
-)
-		"#,
-    )
-    .unwrap();
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/recursive_ok.wat")).unwrap();
     let module = Module::from_buffer(&wasm).unwrap();
-
     let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
         .assert_no_start();
@@ -265,28 +209,8 @@ fn recursive_ok(b: &mut Bencher) {
 
 #[bench]
 fn recursive_trap(b: &mut Bencher) {
-    let wasm = wabt::wat2wasm(
-        r#"
-(module
-  (func $call (export "call") (param i32) (result i32)
-	block (result i32)
-	  get_local 0
-	  get_local 0
-	  i32.eqz
-	  br_if 0
-
-	  i32.const 1
-	  i32.sub
-	  call $call
-	end
-	unreachable
-  )
-)
-		"#,
-    )
-    .unwrap();
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/recursive_trap.wat")).unwrap();
     let module = Module::from_buffer(&wasm).unwrap();
-
     let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
         .assert_no_start();
@@ -299,40 +223,8 @@ fn recursive_trap(b: &mut Bencher) {
 
 #[bench]
 fn host_calls(b: &mut Bencher) {
-    // The below `.wat` file exports a function `call` that takes a `n` of type `i64`.
-    // It will iterate `n` times and call the imported function `host_call` every time.
-    //
-    // This benchmarks tests the performance of host calls.
-    //
-    // After successful execution the `call` function will return `0`.
-    let wasm = wabt::wat2wasm(
-        r#"
-(module
-  (import "benchmark" "host_call" (func $host_call (param i64) (result i64)))
-  (func $call (export "call") (param i64) (result i64)
-	(block
-		(loop
-			(br_if
-				1
-				(i64.eq (get_local 0) (i64.const 0))
-			)
-			(set_local 0
-				(i64.sub
-					(call $host_call (get_local 0))
-					(i64.const 1)
-				)
-			)
-			(br 0)
-		)
-	)
-	(get_local 0)
-  )
-)
-		"#,
-    )
-    .unwrap();
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/host_calls.wat")).unwrap();
     let module = Module::from_buffer(&wasm).unwrap();
-
     let instance = ModuleInstance::new(&module, &BenchExternals)
         .expect("failed to instantiate wasm module")
         .assert_no_start();
