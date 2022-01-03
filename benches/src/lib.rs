@@ -9,7 +9,7 @@ extern crate wabt;
 use std::{error, fs::File};
 use test::Bencher;
 use wasmi::{
-	Error,
+    Error,
     Externals,
     FuncInstance,
     FuncRef,
@@ -47,8 +47,7 @@ const REVCOMP_OUTPUT: &'static [u8] = include_bytes!("./revcomp-output.txt");
 #[bench]
 fn bench_tiny_keccak(b: &mut Bencher) {
     let wasm_kernel =
-        load_from_file(WASM_KERNEL)
-            .expect("failed to load wasm_kernel. Is `build.rs` broken?");
+        load_from_file(WASM_KERNEL).expect("failed to load wasm_kernel. Is `build.rs` broken?");
 
     let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
@@ -69,8 +68,7 @@ fn bench_tiny_keccak(b: &mut Bencher) {
 #[bench]
 fn bench_rev_comp(b: &mut Bencher) {
     let wasm_kernel =
-        load_from_file(WASM_KERNEL)
-            .expect("failed to load wasm_kernel. Is `build.rs` broken?");
+        load_from_file(WASM_KERNEL).expect("failed to load wasm_kernel. Is `build.rs` broken?");
 
     let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
@@ -126,8 +124,7 @@ fn bench_rev_comp(b: &mut Bencher) {
 #[bench]
 fn bench_regex_redux(b: &mut Bencher) {
     let wasm_kernel =
-        load_from_file(WASM_KERNEL)
-            .expect("failed to load wasm_kernel. Is `build.rs` broken?");
+        load_from_file(WASM_KERNEL).expect("failed to load wasm_kernel. Is `build.rs` broken?");
 
     let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
@@ -357,7 +354,7 @@ fn host_calls(b: &mut Bencher) {
         ) -> Result<Option<RuntimeValue>, Trap> {
             match index {
                 HOST_CALL_INDEX => {
-					let arg = args.nth_value_checked(0)?;
+                    let arg = args.nth_value_checked(0)?;
                     Ok(Some(arg))
                 }
                 _ => panic!("BenchExternals do not provide function at index {}", index),
