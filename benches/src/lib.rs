@@ -116,8 +116,9 @@ fn bench_rev_comp(b: &mut Bencher) {
         Ok(Some(RuntimeValue::I32(v))) => v as u32,
         "",
     );
-    let result = memory
-        .get(output_data_mem_offset, REVCOMP_OUTPUT.len())
+    let mut result = vec![0x00_u8; REVCOMP_OUTPUT.len()];
+    memory
+        .get_into(output_data_mem_offset, &mut result)
         .expect("can't get result data from a wasm memory");
     assert_eq!(&*result, REVCOMP_OUTPUT);
 }
