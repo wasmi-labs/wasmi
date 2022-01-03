@@ -1343,7 +1343,7 @@ fn prepare_function_args(
 ) {
     let req_args = signature.params();
     let len_args = req_args.len();
-    let stack_args = caller_stack.pop_as_slice(len_args);
+    let stack_args = caller_stack.pop_slice(len_args);
     assert_eq!(len_args, stack_args.len());
     host_args.clear();
     let prepared_args = req_args
@@ -1484,7 +1484,7 @@ impl ValueStack {
     /// # Panics
     ///
     /// If the value stack does not have at least `depth` stack entries.
-    pub fn pop_as_slice(&mut self, depth: usize) -> &[RuntimeValueInternal] {
+    pub fn pop_slice(&mut self, depth: usize) -> &[RuntimeValueInternal] {
         self.sp -= depth;
         let start = self.sp;
         let end = self.sp + depth;
