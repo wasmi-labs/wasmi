@@ -69,10 +69,7 @@ fn bench_compile_and_validate_v1(b: &mut Bencher) {
 
     b.iter(|| {
         let engine = v1::Engine::default();
-        let module = v1::Module::new(&engine, &wasm_bytes).unwrap();
-        // let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
-        //     .expect("failed to instantiate wasm module")
-        //     .assert_no_start();
+        let _module = v1::Module::new(&engine, &wasm_bytes).unwrap();
     });
 }
 
@@ -100,7 +97,7 @@ fn bench_instantiate_module_v1(b: &mut Bencher) {
 
     b.iter(|| {
         let mut store = v1::Store::new(&engine, ());
-        let instance = linker.instantiate(&mut store, &module).unwrap();
+        let _instance = linker.instantiate(&mut store, &module).unwrap();
     });
 }
 
