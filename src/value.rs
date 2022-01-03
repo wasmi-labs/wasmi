@@ -835,6 +835,7 @@ impl_float!(F64, f64, i64);
 
 #[test]
 fn copysign_regression_works() {
+    // This test has been directly extracted from a WebAssembly Specification assertion.
     use Float as _;
     assert!(F32::from_bits(0xFFC00000).is_nan());
     assert_eq!(

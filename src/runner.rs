@@ -177,6 +177,7 @@ pub struct Interpreter {
     call_stack: CallStack,
     return_type: Option<ValueType>,
     state: InterpreterState,
+    scratch: Vec<RuntimeValue>,
 }
 
 impl Interpreter {
@@ -206,6 +207,7 @@ impl Interpreter {
             call_stack,
             return_type,
             state: InterpreterState::Initialized,
+            scratch: Vec::new(),
         })
     }
 
@@ -308,22 +310,29 @@ impl Interpreter {
                             self.call_stack.push(nested_context);
                         }
                         FuncInstanceInternal::Host { ref signature, .. } => {
-                            let args = prepare_function_args(signature, &mut self.value_stack);
+                            prepare_function_args(
+                                signature,
+                                &mut self.value_stack,
+                                &mut self.scratch,
+                            );
                             // We push the function context first. If the VM is not resumable, it does no harm. If it is, we then save the context here.
                             self.call_stack.push(function_context);
 
-                            let return_val =
-                                match FuncInstance::invoke(&nested_func, &args, externals) {
-                                    Ok(val) => val,
-                                    Err(trap) => {
-                                        if trap.kind().is_host() {
-                                            self.state = InterpreterState::Resumable(
-                                                nested_func.signature().return_type(),
-                                            );
-                                        }
-                                        return Err(trap);
+                            let return_val = match FuncInstance::invoke(
+                                &nested_func,
+                                &self.scratch,
+                                externals,
+                            ) {
+                                Ok(val) => val,
+                                Err(trap) => {
+                                    if trap.kind().is_host() {
+                                        self.state = InterpreterState::Resumable(
+                                            nested_func.signature().return_type(),
+                                        );
                                     }
-                                };
+                                    return Err(trap);
+                                }
+                            };
 
                             // Check if `return_val` matches the signature.
                             let value_ty = return_val.as_ref().map(|val| val.value_type());
@@ -1330,15 +1339,18 @@ fn effective_address(address: u32, offset: u32) -> Result<u32, TrapKind> {
 fn prepare_function_args(
     signature: &Signature,
     caller_stack: &mut ValueStack,
-) -> Vec<RuntimeValue> {
-    let mut out = signature
-        .params()
+    host_args: &mut Vec<RuntimeValue>,
+) {
+    let req_args = signature.params();
+    let len_args = req_args.len();
+    let stack_args = caller_stack.pop_as_slice(len_args);
+    assert_eq!(len_args, stack_args.len());
+    host_args.clear();
+    let prepared_args = req_args
         .iter()
-        .rev()
-        .map(|&param_ty| caller_stack.pop().with_type(param_ty))
-        .collect::<Vec<RuntimeValue>>();
-    out.reverse();
-    out
+        .zip(stack_args)
+        .map(|(req_arg, stack_arg)| stack_arg.with_type(*req_arg));
+    host_args.extend(prepared_args);
 }
 
 pub fn check_function_args(signature: &Signature, args: &[RuntimeValue]) -> Result<(), Trap> {
@@ -1358,11 +1370,19 @@ pub fn check_function_args(signature: &Signature, args: &[RuntimeValue]) -> Resu
     Ok(())
 }
 
-#[derive(Debug)]
 struct ValueStack {
     buf: Box<[RuntimeValueInternal]>,
     /// Index of the first free place in the stack.
     sp: usize,
+}
+
+impl core::fmt::Debug for ValueStack {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ValueStack")
+            .field("entries", &&self.buf[..self.sp])
+            .field("stack_ptr", &self.sp)
+            .finish()
+    }
 }
 
 impl ValueStack {
@@ -1454,6 +1474,21 @@ impl ValueStack {
     #[inline]
     fn len(&self) -> usize {
         self.sp
+    }
+
+    /// Pops the last `depth` stack entries and returns them as slice.
+    ///
+    /// Stack entries are returned in the order in which they got pushed
+    /// onto the value stack.
+    ///
+    /// # Panics
+    ///
+    /// If the value stack does not have at least `depth` stack entries.
+    pub fn pop_as_slice(&mut self, depth: usize) -> &[RuntimeValueInternal] {
+        self.sp -= depth;
+        let start = self.sp;
+        let end = self.sp + depth;
+        &self.buf[start..end]
     }
 }
 

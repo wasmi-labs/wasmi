@@ -6,42 +6,45 @@ extern crate wasmi;
 extern crate assert_matches;
 extern crate wabt;
 
-use std::error;
-use std::io::Read as _;
-use std::fs::File;
-use wasmi::{ImportsBuilder, Module, ModuleInstance, NopExternals, RuntimeValue, v1};
+use std::{error, fs::File, io::Read as _};
+use test::Bencher;
 use wasmi::{
-	Error,
+    v1,
+    Error,
     Externals,
     FuncInstance,
     FuncRef,
     GlobalDescriptor,
     GlobalRef,
     ImportResolver,
+    ImportsBuilder,
     MemoryDescriptor,
     MemoryRef,
+    Module,
+    ModuleInstance,
+    NopExternals,
     RuntimeArgs,
+    RuntimeValue,
     Signature,
     TableDescriptor,
     TableRef,
     Trap,
 };
-use test::Bencher;
 
 fn load_wasm_from_file(filename: &str) -> Result<Vec<u8>, Box<dyn error::Error>> {
-	let mut file = File::open(filename)?;
-	let mut wasm = Vec::new();
-	file.read_to_end(&mut wasm)?;
-	Ok(wasm)
+    let mut file = File::open(filename)?;
+    let mut wasm = Vec::new();
+    file.read_to_end(&mut wasm)?;
+    Ok(wasm)
 }
 
 // Load a module from a file.
 fn load_from_file(filename: &str) -> Result<Module, Box<dyn error::Error>> {
-	use std::io::prelude::*;
-	let mut file = File::open(filename)?;
-	let mut buf = Vec::new();
-	file.read_to_end(&mut buf)?;
-	Ok(Module::from_buffer(buf)?)
+    use std::io::prelude::*;
+    let mut file = File::open(filename)?;
+    let mut buf = Vec::new();
+    file.read_to_end(&mut buf)?;
+    Ok(Module::from_buffer(buf)?)
 }
 
 const REVCOMP_INPUT: &'static [u8] = include_bytes!("./revcomp-input.txt");
@@ -49,31 +52,31 @@ const REVCOMP_OUTPUT: &'static [u8] = include_bytes!("./revcomp-output.txt");
 
 #[bench]
 fn bench_tiny_keccak(b: &mut Bencher) {
-	let wasm_kernel = load_from_file(
-		"./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm",
-	).expect("failed to load wasm_kernel. Is `build.rs` broken?");
+    let wasm_kernel =
+        load_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
+            .expect("failed to load wasm_kernel. Is `build.rs` broken?");
 
-	let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
-		.expect("failed to instantiate wasm module")
-		.assert_no_start();
+    let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
+        .expect("failed to instantiate wasm module")
+        .assert_no_start();
 
-	let test_data_ptr = assert_matches!(
+    let test_data_ptr = assert_matches!(
 		instance.invoke_export("prepare_tiny_keccak", &[], &mut NopExternals),
 		Ok(Some(v @ RuntimeValue::I32(_))) => v
 	);
 
-	b.iter(|| {
-		instance
-			.invoke_export("bench_tiny_keccak", &[test_data_ptr], &mut NopExternals)
-			.unwrap();
-	});
+    b.iter(|| {
+        instance
+            .invoke_export("bench_tiny_keccak", &[test_data_ptr], &mut NopExternals)
+            .unwrap();
+    });
 }
 
 #[bench]
 fn bench_tiny_keccak_v1(b: &mut Bencher) {
-	let wasm = load_wasm_from_file(
-		"./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm"
-	).unwrap();
+    let wasm =
+        load_wasm_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
+            .unwrap();
     let engine = v1::Engine::default();
     let module = v1::Module::new(&engine, &wasm).unwrap();
     let mut linker = <v1::Linker<()>>::default();
@@ -87,123 +90,128 @@ fn bench_tiny_keccak_v1(b: &mut Bencher) {
         .get_export(&store, "prepare_tiny_keccak")
         .and_then(v1::Extern::into_func)
         .unwrap();
-	let keccak = instance
-		.get_export(&store, "bench_tiny_keccak")
-		.and_then(v1::Extern::into_func)
-		.unwrap();
-	let mut test_data_ptr = RuntimeValue::I32(0);
+    let keccak = instance
+        .get_export(&store, "bench_tiny_keccak")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    let mut test_data_ptr = RuntimeValue::I32(0);
 
-	prepare.call(&mut store, &[], std::slice::from_mut(&mut test_data_ptr)).unwrap();
-	assert!(matches!(test_data_ptr, RuntimeValue::I32(_)));
+    prepare
+        .call(&mut store, &[], std::slice::from_mut(&mut test_data_ptr))
+        .unwrap();
+    assert!(matches!(test_data_ptr, RuntimeValue::I32(_)));
     b.iter(|| {
-        keccak.call(&mut store, std::slice::from_ref(&test_data_ptr), &mut [])
+        keccak
+            .call(&mut store, std::slice::from_ref(&test_data_ptr), &mut [])
             .unwrap();
     });
 }
 
 #[bench]
 fn bench_rev_comp(b: &mut Bencher) {
-	let wasm_kernel = load_from_file(
-		"./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm",
-	).expect("failed to load wasm_kernel. Is `build.rs` broken?");
+    let wasm_kernel =
+        load_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
+            .expect("failed to load wasm_kernel. Is `build.rs` broken?");
 
-	let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
-		.expect("failed to instantiate wasm module")
-		.assert_no_start();
+    let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
+        .expect("failed to instantiate wasm module")
+        .assert_no_start();
 
-	// Allocate buffers for the input and output.
-	let test_data_ptr: RuntimeValue = {
-		let input_size = RuntimeValue::I32(REVCOMP_INPUT.len() as i32);
-		assert_matches!(
+    // Allocate buffers for the input and output.
+    let test_data_ptr: RuntimeValue = {
+        let input_size = RuntimeValue::I32(REVCOMP_INPUT.len() as i32);
+        assert_matches!(
 			instance.invoke_export("prepare_rev_complement", &[input_size], &mut NopExternals),
 			Ok(Some(v @ RuntimeValue::I32(_))) => v,
 			"",
 		)
-	};
+    };
 
-	// Get the pointer to the input buffer.
-	let input_data_mem_offset = assert_matches!(
-		instance.invoke_export("rev_complement_input_ptr", &[test_data_ptr], &mut NopExternals),
-		Ok(Some(RuntimeValue::I32(v))) => v as u32,
-		"",
-	);
+    // Get the pointer to the input buffer.
+    let input_data_mem_offset = assert_matches!(
+        instance.invoke_export("rev_complement_input_ptr", &[test_data_ptr], &mut NopExternals),
+        Ok(Some(RuntimeValue::I32(v))) => v as u32,
+        "",
+    );
 
-	// Copy test data inside the wasm memory.
-	let memory = instance.export_by_name("memory")
-		.expect("Expected export with a name 'memory'")
-		.as_memory()
-		.expect("'memory' should be a memory instance")
-		.clone();
-	memory
-		.set(input_data_mem_offset, REVCOMP_INPUT)
-		.expect("can't load test data into a wasm memory");
+    // Copy test data inside the wasm memory.
+    let memory = instance
+        .export_by_name("memory")
+        .expect("Expected export with a name 'memory'")
+        .as_memory()
+        .expect("'memory' should be a memory instance")
+        .clone();
+    memory
+        .set(input_data_mem_offset, REVCOMP_INPUT)
+        .expect("can't load test data into a wasm memory");
 
-	b.iter(|| {
-		instance
-			.invoke_export("bench_rev_complement", &[test_data_ptr], &mut NopExternals)
-			.unwrap();
-	});
+    b.iter(|| {
+        instance
+            .invoke_export("bench_rev_complement", &[test_data_ptr], &mut NopExternals)
+            .unwrap();
+    });
 
-	// Verify the result.
-	let output_data_mem_offset = assert_matches!(
-		instance.invoke_export("rev_complement_output_ptr", &[test_data_ptr], &mut NopExternals),
-		Ok(Some(RuntimeValue::I32(v))) => v as u32,
-		"",
-	);
-	let result = memory
-		.get(output_data_mem_offset, REVCOMP_OUTPUT.len())
-		.expect("can't get result data from a wasm memory");
-	assert_eq!(&*result, REVCOMP_OUTPUT);
+    // Verify the result.
+    let output_data_mem_offset = assert_matches!(
+        instance.invoke_export("rev_complement_output_ptr", &[test_data_ptr], &mut NopExternals),
+        Ok(Some(RuntimeValue::I32(v))) => v as u32,
+        "",
+    );
+    let result = memory
+        .get(output_data_mem_offset, REVCOMP_OUTPUT.len())
+        .expect("can't get result data from a wasm memory");
+    assert_eq!(&*result, REVCOMP_OUTPUT);
 }
 
 #[bench]
 fn bench_regex_redux(b: &mut Bencher) {
-	let wasm_kernel = load_from_file(
-		"./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm",
-	).expect("failed to load wasm_kernel. Is `build.rs` broken?");
+    let wasm_kernel =
+        load_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
+            .expect("failed to load wasm_kernel. Is `build.rs` broken?");
 
-	let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
-		.expect("failed to instantiate wasm module")
-		.assert_no_start();
+    let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
+        .expect("failed to instantiate wasm module")
+        .assert_no_start();
 
-	// Allocate buffers for the input and output.
-	let test_data_ptr: RuntimeValue = {
-		let input_size = RuntimeValue::I32(REVCOMP_INPUT.len() as i32);
-		assert_matches!(
+    // Allocate buffers for the input and output.
+    let test_data_ptr: RuntimeValue = {
+        let input_size = RuntimeValue::I32(REVCOMP_INPUT.len() as i32);
+        assert_matches!(
 			instance.invoke_export("prepare_regex_redux", &[input_size], &mut NopExternals),
 			Ok(Some(v @ RuntimeValue::I32(_))) => v,
 			"",
 		)
-	};
+    };
 
-	// Get the pointer to the input buffer.
-	let input_data_mem_offset = assert_matches!(
-		instance.invoke_export("regex_redux_input_ptr", &[test_data_ptr], &mut NopExternals),
-		Ok(Some(RuntimeValue::I32(v))) => v as u32,
-		"",
-	);
+    // Get the pointer to the input buffer.
+    let input_data_mem_offset = assert_matches!(
+        instance.invoke_export("regex_redux_input_ptr", &[test_data_ptr], &mut NopExternals),
+        Ok(Some(RuntimeValue::I32(v))) => v as u32,
+        "",
+    );
 
-	// Copy test data inside the wasm memory.
-	let memory = instance.export_by_name("memory")
-		.expect("Expected export with a name 'memory'")
-		.as_memory()
-		.expect("'memory' should be a memory instance")
-		.clone();
-	memory
-		.set(input_data_mem_offset, REVCOMP_INPUT)
-		.expect("can't load test data into a wasm memory");
+    // Copy test data inside the wasm memory.
+    let memory = instance
+        .export_by_name("memory")
+        .expect("Expected export with a name 'memory'")
+        .as_memory()
+        .expect("'memory' should be a memory instance")
+        .clone();
+    memory
+        .set(input_data_mem_offset, REVCOMP_INPUT)
+        .expect("can't load test data into a wasm memory");
 
-	b.iter(|| {
-		instance
-			.invoke_export("bench_regex_redux", &[test_data_ptr], &mut NopExternals)
-			.unwrap();
-	});
+    b.iter(|| {
+        instance
+            .invoke_export("bench_regex_redux", &[test_data_ptr], &mut NopExternals)
+            .unwrap();
+    });
 }
 
 #[bench]
 fn fac_recursive(b: &mut Bencher) {
-	let wasm = wabt::wat2wasm(
-r#"
+    let wasm = wabt::wat2wasm(
+        r#"
 	;; Recursive factorial
 (func (export "fac-rec") (param i64) (result i64)
 	(if (result i64) (i64.eq (get_local 0) (i64.const 0))
@@ -213,26 +221,26 @@ r#"
 		)
 	)
 )
-"#
-	).unwrap();
+"#,
+    )
+    .unwrap();
 
-	let module = Module::from_buffer(&wasm).unwrap();
+    let module = Module::from_buffer(&wasm).unwrap();
 
-	let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
-		.expect("failed to instantiate wasm module")
-		.assert_no_start();
+    let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
+        .expect("failed to instantiate wasm module")
+        .assert_no_start();
 
-	b.iter(|| {
-		let value = instance
-			.invoke_export("fac-rec", &[RuntimeValue::I64(25)], &mut NopExternals);
-		assert_matches!(value, Ok(Some(RuntimeValue::I64(7034535277573963776))));
-	});
+    b.iter(|| {
+        let value = instance.invoke_export("fac-rec", &[RuntimeValue::I64(25)], &mut NopExternals);
+        assert_matches!(value, Ok(Some(RuntimeValue::I64(7034535277573963776))));
+    });
 }
 
 #[bench]
 fn fac_recursive_v1(b: &mut Bencher) {
-	let wasm = wabt::wat2wasm(
-r#"
+    let wasm = wabt::wat2wasm(
+        r#"
 	;; Recursive factorial
 (func (export "fac-rec") (param i64) (result i64)
 	(if (result i64) (i64.eq (get_local 0) (i64.const 0))
@@ -242,8 +250,9 @@ r#"
 		)
 	)
 )
-"#
-	).unwrap();
+"#,
+    )
+    .unwrap();
 
     let engine = v1::Engine::default();
     let module = v1::Module::new(&engine, &wasm).unwrap();
@@ -269,8 +278,8 @@ r#"
 
 #[bench]
 fn fac_opt(b: &mut Bencher) {
-	let wasm = wabt::wat2wasm(
-r#"
+    let wasm = wabt::wat2wasm(
+        r#"
 ;; Optimized factorial.
 (func (export "fac-opt") (param i64) (result i64)
 	(local i64)
@@ -285,20 +294,20 @@ r#"
 	)
 	(get_local 1)
 )
-"#
-	).unwrap();
+"#,
+    )
+    .unwrap();
 
-	let module = Module::from_buffer(&wasm).unwrap();
+    let module = Module::from_buffer(&wasm).unwrap();
 
-	let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
-		.expect("failed to instantiate wasm module")
-		.assert_no_start();
+    let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
+        .expect("failed to instantiate wasm module")
+        .assert_no_start();
 
-	b.iter(|| {
-		let value = instance
-			.invoke_export("fac-opt", &[RuntimeValue::I64(25)], &mut NopExternals);
-		assert_matches!(value, Ok(Some(RuntimeValue::I64(7034535277573963776))));
-	});
+    b.iter(|| {
+        let value = instance.invoke_export("fac-opt", &[RuntimeValue::I64(25)], &mut NopExternals);
+        assert_matches!(value, Ok(Some(RuntimeValue::I64(7034535277573963776))));
+    });
 }
 
 #[bench]
@@ -349,8 +358,8 @@ fn fac_opt_v1(b: &mut Bencher) {
 // is not too large.
 #[bench]
 fn recursive_ok(b: &mut Bencher) {
-	let wasm = wabt::wat2wasm(
-		r#"
+    let wasm = wabt::wat2wasm(
+        r#"
 (module
   (func $call (export "call") (param i32) (result i32)
 	block (result i32)
@@ -365,26 +374,26 @@ fn recursive_ok(b: &mut Bencher) {
 	end
   )
 )
-		"#
-	).unwrap();
-	let module = Module::from_buffer(&wasm).unwrap();
+		"#,
+    )
+    .unwrap();
+    let module = Module::from_buffer(&wasm).unwrap();
 
-	let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
-		.expect("failed to instantiate wasm module")
-		.assert_no_start();
+    let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
+        .expect("failed to instantiate wasm module")
+        .assert_no_start();
 
-	b.iter(|| {
-		let value = instance
-			.invoke_export("call", &[RuntimeValue::I32(8000)], &mut NopExternals);
-		assert_matches!(value, Ok(Some(RuntimeValue::I32(0))));
-	});
+    b.iter(|| {
+        let value = instance.invoke_export("call", &[RuntimeValue::I32(8000)], &mut NopExternals);
+        assert_matches!(value, Ok(Some(RuntimeValue::I32(0))));
+    });
 }
 
 #[bench]
 fn recursive_ok_v1(b: &mut Bencher) {
-	// This benchmark tests the performance of recursive Wasm function calls.
-	let wasm = wabt::wat2wasm(
-		r#"
+    // This benchmark tests the performance of recursive Wasm function calls.
+    let wasm = wabt::wat2wasm(
+        r#"
 (module
   (func $call (export "bench_call") (param i32) (result i32)
 	block (result i32)
@@ -399,8 +408,9 @@ fn recursive_ok_v1(b: &mut Bencher) {
 	end
   )
 )
-		"#
-	).unwrap();
+		"#,
+    )
+    .unwrap();
 
     let engine = v1::Engine::default();
     let module = v1::Module::new(&engine, &wasm).unwrap();
@@ -418,7 +428,8 @@ fn recursive_ok_v1(b: &mut Bencher) {
     let mut result = [RuntimeValue::I32(0)];
 
     b.iter(|| {
-        bench_call.call(&mut store, &[RuntimeValue::I32(8000)], &mut result)
+        bench_call
+            .call(&mut store, &[RuntimeValue::I32(8000)], &mut result)
             .unwrap();
         assert_matches!(result, [RuntimeValue::I32(0)]);
     });
@@ -426,8 +437,8 @@ fn recursive_ok_v1(b: &mut Bencher) {
 
 #[bench]
 fn recursive_trap(b: &mut Bencher) {
-	let wasm = wabt::wat2wasm(
-		r#"
+    let wasm = wabt::wat2wasm(
+        r#"
 (module
   (func $call (export "call") (param i32) (result i32)
 	block (result i32)
@@ -443,19 +454,19 @@ fn recursive_trap(b: &mut Bencher) {
 	unreachable
   )
 )
-		"#
-	).unwrap();
-	let module = Module::from_buffer(&wasm).unwrap();
+		"#,
+    )
+    .unwrap();
+    let module = Module::from_buffer(&wasm).unwrap();
 
-	let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
-		.expect("failed to instantiate wasm module")
-		.assert_no_start();
+    let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
+        .expect("failed to instantiate wasm module")
+        .assert_no_start();
 
-	b.iter(|| {
-		let value = instance
-			.invoke_export("call", &[RuntimeValue::I32(1000)], &mut NopExternals);
-		assert_matches!(value, Err(_));
-	});
+    b.iter(|| {
+        let value = instance.invoke_export("call", &[RuntimeValue::I32(1000)], &mut NopExternals);
+        assert_matches!(value, Err(_));
+    });
 }
 
 #[bench]
@@ -515,7 +526,7 @@ fn host_calls(b: &mut Bencher) {
         ) -> Result<Option<RuntimeValue>, Trap> {
             match index {
                 HOST_CALL_INDEX => {
-					let arg = args.nth_value_checked(0)?;
+                    let arg = args.nth_value_checked(0)?;
                     Ok(Some(arg))
                 }
                 _ => panic!("BenchExternals do not provide function at index {}", index),
@@ -627,9 +638,6 @@ fn host_calls_v1(b: &mut Bencher) {
     )
     .unwrap();
 
-    /// The index of the host function that is about to be called a lot.
-    const HOST_CALL_INDEX: usize = 0;
-
     /// How often the `host_call` should be called per Wasm invocation.
     const REPETITIONS: i64 = 1000;
 
@@ -637,8 +645,8 @@ fn host_calls_v1(b: &mut Bencher) {
     let module = v1::Module::new(&engine, &wasm).unwrap();
     let mut linker = <v1::Linker<()>>::default();
     let mut store = v1::Store::new(&engine, ());
-	let host_call = v1::Func::wrap(&mut store, |value: i64| value);
-	linker.define("benchmark", "host_call", host_call).unwrap();
+    let host_call = v1::Func::wrap(&mut store, |value: i64| value);
+    linker.define("benchmark", "host_call", host_call).unwrap();
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()
@@ -651,11 +659,8 @@ fn host_calls_v1(b: &mut Bencher) {
     let mut result = [RuntimeValue::I64(0)];
 
     b.iter(|| {
-        call.call(
-            &mut store,
-            &[RuntimeValue::I64(REPETITIONS)],
-			&mut result,
-        ).unwrap();
+        call.call(&mut store, &[RuntimeValue::I64(REPETITIONS)], &mut result)
+            .unwrap();
         assert_matches!(result, [RuntimeValue::I64(0)]);
     });
 }
