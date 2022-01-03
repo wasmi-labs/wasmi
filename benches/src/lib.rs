@@ -49,10 +49,7 @@ fn bench_compile_and_validate(b: &mut Bencher) {
             .expect("failed to load wasm_kernel. Is `build.rs` broken?");
 
     b.iter(|| {
-        let module = Module::from_buffer(&wasm_bytes).unwrap();
-        // let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
-        //     .expect("failed to instantiate wasm module")
-        //     .assert_no_start();
+        let _module = Module::from_buffer(&wasm_bytes).unwrap();
     });
 }
 
@@ -63,7 +60,7 @@ fn bench_instantiate_module(b: &mut Bencher) {
             .expect("failed to load wasm_kernel. Is `build.rs` broken?");
 
     b.iter(|| {
-        let instance = ModuleInstance::new(&wasm_module, &ImportsBuilder::default())
+        let _instance = ModuleInstance::new(&wasm_module, &ImportsBuilder::default())
             .expect("failed to instantiate wasm module")
             .assert_no_start();
     });
