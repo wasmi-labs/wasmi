@@ -13,7 +13,7 @@ use core::{fmt, fmt::Display, mem};
 /// A reference to an instruction of the partially
 /// constructed function body of the [`InstructionsBuilder`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct InstructionIdx(usize);
+pub struct InstructionIdx(u32);
 
 impl InstructionIdx {
     /// An invalid instruction index.
@@ -24,21 +24,30 @@ impl InstructionIdx {
     /// without major performance implications for the bytecode itself, e.g.
     /// when representing invalid [`InstructionIdx`] by wrapping them in an
     /// `Option`.
-    pub const INVALID: Self = Self(usize::MAX);
+    pub const INVALID: Self = Self(u32::MAX);
 
     /// Creates an [`InstructionIdx`] from the given `usize` value.
     ///
     /// # Note
     ///
     /// This intentionally is an API intended for test purposes only.
-    #[cfg(test)]
+    ///
+    /// # Panics
+    ///
+    /// If the `value` exceeds limitations for [`InstructionIdx`].
     pub fn from_usize(value: usize) -> Self {
+        let value = value.try_into().unwrap_or_else(|error| {
+            panic!(
+                "encountered invalid value of {} for `InstructionIdx`: {}",
+                value, error
+            )
+        });
         Self(value)
     }
 
     /// Returns the underlying `usize` value of the instruction index.
     pub fn into_usize(self) -> usize {
-        self.0
+        self.0 as usize
     }
 }
 
@@ -96,7 +105,7 @@ pub struct InstructionsBuilder {
 impl InstructionsBuilder {
     /// Returns the current instruction pointer as index.
     pub fn current_pc(&self) -> InstructionIdx {
-        InstructionIdx(self.insts.len())
+        InstructionIdx::from_usize(self.insts.len())
     }
 
     /// Creates a new unresolved label and returns an index to it.
@@ -161,7 +170,7 @@ impl InstructionsBuilder {
     /// Allows to patch the branch target of branch instructions.
     pub fn patch_relocation(&mut self, reloc: Reloc, dst_pc: InstructionIdx) {
         match reloc {
-            Reloc::Br { inst_idx } => match &mut self.insts[inst_idx.0] {
+            Reloc::Br { inst_idx } => match &mut self.insts[inst_idx.into_usize()] {
                 Instruction::Br(target)
                 | Instruction::BrIfEqz(target)
                 | Instruction::BrIfNez(target) => {
@@ -175,7 +184,7 @@ impl InstructionsBuilder {
             Reloc::BrTable {
                 inst_idx,
                 target_idx,
-            } => match &mut self.insts[inst_idx.0 + target_idx + 1] {
+            } => match &mut self.insts[inst_idx.into_usize() + target_idx + 1] {
                 Instruction::BrTableTarget(target) => {
                     target.update_destination_pc(dst_pc);
                 }
