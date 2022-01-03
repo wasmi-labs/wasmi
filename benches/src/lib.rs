@@ -53,7 +53,7 @@ fn load_from_file(file_name: &str) -> Module {
 }
 
 const WASM_KERNEL: &str =
-    "benches/wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
+    "wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
 const REVCOMP_INPUT: &'static [u8] = include_bytes!("./revcomp-input.txt");
 const REVCOMP_OUTPUT: &'static [u8] = include_bytes!("./revcomp-output.txt");
 
