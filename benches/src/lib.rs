@@ -6,7 +6,7 @@ extern crate wasmi;
 extern crate assert_matches;
 extern crate wabt;
 
-use std::{error, fs::File};
+use std::fs::File;
 use test::Bencher;
 use wasmi::{
     Error,
@@ -30,13 +30,26 @@ use wasmi::{
     Trap,
 };
 
-// Load a module from a file.
-fn load_from_file(filename: &str) -> Result<Module, Box<dyn error::Error>> {
+// Parses the Wasm binary at the given file name into a `wasmi` module.
+//
+// # Note
+//
+// This includes validation and compilation to `wasmi` bytecode.
+fn load_from_file(file_name: &str) -> Module {
     use std::io::prelude::*;
-    let mut file = File::open(filename)?;
-    let mut buf = Vec::new();
-    file.read_to_end(&mut buf)?;
-    Ok(Module::from_buffer(buf)?)
+    let mut file = File::open(file_name)
+        .unwrap_or_else(|error| panic!("could not read benchmark file {}: {}", file_name, error));
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer).unwrap_or_else(|error| {
+        panic!("could not read file at {} to buffer: {}", file_name, error)
+    });
+    let module = Module::from_buffer(buffer).unwrap_or_else(|error| {
+        panic!(
+            "could not parse Wasm module from file {}: {}",
+            file_name, error
+        )
+    });
+    module
 }
 
 const WASM_KERNEL: &str =
@@ -46,13 +59,10 @@ const REVCOMP_OUTPUT: &'static [u8] = include_bytes!("./revcomp-output.txt");
 
 #[bench]
 fn bench_tiny_keccak(b: &mut Bencher) {
-    let wasm_kernel =
-        load_from_file(WASM_KERNEL).expect("failed to load wasm_kernel. Is `build.rs` broken?");
-
+    let wasm_kernel = load_from_file(WASM_KERNEL);
     let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
         .assert_no_start();
-
     let test_data_ptr = assert_matches!(
 		instance.invoke_export("prepare_tiny_keccak", &[], &mut NopExternals),
 		Ok(Some(v @ RuntimeValue::I32(_))) => v
@@ -67,9 +77,7 @@ fn bench_tiny_keccak(b: &mut Bencher) {
 
 #[bench]
 fn bench_rev_comp(b: &mut Bencher) {
-    let wasm_kernel =
-        load_from_file(WASM_KERNEL).expect("failed to load wasm_kernel. Is `build.rs` broken?");
-
+    let wasm_kernel = load_from_file(WASM_KERNEL);
     let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
         .assert_no_start();
@@ -123,9 +131,7 @@ fn bench_rev_comp(b: &mut Bencher) {
 
 #[bench]
 fn bench_regex_redux(b: &mut Bencher) {
-    let wasm_kernel =
-        load_from_file(WASM_KERNEL).expect("failed to load wasm_kernel. Is `build.rs` broken?");
-
+    let wasm_kernel = load_from_file(WASM_KERNEL);
     let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
         .assert_no_start();
