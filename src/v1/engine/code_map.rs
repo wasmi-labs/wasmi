@@ -61,7 +61,8 @@ impl CodeMap {
         let len_instructions = insts.len().try_into().unwrap_or_else(|error| {
             panic!(
                 "encountered too many instructions (= {}) for function: {}",
-                insts.len(), error
+                insts.len(),
+                error
             )
         });
         let len_locals = len_locals.try_into().unwrap_or_else(|error| {
