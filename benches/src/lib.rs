@@ -381,6 +381,50 @@ fn recursive_ok(b: &mut Bencher) {
 }
 
 #[bench]
+fn recursive_ok_v1(b: &mut Bencher) {
+	// This benchmark tests the performance of recursive Wasm function calls.
+	let wasm = wabt::wat2wasm(
+		r#"
+(module
+  (func $call (export "bench_call") (param i32) (result i32)
+	block (result i32)
+	  get_local 0
+	  get_local 0
+	  i32.eqz
+	  br_if 0
+
+	  i32.const 1
+	  i32.sub
+	  call $call
+	end
+  )
+)
+		"#
+	).unwrap();
+
+    let engine = v1::Engine::default();
+    let module = v1::Module::new(&engine, &wasm).unwrap();
+    let mut linker = <v1::Linker<()>>::default();
+    let mut store = v1::Store::new(&engine, ());
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let bench_call = instance
+        .get_export(&store, "bench_call")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    let mut result = [RuntimeValue::I32(0)];
+
+    b.iter(|| {
+        bench_call.call(&mut store, &[RuntimeValue::I32(8000)], &mut result)
+            .unwrap();
+        assert_matches!(result, [RuntimeValue::I32(0)]);
+    });
+}
+
+#[bench]
 fn recursive_trap(b: &mut Bencher) {
 	let wasm = wabt::wat2wasm(
 		r#"
