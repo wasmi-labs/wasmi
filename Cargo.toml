@@ -52,4 +52,11 @@ reduced-stack-buffer = [ "parity-wasm/reduced-stack-buffer" ]
 
 [workspace]
 members = ["validation"]
-exclude = ["benches"]
+exclude = ["benches/wasm-kernel"]
+
+[[bench]]
+name = "benches"
+path = "benches/src/lib.rs"
+
+[profile.bench]
+debug = true
