@@ -157,6 +157,7 @@ impl<'a> ResolvedFuncBody<'a> {
     /// Visits the corresponding [`Instruction`] method from the given visitor.
     ///
     /// Returns the visitor's outcome value.
+    #[inline]
     pub fn visit<T>(&self, index: usize, mut visitor: T) -> T::Outcome
     where
         T: VisitInstruction,
