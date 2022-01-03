@@ -65,6 +65,21 @@ fn bench_compile_and_validate(b: &mut Bencher) {
 }
 
 #[bench]
+fn bench_compile_and_validate_v1(b: &mut Bencher) {
+    let wasm_bytes =
+        load_wasm_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
+            .expect("failed to load wasm_kernel. Is `build.rs` broken?");
+
+    b.iter(|| {
+        let engine = v1::Engine::default();
+        let module = v1::Module::new(&engine, &wasm_bytes).unwrap();
+        // let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
+        //     .expect("failed to instantiate wasm module")
+        //     .assert_no_start();
+    });
+}
+
+#[bench]
 fn bench_instantiate_module(b: &mut Bencher) {
     let wasm_module =
         load_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
@@ -74,6 +89,21 @@ fn bench_instantiate_module(b: &mut Bencher) {
         let instance = ModuleInstance::new(&wasm_module, &ImportsBuilder::default())
             .expect("failed to instantiate wasm module")
             .assert_no_start();
+    });
+}
+
+#[bench]
+fn bench_instantiate_module_v1(b: &mut Bencher) {
+    let wasm_bytes =
+        load_wasm_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
+            .expect("failed to load wasm_kernel. Is `build.rs` broken?");
+    let engine = v1::Engine::default();
+    let mut linker = <v1::Linker<()>>::default();
+    let module = v1::Module::new(&engine, &wasm_bytes).unwrap();
+
+    b.iter(|| {
+        let mut store = v1::Store::new(&engine, ());
+        let instance = linker.instantiate(&mut store, &module).unwrap();
     });
 }
 
