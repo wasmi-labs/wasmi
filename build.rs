@@ -1,7 +1,7 @@
 use std::{env, process};
 
 fn main() {
-    println!("cargo:rerun-if-changed=./wasm-kernel/");
+    println!("cargo:rerun-if-changed=./benches/wasm-kernel/");
 
     // The CARGO environment variable provides a path to the executable that
     // runs this build process.
@@ -13,7 +13,7 @@ fn main() {
         .arg("build")
         .arg("--target=wasm32-unknown-unknown")
         .arg("--release")
-        .arg("--manifest-path=./wasm-kernel/Cargo.toml")
+        .arg("--manifest-path=./benches/wasm-kernel/Cargo.toml")
         .arg("--verbose")
         .output()
         .expect("failed to execute `cargo`");
