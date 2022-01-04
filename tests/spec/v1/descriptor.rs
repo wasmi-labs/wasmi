@@ -19,7 +19,7 @@ impl TestDescriptor {
     ///
     /// If the corresponding Wasm test spec file cannot properly be read.
     pub fn new(name: &str) -> Self {
-        let path = format!("tests/spec/testsuite/{}.wast", name);
+        let path = format!("tests/spec/testsuite-v1/{}.wast", name);
         let file = fs::read_to_string(&path).unwrap_or_else(|error| {
             panic!("{}, failed to read `.wast` test file: {}", path, error)
         });
