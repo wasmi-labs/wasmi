@@ -50,13 +50,10 @@ fn load_from_file(filename: &str) -> Result<Module, Box<dyn error::Error>> {
 const REVCOMP_INPUT: &'static [u8] = include_bytes!("./revcomp-input.txt");
 const REVCOMP_OUTPUT: &'static [u8] = include_bytes!("./revcomp-output.txt");
 
-const WASM_KERNEL: &str =
-    "benches/wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
-
 #[bench]
 fn bench_compile_and_validate(b: &mut Bencher) {
     let wasm_bytes =
-        load_wasm_from_file(WASM_KERNEL)
+        load_wasm_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
             .expect("failed to load wasm_kernel. Is `build.rs` broken?");
 
     b.iter(|| {
@@ -67,7 +64,7 @@ fn bench_compile_and_validate(b: &mut Bencher) {
 #[bench]
 fn bench_compile_and_validate_v1(b: &mut Bencher) {
     let wasm_bytes =
-    load_wasm_from_file(WASM_KERNEL)
+        load_wasm_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
             .expect("failed to load wasm_kernel. Is `build.rs` broken?");
 
     b.iter(|| {
@@ -79,7 +76,7 @@ fn bench_compile_and_validate_v1(b: &mut Bencher) {
 #[bench]
 fn bench_instantiate_module(b: &mut Bencher) {
     let wasm_module =
-        load_from_file(WASM_KERNEL)
+        load_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
             .expect("failed to load wasm_kernel. Is `build.rs` broken?");
 
     b.iter(|| {
@@ -92,7 +89,7 @@ fn bench_instantiate_module(b: &mut Bencher) {
 #[bench]
 fn bench_instantiate_module_v1(b: &mut Bencher) {
     let wasm_bytes =
-        load_wasm_from_file(WASM_KERNEL)
+        load_wasm_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
             .expect("failed to load wasm_kernel. Is `build.rs` broken?");
     let engine = v1::Engine::default();
     let mut linker = <v1::Linker<()>>::default();
@@ -107,7 +104,7 @@ fn bench_instantiate_module_v1(b: &mut Bencher) {
 #[bench]
 fn bench_tiny_keccak(b: &mut Bencher) {
     let wasm_kernel =
-        load_from_file(WASM_KERNEL)
+        load_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
             .expect("failed to load wasm_kernel. Is `build.rs` broken?");
 
     let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
@@ -129,7 +126,7 @@ fn bench_tiny_keccak(b: &mut Bencher) {
 #[bench]
 fn bench_tiny_keccak_v1(b: &mut Bencher) {
     let wasm =
-        load_wasm_from_file(WASM_KERNEL)
+        load_wasm_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
             .unwrap();
     let engine = v1::Engine::default();
     let module = v1::Module::new(&engine, &wasm).unwrap();
@@ -164,7 +161,7 @@ fn bench_tiny_keccak_v1(b: &mut Bencher) {
 #[bench]
 fn bench_rev_comp(b: &mut Bencher) {
     let wasm_kernel =
-        load_from_file(WASM_KERNEL)
+        load_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
             .expect("failed to load wasm_kernel. Is `build.rs` broken?");
 
     let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
@@ -220,7 +217,7 @@ fn bench_rev_comp(b: &mut Bencher) {
 #[bench]
 fn bench_regex_redux(b: &mut Bencher) {
     let wasm_kernel =
-        load_from_file(WASM_KERNEL)
+        load_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
             .expect("failed to load wasm_kernel. Is `build.rs` broken?");
 
     let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())

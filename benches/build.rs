@@ -13,7 +13,7 @@ fn main() {
         .arg("build")
         .arg("--target=wasm32-unknown-unknown")
         .arg("--release")
-        .arg("--manifest-path=benches/wasm-kernel/Cargo.toml")
+        .arg("--manifest-path=./wasm-kernel/Cargo.toml")
         .arg("--verbose")
         .output()
         .expect("failed to execute `cargo`");
