@@ -40,7 +40,6 @@ use wasmi::{
 ///
 /// - If the benchmark Wasm file could not be opened, read or parsed.
 fn load_file(file_name: &str) -> Vec<u8> {
-    // use std::io::prelude::*;
     let mut file = File::open(file_name)
         .unwrap_or_else(|error| panic!("could not open benchmark file {}: {}", file_name, error));
     let mut buffer = Vec::new();
