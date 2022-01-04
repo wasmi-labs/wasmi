@@ -37,7 +37,6 @@ define_tests! {
     fn wasm_const("const");
     fn wasm_conversions("conversions");
     fn wasm_custom("custom");
-    fn wasm_custom_section("custom_section");
     fn wasm_data("data");
     fn wasm_elem("elem");
     fn wasm_endianness("endianness");
@@ -56,7 +55,6 @@ define_tests! {
     fn wasm_forward("forward");
     fn wasm_func("func");
     fn wasm_func_ptrs("func_ptrs");
-    fn wasm_get_local("get_local");
     fn wasm_globals("globals");
     fn wasm_i32("i32");
     fn wasm_i64("i64");
@@ -76,19 +74,16 @@ define_tests! {
     fn wasm_memory("memory");
     fn wasm_memory_redundancy("memory_redundancy");
     fn wasm_memory_trap("memory_trap");
+    fn wasm_memory_grow("memory_grow");
     fn wasm_names("names");
     fn wasm_nop("nop");
-    fn wasm_resizing("resizing");
     fn wasm_return("return");
     fn wasm_select("select");
-    fn wasm_set_local("set_local");
     #[ignore] fn wasm_skip_stack_guard_page("skip-stack-guard-page");
     fn wasm_stack("stack");
     fn wasm_start("start");
     fn wasm_store("store");
-    fn wasm_store_retval("store_retval");
     fn wasm_switch("switch");
-    fn wasm_tee_local("tee_local");
     fn wasm_token("token");
     fn wasm_traps("traps");
     fn wasm_type("type");
