@@ -56,6 +56,7 @@ define_tests! {
     fn wasm_forward("forward");
     fn wasm_func("func");
     fn wasm_func_ptrs("func_ptrs");
+    fn wasm_global("global");
     fn wasm_globals("globals");
     fn wasm_i32("i32");
     fn wasm_i64("i64");
@@ -86,6 +87,7 @@ define_tests! {
     fn wasm_start("start");
     fn wasm_store("store");
     fn wasm_switch("switch");
+    fn wasm_table("table");
     fn wasm_token("token");
     fn wasm_traps("traps");
     fn wasm_type("type");
