@@ -26,6 +26,7 @@ define_tests! {
     fn wasm_address("address");
     fn wasm_align("align");
     fn wasm_binary("binary");
+    fn wasm_binary_leb128("binary-leb128");
     fn wasm_block("block");
     fn wasm_br("br");
     fn wasm_br_if("br_if");
