@@ -5,7 +5,7 @@
 
 lazy_static! {
 	static ref REGEX: ::regex::bytes::Regex =
-		{ ::regex::bytes::Regex::new("agggtaa[cgt]|[acg]ttaccct").unwrap() };
+		::regex::bytes::Regex::new("agggtaa[cgt]|[acg]ttaccct").unwrap();
 }
 
 pub fn prepare() {

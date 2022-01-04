@@ -6,7 +6,7 @@ extern crate wasmi;
 extern crate assert_matches;
 extern crate wabt;
 
-use std::{error, fs::File, io::Read as _};
+use std::{fs::File, io::Read as _};
 use test::Bencher;
 use wasmi::{
     v1,
@@ -31,30 +31,52 @@ use wasmi::{
     Trap,
 };
 
-fn load_wasm_from_file(filename: &str) -> Result<Vec<u8>, Box<dyn error::Error>> {
-    let mut file = File::open(filename)?;
-    let mut wasm = Vec::new();
-    file.read_to_end(&mut wasm)?;
-    Ok(wasm)
+/// Returns the Wasm binary at the given `file_name` as `Vec<u8>`.
+///
+/// # Note
+///
+/// This includes validation and compilation to `wasmi` bytecode.
+///
+/// # Panics
+///
+/// - If the benchmark Wasm file could not be opened, read or parsed.
+fn load_file(file_name: &str) -> Vec<u8> {
+    let mut file = File::open(file_name)
+        .unwrap_or_else(|error| panic!("could not open benchmark file {}: {}", file_name, error));
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer).unwrap_or_else(|error| {
+        panic!("could not read file at {} to buffer: {}", file_name, error)
+    });
+    buffer
 }
 
-// Load a module from a file.
-fn load_from_file(filename: &str) -> Result<Module, Box<dyn error::Error>> {
-    use std::io::prelude::*;
-    let mut file = File::open(filename)?;
-    let mut buf = Vec::new();
-    file.read_to_end(&mut buf)?;
-    Ok(Module::from_buffer(buf)?)
+/// Parses the Wasm binary at the given `file_name` into a `wasmi` module.
+///
+/// # Note
+///
+/// This includes validation and compilation to `wasmi` bytecode.
+///
+/// # Panics
+///
+/// - If the benchmark Wasm file could not be opened, read or parsed.
+fn load_module(file_name: &str) -> Module {
+    let buffer = load_file(file_name);
+    let module = Module::from_buffer(buffer).unwrap_or_else(|error| {
+        panic!(
+            "could not parse Wasm module from file {}: {}",
+            file_name, error
+        )
+    });
+    module
 }
 
+const WASM_KERNEL: &str = "wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
 const REVCOMP_INPUT: &'static [u8] = include_bytes!("./revcomp-input.txt");
 const REVCOMP_OUTPUT: &'static [u8] = include_bytes!("./revcomp-output.txt");
 
 #[bench]
 fn bench_compile_and_validate(b: &mut Bencher) {
-    let wasm_bytes =
-        load_wasm_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
-            .expect("failed to load wasm_kernel. Is `build.rs` broken?");
+    let wasm_bytes = load_file(WASM_KERNEL);
 
     b.iter(|| {
         let _module = Module::from_buffer(&wasm_bytes).unwrap();
@@ -63,9 +85,7 @@ fn bench_compile_and_validate(b: &mut Bencher) {
 
 #[bench]
 fn bench_compile_and_validate_v1(b: &mut Bencher) {
-    let wasm_bytes =
-        load_wasm_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
-            .expect("failed to load wasm_kernel. Is `build.rs` broken?");
+    let wasm_bytes = load_file(WASM_KERNEL);
 
     b.iter(|| {
         let engine = v1::Engine::default();
@@ -75,12 +95,10 @@ fn bench_compile_and_validate_v1(b: &mut Bencher) {
 
 #[bench]
 fn bench_instantiate_module(b: &mut Bencher) {
-    let wasm_module =
-        load_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
-            .expect("failed to load wasm_kernel. Is `build.rs` broken?");
+    let wasm_kernel = load_module(WASM_KERNEL);
 
     b.iter(|| {
-        let _instance = ModuleInstance::new(&wasm_module, &ImportsBuilder::default())
+        let _instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
             .expect("failed to instantiate wasm module")
             .assert_no_start();
     });
@@ -88,9 +106,7 @@ fn bench_instantiate_module(b: &mut Bencher) {
 
 #[bench]
 fn bench_instantiate_module_v1(b: &mut Bencher) {
-    let wasm_bytes =
-        load_wasm_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
-            .expect("failed to load wasm_kernel. Is `build.rs` broken?");
+    let wasm_bytes = load_file(WASM_KERNEL);
     let engine = v1::Engine::default();
     let mut linker = <v1::Linker<()>>::default();
     let module = v1::Module::new(&engine, &wasm_bytes).unwrap();
@@ -103,14 +119,10 @@ fn bench_instantiate_module_v1(b: &mut Bencher) {
 
 #[bench]
 fn bench_tiny_keccak(b: &mut Bencher) {
-    let wasm_kernel =
-        load_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
-            .expect("failed to load wasm_kernel. Is `build.rs` broken?");
-
+    let wasm_kernel = load_module(WASM_KERNEL);
     let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
         .assert_no_start();
-
     let test_data_ptr = assert_matches!(
 		instance.invoke_export("prepare_tiny_keccak", &[], &mut NopExternals),
 		Ok(Some(v @ RuntimeValue::I32(_))) => v
@@ -125,9 +137,7 @@ fn bench_tiny_keccak(b: &mut Bencher) {
 
 #[bench]
 fn bench_tiny_keccak_v1(b: &mut Bencher) {
-    let wasm =
-        load_wasm_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
-            .unwrap();
+    let wasm = load_file(WASM_KERNEL);
     let engine = v1::Engine::default();
     let module = v1::Module::new(&engine, &wasm).unwrap();
     let mut linker = <v1::Linker<()>>::default();
@@ -160,10 +170,7 @@ fn bench_tiny_keccak_v1(b: &mut Bencher) {
 
 #[bench]
 fn bench_rev_comp(b: &mut Bencher) {
-    let wasm_kernel =
-        load_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
-            .expect("failed to load wasm_kernel. Is `build.rs` broken?");
-
+    let wasm_kernel = load_module(WASM_KERNEL);
     let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
         .assert_no_start();
@@ -208,18 +215,16 @@ fn bench_rev_comp(b: &mut Bencher) {
         Ok(Some(RuntimeValue::I32(v))) => v as u32,
         "",
     );
-    let result = memory
-        .get(output_data_mem_offset, REVCOMP_OUTPUT.len())
+    let mut result = vec![0x00_u8; REVCOMP_OUTPUT.len()];
+    memory
+        .get_into(output_data_mem_offset, &mut result)
         .expect("can't get result data from a wasm memory");
     assert_eq!(&*result, REVCOMP_OUTPUT);
 }
 
 #[bench]
 fn bench_regex_redux(b: &mut Bencher) {
-    let wasm_kernel =
-        load_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
-            .expect("failed to load wasm_kernel. Is `build.rs` broken?");
-
+    let wasm_kernel = load_module(WASM_KERNEL);
     let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
         .assert_no_start();
@@ -261,23 +266,8 @@ fn bench_regex_redux(b: &mut Bencher) {
 
 #[bench]
 fn fac_recursive(b: &mut Bencher) {
-    let wasm = wabt::wat2wasm(
-        r#"
-	;; Recursive factorial
-(func (export "fac-rec") (param i64) (result i64)
-	(if (result i64) (i64.eq (get_local 0) (i64.const 0))
-		(then (i64.const 1))
-		(else
-			(i64.mul (get_local 0) (call 0 (i64.sub (get_local 0) (i64.const 1))))
-		)
-	)
-)
-"#,
-    )
-    .unwrap();
-
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/recursive_factorial.wat")).unwrap();
     let module = Module::from_buffer(&wasm).unwrap();
-
     let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
         .assert_no_start();
@@ -290,21 +280,7 @@ fn fac_recursive(b: &mut Bencher) {
 
 #[bench]
 fn fac_recursive_v1(b: &mut Bencher) {
-    let wasm = wabt::wat2wasm(
-        r#"
-	;; Recursive factorial
-(func (export "fac-rec") (param i64) (result i64)
-	(if (result i64) (i64.eq (get_local 0) (i64.const 0))
-		(then (i64.const 1))
-		(else
-			(i64.mul (get_local 0) (call 0 (i64.sub (get_local 0) (i64.const 1))))
-		)
-	)
-)
-"#,
-    )
-    .unwrap();
-
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/recursive_factorial.wat")).unwrap();
     let engine = v1::Engine::default();
     let module = v1::Module::new(&engine, &wasm).unwrap();
     let mut linker = <v1::Linker<()>>::default();
@@ -329,28 +305,8 @@ fn fac_recursive_v1(b: &mut Bencher) {
 
 #[bench]
 fn fac_opt(b: &mut Bencher) {
-    let wasm = wabt::wat2wasm(
-        r#"
-;; Optimized factorial.
-(func (export "fac-opt") (param i64) (result i64)
-	(local i64)
-	(set_local 1 (i64.const 1))
-	(block
-		(br_if 0 (i64.lt_s (get_local 0) (i64.const 2)))
-		(loop
-			(set_local 1 (i64.mul (get_local 1) (get_local 0)))
-			(set_local 0 (i64.add (get_local 0) (i64.const -1)))
-			(br_if 0 (i64.gt_s (get_local 0) (i64.const 1)))
-		)
-	)
-	(get_local 1)
-)
-"#,
-    )
-    .unwrap();
-
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/optimized_factorial.wat")).unwrap();
     let module = Module::from_buffer(&wasm).unwrap();
-
     let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
         .assert_no_start();
@@ -363,26 +319,7 @@ fn fac_opt(b: &mut Bencher) {
 
 #[bench]
 fn fac_opt_v1(b: &mut Bencher) {
-    let wasm = wabt::wat2wasm(
-        r#"
-;; Optimized factorial.
-(func (export "fac-opt") (param i64) (result i64)
-	(local i64)
-	(set_local 1 (i64.const 1))
-	(block
-		(br_if 0 (i64.lt_s (get_local 0) (i64.const 2)))
-		(loop
-			(set_local 1 (i64.mul (get_local 1) (get_local 0)))
-			(set_local 0 (i64.add (get_local 0) (i64.const -1)))
-			(br_if 0 (i64.gt_s (get_local 0) (i64.const 1)))
-		)
-	)
-	(get_local 1)
-)
-"#,
-    )
-    .unwrap();
-
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/optimized_factorial.wat")).unwrap();
     let engine = v1::Engine::default();
     let module = v1::Module::new(&engine, &wasm).unwrap();
     let mut linker = <v1::Linker<()>>::default();
@@ -409,27 +346,8 @@ fn fac_opt_v1(b: &mut Bencher) {
 // is not too large.
 #[bench]
 fn recursive_ok(b: &mut Bencher) {
-    let wasm = wabt::wat2wasm(
-        r#"
-(module
-  (func $call (export "call") (param i32) (result i32)
-	block (result i32)
-	  get_local 0
-	  get_local 0
-	  i32.eqz
-	  br_if 0
-
-	  i32.const 1
-	  i32.sub
-	  call $call
-	end
-  )
-)
-		"#,
-    )
-    .unwrap();
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/recursive_ok.wat")).unwrap();
     let module = Module::from_buffer(&wasm).unwrap();
-
     let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
         .assert_no_start();
@@ -488,28 +406,8 @@ fn recursive_ok_v1(b: &mut Bencher) {
 
 #[bench]
 fn recursive_trap(b: &mut Bencher) {
-    let wasm = wabt::wat2wasm(
-        r#"
-(module
-  (func $call (export "call") (param i32) (result i32)
-	block (result i32)
-	  get_local 0
-	  get_local 0
-	  i32.eqz
-	  br_if 0
-
-	  i32.const 1
-	  i32.sub
-	  call $call
-	end
-	unreachable
-  )
-)
-		"#,
-    )
-    .unwrap();
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/recursive_trap.wat")).unwrap();
     let module = Module::from_buffer(&wasm).unwrap();
-
     let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
         .assert_no_start();
@@ -522,40 +420,8 @@ fn recursive_trap(b: &mut Bencher) {
 
 #[bench]
 fn host_calls(b: &mut Bencher) {
-    // The below `.wat` file exports a function `call` that takes a `n` of type `i64`.
-    // It will iterate `n` times and call the imported function `host_call` every time.
-    //
-    // This benchmarks tests the performance of host calls.
-    //
-    // After successful execution the `call` function will return `0`.
-    let wasm = wabt::wat2wasm(
-        r#"
-(module
-  (import "benchmark" "host_call" (func $host_call (param i64) (result i64)))
-  (func $call (export "call") (param i64) (result i64)
-	(block
-		(loop
-			(br_if
-				1
-				(i64.eq (get_local 0) (i64.const 0))
-			)
-			(set_local 0
-				(i64.sub
-					(call $host_call (get_local 0))
-					(i64.const 1)
-				)
-			)
-			(br 0)
-		)
-	)
-	(get_local 0)
-  )
-)
-		"#,
-    )
-    .unwrap();
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/host_calls.wat")).unwrap();
     let module = Module::from_buffer(&wasm).unwrap();
-
     let instance = ModuleInstance::new(&module, &BenchExternals)
         .expect("failed to instantiate wasm module")
         .assert_no_start();
