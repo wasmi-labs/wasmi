@@ -1,6 +1,7 @@
 use super::{AsContext, AsContextMut, Func, Index, Stored};
 use alloc::vec::Vec;
 use core::{fmt, fmt::Display};
+use parity_wasm::elements as pwasm;
 
 /// A raw index to a table entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -100,6 +101,16 @@ impl TableType {
             assert!(initial <= maximum);
         }
         Self { initial, maximum }
+    }
+
+    /// Creates a new [`TableType`] from the given [`pwasm::TableType`].
+    pub(crate) fn from_elements(table_type: &pwasm::TableType) -> Self {
+        let initial = table_type.limits().initial() as usize;
+        let maximum = table_type
+            .limits()
+            .maximum()
+            .map(|maximum| maximum as usize);
+        TableType::new(initial, maximum)
     }
 
     /// Returns the initial size.
