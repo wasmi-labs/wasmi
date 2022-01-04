@@ -69,6 +69,10 @@ define_tests! {
     fn wasm_left_to_right("left-to-right");
     #[ignore] fn wasm_linking("linking");
     fn wasm_loop("loop");
+    fn wasm_load("load");
+    fn wasm_local_get("local_get");
+    fn wasm_local_set("local_set");
+    fn wasm_local_tee("local_tee");
     fn wasm_memory("memory");
     fn wasm_memory_redundancy("memory_redundancy");
     fn wasm_memory_trap("memory_trap");
@@ -81,6 +85,7 @@ define_tests! {
     #[ignore] fn wasm_skip_stack_guard_page("skip-stack-guard-page");
     fn wasm_stack("stack");
     fn wasm_start("start");
+    fn wasm_store("store");
     fn wasm_store_retval("store_retval");
     fn wasm_switch("switch");
     fn wasm_tee_local("tee_local");
