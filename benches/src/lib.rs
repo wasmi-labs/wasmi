@@ -35,10 +35,14 @@ use wasmi::{
 /// # Note
 ///
 /// This includes validation and compilation to `wasmi` bytecode.
+///
+/// # Panics
+///
+/// - If the benchmark Wasm file could not be opened, read or parsed.
 fn load_from_file(file_name: &str) -> Module {
     use std::io::prelude::*;
     let mut file = File::open(file_name)
-        .unwrap_or_else(|error| panic!("could not read benchmark file {}: {}", file_name, error));
+        .unwrap_or_else(|error| panic!("could not open benchmark file {}: {}", file_name, error));
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer).unwrap_or_else(|error| {
         panic!("could not read file at {} to buffer: {}", file_name, error)
