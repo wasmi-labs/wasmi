@@ -12,7 +12,7 @@
 // contributed by Matt Brubeck
 
 use std::io::BufRead;
-use std::mem::replace;
+use std::mem::{replace, take};
 use std::{cmp, io};
 
 /// Lookup table to find the complement of a single FASTA code.
@@ -51,7 +51,7 @@ impl<'a, T> SplitOff for &'a mut [T] {
 	/// Split the left `n` items from self and return them as a separate slice.
 	fn split_off_left(&mut self, n: usize) -> Self {
 		let n = cmp::min(self.len(), n);
-		let data = replace(self, &mut []);
+		let data = take(self);
 		let (left, data) = data.split_at_mut(n);
 		*self = data;
 		left
@@ -60,7 +60,7 @@ impl<'a, T> SplitOff for &'a mut [T] {
 	fn split_off_right(&mut self, n: usize) -> Self {
 		let len = self.len();
 		let n = cmp::min(len, n);
-		let data = replace(self, &mut []);
+		let data = take(self);
 		let (data, right) = data.split_at_mut(len - n);
 		*self = data;
 		right
@@ -90,7 +90,7 @@ fn reverse_complement_left_right(
 ) {
 	// Each iteration swaps one line from the start of the sequence with one
 	// from the end.
-	while left.len() > 0 || right.len() > 0 {
+	while !left.is_empty() || !right.is_empty() {
 		// Get the chunk up to the newline in `right`.
 		let mut a = left.split_off_left(trailing_len);
 		let mut b = right.split_off_right(trailing_len);
