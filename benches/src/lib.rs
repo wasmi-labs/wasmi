@@ -76,10 +76,7 @@ const REVCOMP_OUTPUT: &'static [u8] = include_bytes!("./revcomp-output.txt");
 
 #[bench]
 fn bench_compile_and_validate(b: &mut Bencher) {
-    let wasm_bytes =
-        load_wasm_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
-            .expect("failed to load wasm_kernel. Is `build.rs` broken?");
-
+    let wasm_bytes = load_file(WASM_KERNEL);
     b.iter(|| {
         let _module = Module::from_buffer(&wasm_bytes).unwrap();
     });
@@ -87,12 +84,10 @@ fn bench_compile_and_validate(b: &mut Bencher) {
 
 #[bench]
 fn bench_instantiate_module(b: &mut Bencher) {
-    let wasm_module =
-        load_from_file("./wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm")
-            .expect("failed to load wasm_kernel. Is `build.rs` broken?");
+    let wasm_kernel = load_module(WASM_KERNEL);
 
     b.iter(|| {
-        let _instance = ModuleInstance::new(&wasm_module, &ImportsBuilder::default())
+        let _instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
             .expect("failed to instantiate wasm module")
             .assert_no_start();
     });
