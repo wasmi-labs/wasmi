@@ -56,8 +56,7 @@ fn load_from_file(file_name: &str) -> Module {
     module
 }
 
-const WASM_KERNEL: &str =
-    "wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
+const WASM_KERNEL: &str = "wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
 const REVCOMP_INPUT: &'static [u8] = include_bytes!("./revcomp-input.txt");
 const REVCOMP_OUTPUT: &'static [u8] = include_bytes!("./revcomp-output.txt");
 
