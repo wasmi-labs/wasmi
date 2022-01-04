@@ -10,6 +10,7 @@ use self::byte_buffer::{ByteBuffer, VmemError};
 use super::{AsContext, AsContextMut, Index, StoreContext, StoreContextMut, Stored};
 use crate::memory_units::{Bytes, Pages};
 use core::{fmt, fmt::Display};
+use parity_wasm::elements as pwasm;
 
 /// A raw index to a linear memory entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -98,6 +99,13 @@ impl MemoryType {
             initial_pages: Pages(initial as usize),
             maximum_pages: maximum.map(|value| Pages(value as usize)),
         }
+    }
+
+    /// Creates a new [`MemoryType`] from the given [`pwasm::MemoryType`].
+    pub fn from_elements(memory_type: &pwasm::MemoryType) -> Self {
+        let initial = memory_type.limits().initial();
+        let maximum = memory_type.limits().maximum();
+        MemoryType::new(initial, maximum)
     }
 
     /// Returns the initial pages of the memory type.
