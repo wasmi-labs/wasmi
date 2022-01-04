@@ -75,6 +75,7 @@ define_tests! {
     fn wasm_memory_redundancy("memory_redundancy");
     fn wasm_memory_trap("memory_trap");
     fn wasm_memory_grow("memory_grow");
+    fn wasm_memory_size("memory_size");
     fn wasm_names("names");
     fn wasm_nop("nop");
     fn wasm_return("return");
