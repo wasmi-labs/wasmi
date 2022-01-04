@@ -437,17 +437,15 @@ impl<T> Linker<T> {
                     Extern::Table(table)
                 }
                 pwasm::External::Memory(memory_type) => {
-                    let initial = memory_type.limits().initial();
-                    let maximum = memory_type.limits().maximum();
-                    let expected_memory_type = MemoryType::new(initial, maximum);
+                    let expected_type = MemoryType::from_elements(&memory_type);
                     let memory = self
                         .resolve(module_name, Some(field_name))
                         .and_then(Extern::into_memory)
                         .ok_or_else(|| LinkerError::CannotFindDefinitionForImport {
                             import: import.clone(),
                         })?;
-                    let actual_memory_type = memory.memory_type(context.as_context());
-                    actual_memory_type.satisfies(&expected_memory_type)?;
+                    let actual_type = memory.memory_type(context.as_context());
+                    actual_type.satisfies(&expected_type)?;
                     Extern::Memory(memory)
                 }
                 pwasm::External::Global(global_type) => {

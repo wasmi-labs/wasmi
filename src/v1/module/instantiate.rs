@@ -406,8 +406,7 @@ impl Module {
                     builder.push_table(table);
                 }
                 (pwasm::External::Memory(memory_type), Extern::Memory(memory)) => {
-                    let limits = *memory_type.limits();
-                    let required = MemoryType::new(limits.initial(), limits.maximum());
+                    let required = MemoryType::from_elements(memory_type);
                     let imported = memory.memory_type(context.as_context());
                     imported.satisfies(&required)?;
                     builder.push_memory(memory);
@@ -525,9 +524,7 @@ impl Module {
             .map(pwasm::MemorySection::entries)
             .unwrap_or(&[]);
         for memory_type in memory_types {
-            let initial = memory_type.limits().initial();
-            let maximum = memory_type.limits().maximum();
-            let memory_type = MemoryType::new(initial, maximum);
+            let memory_type = MemoryType::from_elements(memory_type);
             let memory =
                 Memory::new(context.as_context_mut(), memory_type).unwrap_or_else(|error| {
                     panic!(
