@@ -400,11 +400,7 @@ impl Module {
                     builder.push_func(func);
                 }
                 (pwasm::External::Table(table_type), Extern::Table(table)) => {
-                    let limits = *table_type.limits();
-                    let required = TableType::new(
-                        limits.initial() as usize,
-                        limits.maximum().map(|maximum| maximum as usize),
-                    );
+                    let required = TableType::from_elements(table_type);
                     let imported = table.table_type(context.as_context());
                     imported.satisfies(&required)?;
                     builder.push_table(table);
@@ -507,12 +503,7 @@ impl Module {
             .map(pwasm::TableSection::entries)
             .unwrap_or(&[]);
         for table_type in table_types {
-            let initial = table_type.limits().initial() as usize;
-            let maximum = table_type
-                .limits()
-                .maximum()
-                .map(|maximum| maximum as usize);
-            let table_type = TableType::new(initial, maximum);
+            let table_type = TableType::from_elements(table_type);
             let table = Table::new(context.as_context_mut(), table_type);
             builder.push_table(table);
         }

@@ -425,20 +425,15 @@ impl<T> Linker<T> {
                     Extern::Func(func)
                 }
                 pwasm::External::Table(table_type) => {
-                    let initial = table_type.limits().initial() as usize;
-                    let maximum = table_type
-                        .limits()
-                        .maximum()
-                        .map(|maximum| maximum as usize);
-                    let expected_table_type = TableType::new(initial, maximum);
+                    let expected_type = TableType::from_elements(&table_type);
                     let table = self
                         .resolve(module_name, Some(field_name))
                         .and_then(Extern::into_table)
                         .ok_or_else(|| LinkerError::CannotFindDefinitionForImport {
                             import: import.clone(),
                         })?;
-                    let actual_table_type = table.table_type(context.as_context());
-                    actual_table_type.satisfies(&expected_table_type)?;
+                    let actual_type = table.table_type(context.as_context());
+                    actual_type.satisfies(&expected_type)?;
                     Extern::Table(table)
                 }
                 pwasm::External::Memory(memory_type) => {
