@@ -30,11 +30,11 @@ use wasmi::{
     Trap,
 };
 
-// Parses the Wasm binary at the given file name into a `wasmi` module.
-//
-// # Note
-//
-// This includes validation and compilation to `wasmi` bytecode.
+/// Parses the Wasm binary at the given file name into a `wasmi` module.
+///
+/// # Note
+///
+/// This includes validation and compilation to `wasmi` bytecode.
 fn load_from_file(file_name: &str) -> Module {
     use std::io::prelude::*;
     let mut file = File::open(file_name)
