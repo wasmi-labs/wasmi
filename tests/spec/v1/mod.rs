@@ -82,7 +82,7 @@ define_tests! {
     fn wasm_nop("nop");
     fn wasm_return("return");
     fn wasm_select("select");
-    #[ignore] fn wasm_skip_stack_guard_page("skip-stack-guard-page");
+    fn wasm_skip_stack_guard_page("skip-stack-guard-page");
     fn wasm_stack("stack");
     fn wasm_start("start");
     fn wasm_store("store");
