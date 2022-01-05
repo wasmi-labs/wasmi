@@ -370,7 +370,7 @@ fn recursive_ok_v1(b: &mut Bencher) {
         .ensure_no_start(&mut store)
         .unwrap();
     let bench_call = instance
-        .get_export(&store, "bench_call")
+        .get_export(&store, "call")
         .and_then(v1::Extern::into_func)
         .unwrap();
     let mut result = [RuntimeValue::I32(0)];
