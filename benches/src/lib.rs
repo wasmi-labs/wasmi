@@ -264,6 +264,50 @@ fn bench_regex_redux(b: &mut Bencher) {
 }
 
 #[bench]
+fn count_until(b: &mut Bencher) {
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/count_until.wat")).unwrap();
+    let module = Module::from_buffer(&wasm).unwrap();
+    let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
+        .expect("failed to instantiate wasm module")
+        .assert_no_start();
+    const REPETITIONS: i32 = 100_000;
+    b.iter(|| {
+        let value = instance.invoke_export(
+            "count_until",
+            &[RuntimeValue::I32(REPETITIONS)],
+            &mut NopExternals,
+        );
+        assert_matches!(value, Ok(Some(RuntimeValue::I32(REPETITIONS))));
+    });
+}
+
+#[bench]
+fn count_until_v1(b: &mut Bencher) {
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/count_until.wat")).unwrap();
+    let engine = v1::Engine::default();
+    let module = v1::Module::new(&engine, &wasm).unwrap();
+    let mut linker = <v1::Linker<()>>::default();
+    let mut store = v1::Store::new(&engine, ());
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let count_until = instance
+        .get_export(&store, "count_until")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    const REPETITIONS: i32 = 100_000;
+    let mut result = [RuntimeValue::I32(0)];
+    b.iter(|| {
+        count_until
+            .call(&mut store, &[RuntimeValue::I32(REPETITIONS)], &mut result)
+            .unwrap();
+        assert_matches!(result, [RuntimeValue::I32(REPETITIONS)]);
+    });
+}
+
+#[bench]
 fn fac_recursive(b: &mut Bencher) {
     let wasm = wabt::wat2wasm(include_bytes!("../wat/recursive_factorial.wat")).unwrap();
     let module = Module::from_buffer(&wasm).unwrap();
