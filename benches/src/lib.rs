@@ -77,7 +77,6 @@ const REVCOMP_OUTPUT: &'static [u8] = include_bytes!("./revcomp-output.txt");
 #[bench]
 fn bench_compile_and_validate(b: &mut Bencher) {
     let wasm_bytes = load_file(WASM_KERNEL);
-
     b.iter(|| {
         let _module = Module::from_buffer(&wasm_bytes).unwrap();
     });
