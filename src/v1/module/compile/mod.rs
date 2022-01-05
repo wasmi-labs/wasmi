@@ -76,10 +76,10 @@ impl<'engine> FuncValidator for FuncBodyTranslator<'engine> {
     }
 
     fn finish(mut self, ctx: &FunctionValidationContext) -> Self::Output {
-        self.pin_max_stack_height(&ctx);
+        self.pin_max_stack_height(ctx);
         let func_body =
             self.inst_builder
-                .finish(&self.engine, self.len_locals, self.max_stack_height);
+                .finish(self.engine, self.len_locals, self.max_stack_height);
         (func_body, self.inst_builder)
     }
 }
@@ -122,10 +122,10 @@ impl<'engine> FuncBodyTranslator<'engine> {
         // of the instruction sequence because with future Wasm `multivalue`
         // proposal it could be that the last instruction pushes a lot
         // of values to the stack.
-        self.pin_max_stack_height(&validator);
+        self.pin_max_stack_height(validator);
         let func_body =
             self.inst_builder
-                .finish(&self.engine, self.len_locals, self.max_stack_height);
+                .finish(self.engine, self.len_locals, self.max_stack_height);
         Ok(func_body)
     }
 
@@ -194,7 +194,7 @@ impl<'engine> FuncBodyTranslator<'engine> {
         inst: &Instruction,
     ) -> Result<(), Error> {
         use Instruction as Inst;
-        self.pin_max_stack_height(&validator);
+        self.pin_max_stack_height(validator);
         match inst {
             Inst::Unreachable => {
                 self.validate_translate(validator, inst, InstructionsBuilder::unreachable)?;

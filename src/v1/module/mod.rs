@@ -78,7 +78,7 @@ impl Module {
     /// Create a new module from the binary Wasm encoded bytes.
     pub fn new(engine: &Engine, bytes: impl AsRef<[u8]>) -> Result<Module, TranslationError> {
         let module = pwasm::deserialize_buffer(bytes.as_ref())?;
-        let func_bodies = validate_module::<ModuleValidation>(&module, &engine)?;
+        let func_bodies = validate_module::<ModuleValidation>(&module, engine)?;
         Ok(Self {
             module,
             engine: engine.clone(),
