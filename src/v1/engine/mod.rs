@@ -84,12 +84,19 @@ impl Engine {
     /// Allocates the instructions of a Wasm function body to the [`Engine`].
     ///
     /// Returns a [`FuncBody`] reference to the allocated function body.
-    pub(super) fn alloc_func_body<I>(&self, len_locals: usize, insts: I) -> FuncBody
+    pub(super) fn alloc_func_body<I>(
+        &self,
+        len_locals: usize,
+        max_stack_height: usize,
+        insts: I,
+    ) -> FuncBody
     where
         I: IntoIterator<Item = Instruction>,
         I::IntoIter: ExactSizeIterator,
     {
-        self.inner.lock().alloc_func_body(len_locals, insts)
+        self.inner
+            .lock()
+            .alloc_func_body(len_locals, max_stack_height, insts)
     }
 
     /// Resolves the [`FuncBody`] to the underlying `wasmi` bytecode instructions.
@@ -149,12 +156,17 @@ impl EngineInner {
     /// Allocates the instructions of a Wasm function body to the [`Engine`].
     ///
     /// Returns a [`FuncBody`] reference to the allocated function body.
-    pub fn alloc_func_body<I>(&mut self, len_locals: usize, insts: I) -> FuncBody
+    pub fn alloc_func_body<I>(
+        &mut self,
+        len_locals: usize,
+        max_stack_height: usize,
+        insts: I,
+    ) -> FuncBody
     where
         I: IntoIterator<Item = Instruction>,
         I::IntoIter: ExactSizeIterator,
     {
-        self.code_map.alloc(len_locals, insts)
+        self.code_map.alloc(len_locals, max_stack_height, insts)
     }
 
     /// Executes the given [`Func`] using the given arguments `args` and stores the result into `results`.
@@ -260,8 +272,8 @@ impl EngineInner {
                 Some(frame) => frame,
                 None => return Ok(()),
             };
-            let result = ExecutionContext::new(self, &mut function_frame)
-                .execute_frame(ctx.as_context_mut())?;
+            let result =
+                ExecutionContext::new(self, &mut function_frame).execute_frame(&mut ctx)?;
             match result {
                 FunctionExecutionOutcome::Return => {
                     continue 'outer;

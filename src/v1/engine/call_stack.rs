@@ -186,6 +186,8 @@ impl FunctionFrame {
             // Nothing to do if the function frame has already been initialized.
             return;
         }
+        let max_stack_height = resolved_func_body.max_stack_height();
+        value_stack.reserve(max_stack_height);
         let len_locals = resolved_func_body.len_locals();
         value_stack
             .extend_zeros(len_locals)

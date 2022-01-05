@@ -387,15 +387,14 @@ impl ValueStack {
     /// For this to be working we need a stack-depth analysis during Wasm
     /// compilation so that we are aware of all stack-depths for every
     /// functions.
-    #[allow(dead_code)] // TODO: decide how to utilize this
     pub fn reserve(&mut self, additional: usize) {
         let required_len = self.len() + additional;
         if required_len > self.capacity() {
-            // Double the current length of the value stack and additionally
-            // add as many entires on top as have been requested.
-            let new_len = self.len() * 2 + additional;
+            // By extending with the required new length we effectively double
+            // the current value stack length and add the additional flat amount
+            // on top. This avoids too many frequent reallocations.
             self.entries
-                .extend(iter::repeat(StackEntry(0x00)).take(new_len));
+                .extend(iter::repeat(StackEntry(0x00)).take(required_len));
         }
     }
 

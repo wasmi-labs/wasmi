@@ -226,6 +226,7 @@ pub enum Instruction {
         /// Note: Storing the amount of locals inline with the rest of the
         ///       function body eliminates one indirection when calling a function.
         len_locals: u32,
+        max_stack_height: u32,
     },
     /// The end of a Wasm function body.
     ///

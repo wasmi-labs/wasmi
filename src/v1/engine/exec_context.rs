@@ -44,7 +44,10 @@ pub struct ExecutionContext<'engine, 'func> {
 
 impl<'engine, 'func> ExecutionContext<'engine, 'func> {
     /// Creates an execution context for the given [`FunctionFrame`].
-    pub fn new(engine: &'engine mut EngineInner, frame: &'func mut FunctionFrame) -> Self {
+    pub fn new(
+        engine: &'engine mut EngineInner,
+        frame: &'func mut FunctionFrame,
+    ) -> Self {
         let resolved = engine.code_map.resolve(frame.func_body);
         frame.initialize(resolved, &mut engine.value_stack);
         Self {

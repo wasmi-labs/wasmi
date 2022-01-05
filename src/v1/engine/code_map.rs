@@ -48,7 +48,7 @@ impl CodeMap {
     /// Returns a reference to the allocated function body that can
     /// be used with [`CodeMap::resolve`] in order to resolve its
     /// instructions.
-    pub fn alloc<I>(&mut self, len_locals: usize, insts: I) -> FuncBody
+    pub fn alloc<I>(&mut self, len_locals: usize, max_stack_height: usize, insts: I) -> FuncBody
     where
         I: IntoIterator<Item = Instruction>,
         I::IntoIter: ExactSizeIterator,
@@ -65,6 +65,14 @@ impl CodeMap {
                 error
             )
         });
+        let max_stack_height = (max_stack_height + len_locals)
+            .try_into()
+            .unwrap_or_else(|error| {
+                panic!(
+                "encountered function that requires too many stack values (= {}) for function: {}",
+                max_stack_height, error
+            )
+            });
         let len_locals = len_locals.try_into().unwrap_or_else(|error| {
             panic!(
                 "encountered too many local variables (= {}) for function: {}",
@@ -74,6 +82,7 @@ impl CodeMap {
         let start = iter::once(Instruction::FuncBodyStart {
             len_instructions,
             len_locals,
+            max_stack_height,
         });
         let end = iter::once(Instruction::FuncBodyEnd);
         self.insts.extend(start.chain(insts).chain(end));
@@ -87,11 +96,12 @@ impl CodeMap {
     /// If the given `func_body` is invalid for this [`CodeMap`].
     pub fn resolve(&self, func_body: FuncBody) -> ResolvedFuncBody {
         let offset = func_body.into_usize();
-        let (len_instructions, len_locals) = match &self.insts[offset] {
+        let (len_instructions, len_locals, max_stack_height) = match &self.insts[offset] {
             Instruction::FuncBodyStart {
                 len_instructions,
                 len_locals,
-            } => (*len_instructions, *len_locals),
+                max_stack_height,
+            } => (*len_instructions, *len_locals, *max_stack_height),
             unexpected => panic!(
                 "expected function start instruction but found: {:?}",
                 unexpected
@@ -99,6 +109,7 @@ impl CodeMap {
         };
         let len_instructions = len_instructions as usize;
         let len_locals = len_locals as usize;
+        let max_stack_height = max_stack_height as usize;
         // The index of the first instruction in the function body.
         let first_inst = offset + 1;
         {
@@ -116,7 +127,11 @@ impl CodeMap {
             );
         }
         let insts = &self.insts[first_inst..(first_inst + len_instructions)];
-        ResolvedFuncBody { insts, len_locals }
+        ResolvedFuncBody {
+            insts,
+            len_locals,
+            max_stack_height,
+        }
     }
 }
 
@@ -134,6 +149,7 @@ impl CodeMap {
 pub struct ResolvedFuncBody<'a> {
     insts: &'a [Instruction],
     len_locals: usize,
+    max_stack_height: usize,
 }
 
 impl ResolvedFuncBody<'_> {
@@ -150,6 +166,16 @@ impl ResolvedFuncBody<'_> {
     /// Returns the amount of local variable of the function.
     pub fn len_locals(&self) -> usize {
         self.len_locals
+    }
+
+    /// Returns the amount of stack values required by the function.
+    ///
+    /// # Note
+    ///
+    /// This amount includes the amount of local variables but does
+    /// _not_ include the amount of input parameters to the function.
+    pub fn max_stack_height(&self) -> usize {
+        self.max_stack_height
     }
 }
 

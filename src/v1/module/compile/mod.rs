@@ -42,6 +42,12 @@ pub struct FuncBodyTranslator {
     control_frames: Vec<ControlFrame>,
     /// The amount of local variables of the currently compiled function.
     len_locals: usize,
+    /// The maximum stack height of the translated Wasm function.
+    ///
+    /// # Note
+    ///
+    /// This does not include input parameters and local variables.
+    max_stack_height: usize,
 }
 
 impl FuncValidator for FuncBodyTranslator {
@@ -70,7 +76,9 @@ impl FuncValidator for FuncBodyTranslator {
     }
 
     fn finish(mut self) -> Self::Output {
-        let func_body = self.inst_builder.finish(&self.engine, self.len_locals);
+        let func_body =
+            self.inst_builder
+                .finish(&self.engine, self.len_locals, self.max_stack_height);
         (func_body, self.inst_builder)
     }
 }
@@ -86,6 +94,7 @@ impl FuncBodyTranslator {
             inst_builder,
             control_frames,
             len_locals,
+            max_stack_height: len_locals,
         }
     }
 
@@ -102,10 +111,34 @@ impl FuncBodyTranslator {
         I::IntoIter: ExactSizeIterator,
     {
         for instruction in instructions {
+            self.pin_max_stack_height(&validator);
             self.translate_instruction(validator, instruction)?;
         }
-        let func_body = self.inst_builder.finish(&self.engine, self.len_locals);
+        // We need to call this function yet another time at the end
+        // of the instruction sequence because with future Wasm `multivalue`
+        // proposal it could be that the last instruction pushes a lot
+        // of values to the stack.
+        self.pin_max_stack_height(&validator);
+        let func_body =
+            self.inst_builder
+                .finish(&self.engine, self.len_locals, self.max_stack_height);
         Ok(func_body)
+    }
+
+    /// Updates the maximum stack height of the function.
+    ///
+    /// # Note
+    ///
+    /// - This only updates the maximum stack height value of `self` in
+    ///   case the current stack height is greater than the maximum seen
+    ///   so far.
+    /// - This function needs to be called once for every instruction seen
+    ///   in order for the whole construction to work properly.
+    fn pin_max_stack_height(&mut self, ctx: &FunctionValidationContext) {
+        let current_stack_height = ctx.value_stack.len();
+        if current_stack_height > self.max_stack_height {
+            self.max_stack_height = current_stack_height;
+        }
     }
 
     /// Pops the top most control frame.
