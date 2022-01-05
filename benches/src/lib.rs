@@ -359,27 +359,7 @@ fn recursive_ok(b: &mut Bencher) {
 
 #[bench]
 fn recursive_ok_v1(b: &mut Bencher) {
-    // This benchmark tests the performance of recursive Wasm function calls.
-    let wasm = wabt::wat2wasm(
-        r#"
-(module
-  (func $call (export "bench_call") (param i32) (result i32)
-	block (result i32)
-	  get_local 0
-	  get_local 0
-	  i32.eqz
-	  br_if 0
-
-	  i32.const 1
-	  i32.sub
-	  call $call
-	end
-  )
-)
-		"#,
-    )
-    .unwrap();
-
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/recursive_ok.wat")).unwrap();
     let engine = v1::Engine::default();
     let module = v1::Module::new(&engine, &wasm).unwrap();
     let mut linker = <v1::Linker<()>>::default();
@@ -521,42 +501,10 @@ fn host_calls(b: &mut Bencher) {
 
 #[bench]
 fn host_calls_v1(b: &mut Bencher) {
-    // The below `.wat` file exports a function `call` that takes a `n` of type `i64`.
-    // It will iterate `n` times and call the imported function `host_call` every time.
-    //
-    // This benchmarks tests the performance of host calls.
-    //
-    // After successful execution the `call` function will return `0`.
-    let wasm = wabt::wat2wasm(
-        r#"
-(module
-  (import "benchmark" "host_call" (func $host_call (param i64) (result i64)))
-  (func $call (export "call") (param i64) (result i64)
-	(block
-		(loop
-			(br_if
-				1
-				(i64.eq (get_local 0) (i64.const 0))
-			)
-			(set_local 0
-				(i64.sub
-					(call $host_call (get_local 0))
-					(i64.const 1)
-				)
-			)
-			(br 0)
-		)
-	)
-	(get_local 0)
-  )
-)
-		"#,
-    )
-    .unwrap();
-
     /// How often the `host_call` should be called per Wasm invocation.
     const REPETITIONS: i64 = 1000;
 
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/host_calls.wat")).unwrap();
     let engine = v1::Engine::default();
     let module = v1::Module::new(&engine, &wasm).unwrap();
     let mut linker = <v1::Linker<()>>::default();
