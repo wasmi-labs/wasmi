@@ -56,7 +56,7 @@ impl VirtualMemory {
     /// - If the operating system returns an error upon virtual memory allocation.
     pub fn new(len: usize) -> Result<Self, MemoryError> {
         assert_ne!(len, 0, "cannot allocate empty virtual memory");
-        if len > max_memory_len() {
+        if len > u32::MAX as usize {
             return Err(MemoryError::OutOfBoundsAllocation);
         }
         let allocation = region::alloc(len, Protection::READ_WRITE).map_err(VmemError::from)?;
