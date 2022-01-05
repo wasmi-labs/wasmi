@@ -34,16 +34,16 @@ pub struct Module {
 }
 
 #[derive(Debug)]
-pub struct ModuleValidation {
-    engine: Engine,
+pub struct ModuleValidation<'engine> {
+    engine: &'engine Engine,
     inst_builder: InstructionsBuilder,
     func_bodies: Vec<FuncBody>,
 }
 
-impl Validator for ModuleValidation {
-    type Input = Engine;
+impl<'engine> Validator for ModuleValidation<'engine> {
+    type Input = &'engine Engine;
     type Output = Vec<FuncBody>;
-    type FuncValidator = FuncBodyTranslator;
+    type FuncValidator = FuncBodyTranslator<'engine>;
 
     fn new(_module: &pwasm::Module, engine: Self::Input) -> Self {
         ModuleValidation {
@@ -70,7 +70,7 @@ impl Validator for ModuleValidation {
         &mut self,
     ) -> <Self::FuncValidator as validation::FuncValidator>::Input {
         let inst_builder = mem::take(&mut self.inst_builder);
-        (self.engine.clone(), inst_builder)
+        (self.engine, inst_builder)
     }
 }
 
@@ -78,7 +78,7 @@ impl Module {
     /// Create a new module from the binary Wasm encoded bytes.
     pub fn new(engine: &Engine, bytes: impl AsRef<[u8]>) -> Result<Module, TranslationError> {
         let module = pwasm::deserialize_buffer(bytes.as_ref())?;
-        let func_bodies = validate_module::<ModuleValidation>(&module, engine.clone())?;
+        let func_bodies = validate_module::<ModuleValidation>(&module, &engine)?;
         Ok(Self {
             module,
             engine: engine.clone(),

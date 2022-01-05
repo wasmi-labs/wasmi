@@ -127,7 +127,7 @@ pub fn drive<T: FuncValidator>(
     // the end of the function body.
     assert!(context.frame_stack.is_empty());
 
-    Ok(validator.finish())
+    Ok(validator.finish(&context))
 }
 
 /// Function validation context.

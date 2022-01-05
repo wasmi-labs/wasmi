@@ -33,9 +33,9 @@ use validation::{
 
 /// Allows to translate a Wasm functions into `wasmi` bytecode.
 #[derive(Debug)]
-pub struct FuncBodyTranslator {
+pub struct FuncBodyTranslator<'engine> {
     /// The underlying engine which the translator feeds.
-    engine: Engine,
+    engine: &'engine Engine,
     /// The underlying instruction builder to incrementally build up `wasmi` bytecode.
     inst_builder: InstructionsBuilder,
     /// The underlying control flow frames representing Wasm control flow.
@@ -50,8 +50,8 @@ pub struct FuncBodyTranslator {
     max_stack_height: usize,
 }
 
-impl FuncValidator for FuncBodyTranslator {
-    type Input = (Engine, InstructionsBuilder);
+impl<'engine> FuncValidator for FuncBodyTranslator<'engine> {
+    type Input = (&'engine Engine, InstructionsBuilder);
     type Output = (FuncBody, InstructionsBuilder);
 
     fn new(
@@ -64,7 +64,7 @@ impl FuncValidator for FuncBodyTranslator {
             .iter()
             .map(|local| local.count() as usize)
             .sum();
-        FuncBodyTranslator::new(&engine, inst_builder, len_locals)
+        FuncBodyTranslator::new(engine, inst_builder, len_locals)
     }
 
     fn next_instruction(
@@ -75,7 +75,8 @@ impl FuncValidator for FuncBodyTranslator {
         self.translate_instruction(ctx, instruction)
     }
 
-    fn finish(mut self) -> Self::Output {
+    fn finish(mut self, ctx: &FunctionValidationContext) -> Self::Output {
+        self.pin_max_stack_height(&ctx);
         let func_body =
             self.inst_builder
                 .finish(&self.engine, self.len_locals, self.max_stack_height);
@@ -83,18 +84,22 @@ impl FuncValidator for FuncBodyTranslator {
     }
 }
 
-impl FuncBodyTranslator {
+impl<'engine> FuncBodyTranslator<'engine> {
     /// Creates a new Wasm function body translator for the given [`Engine`].
-    pub fn new(engine: &Engine, mut inst_builder: InstructionsBuilder, len_locals: usize) -> Self {
+    pub fn new(
+        engine: &'engine Engine,
+        mut inst_builder: InstructionsBuilder,
+        len_locals: usize,
+    ) -> Self {
         // Push implicit frame for the whole function block.
         let end_label = inst_builder.new_label();
         let control_frames = vec![ControlFrame::Block { end_label }];
         Self {
-            engine: engine.clone(),
+            engine,
             inst_builder,
             control_frames,
             len_locals,
-            max_stack_height: len_locals,
+            max_stack_height: 0,
         }
     }
 
@@ -111,7 +116,6 @@ impl FuncBodyTranslator {
         I::IntoIter: ExactSizeIterator,
     {
         for instruction in instructions {
-            self.pin_max_stack_height(&validator);
             self.translate_instruction(validator, instruction)?;
         }
         // We need to call this function yet another time at the end
@@ -135,7 +139,7 @@ impl FuncBodyTranslator {
     /// - This function needs to be called once for every instruction seen
     ///   in order for the whole construction to work properly.
     fn pin_max_stack_height(&mut self, ctx: &FunctionValidationContext) {
-        let current_stack_height = ctx.value_stack.len();
+        let current_stack_height = ctx.value_stack.len() + self.len_locals;
         if current_stack_height > self.max_stack_height {
             self.max_stack_height = current_stack_height;
         }
@@ -190,6 +194,7 @@ impl FuncBodyTranslator {
         inst: &Instruction,
     ) -> Result<(), Error> {
         use Instruction as Inst;
+        self.pin_max_stack_height(&validator);
         match inst {
             Inst::Unreachable => {
                 self.validate_translate(validator, inst, InstructionsBuilder::unreachable)?;

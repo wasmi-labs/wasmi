@@ -107,7 +107,7 @@ pub trait FuncValidator {
         instruction: &Instruction,
     ) -> Result<(), Error>;
 
-    fn finish(self) -> Self::Output;
+    fn finish(self, ctx: &func::FunctionValidationContext) -> Self::Output;
 }
 
 /// A module validator that just validates modules and produces no result.
@@ -153,7 +153,7 @@ impl FuncValidator for PlainFuncValidator {
         ctx.step(instruction)
     }
 
-    fn finish(self) {}
+    fn finish(self, _ctx: &func::FunctionValidationContext) {}
 }
 
 pub fn validate_module<V: Validator>(

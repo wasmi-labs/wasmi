@@ -98,7 +98,7 @@ impl FuncValidator for Compiler {
     ) -> Result<(), Error> {
         self.compile_instruction(ctx, instruction)
     }
-    fn finish(self) -> Self::Output {
+    fn finish(self, _ctx: &FunctionValidationContext) -> Self::Output {
         self.sink.into_inner()
     }
 }
