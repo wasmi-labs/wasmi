@@ -102,7 +102,7 @@ impl MemoryType {
     }
 
     /// Creates a new [`MemoryType`] from the given [`pwasm::MemoryType`].
-    pub fn from_elements(memory_type: &pwasm::MemoryType) -> Self {
+    fn(crate) from_elements(memory_type: &pwasm::MemoryType) -> Self {
         let initial = memory_type.limits().initial();
         let maximum = memory_type.limits().maximum();
         MemoryType::new(initial, maximum)
