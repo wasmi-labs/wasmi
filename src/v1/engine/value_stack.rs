@@ -138,6 +138,13 @@ pub struct ValueStack {
     entries: Vec<StackEntry>,
     /// Index of the first free place in the stack.
     stack_ptr: usize,
+    /// The maximum value stack height.
+    ///
+    /// # Note
+    ///
+    /// Extending the value stack beyond this limit during execution
+    /// will cause a stack overflow trap.
+    maximum_len: usize,
 }
 
 impl Debug for ValueStack {
@@ -160,11 +167,10 @@ impl Eq for ValueStack {}
 
 impl Default for ValueStack {
     fn default() -> Self {
-        // TODO: remove `2 *` in the below calculation.
-        //
-        // Currently we need this to make yet another Wasm spec test pass.
-        // We have not yet figured out why that is though ...
-        Self::new(2 * DEFAULT_VALUE_STACK_LIMIT / mem::size_of::<StackEntry>())
+        Self::new(
+            DEFAULT_VALUE_STACK_LIMIT / mem::size_of::<StackEntry>(),
+            1024 * DEFAULT_VALUE_STACK_LIMIT / mem::size_of::<StackEntry>(),
+        )
     }
 }
 
@@ -196,7 +202,7 @@ impl ValueStack {
     /// # Panics
     ///
     /// If the `initial_len` is zero.
-    pub fn new(initial_len: usize) -> Self {
+    pub fn new(initial_len: usize, maximum_len: usize) -> Self {
         assert!(
             initial_len > 0,
             "cannot initialize the value stack with zero length"
@@ -205,6 +211,7 @@ impl ValueStack {
         Self {
             entries,
             stack_ptr: 0,
+            maximum_len,
         }
     }
 
@@ -387,7 +394,10 @@ impl ValueStack {
     /// For this to be working we need a stack-depth analysis during Wasm
     /// compilation so that we are aware of all stack-depths for every
     /// functions.
-    pub fn reserve(&mut self, additional: usize) {
+    pub fn reserve(&mut self, additional: usize) -> Result<(), Trap> {
+        if self.len() + additional > self.maximum_len {
+            return Err(TrapKind::StackOverflow).map_err(Into::into);
+        }
         let required_len = self.len() + additional;
         if required_len > self.capacity() {
             // By extending with the required new length we effectively double
@@ -396,6 +406,7 @@ impl ValueStack {
             self.entries
                 .extend(iter::repeat(StackEntry(0x00)).take(required_len));
         }
+        Ok(())
     }
 
     /// Drains the remaining value stack.

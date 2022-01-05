@@ -20,7 +20,14 @@ use self::{
     value_stack::{FromStackEntry, StackEntry, ValueStack},
 };
 use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func, Signature};
-use crate::{RuntimeValue, Trap, TrapKind, ValueType};
+use crate::{
+    RuntimeValue,
+    Trap,
+    TrapKind,
+    ValueType,
+    DEFAULT_CALL_STACK_LIMIT,
+    DEFAULT_VALUE_STACK_LIMIT,
+};
 use alloc::{sync::Arc, vec::Vec};
 use spin::mutex::Mutex;
 
@@ -63,9 +70,37 @@ pub struct Engine {
     inner: Arc<Mutex<EngineInner>>,
 }
 
+/// Configuration for an [`Engine`].
+#[derive(Debug)]
+pub struct Config {
+    /// The internal value stack limit.
+    ///
+    /// # Note
+    ///
+    /// Reaching this limit during execution of a Wasm function will
+    /// cause a stack overflow trap.
+    value_stack_limit: usize,
+    /// The internal call stack limit.
+    ///
+    /// # Note
+    ///
+    /// Reaching this limit during execution of a Wasm function will
+    /// cause a stack overflow trap.
+    call_stack_limit: usize,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            value_stack_limit: DEFAULT_VALUE_STACK_LIMIT,
+            call_stack_limit: DEFAULT_CALL_STACK_LIMIT,
+        }
+    }
+}
+
 impl Default for Engine {
     fn default() -> Self {
-        Self::new()
+        Self::new(&Config::default())
     }
 }
 
@@ -75,9 +110,9 @@ impl Engine {
     /// # Note
     ///
     /// Users should ues [`Engine::default`] to construct a default [`Engine`].
-    fn new() -> Self {
+    fn new(config: &Config) -> Self {
         Self {
-            inner: Arc::new(Mutex::new(EngineInner::default())),
+            inner: Arc::new(Mutex::new(EngineInner::new(config))),
         }
     }
 
@@ -140,7 +175,7 @@ impl Engine {
 }
 
 /// The internal state of the `wasmi` engine.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct EngineInner {
     /// Stores the value stack of live values on the Wasm stack.
     value_stack: ValueStack,
@@ -153,6 +188,15 @@ pub struct EngineInner {
 }
 
 impl EngineInner {
+    pub fn new(config: &Config) -> Self {
+        Self {
+            value_stack: ValueStack::new(64, config.value_stack_limit),
+            call_stack: CallStack::new(config.call_stack_limit),
+            code_map: CodeMap::default(),
+            scratch: Vec::new(),
+        }
+    }
+
     /// Allocates the instructions of a Wasm function body to the [`Engine`].
     ///
     /// Returns a [`FuncBody`] reference to the allocated function body.
@@ -273,7 +317,7 @@ impl EngineInner {
                 None => return Ok(()),
             };
             let result =
-                ExecutionContext::new(self, &mut function_frame).execute_frame(&mut ctx)?;
+                ExecutionContext::new(self, &mut function_frame)?.execute_frame(&mut ctx)?;
             match result {
                 FunctionExecutionOutcome::Return => {
                     continue 'outer;

@@ -14,7 +14,7 @@ use super::{
     ResolvedFuncBody,
     ValueStack,
 };
-use crate::DEFAULT_CALL_STACK_LIMIT;
+use crate::{Trap, DEFAULT_CALL_STACK_LIMIT};
 use alloc::vec::Vec;
 use core::{fmt, fmt::Display};
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
@@ -181,13 +181,13 @@ impl FunctionFrame {
         &mut self,
         resolved_func_body: ResolvedFuncBody,
         value_stack: &mut ValueStack,
-    ) {
+    ) -> Result<(), Trap> {
         if self.instantiated {
             // Nothing to do if the function frame has already been initialized.
-            return;
+            return Ok(());
         }
         let max_stack_height = resolved_func_body.max_stack_height();
-        value_stack.reserve(max_stack_height);
+        value_stack.reserve(max_stack_height)?;
         let len_locals = resolved_func_body.len_locals();
         value_stack
             .extend_zeros(len_locals)
@@ -195,6 +195,7 @@ impl FunctionFrame {
                 panic!("encountered stack overflow while pushing locals: {}", error)
             });
         self.instantiated = true;
+        Ok(())
     }
 }
 

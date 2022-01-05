@@ -41,7 +41,7 @@ use self::{
     table::{TableEntity, TableIdx},
 };
 pub use self::{
-    engine::Engine,
+    engine::{Config, Engine},
     error::Error,
     external::Extern,
     func::{Caller, Func},

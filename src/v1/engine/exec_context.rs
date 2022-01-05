@@ -47,14 +47,14 @@ impl<'engine, 'func> ExecutionContext<'engine, 'func> {
     pub fn new(
         engine: &'engine mut EngineInner,
         frame: &'func mut FunctionFrame,
-    ) -> Self {
+    ) -> Result<Self, Trap> {
         let resolved = engine.code_map.resolve(frame.func_body);
-        frame.initialize(resolved, &mut engine.value_stack);
-        Self {
+        frame.initialize(resolved, &mut engine.value_stack)?;
+        Ok(Self {
             value_stack: &mut engine.value_stack,
             frame,
             func_body: resolved,
-        }
+        })
     }
 
     pub fn execute_frame(
