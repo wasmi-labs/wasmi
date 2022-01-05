@@ -6,7 +6,7 @@ extern crate wasmi;
 extern crate assert_matches;
 extern crate wabt;
 
-use std::fs::File;
+use std::{fs::File, io::Read};
 use test::Bencher;
 use wasmi::{
     Error,
@@ -30,7 +30,7 @@ use wasmi::{
     Trap,
 };
 
-/// Parses the Wasm binary at the given file name into a `wasmi` module.
+/// Returns the Wasm binary at the given `file_name` as `Vec<u8>`.
 ///
 /// # Note
 ///
@@ -39,14 +39,27 @@ use wasmi::{
 /// # Panics
 ///
 /// - If the benchmark Wasm file could not be opened, read or parsed.
-fn load_from_file(file_name: &str) -> Module {
-    use std::io::prelude::*;
+fn load_file(file_name: &str) -> Vec<u8> {
     let mut file = File::open(file_name)
         .unwrap_or_else(|error| panic!("could not open benchmark file {}: {}", file_name, error));
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer).unwrap_or_else(|error| {
         panic!("could not read file at {} to buffer: {}", file_name, error)
     });
+    buffer
+}
+
+/// Parses the Wasm binary at the given `file_name` into a `wasmi` module.
+///
+/// # Note
+///
+/// This includes validation and compilation to `wasmi` bytecode.
+///
+/// # Panics
+///
+/// - If the benchmark Wasm file could not be opened, read or parsed.
+fn load_module(file_name: &str) -> Module {
+    let buffer = load_file(file_name);
     let module = Module::from_buffer(buffer).unwrap_or_else(|error| {
         panic!(
             "could not parse Wasm module from file {}: {}",
@@ -61,8 +74,27 @@ const REVCOMP_INPUT: &'static [u8] = include_bytes!("./revcomp-input.txt");
 const REVCOMP_OUTPUT: &'static [u8] = include_bytes!("./revcomp-output.txt");
 
 #[bench]
+fn bench_compile_and_validate(b: &mut Bencher) {
+    let wasm_bytes = load_file(WASM_KERNEL);
+    b.iter(|| {
+        let _module = Module::from_buffer(&wasm_bytes).unwrap();
+    });
+}
+
+#[bench]
+fn bench_instantiate_module(b: &mut Bencher) {
+    let wasm_kernel = load_module(WASM_KERNEL);
+
+    b.iter(|| {
+        let _instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
+            .expect("failed to instantiate wasm module")
+            .assert_no_start();
+    });
+}
+
+#[bench]
 fn bench_tiny_keccak(b: &mut Bencher) {
-    let wasm_kernel = load_from_file(WASM_KERNEL);
+    let wasm_kernel = load_module(WASM_KERNEL);
     let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
         .assert_no_start();
@@ -80,7 +112,7 @@ fn bench_tiny_keccak(b: &mut Bencher) {
 
 #[bench]
 fn bench_rev_comp(b: &mut Bencher) {
-    let wasm_kernel = load_from_file(WASM_KERNEL);
+    let wasm_kernel = load_module(WASM_KERNEL);
     let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
         .assert_no_start();
@@ -134,7 +166,7 @@ fn bench_rev_comp(b: &mut Bencher) {
 
 #[bench]
 fn bench_regex_redux(b: &mut Bencher) {
-    let wasm_kernel = load_from_file(WASM_KERNEL);
+    let wasm_kernel = load_module(WASM_KERNEL);
     let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
         .assert_no_start();
