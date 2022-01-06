@@ -1,11 +1,10 @@
 use std::{error::Error, fmt, fmt::Display};
-
-use wasmi::Trap;
+use wasmi::v1::Error as WasmiError;
 
 /// Errors that may occur upon Wasm spec test suite execution.
 #[derive(Debug)]
 pub enum TestError {
-    Trap(Trap),
+    Wasmi(WasmiError),
     InstanceNotRegistered {
         name: String,
     },
@@ -51,13 +50,16 @@ impl Display for TestError {
                     module_name, global_name
                 )
             }
-            Self::Trap(trap) => Display::fmt(trap, f),
+            Self::Wasmi(wasmi_error) => Display::fmt(wasmi_error, f),
         }
     }
 }
 
-impl From<Trap> for TestError {
-    fn from(error: Trap) -> Self {
-        Self::Trap(error)
+impl<E> From<E> for TestError
+where
+    E: Into<WasmiError>,
+{
+    fn from(error: E) -> Self {
+        Self::Wasmi(error.into())
     }
 }

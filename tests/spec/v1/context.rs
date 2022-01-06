@@ -139,7 +139,10 @@ impl TestContext<'_> {
     /// # Errors
     ///
     /// If creating the [`Module`] fails.
-    pub fn compile_and_instantiate(&mut self, mut module: wast::Module) -> Result<Instance> {
+    pub fn compile_and_instantiate(
+        &mut self,
+        mut module: wast::Module,
+    ) -> Result<Instance, TestError> {
         let module_name = module.id.map(|id| id.name());
         let wasm = module.encode().unwrap_or_else(|error| {
             panic!(

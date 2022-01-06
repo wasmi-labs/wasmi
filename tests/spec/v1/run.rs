@@ -1,7 +1,8 @@
-use super::{TestContext, TestDescriptor};
+use super::{error::TestError, TestContext, TestDescriptor};
 use anyhow::Result;
 use wasmi::{
     nan_preserving_float::{F32, F64},
+    v1::Error as WasmiError,
     RuntimeValue,
 };
 use wast::{
@@ -9,6 +10,7 @@ use wast::{
     AssertExpression,
     NanPattern,
     QuoteModule,
+    Span,
     Wast,
     WastDirective,
     WastExecute,
@@ -124,9 +126,7 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                         message,
                         results
                     ),
-                    Err(_) => {
-                        // TODO: ideally we check if the error is caused by a trap.
-                    }
+                    Err(error) => assert_trap(test_context, span, error, message),
                 }
             }
             WastDirective::AssertReturn {
@@ -160,9 +160,7 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                             results
                         )
                     }
-                    Err(_) => {
-                        // TODO: ideally we check that the error was caused by a resource exhaustion
-                    }
+                    Err(error) => assert_trap(test_context, span, error, message),
                 }
             }
             WastDirective::AssertUnlinkable {
@@ -187,6 +185,31 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
         }
     }
     Ok(())
+}
+
+/// Asserts that the `error` is a trap with the expected `message`.
+///
+/// # Panics
+///
+/// - If the `error` is not a trap.
+/// - If the trap message of the `error` is not as expected.
+fn assert_trap(test_context: &TestContext, span: Span, error: TestError, message: &str) {
+    match error {
+        TestError::Wasmi(WasmiError::Trap(trap)) => {
+            assert_eq!(
+                trap.kind().trap_message(),
+                message,
+                "{}: the directive trapped as expected but with an unexpected message",
+                test_context.spanned(span),
+            );
+        }
+        unexpected => panic!(
+            "encountered unexpected error: \n\t\
+                found: '{}'\n\t\
+                expected: trap with message '{}'",
+            unexpected, message,
+        ),
+    }
 }
 
 /// Asserts that `results` match the `expected` values.
@@ -284,7 +307,7 @@ fn execute_wast_execute(
     context: &mut TestContext,
     span: wast::Span,
     execute: WastExecute,
-) -> Result<Vec<RuntimeValue>> {
+) -> Result<Vec<RuntimeValue>, TestError> {
     match execute {
         WastExecute::Invoke(invoke) => {
             execute_wast_invoke(context, span, invoke).map_err(Into::into)
@@ -292,8 +315,7 @@ fn execute_wast_execute(
         WastExecute::Module(module) => context.compile_and_instantiate(module).map(|_| Vec::new()),
         WastExecute::Get { module, global } => context
             .get_global(module, global)
-            .map(|result| vec![result])
-            .map_err(Into::into),
+            .map(|result| vec![result]),
     }
 }
 
@@ -301,7 +323,7 @@ fn execute_wast_invoke(
     context: &mut TestContext,
     span: wast::Span,
     invoke: WastInvoke,
-) -> Result<Vec<RuntimeValue>> {
+) -> Result<Vec<RuntimeValue>, TestError> {
     let module_name = invoke.module.map(|id| id.name());
     let field_name = invoke.name;
     let mut args = <Vec<RuntimeValue>>::new();
@@ -329,5 +351,5 @@ fn execute_wast_invoke(
     context
         .invoke(module_name, field_name, &args)
         .map(|results| results.to_vec())
-        .map_err(Into::into)
+    // .map_err(Into::into)
 }
