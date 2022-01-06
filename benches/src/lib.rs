@@ -6,9 +6,10 @@ extern crate wasmi;
 extern crate assert_matches;
 extern crate wabt;
 
-use std::{fs::File, io::Read};
+use std::{fs::File, io::Read as _};
 use test::Bencher;
 use wasmi::{
+    v1,
     Error,
     Externals,
     FuncInstance,
@@ -82,6 +83,16 @@ fn bench_compile_and_validate(b: &mut Bencher) {
 }
 
 #[bench]
+fn bench_compile_and_validate_v1(b: &mut Bencher) {
+    let wasm_bytes = load_file(WASM_KERNEL);
+
+    b.iter(|| {
+        let engine = v1::Engine::default();
+        let _module = v1::Module::new(&engine, &wasm_bytes).unwrap();
+    });
+}
+
+#[bench]
 fn bench_instantiate_module(b: &mut Bencher) {
     let wasm_kernel = load_module(WASM_KERNEL);
 
@@ -89,6 +100,19 @@ fn bench_instantiate_module(b: &mut Bencher) {
         let _instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
             .expect("failed to instantiate wasm module")
             .assert_no_start();
+    });
+}
+
+#[bench]
+fn bench_instantiate_module_v1(b: &mut Bencher) {
+    let wasm_bytes = load_file(WASM_KERNEL);
+    let engine = v1::Engine::default();
+    let mut linker = <v1::Linker<()>>::default();
+    let module = v1::Module::new(&engine, &wasm_bytes).unwrap();
+
+    b.iter(|| {
+        let mut store = v1::Store::new(&engine, ());
+        let _instance = linker.instantiate(&mut store, &module).unwrap();
     });
 }
 
@@ -106,6 +130,39 @@ fn bench_tiny_keccak(b: &mut Bencher) {
     b.iter(|| {
         instance
             .invoke_export("bench_tiny_keccak", &[test_data_ptr], &mut NopExternals)
+            .unwrap();
+    });
+}
+
+#[bench]
+fn bench_tiny_keccak_v1(b: &mut Bencher) {
+    let wasm = load_file(WASM_KERNEL);
+    let engine = v1::Engine::default();
+    let module = v1::Module::new(&engine, &wasm).unwrap();
+    let mut linker = <v1::Linker<()>>::default();
+    let mut store = v1::Store::new(&engine, ());
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let prepare = instance
+        .get_export(&store, "prepare_tiny_keccak")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    let keccak = instance
+        .get_export(&store, "bench_tiny_keccak")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    let mut test_data_ptr = RuntimeValue::I32(0);
+
+    prepare
+        .call(&mut store, &[], std::slice::from_mut(&mut test_data_ptr))
+        .unwrap();
+    assert!(matches!(test_data_ptr, RuntimeValue::I32(_)));
+    b.iter(|| {
+        keccak
+            .call(&mut store, std::slice::from_ref(&test_data_ptr), &mut [])
             .unwrap();
     });
 }
@@ -207,6 +264,50 @@ fn bench_regex_redux(b: &mut Bencher) {
 }
 
 #[bench]
+fn count_until(b: &mut Bencher) {
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/count_until.wat")).unwrap();
+    let module = Module::from_buffer(&wasm).unwrap();
+    let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
+        .expect("failed to instantiate wasm module")
+        .assert_no_start();
+    const REPETITIONS: i32 = 100_000;
+    b.iter(|| {
+        let value = instance.invoke_export(
+            "count_until",
+            &[RuntimeValue::I32(REPETITIONS)],
+            &mut NopExternals,
+        );
+        assert_matches!(value, Ok(Some(RuntimeValue::I32(REPETITIONS))));
+    });
+}
+
+#[bench]
+fn count_until_v1(b: &mut Bencher) {
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/count_until.wat")).unwrap();
+    let engine = v1::Engine::default();
+    let module = v1::Module::new(&engine, &wasm).unwrap();
+    let mut linker = <v1::Linker<()>>::default();
+    let mut store = v1::Store::new(&engine, ());
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let count_until = instance
+        .get_export(&store, "count_until")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    const REPETITIONS: i32 = 100_000;
+    let mut result = [RuntimeValue::I32(0)];
+    b.iter(|| {
+        count_until
+            .call(&mut store, &[RuntimeValue::I32(REPETITIONS)], &mut result)
+            .unwrap();
+        assert_matches!(result, [RuntimeValue::I32(REPETITIONS)]);
+    });
+}
+
+#[bench]
 fn fac_recursive(b: &mut Bencher) {
     let wasm = wabt::wat2wasm(include_bytes!("../wat/recursive_factorial.wat")).unwrap();
     let module = Module::from_buffer(&wasm).unwrap();
@@ -217,6 +318,31 @@ fn fac_recursive(b: &mut Bencher) {
     b.iter(|| {
         let value = instance.invoke_export("fac-rec", &[RuntimeValue::I64(25)], &mut NopExternals);
         assert_matches!(value, Ok(Some(RuntimeValue::I64(7034535277573963776))));
+    });
+}
+
+#[bench]
+fn fac_recursive_v1(b: &mut Bencher) {
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/recursive_factorial.wat")).unwrap();
+    let engine = v1::Engine::default();
+    let module = v1::Module::new(&engine, &wasm).unwrap();
+    let mut linker = <v1::Linker<()>>::default();
+    let mut store = v1::Store::new(&engine, ());
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let fac = instance
+        .get_export(&store, "fac-rec")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    let mut result = [RuntimeValue::I64(0)];
+
+    b.iter(|| {
+        fac.call(&mut store, &[RuntimeValue::I64(25)], &mut result)
+            .unwrap();
+        assert_matches!(result, [RuntimeValue::I64(7034535277573963776)]);
     });
 }
 
@@ -235,6 +361,33 @@ fn fac_opt(b: &mut Bencher) {
 }
 
 #[bench]
+fn fac_opt_v1(b: &mut Bencher) {
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/optimized_factorial.wat")).unwrap();
+    let engine = v1::Engine::default();
+    let module = v1::Module::new(&engine, &wasm).unwrap();
+    let mut linker = <v1::Linker<()>>::default();
+    let mut store = v1::Store::new(&engine, ());
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let fac = instance
+        .get_export(&store, "fac-opt")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    let mut result = [RuntimeValue::I64(0)];
+
+    b.iter(|| {
+        fac.call(&mut store, &[RuntimeValue::I64(25)], &mut result)
+            .unwrap();
+        assert_matches!(result, [RuntimeValue::I64(7034535277573963776)]);
+    });
+}
+
+// This is used for testing overhead of a function call
+// is not too large.
+#[bench]
 fn recursive_ok(b: &mut Bencher) {
     let wasm = wabt::wat2wasm(include_bytes!("../wat/recursive_ok.wat")).unwrap();
     let module = Module::from_buffer(&wasm).unwrap();
@@ -245,6 +398,32 @@ fn recursive_ok(b: &mut Bencher) {
     b.iter(|| {
         let value = instance.invoke_export("call", &[RuntimeValue::I32(8000)], &mut NopExternals);
         assert_matches!(value, Ok(Some(RuntimeValue::I32(0))));
+    });
+}
+
+#[bench]
+fn recursive_ok_v1(b: &mut Bencher) {
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/recursive_ok.wat")).unwrap();
+    let engine = v1::Engine::default();
+    let module = v1::Module::new(&engine, &wasm).unwrap();
+    let mut linker = <v1::Linker<()>>::default();
+    let mut store = v1::Store::new(&engine, ());
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let bench_call = instance
+        .get_export(&store, "call")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    let mut result = [RuntimeValue::I32(0)];
+
+    b.iter(|| {
+        bench_call
+            .call(&mut store, &[RuntimeValue::I32(8000)], &mut result)
+            .unwrap();
+        assert_matches!(result, [RuntimeValue::I32(0)]);
     });
 }
 
@@ -361,5 +540,35 @@ fn host_calls(b: &mut Bencher) {
             &mut BenchExternals,
         );
         assert_matches!(value, Ok(Some(RuntimeValue::I64(0))));
+    });
+}
+
+#[bench]
+fn host_calls_v1(b: &mut Bencher) {
+    /// How often the `host_call` should be called per Wasm invocation.
+    const REPETITIONS: i64 = 1000;
+
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/host_calls.wat")).unwrap();
+    let engine = v1::Engine::default();
+    let module = v1::Module::new(&engine, &wasm).unwrap();
+    let mut linker = <v1::Linker<()>>::default();
+    let mut store = v1::Store::new(&engine, ());
+    let host_call = v1::Func::wrap(&mut store, |value: i64| value);
+    linker.define("benchmark", "host_call", host_call).unwrap();
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let call = instance
+        .get_export(&store, "call")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    let mut result = [RuntimeValue::I64(0)];
+
+    b.iter(|| {
+        call.call(&mut store, &[RuntimeValue::I64(REPETITIONS)], &mut result)
+            .unwrap();
+        assert_matches!(result, [RuntimeValue::I64(0)]);
     });
 }

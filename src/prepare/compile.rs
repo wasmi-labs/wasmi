@@ -74,8 +74,9 @@ pub struct Compiler {
 }
 
 impl FuncValidator for Compiler {
+    type Input = ();
     type Output = isa::Instructions;
-    fn new(_ctx: &FunctionValidationContext, body: &FuncBody) -> Self {
+    fn new(_ctx: &FunctionValidationContext, body: &FuncBody, _input: Self::Input) -> Self {
         let code_len = body.code().elements().len();
         let mut compiler = Compiler {
             sink: Sink::with_capacity(code_len),
@@ -97,7 +98,7 @@ impl FuncValidator for Compiler {
     ) -> Result<(), Error> {
         self.compile_instruction(ctx, instruction)
     }
-    fn finish(self) -> Self::Output {
+    fn finish(self, _ctx: &FunctionValidationContext) -> Self::Output {
         self.sink.into_inner()
     }
 }

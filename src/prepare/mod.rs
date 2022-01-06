@@ -24,25 +24,32 @@ pub struct WasmiValidation {
 // This implementation of `Validation` is compiling wasm code at the
 // validation time.
 impl Validator for WasmiValidation {
+    type Input = ();
     type Output = Vec<isa::Instructions>;
     type FuncValidator = compile::Compiler;
-    fn new(_module: &Module) -> Self {
+    fn new(_module: &Module, _input: Self::Input) -> Self {
         WasmiValidation {
             // TODO: with capacity?
             code_map: Vec::new(),
         }
     }
+
     fn on_function_validated(&mut self, _index: u32, output: isa::Instructions) {
         self.code_map.push(output);
     }
     fn finish(self) -> Vec<isa::Instructions> {
         self.code_map
     }
+
+    fn func_validator_input(
+        &mut self,
+    ) -> <Self::FuncValidator as validation::FuncValidator>::Input {
+    }
 }
 
 /// Validate a module and compile it to the internal representation.
 pub fn compile_module(module: Module) -> Result<CompiledModule, Error> {
-    let code_map = validate_module::<WasmiValidation>(&module)?;
+    let code_map = validate_module::<WasmiValidation>(&module, ())?;
     Ok(CompiledModule { code_map, module })
 }
 

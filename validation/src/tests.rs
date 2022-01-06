@@ -18,7 +18,7 @@ use parity_wasm::{
 };
 
 fn validate_module(module: &Module) -> Result<(), Error> {
-    super::validate_module::<PlainValidator>(module)
+    super::validate_module::<PlainValidator>(module, ())
 }
 
 #[test]

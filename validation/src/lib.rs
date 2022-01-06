@@ -75,37 +75,52 @@ impl From<stack::Error> for Error {
 }
 
 pub trait Validator {
+    /// Custom inputs to the validator constructor.
+    type Input;
     type Output;
     type FuncValidator: FuncValidator;
-    fn new(module: &Module) -> Self;
+
+    fn new(module: &Module, input: Self::Input) -> Self;
+
+    fn func_validator_input(&mut self) -> <Self::FuncValidator as FuncValidator>::Input;
+
     fn on_function_validated(
         &mut self,
         index: u32,
         output: <<Self as Validator>::FuncValidator as FuncValidator>::Output,
     );
+
     fn finish(self) -> Self::Output;
 }
 
 pub trait FuncValidator {
+    /// Custom inputs to the function validator constructor.
+    type Input;
+
     type Output;
-    fn new(ctx: &func::FunctionValidationContext, body: &FuncBody) -> Self;
+
+    fn new(ctx: &func::FunctionValidationContext, body: &FuncBody, input: Self::Input) -> Self;
+
     fn next_instruction(
         &mut self,
         ctx: &mut func::FunctionValidationContext,
         instruction: &Instruction,
     ) -> Result<(), Error>;
-    fn finish(self) -> Self::Output;
+
+    fn finish(self, ctx: &func::FunctionValidationContext) -> Self::Output;
 }
 
 /// A module validator that just validates modules and produces no result.
 pub struct PlainValidator;
 
 impl Validator for PlainValidator {
+    type Input = ();
     type Output = ();
     type FuncValidator = PlainFuncValidator;
-    fn new(_module: &Module) -> PlainValidator {
+    fn new(_module: &Module, _args: Self::Input) -> PlainValidator {
         PlainValidator
     }
+    fn func_validator_input(&mut self) -> <Self::FuncValidator as FuncValidator>::Input {}
     fn on_function_validated(
         &mut self,
         _index: u32,
@@ -119,9 +134,14 @@ impl Validator for PlainValidator {
 pub struct PlainFuncValidator;
 
 impl FuncValidator for PlainFuncValidator {
+    type Input = ();
     type Output = ();
 
-    fn new(_ctx: &func::FunctionValidationContext, _body: &FuncBody) -> PlainFuncValidator {
+    fn new(
+        _ctx: &func::FunctionValidationContext,
+        _body: &FuncBody,
+        _input: Self::Input,
+    ) -> PlainFuncValidator {
         PlainFuncValidator
     }
 
@@ -133,13 +153,16 @@ impl FuncValidator for PlainFuncValidator {
         ctx.step(instruction)
     }
 
-    fn finish(self) {}
+    fn finish(self, _ctx: &func::FunctionValidationContext) {}
 }
 
-pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error> {
+pub fn validate_module<V: Validator>(
+    module: &Module,
+    input: <V as Validator>::Input,
+) -> Result<V::Output, Error> {
     let mut context_builder = ModuleContextBuilder::new();
     let mut imported_globals = Vec::new();
-    let mut validation = V::new(module);
+    let mut validation = V::new(module, input);
 
     // Copy types from module as is.
     context_builder.set_types(
@@ -226,14 +249,19 @@ pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error
                 .bodies()
                 .get(index as usize)
                 .ok_or_else(|| Error(format!("Missing body for function {}", index)))?;
-
-            let output = func::drive::<V::FuncValidator>(&context, function, function_body)
-                .map_err(|Error(ref msg)| {
-                    Error(format!(
-                        "Function #{} reading/validation error: {}",
-                        index, msg
-                    ))
-                })?;
+            let func_validator_input = validation.func_validator_input();
+            let output = func::drive::<V::FuncValidator>(
+                &context,
+                function,
+                function_body,
+                func_validator_input,
+            )
+            .map_err(|Error(ref msg)| {
+                Error(format!(
+                    "Function #{} reading/validation error: {}",
+                    index, msg
+                ))
+            })?;
             validation.on_function_validated(index as u32, output);
         }
     }

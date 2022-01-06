@@ -91,6 +91,7 @@ pub fn drive<T: FuncValidator>(
     module: &ModuleContext,
     func: &Func,
     body: &FuncBody,
+    input: <T as FuncValidator>::Input,
 ) -> Result<T::Output, Error> {
     let (params, result_ty) = module.require_function_type(func.type_ref())?;
 
@@ -108,7 +109,7 @@ pub fn drive<T: FuncValidator>(
         result_ty,
     )?;
 
-    let mut validator = T::new(&context, body);
+    let mut validator = T::new(&context, body, input);
 
     for (position, instruction) in code.iter().enumerate() {
         validator
@@ -126,7 +127,7 @@ pub fn drive<T: FuncValidator>(
     // the end of the function body.
     assert!(context.frame_stack.is_empty());
 
-    Ok(validator.finish())
+    Ok(validator.finish(&context))
 }
 
 /// Function validation context.

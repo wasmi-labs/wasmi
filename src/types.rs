@@ -1,5 +1,5 @@
 use alloc::borrow::Cow;
-
+use core::{fmt, fmt::Display};
 use parity_wasm::elements::{
     FunctionType,
     GlobalType,
@@ -82,7 +82,7 @@ impl Signature {
 /// See [`RuntimeValue`] for details.
 ///
 /// [`RuntimeValue`]: enum.RuntimeValue.html
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ValueType {
     /// 32-bit signed or unsigned integer.
     I32,
@@ -92,6 +92,17 @@ pub enum ValueType {
     F32,
     /// 64-bit IEEE 754-2008 floating point number.
     F64,
+}
+
+impl Display for ValueType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::I32 => write!(f, "i32"),
+            Self::I64 => write!(f, "i64"),
+            Self::F32 => write!(f, "f32"),
+            Self::F64 => write!(f, "f64"),
+        }
+    }
 }
 
 impl ValueType {
