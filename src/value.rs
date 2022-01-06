@@ -413,10 +413,13 @@ macro_rules! impl_try_truncate_into {
         impl TryTruncateInto<$into, TrapKind> for $from {
             fn try_truncate_into(self) -> Result<$into, TrapKind> {
                 // Casting from a float to an integer will round the float towards zero
+                if self.is_nan() {
+                    return Err(TrapKind::InvalidConversionToInt);
+                }
                 num_rational::BigRational::from_float(self)
                     .map(|val| val.to_integer())
                     .and_then(|val| $to_primitive(&val))
-                    .ok_or(TrapKind::InvalidConversionToInt)
+                    .ok_or(TrapKind::IntegerOverflow)
             }
         }
     };
@@ -624,7 +627,7 @@ macro_rules! impl_integer_arithmetic_ops {
                 } else {
                     let (result, overflow) = self.overflowing_div(other);
                     if overflow {
-                        Err(TrapKind::InvalidConversionToInt)
+                        Err(TrapKind::IntegerOverflow)
                     } else {
                         Ok(result)
                     }
