@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Additionally we have an `Internal` section for changes that are of interest to developers.
 
+## [0.11.0] - 2022-01-06
+
+### Fixed
+
+- Make `wasmi` traps more conformant with the Wasm specification. (https://github.com/paritytech/wasmi/pull/300)
+- Fixed a bug in `{f32, f64}_copysign` implementations. (https://github.com/paritytech/wasmi/pull/293)
+- Fixed a bug in `{f32, f64}_{min, max}` implementations. (https://github.com/paritytech/wasmi/pull/295)
+
+### Changed
+
+- Optimized Wasm to host calls. (https://github.com/paritytech/wasmi/pull/291)
+    - In some artificial benchmarks we saw improvements of up to 42%!
+- Introduce a more efficient `LittleEndianConvert` trait. (https://github.com/paritytech/wasmi/pull/290)
+
+### Internal
+
+- Refactor and clean up benchmarking code and added more benchmarks.
+    - https://github.com/paritytech/wasmi/pull/299
+    - https://github.com/paritytech/wasmi/pull/298
+- Apply some clippy suggestions with respect ot `#[must_use]`. (https://github.com/paritytech/wasmi/pull/288)
+- Improve Rust code formatting of imports.
+- Improve debug impl of `ValueStack` so that only the live parts are printed.
+
 ## [0.10.0] - 2021-12-14
 
 ### Added
