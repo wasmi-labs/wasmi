@@ -110,7 +110,7 @@ use alloc::{
     string::{String, ToString},
     vec::Vec,
 };
-use core::fmt;
+use core::fmt::{self, Display};
 #[cfg(feature = "std")]
 use std::error;
 
@@ -145,14 +145,14 @@ impl Trap {
 
 impl fmt::Display for Trap {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Trap: {:?}", self.kind)
+        write!(f, "{}", self.kind())
     }
 }
 
 #[cfg(feature = "std")]
 impl error::Error for Trap {
     fn description(&self) -> &str {
-        "runtime trap"
+        self.kind().trap_message()
     }
 }
 
@@ -197,13 +197,19 @@ pub enum TrapKind {
     /// zero as divider.
     DivisionByZero,
 
+    /// An integer arithmetic operation caused an overflow.
+    ///
+    /// This can happen when:
+    ///
+    /// - Trying to do signed division (or get the remainder) -2<sup>N-1</sup> over -1. This is
+    ///   because the result +2<sup>N-1</sup> isn't representable as a N-bit signed integer.
+    IntegerOverflow,
+
     /// Attempt to make a conversion to an int failed.
     ///
     /// This can happen when:
     ///
-    /// - trying to do signed division (or get the remainder) -2<sup>N-1</sup> over -1. This is
-    ///   because the result +2<sup>N-1</sup> isn't representable as a N-bit signed integer.
-    /// - trying to truncate NaNs, infinity, or value for which the result is out of range into an integer.
+    /// - Trying to truncate NaNs, infinity, or value for which the result is out of range into an integer.
     InvalidConversionToInt,
 
     /// Stack overflow.
@@ -237,6 +243,35 @@ impl TrapKind {
     /// Whether this trap is specified by the host.
     pub fn is_host(&self) -> bool {
         matches!(self, TrapKind::Host(_))
+    }
+
+    /// Returns the trap message as specified by the WebAssembly specification.
+    ///
+    /// # Note
+    ///
+    /// This API is primarily useful for the Wasm spec testsuite but might have
+    /// other uses since it avoid heap memory allocation in certain cases.
+    pub fn trap_message(&self) -> &'static str {
+        match self {
+            TrapKind::Unreachable => "unreachable",
+            TrapKind::MemoryAccessOutOfBounds => "out of bounds memory access",
+            TrapKind::TableAccessOutOfBounds => "undefined element",
+            TrapKind::ElemUninitialized => "uninitialized element",
+            TrapKind::DivisionByZero => "integer divide by zero",
+            TrapKind::IntegerOverflow => "integer overflow",
+            TrapKind::InvalidConversionToInt => "invalid conversion to integer",
+            TrapKind::StackOverflow => "call stack exhausted",
+            TrapKind::UnexpectedSignature => "indirect call type mismatch",
+
+            // Note: The below trap message is not further specified by the Wasm spec.
+            TrapKind::Host(_) => "host trap",
+        }
+    }
+}
+
+impl Display for TrapKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.trap_message())
     }
 }
 
