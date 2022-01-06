@@ -29,7 +29,7 @@ use super::{
     },
     Module,
 };
-use crate::{RuntimeValue, Trap, ValueType};
+use crate::{RuntimeValue, ValueType};
 use core::{fmt, fmt::Display};
 use parity_wasm::elements as pwasm;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
@@ -88,8 +88,6 @@ pub enum InstantiationError {
         /// The index of the found `start` function.
         index: u32,
     },
-    /// Encountered when the `start` function trapped.
-    Trap(Trap),
 }
 
 #[cfg(feature = "std")]
@@ -141,20 +139,9 @@ impl Display for InstantiationError {
             Self::FoundStartFn { index } => {
                 write!(f, "found an unexpected start function with index {}", index)
             }
-            Self::Trap(trap) => write!(
-                f,
-                "encountered a trap while running `start` function: {}",
-                trap
-            ),
             Self::Table(error) => Display::fmt(error, f),
             Self::Memory(error) => Display::fmt(error, f),
         }
-    }
-}
-
-impl From<Trap> for InstantiationError {
-    fn from(trap: Trap) -> Self {
-        InstantiationError::Trap(trap)
     }
 }
 
@@ -210,7 +197,7 @@ impl<'a> InstancePre<'a> {
     /// # Panics
     ///
     /// If the `start` function is invalid albeit successful validation.
-    pub fn start(self, mut context: impl AsContextMut) -> Result<Instance, InstantiationError> {
+    pub fn start(self, mut context: impl AsContextMut) -> Result<Instance, Error> {
         let opt_start_index = self.start_fn();
         context
             .as_context_mut()

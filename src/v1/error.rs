@@ -6,6 +6,7 @@ use super::errors::{
     TableError,
     TranslationError,
 };
+use crate::Trap;
 use core::{fmt, fmt::Display};
 
 /// An error that may occur upon operating on Wasm modules or module instances.
@@ -24,6 +25,8 @@ pub enum Error {
     Translation(TranslationError),
     /// A module instantiation error.
     Instantiation(InstantiationError),
+    /// A trap as defined by the WebAssembly specification.
+    Trap(Trap),
 }
 
 #[cfg(feature = "std")]
@@ -32,6 +35,7 @@ impl std::error::Error for Error {}
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            Error::Trap(error) => Display::fmt(error, f),
             Error::Global(error) => Display::fmt(error, f),
             Error::Memory(error) => Display::fmt(error, f),
             Error::Table(error) => Display::fmt(error, f),
@@ -39,6 +43,12 @@ impl Display for Error {
             Error::Translation(error) => Display::fmt(error, f),
             Error::Instantiation(error) => Display::fmt(error, f),
         }
+    }
+}
+
+impl From<Trap> for Error {
+    fn from(error: Trap) -> Self {
+        Self::Trap(error)
     }
 }
 
