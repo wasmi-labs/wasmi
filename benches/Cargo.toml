@@ -10,3 +10,5 @@ wabt = "0.9"
 
 [profile.bench]
 debug = true
+lto = "fat"
+codegen-units = 1
