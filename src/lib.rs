@@ -263,18 +263,6 @@ impl TrapKind {
             TrapKind::StackOverflow => "call stack exhausted",
             TrapKind::UnexpectedSignature => "indirect call type mismatch",
 
-            // StackOverflow,
-            // MemoryOutOfBounds,
-            // HeapMisaligned,
-            // TableOutOfBounds,
-            // IndirectCallToNull,
-            // BadSignature,
-            // IntegerOverflow,
-            // IntegerDivisionByZero,
-            // BadConversionToInteger,
-            // UnreachableCodeReached,
-            // Interrupt,
-
             // Note: The below trap message is not further specified by the Wasm spec.
             TrapKind::Host(_) => "host trap",
         }
