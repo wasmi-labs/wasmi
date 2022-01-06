@@ -201,10 +201,11 @@ impl<T> HostFuncEntity<T> {
     pub fn call(
         &self,
         mut ctx: impl AsContextMut<UserState = T>,
+        instance: Option<Instance>,
         inputs: &[RuntimeValue],
         outputs: &mut [RuntimeValue],
     ) -> Result<(), Trap> {
-        let caller = <Caller<T>>::from(&mut ctx);
+        let caller = <Caller<T>>::new(&mut ctx, instance);
         (self.trampoline.closure)(caller, inputs, outputs)
     }
 }

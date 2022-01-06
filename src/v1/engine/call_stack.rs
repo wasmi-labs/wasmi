@@ -197,6 +197,11 @@ impl FunctionFrame {
         self.instantiated = true;
         Ok(())
     }
+
+    /// Returns the instance of the [`FunctionFrame`].
+    pub fn instance(&self) -> Instance {
+        self.instance
+    }
 }
 
 /// The live function call stack storing the live function activation frames.

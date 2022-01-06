@@ -235,7 +235,7 @@ impl EngineInner {
             FuncEntityInternal::Host(host_func) => {
                 let signature = host_func.signature();
                 Self::check_signature(ctx.as_context(), signature, args, results)?;
-                host_func.clone().call(&mut ctx, args, results)?;
+                host_func.clone().call(&mut ctx, None, args, results)?;
             }
         }
         Ok(())
@@ -345,6 +345,7 @@ impl EngineInner {
                             // Note: We push the function context before calling the host function.
                             //       If the VM is not resumable, it does no harm.
                             //       If it is, we then save the context here.
+                            let instance = function_frame.instance();
                             self.call_stack
                                 .push(function_frame)
                                 .map_err(|_| TrapKind::StackOverflow)?;
@@ -363,9 +364,12 @@ impl EngineInner {
                             // Now we are ready to perform the host function call.
                             // Note: We need to clone the host function due to some borrowing issues.
                             //       This should not be a big deal since host functions usually are cheap to clone.
-                            host_func
-                                .clone()
-                                .call(ctx.as_context_mut(), inputs, outputs)?;
+                            host_func.clone().call(
+                                ctx.as_context_mut(),
+                                Some(instance),
+                                inputs,
+                                outputs,
+                            )?;
                             // Check if the returned values match their expected types.
                             let output_types = signature.outputs(ctx.as_context());
                             for (required_type, output_value) in
