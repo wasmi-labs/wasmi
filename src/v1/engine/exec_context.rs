@@ -57,6 +57,13 @@ impl<'engine, 'func> ExecutionContext<'engine, 'func> {
         })
     }
 
+    /// Executes the current function frame.
+    ///
+    /// # Note
+    ///
+    /// This executes instructions sequentially until either the function
+    /// calls into another function or the function returns to its caller.
+    #[inline(always)]
     pub fn execute_frame(
         &mut self,
         mut ctx: impl AsContextMut,
