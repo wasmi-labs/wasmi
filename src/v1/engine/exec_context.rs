@@ -57,6 +57,7 @@ impl<'engine, 'func> ExecutionContext<'engine, 'func> {
         })
     }
 
+    #[inline(always)]
     pub fn execute_frame(
         &mut self,
         mut ctx: impl AsContextMut,
