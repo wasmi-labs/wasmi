@@ -188,7 +188,16 @@ impl<'a> ResolvedFuncBody<'a> {
     where
         T: VisitInstruction,
     {
-        let inst = &self.insts[index];
+        // # Safety
+        //
+        // This access is safe since all possible accesses have already been
+        // checked during Wasm validation. Functions and their instructions including
+        // jump addresses are immutable after Wasm function compilation and validation
+        // and therefore this bounds check can be safely eliminated.
+        //
+        // Note that eliminating this bounds check is extremely valuable since this
+        // part of the `wasmi` interpreter is part of the interpreter's hot path.
+        let inst = unsafe { self.insts.get_unchecked(index) };
         match inst {
             Instruction::GetLocal { local_depth } => visitor.visit_get_local(*local_depth),
             Instruction::SetLocal { local_depth } => visitor.visit_set_local(*local_depth),
