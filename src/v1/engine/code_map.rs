@@ -188,6 +188,11 @@ impl<'a> ResolvedFuncBody<'a> {
     where
         T: VisitInstruction,
     {
+        debug_assert!(
+            self.insts.get(index).is_some(),
+            "expect to find instruction at index {} due to validation but found none",
+            index
+        );
         // # Safety
         //
         // This access is safe since all possible accesses have already been
