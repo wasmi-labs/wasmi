@@ -1,11 +1,13 @@
 #![feature(test)]
 
+extern crate core;
 extern crate test;
 extern crate wasmi;
 #[macro_use]
 extern crate assert_matches;
 extern crate wabt;
 
+use core::slice;
 use std::{fs::File, io::Read as _};
 use test::Bencher;
 use wasmi::{
@@ -219,6 +221,86 @@ fn bench_rev_comp(b: &mut Bencher) {
         .get_into(output_data_mem_offset, &mut result)
         .expect("can't get result data from a wasm memory");
     assert_eq!(&*result, REVCOMP_OUTPUT);
+}
+
+#[bench]
+fn bench_rev_comp_v1(b: &mut Bencher) {
+    let wasm = load_file(WASM_KERNEL);
+    let engine = v1::Engine::default();
+    let module = v1::Module::new(&engine, &wasm).unwrap();
+    let mut linker = <v1::Linker<()>>::default();
+    let mut store = v1::Store::new(&engine, ());
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+
+    // Allocate buffers for the input and output.
+    let mut result = RuntimeValue::I32(0);
+    let input_size = RuntimeValue::I32(REVCOMP_INPUT.len() as i32);
+    let prepare_rev_complement = instance
+        .get_export(&store, "prepare_rev_complement")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    prepare_rev_complement
+        .call(&mut store, &[input_size], slice::from_mut(&mut result))
+        .unwrap();
+    let test_data_ptr = match result {
+        value @ RuntimeValue::I32(_) => value,
+        _ => panic!("unexpected non-I32 result found for prepare_rev_complement"),
+    };
+
+    // Get the pointer to the input buffer.
+    let rev_complement_input_ptr = instance
+        .get_export(&store, "rev_complement_input_ptr")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    rev_complement_input_ptr
+        .call(&mut store, &[test_data_ptr], slice::from_mut(&mut result))
+        .unwrap();
+    let input_data_mem_offset = match result {
+        RuntimeValue::I32(value) => value,
+        _ => panic!("unexpected non-I32 result found for prepare_rev_complement"),
+    };
+
+    // Copy test data inside the wasm memory.
+    let memory = instance
+        .get_export(&store, "memory")
+        .and_then(v1::Extern::into_memory)
+        .expect("failed to find 'memory' exported linear memory in instance");
+    memory
+        .write(&mut store, input_data_mem_offset as usize, REVCOMP_INPUT)
+        .expect("failed to write test data into a wasm memory");
+
+    let bench_rev_complement = instance
+        .get_export(&store, "bench_rev_complement")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    b.iter(|| {
+        bench_rev_complement
+            .call(&mut store, &[test_data_ptr], &mut [])
+            .unwrap();
+    });
+
+    // Get the pointer to the output buffer.
+    let rev_complement_output_ptr = instance
+        .get_export(&store, "rev_complement_output_ptr")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    rev_complement_output_ptr
+        .call(&mut store, &[test_data_ptr], slice::from_mut(&mut result))
+        .unwrap();
+    let output_data_mem_offset = match result {
+        RuntimeValue::I32(value) => value,
+        _ => panic!("unexpected non-I32 result found for prepare_rev_complement"),
+    };
+
+    let mut revcomp_result = vec![0x00_u8; REVCOMP_OUTPUT.len()];
+    memory
+        .read(&store, output_data_mem_offset as usize, &mut revcomp_result)
+        .expect("failed to read result data from a wasm memory");
+    assert_eq!(&revcomp_result[..], REVCOMP_OUTPUT);
 }
 
 #[bench]
@@ -460,8 +542,7 @@ fn recursive_trap_v1(b: &mut Bencher) {
     let mut result = [RuntimeValue::I32(0)];
 
     b.iter(|| {
-        let result = bench_call
-            .call(&mut store, &[RuntimeValue::I32(1000)], &mut result);
+        let result = bench_call.call(&mut store, &[RuntimeValue::I32(1000)], &mut result);
         assert_matches!(result, Err(_));
     });
 }
