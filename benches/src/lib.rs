@@ -1,11 +1,9 @@
 #![feature(test)]
 
-extern crate core;
 extern crate test;
-extern crate wasmi;
+
 #[macro_use]
 extern crate assert_matches;
-extern crate wabt;
 
 use core::slice;
 use std::{fs::File, io::Read as _};
@@ -63,18 +61,17 @@ fn load_file(file_name: &str) -> Vec<u8> {
 /// - If the benchmark Wasm file could not be opened, read or parsed.
 fn load_module(file_name: &str) -> Module {
     let buffer = load_file(file_name);
-    let module = Module::from_buffer(buffer).unwrap_or_else(|error| {
+    Module::from_buffer(buffer).unwrap_or_else(|error| {
         panic!(
             "could not parse Wasm module from file {}: {}",
             file_name, error
         )
-    });
-    module
+    })
 }
 
 const WASM_KERNEL: &str = "wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
-const REVCOMP_INPUT: &'static [u8] = include_bytes!("./revcomp-input.txt");
-const REVCOMP_OUTPUT: &'static [u8] = include_bytes!("./revcomp-output.txt");
+const REVCOMP_INPUT: &[u8] = include_bytes!("./revcomp-input.txt");
+const REVCOMP_OUTPUT: &[u8] = include_bytes!("./revcomp-output.txt");
 
 #[bench]
 fn bench_compile_and_validate(b: &mut Bencher) {
