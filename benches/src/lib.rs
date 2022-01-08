@@ -442,6 +442,31 @@ fn recursive_trap(b: &mut Bencher) {
 }
 
 #[bench]
+fn recursive_trap_v1(b: &mut Bencher) {
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/recursive_trap.wat")).unwrap();
+    let engine = v1::Engine::default();
+    let module = v1::Module::new(&engine, &wasm).unwrap();
+    let mut linker = <v1::Linker<()>>::default();
+    let mut store = v1::Store::new(&engine, ());
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let bench_call = instance
+        .get_export(&store, "call")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    let mut result = [RuntimeValue::I32(0)];
+
+    b.iter(|| {
+        let result = bench_call
+            .call(&mut store, &[RuntimeValue::I32(1000)], &mut result);
+        assert_matches!(result, Err(_));
+    });
+}
+
+#[bench]
 fn host_calls(b: &mut Bencher) {
     let wasm = wabt::wat2wasm(include_bytes!("../wat/host_calls.wat")).unwrap();
     let module = Module::from_buffer(&wasm).unwrap();
