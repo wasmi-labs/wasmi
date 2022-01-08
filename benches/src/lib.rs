@@ -343,6 +343,67 @@ fn bench_regex_redux(b: &mut Bencher) {
 }
 
 #[bench]
+fn bench_regex_redux_v1(b: &mut Bencher) {
+    let wasm = load_file(WASM_KERNEL);
+    let engine = v1::Engine::default();
+    let module = v1::Module::new(&engine, &wasm).unwrap();
+    let mut linker = <v1::Linker<()>>::default();
+    let mut store = v1::Store::new(&engine, ());
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+
+    // Allocate buffers for the input and output.
+    let mut result = RuntimeValue::I32(0);
+    let input_size = RuntimeValue::I32(REVCOMP_INPUT.len() as i32);
+    let prepare_regex_redux = instance
+        .get_export(&store, "prepare_regex_redux")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+        prepare_regex_redux
+        .call(&mut store, &[input_size], slice::from_mut(&mut result))
+        .unwrap();
+    let test_data_ptr = match result {
+        value @ RuntimeValue::I32(_) => value,
+        _ => panic!("unexpected non-I32 result found for prepare_regex_redux"),
+    };
+
+    // Get the pointer to the input buffer.
+    let regex_redux_input_ptr = instance
+        .get_export(&store, "regex_redux_input_ptr")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+        regex_redux_input_ptr
+        .call(&mut store, &[test_data_ptr], slice::from_mut(&mut result))
+        .unwrap();
+    let input_data_mem_offset = match result {
+        RuntimeValue::I32(value) => value,
+        _ => panic!("unexpected non-I32 result found for regex_redux_input_ptr"),
+    };
+
+    // Copy test data inside the wasm memory.
+    let memory = instance
+        .get_export(&store, "memory")
+        .and_then(v1::Extern::into_memory)
+        .expect("failed to find 'memory' exported linear memory in instance");
+    memory
+        .write(&mut store, input_data_mem_offset as usize, REVCOMP_INPUT)
+        .expect("failed to write test data into a wasm memory");
+
+    let bench_regex_redux = instance
+        .get_export(&store, "bench_regex_redux")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    b.iter(|| {
+        bench_regex_redux
+            .call(&mut store, &[test_data_ptr], &mut [])
+            .unwrap();
+    });
+}
+
+#[bench]
 fn count_until(b: &mut Bencher) {
     let wasm = wabt::wat2wasm(include_bytes!("../wat/count_until.wat")).unwrap();
     let module = Module::from_buffer(&wasm).unwrap();
