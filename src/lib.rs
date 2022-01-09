@@ -105,6 +105,9 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std as alloc;
 
+#[cfg(not(feature = "std"))]
+extern crate libm;
+
 use alloc::{
     boxed::Box,
     string::{String, ToString},
@@ -113,9 +116,6 @@ use alloc::{
 use core::fmt::{self, Display};
 #[cfg(feature = "std")]
 use std::error;
-
-#[cfg(not(feature = "std"))]
-extern crate libm;
 
 /// Error type which can be thrown by wasm code or by host environment.
 ///
