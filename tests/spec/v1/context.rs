@@ -18,7 +18,7 @@ use wasmi::{
         Table,
         TableType,
     },
-    RuntimeValue,
+    Value,
 };
 use wast::Id;
 
@@ -40,7 +40,7 @@ pub struct TestContext<'a> {
     /// Profiling during the Wasm spec test run.
     profile: TestProfile,
     /// Intermediate results buffer that can be reused for calling Wasm functions.
-    results: Vec<RuntimeValue>,
+    results: Vec<Value>,
     /// The descriptor of the test.
     ///
     /// Useful for printing better debug messages in case of failure.
@@ -55,15 +55,15 @@ impl<'a> TestContext<'a> {
         let mut store = Store::new(&engine, ());
         let default_memory = Memory::new(&mut store, MemoryType::new(1, Some(2))).unwrap();
         let default_table = Table::new(&mut store, TableType::new(10, Some(20)));
-        let global_i32 = Global::new(&mut store, RuntimeValue::I32(666), Mutability::Const);
+        let global_i32 = Global::new(&mut store, Value::I32(666), Mutability::Const);
         let global_f32 = Global::new(
             &mut store,
-            RuntimeValue::F32(666.0.into()),
+            Value::F32(666.0.into()),
             Mutability::Const,
         );
         let global_f64 = Global::new(
             &mut store,
-            RuntimeValue::F64(666.0.into()),
+            Value::F64(666.0.into()),
             Mutability::Const,
         );
         let print = Func::wrap(&mut store, || {
@@ -229,8 +229,8 @@ impl TestContext<'_> {
         &mut self,
         module_name: Option<&str>,
         func_name: &str,
-        args: &[RuntimeValue],
-    ) -> Result<&[RuntimeValue], TestError> {
+        args: &[Value],
+    ) -> Result<&[Value], TestError> {
         let instance = self.instance_by_name_or_last(module_name)?;
         let func = instance
             .get_export(&self.store, func_name)
@@ -241,7 +241,7 @@ impl TestContext<'_> {
             })?;
         let len_results = func.signature(&self.store).outputs(&self.store).len();
         self.results.clear();
-        self.results.resize(len_results, RuntimeValue::I32(0));
+        self.results.resize(len_results, Value::I32(0));
         func.call(&mut self.store, args, &mut self.results)?;
         Ok(&self.results)
     }
@@ -256,7 +256,7 @@ impl TestContext<'_> {
         &self,
         module_name: Option<Id>,
         global_name: &str,
-    ) -> Result<RuntimeValue, TestError> {
+    ) -> Result<Value, TestError> {
         let module_name = module_name.map(|id| id.name());
         let instance = self.instance_by_name_or_last(module_name)?;
         let global = instance

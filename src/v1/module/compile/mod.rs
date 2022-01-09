@@ -9,7 +9,7 @@ mod utils;
 use self::control_frame::ControlFrame;
 use super::{
     super::{
-        super::{RuntimeValue, ValueType},
+        super::{Value, ValueType},
         engine::{
             bytecode::{FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx},
             inst_builder::{Reloc, Signedness, WasmFloatType, WasmIntType},
@@ -397,16 +397,16 @@ impl<'engine> FuncBodyTranslator<'engine> {
                 self.validate_translate(validator, inst, InstructionsBuilder::memory_grow)?
             }
             Inst::I32Const(value) => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.constant(RuntimeValue::from(*value))
+                inst_builder.constant(Value::from(*value))
             })?,
             Inst::I64Const(value) => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.constant(RuntimeValue::from(*value))
+                inst_builder.constant(Value::from(*value))
             })?,
             Inst::F32Const(value) => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.constant(RuntimeValue::from(*value))
+                inst_builder.constant(Value::from(*value))
             })?,
             Inst::F64Const(value) => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.constant(RuntimeValue::from(*value))
+                inst_builder.constant(Value::from(*value))
             })?,
             Inst::I32Eqz => self.validate_translate(validator, inst, |inst_builder| {
                 inst_builder.int_eqz(WasmIntType::I32)

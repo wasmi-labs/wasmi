@@ -51,7 +51,7 @@
 //! extern crate wasmi;
 //! extern crate wabt;
 //!
-//! use wasmi::{ModuleInstance, ImportsBuilder, NopExternals, RuntimeValue};
+//! use wasmi::{ModuleInstance, ImportsBuilder, NopExternals, Value};
 //!
 //! fn main() {
 //!     // Parse WAT (WebAssembly Text format) into wasm bytecode.
@@ -89,7 +89,7 @@
 //!             &[],
 //!             &mut NopExternals,
 //!         ).expect("failed to execute export"),
-//!         Some(RuntimeValue::I32(1337)),
+//!         Some(Value::I32(1337)),
 //!     );
 //! }
 //! ```
@@ -469,7 +469,7 @@ pub use self::{
     runner::{StackRecycler, DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT},
     table::{TableInstance, TableRef},
     types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor, ValueType},
-    value::{FromRuntimeValue, LittleEndianConvert, RuntimeValue},
+    value::{FromValue, LittleEndianConvert, Value},
 };
 
 /// WebAssembly-specific sizes and units.

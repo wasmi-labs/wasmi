@@ -12,7 +12,7 @@ use super::{
     StoreContext,
     Stored,
 };
-use crate::{RuntimeValue, Trap, ValueType};
+use crate::{Value, Trap, ValueType};
 use alloc::sync::Arc;
 use core::{fmt, fmt::Debug};
 
@@ -153,7 +153,7 @@ impl<T> Clone for HostFuncEntity<T> {
     }
 }
 
-type HostFuncTrampolineFn<T> = dyn Fn(Caller<T>, &[RuntimeValue], &mut [RuntimeValue]) -> Result<(), Trap>
+type HostFuncTrampolineFn<T> = dyn Fn(Caller<T>, &[Value], &mut [Value]) -> Result<(), Trap>
     + Send
     + Sync
     + 'static;
@@ -202,8 +202,8 @@ impl<T> HostFuncEntity<T> {
         &self,
         mut ctx: impl AsContextMut<UserState = T>,
         instance: Option<Instance>,
-        inputs: &[RuntimeValue],
-        outputs: &mut [RuntimeValue],
+        inputs: &[Value],
+        outputs: &mut [Value],
     ) -> Result<(), Trap> {
         let caller = <Caller<T>>::new(&mut ctx, instance);
         (self.trampoline.closure)(caller, inputs, outputs)
@@ -246,8 +246,8 @@ impl Func {
     pub fn call<T>(
         &self,
         mut ctx: impl AsContextMut<UserState = T>,
-        inputs: &[RuntimeValue],
-        outputs: &mut [RuntimeValue],
+        inputs: &[Value],
+        outputs: &mut [Value],
     ) -> Result<(), Trap> {
         // Cloning an engine is a cheap operation.
         ctx.as_context().store.engine().clone().execute_func(

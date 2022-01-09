@@ -15,7 +15,7 @@ use wasmi::{
     ModuleInstance,
     ModuleRef,
     RuntimeArgs,
-    RuntimeValue,
+    Value,
     Signature,
     Trap,
     ValueType,
@@ -156,7 +156,7 @@ impl<'a> Externals for Runtime<'a> {
         &mut self,
         index: usize,
         args: RuntimeArgs,
-    ) -> Result<Option<RuntimeValue>, Trap> {
+    ) -> Result<Option<Value>, Trap> {
         match index {
             SET_FUNC_INDEX => {
                 let idx: i32 = args.nth(0);

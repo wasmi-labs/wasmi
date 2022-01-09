@@ -20,7 +20,7 @@ use wasmi::{
     ModuleImportResolver,
     ModuleInstance,
     NopExternals,
-    RuntimeValue,
+    Value,
     Signature,
     TableDescriptor,
     TableInstance,
@@ -48,7 +48,7 @@ impl ModuleImportResolver for ResolveAll {
         global_type: &GlobalDescriptor,
     ) -> Result<GlobalRef, Error> {
         Ok(GlobalInstance::alloc(
-            RuntimeValue::default(global_type.value_type()),
+            Value::default(global_type.value_type()),
             global_type.is_mutable(),
         ))
     }

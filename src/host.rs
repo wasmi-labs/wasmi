@@ -1,26 +1,26 @@
 use crate::{
-    value::{FromRuntimeValue, RuntimeValue},
+    value::{FromValue, Value},
     Trap,
     TrapKind,
 };
 
 use downcast_rs::{impl_downcast, DowncastSync};
 
-/// Wrapper around slice of [`RuntimeValue`] for using it
+/// Wrapper around slice of [`Value`] for using it
 /// as an argument list conveniently.
 ///
-/// [`RuntimeValue`]: enum.RuntimeValue.html
+/// [`Value`]: enum.Value.html
 #[derive(Debug)]
-pub struct RuntimeArgs<'a>(&'a [RuntimeValue]);
+pub struct RuntimeArgs<'a>(&'a [Value]);
 
-impl<'a> From<&'a [RuntimeValue]> for RuntimeArgs<'a> {
-    fn from(inner: &'a [RuntimeValue]) -> Self {
+impl<'a> From<&'a [Value]> for RuntimeArgs<'a> {
+    fn from(inner: &'a [Value]) -> Self {
         RuntimeArgs(inner)
     }
 }
 
-impl<'a> AsRef<[RuntimeValue]> for RuntimeArgs<'a> {
-    fn as_ref(&self) -> &[RuntimeValue] {
+impl<'a> AsRef<[Value]> for RuntimeArgs<'a> {
+    fn as_ref(&self) -> &[Value] {
         self.0
     }
 }
@@ -33,7 +33,7 @@ impl<'a> RuntimeArgs<'a> {
     /// Returns `Err` if cast is invalid or not enough arguments.
     pub fn nth_checked<T>(&self, idx: usize) -> Result<T, Trap>
     where
-        T: FromRuntimeValue,
+        T: FromValue,
     {
         self.nth_value_checked(idx)?
             .try_into()
@@ -41,14 +41,14 @@ impl<'a> RuntimeArgs<'a> {
             .map_err(Into::into)
     }
 
-    /// Extract argument as a [`RuntimeValue`] by index `idx`.
+    /// Extract argument as a [`Value`] by index `idx`.
     ///
     /// # Errors
     ///
     /// Returns `Err` if this list has not enough arguments.
     ///
-    /// [`RuntimeValue`]: enum.RuntimeValue.html
-    pub fn nth_value_checked(&self, idx: usize) -> Result<RuntimeValue, Trap> {
+    /// [`Value`]: enum.Value.html
+    pub fn nth_value_checked(&self, idx: usize) -> Result<Value, Trap> {
         if self.0.len() <= idx {
             return Err(TrapKind::UnexpectedSignature.into());
         }
@@ -62,7 +62,7 @@ impl<'a> RuntimeArgs<'a> {
     /// Panics if cast is invalid or not enough arguments.
     pub fn nth<T>(&self, idx: usize) -> T
     where
-        T: FromRuntimeValue,
+        T: FromValue,
     {
         let value = self.nth_value_checked(idx).expect("Invalid argument index");
         value.try_into().expect("Unexpected argument type")
@@ -136,7 +136,7 @@ impl_downcast!(HostError);
 ///
 /// ```rust
 /// use wasmi::{
-///     Externals, RuntimeValue, RuntimeArgs, Error, ModuleImportResolver,
+///     Externals, Value, RuntimeArgs, Error, ModuleImportResolver,
 ///     FuncRef, ValueType, Signature, FuncInstance, Trap,
 /// };
 ///
@@ -151,14 +151,14 @@ impl_downcast!(HostError);
 ///         &mut self,
 ///         index: usize,
 ///         args: RuntimeArgs,
-///     ) -> Result<Option<RuntimeValue>, Trap> {
+///     ) -> Result<Option<Value>, Trap> {
 ///         match index {
 ///             ADD_FUNC_INDEX => {
 ///                 let a: u32 = args.nth_checked(0)?;
 ///                 let b: u32 = args.nth_checked(1)?;
 ///                 let result = a + b;
 ///
-///                 Ok(Some(RuntimeValue::I32(result as i32)))
+///                 Ok(Some(Value::I32(result as i32)))
 ///             }
 ///             _ => panic!("Unimplemented function at {}", index),
 ///         }
@@ -213,7 +213,7 @@ pub trait Externals {
         &mut self,
         index: usize,
         args: RuntimeArgs,
-    ) -> Result<Option<RuntimeValue>, Trap>;
+    ) -> Result<Option<Value>, Trap>;
 }
 
 /// Implementation of [`Externals`] that just traps on [`invoke_index`].
@@ -227,7 +227,7 @@ impl Externals for NopExternals {
         &mut self,
         _index: usize,
         _args: RuntimeArgs,
-    ) -> Result<Option<RuntimeValue>, Trap> {
+    ) -> Result<Option<Value>, Trap> {
         Err(TrapKind::Unreachable.into())
     }
 }
@@ -236,18 +236,18 @@ impl Externals for NopExternals {
 mod tests {
 
     use super::{HostError, RuntimeArgs};
-    use crate::value::RuntimeValue;
+    use crate::value::Value;
 
     #[test]
     fn i32_runtime_args() {
-        let args: RuntimeArgs = (&[RuntimeValue::I32(0)][..]).into();
+        let args: RuntimeArgs = (&[Value::I32(0)][..]).into();
         let val: i32 = args.nth_checked(0).unwrap();
         assert_eq!(val, 0);
     }
 
     #[test]
     fn i64_invalid_arg_cast() {
-        let args: RuntimeArgs = (&[RuntimeValue::I64(90534534545322)][..]).into();
+        let args: RuntimeArgs = (&[Value::I64(90534534545322)][..]).into();
         assert!(args.nth_checked::<i32>(0).is_err());
     }
 
