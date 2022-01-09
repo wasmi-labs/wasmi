@@ -14,9 +14,9 @@ use crate::{
         Float,
         Integer,
         LittleEndianConvert,
-        Value,
         TransmuteInto,
         TryTruncateInto,
+        Value,
         WrapInto,
     },
     Signature,
@@ -1418,13 +1418,7 @@ impl ValueStack {
     }
 
     #[inline]
-    fn pop_triple(
-        &mut self,
-    ) -> (
-        ValueInternal,
-        ValueInternal,
-        ValueInternal,
-    ) {
+    fn pop_triple(&mut self) -> (ValueInternal, ValueInternal, ValueInternal) {
         let right = self.pop();
         let mid = self.pop();
         let left = self.pop();

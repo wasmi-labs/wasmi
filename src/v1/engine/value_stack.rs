@@ -3,9 +3,9 @@
 use super::DropKeep;
 use crate::{
     nan_preserving_float::{F32, F64},
-    Value,
     Trap,
     TrapKind,
+    Value,
     ValueType,
     DEFAULT_VALUE_STACK_LIMIT,
 };

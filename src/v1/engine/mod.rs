@@ -21,9 +21,9 @@ use self::{
 };
 use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func, Signature};
 use crate::{
-    Value,
     Trap,
     TrapKind,
+    Value,
     ValueType,
     DEFAULT_CALL_STACK_LIMIT,
     DEFAULT_VALUE_STACK_LIMIT,

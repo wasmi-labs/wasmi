@@ -11,10 +11,10 @@ use crate::{
     Error,
     MemoryInstance,
     Module,
-    Value,
     Signature,
     TableInstance,
     Trap,
+    Value,
 };
 use alloc::{
     borrow::ToOwned,

@@ -158,8 +158,7 @@ where
         if inputs.len() != 1 {
             return Err(Trap::new(TrapKind::UnexpectedSignature));
         }
-        Value::try_into::<T1>(inputs[0])
-            .ok_or_else(|| Trap::new(TrapKind::UnexpectedSignature))
+        Value::try_into::<T1>(inputs[0]).ok_or_else(|| Trap::new(TrapKind::UnexpectedSignature))
     }
 }
 

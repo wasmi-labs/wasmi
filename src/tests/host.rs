@@ -19,13 +19,13 @@ use crate::{
     ModuleRef,
     ResumableError,
     RuntimeArgs,
-    Value,
     Signature,
     TableDescriptor,
     TableInstance,
     TableRef,
     Trap,
     TrapKind,
+    Value,
 };
 use alloc::boxed::Box;
 use std::println;
@@ -108,11 +108,7 @@ const RECURSE_FUNC_INDEX: usize = 4;
 const TRAP_SUB_FUNC_INDEX: usize = 5;
 
 impl Externals for TestHost {
-    fn invoke_index(
-        &mut self,
-        index: usize,
-        args: RuntimeArgs,
-    ) -> Result<Option<Value>, Trap> {
+    fn invoke_index(&mut self, index: usize, args: RuntimeArgs) -> Result<Option<Value>, Trap> {
         match index {
             SUB_FUNC_INDEX => {
                 let a: i32 = args.nth(0);
@@ -602,11 +598,7 @@ fn defer_providing_externals() {
     }
 
     impl<'a> Externals for HostExternals<'a> {
-        fn invoke_index(
-            &mut self,
-            index: usize,
-            args: RuntimeArgs,
-        ) -> Result<Option<Value>, Trap> {
+        fn invoke_index(&mut self, index: usize, args: RuntimeArgs) -> Result<Option<Value>, Trap> {
             match index {
                 INC_FUNC_INDEX => {
                     let a = args.nth::<u32>(0);
@@ -807,9 +799,7 @@ fn dynamically_add_host_func() {
 
                     Ok(Some(Value::I32(table_index as i32)))
                 }
-                index if index as u32 <= self.added_funcs => {
-                    Ok(Some(Value::I32(index as i32)))
-                }
+                index if index as u32 <= self.added_funcs => Ok(Some(Value::I32(index as i32))),
                 _ => panic!("'env' module doesn't provide function at index {}", index),
             }
         }

@@ -133,11 +133,7 @@ impl Global {
     }
 
     /// Creates a new global variable to the store.
-    pub fn new(
-        mut ctx: impl AsContextMut,
-        initial_value: Value,
-        mutability: Mutability,
-    ) -> Self {
+    pub fn new(mut ctx: impl AsContextMut, initial_value: Value, mutability: Mutability) -> Self {
         ctx.as_context_mut()
             .store
             .alloc_global(GlobalEntity::new(initial_value, mutability))
@@ -171,11 +167,7 @@ impl Global {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Global`].
-    pub fn set(
-        &self,
-        mut ctx: impl AsContextMut,
-        new_value: Value,
-    ) -> Result<(), GlobalError> {
+    pub fn set(&self, mut ctx: impl AsContextMut, new_value: Value) -> Result<(), GlobalError> {
         ctx.as_context_mut()
             .store
             .resolve_global_mut(*self)

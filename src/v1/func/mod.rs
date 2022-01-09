@@ -12,7 +12,7 @@ use super::{
     StoreContext,
     Stored,
 };
-use crate::{Value, Trap, ValueType};
+use crate::{Trap, Value, ValueType};
 use alloc::sync::Arc;
 use core::{fmt, fmt::Debug};
 
@@ -153,10 +153,8 @@ impl<T> Clone for HostFuncEntity<T> {
     }
 }
 
-type HostFuncTrampolineFn<T> = dyn Fn(Caller<T>, &[Value], &mut [Value]) -> Result<(), Trap>
-    + Send
-    + Sync
-    + 'static;
+type HostFuncTrampolineFn<T> =
+    dyn Fn(Caller<T>, &[Value], &mut [Value]) -> Result<(), Trap> + Send + Sync + 'static;
 
 pub struct HostFuncTrampoline<T> {
     closure: Arc<HostFuncTrampolineFn<T>>,

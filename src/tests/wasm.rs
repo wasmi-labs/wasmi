@@ -16,11 +16,11 @@ use crate::{
     ModuleImportResolver,
     ModuleInstance,
     NopExternals,
-    Value,
     Signature,
     TableDescriptor,
     TableInstance,
     TableRef,
+    Value,
 };
 use alloc::vec::Vec;
 use std::fs::File;
@@ -153,10 +153,7 @@ fn interpreter_accumulate_u8() {
     let _ = env_memory.set(offset, BUF);
 
     // Set up the function argument list and invoke the function
-    let args = &[
-        Value::I32(BUF.len() as i32),
-        Value::I32(offset as i32),
-    ];
+    let args = &[Value::I32(BUF.len() as i32), Value::I32(offset as i32)];
     let retval = instance
         .invoke_export(FUNCTION_NAME, args, &mut NopExternals)
         .expect("Failed to execute function");
