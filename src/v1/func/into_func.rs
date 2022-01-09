@@ -80,7 +80,7 @@ macro_rules! impl_into_func {
                     outputs: &mut [RuntimeValue],
                 | -> Result<(), Trap> {
                     if inputs.len() != len_inputs || outputs.len() != len_outputs {
-                        return Err(Trap::new(TrapCode::UnexpectedSignature))
+                        return Err(Trap::from(TrapCode::UnexpectedSignature))
                     }
                     let mut inputs_iter = inputs.iter();
                     let ( $($args,)* ) = <($($args,)*) as ReadInputs>::read_inputs(inputs)?;
@@ -113,7 +113,7 @@ where
 {
     fn write_outputs(self, outputs: &mut [RuntimeValue]) -> Result<(), Trap> {
         if outputs.len() != 1 {
-            return Err(Trap::new(TrapCode::UnexpectedSignature));
+            return Err(Trap::from(TrapCode::UnexpectedSignature));
         }
         outputs[0] = self.into();
         Ok(())
@@ -132,7 +132,7 @@ macro_rules! impl_write_outputs {
             #[allow(unused_mut, unused_variables)]
             fn write_outputs(self, outputs: &mut [RuntimeValue]) -> Result<(), Trap> {
                 if outputs.len() != $n {
-                    return Err(Trap::new(TrapCode::UnexpectedSignature));
+                    return Err(Trap::from(TrapCode::UnexpectedSignature));
                 }
                 let ($($args,)*) = self;
                 let mut i = 0;
@@ -156,10 +156,10 @@ where
 {
     fn read_inputs(inputs: &[RuntimeValue]) -> Result<Self, Trap> {
         if inputs.len() != 1 {
-            return Err(Trap::new(TrapCode::UnexpectedSignature));
+            return Err(Trap::from(TrapCode::UnexpectedSignature));
         }
         RuntimeValue::try_into::<T1>(inputs[0])
-            .ok_or_else(|| Trap::new(TrapCode::UnexpectedSignature))
+            .ok_or_else(|| Trap::from(TrapCode::UnexpectedSignature))
     }
 }
 
@@ -174,7 +174,7 @@ macro_rules! impl_read_inputs {
             #[allow(unused_mut, unused_variables)]
             fn read_inputs(inputs: &[RuntimeValue]) -> Result<Self, Trap> {
                 if inputs.len() != $n {
-                    return Err(Trap::new(TrapCode::UnexpectedSignature))
+                    return Err(Trap::from(TrapCode::UnexpectedSignature))
                 }
                 let mut inputs = inputs.iter();
                 Ok((
@@ -184,7 +184,7 @@ macro_rules! impl_read_inputs {
                             .copied()
                             .map(RuntimeValue::try_into::<$args>)
                             .flatten()
-                            .ok_or(Trap::new(TrapCode::UnexpectedSignature))?,
+                            .ok_or(Trap::from(TrapCode::UnexpectedSignature))?,
                     )*
                 ))
             }

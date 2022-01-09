@@ -330,7 +330,7 @@ impl<'args> FuncInvocation<'args> {
         use crate::TrapCode;
 
         if return_val.map(|v| v.value_type()) != self.resumable_value_type() {
-            return Err(ResumableError::Trap(Trap::new(
+            return Err(ResumableError::Trap(Trap::from(
                 TrapCode::UnexpectedSignature,
             )));
         }

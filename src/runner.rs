@@ -251,7 +251,7 @@ impl Interpreter {
         if let Some(return_val) = return_val {
             self.value_stack
                 .push(return_val.into())
-                .map_err(Trap::new)?;
+                .map_err(Trap::from)?;
         }
 
         self.run_interpreter_loop(externals)?;
@@ -288,7 +288,7 @@ impl Interpreter {
 
             let function_return = self
                 .do_run_function(&mut function_context, &function_body.code)
-                .map_err(Trap::new)?;
+                .map_err(Trap::from)?;
 
             match function_return {
                 RunResult::Return => {
@@ -325,7 +325,7 @@ impl Interpreter {
                             ) {
                                 Ok(val) => val,
                                 Err(trap) => {
-                                    if trap.kind().is_host() {
+                                    if trap.is_host() {
                                         self.state = InterpreterState::Resumable(
                                             nested_func.signature().return_type(),
                                         );
@@ -344,7 +344,7 @@ impl Interpreter {
                             if let Some(return_val) = return_val {
                                 self.value_stack
                                     .push(return_val.into())
-                                    .map_err(Trap::new)?;
+                                    .map_err(Trap::from)?;
                             }
                         }
                     }

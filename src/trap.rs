@@ -10,12 +10,9 @@ use std::error::Error as StdError;
 /// Traps can't be handled by WebAssembly code, but are reported to the embedder.
 #[derive(Debug)]
 pub enum Trap {
+    /// Traps during Wasm execution.
     Code(TrapCode),
-    /// Error specified by the host.
-    ///
-    /// Typically returned from an implementation of [`Externals`].
-    ///
-    /// [`Externals`]: trait.Externals.html
+    /// Traps and errors during host execution.
     Host(Box<dyn HostError>),
 }
 
@@ -36,7 +33,7 @@ impl Trap {
     /// Returns the [`TrapCode`] traps originating from Wasm execution.
     pub fn code(&self) -> Option<TrapCode> {
         if let Self::Code(trap_code) = self {
-            return Some(trap_code);
+            return Some(*trap_code);
         }
         None
     }
@@ -60,7 +57,7 @@ impl Display for Trap {
 #[cfg(feature = "std")]
 impl StdError for Trap {
     fn description(&self) -> &str {
-        self.code().trap_message()
+        self.code().map(|code| code.trap_message()).unwrap_or("")
     }
 }
 
@@ -69,7 +66,7 @@ impl StdError for Trap {
 /// See [`Trap`] for details.
 ///
 /// [`Trap`]: struct.Trap.html
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum TrapCode {
     /// Wasm code executed `unreachable` opcode.
     ///
@@ -141,11 +138,6 @@ pub enum TrapCode {
 }
 
 impl TrapCode {
-    /// Whether this trap is specified by the host.
-    pub fn is_host(&self) -> bool {
-        matches!(self, TrapCode::Host(_))
-    }
-
     /// Returns the trap message as specified by the WebAssembly specification.
     ///
     /// # Note
