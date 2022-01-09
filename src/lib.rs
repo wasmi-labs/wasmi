@@ -452,6 +452,7 @@ pub mod nan_preserving_float;
 mod prepare;
 mod runner;
 mod table;
+mod trap;
 mod types;
 pub mod v1;
 mod value;
