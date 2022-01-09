@@ -126,15 +126,13 @@ pub enum TrapCode {
 
     /// Attempt to invoke a function with mismatching signature.
     ///
-    /// This can happen if [`FuncInstance`] was invoked
-    /// with mismatching [signature][`Signature`].
+    /// This can happen if a Wasm or host function was invoked
+    /// with mismatching parameters or result values.
     ///
-    /// This can always happen with indirect calls. `call_indirect` instruction always
-    /// specifies the expected signature of function. If `call_indirect` is executed
-    /// with index that points on function with signature different that is
-    /// expected by this `call_indirect`, this trap is raised.
-    ///
-    /// [`Signature`]: struct.Signature.html
+    /// This can always happen with indirect calls as they always
+    /// specify the expected signature of function. If an indirect call is executed
+    /// with an index that points to a function with signature different of what is
+    /// expected by this indirect call, this trap is raised.
     UnexpectedSignature,
 }
 
