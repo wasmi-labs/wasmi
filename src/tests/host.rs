@@ -25,7 +25,7 @@ use crate::{
     TableInstance,
     TableRef,
     Trap,
-    TrapKind,
+    TrapCode,
 };
 use alloc::boxed::Box;
 use std::println;
@@ -125,7 +125,7 @@ impl Externals for TestHost {
             ERR_FUNC_INDEX => {
                 let error_code: u32 = args.nth(0);
                 let error = HostErrorWithCode { error_code };
-                Err(TrapKind::Host(Box::new(error)).into())
+                Err(TrapCode::Host(Box::new(error)).into())
             }
             INC_MEM_FUNC_INDEX => {
                 let ptr: u32 = args.nth(0);
@@ -170,7 +170,7 @@ impl Externals for TestHost {
 
                 if val.value_type() != result.value_type() {
                     return Err(
-                        TrapKind::Host(Box::new(HostErrorWithCode { error_code: 123 })).into(),
+                        TrapCode::Host(Box::new(HostErrorWithCode { error_code: 123 })).into(),
                     );
                 }
                 Ok(Some(result))
@@ -181,7 +181,7 @@ impl Externals for TestHost {
 
                 let result: RuntimeValue = (a - b).into();
                 self.trap_sub_result = Some(result);
-                Err(TrapKind::Host(Box::new(HostErrorWithCode { error_code: 301 })).into())
+                Err(TrapCode::Host(Box::new(HostErrorWithCode { error_code: 301 })).into())
             }
             _ => panic!("env doesn't provide function at index {}", index),
         }
@@ -364,7 +364,7 @@ fn resume_call_host_func_type_mismatch() {
         let err = invocation.resume_execution(val, &mut env).unwrap_err();
 
         if let ResumableError::Trap(trap) = &err {
-            if let TrapKind::UnexpectedSignature = trap.kind() {
+            if let TrapCode::UnexpectedSignature = trap.kind() {
                 return;
             }
         }
@@ -803,7 +803,7 @@ fn dynamically_add_host_func() {
                     );
                     self.table
                         .set(table_index, Some(added_func))
-                        .map_err(|_| TrapKind::TableAccessOutOfBounds)?;
+                        .map_err(|_| TrapCode::TableAccessOutOfBounds)?;
 
                     Ok(Some(RuntimeValue::I32(table_index as i32)))
                 }

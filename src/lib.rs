@@ -123,22 +123,22 @@ extern crate libm;
 /// Traps can't be handled by WebAssembly code, but are reported to the embedder.
 #[derive(Debug)]
 pub struct Trap {
-    kind: TrapKind,
+    kind: TrapCode,
 }
 
 impl Trap {
     /// Create new trap.
-    pub fn new(kind: TrapKind) -> Trap {
+    pub fn new(kind: TrapCode) -> Trap {
         Trap { kind }
     }
 
     /// Returns kind of this trap.
-    pub fn kind(&self) -> &TrapKind {
+    pub fn kind(&self) -> &TrapCode {
         &self.kind
     }
 
     /// Converts into kind of this trap.
-    pub fn into_kind(self) -> TrapKind {
+    pub fn into_kind(self) -> TrapCode {
         self.kind
     }
 }
@@ -162,7 +162,7 @@ impl error::Error for Trap {
 ///
 /// [`Trap`]: struct.Trap.html
 #[derive(Debug)]
-pub enum TrapKind {
+pub enum TrapCode {
     /// Wasm code executed `unreachable` opcode.
     ///
     /// `unreachable` is a special opcode which always traps upon execution.
@@ -239,10 +239,10 @@ pub enum TrapKind {
     Host(Box<dyn host::HostError>),
 }
 
-impl TrapKind {
+impl TrapCode {
     /// Whether this trap is specified by the host.
     pub fn is_host(&self) -> bool {
-        matches!(self, TrapKind::Host(_))
+        matches!(self, TrapCode::Host(_))
     }
 
     /// Returns the trap message as specified by the WebAssembly specification.
@@ -253,23 +253,23 @@ impl TrapKind {
     /// other uses since it avoid heap memory allocation in certain cases.
     pub fn trap_message(&self) -> &'static str {
         match self {
-            TrapKind::Unreachable => "unreachable",
-            TrapKind::MemoryAccessOutOfBounds => "out of bounds memory access",
-            TrapKind::TableAccessOutOfBounds => "undefined element",
-            TrapKind::ElemUninitialized => "uninitialized element",
-            TrapKind::DivisionByZero => "integer divide by zero",
-            TrapKind::IntegerOverflow => "integer overflow",
-            TrapKind::InvalidConversionToInt => "invalid conversion to integer",
-            TrapKind::StackOverflow => "call stack exhausted",
-            TrapKind::UnexpectedSignature => "indirect call type mismatch",
+            TrapCode::Unreachable => "unreachable",
+            TrapCode::MemoryAccessOutOfBounds => "out of bounds memory access",
+            TrapCode::TableAccessOutOfBounds => "undefined element",
+            TrapCode::ElemUninitialized => "uninitialized element",
+            TrapCode::DivisionByZero => "integer divide by zero",
+            TrapCode::IntegerOverflow => "integer overflow",
+            TrapCode::InvalidConversionToInt => "invalid conversion to integer",
+            TrapCode::StackOverflow => "call stack exhausted",
+            TrapCode::UnexpectedSignature => "indirect call type mismatch",
 
             // Note: The below trap message is not further specified by the Wasm spec.
-            TrapKind::Host(_) => "host trap",
+            TrapCode::Host(_) => "host trap",
         }
     }
 }
 
-impl Display for TrapKind {
+impl Display for TrapCode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.trap_message())
     }
@@ -312,7 +312,7 @@ impl Error {
         match self {
             Error::Host(host_err) => Some(&**host_err),
             Error::Trap(Trap {
-                kind: TrapKind::Host(host_err),
+                kind: TrapCode::Host(host_err),
             }) => Some(&**host_err),
             _ => None,
         }
@@ -330,7 +330,7 @@ impl Error {
         match self {
             Error::Host(host_err) => Some(host_err),
             Error::Trap(Trap {
-                kind: TrapKind::Host(host_err),
+                kind: TrapCode::Host(host_err),
             }) => Some(host_err),
             _ => None,
         }
@@ -348,7 +348,7 @@ impl Error {
         match self {
             Error::Host(host_err) => Ok(host_err),
             Error::Trap(Trap {
-                kind: TrapKind::Host(host_err),
+                kind: TrapCode::Host(host_err),
             }) => Ok(host_err),
             other => Err(other),
         }
@@ -419,7 +419,7 @@ where
     U: host::HostError + Sized,
 {
     fn from(e: U) -> Self {
-        Trap::new(TrapKind::Host(Box::new(e)))
+        Trap::new(TrapCode::Host(Box::new(e)))
     }
 }
 
@@ -429,8 +429,8 @@ impl From<Trap> for Error {
     }
 }
 
-impl From<TrapKind> for Trap {
-    fn from(e: TrapKind) -> Trap {
+impl From<TrapCode> for Trap {
+    fn from(e: TrapCode) -> Trap {
         Trap::new(e)
     }
 }

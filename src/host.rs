@@ -1,7 +1,7 @@
 use crate::{
     value::{FromRuntimeValue, RuntimeValue},
     Trap,
-    TrapKind,
+    TrapCode,
 };
 
 use downcast_rs::{impl_downcast, DowncastSync};
@@ -37,7 +37,7 @@ impl<'a> RuntimeArgs<'a> {
     {
         self.nth_value_checked(idx)?
             .try_into()
-            .ok_or(TrapKind::UnexpectedSignature)
+            .ok_or(TrapCode::UnexpectedSignature)
             .map_err(Into::into)
     }
 
@@ -50,7 +50,7 @@ impl<'a> RuntimeArgs<'a> {
     /// [`RuntimeValue`]: enum.RuntimeValue.html
     pub fn nth_value_checked(&self, idx: usize) -> Result<RuntimeValue, Trap> {
         if self.0.len() <= idx {
-            return Err(TrapKind::UnexpectedSignature.into());
+            return Err(TrapCode::UnexpectedSignature.into());
         }
         Ok(self.0[idx])
     }
@@ -228,7 +228,7 @@ impl Externals for NopExternals {
         _index: usize,
         _args: RuntimeArgs,
     ) -> Result<Option<RuntimeValue>, Trap> {
-        Err(TrapKind::Unreachable.into())
+        Err(TrapCode::Unreachable.into())
     }
 }
 

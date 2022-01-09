@@ -23,7 +23,7 @@ use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func, Signature};
 use crate::{
     RuntimeValue,
     Trap,
-    TrapKind,
+    TrapCode,
     ValueType,
     DEFAULT_CALL_STACK_LIMIT,
     DEFAULT_VALUE_STACK_LIMIT,
@@ -267,7 +267,7 @@ impl EngineInner {
         let frame = FunctionFrame::new(ctx.as_context(), func);
         self.call_stack
             .push(frame)
-            .map_err(|_error| Trap::from(TrapKind::StackOverflow))?;
+            .map_err(|_error| Trap::from(TrapCode::StackOverflow))?;
         self.execute_until_done(ctx.as_context_mut())?;
         let result_types = signature.outputs(&ctx);
         self.write_results_back(result_types, results)?;
@@ -328,10 +328,10 @@ impl EngineInner {
                             let nested_frame = FunctionFrame::new_wasm(func, wasm_func);
                             self.call_stack
                                 .push(function_frame)
-                                .map_err(|_| TrapKind::StackOverflow)?;
+                                .map_err(|_| TrapCode::StackOverflow)?;
                             self.call_stack
                                 .push(nested_frame)
-                                .map_err(|_| TrapKind::StackOverflow)?;
+                                .map_err(|_| TrapCode::StackOverflow)?;
                         }
                         FuncEntityInternal::Host(host_func) => {
                             let signature = host_func.signature();
@@ -348,7 +348,7 @@ impl EngineInner {
                             let instance = function_frame.instance();
                             self.call_stack
                                 .push(function_frame)
-                                .map_err(|_| TrapKind::StackOverflow)?;
+                                .map_err(|_| TrapCode::StackOverflow)?;
                             // Prepare scratch buffer to hold both, inputs and outputs of the call.
                             // We are going to split the scratch buffer in the middle right before the call.
                             debug_assert_eq!(self.scratch.len(), input_types.len());
@@ -376,7 +376,7 @@ impl EngineInner {
                                 output_types.iter().copied().zip(&*outputs)
                             {
                                 if required_type != output_value.value_type() {
-                                    return Err(TrapKind::UnexpectedSignature).map_err(Into::into);
+                                    return Err(TrapCode::UnexpectedSignature).map_err(Into::into);
                                 }
                             }
                             // Copy host function output values to the value stack.
@@ -443,7 +443,7 @@ impl EngineInner {
         if expected_inputs.iter().copied().ne(actual_inputs)
             || expected_outputs.len() != results.len()
         {
-            return Err(Trap::from(TrapKind::UnexpectedSignature));
+            return Err(Trap::from(TrapCode::UnexpectedSignature));
         }
         Ok(())
     }

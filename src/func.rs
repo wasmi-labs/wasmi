@@ -327,11 +327,11 @@ impl<'args> FuncInvocation<'args> {
         return_val: Option<RuntimeValue>,
         externals: &'externals mut E,
     ) -> Result<Option<RuntimeValue>, ResumableError> {
-        use crate::TrapKind;
+        use crate::TrapCode;
 
         if return_val.map(|v| v.value_type()) != self.resumable_value_type() {
             return Err(ResumableError::Trap(Trap::new(
-                TrapKind::UnexpectedSignature,
+                TrapCode::UnexpectedSignature,
             )));
         }
 

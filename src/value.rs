@@ -1,7 +1,7 @@
 use crate::{
     nan_preserving_float::{F32, F64},
     types::ValueType,
-    TrapKind,
+    TrapCode,
 };
 use core::{f32, i32, i64, u32, u64};
 
@@ -132,7 +132,7 @@ pub trait ArithmeticOps<T> {
     /// Multiply two values.
     fn mul(self, other: T) -> T;
     /// Divide two values.
-    fn div(self, other: T) -> Result<T, TrapKind>;
+    fn div(self, other: T) -> Result<T, TrapCode>;
 }
 
 /// Integer value.
@@ -148,7 +148,7 @@ pub trait Integer<T>: ArithmeticOps<T> {
     /// Get right bit rotation result.
     fn rotr(self, other: T) -> T;
     /// Get division remainder.
-    fn rem(self, other: T) -> Result<T, TrapKind>;
+    fn rem(self, other: T) -> Result<T, TrapCode>;
 }
 
 /// Float-point value.
@@ -410,22 +410,22 @@ impl WrapInto<F32> for F64 {
 
 macro_rules! impl_try_truncate_into {
     (@primitive $from: ident, $into: ident, $to_primitive:path) => {
-        impl TryTruncateInto<$into, TrapKind> for $from {
-            fn try_truncate_into(self) -> Result<$into, TrapKind> {
+        impl TryTruncateInto<$into, TrapCode> for $from {
+            fn try_truncate_into(self) -> Result<$into, TrapCode> {
                 // Casting from a float to an integer will round the float towards zero
                 if self.is_nan() {
-                    return Err(TrapKind::InvalidConversionToInt);
+                    return Err(TrapCode::InvalidConversionToInt);
                 }
                 num_rational::BigRational::from_float(self)
                     .map(|val| val.to_integer())
                     .and_then(|val| $to_primitive(&val))
-                    .ok_or(TrapKind::IntegerOverflow)
+                    .ok_or(TrapCode::IntegerOverflow)
             }
         }
     };
     (@wrapped $from:ident, $intermediate:ident, $into:ident) => {
-        impl TryTruncateInto<$into, TrapKind> for $from {
-            fn try_truncate_into(self) -> Result<$into, TrapKind> {
+        impl TryTruncateInto<$into, TrapCode> for $from {
+            fn try_truncate_into(self) -> Result<$into, TrapCode> {
                 $intermediate::from(self).try_truncate_into()
             }
         }
@@ -621,13 +621,13 @@ macro_rules! impl_integer_arithmetic_ops {
             fn mul(self, other: $type) -> $type {
                 self.wrapping_mul(other)
             }
-            fn div(self, other: $type) -> Result<$type, TrapKind> {
+            fn div(self, other: $type) -> Result<$type, TrapCode> {
                 if other == 0 {
-                    Err(TrapKind::DivisionByZero)
+                    Err(TrapCode::DivisionByZero)
                 } else {
                     let (result, overflow) = self.overflowing_div(other);
                     if overflow {
-                        Err(TrapKind::IntegerOverflow)
+                        Err(TrapCode::IntegerOverflow)
                     } else {
                         Ok(result)
                     }
@@ -654,7 +654,7 @@ macro_rules! impl_float_arithmetic_ops {
             fn mul(self, other: $type) -> $type {
                 self * other
             }
-            fn div(self, other: $type) -> Result<$type, TrapKind> {
+            fn div(self, other: $type) -> Result<$type, TrapCode> {
                 Ok(self / other)
             }
         }
@@ -684,9 +684,9 @@ macro_rules! impl_integer {
             fn rotr(self, other: $type) -> $type {
                 self.rotate_right(other as u32)
             }
-            fn rem(self, other: $type) -> Result<$type, TrapKind> {
+            fn rem(self, other: $type) -> Result<$type, TrapCode> {
                 if other == 0 {
-                    Err(TrapKind::DivisionByZero)
+                    Err(TrapCode::DivisionByZero)
                 } else {
                     Ok(self.wrapping_rem(other))
                 }
