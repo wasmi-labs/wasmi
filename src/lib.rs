@@ -152,7 +152,8 @@ impl Error {
     /// [`TrapKind::Host`]: enum.TrapKind.html#variant.Host
     pub fn as_host_error(&self) -> Option<&dyn host::HostError> {
         match self {
-            Error::Host(host_err) => Some(&**host_err),
+            Self::Host(host_error) => Some(&**host_error),
+            Self::Trap(Trap::Host(host_error)) => Some(&**host_error),
             _ => None,
         }
     }
@@ -167,7 +168,8 @@ impl Error {
     /// [`TrapKind::Host`]: enum.TrapKind.html#variant.Host
     pub fn into_host_error(self) -> Option<Box<dyn host::HostError>> {
         match self {
-            Error::Host(host_err) => Some(host_err),
+            Error::Host(host_error) => Some(host_error),
+            Self::Trap(Trap::Host(host_error)) => Some(host_error),
             _ => None,
         }
     }
@@ -182,7 +184,8 @@ impl Error {
     /// [`TrapKind::Host`]: enum.TrapKind.html#variant.Host
     pub fn try_into_host_error(self) -> Result<Box<dyn host::HostError>, Self> {
         match self {
-            Error::Host(host_err) => Ok(host_err),
+            Error::Host(host_error) => Ok(host_error),
+            Self::Trap(Trap::Host(host_error)) => Ok(host_error),
             other => Err(other),
         }
     }
