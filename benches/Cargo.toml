@@ -2,6 +2,7 @@
 name = "benches"
 version = "0.1.0"
 authors = ["Sergey Pepyakin <s.pepyakin@gmail.com>"]
+edition = "2021"
 
 [dependencies]
 wasmi = { path = ".." }
