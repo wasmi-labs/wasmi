@@ -1,11 +1,11 @@
 #![feature(test)]
 
 extern crate test;
-extern crate wasmi;
+
 #[macro_use]
 extern crate assert_matches;
-extern crate wabt;
 
+use core::slice;
 use std::{fs::File, io::Read as _};
 use test::Bencher;
 use wasmi::{
@@ -61,18 +61,17 @@ fn load_file(file_name: &str) -> Vec<u8> {
 /// - If the benchmark Wasm file could not be opened, read or parsed.
 fn load_module(file_name: &str) -> Module {
     let buffer = load_file(file_name);
-    let module = Module::from_buffer(buffer).unwrap_or_else(|error| {
+    Module::from_buffer(buffer).unwrap_or_else(|error| {
         panic!(
             "could not parse Wasm module from file {}: {}",
             file_name, error
         )
-    });
-    module
+    })
 }
 
 const WASM_KERNEL: &str = "wasm-kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
-const REVCOMP_INPUT: &'static [u8] = include_bytes!("./revcomp-input.txt");
-const REVCOMP_OUTPUT: &'static [u8] = include_bytes!("./revcomp-output.txt");
+const REVCOMP_INPUT: &[u8] = include_bytes!("./revcomp-input.txt");
+const REVCOMP_OUTPUT: &[u8] = include_bytes!("./revcomp-output.txt");
 
 #[bench]
 fn bench_compile_and_validate(b: &mut Bencher) {
@@ -222,6 +221,86 @@ fn bench_rev_comp(b: &mut Bencher) {
 }
 
 #[bench]
+fn bench_rev_comp_v1(b: &mut Bencher) {
+    let wasm = load_file(WASM_KERNEL);
+    let engine = v1::Engine::default();
+    let module = v1::Module::new(&engine, &wasm).unwrap();
+    let mut linker = <v1::Linker<()>>::default();
+    let mut store = v1::Store::new(&engine, ());
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+
+    // Allocate buffers for the input and output.
+    let mut result = RuntimeValue::I32(0);
+    let input_size = RuntimeValue::I32(REVCOMP_INPUT.len() as i32);
+    let prepare_rev_complement = instance
+        .get_export(&store, "prepare_rev_complement")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    prepare_rev_complement
+        .call(&mut store, &[input_size], slice::from_mut(&mut result))
+        .unwrap();
+    let test_data_ptr = match result {
+        value @ RuntimeValue::I32(_) => value,
+        _ => panic!("unexpected non-I32 result found for prepare_rev_complement"),
+    };
+
+    // Get the pointer to the input buffer.
+    let rev_complement_input_ptr = instance
+        .get_export(&store, "rev_complement_input_ptr")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    rev_complement_input_ptr
+        .call(&mut store, &[test_data_ptr], slice::from_mut(&mut result))
+        .unwrap();
+    let input_data_mem_offset = match result {
+        RuntimeValue::I32(value) => value,
+        _ => panic!("unexpected non-I32 result found for prepare_rev_complement"),
+    };
+
+    // Copy test data inside the wasm memory.
+    let memory = instance
+        .get_export(&store, "memory")
+        .and_then(v1::Extern::into_memory)
+        .expect("failed to find 'memory' exported linear memory in instance");
+    memory
+        .write(&mut store, input_data_mem_offset as usize, REVCOMP_INPUT)
+        .expect("failed to write test data into a wasm memory");
+
+    let bench_rev_complement = instance
+        .get_export(&store, "bench_rev_complement")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    b.iter(|| {
+        bench_rev_complement
+            .call(&mut store, &[test_data_ptr], &mut [])
+            .unwrap();
+    });
+
+    // Get the pointer to the output buffer.
+    let rev_complement_output_ptr = instance
+        .get_export(&store, "rev_complement_output_ptr")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    rev_complement_output_ptr
+        .call(&mut store, &[test_data_ptr], slice::from_mut(&mut result))
+        .unwrap();
+    let output_data_mem_offset = match result {
+        RuntimeValue::I32(value) => value,
+        _ => panic!("unexpected non-I32 result found for prepare_rev_complement"),
+    };
+
+    let mut revcomp_result = vec![0x00_u8; REVCOMP_OUTPUT.len()];
+    memory
+        .read(&store, output_data_mem_offset as usize, &mut revcomp_result)
+        .expect("failed to read result data from a wasm memory");
+    assert_eq!(&revcomp_result[..], REVCOMP_OUTPUT);
+}
+
+#[bench]
 fn bench_regex_redux(b: &mut Bencher) {
     let wasm_kernel = load_module(WASM_KERNEL);
     let instance = ModuleInstance::new(&wasm_kernel, &ImportsBuilder::default())
@@ -259,6 +338,67 @@ fn bench_regex_redux(b: &mut Bencher) {
     b.iter(|| {
         instance
             .invoke_export("bench_regex_redux", &[test_data_ptr], &mut NopExternals)
+            .unwrap();
+    });
+}
+
+#[bench]
+fn bench_regex_redux_v1(b: &mut Bencher) {
+    let wasm = load_file(WASM_KERNEL);
+    let engine = v1::Engine::default();
+    let module = v1::Module::new(&engine, &wasm).unwrap();
+    let mut linker = <v1::Linker<()>>::default();
+    let mut store = v1::Store::new(&engine, ());
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+
+    // Allocate buffers for the input and output.
+    let mut result = RuntimeValue::I32(0);
+    let input_size = RuntimeValue::I32(REVCOMP_INPUT.len() as i32);
+    let prepare_regex_redux = instance
+        .get_export(&store, "prepare_regex_redux")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+        prepare_regex_redux
+        .call(&mut store, &[input_size], slice::from_mut(&mut result))
+        .unwrap();
+    let test_data_ptr = match result {
+        value @ RuntimeValue::I32(_) => value,
+        _ => panic!("unexpected non-I32 result found for prepare_regex_redux"),
+    };
+
+    // Get the pointer to the input buffer.
+    let regex_redux_input_ptr = instance
+        .get_export(&store, "regex_redux_input_ptr")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+        regex_redux_input_ptr
+        .call(&mut store, &[test_data_ptr], slice::from_mut(&mut result))
+        .unwrap();
+    let input_data_mem_offset = match result {
+        RuntimeValue::I32(value) => value,
+        _ => panic!("unexpected non-I32 result found for regex_redux_input_ptr"),
+    };
+
+    // Copy test data inside the wasm memory.
+    let memory = instance
+        .get_export(&store, "memory")
+        .and_then(v1::Extern::into_memory)
+        .expect("failed to find 'memory' exported linear memory in instance");
+    memory
+        .write(&mut store, input_data_mem_offset as usize, REVCOMP_INPUT)
+        .expect("failed to write test data into a wasm memory");
+
+    let bench_regex_redux = instance
+        .get_export(&store, "bench_regex_redux")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    b.iter(|| {
+        bench_regex_redux
+            .call(&mut store, &[test_data_ptr], &mut [])
             .unwrap();
     });
 }
@@ -438,6 +578,30 @@ fn recursive_trap(b: &mut Bencher) {
     b.iter(|| {
         let value = instance.invoke_export("call", &[RuntimeValue::I32(1000)], &mut NopExternals);
         assert_matches!(value, Err(_));
+    });
+}
+
+#[bench]
+fn recursive_trap_v1(b: &mut Bencher) {
+    let wasm = wabt::wat2wasm(include_bytes!("../wat/recursive_trap.wat")).unwrap();
+    let engine = v1::Engine::default();
+    let module = v1::Module::new(&engine, &wasm).unwrap();
+    let mut linker = <v1::Linker<()>>::default();
+    let mut store = v1::Store::new(&engine, ());
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let bench_call = instance
+        .get_export(&store, "call")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    let mut result = [RuntimeValue::I32(0)];
+
+    b.iter(|| {
+        let result = bench_call.call(&mut store, &[RuntimeValue::I32(1000)], &mut result);
+        assert_matches!(result, Err(_));
     });
 }
 
