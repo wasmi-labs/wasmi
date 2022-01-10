@@ -223,7 +223,7 @@ impl ValueStack {
         let cells = self
             .entries
             .get_mut(self.stack_ptr..self.stack_ptr + additional)
-            .ok_or_else(|| TrapCode::StackOverflow)?;
+            .ok_or(TrapCode::StackOverflow)?;
         cells.fill(Default::default());
         self.stack_ptr += additional;
         Ok(())
