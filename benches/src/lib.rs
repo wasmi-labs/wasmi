@@ -234,8 +234,8 @@ fn bench_rev_comp_v1(b: &mut Bencher) {
         .unwrap();
 
     // Allocate buffers for the input and output.
-    let mut result = RuntimeValue::I32(0);
-    let input_size = RuntimeValue::I32(REVCOMP_INPUT.len() as i32);
+    let mut result = Value::I32(0);
+    let input_size = Value::I32(REVCOMP_INPUT.len() as i32);
     let prepare_rev_complement = instance
         .get_export(&store, "prepare_rev_complement")
         .and_then(v1::Extern::into_func)
@@ -244,7 +244,7 @@ fn bench_rev_comp_v1(b: &mut Bencher) {
         .call(&mut store, &[input_size], slice::from_mut(&mut result))
         .unwrap();
     let test_data_ptr = match result {
-        value @ RuntimeValue::I32(_) => value,
+        value @ Value::I32(_) => value,
         _ => panic!("unexpected non-I32 result found for prepare_rev_complement"),
     };
 
@@ -257,7 +257,7 @@ fn bench_rev_comp_v1(b: &mut Bencher) {
         .call(&mut store, &[test_data_ptr], slice::from_mut(&mut result))
         .unwrap();
     let input_data_mem_offset = match result {
-        RuntimeValue::I32(value) => value,
+        Value::I32(value) => value,
         _ => panic!("unexpected non-I32 result found for prepare_rev_complement"),
     };
 
@@ -289,7 +289,7 @@ fn bench_rev_comp_v1(b: &mut Bencher) {
         .call(&mut store, &[test_data_ptr], slice::from_mut(&mut result))
         .unwrap();
     let output_data_mem_offset = match result {
-        RuntimeValue::I32(value) => value,
+        Value::I32(value) => value,
         _ => panic!("unexpected non-I32 result found for prepare_rev_complement"),
     };
 
@@ -356,8 +356,8 @@ fn bench_regex_redux_v1(b: &mut Bencher) {
         .unwrap();
 
     // Allocate buffers for the input and output.
-    let mut result = RuntimeValue::I32(0);
-    let input_size = RuntimeValue::I32(REVCOMP_INPUT.len() as i32);
+    let mut result = Value::I32(0);
+    let input_size = Value::I32(REVCOMP_INPUT.len() as i32);
     let prepare_regex_redux = instance
         .get_export(&store, "prepare_regex_redux")
         .and_then(v1::Extern::into_func)
@@ -366,7 +366,7 @@ fn bench_regex_redux_v1(b: &mut Bencher) {
         .call(&mut store, &[input_size], slice::from_mut(&mut result))
         .unwrap();
     let test_data_ptr = match result {
-        value @ RuntimeValue::I32(_) => value,
+        value @ Value::I32(_) => value,
         _ => panic!("unexpected non-I32 result found for prepare_regex_redux"),
     };
 
@@ -379,7 +379,7 @@ fn bench_regex_redux_v1(b: &mut Bencher) {
         .call(&mut store, &[test_data_ptr], slice::from_mut(&mut result))
         .unwrap();
     let input_data_mem_offset = match result {
-        RuntimeValue::I32(value) => value,
+        Value::I32(value) => value,
         _ => panic!("unexpected non-I32 result found for regex_redux_input_ptr"),
     };
 
@@ -597,10 +597,10 @@ fn recursive_trap_v1(b: &mut Bencher) {
         .get_export(&store, "call")
         .and_then(v1::Extern::into_func)
         .unwrap();
-    let mut result = [RuntimeValue::I32(0)];
+    let mut result = [Value::I32(0)];
 
     b.iter(|| {
-        let result = bench_call.call(&mut store, &[RuntimeValue::I32(1000)], &mut result);
+        let result = bench_call.call(&mut store, &[Value::I32(1000)], &mut result);
         assert_matches!(result, Err(_));
     });
 }
