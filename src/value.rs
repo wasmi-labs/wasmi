@@ -192,6 +192,18 @@ impl RuntimeValue {
         }
     }
 
+    /// Creates new value by interpreting passed u32 as f32.
+    #[deprecated(note = "use `F32::from_bits(val).into()` instead")]
+    pub fn decode_f32(val: u32) -> Self {
+        RuntimeValue::F32(F32::from_bits(val))
+    }
+
+    /// Creates new value by interpreting passed u64 as f64.
+    #[deprecated(note = "use `F64::from_bits(val).into()` instead")]
+    pub fn decode_f64(val: u64) -> Self {
+        RuntimeValue::F64(F64::from_bits(val))
+    }
+
     /// Get variable type for this value.
     pub fn value_type(&self) -> ValueType {
         match *self {
