@@ -39,13 +39,12 @@ impl SignatureEntity {
     where
         I: IntoIterator<Item = ValueType>,
         O: IntoIterator<Item = ValueType>,
-        I::IntoIter: ExactSizeIterator,
     {
-        let inputs = inputs.into_iter();
-        let len_inputs = inputs.len();
-        let inputs_outputs = Arc::from(inputs.chain(outputs).collect::<Vec<_>>());
+        let mut inputs_outputs = inputs.into_iter().collect::<Vec<_>>();
+        let len_inputs = inputs_outputs.len();
+        inputs_outputs.extend(outputs);
         Self {
-            inputs_outputs,
+            inputs_outputs: inputs_outputs.into(),
             len_inputs,
         }
     }
@@ -87,7 +86,6 @@ impl Signature {
     where
         I: IntoIterator<Item = ValueType>,
         O: IntoIterator<Item = ValueType>,
-        I::IntoIter: ExactSizeIterator,
     {
         ctx.alloc_signature(SignatureEntity::new(inputs, outputs))
     }
