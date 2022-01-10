@@ -67,7 +67,7 @@ impl<'engine, 'func> ExecutionContext<'engine, 'func> {
     pub fn execute_frame(
         &mut self,
         mut ctx: impl AsContextMut,
-    ) -> Result<FunctionExecutionOutcome, TrapCode> {
+    ) -> Result<FunctionExecutionOutcome, Trap> {
         'outer: loop {
             let pc = self.frame.inst_ptr;
             let inst_context =
@@ -168,12 +168,13 @@ where
     /// # Errors
     ///
     /// If the resulting effective address overflows.
-    fn effective_address(offset: Offset, address: u32) -> Result<usize, TrapCode> {
+    fn effective_address(offset: Offset, address: u32) -> Result<usize, Trap> {
         offset
             .into_inner()
             .checked_add(address)
             .map(|address| address as usize)
             .ok_or(TrapCode::MemoryAccessOutOfBounds)
+            .map_err(Into::into)
     }
 
     /// Loads a value of type `T` from the default memory at the given address offset.
@@ -186,7 +187,7 @@ where
     /// - `i64.load`
     /// - `f32.load`
     /// - `f64.load`
-    fn execute_load<T>(&mut self, offset: Offset) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_load<T>(&mut self, offset: Offset) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: LittleEndianConvert,
@@ -220,7 +221,7 @@ where
     /// - `i64.load_16u`
     /// - `i64.load_32s`
     /// - `i64.load_32u`
-    fn execute_load_extend<T, U>(&mut self, offset: Offset) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_load_extend<T, U>(&mut self, offset: Offset) -> Result<ExecutionOutcome, Trap>
     where
         T: ExtendInto<U> + LittleEndianConvert,
         StackEntry: From<U>,
@@ -248,7 +249,7 @@ where
     /// - `i64.store`
     /// - `f32.store`
     /// - `f64.store`
-    fn execute_store<T>(&mut self, offset: Offset) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_store<T>(&mut self, offset: Offset) -> Result<ExecutionOutcome, Trap>
     where
         T: LittleEndianConvert + FromStackEntry,
     {
@@ -274,7 +275,7 @@ where
     /// - `i64.store8`
     /// - `i64.store16`
     /// - `i64.store32`
-    fn execute_store_wrap<T, U>(&mut self, offset: Offset) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_store_wrap<T, U>(&mut self, offset: Offset) -> Result<ExecutionOutcome, Trap>
     where
         T: WrapInto<U> + FromStackEntry,
         U: LittleEndianConvert,
@@ -290,7 +291,7 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
-    fn execute_eqz<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_eqz<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         T: FromStackEntry,
         T: PartialEq<T> + Default,
@@ -306,7 +307,7 @@ where
     /// Executes a relative operation given the top two stack values.
     ///
     /// After success the top of the stack will store the result.
-    fn execute_relop<T, F>(&mut self, f: F) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_relop<T, F>(&mut self, f: F) -> Result<ExecutionOutcome, Trap>
     where
         T: FromStackEntry,
         F: FnOnce(T, T) -> bool,
@@ -319,49 +320,49 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
-    fn execute_eq<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_eq<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         T: FromStackEntry + PartialEq,
     {
         self.execute_relop(|left: T, right: T| left == right)
     }
 
-    fn execute_ne<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_ne<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         T: FromStackEntry + PartialEq,
     {
         self.execute_relop(|left: T, right: T| left != right)
     }
 
-    fn execute_lt<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_lt<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         T: FromStackEntry + PartialOrd,
     {
         self.execute_relop(|left: T, right: T| left < right)
     }
 
-    fn execute_le<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_le<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         T: FromStackEntry + PartialOrd,
     {
         self.execute_relop(|left: T, right: T| left <= right)
     }
 
-    fn execute_gt<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_gt<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         T: FromStackEntry + PartialOrd,
     {
         self.execute_relop(|left: T, right: T| left > right)
     }
 
-    fn execute_ge<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_ge<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         T: FromStackEntry + PartialOrd,
     {
         self.execute_relop(|left: T, right: T| left >= right)
     }
 
-    fn execute_unop<T, U, F>(&mut self, f: F) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_unop<T, U, F>(&mut self, f: F) -> Result<ExecutionOutcome, Trap>
     where
         F: FnOnce(T) -> U,
         T: FromStackEntry,
@@ -374,7 +375,7 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
-    fn execute_clz<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_clz<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: Integer<T> + FromStackEntry,
@@ -382,7 +383,7 @@ where
         self.execute_unop(|v: T| v.leading_zeros())
     }
 
-    fn execute_ctz<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_ctz<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: Integer<T> + FromStackEntry,
@@ -390,7 +391,7 @@ where
         self.execute_unop(|v: T| v.trailing_zeros())
     }
 
-    fn execute_popcnt<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_popcnt<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: Integer<T> + FromStackEntry,
@@ -398,7 +399,7 @@ where
         self.execute_unop(|v: T| v.count_ones())
     }
 
-    fn execute_binop<T, R, F>(&mut self, f: F) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_binop<T, R, F>(&mut self, f: F) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<R>,
         T: FromStackEntry,
@@ -412,7 +413,7 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
-    fn execute_add<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_add<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: FromStackEntry + ArithmeticOps<T>,
@@ -420,7 +421,7 @@ where
         self.execute_binop(|left: T, right: T| left.add(right))
     }
 
-    fn execute_sub<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_sub<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: FromStackEntry + ArithmeticOps<T>,
@@ -428,7 +429,7 @@ where
         self.execute_binop(|left: T, right: T| left.sub(right))
     }
 
-    fn execute_mul<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_mul<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: FromStackEntry + ArithmeticOps<T>,
@@ -436,7 +437,7 @@ where
         self.execute_binop(|left: T, right: T| left.mul(right))
     }
 
-    fn try_execute_binop<T, F>(&mut self, f: F) -> Result<ExecutionOutcome, TrapCode>
+    fn try_execute_binop<T, F>(&mut self, f: F) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: FromStackEntry,
@@ -450,7 +451,7 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
-    fn execute_div<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_div<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: FromStackEntry + ArithmeticOps<T>,
@@ -458,7 +459,7 @@ where
         self.try_execute_binop(|left, right| left.div(right))
     }
 
-    fn execute_rem<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_rem<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: FromStackEntry + Integer<T>,
@@ -466,7 +467,7 @@ where
         self.try_execute_binop(|left, right| left.rem(right))
     }
 
-    fn execute_and<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_and<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<<T as BitAnd>::Output>,
         T: FromStackEntry + BitAnd<T>,
@@ -474,7 +475,7 @@ where
         self.execute_binop(|left: T, right: T| left.bitand(right))
     }
 
-    fn execute_or<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_or<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<<T as BitOr>::Output>,
         T: FromStackEntry + BitOr<T>,
@@ -482,7 +483,7 @@ where
         self.execute_binop(|left: T, right: T| left.bitor(right))
     }
 
-    fn execute_xor<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_xor<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<<T as BitXor>::Output>,
         T: FromStackEntry + BitXor<T>,
@@ -490,7 +491,7 @@ where
         self.execute_binop(|left: T, right: T| left.bitxor(right))
     }
 
-    fn execute_shl<T>(&mut self, mask: T) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_shl<T>(&mut self, mask: T) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<<T as Shl>::Output>,
         T: FromStackEntry + Shl<T> + BitAnd<T, Output = T>,
@@ -498,7 +499,7 @@ where
         self.execute_binop(|left: T, right: T| left.shl(right & mask))
     }
 
-    fn execute_shr<T>(&mut self, mask: T) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_shr<T>(&mut self, mask: T) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<<T as Shr>::Output>,
         T: FromStackEntry + Shr<T> + BitAnd<T, Output = T>,
@@ -506,7 +507,7 @@ where
         self.execute_binop(|left: T, right: T| left.shr(right & mask))
     }
 
-    fn execute_rotl<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_rotl<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: Integer<T> + FromStackEntry,
@@ -514,7 +515,7 @@ where
         self.execute_binop(|left: T, right: T| left.rotl(right))
     }
 
-    fn execute_rotr<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_rotr<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: Integer<T> + FromStackEntry,
@@ -522,7 +523,7 @@ where
         self.execute_binop(|left: T, right: T| left.rotr(right))
     }
 
-    fn execute_abs<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_abs<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: Float<T> + FromStackEntry,
@@ -530,7 +531,7 @@ where
         self.execute_unop(|v: T| v.abs())
     }
 
-    fn execute_neg<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_neg<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<<T as Neg>::Output>,
         T: Neg + FromStackEntry,
@@ -538,7 +539,7 @@ where
         self.execute_unop(|v: T| v.neg())
     }
 
-    fn execute_ceil<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_ceil<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: Float<T> + FromStackEntry,
@@ -546,7 +547,7 @@ where
         self.execute_unop(|v: T| v.ceil())
     }
 
-    fn execute_floor<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_floor<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: Float<T> + FromStackEntry,
@@ -554,7 +555,7 @@ where
         self.execute_unop(|v: T| v.floor())
     }
 
-    fn execute_trunc<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_trunc<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: Float<T> + FromStackEntry,
@@ -562,7 +563,7 @@ where
         self.execute_unop(|v: T| v.trunc())
     }
 
-    fn execute_nearest<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_nearest<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: Float<T> + FromStackEntry,
@@ -570,7 +571,7 @@ where
         self.execute_unop(|v: T| v.nearest())
     }
 
-    fn execute_sqrt<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_sqrt<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: Float<T> + FromStackEntry,
@@ -578,7 +579,7 @@ where
         self.execute_unop(|v: T| v.sqrt())
     }
 
-    fn execute_min<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_min<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: Float<T> + FromStackEntry,
@@ -586,7 +587,7 @@ where
         self.execute_binop(|left: T, right: T| left.min(right))
     }
 
-    fn execute_max<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_max<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: Float<T> + FromStackEntry,
@@ -594,7 +595,7 @@ where
         self.execute_binop(|left: T, right: T| left.max(right))
     }
 
-    fn execute_copysign<T>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_copysign<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
         T: Float<T> + FromStackEntry,
@@ -602,7 +603,7 @@ where
         self.execute_binop(|left: T, right: T| left.copysign(right))
     }
 
-    fn execute_wrap<T, U>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_wrap<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<U>,
         T: WrapInto<U> + FromStackEntry,
@@ -610,7 +611,7 @@ where
         self.execute_unop(|value: T| value.wrap_into())
     }
 
-    fn execute_extend<T, U>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_extend<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<U>,
         T: ExtendInto<U> + FromStackEntry,
@@ -618,7 +619,7 @@ where
         self.execute_unop(|value: T| value.extend_into())
     }
 
-    fn execute_trunc_to_int<T, U>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_trunc_to_int<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<U>,
         T: TryTruncateInto<U, TrapCode> + FromStackEntry,
@@ -629,7 +630,7 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
-    fn execute_reinterpret<T, U>(&mut self) -> Result<ExecutionOutcome, TrapCode>
+    fn execute_reinterpret<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<U>,
         T: FromStackEntry,
@@ -643,10 +644,10 @@ impl<'engine, 'func, Ctx> VisitInstruction for InstructionExecutionContext<'engi
 where
     Ctx: AsContextMut,
 {
-    type Outcome = Result<ExecutionOutcome, TrapCode>;
+    type Outcome = Result<ExecutionOutcome, Trap>;
 
     fn visit_unreachable(&mut self) -> Self::Outcome {
-        Err(TrapCode::Unreachable)
+        Err(TrapCode::Unreachable).map_err(Into::into)
     }
 
     fn visit_br(&mut self, target: Target) -> Self::Outcome {
@@ -748,7 +749,7 @@ where
                 )
             });
         if actual_signature != expected_signature {
-            return Err(TrapCode::UnexpectedSignature);
+            return Err(TrapCode::UnexpectedSignature).map_err(Into::into);
         }
         Ok(ExecutionOutcome::ExecuteCall(func))
     }
