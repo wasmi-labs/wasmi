@@ -46,6 +46,15 @@ impl From<TrapCode> for Trap {
     }
 }
 
+impl<U> From<U> for Trap
+where
+    U: HostError + Sized,
+{
+    fn from(e: U) -> Self {
+        Trap::host(e)
+    }
+}
+
 impl Display for Trap {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -161,14 +170,5 @@ impl TrapCode {
 impl Display for TrapCode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.trap_message())
-    }
-}
-
-impl<U> From<U> for Trap
-where
-    U: HostError + Sized,
-{
-    fn from(e: U) -> Self {
-        Trap::host(e)
     }
 }
