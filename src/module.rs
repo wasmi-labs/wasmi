@@ -5,6 +5,7 @@ use crate::{
     imports::ImportResolver,
     memory::MemoryRef,
     memory_units::Pages,
+    nan_preserving_float::{F32, F64},
     runner::StackRecycler,
     table::TableRef,
     types::{GlobalDescriptor, MemoryDescriptor, TableDescriptor},
@@ -788,8 +789,8 @@ fn eval_init_expr(init_expr: &InitExpr, module: &ModuleInstance) -> Value {
     match code[0] {
         Instruction::I32Const(v) => v.into(),
         Instruction::I64Const(v) => v.into(),
-        Instruction::F32Const(v) => Value::decode_f32(v),
-        Instruction::F64Const(v) => Value::decode_f64(v),
+        Instruction::F32Const(v) => F32::from_bits(v).into(),
+        Instruction::F64Const(v) => F64::from_bits(v).into(),
         Instruction::GetGlobal(idx) => {
             let global = module
                 .global_by_index(idx)

@@ -29,7 +29,11 @@ use super::{
     },
     Module,
 };
-use crate::{Value, ValueType};
+use crate::{
+    nan_preserving_float::{F32, F64},
+    Value,
+    ValueType,
+};
 use core::{fmt, fmt::Display};
 use parity_wasm::elements as pwasm;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
@@ -620,8 +624,8 @@ impl Module {
         match &operands[0] {
             pwasm::Instruction::I32Const(value) => Value::from(*value),
             pwasm::Instruction::I64Const(value) => Value::from(*value),
-            pwasm::Instruction::F32Const(value) => Value::decode_f32(*value),
-            pwasm::Instruction::F64Const(value) => Value::decode_f64(*value),
+            pwasm::Instruction::F32Const(value) => Value::from(F32::from_bits(*value)),
+            pwasm::Instruction::F64Const(value) => Value::from(F64::from_bits(*value)),
             pwasm::Instruction::GetGlobal(global_index) => {
                 let global = builder
                     .get_global(*global_index)
