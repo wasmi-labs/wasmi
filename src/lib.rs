@@ -117,9 +117,6 @@ use core::fmt;
 #[cfg(feature = "std")]
 use std::error;
 
-#[cfg(not(feature = "std"))]
-extern crate libm;
-
 #[doc(inline)]
 #[deprecated(note = "use `Value` instead")]
 pub use self::value::Value as RuntimeValue;
