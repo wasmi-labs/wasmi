@@ -67,6 +67,7 @@ impl<'engine> FuncValidator for FuncBodyTranslator<'engine> {
         FuncBodyTranslator::new(engine, inst_builder, len_locals)
     }
 
+    #[inline(always)]
     fn next_instruction(
         &mut self,
         ctx: &mut FunctionValidationContext,
@@ -169,6 +170,7 @@ impl<'engine> FuncBodyTranslator<'engine> {
     }
 
     /// Validate the Wasm `inst` and translate the respective `wasmi` bytecode.
+    #[inline(always)]
     fn validate_translate<F, R>(
         &mut self,
         validator: &mut FunctionValidationContext,
@@ -188,6 +190,7 @@ impl<'engine> FuncBodyTranslator<'engine> {
     /// # Errors
     ///
     /// If there are validation or translation problems.
+    #[inline(always)]
     fn translate_instruction(
         &mut self,
         validator: &mut FunctionValidationContext,
