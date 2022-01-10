@@ -117,6 +117,10 @@ use std::error;
 #[cfg(not(feature = "std"))]
 extern crate libm;
 
+#[doc(inline)]
+#[deprecated(note = "use `Value` instead")]
+pub use self::value::Value as RuntimeValue;
+
 /// Error type which can be thrown by wasm code or by host environment.
 ///
 /// Under some conditions, wasm execution may produce a `Trap`, which immediately aborts execution.
@@ -469,8 +473,9 @@ pub use self::{
     runner::{StackRecycler, DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT},
     table::{TableInstance, TableRef},
     types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor, ValueType},
-    value::{FromValue, LittleEndianConvert, Value},
+    value::{FromValue, LittleEndianConvert},
 };
+use self::value::Value;
 
 /// WebAssembly-specific sizes and units.
 pub mod memory_units {
