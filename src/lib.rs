@@ -250,15 +250,6 @@ where
     }
 }
 
-impl<U> From<U> for Trap
-where
-    U: host::HostError + Sized,
-{
-    fn from(e: U) -> Self {
-        Trap::Host(Box::new(e))
-    }
-}
-
 impl From<Trap> for Error {
     fn from(e: Trap) -> Error {
         Error::Trap(e)

@@ -163,3 +163,12 @@ impl Display for TrapCode {
         write!(f, "{}", self.trap_message())
     }
 }
+
+impl<U> From<U> for Trap
+where
+    U: HostError + Sized,
+{
+    fn from(e: U) -> Self {
+        Trap::host(e)
+    }
+}
