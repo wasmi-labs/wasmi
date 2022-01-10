@@ -3,7 +3,7 @@ use anyhow::Result;
 use wasmi::{
     nan_preserving_float::{F32, F64},
     v1::Error as WasmiError,
-    RuntimeValue,
+    Value,
 };
 use wast::{
     lexer::Lexer,
@@ -219,19 +219,19 @@ fn assert_trap(test_context: &TestContext, span: Span, error: TestError, message
 fn assert_results(
     context: &TestContext,
     span: wast::Span,
-    results: &[RuntimeValue],
+    results: &[Value],
     expected: &[AssertExpression],
 ) {
     assert_eq!(results.len(), expected.len());
     for (result, expected) in results.iter().zip(expected) {
         match (result, expected) {
-            (RuntimeValue::I32(result), AssertExpression::I32(expected)) => {
+            (Value::I32(result), AssertExpression::I32(expected)) => {
                 assert_eq!(result, expected, "in {}", context.spanned(span))
             }
-            (RuntimeValue::I64(result), AssertExpression::I64(expected)) => {
+            (Value::I64(result), AssertExpression::I64(expected)) => {
                 assert_eq!(result, expected, "in {}", context.spanned(span))
             }
-            (RuntimeValue::F32(result), AssertExpression::F32(expected)) => match expected {
+            (Value::F32(result), AssertExpression::F32(expected)) => match expected {
                 NanPattern::CanonicalNan | NanPattern::ArithmeticNan => assert!(result.is_nan()),
                 NanPattern::Value(expected) => {
                     assert_eq!(
@@ -242,13 +242,13 @@ fn assert_results(
                     );
                 }
             },
-            (RuntimeValue::F32(result), AssertExpression::LegacyArithmeticNaN) => {
+            (Value::F32(result), AssertExpression::LegacyArithmeticNaN) => {
                 assert!(result.is_nan(), "in {}", context.spanned(span))
             }
-            (RuntimeValue::F32(result), AssertExpression::LegacyCanonicalNaN) => {
+            (Value::F32(result), AssertExpression::LegacyCanonicalNaN) => {
                 assert!(result.is_nan(), "in {}", context.spanned(span))
             }
-            (RuntimeValue::F64(result), AssertExpression::F64(expected)) => match expected {
+            (Value::F64(result), AssertExpression::F64(expected)) => match expected {
                 NanPattern::CanonicalNan | NanPattern::ArithmeticNan => {
                     assert!(result.is_nan(), "in {}", context.spanned(span))
                 }
@@ -261,10 +261,10 @@ fn assert_results(
                     );
                 }
             },
-            (RuntimeValue::F64(result), AssertExpression::LegacyArithmeticNaN) => {
+            (Value::F64(result), AssertExpression::LegacyArithmeticNaN) => {
                 assert!(result.is_nan(), "in {}", context.spanned(span))
             }
-            (RuntimeValue::F64(result), AssertExpression::LegacyCanonicalNaN) => {
+            (Value::F64(result), AssertExpression::LegacyCanonicalNaN) => {
                 assert!(result.is_nan(), "in {}", context.spanned(span))
             }
             (result, expected) => panic!(
@@ -310,7 +310,7 @@ fn execute_wast_execute(
     context: &mut TestContext,
     span: wast::Span,
     execute: WastExecute,
-) -> Result<Vec<RuntimeValue>, TestError> {
+) -> Result<Vec<Value>, TestError> {
     match execute {
         WastExecute::Invoke(invoke) => {
             execute_wast_invoke(context, span, invoke).map_err(Into::into)
@@ -326,10 +326,10 @@ fn execute_wast_invoke(
     context: &mut TestContext,
     span: wast::Span,
     invoke: WastInvoke,
-) -> Result<Vec<RuntimeValue>, TestError> {
+) -> Result<Vec<Value>, TestError> {
     let module_name = invoke.module.map(|id| id.name());
     let field_name = invoke.name;
-    let mut args = <Vec<RuntimeValue>>::new();
+    let mut args = <Vec<Value>>::new();
     for arg in invoke.args {
         assert_eq!(
             arg.instrs.len(),
@@ -339,10 +339,10 @@ fn execute_wast_invoke(
             arg.instrs
         );
         let arg = match &arg.instrs[0] {
-            wast::Instruction::I32Const(value) => RuntimeValue::I32(*value),
-            wast::Instruction::I64Const(value) => RuntimeValue::I64(*value),
-            wast::Instruction::F32Const(value) => RuntimeValue::F32(F32::from_bits(value.bits)),
-            wast::Instruction::F64Const(value) => RuntimeValue::F64(F64::from_bits(value.bits)),
+            wast::Instruction::I32Const(value) => Value::I32(*value),
+            wast::Instruction::I64Const(value) => Value::I64(*value),
+            wast::Instruction::F32Const(value) => Value::F32(F32::from_bits(value.bits)),
+            wast::Instruction::F64Const(value) => Value::F64(F64::from_bits(value.bits)),
             unsupported => panic!(
                 "{}: encountered unsupported invoke instruction: {:?}",
                 context.spanned(span),

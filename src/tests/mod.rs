@@ -20,20 +20,20 @@ fn assert_error_properties() {
 }
 
 /// Test that converting an u32 (u64) that does not fit in an i32 (i64)
-/// to a RuntimeValue and back works as expected and the number remains unchanged.
+/// to a Value and back works as expected and the number remains unchanged.
 #[test]
-fn unsigned_to_runtime_value() {
-    use super::RuntimeValue;
+fn unsigned_to_value() {
+    use super::Value;
 
     let overflow_i32: u32 = ::core::i32::MAX as u32 + 1;
     assert_eq!(
-        RuntimeValue::from(overflow_i32).try_into::<u32>().unwrap(),
+        Value::from(overflow_i32).try_into::<u32>().unwrap(),
         overflow_i32
     );
 
     let overflow_i64: u64 = ::core::i64::MAX as u64 + 1;
     assert_eq!(
-        RuntimeValue::from(overflow_i64).try_into::<u64>().unwrap(),
+        Value::from(overflow_i64).try_into::<u64>().unwrap(),
         overflow_i64
     );
 }

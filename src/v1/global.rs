@@ -1,5 +1,5 @@
 use super::{AsContext, AsContextMut, Index, Stored};
-use crate::{RuntimeValue, ValueType};
+use crate::{Value, ValueType};
 use core::{fmt, fmt::Display};
 
 /// A raw index to a global variable entity.
@@ -61,13 +61,13 @@ pub enum Mutability {
 /// A global variable entitiy.
 #[derive(Debug)]
 pub struct GlobalEntity {
-    value: RuntimeValue,
+    value: Value,
     mutability: Mutability,
 }
 
 impl GlobalEntity {
     /// Creates a new global entity with the given initial value and mutability.
-    pub fn new(initial_value: RuntimeValue, mutability: Mutability) -> Self {
+    pub fn new(initial_value: Value, mutability: Mutability) -> Self {
         Self {
             value: initial_value,
             mutability,
@@ -90,7 +90,7 @@ impl GlobalEntity {
     ///
     /// - If the global variable is immutable.
     /// - If there is a type mismatch between the global variable and the new value.
-    pub fn set(&mut self, new_value: RuntimeValue) -> Result<(), GlobalError> {
+    pub fn set(&mut self, new_value: Value) -> Result<(), GlobalError> {
         if !self.is_mutable() {
             return Err(GlobalError::ImmutableWrite);
         }
@@ -105,7 +105,7 @@ impl GlobalEntity {
     }
 
     /// Returns the current value of the global variable.
-    pub fn get(&self) -> RuntimeValue {
+    pub fn get(&self) -> Value {
         self.value
     }
 }
@@ -133,11 +133,7 @@ impl Global {
     }
 
     /// Creates a new global variable to the store.
-    pub fn new(
-        mut ctx: impl AsContextMut,
-        initial_value: RuntimeValue,
-        mutability: Mutability,
-    ) -> Self {
+    pub fn new(mut ctx: impl AsContextMut, initial_value: Value, mutability: Mutability) -> Self {
         ctx.as_context_mut()
             .store
             .alloc_global(GlobalEntity::new(initial_value, mutability))
@@ -171,11 +167,7 @@ impl Global {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Global`].
-    pub fn set(
-        &self,
-        mut ctx: impl AsContextMut,
-        new_value: RuntimeValue,
-    ) -> Result<(), GlobalError> {
+    pub fn set(&self, mut ctx: impl AsContextMut, new_value: Value) -> Result<(), GlobalError> {
         ctx.as_context_mut()
             .store
             .resolve_global_mut(*self)
@@ -187,7 +179,7 @@ impl Global {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Global`].
-    pub fn get(&self, ctx: impl AsContext) -> RuntimeValue {
+    pub fn get(&self, ctx: impl AsContext) -> Value {
         ctx.as_context().store.resolve_global(*self).get()
     }
 }

@@ -6,7 +6,7 @@ use super::{
     FuncBody,
     Instruction,
 };
-use crate::{RuntimeValue, ValueType};
+use crate::{Value, ValueType};
 use alloc::vec::Vec;
 use core::{fmt, fmt::Display, mem};
 
@@ -413,12 +413,12 @@ impl InstructionsBuilder {
     /// - `i64.const`
     /// - `f32.const`
     /// - `f64.const`
-    pub fn constant(&mut self, value: RuntimeValue) -> InstructionIdx {
+    pub fn constant(&mut self, value: Value) -> InstructionIdx {
         let inst = match value {
-            RuntimeValue::I32(value) => Instruction::I32Const(value),
-            RuntimeValue::I64(value) => Instruction::I64Const(value),
-            RuntimeValue::F32(value) => Instruction::F32Const(value),
-            RuntimeValue::F64(value) => Instruction::F64Const(value),
+            Value::I32(value) => Instruction::I32Const(value),
+            Value::I64(value) => Instruction::I64Const(value),
+            Value::F32(value) => Instruction::F32Const(value),
+            Value::F64(value) => Instruction::F64Const(value),
         };
         self.push_inst(inst)
     }

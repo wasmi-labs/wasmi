@@ -13,7 +13,7 @@ use core::{f32, i32, i64, u32, u64};
 /// There is no distinction between signed and unsigned integer types. Instead, integers are
 /// interpreted by respective operations as either unsigned or signed in two’s complement representation.
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum RuntimeValue {
+pub enum Value {
     /// Value of 32-bit signed or unsigned integer.
     I32(i32),
     /// Value of 64-bit signed or unsigned integer.
@@ -24,26 +24,26 @@ pub enum RuntimeValue {
     F64(F64),
 }
 
-/// Trait for creating value from a [`RuntimeValue`].
+/// Trait for creating value from a [`Value`].
 ///
 /// Typically each implementation can create a value from the specific type.
 /// For example, values of type `bool` or `u32` are both represented by [`I32`] and `f64` values are represented by
 /// [`F64`].
 ///
-/// [`I32`]: enum.RuntimeValue.html#variant.I32
-/// [`F64`]: enum.RuntimeValue.html#variant.F64
-/// [`RuntimeValue`]: enum.RuntimeValue.html
-pub trait FromRuntimeValue
+/// [`I32`]: enum.Value.html#variant.I32
+/// [`F64`]: enum.Value.html#variant.F64
+/// [`Value`]: enum.Value.html
+pub trait FromValue
 where
     Self: Sized,
 {
-    /// Create a value of type `Self` from a given [`RuntimeValue`].
+    /// Create a value of type `Self` from a given [`Value`].
     ///
-    /// Returns `None` if the [`RuntimeValue`] is of type different than
+    /// Returns `None` if the [`Value`] is of type different than
     /// expected by the conversion in question.
     ///
-    /// [`RuntimeValue`]: enum.RuntimeValue.html
-    fn from_runtime_value(val: RuntimeValue) -> Option<Self>;
+    /// [`Value`]: enum.Value.html
+    fn from_value(val: Value) -> Option<Self>;
 }
 
 /// Convert one type to another by wrapping.
@@ -181,117 +181,117 @@ pub trait Float<T>: ArithmeticOps<T> {
     fn copysign(self, other: T) -> T;
 }
 
-impl RuntimeValue {
+impl Value {
     /// Creates new default value of given type.
     pub fn default(value_type: ValueType) -> Self {
         match value_type {
-            ValueType::I32 => RuntimeValue::I32(0),
-            ValueType::I64 => RuntimeValue::I64(0),
-            ValueType::F32 => RuntimeValue::F32(0f32.into()),
-            ValueType::F64 => RuntimeValue::F64(0f64.into()),
+            ValueType::I32 => Value::I32(0),
+            ValueType::I64 => Value::I64(0),
+            ValueType::F32 => Value::F32(0f32.into()),
+            ValueType::F64 => Value::F64(0f64.into()),
         }
     }
 
     /// Creates new value by interpreting passed u32 as f32.
     #[deprecated(note = "use `F32::from_bits(val).into()` instead")]
     pub fn decode_f32(val: u32) -> Self {
-        RuntimeValue::F32(F32::from_bits(val))
+        Value::F32(F32::from_bits(val))
     }
 
     /// Creates new value by interpreting passed u64 as f64.
     #[deprecated(note = "use `F64::from_bits(val).into()` instead")]
     pub fn decode_f64(val: u64) -> Self {
-        RuntimeValue::F64(F64::from_bits(val))
+        Value::F64(F64::from_bits(val))
     }
 
     /// Get variable type for this value.
     pub fn value_type(&self) -> ValueType {
         match *self {
-            RuntimeValue::I32(_) => ValueType::I32,
-            RuntimeValue::I64(_) => ValueType::I64,
-            RuntimeValue::F32(_) => ValueType::F32,
-            RuntimeValue::F64(_) => ValueType::F64,
+            Value::I32(_) => ValueType::I32,
+            Value::I64(_) => ValueType::I64,
+            Value::F32(_) => ValueType::F32,
+            Value::F64(_) => ValueType::F64,
         }
     }
 
-    /// Returns `T` if this particular [`RuntimeValue`] contains
+    /// Returns `T` if this particular [`Value`] contains
     /// appropriate type.
     ///
-    /// See [`FromRuntimeValue`] for details.
+    /// See [`FromValue`] for details.
     ///
-    /// [`FromRuntimeValue`]: trait.FromRuntimeValue.html
-    /// [`RuntimeValue`]: enum.RuntimeValue.html
-    pub fn try_into<T: FromRuntimeValue>(self) -> Option<T> {
-        FromRuntimeValue::from_runtime_value(self)
+    /// [`FromValue`]: trait.FromValue.html
+    /// [`Value`]: enum.Value.html
+    pub fn try_into<T: FromValue>(self) -> Option<T> {
+        FromValue::from_value(self)
     }
 }
 
-impl From<i8> for RuntimeValue {
+impl From<i8> for Value {
     fn from(val: i8) -> Self {
-        RuntimeValue::I32(val as i32)
+        Value::I32(val as i32)
     }
 }
 
-impl From<i16> for RuntimeValue {
+impl From<i16> for Value {
     fn from(val: i16) -> Self {
-        RuntimeValue::I32(val as i32)
+        Value::I32(val as i32)
     }
 }
 
-impl From<i32> for RuntimeValue {
+impl From<i32> for Value {
     fn from(val: i32) -> Self {
-        RuntimeValue::I32(val)
+        Value::I32(val)
     }
 }
 
-impl From<i64> for RuntimeValue {
+impl From<i64> for Value {
     fn from(val: i64) -> Self {
-        RuntimeValue::I64(val)
+        Value::I64(val)
     }
 }
 
-impl From<u8> for RuntimeValue {
+impl From<u8> for Value {
     fn from(val: u8) -> Self {
-        RuntimeValue::I32(val as i32)
+        Value::I32(val as i32)
     }
 }
 
-impl From<u16> for RuntimeValue {
+impl From<u16> for Value {
     fn from(val: u16) -> Self {
-        RuntimeValue::I32(val as i32)
+        Value::I32(val as i32)
     }
 }
 
-impl From<u32> for RuntimeValue {
+impl From<u32> for Value {
     fn from(val: u32) -> Self {
-        RuntimeValue::I32(val.transmute_into())
+        Value::I32(val.transmute_into())
     }
 }
 
-impl From<u64> for RuntimeValue {
+impl From<u64> for Value {
     fn from(val: u64) -> Self {
-        RuntimeValue::I64(val.transmute_into())
+        Value::I64(val.transmute_into())
     }
 }
 
-impl From<F32> for RuntimeValue {
+impl From<F32> for Value {
     fn from(val: F32) -> Self {
-        RuntimeValue::F32(val)
+        Value::F32(val)
     }
 }
 
-impl From<F64> for RuntimeValue {
+impl From<F64> for Value {
     fn from(val: F64) -> Self {
-        RuntimeValue::F64(val)
+        Value::F64(val)
     }
 }
 
-macro_rules! impl_from_runtime_value {
+macro_rules! impl_from_value {
     ($expected_rt_ty: ident, $into: ty) => {
-        impl FromRuntimeValue for $into {
-            fn from_runtime_value(val: RuntimeValue) -> Option<Self> {
+        impl FromValue for $into {
+            fn from_value(val: Value) -> Option<Self> {
                 match val {
-                    RuntimeValue::$expected_rt_ty(val) => Some(val.transmute_into()),
+                    Value::$expected_rt_ty(val) => Some(val.transmute_into()),
                     _ => None,
                 }
             }
@@ -302,11 +302,11 @@ macro_rules! impl_from_runtime_value {
 /// This conversion assumes that boolean values are represented by
 /// [`I32`] type.
 ///
-/// [`I32`]: enum.RuntimeValue.html#variant.I32
-impl FromRuntimeValue for bool {
-    fn from_runtime_value(val: RuntimeValue) -> Option<Self> {
+/// [`I32`]: enum.Value.html#variant.I32
+impl FromValue for bool {
+    fn from_value(val: Value) -> Option<Self> {
         match val {
-            RuntimeValue::I32(val) => Some(val != 0),
+            Value::I32(val) => Some(val != 0),
             _ => None,
         }
     }
@@ -314,13 +314,13 @@ impl FromRuntimeValue for bool {
 
 ///  This conversion assumes that `i8` is represented as an [`I32`].
 ///
-/// [`I32`]: enum.RuntimeValue.html#variant.I32
-impl FromRuntimeValue for i8 {
-    fn from_runtime_value(val: RuntimeValue) -> Option<Self> {
+/// [`I32`]: enum.Value.html#variant.I32
+impl FromValue for i8 {
+    fn from_value(val: Value) -> Option<Self> {
         let min = i8::min_value() as i32;
         let max = i8::max_value() as i32;
         match val {
-            RuntimeValue::I32(val) if min <= val && val <= max => Some(val as i8),
+            Value::I32(val) if min <= val && val <= max => Some(val as i8),
             _ => None,
         }
     }
@@ -328,13 +328,13 @@ impl FromRuntimeValue for i8 {
 
 ///  This conversion assumes that `i16` is represented as an [`I32`].
 ///
-/// [`I32`]: enum.RuntimeValue.html#variant.I32
-impl FromRuntimeValue for i16 {
-    fn from_runtime_value(val: RuntimeValue) -> Option<Self> {
+/// [`I32`]: enum.Value.html#variant.I32
+impl FromValue for i16 {
+    fn from_value(val: Value) -> Option<Self> {
         let min = i16::min_value() as i32;
         let max = i16::max_value() as i32;
         match val {
-            RuntimeValue::I32(val) if min <= val && val <= max => Some(val as i16),
+            Value::I32(val) if min <= val && val <= max => Some(val as i16),
             _ => None,
         }
     }
@@ -342,13 +342,13 @@ impl FromRuntimeValue for i16 {
 
 ///  This conversion assumes that `u8` is represented as an [`I32`].
 ///
-/// [`I32`]: enum.RuntimeValue.html#variant.I32
-impl FromRuntimeValue for u8 {
-    fn from_runtime_value(val: RuntimeValue) -> Option<Self> {
+/// [`I32`]: enum.Value.html#variant.I32
+impl FromValue for u8 {
+    fn from_value(val: Value) -> Option<Self> {
         let min = u8::min_value() as i32;
         let max = u8::max_value() as i32;
         match val {
-            RuntimeValue::I32(val) if min <= val && val <= max => Some(val as u8),
+            Value::I32(val) if min <= val && val <= max => Some(val as u8),
             _ => None,
         }
     }
@@ -356,24 +356,24 @@ impl FromRuntimeValue for u8 {
 
 ///  This conversion assumes that `u16` is represented as an [`I32`].
 ///
-/// [`I32`]: enum.RuntimeValue.html#variant.I32
-impl FromRuntimeValue for u16 {
-    fn from_runtime_value(val: RuntimeValue) -> Option<Self> {
+/// [`I32`]: enum.Value.html#variant.I32
+impl FromValue for u16 {
+    fn from_value(val: Value) -> Option<Self> {
         let min = u16::min_value() as i32;
         let max = u16::max_value() as i32;
         match val {
-            RuntimeValue::I32(val) if min <= val && val <= max => Some(val as u16),
+            Value::I32(val) if min <= val && val <= max => Some(val as u16),
             _ => None,
         }
     }
 }
 
-impl_from_runtime_value!(I32, i32);
-impl_from_runtime_value!(I64, i64);
-impl_from_runtime_value!(F32, F32);
-impl_from_runtime_value!(F64, F64);
-impl_from_runtime_value!(I32, u32);
-impl_from_runtime_value!(I64, u64);
+impl_from_value!(I32, i32);
+impl_from_value!(I64, i64);
+impl_from_value!(F32, F32);
+impl_from_value!(F64, F64);
+impl_from_value!(I32, u32);
+impl_from_value!(I64, u64);
 
 macro_rules! impl_wrap_into {
     ($from:ident, $into:ident) => {

@@ -14,9 +14,9 @@ use crate::{
         Float,
         Integer,
         LittleEndianConvert,
-        RuntimeValue,
         TransmuteInto,
         TryTruncateInto,
+        Value,
         WrapInto,
     },
     Signature,
@@ -42,93 +42,93 @@ pub const DEFAULT_CALL_STACK_LIMIT: usize = 64 * 1024;
 /// spec tests) and not undefined behaviour.
 ///
 /// At the boundary between the interpreter and the outside world we convert to the public
-/// `RuntimeValue` type, which can then be matched on. We can create a `RuntimeValue` from
-/// a `RuntimeValueInternal` only when the type is statically known, which it always is
+/// `Value` type, which can then be matched on. We can create a `Value` from
+/// a `ValueInternal` only when the type is statically known, which it always is
 /// at these boundaries.
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 #[repr(transparent)]
-struct RuntimeValueInternal(pub u64);
+struct ValueInternal(pub u64);
 
-impl RuntimeValueInternal {
-    pub fn with_type(self, ty: ValueType) -> RuntimeValue {
+impl ValueInternal {
+    pub fn with_type(self, ty: ValueType) -> Value {
         match ty {
-            ValueType::I32 => RuntimeValue::I32(<_>::from_runtime_value_internal(self)),
-            ValueType::I64 => RuntimeValue::I64(<_>::from_runtime_value_internal(self)),
-            ValueType::F32 => RuntimeValue::F32(<_>::from_runtime_value_internal(self)),
-            ValueType::F64 => RuntimeValue::F64(<_>::from_runtime_value_internal(self)),
+            ValueType::I32 => Value::I32(<_>::from_value_internal(self)),
+            ValueType::I64 => Value::I64(<_>::from_value_internal(self)),
+            ValueType::F32 => Value::F32(<_>::from_value_internal(self)),
+            ValueType::F64 => Value::F64(<_>::from_value_internal(self)),
         }
     }
 }
 
-trait FromRuntimeValueInternal
+trait FromValueInternal
 where
     Self: Sized,
 {
-    fn from_runtime_value_internal(val: RuntimeValueInternal) -> Self;
+    fn from_value_internal(val: ValueInternal) -> Self;
 }
 
-macro_rules! impl_from_runtime_value_internal {
+macro_rules! impl_from_value_internal {
 	($($t:ty),*) =>	{
 		$(
-			impl FromRuntimeValueInternal for $t {
-				fn from_runtime_value_internal(
-					RuntimeValueInternal(val): RuntimeValueInternal,
+			impl FromValueInternal for $t {
+				fn from_value_internal(
+					ValueInternal(val): ValueInternal,
 				) -> Self {
 					val	as _
 				}
 			}
 
-			impl From<$t> for RuntimeValueInternal {
+			impl From<$t> for ValueInternal {
 				fn from(other: $t) -> Self {
-					RuntimeValueInternal(other as _)
+					ValueInternal(other as _)
 				}
 			}
 		)*
 	};
 }
 
-macro_rules! impl_from_runtime_value_internal_float	{
+macro_rules! impl_from_value_internal_float	{
 	($($t:ty),*) =>	{
 		$(
-			impl FromRuntimeValueInternal for $t {
-				fn from_runtime_value_internal(
-					RuntimeValueInternal(val): RuntimeValueInternal,
+			impl FromValueInternal for $t {
+				fn from_value_internal(
+					ValueInternal(val): ValueInternal,
 				) -> Self {
 					<$t>::from_bits(val	as _)
 				}
 			}
 
-			impl From<$t> for RuntimeValueInternal {
+			impl From<$t> for ValueInternal {
 				fn from(other: $t) -> Self {
-					RuntimeValueInternal(other.to_bits() as	_)
+					ValueInternal(other.to_bits() as	_)
 				}
 			}
 		)*
 	};
 }
 
-impl_from_runtime_value_internal!(i8, u8, i16, u16, i32, u32, i64, u64);
-impl_from_runtime_value_internal_float!(f32, f64, F32, F64);
+impl_from_value_internal!(i8, u8, i16, u16, i32, u32, i64, u64);
+impl_from_value_internal_float!(f32, f64, F32, F64);
 
-impl From<bool> for RuntimeValueInternal {
+impl From<bool> for ValueInternal {
     fn from(other: bool) -> Self {
         (if other { 1 } else { 0 }).into()
     }
 }
 
-impl FromRuntimeValueInternal for bool {
-    fn from_runtime_value_internal(RuntimeValueInternal(val): RuntimeValueInternal) -> Self {
+impl FromValueInternal for bool {
+    fn from_value_internal(ValueInternal(val): ValueInternal) -> Self {
         val != 0
     }
 }
 
-impl From<RuntimeValue> for RuntimeValueInternal {
-    fn from(other: RuntimeValue) -> Self {
+impl From<Value> for ValueInternal {
+    fn from(other: Value) -> Self {
         match other {
-            RuntimeValue::I32(val) => val.into(),
-            RuntimeValue::I64(val) => val.into(),
-            RuntimeValue::F32(val) => val.into(),
-            RuntimeValue::F64(val) => val.into(),
+            Value::I32(val) => val.into(),
+            Value::I64(val) => val.into(),
+            Value::F32(val) => val.into(),
+            Value::F64(val) => val.into(),
         }
     }
 }
@@ -177,13 +177,13 @@ pub struct Interpreter {
     call_stack: CallStack,
     return_type: Option<ValueType>,
     state: InterpreterState,
-    scratch: Vec<RuntimeValue>,
+    scratch: Vec<Value>,
 }
 
 impl Interpreter {
     pub fn new(
         func: &FuncRef,
-        args: &[RuntimeValue],
+        args: &[Value],
         mut stack_recycler: Option<&mut StackRecycler>,
     ) -> Result<Interpreter, Trap> {
         let mut value_stack = StackRecycler::recreate_value_stack(&mut stack_recycler);
@@ -218,7 +218,7 @@ impl Interpreter {
     pub fn start_execution<'a, E: Externals + 'a>(
         &mut self,
         externals: &'a mut E,
-    ) -> Result<Option<RuntimeValue>, Trap> {
+    ) -> Result<Option<Value>, Trap> {
         // Ensure that the VM has not been executed. This is checked in `FuncInvocation::start_execution`.
         assert!(self.state == InterpreterState::Initialized);
 
@@ -237,9 +237,9 @@ impl Interpreter {
 
     pub fn resume_execution<'a, E: Externals + 'a>(
         &mut self,
-        return_val: Option<RuntimeValue>,
+        return_val: Option<Value>,
         externals: &'a mut E,
-    ) -> Result<Option<RuntimeValue>, Trap> {
+    ) -> Result<Option<Value>, Trap> {
         use core::mem::swap;
 
         // Ensure that the VM is resumable. This is checked in `FuncInvocation::resume_execution`.
@@ -703,7 +703,7 @@ impl Interpreter {
     fn run_select(&mut self) -> Result<InstructionOutcome, TrapKind> {
         let (left, mid, right) = self.value_stack.pop_triple();
 
-        let condition = <_>::from_runtime_value_internal(right);
+        let condition = <_>::from_value_internal(right);
         let val = if condition { left } else { mid };
         self.value_stack.push(val)?;
         Ok(InstructionOutcome::RunNextInstruction)
@@ -763,7 +763,7 @@ impl Interpreter {
         offset: u32,
     ) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
+        ValueInternal: From<T>,
         T: LittleEndianConvert,
     {
         let raw_address = self.value_stack.pop_as();
@@ -785,7 +785,7 @@ impl Interpreter {
     ) -> Result<InstructionOutcome, TrapKind>
     where
         T: ExtendInto<U>,
-        RuntimeValueInternal: From<U>,
+        ValueInternal: From<U>,
         T: LittleEndianConvert,
     {
         let raw_address = self.value_stack.pop_as();
@@ -809,7 +809,7 @@ impl Interpreter {
         offset: u32,
     ) -> Result<InstructionOutcome, TrapKind>
     where
-        T: FromRuntimeValueInternal,
+        T: FromValueInternal,
         T: LittleEndianConvert,
     {
         let stack_value = self.value_stack.pop_as::<T>();
@@ -830,11 +830,11 @@ impl Interpreter {
         offset: u32,
     ) -> Result<InstructionOutcome, TrapKind>
     where
-        T: FromRuntimeValueInternal,
+        T: FromValueInternal,
         T: WrapInto<U>,
         U: LittleEndianConvert,
     {
-        let stack_value: T = <_>::from_runtime_value_internal(self.value_stack.pop());
+        let stack_value: T = <_>::from_value_internal(self.value_stack.pop());
         let stack_value = stack_value.wrap_into();
         let raw_address = self.value_stack.pop_as::<u32>();
         let address = effective_address(offset, raw_address)?;
@@ -854,7 +854,7 @@ impl Interpreter {
             .memory()
             .expect("Due to validation memory should exists");
         let s = m.current_size().0;
-        self.value_stack.push(RuntimeValueInternal(s as _))?;
+        self.value_stack.push(ValueInternal(s as _))?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
@@ -870,11 +870,11 @@ impl Interpreter {
             Ok(Pages(new_size)) => new_size as u32,
             Err(_) => u32::MAX, // Returns -1 (or 0xFFFFFFFF) in case of error.
         };
-        self.value_stack.push(RuntimeValueInternal(m as _))?;
+        self.value_stack.push(ValueInternal(m as _))?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_const(&mut self, val: RuntimeValue) -> Result<InstructionOutcome, TrapKind> {
+    fn run_const(&mut self, val: Value) -> Result<InstructionOutcome, TrapKind> {
         self.value_stack
             .push(val.into())
             .map_err(Into::into)
@@ -883,14 +883,14 @@ impl Interpreter {
 
     fn run_relop<T, F>(&mut self, f: F) -> Result<InstructionOutcome, TrapKind>
     where
-        T: FromRuntimeValueInternal,
+        T: FromValueInternal,
         F: FnOnce(T, T) -> bool,
     {
         let (left, right) = self.value_stack.pop_pair_as::<T>();
         let v = if f(left, right) {
-            RuntimeValueInternal(1)
+            ValueInternal(1)
         } else {
-            RuntimeValueInternal(0)
+            ValueInternal(0)
         };
         self.value_stack.push(v)?;
         Ok(InstructionOutcome::RunNextInstruction)
@@ -898,53 +898,53 @@ impl Interpreter {
 
     fn run_eqz<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        T: FromRuntimeValueInternal,
+        T: FromValueInternal,
         T: PartialEq<T> + Default,
     {
         let v = self.value_stack.pop_as::<T>();
-        let v = RuntimeValueInternal(if v == Default::default() { 1 } else { 0 });
+        let v = ValueInternal(if v == Default::default() { 1 } else { 0 });
         self.value_stack.push(v)?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
     fn run_eq<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        T: FromRuntimeValueInternal + PartialEq<T>,
+        T: FromValueInternal + PartialEq<T>,
     {
         self.run_relop(|left: T, right: T| left == right)
     }
 
     fn run_ne<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        T: FromRuntimeValueInternal + PartialEq<T>,
+        T: FromValueInternal + PartialEq<T>,
     {
         self.run_relop(|left: T, right: T| left != right)
     }
 
     fn run_lt<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        T: FromRuntimeValueInternal + PartialOrd<T>,
+        T: FromValueInternal + PartialOrd<T>,
     {
         self.run_relop(|left: T, right: T| left < right)
     }
 
     fn run_gt<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        T: FromRuntimeValueInternal + PartialOrd<T>,
+        T: FromValueInternal + PartialOrd<T>,
     {
         self.run_relop(|left: T, right: T| left > right)
     }
 
     fn run_lte<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        T: FromRuntimeValueInternal + PartialOrd<T>,
+        T: FromValueInternal + PartialOrd<T>,
     {
         self.run_relop(|left: T, right: T| left <= right)
     }
 
     fn run_gte<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        T: FromRuntimeValueInternal + PartialOrd<T>,
+        T: FromValueInternal + PartialOrd<T>,
     {
         self.run_relop(|left: T, right: T| left >= right)
     }
@@ -952,8 +952,8 @@ impl Interpreter {
     fn run_unop<T, U, F>(&mut self, f: F) -> Result<InstructionOutcome, TrapKind>
     where
         F: FnOnce(T) -> U,
-        T: FromRuntimeValueInternal,
-        RuntimeValueInternal: From<U>,
+        T: FromValueInternal,
+        ValueInternal: From<U>,
     {
         let v = self.value_stack.pop_as::<T>();
         let v = f(v);
@@ -963,32 +963,32 @@ impl Interpreter {
 
     fn run_clz<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
-        T: Integer<T> + FromRuntimeValueInternal,
+        ValueInternal: From<T>,
+        T: Integer<T> + FromValueInternal,
     {
         self.run_unop(|v: T| v.leading_zeros())
     }
 
     fn run_ctz<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
-        T: Integer<T> + FromRuntimeValueInternal,
+        ValueInternal: From<T>,
+        T: Integer<T> + FromValueInternal,
     {
         self.run_unop(|v: T| v.trailing_zeros())
     }
 
     fn run_popcnt<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
-        T: Integer<T> + FromRuntimeValueInternal,
+        ValueInternal: From<T>,
+        T: Integer<T> + FromValueInternal,
     {
         self.run_unop(|v: T| v.count_ones())
     }
 
     fn run_add<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
-        T: ArithmeticOps<T> + FromRuntimeValueInternal,
+        ValueInternal: From<T>,
+        T: ArithmeticOps<T> + FromValueInternal,
     {
         let (left, right) = self.value_stack.pop_pair_as::<T>();
         let v = left.add(right);
@@ -998,8 +998,8 @@ impl Interpreter {
 
     fn run_sub<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
-        T: ArithmeticOps<T> + FromRuntimeValueInternal,
+        ValueInternal: From<T>,
+        T: ArithmeticOps<T> + FromValueInternal,
     {
         let (left, right) = self.value_stack.pop_pair_as::<T>();
         let v = left.sub(right);
@@ -1009,8 +1009,8 @@ impl Interpreter {
 
     fn run_mul<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
-        T: ArithmeticOps<T> + FromRuntimeValueInternal,
+        ValueInternal: From<T>,
+        T: ArithmeticOps<T> + FromValueInternal,
     {
         let (left, right) = self.value_stack.pop_pair_as::<T>();
         let v = left.mul(right);
@@ -1020,8 +1020,8 @@ impl Interpreter {
 
     fn run_div<T, U>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
-        T: TransmuteInto<U> + FromRuntimeValueInternal,
+        ValueInternal: From<T>,
+        T: TransmuteInto<U> + FromValueInternal,
         U: ArithmeticOps<U> + TransmuteInto<T>,
     {
         let (left, right) = self.value_stack.pop_pair_as::<T>();
@@ -1034,8 +1034,8 @@ impl Interpreter {
 
     fn run_rem<T, U>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
-        T: TransmuteInto<U> + FromRuntimeValueInternal,
+        ValueInternal: From<T>,
+        T: TransmuteInto<U> + FromValueInternal,
         U: Integer<U> + TransmuteInto<T>,
     {
         let (left, right) = self.value_stack.pop_pair_as::<T>();
@@ -1048,8 +1048,8 @@ impl Interpreter {
 
     fn run_and<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<<T as ops::BitAnd>::Output>,
-        T: ops::BitAnd<T> + FromRuntimeValueInternal,
+        ValueInternal: From<<T as ops::BitAnd>::Output>,
+        T: ops::BitAnd<T> + FromValueInternal,
     {
         let (left, right) = self.value_stack.pop_pair_as::<T>();
         let v = left.bitand(right);
@@ -1059,8 +1059,8 @@ impl Interpreter {
 
     fn run_or<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<<T as ops::BitOr>::Output>,
-        T: ops::BitOr<T> + FromRuntimeValueInternal,
+        ValueInternal: From<<T as ops::BitOr>::Output>,
+        T: ops::BitOr<T> + FromValueInternal,
     {
         let (left, right) = self.value_stack.pop_pair_as::<T>();
         let v = left.bitor(right);
@@ -1070,8 +1070,8 @@ impl Interpreter {
 
     fn run_xor<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<<T as ops::BitXor>::Output>,
-        T: ops::BitXor<T> + FromRuntimeValueInternal,
+        ValueInternal: From<<T as ops::BitXor>::Output>,
+        T: ops::BitXor<T> + FromValueInternal,
     {
         let (left, right) = self.value_stack.pop_pair_as::<T>();
         let v = left.bitxor(right);
@@ -1081,8 +1081,8 @@ impl Interpreter {
 
     fn run_shl<T>(&mut self, mask: T) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<<T as ops::Shl<T>>::Output>,
-        T: ops::Shl<T> + ops::BitAnd<T, Output = T> + FromRuntimeValueInternal,
+        ValueInternal: From<<T as ops::Shl<T>>::Output>,
+        T: ops::Shl<T> + ops::BitAnd<T, Output = T> + FromValueInternal,
     {
         let (left, right) = self.value_stack.pop_pair_as::<T>();
         let v = left.shl(right & mask);
@@ -1092,8 +1092,8 @@ impl Interpreter {
 
     fn run_shr<T, U>(&mut self, mask: U) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
-        T: TransmuteInto<U> + FromRuntimeValueInternal,
+        ValueInternal: From<T>,
+        T: TransmuteInto<U> + FromValueInternal,
         U: ops::Shr<U> + ops::BitAnd<U, Output = U>,
         <U as ops::Shr<U>>::Output: TransmuteInto<T>,
     {
@@ -1107,8 +1107,8 @@ impl Interpreter {
 
     fn run_rotl<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
-        T: Integer<T> + FromRuntimeValueInternal,
+        ValueInternal: From<T>,
+        T: Integer<T> + FromValueInternal,
     {
         let (left, right) = self.value_stack.pop_pair_as::<T>();
         let v = left.rotl(right);
@@ -1118,8 +1118,8 @@ impl Interpreter {
 
     fn run_rotr<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
-        T: Integer<T> + FromRuntimeValueInternal,
+        ValueInternal: From<T>,
+        T: Integer<T> + FromValueInternal,
     {
         let (left, right) = self.value_stack.pop_pair_as::<T>();
         let v = left.rotr(right);
@@ -1129,64 +1129,64 @@ impl Interpreter {
 
     fn run_abs<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
-        T: Float<T> + FromRuntimeValueInternal,
+        ValueInternal: From<T>,
+        T: Float<T> + FromValueInternal,
     {
         self.run_unop(|v: T| v.abs())
     }
 
     fn run_neg<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<<T as ops::Neg>::Output>,
-        T: ops::Neg + FromRuntimeValueInternal,
+        ValueInternal: From<<T as ops::Neg>::Output>,
+        T: ops::Neg + FromValueInternal,
     {
         self.run_unop(|v: T| v.neg())
     }
 
     fn run_ceil<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
-        T: Float<T> + FromRuntimeValueInternal,
+        ValueInternal: From<T>,
+        T: Float<T> + FromValueInternal,
     {
         self.run_unop(|v: T| v.ceil())
     }
 
     fn run_floor<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
-        T: Float<T> + FromRuntimeValueInternal,
+        ValueInternal: From<T>,
+        T: Float<T> + FromValueInternal,
     {
         self.run_unop(|v: T| v.floor())
     }
 
     fn run_trunc<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
-        T: Float<T> + FromRuntimeValueInternal,
+        ValueInternal: From<T>,
+        T: Float<T> + FromValueInternal,
     {
         self.run_unop(|v: T| v.trunc())
     }
 
     fn run_nearest<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
-        T: Float<T> + FromRuntimeValueInternal,
+        ValueInternal: From<T>,
+        T: Float<T> + FromValueInternal,
     {
         self.run_unop(|v: T| v.nearest())
     }
 
     fn run_sqrt<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
-        T: Float<T> + FromRuntimeValueInternal,
+        ValueInternal: From<T>,
+        T: Float<T> + FromValueInternal,
     {
         self.run_unop(|v: T| v.sqrt())
     }
 
     fn run_min<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
-        T: Float<T> + FromRuntimeValueInternal,
+        ValueInternal: From<T>,
+        T: Float<T> + FromValueInternal,
     {
         let (left, right) = self.value_stack.pop_pair_as::<T>();
         let v = left.min(right);
@@ -1196,8 +1196,8 @@ impl Interpreter {
 
     fn run_max<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
-        T: Float<T> + FromRuntimeValueInternal,
+        ValueInternal: From<T>,
+        T: Float<T> + FromValueInternal,
     {
         let (left, right) = self.value_stack.pop_pair_as::<T>();
         let v = left.max(right);
@@ -1207,8 +1207,8 @@ impl Interpreter {
 
     fn run_copysign<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<T>,
-        T: Float<T> + FromRuntimeValueInternal,
+        ValueInternal: From<T>,
+        T: Float<T> + FromValueInternal,
     {
         let (left, right) = self.value_stack.pop_pair_as::<T>();
         let v = left.copysign(right);
@@ -1218,16 +1218,16 @@ impl Interpreter {
 
     fn run_wrap<T, U>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<U>,
-        T: WrapInto<U> + FromRuntimeValueInternal,
+        ValueInternal: From<U>,
+        T: WrapInto<U> + FromValueInternal,
     {
         self.run_unop(|v: T| v.wrap_into())
     }
 
     fn run_trunc_to_int<T, U, V>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<V>,
-        T: TryTruncateInto<U, TrapKind> + FromRuntimeValueInternal,
+        ValueInternal: From<V>,
+        T: TryTruncateInto<U, TrapKind> + FromValueInternal,
         U: TransmuteInto<V>,
     {
         let v = self.value_stack.pop_as::<T>();
@@ -1240,8 +1240,8 @@ impl Interpreter {
 
     fn run_extend<T, U, V>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<V>,
-        T: ExtendInto<U> + FromRuntimeValueInternal,
+        ValueInternal: From<V>,
+        T: ExtendInto<U> + FromValueInternal,
         U: TransmuteInto<V>,
     {
         let v = self.value_stack.pop_as::<T>();
@@ -1254,8 +1254,8 @@ impl Interpreter {
 
     fn run_reinterpret<T, U>(&mut self) -> Result<InstructionOutcome, TrapKind>
     where
-        RuntimeValueInternal: From<U>,
-        T: FromRuntimeValueInternal,
+        ValueInternal: From<U>,
+        T: FromValueInternal,
         T: TransmuteInto<U>,
     {
         let v = self.value_stack.pop_as::<T>();
@@ -1339,7 +1339,7 @@ fn effective_address(address: u32, offset: u32) -> Result<u32, TrapKind> {
 fn prepare_function_args(
     signature: &Signature,
     caller_stack: &mut ValueStack,
-    host_args: &mut Vec<RuntimeValue>,
+    host_args: &mut Vec<Value>,
 ) {
     let req_args = signature.params();
     let len_args = req_args.len();
@@ -1353,7 +1353,7 @@ fn prepare_function_args(
     host_args.extend(prepared_args);
 }
 
-pub fn check_function_args(signature: &Signature, args: &[RuntimeValue]) -> Result<(), Trap> {
+pub fn check_function_args(signature: &Signature, args: &[Value]) -> Result<(), Trap> {
     if signature.params().len() != args.len() {
         return Err(TrapKind::UnexpectedSignature.into());
     }
@@ -1371,7 +1371,7 @@ pub fn check_function_args(signature: &Signature, args: &[RuntimeValue]) -> Resu
 }
 
 struct ValueStack {
-    buf: Box<[RuntimeValueInternal]>,
+    buf: Box<[ValueInternal]>,
     /// Index of the first free place in the stack.
     sp: usize,
 }
@@ -1400,17 +1400,17 @@ impl ValueStack {
     #[inline]
     fn pop_as<T>(&mut self) -> T
     where
-        T: FromRuntimeValueInternal,
+        T: FromValueInternal,
     {
         let value = self.pop();
 
-        T::from_runtime_value_internal(value)
+        T::from_value_internal(value)
     }
 
     #[inline]
     fn pop_pair_as<T>(&mut self) -> (T, T)
     where
-        T: FromRuntimeValueInternal,
+        T: FromValueInternal,
     {
         let right = self.pop_as();
         let left = self.pop_as();
@@ -1418,13 +1418,7 @@ impl ValueStack {
     }
 
     #[inline]
-    fn pop_triple(
-        &mut self,
-    ) -> (
-        RuntimeValueInternal,
-        RuntimeValueInternal,
-        RuntimeValueInternal,
-    ) {
+    fn pop_triple(&mut self) -> (ValueInternal, ValueInternal, ValueInternal) {
         let right = self.pop();
         let mid = self.pop();
         let left = self.pop();
@@ -1432,27 +1426,27 @@ impl ValueStack {
     }
 
     #[inline]
-    fn top(&self) -> &RuntimeValueInternal {
+    fn top(&self) -> &ValueInternal {
         self.pick(1)
     }
 
-    fn pick(&self, depth: usize) -> &RuntimeValueInternal {
+    fn pick(&self, depth: usize) -> &ValueInternal {
         &self.buf[self.sp - depth]
     }
 
     #[inline]
-    fn pick_mut(&mut self, depth: usize) -> &mut RuntimeValueInternal {
+    fn pick_mut(&mut self, depth: usize) -> &mut ValueInternal {
         &mut self.buf[self.sp - depth]
     }
 
     #[inline]
-    fn pop(&mut self) -> RuntimeValueInternal {
+    fn pop(&mut self) -> ValueInternal {
         self.sp -= 1;
         self.buf[self.sp]
     }
 
     #[inline]
-    fn push(&mut self, value: RuntimeValueInternal) -> Result<(), TrapKind> {
+    fn push(&mut self, value: ValueInternal) -> Result<(), TrapKind> {
         let cell = self.buf.get_mut(self.sp).ok_or(TrapKind::StackOverflow)?;
         *cell = value;
         self.sp += 1;
@@ -1484,7 +1478,7 @@ impl ValueStack {
     /// # Panics
     ///
     /// If the value stack does not have at least `depth` stack entries.
-    pub fn pop_slice(&mut self, depth: usize) -> &[RuntimeValueInternal] {
+    pub fn pop_slice(&mut self, depth: usize) -> &[ValueInternal] {
         self.sp -= depth;
         let start = self.sp;
         let end = self.sp + depth;
@@ -1517,7 +1511,7 @@ impl CallStack {
 
 /// Used to recycle stacks instead of allocating them repeatedly.
 pub struct StackRecycler {
-    value_stack_buf: Option<Box<[RuntimeValueInternal]>>,
+    value_stack_buf: Option<Box<[ValueInternal]>>,
     value_stack_limit: usize,
     call_stack_buf: Option<Vec<FunctionContext>>,
     call_stack_limit: usize,
@@ -1547,7 +1541,7 @@ impl StackRecycler {
     pub fn clear(&mut self) {
         if let Some(buf) = &mut self.value_stack_buf {
             for cell in buf.iter_mut() {
-                *cell = RuntimeValueInternal(0);
+                *cell = ValueInternal(0);
             }
         }
     }
@@ -1556,7 +1550,7 @@ impl StackRecycler {
         let limit = this
             .as_ref()
             .map_or(DEFAULT_VALUE_STACK_LIMIT, |this| this.value_stack_limit)
-            / ::core::mem::size_of::<RuntimeValueInternal>();
+            / ::core::mem::size_of::<ValueInternal>();
 
         let buf = this
             .as_mut()
@@ -1564,7 +1558,7 @@ impl StackRecycler {
             .unwrap_or_else(|| {
                 let mut buf = Vec::new();
                 buf.reserve_exact(limit);
-                buf.resize(limit, RuntimeValueInternal(0));
+                buf.resize(limit, ValueInternal(0));
                 buf.into_boxed_slice()
             });
 
