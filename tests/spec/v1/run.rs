@@ -14,7 +14,7 @@ use wast::{
     Wast,
     WastDirective,
     WastExecute,
-    WastInvoke,
+    WastInvoke, lexer::Lexer,
 };
 
 /// Runs the Wasm test spec identified by the given name.
@@ -22,7 +22,9 @@ pub fn run_wasm_spec_test(name: &str) {
     let test = TestDescriptor::new(name);
     let mut context = TestContext::new(&test);
 
-    let parse_buffer = match ParseBuffer::new(test.file()) {
+    let mut lexer = Lexer::new(test.file());
+    lexer.allow_confusing_unicode(true);
+    let parse_buffer = match ParseBuffer::new_with_lexer(lexer) {
         Ok(buffer) => buffer,
         Err(error) => panic!(
             "failed to create ParseBuffer for {}: {}",
