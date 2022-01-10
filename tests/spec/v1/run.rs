@@ -6,6 +6,7 @@ use wasmi::{
     RuntimeValue,
 };
 use wast::{
+    lexer::Lexer,
     parser::ParseBuffer,
     AssertExpression,
     NanPattern,
@@ -14,7 +15,7 @@ use wast::{
     Wast,
     WastDirective,
     WastExecute,
-    WastInvoke, lexer::Lexer,
+    WastInvoke,
 };
 
 /// Runs the Wasm test spec identified by the given name.
