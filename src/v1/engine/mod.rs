@@ -283,11 +283,7 @@ impl EngineInner {
     /// # Panics
     ///
     /// - If the `results` buffer length does not match the remaining amount of stack values.
-    fn write_results_back(
-        &mut self,
-        result_types: &[ValueType],
-        results: &mut [RuntimeValue],
-    ) {
+    fn write_results_back(&mut self, result_types: &[ValueType], results: &mut [RuntimeValue]) {
         assert_eq!(
             self.value_stack.len(),
             results.len(),

@@ -395,7 +395,7 @@ impl ValueStack {
     /// functions.
     pub fn reserve(&mut self, additional: usize) -> Result<(), TrapCode> {
         if self.len() + additional > self.maximum_len {
-            return Err(TrapCode::StackOverflow)
+            return Err(TrapCode::StackOverflow);
         }
         let required_len = self.len() + additional;
         if required_len > self.capacity() {

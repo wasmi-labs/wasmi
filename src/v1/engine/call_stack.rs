@@ -14,7 +14,7 @@ use super::{
     ResolvedFuncBody,
     ValueStack,
 };
-use crate::{DEFAULT_CALL_STACK_LIMIT, TrapCode};
+use crate::{TrapCode, DEFAULT_CALL_STACK_LIMIT};
 use alloc::vec::Vec;
 use core::{fmt, fmt::Display};
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
