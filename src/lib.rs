@@ -473,9 +473,8 @@ pub use self::{
     runner::{StackRecycler, DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT},
     table::{TableInstance, TableRef},
     types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor, ValueType},
-    value::{FromValue, LittleEndianConvert},
+    value::{FromValue, LittleEndianConvert, Value},
 };
-use self::value::Value;
 
 /// WebAssembly-specific sizes and units.
 pub mod memory_units {
