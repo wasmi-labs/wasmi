@@ -21,9 +21,9 @@ use self::{
 };
 use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func, Signature};
 use crate::{
-    RuntimeValue,
     Trap,
     TrapCode,
+    Value,
     ValueType,
     DEFAULT_CALL_STACK_LIMIT,
     DEFAULT_VALUE_STACK_LIMIT,
@@ -167,8 +167,8 @@ impl Engine {
         &mut self,
         ctx: impl AsContextMut,
         func: Func,
-        args: &[RuntimeValue],
-        results: &mut [RuntimeValue],
+        args: &[Value],
+        results: &mut [Value],
     ) -> Result<(), Trap> {
         self.inner.lock().execute_func(ctx, func, args, results)
     }
@@ -184,7 +184,7 @@ pub struct EngineInner {
     /// Stores all Wasm function bodies that the interpreter is aware of.
     code_map: CodeMap,
     /// Scratch buffer for intermediate results and data.
-    scratch: Vec<RuntimeValue>,
+    scratch: Vec<Value>,
 }
 
 impl EngineInner {
@@ -224,8 +224,8 @@ impl EngineInner {
         &mut self,
         mut ctx: impl AsContextMut,
         func: Func,
-        args: &[RuntimeValue],
-        results: &mut [RuntimeValue],
+        args: &[Value],
+        results: &mut [Value],
     ) -> Result<(), Trap> {
         match func.as_internal(&ctx) {
             FuncEntityInternal::Wasm(wasm_func) => {
@@ -256,8 +256,8 @@ impl EngineInner {
         &mut self,
         mut ctx: impl AsContextMut,
         signature: Signature,
-        args: &[RuntimeValue],
-        results: &mut [RuntimeValue],
+        args: &[Value],
+        results: &mut [Value],
         func: Func,
     ) -> Result<(), Trap> {
         self.value_stack.clear();
@@ -283,7 +283,7 @@ impl EngineInner {
     /// # Panics
     ///
     /// - If the `results` buffer length does not match the remaining amount of stack values.
-    fn write_results_back(&mut self, result_types: &[ValueType], results: &mut [RuntimeValue]) {
+    fn write_results_back(&mut self, result_types: &[ValueType], results: &mut [Value]) {
         assert_eq!(
             self.value_stack.len(),
             results.len(),
@@ -349,7 +349,7 @@ impl EngineInner {
                             debug_assert_eq!(self.scratch.len(), input_types.len());
                             let len_inputs = input_types.len();
                             let len_outputs = output_types.len();
-                            let zeros = output_types.iter().copied().map(RuntimeValue::default);
+                            let zeros = output_types.iter().copied().map(Value::default);
                             self.scratch.extend(zeros);
                             // At this point the scratch buffer holds the host function input arguments
                             // as well as a zero initialized entry per expected host function output value.
@@ -396,7 +396,7 @@ impl EngineInner {
     fn prepare_host_function_args(
         input_types: &[ValueType],
         value_stack: &mut ValueStack,
-        host_args: &mut Vec<RuntimeValue>,
+        host_args: &mut Vec<Value>,
     ) {
         let len_args = input_types.len();
         let stack_args = value_stack.pop_as_slice(len_args);
@@ -410,7 +410,7 @@ impl EngineInner {
     }
 
     /// Initializes the value stack with the given arguments `args`.
-    fn initialize_args(&mut self, args: &[RuntimeValue]) {
+    fn initialize_args(&mut self, args: &[Value]) {
         assert!(
             self.value_stack.is_empty(),
             "encountered non-empty value stack upon function execution initialization",
@@ -429,8 +429,8 @@ impl EngineInner {
     fn check_signature(
         ctx: impl AsContext,
         signature: Signature,
-        params: &[RuntimeValue],
-        results: &[RuntimeValue],
+        params: &[Value],
+        results: &[Value],
     ) -> Result<(), TrapCode> {
         let expected_inputs = signature.inputs(ctx.as_context());
         let expected_outputs = signature.outputs(ctx.as_context());

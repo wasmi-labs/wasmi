@@ -51,7 +51,7 @@
 //! extern crate wasmi;
 //! extern crate wabt;
 //!
-//! use wasmi::{ModuleInstance, ImportsBuilder, NopExternals, RuntimeValue};
+//! use wasmi::{ModuleInstance, ImportsBuilder, NopExternals, Value};
 //!
 //! fn main() {
 //!     // Parse WAT (WebAssembly Text format) into wasm bytecode.
@@ -89,7 +89,7 @@
 //!             &[],
 //!             &mut NopExternals,
 //!         ).expect("failed to execute export"),
-//!         Some(RuntimeValue::I32(1337)),
+//!         Some(Value::I32(1337)),
 //!     );
 //! }
 //! ```
@@ -116,6 +116,13 @@ use alloc::{
 use core::fmt;
 #[cfg(feature = "std")]
 use std::error;
+
+#[cfg(not(feature = "std"))]
+extern crate libm;
+
+#[doc(inline)]
+#[deprecated(note = "use `Value` instead")]
+pub use self::value::Value as RuntimeValue;
 
 /// Internal interpreter error.
 #[derive(Debug)]
@@ -292,7 +299,7 @@ pub use self::{
     table::{TableInstance, TableRef},
     trap::{Trap, TrapCode},
     types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor, ValueType},
-    value::{FromRuntimeValue, LittleEndianConvert, RuntimeValue},
+    value::{FromValue, LittleEndianConvert, Value},
 };
 
 /// WebAssembly-specific sizes and units.

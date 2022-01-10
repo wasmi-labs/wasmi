@@ -9,7 +9,7 @@ mod utils;
 use self::control_frame::ControlFrame;
 use super::{
     super::{
-        super::{RuntimeValue, ValueType},
+        super::{Value, ValueType},
         engine::{
             bytecode::{FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx},
             inst_builder::{Reloc, Signedness, WasmFloatType, WasmIntType},
@@ -67,6 +67,7 @@ impl<'engine> FuncValidator for FuncBodyTranslator<'engine> {
         FuncBodyTranslator::new(engine, inst_builder, len_locals)
     }
 
+    #[inline(always)]
     fn next_instruction(
         &mut self,
         ctx: &mut FunctionValidationContext,
@@ -169,6 +170,7 @@ impl<'engine> FuncBodyTranslator<'engine> {
     }
 
     /// Validate the Wasm `inst` and translate the respective `wasmi` bytecode.
+    #[inline(always)]
     fn validate_translate<F, R>(
         &mut self,
         validator: &mut FunctionValidationContext,
@@ -188,6 +190,7 @@ impl<'engine> FuncBodyTranslator<'engine> {
     /// # Errors
     ///
     /// If there are validation or translation problems.
+    #[inline(always)]
     fn translate_instruction(
         &mut self,
         validator: &mut FunctionValidationContext,
@@ -397,16 +400,16 @@ impl<'engine> FuncBodyTranslator<'engine> {
                 self.validate_translate(validator, inst, InstructionsBuilder::memory_grow)?
             }
             Inst::I32Const(value) => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.constant(RuntimeValue::from(*value))
+                inst_builder.constant(Value::from(*value))
             })?,
             Inst::I64Const(value) => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.constant(RuntimeValue::from(*value))
+                inst_builder.constant(Value::from(*value))
             })?,
             Inst::F32Const(value) => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.constant(RuntimeValue::from(*value))
+                inst_builder.constant(Value::from(*value))
             })?,
             Inst::F64Const(value) => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.constant(RuntimeValue::from(*value))
+                inst_builder.constant(Value::from(*value))
             })?,
             Inst::I32Eqz => self.validate_translate(validator, inst, |inst_builder| {
                 inst_builder.int_eqz(WasmIntType::I32)

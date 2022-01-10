@@ -3,8 +3,8 @@
 use super::DropKeep;
 use crate::{
     nan_preserving_float::{F32, F64},
-    RuntimeValue,
     TrapCode,
+    Value,
     ValueType,
     DEFAULT_VALUE_STACK_LIMIT,
 };
@@ -23,8 +23,8 @@ use core::{fmt, fmt::Debug, iter, mem};
 /// occur, e.g. interpreting a value of 42 as a [`bool`] value.
 ///
 /// At the boundary between the interpreter and the outside world we convert the
-/// stack entry value into the required `RuntimeValue` type which can then be matched on.
-/// It is only possible to convert a [`StackEntry`] into a [`RuntimeValue`] if and only if
+/// stack entry value into the required `Value` type which can then be matched on.
+/// It is only possible to convert a [`StackEntry`] into a [`Value`] if and only if
 /// the type is statically known which always is the case at these boundaries.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
@@ -36,24 +36,24 @@ impl StackEntry {
         self.0
     }
 
-    /// Converts the untyped [`StackEntry`] value into a typed [`RuntimeValue`].
-    pub fn with_type(self, value_type: ValueType) -> RuntimeValue {
+    /// Converts the untyped [`StackEntry`] value into a typed [`Value`].
+    pub fn with_type(self, value_type: ValueType) -> Value {
         match value_type {
-            ValueType::I32 => RuntimeValue::I32(<_>::from_stack_entry(self)),
-            ValueType::I64 => RuntimeValue::I64(<_>::from_stack_entry(self)),
-            ValueType::F32 => RuntimeValue::F32(<_>::from_stack_entry(self)),
-            ValueType::F64 => RuntimeValue::F64(<_>::from_stack_entry(self)),
+            ValueType::I32 => Value::I32(<_>::from_stack_entry(self)),
+            ValueType::I64 => Value::I64(<_>::from_stack_entry(self)),
+            ValueType::F32 => Value::F32(<_>::from_stack_entry(self)),
+            ValueType::F64 => Value::F64(<_>::from_stack_entry(self)),
         }
     }
 }
 
-impl From<RuntimeValue> for StackEntry {
-    fn from(value: RuntimeValue) -> Self {
+impl From<Value> for StackEntry {
+    fn from(value: Value) -> Self {
         match value {
-            RuntimeValue::I32(value) => value.into(),
-            RuntimeValue::I64(value) => value.into(),
-            RuntimeValue::F32(value) => value.into(),
-            RuntimeValue::F64(value) => value.into(),
+            Value::I32(value) => value.into(),
+            Value::I64(value) => value.into(),
+            Value::F32(value) => value.into(),
+            Value::F64(value) => value.into(),
         }
     }
 }

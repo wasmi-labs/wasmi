@@ -1,7 +1,7 @@
-use super::{super::SignatureEntity, Caller, HostFuncTrampoline, RuntimeValue, ValueType};
+use super::{super::SignatureEntity, Caller, HostFuncTrampoline, Value, ValueType};
 use crate::{
     nan_preserving_float::{F32, F64},
-    FromRuntimeValue,
+    FromValue,
     Trap,
     TrapCode,
 };
@@ -76,8 +76,8 @@ macro_rules! impl_into_func {
                 #[allow(unused_mut, unused_variables)]
                 let trampoline = move |
                     caller: Caller<T>,
-                    inputs: &[RuntimeValue],
-                    outputs: &mut [RuntimeValue],
+                    inputs: &[Value],
+                    outputs: &mut [Value],
                 | -> Result<(), Trap> {
                     if inputs.len() != len_inputs || outputs.len() != len_outputs {
                         return Err(Trap::from(TrapCode::UnexpectedSignature))
@@ -104,14 +104,14 @@ macro_rules! impl_into_func {
 for_each_function_signature!(impl_into_func);
 
 pub trait WriteOutputs {
-    fn write_outputs(self, outputs: &mut [RuntimeValue]) -> Result<(), Trap>;
+    fn write_outputs(self, outputs: &mut [Value]) -> Result<(), Trap>;
 }
 
 impl<T1> WriteOutputs for T1
 where
-    T1: Into<RuntimeValue>,
+    T1: Into<Value>,
 {
-    fn write_outputs(self, outputs: &mut [RuntimeValue]) -> Result<(), Trap> {
+    fn write_outputs(self, outputs: &mut [Value]) -> Result<(), Trap> {
         if outputs.len() != 1 {
             return Err(Trap::from(TrapCode::UnexpectedSignature));
         }
@@ -126,11 +126,11 @@ macro_rules! impl_write_outputs {
         impl<$($args),*> WriteOutputs for ($($args,)*)
         where
             $(
-                $args: Into<RuntimeValue>
+                $args: Into<Value>
             ),*
         {
             #[allow(unused_mut, unused_variables)]
-            fn write_outputs(self, outputs: &mut [RuntimeValue]) -> Result<(), Trap> {
+            fn write_outputs(self, outputs: &mut [Value]) -> Result<(), Trap> {
                 if outputs.len() != $n {
                     return Err(Trap::from(TrapCode::UnexpectedSignature));
                 }
@@ -147,19 +147,18 @@ macro_rules! impl_write_outputs {
 for_each_function_signature!(impl_write_outputs);
 
 pub trait ReadInputs: Sized {
-    fn read_inputs(inputs: &[RuntimeValue]) -> Result<Self, Trap>;
+    fn read_inputs(inputs: &[Value]) -> Result<Self, Trap>;
 }
 
 impl<T1> ReadInputs for T1
 where
-    T1: FromRuntimeValue,
+    T1: FromValue,
 {
-    fn read_inputs(inputs: &[RuntimeValue]) -> Result<Self, Trap> {
+    fn read_inputs(inputs: &[Value]) -> Result<Self, Trap> {
         if inputs.len() != 1 {
             return Err(Trap::from(TrapCode::UnexpectedSignature));
         }
-        RuntimeValue::try_into::<T1>(inputs[0])
-            .ok_or_else(|| Trap::from(TrapCode::UnexpectedSignature))
+        Value::try_into::<T1>(inputs[0]).ok_or_else(|| Trap::from(TrapCode::UnexpectedSignature))
     }
 }
 
@@ -168,11 +167,11 @@ macro_rules! impl_read_inputs {
         impl<$($args),*> ReadInputs for ($($args,)*)
         where
             $(
-                $args: FromRuntimeValue
+                $args: FromValue
             ),*
         {
             #[allow(unused_mut, unused_variables)]
-            fn read_inputs(inputs: &[RuntimeValue]) -> Result<Self, Trap> {
+            fn read_inputs(inputs: &[Value]) -> Result<Self, Trap> {
                 if inputs.len() != $n {
                     return Err(Trap::from(TrapCode::UnexpectedSignature))
                 }
@@ -182,7 +181,7 @@ macro_rules! impl_read_inputs {
                         inputs
                             .next()
                             .copied()
-                            .map(RuntimeValue::try_into::<$args>)
+                            .map(Value::try_into::<$args>)
                             .flatten()
                             .ok_or(Trap::from(TrapCode::UnexpectedSignature))?,
                     )*
@@ -193,7 +192,7 @@ macro_rules! impl_read_inputs {
 }
 for_each_function_signature!(impl_read_inputs);
 
-pub trait WasmType: FromRuntimeValue + Into<RuntimeValue> {
+pub trait WasmType: FromValue + Into<Value> {
     /// The underlying ABI type.
     type Abi: Copy;
 

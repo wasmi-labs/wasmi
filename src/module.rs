@@ -5,16 +5,17 @@ use crate::{
     imports::ImportResolver,
     memory::MemoryRef,
     memory_units::Pages,
+    nan_preserving_float::{F32, F64},
     runner::StackRecycler,
     table::TableRef,
     types::{GlobalDescriptor, MemoryDescriptor, TableDescriptor},
     Error,
     MemoryInstance,
     Module,
-    RuntimeValue,
     Signature,
     TableInstance,
     Trap,
+    Value,
 };
 use alloc::{
     borrow::ToOwned,
@@ -430,7 +431,7 @@ impl ModuleInstance {
                 .as_ref()
                 .expect("passive segments are rejected due to validation");
             let offset_val = match eval_init_expr(offset, &module_ref) {
-                RuntimeValue::I32(v) => v as u32,
+                Value::I32(v) => v as u32,
                 _ => panic!("Due to validation elem segment offset should evaluate to i32"),
             };
 
@@ -463,7 +464,7 @@ impl ModuleInstance {
                 .as_ref()
                 .expect("passive segments are rejected due to validation");
             let offset_val = match eval_init_expr(offset, &module_ref) {
-                RuntimeValue::I32(v) => v as u32,
+                Value::I32(v) => v as u32,
                 _ => panic!("Due to validation data segment offset should evaluate to i32"),
             };
 
@@ -604,7 +605,7 @@ impl ModuleInstance {
     /// ```rust
     /// # extern crate wasmi;
     /// # extern crate wabt;
-    /// # use wasmi::{ModuleInstance, ImportsBuilder, NopExternals, RuntimeValue};
+    /// # use wasmi::{ModuleInstance, ImportsBuilder, NopExternals, Value};
     /// # fn main() {
     /// # let wasm_binary: Vec<u8> = wabt::wat2wasm(
     /// #   r#"
@@ -625,19 +626,19 @@ impl ModuleInstance {
     /// assert_eq!(
     ///     instance.invoke_export(
     ///         "add",
-    ///         &[RuntimeValue::I32(5), RuntimeValue::I32(3)],
+    ///         &[Value::I32(5), Value::I32(3)],
     ///         &mut NopExternals,
     ///     ).expect("failed to execute export"),
-    ///     Some(RuntimeValue::I32(8)),
+    ///     Some(Value::I32(8)),
     /// );
     /// # }
     /// ```
     pub fn invoke_export<E: Externals>(
         &self,
         func_name: &str,
-        args: &[RuntimeValue],
+        args: &[Value],
         externals: &mut E,
-    ) -> Result<Option<RuntimeValue>, Error> {
+    ) -> Result<Option<Value>, Error> {
         let func_instance = self.func_by_name(func_name)?;
 
         FuncInstance::invoke(&func_instance, args, externals).map_err(Error::Trap)
@@ -653,10 +654,10 @@ impl ModuleInstance {
     pub fn invoke_export_with_stack<E: Externals>(
         &self,
         func_name: &str,
-        args: &[RuntimeValue],
+        args: &[Value],
         externals: &mut E,
         stack_recycler: &mut StackRecycler,
-    ) -> Result<Option<RuntimeValue>, Error> {
+    ) -> Result<Option<Value>, Error> {
         let func_instance = self.func_by_name(func_name)?;
 
         FuncInstance::invoke_with_stack(&func_instance, args, externals, stack_recycler)
@@ -779,7 +780,7 @@ impl<'a> NotStartedModuleRef<'a> {
     }
 }
 
-fn eval_init_expr(init_expr: &InitExpr, module: &ModuleInstance) -> RuntimeValue {
+fn eval_init_expr(init_expr: &InitExpr, module: &ModuleInstance) -> Value {
     let code = init_expr.code();
     debug_assert!(
         code.len() == 2,
@@ -788,8 +789,8 @@ fn eval_init_expr(init_expr: &InitExpr, module: &ModuleInstance) -> RuntimeValue
     match code[0] {
         Instruction::I32Const(v) => v.into(),
         Instruction::I64Const(v) => v.into(),
-        Instruction::F32Const(v) => RuntimeValue::decode_f32(v),
-        Instruction::F64Const(v) => RuntimeValue::decode_f64(v),
+        Instruction::F32Const(v) => F32::from_bits(v).into(),
+        Instruction::F64Const(v) => F64::from_bits(v).into(),
         Instruction::GetGlobal(idx) => {
             let global = module
                 .global_by_index(idx)
