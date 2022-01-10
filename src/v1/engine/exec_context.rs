@@ -67,7 +67,7 @@ impl<'engine, 'func> ExecutionContext<'engine, 'func> {
     pub fn execute_frame(
         &mut self,
         mut ctx: impl AsContextMut,
-    ) -> Result<FunctionExecutionOutcome, Trap> {
+    ) -> Result<FunctionExecutionOutcome, TrapCode> {
         'outer: loop {
             let pc = self.frame.inst_ptr;
             let inst_context =

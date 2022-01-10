@@ -4,7 +4,6 @@ use super::DropKeep;
 use crate::{
     nan_preserving_float::{F32, F64},
     RuntimeValue,
-    Trap,
     TrapCode,
     ValueType,
     DEFAULT_VALUE_STACK_LIMIT,
@@ -220,11 +219,11 @@ impl ValueStack {
     /// # Errors
     ///
     /// If the value stack cannot fit `additional` stack values.
-    pub fn extend_zeros(&mut self, additional: usize) -> Result<(), Trap> {
+    pub fn extend_zeros(&mut self, additional: usize) -> Result<(), TrapCode> {
         let cells = self
             .entries
             .get_mut(self.stack_ptr..self.stack_ptr + additional)
-            .ok_or_else(|| Trap::from(TrapCode::StackOverflow))?;
+            .ok_or_else(|| TrapCode::StackOverflow)?;
         cells.fill(Default::default());
         self.stack_ptr += additional;
         Ok(())
@@ -394,9 +393,9 @@ impl ValueStack {
     /// For this to be working we need a stack-depth analysis during Wasm
     /// compilation so that we are aware of all stack-depths for every
     /// functions.
-    pub fn reserve(&mut self, additional: usize) -> Result<(), Trap> {
+    pub fn reserve(&mut self, additional: usize) -> Result<(), TrapCode> {
         if self.len() + additional > self.maximum_len {
-            return Err(TrapCode::StackOverflow).map_err(Into::into);
+            return Err(TrapCode::StackOverflow)
         }
         let required_len = self.len() + additional;
         if required_len > self.capacity() {

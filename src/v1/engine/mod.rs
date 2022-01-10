@@ -267,10 +267,10 @@ impl EngineInner {
         let frame = FunctionFrame::new(ctx.as_context(), func);
         self.call_stack
             .push(frame)
-            .map_err(|_error| Trap::from(TrapCode::StackOverflow))?;
+            .map_err(|_error| TrapCode::StackOverflow)?;
         self.execute_until_done(ctx.as_context_mut())?;
         let result_types = signature.outputs(&ctx);
-        self.write_results_back(result_types, results)?;
+        self.write_results_back(result_types, results);
         Ok(())
     }
 
@@ -287,7 +287,7 @@ impl EngineInner {
         &mut self,
         result_types: &[ValueType],
         results: &mut [RuntimeValue],
-    ) -> Result<(), Trap> {
+    ) {
         assert_eq!(
             self.value_stack.len(),
             results.len(),
@@ -302,7 +302,6 @@ impl EngineInner {
         {
             *result = value.with_type(*value_type);
         }
-        Ok(())
     }
 
     /// Executes functions until the call stack is empty.
@@ -436,14 +435,14 @@ impl EngineInner {
         signature: Signature,
         params: &[RuntimeValue],
         results: &[RuntimeValue],
-    ) -> Result<(), Trap> {
+    ) -> Result<(), TrapCode> {
         let expected_inputs = signature.inputs(ctx.as_context());
         let expected_outputs = signature.outputs(ctx.as_context());
         let actual_inputs = params.iter().map(|value| value.value_type());
         if expected_inputs.iter().copied().ne(actual_inputs)
             || expected_outputs.len() != results.len()
         {
-            return Err(Trap::from(TrapCode::UnexpectedSignature));
+            return Err(TrapCode::UnexpectedSignature);
         }
         Ok(())
     }
