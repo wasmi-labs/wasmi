@@ -3,8 +3,8 @@
 (module
   (func $call (export "call") (param i32) (result i32)
 	block (result i32)
-	  get_local 0
-	  get_local 0
+	  local.get 0
+	  local.get 0
 	  i32.eqz
 	  br_if 0
 
