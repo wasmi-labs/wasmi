@@ -177,3 +177,24 @@ jobs:
         with:
           name: code-coverage-report
           path: cobertura.xml
+
+  benchmarks:
+    name: Benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Checkout Submodules
+        run: git submodule update --init --recursive
+      - name: Compare Benchmarks
+        uses: boa-dev/criterion-compare-action@v2.0.0
+        with:
+          - branchName: ${{ github.base_ref }}
+          - token: ${{ secrets.GITHUB_TOKEN }}
