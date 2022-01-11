@@ -611,7 +611,7 @@ mod tests {
     #[test]
     fn ensure_page_size() {
         use memory_units::ByteSize;
-        assert_eq!(LINEAR_MEMORY_PAGE_SIZE, Pages::byte_size());
+        assert_eq!(LINEAR_MEMORY_PAGE_SIZE, Pages::BYTE_SIZE);
     }
 
     fn create_memory(initial_content: &[u8]) -> MemoryInstance {
