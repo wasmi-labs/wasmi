@@ -24,11 +24,11 @@ use wasmi::{
     ModuleInstance,
     NopExternals,
     RuntimeArgs,
-    Value,
     Signature,
     TableDescriptor,
     TableRef,
     Trap,
+    Value,
 };
 
 /// Returns the Wasm binary at the given `file_name` as `Vec<u8>`.
@@ -362,7 +362,7 @@ fn bench_regex_redux_v1(b: &mut Bencher) {
         .get_export(&store, "prepare_regex_redux")
         .and_then(v1::Extern::into_func)
         .unwrap();
-        prepare_regex_redux
+    prepare_regex_redux
         .call(&mut store, &[input_size], slice::from_mut(&mut result))
         .unwrap();
     let test_data_ptr = match result {
@@ -375,7 +375,7 @@ fn bench_regex_redux_v1(b: &mut Bencher) {
         .get_export(&store, "regex_redux_input_ptr")
         .and_then(v1::Extern::into_func)
         .unwrap();
-        regex_redux_input_ptr
+    regex_redux_input_ptr
         .call(&mut store, &[test_data_ptr], slice::from_mut(&mut result))
         .unwrap();
     let input_data_mem_offset = match result {
@@ -412,11 +412,8 @@ fn count_until(b: &mut Bencher) {
         .assert_no_start();
     const REPETITIONS: i32 = 100_000;
     b.iter(|| {
-        let value = instance.invoke_export(
-            "count_until",
-            &[Value::I32(REPETITIONS)],
-            &mut NopExternals,
-        );
+        let value =
+            instance.invoke_export("count_until", &[Value::I32(REPETITIONS)], &mut NopExternals);
         assert_matches!(value, Ok(Some(Value::I32(REPETITIONS))));
     });
 }
@@ -623,11 +620,7 @@ fn host_calls(b: &mut Bencher) {
     const REPETITIONS: i64 = 1000;
 
     impl Externals for BenchExternals {
-        fn invoke_index(
-            &mut self,
-            index: usize,
-            args: RuntimeArgs,
-        ) -> Result<Option<Value>, Trap> {
+        fn invoke_index(&mut self, index: usize, args: RuntimeArgs) -> Result<Option<Value>, Trap> {
             match index {
                 HOST_CALL_INDEX => {
                     let arg = args.nth_value_checked(0)?;
@@ -698,11 +691,7 @@ fn host_calls(b: &mut Bencher) {
     }
 
     b.iter(|| {
-        let value = instance.invoke_export(
-            "call",
-            &[Value::I64(REPETITIONS)],
-            &mut BenchExternals,
-        );
+        let value = instance.invoke_export("call", &[Value::I64(REPETITIONS)], &mut BenchExternals);
         assert_matches!(value, Ok(Some(Value::I64(0))));
     });
 }
