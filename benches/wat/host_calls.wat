@@ -11,17 +11,17 @@
 		(loop
 			(br_if
 				1
-				(i64.eq (get_local 0) (i64.const 0))
+				(i64.eq (local.get 0) (i64.const 0))
 			)
-			(set_local 0
+			(local.set 0
 				(i64.sub
-					(call $host_call (get_local 0))
+					(call $host_call (local.get 0))
 					(i64.const 1)
 				)
 			)
 			(br 0)
 		)
 	)
-	(get_local 0)
+	(local.get 0)
   )
 )

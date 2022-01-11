@@ -122,7 +122,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: audit
-          args: --deny warnings
+          args: ''
 
   clippy:
     name: Clippy

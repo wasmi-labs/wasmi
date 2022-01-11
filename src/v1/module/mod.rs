@@ -85,4 +85,9 @@ impl Module {
             func_bodies,
         })
     }
+
+    /// Returns a shared reference to the [`Engine`] associated to the [`Module`].
+    pub fn engine(&self) -> &Engine {
+        &self.engine
+    }
 }
