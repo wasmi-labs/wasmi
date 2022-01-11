@@ -23,7 +23,7 @@ downcast-rs = { version = "1.2", default-features = false }
 spin = { version = "0.9", default-features = false, features = ["mutex", "spin_mutex"] }
 
 [dev-dependencies]
-assert_matches = "1.1"
+assert_matches = "1.5"
 rand = "0.4.2"
 wabt = "0.9"
 wast = "39.0"
