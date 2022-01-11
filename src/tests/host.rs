@@ -24,10 +24,9 @@ use crate::{
     TableInstance,
     TableRef,
     Trap,
-    TrapKind,
+    TrapCode,
     Value,
 };
-use alloc::boxed::Box;
 use std::println;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -121,7 +120,7 @@ impl Externals for TestHost {
             ERR_FUNC_INDEX => {
                 let error_code: u32 = args.nth(0);
                 let error = HostErrorWithCode { error_code };
-                Err(TrapKind::Host(Box::new(error)).into())
+                Err(Trap::host(error))
             }
             INC_MEM_FUNC_INDEX => {
                 let ptr: u32 = args.nth(0);
@@ -165,9 +164,7 @@ impl Externals for TestHost {
                     .expect("expected to be Some");
 
                 if val.value_type() != result.value_type() {
-                    return Err(
-                        TrapKind::Host(Box::new(HostErrorWithCode { error_code: 123 })).into(),
-                    );
+                    return Err(Trap::host(HostErrorWithCode { error_code: 123 }));
                 }
                 Ok(Some(result))
             }
@@ -177,7 +174,7 @@ impl Externals for TestHost {
 
                 let result: Value = (a - b).into();
                 self.trap_sub_result = Some(result);
-                Err(TrapKind::Host(Box::new(HostErrorWithCode { error_code: 301 })).into())
+                Err(Trap::host(HostErrorWithCode { error_code: 301 }))
             }
             _ => panic!("env doesn't provide function at index {}", index),
         }
@@ -359,10 +356,8 @@ fn resume_call_host_func_type_mismatch() {
         assert!(invocation.is_resumable());
         let err = invocation.resume_execution(val, &mut env).unwrap_err();
 
-        if let ResumableError::Trap(trap) = &err {
-            if let TrapKind::UnexpectedSignature = trap.kind() {
-                return;
-            }
+        if let ResumableError::Trap(Trap::Code(TrapCode::UnexpectedSignature)) = &err {
+            return;
         }
 
         // If didn't return in the previous `match`...
@@ -404,6 +399,7 @@ fn host_err() {
         .invoke_export("test", &[], &mut env)
         .expect_err("`test` expected to return error");
 
+    println!("err = {:?}", error);
     let error_with_code = error
         .as_host_error()
         .expect("Expected host error")
@@ -795,7 +791,7 @@ fn dynamically_add_host_func() {
                     );
                     self.table
                         .set(table_index, Some(added_func))
-                        .map_err(|_| TrapKind::TableAccessOutOfBounds)?;
+                        .map_err(|_| TrapCode::TableAccessOutOfBounds)?;
 
                     Ok(Some(Value::I32(table_index as i32)))
                 }

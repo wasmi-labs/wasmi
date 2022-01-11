@@ -21,7 +21,7 @@ use crate::{
     },
     Signature,
     Trap,
-    TrapKind,
+    TrapCode,
     ValueType,
 };
 use alloc::{boxed::Box, vec::Vec};
@@ -192,7 +192,7 @@ impl Interpreter {
             value_stack.push(arg).map_err(
                 // There is not enough space for pushing initial arguments.
                 // Weird, but bail out anyway.
-                |_| Trap::from(TrapKind::StackOverflow),
+                |_| Trap::from(TrapCode::StackOverflow),
             )?;
         }
 
@@ -251,7 +251,7 @@ impl Interpreter {
         if let Some(return_val) = return_val {
             self.value_stack
                 .push(return_val.into())
-                .map_err(Trap::new)?;
+                .map_err(Trap::from)?;
         }
 
         self.run_interpreter_loop(externals)?;
@@ -288,7 +288,7 @@ impl Interpreter {
 
             let function_return = self
                 .do_run_function(&mut function_context, &function_body.code)
-                .map_err(Trap::new)?;
+                .map_err(Trap::from)?;
 
             match function_return {
                 RunResult::Return => {
@@ -300,7 +300,7 @@ impl Interpreter {
                 }
                 RunResult::NestedCall(nested_func) => {
                     if self.call_stack.is_full() {
-                        return Err(TrapKind::StackOverflow.into());
+                        return Err(TrapCode::StackOverflow.into());
                     }
 
                     match *nested_func.as_internal() {
@@ -325,7 +325,7 @@ impl Interpreter {
                             ) {
                                 Ok(val) => val,
                                 Err(trap) => {
-                                    if trap.kind().is_host() {
+                                    if trap.is_host() {
                                         self.state = InterpreterState::Resumable(
                                             nested_func.signature().return_type(),
                                         );
@@ -338,13 +338,13 @@ impl Interpreter {
                             let value_ty = return_val.as_ref().map(|val| val.value_type());
                             let expected_ty = nested_func.signature().return_type();
                             if value_ty != expected_ty {
-                                return Err(TrapKind::UnexpectedSignature.into());
+                                return Err(TrapCode::UnexpectedSignature.into());
                             }
 
                             if let Some(return_val) = return_val {
                                 self.value_stack
                                     .push(return_val.into())
-                                    .map_err(Trap::new)?;
+                                    .map_err(Trap::from)?;
                             }
                         }
                     }
@@ -357,7 +357,7 @@ impl Interpreter {
         &mut self,
         function_context: &mut FunctionContext,
         instructions: &isa::Instructions,
-    ) -> Result<RunResult, TrapKind> {
+    ) -> Result<RunResult, TrapCode> {
         let mut iter = instructions.iterate_from(function_context.position);
 
         loop {
@@ -392,7 +392,7 @@ impl Interpreter {
         &mut self,
         context: &mut FunctionContext,
         instruction: &isa::Instruction,
-    ) -> Result<InstructionOutcome, TrapKind> {
+    ) -> Result<InstructionOutcome, TrapCode> {
         match instruction {
             isa::Instruction::Unreachable => self.run_unreachable(context),
 
@@ -611,19 +611,19 @@ impl Interpreter {
     fn run_unreachable(
         &mut self,
         _context: &mut FunctionContext,
-    ) -> Result<InstructionOutcome, TrapKind> {
-        Err(TrapKind::Unreachable)
+    ) -> Result<InstructionOutcome, TrapCode> {
+        Err(TrapCode::Unreachable)
     }
 
     fn run_br(
         &mut self,
         _context: &mut FunctionContext,
         target: isa::Target,
-    ) -> Result<InstructionOutcome, TrapKind> {
+    ) -> Result<InstructionOutcome, TrapCode> {
         Ok(InstructionOutcome::Branch(target))
     }
 
-    fn run_br_nez(&mut self, target: isa::Target) -> Result<InstructionOutcome, TrapKind> {
+    fn run_br_nez(&mut self, target: isa::Target) -> Result<InstructionOutcome, TrapCode> {
         let condition = self.value_stack.pop_as();
         if condition {
             Ok(InstructionOutcome::Branch(target))
@@ -632,7 +632,7 @@ impl Interpreter {
         }
     }
 
-    fn run_br_eqz(&mut self, target: isa::Target) -> Result<InstructionOutcome, TrapKind> {
+    fn run_br_eqz(&mut self, target: isa::Target) -> Result<InstructionOutcome, TrapCode> {
         let condition = self.value_stack.pop_as();
         if condition {
             Ok(InstructionOutcome::RunNextInstruction)
@@ -641,7 +641,7 @@ impl Interpreter {
         }
     }
 
-    fn run_br_table(&mut self, targets: isa::BrTargets) -> Result<InstructionOutcome, TrapKind> {
+    fn run_br_table(&mut self, targets: isa::BrTargets) -> Result<InstructionOutcome, TrapCode> {
         let index: u32 = self.value_stack.pop_as();
 
         let dst = targets.get(index);
@@ -649,7 +649,7 @@ impl Interpreter {
         Ok(InstructionOutcome::Branch(dst))
     }
 
-    fn run_return(&mut self, drop_keep: isa::DropKeep) -> Result<InstructionOutcome, TrapKind> {
+    fn run_return(&mut self, drop_keep: isa::DropKeep) -> Result<InstructionOutcome, TrapCode> {
         Ok(InstructionOutcome::Return(drop_keep))
     }
 
@@ -657,7 +657,7 @@ impl Interpreter {
         &mut self,
         context: &mut FunctionContext,
         func_idx: u32,
-    ) -> Result<InstructionOutcome, TrapKind> {
+    ) -> Result<InstructionOutcome, TrapCode> {
         let func = context
             .module()
             .func_by_index(func_idx)
@@ -669,7 +669,7 @@ impl Interpreter {
         &mut self,
         context: &mut FunctionContext,
         signature_idx: u32,
-    ) -> Result<InstructionOutcome, TrapKind> {
+    ) -> Result<InstructionOutcome, TrapCode> {
         let table_func_idx: u32 = self.value_stack.pop_as();
         let table = context
             .module()
@@ -677,8 +677,8 @@ impl Interpreter {
             .expect("Due to validation table should exists");
         let func_ref = table
             .get(table_func_idx)
-            .map_err(|_| TrapKind::TableAccessOutOfBounds)?
-            .ok_or(TrapKind::ElemUninitialized)?;
+            .map_err(|_| TrapCode::TableAccessOutOfBounds)?
+            .ok_or(TrapCode::ElemUninitialized)?;
 
         {
             let actual_function_type = func_ref.signature();
@@ -688,19 +688,19 @@ impl Interpreter {
                 .expect("Due to validation type should exists");
 
             if &*required_function_type != actual_function_type {
-                return Err(TrapKind::UnexpectedSignature);
+                return Err(TrapCode::UnexpectedSignature);
             }
         }
 
         Ok(InstructionOutcome::ExecuteCall(func_ref))
     }
 
-    fn run_drop(&mut self) -> Result<InstructionOutcome, TrapKind> {
+    fn run_drop(&mut self) -> Result<InstructionOutcome, TrapCode> {
         let _ = self.value_stack.pop();
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_select(&mut self) -> Result<InstructionOutcome, TrapKind> {
+    fn run_select(&mut self) -> Result<InstructionOutcome, TrapCode> {
         let (left, mid, right) = self.value_stack.pop_triple();
 
         let condition = <_>::from_value_internal(right);
@@ -709,19 +709,19 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_get_local(&mut self, index: u32) -> Result<InstructionOutcome, TrapKind> {
+    fn run_get_local(&mut self, index: u32) -> Result<InstructionOutcome, TrapCode> {
         let val = *self.value_stack.pick_mut(index as usize);
         self.value_stack.push(val)?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_set_local(&mut self, index: u32) -> Result<InstructionOutcome, TrapKind> {
+    fn run_set_local(&mut self, index: u32) -> Result<InstructionOutcome, TrapCode> {
         let val = self.value_stack.pop();
         *self.value_stack.pick_mut(index as usize) = val;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_tee_local(&mut self, index: u32) -> Result<InstructionOutcome, TrapKind> {
+    fn run_tee_local(&mut self, index: u32) -> Result<InstructionOutcome, TrapCode> {
         let val = *self.value_stack.top();
         *self.value_stack.pick_mut(index as usize) = val;
         Ok(InstructionOutcome::RunNextInstruction)
@@ -731,7 +731,7 @@ impl Interpreter {
         &mut self,
         context: &mut FunctionContext,
         index: u32,
-    ) -> Result<InstructionOutcome, TrapKind> {
+    ) -> Result<InstructionOutcome, TrapCode> {
         let global = context
             .module()
             .global_by_index(index)
@@ -745,7 +745,7 @@ impl Interpreter {
         &mut self,
         context: &mut FunctionContext,
         index: u32,
-    ) -> Result<InstructionOutcome, TrapKind> {
+    ) -> Result<InstructionOutcome, TrapCode> {
         let val = self.value_stack.pop();
         let global = context
             .module()
@@ -761,7 +761,7 @@ impl Interpreter {
         &mut self,
         context: &mut FunctionContext,
         offset: u32,
-    ) -> Result<InstructionOutcome, TrapKind>
+    ) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: LittleEndianConvert,
@@ -773,7 +773,7 @@ impl Interpreter {
             .expect("Due to validation memory should exists");
         let n: T = m
             .get_value(address)
-            .map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
+            .map_err(|_| TrapCode::MemoryAccessOutOfBounds)?;
         self.value_stack.push(n.into())?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
@@ -782,7 +782,7 @@ impl Interpreter {
         &mut self,
         context: &mut FunctionContext,
         offset: u32,
-    ) -> Result<InstructionOutcome, TrapKind>
+    ) -> Result<InstructionOutcome, TrapCode>
     where
         T: ExtendInto<U>,
         ValueInternal: From<U>,
@@ -795,7 +795,7 @@ impl Interpreter {
             .expect("Due to validation memory should exists");
         let v: T = m
             .get_value(address)
-            .map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
+            .map_err(|_| TrapCode::MemoryAccessOutOfBounds)?;
         let stack_value: U = v.extend_into();
         self.value_stack
             .push(stack_value.into())
@@ -807,7 +807,7 @@ impl Interpreter {
         &mut self,
         context: &mut FunctionContext,
         offset: u32,
-    ) -> Result<InstructionOutcome, TrapKind>
+    ) -> Result<InstructionOutcome, TrapCode>
     where
         T: FromValueInternal,
         T: LittleEndianConvert,
@@ -820,7 +820,7 @@ impl Interpreter {
             .memory()
             .expect("Due to validation memory should exists");
         m.set_value(address, stack_value)
-            .map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
+            .map_err(|_| TrapCode::MemoryAccessOutOfBounds)?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
@@ -828,7 +828,7 @@ impl Interpreter {
         &mut self,
         context: &mut FunctionContext,
         offset: u32,
-    ) -> Result<InstructionOutcome, TrapKind>
+    ) -> Result<InstructionOutcome, TrapCode>
     where
         T: FromValueInternal,
         T: WrapInto<U>,
@@ -842,14 +842,14 @@ impl Interpreter {
             .memory()
             .expect("Due to validation memory should exists");
         m.set_value(address, stack_value)
-            .map_err(|_| TrapKind::MemoryAccessOutOfBounds)?;
+            .map_err(|_| TrapCode::MemoryAccessOutOfBounds)?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
     fn run_current_memory(
         &mut self,
         context: &mut FunctionContext,
-    ) -> Result<InstructionOutcome, TrapKind> {
+    ) -> Result<InstructionOutcome, TrapCode> {
         let m = context
             .memory()
             .expect("Due to validation memory should exists");
@@ -861,7 +861,7 @@ impl Interpreter {
     fn run_grow_memory(
         &mut self,
         context: &mut FunctionContext,
-    ) -> Result<InstructionOutcome, TrapKind> {
+    ) -> Result<InstructionOutcome, TrapCode> {
         let pages: u32 = self.value_stack.pop_as();
         let m = context
             .memory()
@@ -874,14 +874,14 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_const(&mut self, val: Value) -> Result<InstructionOutcome, TrapKind> {
+    fn run_const(&mut self, val: Value) -> Result<InstructionOutcome, TrapCode> {
         self.value_stack
             .push(val.into())
             .map_err(Into::into)
             .map(|_| InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_relop<T, F>(&mut self, f: F) -> Result<InstructionOutcome, TrapKind>
+    fn run_relop<T, F>(&mut self, f: F) -> Result<InstructionOutcome, TrapCode>
     where
         T: FromValueInternal,
         F: FnOnce(T, T) -> bool,
@@ -896,7 +896,7 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_eqz<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_eqz<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         T: FromValueInternal,
         T: PartialEq<T> + Default,
@@ -907,49 +907,49 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_eq<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_eq<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         T: FromValueInternal + PartialEq<T>,
     {
         self.run_relop(|left: T, right: T| left == right)
     }
 
-    fn run_ne<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_ne<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         T: FromValueInternal + PartialEq<T>,
     {
         self.run_relop(|left: T, right: T| left != right)
     }
 
-    fn run_lt<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_lt<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         T: FromValueInternal + PartialOrd<T>,
     {
         self.run_relop(|left: T, right: T| left < right)
     }
 
-    fn run_gt<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_gt<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         T: FromValueInternal + PartialOrd<T>,
     {
         self.run_relop(|left: T, right: T| left > right)
     }
 
-    fn run_lte<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_lte<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         T: FromValueInternal + PartialOrd<T>,
     {
         self.run_relop(|left: T, right: T| left <= right)
     }
 
-    fn run_gte<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_gte<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         T: FromValueInternal + PartialOrd<T>,
     {
         self.run_relop(|left: T, right: T| left >= right)
     }
 
-    fn run_unop<T, U, F>(&mut self, f: F) -> Result<InstructionOutcome, TrapKind>
+    fn run_unop<T, U, F>(&mut self, f: F) -> Result<InstructionOutcome, TrapCode>
     where
         F: FnOnce(T) -> U,
         T: FromValueInternal,
@@ -961,7 +961,7 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_clz<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_clz<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Integer<T> + FromValueInternal,
@@ -969,7 +969,7 @@ impl Interpreter {
         self.run_unop(|v: T| v.leading_zeros())
     }
 
-    fn run_ctz<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_ctz<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Integer<T> + FromValueInternal,
@@ -977,7 +977,7 @@ impl Interpreter {
         self.run_unop(|v: T| v.trailing_zeros())
     }
 
-    fn run_popcnt<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_popcnt<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Integer<T> + FromValueInternal,
@@ -985,7 +985,7 @@ impl Interpreter {
         self.run_unop(|v: T| v.count_ones())
     }
 
-    fn run_add<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_add<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: ArithmeticOps<T> + FromValueInternal,
@@ -996,7 +996,7 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_sub<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_sub<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: ArithmeticOps<T> + FromValueInternal,
@@ -1007,7 +1007,7 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_mul<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_mul<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: ArithmeticOps<T> + FromValueInternal,
@@ -1018,7 +1018,7 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_div<T, U>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_div<T, U>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: TransmuteInto<U> + FromValueInternal,
@@ -1032,7 +1032,7 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_rem<T, U>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_rem<T, U>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: TransmuteInto<U> + FromValueInternal,
@@ -1046,7 +1046,7 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_and<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_and<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<<T as ops::BitAnd>::Output>,
         T: ops::BitAnd<T> + FromValueInternal,
@@ -1057,7 +1057,7 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_or<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_or<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<<T as ops::BitOr>::Output>,
         T: ops::BitOr<T> + FromValueInternal,
@@ -1068,7 +1068,7 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_xor<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_xor<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<<T as ops::BitXor>::Output>,
         T: ops::BitXor<T> + FromValueInternal,
@@ -1079,7 +1079,7 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_shl<T>(&mut self, mask: T) -> Result<InstructionOutcome, TrapKind>
+    fn run_shl<T>(&mut self, mask: T) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<<T as ops::Shl<T>>::Output>,
         T: ops::Shl<T> + ops::BitAnd<T, Output = T> + FromValueInternal,
@@ -1090,7 +1090,7 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_shr<T, U>(&mut self, mask: U) -> Result<InstructionOutcome, TrapKind>
+    fn run_shr<T, U>(&mut self, mask: U) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: TransmuteInto<U> + FromValueInternal,
@@ -1105,7 +1105,7 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_rotl<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_rotl<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Integer<T> + FromValueInternal,
@@ -1116,7 +1116,7 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_rotr<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_rotr<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Integer<T> + FromValueInternal,
@@ -1127,7 +1127,7 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_abs<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_abs<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Float<T> + FromValueInternal,
@@ -1135,7 +1135,7 @@ impl Interpreter {
         self.run_unop(|v: T| v.abs())
     }
 
-    fn run_neg<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_neg<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<<T as ops::Neg>::Output>,
         T: ops::Neg + FromValueInternal,
@@ -1143,7 +1143,7 @@ impl Interpreter {
         self.run_unop(|v: T| v.neg())
     }
 
-    fn run_ceil<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_ceil<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Float<T> + FromValueInternal,
@@ -1151,7 +1151,7 @@ impl Interpreter {
         self.run_unop(|v: T| v.ceil())
     }
 
-    fn run_floor<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_floor<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Float<T> + FromValueInternal,
@@ -1159,7 +1159,7 @@ impl Interpreter {
         self.run_unop(|v: T| v.floor())
     }
 
-    fn run_trunc<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_trunc<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Float<T> + FromValueInternal,
@@ -1167,7 +1167,7 @@ impl Interpreter {
         self.run_unop(|v: T| v.trunc())
     }
 
-    fn run_nearest<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_nearest<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Float<T> + FromValueInternal,
@@ -1175,7 +1175,7 @@ impl Interpreter {
         self.run_unop(|v: T| v.nearest())
     }
 
-    fn run_sqrt<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_sqrt<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Float<T> + FromValueInternal,
@@ -1183,7 +1183,7 @@ impl Interpreter {
         self.run_unop(|v: T| v.sqrt())
     }
 
-    fn run_min<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_min<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Float<T> + FromValueInternal,
@@ -1194,7 +1194,7 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_max<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_max<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Float<T> + FromValueInternal,
@@ -1205,7 +1205,7 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_copysign<T>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_copysign<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Float<T> + FromValueInternal,
@@ -1216,7 +1216,7 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_wrap<T, U>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_wrap<T, U>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<U>,
         T: WrapInto<U> + FromValueInternal,
@@ -1224,10 +1224,10 @@ impl Interpreter {
         self.run_unop(|v: T| v.wrap_into())
     }
 
-    fn run_trunc_to_int<T, U, V>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_trunc_to_int<T, U, V>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<V>,
-        T: TryTruncateInto<U, TrapKind> + FromValueInternal,
+        T: TryTruncateInto<U, TrapCode> + FromValueInternal,
         U: TransmuteInto<V>,
     {
         let v = self.value_stack.pop_as::<T>();
@@ -1238,7 +1238,7 @@ impl Interpreter {
             .map(|_| InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_extend<T, U, V>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_extend<T, U, V>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<V>,
         T: ExtendInto<U> + FromValueInternal,
@@ -1252,7 +1252,7 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_reinterpret<T, U>(&mut self) -> Result<InstructionOutcome, TrapKind>
+    fn run_reinterpret<T, U>(&mut self) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<U>,
         T: FromValueInternal,
@@ -1303,7 +1303,7 @@ impl FunctionContext {
         &mut self,
         locals: &[Local],
         value_stack: &mut ValueStack,
-    ) -> Result<(), TrapKind> {
+    ) -> Result<(), TrapCode> {
         debug_assert!(!self.is_initialized);
 
         let num_locals = locals.iter().map(|l| l.count() as usize).sum();
@@ -1329,9 +1329,9 @@ impl fmt::Debug for FunctionContext {
     }
 }
 
-fn effective_address(address: u32, offset: u32) -> Result<u32, TrapKind> {
+fn effective_address(address: u32, offset: u32) -> Result<u32, TrapCode> {
     match offset.checked_add(address) {
-        None => Err(TrapKind::MemoryAccessOutOfBounds),
+        None => Err(TrapCode::MemoryAccessOutOfBounds),
         Some(address) => Ok(address),
     }
 }
@@ -1355,7 +1355,7 @@ fn prepare_function_args(
 
 pub fn check_function_args(signature: &Signature, args: &[Value]) -> Result<(), Trap> {
     if signature.params().len() != args.len() {
-        return Err(TrapKind::UnexpectedSignature.into());
+        return Err(TrapCode::UnexpectedSignature.into());
     }
 
     if signature
@@ -1364,7 +1364,7 @@ pub fn check_function_args(signature: &Signature, args: &[Value]) -> Result<(), 
         .zip(args.iter().map(|param_value| param_value.value_type()))
         .any(|(expected_type, actual_type)| &actual_type != expected_type)
     {
-        return Err(TrapKind::UnexpectedSignature.into());
+        return Err(TrapCode::UnexpectedSignature.into());
     }
 
     Ok(())
@@ -1446,18 +1446,18 @@ impl ValueStack {
     }
 
     #[inline]
-    fn push(&mut self, value: ValueInternal) -> Result<(), TrapKind> {
-        let cell = self.buf.get_mut(self.sp).ok_or(TrapKind::StackOverflow)?;
+    fn push(&mut self, value: ValueInternal) -> Result<(), TrapCode> {
+        let cell = self.buf.get_mut(self.sp).ok_or(TrapCode::StackOverflow)?;
         *cell = value;
         self.sp += 1;
         Ok(())
     }
 
-    fn extend(&mut self, len: usize) -> Result<(), TrapKind> {
+    fn extend(&mut self, len: usize) -> Result<(), TrapCode> {
         let cells = self
             .buf
             .get_mut(self.sp..self.sp + len)
-            .ok_or(TrapKind::StackOverflow)?;
+            .ok_or(TrapCode::StackOverflow)?;
         for cell in cells {
             *cell = Default::default();
         }

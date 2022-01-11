@@ -3,6 +3,7 @@ use anyhow::Result;
 use wasmi::{
     nan_preserving_float::{F32, F64},
     v1::Error as WasmiError,
+    Trap,
     Value,
 };
 use wast::{
@@ -198,9 +199,9 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
 /// - If the trap message of the `error` is not as expected.
 fn assert_trap(test_context: &TestContext, span: Span, error: TestError, message: &str) {
     match error {
-        TestError::Wasmi(WasmiError::Trap(trap)) => {
+        TestError::Wasmi(WasmiError::Trap(Trap::Code(trap_code))) => {
             assert_eq!(
-                trap.kind().trap_message(),
+                trap_code.trap_message(),
                 message,
                 "{}: the directive trapped as expected but with an unexpected message",
                 test_context.spanned(span),

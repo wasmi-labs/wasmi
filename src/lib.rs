@@ -105,179 +105,21 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std as alloc;
 
+#[cfg(not(feature = "std"))]
+extern crate libm;
+
 use alloc::{
     boxed::Box,
     string::{String, ToString},
     vec::Vec,
 };
-use core::fmt::{self, Display};
+use core::fmt;
 #[cfg(feature = "std")]
 use std::error;
-
-#[cfg(not(feature = "std"))]
-extern crate libm;
 
 #[doc(inline)]
 #[deprecated(note = "use `Value` instead")]
 pub use self::value::Value as RuntimeValue;
-
-/// Error type which can be thrown by wasm code or by host environment.
-///
-/// Under some conditions, wasm execution may produce a `Trap`, which immediately aborts execution.
-/// Traps can't be handled by WebAssembly code, but are reported to the embedder.
-#[derive(Debug)]
-pub struct Trap {
-    kind: TrapKind,
-}
-
-impl Trap {
-    /// Create new trap.
-    pub fn new(kind: TrapKind) -> Trap {
-        Trap { kind }
-    }
-
-    /// Returns kind of this trap.
-    pub fn kind(&self) -> &TrapKind {
-        &self.kind
-    }
-
-    /// Converts into kind of this trap.
-    pub fn into_kind(self) -> TrapKind {
-        self.kind
-    }
-}
-
-impl fmt::Display for Trap {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.kind())
-    }
-}
-
-#[cfg(feature = "std")]
-impl error::Error for Trap {
-    fn description(&self) -> &str {
-        self.kind().trap_message()
-    }
-}
-
-/// Error type which can be thrown by wasm code or by host environment.
-///
-/// See [`Trap`] for details.
-///
-/// [`Trap`]: struct.Trap.html
-#[derive(Debug)]
-pub enum TrapKind {
-    /// Wasm code executed `unreachable` opcode.
-    ///
-    /// `unreachable` is a special opcode which always traps upon execution.
-    /// This opcode have a similar purpose as `ud2` in x86.
-    Unreachable,
-
-    /// Attempt to load or store at the address which
-    /// lies outside of bounds of the memory.
-    ///
-    /// Since addresses are interpreted as unsigned integers, out of bounds access
-    /// can't happen with negative addresses (i.e. they will always wrap).
-    MemoryAccessOutOfBounds,
-
-    /// Attempt to access table element at index which
-    /// lies outside of bounds.
-    ///
-    /// This typically can happen when `call_indirect` is executed
-    /// with index that lies out of bounds.
-    ///
-    /// Since indexes are interpreted as unsinged integers, out of bounds access
-    /// can't happen with negative indexes (i.e. they will always wrap).
-    TableAccessOutOfBounds,
-
-    /// Attempt to access table element which is uninitialized (i.e. `None`).
-    ///
-    /// This typically can happen when `call_indirect` is executed.
-    ElemUninitialized,
-
-    /// Attempt to divide by zero.
-    ///
-    /// This trap typically can happen if `div` or `rem` is executed with
-    /// zero as divider.
-    DivisionByZero,
-
-    /// An integer arithmetic operation caused an overflow.
-    ///
-    /// This can happen when:
-    ///
-    /// - Trying to do signed division (or get the remainder) -2<sup>N-1</sup> over -1. This is
-    ///   because the result +2<sup>N-1</sup> isn't representable as a N-bit signed integer.
-    IntegerOverflow,
-
-    /// Attempt to make a conversion to an int failed.
-    ///
-    /// This can happen when:
-    ///
-    /// - Trying to truncate NaNs, infinity, or value for which the result is out of range into an integer.
-    InvalidConversionToInt,
-
-    /// Stack overflow.
-    ///
-    /// This is likely caused by some infinite or very deep recursion.
-    /// Extensive inlining might also be the cause of stack overflow.
-    StackOverflow,
-
-    /// Attempt to invoke a function with mismatching signature.
-    ///
-    /// This can happen if [`FuncInstance`] was invoked
-    /// with mismatching [signature][`Signature`].
-    ///
-    /// This can always happen with indirect calls. `call_indirect` instruction always
-    /// specifies the expected signature of function. If `call_indirect` is executed
-    /// with index that points on function with signature different that is
-    /// expected by this `call_indirect`, this trap is raised.
-    ///
-    /// [`Signature`]: struct.Signature.html
-    UnexpectedSignature,
-
-    /// Error specified by the host.
-    ///
-    /// Typically returned from an implementation of [`Externals`].
-    ///
-    /// [`Externals`]: trait.Externals.html
-    Host(Box<dyn host::HostError>),
-}
-
-impl TrapKind {
-    /// Whether this trap is specified by the host.
-    pub fn is_host(&self) -> bool {
-        matches!(self, TrapKind::Host(_))
-    }
-
-    /// Returns the trap message as specified by the WebAssembly specification.
-    ///
-    /// # Note
-    ///
-    /// This API is primarily useful for the Wasm spec testsuite but might have
-    /// other uses since it avoid heap memory allocation in certain cases.
-    pub fn trap_message(&self) -> &'static str {
-        match self {
-            TrapKind::Unreachable => "unreachable",
-            TrapKind::MemoryAccessOutOfBounds => "out of bounds memory access",
-            TrapKind::TableAccessOutOfBounds => "undefined element",
-            TrapKind::ElemUninitialized => "uninitialized element",
-            TrapKind::DivisionByZero => "integer divide by zero",
-            TrapKind::IntegerOverflow => "integer overflow",
-            TrapKind::InvalidConversionToInt => "invalid conversion to integer",
-            TrapKind::StackOverflow => "call stack exhausted",
-            TrapKind::UnexpectedSignature => "indirect call type mismatch",
-
-            // Note: The below trap message is not further specified by the Wasm spec.
-            TrapKind::Host(_) => "host trap",
-        }
-    }
-}
-
-impl Display for TrapKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.trap_message())
-    }
-}
 
 /// Internal interpreter error.
 #[derive(Debug)]
@@ -314,10 +156,8 @@ impl Error {
     /// [`TrapKind::Host`]: enum.TrapKind.html#variant.Host
     pub fn as_host_error(&self) -> Option<&dyn host::HostError> {
         match self {
-            Error::Host(host_err) => Some(&**host_err),
-            Error::Trap(Trap {
-                kind: TrapKind::Host(host_err),
-            }) => Some(&**host_err),
+            Self::Host(host_error) => Some(&**host_error),
+            Self::Trap(Trap::Host(host_error)) => Some(&**host_error),
             _ => None,
         }
     }
@@ -332,10 +172,8 @@ impl Error {
     /// [`TrapKind::Host`]: enum.TrapKind.html#variant.Host
     pub fn into_host_error(self) -> Option<Box<dyn host::HostError>> {
         match self {
-            Error::Host(host_err) => Some(host_err),
-            Error::Trap(Trap {
-                kind: TrapKind::Host(host_err),
-            }) => Some(host_err),
+            Error::Host(host_error) => Some(host_error),
+            Self::Trap(Trap::Host(host_error)) => Some(host_error),
             _ => None,
         }
     }
@@ -350,10 +188,8 @@ impl Error {
     /// [`TrapKind::Host`]: enum.TrapKind.html#variant.Host
     pub fn try_into_host_error(self) -> Result<Box<dyn host::HostError>, Self> {
         match self {
-            Error::Host(host_err) => Ok(host_err),
-            Error::Trap(Trap {
-                kind: TrapKind::Host(host_err),
-            }) => Ok(host_err),
+            Error::Host(host_error) => Ok(host_error),
+            Self::Trap(Trap::Host(host_error)) => Ok(host_error),
             other => Err(other),
         }
     }
@@ -418,24 +254,9 @@ where
     }
 }
 
-impl<U> From<U> for Trap
-where
-    U: host::HostError + Sized,
-{
-    fn from(e: U) -> Self {
-        Trap::new(TrapKind::Host(Box::new(e)))
-    }
-}
-
 impl From<Trap> for Error {
     fn from(e: Trap) -> Error {
         Error::Trap(e)
-    }
-}
-
-impl From<TrapKind> for Trap {
-    fn from(e: TrapKind) -> Trap {
-        Trap::new(e)
     }
 }
 
@@ -456,6 +277,7 @@ pub mod nan_preserving_float;
 mod prepare;
 mod runner;
 mod table;
+mod trap;
 mod types;
 pub mod v1;
 mod value;
@@ -472,6 +294,7 @@ pub use self::{
     module::{ExternVal, ModuleInstance, ModuleRef, NotStartedModuleRef},
     runner::{StackRecycler, DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT},
     table::{TableInstance, TableRef},
+    trap::{Trap, TrapCode},
     types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor, ValueType},
     value::{FromValue, LittleEndianConvert, Value},
 };

@@ -14,7 +14,7 @@ use super::{
     ResolvedFuncBody,
     ValueStack,
 };
-use crate::{Trap, DEFAULT_CALL_STACK_LIMIT};
+use crate::{TrapCode, DEFAULT_CALL_STACK_LIMIT};
 use alloc::vec::Vec;
 use core::{fmt, fmt::Display};
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
@@ -181,7 +181,7 @@ impl FunctionFrame {
         &mut self,
         resolved_func_body: ResolvedFuncBody,
         value_stack: &mut ValueStack,
-    ) -> Result<(), Trap> {
+    ) -> Result<(), TrapCode> {
         if self.instantiated {
             // Nothing to do if the function frame has already been initialized.
             return Ok(());
