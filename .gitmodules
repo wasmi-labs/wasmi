@@ -5,3 +5,6 @@
 [submodule "tests/spec/testsuite-v1"]
 	path = tests/spec/testsuite-v1
 	url = https://github.com/WebAssembly/testsuite.git
+[submodule "benches/wasm_kernel"]
+	path = benches/wasm/wasm_kernel
+	url = https://github.com/robbepop/wasm_kernel.git

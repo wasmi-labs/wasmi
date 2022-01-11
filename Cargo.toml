@@ -28,6 +28,7 @@ rand = "0.4.2"
 wabt = "0.9"
 wast = "39.0"
 anyhow = "1.0"
+criterion = "0.3.5"
 
 [features]
 default = ["std"]
@@ -56,4 +57,13 @@ reduced-stack-buffer = [ "parity-wasm/reduced-stack-buffer" ]
 
 [workspace]
 members = ["validation"]
-exclude = ["benches"]
+exclude = []
+
+[[bench]]
+name = "benches"
+harness = false
+
+[profile.bench]
+debug = true
+lto = "fat"
+codegen-units = 1
