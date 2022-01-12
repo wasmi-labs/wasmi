@@ -610,7 +610,7 @@ mod tests {
 
     #[test]
     fn ensure_page_size() {
-        use memory_units::ByteSize;
+        use crate::memory_units::ByteSize;
         assert_eq!(LINEAR_MEMORY_PAGE_SIZE, Pages::BYTE_SIZE);
     }
 

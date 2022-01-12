@@ -15,7 +15,6 @@ exclude = [ "/res/*", "/tests/*", "/fuzz/*", "/benches/*" ]
 wasmi_core = { version = "0.1", path = "core", default-features = false }
 validation = { package = "wasmi-validation", version = "0.4", path = "validation", default-features = false }
 parity-wasm = { version = "0.42.0", default-features = false }
-memory_units = "0.4.0"
 libm = "0.2.1"
 num-rational = { version = "0.4", default-features = false, features = ["num-bigint"] }
 num-traits = { version = "0.2.8", default-features = false }

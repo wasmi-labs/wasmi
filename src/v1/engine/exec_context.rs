@@ -15,6 +15,7 @@ use super::{
     VisitInstruction,
 };
 use crate::{
+    memory_units::Pages,
     nan_preserving_float::{F32, F64},
     value::{
         ArithmeticOps,
@@ -29,7 +30,6 @@ use crate::{
     TrapCode,
 };
 use core::ops::{BitAnd, BitOr, BitXor, Neg, Shl, Shr};
-use memory_units::wasm32::Pages;
 
 /// State that is used during Wasm function execution.
 #[derive(Debug)]
