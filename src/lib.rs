@@ -273,7 +273,6 @@ mod imports;
 mod isa;
 mod memory;
 mod module;
-pub mod nan_preserving_float;
 mod prepare;
 mod runner;
 mod table;
@@ -298,6 +297,7 @@ pub use self::{
     types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor, ValueType},
     value::{FromValue, LittleEndianConvert, Value},
 };
+pub use wasmi_core::nan_preserving_float;
 
 /// WebAssembly-specific sizes and units.
 pub mod memory_units {

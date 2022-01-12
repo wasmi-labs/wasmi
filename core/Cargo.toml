@@ -1,19 +1,16 @@
 [package]
-name = "wasmi"
-version = "0.11.0"
+name = "wasmi_core"
+version = "0.1.0"
 edition = "2021"
-authors = ["Parity Technologies <admin@parity.io>", "Nikolay Volf <nikvolf@gmail.com>", "Svyatoslav Nikolsky <svyatonik@yandex.ru>", "Sergey Pepyakin <s.pepyakin@gmail.com>"]
+authors = ["Parity Technologies <admin@parity.io>"]
 license = "MIT/Apache-2.0"
-readme = "README.md"
+readme = "../README.md"
 repository = "https://github.com/paritytech/wasmi"
 documentation = "https://paritytech.github.io/wasmi/"
 description = "WebAssembly interpreter"
 keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
-exclude = [ "/res/*", "/tests/*", "/fuzz/*", "/benches/*" ]
 
 [dependencies]
-wasmi_core = { version = "0.1", path = "core", default-features = false }
-validation = { package = "wasmi-validation", version = "0.4", path = "validation", default-features = false }
 parity-wasm = { version = "0.42.0", default-features = false }
 memory_units = "0.4.0"
 libm = "0.2.1"
@@ -21,27 +18,19 @@ num-rational = { version = "0.4", default-features = false, features = ["num-big
 num-traits = { version = "0.2.8", default-features = false }
 region = { version = "3.0", optional = true }
 downcast-rs = { version = "1.2", default-features = false }
-spin = { version = "0.9", default-features = false, features = ["mutex", "spin_mutex"] }
 
 [dev-dependencies]
-assert_matches = "1.5"
 rand = "0.8.2"
-wabt = "0.9"
-wast = "39.0"
-anyhow = "1.0"
-criterion = "0.3.5"
 
 [features]
 default = ["std"]
 # Use `no-default-features` for a `no_std` build.
 std = [
     "parity-wasm/std",
-    "validation/std",
     "num-rational/std",
     "num-rational/num-bigint-std",
     "num-traits/std",
     "downcast-rs/std",
-    "spin/std",
 ]
 # Enables OS supported virtual memory.
 #
@@ -53,18 +42,3 @@ std = [
 # - The default is to fall back is an inefficient vector based implementation.
 # - By nature this feature requires `region` and the Rust standard library.
 virtual_memory = ["region", "std"]
-
-reduced-stack-buffer = [ "parity-wasm/reduced-stack-buffer" ]
-
-[workspace]
-members = ["validation"]
-exclude = []
-
-[[bench]]
-name = "benches"
-harness = false
-
-[profile.bench]
-debug = true
-lto = "fat"
-codegen-units = 1
