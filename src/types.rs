@@ -1,12 +1,6 @@
+use crate::ValueType;
 use alloc::borrow::Cow;
-use core::{fmt, fmt::Display};
-use parity_wasm::elements::{
-    FunctionType,
-    GlobalType,
-    MemoryType,
-    TableType,
-    ValueType as EValueType,
-};
+use parity_wasm::elements::{FunctionType, GlobalType, MemoryType, TableType};
 
 /// Signature of a [function].
 ///
@@ -73,54 +67,6 @@ impl Signature {
                 .results()
                 .first()
                 .map(|vty| ValueType::from_elements(*vty)),
-        }
-    }
-}
-
-/// Type of a value.
-///
-/// See [`Value`] for details.
-///
-/// [`Value`]: enum.Value.html
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum ValueType {
-    /// 32-bit signed or unsigned integer.
-    I32,
-    /// 64-bit signed or unsigned integer.
-    I64,
-    /// 32-bit IEEE 754-2008 floating point number.
-    F32,
-    /// 64-bit IEEE 754-2008 floating point number.
-    F64,
-}
-
-impl Display for ValueType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::I32 => write!(f, "i32"),
-            Self::I64 => write!(f, "i64"),
-            Self::F32 => write!(f, "f32"),
-            Self::F64 => write!(f, "f64"),
-        }
-    }
-}
-
-impl ValueType {
-    pub(crate) fn from_elements(value_type: EValueType) -> ValueType {
-        match value_type {
-            EValueType::I32 => ValueType::I32,
-            EValueType::I64 => ValueType::I64,
-            EValueType::F32 => ValueType::F32,
-            EValueType::F64 => ValueType::F64,
-        }
-    }
-
-    pub(crate) fn into_elements(self) -> EValueType {
-        match self {
-            ValueType::I32 => EValueType::I32,
-            ValueType::I64 => EValueType::I64,
-            ValueType::F32 => EValueType::F32,
-            ValueType::F64 => EValueType::F64,
         }
     }
 }

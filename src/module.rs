@@ -846,7 +846,8 @@ mod tests {
         func::FuncInstance,
         imports::ImportsBuilder,
         tests::parse_wat,
-        types::{Signature, ValueType},
+        types::Signature,
+        ValueType,
     };
 
     #[should_panic]

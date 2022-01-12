@@ -104,16 +104,16 @@ macro_rules! impl_into_func {
 for_each_function_signature!(impl_into_func);
 
 pub trait WriteOutputs {
-    fn write_outputs(self, outputs: &mut [Value]) -> Result<(), Trap>;
+    fn write_outputs(self, outputs: &mut [Value]) -> Result<(), TrapCode>;
 }
 
 impl<T1> WriteOutputs for T1
 where
-    T1: Into<Value>,
+    T1: WasmType,
 {
-    fn write_outputs(self, outputs: &mut [Value]) -> Result<(), Trap> {
+    fn write_outputs(self, outputs: &mut [Value]) -> Result<(), TrapCode> {
         if outputs.len() != 1 {
-            return Err(Trap::from(TrapCode::UnexpectedSignature));
+            return Err(TrapCode::UnexpectedSignature);
         }
         outputs[0] = self.into();
         Ok(())
@@ -126,13 +126,13 @@ macro_rules! impl_write_outputs {
         impl<$($args),*> WriteOutputs for ($($args,)*)
         where
             $(
-                $args: Into<Value>
+                $args: WasmType
             ),*
         {
             #[allow(unused_mut, unused_variables)]
-            fn write_outputs(self, outputs: &mut [Value]) -> Result<(), Trap> {
+            fn write_outputs(self, outputs: &mut [Value]) -> Result<(), TrapCode> {
                 if outputs.len() != $n {
-                    return Err(Trap::from(TrapCode::UnexpectedSignature));
+                    return Err(TrapCode::UnexpectedSignature);
                 }
                 let ($($args,)*) = self;
                 let mut i = 0;
@@ -147,18 +147,18 @@ macro_rules! impl_write_outputs {
 for_each_function_signature!(impl_write_outputs);
 
 pub trait ReadInputs: Sized {
-    fn read_inputs(inputs: &[Value]) -> Result<Self, Trap>;
+    fn read_inputs(inputs: &[Value]) -> Result<Self, TrapCode>;
 }
 
 impl<T1> ReadInputs for T1
 where
-    T1: FromValue,
+    T1: WasmType,
 {
-    fn read_inputs(inputs: &[Value]) -> Result<Self, Trap> {
+    fn read_inputs(inputs: &[Value]) -> Result<Self, TrapCode> {
         if inputs.len() != 1 {
-            return Err(Trap::from(TrapCode::UnexpectedSignature));
+            return Err(TrapCode::UnexpectedSignature);
         }
-        Value::try_into::<T1>(inputs[0]).ok_or_else(|| Trap::from(TrapCode::UnexpectedSignature))
+        Value::try_into::<T1>(inputs[0]).ok_or(TrapCode::UnexpectedSignature)
     }
 }
 
@@ -167,13 +167,13 @@ macro_rules! impl_read_inputs {
         impl<$($args),*> ReadInputs for ($($args,)*)
         where
             $(
-                $args: FromValue
+                $args: WasmType
             ),*
         {
             #[allow(unused_mut, unused_variables)]
-            fn read_inputs(inputs: &[Value]) -> Result<Self, Trap> {
+            fn read_inputs(inputs: &[Value]) -> Result<Self, TrapCode> {
                 if inputs.len() != $n {
-                    return Err(Trap::from(TrapCode::UnexpectedSignature))
+                    return Err(TrapCode::UnexpectedSignature)
                 }
                 let mut inputs = inputs.iter();
                 Ok((
@@ -183,7 +183,7 @@ macro_rules! impl_read_inputs {
                             .copied()
                             .map(Value::try_into::<$args>)
                             .flatten()
-                            .ok_or(Trap::from(TrapCode::UnexpectedSignature))?,
+                            .ok_or(TrapCode::UnexpectedSignature)?,
                     )*
                 ))
             }

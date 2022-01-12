@@ -6,7 +6,7 @@ mod byte_buffer;
 #[path = "buffer_vec.rs"]
 mod byte_buffer;
 
-use self::byte_buffer::{ByteBuffer, VmemError};
+use self::byte_buffer::{ByteBuffer, VirtualMemoryError};
 use super::{AsContext, AsContextMut, Index, StoreContext, StoreContextMut, Stored};
 use crate::memory_units::{Bytes, Pages};
 use core::{fmt, fmt::Display};
@@ -37,7 +37,7 @@ pub enum MemoryError {
     /// Tried to access linear memory out of bounds.
     OutOfBoundsAccess,
     /// A generic virtual memory error.
-    Vmem(byte_buffer::VmemError),
+    Vmem(byte_buffer::VirtualMemoryError),
     /// Occurs when a memory type does not satisfy the constraints of another.
     UnsatisfyingMemoryType {
         /// The unsatisfying [`MemoryType`].
@@ -74,8 +74,8 @@ impl Display for MemoryError {
     }
 }
 
-impl From<VmemError> for MemoryError {
-    fn from(error: VmemError) -> Self {
+impl From<VirtualMemoryError> for MemoryError {
+    fn from(error: VirtualMemoryError) -> Self {
         Self::Vmem(error)
     }
 }

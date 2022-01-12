@@ -105,9 +105,6 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std as alloc;
 
-#[cfg(not(feature = "std"))]
-extern crate libm;
-
 use alloc::{
     boxed::Box,
     string::{String, ToString},
@@ -119,7 +116,7 @@ use std::error;
 
 #[doc(inline)]
 #[deprecated(note = "use `Value` instead")]
-pub use self::value::Value as RuntimeValue;
+pub use wasmi_core::Value as RuntimeValue;
 
 /// Internal interpreter error.
 #[derive(Debug)]
@@ -142,10 +139,18 @@ pub enum Error {
     /// Trap.
     Trap(Trap),
     /// Custom embedder error.
-    Host(Box<dyn host::HostError>),
+    Host(Box<dyn HostError>),
 }
 
 impl Error {
+    /// Creates a new host error.
+    pub fn host<T>(host_error: T) -> Self
+    where
+        T: HostError + Sized,
+    {
+        Self::Host(Box::new(host_error))
+    }
+
     /// Returns a reference to a [`HostError`] if this `Error` represents some host error.
     ///
     /// I.e. if this error have variant [`Host`] or [`Trap`][`Trap`] with [host][`TrapKind::Host`] error.
@@ -154,7 +159,7 @@ impl Error {
     /// [`Host`]: enum.Error.html#variant.Host
     /// [`Trap`]: enum.Error.html#variant.Trap
     /// [`TrapKind::Host`]: enum.TrapKind.html#variant.Host
-    pub fn as_host_error(&self) -> Option<&dyn host::HostError> {
+    pub fn as_host_error(&self) -> Option<&dyn HostError> {
         match self {
             Self::Host(host_error) => Some(&**host_error),
             Self::Trap(Trap::Host(host_error)) => Some(&**host_error),
@@ -170,7 +175,7 @@ impl Error {
     /// [`Host`]: enum.Error.html#variant.Host
     /// [`Trap`]: enum.Error.html#variant.Trap
     /// [`TrapKind::Host`]: enum.TrapKind.html#variant.Host
-    pub fn into_host_error(self) -> Option<Box<dyn host::HostError>> {
+    pub fn into_host_error(self) -> Option<Box<dyn HostError>> {
         match self {
             Error::Host(host_error) => Some(host_error),
             Self::Trap(Trap::Host(host_error)) => Some(host_error),
@@ -186,7 +191,7 @@ impl Error {
     /// [`Host`]: enum.Error.html#variant.Host
     /// [`Trap`]: enum.Error.html#variant.Trap
     /// [`TrapKind::Host`]: enum.TrapKind.html#variant.Host
-    pub fn try_into_host_error(self) -> Result<Box<dyn host::HostError>, Self> {
+    pub fn try_into_host_error(self) -> Result<Box<dyn HostError>, Self> {
         match self {
             Error::Host(host_error) => Ok(host_error),
             Self::Trap(Trap::Host(host_error)) => Ok(host_error),
@@ -245,15 +250,6 @@ impl error::Error for Error {
     }
 }
 
-impl<U> From<U> for Error
-where
-    U: host::HostError + Sized,
-{
-    fn from(e: U) -> Self {
-        Error::Host(Box::new(e))
-    }
-}
-
 impl From<Trap> for Error {
     fn from(e: Trap) -> Error {
         Error::Trap(e)
@@ -273,14 +269,11 @@ mod imports;
 mod isa;
 mod memory;
 mod module;
-pub mod nan_preserving_float;
 mod prepare;
 mod runner;
 mod table;
-mod trap;
 mod types;
 pub mod v1;
-mod value;
 
 #[cfg(test)]
 mod tests;
@@ -288,20 +281,45 @@ mod tests;
 pub use self::{
     func::{FuncInstance, FuncInvocation, FuncRef, ResumableError},
     global::{GlobalInstance, GlobalRef},
-    host::{Externals, HostError, NopExternals, RuntimeArgs},
+    host::{Externals, NopExternals, RuntimeArgs},
     imports::{ImportResolver, ImportsBuilder, ModuleImportResolver},
     memory::{MemoryInstance, MemoryRef, LINEAR_MEMORY_PAGE_SIZE},
     module::{ExternVal, ModuleInstance, ModuleRef, NotStartedModuleRef},
     runner::{StackRecycler, DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT},
     table::{TableInstance, TableRef},
-    trap::{Trap, TrapCode},
-    types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor, ValueType},
-    value::{FromValue, LittleEndianConvert, Value},
+    types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor},
+};
+pub use wasmi_core::{
+    memory_units,
+    FromValue,
+    HostError,
+    LittleEndianConvert,
+    Trap,
+    TrapCode,
+    Value,
+    ValueType,
 };
 
-/// WebAssembly-specific sizes and units.
-pub mod memory_units {
-    pub use memory_units::{size_of, wasm32::*, ByteSize, Bytes, RoundUpTo};
+/// Mirrors the old value module.
+pub mod value {
+    pub use wasmi_core::{
+        ArithmeticOps,
+        ExtendInto,
+        Float,
+        FromValue,
+        Integer,
+        LittleEndianConvert,
+        TransmuteInto,
+        TryTruncateInto,
+        Value,
+        ValueType,
+        WrapInto,
+    };
+}
+
+/// Floating point types that preserve NaN values.
+pub mod nan_preserving_float {
+    pub use wasmi_core::{F32, F64};
 }
 
 /// Deserialized module prepared for instantiation.

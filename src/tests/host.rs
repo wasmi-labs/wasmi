@@ -4,7 +4,6 @@ extern crate std;
 use super::parse_wat;
 use crate::{
     memory_units::Pages,
-    types::ValueType,
     Error,
     Externals,
     FuncInstance,
@@ -26,6 +25,7 @@ use crate::{
     Trap,
     TrapCode,
     Value,
+    ValueType,
 };
 use std::println;
 

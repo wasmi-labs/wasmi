@@ -1,4 +1,4 @@
-use crate::{types::ValueType, value::Value, Error};
+use crate::{value::Value, Error, ValueType};
 use alloc::rc::Rc;
 use core::cell::Cell;
 use parity_wasm::elements::ValueType as EValueType;
