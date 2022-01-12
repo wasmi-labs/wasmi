@@ -1,4 +1,4 @@
-use crate::host::HostError;
+use wasmi_core::HostError;
 use alloc::boxed::Box;
 use core::fmt::{self, Display};
 

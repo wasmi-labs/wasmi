@@ -4,8 +4,6 @@ use crate::{
     TrapCode,
 };
 
-use downcast_rs::{impl_downcast, DowncastSync};
-
 /// Wrapper around slice of [`Value`] for using it
 /// as an argument list conveniently.
 ///
@@ -73,62 +71,6 @@ impl<'a> RuntimeArgs<'a> {
         self.0.len()
     }
 }
-
-/// Trait that allows the host to return custom error.
-///
-/// It should be useful for representing custom traps,
-/// troubles at instantiation time or other host specific conditions.
-///
-/// Types that implement this trait can automatically be converted to `wasmi::Error` and `wasmi::Trap`
-/// and will be represented as a boxed `HostError`. You can then use the various methods on `wasmi::Error`
-/// to get your custom error type back
-///
-/// # Examples
-///
-/// ```rust
-/// use std::fmt;
-/// use wasmi::{Error, HostError};
-///
-/// #[derive(Debug)]
-/// struct MyError {
-///     code: u32,
-/// }
-///
-/// impl fmt::Display for MyError {
-///     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-///         write!(f, "MyError, code={}", self.code)
-///     }
-/// }
-///
-/// impl HostError for MyError { }
-///
-/// fn failable_fn() -> Result<(), Error> {
-///     let my_error = MyError { code: 1312 };
-///     // Note how you can just convert your errors to `wasmi::Error`
-///     Err(my_error.into())
-/// }
-///
-/// // Get a reference to the concrete error
-/// match failable_fn() {
-///     Err(Error::Host(host_error)) => {
-///         let my_error: &MyError = host_error.downcast_ref::<MyError>().unwrap();
-///         assert_eq!(my_error.code, 1312);
-///     }
-///     _ => panic!(),
-/// }
-///
-/// // get the concrete error itself
-/// match failable_fn() {
-///     Err(err) => {
-///         let my_error: Box<MyError> = err.try_into_host_error().unwrap().downcast::<MyError>().unwrap();
-///         assert_eq!(my_error.code, 1312);
-///     }
-///     _ => panic!(),
-/// }
-///
-/// ```
-pub trait HostError: 'static + ::core::fmt::Display + ::core::fmt::Debug + DowncastSync {}
-impl_downcast!(HostError);
 
 /// Trait that allows to implement host functions.
 ///
@@ -226,9 +168,9 @@ impl Externals for NopExternals {
 
 #[cfg(test)]
 mod tests {
-
-    use super::{HostError, RuntimeArgs};
+    use super::RuntimeArgs;
     use crate::value::Value;
+    use wasmi_core::HostError;
 
     #[test]
     fn i32_runtime_args() {
