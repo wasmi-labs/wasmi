@@ -292,7 +292,16 @@ pub use self::{
     table::{TableInstance, TableRef},
     types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor},
 };
-pub use wasmi_core::{FromValue, HostError, LittleEndianConvert, Trap, TrapCode, Value, ValueType};
+pub use wasmi_core::{
+    memory_units,
+    FromValue,
+    HostError,
+    LittleEndianConvert,
+    Trap,
+    TrapCode,
+    Value,
+    ValueType,
+};
 
 /// Mirrors the old value module.
 pub mod value {
@@ -314,11 +323,6 @@ pub mod value {
 /// Floating point types that preserve NaN values.
 pub mod nan_preserving_float {
     pub use wasmi_core::{F32, F64};
-}
-
-/// WebAssembly-specific sizes and units.
-pub mod memory_units {
-    pub use memory_units::{size_of, wasm32::*, ByteSize, Bytes, RoundUpTo};
 }
 
 /// Deserialized module prepared for instantiation.
