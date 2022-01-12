@@ -275,7 +275,6 @@ mod module;
 mod prepare;
 mod runner;
 mod table;
-mod trap;
 mod types;
 pub mod v1;
 mod value;
@@ -292,11 +291,10 @@ pub use self::{
     module::{ExternVal, ModuleInstance, ModuleRef, NotStartedModuleRef},
     runner::{StackRecycler, DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT},
     table::{TableInstance, TableRef},
-    trap::{Trap, TrapCode},
     types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor, ValueType},
     value::{FromValue, LittleEndianConvert, Value},
 };
-pub use wasmi_core::HostError;
+pub use wasmi_core::{Trap, TrapCode, HostError};
 
 /// Floating point types that preserve NaN values.
 pub mod nan_preserving_float {
