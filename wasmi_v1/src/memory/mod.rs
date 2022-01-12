@@ -8,9 +8,9 @@ mod byte_buffer;
 
 use self::byte_buffer::{ByteBuffer, VirtualMemoryError};
 use super::{AsContext, AsContextMut, Index, StoreContext, StoreContextMut, Stored};
-use wasmi_core::memory_units::{Bytes, Pages};
 use core::{fmt, fmt::Display};
 use parity_wasm::elements as pwasm;
+use wasmi_core::memory_units::{Bytes, Pages};
 
 /// A raw index to a linear memory entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

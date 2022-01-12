@@ -1,11 +1,7 @@
 use super::{super::SignatureEntity, Caller, HostFuncTrampoline, Value, ValueType};
-use crate::{
-    F32, F64,
-    Trap,
-    TrapCode,
-};
-use wasmi_core::FromValue;
+use crate::{Trap, TrapCode, F32, F64};
 use alloc::sync::Arc;
+use wasmi_core::FromValue;
 
 pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {
     #[doc(hidden)]

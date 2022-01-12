@@ -20,12 +20,7 @@ use self::{
     value_stack::{FromStackEntry, StackEntry, ValueStack},
 };
 use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func, Signature};
-use crate::{
-    Trap,
-    TrapCode,
-    Value,
-    ValueType,
-};
+use crate::{Trap, TrapCode, Value, ValueType};
 use alloc::{sync::Arc, vec::Vec};
 use spin::mutex::Mutex;
 
