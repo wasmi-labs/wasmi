@@ -47,7 +47,7 @@ virtual_memory = ["wasmi_core/virtual_memory", "std"]
 reduced-stack-buffer = [ "parity-wasm/reduced-stack-buffer" ]
 
 [workspace]
-members = ["validation"]
+members = ["validation", "core"]
 exclude = []
 
 [[bench]]
