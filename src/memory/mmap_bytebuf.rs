@@ -5,60 +5,7 @@
 //! memory up to maximum. This might be a problem for systems that don't have a lot of virtual
 //! memory (i.e. 32-bit platforms).
 
-use core::slice;
-use region::{Allocation, Protection};
-
-/// A virtual memory buffer.
-struct VirtualMemory {
-    /// The virtual memory allocation.
-    allocation: Allocation,
-}
-
-impl VirtualMemory {
-    /// Create a new virtual memory allocation.
-    ///
-    /// # Note
-    ///
-    /// The allocated virtual memory allows for read and write operations.
-    ///
-    /// # Errors
-    ///
-    /// - If `len` should not exceed `isize::max_value()`
-    /// - If `len` should be greater than 0.
-    /// - If the operating system returns an error upon virtual memory allocation.
-    pub fn new(len: usize) -> Result<Self, String> {
-        if len > isize::max_value() as usize {
-            return Err("`len` should not exceed `isize::max_value()`".into());
-        }
-        if len == 0 {
-            return Err("`len` should be greater than 0".into());
-        }
-        let allocation =
-            region::alloc(len, Protection::READ_WRITE).map_err(|error| error.to_string())?;
-        Ok(Self { allocation })
-    }
-
-    /// Returns a shared slice over the bytes of the virtual memory allocation.
-    pub fn as_slice(&self) -> &[u8] {
-        // # SAFETY
-        //
-        // The operation is safe since we assume that the virtual memory allocation
-        // has been successful and allocated exactly `self.allocation.len()` bytes.
-        // Therefore creating a slice with `self.len` elements is valid.
-        // Aliasing guarantees are not violated since `self` is the only owner
-        // of the underlying virtual memory allocation.
-        unsafe { slice::from_raw_parts(self.allocation.as_ptr(), self.allocation.len()) }
-    }
-
-    /// Returns an exclusive slice over the bytes of the virtual memory allocation.
-    pub fn as_slice_mut(&mut self) -> &mut [u8] {
-        // # SAFETY
-        //
-        // See safety proof of the `as_slice` method.
-        // Additionally, it is not possible to obtain two mutable references for the same memory area.
-        unsafe { slice::from_raw_parts_mut(self.allocation.as_mut_ptr(), self.allocation.len()) }
-    }
-}
+use wasmi_core::VirtualMemory;
 
 /// A virtually allocated byte buffer.
 pub struct ByteBuf {
@@ -83,7 +30,7 @@ impl ByteBuf {
         if len > isize::max_value() as usize {
             return Err("`len` should not exceed `isize::max_value()`".into());
         }
-        let mem = VirtualMemory::new(Self::ALLOCATION_SIZE)?;
+        let mem = VirtualMemory::new(Self::ALLOCATION_SIZE).map_err(|error| error.to_string())?;
         Ok(Self { mem, len })
     }
 
@@ -112,12 +59,12 @@ impl ByteBuf {
 
     /// Returns a shared slice over the bytes of the virtual memory allocation.
     pub fn as_slice(&self) -> &[u8] {
-        &self.mem.as_slice()[..self.len]
+        &self.mem.data()[..self.len]
     }
 
     /// Returns an exclusive slice over the bytes of the virtual memory allocation.
     pub fn as_slice_mut(&mut self) -> &mut [u8] {
-        &mut self.mem.as_slice_mut()[..self.len]
+        &mut self.mem.data_mut()[..self.len]
     }
 
     /// Writes zero to the used bits of the virtual memory.
@@ -126,7 +73,7 @@ impl ByteBuf {
     ///
     /// If possible this API should not exist.
     pub fn erase(&mut self) -> Result<(), String> {
-        self.mem = VirtualMemory::new(Self::ALLOCATION_SIZE)?;
+        self.mem = VirtualMemory::new(Self::ALLOCATION_SIZE).map_err(|error| error.to_string())?;
         Ok(())
     }
 }
