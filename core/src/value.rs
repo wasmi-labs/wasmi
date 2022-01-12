@@ -1,9 +1,59 @@
 use crate::{
     nan_preserving_float::{F32, F64},
-    types::ValueType,
     TrapCode,
 };
-use core::{f32, i32, i64, u32, u64};
+use core::{f32, fmt, fmt::Display, i32, i64, u32, u64};
+use parity_wasm::elements as pwasm;
+
+/// Type of a value.
+///
+/// See [`Value`] for details.
+///
+/// [`Value`]: enum.Value.html
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ValueType {
+    /// 32-bit signed or unsigned integer.
+    I32,
+    /// 64-bit signed or unsigned integer.
+    I64,
+    /// 32-bit IEEE 754-2008 floating point number.
+    F32,
+    /// 64-bit IEEE 754-2008 floating point number.
+    F64,
+}
+
+impl Display for ValueType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::I32 => write!(f, "i32"),
+            Self::I64 => write!(f, "i64"),
+            Self::F32 => write!(f, "f32"),
+            Self::F64 => write!(f, "f64"),
+        }
+    }
+}
+
+impl ValueType {
+    /// Converts into [`ValueType`] from [`pwasm::ValueType`].
+    pub fn from_elements(value_type: pwasm::ValueType) -> Self {
+        match value_type {
+            pwasm::ValueType::I32 => Self::I32,
+            pwasm::ValueType::I64 => Self::I64,
+            pwasm::ValueType::F32 => Self::F32,
+            pwasm::ValueType::F64 => Self::F64,
+        }
+    }
+
+    /// Converts from [`ValueType`] into [`pwasm::ValueType`].
+    pub fn into_elements(self) -> pwasm::ValueType {
+        match self {
+            Self::I32 => pwasm::ValueType::I32,
+            Self::I64 => pwasm::ValueType::I64,
+            Self::F32 => pwasm::ValueType::F32,
+            Self::F64 => pwasm::ValueType::F64,
+        }
+    }
+}
 
 /// Runtime representation of a value.
 ///

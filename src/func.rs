@@ -3,10 +3,10 @@ use crate::{
     isa,
     module::ModuleInstance,
     runner::{check_function_args, Interpreter, InterpreterState, StackRecycler},
-    types::ValueType,
     value::Value,
     Signature,
     Trap,
+    ValueType,
 };
 use alloc::{
     borrow::Cow,

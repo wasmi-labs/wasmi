@@ -119,7 +119,7 @@ use std::error;
 
 #[doc(inline)]
 #[deprecated(note = "use `Value` instead")]
-pub use self::value::Value as RuntimeValue;
+pub use wasmi_core::Value as RuntimeValue;
 
 /// Internal interpreter error.
 #[derive(Debug)]
@@ -277,7 +277,6 @@ mod runner;
 mod table;
 mod types;
 pub mod v1;
-mod value;
 
 #[cfg(test)]
 mod tests;
@@ -291,10 +290,26 @@ pub use self::{
     module::{ExternVal, ModuleInstance, ModuleRef, NotStartedModuleRef},
     runner::{StackRecycler, DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT},
     table::{TableInstance, TableRef},
-    types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor, ValueType},
-    value::{FromValue, LittleEndianConvert, Value},
+    types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor},
 };
-pub use wasmi_core::{Trap, TrapCode, HostError};
+pub use wasmi_core::{FromValue, HostError, LittleEndianConvert, Trap, TrapCode, Value, ValueType};
+
+/// Mirrors the old value module.
+pub mod value {
+    pub use wasmi_core::{
+        ArithmeticOps,
+        ExtendInto,
+        Float,
+        FromValue,
+        Integer,
+        LittleEndianConvert,
+        TransmuteInto,
+        TryTruncateInto,
+        Value,
+        ValueType,
+        WrapInto,
+    };
+}
 
 /// Floating point types that preserve NaN values.
 pub mod nan_preserving_float {
