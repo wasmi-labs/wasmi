@@ -9,7 +9,6 @@ mod utils;
 use self::control_frame::ControlFrame;
 use super::{
     super::{
-        super::{Value, ValueType},
         engine::{
             bytecode::{FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx},
             inst_builder::{Reloc, Signedness, WasmFloatType, WasmIntType},
@@ -23,6 +22,7 @@ use super::{
     },
     Engine,
 };
+use crate::{Value, ValueType};
 use alloc::vec::Vec;
 use parity_wasm::elements::{self as pwasm, Instruction};
 use validation::{

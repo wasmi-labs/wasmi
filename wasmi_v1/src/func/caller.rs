@@ -1,5 +1,5 @@
 use super::super::{AsContext, AsContextMut, StoreContext, StoreContextMut};
-use crate::v1::{Engine, Extern, Instance};
+use crate::{Engine, Extern, Instance};
 
 /// Represents the caller’s context when creating a host function via [`Func::wrap`].
 ///

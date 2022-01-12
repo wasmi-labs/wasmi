@@ -10,7 +10,7 @@ pub use self::{
     utils::{BrTable, DropKeep, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, Target},
     visitor::VisitInstruction,
 };
-use crate::nan_preserving_float::{F32, F64};
+use crate::{F32, F64};
 
 /// The internal `wasmi` bytecode that is stored for Wasm functions.
 ///

@@ -29,11 +29,7 @@ use super::{
     },
     Module,
 };
-use crate::{
-    nan_preserving_float::{F32, F64},
-    Value,
-    ValueType,
-};
+use crate::{Value, ValueType, F32, F64};
 use core::{fmt, fmt::Display};
 use parity_wasm::elements as pwasm;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
