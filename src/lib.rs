@@ -297,7 +297,11 @@ pub use self::{
     types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor, ValueType},
     value::{FromValue, LittleEndianConvert, Value},
 };
-pub use wasmi_core::nan_preserving_float;
+
+/// Floating point types that preserve NaN values.
+pub mod nan_preserving_float {
+    pub use wasmi_core::{F32, F64};
+}
 
 /// WebAssembly-specific sizes and units.
 pub mod memory_units {
