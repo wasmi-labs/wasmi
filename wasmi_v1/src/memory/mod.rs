@@ -8,7 +8,7 @@ mod byte_buffer;
 
 use self::byte_buffer::{ByteBuffer, VirtualMemoryError};
 use super::{AsContext, AsContextMut, Index, StoreContext, StoreContextMut, Stored};
-use crate::memory_units::{Bytes, Pages};
+use wasmi_core::memory_units::{Bytes, Pages};
 use core::{fmt, fmt::Display};
 use parity_wasm::elements as pwasm;
 

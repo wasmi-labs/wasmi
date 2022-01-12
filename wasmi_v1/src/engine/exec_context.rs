@@ -14,22 +14,18 @@ use super::{
     ValueStack,
     VisitInstruction,
 };
-use crate::{
-    memory_units::Pages,
-    nan_preserving_float::{F32, F64},
-    value::{
-        ArithmeticOps,
-        ExtendInto,
-        Float,
-        Integer,
-        LittleEndianConvert,
-        TryTruncateInto,
-        WrapInto,
-    },
-    Trap,
-    TrapCode,
-};
+use crate::{Trap, TrapCode, F32, F64};
 use core::ops::{BitAnd, BitOr, BitXor, Neg, Shl, Shr};
+use wasmi_core::{
+    memory_units::Pages,
+    ArithmeticOps,
+    ExtendInto,
+    Float,
+    Integer,
+    LittleEndianConvert,
+    TryTruncateInto,
+    WrapInto,
+};
 
 /// State that is used during Wasm function execution.
 #[derive(Debug)]

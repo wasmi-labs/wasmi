@@ -1,5 +1,5 @@
 use super::{BrTable, DropKeep, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, Target};
-use crate::nan_preserving_float::{F32, F64};
+use crate::{F32, F64};
 
 pub trait VisitInstruction {
     type Outcome;

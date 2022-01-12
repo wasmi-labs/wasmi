@@ -4,6 +4,12 @@
 //! The overall structure is heavily inspired by the `wasmtime` virtual
 //! machine architecture.
 
+#[cfg(not(feature = "std"))]
+#[macro_use]
+extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std as alloc;
+
 mod arena;
 mod engine;
 mod error;
@@ -17,6 +23,8 @@ mod module;
 mod signature;
 mod store;
 mod table;
+
+use wasmi_core::{Trap, TrapCode, Value, ValueType, F32, F64};
 
 /// Defines some errors that may occur upon interaction with `wasmi`.
 pub mod errors {

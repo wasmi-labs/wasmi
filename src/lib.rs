@@ -273,7 +273,6 @@ mod prepare;
 mod runner;
 mod table;
 mod types;
-pub mod v1;
 
 #[cfg(test)]
 mod tests;
@@ -299,6 +298,7 @@ pub use wasmi_core::{
     Value,
     ValueType,
 };
+pub use wasmi_v1 as v1;
 
 /// Mirrors the old value module.
 pub mod value {

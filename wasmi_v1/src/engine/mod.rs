@@ -25,11 +25,15 @@ use crate::{
     TrapCode,
     Value,
     ValueType,
-    DEFAULT_CALL_STACK_LIMIT,
-    DEFAULT_VALUE_STACK_LIMIT,
 };
 use alloc::{sync::Arc, vec::Vec};
 use spin::mutex::Mutex;
+
+/// Maximum number of bytes on the value stack.
+pub const DEFAULT_VALUE_STACK_LIMIT: usize = 1024 * 1024;
+
+/// Maximum number of levels on the call stack.
+pub const DEFAULT_CALL_STACK_LIMIT: usize = 64 * 1024;
 
 /// The outcome of a `wasmi` instruction execution.
 ///

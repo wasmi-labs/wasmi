@@ -1,10 +1,10 @@
 use super::{super::SignatureEntity, Caller, HostFuncTrampoline, Value, ValueType};
 use crate::{
-    nan_preserving_float::{F32, F64},
-    FromValue,
+    F32, F64,
     Trap,
     TrapCode,
 };
+use wasmi_core::FromValue;
 use alloc::sync::Arc;
 
 pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {
