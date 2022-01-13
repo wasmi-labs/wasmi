@@ -2,7 +2,7 @@
 extern crate std;
 
 use super::parse_wat;
-use crate::{
+use wasmi::{
     memory_units::Pages,
     Error,
     Externals,
