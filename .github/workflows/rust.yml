@@ -18,17 +18,22 @@ jobs:
           toolchain: stable
           target: wasm32-unknown-unknown
           override: true
-      - name: Build (std + virtual_memory)
+      - name: Build (default features)
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --workspace --features virtual_memory
+          args: --workspace
+      - name: Build (all features)
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --workspace --all-features
       - name: Build (no_std)
         uses: actions-rs/cargo@v1
         with:
           command: build
           args: --workspace --no-default-features
-      - name: Build (no_std + Wasm)
+      - name: Build (wasm32)
         uses: actions-rs/cargo@v1
         with:
           command: build
@@ -61,19 +66,21 @@ jobs:
           override: true
       - name: Checkout Submodules
         run: git submodule update --init --recursive
-      - uses: actions-rs/cargo@v1
+      - name: Test (default features)
+        uses: actions-rs/cargo@v1
         env:
           RUSTFLAGS: '--cfg debug_assertions'
         with:
           command: test
           args: --workspace --release
-      - uses: actions-rs/cargo@v1
+      - name: Test (all features)
+        uses: actions-rs/cargo@v1
         env:
           RUSTFLAGS: '--cfg debug_assertions'
           TEST_FLAGS: ${{ matrix.test-args }}
         with:
           command: test
-          args: --workspace --release --features virtual_memory -- $TEST_FLAGS
+          args: --workspace --release --all-features -- $TEST_FLAGS
 
   fmt:
     name: Formatting
@@ -135,15 +142,18 @@ jobs:
           toolchain: nightly
           override: true
           components: clippy
-      - uses: actions-rs/cargo@v1
+      - name: Clippy (default features)
+        uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: -- -D warnings
-      - uses: actions-rs/cargo@v1
+          args: --workspace -- -D warnings
+      - name: Clippy (all features)
+        uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --workspace --features virtual_memory -- -D warnings
-      - uses: actions-rs/cargo@v1
+          args: --workspace --all-features -- -D warnings
+      - name: Clippy (no_std)
+        uses: actions-rs/cargo@v1
         with:
           command: clippy
           args: --workspace --no-default-features -- -D warnings
@@ -167,7 +177,7 @@ jobs:
         uses: actions-rs/tarpaulin@v0.1
         with:
           version: '0.18.0'
-          args: --workspace
+          args: --workspace --features v1
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v1.0.2
         with:
