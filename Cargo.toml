@@ -20,7 +20,6 @@ spin = { version = "0.9", default-features = false, features = ["mutex", "spin_m
 
 [dev-dependencies]
 assert_matches = "1.5"
-rand = "0.8.2"
 wabt = "0.9"
 wast = "39.0"
 anyhow = "1.0"
