@@ -842,13 +842,12 @@ pub fn check_limits(limits: &ResizableLimits) -> Result<(), Error> {
 #[cfg(test)]
 mod tests {
     use super::{ExternVal, ModuleInstance};
-    use crate::{
-        func::FuncInstance,
-        imports::ImportsBuilder,
-        tests::parse_wat,
-        types::Signature,
-        ValueType,
-    };
+    use crate::{func::FuncInstance, imports::ImportsBuilder, types::Signature, Module, ValueType};
+
+    fn parse_wat(source: &str) -> Module {
+        let wasm_binary = wabt::wat2wasm(source).expect("Failed to parse wat source");
+        Module::from_buffer(wasm_binary).expect("Failed to load parsed module")
+    }
 
     #[should_panic]
     #[test]

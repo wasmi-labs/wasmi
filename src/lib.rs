@@ -274,9 +274,6 @@ mod runner;
 mod table;
 mod types;
 
-#[cfg(test)]
-mod tests;
-
 pub use self::{
     func::{FuncInstance, FuncInvocation, FuncRef, ResumableError},
     global::{GlobalInstance, GlobalRef},

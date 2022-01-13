@@ -1,14 +1,14 @@
-use crate::Module;
-
 mod host;
 mod wasm;
 
-use super::Error;
+use wasmi::{Error, Module};
 
 fn assert_send<T: Send>() {}
 fn assert_sync<T: Sync>() {}
+
 #[cfg(feature = "std")]
 fn assert_std_err_impl<T: ::std::error::Error>() {}
+
 #[cfg(not(feature = "std"))]
 fn assert_std_err_impl<T>() {}
 
@@ -23,7 +23,7 @@ fn assert_error_properties() {
 /// to a Value and back works as expected and the number remains unchanged.
 #[test]
 fn unsigned_to_value() {
-    use super::Value;
+    use wasmi::Value;
 
     let overflow_i32: u32 = ::core::i32::MAX as u32 + 1;
     assert_eq!(

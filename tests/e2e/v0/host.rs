@@ -2,7 +2,8 @@
 extern crate std;
 
 use super::parse_wat;
-use crate::{
+use std::println;
+use wasmi::{
     memory_units::Pages,
     Error,
     Externals,
@@ -27,7 +28,6 @@ use crate::{
     Value,
     ValueType,
 };
-use std::println;
 
 #[derive(Debug, Clone, PartialEq)]
 struct HostErrorWithCode {
