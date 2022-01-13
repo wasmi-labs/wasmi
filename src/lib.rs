@@ -295,6 +295,8 @@ pub use wasmi_core::{
     Value,
     ValueType,
 };
+
+#[cfg(feature = "v1")]
 pub use wasmi_v1 as v1;
 
 /// Mirrors the old value module.
