@@ -62,7 +62,7 @@ impl<'a> FuncParams<'a> {
     where
         T: WriteResults,
     {
-        let mut results_buffer = &mut self.params_results[..self.len_results];
+        let results_buffer = &mut self.params_results[..self.len_results];
         <T as WriteResults>::write_results(results, results_buffer);
         FuncResults {}
     }
