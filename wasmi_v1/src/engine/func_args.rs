@@ -50,7 +50,7 @@ impl<'a> FuncParams<'a> {
         T: ReadParams,
     {
         let params_buffer = &self.params_results[..self.len_params];
-        <T as ReadParams>::read_params(&params_buffer)
+        <T as ReadParams>::read_params(params_buffer)
     }
 
     /// Sets the results of the function invocation.
@@ -63,7 +63,7 @@ impl<'a> FuncParams<'a> {
         T: WriteResults,
     {
         let mut results_buffer = &mut self.params_results[..self.len_results];
-        <T as WriteResults>::write_results(results, &mut results_buffer);
+        <T as WriteResults>::write_results(results, results_buffer);
         FuncResults {}
     }
 }
@@ -79,7 +79,6 @@ pub trait ReadParams {
 impl ReadParams for () {
     fn read_params(results: &[StackEntry]) -> Self {
         assert_eq!(results.len(), 0);
-        ()
     }
 }
 
