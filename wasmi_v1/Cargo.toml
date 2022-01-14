@@ -17,12 +17,7 @@ parity-wasm = { version = "0.42.0", default-features = false }
 spin = { version = "0.9", default-features = false, features = ["mutex", "spin_mutex"] }
 
 [dev-dependencies]
-assert_matches = "1.5"
-rand = "0.8.2"
 wabt = "0.9"
-wast = "39.0"
-anyhow = "1.0"
-criterion = "0.3.5"
 
 [features]
 default = ["std"]
