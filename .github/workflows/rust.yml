@@ -22,7 +22,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --workspace
+          args: --workspace --features v1
       - name: Build (all features)
         uses: actions-rs/cargo@v1
         with:
@@ -32,12 +32,12 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --workspace --no-default-features
+          args: --workspace --features v1 --no-default-features
       - name: Build (wasm32)
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --workspace --no-default-features --target wasm32-unknown-unknown
+          args: --workspace --features v1 --no-default-features --target wasm32-unknown-unknown
 
   test:
     name: Test
@@ -72,7 +72,7 @@ jobs:
           RUSTFLAGS: '--cfg debug_assertions'
         with:
           command: test
-          args: --workspace --release
+          args: --workspace --release --features v1
       - name: Test (all features)
         uses: actions-rs/cargo@v1
         env:
@@ -114,7 +114,7 @@ jobs:
           RUSTDOCFLAGS: '-D warnings'
         with:
           command: doc
-          args: --workspace --no-deps --document-private-items
+          args: --workspace --all-features --no-deps --document-private-items
 
   audit:
     name: Audit
@@ -146,7 +146,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --workspace -- -D warnings
+          args: --workspace --features v1 -- -D warnings
       - name: Clippy (all features)
         uses: actions-rs/cargo@v1
         with:
@@ -156,7 +156,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --workspace --no-default-features -- -D warnings
+          args: --workspace --features v1 --no-default-features -- -D warnings
 
   coverage:
     name: Coverage
@@ -173,11 +173,16 @@ jobs:
           override: true
       - name: Checkout Submodules
         run: git submodule update --init --recursive
-      - name: Run cargo-tarpaulin
+      - name: Run cargo-tarpaulin (default features)
         uses: actions-rs/tarpaulin@v0.1
         with:
           version: '0.18.0'
           args: --workspace --features v1
+      - name: Run cargo-tarpaulin (all features)
+        uses: actions-rs/tarpaulin@v0.1
+        with:
+          version: '0.18.0'
+          args: --workspace --all-features
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v1.0.2
         with:
