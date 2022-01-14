@@ -1,259 +1,226 @@
-use super::{super::SignatureEntity, Caller, HostFuncTrampoline, Value, ValueType};
-use crate::{Trap, TrapCode, F32, F64};
+use super::{
+    super::engine::{FuncParams, FuncResults, WasmType as InternalWasmType},
+    HostFuncTrampoline,
+};
+use crate::{
+    engine::{ReadParams, WriteResults},
+    Caller,
+    SignatureEntity,
+};
 use alloc::sync::Arc;
-use wasmi_core::FromValue;
+use core::array;
+use wasmi_core::{FromValue, Trap, Value, ValueType, F32, F64};
 
 pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {
+    type Params: WasmTypeList;
+    type Results: WasmTypeList;
+
     #[doc(hidden)]
     fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>);
 }
 
-macro_rules! for_each_function_signature {
-    ($mac:ident) => {
-        $mac!( 0 );
-        $mac!( 1 T1);
-        $mac!( 2 T1 T2);
-        $mac!( 3 T1 T2 T3);
-        $mac!( 4 T1 T2 T3 T4);
-        $mac!( 5 T1 T2 T3 T4 T5);
-        $mac!( 6 T1 T2 T3 T4 T5 T6);
-        $mac!( 7 T1 T2 T3 T4 T5 T6 T7);
-        $mac!( 8 T1 T2 T3 T4 T5 T6 T7 T8);
-        $mac!( 9 T1 T2 T3 T4 T5 T6 T7 T8 T9);
-        $mac!(10 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10);
-        $mac!(11 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11);
-        $mac!(12 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12);
-        $mac!(13 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13);
-        $mac!(14 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13 T14);
-        $mac!(15 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13 T14 T15);
-        $mac!(16 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13 T14 T15 T16);
-    }
-}
-
-macro_rules! impl_into_func {
-    ($n:literal $($args:ident)*) => {
-        // Implement for functions without a leading `&Caller` parameter,
-        // delegating to the implementation below which does have the leading
-        // `Caller` parameter.
-        #[allow(non_snake_case)]
-        impl<T, F, $($args,)* R> IntoFunc<T, ($($args,)*), R> for F
-        where
-            F: Fn($($args),*) -> R,
-            F: Send + Sync + 'static,
-            $(
-                $args: WasmType,
-            )*
-            R: WasmReturnType,
-        {
-            fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
-                let f = move |_: Caller<'_, T>, $($args:$args),*| {
-                    self($($args),*)
-                };
-                f.into_func()
-            }
-        }
-
-        #[allow(non_snake_case)]
-        impl<T, F, $($args,)* R> IntoFunc<T, (Caller<'_, T>, $($args,)*), R> for F
-        where
-            F: Fn(Caller<T>, $($args),*) -> R,
-            F: Send + Sync + 'static,
-            $(
-                $args: WasmType,
-            )*
-            R: WasmReturnType,
-        {
-            fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
-                let inputs = [$(<$args as WasmType>::value_type()),*];
-                let signature = R::signature(inputs);
-                let len_inputs = signature.inputs().len();
-                let len_outputs = signature.outputs().len();
-                #[rustfmt::skip]
-                #[allow(unused_mut, unused_variables)]
-                let trampoline = move |
-                    caller: Caller<T>,
-                    inputs: &[Value],
-                    outputs: &mut [Value],
-                | -> Result<(), Trap> {
-                    if inputs.len() != len_inputs || outputs.len() != len_outputs {
-                        return Err(Trap::from(TrapCode::UnexpectedSignature))
-                    }
-                    let mut inputs_iter = inputs.iter();
-                    let ( $($args,)* ) = <($($args,)*) as ReadInputs>::read_inputs(inputs)?;
-                    let result = (self)(
-                        caller,
-                        $(
-                            $args
-                        ),*
-                    ).into_fallible()?;
-                    result.write_outputs(outputs)?;
-                    Ok(())
-                };
-                // We are using an `Arc` instead of a `Box` here to make `clone` cheap.
-                // We currently need cloning to prevent `unsafe` Rust usage when calling
-                // a Wasm or host function.
-                (signature, HostFuncTrampoline { closure: Arc::new(trampoline) })
-            }
-        }
-    }
-}
-for_each_function_signature!(impl_into_func);
-
-pub trait WriteOutputs {
-    fn write_outputs(self, outputs: &mut [Value]) -> Result<(), TrapCode>;
-}
-
-impl<T1> WriteOutputs for T1
+impl<T, F, R> IntoFunc<T, (), R> for F
 where
-    T1: WasmType,
+    F: Fn() -> R,
+    F: Send + Sync + 'static,
+    R: WasmReturnType,
 {
-    fn write_outputs(self, outputs: &mut [Value]) -> Result<(), TrapCode> {
-        if outputs.len() != 1 {
-            return Err(TrapCode::UnexpectedSignature);
-        }
-        outputs[0] = self.into();
-        Ok(())
+    type Params = ();
+    type Results = <R as WasmReturnType>::Ok;
+
+    fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
+        IntoFunc::into_func(move |_: Caller<'_, T>| self())
     }
 }
 
-macro_rules! impl_write_outputs {
-    ($n:literal $($args:ident)*) => {
-        #[allow(non_snake_case)]
-        impl<$($args),*> WriteOutputs for ($($args,)*)
-        where
-            $(
-                $args: WasmType
-            ),*
-        {
-            #[allow(unused_mut, unused_variables)]
-            fn write_outputs(self, outputs: &mut [Value]) -> Result<(), TrapCode> {
-                if outputs.len() != $n {
-                    return Err(TrapCode::UnexpectedSignature);
-                }
-                let ($($args,)*) = self;
-                let mut i = 0;
-                $({
-                    outputs[i] = $args.into();
-                })*
-                Ok(())
-            }
-        }
-    }
-}
-for_each_function_signature!(impl_write_outputs);
-
-pub trait ReadInputs: Sized {
-    fn read_inputs(inputs: &[Value]) -> Result<Self, TrapCode>;
-}
-
-impl<T1> ReadInputs for T1
+impl<T, F, P1, R> IntoFunc<T, P1, R> for F
 where
-    T1: WasmType,
+    F: Fn(P1) -> R,
+    F: Send + Sync + 'static,
+    P1: WasmType,
+    R: WasmReturnType,
 {
-    fn read_inputs(inputs: &[Value]) -> Result<Self, TrapCode> {
-        if inputs.len() != 1 {
-            return Err(TrapCode::UnexpectedSignature);
+    type Params = P1;
+    type Results = <R as WasmReturnType>::Ok;
+
+    fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
+        IntoFunc::into_func(move |_: Caller<'_, T>, p1: P1| self(p1))
+    }
+}
+
+impl<T, F, P1, P2, R> IntoFunc<T, (P1, P2), R> for F
+where
+    F: Fn(P1, P2) -> R,
+    F: Send + Sync + 'static,
+    P1: WasmType,
+    P2: WasmType,
+    R: WasmReturnType,
+{
+    type Params = (P1, P2);
+    type Results = <R as WasmReturnType>::Ok;
+
+    fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
+        IntoFunc::into_func(move |_: Caller<'_, T>, p1: P1, p2: P2| self(p1, p2))
+    }
+}
+
+impl<T, F, P1, P2, P3, R> IntoFunc<T, (P1, P2, P3), R> for F
+where
+    F: Fn(P1, P2, P3) -> R,
+    F: Send + Sync + 'static,
+    P1: WasmType,
+    P2: WasmType,
+    P3: WasmType,
+    R: WasmReturnType,
+{
+    type Params = (P1, P2, P3);
+    type Results = <R as WasmReturnType>::Ok;
+
+    fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
+        IntoFunc::into_func(move |_: Caller<'_, T>, p1: P1, p2: P2, p3: P3| self(p1, p2, p3))
+    }
+}
+
+impl<T, F, R> IntoFunc<T, Caller<'_, T>, R> for F
+where
+    F: Fn(Caller<T>) -> R,
+    F: Send + Sync + 'static,
+    R: WasmReturnType,
+{
+    type Params = ();
+    type Results = <R as WasmReturnType>::Ok;
+
+    fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
+        let signature = SignatureEntity::new(
+            <Self::Params as WasmTypeList>::value_types(),
+            <Self::Results as WasmTypeList>::value_types(),
+        );
+        let trampoline = HostFuncTrampoline::new(
+            move |caller: Caller<T>, params_results: FuncParams| -> Result<FuncResults, Trap> {
+                let _params: Self::Params = params_results.read_params();
+                let results: Self::Results = self(caller).into_fallible()?;
+                Ok(params_results.write_results(results))
+            },
+        );
+        (signature, trampoline)
+    }
+}
+
+impl<T, F, P1, R> IntoFunc<T, (Caller<'_, T>, P1), R> for F
+where
+    F: Fn(Caller<T>, P1) -> R,
+    F: Send + Sync + 'static,
+    P1: WasmType,
+    R: WasmReturnType,
+{
+    type Params = P1;
+    type Results = <R as WasmReturnType>::Ok;
+
+    fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
+        let signature = SignatureEntity::new(
+            <Self::Params as WasmTypeList>::value_types(),
+            <Self::Results as WasmTypeList>::value_types(),
+        );
+        let trampoline = HostFuncTrampoline::new(
+            move |caller: Caller<T>, params_results: FuncParams| -> Result<FuncResults, Trap> {
+                let params: Self::Params = params_results.read_params();
+                let results: Self::Results = (caller, params).apply_ref(&self).into_fallible()?;
+                Ok(params_results.write_results(results))
+            },
+        );
+        (signature, trampoline)
+    }
+}
+
+impl<T, F, P1, P2, R> IntoFunc<T, (Caller<'_, T>, P1, P2), R> for F
+where
+    F: Fn(Caller<T>, P1, P2) -> R,
+    F: Send + Sync + 'static,
+    P1: WasmType,
+    P2: WasmType,
+    R: WasmReturnType,
+{
+    type Params = (P1, P2);
+    type Results = <R as WasmReturnType>::Ok;
+
+    fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
+        let signature = SignatureEntity::new(
+            <Self::Params as WasmTypeList>::value_types(),
+            <Self::Results as WasmTypeList>::value_types(),
+        );
+        let trampoline = HostFuncTrampoline::new(
+            move |caller: Caller<T>, params_results: FuncParams| -> Result<FuncResults, Trap> {
+                let (p1, p2): Self::Params = params_results.read_params();
+                let results: Self::Results = (caller, p1, p2).apply_ref(&self).into_fallible()?;
+                Ok(params_results.write_results(results))
+            },
+        );
+        (signature, trampoline)
+    }
+}
+
+impl<T, F, P1, P2, P3, R> IntoFunc<T, (Caller<'_, T>, P1, P2, P3), R> for F
+where
+    F: Fn(Caller<T>, P1, P2, P3) -> R,
+    F: Send + Sync + 'static,
+    P1: WasmType,
+    P2: WasmType,
+    P3: WasmType,
+    R: WasmReturnType,
+{
+    type Params = (P1, P2, P3);
+    type Results = <R as WasmReturnType>::Ok;
+
+    fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
+        let signature = SignatureEntity::new(
+            <Self::Params as WasmTypeList>::value_types(),
+            <Self::Results as WasmTypeList>::value_types(),
+        );
+        let trampoline = HostFuncTrampoline::new(
+            move |caller: Caller<T>, params_results: FuncParams| -> Result<FuncResults, Trap> {
+                let (p1, p2, p3): Self::Params = params_results.read_params();
+                let results: Self::Results =
+                    (caller, p1, p2, p3).apply_ref(&self).into_fallible()?;
+                Ok(params_results.write_results(results))
+            },
+        );
+        (signature, trampoline)
+    }
+}
+
+impl<T> HostFuncTrampoline<T> {
+    pub fn new<F>(trampoline: F) -> Self
+    where
+        F: Fn(Caller<T>, FuncParams) -> Result<FuncResults, Trap>,
+        F: Send + Sync + 'static,
+    {
+        Self {
+            closure: Arc::new(trampoline),
         }
-        Value::try_into::<T1>(inputs[0]).ok_or(TrapCode::UnexpectedSignature)
-    }
-}
-
-macro_rules! impl_read_inputs {
-    ($n:literal $($args:ident)*) => {
-        impl<$($args),*> ReadInputs for ($($args,)*)
-        where
-            $(
-                $args: WasmType
-            ),*
-        {
-            #[allow(unused_mut, unused_variables)]
-            fn read_inputs(inputs: &[Value]) -> Result<Self, TrapCode> {
-                if inputs.len() != $n {
-                    return Err(TrapCode::UnexpectedSignature)
-                }
-                let mut inputs = inputs.iter();
-                Ok((
-                    $(
-                        inputs
-                            .next()
-                            .copied()
-                            .map(Value::try_into::<$args>)
-                            .flatten()
-                            .ok_or(TrapCode::UnexpectedSignature)?,
-                    )*
-                ))
-            }
-        }
-    }
-}
-for_each_function_signature!(impl_read_inputs);
-
-pub trait WasmType: FromValue + Into<Value> {
-    /// The underlying ABI type.
-    type Abi: Copy;
-
-    /// Returns the value type of the Wasm type.
-    fn value_type() -> ValueType;
-}
-
-impl WasmType for i32 {
-    type Abi = Self;
-
-    fn value_type() -> ValueType {
-        ValueType::I32
-    }
-}
-
-impl WasmType for i64 {
-    type Abi = Self;
-
-    fn value_type() -> ValueType {
-        ValueType::I64
-    }
-}
-
-impl WasmType for F32 {
-    type Abi = Self;
-
-    fn value_type() -> ValueType {
-        ValueType::F32
-    }
-}
-
-impl WasmType for F64 {
-    type Abi = Self;
-
-    fn value_type() -> ValueType {
-        ValueType::F64
     }
 }
 
 pub trait WasmReturnType {
-    type Abi: WriteOutputs;
+    type Ok: WasmTypeList;
 
-    fn signature<I>(inputs: I) -> SignatureEntity
-    where
-        I: IntoIterator<Item = ValueType>,
-        I::IntoIter: ExactSizeIterator;
+    fn into_fallible(self) -> Result<<Self as WasmReturnType>::Ok, Trap>;
+}
 
-    fn into_fallible(self) -> Result<Self::Abi, Trap>;
+impl WasmReturnType for () {
+    type Ok = ();
+
+    fn into_fallible(self) -> Result<Self::Ok, Trap> {
+        Ok(self)
+    }
 }
 
 impl<T1> WasmReturnType for T1
 where
     T1: WasmType,
 {
-    type Abi = T1;
+    type Ok = T1;
 
-    fn signature<I>(inputs: I) -> SignatureEntity
-    where
-        I: IntoIterator<Item = ValueType>,
-        I::IntoIter: ExactSizeIterator,
-    {
-        <Result<Self::Abi, Trap>>::signature(inputs)
-    }
-
-    fn into_fallible(self) -> Result<Self::Abi, Trap> {
+    fn into_fallible(self) -> Result<Self::Ok, Trap> {
         Ok(self)
     }
 }
@@ -262,68 +229,357 @@ impl<T1> WasmReturnType for Result<T1, Trap>
 where
     T1: WasmType,
 {
-    type Abi = T1;
+    type Ok = T1;
 
-    fn signature<I>(inputs: I) -> SignatureEntity
-    where
-        I: IntoIterator<Item = ValueType>,
-        I::IntoIter: ExactSizeIterator,
-    {
-        SignatureEntity::new(inputs, [<T1 as WasmType>::value_type()])
-    }
-
-    fn into_fallible(self) -> Result<Self::Abi, Trap> {
+    fn into_fallible(self) -> Result<<Self as WasmReturnType>::Ok, Trap> {
         self
     }
 }
 
-macro_rules! impl_wasm_return_type {
-    ($n:literal $($args:ident)*) => {
-        impl<$($args),*> WasmReturnType for ($($args,)*)
-        where
-            $(
-                $args: WasmType,
-            )*
-        {
-            type Abi = ($($args,)*);
-
-            fn signature<I>(inputs: I) -> SignatureEntity
-            where
-                I: IntoIterator<Item = ValueType>,
-                I::IntoIter: ExactSizeIterator,
-            {
-                <Result<Self::Abi, Trap>>::signature(inputs)
-            }
-
-            fn into_fallible(self) -> Result<Self::Abi, Trap> {
-                Ok(self)
-            }
-        }
-
-        impl<$($args),*> WasmReturnType for Result<($($args,)*), Trap>
-        where
-            $(
-                $args: WasmType,
-            )*
-        {
-            type Abi = ($($args,)*);
-
-            fn signature<I>(inputs: I) -> SignatureEntity
-            where
-                I: IntoIterator<Item = ValueType>,
-                I::IntoIter: ExactSizeIterator,
-            {
-                SignatureEntity::new(inputs, [
-                    $(
-                        <$args as WasmType>::value_type(),
-                    )*
-                ])
-            }
-
-            fn into_fallible(self) -> Result<Self::Abi, Trap> {
-                self
-            }
-        }
-    };
+pub trait WasmType: FromValue + Into<Value> + InternalWasmType {
+    /// Returns the value type of the Wasm type.
+    fn value_type() -> ValueType;
 }
-for_each_function_signature!(impl_wasm_return_type);
+
+impl WasmType for i32 {
+    fn value_type() -> ValueType {
+        ValueType::I32
+    }
+}
+
+impl WasmType for i64 {
+    fn value_type() -> ValueType {
+        ValueType::I64
+    }
+}
+
+impl WasmType for F32 {
+    fn value_type() -> ValueType {
+        ValueType::F32
+    }
+}
+
+impl WasmType for F64 {
+    fn value_type() -> ValueType {
+        ValueType::F64
+    }
+}
+
+pub trait WasmTypeList: ReadParams + WriteResults {
+    type Iter: IntoIterator<Item = ValueType> + ExactSizeIterator + DoubleEndedIterator;
+
+    fn value_types() -> Self::Iter;
+}
+
+impl WasmTypeList for () {
+    type Iter = array::IntoIter<ValueType, 0>;
+
+    fn value_types() -> Self::Iter {
+        [].into_iter()
+    }
+}
+
+impl<T1> WasmTypeList for T1
+where
+    T1: WasmType,
+{
+    type Iter = array::IntoIter<ValueType, 1>;
+
+    fn value_types() -> Self::Iter {
+        [<T1 as WasmType>::value_type()].into_iter()
+    }
+}
+
+impl<T1> WasmTypeList for (T1,)
+where
+    T1: WasmType,
+{
+    type Iter = array::IntoIter<ValueType, 1>;
+
+    fn value_types() -> Self::Iter {
+        [<T1 as WasmType>::value_type()].into_iter()
+    }
+}
+
+impl<T1, T2> WasmTypeList for (T1, T2)
+where
+    T1: WasmType,
+    T2: WasmType,
+{
+    type Iter = array::IntoIter<ValueType, 2>;
+
+    fn value_types() -> Self::Iter {
+        [
+            <T1 as WasmType>::value_type(),
+            <T2 as WasmType>::value_type(),
+        ]
+        .into_iter()
+    }
+}
+
+impl<T1, T2, T3> WasmTypeList for (T1, T2, T3)
+where
+    T1: WasmType,
+    T2: WasmType,
+    T3: WasmType,
+{
+    type Iter = array::IntoIter<ValueType, 3>;
+
+    fn value_types() -> Self::Iter {
+        [
+            <T1 as WasmType>::value_type(),
+            <T2 as WasmType>::value_type(),
+            <T3 as WasmType>::value_type(),
+        ]
+        .into_iter()
+    }
+}
+
+impl<T1, T2, T3, T4> WasmTypeList for (T1, T2, T3, T4)
+where
+    T1: WasmType,
+    T2: WasmType,
+    T3: WasmType,
+    T4: WasmType,
+{
+    type Iter = array::IntoIter<ValueType, 4>;
+
+    fn value_types() -> Self::Iter {
+        [
+            <T1 as WasmType>::value_type(),
+            <T2 as WasmType>::value_type(),
+            <T3 as WasmType>::value_type(),
+            <T4 as WasmType>::value_type(),
+        ]
+        .into_iter()
+    }
+}
+
+impl<T1, T2, T3, T4, T5> WasmTypeList for (T1, T2, T3, T4, T5)
+where
+    T1: WasmType,
+    T2: WasmType,
+    T3: WasmType,
+    T4: WasmType,
+    T5: WasmType,
+{
+    type Iter = array::IntoIter<ValueType, 5>;
+
+    fn value_types() -> Self::Iter {
+        [
+            <T1 as WasmType>::value_type(),
+            <T2 as WasmType>::value_type(),
+            <T3 as WasmType>::value_type(),
+            <T4 as WasmType>::value_type(),
+            <T5 as WasmType>::value_type(),
+        ]
+        .into_iter()
+    }
+}
+
+impl<T1, T2, T3, T4, T5, T6> WasmTypeList for (T1, T2, T3, T4, T5, T6)
+where
+    T1: WasmType,
+    T2: WasmType,
+    T3: WasmType,
+    T4: WasmType,
+    T5: WasmType,
+    T6: WasmType,
+{
+    type Iter = array::IntoIter<ValueType, 6>;
+
+    fn value_types() -> Self::Iter {
+        [
+            <T1 as WasmType>::value_type(),
+            <T2 as WasmType>::value_type(),
+            <T3 as WasmType>::value_type(),
+            <T4 as WasmType>::value_type(),
+            <T5 as WasmType>::value_type(),
+            <T6 as WasmType>::value_type(),
+        ]
+        .into_iter()
+    }
+}
+
+impl<T1, T2, T3, T4, T5, T6, T7> WasmTypeList for (T1, T2, T3, T4, T5, T6, T7)
+where
+    T1: WasmType,
+    T2: WasmType,
+    T3: WasmType,
+    T4: WasmType,
+    T5: WasmType,
+    T6: WasmType,
+    T7: WasmType,
+{
+    type Iter = array::IntoIter<ValueType, 7>;
+
+    fn value_types() -> Self::Iter {
+        [
+            <T1 as WasmType>::value_type(),
+            <T2 as WasmType>::value_type(),
+            <T3 as WasmType>::value_type(),
+            <T4 as WasmType>::value_type(),
+            <T5 as WasmType>::value_type(),
+            <T6 as WasmType>::value_type(),
+            <T7 as WasmType>::value_type(),
+        ]
+        .into_iter()
+    }
+}
+
+impl<T1, T2, T3, T4, T5, T6, T7, T8> WasmTypeList for (T1, T2, T3, T4, T5, T6, T7, T8)
+where
+    T1: WasmType,
+    T2: WasmType,
+    T3: WasmType,
+    T4: WasmType,
+    T5: WasmType,
+    T6: WasmType,
+    T7: WasmType,
+    T8: WasmType,
+{
+    type Iter = array::IntoIter<ValueType, 8>;
+
+    fn value_types() -> Self::Iter {
+        [
+            <T1 as WasmType>::value_type(),
+            <T2 as WasmType>::value_type(),
+            <T3 as WasmType>::value_type(),
+            <T4 as WasmType>::value_type(),
+            <T5 as WasmType>::value_type(),
+            <T6 as WasmType>::value_type(),
+            <T7 as WasmType>::value_type(),
+            <T8 as WasmType>::value_type(),
+        ]
+        .into_iter()
+    }
+}
+
+impl<T1, T2, T3, T4, T5, T6, T7, T8, T9> WasmTypeList for (T1, T2, T3, T4, T5, T6, T7, T8, T9)
+where
+    T1: WasmType,
+    T2: WasmType,
+    T3: WasmType,
+    T4: WasmType,
+    T5: WasmType,
+    T6: WasmType,
+    T7: WasmType,
+    T8: WasmType,
+    T9: WasmType,
+{
+    type Iter = array::IntoIter<ValueType, 9>;
+
+    fn value_types() -> Self::Iter {
+        [
+            <T1 as WasmType>::value_type(),
+            <T2 as WasmType>::value_type(),
+            <T3 as WasmType>::value_type(),
+            <T4 as WasmType>::value_type(),
+            <T5 as WasmType>::value_type(),
+            <T6 as WasmType>::value_type(),
+            <T7 as WasmType>::value_type(),
+            <T8 as WasmType>::value_type(),
+            <T9 as WasmType>::value_type(),
+        ]
+        .into_iter()
+    }
+}
+
+pub trait ApplyFunc<F, R> {
+    fn apply_ref(self, f: F) -> R;
+}
+
+impl<F, R> ApplyFunc<F, R> for ()
+where
+    F: Fn() -> R,
+{
+    fn apply_ref(self, f: F) -> R {
+        f()
+    }
+}
+
+impl<T1, F, R> ApplyFunc<F, R> for (T1,)
+where
+    F: Fn(T1) -> R,
+{
+    fn apply_ref(self, f: F) -> R {
+        f(self.0)
+    }
+}
+
+impl<T1, T2, F, R> ApplyFunc<F, R> for (T1, T2)
+where
+    F: Fn(T1, T2) -> R,
+{
+    fn apply_ref(self, f: F) -> R {
+        f(self.0, self.1)
+    }
+}
+
+impl<T1, T2, T3, F, R> ApplyFunc<F, R> for (T1, T2, T3)
+where
+    F: Fn(T1, T2, T3) -> R,
+{
+    fn apply_ref(self, f: F) -> R {
+        f(self.0, self.1, self.2)
+    }
+}
+
+impl<T1, T2, T3, T4, F, R> ApplyFunc<F, R> for (T1, T2, T3, T4)
+where
+    F: Fn(T1, T2, T3, T4) -> R,
+{
+    fn apply_ref(self, f: F) -> R {
+        f(self.0, self.1, self.2, self.3)
+    }
+}
+
+impl<T1, T2, T3, T4, T5, F, R> ApplyFunc<F, R> for (T1, T2, T3, T4, T5)
+where
+    F: Fn(T1, T2, T3, T4, T5) -> R,
+{
+    fn apply_ref(self, f: F) -> R {
+        f(self.0, self.1, self.2, self.3, self.4)
+    }
+}
+
+impl<T1, T2, T3, T4, T5, T6, F, R> ApplyFunc<F, R> for (T1, T2, T3, T4, T5, T6)
+where
+    F: Fn(T1, T2, T3, T4, T5, T6) -> R,
+{
+    fn apply_ref(self, f: F) -> R {
+        f(self.0, self.1, self.2, self.3, self.4, self.5)
+    }
+}
+
+impl<T1, T2, T3, T4, T5, T6, T7, F, R> ApplyFunc<F, R> for (T1, T2, T3, T4, T5, T6, T7)
+where
+    F: Fn(T1, T2, T3, T4, T5, T6, T7) -> R,
+{
+    fn apply_ref(self, f: F) -> R {
+        f(self.0, self.1, self.2, self.3, self.4, self.5, self.6)
+    }
+}
+
+impl<T1, T2, T3, T4, T5, T6, T7, T8, F, R> ApplyFunc<F, R> for (T1, T2, T3, T4, T5, T6, T7, T8)
+where
+    F: Fn(T1, T2, T3, T4, T5, T6, T7, T8) -> R,
+{
+    fn apply_ref(self, f: F) -> R {
+        f(
+            self.0, self.1, self.2, self.3, self.4, self.5, self.6, self.7,
+        )
+    }
+}
+
+impl<T1, T2, T3, T4, T5, T6, T7, T8, T9, F, R> ApplyFunc<F, R>
+    for (T1, T2, T3, T4, T5, T6, T7, T8, T9)
+where
+    F: Fn(T1, T2, T3, T4, T5, T6, T7, T8, T9) -> R,
+{
+    fn apply_ref(self, f: F) -> R {
+        f(
+            self.0, self.1, self.2, self.3, self.4, self.5, self.6, self.7, self.8,
+        )
+    }
+}
