@@ -178,11 +178,6 @@ jobs:
         with:
           version: '0.18.0'
           args: --workspace --features v1
-      - name: Run cargo-tarpaulin (all features)
-        uses: actions-rs/tarpaulin@v0.1
-        with:
-          version: '0.18.0'
-          args: --workspace --all-features
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v1.0.2
         with:
