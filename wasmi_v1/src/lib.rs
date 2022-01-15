@@ -10,6 +10,9 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std as alloc;
 
+#[macro_use]
+mod foreach_tuple;
+
 mod arena;
 mod engine;
 mod error;

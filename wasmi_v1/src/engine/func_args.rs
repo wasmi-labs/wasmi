@@ -1,5 +1,6 @@
 use super::{FromStackEntry, StackEntry};
 use core::cmp;
+use crate::foreach_tuple::for_each_tuple;
 
 #[derive(Debug)]
 pub struct FuncParams<'a> {
@@ -74,28 +75,6 @@ impl<'a> FuncParams<'a> {
 pub trait WasmType: FromStackEntry + Into<StackEntry> {}
 
 impl<T> WasmType for T where T: FromStackEntry + Into<StackEntry> {}
-
-macro_rules! for_each_tuple {
-    ($mac:ident) => {
-        $mac!( 0 );
-        $mac!( 1 T1);
-        $mac!( 2 T1 T2);
-        $mac!( 3 T1 T2 T3);
-        $mac!( 4 T1 T2 T3 T4);
-        $mac!( 5 T1 T2 T3 T4 T5);
-        $mac!( 6 T1 T2 T3 T4 T5 T6);
-        $mac!( 7 T1 T2 T3 T4 T5 T6 T7);
-        $mac!( 8 T1 T2 T3 T4 T5 T6 T7 T8);
-        $mac!( 9 T1 T2 T3 T4 T5 T6 T7 T8 T9);
-        $mac!(10 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10);
-        $mac!(11 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11);
-        $mac!(12 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12);
-        $mac!(13 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13);
-        $mac!(14 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13 T14);
-        $mac!(15 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13 T14 T15);
-        $mac!(16 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13 T14 T15 T16);
-    }
-}
 
 /// Type sequences that can read host function parameters from the [`ValueStack`].
 pub trait ReadParams {
