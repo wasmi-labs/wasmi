@@ -202,18 +202,32 @@ impl<T> HostFuncTrampoline<T> {
     }
 }
 
+macro_rules! for_each_tuple {
+    ($mac:ident) => {
+        $mac!( 0 );
+        $mac!( 1 T1);
+        $mac!( 2 T1 T2);
+        $mac!( 3 T1 T2 T3);
+        $mac!( 4 T1 T2 T3 T4);
+        $mac!( 5 T1 T2 T3 T4 T5);
+        $mac!( 6 T1 T2 T3 T4 T5 T6);
+        $mac!( 7 T1 T2 T3 T4 T5 T6 T7);
+        $mac!( 8 T1 T2 T3 T4 T5 T6 T7 T8);
+        $mac!( 9 T1 T2 T3 T4 T5 T6 T7 T8 T9);
+        // $mac!(10 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10);
+        // $mac!(11 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11);
+        // $mac!(12 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12);
+        // $mac!(13 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13);
+        // $mac!(14 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13 T14);
+        // $mac!(15 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13 T14 T15);
+        // $mac!(16 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13 T14 T15 T16);
+    }
+}
+
 pub trait WasmReturnType {
     type Ok: WasmTypeList;
 
     fn into_fallible(self) -> Result<<Self as WasmReturnType>::Ok, Trap>;
-}
-
-impl WasmReturnType for () {
-    type Ok = ();
-
-    fn into_fallible(self) -> Result<Self::Ok, Trap> {
-        Ok(self)
-    }
 }
 
 impl<T1> WasmReturnType for T1
@@ -227,16 +241,36 @@ where
     }
 }
 
-impl<T1> WasmReturnType for Result<T1, Trap>
-where
-    T1: WasmType,
-{
-    type Ok = T1;
+macro_rules! impl_wasm_return_type {
+    ( $n:literal $( $tuple:ident )* ) => {
+        impl<$($tuple),*> WasmReturnType for ($($tuple,)*)
+        where
+            $(
+                $tuple: WasmType
+            ),*
+        {
+            type Ok = ($($tuple,)*);
 
-    fn into_fallible(self) -> Result<<Self as WasmReturnType>::Ok, Trap> {
-        self
-    }
+            fn into_fallible(self) -> Result<Self::Ok, Trap> {
+                Ok(self)
+            }
+        }
+
+        impl<$($tuple),*> WasmReturnType for Result<($($tuple,)*), Trap>
+        where
+            $(
+                $tuple: WasmType
+            ),*
+        {
+            type Ok = ($($tuple,)*);
+
+            fn into_fallible(self) -> Result<<Self as WasmReturnType>::Ok, Trap> {
+                self
+            }
+        }
+    };
 }
+for_each_tuple!(impl_wasm_return_type);
 
 pub trait WasmType: FromValue + Into<Value> + InternalWasmType {
     /// Returns the value type of the Wasm type.
@@ -285,14 +319,6 @@ pub trait WasmTypeList: ReadParams + WriteResults {
     fn value_types() -> Self::Iter;
 }
 
-impl WasmTypeList for () {
-    type Iter = array::IntoIter<ValueType, 0>;
-
-    fn value_types() -> Self::Iter {
-        [].into_iter()
-    }
-}
-
 impl<T1> WasmTypeList for T1
 where
     T1: WasmType,
@@ -304,200 +330,25 @@ where
     }
 }
 
-impl<T1> WasmTypeList for (T1,)
-where
-    T1: WasmType,
-{
-    type Iter = array::IntoIter<ValueType, 1>;
+macro_rules! impl_wasm_type_list {
+    ( $n:literal $( $tuple:ident )* ) => {
+        impl<$($tuple),*> WasmTypeList for ($($tuple,)*)
+        where
+            $(
+                $tuple: WasmType
+            ),*
+        {
+            type Iter = array::IntoIter<ValueType, $n>;
 
-    fn value_types() -> Self::Iter {
-        [<T1 as WasmType>::value_type()].into_iter()
-    }
+            fn value_types() -> Self::Iter {
+                [$(
+                    <$tuple as WasmType>::value_type()
+                ),*].into_iter()
+            }
+        }
+    };
 }
-
-impl<T1, T2> WasmTypeList for (T1, T2)
-where
-    T1: WasmType,
-    T2: WasmType,
-{
-    type Iter = array::IntoIter<ValueType, 2>;
-
-    fn value_types() -> Self::Iter {
-        [
-            <T1 as WasmType>::value_type(),
-            <T2 as WasmType>::value_type(),
-        ]
-        .into_iter()
-    }
-}
-
-impl<T1, T2, T3> WasmTypeList for (T1, T2, T3)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-{
-    type Iter = array::IntoIter<ValueType, 3>;
-
-    fn value_types() -> Self::Iter {
-        [
-            <T1 as WasmType>::value_type(),
-            <T2 as WasmType>::value_type(),
-            <T3 as WasmType>::value_type(),
-        ]
-        .into_iter()
-    }
-}
-
-impl<T1, T2, T3, T4> WasmTypeList for (T1, T2, T3, T4)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-    T4: WasmType,
-{
-    type Iter = array::IntoIter<ValueType, 4>;
-
-    fn value_types() -> Self::Iter {
-        [
-            <T1 as WasmType>::value_type(),
-            <T2 as WasmType>::value_type(),
-            <T3 as WasmType>::value_type(),
-            <T4 as WasmType>::value_type(),
-        ]
-        .into_iter()
-    }
-}
-
-impl<T1, T2, T3, T4, T5> WasmTypeList for (T1, T2, T3, T4, T5)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-    T4: WasmType,
-    T5: WasmType,
-{
-    type Iter = array::IntoIter<ValueType, 5>;
-
-    fn value_types() -> Self::Iter {
-        [
-            <T1 as WasmType>::value_type(),
-            <T2 as WasmType>::value_type(),
-            <T3 as WasmType>::value_type(),
-            <T4 as WasmType>::value_type(),
-            <T5 as WasmType>::value_type(),
-        ]
-        .into_iter()
-    }
-}
-
-impl<T1, T2, T3, T4, T5, T6> WasmTypeList for (T1, T2, T3, T4, T5, T6)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-    T4: WasmType,
-    T5: WasmType,
-    T6: WasmType,
-{
-    type Iter = array::IntoIter<ValueType, 6>;
-
-    fn value_types() -> Self::Iter {
-        [
-            <T1 as WasmType>::value_type(),
-            <T2 as WasmType>::value_type(),
-            <T3 as WasmType>::value_type(),
-            <T4 as WasmType>::value_type(),
-            <T5 as WasmType>::value_type(),
-            <T6 as WasmType>::value_type(),
-        ]
-        .into_iter()
-    }
-}
-
-impl<T1, T2, T3, T4, T5, T6, T7> WasmTypeList for (T1, T2, T3, T4, T5, T6, T7)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-    T4: WasmType,
-    T5: WasmType,
-    T6: WasmType,
-    T7: WasmType,
-{
-    type Iter = array::IntoIter<ValueType, 7>;
-
-    fn value_types() -> Self::Iter {
-        [
-            <T1 as WasmType>::value_type(),
-            <T2 as WasmType>::value_type(),
-            <T3 as WasmType>::value_type(),
-            <T4 as WasmType>::value_type(),
-            <T5 as WasmType>::value_type(),
-            <T6 as WasmType>::value_type(),
-            <T7 as WasmType>::value_type(),
-        ]
-        .into_iter()
-    }
-}
-
-impl<T1, T2, T3, T4, T5, T6, T7, T8> WasmTypeList for (T1, T2, T3, T4, T5, T6, T7, T8)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-    T4: WasmType,
-    T5: WasmType,
-    T6: WasmType,
-    T7: WasmType,
-    T8: WasmType,
-{
-    type Iter = array::IntoIter<ValueType, 8>;
-
-    fn value_types() -> Self::Iter {
-        [
-            <T1 as WasmType>::value_type(),
-            <T2 as WasmType>::value_type(),
-            <T3 as WasmType>::value_type(),
-            <T4 as WasmType>::value_type(),
-            <T5 as WasmType>::value_type(),
-            <T6 as WasmType>::value_type(),
-            <T7 as WasmType>::value_type(),
-            <T8 as WasmType>::value_type(),
-        ]
-        .into_iter()
-    }
-}
-
-impl<T1, T2, T3, T4, T5, T6, T7, T8, T9> WasmTypeList for (T1, T2, T3, T4, T5, T6, T7, T8, T9)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-    T4: WasmType,
-    T5: WasmType,
-    T6: WasmType,
-    T7: WasmType,
-    T8: WasmType,
-    T9: WasmType,
-{
-    type Iter = array::IntoIter<ValueType, 9>;
-
-    fn value_types() -> Self::Iter {
-        [
-            <T1 as WasmType>::value_type(),
-            <T2 as WasmType>::value_type(),
-            <T3 as WasmType>::value_type(),
-            <T4 as WasmType>::value_type(),
-            <T5 as WasmType>::value_type(),
-            <T6 as WasmType>::value_type(),
-            <T7 as WasmType>::value_type(),
-            <T8 as WasmType>::value_type(),
-            <T9 as WasmType>::value_type(),
-        ]
-        .into_iter()
-    }
-}
+for_each_tuple!(impl_wasm_type_list);
 
 /// Tuple types that can be applied to a function taking matching parameters.
 ///
@@ -515,97 +366,18 @@ pub trait ApplyFunc<F, R> {
     fn apply_ref(self, f: F) -> R;
 }
 
-impl<F, R> ApplyFunc<F, R> for ()
-where
-    F: Fn() -> R,
-{
-    fn apply_ref(self, f: F) -> R {
-        f()
-    }
+macro_rules! impl_apply_func {
+    ( $n:literal $( $tuple:ident )* ) => {
+        impl<F, R, $($tuple),*> ApplyFunc<F, R> for ($($tuple,)*)
+        where
+            F: Fn($($tuple),*) -> R,
+        {
+            #[allow(non_snake_case)]
+            fn apply_ref(self, f: F) -> R {
+                let ($($tuple,)*) = self;
+                f($($tuple),*)
+            }
+        }
+    };
 }
-
-impl<T1, F, R> ApplyFunc<F, R> for (T1,)
-where
-    F: Fn(T1) -> R,
-{
-    fn apply_ref(self, f: F) -> R {
-        f(self.0)
-    }
-}
-
-impl<T1, T2, F, R> ApplyFunc<F, R> for (T1, T2)
-where
-    F: Fn(T1, T2) -> R,
-{
-    fn apply_ref(self, f: F) -> R {
-        f(self.0, self.1)
-    }
-}
-
-impl<T1, T2, T3, F, R> ApplyFunc<F, R> for (T1, T2, T3)
-where
-    F: Fn(T1, T2, T3) -> R,
-{
-    fn apply_ref(self, f: F) -> R {
-        f(self.0, self.1, self.2)
-    }
-}
-
-impl<T1, T2, T3, T4, F, R> ApplyFunc<F, R> for (T1, T2, T3, T4)
-where
-    F: Fn(T1, T2, T3, T4) -> R,
-{
-    fn apply_ref(self, f: F) -> R {
-        f(self.0, self.1, self.2, self.3)
-    }
-}
-
-impl<T1, T2, T3, T4, T5, F, R> ApplyFunc<F, R> for (T1, T2, T3, T4, T5)
-where
-    F: Fn(T1, T2, T3, T4, T5) -> R,
-{
-    fn apply_ref(self, f: F) -> R {
-        f(self.0, self.1, self.2, self.3, self.4)
-    }
-}
-
-impl<T1, T2, T3, T4, T5, T6, F, R> ApplyFunc<F, R> for (T1, T2, T3, T4, T5, T6)
-where
-    F: Fn(T1, T2, T3, T4, T5, T6) -> R,
-{
-    fn apply_ref(self, f: F) -> R {
-        f(self.0, self.1, self.2, self.3, self.4, self.5)
-    }
-}
-
-impl<T1, T2, T3, T4, T5, T6, T7, F, R> ApplyFunc<F, R> for (T1, T2, T3, T4, T5, T6, T7)
-where
-    F: Fn(T1, T2, T3, T4, T5, T6, T7) -> R,
-{
-    fn apply_ref(self, f: F) -> R {
-        f(self.0, self.1, self.2, self.3, self.4, self.5, self.6)
-    }
-}
-
-impl<T1, T2, T3, T4, T5, T6, T7, T8, F, R> ApplyFunc<F, R> for (T1, T2, T3, T4, T5, T6, T7, T8)
-where
-    F: Fn(T1, T2, T3, T4, T5, T6, T7, T8) -> R,
-{
-    fn apply_ref(self, f: F) -> R {
-        f(
-            self.0, self.1, self.2, self.3, self.4, self.5, self.6, self.7,
-        )
-    }
-}
-
-impl<T1, T2, T3, T4, T5, T6, T7, T8, T9, F, R> ApplyFunc<F, R>
-    for (T1, T2, T3, T4, T5, T6, T7, T8, T9)
-where
-    F: Fn(T1, T2, T3, T4, T5, T6, T7, T8, T9) -> R,
-{
-    fn apply_ref(self, f: F) -> R {
-        f(
-            self.0, self.1, self.2, self.3, self.4, self.5, self.6, self.7, self.8,
-        )
-    }
-}
+for_each_tuple!(impl_apply_func);
