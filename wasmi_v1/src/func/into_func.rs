@@ -34,10 +34,10 @@ macro_rules! impl_into_func {
             $(
                 $tuple: WasmType,
             )*
-            R: WasmReturnType,
+            R: WasmResults,
         {
             type Params = ($($tuple,)*);
-            type Results = <R as WasmReturnType>::Ok;
+            type Results = <R as WasmResults>::Ok;
 
             #[allow(non_snake_case)]
             fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
@@ -61,10 +61,10 @@ macro_rules! impl_into_func {
             $(
                 $tuple: WasmType,
             )*
-            R: WasmReturnType,
+            R: WasmResults,
         {
             type Params = ($($tuple,)*);
-            type Results = <R as WasmReturnType>::Ok;
+            type Results = <R as WasmResults>::Ok;
 
             #[allow(non_snake_case)]
             fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
@@ -88,15 +88,15 @@ macro_rules! impl_into_func {
 for_each_tuple!(impl_into_func);
 
 /// Types and type sequences that can be used as return values of host functions.
-pub trait WasmReturnType {
+pub trait WasmResults {
     #[doc(hidden)]
     type Ok: WasmTypeList;
 
     #[doc(hidden)]
-    fn into_fallible(self) -> Result<<Self as WasmReturnType>::Ok, Trap>;
+    fn into_fallible(self) -> Result<<Self as WasmResults>::Ok, Trap>;
 }
 
-impl<T1> WasmReturnType for T1
+impl<T1> WasmResults for T1
 where
     T1: WasmType,
 {
@@ -109,7 +109,7 @@ where
 
 macro_rules! impl_wasm_return_type {
     ( $n:literal $( $tuple:ident )* ) => {
-        impl<$($tuple),*> WasmReturnType for ($($tuple,)*)
+        impl<$($tuple),*> WasmResults for ($($tuple,)*)
         where
             $(
                 $tuple: WasmType
@@ -122,7 +122,7 @@ macro_rules! impl_wasm_return_type {
             }
         }
 
-        impl<$($tuple),*> WasmReturnType for Result<($($tuple,)*), Trap>
+        impl<$($tuple),*> WasmResults for Result<($($tuple,)*), Trap>
         where
             $(
                 $tuple: WasmType
@@ -130,7 +130,7 @@ macro_rules! impl_wasm_return_type {
         {
             type Ok = ($($tuple,)*);
 
-            fn into_fallible(self) -> Result<<Self as WasmReturnType>::Ok, Trap> {
+            fn into_fallible(self) -> Result<<Self as WasmResults>::Ok, Trap> {
                 self
             }
         }
