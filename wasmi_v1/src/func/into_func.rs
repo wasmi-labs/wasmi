@@ -4,6 +4,7 @@ use super::{
 };
 use crate::{
     engine::{ReadParams, WriteResults},
+    foreach_tuple::for_each_tuple,
     Caller,
     SignatureEntity,
 };

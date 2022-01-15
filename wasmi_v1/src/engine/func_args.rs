@@ -1,6 +1,6 @@
 use super::{FromStackEntry, StackEntry};
-use core::cmp;
 use crate::foreach_tuple::for_each_tuple;
+use core::cmp;
 
 #[derive(Debug)]
 pub struct FuncParams<'a> {
