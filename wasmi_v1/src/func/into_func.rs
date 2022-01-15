@@ -21,174 +21,67 @@ pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {
     fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>);
 }
 
-impl<T, F, R> IntoFunc<T, (), R> for F
-where
-    F: Fn() -> R,
-    F: Send + Sync + 'static,
-    R: WasmReturnType,
-{
-    type Params = ();
-    type Results = <R as WasmReturnType>::Ok;
+macro_rules! impl_into_func {
+    ( $n:literal $( $tuple:ident )* ) => {
+        impl<T, F, $($tuple,)* R> IntoFunc<T, ($($tuple,)*), R> for F
+        where
+            F: Fn($($tuple),*) -> R,
+            F: Send + Sync + 'static,
+            $(
+                $tuple: WasmType,
+            )*
+            R: WasmReturnType,
+        {
+            type Params = ($($tuple,)*);
+            type Results = <R as WasmReturnType>::Ok;
 
-    fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
-        IntoFunc::into_func(move |_: Caller<'_, T>| self())
-    }
+            #[allow(non_snake_case)]
+            fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
+                IntoFunc::into_func(
+                    move |
+                        _: Caller<'_, T>,
+                        $(
+                            $tuple: $tuple,
+                        )*
+                    | {
+                        (self)($($tuple),*)
+                    }
+                )
+            }
+        }
+
+        impl<T, F, $($tuple,)* R> IntoFunc<T, (Caller<'_, T>, $($tuple),*), R> for F
+        where
+            F: Fn(Caller<T>, $($tuple),*) -> R,
+            F: Send + Sync + 'static,
+            $(
+                $tuple: WasmType,
+            )*
+            R: WasmReturnType,
+        {
+            type Params = ($($tuple,)*);
+            type Results = <R as WasmReturnType>::Ok;
+
+            #[allow(non_snake_case)]
+            fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
+                let signature = SignatureEntity::new(
+                    <Self::Params as WasmTypeList>::value_types(),
+                    <Self::Results as WasmTypeList>::value_types(),
+                );
+                let trampoline = HostFuncTrampoline::new(
+                    move |caller: Caller<T>, params_results: FuncParams| -> Result<FuncResults, Trap> {
+                        let ($($tuple,)*): Self::Params = params_results.read_params();
+                        let results: Self::Results =
+                            (self)(caller, $($tuple),*).into_fallible()?;
+                        Ok(params_results.write_results(results))
+                    },
+                );
+                (signature, trampoline)
+            }
+        }
+    };
 }
-
-impl<T, F, P1, R> IntoFunc<T, P1, R> for F
-where
-    F: Fn(P1) -> R,
-    F: Send + Sync + 'static,
-    P1: WasmType,
-    R: WasmReturnType,
-{
-    type Params = P1;
-    type Results = <R as WasmReturnType>::Ok;
-
-    fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
-        IntoFunc::into_func(move |_: Caller<'_, T>, p1: P1| self(p1))
-    }
-}
-
-impl<T, F, P1, P2, R> IntoFunc<T, (P1, P2), R> for F
-where
-    F: Fn(P1, P2) -> R,
-    F: Send + Sync + 'static,
-    P1: WasmType,
-    P2: WasmType,
-    R: WasmReturnType,
-{
-    type Params = (P1, P2);
-    type Results = <R as WasmReturnType>::Ok;
-
-    fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
-        IntoFunc::into_func(move |_: Caller<'_, T>, p1: P1, p2: P2| self(p1, p2))
-    }
-}
-
-impl<T, F, P1, P2, P3, R> IntoFunc<T, (P1, P2, P3), R> for F
-where
-    F: Fn(P1, P2, P3) -> R,
-    F: Send + Sync + 'static,
-    P1: WasmType,
-    P2: WasmType,
-    P3: WasmType,
-    R: WasmReturnType,
-{
-    type Params = (P1, P2, P3);
-    type Results = <R as WasmReturnType>::Ok;
-
-    fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
-        IntoFunc::into_func(move |_: Caller<'_, T>, p1: P1, p2: P2, p3: P3| self(p1, p2, p3))
-    }
-}
-
-impl<T, F, R> IntoFunc<T, Caller<'_, T>, R> for F
-where
-    F: Fn(Caller<T>) -> R,
-    F: Send + Sync + 'static,
-    R: WasmReturnType,
-{
-    type Params = ();
-    type Results = <R as WasmReturnType>::Ok;
-
-    fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
-        let signature = SignatureEntity::new(
-            <Self::Params as WasmTypeList>::value_types(),
-            <Self::Results as WasmTypeList>::value_types(),
-        );
-        let trampoline = HostFuncTrampoline::new(
-            move |caller: Caller<T>, params_results: FuncParams| -> Result<FuncResults, Trap> {
-                let _params: Self::Params = params_results.read_params();
-                let results: Self::Results = self(caller).into_fallible()?;
-                Ok(params_results.write_results(results))
-            },
-        );
-        (signature, trampoline)
-    }
-}
-
-impl<T, F, P1, R> IntoFunc<T, (Caller<'_, T>, P1), R> for F
-where
-    F: Fn(Caller<T>, P1) -> R,
-    F: Send + Sync + 'static,
-    P1: WasmType,
-    R: WasmReturnType,
-{
-    type Params = P1;
-    type Results = <R as WasmReturnType>::Ok;
-
-    fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
-        let signature = SignatureEntity::new(
-            <Self::Params as WasmTypeList>::value_types(),
-            <Self::Results as WasmTypeList>::value_types(),
-        );
-        let trampoline = HostFuncTrampoline::new(
-            move |caller: Caller<T>, params_results: FuncParams| -> Result<FuncResults, Trap> {
-                let params: Self::Params = params_results.read_params();
-                let results: Self::Results = (caller, params).apply_ref(&self).into_fallible()?;
-                Ok(params_results.write_results(results))
-            },
-        );
-        (signature, trampoline)
-    }
-}
-
-impl<T, F, P1, P2, R> IntoFunc<T, (Caller<'_, T>, P1, P2), R> for F
-where
-    F: Fn(Caller<T>, P1, P2) -> R,
-    F: Send + Sync + 'static,
-    P1: WasmType,
-    P2: WasmType,
-    R: WasmReturnType,
-{
-    type Params = (P1, P2);
-    type Results = <R as WasmReturnType>::Ok;
-
-    fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
-        let signature = SignatureEntity::new(
-            <Self::Params as WasmTypeList>::value_types(),
-            <Self::Results as WasmTypeList>::value_types(),
-        );
-        let trampoline = HostFuncTrampoline::new(
-            move |caller: Caller<T>, params_results: FuncParams| -> Result<FuncResults, Trap> {
-                let (p1, p2): Self::Params = params_results.read_params();
-                let results: Self::Results = (caller, p1, p2).apply_ref(&self).into_fallible()?;
-                Ok(params_results.write_results(results))
-            },
-        );
-        (signature, trampoline)
-    }
-}
-
-impl<T, F, P1, P2, P3, R> IntoFunc<T, (Caller<'_, T>, P1, P2, P3), R> for F
-where
-    F: Fn(Caller<T>, P1, P2, P3) -> R,
-    F: Send + Sync + 'static,
-    P1: WasmType,
-    P2: WasmType,
-    P3: WasmType,
-    R: WasmReturnType,
-{
-    type Params = (P1, P2, P3);
-    type Results = <R as WasmReturnType>::Ok;
-
-    fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
-        let signature = SignatureEntity::new(
-            <Self::Params as WasmTypeList>::value_types(),
-            <Self::Results as WasmTypeList>::value_types(),
-        );
-        let trampoline = HostFuncTrampoline::new(
-            move |caller: Caller<T>, params_results: FuncParams| -> Result<FuncResults, Trap> {
-                let (p1, p2, p3): Self::Params = params_results.read_params();
-                let results: Self::Results =
-                    (caller, p1, p2, p3).apply_ref(&self).into_fallible()?;
-                Ok(params_results.write_results(results))
-            },
-        );
-        (signature, trampoline)
-    }
-}
+for_each_tuple!(impl_into_func);
 
 pub trait WasmReturnType {
     type Ok: WasmTypeList;
