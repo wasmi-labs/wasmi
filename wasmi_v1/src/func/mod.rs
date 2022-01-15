@@ -160,6 +160,19 @@ pub struct HostFuncTrampoline<T> {
     closure: Arc<HostFuncTrampolineFn<T>>,
 }
 
+impl<T> HostFuncTrampoline<T> {
+    /// Creates a new [`HostFuncTrampoline`] from the given trampoline function.
+    pub fn new<F>(trampoline: F) -> Self
+    where
+        F: Fn(Caller<T>, FuncParams) -> Result<FuncResults, Trap>,
+        F: Send + Sync + 'static,
+    {
+        Self {
+            closure: Arc::new(trampoline),
+        }
+    }
+}
+
 impl<T> Clone for HostFuncTrampoline<T> {
     fn clone(&self) -> Self {
         Self {

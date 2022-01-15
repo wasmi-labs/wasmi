@@ -7,7 +7,6 @@ use crate::{
     Caller,
     SignatureEntity,
 };
-use alloc::sync::Arc;
 use core::array;
 use wasmi_core::{FromValue, Trap, Value, ValueType, F32, F64};
 
@@ -187,18 +186,6 @@ where
             },
         );
         (signature, trampoline)
-    }
-}
-
-impl<T> HostFuncTrampoline<T> {
-    pub fn new<F>(trampoline: F) -> Self
-    where
-        F: Fn(Caller<T>, FuncParams) -> Result<FuncResults, Trap>,
-        F: Send + Sync + 'static,
-    {
-        Self {
-            closure: Arc::new(trampoline),
-        }
     }
 }
 
