@@ -346,7 +346,6 @@ impl EngineInner {
         }
     }
 
-    #[inline(always)]
     fn execute_host_func<C>(
         &mut self,
         mut ctx: C,
