@@ -12,7 +12,9 @@ use core::array;
 use wasmi_core::{FromValue, Trap, Value, ValueType, F32, F64};
 
 pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {
+    #[doc(hidden)]
     type Params: WasmTypeList;
+    #[doc(hidden)]
     type Results: WasmTypeList;
 
     #[doc(hidden)]
