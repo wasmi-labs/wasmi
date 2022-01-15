@@ -11,12 +11,16 @@ use crate::{
 use core::array;
 use wasmi_core::{FromValue, Trap, Value, ValueType, F32, F64};
 
+/// Closures and functions that can be used as host functions.
 pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {
+    /// The parameters of the host function.
     #[doc(hidden)]
     type Params: WasmTypeList;
+    /// The results of the host function.
     #[doc(hidden)]
     type Results: WasmTypeList;
 
+    /// Converts the function into its `wasmi` signature and its trampoline.
     #[doc(hidden)]
     fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>);
 }
@@ -83,9 +87,12 @@ macro_rules! impl_into_func {
 }
 for_each_tuple!(impl_into_func);
 
+/// Types and type sequences that can be used as return values of host functions.
 pub trait WasmReturnType {
+    #[doc(hidden)]
     type Ok: WasmTypeList;
 
+    #[doc(hidden)]
     fn into_fallible(self) -> Result<<Self as WasmReturnType>::Ok, Trap>;
 }
 
@@ -131,6 +138,7 @@ macro_rules! impl_wasm_return_type {
 }
 for_each_tuple!(impl_wasm_return_type);
 
+/// Types that can be used as parameters or results of host functions.
 pub trait WasmType: FromValue + Into<Value> + InternalWasmType {
     /// Returns the value type of the Wasm type.
     fn value_type() -> ValueType;
