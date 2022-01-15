@@ -77,12 +77,16 @@ pub trait WasmType: FromStackEntry + Into<StackEntry> {}
 impl<T> WasmType for T where T: FromStackEntry + Into<StackEntry> {}
 
 /// Type sequences that can read host function parameters from the [`ValueStack`].
+///
+/// [`ValueStack`]: [`crate::engine::ValueStack`]
 pub trait ReadParams {
     /// Reads the host parameters from the given [`ValueStack`] region.
     ///
     /// # Panics
     ///
     /// If the length of the [`ValueStack`] region does not match.
+    ///
+    /// [`ValueStack`]: [`crate::engine::ValueStack`]
     fn read_params(params: &[StackEntry]) -> Self;
 }
 
@@ -117,12 +121,16 @@ macro_rules! impl_read_params {
 for_each_tuple!(impl_read_params);
 
 /// Type sequences that can write results back into the [`ValueStack`].
+///
+/// [`ValueStack`]: [`crate::engine::ValueStack`]
 pub trait WriteResults {
     /// Writes the `results` into the given [`ValueStack`] region.
     ///
     /// # Panics
     ///
     /// If the length of the [`ValueStack`] region does not match.
+    ///
+    /// [`ValueStack`]: [`crate::engine::ValueStack`]
     fn write_results(self, results: &mut [StackEntry]);
 }
 
