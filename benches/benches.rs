@@ -169,7 +169,9 @@ fn bench_execute_rev_comp_v0(c: &mut Criterion) {
         .set(input_data_mem_offset, REVCOMP_INPUT)
         .expect("can't load test data into a wasm memory");
 
+    let mut ran_benchmarks = false;
     c.bench_function("execute/rev_complement/v0", |b| {
+        ran_benchmarks = true;
         b.iter(|| {
             instance
                 .invoke_export(
@@ -181,17 +183,19 @@ fn bench_execute_rev_comp_v0(c: &mut Criterion) {
         })
     });
 
-    // Verify the result.
-    let output_data_mem_offset = assert_matches!(
-        instance.invoke_export("rev_complement_output_ptr", &[test_data_ptr], &mut v0::NopExternals),
-        Ok(Some(Value::I32(v))) => v as u32,
-        "",
-    );
-    let mut result = vec![0x00_u8; REVCOMP_OUTPUT.len()];
-    memory
-        .get_into(output_data_mem_offset, &mut result)
-        .expect("can't get result data from a wasm memory");
-    assert_eq!(&*result, REVCOMP_OUTPUT);
+    if ran_benchmarks {
+        // Verify the result.
+        let output_data_mem_offset = assert_matches!(
+            instance.invoke_export("rev_complement_output_ptr", &[test_data_ptr], &mut v0::NopExternals),
+            Ok(Some(Value::I32(v))) => v as u32,
+            "",
+        );
+        let mut result = vec![0x00_u8; REVCOMP_OUTPUT.len()];
+        memory
+            .get_into(output_data_mem_offset, &mut result)
+            .expect("can't get result data from a wasm memory");
+        assert_eq!(&*result, REVCOMP_OUTPUT);
+    }
 }
 
 fn bench_execute_rev_comp_v1(c: &mut Criterion) {
