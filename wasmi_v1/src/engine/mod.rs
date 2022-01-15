@@ -4,9 +4,11 @@ pub mod bytecode;
 pub mod call_stack;
 pub mod code_map;
 pub mod exec_context;
+mod func_args;
 pub mod inst_builder;
 pub mod value_stack;
 
+pub(crate) use self::func_args::{FuncParams, FuncResults, ReadParams, WasmType, WriteResults};
 pub use self::{
     bytecode::{DropKeep, Target},
     code_map::FuncBody,
@@ -20,8 +22,9 @@ use self::{
     value_stack::{FromStackEntry, StackEntry, ValueStack},
 };
 use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func, Signature};
-use crate::{Trap, TrapCode, Value, ValueType};
-use alloc::{sync::Arc, vec::Vec};
+use crate::{func::HostFuncEntity, Instance, Trap, TrapCode, Value, ValueType};
+use alloc::sync::Arc;
+use core::cmp;
 use spin::mutex::Mutex;
 
 /// Maximum number of bytes on the value stack.
@@ -182,8 +185,6 @@ pub struct EngineInner {
     call_stack: CallStack,
     /// Stores all Wasm function bodies that the interpreter is aware of.
     code_map: CodeMap,
-    /// Scratch buffer for intermediate results and data.
-    scratch: Vec<Value>,
 }
 
 impl EngineInner {
@@ -192,7 +193,6 @@ impl EngineInner {
             value_stack: ValueStack::new(64, config.value_stack_limit),
             call_stack: CallStack::new(config.call_stack_limit),
             code_map: CodeMap::default(),
-            scratch: Vec::new(),
         }
     }
 
@@ -232,9 +232,11 @@ impl EngineInner {
                 self.execute_wasm_func(&mut ctx, signature, args, results, func)?;
             }
             FuncEntityInternal::Host(host_func) => {
-                let signature = host_func.signature();
-                Self::check_signature(ctx.as_context(), signature, args, results)?;
-                host_func.clone().call(&mut ctx, None, args, results)?;
+                self.initialize_args(args);
+                let host_func = host_func.clone();
+                self.execute_host_func(&mut ctx, host_func.clone(), None)?;
+                let result_types = host_func.signature().outputs(&ctx);
+                self.write_results_back(result_types, results);
             }
         }
         Ok(())
@@ -328,14 +330,6 @@ impl EngineInner {
                                 .map_err(|_| TrapCode::StackOverflow)?;
                         }
                         FuncEntityInternal::Host(host_func) => {
-                            let signature = host_func.signature();
-                            let (input_types, output_types) =
-                                signature.inputs_outputs(ctx.as_context());
-                            Self::prepare_host_function_args(
-                                input_types,
-                                &mut self.value_stack,
-                                &mut self.scratch,
-                            );
                             // Note: We push the function context before calling the host function.
                             //       If the VM is not resumable, it does no harm.
                             //       If it is, we then save the context here.
@@ -343,39 +337,8 @@ impl EngineInner {
                             self.call_stack
                                 .push(function_frame)
                                 .map_err(|_| TrapCode::StackOverflow)?;
-                            // Prepare scratch buffer to hold both, inputs and outputs of the call.
-                            // We are going to split the scratch buffer in the middle right before the call.
-                            debug_assert_eq!(self.scratch.len(), input_types.len());
-                            let len_inputs = input_types.len();
-                            let len_outputs = output_types.len();
-                            let zeros = output_types.iter().copied().map(Value::default);
-                            self.scratch.extend(zeros);
-                            // At this point the scratch buffer holds the host function input arguments
-                            // as well as a zero initialized entry per expected host function output value.
-                            let (inputs, outputs) = self.scratch.split_at_mut(len_inputs);
-                            debug_assert_eq!(inputs.len(), len_inputs);
-                            debug_assert_eq!(outputs.len(), len_outputs);
-                            // Now we are ready to perform the host function call.
-                            // Note: We need to clone the host function due to some borrowing issues.
-                            //       This should not be a big deal since host functions usually are cheap to clone.
-                            host_func.clone().call(
-                                ctx.as_context_mut(),
-                                Some(instance),
-                                inputs,
-                                outputs,
-                            )?;
-                            // Check if the returned values match their expected types.
-                            let output_types = signature.outputs(ctx.as_context());
-                            for (required_type, output_value) in
-                                output_types.iter().copied().zip(&*outputs)
-                            {
-                                if required_type != output_value.value_type() {
-                                    return Err(TrapCode::UnexpectedSignature).map_err(Into::into);
-                                }
-                            }
-                            // Copy host function output values to the value stack.
-                            self.value_stack
-                                .extend(outputs.iter().copied().map(|value| value.into()));
+                            let host_func = host_func.clone();
+                            self.execute_host_func(&mut ctx, host_func, Some(instance))?;
                         }
                     }
                 }
@@ -383,29 +346,48 @@ impl EngineInner {
         }
     }
 
-    /// Prepares the inputs arguments to the host function execution.
-    ///
-    /// # Note
-    ///
-    /// This will pop the last `n` values from the `value_stack` where
-    /// `n` is the number of required input arguments to the host function
-    /// and equal to the number of elements in `input_types`.
-    /// The `input_types` slice represents the value types required by the
-    /// host function that is about to be called.
-    fn prepare_host_function_args(
-        input_types: &[ValueType],
-        value_stack: &mut ValueStack,
-        host_args: &mut Vec<Value>,
-    ) {
-        let len_args = input_types.len();
-        let stack_args = value_stack.pop_as_slice(len_args);
-        assert_eq!(len_args, stack_args.len());
-        host_args.clear();
-        let prepared_args = input_types
-            .iter()
-            .zip(stack_args)
-            .map(|(input_type, host_arg)| host_arg.with_type(*input_type));
-        host_args.extend(prepared_args);
+    fn execute_host_func<C>(
+        &mut self,
+        mut ctx: C,
+        host_func: HostFuncEntity<<C as AsContext>::UserState>,
+        instance: Option<Instance>,
+    ) -> Result<(), Trap>
+    where
+        C: AsContextMut,
+    {
+        // The host function signature is required for properly
+        // adjusting, inspecting and manipulating the value stack.
+        let signature = host_func.signature();
+        let (input_types, output_types) = signature.inputs_outputs(ctx.as_context());
+        // In case the host function returns more values than it takes
+        // we are required to extend the value stack.
+        let len_inputs = input_types.len();
+        let len_outputs = output_types.len();
+        let len_inout = cmp::max(len_inputs, len_outputs);
+        self.value_stack.reserve(len_inout)?;
+        if len_outputs > len_inputs {
+            let delta = len_outputs - len_inputs;
+            self.value_stack.extend_zeros(delta)?;
+        }
+        let params_results = FuncParams::new(
+            self.value_stack.peek_as_slice_mut(len_inout),
+            len_inputs,
+            len_outputs,
+        );
+        // Now we are ready to perform the host function call.
+        // Note: We need to clone the host function due to some borrowing issues.
+        //       This should not be a big deal since host functions usually are cheap to clone.
+        host_func.call(ctx.as_context_mut(), instance, params_results)?;
+        // If the host functions returns fewer results than it receives parameters
+        // the value stack needs to be shrinked for the delta.
+        if len_outputs < len_inputs {
+            let delta = len_inputs - len_outputs;
+            self.value_stack.drop(delta);
+        }
+        // At this point the host function has been called and has directly
+        // written its results into the value stack so that the last entries
+        // in the value stack are the result values of the host function call.
+        Ok(())
     }
 
     /// Initializes the value stack with the given arguments `args`.

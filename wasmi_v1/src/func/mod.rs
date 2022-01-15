@@ -3,7 +3,7 @@ mod into_func;
 
 pub use self::{caller::Caller, into_func::IntoFunc};
 use super::{
-    engine::FuncBody,
+    engine::{FuncBody, FuncParams, FuncResults},
     AsContext,
     AsContextMut,
     Index,
@@ -12,7 +12,7 @@ use super::{
     StoreContext,
     Stored,
 };
-use crate::{Trap, Value, ValueType};
+use crate::{Trap, Value};
 use alloc::sync::Arc;
 use core::{fmt, fmt::Debug};
 
@@ -154,10 +154,23 @@ impl<T> Clone for HostFuncEntity<T> {
 }
 
 type HostFuncTrampolineFn<T> =
-    dyn Fn(Caller<T>, &[Value], &mut [Value]) -> Result<(), Trap> + Send + Sync + 'static;
+    dyn Fn(Caller<T>, FuncParams) -> Result<FuncResults, Trap> + Send + Sync + 'static;
 
 pub struct HostFuncTrampoline<T> {
     closure: Arc<HostFuncTrampolineFn<T>>,
+}
+
+impl<T> HostFuncTrampoline<T> {
+    /// Creates a new [`HostFuncTrampoline`] from the given trampoline function.
+    pub fn new<F>(trampoline: F) -> Self
+    where
+        F: Fn(Caller<T>, FuncParams) -> Result<FuncResults, Trap>,
+        F: Send + Sync + 'static,
+    {
+        Self {
+            closure: Arc::new(trampoline),
+        }
+    }
 }
 
 impl<T> Clone for HostFuncTrampoline<T> {
@@ -200,11 +213,10 @@ impl<T> HostFuncEntity<T> {
         &self,
         mut ctx: impl AsContextMut<UserState = T>,
         instance: Option<Instance>,
-        inputs: &[Value],
-        outputs: &mut [Value],
-    ) -> Result<(), Trap> {
+        params: FuncParams,
+    ) -> Result<FuncResults, Trap> {
         let caller = <Caller<T>>::new(&mut ctx, instance);
-        (self.trampoline.closure)(caller, inputs, outputs)
+        (self.trampoline.closure)(caller, params)
     }
 }
 
