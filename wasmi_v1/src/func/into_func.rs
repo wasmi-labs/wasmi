@@ -208,35 +208,3 @@ macro_rules! impl_wasm_type_list {
     };
 }
 for_each_tuple!(impl_wasm_type_list);
-
-/// Tuple types that can be applied to a function taking matching parameters.
-///
-/// # Note
-///
-/// This is a convenience type to clean up some generic code.
-pub trait ApplyFunc<F, R> {
-    /// Applies `f` given `self` as parameters.
-    ///
-    /// # Note
-    ///
-    /// `Self` usually is a tuple type `(T1, T2, ..)` and `f` is
-    /// a function that takes parameters of the same order and structure
-    /// as `Self`.
-    fn apply_ref(self, f: F) -> R;
-}
-
-macro_rules! impl_apply_func {
-    ( $n:literal $( $tuple:ident )* ) => {
-        impl<F, R, $($tuple),*> ApplyFunc<F, R> for ($($tuple,)*)
-        where
-            F: Fn($($tuple),*) -> R,
-        {
-            #[allow(non_snake_case)]
-            fn apply_ref(self, f: F) -> R {
-                let ($($tuple,)*) = self;
-                f($($tuple),*)
-            }
-        }
-    };
-}
-for_each_tuple!(impl_apply_func);
