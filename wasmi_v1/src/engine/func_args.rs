@@ -75,6 +75,28 @@ pub trait WasmType: FromStackEntry + Into<StackEntry> {}
 
 impl<T> WasmType for T where T: FromStackEntry + Into<StackEntry> {}
 
+macro_rules! for_each_tuple {
+    ($mac:ident) => {
+        $mac!( 0 );
+        $mac!( 1 T1);
+        $mac!( 2 T1 T2);
+        $mac!( 3 T1 T2 T3);
+        $mac!( 4 T1 T2 T3 T4);
+        $mac!( 5 T1 T2 T3 T4 T5);
+        $mac!( 6 T1 T2 T3 T4 T5 T6);
+        $mac!( 7 T1 T2 T3 T4 T5 T6 T7);
+        $mac!( 8 T1 T2 T3 T4 T5 T6 T7 T8);
+        $mac!( 9 T1 T2 T3 T4 T5 T6 T7 T8 T9);
+        $mac!(10 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10);
+        $mac!(11 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11);
+        $mac!(12 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12);
+        $mac!(13 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13);
+        $mac!(14 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13 T14);
+        $mac!(15 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13 T14 T15);
+        $mac!(16 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13 T14 T15 T16);
+    }
+}
+
 /// Type sequences that can read host function parameters from the [`ValueStack`].
 pub trait ReadParams {
     /// Reads the host parameters from the given [`ValueStack`] region.
@@ -83,12 +105,6 @@ pub trait ReadParams {
     ///
     /// If the length of the [`ValueStack`] region does not match.
     fn read_params(params: &[StackEntry]) -> Self;
-}
-
-impl ReadParams for () {
-    fn read_params(results: &[StackEntry]) -> Self {
-        assert_eq!(results.len(), 0);
-    }
 }
 
 impl<T1> ReadParams for T1
@@ -101,183 +117,35 @@ where
     }
 }
 
-impl<T1> ReadParams for (T1,)
-where
-    T1: WasmType,
-{
-    fn read_params(results: &[StackEntry]) -> Self {
-        assert_eq!(results.len(), 1);
-        (<T1 as FromStackEntry>::from_stack_entry(results[0]),)
-    }
+macro_rules! impl_read_params {
+    ( $n:literal $( $tuple:ident )* ) => {
+        impl<$($tuple),*> ReadParams for ($($tuple,)*)
+        where
+            $(
+                $tuple: WasmType
+            ),*
+        {
+            #[allow(non_snake_case)]
+            fn read_params(results: &[StackEntry]) -> Self {
+                match results {
+                    &[$($tuple),*] => (
+                        $(
+                            <$tuple as FromStackEntry>::from_stack_entry($tuple),
+                        )*
+                    ),
+                    unexpected => {
+                        panic!(
+                            "expected slice with {} elements but found: {:?}",
+                            $n,
+                            unexpected,
+                        )
+                    }
+                }
+            }
+        }
+    };
 }
-
-impl<T1, T2> ReadParams for (T1, T2)
-where
-    T1: WasmType,
-    T2: WasmType,
-{
-    fn read_params(results: &[StackEntry]) -> Self {
-        assert_eq!(results.len(), 2);
-        (
-            <T1 as FromStackEntry>::from_stack_entry(results[0]),
-            <T2 as FromStackEntry>::from_stack_entry(results[1]),
-        )
-    }
-}
-
-impl<T1, T2, T3> ReadParams for (T1, T2, T3)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-{
-    fn read_params(results: &[StackEntry]) -> Self {
-        assert_eq!(results.len(), 3);
-        (
-            <T1 as FromStackEntry>::from_stack_entry(results[0]),
-            <T2 as FromStackEntry>::from_stack_entry(results[1]),
-            <T3 as FromStackEntry>::from_stack_entry(results[2]),
-        )
-    }
-}
-
-impl<T1, T2, T3, T4> ReadParams for (T1, T2, T3, T4)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-    T4: WasmType,
-{
-    fn read_params(results: &[StackEntry]) -> Self {
-        assert_eq!(results.len(), 4);
-        (
-            <T1 as FromStackEntry>::from_stack_entry(results[0]),
-            <T2 as FromStackEntry>::from_stack_entry(results[1]),
-            <T3 as FromStackEntry>::from_stack_entry(results[2]),
-            <T4 as FromStackEntry>::from_stack_entry(results[3]),
-        )
-    }
-}
-
-impl<T1, T2, T3, T4, T5> ReadParams for (T1, T2, T3, T4, T5)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-    T4: WasmType,
-    T5: WasmType,
-{
-    fn read_params(results: &[StackEntry]) -> Self {
-        assert_eq!(results.len(), 5);
-        (
-            <T1 as FromStackEntry>::from_stack_entry(results[0]),
-            <T2 as FromStackEntry>::from_stack_entry(results[1]),
-            <T3 as FromStackEntry>::from_stack_entry(results[2]),
-            <T4 as FromStackEntry>::from_stack_entry(results[3]),
-            <T5 as FromStackEntry>::from_stack_entry(results[4]),
-        )
-    }
-}
-
-impl<T1, T2, T3, T4, T5, T6> ReadParams for (T1, T2, T3, T4, T5, T6)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-    T4: WasmType,
-    T5: WasmType,
-    T6: WasmType,
-{
-    fn read_params(results: &[StackEntry]) -> Self {
-        assert_eq!(results.len(), 6);
-        (
-            <T1 as FromStackEntry>::from_stack_entry(results[0]),
-            <T2 as FromStackEntry>::from_stack_entry(results[1]),
-            <T3 as FromStackEntry>::from_stack_entry(results[2]),
-            <T4 as FromStackEntry>::from_stack_entry(results[3]),
-            <T5 as FromStackEntry>::from_stack_entry(results[4]),
-            <T6 as FromStackEntry>::from_stack_entry(results[5]),
-        )
-    }
-}
-
-impl<T1, T2, T3, T4, T5, T6, T7> ReadParams for (T1, T2, T3, T4, T5, T6, T7)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-    T4: WasmType,
-    T5: WasmType,
-    T6: WasmType,
-    T7: WasmType,
-{
-    fn read_params(results: &[StackEntry]) -> Self {
-        assert_eq!(results.len(), 7);
-        (
-            <T1 as FromStackEntry>::from_stack_entry(results[0]),
-            <T2 as FromStackEntry>::from_stack_entry(results[1]),
-            <T3 as FromStackEntry>::from_stack_entry(results[2]),
-            <T4 as FromStackEntry>::from_stack_entry(results[3]),
-            <T5 as FromStackEntry>::from_stack_entry(results[4]),
-            <T6 as FromStackEntry>::from_stack_entry(results[5]),
-            <T7 as FromStackEntry>::from_stack_entry(results[6]),
-        )
-    }
-}
-
-impl<T1, T2, T3, T4, T5, T6, T7, T8> ReadParams for (T1, T2, T3, T4, T5, T6, T7, T8)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-    T4: WasmType,
-    T5: WasmType,
-    T6: WasmType,
-    T7: WasmType,
-    T8: WasmType,
-{
-    fn read_params(results: &[StackEntry]) -> Self {
-        assert_eq!(results.len(), 8);
-        (
-            <T1 as FromStackEntry>::from_stack_entry(results[0]),
-            <T2 as FromStackEntry>::from_stack_entry(results[1]),
-            <T3 as FromStackEntry>::from_stack_entry(results[2]),
-            <T4 as FromStackEntry>::from_stack_entry(results[3]),
-            <T5 as FromStackEntry>::from_stack_entry(results[4]),
-            <T6 as FromStackEntry>::from_stack_entry(results[5]),
-            <T7 as FromStackEntry>::from_stack_entry(results[6]),
-            <T8 as FromStackEntry>::from_stack_entry(results[7]),
-        )
-    }
-}
-
-impl<T1, T2, T3, T4, T5, T6, T7, T8, T9> ReadParams for (T1, T2, T3, T4, T5, T6, T7, T8, T9)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-    T4: WasmType,
-    T5: WasmType,
-    T6: WasmType,
-    T7: WasmType,
-    T8: WasmType,
-    T9: WasmType,
-{
-    fn read_params(results: &[StackEntry]) -> Self {
-        assert_eq!(results.len(), 9);
-        (
-            <T1 as FromStackEntry>::from_stack_entry(results[0]),
-            <T2 as FromStackEntry>::from_stack_entry(results[1]),
-            <T3 as FromStackEntry>::from_stack_entry(results[2]),
-            <T4 as FromStackEntry>::from_stack_entry(results[3]),
-            <T5 as FromStackEntry>::from_stack_entry(results[4]),
-            <T6 as FromStackEntry>::from_stack_entry(results[5]),
-            <T7 as FromStackEntry>::from_stack_entry(results[6]),
-            <T8 as FromStackEntry>::from_stack_entry(results[7]),
-            <T9 as FromStackEntry>::from_stack_entry(results[8]),
-        )
-    }
-}
+for_each_tuple!(impl_read_params);
 
 /// Type sequences that can write results back into the [`ValueStack`].
 pub trait WriteResults {
@@ -287,12 +155,6 @@ pub trait WriteResults {
     ///
     /// If the length of the [`ValueStack`] region does not match.
     fn write_results(self, results: &mut [StackEntry]);
-}
-
-impl WriteResults for () {
-    fn write_results(self, results: &mut [StackEntry]) {
-        assert_eq!(results.len(), 0);
-    }
 }
 
 impl<T1> WriteResults for T1
@@ -305,164 +167,25 @@ where
     }
 }
 
-impl<T1> WriteResults for (T1,)
-where
-    T1: WasmType,
-{
-    fn write_results(self, results: &mut [StackEntry]) {
-        assert_eq!(results.len(), 1);
-        results[0] = self.0.into();
-    }
+macro_rules! impl_write_params {
+    ( $n:literal $( $tuple:ident )* ) => {
+        impl<$($tuple),*> WriteResults for ($($tuple,)*)
+        where
+            $(
+                $tuple: WasmType
+            ),*
+        {
+            #[allow(non_snake_case)]
+            fn write_results(self, results: &mut [StackEntry]) {
+                let ($($tuple,)*) = self;
+                let converted: [StackEntry; $n] = [
+                    $(
+                        <$tuple as Into<StackEntry>>::into($tuple)
+                    ),*
+                ];
+                results.copy_from_slice(&converted);
+            }
+        }
+    };
 }
-
-impl<T1, T2> WriteResults for (T1, T2)
-where
-    T1: WasmType,
-    T2: WasmType,
-{
-    fn write_results(self, results: &mut [StackEntry]) {
-        assert_eq!(results.len(), 2);
-        results[0] = self.0.into();
-        results[1] = self.1.into();
-    }
-}
-
-impl<T1, T2, T3> WriteResults for (T1, T2, T3)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-{
-    fn write_results(self, results: &mut [StackEntry]) {
-        assert_eq!(results.len(), 3);
-        results[0] = self.0.into();
-        results[1] = self.1.into();
-        results[2] = self.2.into();
-    }
-}
-
-impl<T1, T2, T3, T4> WriteResults for (T1, T2, T3, T4)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-    T4: WasmType,
-{
-    fn write_results(self, results: &mut [StackEntry]) {
-        assert_eq!(results.len(), 4);
-        results[0] = self.0.into();
-        results[1] = self.1.into();
-        results[2] = self.2.into();
-        results[3] = self.3.into();
-    }
-}
-
-impl<T1, T2, T3, T4, T5> WriteResults for (T1, T2, T3, T4, T5)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-    T4: WasmType,
-    T5: WasmType,
-{
-    fn write_results(self, results: &mut [StackEntry]) {
-        assert_eq!(results.len(), 5);
-        results[0] = self.0.into();
-        results[1] = self.1.into();
-        results[2] = self.2.into();
-        results[3] = self.3.into();
-        results[4] = self.4.into();
-    }
-}
-
-impl<T1, T2, T3, T4, T5, T6> WriteResults for (T1, T2, T3, T4, T5, T6)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-    T4: WasmType,
-    T5: WasmType,
-    T6: WasmType,
-{
-    fn write_results(self, results: &mut [StackEntry]) {
-        assert_eq!(results.len(), 6);
-        results[0] = self.0.into();
-        results[1] = self.1.into();
-        results[2] = self.2.into();
-        results[3] = self.3.into();
-        results[4] = self.4.into();
-        results[5] = self.5.into();
-    }
-}
-
-impl<T1, T2, T3, T4, T5, T6, T7> WriteResults for (T1, T2, T3, T4, T5, T6, T7)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-    T4: WasmType,
-    T5: WasmType,
-    T6: WasmType,
-    T7: WasmType,
-{
-    fn write_results(self, results: &mut [StackEntry]) {
-        assert_eq!(results.len(), 7);
-        results[0] = self.0.into();
-        results[1] = self.1.into();
-        results[2] = self.2.into();
-        results[3] = self.3.into();
-        results[4] = self.4.into();
-        results[5] = self.5.into();
-        results[6] = self.6.into();
-    }
-}
-
-impl<T1, T2, T3, T4, T5, T6, T7, T8> WriteResults for (T1, T2, T3, T4, T5, T6, T7, T8)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-    T4: WasmType,
-    T5: WasmType,
-    T6: WasmType,
-    T7: WasmType,
-    T8: WasmType,
-{
-    fn write_results(self, results: &mut [StackEntry]) {
-        assert_eq!(results.len(), 8);
-        results[0] = self.0.into();
-        results[1] = self.1.into();
-        results[2] = self.2.into();
-        results[3] = self.3.into();
-        results[4] = self.4.into();
-        results[5] = self.5.into();
-        results[6] = self.6.into();
-        results[7] = self.7.into();
-    }
-}
-
-impl<T1, T2, T3, T4, T5, T6, T7, T8, T9> WriteResults for (T1, T2, T3, T4, T5, T6, T7, T8, T9)
-where
-    T1: WasmType,
-    T2: WasmType,
-    T3: WasmType,
-    T4: WasmType,
-    T5: WasmType,
-    T6: WasmType,
-    T7: WasmType,
-    T8: WasmType,
-    T9: WasmType,
-{
-    fn write_results(self, results: &mut [StackEntry]) {
-        assert_eq!(results.len(), 9);
-        results[0] = self.0.into();
-        results[1] = self.1.into();
-        results[2] = self.2.into();
-        results[3] = self.3.into();
-        results[4] = self.4.into();
-        results[5] = self.5.into();
-        results[6] = self.6.into();
-        results[7] = self.7.into();
-        results[8] = self.8.into();
-    }
-}
+for_each_tuple!(impl_write_params);
