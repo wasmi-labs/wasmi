@@ -17,6 +17,8 @@ pub struct FuncParams<'a> {
     len_results: usize,
 }
 
+/// Utility type to ensure at compile time that host functions always
+/// call [`FuncParams::write_results`] at the end of their execution.
 #[derive(Debug)]
 pub struct FuncResults {}
 
@@ -68,11 +70,18 @@ impl<'a> FuncParams<'a> {
     }
 }
 
+/// Types that can be used with the `wasmi` `v1` engine as inputs and outputs.
 pub trait WasmType: FromStackEntry + Into<StackEntry> {}
 
 impl<T> WasmType for T where T: FromStackEntry + Into<StackEntry> {}
 
+/// Type sequences that can read host function parameters from the [`ValueStack`].
 pub trait ReadParams {
+    /// Reads the host parameters from the given [`ValueStack`] region.
+    ///
+    /// # Panics
+    ///
+    /// If the length of the [`ValueStack`] region does not match.
     fn read_params(params: &[StackEntry]) -> Self;
 }
 
@@ -270,7 +279,13 @@ where
     }
 }
 
+/// Type sequences that can write results back into the [`ValueStack`].
 pub trait WriteResults {
+    /// Writes the `results` into the given [`ValueStack`] region.
+    ///
+    /// # Panics
+    ///
+    /// If the length of the [`ValueStack`] region does not match.
     fn write_results(self, results: &mut [StackEntry]);
 }
 

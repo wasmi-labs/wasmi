@@ -265,9 +265,21 @@ impl WasmType for F64 {
     }
 }
 
+/// A list of [`WasmType`] types.
+///
+/// # Note
+///
+/// This is a convenience trait that allows to:
+///
+/// - Read host function parameters from a region of the value stack.
+/// - Write host function results into a region of the value stack.
+/// - Iterate over the value types of the Wasm type sequence
+///     - This is useful to construct host function signatures.
 pub trait WasmTypeList: ReadParams + WriteResults {
+    /// The [`ValueType`] sequence iterator type.
     type Iter: IntoIterator<Item = ValueType> + ExactSizeIterator + DoubleEndedIterator;
 
+    /// Returns an iterator over the [`ValueType`] sequence representing `Self`.
     fn value_types() -> Self::Iter;
 }
 
@@ -485,7 +497,19 @@ where
     }
 }
 
+/// Tuple types that can be applied to a function taking matching parameters.
+///
+/// # Note
+///
+/// This is a convenience type to clean up some generic code.
 pub trait ApplyFunc<F, R> {
+    /// Applies `f` given `self` as parameters.
+    ///
+    /// # Note
+    ///
+    /// `Self` usually is a tuple type `(T1, T2, ..)` and `f` is
+    /// a function that takes parameters of the same order and structure
+    /// as `Self`.
     fn apply_ref(self, f: F) -> R;
 }
 
