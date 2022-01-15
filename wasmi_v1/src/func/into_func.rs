@@ -136,40 +136,24 @@ pub trait WasmType: FromValue + Into<Value> + InternalWasmType {
     fn value_type() -> ValueType;
 }
 
-impl WasmType for u32 {
-    fn value_type() -> ValueType {
-        ValueType::I32
-    }
+macro_rules! impl_wasm_type {
+    ( $( type $rust_type:ty = $wasmi_type:ident );* $(;)? ) => {
+        $(
+            impl WasmType for $rust_type {
+                fn value_type() -> ValueType {
+                    ValueType::$wasmi_type
+                }
+            }
+        )*
+    };
 }
-
-impl WasmType for u64 {
-    fn value_type() -> ValueType {
-        ValueType::I64
-    }
-}
-
-impl WasmType for i32 {
-    fn value_type() -> ValueType {
-        ValueType::I32
-    }
-}
-
-impl WasmType for i64 {
-    fn value_type() -> ValueType {
-        ValueType::I64
-    }
-}
-
-impl WasmType for F32 {
-    fn value_type() -> ValueType {
-        ValueType::F32
-    }
-}
-
-impl WasmType for F64 {
-    fn value_type() -> ValueType {
-        ValueType::F64
-    }
+impl_wasm_type! {
+    type u32 = I32;
+    type u64 = I64;
+    type i32 = I32;
+    type i64 = I64;
+    type F32 = F32;
+    type F64 = F64;
 }
 
 /// A list of [`WasmType`] types.
