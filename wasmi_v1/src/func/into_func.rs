@@ -136,6 +136,18 @@ pub trait WasmType: FromValue + Into<Value> + InternalWasmType {
     fn value_type() -> ValueType;
 }
 
+impl WasmType for u32 {
+    fn value_type() -> ValueType {
+        ValueType::I32
+    }
+}
+
+impl WasmType for u64 {
+    fn value_type() -> ValueType {
+        ValueType::I64
+    }
+}
+
 impl WasmType for i32 {
     fn value_type() -> ValueType {
         ValueType::I32
