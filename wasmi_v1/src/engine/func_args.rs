@@ -86,16 +86,6 @@ pub trait ReadParams {
     fn read_params(params: &[StackEntry]) -> Self;
 }
 
-impl<T1> ReadParams for T1
-where
-    T1: WasmType,
-{
-    fn read_params(results: &[StackEntry]) -> Self {
-        assert_eq!(results.len(), 1);
-        <T1 as FromStackEntry>::from_stack_entry(results[0])
-    }
-}
-
 macro_rules! impl_read_params {
     ( $n:literal $( $tuple:ident )* ) => {
         impl<$($tuple),*> ReadParams for ($($tuple,)*)
@@ -134,16 +124,6 @@ pub trait WriteResults {
     ///
     /// If the length of the [`ValueStack`] region does not match.
     fn write_results(self, results: &mut [StackEntry]);
-}
-
-impl<T1> WriteResults for T1
-where
-    T1: WasmType,
-{
-    fn write_results(self, results: &mut [StackEntry]) {
-        assert_eq!(results.len(), 1);
-        results[0] = self.into();
-    }
 }
 
 macro_rules! impl_write_params {

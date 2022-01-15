@@ -89,17 +89,6 @@ pub trait WasmReturnType {
     fn into_fallible(self) -> Result<<Self as WasmReturnType>::Ok, Trap>;
 }
 
-impl<T1> WasmReturnType for T1
-where
-    T1: WasmType,
-{
-    type Ok = T1;
-
-    fn into_fallible(self) -> Result<Self::Ok, Trap> {
-        Ok(self)
-    }
-}
-
 macro_rules! impl_wasm_return_type {
     ( $n:literal $( $tuple:ident )* ) => {
         impl<$($tuple),*> WasmReturnType for ($($tuple,)*)
@@ -172,17 +161,6 @@ pub trait WasmTypeList: ReadParams + WriteResults {
 
     /// Returns an iterator over the [`ValueType`] sequence representing `Self`.
     fn value_types() -> Self::Iter;
-}
-
-impl<T1> WasmTypeList for T1
-where
-    T1: WasmType,
-{
-    type Iter = array::IntoIter<ValueType, 1>;
-
-    fn value_types() -> Self::Iter {
-        [<T1 as WasmType>::value_type()].into_iter()
-    }
 }
 
 macro_rules! impl_wasm_type_list {
