@@ -21,6 +21,17 @@
 
 With all that said `wasmi` should be a good option for initial prototyping and there shouldn't be a problem migrating from `wasmi` to another specification compliant execution engine later on.
 
+# Distinct Features
+
+The following list states some of the distinct features of `wasmi`.
+
+- Primarily concerned about
+    - correct and deterministic WebAssembly execution.
+    - WebAssembly specification compliance.
+- Can itself be compiled to WebAssembly.
+- Low-overhead and cross-platform WebAssembly runtime.
+- New experimental `v1` engine allows to be used as a drop-in solution for Wasmtime.
+
 # Developer Notes
 
 ## Building
@@ -53,8 +64,20 @@ After Git submodules have been initialized and updated you can test using:
 cargo test
 ```
 
-It is recommended to further specify `--release` since compiling and testing without optimizations
-usually is slower compared to compiling and testing with optimizations.
+### Workspace
+
+If you want to test the entire `wasmi` workspace using all features we recommend
+
+```
+cargo test --all-features --workspace
+```
+
+This tests both `wasmi` engines using all features available to them.
+
+### Note
+
+It is recommended to test using `--release` since compiling and testing without optimizations
+usually is a lot slower compared to compiling and testing with optimizations.
 
 ## Platforms
 
@@ -68,6 +91,8 @@ cargo build --no-default-features --target wasm32-unknown-unknown
 
 ## Features
 
+### Virtual Memory
+
 On 64-bit platforms we further provide cross-platform suppport for virtual memory usage.
 For this build `wasmi` using:
 
@@ -75,13 +100,43 @@ For this build `wasmi` using:
 cargo build --features virtual_memory
 ```
 
+### New Engine
+
+We are currently building an experimental new `wasmi` engine that mirrors the Wasmtime APIs
+and has an improved performance and decreased overhead compared to the old `wasmi` engine.
+
+You can enable and start using it today via the `v1` crate feature:
+
+```
+cargo build --features v1
+```
+
+#### Note
+
+- The new `v1` implementation is experimental and therefore not
+  recommended for production usage, yet.
+- Be sure to use the following Cargo profile to gain the maximum
+  performance using the `v1` engine:
+
+  ```toml
+  [profile.release]
+  lto = "fat"
+  codegen-units = 1
+  ```
+
+
 ## Benchmarks
 
 In order to benchmark `wasmi` use the following command:
 
 ```
-cargo bench --manifest-path benches/Cargo.toml
+cargo bench
 ```
+
+**Note:** Benchmarks can be filtered by `compile_and_validate`,
+`instantiate` and `execute` flags given to `cargo bench`.
+For example `cargo bench execute` will only execute the benchmark
+tests that test the performance of WebAssembly execution.
 
 # License
 
