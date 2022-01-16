@@ -16,7 +16,6 @@ wasmi_core = { version = "0.1", path = "core", default-features = false }
 wasmi_v1 = { version = "0.11", path = "wasmi_v1", default-features = false, optional = true }
 validation = { package = "wasmi-validation", version = "0.4", path = "validation", default-features = false }
 parity-wasm = { version = "0.42.0", default-features = false }
-spin = { version = "0.9", default-features = false, features = ["mutex", "spin_mutex"] }
 
 [dev-dependencies]
 assert_matches = "1.5"
@@ -31,7 +30,6 @@ default = ["std"]
 std = [
     "parity-wasm/std",
     "validation/std",
-    "spin/std",
 ]
 # Enables the `wasmi_v1` interpreter implementation.
 v1 = ["wasmi_v1"]
