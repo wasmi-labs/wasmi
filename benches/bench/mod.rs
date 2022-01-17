@@ -1,8 +1,6 @@
 use super::v0;
 use std::{fs::File, io::Read as _};
-
-#[cfg(features = "v1")]
-use super::v1;
+use wasmi_v1 as v1;
 
 /// Returns the Wasm binary at the given `file_name` as `Vec<u8>`.
 ///
@@ -51,7 +49,6 @@ pub fn load_module_from_file_v0(file_name: &str) -> v0::Module {
 /// # Panics
 ///
 /// If the benchmark Wasm file could not be opened, read or parsed.
-#[cfg(features = "v1")]
 pub fn load_module_from_file_v1(file_name: &str) -> v1::Module {
     let wasm = load_wasm_from_file(file_name);
     let engine = v1::Engine::default();
@@ -89,7 +86,6 @@ pub fn load_instance_from_file_v0(file_name: &str) -> v0::ModuleRef {
 /// # Panics
 ///
 /// If the benchmark Wasm file could not be opened, read or parsed.
-#[cfg(features = "v1")]
 pub fn load_instance_from_file_v1(file_name: &str) -> (v1::Store<()>, v1::Instance) {
     let module = load_module_from_file_v1(file_name);
     let mut linker = <v1::Linker<()>>::default();
@@ -129,7 +125,6 @@ pub fn load_instance_from_wat_v0(wat_bytes: &[u8]) -> v0::ModuleRef {
 /// # Panics
 ///
 /// If the benchmark Wasm file could not be opened, read or parsed.
-#[cfg(features = "v1")]
 pub fn load_instance_from_wat_v1(wat_bytes: &[u8]) -> (v1::Store<()>, v1::Instance) {
     let wasm = wabt::wat2wasm(wat_bytes).unwrap();
     let engine = v1::Engine::default();
