@@ -6,9 +6,13 @@ use core::{fmt, fmt::Display};
 pub enum FuncError {
     /// Encountered when trying to create a [`TypedFunc`]
     /// with mismatching function parameter types.
+    ///
+    /// [`TypedFunc`]: [`super::TypedFunc`]
     MismatchingParameters { func: Func },
     /// Encountered when trying to create a [`TypedFunc`]
     /// with mismatching function results types.
+    ///
+    /// [`TypedFunc`]: [`super::TypedFunc`]
     MismatchingResults { func: Func },
 }
 
