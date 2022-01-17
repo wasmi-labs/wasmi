@@ -352,14 +352,14 @@ impl EngineInner {
         // we are required to extend the value stack.
         let len_inputs = input_types.len();
         let len_outputs = output_types.len();
-        let len_inout = cmp::max(len_inputs, len_outputs);
-        self.value_stack.reserve(len_inout)?;
+        let max_inout = cmp::max(len_inputs, len_outputs);
+        self.value_stack.reserve(max_inout)?;
         if len_outputs > len_inputs {
             let delta = len_outputs - len_inputs;
             self.value_stack.extend_zeros(delta)?;
         }
         let params_results = FuncParams::new(
-            self.value_stack.peek_as_slice_mut(len_inout),
+            self.value_stack.peek_as_slice_mut(max_inout),
             len_inputs,
             len_outputs,
         );
