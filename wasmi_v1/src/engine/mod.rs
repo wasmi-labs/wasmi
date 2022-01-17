@@ -259,9 +259,7 @@ impl EngineInner {
     /// - When encountering a Wasm trap during the execution of `func`.
     fn execute_wasm_func(&mut self, mut ctx: impl AsContextMut, func: Func) -> Result<(), Trap> {
         let frame = FunctionFrame::new(ctx.as_context(), func);
-        self.call_stack
-            .push(frame)
-            .map_err(|_error| TrapCode::StackOverflow)?;
+        self.call_stack.push(frame)?;
         self.execute_until_done(ctx.as_context_mut())?;
         Ok(())
     }
