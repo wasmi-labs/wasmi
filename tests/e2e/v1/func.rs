@@ -194,25 +194,7 @@ fn dynamic_many_params_works() {
 #[test]
 fn static_many_params_works() {
     let (mut store, func) = setup_many_params();
-    type Inputs = (
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-    );
-    let typed_func = func.typed::<Inputs, (), _>(&mut store).unwrap();
+    let typed_func = func.typed::<I32x16, (), _>(&mut store).unwrap();
     let inputs = ascending_tuple();
     let result = typed_func.call(&mut store, inputs);
     assert_matches!(result, Ok(()));
@@ -242,26 +224,7 @@ fn dynamic_many_results_works() {
 #[test]
 fn static_many_results_works() {
     let (mut store, func) = setup_many_results();
-    let typed_func = func
-        .typed::<(), (
-            i32,
-            i32,
-            i32,
-            i32,
-            i32,
-            i32,
-            i32,
-            i32,
-            i32,
-            i32,
-            i32,
-            i32,
-            i32,
-            i32,
-            i32,
-            i32,
-        ), _>(&mut store)
-        .unwrap();
+    let typed_func = func.typed::<(), I32x16, _>(&mut store).unwrap();
     let result = typed_func.call(&mut store, ()).unwrap();
     let expected = ascending_tuple();
     assert_eq_tuple!(result, expected; 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
@@ -325,25 +288,7 @@ fn dynamic_many_params_many_results_works() {
 #[test]
 fn static_many_params_many_results_works() {
     let (mut store, func) = setup_many_params_many_results();
-    type InOut = (
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-        i32,
-    );
-    let typed_func = func.typed::<InOut, InOut, _>(&mut store).unwrap();
+    let typed_func = func.typed::<I32x16, I32x16, _>(&mut store).unwrap();
     let inputs = ascending_tuple();
     let result = typed_func.call(&mut store, inputs).unwrap();
     assert_eq_tuple!(result, inputs; 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
