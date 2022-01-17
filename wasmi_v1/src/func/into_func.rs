@@ -174,7 +174,7 @@ impl_wasm_type! {
 /// - Write host function results into a region of the value stack.
 /// - Iterate over the value types of the Wasm type sequence
 ///     - This is useful to construct host function signatures.
-pub trait WasmTypeList: ReadParams + WriteResults {
+pub trait WasmTypeList: ReadParams + WriteResults + Sized {
     /// The number of Wasm types in the list.
     const LEN: usize;
 
@@ -199,6 +199,13 @@ pub trait WasmTypeList: ReadParams + WriteResults {
 
     /// Returns an array representing the [`Value`] sequence of `self`.
     fn values(self) -> Self::Values;
+
+    /// Consumes the [`Value`] iterator and creates `Self` if possible.
+    ///
+    /// Returns `None` if construction of `Self` is impossible.
+    fn from_values<T>(values: T) -> Option<Self>
+    where
+        T: Iterator<Item = Value>;
 }
 
 impl<T1> WasmTypeList for T1
@@ -218,6 +225,20 @@ where
 
     fn values(self) -> Self::Values {
         [<T1 as Into<Value>>::into(self)]
+    }
+
+    fn from_values<T>(mut values: T) -> Option<Self>
+    where
+        T: Iterator<Item = Value>,
+    {
+        let value: T1 = values.next().and_then(Value::try_into)?;
+        if values.next().is_some() {
+            // Note: If the iterator yielded more items than
+            //       necessary we create no value from this procedure
+            //       as it is likely a bug.
+            return None;
+        }
+        Some(value)
     }
 }
 
@@ -248,6 +269,22 @@ macro_rules! impl_wasm_type_list {
                 [$(
                     <$tuple as Into<Value>>::into($tuple)
                 ),*]
+            }
+
+            fn from_values<T>(mut values: T) -> Option<Self>
+            where
+                T: Iterator<Item = Value>,
+            {
+                let result = ($(
+                    values.next().and_then(Value::try_into::<$tuple>)?,
+                )*);
+                if values.next().is_some() {
+                    // Note: If the iterator yielded more items than
+                    //       necessary we create no value from this procedure
+                    //       as it is likely a bug.
+                    return None
+                }
+                Some(result)
             }
         }
     };
