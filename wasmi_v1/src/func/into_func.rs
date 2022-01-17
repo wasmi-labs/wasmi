@@ -142,9 +142,6 @@ for_each_tuple!(impl_wasm_return_type);
 pub trait WasmType: FromValue + Into<Value> + InternalWasmType {
     /// Returns the value type of the Wasm type.
     fn value_type() -> ValueType;
-
-    /// Returns the [`Value`] for the [`WasmType`] of `self`.
-    fn value(self) -> Value;
 }
 
 macro_rules! impl_wasm_type {
@@ -153,10 +150,6 @@ macro_rules! impl_wasm_type {
             impl WasmType for $rust_type {
                 fn value_type() -> ValueType {
                     ValueType::$wasmi_type
-                }
-
-                fn value(self) -> Value {
-                    Value::$wasmi_type(self as _)
                 }
             }
         )*
@@ -224,7 +217,7 @@ where
     }
 
     fn values(self) -> Self::Values {
-        [<T1 as WasmType>::value(self)]
+        [<T1 as Into<Value>>::into(self)]
     }
 }
 
@@ -253,7 +246,7 @@ macro_rules! impl_wasm_type_list {
             fn values(self) -> Self::Values {
                 let ($($tuple,)*) = self;
                 [$(
-                    <$tuple as WasmType>::value($tuple)
+                    <$tuple as Into<Value>>::into($tuple)
                 ),*]
             }
         }
