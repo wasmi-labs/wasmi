@@ -191,7 +191,7 @@ fn many_params_many_results_works() {
 }
 
 #[test]
-fn many_types_works() {
+fn dynamic_many_types_works() {
     let mut store = test_setup();
     // Function taking no arguments and returning 16 results as tuple (maximum).
     let func = Func::wrap(
@@ -209,6 +209,22 @@ fn many_types_works() {
     ];
     func.call(&mut store, &inputs, &mut results).unwrap();
     assert_eq!(&results, &inputs)
+}
+
+#[test]
+fn static_many_types_works() {
+    let mut store = test_setup();
+    // Function taking no arguments and returning 16 results as tuple (maximum).
+    let func = Func::wrap(
+        &mut store,
+        |v0: i32, v1: u32, v2: i64, v3: u64, v4: F32, v5: F64| (v0, v1, v2, v3, v4, v5),
+    );
+    let typed_func = func
+        .typed::<(i32, u32, i64, u64, F32, F64), (i32, u32, i64, u64, F32, F64), _>(&mut store)
+        .unwrap();
+    let inputs = (0, 1, 2, 3, 4.0.into(), 5.0.into());
+    let result = typed_func.call(&mut store, inputs).unwrap();
+    assert_eq!(result, inputs);
 }
 
 #[test]
