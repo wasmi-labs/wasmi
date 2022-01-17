@@ -6,7 +6,7 @@ use crate::{
     Error,
     Value,
 };
-use core::marker::PhantomData;
+use core::{fmt, fmt::Debug, marker::PhantomData};
 use wasmi_core::Trap;
 
 /// A typed [`Func`] instance.
@@ -24,6 +24,15 @@ pub struct TypedFunc<Params, Results> {
     _signature: PhantomData<fn(Params) -> Results>,
     /// The underlying [`Func`] instance.
     func: Func,
+}
+
+impl<Params, Results> Debug for TypedFunc<Params, Results> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TypedFunc")
+            .field("_signature", &self._signature)
+            .field("func", &self.func)
+            .finish()
+    }
 }
 
 impl<Params, Results> Copy for TypedFunc<Params, Results> {}
