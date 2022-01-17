@@ -24,7 +24,7 @@ use self::{
     value_stack::{FromStackEntry, StackEntry, ValueStack},
 };
 use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func};
-use crate::{func::HostFuncEntity, Instance, Trap, TrapCode, ValueType};
+use crate::{func::HostFuncEntity, Instance, Trap, ValueType};
 use alloc::sync::Arc;
 use core::cmp;
 use spin::mutex::Mutex;
