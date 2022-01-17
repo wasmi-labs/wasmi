@@ -244,12 +244,6 @@ impl CallStack {
         self.frames.len()
     }
 
-    /// Returns `true` if the [`CallStack`] is empty.
-    #[allow(dead_code)] // TODO: decide how to remove this
-    pub fn is_empty(&self) -> bool {
-        self.frames.is_empty()
-    }
-
     /// Clears the [`CallStack`] entirely.
     ///
     /// # Note
