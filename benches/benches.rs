@@ -2,34 +2,63 @@ mod bench;
 
 use self::bench::{
     load_instance_from_file_v0,
-    load_instance_from_file_v1,
     load_instance_from_wat_v0,
-    load_instance_from_wat_v1,
     load_module_from_file_v0,
-    load_module_from_file_v1,
     load_wasm_from_file,
+};
+#[cfg(features = "v1")]
+use self::bench::{
+    load_instance_from_file_v1,
+    load_instance_from_wat_v1,
+    load_module_from_file_v1,
 };
 use assert_matches::assert_matches;
 use criterion::{criterion_group, criterion_main, Criterion};
+#[cfg(features = "v1")]
 use std::slice;
 use wasmi as v0;
-use wasmi::{v1, Trap, Value};
+use wasmi::{Trap, Value};
+
+#[cfg(features = "v1")]
+use wasmi::v1;
 
 const WASM_KERNEL: &str =
     "benches/wasm/wasm_kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
 const REVCOMP_INPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-input.txt");
 const REVCOMP_OUTPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-output.txt");
 
+#[cfg(not(features = "v1"))]
+criterion_group!(bench_compile_and_validate, bench_compile_and_validate_v0,);
+#[cfg(features = "v1")]
 criterion_group!(
     bench_compile_and_validate,
     bench_compile_and_validate_v0,
     bench_compile_and_validate_v1
 );
+
+#[cfg(not(features = "v1"))]
+criterion_group!(bench_instantiate, bench_instantiate_v0,);
+#[cfg(features = "v1")]
 criterion_group!(
     bench_instantiate,
     bench_instantiate_v0,
     bench_instantiate_v1
 );
+
+#[cfg(not(features = "v1"))]
+criterion_group!(
+    bench_execute,
+    bench_execute_tiny_keccak_v0,
+    bench_execute_rev_comp_v0,
+    bench_execute_regex_redux_v0,
+    bench_execute_count_until_v0,
+    bench_execute_fac_recursive_v0,
+    bench_execute_fac_opt_v0,
+    bench_execute_recursive_ok_v0,
+    bench_execute_recursive_trap_v0,
+    bench_execute_host_calls_v0,
+);
+#[cfg(features = "v1")]
 criterion_group!(
     bench_execute,
     bench_execute_tiny_keccak_v0,
@@ -51,6 +80,7 @@ criterion_group!(
     bench_execute_host_calls_v0,
     bench_execute_host_calls_v1
 );
+
 criterion_main!(bench_compile_and_validate, bench_instantiate, bench_execute);
 
 fn bench_compile_and_validate_v0(c: &mut Criterion) {
@@ -62,6 +92,7 @@ fn bench_compile_and_validate_v0(c: &mut Criterion) {
     });
 }
 
+#[cfg(features = "v1")]
 fn bench_compile_and_validate_v1(c: &mut Criterion) {
     let wasm_bytes = load_wasm_from_file(WASM_KERNEL);
     c.bench_function("compile_and_validate/v1", |b| {
@@ -84,6 +115,7 @@ fn bench_instantiate_v0(c: &mut Criterion) {
     });
 }
 
+#[cfg(features = "v1")]
 fn bench_instantiate_v1(c: &mut Criterion) {
     let module = load_module_from_file_v1(WASM_KERNEL);
     let mut linker = <v1::Linker<()>>::default();
@@ -113,6 +145,7 @@ fn bench_execute_tiny_keccak_v0(c: &mut Criterion) {
     });
 }
 
+#[cfg(features = "v1")]
 fn bench_execute_tiny_keccak_v1(c: &mut Criterion) {
     let (mut store, instance) = load_instance_from_file_v1(WASM_KERNEL);
     let prepare = instance
@@ -198,6 +231,7 @@ fn bench_execute_rev_comp_v0(c: &mut Criterion) {
     }
 }
 
+#[cfg(features = "v1")]
 fn bench_execute_rev_comp_v1(c: &mut Criterion) {
     let (mut store, instance) = load_instance_from_file_v1(WASM_KERNEL);
 
@@ -311,6 +345,7 @@ fn bench_execute_regex_redux_v0(c: &mut Criterion) {
     });
 }
 
+#[cfg(features = "v1")]
 fn bench_execute_regex_redux_v1(c: &mut Criterion) {
     let (mut store, instance) = load_instance_from_file_v1(WASM_KERNEL);
 
@@ -381,6 +416,7 @@ fn bench_execute_count_until_v0(c: &mut Criterion) {
     });
 }
 
+#[cfg(features = "v1")]
 fn bench_execute_count_until_v1(c: &mut Criterion) {
     let (mut store, instance) = load_instance_from_wat_v1(include_bytes!("wat/count_until.wat"));
     let count_until = instance
@@ -408,6 +444,7 @@ fn bench_execute_fac_recursive_v0(c: &mut Criterion) {
     });
 }
 
+#[cfg(features = "v1")]
 fn bench_execute_fac_recursive_v1(c: &mut Criterion) {
     let (mut store, instance) =
         load_instance_from_wat_v1(include_bytes!("wat/recursive_factorial.wat"));
@@ -435,6 +472,7 @@ fn bench_execute_fac_opt_v0(c: &mut Criterion) {
     });
 }
 
+#[cfg(features = "v1")]
 fn bench_execute_fac_opt_v1(c: &mut Criterion) {
     let (mut store, instance) =
         load_instance_from_wat_v1(include_bytes!("wat/optimized_factorial.wat"));
@@ -468,6 +506,7 @@ fn bench_execute_recursive_ok_v0(c: &mut Criterion) {
     });
 }
 
+#[cfg(features = "v1")]
 fn bench_execute_recursive_ok_v1(c: &mut Criterion) {
     let (mut store, instance) = load_instance_from_wat_v1(include_bytes!("wat/recursive_ok.wat"));
     let bench_call = instance
@@ -495,6 +534,7 @@ fn bench_execute_recursive_trap_v0(c: &mut Criterion) {
     });
 }
 
+#[cfg(features = "v1")]
 fn bench_execute_recursive_trap_v1(c: &mut Criterion) {
     let (mut store, instance) = load_instance_from_wat_v1(include_bytes!("wat/recursive_trap.wat"));
     let bench_call = instance
@@ -612,6 +652,7 @@ fn bench_execute_host_calls_v0(c: &mut Criterion) {
     });
 }
 
+#[cfg(features = "v1")]
 fn bench_execute_host_calls_v1(c: &mut Criterion) {
     let wasm = wabt::wat2wasm(include_bytes!("wat/host_calls.wat")).unwrap();
     let engine = v1::Engine::default();
