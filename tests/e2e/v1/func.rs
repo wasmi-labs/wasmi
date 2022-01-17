@@ -1,10 +1,12 @@
 //! Tests for the `Func` type in `wasmi_v1`.
 
+use assert_matches::assert_matches;
 use wasmi::{
     v1::{Engine, Func, Store},
     Value,
 };
 use wasmi_core::{F32, F64};
+use wasmi_v1::{errors::FuncError, Error};
 
 fn test_setup() -> Store<()> {
     let engine = Engine::default();
@@ -207,4 +209,54 @@ fn many_types_works() {
     ];
     func.call(&mut store, &inputs, &mut results).unwrap();
     assert_eq!(&results, &inputs)
+}
+
+#[test]
+fn type_check_works() {
+    let mut store = test_setup();
+    let identity = Func::wrap(&mut store, |value: i32| value);
+    let mut result = Value::I32(0);
+    // Case: Too few inputs given to function.
+    assert_matches!(
+        identity.call(&mut store, &[], core::slice::from_mut(&mut result)),
+        Err(Error::Func(FuncError::MismatchingParameters { .. }))
+    );
+    // Case: Too many inputs given to function.
+    assert_matches!(
+        identity.call(
+            &mut store,
+            &[Value::I32(0), Value::I32(1)],
+            core::slice::from_mut(&mut result)
+        ),
+        Err(Error::Func(FuncError::MismatchingParameters { .. }))
+    );
+    // Case: Too few outputs given to function.
+    assert_matches!(
+        identity.call(&mut store, &[Value::I32(0)], &mut [],),
+        Err(Error::Func(FuncError::MismatchingResults { .. }))
+    );
+    // Case: Too many outputs given to function.
+    assert_matches!(
+        identity.call(
+            &mut store,
+            &[Value::I32(0)],
+            &mut [Value::I32(0), Value::I32(1)],
+        ),
+        Err(Error::Func(FuncError::MismatchingResults { .. }))
+    );
+    // Case: Mismatching type given as input to function.
+    for input in &[
+        Value::I64(0),
+        Value::F32(0.0.into()),
+        Value::F64(0.0.into()),
+    ] {
+        assert_matches!(
+            identity.call(
+                &mut store,
+                core::slice::from_ref(input),
+                core::slice::from_mut(&mut result)
+            ),
+            Err(Error::Func(FuncError::MismatchingParameters { .. }))
+        );
+    }
 }
