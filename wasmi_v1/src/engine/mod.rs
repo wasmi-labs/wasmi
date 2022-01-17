@@ -33,24 +33,6 @@ pub const DEFAULT_VALUE_STACK_LIMIT: usize = 1024 * 1024;
 /// Maximum number of levels on the call stack.
 pub const DEFAULT_CALL_STACK_LIMIT: usize = 64 * 1024;
 
-/// The outcome of a `wasmi` instruction execution.
-///
-/// # Note
-///
-/// This signals to the `wasmi` interpreter what to do after the
-/// instruction has been successfully executed.
-#[derive(Debug, Copy, Clone)]
-pub enum ExecutionOutcome {
-    /// Continue with next instruction.
-    Continue,
-    /// Branch to an instruction at the given position.
-    Branch(Target),
-    /// Execute function call.
-    ExecuteCall(Func),
-    /// Return from current function block.
-    Return(DropKeep),
-}
-
 /// The outcome of a `wasmi` function execution.
 #[derive(Debug, Copy, Clone)]
 pub enum FunctionExecutionOutcome {
