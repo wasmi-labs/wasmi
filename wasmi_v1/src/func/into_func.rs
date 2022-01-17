@@ -8,7 +8,6 @@ use crate::{
     Caller,
     SignatureEntity,
 };
-use core::array;
 use wasmi_core::{FromValue, Trap, Value, ValueType, F32, F64};
 
 /// Closures and functions that can be used as host functions.
