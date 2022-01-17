@@ -212,7 +212,7 @@ fn many_types_works() {
 }
 
 #[test]
-fn type_check_works() {
+fn dynamic_type_check_works() {
     let mut store = test_setup();
     let identity = Func::wrap(&mut store, |value: i32| value);
     let mut result = Value::I32(0);
