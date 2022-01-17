@@ -156,6 +156,8 @@ impl Engine {
     /// - If the given arguments `params` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm trap during the execution of `func`.
+    ///
+    /// [`TypedFunc`]: [`crate::TypedFunc`]
     pub(crate) fn execute_func<Params, Results>(
         &mut self,
         ctx: impl AsContextMut,

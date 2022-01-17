@@ -8,6 +8,8 @@ use core::{iter, slice};
 /// - This is generically implemented by `&[Value]` and tuples of `T: WasmType` types.
 /// - Using this trait allows to customize the parameters entrypoint for efficient
 ///   function execution via the [`Engine`].
+///
+/// [`Engine`]: [`crate::Engine`]
 pub trait CallParams {
     /// The iterator over the parameter values.
     type Params: Iterator<Item = Value>;
@@ -17,6 +19,8 @@ pub trait CallParams {
     /// # Note
     ///
     /// Used by the [`Engine`] to determine how many parameters are received.
+    ///
+    /// [`Engine`]: [`crate::Engine`]
     fn len_params(&self) -> usize;
 
     /// Feeds the parameter values from the caller.
@@ -43,6 +47,8 @@ impl<'a> CallParams for &'a [Value] {
 ///   tuples of `T: WasmType`.
 /// - Using this trait allows to customize the parameters entrypoint for efficient
 ///   function execution via the [`Engine`].
+///
+/// [`Engine`]: [`crate::Engine`]
 pub trait CallResults {
     /// The type of the returned results value.
     type Results;
@@ -52,6 +58,8 @@ pub trait CallResults {
     /// # Note
     ///
     /// Used by the [`Engine`] to determine how many results are expected.
+    ///
+    /// [`Engine`]: [`crate::Engine`]
     fn len_results(&self) -> usize;
 
     /// Feeds the result values back to the caller.
