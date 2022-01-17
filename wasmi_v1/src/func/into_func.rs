@@ -184,7 +184,7 @@ pub trait WasmTypeList: ReadParams + WriteResults {
         + AsMut<[ValueType]>;
 
     /// The iterator type of the [`Types`] type sequence.
-    type TypesIter: ExactSizeIterator + DoubleEndedIterator + FusedIterator;
+    type TypesIter: ExactSizeIterator<Item = ValueType> + DoubleEndedIterator + FusedIterator;
 
     /// The [`Value`] sequence as array.
     type Values: IntoIterator<IntoIter = Self::ValuesIter, Item = Value>
@@ -192,7 +192,7 @@ pub trait WasmTypeList: ReadParams + WriteResults {
         + AsMut<[Value]>;
 
     /// The iterator type of the [`Values`] value sequence.
-    type ValuesIter: ExactSizeIterator + DoubleEndedIterator + FusedIterator;
+    type ValuesIter: ExactSizeIterator<Item = Value> + DoubleEndedIterator + FusedIterator;
 
     /// Returns an array representing the [`ValueType`] sequence of `Self`.
     fn value_types() -> Self::Types;
