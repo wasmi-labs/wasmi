@@ -259,7 +259,7 @@ impl Func {
         inputs: &[Value],
         outputs: &mut [Value],
     ) -> Result<(), Trap> {
-        // Cloning an engine is a cheap operation.
+        // Note: Cloning an [`Engine`] is intentionally a cheap operation.
         ctx.as_context().store.engine().clone().execute_func(
             ctx.as_context_mut(),
             *self,

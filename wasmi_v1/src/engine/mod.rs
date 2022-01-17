@@ -143,6 +143,13 @@ impl Engine {
 
     /// Executes the given [`Func`] using the given arguments `params` and stores the result into `results`.
     ///
+    /// # Note
+    ///
+    /// This API assumes that the `params` and `results` are well typed and
+    /// therefore won't perform type checks.
+    /// Those checks are usually done at the [`Func::call`] API or when creating
+    /// a new [`TypedFunc`] instance via [`Func::typed`].
+    ///
     /// # Errors
     ///
     /// - If the given `func` is not a Wasm function, e.g. if it is a host function.
