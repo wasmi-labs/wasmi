@@ -79,7 +79,7 @@ impl<'a> CallResults for &'a mut [Value] {
     {
         let results = results.into_iter();
         assert_eq!(self.len_results(), results.len());
-        for (dst, src) in self.into_iter().zip(results) {
+        for (dst, src) in self.iter_mut().zip(results) {
             *dst = src;
         }
         self
