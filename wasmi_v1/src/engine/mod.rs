@@ -235,9 +235,10 @@ impl EngineInner {
                 signature
             }
             FuncEntityInternal::Host(host_func) => {
+                let signature = host_func.signature();
                 let host_func = host_func.clone();
-                self.execute_host_func(&mut ctx, host_func.clone(), None)?;
-                host_func.signature()
+                self.execute_host_func(&mut ctx, host_func, None)?;
+                signature
             }
         };
         let result_types = signature.outputs(&ctx);
