@@ -259,4 +259,11 @@ fn type_check_works() {
             Err(Error::Func(FuncError::MismatchingParameters { .. }))
         );
     }
+    // Case: Allow for incorrect result type.
+    //
+    // The result type will be overwritten anyways.
+    assert_matches!(
+        identity.call(&mut store, &[Value::I32(0)], &mut [Value::I64(0)],),
+        Ok(_)
+    );
 }
