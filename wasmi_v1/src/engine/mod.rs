@@ -318,21 +318,14 @@ impl EngineInner {
                     match func.as_internal(ctx.as_context()) {
                         FuncEntityInternal::Wasm(wasm_func) => {
                             let nested_frame = FunctionFrame::new_wasm(func, wasm_func);
-                            self.call_stack
-                                .push(function_frame)
-                                .map_err(|_| TrapCode::StackOverflow)?;
-                            self.call_stack
-                                .push(nested_frame)
-                                .map_err(|_| TrapCode::StackOverflow)?;
+                            self.call_stack.push_pair(function_frame, nested_frame)?;
                         }
                         FuncEntityInternal::Host(host_func) => {
                             // Note: We push the function context before calling the host function.
                             //       If the VM is not resumable, it does no harm.
                             //       If it is, we then save the context here.
                             let instance = function_frame.instance();
-                            self.call_stack
-                                .push(function_frame)
-                                .map_err(|_| TrapCode::StackOverflow)?;
+                            self.call_stack.push(function_frame)?;
                             let host_func = host_func.clone();
                             self.execute_host_func(&mut ctx, host_func, Some(instance))?;
                         }
