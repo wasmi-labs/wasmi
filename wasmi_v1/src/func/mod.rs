@@ -265,7 +265,8 @@ impl Func {
             *self,
             inputs,
             outputs,
-        )
+        )?;
+        Ok(())
     }
 
     /// Returns the internal representation of the [`Func`] instance.
