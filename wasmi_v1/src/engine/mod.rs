@@ -6,6 +6,7 @@ pub mod code_map;
 pub mod exec_context;
 mod func_args;
 pub mod inst_builder;
+mod traits;
 pub mod value_stack;
 
 pub(crate) use self::func_args::{FuncParams, FuncResults, ReadParams, WasmType, WriteResults};
@@ -13,6 +14,7 @@ pub use self::{
     bytecode::{DropKeep, Target},
     code_map::FuncBody,
     inst_builder::{InstructionIdx, InstructionsBuilder, LabelIdx, Reloc},
+    traits::{CallParams, CallResults},
 };
 use self::{
     bytecode::{Instruction, VisitInstruction},
@@ -139,22 +141,25 @@ impl Engine {
             .clone()
     }
 
-    /// Executes the given [`Func`] using the given arguments `args` and stores the result into `results`.
+    /// Executes the given [`Func`] using the given arguments `params` and stores the result into `results`.
     ///
     /// # Errors
     ///
     /// - If the given `func` is not a Wasm function, e.g. if it is a host function.
-    /// - If the given arguments `args` do not match the expected parameters of `func`.
+    /// - If the given arguments `params` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm trap during the execution of `func`.
-    pub(crate) fn execute_func(
+    pub(crate) fn execute_func<Params>(
         &mut self,
         ctx: impl AsContextMut,
         func: Func,
-        args: &[Value],
+        params: Params,
         results: &mut [Value],
-    ) -> Result<(), Trap> {
-        self.inner.lock().execute_func(ctx, func, args, results)
+    ) -> Result<(), Trap>
+    where
+        Params: CallParams,
+    {
+        self.inner.lock().execute_func(ctx, func, params, results)
     }
 }
 
@@ -201,20 +206,23 @@ impl EngineInner {
     /// - If the given arguments `args` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm trap during the execution of `func`.
-    pub fn execute_func(
+    pub fn execute_func<Params>(
         &mut self,
         mut ctx: impl AsContextMut,
         func: Func,
-        args: &[Value],
+        params: Params,
         results: &mut [Value],
-    ) -> Result<(), Trap> {
+    ) -> Result<(), Trap>
+    where
+        Params: CallParams,
+    {
         match func.as_internal(&ctx) {
             FuncEntityInternal::Wasm(wasm_func) => {
                 let signature = wasm_func.signature();
-                self.execute_wasm_func(&mut ctx, signature, args, results, func)?;
+                self.execute_wasm_func(&mut ctx, signature, params, results, func)?;
             }
             FuncEntityInternal::Host(host_func) => {
-                self.initialize_args(args);
+                self.initialize_args(params);
                 let host_func = host_func.clone();
                 self.execute_host_func(&mut ctx, host_func.clone(), None)?;
                 let result_types = host_func.signature().outputs(&ctx);
@@ -235,18 +243,20 @@ impl EngineInner {
     /// - If the given arguments `args` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm trap during the execution of `func`.
-    fn execute_wasm_func(
+    fn execute_wasm_func<Params>(
         &mut self,
         mut ctx: impl AsContextMut,
         signature: Signature,
-        args: &[Value],
+        params: Params,
         results: &mut [Value],
         func: Func,
-    ) -> Result<(), Trap> {
+    ) -> Result<(), Trap>
+    where
+        Params: CallParams,
+    {
         self.value_stack.clear();
         self.call_stack.clear();
-        Self::check_signature(ctx.as_context(), signature, args, results)?;
-        self.initialize_args(args);
+        self.initialize_args(params);
         let frame = FunctionFrame::new(ctx.as_context(), func);
         self.call_stack
             .push(frame)
@@ -372,37 +382,17 @@ impl EngineInner {
         Ok(())
     }
 
-    /// Initializes the value stack with the given arguments `args`.
-    fn initialize_args(&mut self, args: &[Value]) {
+    /// Initializes the value stack with the given arguments `params`.
+    fn initialize_args<Params>(&mut self, params: Params)
+    where
+        Params: CallParams,
+    {
         assert!(
             self.value_stack.is_empty(),
             "encountered non-empty value stack upon function execution initialization",
         );
-        for &arg in args {
-            self.value_stack.push(arg);
+        for param in params.feed_params() {
+            self.value_stack.push(param);
         }
-    }
-
-    /// Checks if the `signature` and the given `params` and `results` slices match.
-    ///
-    /// # Errors
-    ///
-    /// - If the given `signature` inputs and `params` do not have matching length and value types.
-    /// - If the given `signature` outputs and `results` do not have the same lengths.
-    fn check_signature(
-        ctx: impl AsContext,
-        signature: Signature,
-        params: &[Value],
-        results: &[Value],
-    ) -> Result<(), TrapCode> {
-        let expected_inputs = signature.inputs(ctx.as_context());
-        let expected_outputs = signature.outputs(ctx.as_context());
-        let actual_inputs = params.iter().map(|value| value.value_type());
-        if expected_inputs.iter().copied().ne(actual_inputs)
-            || expected_outputs.len() != results.len()
-        {
-            return Err(TrapCode::UnexpectedSignature);
-        }
-        Ok(())
     }
 }
