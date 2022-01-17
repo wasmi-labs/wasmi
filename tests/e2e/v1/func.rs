@@ -267,3 +267,39 @@ fn dynamic_type_check_works() {
         Ok(_)
     );
 }
+
+#[test]
+fn static_type_check_works() {
+    let mut store = test_setup();
+    let identity = Func::wrap(&mut store, |value: i32| value);
+    // Case: Too few inputs given to function.
+    assert_matches!(
+        identity.typed::<(), i32, _>(&mut store),
+        Err(Error::Func(FuncError::MismatchingParameters { .. }))
+    );
+    // Case: Too many inputs given to function.
+    assert_matches!(
+        identity.typed::<(i32, i32), i32, _>(&mut store),
+        Err(Error::Func(FuncError::MismatchingParameters { .. }))
+    );
+    // Case: Too few results given to function.
+    assert_matches!(
+        identity.typed::<i32, (), _>(&mut store),
+        Err(Error::Func(FuncError::MismatchingResults { .. }))
+    );
+    // Case: Too many results given to function.
+    assert_matches!(
+        identity.typed::<i32, (i32, i32), _>(&mut store),
+        Err(Error::Func(FuncError::MismatchingResults { .. }))
+    );
+    // Case: Mismatching type given as input to function.
+    assert_matches!(
+        identity.typed::<i64, i32, _>(&mut store),
+        Err(Error::Func(FuncError::MismatchingParameters { .. }))
+    );
+    // Case: Mismatching type given as output of function.
+    assert_matches!(
+        identity.typed::<i32, i64, _>(&mut store),
+        Err(Error::Func(FuncError::MismatchingResults { .. }))
+    );
+}
