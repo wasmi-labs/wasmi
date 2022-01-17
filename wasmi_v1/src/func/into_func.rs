@@ -227,6 +227,7 @@ macro_rules! impl_wasm_type_list {
                 ),*]
             }
 
+            #[allow(non_snake_case)]
             fn values(self) -> Self::Values {
                 let ($($tuple,)*) = self;
                 [$(
