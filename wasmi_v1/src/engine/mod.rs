@@ -24,7 +24,7 @@ use self::{
     value_stack::{FromStackEntry, StackEntry, ValueStack},
 };
 use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func};
-use crate::{func::HostFuncEntity, Instance, Trap, TrapCode, ValueType};
+use crate::{func::HostFuncEntity, Instance, Trap, ValueType};
 use alloc::sync::Arc;
 use core::cmp;
 use spin::mutex::Mutex;
@@ -235,9 +235,10 @@ impl EngineInner {
                 signature
             }
             FuncEntityInternal::Host(host_func) => {
+                let signature = host_func.signature();
                 let host_func = host_func.clone();
-                self.execute_host_func(&mut ctx, host_func.clone(), None)?;
-                host_func.signature()
+                self.execute_host_func(&mut ctx, host_func, None)?;
+                signature
             }
         };
         let result_types = signature.outputs(&ctx);
@@ -258,9 +259,7 @@ impl EngineInner {
     /// - When encountering a Wasm trap during the execution of `func`.
     fn execute_wasm_func(&mut self, mut ctx: impl AsContextMut, func: Func) -> Result<(), Trap> {
         let frame = FunctionFrame::new(ctx.as_context(), func);
-        self.call_stack
-            .push(frame)
-            .map_err(|_error| TrapCode::StackOverflow)?;
+        self.call_stack.push(frame)?;
         self.execute_until_done(ctx.as_context_mut())?;
         Ok(())
     }
@@ -348,20 +347,19 @@ impl EngineInner {
     {
         // The host function signature is required for properly
         // adjusting, inspecting and manipulating the value stack.
-        let signature = host_func.signature();
-        let (input_types, output_types) = signature.inputs_outputs(ctx.as_context());
+        let (input_types, output_types) = host_func.signature().inputs_outputs(ctx.as_context());
         // In case the host function returns more values than it takes
         // we are required to extend the value stack.
         let len_inputs = input_types.len();
         let len_outputs = output_types.len();
-        let len_inout = cmp::max(len_inputs, len_outputs);
-        self.value_stack.reserve(len_inout)?;
+        let max_inout = cmp::max(len_inputs, len_outputs);
+        self.value_stack.reserve(max_inout)?;
         if len_outputs > len_inputs {
             let delta = len_outputs - len_inputs;
             self.value_stack.extend_zeros(delta)?;
         }
         let params_results = FuncParams::new(
-            self.value_stack.peek_as_slice_mut(len_inout),
+            self.value_stack.peek_as_slice_mut(max_inout),
             len_inputs,
             len_outputs,
         );
@@ -388,10 +386,6 @@ impl EngineInner {
     {
         self.value_stack.clear();
         self.call_stack.clear();
-        assert!(
-            self.value_stack.is_empty(),
-            "encountered non-empty value stack upon function execution initialization",
-        );
         for param in params.feed_params() {
             self.value_stack.push(param);
         }

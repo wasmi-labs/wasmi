@@ -59,6 +59,5 @@ name = "benches"
 harness = false
 
 [profile.bench]
-debug = true
 lto = "fat"
 codegen-units = 1

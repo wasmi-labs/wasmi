@@ -172,11 +172,6 @@ pub struct InstancePre<'a> {
 }
 
 impl<'a> InstancePre<'a> {
-    /// Returns `true` if the [`Module`] has a `start` function.
-    fn has_start_fn(&self) -> bool {
-        self.start_fn().is_some()
-    }
-
     /// Returns the index of the `start` function if any.
     ///
     /// Returns `None` if the [`Module`] does not have a `start` function.

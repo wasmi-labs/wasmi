@@ -373,11 +373,6 @@ impl ValueStack {
         self.stack_ptr
     }
 
-    /// Returns `true` if the [`ValueStack`] is empty.
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
     /// Reserves enough space for `additional` entries in the [`ValueStack`].
     ///
     /// # Note
