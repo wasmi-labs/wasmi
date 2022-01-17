@@ -4,7 +4,6 @@ use super::{
     AsContextMut,
     DropKeep,
     EngineInner,
-    ExecutionOutcome,
     FromStackEntry,
     FunctionExecutionOutcome,
     FunctionFrame,
@@ -14,7 +13,7 @@ use super::{
     ValueStack,
     VisitInstruction,
 };
-use crate::{Trap, TrapCode, F32, F64};
+use crate::{Func, Trap, TrapCode, F32, F64};
 use core::ops::{BitAnd, BitOr, BitXor, Neg, Shl, Shr};
 use wasmi_core::{
     memory_units::Pages,
@@ -26,6 +25,24 @@ use wasmi_core::{
     TryTruncateInto,
     WrapInto,
 };
+
+/// The outcome of a `wasmi` instruction execution.
+///
+/// # Note
+///
+/// This signals to the `wasmi` interpreter what to do after the
+/// instruction has been successfully executed.
+#[derive(Debug, Copy, Clone)]
+pub enum ExecutionOutcome {
+    /// Continue with next instruction.
+    Continue,
+    /// Branch to an instruction at the given position.
+    Branch(Target),
+    /// Execute function call.
+    ExecuteCall(Func),
+    /// Return from current function block.
+    Return(DropKeep),
+}
 
 /// State that is used during Wasm function execution.
 #[derive(Debug)]

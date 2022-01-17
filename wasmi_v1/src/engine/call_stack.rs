@@ -17,28 +17,7 @@ use super::{
 };
 use crate::TrapCode;
 use alloc::vec::Vec;
-use core::{fmt, fmt::Display};
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
-
-/// Errors that may occur when operating with the [`CallStack`].
-#[derive(Debug)]
-#[non_exhaustive]
-pub enum CallStackError {
-    /// The [`CallStack`] has reached its recursion limit.
-    StackOverflow(usize),
-}
-
-impl Display for CallStackError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::StackOverflow(limit) => write!(
-                f,
-                "tried to call function when at recursion limit of {}",
-                limit
-            ),
-        }
-    }
-}
 
 /// A function frame of a function in the call stack.
 #[derive(Debug)]
@@ -234,11 +213,24 @@ impl CallStack {
     /// # Errors
     ///
     /// If the [`FunctionFrame`] is at the set recursion limit.
-    pub fn push(&mut self, frame: FunctionFrame) -> Result<(), CallStackError> {
+    pub fn push(&mut self, frame: FunctionFrame) -> Result<(), TrapCode> {
         if self.len() == self.recursion_limit {
-            return Err(CallStackError::StackOverflow(self.recursion_limit));
+            // return Err(CallStackError::StackOverflow(self.recursion_limit));
+            return Err(TrapCode::StackOverflow);
         }
         self.frames.push(frame);
+        Ok(())
+    }
+
+    pub fn push_pair(
+        &mut self,
+        first: FunctionFrame,
+        second: FunctionFrame,
+    ) -> Result<(), TrapCode> {
+        if self.len() + 1 >= self.recursion_limit {
+            return Err(TrapCode::StackOverflow);
+        }
+        self.frames.extend([first, second]);
         Ok(())
     }
 

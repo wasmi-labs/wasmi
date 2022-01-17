@@ -1,7 +1,14 @@
 mod caller;
+mod error;
 mod into_func;
+mod typed_func;
 
-pub use self::{caller::Caller, into_func::IntoFunc};
+pub use self::{
+    caller::Caller,
+    error::FuncError,
+    into_func::IntoFunc,
+    typed_func::{TypedFunc, WasmParams, WasmResults},
+};
 use super::{
     engine::{FuncBody, FuncParams, FuncResults},
     AsContext,
@@ -12,7 +19,7 @@ use super::{
     StoreContext,
     Stored,
 };
-use crate::{Trap, Value};
+use crate::{Error, Trap, Value};
 use alloc::sync::Arc;
 use core::{fmt, fmt::Debug};
 
@@ -253,19 +260,59 @@ impl Func {
     /// Calls the Wasm or host function with the given inputs.
     ///
     /// The result is written back into the `outputs` buffer.
+    ///
+    /// # Errors
+    ///
+    /// - If the function returned a [`Trap`].
+    /// - If the types of the `inputs` do not match the expected types for the
+    ///   function signature of `self`.
+    /// - If the number of input values does not match the expected number of
+    ///   inputs required by the function signature of `self`.
+    /// - If the number of output values does not match the expected number of
+    ///   outputs required by the function signature of `self`.
     pub fn call<T>(
         &self,
         mut ctx: impl AsContextMut<UserState = T>,
         inputs: &[Value],
         outputs: &mut [Value],
-    ) -> Result<(), Trap> {
-        // Cloning an engine is a cheap operation.
+    ) -> Result<(), Error> {
+        // Since [`Func`] is a dynamically typed function instance there is
+        // a need to verify that the given input parameters match the required
+        // types and that the given output slice matches the expected length.
+        //
+        // These checks can be avoided using the [`TypedFunc`] API.
+        let (expected_inputs, expected_outputs) = self.signature(&ctx).inputs_outputs(&ctx);
+        let actual_inputs = inputs.iter().map(|value| value.value_type());
+        if expected_inputs.iter().copied().ne(actual_inputs) {
+            return Err(FuncError::MismatchingParameters { func: *self }).map_err(Into::into);
+        }
+        if expected_outputs.len() != outputs.len() {
+            return Err(FuncError::MismatchingResults { func: *self }).map_err(Into::into);
+        }
+        // Note: Cloning an [`Engine`] is intentionally a cheap operation.
         ctx.as_context().store.engine().clone().execute_func(
             ctx.as_context_mut(),
             *self,
             inputs,
             outputs,
-        )
+        )?;
+        Ok(())
+    }
+
+    /// Creates a new [`TypedFunc`] from this [`Func`].
+    ///
+    /// # Note
+    ///
+    /// This performs static type checks given `Params` as parameter types
+    /// to [`Func`] and `Results` as result types of [`Func`] so that those
+    /// type checks can be avoided when calling the created [`TypedFunc`].
+    pub fn typed<Params, Results, S>(&self, ctx: S) -> Result<TypedFunc<Params, Results>, Error>
+    where
+        Params: WasmParams,
+        Results: WasmResults,
+        S: AsContext,
+    {
+        TypedFunc::new(ctx, *self)
     }
 
     /// Returns the internal representation of the [`Func`] instance.

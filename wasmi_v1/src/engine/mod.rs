@@ -6,6 +6,7 @@ pub mod code_map;
 pub mod exec_context;
 mod func_args;
 pub mod inst_builder;
+mod traits;
 pub mod value_stack;
 
 pub(crate) use self::func_args::{FuncParams, FuncResults, ReadParams, WasmType, WriteResults};
@@ -13,6 +14,7 @@ pub use self::{
     bytecode::{DropKeep, Target},
     code_map::FuncBody,
     inst_builder::{InstructionIdx, InstructionsBuilder, LabelIdx, Reloc},
+    traits::{CallParams, CallResults},
 };
 use self::{
     bytecode::{Instruction, VisitInstruction},
@@ -21,8 +23,8 @@ use self::{
     exec_context::ExecutionContext,
     value_stack::{FromStackEntry, StackEntry, ValueStack},
 };
-use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func, Signature};
-use crate::{func::HostFuncEntity, Instance, Trap, TrapCode, Value, ValueType};
+use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func};
+use crate::{func::HostFuncEntity, Instance, Trap, TrapCode, ValueType};
 use alloc::sync::Arc;
 use core::cmp;
 use spin::mutex::Mutex;
@@ -32,24 +34,6 @@ pub const DEFAULT_VALUE_STACK_LIMIT: usize = 1024 * 1024;
 
 /// Maximum number of levels on the call stack.
 pub const DEFAULT_CALL_STACK_LIMIT: usize = 64 * 1024;
-
-/// The outcome of a `wasmi` instruction execution.
-///
-/// # Note
-///
-/// This signals to the `wasmi` interpreter what to do after the
-/// instruction has been successfully executed.
-#[derive(Debug, Copy, Clone)]
-pub enum ExecutionOutcome {
-    /// Continue with next instruction.
-    Continue,
-    /// Branch to an instruction at the given position.
-    Branch(Target),
-    /// Execute function call.
-    ExecuteCall(Func),
-    /// Return from current function block.
-    Return(DropKeep),
-}
 
 /// The outcome of a `wasmi` function execution.
 #[derive(Debug, Copy, Clone)]
@@ -157,22 +141,35 @@ impl Engine {
             .clone()
     }
 
-    /// Executes the given [`Func`] using the given arguments `args` and stores the result into `results`.
+    /// Executes the given [`Func`] using the given arguments `params` and stores the result into `results`.
+    ///
+    /// # Note
+    ///
+    /// This API assumes that the `params` and `results` are well typed and
+    /// therefore won't perform type checks.
+    /// Those checks are usually done at the [`Func::call`] API or when creating
+    /// a new [`TypedFunc`] instance via [`Func::typed`].
     ///
     /// # Errors
     ///
     /// - If the given `func` is not a Wasm function, e.g. if it is a host function.
-    /// - If the given arguments `args` do not match the expected parameters of `func`.
+    /// - If the given arguments `params` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm trap during the execution of `func`.
-    pub(crate) fn execute_func(
+    ///
+    /// [`TypedFunc`]: [`crate::TypedFunc`]
+    pub(crate) fn execute_func<Params, Results>(
         &mut self,
         ctx: impl AsContextMut,
         func: Func,
-        args: &[Value],
-        results: &mut [Value],
-    ) -> Result<(), Trap> {
-        self.inner.lock().execute_func(ctx, func, args, results)
+        params: Params,
+        results: Results,
+    ) -> Result<<Results as CallResults>::Results, Trap>
+    where
+        Params: CallParams,
+        Results: CallResults,
+    {
+        self.inner.lock().execute_func(ctx, func, params, results)
     }
 }
 
@@ -219,27 +216,33 @@ impl EngineInner {
     /// - If the given arguments `args` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm trap during the execution of `func`.
-    pub fn execute_func(
+    pub fn execute_func<Params, Results>(
         &mut self,
         mut ctx: impl AsContextMut,
         func: Func,
-        args: &[Value],
-        results: &mut [Value],
-    ) -> Result<(), Trap> {
-        match func.as_internal(&ctx) {
+        params: Params,
+        results: Results,
+    ) -> Result<<Results as CallResults>::Results, Trap>
+    where
+        Params: CallParams,
+        Results: CallResults,
+    {
+        self.initialize_args(params);
+        let signature = match func.as_internal(&ctx) {
             FuncEntityInternal::Wasm(wasm_func) => {
                 let signature = wasm_func.signature();
-                self.execute_wasm_func(&mut ctx, signature, args, results, func)?;
+                self.execute_wasm_func(&mut ctx, func)?;
+                signature
             }
             FuncEntityInternal::Host(host_func) => {
-                self.initialize_args(args);
                 let host_func = host_func.clone();
                 self.execute_host_func(&mut ctx, host_func.clone(), None)?;
-                let result_types = host_func.signature().outputs(&ctx);
-                self.write_results_back(result_types, results);
+                host_func.signature()
             }
-        }
-        Ok(())
+        };
+        let result_types = signature.outputs(&ctx);
+        let results = self.write_results_back(result_types, results);
+        Ok(results)
     }
 
     /// Executes the given Wasm [`Func`] using the given arguments `args` and stores the result into `results`.
@@ -253,25 +256,12 @@ impl EngineInner {
     /// - If the given arguments `args` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm trap during the execution of `func`.
-    fn execute_wasm_func(
-        &mut self,
-        mut ctx: impl AsContextMut,
-        signature: Signature,
-        args: &[Value],
-        results: &mut [Value],
-        func: Func,
-    ) -> Result<(), Trap> {
-        self.value_stack.clear();
-        self.call_stack.clear();
-        Self::check_signature(ctx.as_context(), signature, args, results)?;
-        self.initialize_args(args);
+    fn execute_wasm_func(&mut self, mut ctx: impl AsContextMut, func: Func) -> Result<(), Trap> {
         let frame = FunctionFrame::new(ctx.as_context(), func);
         self.call_stack
             .push(frame)
             .map_err(|_error| TrapCode::StackOverflow)?;
         self.execute_until_done(ctx.as_context_mut())?;
-        let result_types = signature.outputs(&ctx);
-        self.write_results_back(result_types, results);
         Ok(())
     }
 
@@ -284,21 +274,29 @@ impl EngineInner {
     /// # Panics
     ///
     /// - If the `results` buffer length does not match the remaining amount of stack values.
-    fn write_results_back(&mut self, result_types: &[ValueType], results: &mut [Value]) {
+    fn write_results_back<Results>(
+        &mut self,
+        result_types: &[ValueType],
+        results: Results,
+    ) -> <Results as CallResults>::Results
+    where
+        Results: CallResults,
+    {
         assert_eq!(
             self.value_stack.len(),
-            results.len(),
+            results.len_results(),
             "expected {} values on the stack after function execution but found {}",
-            results.len(),
+            results.len_results(),
             self.value_stack.len(),
         );
-        assert_eq!(results.len(), result_types.len());
-        for (result, (value, value_type)) in results
-            .iter_mut()
-            .zip(self.value_stack.drain().iter().zip(result_types))
-        {
-            *result = value.with_type(*value_type);
-        }
+        assert_eq!(results.len_results(), result_types.len());
+        results.feed_results(
+            self.value_stack
+                .drain()
+                .iter()
+                .zip(result_types)
+                .map(|(raw_value, value_type)| raw_value.with_type(*value_type)),
+        )
     }
 
     /// Executes functions until the call stack is empty.
@@ -322,21 +320,14 @@ impl EngineInner {
                     match func.as_internal(ctx.as_context()) {
                         FuncEntityInternal::Wasm(wasm_func) => {
                             let nested_frame = FunctionFrame::new_wasm(func, wasm_func);
-                            self.call_stack
-                                .push(function_frame)
-                                .map_err(|_| TrapCode::StackOverflow)?;
-                            self.call_stack
-                                .push(nested_frame)
-                                .map_err(|_| TrapCode::StackOverflow)?;
+                            self.call_stack.push_pair(function_frame, nested_frame)?;
                         }
                         FuncEntityInternal::Host(host_func) => {
                             // Note: We push the function context before calling the host function.
                             //       If the VM is not resumable, it does no harm.
                             //       If it is, we then save the context here.
                             let instance = function_frame.instance();
-                            self.call_stack
-                                .push(function_frame)
-                                .map_err(|_| TrapCode::StackOverflow)?;
+                            self.call_stack.push(function_frame)?;
                             let host_func = host_func.clone();
                             self.execute_host_func(&mut ctx, host_func, Some(instance))?;
                         }
@@ -390,37 +381,19 @@ impl EngineInner {
         Ok(())
     }
 
-    /// Initializes the value stack with the given arguments `args`.
-    fn initialize_args(&mut self, args: &[Value]) {
+    /// Initializes the value stack with the given arguments `params`.
+    fn initialize_args<Params>(&mut self, params: Params)
+    where
+        Params: CallParams,
+    {
+        self.value_stack.clear();
+        self.call_stack.clear();
         assert!(
             self.value_stack.is_empty(),
             "encountered non-empty value stack upon function execution initialization",
         );
-        for &arg in args {
-            self.value_stack.push(arg);
+        for param in params.feed_params() {
+            self.value_stack.push(param);
         }
-    }
-
-    /// Checks if the `signature` and the given `params` and `results` slices match.
-    ///
-    /// # Errors
-    ///
-    /// - If the given `signature` inputs and `params` do not have matching length and value types.
-    /// - If the given `signature` outputs and `results` do not have the same lengths.
-    fn check_signature(
-        ctx: impl AsContext,
-        signature: Signature,
-        params: &[Value],
-        results: &[Value],
-    ) -> Result<(), TrapCode> {
-        let expected_inputs = signature.inputs(ctx.as_context());
-        let expected_outputs = signature.outputs(ctx.as_context());
-        let actual_inputs = params.iter().map(|value| value.value_type());
-        if expected_inputs.iter().copied().ne(actual_inputs)
-            || expected_outputs.len() != results.len()
-        {
-            return Err(TrapCode::UnexpectedSignature);
-        }
-        Ok(())
     }
 }
