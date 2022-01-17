@@ -104,32 +104,6 @@ impl<'engine> FuncBodyTranslator<'engine> {
         }
     }
 
-    /// Translates the instructions forming a Wasm function body into `wasmi` bytecode.
-    ///
-    /// Returns a [`FuncBody`] reference to the translated `wasmi` bytecode.
-    pub fn translate<'a, I: 'a>(
-        &mut self,
-        validator: &mut FunctionValidationContext,
-        instructions: I,
-    ) -> Result<FuncBody, Error>
-    where
-        I: IntoIterator<Item = &'a pwasm::Instruction>,
-        I::IntoIter: ExactSizeIterator,
-    {
-        for instruction in instructions {
-            self.translate_instruction(validator, instruction)?;
-        }
-        // We need to call this function yet another time at the end
-        // of the instruction sequence because with future Wasm `multivalue`
-        // proposal it could be that the last instruction pushes a lot
-        // of values to the stack.
-        self.pin_max_stack_height(validator);
-        let func_body =
-            self.inst_builder
-                .finish(self.engine, self.len_locals, self.max_stack_height);
-        Ok(func_body)
-    }
-
     /// Updates the maximum stack height of the function.
     ///
     /// # Note
