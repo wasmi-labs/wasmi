@@ -175,21 +175,22 @@ impl_wasm_type! {
 /// - Iterate over the value types of the Wasm type sequence
 ///     - This is useful to construct host function signatures.
 pub trait WasmTypeList: ReadParams + WriteResults {
-    /// The [`ValueType`] sequence iterator type.
-    type Iter: IntoIterator<Item = ValueType> + ExactSizeIterator + DoubleEndedIterator;
+    /// The [`ValueType`] sequence as array.
+    type Types: IntoIterator<Item = ValueType> + AsRef<[ValueType]> + AsMut<[ValueType]>;
 
-    /// Returns an iterator over the [`ValueType`] sequence representing `Self`.
-    fn value_types() -> Self::Iter;
+    /// Returns an array representing the [`ValueType`] sequence of `Self`.
+    fn value_types() -> Self::Types;
+
 }
 
 impl<T1> WasmTypeList for T1
 where
     T1: WasmType,
 {
-    type Iter = array::IntoIter<ValueType, 1>;
+    type Types = [ValueType; 1];
 
-    fn value_types() -> Self::Iter {
-        [<T1 as WasmType>::value_type()].into_iter()
+    fn value_types() -> Self::Types {
+        [<T1 as WasmType>::value_type()]
     }
 }
 
@@ -201,12 +202,12 @@ macro_rules! impl_wasm_type_list {
                 $tuple: WasmType
             ),*
         {
-            type Iter = array::IntoIter<ValueType, $n>;
+            type Types = [ValueType; $n];
 
-            fn value_types() -> Self::Iter {
+            fn value_types() -> Self::Types {
                 [$(
                     <$tuple as WasmType>::value_type()
-                ),*].into_iter()
+                ),*]
             }
         }
     };
