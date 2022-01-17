@@ -8,6 +8,7 @@ use crate::{
     Caller,
     SignatureEntity,
 };
+use core::{array, iter::FusedIterator};
 use wasmi_core::{FromValue, Trap, Value, ValueType, F32, F64};
 
 /// Closures and functions that can be used as host functions.
@@ -182,10 +183,20 @@ impl_wasm_type! {
 ///     - This is useful to construct host function signatures.
 pub trait WasmTypeList: ReadParams + WriteResults {
     /// The [`ValueType`] sequence as array.
-    type Types: IntoIterator<Item = ValueType> + AsRef<[ValueType]> + AsMut<[ValueType]>;
+    type Types: IntoIterator<IntoIter = Self::TypesIter, Item = ValueType>
+        + AsRef<[ValueType]>
+        + AsMut<[ValueType]>;
+
+    /// The iterator type of the [`Types`] type sequence.
+    type TypesIter: ExactSizeIterator + DoubleEndedIterator + FusedIterator;
 
     /// The [`Value`] sequence as array.
-    type Values: IntoIterator<Item = Value> + AsRef<[Value]> + AsMut<[Value]>;
+    type Values: IntoIterator<IntoIter = Self::ValuesIter, Item = Value>
+        + AsRef<[Value]>
+        + AsMut<[Value]>;
+
+    /// The iterator type of the [`Values`] value sequence.
+    type ValuesIter: ExactSizeIterator + DoubleEndedIterator + FusedIterator;
 
     /// Returns an array representing the [`ValueType`] sequence of `Self`.
     fn value_types() -> Self::Types;
@@ -199,7 +210,9 @@ where
     T1: WasmType,
 {
     type Types = [ValueType; 1];
+    type TypesIter = array::IntoIter<ValueType, 1>;
     type Values = [Value; 1];
+    type ValuesIter = array::IntoIter<Value, 1>;
 
     fn value_types() -> Self::Types {
         [<T1 as WasmType>::value_type()]
@@ -219,7 +232,9 @@ macro_rules! impl_wasm_type_list {
             ),*
         {
             type Types = [ValueType; $n];
+            type TypesIter = array::IntoIter<ValueType, $n>;
             type Values = [Value; $n];
+            type ValuesIter = array::IntoIter<Value, $n>;
 
             fn value_types() -> Self::Types {
                 [$(
