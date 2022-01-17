@@ -24,6 +24,10 @@ wast = "39.0"
 anyhow = "1.0"
 criterion = "0.3.5"
 
+# Required as dev-dependency because otherwise benchmarks
+# have trouble using it without `cargo bench --all-features`.
+wasmi_v1 = { version = "0.11", path = "wasmi_v1" }
+
 [features]
 default = ["std"]
 # Use `no-default-features` for a `no_std` build.
