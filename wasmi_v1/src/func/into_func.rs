@@ -141,6 +141,9 @@ for_each_tuple!(impl_wasm_return_type);
 pub trait WasmType: FromValue + Into<Value> + InternalWasmType {
     /// Returns the value type of the Wasm type.
     fn value_type() -> ValueType;
+
+    /// Returns the [`Value`] for the [`WasmType`] of `self`.
+    fn value(self) -> Value;
 }
 
 macro_rules! impl_wasm_type {
@@ -149,6 +152,10 @@ macro_rules! impl_wasm_type {
             impl WasmType for $rust_type {
                 fn value_type() -> ValueType {
                     ValueType::$wasmi_type
+                }
+
+                fn value(self) -> Value {
+                    Value::$wasmi_type(self as _)
                 }
             }
         )*
@@ -177,9 +184,14 @@ pub trait WasmTypeList: ReadParams + WriteResults {
     /// The [`ValueType`] sequence as array.
     type Types: IntoIterator<Item = ValueType> + AsRef<[ValueType]> + AsMut<[ValueType]>;
 
+    /// The [`Value`] sequence as array.
+    type Values: IntoIterator<Item = Value> + AsRef<[Value]> + AsMut<[Value]>;
+
     /// Returns an array representing the [`ValueType`] sequence of `Self`.
     fn value_types() -> Self::Types;
 
+    /// Returns an array representing the [`Value`] sequence of `self`.
+    fn values(self) -> Self::Values;
 }
 
 impl<T1> WasmTypeList for T1
@@ -187,9 +199,14 @@ where
     T1: WasmType,
 {
     type Types = [ValueType; 1];
+    type Values = [Value; 1];
 
     fn value_types() -> Self::Types {
         [<T1 as WasmType>::value_type()]
+    }
+
+    fn values(self) -> Self::Values {
+        [<T1 as WasmType>::value(self)]
     }
 }
 
@@ -202,10 +219,18 @@ macro_rules! impl_wasm_type_list {
             ),*
         {
             type Types = [ValueType; $n];
+            type Values = [Value; $n];
 
             fn value_types() -> Self::Types {
                 [$(
                     <$tuple as WasmType>::value_type()
+                ),*]
+            }
+
+            fn values(self) -> Self::Values {
+                let ($($tuple,)*) = self;
+                [$(
+                    <$tuple as WasmType>::value($tuple)
                 ),*]
             }
         }
