@@ -306,13 +306,11 @@ impl Func {
     /// This performs static type checks given `Params` as parameter types
     /// to [`Func`] and `Results` as result types of [`Func`] so that those
     /// type checks can be avoided when calling the created [`TypedFunc`].
-    pub fn typed<Params, Results>(
-        &self,
-        ctx: impl AsContext,
-    ) -> Result<TypedFunc<Params, Results>, Error>
+    pub fn typed<Params, Results, S>(&self, ctx: S) -> Result<TypedFunc<Params, Results>, Error>
     where
         Params: WasmParams,
         Results: WasmResults,
+        S: AsContext,
     {
         TypedFunc::new(ctx, *self)
     }
