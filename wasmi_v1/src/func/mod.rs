@@ -1,8 +1,14 @@
 mod caller;
 mod error;
 mod into_func;
+mod typed_func;
 
-pub use self::{caller::Caller, error::FuncError, into_func::IntoFunc};
+pub use self::{
+    caller::Caller,
+    error::FuncError,
+    into_func::IntoFunc,
+    typed_func::{TypedFunc, WasmParams, WasmResults},
+};
 use super::{
     engine::{FuncBody, FuncParams, FuncResults},
     AsContext,
@@ -291,6 +297,24 @@ impl Func {
             outputs,
         )?;
         Ok(())
+    }
+
+    /// Creates a new [`TypedFunc`] from this [`Func`].
+    ///
+    /// # Note
+    ///
+    /// This performs static type checks given `Params` as parameter types
+    /// to [`Func`] and `Results` as result types of [`Func`] so that those
+    /// type checks can be avoided when calling the created [`TypedFunc`].
+    pub fn typed<Params, Results>(
+        &self,
+        ctx: impl AsContext,
+    ) -> Result<TypedFunc<Params, Results>, Error>
+    where
+        Params: WasmParams,
+        Results: WasmResults,
+    {
+        TypedFunc::new(ctx, *self)
     }
 
     /// Returns the internal representation of the [`Func`] instance.
