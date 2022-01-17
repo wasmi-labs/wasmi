@@ -386,10 +386,6 @@ impl EngineInner {
     {
         self.value_stack.clear();
         self.call_stack.clear();
-        assert!(
-            self.value_stack.is_empty(),
-            "encountered non-empty value stack upon function execution initialization",
-        );
         for param in params.feed_params() {
             self.value_stack.push(param);
         }
