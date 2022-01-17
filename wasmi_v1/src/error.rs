@@ -1,4 +1,5 @@
 use super::errors::{
+    FuncError,
     GlobalError,
     InstantiationError,
     LinkerError,
@@ -25,6 +26,8 @@ pub enum Error {
     Translation(TranslationError),
     /// A module instantiation error.
     Instantiation(InstantiationError),
+    /// A function error.
+    Func(FuncError),
     /// A trap as defined by the WebAssembly specification.
     Trap(Trap),
 }
@@ -35,13 +38,14 @@ impl std::error::Error for Error {}
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Error::Trap(error) => Display::fmt(error, f),
-            Error::Global(error) => Display::fmt(error, f),
-            Error::Memory(error) => Display::fmt(error, f),
-            Error::Table(error) => Display::fmt(error, f),
-            Error::Linker(error) => Display::fmt(error, f),
-            Error::Translation(error) => Display::fmt(error, f),
-            Error::Instantiation(error) => Display::fmt(error, f),
+            Self::Trap(error) => Display::fmt(error, f),
+            Self::Global(error) => Display::fmt(error, f),
+            Self::Memory(error) => Display::fmt(error, f),
+            Self::Table(error) => Display::fmt(error, f),
+            Self::Linker(error) => Display::fmt(error, f),
+            Self::Translation(error) => Display::fmt(error, f),
+            Self::Func(error) => Display::fmt(error, f),
+            Self::Instantiation(error) => Display::fmt(error, f),
         }
     }
 }
@@ -85,5 +89,11 @@ impl From<TranslationError> for Error {
 impl From<InstantiationError> for Error {
     fn from(error: InstantiationError) -> Self {
         Self::Instantiation(error)
+    }
+}
+
+impl From<FuncError> for Error {
+    fn from(error: FuncError) -> Self {
+        Self::Func(error)
     }
 }

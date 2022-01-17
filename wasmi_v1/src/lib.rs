@@ -32,6 +32,7 @@ use wasmi_core::{Trap, TrapCode, Value, ValueType, F32, F64};
 /// Defines some errors that may occur upon interaction with `wasmi`.
 pub mod errors {
     pub use super::{
+        func::FuncError,
         global::GlobalError,
         linker::LinkerError,
         memory::MemoryError,
@@ -55,7 +56,7 @@ pub use self::{
     engine::{Config, Engine},
     error::Error,
     external::Extern,
-    func::{Caller, Func},
+    func::{Caller, Func, TypedFunc, WasmParams, WasmResults},
     global::{Global, Mutability},
     instance::{ExportsIter, Instance},
     linker::Linker,

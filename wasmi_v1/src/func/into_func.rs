@@ -8,7 +8,7 @@ use crate::{
     Caller,
     SignatureEntity,
 };
-use core::array;
+use core::{array, iter::FusedIterator};
 use wasmi_core::{FromValue, Trap, Value, ValueType, F32, F64};
 
 /// Closures and functions that can be used as host functions.
@@ -174,22 +174,71 @@ impl_wasm_type! {
 /// - Write host function results into a region of the value stack.
 /// - Iterate over the value types of the Wasm type sequence
 ///     - This is useful to construct host function signatures.
-pub trait WasmTypeList: ReadParams + WriteResults {
-    /// The [`ValueType`] sequence iterator type.
-    type Iter: IntoIterator<Item = ValueType> + ExactSizeIterator + DoubleEndedIterator;
+pub trait WasmTypeList: ReadParams + WriteResults + Sized {
+    /// The number of Wasm types in the list.
+    const LEN: usize;
 
-    /// Returns an iterator over the [`ValueType`] sequence representing `Self`.
-    fn value_types() -> Self::Iter;
+    /// The [`ValueType`] sequence as array.
+    type Types: IntoIterator<IntoIter = Self::TypesIter, Item = ValueType>
+        + AsRef<[ValueType]>
+        + AsMut<[ValueType]>;
+
+    /// The iterator type of the sequence of [`ValueType`].
+    type TypesIter: ExactSizeIterator<Item = ValueType> + DoubleEndedIterator + FusedIterator;
+
+    /// The [`Value`] sequence as array.
+    type Values: IntoIterator<IntoIter = Self::ValuesIter, Item = Value>
+        + AsRef<[Value]>
+        + AsMut<[Value]>;
+
+    /// The iterator type of the sequence of [`Value`].
+    type ValuesIter: ExactSizeIterator<Item = Value> + DoubleEndedIterator + FusedIterator;
+
+    /// Returns an array representing the [`ValueType`] sequence of `Self`.
+    fn value_types() -> Self::Types;
+
+    /// Returns an array representing the [`Value`] sequence of `self`.
+    fn values(self) -> Self::Values;
+
+    /// Consumes the [`Value`] iterator and creates `Self` if possible.
+    ///
+    /// Returns `None` if construction of `Self` is impossible.
+    fn from_values<T>(values: T) -> Option<Self>
+    where
+        T: Iterator<Item = Value>;
 }
 
 impl<T1> WasmTypeList for T1
 where
     T1: WasmType,
 {
-    type Iter = array::IntoIter<ValueType, 1>;
+    const LEN: usize = 1;
 
-    fn value_types() -> Self::Iter {
-        [<T1 as WasmType>::value_type()].into_iter()
+    type Types = [ValueType; 1];
+    type TypesIter = array::IntoIter<ValueType, 1>;
+    type Values = [Value; 1];
+    type ValuesIter = array::IntoIter<Value, 1>;
+
+    fn value_types() -> Self::Types {
+        [<T1 as WasmType>::value_type()]
+    }
+
+    fn values(self) -> Self::Values {
+        [<T1 as Into<Value>>::into(self)]
+    }
+
+    fn from_values<T>(mut values: T) -> Option<Self>
+    where
+        T: Iterator<Item = Value>,
+    {
+        let value: T1 = values.next().and_then(Value::try_into)?;
+        if values.next().is_some() {
+            // Note: If the iterator yielded more items than
+            //       necessary we create no value from this procedure
+            //       as it is likely a bug.
+            return None;
+        }
+        Some(value)
     }
 }
 
@@ -201,12 +250,41 @@ macro_rules! impl_wasm_type_list {
                 $tuple: WasmType
             ),*
         {
-            type Iter = array::IntoIter<ValueType, $n>;
+            const LEN: usize = $n;
 
-            fn value_types() -> Self::Iter {
+            type Types = [ValueType; $n];
+            type TypesIter = array::IntoIter<ValueType, $n>;
+            type Values = [Value; $n];
+            type ValuesIter = array::IntoIter<Value, $n>;
+
+            fn value_types() -> Self::Types {
                 [$(
                     <$tuple as WasmType>::value_type()
-                ),*].into_iter()
+                ),*]
+            }
+
+            #[allow(non_snake_case)]
+            fn values(self) -> Self::Values {
+                let ($($tuple,)*) = self;
+                [$(
+                    <$tuple as Into<Value>>::into($tuple)
+                ),*]
+            }
+
+            fn from_values<T>(mut values: T) -> Option<Self>
+            where
+                T: Iterator<Item = Value>,
+            {
+                let result = ($(
+                    values.next().and_then(Value::try_into::<$tuple>)?,
+                )*);
+                if values.next().is_some() {
+                    // Note: If the iterator yielded more items than
+                    //       necessary we create no value from this procedure
+                    //       as it is likely a bug.
+                    return None
+                }
+                Some(result)
             }
         }
     };
