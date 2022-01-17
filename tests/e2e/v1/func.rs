@@ -263,7 +263,7 @@ fn type_check_works() {
     //
     // The result type will be overwritten anyways.
     assert_matches!(
-        identity.call(&mut store, &[Value::I32(0)], &mut [Value::I64(0)],),
+        identity.call(&mut store, &[Value::I32(0)], &mut [Value::I64(0)]),
         Ok(_)
     );
 }
