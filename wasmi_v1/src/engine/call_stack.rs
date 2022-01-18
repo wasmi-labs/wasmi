@@ -222,18 +222,6 @@ impl CallStack {
         Ok(())
     }
 
-    pub fn push_pair(
-        &mut self,
-        first: FunctionFrame,
-        second: FunctionFrame,
-    ) -> Result<(), TrapCode> {
-        if self.len() + 1 >= self.recursion_limit {
-            return Err(TrapCode::StackOverflow);
-        }
-        self.frames.extend([first, second]);
-        Ok(())
-    }
-
     /// Pops the last [`FunctionFrame`] from the [`CallStack`] if any.
     pub fn pop(&mut self) -> Option<FunctionFrame> {
         self.frames.pop()
