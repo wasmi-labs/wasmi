@@ -259,8 +259,7 @@ impl EngineInner {
     /// - When encountering a Wasm trap during the execution of `func`.
     fn execute_wasm_func(&mut self, mut ctx: impl AsContextMut, func: Func) -> Result<(), Trap> {
         let frame = FunctionFrame::new(ctx.as_context(), func);
-        self.call_stack.push(frame)?;
-        self.execute_until_done(ctx.as_context_mut())?;
+        self.execute_until_done(&mut ctx, frame)?;
         Ok(())
     }
 
@@ -303,11 +302,11 @@ impl EngineInner {
     /// # Errors
     ///
     /// - If any of the executed instructions yield an error.
-    fn execute_until_done(&mut self, mut ctx: impl AsContextMut) -> Result<(), Trap> {
-        let mut function_frame = match self.call_stack.pop() {
-            Some(frame) => frame,
-            None => return Ok(()),
-        };
+    fn execute_until_done(
+        &mut self,
+        mut ctx: impl AsContextMut,
+        mut function_frame: FunctionFrame,
+    ) -> Result<(), Trap> {
         'outer: loop {
             let result =
                 ExecutionContext::new(self, &mut function_frame)?.execute_frame(&mut ctx)?;
