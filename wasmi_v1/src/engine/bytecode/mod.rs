@@ -10,7 +10,7 @@ pub use self::{
     utils::{BrTable, DropKeep, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, Target},
     visitor::VisitInstruction,
 };
-use crate::{F32, F64};
+use super::value_stack::StackEntry;
 
 /// The internal `wasmi` bytecode that is stored for Wasm functions.
 ///
@@ -71,10 +71,7 @@ pub enum Instruction {
     I64Store32(Offset),
     CurrentMemory,
     GrowMemory,
-    I32Const(i32),
-    I64Const(i64),
-    F32Const(F32),
-    F64Const(F64),
+    Const(StackEntry),
     I32Eqz,
     I32Eq,
     I32Ne,
@@ -235,4 +232,14 @@ pub enum Instruction {
     /// This is a non-WebAssembly instruction that is specific to how the `wasmi`
     /// interpreter organizes its internal bytecode.
     FuncBodyEnd,
+}
+
+impl Instruction {
+    /// Creates a new `Const` instruction from the given value.
+    pub fn constant<T>(value: T) -> Self
+    where
+        T: Into<StackEntry>,
+    {
+        Self::Const(value.into())
+    }
 }

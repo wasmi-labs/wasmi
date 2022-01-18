@@ -1,5 +1,5 @@
 use super::{BrTable, DropKeep, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, Target};
-use crate::{F32, F64};
+use crate::engine::value_stack::StackEntry;
 
 pub trait VisitInstruction {
     type Outcome;
@@ -16,10 +16,7 @@ pub trait VisitInstruction {
     fn visit_set_global(&mut self, global_idx: GlobalIdx) -> Self::Outcome;
     fn visit_call(&mut self, func: FuncIdx) -> Self::Outcome;
     fn visit_call_indirect(&mut self, signature: SignatureIdx) -> Self::Outcome;
-    fn visit_i32_const(&mut self, value: i32) -> Self::Outcome;
-    fn visit_i64_const(&mut self, value: i64) -> Self::Outcome;
-    fn visit_f32_const(&mut self, value: F32) -> Self::Outcome;
-    fn visit_f64_const(&mut self, value: F64) -> Self::Outcome;
+    fn visit_const(&mut self, bytes: StackEntry) -> Self::Outcome;
     fn visit_unreachable(&mut self) -> Self::Outcome;
     fn visit_drop(&mut self) -> Self::Outcome;
     fn visit_select(&mut self) -> Self::Outcome;

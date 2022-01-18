@@ -767,23 +767,8 @@ where
         Ok(ExecutionOutcome::ExecuteCall(func))
     }
 
-    fn visit_i32_const(&mut self, value: i32) -> Self::Outcome {
-        self.value_stack.push(value);
-        Ok(ExecutionOutcome::Continue)
-    }
-
-    fn visit_i64_const(&mut self, value: i64) -> Self::Outcome {
-        self.value_stack.push(value);
-        Ok(ExecutionOutcome::Continue)
-    }
-
-    fn visit_f32_const(&mut self, value: F32) -> Self::Outcome {
-        self.value_stack.push(value);
-        Ok(ExecutionOutcome::Continue)
-    }
-
-    fn visit_f64_const(&mut self, value: F64) -> Self::Outcome {
-        self.value_stack.push(value);
+    fn visit_const(&mut self, bytes: StackEntry) -> Self::Outcome {
+        self.value_stack.push(bytes);
         Ok(ExecutionOutcome::Continue)
     }
 

@@ -414,13 +414,7 @@ impl InstructionsBuilder {
     /// - `f32.const`
     /// - `f64.const`
     pub fn constant(&mut self, value: Value) -> InstructionIdx {
-        let inst = match value {
-            Value::I32(value) => Instruction::I32Const(value),
-            Value::I64(value) => Instruction::I64Const(value),
-            Value::F32(value) => Instruction::F32Const(value),
-            Value::F64(value) => Instruction::F64Const(value),
-        };
-        self.push_inst(inst)
+        self.push_inst(Instruction::constant(value))
     }
 
     /// Creates an instruction equivalent to one of the following Wasm instructins:

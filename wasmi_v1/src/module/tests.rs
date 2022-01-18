@@ -66,7 +66,7 @@ fn implicit_return_with_value() {
     assert_single_func_body(
         &wasm,
         &[
-            Instruction::I32Const(0),
+            Instruction::constant(0),
             Instruction::Return(DropKeep::new(0, 1)),
         ],
     );
@@ -239,18 +239,18 @@ fn if_without_else() {
         &wasm,
         &[
             // 0
-            Instruction::I32Const(1),
+            Instruction::constant(1),
             // 1
             Instruction::BrIfEqz(Target::new(
                 InstructionIdx::from_usize(4),
                 DropKeep::new(0, 0),
             )),
             // 2
-            Instruction::I32Const(2),
+            Instruction::constant(2),
             // 3
             Instruction::Return(DropKeep::new(1, 1)),
             // 4
-            Instruction::I32Const(3),
+            Instruction::constant(3),
             // 5
             Instruction::Return(DropKeep::new(1, 1)),
         ],
@@ -279,12 +279,12 @@ fn if_else() {
     assert_single_func_body(
         &wasm,
         &[
-            Instruction::I32Const(1),
+            Instruction::constant(1),
             Instruction::BrIfEqz(Target::new(
                 InstructionIdx::from_usize(5),
                 DropKeep::new(0, 0),
             )),
-            Instruction::I32Const(2),
+            Instruction::constant(2),
             Instruction::SetLocal {
                 local_depth: LocalIdx::from(1),
             },
@@ -292,7 +292,7 @@ fn if_else() {
                 InstructionIdx::from_usize(7),
                 DropKeep::new(0, 0),
             )),
-            Instruction::I32Const(3),
+            Instruction::constant(3),
             Instruction::SetLocal {
                 local_depth: LocalIdx::from(1),
             },
@@ -321,17 +321,17 @@ fn if_else_returns_result() {
     assert_single_func_body(
         &wasm,
         &[
-            Instruction::I32Const(1),
+            Instruction::constant(1),
             Instruction::BrIfEqz(Target::new(
                 InstructionIdx::from_usize(4),
                 DropKeep::new(0, 0),
             )),
-            Instruction::I32Const(2),
+            Instruction::constant(2),
             Instruction::Br(Target::new(
                 InstructionIdx::from_usize(5),
                 DropKeep::new(0, 0),
             )),
-            Instruction::I32Const(3),
+            Instruction::constant(3),
             Instruction::Drop,
             Instruction::Return(DropKeep::new(0, 0)),
         ],
@@ -362,24 +362,24 @@ fn if_else_branch_from_true_branch() {
     assert_single_func_body(
         &wasm,
         &[
-            Instruction::I32Const(1),
+            Instruction::constant(1),
             Instruction::BrIfEqz(Target::new(
                 InstructionIdx::from_usize(8),
                 DropKeep::new(0, 0),
             )),
-            Instruction::I32Const(1),
-            Instruction::I32Const(1),
+            Instruction::constant(1),
+            Instruction::constant(1),
             Instruction::BrIfNez(Target::new(
                 InstructionIdx::from_usize(9),
                 DropKeep::new(0, 1),
             )),
             Instruction::Drop,
-            Instruction::I32Const(2),
+            Instruction::constant(2),
             Instruction::Br(Target::new(
                 InstructionIdx::from_usize(9),
                 DropKeep::new(0, 0),
             )),
-            Instruction::I32Const(3),
+            Instruction::constant(3),
             Instruction::Drop,
             Instruction::Return(DropKeep::new(0, 0)),
         ],
@@ -410,24 +410,24 @@ fn if_else_branch_from_false_branch() {
     assert_single_func_body(
         &wasm,
         &[
-            Instruction::I32Const(1),
+            Instruction::constant(1),
             Instruction::BrIfEqz(Target::new(
                 InstructionIdx::from_usize(4),
                 DropKeep::new(0, 0),
             )),
-            Instruction::I32Const(1),
+            Instruction::constant(1),
             Instruction::Br(Target::new(
                 InstructionIdx::from_usize(9),
                 DropKeep::new(0, 0),
             )),
-            Instruction::I32Const(2),
-            Instruction::I32Const(1),
+            Instruction::constant(2),
+            Instruction::constant(1),
             Instruction::BrIfNez(Target::new(
                 InstructionIdx::from_usize(9),
                 DropKeep::new(0, 1),
             )),
             Instruction::Drop,
-            Instruction::I32Const(3),
+            Instruction::constant(3),
             Instruction::Drop,
             Instruction::Return(DropKeep::new(0, 0)),
         ],
@@ -453,12 +453,12 @@ fn loop_() {
     assert_single_func_body(
         &wasm,
         &[
-            Instruction::I32Const(1),
+            Instruction::constant(1),
             Instruction::BrIfNez(Target::new(
                 InstructionIdx::from_usize(0),
                 DropKeep::new(0, 0),
             )),
-            Instruction::I32Const(2),
+            Instruction::constant(2),
             Instruction::Drop,
             Instruction::Return(DropKeep::new(0, 0)),
         ],
@@ -503,9 +503,9 @@ fn spec_as_br_if_value_cond() {
     assert_single_func_body(
         &wasm,
         &[
-            Instruction::I32Const(6),
-            Instruction::I32Const(9),
-            Instruction::I32Const(0),
+            Instruction::constant(6),
+            Instruction::constant(9),
+            Instruction::constant(0),
             Instruction::BrTable { len_targets: 2 },
             Instruction::BrTableTarget(Target::new(
                 InstructionIdx::from_usize(9),
@@ -520,7 +520,7 @@ fn spec_as_br_if_value_cond() {
                 DropKeep::new(0, 1),
             )),
             Instruction::Drop,
-            Instruction::I32Const(7),
+            Instruction::constant(7),
             Instruction::Return(DropKeep::new(0, 1)),
         ],
     );
@@ -545,7 +545,7 @@ fn br_table() {
     assert_single_func_body(
         &wasm,
         &[
-            Instruction::I32Const(0),
+            Instruction::constant(0),
             Instruction::BrTable { len_targets: 2 },
             Instruction::BrTableTarget(Target::new(
                 InstructionIdx::from_usize(0),
@@ -582,8 +582,8 @@ fn br_table_returns_result() {
     assert_single_func_body(
         &wasm,
         &[
-            Instruction::I32Const(0),
-            Instruction::I32Const(1),
+            Instruction::constant(0),
+            Instruction::constant(1),
             Instruction::BrTable { len_targets: 2 },
             Instruction::BrTableTarget(Target::new(
                 InstructionIdx::from_usize(5),
@@ -628,9 +628,9 @@ fn wabt_example() {
                 InstructionIdx::from_usize(4),
                 DropKeep::new(0, 0),
             )),
-            Instruction::I32Const(1),
+            Instruction::constant(1),
             Instruction::Return(DropKeep::new(1, 1)),
-            Instruction::I32Const(2),
+            Instruction::constant(2),
             Instruction::Return(DropKeep::new(1, 1)),
             Instruction::Return(DropKeep::new(1, 1)),
         ],
