@@ -78,7 +78,7 @@ impl<'engine, 'func> ExecutionContext<'engine, 'func> {
     /// calls into another function or the function returns to its caller.
     #[inline(always)]
     pub fn execute_frame(
-        &mut self,
+        self,
         mut ctx: impl AsContextMut,
     ) -> Result<FunctionExecutionOutcome, Trap> {
         'outer: loop {
