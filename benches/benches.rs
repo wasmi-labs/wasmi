@@ -245,7 +245,9 @@ fn bench_execute_rev_comp_v1(c: &mut Criterion) {
         .and_then(v1::Extern::into_func)
         .unwrap();
 
+    let mut ran_benchmarks = false;
     c.bench_function("execute/rev_complement/v1", |b| {
+        ran_benchmarks = true;
         b.iter(|| {
             bench_rev_complement
                 .call(&mut store, &[test_data_ptr], &mut [])
@@ -253,24 +255,26 @@ fn bench_execute_rev_comp_v1(c: &mut Criterion) {
         })
     });
 
-    // Get the pointer to the output buffer.
-    let rev_complement_output_ptr = instance
-        .get_export(&store, "rev_complement_output_ptr")
-        .and_then(v1::Extern::into_func)
-        .unwrap();
-    rev_complement_output_ptr
-        .call(&mut store, &[test_data_ptr], slice::from_mut(&mut result))
-        .unwrap();
-    let output_data_mem_offset = match result {
-        Value::I32(value) => value,
-        _ => panic!("unexpected non-I32 result found for prepare_rev_complement"),
-    };
+    if ran_benchmarks {
+        // Get the pointer to the output buffer.
+        let rev_complement_output_ptr = instance
+            .get_export(&store, "rev_complement_output_ptr")
+            .and_then(v1::Extern::into_func)
+            .unwrap();
+        rev_complement_output_ptr
+            .call(&mut store, &[test_data_ptr], slice::from_mut(&mut result))
+            .unwrap();
+        let output_data_mem_offset = match result {
+            Value::I32(value) => value,
+            _ => panic!("unexpected non-I32 result found for prepare_rev_complement"),
+        };
 
-    let mut revcomp_result = vec![0x00_u8; REVCOMP_OUTPUT.len()];
-    memory
-        .read(&store, output_data_mem_offset as usize, &mut revcomp_result)
-        .expect("failed to read result data from a wasm memory");
-    assert_eq!(&revcomp_result[..], REVCOMP_OUTPUT);
+        let mut revcomp_result = vec![0x00_u8; REVCOMP_OUTPUT.len()];
+        memory
+            .read(&store, output_data_mem_offset as usize, &mut revcomp_result)
+            .expect("failed to read result data from a wasm memory");
+        assert_eq!(&revcomp_result[..], REVCOMP_OUTPUT);
+    }
 }
 
 fn bench_execute_regex_redux_v0(c: &mut Criterion) {
