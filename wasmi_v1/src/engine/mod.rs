@@ -258,10 +258,49 @@ impl EngineInner {
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm trap during the execution of `func`.
     fn execute_wasm_func(&mut self, mut ctx: impl AsContextMut, func: Func) -> Result<(), Trap> {
-        let frame = FunctionFrame::new(ctx.as_context(), func);
-        self.call_stack.push(frame)?;
-        self.execute_until_done(ctx.as_context_mut())?;
-        Ok(())
+        let mut function_frame = FunctionFrame::new(&ctx, func);
+        'outer: loop {
+            match self.execute_frame(&mut ctx, &mut function_frame)? {
+                FunctionExecutionOutcome::Return => match self.call_stack.pop() {
+                    Some(frame) => {
+                        function_frame = frame;
+                        continue 'outer;
+                    }
+                    None => return Ok(()),
+                },
+                FunctionExecutionOutcome::NestedCall(func) => {
+                    match func.as_internal(&ctx) {
+                        FuncEntityInternal::Wasm(wasm_func) => {
+                            let nested_frame = FunctionFrame::new_wasm(func, wasm_func);
+                            self.call_stack.push(function_frame)?;
+                            function_frame = nested_frame;
+                        }
+                        FuncEntityInternal::Host(host_func) => {
+                            // Note: We push the function context before calling the host function.
+                            //       If the VM is not resumable, it does no harm.
+                            //       If it is, we then save the context here.
+                            let instance = function_frame.instance();
+                            let host_func = host_func.clone();
+                            self.execute_host_func(&mut ctx, host_func, Some(instance))?;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Executes the given function frame and returns the outcome.
+    ///
+    /// # Errors
+    ///
+    /// If the function frame execution trapped.
+    #[inline(always)]
+    fn execute_frame(
+        &mut self,
+        mut ctx: impl AsContextMut,
+        frame: &mut FunctionFrame,
+    ) -> Result<FunctionExecutionOutcome, Trap> {
+        ExecutionContext::new(self, frame)?.execute_frame(&mut ctx)
     }
 
     /// Writes the results of the function execution back into the `results` buffer.
@@ -298,48 +337,13 @@ impl EngineInner {
         )
     }
 
-    /// Executes functions until the call stack is empty.
+    /// Executes the given host function.
     ///
     /// # Errors
     ///
-    /// - If any of the executed instructions yield an error.
-    fn execute_until_done(&mut self, mut ctx: impl AsContextMut) -> Result<(), Trap> {
-        let mut function_frame = match self.call_stack.pop() {
-            Some(frame) => frame,
-            None => return Ok(()),
-        };
-        'outer: loop {
-            let result =
-                ExecutionContext::new(self, &mut function_frame)?.execute_frame(&mut ctx)?;
-            match result {
-                FunctionExecutionOutcome::Return => match self.call_stack.pop() {
-                    Some(frame) => {
-                        function_frame = frame;
-                        continue 'outer;
-                    }
-                    None => return Ok(()),
-                },
-                FunctionExecutionOutcome::NestedCall(func) => {
-                    match func.as_internal(ctx.as_context()) {
-                        FuncEntityInternal::Wasm(wasm_func) => {
-                            let nested_frame = FunctionFrame::new_wasm(func, wasm_func);
-                            self.call_stack.push(function_frame)?;
-                            function_frame = nested_frame;
-                        }
-                        FuncEntityInternal::Host(host_func) => {
-                            // Note: We push the function context before calling the host function.
-                            //       If the VM is not resumable, it does no harm.
-                            //       If it is, we then save the context here.
-                            let instance = function_frame.instance();
-                            let host_func = host_func.clone();
-                            self.execute_host_func(&mut ctx, host_func, Some(instance))?;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
+    /// - If the host function returns a host side error or trap.
+    /// - If the value stack overflowed upon pushing parameters or results.
+    #[inline(never)]
     fn execute_host_func<C>(
         &mut self,
         mut ctx: C,
