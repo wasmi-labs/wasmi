@@ -304,29 +304,33 @@ impl EngineInner {
     ///
     /// - If any of the executed instructions yield an error.
     fn execute_until_done(&mut self, mut ctx: impl AsContextMut) -> Result<(), Trap> {
+        let mut function_frame = match self.call_stack.pop() {
+            Some(frame) => frame,
+            None => return Ok(()),
+        };
         'outer: loop {
-            let mut function_frame = match self.call_stack.pop() {
-                Some(frame) => frame,
-                None => return Ok(()),
-            };
             let result =
                 ExecutionContext::new(self, &mut function_frame)?.execute_frame(&mut ctx)?;
             match result {
-                FunctionExecutionOutcome::Return => {
-                    continue 'outer;
-                }
+                FunctionExecutionOutcome::Return => match self.call_stack.pop() {
+                    Some(frame) => {
+                        function_frame = frame;
+                        continue 'outer;
+                    }
+                    None => return Ok(()),
+                },
                 FunctionExecutionOutcome::NestedCall(func) => {
                     match func.as_internal(ctx.as_context()) {
                         FuncEntityInternal::Wasm(wasm_func) => {
                             let nested_frame = FunctionFrame::new_wasm(func, wasm_func);
-                            self.call_stack.push_pair(function_frame, nested_frame)?;
+                            self.call_stack.push(function_frame)?;
+                            function_frame = nested_frame;
                         }
                         FuncEntityInternal::Host(host_func) => {
                             // Note: We push the function context before calling the host function.
                             //       If the VM is not resumable, it does no harm.
                             //       If it is, we then save the context here.
                             let instance = function_frame.instance();
-                            self.call_stack.push(function_frame)?;
                             let host_func = host_func.clone();
                             self.execute_host_func(&mut ctx, host_func, Some(instance))?;
                         }
