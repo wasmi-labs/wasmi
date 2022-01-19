@@ -276,9 +276,6 @@ impl EngineInner {
                             function_frame = nested_frame;
                         }
                         FuncEntityInternal::Host(host_func) => {
-                            // Note: We push the function context before calling the host function.
-                            //       If the VM is not resumable, it does no harm.
-                            //       If it is, we then save the context here.
                             let instance = function_frame.instance();
                             let host_func = host_func.clone();
                             self.execute_host_func(&mut ctx, host_func, Some(instance))?;
