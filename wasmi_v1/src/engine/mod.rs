@@ -246,7 +246,6 @@ impl EngineInner {
         Ok(results)
     }
 
-
     /// Initializes the value stack with the given arguments `params`.
     fn initialize_args<Params>(&mut self, params: Params)
     where
@@ -257,6 +256,40 @@ impl EngineInner {
         for param in params.feed_params() {
             self.value_stack.push(param);
         }
+    }
+
+    /// Writes the results of the function execution back into the `results` buffer.
+    ///
+    /// # Note
+    ///
+    /// The value stack is empty after this operation.
+    ///
+    /// # Panics
+    ///
+    /// - If the `results` buffer length does not match the remaining amount of stack values.
+    fn write_results_back<Results>(
+        &mut self,
+        result_types: &[ValueType],
+        results: Results,
+    ) -> <Results as CallResults>::Results
+    where
+        Results: CallResults,
+    {
+        assert_eq!(
+            self.value_stack.len(),
+            results.len_results(),
+            "expected {} values on the stack after function execution but found {}",
+            results.len_results(),
+            self.value_stack.len(),
+        );
+        assert_eq!(results.len_results(), result_types.len());
+        results.feed_results(
+            self.value_stack
+                .drain()
+                .iter()
+                .zip(result_types)
+                .map(|(raw_value, value_type)| raw_value.with_type(*value_type)),
+        )
     }
 
     /// Executes the given Wasm [`Func`] using the given arguments `args` and stores the result into `results`.
@@ -311,40 +344,6 @@ impl EngineInner {
         frame: &mut FunctionFrame,
     ) -> Result<FunctionExecutionOutcome, Trap> {
         ExecutionContext::new(self, frame)?.execute_frame(&mut ctx)
-    }
-
-    /// Writes the results of the function execution back into the `results` buffer.
-    ///
-    /// # Note
-    ///
-    /// The value stack is empty after this operation.
-    ///
-    /// # Panics
-    ///
-    /// - If the `results` buffer length does not match the remaining amount of stack values.
-    fn write_results_back<Results>(
-        &mut self,
-        result_types: &[ValueType],
-        results: Results,
-    ) -> <Results as CallResults>::Results
-    where
-        Results: CallResults,
-    {
-        assert_eq!(
-            self.value_stack.len(),
-            results.len_results(),
-            "expected {} values on the stack after function execution but found {}",
-            results.len_results(),
-            self.value_stack.len(),
-        );
-        assert_eq!(results.len_results(), result_types.len());
-        results.feed_results(
-            self.value_stack
-                .drain()
-                .iter()
-                .zip(result_types)
-                .map(|(raw_value, value_type)| raw_value.with_type(*value_type)),
-        )
     }
 
     /// Executes the given host function.
