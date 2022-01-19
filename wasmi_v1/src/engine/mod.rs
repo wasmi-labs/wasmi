@@ -246,61 +246,16 @@ impl EngineInner {
         Ok(results)
     }
 
-    /// Executes the given Wasm [`Func`] using the given arguments `args` and stores the result into `results`.
-    ///
-    /// # Note
-    ///
-    /// The caller is required to ensure that the given `func` actually is a Wasm function.
-    ///
-    /// # Errors
-    ///
-    /// - If the given arguments `args` do not match the expected parameters of `func`.
-    /// - If the given `results` do not match the the length of the expected results of `func`.
-    /// - When encountering a Wasm trap during the execution of `func`.
-    fn execute_wasm_func(&mut self, mut ctx: impl AsContextMut, func: Func) -> Result<(), Trap> {
-        let mut function_frame = FunctionFrame::new(&ctx, func);
-        'outer: loop {
-            match self.execute_frame(&mut ctx, &mut function_frame)? {
-                FunctionExecutionOutcome::Return => match self.call_stack.pop() {
-                    Some(frame) => {
-                        function_frame = frame;
-                        continue 'outer;
-                    }
-                    None => return Ok(()),
-                },
-                FunctionExecutionOutcome::NestedCall(func) => {
-                    match func.as_internal(&ctx) {
-                        FuncEntityInternal::Wasm(wasm_func) => {
-                            let nested_frame = FunctionFrame::new_wasm(func, wasm_func);
-                            self.call_stack.push(function_frame)?;
-                            function_frame = nested_frame;
-                        }
-                        FuncEntityInternal::Host(host_func) => {
-                            // Note: We push the function context before calling the host function.
-                            //       If the VM is not resumable, it does no harm.
-                            //       If it is, we then save the context here.
-                            let instance = function_frame.instance();
-                            let host_func = host_func.clone();
-                            self.execute_host_func(&mut ctx, host_func, Some(instance))?;
-                        }
-                    }
-                }
-            }
+    /// Initializes the value stack with the given arguments `params`.
+    fn initialize_args<Params>(&mut self, params: Params)
+    where
+        Params: CallParams,
+    {
+        self.value_stack.clear();
+        self.call_stack.clear();
+        for param in params.feed_params() {
+            self.value_stack.push(param);
         }
-    }
-
-    /// Executes the given function frame and returns the outcome.
-    ///
-    /// # Errors
-    ///
-    /// If the function frame execution trapped.
-    #[inline(always)]
-    fn execute_frame(
-        &mut self,
-        mut ctx: impl AsContextMut,
-        frame: &mut FunctionFrame,
-    ) -> Result<FunctionExecutionOutcome, Trap> {
-        ExecutionContext::new(self, frame)?.execute_frame(&mut ctx)
     }
 
     /// Writes the results of the function execution back into the `results` buffer.
@@ -335,6 +290,58 @@ impl EngineInner {
                 .zip(result_types)
                 .map(|(raw_value, value_type)| raw_value.with_type(*value_type)),
         )
+    }
+
+    /// Executes the given Wasm [`Func`] using the given arguments `args` and stores the result into `results`.
+    ///
+    /// # Note
+    ///
+    /// The caller is required to ensure that the given `func` actually is a Wasm function.
+    ///
+    /// # Errors
+    ///
+    /// - If the given arguments `args` do not match the expected parameters of `func`.
+    /// - If the given `results` do not match the the length of the expected results of `func`.
+    /// - When encountering a Wasm trap during the execution of `func`.
+    fn execute_wasm_func(&mut self, mut ctx: impl AsContextMut, func: Func) -> Result<(), Trap> {
+        let mut function_frame = FunctionFrame::new(&ctx, func);
+        'outer: loop {
+            match self.execute_frame(&mut ctx, &mut function_frame)? {
+                FunctionExecutionOutcome::Return => match self.call_stack.pop() {
+                    Some(frame) => {
+                        function_frame = frame;
+                        continue 'outer;
+                    }
+                    None => return Ok(()),
+                },
+                FunctionExecutionOutcome::NestedCall(func) => match func.as_internal(&ctx) {
+                    FuncEntityInternal::Wasm(wasm_func) => {
+                        let nested_frame = FunctionFrame::new_wasm(func, wasm_func);
+                        self.call_stack.push(function_frame)?;
+                        function_frame = nested_frame;
+                    }
+                    FuncEntityInternal::Host(host_func) => {
+                        let instance = function_frame.instance();
+                        let host_func = host_func.clone();
+                        self.execute_host_func(&mut ctx, host_func, Some(instance))?;
+                    }
+                },
+            }
+        }
+    }
+
+    /// Executes the given function frame and returns the outcome.
+    ///
+    /// # Errors
+    ///
+    /// If the function frame execution trapped.
+    #[inline(always)]
+    fn execute_frame(
+        &mut self,
+        mut ctx: impl AsContextMut,
+        frame: &mut FunctionFrame,
+    ) -> Result<FunctionExecutionOutcome, Trap> {
+        ExecutionContext::new(self, frame)?.execute_frame(&mut ctx)
     }
 
     /// Executes the given host function.
@@ -385,17 +392,5 @@ impl EngineInner {
         // written its results into the value stack so that the last entries
         // in the value stack are the result values of the host function call.
         Ok(())
-    }
-
-    /// Initializes the value stack with the given arguments `params`.
-    fn initialize_args<Params>(&mut self, params: Params)
-    where
-        Params: CallParams,
-    {
-        self.value_stack.clear();
-        self.call_stack.clear();
-        for param in params.feed_params() {
-            self.value_stack.push(param);
-        }
     }
 }
