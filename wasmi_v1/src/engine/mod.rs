@@ -246,6 +246,19 @@ impl EngineInner {
         Ok(results)
     }
 
+
+    /// Initializes the value stack with the given arguments `params`.
+    fn initialize_args<Params>(&mut self, params: Params)
+    where
+        Params: CallParams,
+    {
+        self.value_stack.clear();
+        self.call_stack.clear();
+        for param in params.feed_params() {
+            self.value_stack.push(param);
+        }
+    }
+
     /// Executes the given Wasm [`Func`] using the given arguments `args` and stores the result into `results`.
     ///
     /// # Note
@@ -382,17 +395,5 @@ impl EngineInner {
         // written its results into the value stack so that the last entries
         // in the value stack are the result values of the host function call.
         Ok(())
-    }
-
-    /// Initializes the value stack with the given arguments `params`.
-    fn initialize_args<Params>(&mut self, params: Params)
-    where
-        Params: CallParams,
-    {
-        self.value_stack.clear();
-        self.call_stack.clear();
-        for param in params.feed_params() {
-            self.value_stack.push(param);
-        }
     }
 }
