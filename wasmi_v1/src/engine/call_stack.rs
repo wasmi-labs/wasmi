@@ -215,7 +215,6 @@ impl CallStack {
     /// If the [`FunctionFrame`] is at the set recursion limit.
     pub fn push(&mut self, frame: FunctionFrame) -> Result<(), TrapCode> {
         if self.len() == self.recursion_limit {
-            // return Err(CallStackError::StackOverflow(self.recursion_limit));
             return Err(TrapCode::StackOverflow);
         }
         self.frames.push(frame);
