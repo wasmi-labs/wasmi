@@ -17,7 +17,7 @@ use wasmi::{
     RuntimeArgs,
     Signature,
     Trap,
-    Value,
+    RuntimeValue,
     ValueType,
 };
 
@@ -152,7 +152,7 @@ const SET_FUNC_INDEX: usize = 0;
 const GET_FUNC_INDEX: usize = 1;
 
 impl<'a> Externals for Runtime<'a> {
-    fn invoke_index(&mut self, index: usize, args: RuntimeArgs) -> Result<Option<Value>, Trap> {
+    fn invoke_index(&mut self, index: usize, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         match index {
             SET_FUNC_INDEX => {
                 let idx: i32 = args.nth(0);

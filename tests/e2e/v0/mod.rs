@@ -23,17 +23,17 @@ fn assert_error_properties() {
 /// to a Value and back works as expected and the number remains unchanged.
 #[test]
 fn unsigned_to_value() {
-    use wasmi::Value;
+    use wasmi::RuntimeValue;
 
     let overflow_i32: u32 = ::core::i32::MAX as u32 + 1;
     assert_eq!(
-        Value::from(overflow_i32).try_into::<u32>().unwrap(),
+        RuntimeValue::from(overflow_i32).try_into::<u32>().unwrap(),
         overflow_i32
     );
 
     let overflow_i64: u64 = ::core::i64::MAX as u64 + 1;
     assert_eq!(
-        Value::from(overflow_i64).try_into::<u64>().unwrap(),
+        RuntimeValue::from(overflow_i64).try_into::<u64>().unwrap(),
         overflow_i64
     );
 }

@@ -24,7 +24,7 @@ use wasmi::{
     TableDescriptor,
     TableInstance,
     TableRef,
-    Value,
+    RuntimeValue,
 };
 
 fn load_from_file(filename: &str) -> Module {
@@ -48,7 +48,7 @@ impl ModuleImportResolver for ResolveAll {
         global_type: &GlobalDescriptor,
     ) -> Result<GlobalRef, Error> {
         Ok(GlobalInstance::alloc(
-            Value::default(global_type.value_type()),
+            RuntimeValue::default(global_type.value_type()),
             global_type.is_mutable(),
         ))
     }

@@ -21,7 +21,7 @@ use wasmi::{
     TableDescriptor,
     TableInstance,
     TableRef,
-    Value,
+    RuntimeValue,
 };
 
 struct Env {
@@ -34,8 +34,8 @@ struct Env {
 impl Env {
     fn new() -> Env {
         Env {
-            table_base: GlobalInstance::alloc(Value::I32(0), false),
-            memory_base: GlobalInstance::alloc(Value::I32(0), false),
+            table_base: GlobalInstance::alloc(RuntimeValue::I32(0), false),
+            memory_base: GlobalInstance::alloc(RuntimeValue::I32(0), false),
             memory: MemoryInstance::alloc(Pages(256), None).unwrap(),
             table: TableInstance::alloc(64, None).unwrap(),
         }
@@ -119,8 +119,8 @@ fn interpreter_inc_i32() {
 
     let i32_val = 42;
     // the functions expects a single i32 parameter
-    let args = &[Value::I32(i32_val)];
-    let exp_retval = Some(Value::I32(i32_val + 1));
+    let args = &[RuntimeValue::I32(i32_val)];
+    let exp_retval = Some(RuntimeValue::I32(i32_val + 1));
 
     let retval = instance
         .invoke_export(FUNCTION_NAME, args, &mut NopExternals)
@@ -152,14 +152,14 @@ fn interpreter_accumulate_u8() {
     let _ = env_memory.set(offset, BUF);
 
     // Set up the function argument list and invoke the function
-    let args = &[Value::I32(BUF.len() as i32), Value::I32(offset as i32)];
+    let args = &[RuntimeValue::I32(BUF.len() as i32), RuntimeValue::I32(offset as i32)];
     let retval = instance
         .invoke_export(FUNCTION_NAME, args, &mut NopExternals)
         .expect("Failed to execute function");
 
     // For verification, repeat accumulation using native code
     let accu = BUF.iter().fold(0_i32, |a, b| a + *b as i32);
-    let exp_retval: Option<Value> = Some(Value::I32(accu));
+    let exp_retval: Option<RuntimeValue> = Some(RuntimeValue::I32(accu));
 
     // Verify calculation from WebAssembly runtime is identical to expected result
     assert_eq!(exp_retval, retval);

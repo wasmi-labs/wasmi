@@ -115,7 +115,6 @@ use core::fmt;
 use std::error;
 
 #[doc(inline)]
-#[deprecated(note = "use `Value` instead")]
 pub use wasmi_core::Value as RuntimeValue;
 
 /// Internal interpreter error.
@@ -292,12 +291,12 @@ pub use wasmi_core::{
     LittleEndianConvert,
     Trap,
     TrapCode,
-    Value,
     ValueType,
 };
 
 #[cfg(feature = "v1")]
 pub use wasmi_v1 as v1;
+use wasmi_core::Value;
 
 /// Mirrors the old value module.
 pub mod value {

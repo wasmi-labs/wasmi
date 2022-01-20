@@ -25,7 +25,7 @@ use wasmi::{
     TableRef,
     Trap,
     TrapCode,
-    Value,
+    RuntimeValue,
     ValueType,
 };
 
@@ -55,7 +55,7 @@ struct TestHost {
     memory: Option<MemoryRef>,
     instance: Option<ModuleRef>,
 
-    trap_sub_result: Option<Value>,
+    trap_sub_result: Option<RuntimeValue>,
 }
 
 impl TestHost {
@@ -107,13 +107,13 @@ const RECURSE_FUNC_INDEX: usize = 4;
 const TRAP_SUB_FUNC_INDEX: usize = 5;
 
 impl Externals for TestHost {
-    fn invoke_index(&mut self, index: usize, args: RuntimeArgs) -> Result<Option<Value>, Trap> {
+    fn invoke_index(&mut self, index: usize, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
         match index {
             SUB_FUNC_INDEX => {
                 let a: i32 = args.nth(0);
                 let b: i32 = args.nth(1);
 
-                let result: Value = (a - b).into();
+                let result: RuntimeValue = (a - b).into();
 
                 Ok(Some(result))
             }
@@ -146,7 +146,7 @@ impl Externals for TestHost {
                 let mut buf = [0u8; 1];
                 memory.get_into(ptr, &mut buf).unwrap();
 
-                Ok(Some(Value::I32(buf[0] as i32)))
+                Ok(Some(RuntimeValue::I32(buf[0] as i32)))
             }
             RECURSE_FUNC_INDEX => {
                 let val = args
@@ -172,7 +172,7 @@ impl Externals for TestHost {
                 let a: i32 = args.nth(0);
                 let b: i32 = args.nth(1);
 
-                let result: Value = (a - b).into();
+                let result: RuntimeValue = (a - b).into();
                 self.trap_sub_result = Some(result);
                 Err(Trap::host(HostErrorWithCode { error_code: 301 }))
             }
@@ -271,7 +271,7 @@ fn call_host_func() {
         instance
             .invoke_export("test", &[], &mut env)
             .expect("Failed to invoke 'test' function",),
-        Some(Value::I32(-2))
+        Some(RuntimeValue::I32(-2))
     );
 }
 
@@ -314,13 +314,13 @@ fn resume_call_host_func() {
         invocation
             .resume_execution(trap_sub_result, &mut env)
             .expect("Failed to invoke 'test' function",),
-        Some(Value::I32(-2))
+        Some(RuntimeValue::I32(-2))
     );
 }
 
 #[test]
 fn resume_call_host_func_type_mismatch() {
-    fn resume_with_val(val: Option<Value>) {
+    fn resume_with_val(val: Option<RuntimeValue>) {
         let module = parse_wat(
             r#"
             (module
@@ -489,7 +489,7 @@ fn pull_internal_mem_from_module() {
 
     assert_eq!(
         instance.invoke_export("test", &[], &mut env).unwrap(),
-        Some(Value::I32(1))
+        Some(RuntimeValue::I32(1))
     );
 }
 
@@ -537,7 +537,7 @@ fn recursion() {
             .invoke_export("test", &[], &mut env)
             .expect("Failed to invoke 'test' function",),
         // 363 = 321 + 42
-        Some(Value::I64(363))
+        Some(RuntimeValue::I64(363))
     );
 }
 
@@ -594,7 +594,7 @@ fn defer_providing_externals() {
     }
 
     impl<'a> Externals for HostExternals<'a> {
-        fn invoke_index(&mut self, index: usize, args: RuntimeArgs) -> Result<Option<Value>, Trap> {
+        fn invoke_index(&mut self, index: usize, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
             match index {
                 INC_FUNC_INDEX => {
                     let a = args.nth::<u32>(0);
@@ -660,7 +660,7 @@ fn two_envs_one_externals() {
             &mut self,
             index: usize,
             _args: RuntimeArgs,
-        ) -> Result<Option<Value>, Trap> {
+        ) -> Result<Option<RuntimeValue>, Trap> {
             match index {
                 PRIVILEGED_FUNC_INDEX => {
                     println!("privileged!");
@@ -776,7 +776,7 @@ fn dynamically_add_host_func() {
             &mut self,
             index: usize,
             _args: RuntimeArgs,
-        ) -> Result<Option<Value>, Trap> {
+        ) -> Result<Option<RuntimeValue>, Trap> {
             match index {
                 ADD_FUNC_FUNC_INDEX => {
                     // Allocate indicies for the new function.
@@ -793,9 +793,9 @@ fn dynamically_add_host_func() {
                         .set(table_index, Some(added_func))
                         .map_err(|_| TrapCode::TableAccessOutOfBounds)?;
 
-                    Ok(Some(Value::I32(table_index as i32)))
+                    Ok(Some(RuntimeValue::I32(table_index as i32)))
                 }
-                index if index as u32 <= self.added_funcs => Ok(Some(Value::I32(index as i32))),
+                index if index as u32 <= self.added_funcs => Ok(Some(RuntimeValue::I32(index as i32))),
                 _ => panic!("'env' module doesn't provide function at index {}", index),
             }
         }
@@ -866,6 +866,6 @@ fn dynamically_add_host_func() {
         instance
             .invoke_export("test", &[], &mut host_externals)
             .expect("Failed to invoke 'test' function"),
-        Some(Value::I32(2))
+        Some(RuntimeValue::I32(2))
     );
 }
