@@ -1,5 +1,5 @@
 use std::{error::Error, fmt, fmt::Display};
-use wasmi::v1::Error as WasmiError;
+use wasmi_v1::Error as WasmiError;
 
 /// Errors that may occur upon Wasm spec test suite execution.
 #[derive(Debug)]

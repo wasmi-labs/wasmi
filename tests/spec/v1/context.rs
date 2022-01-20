@@ -1,24 +1,22 @@
 use super::{TestDescriptor, TestError, TestProfile, TestSpan};
 use anyhow::Result;
 use std::collections::HashMap;
-use wasmi::{
-    nan_preserving_float::{F32, F64},
-    v1::{
-        Engine,
-        Extern,
-        Func,
-        Global,
-        Instance,
-        Linker,
-        Memory,
-        MemoryType,
-        Module,
-        Mutability,
-        Store,
-        Table,
-        TableType,
-    },
-    Value,
+use wasmi_core::Value;
+use wasmi::nan_preserving_float::{F32, F64};
+use wasmi_v1::{
+    Engine,
+    Extern,
+    Func,
+    Global,
+    Instance,
+    Linker,
+    Memory,
+    MemoryType,
+    Module,
+    Mutability,
+    Store,
+    Table,
+    TableType,
 };
 use wast::Id;
 
