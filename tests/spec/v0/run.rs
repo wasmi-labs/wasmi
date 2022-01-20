@@ -22,12 +22,12 @@ use wasmi::{
     ModuleInstance,
     ModuleRef,
     RuntimeArgs,
+    RuntimeValue,
     Signature,
     TableDescriptor,
     TableInstance,
     TableRef,
     Trap,
-    RuntimeValue,
 };
 
 fn spec_to_value(val: WabtValue<u32, u64>) -> RuntimeValue {
@@ -83,7 +83,11 @@ impl SpecModule {
 const PRINT_FUNC_INDEX: usize = 0;
 
 impl Externals for SpecModule {
-    fn invoke_index(&mut self, index: usize, args: RuntimeArgs) -> Result<Option<RuntimeValue>, Trap> {
+    fn invoke_index(
+        &mut self,
+        index: usize,
+        args: RuntimeArgs,
+    ) -> Result<Option<RuntimeValue>, Trap> {
         match index {
             PRINT_FUNC_INDEX => {
                 println!("print: {:?}", args);

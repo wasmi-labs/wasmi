@@ -20,11 +20,11 @@ use wasmi::{
     ModuleImportResolver,
     ModuleInstance,
     NopExternals,
+    RuntimeValue,
     Signature,
     TableDescriptor,
     TableInstance,
     TableRef,
-    RuntimeValue,
 };
 
 fn load_from_file(filename: &str) -> Module {

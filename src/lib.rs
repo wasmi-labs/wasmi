@@ -284,6 +284,7 @@ pub use self::{
     table::{TableInstance, TableRef},
     types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor},
 };
+use wasmi_core::Value;
 pub use wasmi_core::{
     memory_units,
     FromValue,
@@ -293,7 +294,6 @@ pub use wasmi_core::{
     TrapCode,
     ValueType,
 };
-use wasmi_core::Value;
 
 /// Mirrors the old value module.
 pub mod value {

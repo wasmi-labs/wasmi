@@ -17,11 +17,11 @@ use wasmi::{
     ModuleImportResolver,
     ModuleInstance,
     NopExternals,
+    RuntimeValue,
     Signature,
     TableDescriptor,
     TableInstance,
     TableRef,
-    RuntimeValue,
 };
 
 struct Env {
@@ -152,7 +152,10 @@ fn interpreter_accumulate_u8() {
     let _ = env_memory.set(offset, BUF);
 
     // Set up the function argument list and invoke the function
-    let args = &[RuntimeValue::I32(BUF.len() as i32), RuntimeValue::I32(offset as i32)];
+    let args = &[
+        RuntimeValue::I32(BUF.len() as i32),
+        RuntimeValue::I32(offset as i32),
+    ];
     let retval = instance
         .invoke_export(FUNCTION_NAME, args, &mut NopExternals)
         .expect("Failed to execute function");

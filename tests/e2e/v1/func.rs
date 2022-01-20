@@ -1,9 +1,8 @@
 //! Tests for the `Func` type in `wasmi_v1`.
 
 use assert_matches::assert_matches;
-use wasmi_v1::{Engine, Func, Store};
-use wasmi_core::{F32, F64, Value};
-use wasmi_v1::{errors::FuncError, Error};
+use wasmi_core::{Value, F32, F64};
+use wasmi_v1::{errors::FuncError, Engine, Error, Func, Store};
 
 fn test_setup() -> Store<()> {
     let engine = Engine::default();
