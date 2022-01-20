@@ -1,11 +1,7 @@
 use super::{error::TestError, TestContext, TestDescriptor};
 use anyhow::Result;
-use wasmi::{
-    nan_preserving_float::{F32, F64},
-    v1::Error as WasmiError,
-    Trap,
-    Value,
-};
+use wasmi_core::{Trap, Value, F32, F64};
+use wasmi_v1::Error as WasmiError;
 use wast::{
     lexer::Lexer,
     parser::ParseBuffer,
@@ -355,5 +351,4 @@ fn execute_wast_invoke(
     context
         .invoke(module_name, field_name, &args)
         .map(|results| results.to_vec())
-    // .map_err(Into::into)
 }

@@ -4,7 +4,7 @@ extern crate wasmi;
 use std::env::args;
 
 use parity_wasm::elements::{External, FunctionType, Internal, Module, Type, ValueType};
-use wasmi::{ImportsBuilder, ModuleInstance, NopExternals, Value};
+use wasmi::{ImportsBuilder, ModuleInstance, NopExternals, RuntimeValue};
 
 fn main() {
     let args: Vec<_> = args().collect();
@@ -72,30 +72,30 @@ fn main() {
             .iter()
             .enumerate()
             .map(|(i, value)| match value {
-                ValueType::I32 => Value::I32(
+                ValueType::I32 => RuntimeValue::I32(
                     program_args[i]
                         .parse::<i32>()
                         .unwrap_or_else(|_| panic!("Can't parse arg #{} as i32", program_args[i])),
                 ),
-                ValueType::I64 => Value::I64(
+                ValueType::I64 => RuntimeValue::I64(
                     program_args[i]
                         .parse::<i64>()
                         .unwrap_or_else(|_| panic!("Can't parse arg #{} as i64", program_args[i])),
                 ),
-                ValueType::F32 => Value::F32(
+                ValueType::F32 => RuntimeValue::F32(
                     program_args[i]
                         .parse::<f32>()
                         .unwrap_or_else(|_| panic!("Can't parse arg #{} as f32", program_args[i]))
                         .into(),
                 ),
-                ValueType::F64 => Value::F64(
+                ValueType::F64 => RuntimeValue::F64(
                     program_args[i]
                         .parse::<f64>()
                         .unwrap_or_else(|_| panic!("Can't parse arg #{} as f64", program_args[i]))
                         .into(),
                 ),
             })
-            .collect::<Vec<Value>>()
+            .collect::<Vec<RuntimeValue>>()
     };
 
     let loaded_module = wasmi::Module::from_parity_wasm_module(module).expect("Module to be valid");

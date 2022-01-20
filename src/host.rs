@@ -1,24 +1,20 @@
-use crate::{
-    value::{FromValue, Value},
-    Trap,
-    TrapCode,
-};
+use crate::{value::FromValue, RuntimeValue, Trap, TrapCode};
 
 /// Wrapper around slice of [`Value`] for using it
 /// as an argument list conveniently.
 ///
 /// [`Value`]: enum.Value.html
 #[derive(Debug)]
-pub struct RuntimeArgs<'a>(&'a [Value]);
+pub struct RuntimeArgs<'a>(&'a [RuntimeValue]);
 
-impl<'a> From<&'a [Value]> for RuntimeArgs<'a> {
-    fn from(inner: &'a [Value]) -> Self {
+impl<'a> From<&'a [RuntimeValue]> for RuntimeArgs<'a> {
+    fn from(inner: &'a [RuntimeValue]) -> Self {
         RuntimeArgs(inner)
     }
 }
 
-impl<'a> AsRef<[Value]> for RuntimeArgs<'a> {
-    fn as_ref(&self) -> &[Value] {
+impl<'a> AsRef<[RuntimeValue]> for RuntimeArgs<'a> {
+    fn as_ref(&self) -> &[RuntimeValue] {
         self.0
     }
 }
@@ -46,7 +42,7 @@ impl<'a> RuntimeArgs<'a> {
     /// Returns `Err` if this list has not enough arguments.
     ///
     /// [`Value`]: enum.Value.html
-    pub fn nth_value_checked(&self, idx: usize) -> Result<Value, Trap> {
+    pub fn nth_value_checked(&self, idx: usize) -> Result<RuntimeValue, Trap> {
         if self.0.len() <= idx {
             return Err(TrapCode::UnexpectedSignature.into());
         }
@@ -78,7 +74,7 @@ impl<'a> RuntimeArgs<'a> {
 ///
 /// ```rust
 /// use wasmi::{
-///     Externals, Value, RuntimeArgs, Error, ModuleImportResolver,
+///     Externals, RuntimeValue, RuntimeArgs, Error, ModuleImportResolver,
 ///     FuncRef, ValueType, Signature, FuncInstance, Trap,
 /// };
 ///
@@ -93,14 +89,14 @@ impl<'a> RuntimeArgs<'a> {
 ///         &mut self,
 ///         index: usize,
 ///         args: RuntimeArgs,
-///     ) -> Result<Option<Value>, Trap> {
+///     ) -> Result<Option<RuntimeValue>, Trap> {
 ///         match index {
 ///             ADD_FUNC_INDEX => {
 ///                 let a: u32 = args.nth_checked(0)?;
 ///                 let b: u32 = args.nth_checked(1)?;
 ///                 let result = a + b;
 ///
-///                 Ok(Some(Value::I32(result as i32)))
+///                 Ok(Some(RuntimeValue::I32(result as i32)))
 ///             }
 ///             _ => panic!("Unimplemented function at {}", index),
 ///         }
@@ -151,7 +147,11 @@ impl<'a> RuntimeArgs<'a> {
 /// ```
 pub trait Externals {
     /// Perform invoke of a host function by specified `index`.
-    fn invoke_index(&mut self, index: usize, args: RuntimeArgs) -> Result<Option<Value>, Trap>;
+    fn invoke_index(
+        &mut self,
+        index: usize,
+        args: RuntimeArgs,
+    ) -> Result<Option<RuntimeValue>, Trap>;
 }
 
 /// Implementation of [`Externals`] that just traps on [`invoke_index`].
@@ -161,7 +161,11 @@ pub trait Externals {
 pub struct NopExternals;
 
 impl Externals for NopExternals {
-    fn invoke_index(&mut self, _index: usize, _args: RuntimeArgs) -> Result<Option<Value>, Trap> {
+    fn invoke_index(
+        &mut self,
+        _index: usize,
+        _args: RuntimeArgs,
+    ) -> Result<Option<RuntimeValue>, Trap> {
         Err(TrapCode::Unreachable.into())
     }
 }
@@ -169,19 +173,19 @@ impl Externals for NopExternals {
 #[cfg(test)]
 mod tests {
     use super::RuntimeArgs;
-    use crate::value::Value;
+    use crate::RuntimeValue;
     use wasmi_core::HostError;
 
     #[test]
     fn i32_runtime_args() {
-        let args: RuntimeArgs = (&[Value::I32(0)][..]).into();
+        let args: RuntimeArgs = (&[RuntimeValue::I32(0)][..]).into();
         let val: i32 = args.nth_checked(0).unwrap();
         assert_eq!(val, 0);
     }
 
     #[test]
     fn i64_invalid_arg_cast() {
-        let args: RuntimeArgs = (&[Value::I64(90534534545322)][..]).into();
+        let args: RuntimeArgs = (&[RuntimeValue::I64(90534534545322)][..]).into();
         assert!(args.nth_checked::<i32>(0).is_err());
     }
 

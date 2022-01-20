@@ -1,4 +1,4 @@
-use crate::{value::Value, Error, ValueType};
+use crate::{Error, RuntimeValue, ValueType};
 use alloc::rc::Rc;
 use core::cell::Cell;
 use parity_wasm::elements::ValueType as EValueType;
@@ -31,7 +31,7 @@ impl ::core::ops::Deref for GlobalRef {
 /// [`I64`]: enum.Value.html#variant.I64
 #[derive(Debug)]
 pub struct GlobalInstance {
-    val: Cell<Value>,
+    val: Cell<RuntimeValue>,
     mutable: bool,
 }
 
@@ -40,7 +40,7 @@ impl GlobalInstance {
     ///
     /// Since it is possible to export only immutable globals,
     /// users likely want to set `mutable` to `false`.
-    pub fn alloc(val: Value, mutable: bool) -> GlobalRef {
+    pub fn alloc(val: RuntimeValue, mutable: bool) -> GlobalRef {
         GlobalRef(Rc::new(GlobalInstance {
             val: Cell::new(val),
             mutable,
@@ -53,7 +53,7 @@ impl GlobalInstance {
     ///
     /// Returns `Err` if this global isn't mutable or if
     /// type of `val` doesn't match global's type.
-    pub fn set(&self, val: Value) -> Result<(), Error> {
+    pub fn set(&self, val: RuntimeValue) -> Result<(), Error> {
         if !self.mutable {
             return Err(Error::Global(
                 "Attempt to change an immutable variable".into(),
@@ -67,7 +67,7 @@ impl GlobalInstance {
     }
 
     /// Get the value of this global variable.
-    pub fn get(&self) -> Value {
+    pub fn get(&self) -> RuntimeValue {
         self.val.get()
     }
 

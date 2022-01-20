@@ -16,9 +16,9 @@ use crate::{
         LittleEndianConvert,
         TransmuteInto,
         TryTruncateInto,
-        Value,
         WrapInto,
     },
+    RuntimeValue,
     Signature,
     Trap,
     TrapCode,
@@ -50,12 +50,12 @@ pub const DEFAULT_CALL_STACK_LIMIT: usize = 64 * 1024;
 struct ValueInternal(pub u64);
 
 impl ValueInternal {
-    pub fn with_type(self, ty: ValueType) -> Value {
+    pub fn with_type(self, ty: ValueType) -> RuntimeValue {
         match ty {
-            ValueType::I32 => Value::I32(<_>::from_value_internal(self)),
-            ValueType::I64 => Value::I64(<_>::from_value_internal(self)),
-            ValueType::F32 => Value::F32(<_>::from_value_internal(self)),
-            ValueType::F64 => Value::F64(<_>::from_value_internal(self)),
+            ValueType::I32 => RuntimeValue::I32(<_>::from_value_internal(self)),
+            ValueType::I64 => RuntimeValue::I64(<_>::from_value_internal(self)),
+            ValueType::F32 => RuntimeValue::F32(<_>::from_value_internal(self)),
+            ValueType::F64 => RuntimeValue::F64(<_>::from_value_internal(self)),
         }
     }
 }
@@ -122,13 +122,13 @@ impl FromValueInternal for bool {
     }
 }
 
-impl From<Value> for ValueInternal {
-    fn from(other: Value) -> Self {
+impl From<RuntimeValue> for ValueInternal {
+    fn from(other: RuntimeValue) -> Self {
         match other {
-            Value::I32(val) => val.into(),
-            Value::I64(val) => val.into(),
-            Value::F32(val) => val.into(),
-            Value::F64(val) => val.into(),
+            RuntimeValue::I32(val) => val.into(),
+            RuntimeValue::I64(val) => val.into(),
+            RuntimeValue::F32(val) => val.into(),
+            RuntimeValue::F64(val) => val.into(),
         }
     }
 }
@@ -177,13 +177,13 @@ pub struct Interpreter {
     call_stack: CallStack,
     return_type: Option<ValueType>,
     state: InterpreterState,
-    scratch: Vec<Value>,
+    scratch: Vec<RuntimeValue>,
 }
 
 impl Interpreter {
     pub fn new(
         func: &FuncRef,
-        args: &[Value],
+        args: &[RuntimeValue],
         mut stack_recycler: Option<&mut StackRecycler>,
     ) -> Result<Interpreter, Trap> {
         let mut value_stack = StackRecycler::recreate_value_stack(&mut stack_recycler);
@@ -218,7 +218,7 @@ impl Interpreter {
     pub fn start_execution<'a, E: Externals + 'a>(
         &mut self,
         externals: &'a mut E,
-    ) -> Result<Option<Value>, Trap> {
+    ) -> Result<Option<RuntimeValue>, Trap> {
         // Ensure that the VM has not been executed. This is checked in `FuncInvocation::start_execution`.
         assert!(self.state == InterpreterState::Initialized);
 
@@ -237,9 +237,9 @@ impl Interpreter {
 
     pub fn resume_execution<'a, E: Externals + 'a>(
         &mut self,
-        return_val: Option<Value>,
+        return_val: Option<RuntimeValue>,
         externals: &'a mut E,
-    ) -> Result<Option<Value>, Trap> {
+    ) -> Result<Option<RuntimeValue>, Trap> {
         use core::mem::swap;
 
         // Ensure that the VM is resumable. This is checked in `FuncInvocation::resume_execution`.
@@ -874,7 +874,7 @@ impl Interpreter {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_const(&mut self, val: Value) -> Result<InstructionOutcome, TrapCode> {
+    fn run_const(&mut self, val: RuntimeValue) -> Result<InstructionOutcome, TrapCode> {
         self.value_stack
             .push(val.into())
             .map_err(Into::into)
@@ -1339,7 +1339,7 @@ fn effective_address(address: u32, offset: u32) -> Result<u32, TrapCode> {
 fn prepare_function_args(
     signature: &Signature,
     caller_stack: &mut ValueStack,
-    host_args: &mut Vec<Value>,
+    host_args: &mut Vec<RuntimeValue>,
 ) {
     let req_args = signature.params();
     let len_args = req_args.len();
@@ -1353,7 +1353,7 @@ fn prepare_function_args(
     host_args.extend(prepared_args);
 }
 
-pub fn check_function_args(signature: &Signature, args: &[Value]) -> Result<(), Trap> {
+pub fn check_function_args(signature: &Signature, args: &[RuntimeValue]) -> Result<(), Trap> {
     if signature.params().len() != args.len() {
         return Err(TrapCode::UnexpectedSignature.into());
     }

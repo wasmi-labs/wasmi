@@ -22,20 +22,20 @@ use wasmi::{
     ModuleInstance,
     ModuleRef,
     RuntimeArgs,
+    RuntimeValue,
     Signature,
     TableDescriptor,
     TableInstance,
     TableRef,
     Trap,
-    Value,
 };
 
-fn spec_to_value(val: WabtValue<u32, u64>) -> Value {
+fn spec_to_value(val: WabtValue<u32, u64>) -> RuntimeValue {
     match val {
-        WabtValue::I32(v) => Value::I32(v),
-        WabtValue::I64(v) => Value::I64(v),
-        WabtValue::F32(v) => Value::F32(v.into()),
-        WabtValue::F64(v) => Value::F64(v.into()),
+        WabtValue::I32(v) => RuntimeValue::I32(v),
+        WabtValue::I64(v) => RuntimeValue::I64(v),
+        WabtValue::F32(v) => RuntimeValue::F32(v.into()),
+        WabtValue::F64(v) => RuntimeValue::F64(v.into()),
         WabtValue::V128(_) => panic!("v128 is not supported"),
     }
 }
@@ -73,9 +73,9 @@ impl SpecModule {
         SpecModule {
             table: TableInstance::alloc(10, Some(20)).unwrap(),
             memory: MemoryInstance::alloc(Pages(1), Some(Pages(2))).unwrap(),
-            global_i32: GlobalInstance::alloc(Value::I32(666), false),
-            global_f32: GlobalInstance::alloc(Value::F32(666.0.into()), false),
-            global_f64: GlobalInstance::alloc(Value::F64(666.0.into()), false),
+            global_i32: GlobalInstance::alloc(RuntimeValue::I32(666), false),
+            global_f32: GlobalInstance::alloc(RuntimeValue::F32(666.0.into()), false),
+            global_f64: GlobalInstance::alloc(RuntimeValue::F64(666.0.into()), false),
         }
     }
 }
@@ -83,7 +83,11 @@ impl SpecModule {
 const PRINT_FUNC_INDEX: usize = 0;
 
 impl Externals for SpecModule {
-    fn invoke_index(&mut self, index: usize, args: RuntimeArgs) -> Result<Option<Value>, Trap> {
+    fn invoke_index(
+        &mut self,
+        index: usize,
+        args: RuntimeArgs,
+    ) -> Result<Option<RuntimeValue>, Trap> {
         match index {
             PRINT_FUNC_INDEX => {
                 println!("print: {:?}", args);
@@ -306,7 +310,7 @@ fn load_module(
 fn run_action(
     program: &mut SpecDriver,
     action: &Action<u32, u64>,
-) -> Result<Option<Value>, InterpreterError> {
+) -> Result<Option<RuntimeValue>, InterpreterError> {
     match *action {
         Action::Invoke {
             ref module,
@@ -395,19 +399,19 @@ fn try_spec(name: &str) -> Result<(), Error> {
                             .cloned()
                             .map(spec_to_value)
                             .collect::<Vec<_>>();
-                        let actual_result = result.into_iter().collect::<Vec<Value>>();
+                        let actual_result = result.into_iter().collect::<Vec<RuntimeValue>>();
                         for (actual_result, spec_expected) in
                             actual_result.iter().zip(spec_expected.iter())
                         {
                             assert_eq!(actual_result.value_type(), spec_expected.value_type());
                             // f32::NAN != f32::NAN
                             match spec_expected {
-                                Value::F32(val) if val.is_nan() => match actual_result {
-                                    Value::F32(val) => assert!(val.is_nan()),
+                                RuntimeValue::F32(val) if val.is_nan() => match actual_result {
+                                    RuntimeValue::F32(val) => assert!(val.is_nan()),
                                     _ => unreachable!(), // checked above that types are same
                                 },
-                                Value::F64(val) if val.is_nan() => match actual_result {
-                                    Value::F64(val) => assert!(val.is_nan()),
+                                RuntimeValue::F64(val) if val.is_nan() => match actual_result {
+                                    RuntimeValue::F64(val) => assert!(val.is_nan()),
                                     _ => unreachable!(), // checked above that types are same
                                 },
                                 spec_expected => assert_eq!(actual_result, spec_expected),
@@ -424,14 +428,14 @@ fn try_spec(name: &str) -> Result<(), Error> {
                 let result = run_action(&mut spec_driver, &action);
                 match result {
                     Ok(result) => {
-                        for actual_result in result.into_iter().collect::<Vec<Value>>() {
+                        for actual_result in result.into_iter().collect::<Vec<RuntimeValue>>() {
                             match actual_result {
-                                Value::F32(val) => {
+                                RuntimeValue::F32(val) => {
                                     if !val.is_nan() {
                                         panic!("Expected nan value, got {:?}", val)
                                     }
                                 }
-                                Value::F64(val) => {
+                                RuntimeValue::F64(val) => {
                                     if !val.is_nan() {
                                         panic!("Expected nan value, got {:?}", val)
                                     }
