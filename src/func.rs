@@ -3,7 +3,7 @@ use crate::{
     isa,
     module::ModuleInstance,
     runner::{check_function_args, Interpreter, InterpreterState, StackRecycler},
-    value::Value,
+    RuntimeValue,
     Signature,
     Trap,
     ValueType,
@@ -139,9 +139,9 @@ impl FuncInstance {
     /// [`Trap`]: #enum.Trap.html
     pub fn invoke<E: Externals>(
         func: &FuncRef,
-        args: &[Value],
+        args: &[RuntimeValue],
         externals: &mut E,
-    ) -> Result<Option<Value>, Trap> {
+    ) -> Result<Option<RuntimeValue>, Trap> {
         check_function_args(func.signature(), args)?;
         match *func.as_internal() {
             FuncInstanceInternal::Internal { .. } => {
@@ -164,10 +164,10 @@ impl FuncInstance {
     /// [`invoke`]: #method.invoke
     pub fn invoke_with_stack<E: Externals>(
         func: &FuncRef,
-        args: &[Value],
+        args: &[RuntimeValue],
         externals: &mut E,
         stack_recycler: &mut StackRecycler,
-    ) -> Result<Option<Value>, Trap> {
+    ) -> Result<Option<RuntimeValue>, Trap> {
         check_function_args(func.signature(), args)?;
         match *func.as_internal() {
             FuncInstanceInternal::Internal { .. } => {
@@ -199,7 +199,7 @@ impl FuncInstance {
     /// [`resume_execution`]: struct.FuncInvocation.html#method.resume_execution
     pub fn invoke_resumable<'args>(
         func: &FuncRef,
-        args: impl Into<Cow<'args, [Value]>>,
+        args: impl Into<Cow<'args, [RuntimeValue]>>,
     ) -> Result<FuncInvocation<'args>, Trap> {
         let args = args.into();
         check_function_args(func.signature(), &args)?;
@@ -262,7 +262,7 @@ pub struct FuncInvocation<'args> {
 enum FuncInvocationKind<'args> {
     Internal(Interpreter),
     Host {
-        args: Cow<'args, [Value]>,
+        args: Cow<'args, [RuntimeValue]>,
         host_func_index: usize,
         finished: bool,
     },
@@ -292,7 +292,7 @@ impl<'args> FuncInvocation<'args> {
     pub fn start_execution<'externals, E: Externals + 'externals>(
         &mut self,
         externals: &'externals mut E,
-    ) -> Result<Option<Value>, ResumableError> {
+    ) -> Result<Option<RuntimeValue>, ResumableError> {
         match self.kind {
             FuncInvocationKind::Internal(ref mut interpreter) => {
                 if interpreter.state() != &InterpreterState::Initialized {
@@ -324,9 +324,9 @@ impl<'args> FuncInvocation<'args> {
     /// [`is_resumable`]: #method.is_resumable
     pub fn resume_execution<'externals, E: Externals + 'externals>(
         &mut self,
-        return_val: Option<Value>,
+        return_val: Option<RuntimeValue>,
         externals: &'externals mut E,
-    ) -> Result<Option<Value>, ResumableError> {
+    ) -> Result<Option<RuntimeValue>, ResumableError> {
         use crate::TrapCode;
 
         if return_val.map(|v| v.value_type()) != self.resumable_value_type() {

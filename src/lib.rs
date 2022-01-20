@@ -51,7 +51,7 @@
 //! extern crate wasmi;
 //! extern crate wabt;
 //!
-//! use wasmi::{ModuleInstance, ImportsBuilder, NopExternals, Value};
+//! use wasmi::{ModuleInstance, ImportsBuilder, NopExternals, RuntimeValue};
 //!
 //! fn main() {
 //!     // Parse WAT (WebAssembly Text format) into wasm bytecode.
@@ -89,7 +89,7 @@
 //!             &[],
 //!             &mut NopExternals,
 //!         ).expect("failed to execute export"),
-//!         Some(Value::I32(1337)),
+//!         Some(RuntimeValue::I32(1337)),
 //!     );
 //! }
 //! ```
@@ -113,9 +113,6 @@ use alloc::{
 use core::fmt;
 #[cfg(feature = "std")]
 use std::error;
-
-#[doc(inline)]
-pub use wasmi_core::Value as RuntimeValue;
 
 /// Internal interpreter error.
 #[derive(Debug)]
@@ -284,7 +281,8 @@ pub use self::{
     table::{TableInstance, TableRef},
     types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor},
 };
-use wasmi_core::Value;
+#[doc(inline)]
+pub use wasmi_core::Value as RuntimeValue;
 pub use wasmi_core::{
     memory_units,
     FromValue,
@@ -296,7 +294,7 @@ pub use wasmi_core::{
 };
 
 /// Mirrors the old value module.
-pub mod value {
+pub(crate) mod value {
     pub use wasmi_core::{
         ArithmeticOps,
         ExtendInto,
@@ -306,7 +304,7 @@ pub mod value {
         LittleEndianConvert,
         TransmuteInto,
         TryTruncateInto,
-        Value,
+        Value as RuntimeValue,
         ValueType,
         WrapInto,
     };
