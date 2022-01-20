@@ -293,9 +293,6 @@ pub use wasmi_core::{
     TrapCode,
     ValueType,
 };
-
-#[cfg(feature = "v1")]
-pub use wasmi_v1 as v1;
 use wasmi_core::Value;
 
 /// Mirrors the old value module.
