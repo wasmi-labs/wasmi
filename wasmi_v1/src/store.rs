@@ -61,7 +61,7 @@ pub struct Store<T> {
     /// The unique store index.
     ///
     /// Used to protect against invalid entity indices.
-    idx: StoreIdx,
+    store_idx: StoreIdx,
     /// Stored function signatures.
     signatures: DedupArena<SignatureIdx, SignatureEntity>,
     /// Stored linear memories.
@@ -86,7 +86,7 @@ impl<T> Store<T> {
     /// Creates a new store.
     pub fn new(engine: &Engine, user_state: T) -> Self {
         Self {
-            idx: StoreIdx::new(),
+            store_idx: StoreIdx::new(),
             signatures: DedupArena::new(),
             memories: Arena::new(),
             tables: Arena::new(),
@@ -120,27 +120,27 @@ impl<T> Store<T> {
 
     /// Allocates a new function signature to the store.
     pub(super) fn alloc_signature(&mut self, signature: SignatureEntity) -> Signature {
-        Signature::from_inner(Stored::new(self.idx, self.signatures.alloc(signature)))
+        Signature::from_inner(Stored::new(self.store_idx, self.signatures.alloc(signature)))
     }
 
     /// Allocates a new global variable to the store.
     pub(super) fn alloc_global(&mut self, global: GlobalEntity) -> Global {
-        Global::from_inner(Stored::new(self.idx, self.globals.alloc(global)))
+        Global::from_inner(Stored::new(self.store_idx, self.globals.alloc(global)))
     }
 
     /// Allocates a new table to the store.
     pub(super) fn alloc_table(&mut self, table: TableEntity) -> Table {
-        Table::from_inner(Stored::new(self.idx, self.tables.alloc(table)))
+        Table::from_inner(Stored::new(self.store_idx, self.tables.alloc(table)))
     }
 
     /// Allocates a new linear memory to the store.
     pub(super) fn alloc_memory(&mut self, memory: MemoryEntity) -> Memory {
-        Memory::from_inner(Stored::new(self.idx, self.memories.alloc(memory)))
+        Memory::from_inner(Stored::new(self.store_idx, self.memories.alloc(memory)))
     }
 
     /// Allocates a new Wasm or host function to the store.
     pub(super) fn alloc_func(&mut self, func: FuncEntity<T>) -> Func {
-        Func::from_inner(Stored::new(self.idx, self.funcs.alloc(func)))
+        Func::from_inner(Stored::new(self.store_idx, self.funcs.alloc(func)))
     }
 
     /// Allocates a new [`Instance`] to the store.
@@ -153,7 +153,7 @@ impl<T> Store<T> {
     /// will cause an execution panic.
     pub(super) fn alloc_instance(&mut self) -> Instance {
         Instance::from_inner(Stored::new(
-            self.idx,
+            self.store_idx,
             self.instances.alloc(InstanceEntity::uninitialized()),
         ))
     }
@@ -199,10 +199,10 @@ impl<T> Store<T> {
     where
         Idx: Index,
     {
-        stored.entity_index(self.idx).unwrap_or_else(|| {
+        stored.entity_index(self.store_idx).unwrap_or_else(|| {
             panic!(
                 "encountered foreign entity in store: {}",
-                self.idx.into_usize()
+                self.store_idx.into_usize()
             )
         })
     }
