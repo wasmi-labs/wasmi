@@ -17,19 +17,19 @@ impl Index for SignatureIdx {
 }
 
 /// A function signature containing the inputs and outputs.
-///
-/// # Note
-///
-/// The inputs and outputs are ordered and merged in a single
-/// vector starting with by inputs by their order and following
-/// up with the outputs.
-/// The `len_inputs` field denotes how many inputs there are in
-/// the head of the vector.
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub struct FuncType {
     /// The number of inputs.
     len_inputs: usize,
     /// The ordered and merged inputs and outputs of the function signature.
+    ///
+    /// # Note
+    ///
+    /// The inputs and outputs are ordered and merged in a single
+    /// vector starting with by inputs by their order and following
+    /// up with the outputs.
+    /// The `len_inputs` field denotes how many inputs there are in
+    /// the head of the vector.
     inputs_outputs: Arc<[ValueType]>,
 }
 
