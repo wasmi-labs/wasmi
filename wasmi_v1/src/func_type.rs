@@ -16,21 +16,21 @@ impl Index for SignatureIdx {
     }
 }
 
-/// A function signature containing the inputs and outputs.
+/// A function type representing a function's parameter and result types.
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub struct FuncType {
-    /// The number of inputs.
-    len_inputs: usize,
-    /// The ordered and merged inputs and outputs of the function signature.
+    /// The number of function parameters.
+    len_params: usize,
+    /// The ordered and merged parameter and result types of the function type.
     ///
     /// # Note
     ///
-    /// The inputs and outputs are ordered and merged in a single
-    /// vector starting with by inputs by their order and following
-    /// up with the outputs.
-    /// The `len_inputs` field denotes how many inputs there are in
-    /// the head of the vector.
-    inputs_outputs: Arc<[ValueType]>,
+    /// The parameters and results are ordered and merged in a single
+    /// vector starting with parameters in their order and followed
+    /// by results in their order.
+    /// The `len_params` field denotes how many parameters there are in
+    /// the head of the vector before the results.
+    params_results: Arc<[ValueType]>,
 }
 
 impl FuncType {
@@ -44,24 +44,24 @@ impl FuncType {
         let len_inputs = inputs_outputs.len();
         inputs_outputs.extend(outputs);
         Self {
-            inputs_outputs: inputs_outputs.into(),
-            len_inputs,
+            params_results: inputs_outputs.into(),
+            len_params: len_inputs,
         }
     }
 
     /// Returns the inputs of the function signature.
     pub fn inputs(&self) -> &[ValueType] {
-        &self.inputs_outputs[..self.len_inputs]
+        &self.params_results[..self.len_params]
     }
 
     /// Returns the outputs of the function signature.
     pub fn outputs(&self) -> &[ValueType] {
-        &self.inputs_outputs[self.len_inputs..]
+        &self.params_results[self.len_params..]
     }
 
     /// Returns the pair of inputs and outputs of the function signature.
     pub fn inputs_outputs(&self) -> (&[ValueType], &[ValueType]) {
-        self.inputs_outputs.split_at(self.len_inputs)
+        self.params_results.split_at(self.len_params)
     }
 }
 
