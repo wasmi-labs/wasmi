@@ -23,7 +23,7 @@ mod instance;
 mod linker;
 mod memory;
 mod module;
-mod signature;
+mod func_type;
 mod store;
 mod table;
 
@@ -48,7 +48,7 @@ use self::{
     global::{GlobalEntity, GlobalIdx},
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
     memory::{MemoryEntity, MemoryIdx},
-    signature::{FuncType, SignatureIdx},
+    func_type::{FuncType, SignatureIdx},
     store::Stored,
     table::{TableEntity, TableIdx},
 };
@@ -62,7 +62,7 @@ pub use self::{
     linker::Linker,
     memory::{Memory, MemoryType},
     module::{InstancePre, Module},
-    signature::Signature,
+    func_type::Signature,
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
 };
