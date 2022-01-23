@@ -48,7 +48,7 @@ use self::{
     global::{GlobalEntity, GlobalIdx},
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
     memory::{MemoryEntity, MemoryIdx},
-    signature::{SignatureEntity, SignatureIdx},
+    signature::{FuncType, SignatureIdx},
     store::Stored,
     table::{TableEntity, TableIdx},
 };

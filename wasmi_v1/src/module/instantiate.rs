@@ -23,7 +23,7 @@ use super::{
         MemoryType,
         Mutability,
         Signature,
-        SignatureEntity,
+        FuncType,
         Table,
         TableType,
     },
@@ -262,7 +262,7 @@ impl Module {
         let handle = context.as_context_mut().store.alloc_instance();
         let mut builder = InstanceEntity::build();
 
-        self.extract_signatures(&mut context, &mut builder);
+        self.extract_func_types(&mut context, &mut builder);
         self.extract_imports(&mut context, &mut builder, externals)?;
         self.extract_functions(&mut context, &mut builder, handle);
         self.extract_tables(&mut context, &mut builder);
@@ -288,7 +288,7 @@ impl Module {
     /// This also stores [`Signature`] references into the [`Instance`] under construction.
     ///
     /// [`Store`]: struct.Store.html
-    fn extract_signatures(
+    fn extract_func_types(
         &self,
         context: &mut impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
@@ -312,7 +312,7 @@ impl Module {
             let signature = context
                 .as_context_mut()
                 .store
-                .alloc_signature(SignatureEntity::new(inputs, outputs));
+                .alloc_signature(FuncType::new(inputs, outputs));
             builder.push_signature(signature);
         }
     }

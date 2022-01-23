@@ -6,7 +6,7 @@ use crate::{
     engine::{ReadParams, WriteResults},
     foreach_tuple::for_each_tuple,
     Caller,
-    SignatureEntity,
+    FuncType,
 };
 use core::{array, iter::FusedIterator};
 use wasmi_core::{FromValue, Trap, Value, ValueType, F32, F64};
@@ -22,7 +22,7 @@ pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {
 
     /// Converts the function into its `wasmi` signature and its trampoline.
     #[doc(hidden)]
-    fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>);
+    fn into_func(self) -> (FuncType, HostFuncTrampoline<T>);
 }
 
 macro_rules! impl_into_func {
@@ -40,7 +40,7 @@ macro_rules! impl_into_func {
             type Results = <R as WasmResults>::Ok;
 
             #[allow(non_snake_case)]
-            fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
+            fn into_func(self) -> (FuncType, HostFuncTrampoline<T>) {
                 IntoFunc::into_func(
                     move |
                         _: Caller<'_, T>,
@@ -67,8 +67,8 @@ macro_rules! impl_into_func {
             type Results = <R as WasmResults>::Ok;
 
             #[allow(non_snake_case)]
-            fn into_func(self) -> (SignatureEntity, HostFuncTrampoline<T>) {
-                let signature = SignatureEntity::new(
+            fn into_func(self) -> (FuncType, HostFuncTrampoline<T>) {
+                let signature = FuncType::new(
                     <Self::Params as WasmTypeList>::value_types(),
                     <Self::Results as WasmTypeList>::value_types(),
                 );

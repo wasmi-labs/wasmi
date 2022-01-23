@@ -15,7 +15,7 @@ use super::{
     MemoryEntity,
     MemoryIdx,
     Signature,
-    SignatureEntity,
+    FuncType,
     SignatureIdx,
     Table,
     TableEntity,
@@ -63,7 +63,7 @@ pub struct Store<T> {
     /// Used to protect against invalid entity indices.
     store_idx: StoreIdx,
     /// Stored function signatures.
-    signatures: DedupArena<SignatureIdx, SignatureEntity>,
+    signatures: DedupArena<SignatureIdx, FuncType>,
     /// Stored linear memories.
     memories: Arena<MemoryIdx, MemoryEntity>,
     /// Stored tables.
@@ -119,7 +119,7 @@ impl<T> Store<T> {
     }
 
     /// Allocates a new function signature to the store.
-    pub(super) fn alloc_signature(&mut self, signature: SignatureEntity) -> Signature {
+    pub(super) fn alloc_signature(&mut self, signature: FuncType) -> Signature {
         Signature::from_inner(Stored::new(
             self.store_idx,
             self.signatures.alloc(signature),
@@ -216,7 +216,7 @@ impl<T> Store<T> {
     ///
     /// - If the signature does not originate from this store.
     /// - If the signature cannot be resolved to its entity.
-    pub(super) fn resolve_signature(&self, signature: Signature) -> &SignatureEntity {
+    pub(super) fn resolve_signature(&self, signature: Signature) -> &FuncType {
         let entity_index = self.unwrap_index(signature.into_inner());
         self.signatures
             .get(entity_index)

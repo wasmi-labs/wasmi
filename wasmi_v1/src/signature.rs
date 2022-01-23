@@ -26,14 +26,14 @@ impl Index for SignatureIdx {
 /// The `len_inputs` field denotes how many inputs there are in
 /// the head of the vector.
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
-pub struct SignatureEntity {
+pub struct FuncType {
     /// The ordered and merged inputs and outputs of the function signature.
     inputs_outputs: Arc<[ValueType]>,
     /// The number of inputs.
     len_inputs: usize,
 }
 
-impl SignatureEntity {
+impl FuncType {
     /// Creates a new function signature.
     pub fn new<I, O>(inputs: I, outputs: O) -> Self
     where
@@ -87,7 +87,7 @@ impl Signature {
         I: IntoIterator<Item = ValueType>,
         O: IntoIterator<Item = ValueType>,
     {
-        ctx.alloc_signature(SignatureEntity::new(inputs, outputs))
+        ctx.alloc_signature(FuncType::new(inputs, outputs))
     }
 
     /// Returns the inputs of the function signature.
