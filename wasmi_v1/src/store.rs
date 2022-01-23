@@ -21,10 +21,8 @@ use super::{
     TableEntity,
     TableIdx,
 };
-use core::{
-    fmt,
-    sync::atomic::{AtomicUsize, Ordering},
-};
+use crate::{GuardedEntity, Index};
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 /// A unique store index.
 ///
@@ -34,40 +32,28 @@ use core::{
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct StoreIdx(usize);
 
+impl Index for StoreIdx {
+    fn into_usize(self) -> usize {
+        self.0
+    }
+
+    fn from_usize(value: usize) -> Self {
+        Self(value)
+    }
+}
+
+impl StoreIdx {
+    /// Returns a new unique [`StoreIdx`].
+    fn new() -> Self {
+        /// A static store index counter.
+        static CURRENT_STORE_IDX: AtomicUsize = AtomicUsize::new(0);
+        let next_idx = CURRENT_STORE_IDX.fetch_add(1, Ordering::AcqRel);
+        Self(next_idx)
+    }
+}
+
 /// A stored entity.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct Stored<Idx> {
-    store_idx: StoreIdx,
-    entity_idx: Idx,
-}
-
-impl<Idx> Stored<Idx> {
-    /// Creates a new store entity.
-    pub fn new(store_idx: StoreIdx, entity_idx: Idx) -> Self {
-        Self {
-            store_idx,
-            entity_idx,
-        }
-    }
-
-    /// Returns the store index of the store entity.
-    pub fn store_index(&self) -> StoreIdx {
-        self.store_idx
-    }
-
-    /// Returns the index of the entity.
-    pub fn entity_index(&self) -> &Idx {
-        &self.entity_idx
-    }
-}
-
-/// Returns the next store index.
-fn next_store_index() -> StoreIdx {
-    /// A static store index counter.
-    static CURRENT_STORE_IDX: AtomicUsize = AtomicUsize::new(0);
-    let next_idx = CURRENT_STORE_IDX.fetch_add(1, Ordering::AcqRel);
-    StoreIdx(next_idx)
-}
+pub type Stored<Idx> = GuardedEntity<StoreIdx, Idx>;
 
 /// The store that owns all data associated to Wasm modules.
 #[derive(Debug)]
@@ -100,7 +86,7 @@ impl<T> Store<T> {
     /// Creates a new store.
     pub fn new(engine: &Engine, user_state: T) -> Self {
         Self {
-            idx: next_store_index(),
+            idx: StoreIdx::new(),
             signatures: DedupArena::new(),
             memories: Arena::new(),
             tables: Arena::new(),
@@ -211,17 +197,14 @@ impl<T> Store<T> {
     /// If the stored entity does not originate from this store.
     fn unwrap_index<Idx>(&self, stored: Stored<Idx>) -> Idx
     where
-        Idx: fmt::Debug,
+        Idx: Index,
     {
-        assert_eq!(
-            self.idx,
-            stored.store_index(),
-            "tried to access entity {:?} of store {:?} at store {:?}",
-            stored.entity_index(),
-            stored.store_index(),
-            self.idx,
-        );
-        stored.entity_idx
+        stored.entity_index(self.idx).unwrap_or_else(|| {
+            panic!(
+                "encountered foreign entity in store: {}",
+                self.idx.into_usize()
+            )
+        })
     }
 
     /// Returns a shared reference to the associated entity of the signature.
