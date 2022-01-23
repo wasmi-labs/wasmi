@@ -49,18 +49,18 @@ impl FuncType {
         }
     }
 
-    /// Returns the inputs of the function signature.
-    pub fn inputs(&self) -> &[ValueType] {
+    /// Returns the parameter types of the function type.
+    pub fn params(&self) -> &[ValueType] {
         &self.params_results[..self.len_params]
     }
 
-    /// Returns the outputs of the function signature.
-    pub fn outputs(&self) -> &[ValueType] {
+    /// Returns the result types of the function type.
+    pub fn results(&self) -> &[ValueType] {
         &self.params_results[self.len_params..]
     }
 
-    /// Returns the pair of inputs and outputs of the function signature.
-    pub fn inputs_outputs(&self) -> (&[ValueType], &[ValueType]) {
+    /// Returns the pair of parameter and result types of the function type.
+    pub fn params_results(&self) -> (&[ValueType], &[ValueType]) {
         self.params_results.split_at(self.len_params)
     }
 }
@@ -96,7 +96,7 @@ impl Signature {
     ///
     /// Panics if `ctx` does not own this [`Signature`].
     pub fn inputs<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a [ValueType] {
-        ctx.into().store.resolve_signature(*self).inputs()
+        ctx.into().store.resolve_signature(*self).params()
     }
 
     /// Returns the outputs of the function signature.
@@ -105,7 +105,7 @@ impl Signature {
     ///
     /// Panics if `ctx` does not own this [`Signature`].
     pub fn outputs<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a [ValueType] {
-        ctx.into().store.resolve_signature(*self).outputs()
+        ctx.into().store.resolve_signature(*self).results()
     }
 
     /// Returns the outputs of the function signature.
@@ -117,6 +117,6 @@ impl Signature {
         &self,
         ctx: impl Into<StoreContext<'a, T>>,
     ) -> (&'a [ValueType], &'a [ValueType]) {
-        ctx.into().store.resolve_signature(*self).inputs_outputs()
+        ctx.into().store.resolve_signature(*self).params_results()
     }
 }
