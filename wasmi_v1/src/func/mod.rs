@@ -78,7 +78,7 @@ impl<T> FuncEntity<T> {
     ///
     /// This can be used to efficiently match against host or Wasm
     /// function entities and efficiently extract their properties.
-    pub(crate) fn as_internal(&self) -> &FuncEntityInternal<T> {
+    pub fn as_internal(&self) -> &FuncEntityInternal<T> {
         &self.internal
     }
 
@@ -253,7 +253,7 @@ impl Func {
     }
 
     /// Returns the signature of the function.
-    pub fn signature(&self, ctx: impl AsContext) -> Signature {
+    pub(crate) fn signature(&self, ctx: impl AsContext) -> Signature {
         ctx.as_context().store.resolve_func(*self).signature()
     }
 
