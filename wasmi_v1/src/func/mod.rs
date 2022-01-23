@@ -281,7 +281,7 @@ impl Func {
         // types and that the given output slice matches the expected length.
         //
         // These checks can be avoided using the [`TypedFunc`] API.
-        let (expected_inputs, expected_outputs) = self.signature(&ctx).inputs_outputs(&ctx);
+        let (expected_inputs, expected_outputs) = self.signature(&ctx).params_results(&ctx);
         let actual_inputs = inputs.iter().map(|value| value.value_type());
         if expected_inputs.iter().copied().ne(actual_inputs) {
             return Err(FuncError::MismatchingParameters { func: *self }).map_err(Into::into);

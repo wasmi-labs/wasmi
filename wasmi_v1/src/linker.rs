@@ -411,9 +411,9 @@ impl<T> Linker<T> {
                         .copied()
                         .map(ValueType::from_elements);
                     let signature = func.signature(context.as_context());
-                    if expected_inputs.ne(signature.inputs(context.as_context()).iter().copied())
+                    if expected_inputs.ne(signature.params(context.as_context()).iter().copied())
                         || expected_outputs
-                            .ne(signature.outputs(context.as_context()).iter().copied())
+                            .ne(signature.results(context.as_context()).iter().copied())
                     {
                         return Err(LinkerError::SignatureMismatch {
                             import: import.clone(),

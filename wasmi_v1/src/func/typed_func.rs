@@ -66,7 +66,7 @@ where
     /// If the provided static types `Params` and `Results` for the parameters
     /// and result types of `func` mismatch the signature of `func`.
     pub(crate) fn new(ctx: impl AsContext, func: Func) -> Result<Self, Error> {
-        let (expected_params, expected_results) = func.signature(&ctx).inputs_outputs(&ctx);
+        let (expected_params, expected_results) = func.signature(&ctx).params_results(&ctx);
         let (actual_params, actual_results) = (
             <Params as WasmTypeList>::value_types(),
             <Results as WasmTypeList>::value_types(),

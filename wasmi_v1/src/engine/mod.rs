@@ -241,7 +241,7 @@ impl EngineInner {
                 signature
             }
         };
-        let result_types = signature.outputs(&ctx);
+        let result_types = signature.results(&ctx);
         let results = self.write_results_back(result_types, results);
         Ok(results)
     }
@@ -362,7 +362,7 @@ impl EngineInner {
     {
         // The host function signature is required for properly
         // adjusting, inspecting and manipulating the value stack.
-        let (input_types, output_types) = host_func.signature().inputs_outputs(ctx.as_context());
+        let (input_types, output_types) = host_func.signature().params_results(ctx.as_context());
         // In case the host function returns more values than it takes
         // we are required to extend the value stack.
         let len_inputs = input_types.len();

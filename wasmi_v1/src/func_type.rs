@@ -90,30 +90,30 @@ impl Signature {
         ctx.alloc_signature(FuncType::new(inputs, outputs))
     }
 
-    /// Returns the inputs of the function signature.
+    /// Returns the parameters of the function type.
     ///
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Signature`].
-    pub fn inputs<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a [ValueType] {
+    pub fn params<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a [ValueType] {
         ctx.into().store.resolve_signature(*self).params()
     }
 
-    /// Returns the outputs of the function signature.
+    /// Returns the results of the function signature.
     ///
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Signature`].
-    pub fn outputs<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a [ValueType] {
+    pub fn results<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a [ValueType] {
         ctx.into().store.resolve_signature(*self).results()
     }
 
-    /// Returns the outputs of the function signature.
+    /// Returns the parameter and result types of the function type.
     ///
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Signature`].
-    pub fn inputs_outputs<'a, T: 'a>(
+    pub fn params_results<'a, T: 'a>(
         &self,
         ctx: impl Into<StoreContext<'a, T>>,
     ) -> (&'a [ValueType], &'a [ValueType]) {
