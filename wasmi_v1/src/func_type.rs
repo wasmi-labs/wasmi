@@ -2,20 +2,6 @@ use super::{Index, Store, StoreContext, Stored};
 use crate::ValueType;
 use alloc::{sync::Arc, vec::Vec};
 
-/// A raw index to a function signature entity.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct SignatureIdx(usize);
-
-impl Index for SignatureIdx {
-    fn into_usize(self) -> usize {
-        self.0
-    }
-
-    fn from_usize(value: usize) -> Self {
-        Self(value)
-    }
-}
-
 /// A function type representing a function's parameter and result types.
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub struct FuncType {
@@ -62,6 +48,20 @@ impl FuncType {
     /// Returns the pair of parameter and result types of the function type.
     pub fn params_results(&self) -> (&[ValueType], &[ValueType]) {
         self.params_results.split_at(self.len_params)
+    }
+}
+
+/// A raw index to a function signature entity.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct SignatureIdx(usize);
+
+impl Index for SignatureIdx {
+    fn into_usize(self) -> usize {
+        self.0
+    }
+
+    fn from_usize(value: usize) -> Self {
+        Self(value)
     }
 }
 
