@@ -27,10 +27,10 @@ impl Index for SignatureIdx {
 /// the head of the vector.
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub struct FuncType {
-    /// The ordered and merged inputs and outputs of the function signature.
-    inputs_outputs: Arc<[ValueType]>,
     /// The number of inputs.
     len_inputs: usize,
+    /// The ordered and merged inputs and outputs of the function signature.
+    inputs_outputs: Arc<[ValueType]>,
 }
 
 impl FuncType {
