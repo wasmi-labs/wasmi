@@ -78,7 +78,7 @@ impl<T> FuncEntity<T> {
     ///
     /// This can be used to efficiently match against host or Wasm
     /// function entities and efficiently extract their properties.
-    pub fn as_internal(&self) -> &FuncEntityInternal<T> {
+    pub(crate) fn as_internal(&self) -> &FuncEntityInternal<T> {
         &self.internal
     }
 
