@@ -23,6 +23,7 @@ mod instance;
 mod linker;
 mod memory;
 mod module;
+mod module2;
 mod signature;
 mod store;
 mod table;
@@ -62,6 +63,7 @@ pub use self::{
     linker::Linker,
     memory::{Memory, MemoryType},
     module::{InstancePre, Module},
+    module2::{Module as Module2, ModuleError, Read},
     signature::Signature,
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
