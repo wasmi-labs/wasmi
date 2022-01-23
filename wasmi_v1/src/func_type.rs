@@ -87,7 +87,7 @@ impl Signature {
         I: IntoIterator<Item = ValueType>,
         O: IntoIterator<Item = ValueType>,
     {
-        ctx.alloc_signature(FuncType::new(inputs, outputs))
+        ctx.alloc_func_type(FuncType::new(inputs, outputs))
     }
 
     /// Returns the parameters of the function type.
@@ -96,7 +96,7 @@ impl Signature {
     ///
     /// Panics if `ctx` does not own this [`Signature`].
     pub fn params<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a [ValueType] {
-        ctx.into().store.resolve_signature(*self).params()
+        ctx.into().store.resolve_func_type(*self).params()
     }
 
     /// Returns the results of the function signature.
@@ -105,7 +105,7 @@ impl Signature {
     ///
     /// Panics if `ctx` does not own this [`Signature`].
     pub fn results<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a [ValueType] {
-        ctx.into().store.resolve_signature(*self).results()
+        ctx.into().store.resolve_func_type(*self).results()
     }
 
     /// Returns the parameter and result types of the function type.
@@ -117,6 +117,6 @@ impl Signature {
         &self,
         ctx: impl Into<StoreContext<'a, T>>,
     ) -> (&'a [ValueType], &'a [ValueType]) {
-        ctx.into().store.resolve_signature(*self).params_results()
+        ctx.into().store.resolve_func_type(*self).params_results()
     }
 }

@@ -312,7 +312,7 @@ impl Module {
             let signature = context
                 .as_context_mut()
                 .store
-                .alloc_signature(FuncType::new(inputs, outputs));
+                .alloc_func_type(FuncType::new(inputs, outputs));
             builder.push_signature(signature);
         }
     }

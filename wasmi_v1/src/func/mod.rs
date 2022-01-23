@@ -201,7 +201,7 @@ impl<T> HostFuncEntity<T> {
         func: impl IntoFunc<T, Params, Results>,
     ) -> Self {
         let (signature, trampoline) = func.into_func();
-        let signature = ctx.as_context_mut().store.alloc_signature(signature);
+        let signature = ctx.as_context_mut().store.alloc_func_type(signature);
         Self {
             signature,
             trampoline,
@@ -261,7 +261,7 @@ impl Func {
     pub fn func_type(&self, ctx: impl AsContext) -> FuncType {
         ctx.as_context()
             .store
-            .resolve_signature(self.signature(&ctx))
+            .resolve_func_type(self.signature(&ctx))
             .clone()
     }
 

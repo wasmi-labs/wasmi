@@ -118,11 +118,11 @@ impl<T> Store<T> {
         self.user_state
     }
 
-    /// Allocates a new function signature to the store.
-    pub(super) fn alloc_signature(&mut self, signature: FuncType) -> Signature {
+    /// Allocates a new function type to the store.
+    pub(super) fn alloc_func_type(&mut self, func_type: FuncType) -> Signature {
         Signature::from_inner(Stored::new(
             self.store_idx,
-            self.signatures.alloc(signature),
+            self.signatures.alloc(func_type),
         ))
     }
 
@@ -216,11 +216,11 @@ impl<T> Store<T> {
     ///
     /// - If the signature does not originate from this store.
     /// - If the signature cannot be resolved to its entity.
-    pub(super) fn resolve_signature(&self, signature: Signature) -> &FuncType {
-        let entity_index = self.unwrap_index(signature.into_inner());
+    pub(super) fn resolve_func_type(&self, func_type: Signature) -> &FuncType {
+        let entity_index = self.unwrap_index(func_type.into_inner());
         self.signatures
             .get(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored signature: {:?}", entity_index))
+            .unwrap_or_else(|| panic!("failed to resolve stored function type: {:?}", entity_index))
     }
 
     /// Returns a shared reference to the associated entity of the global variable.
