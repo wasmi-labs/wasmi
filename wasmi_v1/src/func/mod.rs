@@ -19,7 +19,7 @@ use super::{
     StoreContext,
     Stored,
 };
-use crate::{Error, Trap, Value};
+use crate::{Error, FuncType, Trap, Value};
 use alloc::sync::Arc;
 use core::{fmt, fmt::Debug};
 
@@ -255,6 +255,14 @@ impl Func {
     /// Returns the signature of the function.
     pub fn signature(&self, ctx: impl AsContext) -> Signature {
         ctx.as_context().store.resolve_func(*self).signature()
+    }
+
+    /// Returns the function type of the [`Func`].
+    pub fn func_type(&self, ctx: impl AsContext) -> FuncType {
+        ctx.as_context()
+            .store
+            .resolve_signature(self.signature(&ctx))
+            .clone()
     }
 
     /// Calls the Wasm or host function with the given inputs.
