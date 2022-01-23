@@ -18,12 +18,12 @@ mod engine;
 mod error;
 mod external;
 mod func;
+mod func_type;
 mod global;
 mod instance;
 mod linker;
 mod memory;
 mod module;
-mod func_type;
 mod store;
 mod table;
 
@@ -45,10 +45,10 @@ use self::{
     arena::{Arena, DedupArena, GuardedEntity, Index},
     engine::{DropKeep, FuncBody, InstructionIdx, InstructionsBuilder, LabelIdx, Target},
     func::{FuncEntity, FuncEntityInternal, FuncIdx},
+    func_type::{FuncType, SignatureIdx},
     global::{GlobalEntity, GlobalIdx},
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
     memory::{MemoryEntity, MemoryIdx},
-    func_type::{FuncType, SignatureIdx},
     store::Stored,
     table::{TableEntity, TableIdx},
 };
@@ -57,12 +57,12 @@ pub use self::{
     error::Error,
     external::Extern,
     func::{Caller, Func, TypedFunc, WasmParams, WasmResults},
+    func_type::Signature,
     global::{Global, Mutability},
     instance::{ExportsIter, Instance},
     linker::Linker,
     memory::{Memory, MemoryType},
     module::{InstancePre, Module},
-    func_type::Signature,
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
 };
