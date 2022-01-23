@@ -42,7 +42,7 @@ pub mod errors {
 }
 
 use self::{
-    arena::{Arena, DedupArena, Index, GuardedEntity},
+    arena::{Arena, DedupArena, GuardedEntity, Index},
     engine::{DropKeep, FuncBody, InstructionIdx, InstructionsBuilder, LabelIdx, Target},
     func::{FuncEntity, FuncEntityInternal, FuncIdx},
     global::{GlobalEntity, GlobalIdx},

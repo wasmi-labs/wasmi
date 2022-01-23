@@ -120,7 +120,10 @@ impl<T> Store<T> {
 
     /// Allocates a new function signature to the store.
     pub(super) fn alloc_signature(&mut self, signature: SignatureEntity) -> Signature {
-        Signature::from_inner(Stored::new(self.store_idx, self.signatures.alloc(signature)))
+        Signature::from_inner(Stored::new(
+            self.store_idx,
+            self.signatures.alloc(signature),
+        ))
     }
 
     /// Allocates a new global variable to the store.
