@@ -283,9 +283,11 @@ impl Module {
         })
     }
 
-    /// Extracts the Wasm function signatures from the module and stores them into the [`Store`].
+    /// Extracts the Wasm function signatures from the
+    /// module and stores them into the [`Store`].
     ///
-    /// This also stores [`Signature`] references into the [`Instance`] under construction.
+    /// This also stores deduplicated [`FuncType`] references into the
+    /// [`Instance`] under construction.
     ///
     /// [`Store`]: struct.Store.html
     fn extract_func_types(
@@ -313,7 +315,7 @@ impl Module {
                 .as_context_mut()
                 .store
                 .alloc_func_type(FuncType::new(inputs, outputs));
-            builder.push_signature(signature);
+            builder.push_func_type(signature);
         }
     }
 
