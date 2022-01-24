@@ -58,7 +58,7 @@ pub use self::{
     external::Extern,
     func::{Caller, Func, TypedFunc, WasmParams, WasmResults},
     func_type::FuncType,
-    global::{Global, Mutability},
+    global::{Global, GlobalType, Mutability},
     instance::{ExportsIter, Instance},
     linker::Linker,
     memory::{Memory, MemoryType},

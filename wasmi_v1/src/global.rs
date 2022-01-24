@@ -58,10 +58,33 @@ pub enum Mutability {
     Mutable,
 }
 
+/// The type of a global variable.
+#[derive(Debug, Copy, Clone)]
+pub struct GlobalType {
+    /// The value type of the global variable.
+    ty: ValueType,
+    /// The mutability of the global variable.
+    mutability: Mutability,
+}
+
+impl GlobalType {
+    /// Returns the [`ValueType`] of the global variable.
+    pub fn value_type(&self) -> ValueType {
+        self.ty
+    }
+
+    /// Returns the [`Mutability`] of the global variable.
+    pub fn mutability(&self) -> Mutability {
+        self.mutability
+    }
+}
+
 /// A global variable entitiy.
 #[derive(Debug)]
 pub struct GlobalEntity {
+    /// The current value of the global variable.
     value: Value,
+    /// The mutability of the global variable.
     mutability: Mutability,
 }
 
@@ -82,6 +105,14 @@ impl GlobalEntity {
     /// Returns the type of the global variable value.
     pub fn value_type(&self) -> ValueType {
         self.value.value_type()
+    }
+
+    /// Returns the [`GlobalType`] of the global variable.
+    pub fn global_type(&self) -> GlobalType {
+        GlobalType {
+            ty: self.value_type(),
+            mutability: self.mutability,
+        }
     }
 
     /// Sets a new value to the global variable.
@@ -155,6 +186,11 @@ impl Global {
     /// Panics if `ctx` does not own this [`Global`].
     pub fn value_type(&self, ctx: impl AsContext) -> ValueType {
         ctx.as_context().store.resolve_global(*self).value_type()
+    }
+
+    /// Returns the [`GlobalType`] of the global variable.
+    pub fn global_type(&self, ctx: impl AsContext) -> GlobalType {
+        ctx.as_context().store.resolve_global(*self).global_type()
     }
 
     /// Sets a new value to the global variable.
