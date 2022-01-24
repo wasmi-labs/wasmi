@@ -9,7 +9,7 @@
 
 use super::{
     super::{
-        engine::Signature,
+        engine::DedupFuncType,
         errors::{MemoryError, TableError},
         AsContext,
         AsContextMut,
@@ -51,9 +51,9 @@ pub enum InstantiationError {
     /// Caused when a function has a mismatching signature.
     SignatureMismatch {
         /// The expected function signature for the function import.
-        expected: Signature,
+        expected: DedupFuncType,
         /// The actual function signature for the function import.
-        actual: Signature,
+        actual: DedupFuncType,
     },
     /// Occurs when an imported table does not satisfy the required table type.
     Table(TableError),

@@ -10,9 +10,9 @@ use crate::{
 
 /// A raw index to a function signature entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct SignatureIdx(usize);
+pub struct DedupFuncTypeIdx(usize);
 
-impl Index for SignatureIdx {
+impl Index for DedupFuncTypeIdx {
     fn into_usize(self) -> usize {
         self.0
     }
@@ -22,19 +22,33 @@ impl Index for SignatureIdx {
     }
 }
 
-/// A Wasm function signature reference.
+/// A deduplicated Wasm [`FuncType`].
+///
+/// # Note
+///
+/// Advantages over a non-deduplicated [`FuncType`] are:
+///
+/// - Comparison for equality is as fast as an integer value comparison.
+///     - With this we can speed up indirect calls in the engine.
+/// - Requires a lot less memory footprint to be stored somewhere compared
+///   to a full fledged [`FuncType`].
+///
+/// Disadvantages compared to non-deduplicated [`FuncType`] are:
+///
+/// - Requires another indirection to acquire information such as parameter
+///   or result types of the underlying [`FuncType`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct Signature(GuardedEntity<EngineIdx, SignatureIdx>);
+pub struct DedupFuncType(GuardedEntity<EngineIdx, DedupFuncTypeIdx>);
 
-impl Signature {
+impl DedupFuncType {
     /// Creates a new function signature reference.
-    pub(super) fn from_inner(stored: GuardedEntity<EngineIdx, SignatureIdx>) -> Self {
+    pub(super) fn from_inner(stored: GuardedEntity<EngineIdx, DedupFuncTypeIdx>) -> Self {
         Self(stored)
     }
 
     /// Returns the underlying stored representation.
-    pub(super) fn into_inner(self) -> GuardedEntity<EngineIdx, SignatureIdx> {
+    pub(super) fn into_inner(self) -> GuardedEntity<EngineIdx, DedupFuncTypeIdx> {
         self.0
     }
 
@@ -72,7 +86,7 @@ pub struct FuncTypeRegistry {
     ///
     /// The engine deduplicates function types to make the equality
     /// comparison very fast. This helps to speed up indirect calls.
-    func_types: DedupArena<SignatureIdx, FuncType>,
+    func_types: DedupArena<DedupFuncTypeIdx, FuncType>,
 }
 
 impl FuncTypeRegistry {
@@ -102,8 +116,8 @@ impl FuncTypeRegistry {
     }
 
     /// Allocates a new function type to the engine.
-    pub(crate) fn alloc_func_type(&mut self, func_type: FuncType) -> Signature {
-        Signature::from_inner(Guarded::new(
+    pub(crate) fn alloc_func_type(&mut self, func_type: FuncType) -> DedupFuncType {
+        DedupFuncType::from_inner(Guarded::new(
             self.engine_idx,
             self.func_types.alloc(func_type),
         ))
@@ -115,7 +129,7 @@ impl FuncTypeRegistry {
     ///
     /// - If the deduplicated function type is not owned by the engine.
     /// - If the deduplicated function type cannot be resolved to its entity.
-    pub(crate) fn resolve_func_type(&self, func_type: Signature) -> &FuncType {
+    pub(crate) fn resolve_func_type(&self, func_type: DedupFuncType) -> &FuncType {
         let entity_index = self.unwrap_index(func_type.into_inner());
         self.func_types
             .get(entity_index)

@@ -38,7 +38,7 @@ use core::{
     cmp,
     sync::atomic::{AtomicUsize, Ordering},
 };
-pub use func_types::Signature;
+pub use func_types::DedupFuncType;
 use spin::mutex::Mutex;
 
 /// Maximum number of bytes on the value stack.
@@ -146,7 +146,7 @@ impl Engine {
     }
 
     /// Allocates a new function type to the engine.
-    pub(super) fn alloc_func_type(&mut self, func_type: FuncType) -> Signature {
+    pub(super) fn alloc_func_type(&mut self, func_type: FuncType) -> DedupFuncType {
         self.inner.lock().func_types.alloc_func_type(func_type)
     }
 
@@ -156,7 +156,7 @@ impl Engine {
     ///
     /// - If the deduplicated function type is not owned by the engine.
     /// - If the deduplicated function type cannot be resolved to its entity.
-    pub(super) fn resolve_func_type(&self, func_type: Signature) -> FuncType {
+    pub(super) fn resolve_func_type(&self, func_type: DedupFuncType) -> FuncType {
         // Note: The clone operation on FuncType is intentionally cheap.
         self.inner
             .lock()
@@ -379,7 +379,7 @@ impl EngineInner {
     /// - If the `results` buffer length does not match the remaining amount of stack values.
     fn write_results_back<Results>(
         &mut self,
-        func_type: Signature,
+        func_type: DedupFuncType,
         results: Results,
     ) -> <Results as CallResults>::Results
     where

@@ -10,7 +10,7 @@ pub use self::{
     typed_func::{TypedFunc, WasmParams, WasmResults},
 };
 use super::{
-    engine::{FuncBody, FuncParams, FuncResults, Signature},
+    engine::{DedupFuncType, FuncBody, FuncParams, FuncResults},
     AsContext,
     AsContextMut,
     Index,
@@ -55,7 +55,7 @@ impl<T> Clone for FuncEntity<T> {
 
 impl<T> FuncEntity<T> {
     /// Creates a new Wasm function from the given raw parts.
-    pub(crate) fn new_wasm(signature: Signature, body: FuncBody, instance: Instance) -> Self {
+    pub(crate) fn new_wasm(signature: DedupFuncType, body: FuncBody, instance: Instance) -> Self {
         Self {
             internal: FuncEntityInternal::Wasm(WasmFuncEntity::new(signature, body, instance)),
         }
@@ -82,7 +82,7 @@ impl<T> FuncEntity<T> {
     }
 
     /// Returns the signature of the Wasm function.
-    pub fn signature(&self) -> Signature {
+    pub fn signature(&self) -> DedupFuncType {
         match self.as_internal() {
             FuncEntityInternal::Wasm(func) => func.signature(),
             FuncEntityInternal::Host(func) => func.signature(),
@@ -113,14 +113,14 @@ impl<T> Clone for FuncEntityInternal<T> {
 /// A Wasm function instance.
 #[derive(Debug, Clone)]
 pub(crate) struct WasmFuncEntity {
-    signature: Signature,
+    signature: DedupFuncType,
     body: FuncBody,
     instance: Instance,
 }
 
 impl WasmFuncEntity {
     /// Creates a new Wasm function from the given raw parts.
-    pub fn new(signature: Signature, body: FuncBody, instance: Instance) -> Self {
+    pub fn new(signature: DedupFuncType, body: FuncBody, instance: Instance) -> Self {
         Self {
             signature,
             body,
@@ -129,7 +129,7 @@ impl WasmFuncEntity {
     }
 
     /// Returns the signature of the Wasm function.
-    pub fn signature(&self) -> Signature {
+    pub fn signature(&self) -> DedupFuncType {
         self.signature
     }
 
@@ -146,7 +146,7 @@ impl WasmFuncEntity {
 
 /// A host function instance.
 pub(crate) struct HostFuncEntity<T> {
-    signature: Signature,
+    signature: DedupFuncType,
     trampoline: HostFuncTrampoline<T>,
 }
 
@@ -208,7 +208,7 @@ impl<T> HostFuncEntity<T> {
     }
 
     /// Returns the signature of the host function.
-    pub fn signature(&self) -> Signature {
+    pub fn signature(&self) -> DedupFuncType {
         self.signature
     }
 
@@ -252,7 +252,7 @@ impl Func {
     }
 
     /// Returns the signature of the function.
-    pub(crate) fn signature(&self, ctx: impl AsContext) -> Signature {
+    pub(crate) fn signature(&self, ctx: impl AsContext) -> DedupFuncType {
         ctx.as_context().store.resolve_func(*self).signature()
     }
 

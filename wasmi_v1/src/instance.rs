@@ -1,5 +1,5 @@
 use super::{
-    engine::Signature,
+    engine::DedupFuncType,
     AsContext,
     Extern,
     Func,
@@ -35,7 +35,7 @@ impl Index for InstanceIdx {
 #[derive(Debug)]
 pub struct InstanceEntity {
     initialized: bool,
-    signatures: Vec<Signature>,
+    signatures: Vec<DedupFuncType>,
     tables: Vec<Table>,
     funcs: Vec<Func>,
     memories: Vec<Memory>,
@@ -98,7 +98,7 @@ impl InstanceEntity {
     }
 
     /// Returns the signature at the `index` if any.
-    pub(crate) fn get_signature(&self, index: u32) -> Option<Signature> {
+    pub(crate) fn get_signature(&self, index: u32) -> Option<DedupFuncType> {
         self.signatures.get(index as usize).copied()
     }
 
@@ -184,7 +184,7 @@ impl InstanceEntityBuilder {
     }
 
     /// Pushes a new [`Signature`] to the [`InstanceEntity`] under construction.
-    pub(crate) fn push_signature(&mut self, signature: Signature) {
+    pub(crate) fn push_signature(&mut self, signature: DedupFuncType) {
         self.instance.signatures.push(signature);
     }
 
@@ -297,7 +297,7 @@ impl Instance {
     /// # Panics
     ///
     /// Panics if `store` does not own this [`Instance`].
-    pub(crate) fn get_signature(&self, store: impl AsContext, index: u32) -> Option<Signature> {
+    pub(crate) fn get_signature(&self, store: impl AsContext, index: u32) -> Option<DedupFuncType> {
         store
             .as_context()
             .store

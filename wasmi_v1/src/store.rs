@@ -1,6 +1,6 @@
 use super::{
     arena::Arena,
-    engine::Signature,
+    engine::DedupFuncType,
     Engine,
     Func,
     FuncEntity,
@@ -114,7 +114,7 @@ impl<T> Store<T> {
     }
 
     /// Allocates a new function type to the store.
-    pub(super) fn alloc_func_type(&mut self, func_type: FuncType) -> Signature {
+    pub(super) fn alloc_func_type(&mut self, func_type: FuncType) -> DedupFuncType {
         self.engine.alloc_func_type(func_type)
     }
 
@@ -208,7 +208,7 @@ impl<T> Store<T> {
     ///
     /// - If the deduplicated function type does not originate from this store.
     /// - If the deduplicated function type cannot be resolved to its entity.
-    pub(super) fn resolve_func_type(&self, func_type: Signature) -> FuncType {
+    pub(super) fn resolve_func_type(&self, func_type: DedupFuncType) -> FuncType {
         self.engine.resolve_func_type(func_type)
     }
 
