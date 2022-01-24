@@ -162,13 +162,10 @@ impl ModuleParser {
         self.builder.reserve_func_types(len_types);
         for _ in 0..len_types {
             match section.read()? {
-                wasmparser::TypeDef::Func(func_type) => match func_type_from_wasmparser(&func_type)
-                {
-                    Some(func_type) => {
-                        self.builder.push_func_type(func_type);
-                    }
-                    None => return Err(ModuleError::unsupported(func_type)),
-                },
+                wasmparser::TypeDef::Func(func_type) => {
+                    let func_type = func_type.try_into()?;
+                    self.builder.push_func_type(func_type);
+                }
                 wasmparser::TypeDef::Instance(instance_type) => {
                     return Err(ModuleError::unsupported(instance_type))
                 }
@@ -279,59 +276,5 @@ impl ModuleParser {
         self.validator
             .unknown_section(id, &range)
             .map_err(Into::into)
-    }
-}
-
-/// Creates a [`FuncType`] from the given [`wasmparser::FuncType`].
-///
-/// Returns `None` if the [`wasmparser::FuncType`] has parameter or result types
-/// that are not supported by `wasmi`.
-fn func_type_from_wasmparser(func: &wasmparser::FuncType) -> Option<FuncType> {
-    /// Returns `true` if the given [`wasmparser::Type`] is supported by `wasmi`.
-    fn is_supported_value_type(value_type: &wasmparser::Type) -> bool {
-        value_type_from_wasmparser(value_type).is_some()
-    }
-    if !func.params.iter().all(is_supported_value_type)
-        || !func.returns.iter().all(is_supported_value_type)
-    {
-        // One of more function parameter or result types are not supported by `wasmi`.
-        return None;
-    }
-    /// Returns the [`ValueType`] from the given [`wasmparser::Type`].
-    ///
-    /// # Panics
-    ///
-    /// If the [`wasmparser::Type`] is not supported by `wasmi`.
-    fn extract_value_type(value_type: &wasmparser::Type) -> ValueType {
-        match value_type_from_wasmparser(value_type) {
-            Some(ty) => ty,
-            None => {
-                // This is unreachable since we already filtered out unsupported
-                // types in the preconditions above.
-                unreachable!("encountered unsupported wasmparser type: {:?}", value_type)
-            }
-        }
-    }
-    let params = func.params.iter().map(extract_value_type);
-    let results = func.returns.iter().map(extract_value_type);
-    let func_type = FuncType::new(params, results);
-    Some(func_type)
-}
-
-/// Creates a [`ValueType`] from the given [`wasmparser::Type`].
-///
-/// Returns `None` if the given [`wasmparser::Type`] is not supported by `wasmi`.
-fn value_type_from_wasmparser(value_type: &wasmparser::Type) -> Option<ValueType> {
-    match value_type {
-        wasmparser::Type::I32 => Some(ValueType::I32),
-        wasmparser::Type::I64 => Some(ValueType::I64),
-        wasmparser::Type::F32 => Some(ValueType::F32),
-        wasmparser::Type::F64 => Some(ValueType::F64),
-        wasmparser::Type::V128
-        | wasmparser::Type::FuncRef
-        | wasmparser::Type::ExternRef
-        | wasmparser::Type::ExnRef
-        | wasmparser::Type::Func
-        | wasmparser::Type::EmptyBlockType => None,
     }
 }
