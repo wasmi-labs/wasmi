@@ -62,15 +62,22 @@ pub enum Mutability {
 #[derive(Debug, Copy, Clone)]
 pub struct GlobalType {
     /// The value type of the global variable.
-    ty: ValueType,
+    value_type: ValueType,
     /// The mutability of the global variable.
     mutability: Mutability,
 }
 
 impl GlobalType {
+    pub fn new(value_type: ValueType, mutability: Mutability) -> Self {
+        Self {
+            value_type,
+            mutability,
+        }
+    }
+
     /// Returns the [`ValueType`] of the global variable.
     pub fn value_type(&self) -> ValueType {
-        self.ty
+        self.value_type
     }
 
     /// Returns the [`Mutability`] of the global variable.
@@ -109,10 +116,7 @@ impl GlobalEntity {
 
     /// Returns the [`GlobalType`] of the global variable.
     pub fn global_type(&self) -> GlobalType {
-        GlobalType {
-            ty: self.value_type(),
-            mutability: self.mutability,
-        }
+        GlobalType::new(self.value_type(), self.mutability)
     }
 
     /// Sets a new value to the global variable.
