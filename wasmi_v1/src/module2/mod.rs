@@ -2,8 +2,13 @@ mod builder;
 mod error;
 mod parser;
 mod read;
+mod utils;
 
-use self::{builder::ModuleBuilder, read::ReadError};
+use self::{
+    builder::ModuleBuilder,
+    read::ReadError,
+    utils::value_type_from_wasmparser,
+};
 pub use self::{error::ModuleError, read::Read};
 
 /// A parsed and validated WebAssembly module.
