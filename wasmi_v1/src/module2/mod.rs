@@ -1,11 +1,13 @@
 mod builder;
 mod error;
+mod import;
 mod parser;
 mod read;
 mod utils;
 
 use self::{
     builder::ModuleBuilder,
+    import::{Import, ImportKind},
     read::ReadError,
     utils::value_type_from_wasmparser,
 };

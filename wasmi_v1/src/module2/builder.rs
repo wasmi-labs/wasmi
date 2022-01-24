@@ -1,16 +1,18 @@
-use super::Module;
+use super::{Import, Module};
 use crate::FuncType;
 
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug)]
 pub struct ModuleBuilder {
     func_types: Vec<FuncType>,
+    imports: Vec<Import>,
 }
 
 impl Default for ModuleBuilder {
     fn default() -> Self {
         Self {
             func_types: Vec::new(),
+            imports: Vec::new(),
         }
     }
 }
@@ -21,7 +23,7 @@ impl ModuleBuilder {
     ///
     /// # Note
     ///
-    /// This procedure serves as a memory allocation optimization.
+    /// This procedure serves as an optimization.
     pub fn reserve_func_types(&mut self, hint: u32) {
         self.func_types.reserve_exact(hint as usize);
     }
@@ -33,6 +35,26 @@ impl ModuleBuilder {
         let index = u32::try_from(self.func_types.len())
             .unwrap_or_else(|error| panic!("encountered out of bounds function types: {}", error));
         self.func_types.push(func_type);
+        index
+    }
+
+    /// Reserves enough space for at least `hint` [`FuncType`] instances
+    /// in the [`Module`] under construction.
+    ///
+    /// # Note
+    ///
+    /// This procedure serves as an optimization.
+    pub fn reserve_imports(&mut self, hint: u32) {
+        self.imports.reserve_exact(hint as usize);
+    }
+
+    /// Pushes the given [`Import`] to the [`Module`] under construction.
+    ///
+    /// Returns the raw `u32` index to the pushed [`Import`].
+    pub fn push_import(&mut self, import: Import) -> u32 {
+        let index = u32::try_from(self.imports.len())
+            .unwrap_or_else(|error| panic!("encountered out of bounds imports: {}", error));
+        self.imports.push(import);
         index
     }
 
