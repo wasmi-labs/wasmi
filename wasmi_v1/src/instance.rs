@@ -1,11 +1,11 @@
 use super::{
+    engine::DedupFuncType,
     AsContext,
     Extern,
     Func,
     Global,
     Index,
     Memory,
-    Signature,
     StoreContext,
     Stored,
     Table,
@@ -35,7 +35,7 @@ impl Index for InstanceIdx {
 #[derive(Debug)]
 pub struct InstanceEntity {
     initialized: bool,
-    signatures: Vec<Signature>,
+    func_types: Vec<DedupFuncType>,
     tables: Vec<Table>,
     funcs: Vec<Func>,
     memories: Vec<Memory>,
@@ -48,7 +48,7 @@ impl InstanceEntity {
     pub(crate) fn uninitialized() -> InstanceEntity {
         Self {
             initialized: false,
-            signatures: Vec::new(),
+            func_types: Vec::new(),
             tables: Vec::new(),
             funcs: Vec::new(),
             memories: Vec::new(),
@@ -62,7 +62,7 @@ impl InstanceEntity {
         InstanceEntityBuilder {
             instance: Self {
                 initialized: false,
-                signatures: Vec::default(),
+                func_types: Vec::default(),
                 tables: Vec::default(),
                 funcs: Vec::default(),
                 memories: Vec::default(),
@@ -98,8 +98,8 @@ impl InstanceEntity {
     }
 
     /// Returns the signature at the `index` if any.
-    pub(crate) fn get_signature(&self, index: u32) -> Option<Signature> {
-        self.signatures.get(index as usize).copied()
+    pub(crate) fn get_signature(&self, index: u32) -> Option<DedupFuncType> {
+        self.func_types.get(index as usize).copied()
     }
 
     /// Returns the value exported to the given `name` if any.
@@ -183,9 +183,12 @@ impl InstanceEntityBuilder {
         self.instance.funcs.push(func);
     }
 
-    /// Pushes a new [`Signature`] to the [`InstanceEntity`] under construction.
-    pub(crate) fn push_signature(&mut self, signature: Signature) {
-        self.instance.signatures.push(signature);
+    /// Pushes a new deduplicated [`FuncType`] to the [`InstanceEntity`]
+    /// under construction.
+    ///
+    /// [`FuncType`]: [`crate::FuncType`]
+    pub(crate) fn push_func_type(&mut self, func_type: DedupFuncType) {
+        self.instance.func_types.push(func_type);
     }
 
     /// Pushes a new [`Extern`] under the given `name` to the [`InstanceEntity`] under construction.
@@ -297,7 +300,7 @@ impl Instance {
     /// # Panics
     ///
     /// Panics if `store` does not own this [`Instance`].
-    pub(crate) fn get_signature(&self, store: impl AsContext, index: u32) -> Option<Signature> {
+    pub(crate) fn get_signature(&self, store: impl AsContext, index: u32) -> Option<DedupFuncType> {
         store
             .as_context()
             .store

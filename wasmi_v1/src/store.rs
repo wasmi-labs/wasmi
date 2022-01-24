@@ -1,10 +1,11 @@
 use super::{
-    Arena,
-    DedupArena,
+    arena::Arena,
+    engine::DedupFuncType,
     Engine,
     Func,
     FuncEntity,
     FuncIdx,
+    FuncType,
     Global,
     GlobalEntity,
     GlobalIdx,
@@ -14,17 +15,12 @@ use super::{
     Memory,
     MemoryEntity,
     MemoryIdx,
-    Signature,
-    SignatureEntity,
-    SignatureIdx,
     Table,
     TableEntity,
     TableIdx,
 };
-use core::{
-    fmt,
-    sync::atomic::{AtomicUsize, Ordering},
-};
+use crate::{GuardedEntity, Index};
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 /// A unique store index.
 ///
@@ -34,40 +30,28 @@ use core::{
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct StoreIdx(usize);
 
+impl Index for StoreIdx {
+    fn into_usize(self) -> usize {
+        self.0
+    }
+
+    fn from_usize(value: usize) -> Self {
+        Self(value)
+    }
+}
+
+impl StoreIdx {
+    /// Returns a new unique [`StoreIdx`].
+    fn new() -> Self {
+        /// A static store index counter.
+        static CURRENT_STORE_IDX: AtomicUsize = AtomicUsize::new(0);
+        let next_idx = CURRENT_STORE_IDX.fetch_add(1, Ordering::AcqRel);
+        Self(next_idx)
+    }
+}
+
 /// A stored entity.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct Stored<Idx> {
-    store_idx: StoreIdx,
-    entity_idx: Idx,
-}
-
-impl<Idx> Stored<Idx> {
-    /// Creates a new store entity.
-    pub fn new(store_idx: StoreIdx, entity_idx: Idx) -> Self {
-        Self {
-            store_idx,
-            entity_idx,
-        }
-    }
-
-    /// Returns the store index of the store entity.
-    pub fn store_index(&self) -> StoreIdx {
-        self.store_idx
-    }
-
-    /// Returns the index of the entity.
-    pub fn entity_index(&self) -> &Idx {
-        &self.entity_idx
-    }
-}
-
-/// Returns the next store index.
-fn next_store_index() -> StoreIdx {
-    /// A static store index counter.
-    static CURRENT_STORE_IDX: AtomicUsize = AtomicUsize::new(0);
-    let next_idx = CURRENT_STORE_IDX.fetch_add(1, Ordering::AcqRel);
-    StoreIdx(next_idx)
-}
+pub type Stored<Idx> = GuardedEntity<StoreIdx, Idx>;
 
 /// The store that owns all data associated to Wasm modules.
 #[derive(Debug)]
@@ -75,9 +59,7 @@ pub struct Store<T> {
     /// The unique store index.
     ///
     /// Used to protect against invalid entity indices.
-    idx: StoreIdx,
-    /// Stored function signatures.
-    signatures: DedupArena<SignatureIdx, SignatureEntity>,
+    store_idx: StoreIdx,
     /// Stored linear memories.
     memories: Arena<MemoryIdx, MemoryEntity>,
     /// Stored tables.
@@ -100,8 +82,7 @@ impl<T> Store<T> {
     /// Creates a new store.
     pub fn new(engine: &Engine, user_state: T) -> Self {
         Self {
-            idx: next_store_index(),
-            signatures: DedupArena::new(),
+            store_idx: StoreIdx::new(),
             memories: Arena::new(),
             tables: Arena::new(),
             globals: Arena::new(),
@@ -132,29 +113,29 @@ impl<T> Store<T> {
         self.user_state
     }
 
-    /// Allocates a new function signature to the store.
-    pub(super) fn alloc_signature(&mut self, signature: SignatureEntity) -> Signature {
-        Signature::from_inner(Stored::new(self.idx, self.signatures.alloc(signature)))
+    /// Allocates a new function type to the store.
+    pub(super) fn alloc_func_type(&mut self, func_type: FuncType) -> DedupFuncType {
+        self.engine.alloc_func_type(func_type)
     }
 
     /// Allocates a new global variable to the store.
     pub(super) fn alloc_global(&mut self, global: GlobalEntity) -> Global {
-        Global::from_inner(Stored::new(self.idx, self.globals.alloc(global)))
+        Global::from_inner(Stored::new(self.store_idx, self.globals.alloc(global)))
     }
 
     /// Allocates a new table to the store.
     pub(super) fn alloc_table(&mut self, table: TableEntity) -> Table {
-        Table::from_inner(Stored::new(self.idx, self.tables.alloc(table)))
+        Table::from_inner(Stored::new(self.store_idx, self.tables.alloc(table)))
     }
 
     /// Allocates a new linear memory to the store.
     pub(super) fn alloc_memory(&mut self, memory: MemoryEntity) -> Memory {
-        Memory::from_inner(Stored::new(self.idx, self.memories.alloc(memory)))
+        Memory::from_inner(Stored::new(self.store_idx, self.memories.alloc(memory)))
     }
 
     /// Allocates a new Wasm or host function to the store.
     pub(super) fn alloc_func(&mut self, func: FuncEntity<T>) -> Func {
-        Func::from_inner(Stored::new(self.idx, self.funcs.alloc(func)))
+        Func::from_inner(Stored::new(self.store_idx, self.funcs.alloc(func)))
     }
 
     /// Allocates a new [`Instance`] to the store.
@@ -167,7 +148,7 @@ impl<T> Store<T> {
     /// will cause an execution panic.
     pub(super) fn alloc_instance(&mut self) -> Instance {
         Instance::from_inner(Stored::new(
-            self.idx,
+            self.store_idx,
             self.instances.alloc(InstanceEntity::uninitialized()),
         ))
     }
@@ -211,30 +192,24 @@ impl<T> Store<T> {
     /// If the stored entity does not originate from this store.
     fn unwrap_index<Idx>(&self, stored: Stored<Idx>) -> Idx
     where
-        Idx: fmt::Debug,
+        Idx: Index,
     {
-        assert_eq!(
-            self.idx,
-            stored.store_index(),
-            "tried to access entity {:?} of store {:?} at store {:?}",
-            stored.entity_index(),
-            stored.store_index(),
-            self.idx,
-        );
-        stored.entity_idx
+        stored.entity_index(self.store_idx).unwrap_or_else(|| {
+            panic!(
+                "encountered foreign entity in store: {}",
+                self.store_idx.into_usize()
+            )
+        })
     }
 
     /// Returns a shared reference to the associated entity of the signature.
     ///
     /// # Panics
     ///
-    /// - If the signature does not originate from this store.
-    /// - If the signature cannot be resolved to its entity.
-    pub(super) fn resolve_signature(&self, signature: Signature) -> &SignatureEntity {
-        let entity_index = self.unwrap_index(signature.into_inner());
-        self.signatures
-            .get(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored signature: {:?}", entity_index))
+    /// - If the deduplicated function type does not originate from this store.
+    /// - If the deduplicated function type cannot be resolved to its entity.
+    pub(super) fn resolve_func_type(&self, func_type: DedupFuncType) -> FuncType {
+        self.engine.resolve_func_type(func_type)
     }
 
     /// Returns a shared reference to the associated entity of the global variable.
