@@ -1,5 +1,5 @@
 use super::{Module, ModuleBuilder, ModuleError, Read};
-use crate::signature::SignatureEntity;
+use crate::FuncType;
 use wasmi_core::ValueType;
 use wasmparser::{
     Chunk,
@@ -281,11 +281,11 @@ impl ModuleParser {
     }
 }
 
-/// Creates a [`SignatureEntity`] from the given [`wasmparser::FuncType`].
+/// Creates a [`FuncType`] from the given [`wasmparser::FuncType`].
 ///
 /// Returns `None` if the [`wasmparser::FuncType`] has parameter or result types
 /// that are not supported by `wasmi`.
-fn func_type_from_wasmparser(func: &wasmparser::FuncType) -> Option<SignatureEntity> {
+fn func_type_from_wasmparser(func: &wasmparser::FuncType) -> Option<FuncType> {
     /// Returns `true` if the given [`wasmparser::Type`] is supported by `wasmi`.
     fn is_supported_value_type(value_type: &wasmparser::Type) -> bool {
         value_type_from_wasmparser(value_type).is_some()
@@ -313,7 +313,7 @@ fn func_type_from_wasmparser(func: &wasmparser::FuncType) -> Option<SignatureEnt
     }
     let params = func.params.iter().map(extract_value_type);
     let results = func.returns.iter().map(extract_value_type);
-    let func_type = SignatureEntity::new(params, results);
+    let func_type = FuncType::new(params, results);
     Some(func_type)
 }
 

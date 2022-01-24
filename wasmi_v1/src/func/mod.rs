@@ -10,16 +10,15 @@ pub use self::{
     typed_func::{TypedFunc, WasmParams, WasmResults},
 };
 use super::{
-    engine::{FuncBody, FuncParams, FuncResults},
+    engine::{DedupFuncType, FuncBody, FuncParams, FuncResults},
     AsContext,
     AsContextMut,
     Index,
     Instance,
-    Signature,
     StoreContext,
     Stored,
 };
-use crate::{Error, Trap, Value};
+use crate::{Error, FuncType, Trap, Value};
 use alloc::sync::Arc;
 use core::{fmt, fmt::Debug};
 
@@ -56,7 +55,7 @@ impl<T> Clone for FuncEntity<T> {
 
 impl<T> FuncEntity<T> {
     /// Creates a new Wasm function from the given raw parts.
-    pub(crate) fn new_wasm(signature: Signature, body: FuncBody, instance: Instance) -> Self {
+    pub(crate) fn new_wasm(signature: DedupFuncType, body: FuncBody, instance: Instance) -> Self {
         Self {
             internal: FuncEntityInternal::Wasm(WasmFuncEntity::new(signature, body, instance)),
         }
@@ -83,7 +82,7 @@ impl<T> FuncEntity<T> {
     }
 
     /// Returns the signature of the Wasm function.
-    pub fn signature(&self) -> Signature {
+    pub fn signature(&self) -> DedupFuncType {
         match self.as_internal() {
             FuncEntityInternal::Wasm(func) => func.signature(),
             FuncEntityInternal::Host(func) => func.signature(),
@@ -114,14 +113,14 @@ impl<T> Clone for FuncEntityInternal<T> {
 /// A Wasm function instance.
 #[derive(Debug, Clone)]
 pub(crate) struct WasmFuncEntity {
-    signature: Signature,
+    signature: DedupFuncType,
     body: FuncBody,
     instance: Instance,
 }
 
 impl WasmFuncEntity {
     /// Creates a new Wasm function from the given raw parts.
-    pub fn new(signature: Signature, body: FuncBody, instance: Instance) -> Self {
+    pub fn new(signature: DedupFuncType, body: FuncBody, instance: Instance) -> Self {
         Self {
             signature,
             body,
@@ -130,7 +129,7 @@ impl WasmFuncEntity {
     }
 
     /// Returns the signature of the Wasm function.
-    pub fn signature(&self) -> Signature {
+    pub fn signature(&self) -> DedupFuncType {
         self.signature
     }
 
@@ -147,7 +146,7 @@ impl WasmFuncEntity {
 
 /// A host function instance.
 pub(crate) struct HostFuncEntity<T> {
-    signature: Signature,
+    signature: DedupFuncType,
     trampoline: HostFuncTrampoline<T>,
 }
 
@@ -201,7 +200,7 @@ impl<T> HostFuncEntity<T> {
         func: impl IntoFunc<T, Params, Results>,
     ) -> Self {
         let (signature, trampoline) = func.into_func();
-        let signature = ctx.as_context_mut().store.alloc_signature(signature);
+        let signature = ctx.as_context_mut().store.alloc_func_type(signature);
         Self {
             signature,
             trampoline,
@@ -209,7 +208,7 @@ impl<T> HostFuncEntity<T> {
     }
 
     /// Returns the signature of the host function.
-    pub fn signature(&self) -> Signature {
+    pub fn signature(&self) -> DedupFuncType {
         self.signature
     }
 
@@ -253,8 +252,15 @@ impl Func {
     }
 
     /// Returns the signature of the function.
-    pub fn signature(&self, ctx: impl AsContext) -> Signature {
+    pub(crate) fn signature(&self, ctx: impl AsContext) -> DedupFuncType {
         ctx.as_context().store.resolve_func(*self).signature()
+    }
+
+    /// Returns the function type of the [`Func`].
+    pub fn func_type(&self, ctx: impl AsContext) -> FuncType {
+        ctx.as_context()
+            .store
+            .resolve_func_type(self.signature(&ctx))
     }
 
     /// Calls the Wasm or host function with the given inputs.
@@ -281,7 +287,8 @@ impl Func {
         // types and that the given output slice matches the expected length.
         //
         // These checks can be avoided using the [`TypedFunc`] API.
-        let (expected_inputs, expected_outputs) = self.signature(&ctx).inputs_outputs(&ctx);
+        let func_type = self.func_type(&ctx);
+        let (expected_inputs, expected_outputs) = func_type.params_results();
         let actual_inputs = inputs.iter().map(|value| value.value_type());
         if expected_inputs.iter().copied().ne(actual_inputs) {
             return Err(FuncError::MismatchingParameters { func: *self }).map_err(Into::into);

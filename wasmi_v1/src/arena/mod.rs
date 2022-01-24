@@ -5,11 +5,12 @@
 //! implementation.
 
 mod dedup;
+mod guarded;
 
 #[cfg(test)]
 mod tests;
 
-pub use self::dedup::DedupArena;
+pub use self::{dedup::DedupArena, guarded::GuardedEntity};
 use alloc::vec::Vec;
 use core::{
     iter,

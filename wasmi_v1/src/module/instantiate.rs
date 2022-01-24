@@ -9,12 +9,14 @@
 
 use super::{
     super::{
+        engine::DedupFuncType,
         errors::{MemoryError, TableError},
         AsContext,
         AsContextMut,
         Error,
         Extern,
         FuncEntity,
+        FuncType,
         Global,
         Instance,
         InstanceEntity,
@@ -22,8 +24,6 @@ use super::{
         Memory,
         MemoryType,
         Mutability,
-        Signature,
-        SignatureEntity,
         Table,
         TableType,
     },
@@ -51,9 +51,9 @@ pub enum InstantiationError {
     /// Caused when a function has a mismatching signature.
     SignatureMismatch {
         /// The expected function signature for the function import.
-        expected: Signature,
+        expected: DedupFuncType,
         /// The actual function signature for the function import.
-        actual: Signature,
+        actual: DedupFuncType,
     },
     /// Occurs when an imported table does not satisfy the required table type.
     Table(TableError),
@@ -262,7 +262,7 @@ impl Module {
         let handle = context.as_context_mut().store.alloc_instance();
         let mut builder = InstanceEntity::build();
 
-        self.extract_signatures(&mut context, &mut builder);
+        self.extract_func_types(&mut context, &mut builder);
         self.extract_imports(&mut context, &mut builder, externals)?;
         self.extract_functions(&mut context, &mut builder, handle);
         self.extract_tables(&mut context, &mut builder);
@@ -283,12 +283,14 @@ impl Module {
         })
     }
 
-    /// Extracts the Wasm function signatures from the module and stores them into the [`Store`].
+    /// Extracts the Wasm function signatures from the
+    /// module and stores them into the [`Store`].
     ///
-    /// This also stores [`Signature`] references into the [`Instance`] under construction.
+    /// This also stores deduplicated [`FuncType`] references into the
+    /// [`Instance`] under construction.
     ///
     /// [`Store`]: struct.Store.html
-    fn extract_signatures(
+    fn extract_func_types(
         &self,
         context: &mut impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
@@ -312,8 +314,8 @@ impl Module {
             let signature = context
                 .as_context_mut()
                 .store
-                .alloc_signature(SignatureEntity::new(inputs, outputs));
-            builder.push_signature(signature);
+                .alloc_func_type(FuncType::new(inputs, outputs));
+            builder.push_func_type(signature);
         }
     }
 
