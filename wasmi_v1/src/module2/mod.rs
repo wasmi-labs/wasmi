@@ -1,7 +1,7 @@
 mod builder;
 mod error;
-mod read;
 mod parser;
+mod read;
 
 use self::{builder::ModuleBuilder, read::ReadError};
 pub use self::{error::ModuleError, read::Read};
