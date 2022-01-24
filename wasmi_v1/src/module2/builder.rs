@@ -16,6 +16,16 @@ impl Default for ModuleBuilder {
 }
 
 impl ModuleBuilder {
+    /// Reserves enough space for at least `hint` [`FuncType`] instances
+    /// in the [`Module`] under construction.
+    ///
+    /// # Note
+    ///
+    /// This procedure serves as a memory allocation optimization.
+    pub fn reserve_func_types(&mut self, hint: u32) {
+        self.func_types.reserve_exact(hint as usize);
+    }
+
     /// Pushes the given [`FuncType`] to the [`Module`] under construction.
     ///
     /// Returns the raw `u32` index to the pushed [`FuncType`].

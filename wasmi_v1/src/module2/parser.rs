@@ -159,6 +159,7 @@ impl ModuleParser {
     fn process_types(&mut self, mut section: TypeSectionReader) -> Result<(), ModuleError> {
         self.validator.type_section(&section)?;
         let len_types = section.get_count();
+        self.builder.reserve_func_types(len_types);
         for _ in 0..len_types {
             match section.read()? {
                 wasmparser::TypeDef::Func(func_type) => match func_type_from_wasmparser(&func_type)
