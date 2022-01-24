@@ -9,6 +9,7 @@
 
 use super::{
     super::{
+        engine::Signature,
         errors::{MemoryError, TableError},
         AsContext,
         AsContextMut,
@@ -23,7 +24,6 @@ use super::{
         Memory,
         MemoryType,
         Mutability,
-        Signature,
         Table,
         TableType,
     },

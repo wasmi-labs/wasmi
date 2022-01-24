@@ -1,6 +1,6 @@
 use super::{
-    Arena,
-    DedupArena,
+    arena::Arena,
+    engine::Signature,
     Engine,
     Func,
     FuncEntity,
@@ -15,8 +15,6 @@ use super::{
     Memory,
     MemoryEntity,
     MemoryIdx,
-    Signature,
-    SignatureIdx,
     Table,
     TableEntity,
     TableIdx,
@@ -62,8 +60,6 @@ pub struct Store<T> {
     ///
     /// Used to protect against invalid entity indices.
     store_idx: StoreIdx,
-    /// Stored function signatures.
-    signatures: DedupArena<SignatureIdx, FuncType>,
     /// Stored linear memories.
     memories: Arena<MemoryIdx, MemoryEntity>,
     /// Stored tables.
@@ -87,7 +83,6 @@ impl<T> Store<T> {
     pub fn new(engine: &Engine, user_state: T) -> Self {
         Self {
             store_idx: StoreIdx::new(),
-            signatures: DedupArena::new(),
             memories: Arena::new(),
             tables: Arena::new(),
             globals: Arena::new(),
@@ -120,10 +115,7 @@ impl<T> Store<T> {
 
     /// Allocates a new function type to the store.
     pub(super) fn alloc_func_type(&mut self, func_type: FuncType) -> Signature {
-        Signature::from_inner(Stored::new(
-            self.store_idx,
-            self.signatures.alloc(func_type),
-        ))
+        self.engine.alloc_func_type(func_type)
     }
 
     /// Allocates a new global variable to the store.
@@ -214,13 +206,10 @@ impl<T> Store<T> {
     ///
     /// # Panics
     ///
-    /// - If the signature does not originate from this store.
-    /// - If the signature cannot be resolved to its entity.
-    pub(super) fn resolve_func_type(&self, func_type: Signature) -> &FuncType {
-        let entity_index = self.unwrap_index(func_type.into_inner());
-        self.signatures
-            .get(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored function type: {:?}", entity_index))
+    /// - If the deduplicated function type does not originate from this store.
+    /// - If the deduplicated function type cannot be resolved to its entity.
+    pub(super) fn resolve_func_type(&self, func_type: Signature) -> FuncType {
+        self.engine.resolve_func_type(func_type)
     }
 
     /// Returns a shared reference to the associated entity of the global variable.

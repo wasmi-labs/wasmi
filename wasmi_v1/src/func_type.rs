@@ -1,4 +1,3 @@
-use super::{Index, Store, StoreContext, Stored};
 use crate::ValueType;
 use alloc::{sync::Arc, vec::Vec};
 
@@ -40,6 +39,10 @@ impl FuncType {
         &self.params_results[..self.len_params]
     }
 
+    // pub fn into_params(self) -> impl ExactSizeIterator<Item = ValueType> + 'static {
+    //     self.params_results[..self.len_params].iter().copied()
+    // }
+
     /// Returns the result types of the function type.
     pub fn results(&self) -> &[ValueType] {
         &self.params_results[self.len_params..]
@@ -48,75 +51,5 @@ impl FuncType {
     /// Returns the pair of parameter and result types of the function type.
     pub(crate) fn params_results(&self) -> (&[ValueType], &[ValueType]) {
         self.params_results.split_at(self.len_params)
-    }
-}
-
-/// A raw index to a function signature entity.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct SignatureIdx(usize);
-
-impl Index for SignatureIdx {
-    fn into_usize(self) -> usize {
-        self.0
-    }
-
-    fn from_usize(value: usize) -> Self {
-        Self(value)
-    }
-}
-
-/// A Wasm function signature reference.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(transparent)]
-pub struct Signature(Stored<SignatureIdx>);
-
-impl Signature {
-    /// Creates a new function signature reference.
-    pub(super) fn from_inner(stored: Stored<SignatureIdx>) -> Self {
-        Self(stored)
-    }
-
-    /// Returns the underlying stored representation.
-    pub(super) fn into_inner(self) -> Stored<SignatureIdx> {
-        self.0
-    }
-
-    /// Creates a new function signature to the store.
-    pub fn new<T, I, O>(ctx: &mut Store<T>, inputs: I, outputs: O) -> Self
-    where
-        I: IntoIterator<Item = ValueType>,
-        O: IntoIterator<Item = ValueType>,
-    {
-        ctx.alloc_func_type(FuncType::new(inputs, outputs))
-    }
-
-    /// Returns the parameters of the function type.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `ctx` does not own this [`Signature`].
-    pub fn params<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a [ValueType] {
-        ctx.into().store.resolve_func_type(*self).params()
-    }
-
-    /// Returns the results of the function signature.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `ctx` does not own this [`Signature`].
-    pub fn results<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a [ValueType] {
-        ctx.into().store.resolve_func_type(*self).results()
-    }
-
-    /// Returns the parameter and result types of the function type.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `ctx` does not own this [`Signature`].
-    pub fn params_results<'a, T: 'a>(
-        &self,
-        ctx: impl Into<StoreContext<'a, T>>,
-    ) -> (&'a [ValueType], &'a [ValueType]) {
-        ctx.into().store.resolve_func_type(*self).params_results()
     }
 }

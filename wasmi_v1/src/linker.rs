@@ -6,10 +6,9 @@ use super::{
     InstancePre,
     MemoryType,
     Module,
-    Signature,
     TableType,
 };
-use crate::ValueType;
+use crate::{FuncType, ValueType};
 use alloc::{
     collections::{btree_map::Entry, BTreeMap},
     string::{String, ToString},
@@ -49,7 +48,7 @@ pub enum LinkerError {
         /// The expected function type.
         expected: pwasm::FunctionType,
         /// The actual function signature found.
-        actual: Signature,
+        actual: FuncType,
     },
     /// Occurs when an imported table does not satisfy the required table type.
     Table(TableError),
@@ -410,10 +409,9 @@ impl<T> Linker<T> {
                         .iter()
                         .copied()
                         .map(ValueType::from_elements);
-                    let signature = func.signature(context.as_context());
-                    if expected_inputs.ne(signature.params(context.as_context()).iter().copied())
-                        || expected_outputs
-                            .ne(signature.results(context.as_context()).iter().copied())
+                    let signature = func.func_type(context.as_context());
+                    if expected_inputs.ne(signature.params().iter().copied())
+                        || expected_outputs.ne(signature.results().iter().copied())
                     {
                         return Err(LinkerError::SignatureMismatch {
                             import: import.clone(),

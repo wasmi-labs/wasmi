@@ -5,6 +5,7 @@ pub mod call_stack;
 pub mod code_map;
 pub mod exec_context;
 mod func_args;
+mod func_types;
 pub mod inst_builder;
 mod traits;
 pub mod value_stack;
@@ -21,12 +22,23 @@ use self::{
     call_stack::{CallStack, FunctionFrame},
     code_map::{CodeMap, ResolvedFuncBody},
     exec_context::ExecutionContext,
+    func_types::FuncTypeRegistry,
     value_stack::{FromStackEntry, StackEntry, ValueStack},
 };
 use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func};
-use crate::{func::HostFuncEntity, Instance, Trap, ValueType};
+use crate::{
+    arena::{GuardedEntity, Index},
+    func::HostFuncEntity,
+    FuncType,
+    Instance,
+    Trap,
+};
 use alloc::sync::Arc;
-use core::cmp;
+use core::{
+    cmp,
+    sync::atomic::{AtomicUsize, Ordering},
+};
+pub use func_types::Signature;
 use spin::mutex::Mutex;
 
 /// Maximum number of bytes on the value stack.
@@ -43,6 +55,37 @@ pub enum FunctionExecutionOutcome {
     /// The function called another function.
     NestedCall(Func),
 }
+
+/// A unique engine index.
+///
+/// # Note
+///
+/// Used to protect against invalid entity indices.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct EngineIdx(usize);
+
+impl Index for EngineIdx {
+    fn into_usize(self) -> usize {
+        self.0
+    }
+
+    fn from_usize(value: usize) -> Self {
+        Self(value)
+    }
+}
+
+impl EngineIdx {
+    /// Returns a new unique [`EngineIdx`].
+    fn new() -> Self {
+        /// A static store index counter.
+        static CURRENT_STORE_IDX: AtomicUsize = AtomicUsize::new(0);
+        let next_idx = CURRENT_STORE_IDX.fetch_add(1, Ordering::AcqRel);
+        Self(next_idx)
+    }
+}
+
+/// An entity owned by the [`Engine`].
+type Guarded<Idx> = GuardedEntity<EngineIdx, Idx>;
 
 /// The `wasmi` interpreter.
 ///
@@ -100,6 +143,26 @@ impl Engine {
         Self {
             inner: Arc::new(Mutex::new(EngineInner::new(config))),
         }
+    }
+
+    /// Allocates a new function type to the engine.
+    pub(super) fn alloc_func_type(&mut self, func_type: FuncType) -> Signature {
+        self.inner.lock().func_types.alloc_func_type(func_type)
+    }
+
+    /// Resolves a deduplicated function type into a [`FuncType`] entity.
+    ///
+    /// # Panics
+    ///
+    /// - If the deduplicated function type is not owned by the engine.
+    /// - If the deduplicated function type cannot be resolved to its entity.
+    pub(super) fn resolve_func_type(&self, func_type: Signature) -> FuncType {
+        // Note: The clone operation on FuncType is intentionally cheap.
+        self.inner
+            .lock()
+            .func_types
+            .resolve_func_type(func_type)
+            .clone()
     }
 
     /// Allocates the instructions of a Wasm function body to the [`Engine`].
@@ -182,16 +245,64 @@ pub struct EngineInner {
     call_stack: CallStack,
     /// Stores all Wasm function bodies that the interpreter is aware of.
     code_map: CodeMap,
+    /// Deduplicated function types.
+    ///
+    /// # Note
+    ///
+    /// The engine deduplicates function types to make the equality
+    /// comparison very fast. This helps to speed up indirect calls.
+    func_types: FuncTypeRegistry,
 }
 
 impl EngineInner {
+    /// Creates a new [`EngineInner`] with the given [`Config`].
     pub fn new(config: &Config) -> Self {
+        let engine_idx = EngineIdx::new();
         Self {
             value_stack: ValueStack::new(64, config.value_stack_limit),
             call_stack: CallStack::new(config.call_stack_limit),
             code_map: CodeMap::default(),
+            func_types: FuncTypeRegistry::new(engine_idx),
         }
     }
+
+    // /// Unpacks the entity and checks if it is owned by the engine.
+    // ///
+    // /// # Panics
+    // ///
+    // /// If the guarded entity is not owned by the engine.
+    // fn unwrap_index<Idx>(&self, stored: Guarded<Idx>) -> Idx
+    // where
+    //     Idx: Index,
+    // {
+    //     stored.entity_index(self.engine_idx).unwrap_or_else(|| {
+    //         panic!(
+    //             "encountered foreign entity in engine: {}",
+    //             self.engine_idx.into_usize()
+    //         )
+    //     })
+    // }
+
+    // /// Allocates a new function type to the engine.
+    // pub(super) fn alloc_func_type(&mut self, func_type: FuncType) -> Signature {
+    //     Signature::from_inner(Guarded::new(
+    //         self.engine_idx,
+    //         self.func_types.alloc(func_type),
+    //     ))
+    // }
+
+    // /// Resolves a deduplicated function type into a [`FuncType`] entity.
+    // ///
+    // /// # Panics
+    // ///
+    // /// - If the deduplicated function type is not owned by the engine.
+    // /// - If the deduplicated function type cannot be resolved to its entity.
+    // pub(super) fn resolve_func_type(&self, func_type: Signature) -> &FuncType {
+    //     let entity_index = self.unwrap_index(func_type.into_inner());
+    //     self.func_types
+    //         .get(entity_index)
+    //         .unwrap_or_else(|| panic!("failed to resolve stored function type: {:?}", entity_index))
+    // }
 
     /// Allocates the instructions of a Wasm function body to the [`Engine`].
     ///
@@ -241,8 +352,7 @@ impl EngineInner {
                 signature
             }
         };
-        let result_types = signature.results(&ctx);
-        let results = self.write_results_back(result_types, results);
+        let results = self.write_results_back(signature, results);
         Ok(results)
     }
 
@@ -269,12 +379,13 @@ impl EngineInner {
     /// - If the `results` buffer length does not match the remaining amount of stack values.
     fn write_results_back<Results>(
         &mut self,
-        result_types: &[ValueType],
+        func_type: Signature,
         results: Results,
     ) -> <Results as CallResults>::Results
     where
         Results: CallResults,
     {
+        let result_types = self.func_types.resolve_func_type(func_type).results();
         assert_eq!(
             self.value_stack.len(),
             results.len_results(),
@@ -362,7 +473,10 @@ impl EngineInner {
     {
         // The host function signature is required for properly
         // adjusting, inspecting and manipulating the value stack.
-        let (input_types, output_types) = host_func.signature().params_results(ctx.as_context());
+        let (input_types, output_types) = self
+            .func_types
+            .resolve_func_type(host_func.signature())
+            .params_results();
         // In case the host function returns more values than it takes
         // we are required to extend the value stack.
         let len_inputs = input_types.len();

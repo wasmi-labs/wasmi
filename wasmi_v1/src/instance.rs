@@ -1,11 +1,11 @@
 use super::{
+    engine::Signature,
     AsContext,
     Extern,
     Func,
     Global,
     Index,
     Memory,
-    Signature,
     StoreContext,
     Stored,
     Table,

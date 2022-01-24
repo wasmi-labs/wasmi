@@ -42,10 +42,9 @@ pub mod errors {
 }
 
 use self::{
-    arena::{Arena, DedupArena, GuardedEntity, Index},
+    arena::{GuardedEntity, Index},
     engine::{DropKeep, FuncBody, InstructionIdx, InstructionsBuilder, LabelIdx, Target},
     func::{FuncEntity, FuncEntityInternal, FuncIdx},
-    func_type::{Signature, SignatureIdx},
     global::{GlobalEntity, GlobalIdx},
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
     memory::{MemoryEntity, MemoryIdx},

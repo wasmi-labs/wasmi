@@ -10,12 +10,11 @@ pub use self::{
     typed_func::{TypedFunc, WasmParams, WasmResults},
 };
 use super::{
-    engine::{FuncBody, FuncParams, FuncResults},
+    engine::{FuncBody, FuncParams, FuncResults, Signature},
     AsContext,
     AsContextMut,
     Index,
     Instance,
-    Signature,
     StoreContext,
     Stored,
 };
@@ -262,7 +261,6 @@ impl Func {
         ctx.as_context()
             .store
             .resolve_func_type(self.signature(&ctx))
-            .clone()
     }
 
     /// Calls the Wasm or host function with the given inputs.
@@ -289,7 +287,8 @@ impl Func {
         // types and that the given output slice matches the expected length.
         //
         // These checks can be avoided using the [`TypedFunc`] API.
-        let (expected_inputs, expected_outputs) = self.signature(&ctx).params_results(&ctx);
+        let func_type = self.func_type(&ctx);
+        let (expected_inputs, expected_outputs) = func_type.params_results();
         let actual_inputs = inputs.iter().map(|value| value.value_type());
         if expected_inputs.iter().copied().ne(actual_inputs) {
             return Err(FuncError::MismatchingParameters { func: *self }).map_err(Into::into);
