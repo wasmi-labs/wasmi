@@ -9,7 +9,6 @@ use self::{
     builder::ModuleBuilder,
     import::{Import, ImportKind},
     read::ReadError,
-    utils::value_type_from_wasmparser,
 };
 pub use self::{error::ModuleError, read::Read};
 

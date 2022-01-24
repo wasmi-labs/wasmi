@@ -1,6 +1,4 @@
 use super::{Module, ModuleBuilder, ModuleError, Read};
-use crate::FuncType;
-use wasmi_core::ValueType;
 use wasmparser::{
     Chunk,
     DataSectionReader,
@@ -177,8 +175,23 @@ impl ModuleParser {
         Ok(())
     }
 
-    fn process_imports(&mut self, section: ImportSectionReader) -> Result<(), ModuleError> {
+    /// Processes the Wasm import section.
+    ///
+    /// # Note
+    ///
+    /// This extracts all imports into the [`Module`] under construction.
+    ///
+    /// # Errors
+    ///
+    /// If an unsupported import declaration is encountered.
+    fn process_imports(&mut self, mut section: ImportSectionReader) -> Result<(), ModuleError> {
         self.validator.import_section(&section)?;
+        let len_imports = section.get_count();
+        self.builder.reserve_imports(len_imports);
+        for _ in 0..len_imports {
+            let import = section.read()?.try_into()?;
+            self.builder.push_import(import);
+        }
         Ok(())
     }
 
