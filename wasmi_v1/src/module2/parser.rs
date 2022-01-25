@@ -1,4 +1,4 @@
-use super::{Module, ModuleBuilder, ModuleError, Read};
+use super::{import::FuncTypeIdx, Module, ModuleBuilder, ModuleError, Read};
 use wasmparser::{
     Chunk,
     DataSectionReader,
@@ -108,6 +108,13 @@ impl ModuleParser {
         Ok(reached_end)
     }
 
+    /// Processes the `wasmparser` payload.
+    ///
+    /// # Errors
+    ///
+    /// - If Wasm validation of the payload fails.
+    /// - If some unsupported Wasm proposal definition is encountered.
+    /// - If `wasmi` limits are exceeded.
     fn process_payload(&mut self, payload: Payload) -> Result<bool, ModuleError> {
         match payload {
             Payload::Version { num, range } => self.process_version(num, range),
@@ -157,21 +164,12 @@ impl ModuleParser {
     fn process_types(&mut self, mut section: TypeSectionReader) -> Result<(), ModuleError> {
         self.validator.type_section(&section)?;
         let len_types = section.get_count();
-        self.builder.reserve_func_types(len_types);
-        for _ in 0..len_types {
-            match section.read()? {
-                wasmparser::TypeDef::Func(func_type) => {
-                    let func_type = func_type.try_into()?;
-                    self.builder.push_func_type(func_type);
-                }
-                wasmparser::TypeDef::Instance(instance_type) => {
-                    return Err(ModuleError::unsupported(instance_type))
-                }
-                wasmparser::TypeDef::Module(module_type) => {
-                    return Err(ModuleError::unsupported(module_type))
-                }
-            };
-        }
+        let func_types = (0..len_types).map(|_| match section.read()? {
+            wasmparser::TypeDef::Func(ty) => ty.try_into(),
+            wasmparser::TypeDef::Instance(ty) => Err(ModuleError::unsupported(ty)),
+            wasmparser::TypeDef::Module(ty) => Err(ModuleError::unsupported(ty)),
+        });
+        self.builder.push_func_types(func_types)?;
         Ok(())
     }
 
@@ -183,15 +181,13 @@ impl ModuleParser {
     ///
     /// # Errors
     ///
-    /// If an unsupported import declaration is encountered.
+    /// - If an import fails to validate.
+    /// - If an unsupported import declaration is encountered.
     fn process_imports(&mut self, mut section: ImportSectionReader) -> Result<(), ModuleError> {
         self.validator.import_section(&section)?;
         let len_imports = section.get_count();
-        self.builder.reserve_imports(len_imports);
-        for _ in 0..len_imports {
-            let import = section.read()?.try_into()?;
-            self.builder.push_import(import);
-        }
+        let imports = (0..len_imports).map(|_| section.read()?.try_into());
+        self.builder.push_imports(imports)?;
         Ok(())
     }
 
@@ -223,8 +219,20 @@ impl ModuleParser {
             .map_err(Into::into)
     }
 
-    fn process_functions(&mut self, section: FunctionSectionReader) -> Result<(), ModuleError> {
+    /// Process module function declarations.
+    ///
+    /// # Note
+    ///
+    /// This extracts all function declarations into the [`Module`] under construction.
+    ///
+    /// # Errors
+    ///
+    /// - If a function declaration fails to validate.
+    fn process_functions(&mut self, mut section: FunctionSectionReader) -> Result<(), ModuleError> {
         self.validator.function_section(&section)?;
+        let len_funcs = section.get_count();
+        let funcs = (0..len_funcs).map(|_| section.read().map(FuncTypeIdx).map_err(Into::into));
+        self.builder.push_funcs(funcs)?;
         Ok(())
     }
 
