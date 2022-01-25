@@ -2,11 +2,17 @@ use crate::{GlobalType, MemoryType, ModuleError, TableType};
 use wasmparser::ImportSectionEntryType;
 
 /// A [`Module`] import item.
+///
+/// [`Module`]: [`super::Module`]
 #[derive(Debug)]
 pub struct Import {
     /// The name of the [`Module`] that defines the imported item.
+///
+/// [`Module`]: [`super::Module`]
     module: Box<str>,
     /// The optional name of the imported item within the [`Module`] namespace.
+///
+/// [`Module`]: [`super::Module`]
     field: Option<Box<str>>,
     /// The kind of the imported item.
     kind: ImportKind,
@@ -48,11 +54,15 @@ impl Import {
     }
 
     /// Returns the name of the [`Module`] that defines the imported item.
+///
+/// [`Module`]: [`super::Module`]
     pub fn module_name(&self) -> &str {
         &self.module
     }
 
     /// Returns the optional name of the imported item within the [`Module`] namespace.
+///
+/// [`Module`]: [`super::Module`]
     pub fn field_name(&self) -> Option<&str> {
         self.field.as_deref()
     }
@@ -64,6 +74,8 @@ impl Import {
 }
 
 /// The kind of a [`Module`] import.
+///
+/// [`Module`]: [`super::Module`]
 #[derive(Debug)]
 pub enum ImportKind {
     /// An imported function.
@@ -82,6 +94,9 @@ pub enum ImportKind {
 ///
 /// This generally refers to a [`FuncType`] within the same [`Module`]
 /// and is used by both function declarations and function imports.
+///
+/// [`Module`]: [`super::Module`]
+/// [`FuncType`]: [`crate::FuncType`]
 #[derive(Debug, Copy, Clone)]
 pub struct FuncTypeIdx(pub(super) u32);
 

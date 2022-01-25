@@ -2,10 +2,14 @@ use super::InitExpr;
 use crate::{GlobalType, ModuleError};
 
 /// The index of a global variable within a [`Module`].
+///
+/// [`Module`]: [`super::Module`]
 #[derive(Debug)]
 pub struct GlobalIdx(pub(super) u32);
 
 /// A global variable definition within a [`Module`].
+///
+/// [`Module`]: [`super::Module`]
 #[derive(Debug)]
 pub struct Global {
     /// The type of the global variable.
