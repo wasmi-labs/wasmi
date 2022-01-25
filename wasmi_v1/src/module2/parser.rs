@@ -225,7 +225,7 @@ impl ModuleParser {
     ///
     /// # Errors
     ///
-    /// - If a function declaration fails to validate.
+    /// If a function declaration fails to validate.
     fn process_functions(&mut self, mut section: FunctionSectionReader) -> Result<(), ModuleError> {
         self.validator.function_section(&section)?;
         let len_funcs = section.get_count();
@@ -242,7 +242,7 @@ impl ModuleParser {
     ///
     /// # Errors
     ///
-    /// - If a table declaration fails to validate.
+    /// If a table declaration fails to validate.
     fn process_tables(&mut self, mut section: TableSectionReader) -> Result<(), ModuleError> {
         self.validator.table_section(&section)?;
         let len_tables = section.get_count();
@@ -259,7 +259,7 @@ impl ModuleParser {
     ///
     /// # Errors
     ///
-    /// - If a linear memory declaration fails to validate.
+    /// If a linear memory declaration fails to validate.
     fn process_memories(&mut self, mut section: MemorySectionReader) -> Result<(), ModuleError> {
         self.validator.memory_section(&section)?;
         let len_memories = section.get_count();
@@ -286,7 +286,7 @@ impl ModuleParser {
     ///
     /// # Errors
     ///
-    /// - If a global variable declaration fails to validate.
+    /// If a global variable declaration fails to validate.
     fn process_globals(&mut self, mut section: GlobalSectionReader) -> Result<(), ModuleError> {
         self.validator.global_section(&section)?;
         let len_globals = section.get_count();
@@ -303,7 +303,7 @@ impl ModuleParser {
     ///
     /// # Errors
     ///
-    /// - If an export declaration fails to validate.
+    /// If an export declaration fails to validate.
     fn process_exports(&mut self, mut section: ExportSectionReader) -> Result<(), ModuleError> {
         self.validator.export_section(&section)?;
         let len_exports = section.get_count();
