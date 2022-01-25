@@ -1,4 +1,4 @@
-use super::{import::FuncTypeIdx, Element, Export, FuncIdx, Global, Import, Module};
+use super::{import::FuncTypeIdx, Data, Element, Export, FuncIdx, Global, Import, Module};
 use crate::{FuncType, MemoryType, ModuleError, TableType};
 
 /// A builder for a WebAssembly [`Module`].
@@ -13,6 +13,7 @@ pub struct ModuleBuilder {
     exports: Vec<Export>,
     start: Option<FuncIdx>,
     elements: Vec<Element>,
+    data: Vec<Data>,
 }
 
 impl ModuleBuilder {
@@ -204,6 +205,28 @@ impl ModuleBuilder {
             "tried to initialize module export declarations twice"
         );
         self.elements = elements.into_iter().collect::<Result<Vec<_>, _>>()?;
+        Ok(())
+    }
+
+    /// Pushes the given linear memory data segments to the [`Module`] under construction.
+    ///
+    /// # Errors
+    ///
+    /// If any of the linear memory data segments fail to validate.
+    ///
+    /// # Panics
+    ///
+    /// If this function has already been called on the same [`ModuleBuilder`].
+    pub fn push_data_segments<T>(&mut self, data: T) -> Result<(), ModuleError>
+    where
+        T: IntoIterator<Item = Result<Data, ModuleError>>,
+        T::IntoIter: ExactSizeIterator,
+    {
+        assert!(
+            self.data.is_empty(),
+            "tried to initialize module linear memory data segments twice"
+        );
+        self.data = data.into_iter().collect::<Result<Vec<_>, _>>()?;
         Ok(())
     }
 

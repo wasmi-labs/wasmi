@@ -1,0 +1,45 @@
+use super::{InitExpr, MemoryIdx, ModuleError};
+
+// pub struct Data<'a> {
+//     pub kind: DataKind<'a>,
+//     pub data: &'a [u8],
+//     pub range: Range,
+// }
+
+/// A linear memory data segment within a [`Module`].
+///
+/// [`Module`]: [`super::Module`]
+#[derive(Debug)]
+pub struct Data {
+    memory_index: MemoryIdx,
+    offset: InitExpr,
+    data: Box<[u8]>,
+}
+
+impl TryFrom<wasmparser::Data<'_>> for Data {
+    type Error = ModuleError;
+
+    fn try_from(data: wasmparser::Data<'_>) -> Result<Self, Self::Error> {
+        let (memory_index, offset) = match data.kind {
+            wasmparser::DataKind::Active {
+                memory_index,
+                init_expr,
+            } => {
+                let memory_index = MemoryIdx(memory_index);
+                let offset = InitExpr::try_from(init_expr)?;
+                (memory_index, offset)
+            }
+            wasmparser::DataKind::Passive => {
+                return Err(ModuleError::unsupported(
+                    "encountered unsupported passive data segment",
+                ))
+            }
+        };
+        let data = data.data.into();
+        Ok(Data {
+            memory_index,
+            offset,
+            data,
+        })
+    }
+}

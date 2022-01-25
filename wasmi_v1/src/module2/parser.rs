@@ -356,8 +356,20 @@ impl ModuleParser {
             .map_err(Into::into)
     }
 
-    fn process_data(&mut self, section: DataSectionReader) -> Result<(), ModuleError> {
+    /// Process module linear memory data segments.
+    ///
+    /// # Note
+    ///
+    /// This extracts all table elements into the [`Module`] under construction.
+    ///
+    /// # Errors
+    ///
+    /// If any of the table elements fail to validate.
+    fn process_data(&mut self, mut section: DataSectionReader) -> Result<(), ModuleError> {
         self.validator.data_section(&section)?;
+        let len_segments = section.get_count();
+        let segments = (0..len_segments).map(|_| section.read()?.try_into());
+        self.builder.push_data_segments(segments)?;
         Ok(())
     }
 
