@@ -1,11 +1,12 @@
-use super::{Import, Module};
-use crate::FuncType;
+use super::{import::FuncTypeIdx, Import, Module};
+use crate::{FuncType, ModuleError};
 
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug)]
 pub struct ModuleBuilder {
     func_types: Vec<FuncType>,
     imports: Vec<Import>,
+    funcs: Vec<FuncTypeIdx>,
 }
 
 impl Default for ModuleBuilder {
@@ -13,49 +14,76 @@ impl Default for ModuleBuilder {
         Self {
             func_types: Vec::new(),
             imports: Vec::new(),
+            funcs: Vec::new(),
         }
     }
 }
 
 impl ModuleBuilder {
-    /// Reserves enough space for at least `hint` [`FuncType`] instances
-    /// in the [`Module`] under construction.
+    /// Pushes the given function types to the [`Module`] under construction.
     ///
-    /// # Note
+    /// # Errors
     ///
-    /// This procedure serves as an optimization.
-    pub fn reserve_func_types(&mut self, hint: u32) {
-        self.func_types.reserve_exact(hint as usize);
+    /// If a function type fails to validate.
+    ///
+    /// # Panics
+    ///
+    /// If this function has already been called on the same [`ModuleBuilder`].
+    pub fn push_func_types<T>(&mut self, imports: T) -> Result<(), ModuleError>
+    where
+        T: IntoIterator<Item = Result<FuncType, ModuleError>>,
+        T::IntoIter: ExactSizeIterator,
+    {
+        assert!(
+            self.func_types.is_empty(),
+            "tried to initialize module function types twice"
+        );
+        self.func_types = imports.into_iter().collect::<Result<Vec<_>, _>>()?;
+        Ok(())
     }
 
-    /// Pushes the given [`FuncType`] to the [`Module`] under construction.
+    /// Pushes the given imports to the [`Module`] under construction.
     ///
-    /// Returns the raw `u32` index to the pushed [`FuncType`].
-    pub fn push_func_type(&mut self, func_type: FuncType) -> u32 {
-        let index = u32::try_from(self.func_types.len())
-            .unwrap_or_else(|error| panic!("encountered out of bounds function types: {}", error));
-        self.func_types.push(func_type);
-        index
+    /// # Errors
+    ///
+    /// If an import fails to validate.
+    ///
+    /// # Panics
+    ///
+    /// If this function has already been called on the same [`ModuleBuilder`].
+    pub fn push_imports<T>(&mut self, imports: T) -> Result<(), ModuleError>
+    where
+        T: IntoIterator<Item = Result<Import, ModuleError>>,
+        T::IntoIter: ExactSizeIterator,
+    {
+        assert!(
+            self.imports.is_empty(),
+            "tried to initialize module imports twice"
+        );
+        self.imports = imports.into_iter().collect::<Result<Vec<_>, _>>()?;
+        Ok(())
     }
 
-    /// Reserves enough space for at least `hint` [`FuncType`] instances
-    /// in the [`Module`] under construction.
+    /// Pushes the given function declarations to the [`Module`] under construction.
     ///
-    /// # Note
+    /// # Errors
     ///
-    /// This procedure serves as an optimization.
-    pub fn reserve_imports(&mut self, hint: u32) {
-        self.imports.reserve_exact(hint as usize);
-    }
-
-    /// Pushes the given [`Import`] to the [`Module`] under construction.
+    /// If a function declaration fails to validate.
     ///
-    /// Returns the raw `u32` index to the pushed [`Import`].
-    pub fn push_import(&mut self, import: Import) -> u32 {
-        let index = u32::try_from(self.imports.len())
-            .unwrap_or_else(|error| panic!("encountered out of bounds imports: {}", error));
-        self.imports.push(import);
-        index
+    /// # Panics
+    ///
+    /// If this function has already been called on the same [`ModuleBuilder`].
+    pub fn push_funcs<T>(&mut self, func_decls: T) -> Result<(), ModuleError>
+    where
+        T: IntoIterator<Item = Result<FuncTypeIdx, ModuleError>>,
+        T::IntoIter: ExactSizeIterator,
+    {
+        assert!(
+            self.funcs.is_empty(),
+            "tried to initialize module function declarations twice"
+        );
+        self.funcs = func_decls.into_iter().collect::<Result<Vec<_>, _>>()?;
+        Ok(())
     }
 
     /// Finishes construction of the WebAssembly [`Module`].
