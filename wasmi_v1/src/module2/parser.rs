@@ -195,6 +195,12 @@ impl ModuleParser {
         Ok(())
     }
 
+    /// Process module aliases.
+    ///
+    /// # Note
+    ///
+    /// This is part of the module linking Wasm proposal and not yet supported
+    /// by `wasmi`.
     fn process_aliases(
         &mut self,
         section: wasmparser::AliasSectionReader,
@@ -202,6 +208,12 @@ impl ModuleParser {
         self.validator.alias_section(&section).map_err(Into::into)
     }
 
+    /// Process module instances.
+    ///
+    /// # Note
+    ///
+    /// This is part of the module linking Wasm proposal and not yet supported
+    /// by `wasmi`.
     fn process_instances(
         &mut self,
         section: wasmparser::InstanceSectionReader,
@@ -226,6 +238,12 @@ impl ModuleParser {
         Ok(())
     }
 
+    /// Process module tags.
+    ///
+    /// # Note
+    ///
+    /// This is part of the module linking Wasm proposal and not yet supported
+    /// by `wasmi`.
     fn process_tags(&mut self, section: wasmparser::TagSectionReader) -> Result<(), ModuleError> {
         self.validator.tag_section(&section).map_err(Into::into)
     }
@@ -278,6 +296,12 @@ impl ModuleParser {
             .map_err(Into::into)
     }
 
+    /// Process a module entry.
+    ///
+    /// # Note
+    ///
+    /// This is part of the module linking Wasm proposal and not yet supported
+    /// by `wasmi`.
     fn process_module_entry(&mut self, range: Range) -> Result<(), ModuleError> {
         Err(ModuleError::unsupported(format!(
             "module linking entry at {:?}",
@@ -285,6 +309,11 @@ impl ModuleParser {
         )))
     }
 
+    /// Process an unknown Wasm module section.
+    ///
+    /// # Note
+    ///
+    /// This generally will be treated as an error for now.
     fn process_unknown(&mut self, id: u8, range: Range) -> Result<(), ModuleError> {
         self.validator
             .unknown_section(id, &range)
