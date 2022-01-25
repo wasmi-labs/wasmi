@@ -2,7 +2,7 @@ use crate::ModuleError;
 
 use super::{FuncIdx, InitExpr, TableIdx};
 
-/// A table element within a [`Module`].
+/// A table element segment within a [`Module`].
 ///
 /// [`Module`]: [`super::Module`]
 #[derive(Debug)]
@@ -30,7 +30,7 @@ impl TryFrom<wasmparser::Element<'_>> for Element {
             }
             wasmparser::ElementKind::Passive | wasmparser::ElementKind::Declared => {
                 return Err(ModuleError::unsupported(
-                    "encountered unsupported passive or declared element kind",
+                    "encountered unsupported passive or declared element segment",
                 ))
             }
         };
