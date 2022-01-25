@@ -291,7 +291,7 @@ impl ModuleParser {
     /// # Errors
     ///
     /// - If a global variable declaration fails to validate.
-    fn process_globals(&mut self, section: GlobalSectionReader) -> Result<(), ModuleError> {
+    fn process_globals(&mut self, mut section: GlobalSectionReader) -> Result<(), ModuleError> {
         self.validator.global_section(&section)?;
         let len_globals = section.get_count();
         let globals = (0..len_globals).map(|_| section.read()?.try_into());
