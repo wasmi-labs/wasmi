@@ -2,7 +2,7 @@ use super::{import::FuncTypeIdx, Export, Global, Import, Module};
 use crate::{FuncType, MemoryType, ModuleError, TableType};
 
 /// A builder for a WebAssembly [`Module`].
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ModuleBuilder {
     func_types: Vec<FuncType>,
     imports: Vec<Import>,
@@ -11,20 +11,6 @@ pub struct ModuleBuilder {
     memories: Vec<MemoryType>,
     globals: Vec<Global>,
     exports: Vec<Export>,
-}
-
-impl Default for ModuleBuilder {
-    fn default() -> Self {
-        Self {
-            func_types: Vec::new(),
-            imports: Vec::new(),
-            funcs: Vec::new(),
-            tables: Vec::new(),
-            memories: Vec::new(),
-            globals: Vec::new(),
-            exports: Vec::new(),
-        }
-    }
 }
 
 impl ModuleBuilder {

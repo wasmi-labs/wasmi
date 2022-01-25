@@ -138,7 +138,7 @@ impl ModuleParser {
             Payload::ModuleSectionStart { count, range, .. } => {
                 self.process_module_start(count, range)
             }
-            Payload::ModuleSectionEntry { parser, range } => self.process_module_entry(range),
+            Payload::ModuleSectionEntry { range, .. } => self.process_module_entry(range),
             Payload::UnknownSection { id, range, .. } => self.process_unknown(id, range),
             Payload::End => return Ok(false),
         }?;
