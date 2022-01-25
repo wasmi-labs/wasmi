@@ -12,7 +12,7 @@ mod utils;
 
 use self::{
     builder::ModuleBuilder,
-    export::{Export, External},
+    export::{Export, External, FuncIdx},
     global::{Global, GlobalIdx},
     import::{Import, ImportKind},
     init_expr::{InitExpr, InitExprOperand},

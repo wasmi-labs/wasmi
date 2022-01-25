@@ -1,4 +1,4 @@
-use super::{import::FuncTypeIdx, Export, Global, Import, Module};
+use super::{import::FuncTypeIdx, Export, FuncIdx, Global, Import, Module};
 use crate::{FuncType, MemoryType, ModuleError, TableType};
 
 /// A builder for a WebAssembly [`Module`].
@@ -11,6 +11,7 @@ pub struct ModuleBuilder {
     memories: Vec<MemoryType>,
     globals: Vec<Global>,
     exports: Vec<Export>,
+    start: Option<FuncIdx>,
 }
 
 impl ModuleBuilder {
@@ -166,6 +167,21 @@ impl ModuleBuilder {
         );
         self.exports = exports.into_iter().collect::<Result<Vec<_>, _>>()?;
         Ok(())
+    }
+
+    /// Sets the start function of the [`Module`] to the given index.
+    ///
+    /// # Panics
+    ///
+    /// If this function has already been called on the same [`ModuleBuilder`].
+    pub fn set_start(&mut self, start: FuncIdx) {
+        if let Some(old_start) = &self.start {
+            panic!(
+                "encountered multiple start functions: {:?}, {:?}",
+                old_start, start
+            )
+        }
+        self.start = Some(start);
     }
 
     /// Finishes construction of the WebAssembly [`Module`].

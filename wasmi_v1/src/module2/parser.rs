@@ -1,4 +1,4 @@
-use super::{import::FuncTypeIdx, Module, ModuleBuilder, ModuleError, Read};
+use super::{import::FuncTypeIdx, FuncIdx, Module, ModuleBuilder, ModuleError, Read};
 use wasmparser::{
     Chunk,
     DataSectionReader,
@@ -312,8 +312,18 @@ impl ModuleParser {
         Ok(())
     }
 
+    /// Process module start section.
+    ///
+    /// # Note
+    ///
+    /// This sets the start function for the [`Module`] under construction.
+    ///
+    /// # Errors
+    ///
+    /// If the start function declaration fails to validate.
     fn process_start(&mut self, func: u32, range: Range) -> Result<(), ModuleError> {
         self.validator.start_section(func, &range)?;
+        self.builder.set_start(FuncIdx(func));
         Ok(())
     }
 
