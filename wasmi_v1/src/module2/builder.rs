@@ -1,5 +1,5 @@
 use super::{import::FuncTypeIdx, Import, Module};
-use crate::{FuncType, ModuleError};
+use crate::{FuncType, MemoryType, ModuleError, TableType};
 
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug)]
@@ -7,6 +7,8 @@ pub struct ModuleBuilder {
     func_types: Vec<FuncType>,
     imports: Vec<Import>,
     funcs: Vec<FuncTypeIdx>,
+    tables: Vec<TableType>,
+    memories: Vec<MemoryType>,
 }
 
 impl Default for ModuleBuilder {
@@ -15,6 +17,8 @@ impl Default for ModuleBuilder {
             func_types: Vec::new(),
             imports: Vec::new(),
             funcs: Vec::new(),
+            tables: Vec::new(),
+            memories: Vec::new(),
         }
     }
 }
@@ -83,6 +87,50 @@ impl ModuleBuilder {
             "tried to initialize module function declarations twice"
         );
         self.funcs = func_decls.into_iter().collect::<Result<Vec<_>, _>>()?;
+        Ok(())
+    }
+
+    /// Pushes the given table types to the [`Module`] under construction.
+    ///
+    /// # Errors
+    ///
+    /// If a table declaration fails to validate.
+    ///
+    /// # Panics
+    ///
+    /// If this function has already been called on the same [`ModuleBuilder`].
+    pub fn push_tables<T>(&mut self, tables: T) -> Result<(), ModuleError>
+    where
+        T: IntoIterator<Item = Result<TableType, ModuleError>>,
+        T::IntoIter: ExactSizeIterator,
+    {
+        assert!(
+            self.tables.is_empty(),
+            "tried to initialize module table declarations twice"
+        );
+        self.tables = tables.into_iter().collect::<Result<Vec<_>, _>>()?;
+        Ok(())
+    }
+
+    /// Pushes the given linear memory types to the [`Module`] under construction.
+    ///
+    /// # Errors
+    ///
+    /// If a linear memory declaration fails to validate.
+    ///
+    /// # Panics
+    ///
+    /// If this function has already been called on the same [`ModuleBuilder`].
+    pub fn push_memories<T>(&mut self, memories: T) -> Result<(), ModuleError>
+    where
+        T: IntoIterator<Item = Result<MemoryType, ModuleError>>,
+        T::IntoIter: ExactSizeIterator,
+    {
+        assert!(
+            self.memories.is_empty(),
+            "tried to initialize module table declarations twice"
+        );
+        self.memories = memories.into_iter().collect::<Result<Vec<_>, _>>()?;
         Ok(())
     }
 

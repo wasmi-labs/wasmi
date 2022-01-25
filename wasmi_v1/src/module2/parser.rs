@@ -1,3 +1,5 @@
+use crate::TableType;
+
 use super::{import::FuncTypeIdx, Module, ModuleBuilder, ModuleError, Read};
 use wasmparser::{
     Chunk,
@@ -236,13 +238,37 @@ impl ModuleParser {
         Ok(())
     }
 
-    fn process_tables(&mut self, section: TableSectionReader) -> Result<(), ModuleError> {
+    /// Process module table declarations.
+    ///
+    /// # Note
+    ///
+    /// This extracts all table declarations into the [`Module`] under construction.
+    ///
+    /// # Errors
+    ///
+    /// - If a table declaration fails to validate.
+    fn process_tables(&mut self, mut section: TableSectionReader) -> Result<(), ModuleError> {
         self.validator.table_section(&section)?;
+        let len_tables = section.get_count();
+        let tables = (0..len_tables).map(|_| section.read()?.try_into());
+        self.builder.push_tables(tables)?;
         Ok(())
     }
 
-    fn process_memories(&mut self, section: MemorySectionReader) -> Result<(), ModuleError> {
+    /// Process module linear memory declarations.
+    ///
+    /// # Note
+    ///
+    /// This extracts all linear memory declarations into the [`Module`] under construction.
+    ///
+    /// # Errors
+    ///
+    /// - If a linear memory declaration fails to validate.
+    fn process_memories(&mut self, mut section: MemorySectionReader) -> Result<(), ModuleError> {
         self.validator.memory_section(&section)?;
+        let len_memories = section.get_count();
+        let memories = (0..len_memories).map(|_| section.read()?.try_into());
+        self.builder.push_memories(memories)?;
         Ok(())
     }
 
