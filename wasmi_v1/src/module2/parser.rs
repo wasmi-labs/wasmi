@@ -295,8 +295,20 @@ impl ModuleParser {
         Ok(())
     }
 
-    fn process_exports(&mut self, section: ExportSectionReader) -> Result<(), ModuleError> {
+    /// Process module export declarations.
+    ///
+    /// # Note
+    ///
+    /// This extracts all export declarations into the [`Module`] under construction.
+    ///
+    /// # Errors
+    ///
+    /// - If an export declaration fails to validate.
+    fn process_exports(&mut self, mut section: ExportSectionReader) -> Result<(), ModuleError> {
         self.validator.export_section(&section)?;
+        let len_exports = section.get_count();
+        let exports = (0..len_exports).map(|_| section.read()?.try_into());
+        self.builder.push_exports(exports)?;
         Ok(())
     }
 

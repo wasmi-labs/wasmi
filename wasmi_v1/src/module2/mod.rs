@@ -2,6 +2,7 @@
 
 mod builder;
 mod error;
+mod export;
 mod global;
 mod import;
 mod init_expr;
@@ -11,6 +12,7 @@ mod utils;
 
 use self::{
     builder::ModuleBuilder,
+    export::{Export, External},
     global::{Global, GlobalIdx},
     import::{Import, ImportKind},
     init_expr::{InitExpr, InitExprOperand},
