@@ -194,7 +194,7 @@ impl ModuleBuilder {
     /// # Panics
     ///
     /// If this function has already been called on the same [`ModuleBuilder`].
-    pub fn push_elements<T>(&mut self, elements: T) -> Result<(), ModuleError>
+    pub fn push_element_segments<T>(&mut self, elements: T) -> Result<(), ModuleError>
     where
         T: IntoIterator<Item = Result<Element, ModuleError>>,
         T::IntoIter: ExactSizeIterator,
