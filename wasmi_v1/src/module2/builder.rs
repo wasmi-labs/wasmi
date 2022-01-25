@@ -12,8 +12,8 @@ pub struct ModuleBuilder {
     globals: Vec<Global>,
     exports: Vec<Export>,
     start: Option<FuncIdx>,
-    elements: Vec<Element>,
-    data: Vec<Data>,
+    element_segments: Vec<Element>,
+    data_segments: Vec<Data>,
 }
 
 impl ModuleBuilder {
@@ -201,10 +201,10 @@ impl ModuleBuilder {
         T::IntoIter: ExactSizeIterator,
     {
         assert!(
-            self.elements.is_empty(),
+            self.element_segments.is_empty(),
             "tried to initialize module export declarations twice"
         );
-        self.elements = elements.into_iter().collect::<Result<Vec<_>, _>>()?;
+        self.element_segments = elements.into_iter().collect::<Result<Vec<_>, _>>()?;
         Ok(())
     }
 
@@ -223,10 +223,10 @@ impl ModuleBuilder {
         T::IntoIter: ExactSizeIterator,
     {
         assert!(
-            self.data.is_empty(),
+            self.data_segments.is_empty(),
             "tried to initialize module linear memory data segments twice"
         );
-        self.data = data.into_iter().collect::<Result<Vec<_>, _>>()?;
+        self.data_segments = data.into_iter().collect::<Result<Vec<_>, _>>()?;
         Ok(())
     }
 
