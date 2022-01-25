@@ -1,4 +1,4 @@
-use super::{import::FuncTypeIdx, Import, Module};
+use super::{import::FuncTypeIdx, Global, Import, Module};
 use crate::{FuncType, MemoryType, ModuleError, TableType};
 
 /// A builder for a WebAssembly [`Module`].
@@ -9,6 +9,7 @@ pub struct ModuleBuilder {
     funcs: Vec<FuncTypeIdx>,
     tables: Vec<TableType>,
     memories: Vec<MemoryType>,
+    globals: Vec<Global>,
 }
 
 impl Default for ModuleBuilder {
@@ -19,6 +20,7 @@ impl Default for ModuleBuilder {
             funcs: Vec::new(),
             tables: Vec::new(),
             memories: Vec::new(),
+            globals: Vec::new(),
         }
     }
 }
@@ -131,6 +133,28 @@ impl ModuleBuilder {
             "tried to initialize module table declarations twice"
         );
         self.memories = memories.into_iter().collect::<Result<Vec<_>, _>>()?;
+        Ok(())
+    }
+
+    /// Pushes the given global variables to the [`Module`] under construction.
+    ///
+    /// # Errors
+    ///
+    /// If a global variable declaration fails to validate.
+    ///
+    /// # Panics
+    ///
+    /// If this function has already been called on the same [`ModuleBuilder`].
+    pub fn push_globals<T>(&mut self, globals: T) -> Result<(), ModuleError>
+    where
+        T: IntoIterator<Item = Result<Global, ModuleError>>,
+        T::IntoIter: ExactSizeIterator,
+    {
+        assert!(
+            self.globals.is_empty(),
+            "tried to initialize module global variable declarations twice"
+        );
+        self.globals = globals.into_iter().collect::<Result<Vec<_>, _>>()?;
         Ok(())
     }
 

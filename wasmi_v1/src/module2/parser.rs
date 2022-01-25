@@ -282,8 +282,20 @@ impl ModuleParser {
         self.validator.tag_section(&section).map_err(Into::into)
     }
 
+    /// Process module global variable declarations.
+    ///
+    /// # Note
+    ///
+    /// This extracts all global variable declarations into the [`Module`] under construction.
+    ///
+    /// # Errors
+    ///
+    /// - If a global variable declaration fails to validate.
     fn process_globals(&mut self, section: GlobalSectionReader) -> Result<(), ModuleError> {
         self.validator.global_section(&section)?;
+        let len_globals = section.get_count();
+        let globals = (0..len_globals).map(|_| section.read()?.try_into());
+        self.builder.push_globals(globals)?;
         Ok(())
     }
 

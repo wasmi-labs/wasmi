@@ -1,13 +1,17 @@
 mod builder;
 mod error;
+mod global;
 mod import;
+mod init_expr;
 mod parser;
 mod read;
 mod utils;
 
 use self::{
     builder::ModuleBuilder,
+    global::{Global, GlobalIdx},
     import::{Import, ImportKind},
+    init_expr::{InitExpr, InitExprOperand},
     read::ReadError,
 };
 pub use self::{error::ModuleError, read::Read};
