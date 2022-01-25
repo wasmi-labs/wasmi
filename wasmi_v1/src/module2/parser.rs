@@ -1,5 +1,3 @@
-use crate::TableType;
-
 use super::{import::FuncTypeIdx, Module, ModuleBuilder, ModuleError, Read};
 use wasmparser::{
     Chunk,
@@ -135,9 +133,7 @@ impl ModuleParser {
             Payload::DataCountSection { count, range } => self.process_data_count(count, range),
             Payload::DataSection(section) => self.process_data(section),
             Payload::CustomSection { .. } => Ok(()),
-            Payload::CodeSectionStart { count, range, size } => {
-                self.process_code_start(count, range)
-            }
+            Payload::CodeSectionStart { count, range, .. } => self.process_code_start(count, range),
             Payload::CodeSectionEntry(_section) => self.process_code_entry(),
             Payload::ModuleSectionStart { count, range, .. } => {
                 self.process_module_start(count, range)
