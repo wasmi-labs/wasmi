@@ -7,6 +7,13 @@ use crate::{GlobalType, ModuleError};
 #[derive(Debug)]
 pub struct GlobalIdx(pub(super) u32);
 
+impl GlobalIdx {
+    /// Returns the [`GlobalIdx`] as `usize`.
+    pub fn into_usize(self) -> usize {
+        self.0 as usize
+    }
+}
+
 /// A global variable definition within a [`Module`].
 ///
 /// [`Module`]: [`super::Module`]
