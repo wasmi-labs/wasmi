@@ -384,6 +384,12 @@ impl ModuleParser {
         Ok(())
     }
 
+    /// Process the start of the module entries.
+    ///
+    /// # Note
+    ///
+    /// This is part of the module linking Wasm proposal and not yet supported
+    /// by `wasmi`.
     fn process_module_start(&mut self, count: u32, range: Range) -> Result<(), ModuleError> {
         self.validator
             .module_section_start(count, &range)
