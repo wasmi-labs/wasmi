@@ -24,7 +24,7 @@ impl TryFrom<wasmparser::Import<'_>> for Import {
     fn try_from(import: wasmparser::Import) -> Result<Self, Self::Error> {
         let kind = match import.ty {
             ImportSectionEntryType::Function(func_type) => {
-                Ok(ImportKind::Function(FuncTypeIdx(func_type)))
+                Ok(ImportKind::Func(FuncTypeIdx(func_type)))
             }
             ImportSectionEntryType::Table(table_type) => {
                 table_type.try_into().map(ImportKind::Table)
@@ -79,7 +79,7 @@ impl Import {
 #[derive(Debug)]
 pub enum ImportKind {
     /// An imported function.
-    Function(FuncTypeIdx),
+    Func(FuncTypeIdx),
     /// An imported table.
     Table(TableType),
     /// An imported linear memory.
