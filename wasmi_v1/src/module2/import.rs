@@ -17,7 +17,9 @@ impl TryFrom<wasmparser::Import<'_>> for Import {
 
     fn try_from(import: wasmparser::Import) -> Result<Self, Self::Error> {
         let kind = match import.ty {
-            ImportSectionEntryType::Function(func_type) => Ok(ImportKind::Function(func_type)),
+            ImportSectionEntryType::Function(func_type) => {
+                Ok(ImportKind::Function(FuncTypeIdx(func_type)))
+            }
             ImportSectionEntryType::Table(table_type) => {
                 table_type.try_into().map(ImportKind::Table)
             }
@@ -65,11 +67,31 @@ impl Import {
 #[derive(Debug)]
 pub enum ImportKind {
     /// An imported function.
-    Function(u32),
+    Function(FuncTypeIdx),
     /// An imported table.
     Table(TableType),
     /// An imported linear memory.
     Memory(MemoryType),
     /// An imported global variable.
     Global(GlobalType),
+}
+
+/// A [`FuncType`] index.
+///
+/// # Note
+///
+/// This generally refers to a [`FuncType`] within the same [`Module`]
+/// and is used by both function declarations and function imports.
+#[derive(Debug, Copy, Clone)]
+pub struct FuncTypeIdx(pub(super) u32);
+
+impl FuncTypeIdx {
+    /// Returns the [`FuncTypeIdx`] as `usize`.
+    ///
+    /// # Note
+    ///
+    /// This is mostly useful for indexing into buffers.
+    pub fn into_usize(self) -> usize {
+        self.0 as usize
+    }
 }
