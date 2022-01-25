@@ -41,6 +41,8 @@ impl MemoryIdx {
 }
 
 /// An export definition within a [`Module`].
+///
+/// [`Module`]: [`super::Module`]
 #[derive(Debug)]
 pub struct Export {
     /// The name under which the export definition is exported.
@@ -60,15 +62,25 @@ impl TryFrom<wasmparser::Export<'_>> for Export {
 }
 
 /// An external item of an [`Export`] definition within a [`Module`].
+///
+/// [`Module`]: [`super::Module`]
 #[derive(Debug)]
 pub enum External {
     /// An exported function and its index witihn the [`Module`].
+    ///
+    /// [`Module`]: [`super::Module`]
     Func(FuncIdx),
     /// An exported table and its index witihn the [`Module`].
+    ///
+    /// [`Module`]: [`super::Module`]
     Table(TableIdx),
     /// An exported linear memory and its index witihn the [`Module`].
+    ///
+    /// [`Module`]: [`super::Module`]
     Memory(MemoryIdx),
     /// An exported global variable and its index witihn the [`Module`].
+    ///
+    /// [`Module`]: [`super::Module`]
     Global(GlobalIdx),
 }
 
