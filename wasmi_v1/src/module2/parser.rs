@@ -327,8 +327,20 @@ impl ModuleParser {
         Ok(())
     }
 
-    fn process_element(&mut self, section: ElementSectionReader) -> Result<(), ModuleError> {
+    /// Process module table elements.
+    ///
+    /// # Note
+    ///
+    /// This extracts all table elements into the [`Module`] under construction.
+    ///
+    /// # Errors
+    ///
+    /// If any of the table elements fail to validate.
+    fn process_element(&mut self, mut section: ElementSectionReader) -> Result<(), ModuleError> {
         self.validator.element_section(&section)?;
+        let len_elements = section.get_count();
+        let elements = (0..len_elements).map(|_| section.read()?.try_into());
+        self.builder.push_elements(elements)?;
         Ok(())
     }
 

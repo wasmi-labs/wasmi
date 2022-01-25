@@ -1,4 +1,4 @@
-use super::{import::FuncTypeIdx, Export, FuncIdx, Global, Import, Module};
+use super::{import::FuncTypeIdx, Element, Export, FuncIdx, Global, Import, Module};
 use crate::{FuncType, MemoryType, ModuleError, TableType};
 
 /// A builder for a WebAssembly [`Module`].
@@ -12,6 +12,7 @@ pub struct ModuleBuilder {
     globals: Vec<Global>,
     exports: Vec<Export>,
     start: Option<FuncIdx>,
+    elements: Vec<Element>,
 }
 
 impl ModuleBuilder {
@@ -182,6 +183,28 @@ impl ModuleBuilder {
             )
         }
         self.start = Some(start);
+    }
+
+    /// Pushes the given table elements to the [`Module`] under construction.
+    ///
+    /// # Errors
+    ///
+    /// If any of the table elements fail to validate.
+    ///
+    /// # Panics
+    ///
+    /// If this function has already been called on the same [`ModuleBuilder`].
+    pub fn push_elements<T>(&mut self, elements: T) -> Result<(), ModuleError>
+    where
+        T: IntoIterator<Item = Result<Element, ModuleError>>,
+        T::IntoIter: ExactSizeIterator,
+    {
+        assert!(
+            self.elements.is_empty(),
+            "tried to initialize module export declarations twice"
+        );
+        self.elements = elements.into_iter().collect::<Result<Vec<_>, _>>()?;
+        Ok(())
     }
 
     /// Finishes construction of the WebAssembly [`Module`].

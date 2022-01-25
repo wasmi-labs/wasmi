@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 mod builder;
+mod element;
 mod error;
 mod export;
 mod global;
@@ -12,7 +13,8 @@ mod utils;
 
 use self::{
     builder::ModuleBuilder,
-    export::{Export, External, FuncIdx},
+    element::Element,
+    export::{Export, External, FuncIdx, TableIdx},
     global::{Global, GlobalIdx},
     import::{Import, ImportKind},
     init_expr::{InitExpr, InitExprOperand},
