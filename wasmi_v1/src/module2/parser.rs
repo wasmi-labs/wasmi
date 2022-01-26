@@ -373,12 +373,34 @@ impl ModuleParser {
         Ok(())
     }
 
+    /// Process module code section start.
+    ///
+    /// # Note
+    ///
+    /// This currently does not do a lot but it might become important in the
+    /// future if we add parallel translation of function bodies to prepare for
+    /// the translation.
+    ///
+    /// # Errors
+    ///
+    /// If the code start section fails to validate.
     fn process_code_start(&mut self, count: u32, range: Range) -> Result<(), ModuleError> {
         self.validator
             .code_section_start(count, &range)
             .map_err(Into::into)
     }
 
+    /// Process a single module code section entry.
+    ///
+    /// # Note
+    ///
+    /// This contains the local variables and Wasm instructions of
+    /// a single function body.
+    /// This procedure is translating the Wasm bytecode into `wasmi` bytecode.
+    ///
+    /// # Errors
+    ///
+    /// If the function body fails to validate.
     fn process_code_entry(&mut self) -> Result<(), ModuleError> {
         let _fn_validator = self.validator.code_section_entry()?;
         Ok(())
