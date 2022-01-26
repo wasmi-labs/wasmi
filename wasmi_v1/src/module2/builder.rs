@@ -12,7 +12,6 @@ use super::{
     Module,
 };
 use crate::{FuncType, GlobalType, MemoryType, ModuleError, TableType};
-use core::mem;
 
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug, Default)]
@@ -133,7 +132,7 @@ impl ModuleBuilder {
     /// # Panics
     ///
     /// If this function has already been called on the same [`ModuleBuilder`].
-    pub fn push_funcs<T>(&mut self, func_decls: T) -> Result<(), ModuleError>
+    pub fn push_funcs<T>(&mut self, funcs: T) -> Result<(), ModuleError>
     where
         T: IntoIterator<Item = Result<FuncTypeIdx, ModuleError>>,
         T::IntoIter: ExactSizeIterator,
@@ -142,10 +141,8 @@ impl ModuleBuilder {
             self.funcs.len().saturating_sub(self.imports.funcs.len()) > 0,
             "tried to initialize module function declarations twice"
         );
-        let imported_funcs = mem::take(&mut self.funcs).into_iter().map(Ok);
-        self.funcs = imported_funcs
-            .chain(func_decls)
-            .collect::<Result<Vec<_>, _>>()?;
+        self.funcs
+            .extend(funcs.into_iter().collect::<Result<Vec<_>, _>>()?);
         Ok(())
     }
 
@@ -167,10 +164,8 @@ impl ModuleBuilder {
             self.tables.len().saturating_sub(self.imports.tables.len()) > 0,
             "tried to initialize module table declarations twice"
         );
-        let imported_tables = mem::take(&mut self.tables).into_iter().map(Ok);
-        self.tables = imported_tables
-            .chain(tables)
-            .collect::<Result<Vec<_>, _>>()?;
+        self.tables
+            .extend(tables.into_iter().collect::<Result<Vec<_>, _>>()?);
         Ok(())
     }
 
@@ -195,10 +190,8 @@ impl ModuleBuilder {
                 > 0,
             "tried to initialize module linear memory declarations twice"
         );
-        let imported_memories = mem::take(&mut self.memories).into_iter().map(Ok);
-        self.memories = imported_memories
-            .chain(memories)
-            .collect::<Result<Vec<_>, _>>()?;
+        self.memories
+            .extend(memories.into_iter().collect::<Result<Vec<_>, _>>()?);
         Ok(())
     }
 
@@ -223,15 +216,14 @@ impl ModuleBuilder {
                 > 0,
             "tried to initialize module global variable declarations twice"
         );
-        let imported_globals = mem::take(&mut self.globals).into_iter();
         let (global_decls, global_inits): (Vec<_>, Vec<_>) = globals
             .into_iter()
             .collect::<Result<Vec<_>, _>>()?
             .into_iter()
             .map(Global::into_type_and_init)
             .unzip();
-        self.globals = imported_globals.chain(global_decls).collect();
-        self.globals_init = global_inits;
+        self.globals.extend(global_decls);
+        self.globals_init.extend(global_inits);
         Ok(())
     }
 
