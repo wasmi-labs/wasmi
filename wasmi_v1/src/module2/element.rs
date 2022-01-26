@@ -6,13 +6,13 @@ use super::{FuncIdx, InitExpr, TableIdx};
 ///
 /// [`Module`]: [`super::Module`]
 #[derive(Debug)]
-pub struct Element {
+pub struct ElementSegment {
     table_index: TableIdx,
     offset: InitExpr,
     items: Box<[FuncIdx]>,
 }
 
-impl TryFrom<wasmparser::Element<'_>> for Element {
+impl TryFrom<wasmparser::Element<'_>> for ElementSegment {
     type Error = ModuleError;
 
     fn try_from(element: wasmparser::Element<'_>) -> Result<Self, Self::Error> {
@@ -46,7 +46,7 @@ impl TryFrom<wasmparser::Element<'_>> for Element {
             })
             .collect::<Result<Vec<_>, ModuleError>>()?
             .into_boxed_slice();
-        Ok(Element {
+        Ok(ElementSegment {
             table_index,
             offset,
             items,

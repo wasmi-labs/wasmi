@@ -1,7 +1,7 @@
 use super::{
     import::FuncTypeIdx,
-    Data,
-    Element,
+    DataSegment,
+    ElementSegment,
     Export,
     FuncIdx,
     Global,
@@ -26,8 +26,8 @@ pub struct ModuleBuilder {
     globals_init: Vec<InitExpr>,
     exports: Vec<Export>,
     start: Option<FuncIdx>,
-    element_segments: Vec<Element>,
-    data_segments: Vec<Data>,
+    element_segments: Vec<ElementSegment>,
+    data_segments: Vec<DataSegment>,
 }
 
 /// The import names of the [`Module`] imports.
@@ -283,7 +283,7 @@ impl ModuleBuilder {
     /// If this function has already been called on the same [`ModuleBuilder`].
     pub fn push_element_segments<T>(&mut self, elements: T) -> Result<(), ModuleError>
     where
-        T: IntoIterator<Item = Result<Element, ModuleError>>,
+        T: IntoIterator<Item = Result<ElementSegment, ModuleError>>,
         T::IntoIter: ExactSizeIterator,
     {
         assert!(
@@ -305,7 +305,7 @@ impl ModuleBuilder {
     /// If this function has already been called on the same [`ModuleBuilder`].
     pub fn push_data_segments<T>(&mut self, data: T) -> Result<(), ModuleError>
     where
-        T: IntoIterator<Item = Result<Data, ModuleError>>,
+        T: IntoIterator<Item = Result<DataSegment, ModuleError>>,
         T::IntoIter: ExactSizeIterator,
     {
         assert!(

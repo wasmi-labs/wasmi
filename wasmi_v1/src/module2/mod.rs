@@ -14,8 +14,8 @@ mod utils;
 
 use self::{
     builder::ModuleBuilder,
-    data::Data,
-    element::Element,
+    data::DataSegment,
+    element::ElementSegment,
     export::{Export, External, FuncIdx, MemoryIdx, TableIdx},
     global::{Global, GlobalIdx},
     import::{FuncTypeIdx, Import, ImportKind, ImportName},

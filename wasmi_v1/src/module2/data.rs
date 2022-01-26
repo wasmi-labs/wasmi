@@ -10,13 +10,13 @@ use super::{InitExpr, MemoryIdx, ModuleError};
 ///
 /// [`Module`]: [`super::Module`]
 #[derive(Debug)]
-pub struct Data {
+pub struct DataSegment {
     memory_index: MemoryIdx,
     offset: InitExpr,
     data: Box<[u8]>,
 }
 
-impl TryFrom<wasmparser::Data<'_>> for Data {
+impl TryFrom<wasmparser::Data<'_>> for DataSegment {
     type Error = ModuleError;
 
     fn try_from(data: wasmparser::Data<'_>) -> Result<Self, Self::Error> {
@@ -36,7 +36,7 @@ impl TryFrom<wasmparser::Data<'_>> for Data {
             }
         };
         let data = data.data.into();
-        Ok(Data {
+        Ok(DataSegment {
             memory_index,
             offset,
             data,
