@@ -1,6 +1,6 @@
-use super::ModuleResources;
+use super::{utils::value_type_from_wasmparser, ModuleResources};
 use crate::{Engine, ModuleError};
-use wasmparser::{FuncValidator, FunctionBody, Parser, ValidatorResources};
+use wasmparser::{FuncValidator, FunctionBody, Operator, Parser, ValidatorResources};
 
 // mod block_type;
 // mod control_frame;
@@ -66,5 +66,37 @@ impl<'parser> FunctionTranslator<'parser> {
     /// Starts translation of the Wasm stream into `wasmi` bytecode.
     fn translate(&mut self) -> Result<(), ModuleError> {
         todo!()
+    }
+
+    /// Translates local variables of the Wasm function.
+    fn translate_locals(&mut self) -> Result<(), ModuleError> {
+        let mut reader = self.func_body.get_locals_reader()?;
+        let len_locals = reader.get_count();
+        for _ in 0..len_locals {
+            let offset = reader.original_position();
+            let (amount, value_type) = reader.read()?;
+            self.validator.define_locals(offset, amount, value_type)?;
+            let value_type = value_type_from_wasmparser(&value_type)?;
+            todo!() // TODO: inform backend about local variables
+        }
+        Ok(())
+    }
+
+    /// Translates the Wasm operators of the Wasm function.
+    fn translate_operators(&mut self) -> Result<(), ModuleError> {
+        let mut reader = self.func_body.get_operators_reader()?;
+        while !reader.eof() {
+            let (operator, offset) = reader.read_with_offset()?;
+            self.validator.op(offset, &operator)?;
+            self.translate_operator(operator, offset)?;
+        }
+        reader.ensure_end()?;
+        Ok(())
+    }
+
+    /// Translate a single Wasm operator of the Wasm function.
+    fn translate_operator(&mut self, operator: Operator, offset: usize) -> Result<(), ModuleError> {
+        // TODO: inform backend about Wasm operator
+        Ok(())
     }
 }
