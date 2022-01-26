@@ -6,6 +6,15 @@ use wasmparser::ImportSectionEntryType;
 /// [`Module`]: [`super::Module`]
 #[derive(Debug)]
 pub struct Import {
+    /// The name of the imported item.
+    name: ImportName,
+    /// The kind of the imported item.
+    kind: ImportKind,
+}
+
+/// The name or namespace of an imported item.
+#[derive(Debug)]
+pub struct ImportName {
     /// The name of the [`Module`] that defines the imported item.
     ///
     /// [`Module`]: [`super::Module`]
@@ -14,8 +23,30 @@ pub struct Import {
     ///
     /// [`Module`]: [`super::Module`]
     field: Option<Box<str>>,
-    /// The kind of the imported item.
-    kind: ImportKind,
+}
+
+impl ImportName {
+    /// Creates a new [`Import`] item.
+    pub fn new(module: &str, field: Option<&str>) -> Self {
+        Self {
+            module: module.into(),
+            field: field.map(Into::into),
+        }
+    }
+
+    /// Returns the name of the [`Module`] that defines the imported item.
+    ///
+    /// [`Module`]: [`super::Module`]
+    pub fn module(&self) -> &str {
+        &self.module
+    }
+
+    /// Returns the optional name of the imported item within the [`Module`] namespace.
+    ///
+    /// [`Module`]: [`super::Module`]
+    pub fn field(&self) -> Option<&str> {
+        self.field.as_deref()
+    }
 }
 
 impl TryFrom<wasmparser::Import<'_>> for Import {
@@ -47,29 +78,28 @@ impl Import {
     /// Creates a new [`Import`] item.
     pub fn new(module: &str, field: Option<&str>, kind: ImportKind) -> Self {
         Self {
-            module: module.into(),
-            field: field.map(Into::into),
+            name: ImportName::new(module, field),
             kind,
         }
     }
 
-    /// Returns the name of the [`Module`] that defines the imported item.
-    ///
-    /// [`Module`]: [`super::Module`]
-    pub fn module_name(&self) -> &str {
-        &self.module
-    }
-
-    /// Returns the optional name of the imported item within the [`Module`] namespace.
-    ///
-    /// [`Module`]: [`super::Module`]
-    pub fn field_name(&self) -> Option<&str> {
-        self.field.as_deref()
+    /// Returns the name of the imported item.
+    pub fn name(&self) -> &ImportName {
+        &self.name
     }
 
     /// Returns the kind of the imported item and its associated data.
     pub fn kind(&self) -> &ImportKind {
         &self.kind
+    }
+
+    /// Splits the [`Import`] into its raw parts.
+    ///
+    /// # Note
+    ///
+    /// This allows to reuse some allocations in certain cases.
+    pub fn into_name_and_kind(self) -> (ImportName, ImportKind) {
+        (self.name, self.kind)
     }
 }
 

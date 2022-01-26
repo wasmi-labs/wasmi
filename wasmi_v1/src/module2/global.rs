@@ -53,4 +53,9 @@ impl Global {
     pub fn init_expr(&self) -> &InitExpr {
         &self.init_expr
     }
+
+    /// Splits the [`Global`] into its global type and its global initializer.
+    pub fn into_type_and_init(self) -> (GlobalType, InitExpr) {
+        (self.global_type, self.init_expr)
+    }
 }

@@ -18,7 +18,7 @@ use self::{
     element::Element,
     export::{Export, External, FuncIdx, MemoryIdx, TableIdx},
     global::{Global, GlobalIdx},
-    import::{Import, ImportKind},
+    import::{FuncTypeIdx, Import, ImportKind, ImportName},
     init_expr::{InitExpr, InitExprOperand},
     read::ReadError,
 };

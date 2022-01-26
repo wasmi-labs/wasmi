@@ -1,19 +1,65 @@
-use super::{import::FuncTypeIdx, Data, Element, Export, FuncIdx, Global, Import, Module};
-use crate::{FuncType, MemoryType, ModuleError, TableType};
+use super::{
+    import::FuncTypeIdx,
+    Data,
+    Element,
+    Export,
+    FuncIdx,
+    Global,
+    Import,
+    ImportKind,
+    ImportName,
+    InitExpr,
+    Module,
+};
+use crate::{FuncType, GlobalType, MemoryType, ModuleError, TableType};
+use core::mem;
 
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug, Default)]
 pub struct ModuleBuilder {
     func_types: Vec<FuncType>,
-    imports: Vec<Import>,
+    imports: ModuleImports,
     funcs: Vec<FuncTypeIdx>,
     tables: Vec<TableType>,
     memories: Vec<MemoryType>,
-    globals: Vec<Global>,
+    globals: Vec<GlobalType>,
+    globals_init: Vec<InitExpr>,
     exports: Vec<Export>,
     start: Option<FuncIdx>,
     element_segments: Vec<Element>,
     data_segments: Vec<Data>,
+}
+
+/// The import names of the [`Module`] imports.
+#[derive(Debug, Default)]
+pub struct ModuleImports {
+    funcs: Vec<ImportName>,
+    tables: Vec<ImportName>,
+    memories: Vec<ImportName>,
+    globals: Vec<ImportName>,
+}
+
+/// The resources of a [`Module`] required for translating function bodies.
+#[derive(Debug)]
+pub struct ModuleResources<'a> {
+    res: &'a ModuleBuilder,
+}
+
+impl<'a> ModuleResources<'a> {
+    /// Creates new [`ModuleResources`] from the given [`ModuleBuilder`].
+    pub fn new(res: &'a ModuleBuilder) -> Self {
+        Self { res }
+    }
+
+    /// Returns the [`FuncType`] at the given index.
+    pub fn get_func_type(&self, func_type_idx: FuncTypeIdx) -> &FuncType {
+        &self.res.func_types[func_type_idx.into_usize()]
+    }
+
+    /// Returns the [`FuncType`] of the indexed function.
+    pub fn get_type_of_func(&self, func_idx: FuncIdx) -> &FuncType {
+        self.get_func_type(self.res.funcs[func_idx.into_usize()])
+    }
 }
 
 impl ModuleBuilder {
@@ -53,11 +99,28 @@ impl ModuleBuilder {
         T: IntoIterator<Item = Result<Import, ModuleError>>,
         T::IntoIter: ExactSizeIterator,
     {
-        assert!(
-            self.imports.is_empty(),
-            "tried to initialize module imports twice"
-        );
-        self.imports = imports.into_iter().collect::<Result<Vec<_>, _>>()?;
+        for import in imports {
+            let import = import?;
+            let (name, kind) = import.into_name_and_kind();
+            match kind {
+                ImportKind::Func(func_type_idx) => {
+                    self.imports.funcs.push(name);
+                    self.funcs.push(func_type_idx);
+                }
+                ImportKind::Table(table_type) => {
+                    self.imports.tables.push(name);
+                    self.tables.push(table_type);
+                }
+                ImportKind::Memory(memory_type) => {
+                    self.imports.memories.push(name);
+                    self.memories.push(memory_type);
+                }
+                ImportKind::Global(global_type) => {
+                    self.imports.globals.push(name);
+                    self.globals.push(global_type);
+                }
+            }
+        }
         Ok(())
     }
 
@@ -76,10 +139,13 @@ impl ModuleBuilder {
         T::IntoIter: ExactSizeIterator,
     {
         assert!(
-            self.funcs.is_empty(),
+            self.funcs.len().saturating_sub(self.imports.funcs.len()) > 0,
             "tried to initialize module function declarations twice"
         );
-        self.funcs = func_decls.into_iter().collect::<Result<Vec<_>, _>>()?;
+        let imported_funcs = mem::take(&mut self.funcs).into_iter().map(Ok);
+        self.funcs = imported_funcs
+            .chain(func_decls)
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(())
     }
 
@@ -98,10 +164,13 @@ impl ModuleBuilder {
         T::IntoIter: ExactSizeIterator,
     {
         assert!(
-            self.tables.is_empty(),
+            self.tables.len().saturating_sub(self.imports.tables.len()) > 0,
             "tried to initialize module table declarations twice"
         );
-        self.tables = tables.into_iter().collect::<Result<Vec<_>, _>>()?;
+        let imported_tables = mem::take(&mut self.tables).into_iter().map(Ok);
+        self.tables = imported_tables
+            .chain(tables)
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(())
     }
 
@@ -120,10 +189,16 @@ impl ModuleBuilder {
         T::IntoIter: ExactSizeIterator,
     {
         assert!(
-            self.memories.is_empty(),
-            "tried to initialize module table declarations twice"
+            self.memories
+                .len()
+                .saturating_sub(self.imports.memories.len())
+                > 0,
+            "tried to initialize module linear memory declarations twice"
         );
-        self.memories = memories.into_iter().collect::<Result<Vec<_>, _>>()?;
+        let imported_memories = mem::take(&mut self.memories).into_iter().map(Ok);
+        self.memories = imported_memories
+            .chain(memories)
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(())
     }
 
@@ -142,10 +217,21 @@ impl ModuleBuilder {
         T::IntoIter: ExactSizeIterator,
     {
         assert!(
-            self.globals.is_empty(),
+            self.globals
+                .len()
+                .saturating_sub(self.imports.globals.len())
+                > 0,
             "tried to initialize module global variable declarations twice"
         );
-        self.globals = globals.into_iter().collect::<Result<Vec<_>, _>>()?;
+        let imported_globals = mem::take(&mut self.globals).into_iter();
+        let (global_decls, global_inits): (Vec<_>, Vec<_>) = globals
+            .into_iter()
+            .collect::<Result<Vec<_>, _>>()?
+            .into_iter()
+            .map(Global::into_type_and_init)
+            .unzip();
+        self.globals = imported_globals.chain(global_decls).collect();
+        self.globals_init = global_inits;
         Ok(())
     }
 
