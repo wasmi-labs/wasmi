@@ -17,10 +17,12 @@ use wasmi_core::memory_units::{Bytes, Pages};
 pub struct MemoryIdx(usize);
 
 impl Index for MemoryIdx {
+    #[inline]
     fn into_usize(self) -> usize {
         self.0
     }
 
+    #[inline]
     fn from_usize(value: usize) -> Self {
         Self(value)
     }
@@ -180,11 +182,13 @@ impl MemoryEntity {
     }
 
     /// Returns the memory type of the linear memory.
+    #[inline]
     pub fn memory_type(&self) -> MemoryType {
         self.memory_type
     }
 
     /// Returns the amount of pages in use by the linear memory.
+    #[inline]
     pub fn current_pages(&self) -> Pages {
         self.current_pages
     }
@@ -221,11 +225,13 @@ impl MemoryEntity {
     }
 
     /// Returns a shared slice to the bytes underlying to the byte buffer.
+    #[inline]
     pub fn data(&self) -> &[u8] {
         self.bytes.data()
     }
 
     /// Returns an exclusive slice to the bytes underlying to the byte buffer.
+    #[inline]
     pub fn data_mut(&mut self) -> &mut [u8] {
         self.bytes.data_mut()
     }
@@ -236,6 +242,7 @@ impl MemoryEntity {
     /// # Errors
     ///
     /// If this operation accesses out of bounds linear memory.
+    #[inline]
     pub fn read(&self, offset: usize, buffer: &mut [u8]) -> Result<(), MemoryError> {
         let len_buffer = buffer.len();
         let slice = self
@@ -252,6 +259,7 @@ impl MemoryEntity {
     /// # Errors
     ///
     /// If this operation accesses out of bounds linear memory.
+    #[inline]
     pub fn write(&mut self, offset: usize, buffer: &[u8]) -> Result<(), MemoryError> {
         let len_buffer = buffer.len();
         let slice = self
@@ -270,11 +278,13 @@ pub struct Memory(Stored<MemoryIdx>);
 
 impl Memory {
     /// Creates a new linear memory reference.
+    #[inline]
     pub(super) fn from_inner(stored: Stored<MemoryIdx>) -> Self {
         Self(stored)
     }
 
     /// Returns the underlying stored representation.
+    #[inline]
     pub(super) fn into_inner(self) -> Stored<MemoryIdx> {
         self.0
     }

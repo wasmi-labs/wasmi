@@ -26,11 +26,13 @@ pub struct StackEntry(u64);
 
 impl StackEntry {
     /// Returns the underlying bits of the [`StackEntry`].
+    #[inline]
     pub fn to_bits(self) -> u64 {
         self.0
     }
 
     /// Converts the untyped [`StackEntry`] value into a typed [`Value`].
+    #[inline]
     pub fn with_type(self, value_type: ValueType) -> Value {
         match value_type {
             ValueType::I32 => Value::I32(<_>::from_stack_entry(self)),
@@ -42,6 +44,7 @@ impl StackEntry {
 }
 
 impl From<Value> for StackEntry {
+    #[inline]
     fn from(value: Value) -> Self {
         match value {
             Value::I32(value) => value.into(),
@@ -73,12 +76,14 @@ macro_rules! impl_from_stack_entry_integer {
 	($($t:ty),* $(,)?) =>	{
 		$(
 			impl FromStackEntry for $t {
+				#[inline]
 				fn from_stack_entry(entry: StackEntry) -> Self {
 					entry.to_bits() as _
 				}
 			}
 
 			impl From<$t> for StackEntry {
+				#[inline]
 				fn from(value: $t) -> Self {
 					Self(value as _)
 				}
@@ -92,12 +97,14 @@ macro_rules! impl_from_stack_entry_float {
 	($($t:ty),*) =>	{
 		$(
 			impl FromStackEntry for $t {
+				#[inline]
 				fn from_stack_entry(entry: StackEntry) -> Self {
 					Self::from_bits(entry.to_bits() as _)
 				}
 			}
 
 			impl From<$t> for StackEntry {
+				#[inline]
 				fn from(value: $t) -> Self {
 					Self(value.to_bits() as _)
 				}
@@ -108,12 +115,14 @@ macro_rules! impl_from_stack_entry_float {
 impl_from_stack_entry_float!(f32, f64, F32, F64);
 
 impl From<bool> for StackEntry {
+    #[inline]
     fn from(value: bool) -> Self {
         Self(value as _)
     }
 }
 
 impl FromStackEntry for bool {
+    #[inline]
     fn from_stack_entry(entry: StackEntry) -> Self {
         entry.to_bits() != 0
     }
@@ -259,6 +268,7 @@ impl ValueStack {
     /// # Note
     ///
     /// This has the same effect as [`ValueStack::peek`]`(0)`.
+    #[inline]
     pub fn last(&self) -> StackEntry {
         self.entries[self.stack_ptr - 1]
     }
@@ -268,6 +278,7 @@ impl ValueStack {
     /// # Note
     ///
     /// This has the same effect as [`ValueStack::peek`]`(0)`.
+    #[inline]
     pub fn last_mut(&mut self) -> &mut StackEntry {
         &mut self.entries[self.stack_ptr - 1]
     }
@@ -277,6 +288,7 @@ impl ValueStack {
     /// # Note
     ///
     /// Given a `depth` of 0 has the same effect as [`ValueStack::last`].
+    #[inline]
     pub fn peek(&self, depth: usize) -> StackEntry {
         self.entries[self.stack_ptr - depth - 1]
     }
@@ -286,6 +298,7 @@ impl ValueStack {
     /// # Note
     ///
     /// Given a `depth` of 0 has the same effect as [`ValueStack::last_mut`].
+    #[inline]
     pub fn peek_mut(&mut self, depth: usize) -> &mut StackEntry {
         &mut self.entries[self.stack_ptr - depth - 1]
     }
@@ -296,16 +309,19 @@ impl ValueStack {
     ///
     /// This operation heavily relies on the prior validation of
     /// the executed WebAssembly bytecode for correctness.
+    #[inline]
     pub fn pop(&mut self) -> StackEntry {
         self.stack_ptr -= 1;
         self.entries[self.stack_ptr]
     }
 
+    #[inline]
     pub fn drop(&mut self, depth: usize) {
         self.stack_ptr -= depth;
     }
 
     /// Pops the last [`StackEntry`] from the [`ValueStack`] as `T`.
+    #[inline]
     pub fn pop_as<T>(&mut self) -> T
     where
         T: FromStackEntry,
@@ -321,6 +337,7 @@ impl ValueStack {
     ///   [`ValueStack::pop`] twice.
     /// - This operation heavily relies on the prior validation of
     ///   the executed WebAssembly bytecode for correctness.
+    #[inline]
     pub fn pop2(&mut self) -> (StackEntry, StackEntry) {
         self.stack_ptr -= 2;
         (
@@ -337,6 +354,7 @@ impl ValueStack {
     /// - Pop entry `e2`.
     /// - Peek entry `&mut e1_ptr`.
     /// - Evaluate `f(e1_ptr, e2, e3)`.
+    #[inline]
     pub fn pop2_eval<F>(&mut self, f: F)
     where
         F: FnOnce(&mut StackEntry, StackEntry, StackEntry),
@@ -355,6 +373,7 @@ impl ValueStack {
     /// - Especially the stack-depth analysis during compilation with
     ///   a manual stack extension before function call prevents this
     ///   procedure from panicking.
+    #[inline]
     pub fn push<T>(&mut self, entry: T)
     where
         T: Into<StackEntry>,
@@ -364,11 +383,13 @@ impl ValueStack {
     }
 
     /// Returns the capacity of the [`ValueStack`].
+    #[inline]
     fn capacity(&self) -> usize {
         self.entries.len()
     }
 
     /// Returns the current length of the [`ValueStack`].
+    #[inline]
     pub fn len(&self) -> usize {
         self.stack_ptr
     }
@@ -407,6 +428,7 @@ impl ValueStack {
     ///
     /// This API is mostly used when writing results back to the
     /// caller after function execution has finished.
+    #[inline]
     pub fn drain(&mut self) -> &[StackEntry] {
         let len = self.stack_ptr;
         self.stack_ptr = 0;
@@ -414,6 +436,7 @@ impl ValueStack {
     }
 
     /// Returns an exclusive slice to the last `depth` entries in the value stack.
+    #[inline]
     pub fn peek_as_slice_mut(&mut self, depth: usize) -> &mut [StackEntry] {
         let start = self.stack_ptr - depth;
         let end = self.stack_ptr;
@@ -428,6 +451,7 @@ impl ValueStack {
     /// function execution which leaves the [`ValueStack`] in an unspecified
     /// state. Therefore the [`ValueStack`] is required to be reset before
     /// function execution happens.
+    #[inline]
     pub fn clear(&mut self) {
         self.stack_ptr = 0;
     }

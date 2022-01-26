@@ -89,6 +89,7 @@ impl Target {
 pub struct FuncIdx(u32);
 
 impl From<u32> for FuncIdx {
+    #[inline]
     fn from(index: u32) -> Self {
         Self(index)
     }
@@ -96,6 +97,7 @@ impl From<u32> for FuncIdx {
 
 impl FuncIdx {
     /// Returns the inner `u32` index.
+    #[inline]
     pub fn into_inner(self) -> u32 {
         self.0
     }
@@ -107,6 +109,7 @@ impl FuncIdx {
 pub struct SignatureIdx(u32);
 
 impl From<u32> for SignatureIdx {
+    #[inline]
     fn from(index: u32) -> Self {
         Self(index)
     }
@@ -114,6 +117,7 @@ impl From<u32> for SignatureIdx {
 
 impl SignatureIdx {
     /// Returns the inner `u32` index.
+    #[inline]
     pub fn into_inner(self) -> u32 {
         self.0
     }
@@ -129,6 +133,7 @@ impl SignatureIdx {
 pub struct LocalIdx(u32);
 
 impl From<u32> for LocalIdx {
+    #[inline]
     fn from(index: u32) -> Self {
         Self(index)
     }
@@ -136,6 +141,7 @@ impl From<u32> for LocalIdx {
 
 impl LocalIdx {
     /// Returns the inner `u32` index.
+    #[inline]
     pub fn into_inner(self) -> u32 {
         self.0
     }
@@ -153,6 +159,7 @@ impl LocalIdx {
 pub struct GlobalIdx(u32);
 
 impl From<u32> for GlobalIdx {
+    #[inline]
     fn from(index: u32) -> Self {
         Self(index)
     }
@@ -160,6 +167,7 @@ impl From<u32> for GlobalIdx {
 
 impl GlobalIdx {
     /// Returns the inner `u32` index.
+    #[inline]
     pub fn into_inner(self) -> u32 {
         self.0
     }
@@ -175,6 +183,7 @@ impl GlobalIdx {
 pub struct Offset(u32);
 
 impl From<u32> for Offset {
+    #[inline]
     fn from(index: u32) -> Self {
         Self(index)
     }
@@ -182,6 +191,7 @@ impl From<u32> for Offset {
 
 impl Offset {
     /// Returns the inner `u32` index.
+    #[inline]
     pub fn into_inner(self) -> u32 {
         self.0
     }

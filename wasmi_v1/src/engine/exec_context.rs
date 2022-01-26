@@ -200,6 +200,7 @@ where
     /// - `i64.load`
     /// - `f32.load`
     /// - `f64.load`
+    #[inline]
     fn execute_load<T>(&mut self, offset: Offset) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -234,6 +235,7 @@ where
     /// - `i64.load_16u`
     /// - `i64.load_32s`
     /// - `i64.load_32u`
+    #[inline]
     fn execute_load_extend<T, U>(&mut self, offset: Offset) -> Result<ExecutionOutcome, Trap>
     where
         T: ExtendInto<U> + LittleEndianConvert,
@@ -262,6 +264,7 @@ where
     /// - `i64.store`
     /// - `f32.store`
     /// - `f64.store`
+    #[inline]
     fn execute_store<T>(&mut self, offset: Offset) -> Result<ExecutionOutcome, Trap>
     where
         T: LittleEndianConvert + FromStackEntry,
@@ -288,6 +291,7 @@ where
     /// - `i64.store8`
     /// - `i64.store16`
     /// - `i64.store32`
+    #[inline]
     fn execute_store_wrap<T, U>(&mut self, offset: Offset) -> Result<ExecutionOutcome, Trap>
     where
         T: WrapInto<U> + FromStackEntry,
@@ -304,6 +308,7 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
+    #[inline]
     fn execute_eqz<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         T: FromStackEntry,
@@ -320,6 +325,7 @@ where
     /// Executes a relative operation given the top two stack values.
     ///
     /// After success the top of the stack will store the result.
+    #[inline]
     fn execute_relop<T, F>(&mut self, f: F) -> Result<ExecutionOutcome, Trap>
     where
         T: FromStackEntry,
@@ -333,6 +339,7 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
+    #[inline]
     fn execute_eq<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         T: FromStackEntry + PartialEq,
@@ -340,6 +347,7 @@ where
         self.execute_relop(|left: T, right: T| left == right)
     }
 
+    #[inline]
     fn execute_ne<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         T: FromStackEntry + PartialEq,
@@ -347,6 +355,7 @@ where
         self.execute_relop(|left: T, right: T| left != right)
     }
 
+    #[inline]
     fn execute_lt<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         T: FromStackEntry + PartialOrd,
@@ -354,6 +363,7 @@ where
         self.execute_relop(|left: T, right: T| left < right)
     }
 
+    #[inline]
     fn execute_le<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         T: FromStackEntry + PartialOrd,
@@ -361,6 +371,7 @@ where
         self.execute_relop(|left: T, right: T| left <= right)
     }
 
+    #[inline]
     fn execute_gt<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         T: FromStackEntry + PartialOrd,
@@ -368,6 +379,7 @@ where
         self.execute_relop(|left: T, right: T| left > right)
     }
 
+    #[inline]
     fn execute_ge<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         T: FromStackEntry + PartialOrd,
@@ -375,6 +387,7 @@ where
         self.execute_relop(|left: T, right: T| left >= right)
     }
 
+    #[inline]
     fn execute_unop<T, U, F>(&mut self, f: F) -> Result<ExecutionOutcome, Trap>
     where
         F: FnOnce(T) -> U,
@@ -388,6 +401,7 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
+    #[inline]
     fn execute_clz<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -396,6 +410,7 @@ where
         self.execute_unop(|v: T| v.leading_zeros())
     }
 
+    #[inline]
     fn execute_ctz<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -404,6 +419,7 @@ where
         self.execute_unop(|v: T| v.trailing_zeros())
     }
 
+    #[inline]
     fn execute_popcnt<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -412,6 +428,7 @@ where
         self.execute_unop(|v: T| v.count_ones())
     }
 
+    #[inline]
     fn execute_binop<T, R, F>(&mut self, f: F) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<R>,
@@ -426,6 +443,7 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
+    #[inline]
     fn execute_add<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -434,6 +452,7 @@ where
         self.execute_binop(|left: T, right: T| left.add(right))
     }
 
+    #[inline]
     fn execute_sub<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -442,6 +461,7 @@ where
         self.execute_binop(|left: T, right: T| left.sub(right))
     }
 
+    #[inline]
     fn execute_mul<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -450,6 +470,7 @@ where
         self.execute_binop(|left: T, right: T| left.mul(right))
     }
 
+    #[inline]
     fn try_execute_binop<T, F>(&mut self, f: F) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -464,6 +485,7 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
+    #[inline]
     fn execute_div<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -472,6 +494,7 @@ where
         self.try_execute_binop(|left, right| left.div(right))
     }
 
+    #[inline]
     fn execute_rem<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -480,6 +503,7 @@ where
         self.try_execute_binop(|left, right| left.rem(right))
     }
 
+    #[inline]
     fn execute_and<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<<T as BitAnd>::Output>,
@@ -488,6 +512,7 @@ where
         self.execute_binop(|left: T, right: T| left.bitand(right))
     }
 
+    #[inline]
     fn execute_or<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<<T as BitOr>::Output>,
@@ -496,6 +521,7 @@ where
         self.execute_binop(|left: T, right: T| left.bitor(right))
     }
 
+    #[inline]
     fn execute_xor<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<<T as BitXor>::Output>,
@@ -504,6 +530,7 @@ where
         self.execute_binop(|left: T, right: T| left.bitxor(right))
     }
 
+    #[inline]
     fn execute_shl<T>(&mut self, mask: T) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<<T as Shl>::Output>,
@@ -512,6 +539,7 @@ where
         self.execute_binop(|left: T, right: T| left.shl(right & mask))
     }
 
+    #[inline]
     fn execute_shr<T>(&mut self, mask: T) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<<T as Shr>::Output>,
@@ -520,6 +548,7 @@ where
         self.execute_binop(|left: T, right: T| left.shr(right & mask))
     }
 
+    #[inline]
     fn execute_rotl<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -528,6 +557,7 @@ where
         self.execute_binop(|left: T, right: T| left.rotl(right))
     }
 
+    #[inline]
     fn execute_rotr<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -536,6 +566,7 @@ where
         self.execute_binop(|left: T, right: T| left.rotr(right))
     }
 
+    #[inline]
     fn execute_abs<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -544,6 +575,7 @@ where
         self.execute_unop(|v: T| v.abs())
     }
 
+    #[inline]
     fn execute_neg<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<<T as Neg>::Output>,
@@ -552,6 +584,7 @@ where
         self.execute_unop(|v: T| v.neg())
     }
 
+    #[inline]
     fn execute_ceil<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -560,6 +593,7 @@ where
         self.execute_unop(|v: T| v.ceil())
     }
 
+    #[inline]
     fn execute_floor<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -568,6 +602,7 @@ where
         self.execute_unop(|v: T| v.floor())
     }
 
+    #[inline]
     fn execute_trunc<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -576,6 +611,7 @@ where
         self.execute_unop(|v: T| v.trunc())
     }
 
+    #[inline]
     fn execute_nearest<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -584,6 +620,7 @@ where
         self.execute_unop(|v: T| v.nearest())
     }
 
+    #[inline]
     fn execute_sqrt<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -592,6 +629,7 @@ where
         self.execute_unop(|v: T| v.sqrt())
     }
 
+    #[inline]
     fn execute_min<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -600,6 +638,7 @@ where
         self.execute_binop(|left: T, right: T| left.min(right))
     }
 
+    #[inline]
     fn execute_max<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -608,6 +647,7 @@ where
         self.execute_binop(|left: T, right: T| left.max(right))
     }
 
+    #[inline]
     fn execute_copysign<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<T>,
@@ -616,6 +656,7 @@ where
         self.execute_binop(|left: T, right: T| left.copysign(right))
     }
 
+    #[inline]
     fn execute_wrap<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<U>,
@@ -624,6 +665,7 @@ where
         self.execute_unop(|value: T| value.wrap_into())
     }
 
+    #[inline]
     fn execute_extend<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<U>,
@@ -632,6 +674,7 @@ where
         self.execute_unop(|value: T| value.extend_into())
     }
 
+    #[inline]
     fn execute_trunc_to_int<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<U>,
@@ -643,6 +686,7 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
+    #[inline]
     fn execute_reinterpret<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         StackEntry: From<U>,
@@ -659,14 +703,17 @@ where
 {
     type Outcome = Result<ExecutionOutcome, Trap>;
 
+    #[inline]
     fn visit_unreachable(&mut self) -> Self::Outcome {
         Err(TrapCode::Unreachable).map_err(Into::into)
     }
 
+    #[inline]
     fn visit_br(&mut self, target: Target) -> Self::Outcome {
         Ok(ExecutionOutcome::Branch(target))
     }
 
+    #[inline]
     fn visit_br_if_eqz(&mut self, target: Target) -> Self::Outcome {
         let condition = self.value_stack.pop_as();
         if condition {
@@ -676,6 +723,7 @@ where
         }
     }
 
+    #[inline]
     fn visit_br_if_nez(&mut self, target: Target) -> Self::Outcome {
         let condition = self.value_stack.pop_as();
         if condition {
@@ -685,16 +733,19 @@ where
         }
     }
 
+    #[inline]
     fn visit_br_table(&mut self, br_table: BrTable) -> Self::Outcome {
         let index: u32 = self.value_stack.pop_as();
         let target = br_table.target_or_default(index as usize);
         Ok(ExecutionOutcome::Branch(*target))
     }
 
+    #[inline]
     fn visit_ret(&mut self, drop_keep: DropKeep) -> Self::Outcome {
         Ok(ExecutionOutcome::Return(drop_keep))
     }
 
+    #[inline]
     fn visit_get_local(&mut self, local_depth: LocalIdx) -> Self::Outcome {
         let local_depth = Self::convert_local_depth(local_depth);
         let value = self.value_stack.peek(local_depth);
@@ -702,6 +753,7 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
+    #[inline]
     fn visit_set_local(&mut self, local_depth: LocalIdx) -> Self::Outcome {
         let local_depth = Self::convert_local_depth(local_depth);
         let new_value = self.value_stack.pop();
@@ -709,6 +761,7 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
+    #[inline]
     fn visit_tee_local(&mut self, local_depth: LocalIdx) -> Self::Outcome {
         let local_depth = Self::convert_local_depth(local_depth);
         let new_value = self.value_stack.last();
@@ -716,12 +769,14 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
+    #[inline]
     fn visit_get_global(&mut self, global_index: GlobalIdx) -> Self::Outcome {
         let global_value = self.global(global_index).get(self.ctx.as_context());
         self.value_stack.push(global_value);
         Ok(ExecutionOutcome::Continue)
     }
 
+    #[inline]
     fn visit_set_global(&mut self, global_index: GlobalIdx) -> Self::Outcome {
         let global = self.global(global_index);
         let new_value = self
@@ -734,6 +789,7 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
+    #[inline]
     fn visit_call(&mut self, func_index: FuncIdx) -> Self::Outcome {
         let func = self
             .frame
@@ -767,16 +823,19 @@ where
         Ok(ExecutionOutcome::ExecuteCall(func))
     }
 
+    #[inline]
     fn visit_const(&mut self, bytes: StackEntry) -> Self::Outcome {
         self.value_stack.push(bytes);
         Ok(ExecutionOutcome::Continue)
     }
 
+    #[inline]
     fn visit_drop(&mut self) -> Self::Outcome {
         let _ = self.value_stack.pop();
         Ok(ExecutionOutcome::Continue)
     }
 
+    #[inline]
     fn visit_select(&mut self) -> Self::Outcome {
         self.value_stack.pop2_eval(|e1, e2, e3| {
             let condition = FromStackEntry::from_stack_entry(e3);
@@ -786,6 +845,7 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
+    #[inline]
     fn visit_current_memory(&mut self) -> Self::Outcome {
         let memory = self.default_memory();
         let result = memory.current_pages(self.ctx.as_context()).0 as u32;
@@ -793,6 +853,7 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
+    #[inline]
     fn visit_grow_memory(&mut self) -> Self::Outcome {
         let pages: u32 = self.value_stack.pop_as();
         let memory = self.default_memory();
@@ -808,586 +869,732 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
+    #[inline]
     fn visit_i32_load(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_load::<i32>(offset)
     }
 
+    #[inline]
     fn visit_i64_load(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_load::<i64>(offset)
     }
 
+    #[inline]
     fn visit_f32_load(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_load::<F32>(offset)
     }
 
+    #[inline]
     fn visit_f64_load(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_load::<F64>(offset)
     }
 
+    #[inline]
     fn visit_i32_load_i8(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_load_extend::<i8, i32>(offset)
     }
 
+    #[inline]
     fn visit_i32_load_u8(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_load_extend::<u8, i32>(offset)
     }
 
+    #[inline]
     fn visit_i32_load_i16(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_load_extend::<i16, i32>(offset)
     }
 
+    #[inline]
     fn visit_i32_load_u16(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_load_extend::<u16, i32>(offset)
     }
 
+    #[inline]
     fn visit_i64_load_i8(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_load_extend::<i8, i64>(offset)
     }
 
+    #[inline]
     fn visit_i64_load_u8(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_load_extend::<u8, i64>(offset)
     }
 
+    #[inline]
     fn visit_i64_load_i16(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_load_extend::<i16, i64>(offset)
     }
 
+    #[inline]
     fn visit_i64_load_u16(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_load_extend::<u16, i64>(offset)
     }
 
+    #[inline]
     fn visit_i64_load_i32(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_load_extend::<i32, i64>(offset)
     }
 
+    #[inline]
     fn visit_i64_load_u32(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_load_extend::<u32, i64>(offset)
     }
 
+    #[inline]
     fn visit_i32_store(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_store::<i32>(offset)
     }
 
+    #[inline]
     fn visit_i64_store(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_store::<i64>(offset)
     }
 
+    #[inline]
     fn visit_f32_store(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_store::<F32>(offset)
     }
 
+    #[inline]
     fn visit_f64_store(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_store::<F64>(offset)
     }
 
+    #[inline]
     fn visit_i32_store_8(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_store_wrap::<i32, i8>(offset)
     }
 
+    #[inline]
     fn visit_i32_store_16(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_store_wrap::<i32, i16>(offset)
     }
 
+    #[inline]
     fn visit_i64_store_8(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_store_wrap::<i64, i8>(offset)
     }
 
+    #[inline]
     fn visit_i64_store_16(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_store_wrap::<i64, i16>(offset)
     }
 
+    #[inline]
     fn visit_i64_store_32(&mut self, offset: Offset) -> Self::Outcome {
         self.execute_store_wrap::<i64, i32>(offset)
     }
 
+    #[inline]
     fn visit_i32_eqz(&mut self) -> Self::Outcome {
         self.execute_eqz::<i32>()
     }
 
+    #[inline]
     fn visit_i32_eq(&mut self) -> Self::Outcome {
         self.execute_eq::<i32>()
     }
 
+    #[inline]
     fn visit_i32_ne(&mut self) -> Self::Outcome {
         self.execute_ne::<i32>()
     }
 
+    #[inline]
     fn visit_i32_lt_s(&mut self) -> Self::Outcome {
         self.execute_lt::<i32>()
     }
 
+    #[inline]
     fn visit_i32_lt_u(&mut self) -> Self::Outcome {
         self.execute_lt::<u32>()
     }
 
+    #[inline]
     fn visit_i32_gt_s(&mut self) -> Self::Outcome {
         self.execute_gt::<i32>()
     }
 
+    #[inline]
     fn visit_i32_gt_u(&mut self) -> Self::Outcome {
         self.execute_gt::<u32>()
     }
 
+    #[inline]
     fn visit_i32_le_s(&mut self) -> Self::Outcome {
         self.execute_le::<i32>()
     }
 
+    #[inline]
     fn visit_i32_le_u(&mut self) -> Self::Outcome {
         self.execute_le::<u32>()
     }
 
+    #[inline]
     fn visit_i32_ge_s(&mut self) -> Self::Outcome {
         self.execute_ge::<i32>()
     }
 
+    #[inline]
     fn visit_i32_ge_u(&mut self) -> Self::Outcome {
         self.execute_ge::<u32>()
     }
 
+    #[inline]
     fn visit_i64_eqz(&mut self) -> Self::Outcome {
         self.execute_eqz::<i64>()
     }
 
+    #[inline]
     fn visit_i64_eq(&mut self) -> Self::Outcome {
         self.execute_eq::<i64>()
     }
 
+    #[inline]
     fn visit_i64_ne(&mut self) -> Self::Outcome {
         self.execute_ne::<i64>()
     }
 
+    #[inline]
     fn visit_i64_lt_s(&mut self) -> Self::Outcome {
         self.execute_lt::<i64>()
     }
 
+    #[inline]
     fn visit_i64_lt_u(&mut self) -> Self::Outcome {
         self.execute_lt::<u64>()
     }
 
+    #[inline]
     fn visit_i64_gt_s(&mut self) -> Self::Outcome {
         self.execute_gt::<i64>()
     }
 
+    #[inline]
     fn visit_i64_gt_u(&mut self) -> Self::Outcome {
         self.execute_gt::<u64>()
     }
 
+    #[inline]
     fn visit_i64_le_s(&mut self) -> Self::Outcome {
         self.execute_le::<i64>()
     }
 
+    #[inline]
     fn visit_i64_le_u(&mut self) -> Self::Outcome {
         self.execute_le::<u64>()
     }
 
+    #[inline]
     fn visit_i64_ge_s(&mut self) -> Self::Outcome {
         self.execute_ge::<i64>()
     }
 
+    #[inline]
     fn visit_i64_ge_u(&mut self) -> Self::Outcome {
         self.execute_ge::<u64>()
     }
 
+    #[inline]
     fn visit_f32_eq(&mut self) -> Self::Outcome {
         self.execute_eq::<F32>()
     }
 
+    #[inline]
     fn visit_f32_ne(&mut self) -> Self::Outcome {
         self.execute_ne::<F32>()
     }
 
+    #[inline]
     fn visit_f32_lt(&mut self) -> Self::Outcome {
         self.execute_lt::<F32>()
     }
 
+    #[inline]
     fn visit_f32_gt(&mut self) -> Self::Outcome {
         self.execute_gt::<F32>()
     }
 
+    #[inline]
     fn visit_f32_le(&mut self) -> Self::Outcome {
         self.execute_le::<F32>()
     }
 
+    #[inline]
     fn visit_f32_ge(&mut self) -> Self::Outcome {
         self.execute_ge::<F32>()
     }
 
+    #[inline]
     fn visit_f64_eq(&mut self) -> Self::Outcome {
         self.execute_eq::<F64>()
     }
 
+    #[inline]
     fn visit_f64_ne(&mut self) -> Self::Outcome {
         self.execute_ne::<F64>()
     }
 
+    #[inline]
     fn visit_f64_lt(&mut self) -> Self::Outcome {
         self.execute_lt::<F64>()
     }
 
+    #[inline]
     fn visit_f64_gt(&mut self) -> Self::Outcome {
         self.execute_gt::<F64>()
     }
 
+    #[inline]
     fn visit_f64_le(&mut self) -> Self::Outcome {
         self.execute_le::<F64>()
     }
 
+    #[inline]
     fn visit_f64_ge(&mut self) -> Self::Outcome {
         self.execute_ge::<F64>()
     }
 
+    #[inline]
     fn visit_i32_clz(&mut self) -> Self::Outcome {
         self.execute_clz::<i32>()
     }
 
+    #[inline]
     fn visit_i32_ctz(&mut self) -> Self::Outcome {
         self.execute_ctz::<i32>()
     }
 
+    #[inline]
     fn visit_i32_popcnt(&mut self) -> Self::Outcome {
         self.execute_popcnt::<i32>()
     }
 
+    #[inline]
     fn visit_i32_add(&mut self) -> Self::Outcome {
         self.execute_add::<i32>()
     }
 
+    #[inline]
     fn visit_i32_sub(&mut self) -> Self::Outcome {
         self.execute_sub::<i32>()
     }
 
+    #[inline]
     fn visit_i32_mul(&mut self) -> Self::Outcome {
         self.execute_mul::<i32>()
     }
 
+    #[inline]
     fn visit_i32_div_s(&mut self) -> Self::Outcome {
         self.execute_div::<i32>()
     }
 
+    #[inline]
     fn visit_i32_div_u(&mut self) -> Self::Outcome {
         self.execute_div::<u32>()
     }
 
+    #[inline]
     fn visit_i32_rem_s(&mut self) -> Self::Outcome {
         self.execute_rem::<i32>()
     }
 
+    #[inline]
     fn visit_i32_rem_u(&mut self) -> Self::Outcome {
         self.execute_rem::<u32>()
     }
 
+    #[inline]
     fn visit_i32_and(&mut self) -> Self::Outcome {
         self.execute_and::<i32>()
     }
 
+    #[inline]
     fn visit_i32_or(&mut self) -> Self::Outcome {
         self.execute_or::<i32>()
     }
 
+    #[inline]
     fn visit_i32_xor(&mut self) -> Self::Outcome {
         self.execute_xor::<i32>()
     }
 
+    #[inline]
     fn visit_i32_shl(&mut self) -> Self::Outcome {
         self.execute_shl::<i32>(0x1F)
     }
 
+    #[inline]
     fn visit_i32_shr_s(&mut self) -> Self::Outcome {
         self.execute_shr::<i32>(0x1F)
     }
 
+    #[inline]
     fn visit_i32_shr_u(&mut self) -> Self::Outcome {
         self.execute_shr::<u32>(0x1F)
     }
 
+    #[inline]
     fn visit_i32_rotl(&mut self) -> Self::Outcome {
         self.execute_rotl::<i32>()
     }
 
+    #[inline]
     fn visit_i32_rotr(&mut self) -> Self::Outcome {
         self.execute_rotr::<i32>()
     }
 
+    #[inline]
     fn visit_i64_clz(&mut self) -> Self::Outcome {
         self.execute_clz::<i64>()
     }
 
+    #[inline]
     fn visit_i64_ctz(&mut self) -> Self::Outcome {
         self.execute_ctz::<i64>()
     }
 
+    #[inline]
     fn visit_i64_popcnt(&mut self) -> Self::Outcome {
         self.execute_popcnt::<i64>()
     }
 
+    #[inline]
     fn visit_i64_add(&mut self) -> Self::Outcome {
         self.execute_add::<i64>()
     }
 
+    #[inline]
     fn visit_i64_sub(&mut self) -> Self::Outcome {
         self.execute_sub::<i64>()
     }
 
+    #[inline]
     fn visit_i64_mul(&mut self) -> Self::Outcome {
         self.execute_mul::<i64>()
     }
 
+    #[inline]
     fn visit_i64_div_s(&mut self) -> Self::Outcome {
         self.execute_div::<i64>()
     }
 
+    #[inline]
     fn visit_i64_div_u(&mut self) -> Self::Outcome {
         self.execute_div::<u64>()
     }
 
+    #[inline]
     fn visit_i64_rem_s(&mut self) -> Self::Outcome {
         self.execute_rem::<i64>()
     }
 
+    #[inline]
     fn visit_i64_rem_u(&mut self) -> Self::Outcome {
         self.execute_rem::<u64>()
     }
 
+    #[inline]
     fn visit_i64_and(&mut self) -> Self::Outcome {
         self.execute_and::<i64>()
     }
 
+    #[inline]
     fn visit_i64_or(&mut self) -> Self::Outcome {
         self.execute_or::<i64>()
     }
 
+    #[inline]
     fn visit_i64_xor(&mut self) -> Self::Outcome {
         self.execute_xor::<i64>()
     }
 
+    #[inline]
     fn visit_i64_shl(&mut self) -> Self::Outcome {
         self.execute_shl::<i64>(0x3F)
     }
 
+    #[inline]
     fn visit_i64_shr_s(&mut self) -> Self::Outcome {
         self.execute_shr::<i64>(0x3F)
     }
 
+    #[inline]
     fn visit_i64_shr_u(&mut self) -> Self::Outcome {
         self.execute_shr::<u64>(0x3F)
     }
 
+    #[inline]
     fn visit_i64_rotl(&mut self) -> Self::Outcome {
         self.execute_rotl::<i64>()
     }
 
+    #[inline]
     fn visit_i64_rotr(&mut self) -> Self::Outcome {
         self.execute_rotr::<i64>()
     }
 
+    #[inline]
     fn visit_f32_abs(&mut self) -> Self::Outcome {
         self.execute_abs::<F32>()
     }
 
+    #[inline]
     fn visit_f32_neg(&mut self) -> Self::Outcome {
         self.execute_neg::<F32>()
     }
 
+    #[inline]
     fn visit_f32_ceil(&mut self) -> Self::Outcome {
         self.execute_ceil::<F32>()
     }
 
+    #[inline]
     fn visit_f32_floor(&mut self) -> Self::Outcome {
         self.execute_floor::<F32>()
     }
 
+    #[inline]
     fn visit_f32_trunc(&mut self) -> Self::Outcome {
         self.execute_trunc::<F32>()
     }
 
+    #[inline]
     fn visit_f32_nearest(&mut self) -> Self::Outcome {
         self.execute_nearest::<F32>()
     }
 
+    #[inline]
     fn visit_f32_sqrt(&mut self) -> Self::Outcome {
         self.execute_sqrt::<F32>()
     }
 
+    #[inline]
     fn visit_f32_add(&mut self) -> Self::Outcome {
         self.execute_add::<F32>()
     }
 
+    #[inline]
     fn visit_f32_sub(&mut self) -> Self::Outcome {
         self.execute_sub::<F32>()
     }
 
+    #[inline]
     fn visit_f32_mul(&mut self) -> Self::Outcome {
         self.execute_mul::<F32>()
     }
 
+    #[inline]
     fn visit_f32_div(&mut self) -> Self::Outcome {
         self.execute_div::<F32>()
     }
 
+    #[inline]
     fn visit_f32_min(&mut self) -> Self::Outcome {
         self.execute_min::<F32>()
     }
 
+    #[inline]
     fn visit_f32_max(&mut self) -> Self::Outcome {
         self.execute_max::<F32>()
     }
 
+    #[inline]
     fn visit_f32_copysign(&mut self) -> Self::Outcome {
         self.execute_copysign::<F32>()
     }
 
+    #[inline]
     fn visit_f64_abs(&mut self) -> Self::Outcome {
         self.execute_abs::<F64>()
     }
 
+    #[inline]
     fn visit_f64_neg(&mut self) -> Self::Outcome {
         self.execute_neg::<F64>()
     }
 
+    #[inline]
     fn visit_f64_ceil(&mut self) -> Self::Outcome {
         self.execute_ceil::<F64>()
     }
 
+    #[inline]
     fn visit_f64_floor(&mut self) -> Self::Outcome {
         self.execute_floor::<F64>()
     }
 
+    #[inline]
     fn visit_f64_trunc(&mut self) -> Self::Outcome {
         self.execute_trunc::<F64>()
     }
 
+    #[inline]
     fn visit_f64_nearest(&mut self) -> Self::Outcome {
         self.execute_nearest::<F64>()
     }
 
+    #[inline]
     fn visit_f64_sqrt(&mut self) -> Self::Outcome {
         self.execute_sqrt::<F64>()
     }
 
+    #[inline]
     fn visit_f64_add(&mut self) -> Self::Outcome {
         self.execute_add::<F64>()
     }
 
+    #[inline]
     fn visit_f64_sub(&mut self) -> Self::Outcome {
         self.execute_sub::<F64>()
     }
 
+    #[inline]
     fn visit_f64_mul(&mut self) -> Self::Outcome {
         self.execute_mul::<F64>()
     }
 
+    #[inline]
     fn visit_f64_div(&mut self) -> Self::Outcome {
         self.execute_div::<F64>()
     }
 
+    #[inline]
     fn visit_f64_min(&mut self) -> Self::Outcome {
         self.execute_min::<F64>()
     }
 
+    #[inline]
     fn visit_f64_max(&mut self) -> Self::Outcome {
         self.execute_max::<F64>()
     }
 
+    #[inline]
     fn visit_f64_copysign(&mut self) -> Self::Outcome {
         self.execute_copysign::<F64>()
     }
 
+    #[inline]
     fn visit_i32_wrap_i64(&mut self) -> Self::Outcome {
         self.execute_wrap::<i64, i32>()
     }
 
+    #[inline]
     fn visit_i32_trunc_f32(&mut self) -> Self::Outcome {
         self.execute_trunc_to_int::<F32, i32>()
     }
 
+    #[inline]
     fn visit_u32_trunc_f32(&mut self) -> Self::Outcome {
         self.execute_trunc_to_int::<F32, u32>()
     }
 
+    #[inline]
     fn visit_i32_trunc_f64(&mut self) -> Self::Outcome {
         self.execute_trunc_to_int::<F64, i32>()
     }
 
+    #[inline]
     fn visit_u32_trunc_f64(&mut self) -> Self::Outcome {
         self.execute_trunc_to_int::<F64, u32>()
     }
 
+    #[inline]
     fn visit_i64_extend_i32(&mut self) -> Self::Outcome {
         self.execute_extend::<i32, i64>()
     }
 
+    #[inline]
     fn visit_i64_extend_u32(&mut self) -> Self::Outcome {
         self.execute_extend::<u32, u64>()
     }
 
+    #[inline]
     fn visit_i64_trunc_f32(&mut self) -> Self::Outcome {
         self.execute_trunc_to_int::<F32, i64>()
     }
 
+    #[inline]
     fn visit_u64_trunc_f32(&mut self) -> Self::Outcome {
         self.execute_trunc_to_int::<F32, u64>()
     }
 
+    #[inline]
     fn visit_i64_trunc_f64(&mut self) -> Self::Outcome {
         self.execute_trunc_to_int::<F64, i64>()
     }
 
+    #[inline]
     fn visit_u64_trunc_f64(&mut self) -> Self::Outcome {
         self.execute_trunc_to_int::<F64, u64>()
     }
 
+    #[inline]
     fn visit_f32_convert_i32(&mut self) -> Self::Outcome {
         self.execute_extend::<i32, F32>()
     }
 
+    #[inline]
     fn visit_f32_convert_u32(&mut self) -> Self::Outcome {
         self.execute_extend::<u32, F32>()
     }
 
+    #[inline]
     fn visit_f32_convert_i64(&mut self) -> Self::Outcome {
         self.execute_wrap::<i64, F32>()
     }
 
+    #[inline]
     fn visit_f32_convert_u64(&mut self) -> Self::Outcome {
         self.execute_wrap::<u64, F32>()
     }
 
+    #[inline]
     fn visit_f32_demote_f64(&mut self) -> Self::Outcome {
         self.execute_wrap::<F64, F32>()
     }
 
+    #[inline]
     fn visit_f64_convert_i32(&mut self) -> Self::Outcome {
         self.execute_extend::<i32, F64>()
     }
 
+    #[inline]
     fn visit_f64_convert_u32(&mut self) -> Self::Outcome {
         self.execute_extend::<u32, F64>()
     }
 
+    #[inline]
     fn visit_f64_convert_i64(&mut self) -> Self::Outcome {
         self.execute_extend::<i64, F64>()
     }
 
+    #[inline]
     fn visit_f64_convert_u64(&mut self) -> Self::Outcome {
         self.execute_extend::<u64, F64>()
     }
 
+    #[inline]
     fn visit_f64_promote_f32(&mut self) -> Self::Outcome {
         self.execute_extend::<F32, F64>()
     }
 
+    #[inline]
     fn visit_i32_reinterpret_f32(&mut self) -> Self::Outcome {
         self.execute_reinterpret::<F32, i32>()
     }
 
+    #[inline]
     fn visit_i64_reinterpret_f64(&mut self) -> Self::Outcome {
         self.execute_reinterpret::<F64, i64>()
     }
 
+    #[inline]
     fn visit_f32_reinterpret_i32(&mut self) -> Self::Outcome {
         self.execute_reinterpret::<i32, F32>()
     }
 
+    #[inline]
     fn visit_f64_reinterpret_i64(&mut self) -> Self::Outcome {
         self.execute_reinterpret::<i64, F64>()
     }

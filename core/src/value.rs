@@ -138,10 +138,12 @@ macro_rules! impl_little_endian_convert_primitive {
             impl LittleEndianConvert for $primitive {
                 type Bytes = [::core::primitive::u8; ::core::mem::size_of::<$primitive>()];
 
+                #[inline]
                 fn into_le_bytes(self) -> Self::Bytes {
                     <$primitive>::to_le_bytes(self)
                 }
 
+                #[inline]
                 fn from_le_bytes(bytes: Self::Bytes) -> Self {
                     <$primitive>::from_le_bytes(bytes)
                 }
@@ -157,10 +159,12 @@ macro_rules! impl_little_endian_convert_float {
             impl LittleEndianConvert for $float_ty {
                 type Bytes = <$uint_ty as LittleEndianConvert>::Bytes;
 
+                #[inline]
                 fn into_le_bytes(self) -> Self::Bytes {
                     <$uint_ty>::into_le_bytes(self.to_bits())
                 }
 
+                #[inline]
                 fn from_le_bytes(bytes: Self::Bytes) -> Self {
                     Self::from_bits(<$uint_ty>::from_le_bytes(bytes))
                 }
@@ -233,6 +237,7 @@ pub trait Float<T>: ArithmeticOps<T> {
 
 impl Value {
     /// Creates new default value of given type.
+    #[inline]
     pub fn default(value_type: ValueType) -> Self {
         match value_type {
             ValueType::I32 => Value::I32(0),
@@ -255,6 +260,7 @@ impl Value {
     }
 
     /// Get variable type for this value.
+    #[inline]
     pub fn value_type(&self) -> ValueType {
         match *self {
             Value::I32(_) => ValueType::I32,
@@ -271,66 +277,77 @@ impl Value {
     ///
     /// [`FromValue`]: trait.FromValue.html
     /// [`Value`]: enum.Value.html
+    #[inline]
     pub fn try_into<T: FromValue>(self) -> Option<T> {
         FromValue::from_value(self)
     }
 }
 
 impl From<i8> for Value {
+    #[inline]
     fn from(val: i8) -> Self {
         Value::I32(val as i32)
     }
 }
 
 impl From<i16> for Value {
+    #[inline]
     fn from(val: i16) -> Self {
         Value::I32(val as i32)
     }
 }
 
 impl From<i32> for Value {
+    #[inline]
     fn from(val: i32) -> Self {
         Value::I32(val)
     }
 }
 
 impl From<i64> for Value {
+    #[inline]
     fn from(val: i64) -> Self {
         Value::I64(val)
     }
 }
 
 impl From<u8> for Value {
+    #[inline]
     fn from(val: u8) -> Self {
         Value::I32(val as i32)
     }
 }
 
 impl From<u16> for Value {
+    #[inline]
     fn from(val: u16) -> Self {
         Value::I32(val as i32)
     }
 }
 
 impl From<u32> for Value {
+    #[inline]
     fn from(val: u32) -> Self {
         Value::I32(val.transmute_into())
     }
 }
 
 impl From<u64> for Value {
+    #[inline]
     fn from(val: u64) -> Self {
         Value::I64(val.transmute_into())
     }
 }
 
 impl From<F32> for Value {
+    #[inline]
     fn from(val: F32) -> Self {
         Value::F32(val)
     }
 }
 
 impl From<F64> for Value {
+    #[inline]
     fn from(val: F64) -> Self {
         Value::F64(val)
     }
@@ -339,6 +356,7 @@ impl From<F64> for Value {
 macro_rules! impl_from_value {
     ($expected_rt_ty: ident, $into: ty) => {
         impl FromValue for $into {
+            #[inline]
             fn from_value(val: Value) -> Option<Self> {
                 match val {
                     Value::$expected_rt_ty(val) => Some(val.transmute_into()),
@@ -354,6 +372,7 @@ macro_rules! impl_from_value {
 ///
 /// [`I32`]: enum.Value.html#variant.I32
 impl FromValue for bool {
+    #[inline]
     fn from_value(val: Value) -> Option<Self> {
         match val {
             Value::I32(val) => Some(val != 0),
@@ -366,6 +385,7 @@ impl FromValue for bool {
 ///
 /// [`I32`]: enum.Value.html#variant.I32
 impl FromValue for i8 {
+    #[inline]
     fn from_value(val: Value) -> Option<Self> {
         let min = i8::min_value() as i32;
         let max = i8::max_value() as i32;
@@ -380,6 +400,7 @@ impl FromValue for i8 {
 ///
 /// [`I32`]: enum.Value.html#variant.I32
 impl FromValue for i16 {
+    #[inline]
     fn from_value(val: Value) -> Option<Self> {
         let min = i16::min_value() as i32;
         let max = i16::max_value() as i32;
@@ -394,6 +415,7 @@ impl FromValue for i16 {
 ///
 /// [`I32`]: enum.Value.html#variant.I32
 impl FromValue for u8 {
+    #[inline]
     fn from_value(val: Value) -> Option<Self> {
         let min = u8::min_value() as i32;
         let max = u8::max_value() as i32;
@@ -408,6 +430,7 @@ impl FromValue for u8 {
 ///
 /// [`I32`]: enum.Value.html#variant.I32
 impl FromValue for u16 {
+    #[inline]
     fn from_value(val: Value) -> Option<Self> {
         let min = u16::min_value() as i32;
         let max = u16::max_value() as i32;
@@ -428,6 +451,7 @@ impl_from_value!(I64, u64);
 macro_rules! impl_wrap_into {
     ($from:ident, $into:ident) => {
         impl WrapInto<$into> for $from {
+            #[inline]
             fn wrap_into(self) -> $into {
                 self as $into
             }
@@ -435,6 +459,7 @@ macro_rules! impl_wrap_into {
     };
     ($from:ident, $intermediate:ident, $into:ident) => {
         impl WrapInto<$into> for $from {
+            #[inline]
             fn wrap_into(self) -> $into {
                 $into::from(self as $intermediate)
             }
@@ -455,6 +480,7 @@ impl_wrap_into!(u64, f32, F32);
 impl_wrap_into!(f64, f32);
 
 impl WrapInto<F32> for F64 {
+    #[inline]
     fn wrap_into(self) -> F32 {
         (f64::from(self) as f32).into()
     }
@@ -463,6 +489,7 @@ impl WrapInto<F32> for F64 {
 macro_rules! impl_try_truncate_into {
     (@primitive $from: ident, $into: ident, $to_primitive:path) => {
         impl TryTruncateInto<$into, TrapCode> for $from {
+            #[inline]
             fn try_truncate_into(self) -> Result<$into, TrapCode> {
                 // Casting from a float to an integer will round the float towards zero
                 if self.is_nan() {
@@ -477,6 +504,7 @@ macro_rules! impl_try_truncate_into {
     };
     (@wrapped $from:ident, $intermediate:ident, $into:ident) => {
         impl TryTruncateInto<$into, TrapCode> for $from {
+            #[inline]
             fn try_truncate_into(self) -> Result<$into, TrapCode> {
                 $intermediate::from(self).try_truncate_into()
             }
@@ -504,6 +532,7 @@ impl_try_truncate_into!(@wrapped F64, f64, u64);
 macro_rules! impl_extend_into {
     ($from:ident, $into:ident) => {
         impl ExtendInto<$into> for $from {
+            #[inline]
             fn extend_into(self) -> $into {
                 self as $into
             }
@@ -511,6 +540,7 @@ macro_rules! impl_extend_into {
     };
     ($from:ident, $intermediate:ident, $into:ident) => {
         impl ExtendInto<$into> for $from {
+            #[inline]
             fn extend_into(self) -> $into {
                 $into::from(self as $intermediate)
             }
@@ -546,6 +576,7 @@ impl_extend_into!(u64, f64, F64);
 impl_extend_into!(f32, f64, F64);
 
 impl ExtendInto<F64> for F32 {
+    #[inline]
     fn extend_into(self) -> F64 {
         (f32::from(self) as f64).into()
     }
@@ -554,6 +585,7 @@ impl ExtendInto<F64> for F32 {
 macro_rules! impl_transmute_into_self {
     ($type: ident) => {
         impl TransmuteInto<$type> for $type {
+            #[inline]
             fn transmute_into(self) -> $type {
                 self
             }
@@ -571,6 +603,7 @@ impl_transmute_into_self!(F64);
 macro_rules! impl_transmute_into_as {
     ($from: ident, $into: ident) => {
         impl TransmuteInto<$into> for $from {
+            #[inline]
             fn transmute_into(self) -> $into {
                 self as $into
             }
@@ -585,36 +618,42 @@ impl_transmute_into_as!(i64, u64);
 macro_rules! impl_transmute_into_npf {
     ($npf:ident, $float:ident, $signed:ident, $unsigned:ident) => {
         impl TransmuteInto<$float> for $npf {
+            #[inline]
             fn transmute_into(self) -> $float {
                 self.into()
             }
         }
 
         impl TransmuteInto<$npf> for $float {
+            #[inline]
             fn transmute_into(self) -> $npf {
                 self.into()
             }
         }
 
         impl TransmuteInto<$signed> for $npf {
+            #[inline]
             fn transmute_into(self) -> $signed {
                 self.to_bits() as _
             }
         }
 
         impl TransmuteInto<$unsigned> for $npf {
+            #[inline]
             fn transmute_into(self) -> $unsigned {
                 self.to_bits()
             }
         }
 
         impl TransmuteInto<$npf> for $signed {
+            #[inline]
             fn transmute_into(self) -> $npf {
                 $npf::from_bits(self as _)
             }
         }
 
         impl TransmuteInto<$npf> for $unsigned {
+            #[inline]
             fn transmute_into(self) -> $npf {
                 $npf::from_bits(self)
             }
@@ -626,36 +665,42 @@ impl_transmute_into_npf!(F32, f32, i32, u32);
 impl_transmute_into_npf!(F64, f64, i64, u64);
 
 impl TransmuteInto<i32> for f32 {
+    #[inline]
     fn transmute_into(self) -> i32 {
         self.to_bits() as i32
     }
 }
 
 impl TransmuteInto<i64> for f64 {
+    #[inline]
     fn transmute_into(self) -> i64 {
         self.to_bits() as i64
     }
 }
 
 impl TransmuteInto<f32> for i32 {
+    #[inline]
     fn transmute_into(self) -> f32 {
         f32::from_bits(self as u32)
     }
 }
 
 impl TransmuteInto<f64> for i64 {
+    #[inline]
     fn transmute_into(self) -> f64 {
         f64::from_bits(self as u64)
     }
 }
 
 impl TransmuteInto<i32> for u32 {
+    #[inline]
     fn transmute_into(self) -> i32 {
         self as _
     }
 }
 
 impl TransmuteInto<i64> for u64 {
+    #[inline]
     fn transmute_into(self) -> i64 {
         self as _
     }
@@ -664,15 +709,19 @@ impl TransmuteInto<i64> for u64 {
 macro_rules! impl_integer_arithmetic_ops {
     ($type: ident) => {
         impl ArithmeticOps<$type> for $type {
+            #[inline]
             fn add(self, other: $type) -> $type {
                 self.wrapping_add(other)
             }
+            #[inline]
             fn sub(self, other: $type) -> $type {
                 self.wrapping_sub(other)
             }
+            #[inline]
             fn mul(self, other: $type) -> $type {
                 self.wrapping_mul(other)
             }
+            #[inline]
             fn div(self, other: $type) -> Result<$type, TrapCode> {
                 if other == 0 {
                     Err(TrapCode::DivisionByZero)
@@ -697,15 +746,19 @@ impl_integer_arithmetic_ops!(u64);
 macro_rules! impl_float_arithmetic_ops {
     ($type: ident) => {
         impl ArithmeticOps<$type> for $type {
+            #[inline]
             fn add(self, other: $type) -> $type {
                 self + other
             }
+            #[inline]
             fn sub(self, other: $type) -> $type {
                 self - other
             }
+            #[inline]
             fn mul(self, other: $type) -> $type {
                 self * other
             }
+            #[inline]
             fn div(self, other: $type) -> Result<$type, TrapCode> {
                 Ok(self / other)
             }
@@ -721,21 +774,27 @@ impl_float_arithmetic_ops!(F64);
 macro_rules! impl_integer {
     ($type: ident) => {
         impl Integer<$type> for $type {
+            #[inline]
             fn leading_zeros(self) -> $type {
                 self.leading_zeros() as $type
             }
+            #[inline]
             fn trailing_zeros(self) -> $type {
                 self.trailing_zeros() as $type
             }
+            #[inline]
             fn count_ones(self) -> $type {
                 self.count_ones() as $type
             }
+            #[inline]
             fn rotl(self, other: $type) -> $type {
                 self.rotate_left(other as u32)
             }
+            #[inline]
             fn rotr(self, other: $type) -> $type {
                 self.rotate_right(other as u32)
             }
+            #[inline]
             fn rem(self, other: $type) -> Result<$type, TrapCode> {
                 if other == 0 {
                     Err(TrapCode::DivisionByZero)
@@ -771,21 +830,27 @@ macro_rules! impl_float {
         // In this particular instance we want to directly compare floating point numbers.
         #[allow(clippy::float_cmp)]
         impl Float<$type> for $type {
+            #[inline]
             fn abs(self) -> $type {
                 fmath::$fXX::abs($fXX::from(self)).into()
             }
+            #[inline]
             fn floor(self) -> $type {
                 fmath::$fXX::floor($fXX::from(self)).into()
             }
+            #[inline]
             fn ceil(self) -> $type {
                 fmath::$fXX::ceil($fXX::from(self)).into()
             }
+            #[inline]
             fn trunc(self) -> $type {
                 fmath::$fXX::trunc($fXX::from(self)).into()
             }
+            #[inline]
             fn round(self) -> $type {
                 fmath::$fXX::round($fXX::from(self)).into()
             }
+            #[inline]
             fn nearest(self) -> $type {
                 let round = self.round();
                 if fmath::$fXX::fract($fXX::from(self)).abs() != 0.5 {
@@ -801,15 +866,19 @@ macro_rules! impl_float {
                     round
                 }
             }
+            #[inline]
             fn sqrt(self) -> $type {
                 fmath::$fXX::sqrt($fXX::from(self)).into()
             }
+            #[inline]
             fn is_sign_positive(self) -> bool {
                 $fXX::is_sign_positive($fXX::from(self)).into()
             }
+            #[inline]
             fn is_sign_negative(self) -> bool {
                 $fXX::is_sign_negative($fXX::from(self)).into()
             }
+            #[inline]
             fn min(self, other: $type) -> $type {
                 // The implementation strictly adheres to the mandated behavior for the Wasm specification.
                 // Note: In other contexts this API is also known as: `nan_min`.
@@ -825,6 +894,7 @@ macro_rules! impl_float {
                     }
                 }
             }
+            #[inline]
             fn max(self, other: $type) -> $type {
                 // The implementation strictly adheres to the mandated behavior for the Wasm specification.
                 // Note: In other contexts this API is also known as: `nan_max`.
@@ -840,6 +910,7 @@ macro_rules! impl_float {
                     }
                 }
             }
+            #[inline]
             fn copysign(self, other: $type) -> $type {
                 use core::mem::size_of;
                 let sign_mask: $iXX = 1 << ((size_of::<$iXX>() << 3) - 1);

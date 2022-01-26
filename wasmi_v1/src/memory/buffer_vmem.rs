@@ -61,16 +61,19 @@ impl ByteBuffer {
     }
 
     /// Returns the length of the byte buffer in bytes.
+    #[inline]
     pub fn len(&self) -> usize {
         self.len
     }
 
     /// Returns a shared slice to the bytes underlying to the byte buffer.
+    #[inline]
     pub fn data(&self) -> &[u8] {
         &self.bytes.data()[..self.len]
     }
 
     /// Returns an exclusive slice to the bytes underlying to the byte buffer.
+    #[inline]
     pub fn data_mut(&mut self) -> &mut [u8] {
         &mut self.bytes.data_mut()[..self.len]
     }
