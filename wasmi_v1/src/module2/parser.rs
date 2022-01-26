@@ -70,6 +70,13 @@ impl ModuleParser {
         }
     }
 
+    /// Starts parsing and validating the Wasm bytecode stream.
+    ///
+    /// Returns the compiled and validated Wasm [`Module`] upon success.
+    ///
+    /// # Errors
+    ///
+    /// If the Wasm bytecode stream fails to validate.
     pub fn parse(&mut self, mut stream: impl Read) -> Result<Module, ModuleError> {
         let mut buffer = Vec::new();
         let mut eof = false;
