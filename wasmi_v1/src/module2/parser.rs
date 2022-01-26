@@ -14,6 +14,7 @@ use wasmparser::{
     DataSectionReader,
     ElementSectionReader,
     ExportSectionReader,
+    FunctionBody,
     FunctionSectionReader,
     GlobalSectionReader,
     ImportSectionReader,
@@ -162,7 +163,7 @@ impl ModuleParser {
             Payload::DataSection(section) => self.process_data(section),
             Payload::CustomSection { .. } => Ok(()),
             Payload::CodeSectionStart { count, range, .. } => self.process_code_start(count, range),
-            Payload::CodeSectionEntry(_section) => self.process_code_entry(),
+            Payload::CodeSectionEntry(func_body) => self.process_code_entry(func_body),
             Payload::ModuleSectionStart { count, range, .. } => {
                 self.process_module_start(count, range)
             }
@@ -429,11 +430,17 @@ impl ModuleParser {
     /// # Errors
     ///
     /// If the function body fails to validate.
-    fn process_code_entry(&mut self) -> Result<(), ModuleError> {
+    fn process_code_entry(&mut self, func_body: FunctionBody) -> Result<(), ModuleError> {
         let engine = self.builder.engine();
         let validator = self.validator.code_section_entry()?;
         let module_resources = ModuleResources::new(&self.builder);
-        translate(engine, &mut self.parser, validator, module_resources)?;
+        translate(
+            engine,
+            func_body,
+            &mut self.parser,
+            validator,
+            module_resources,
+        )?;
         Ok(())
     }
 
