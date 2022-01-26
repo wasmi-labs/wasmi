@@ -27,6 +27,18 @@ use wasmparser::{
     WasmFeatures,
 };
 
+/// Parses and validates the given Wasm bytecode stream.
+///
+/// Returns the compiled and validated Wasm [`Module`] upon success.
+/// Uses the given [`Engine`] as the translation target of the process.
+///
+/// # Errors
+///
+/// If the Wasm bytecode stream fails to validate.
+pub fn parse(engine: &Engine, stream: impl Read) -> Result<Module, ModuleError> {
+    ModuleParser::new(engine).parse(stream)
+}
+
 /// Context used to construct a WebAssembly module from a stream of bytes.
 pub struct ModuleParser {
     /// The module builder used throughout stream parsing.

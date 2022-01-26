@@ -21,9 +21,11 @@ use self::{
     global::{Global, GlobalIdx},
     import::{FuncTypeIdx, Import, ImportKind, ImportName},
     init_expr::{InitExpr, InitExprOperand},
+    parser::parse,
     read::ReadError,
 };
 pub use self::{error::ModuleError, read::Read};
+use crate::Engine;
 
 /// A parsed and validated WebAssembly module.
 #[derive(Debug)]
@@ -36,7 +38,7 @@ impl Module {
     ///
     /// - If the `stream` cannot be decoded into a valid Wasm module.
     /// - If unsupported Wasm proposals are encounterd.
-    pub fn new(stream: impl Read) -> Result<Self, ModuleError> {
-        todo!()
+    pub fn new(engine: &Engine, stream: impl Read) -> Result<Self, ModuleError> {
+        parse(engine, stream)
     }
 }
