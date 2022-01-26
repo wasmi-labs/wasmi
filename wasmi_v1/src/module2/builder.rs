@@ -11,11 +11,12 @@ use super::{
     InitExpr,
     Module,
 };
-use crate::{FuncType, GlobalType, MemoryType, ModuleError, TableType};
+use crate::{Engine, FuncType, GlobalType, MemoryType, ModuleError, TableType};
 
 /// A builder for a WebAssembly [`Module`].
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct ModuleBuilder {
+    engine: Engine,
     func_types: Vec<FuncType>,
     imports: ModuleImports,
     funcs: Vec<FuncTypeIdx>,
@@ -62,6 +63,29 @@ impl<'a> ModuleResources<'a> {
 }
 
 impl ModuleBuilder {
+    /// Creates a new [`ModuleBuilder`] for the given [`Engine`].
+    pub fn new(engine: &Engine) -> Self {
+        Self {
+            engine: engine.clone(),
+            func_types: Vec::new(),
+            imports: ModuleImports::default(),
+            funcs: Vec::new(),
+            tables: Vec::new(),
+            memories: Vec::new(),
+            globals: Vec::new(),
+            globals_init: Vec::new(),
+            exports: Vec::new(),
+            start: None,
+            element_segments: Vec::new(),
+            data_segments: Vec::new(),
+        }
+    }
+
+    /// Returns a shared reference to the [`Engine`] of the [`Module`] under construction.
+    pub fn engine(&self) -> &Engine {
+        &self.engine
+    }
+
     /// Pushes the given function types to the [`Module`] under construction.
     ///
     /// # Errors

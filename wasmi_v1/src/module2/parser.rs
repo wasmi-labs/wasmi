@@ -1,3 +1,4 @@
+use crate::Engine;
 use super::{import::FuncTypeIdx, FuncIdx, Module, ModuleBuilder, ModuleError, Read};
 use wasmparser::{
     Chunk,
@@ -27,9 +28,10 @@ pub struct ModuleParser {
     parser: WasmParser,
 }
 
-impl Default for ModuleParser {
-    fn default() -> Self {
-        let builder = ModuleBuilder::default();
+impl ModuleParser {
+    /// Creates a new [`ModuleParser`] for the given [`Engine`].
+    fn new(engine: &Engine) -> Self {
+        let builder = ModuleBuilder::new(engine);
         let mut validator = Validator::default();
         validator.wasm_features(Self::features());
         let parser = WasmParser::new(0);
@@ -39,9 +41,7 @@ impl Default for ModuleParser {
             parser,
         }
     }
-}
 
-impl ModuleParser {
     /// Returns the Wasm features supported by `wasmi`.
     fn features() -> WasmFeatures {
         WasmFeatures {
