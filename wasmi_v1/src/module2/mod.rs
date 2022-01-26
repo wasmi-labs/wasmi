@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 mod builder;
+mod compile;
 mod data;
 mod element;
 mod error;
@@ -13,7 +14,7 @@ mod read;
 mod utils;
 
 use self::{
-    builder::ModuleBuilder,
+    builder::{ModuleBuilder, ModuleResources},
     data::DataSegment,
     element::ElementSegment,
     export::{Export, External, FuncIdx, MemoryIdx, TableIdx},

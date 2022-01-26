@@ -1,5 +1,14 @@
+use super::{
+    compile::translate,
+    import::FuncTypeIdx,
+    FuncIdx,
+    Module,
+    ModuleBuilder,
+    ModuleError,
+    ModuleResources,
+    Read,
+};
 use crate::Engine;
-use super::{import::FuncTypeIdx, FuncIdx, Module, ModuleBuilder, ModuleError, Read};
 use wasmparser::{
     Chunk,
     DataSectionReader,
@@ -402,7 +411,10 @@ impl ModuleParser {
     ///
     /// If the function body fails to validate.
     fn process_code_entry(&mut self) -> Result<(), ModuleError> {
-        let _fn_validator = self.validator.code_section_entry()?;
+        let engine = self.builder.engine();
+        let validator = self.validator.code_section_entry()?;
+        let module_resources = ModuleResources::new(&self.builder);
+        translate(engine, &mut self.parser, validator, module_resources)?;
         Ok(())
     }
 
