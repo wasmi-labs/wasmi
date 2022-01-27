@@ -15,8 +15,8 @@ use crate::{Engine, FuncType, GlobalType, MemoryType, ModuleError, TableType};
 
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug)]
-pub struct ModuleBuilder {
-    engine: Engine,
+pub struct ModuleBuilder<'engine> {
+    engine: &'engine Engine,
     func_types: Vec<FuncType>,
     imports: ModuleImports,
     funcs: Vec<FuncTypeIdx>,
@@ -42,7 +42,7 @@ pub struct ModuleImports {
 /// The resources of a [`Module`] required for translating function bodies.
 #[derive(Debug)]
 pub struct ModuleResources<'a> {
-    res: &'a ModuleBuilder,
+    res: &'a ModuleBuilder<'a>,
 }
 
 impl<'a> ModuleResources<'a> {
@@ -62,11 +62,11 @@ impl<'a> ModuleResources<'a> {
     }
 }
 
-impl ModuleBuilder {
+impl<'engine> ModuleBuilder<'engine> {
     /// Creates a new [`ModuleBuilder`] for the given [`Engine`].
-    pub fn new(engine: &Engine) -> Self {
+    pub fn new(engine: &'engine Engine) -> Self {
         Self {
-            engine: engine.clone(),
+            engine: engine,
             func_types: Vec::new(),
             imports: ModuleImports::default(),
             funcs: Vec::new(),

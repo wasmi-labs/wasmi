@@ -41,9 +41,9 @@ pub fn parse(engine: &Engine, stream: impl Read) -> Result<Module, ModuleError> 
 }
 
 /// Context used to construct a WebAssembly module from a stream of bytes.
-pub struct ModuleParser {
+pub struct ModuleParser<'engine> {
     /// The module builder used throughout stream parsing.
-    builder: ModuleBuilder,
+    builder: ModuleBuilder<'engine>,
     /// The Wasm validator used throughout stream parsing.
     validator: Validator,
     /// The underlying Wasm parser.
@@ -52,9 +52,9 @@ pub struct ModuleParser {
     func: FuncIdx,
 }
 
-impl ModuleParser {
+impl<'engine> ModuleParser<'engine> {
     /// Creates a new [`ModuleParser`] for the given [`Engine`].
-    fn new(engine: &Engine) -> Self {
+    fn new(engine: &'engine Engine) -> Self {
         let builder = ModuleBuilder::new(engine);
         let mut validator = Validator::default();
         validator.wasm_features(Self::features());
