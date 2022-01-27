@@ -102,8 +102,9 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
 
     /// Translate a Wasm `block` control flow operator.
     fn translate_block(&mut self, ty: TypeOrFuncType) -> Result<(), ModuleError> {
-        let _block_type = BlockType::try_from(ty)?;
-        todo!()
+        let block_type = BlockType::try_from(ty)?;
+        self.func_builder.translate_block(block_type)?;
+        Ok(())
     }
 
     /// Translate a single Wasm operator of the Wasm function.
