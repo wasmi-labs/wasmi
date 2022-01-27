@@ -1,4 +1,4 @@
-use super::{utils::value_type_from_wasmparser, ModuleResources};
+use super::{utils::value_type_from_wasmparser, FuncIdx, ModuleResources};
 use crate::{Engine, ModuleError};
 use wasmparser::{FuncValidator, FunctionBody, Operator, ValidatorResources};
 
@@ -20,6 +20,7 @@ use wasmparser::{FuncValidator, FunctionBody, Operator, ValidatorResources};
 /// If the function body fails to validate.
 pub fn translate<'parser>(
     engine: &Engine,
+    func: FuncIdx,
     func_body: FunctionBody<'parser>,
     validator: FuncValidator<ValidatorResources>,
     res: ModuleResources<'parser>,
