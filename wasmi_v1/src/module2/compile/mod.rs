@@ -65,7 +65,9 @@ impl<'parser> FunctionTranslator<'parser> {
 
     /// Starts translation of the Wasm stream into `wasmi` bytecode.
     fn translate(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_locals()?;
+        self.translate_operators()?;
+        Ok(())
     }
 
     /// Translates local variables of the Wasm function.
