@@ -104,7 +104,7 @@ impl<'parser> FunctionTranslator<'parser> {
             Operator::Loop { ty } => todo!(),
             Operator::If { ty } => todo!(),
             Operator::Else => todo!(),
-            Operator::Try { ty: _ }
+            Operator::Try { .. }
             | Operator::Catch { .. }
             | Operator::Throw { .. }
             | Operator::Rethrow { .. } => unsupported_error(),
@@ -156,9 +156,9 @@ impl<'parser> FunctionTranslator<'parser> {
             Operator::I64Const { value } => todo!(),
             Operator::F32Const { value } => todo!(),
             Operator::F64Const { value } => todo!(),
-            Operator::RefNull { ty: _ }
-            | Operator::RefIsNull
-            | Operator::RefFunc { function_index: _ } => unsupported_error(),
+            Operator::RefNull { .. } | Operator::RefIsNull | Operator::RefFunc { .. } => {
+                unsupported_error()
+            }
             Operator::I32Eqz => todo!(),
             Operator::I32Eq => todo!(),
             Operator::I32Ne => todo!(),
