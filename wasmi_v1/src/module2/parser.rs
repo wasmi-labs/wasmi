@@ -434,13 +434,7 @@ impl ModuleParser {
         let engine = self.builder.engine();
         let validator = self.validator.code_section_entry()?;
         let module_resources = ModuleResources::new(&self.builder);
-        translate(
-            engine,
-            func_body,
-            &mut self.parser,
-            validator,
-            module_resources,
-        )?;
+        translate(engine, func_body, validator, module_resources)?;
         Ok(())
     }
 

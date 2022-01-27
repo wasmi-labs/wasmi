@@ -1,6 +1,6 @@
 use super::{utils::value_type_from_wasmparser, ModuleResources};
 use crate::{Engine, ModuleError};
-use wasmparser::{FuncValidator, FunctionBody, Operator, Parser, ValidatorResources};
+use wasmparser::{FuncValidator, FunctionBody, Operator, ValidatorResources};
 
 // mod block_type;
 // mod control_frame;
@@ -21,11 +21,10 @@ use wasmparser::{FuncValidator, FunctionBody, Operator, Parser, ValidatorResourc
 pub fn translate<'parser>(
     engine: &Engine,
     func_body: FunctionBody<'parser>,
-    parser: &'parser mut Parser,
     validator: FuncValidator<ValidatorResources>,
     res: ModuleResources<'parser>,
 ) -> Result<(), ModuleError> {
-    FunctionTranslator::new(engine, func_body, parser, validator, res).translate()
+    FunctionTranslator::new(engine, func_body, validator, res).translate()
 }
 
 /// Translates Wasm bytecode into `wasmi` bytecode for a single Wasm function.
@@ -34,8 +33,6 @@ struct FunctionTranslator<'parser> {
     engine: Engine,
     /// The function body that shall be translated.
     func_body: FunctionBody<'parser>,
-    /// The Wasm parser.
-    parser: &'parser mut Parser,
     /// The Wasm validator.
     validator: FuncValidator<ValidatorResources>,
     /// The `wasmi` module resources.
@@ -50,14 +47,12 @@ impl<'parser> FunctionTranslator<'parser> {
     fn new(
         engine: &Engine,
         func_body: FunctionBody<'parser>,
-        parser: &'parser mut Parser,
         validator: FuncValidator<ValidatorResources>,
         res: ModuleResources<'parser>,
     ) -> Self {
         Self {
             engine: engine.clone(),
             func_body,
-            parser,
             validator,
             res,
         }
