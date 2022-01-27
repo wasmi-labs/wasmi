@@ -1,9 +1,9 @@
+use self::block_type::BlockType;
 use super::{utils::value_type_from_wasmparser, FuncIdx, ModuleResources};
 use crate::{Engine, ModuleError};
 use wasmparser::{FuncValidator, FunctionBody, Operator, ValidatorResources};
 
-// mod block_type;
-// mod control_frame;
+mod block_type;
 
 /// Translates the Wasm bytecode into `wasmi` bytecode.
 ///
