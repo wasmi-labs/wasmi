@@ -4,7 +4,7 @@ use crate::{GlobalType, ModuleError};
 /// The index of a global variable within a [`Module`].
 ///
 /// [`Module`]: [`super::Module`]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct GlobalIdx(pub(super) u32);
 
 impl GlobalIdx {

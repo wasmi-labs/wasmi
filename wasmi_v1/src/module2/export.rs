@@ -4,7 +4,7 @@ use crate::ModuleError;
 /// The index of a function declaration within a [`Module`].
 ///
 /// [`Module`]: [`super::Module`]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct FuncIdx(pub(super) u32);
 
 impl FuncIdx {
@@ -17,7 +17,7 @@ impl FuncIdx {
 /// The index of a table declaration within a [`Module`].
 ///
 /// [`Module`]: [`super::Module`]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct TableIdx(pub(super) u32);
 
 impl TableIdx {
@@ -30,7 +30,7 @@ impl TableIdx {
 /// The index of a linear memory declaration within a [`Module`].
 ///
 /// [`Module`]: [`super::Module`]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct MemoryIdx(pub(super) u32);
 
 impl MemoryIdx {
@@ -64,7 +64,7 @@ impl TryFrom<wasmparser::Export<'_>> for Export {
 /// An external item of an [`Export`] definition within a [`Module`].
 ///
 /// [`Module`]: [`super::Module`]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum External {
     /// An exported function and its index witihn the [`Module`].
     ///
