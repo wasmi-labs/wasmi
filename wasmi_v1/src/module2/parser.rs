@@ -48,6 +48,8 @@ pub struct ModuleParser {
     validator: Validator,
     /// The underlying Wasm parser.
     parser: WasmParser,
+    /// Currently processed function.
+    func: FuncIdx,
 }
 
 impl ModuleParser {
@@ -61,6 +63,7 @@ impl ModuleParser {
             builder,
             validator,
             parser,
+            func: FuncIdx(0),
         }
     }
 
@@ -419,6 +422,13 @@ impl ModuleParser {
             .map_err(Into::into)
     }
 
+    /// Returns the next `FuncIdx` for processing of its function body.
+    fn next_func(&mut self) -> FuncIdx {
+        let next @ FuncIdx(value) = self.func;
+        self.func = FuncIdx(value + 1);
+        next
+    }
+
     /// Process a single module code section entry.
     ///
     /// # Note
@@ -431,10 +441,11 @@ impl ModuleParser {
     ///
     /// If the function body fails to validate.
     fn process_code_entry(&mut self, func_body: FunctionBody) -> Result<(), ModuleError> {
+        let func = self.next_func();
         let engine = self.builder.engine();
         let validator = self.validator.code_section_entry()?;
         let module_resources = ModuleResources::new(&self.builder);
-        translate(engine, func_body, validator, module_resources)?;
+        translate(engine, func, func_body, validator, module_resources)?;
         Ok(())
     }
 

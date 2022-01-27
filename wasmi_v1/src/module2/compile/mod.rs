@@ -24,13 +24,15 @@ pub fn translate<'parser>(
     validator: FuncValidator<ValidatorResources>,
     res: ModuleResources<'parser>,
 ) -> Result<(), ModuleError> {
-    FunctionTranslator::new(engine, func_body, validator, res).translate()
+    FunctionTranslator::new(engine, func, func_body, validator, res).translate()
 }
 
 /// Translates Wasm bytecode into `wasmi` bytecode for a single Wasm function.
 struct FunctionTranslator<'parser> {
     /// The target `wasmi` engine for `wasmi` bytecode translation.
     engine: Engine,
+    /// The index of the translated function.
+    func: FuncIdx,
     /// The function body that shall be translated.
     func_body: FunctionBody<'parser>,
     /// The Wasm validator.
@@ -46,12 +48,14 @@ impl<'parser> FunctionTranslator<'parser> {
     /// Creates a new Wasm to `wasmi` bytecode function translator.
     fn new(
         engine: &Engine,
+        func: FuncIdx,
         func_body: FunctionBody<'parser>,
         validator: FuncValidator<ValidatorResources>,
         res: ModuleResources<'parser>,
     ) -> Self {
         Self {
             engine: engine.clone(),
+            func,
             func_body,
             validator,
             res,
