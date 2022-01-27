@@ -40,7 +40,7 @@ pub struct ModuleImports {
 }
 
 /// The resources of a [`Module`] required for translating function bodies.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct ModuleResources<'a> {
     res: &'a ModuleBuilder<'a>,
 }

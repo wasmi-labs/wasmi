@@ -14,17 +14,23 @@ mod read;
 mod utils;
 
 use self::{
-    builder::{ModuleBuilder, ModuleResources},
+    builder::ModuleBuilder,
     data::DataSegment,
     element::ElementSegment,
-    export::{Export, External, FuncIdx, MemoryIdx, TableIdx},
+    export::{Export, External, MemoryIdx, TableIdx},
     global::{Global, GlobalIdx},
     import::{FuncTypeIdx, Import, ImportKind, ImportName},
     init_expr::{InitExpr, InitExprOperand},
     parser::parse,
     read::ReadError,
 };
-pub use self::{error::ModuleError, read::Read};
+pub use self::{
+    builder::ModuleResources,
+    compile::BlockType,
+    error::ModuleError,
+    export::FuncIdx,
+    read::Read,
+};
 use crate::Engine;
 
 /// A parsed and validated WebAssembly module.

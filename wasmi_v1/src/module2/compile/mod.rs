@@ -1,7 +1,7 @@
-use self::block_type::BlockType;
+pub use self::block_type::BlockType;
 use super::{utils::value_type_from_wasmparser, FuncIdx, ModuleResources};
-use crate::{Engine, ModuleError};
-use wasmparser::{FuncValidator, FunctionBody, Operator, ValidatorResources};
+use crate::{engine::FunctionBuilder, Engine, ModuleError};
+use wasmparser::{FuncValidator, FunctionBody, Operator, TypeOrFuncType, ValidatorResources};
 
 mod block_type;
 
@@ -36,6 +36,8 @@ struct FunctionTranslator<'engine, 'parser> {
     func: FuncIdx,
     /// The function body that shall be translated.
     func_body: FunctionBody<'parser>,
+    /// The interface to incrementally build up the `wasmi` bytecode function.
+    func_builder: FunctionBuilder<'engine, 'parser>,
     /// The Wasm validator.
     validator: FuncValidator<ValidatorResources>,
     /// The `wasmi` module resources.
@@ -54,10 +56,12 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
         validator: FuncValidator<ValidatorResources>,
         res: ModuleResources<'parser>,
     ) -> Self {
+        let func_builder = FunctionBuilder::new(engine, func, res);
         Self {
             engine,
             func,
             func_body,
+            func_builder,
             validator,
             res,
         }
@@ -96,13 +100,19 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
         Ok(())
     }
 
+    /// Translate a Wasm `block` control flow operator.
+    fn translate_block(&mut self, ty: TypeOrFuncType) -> Result<(), ModuleError> {
+        let _block_type = BlockType::try_from(ty)?;
+        todo!()
+    }
+
     /// Translate a single Wasm operator of the Wasm function.
     fn translate_operator(&mut self, operator: Operator) -> Result<(), ModuleError> {
         let unsupported_error = || Err(ModuleError::unsupported(&operator));
         match operator {
             Operator::Unreachable => todo!(),
             Operator::Nop => todo!(),
-            Operator::Block { ty } => todo!(),
+            Operator::Block { ty } => self.translate_block(ty),
             Operator::Loop { ty } => todo!(),
             Operator::If { ty } => todo!(),
             Operator::Else => todo!(),

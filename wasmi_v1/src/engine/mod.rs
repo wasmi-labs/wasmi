@@ -5,6 +5,7 @@ pub mod call_stack;
 pub mod code_map;
 pub mod exec_context;
 mod func_args;
+mod func_builder;
 mod func_types;
 pub mod inst_builder;
 mod traits;
@@ -14,6 +15,7 @@ pub(crate) use self::func_args::{FuncParams, FuncResults, ReadParams, WasmType, 
 pub use self::{
     bytecode::{DropKeep, Target},
     code_map::FuncBody,
+    func_builder::FunctionBuilder,
     inst_builder::{InstructionIdx, InstructionsBuilder, LabelIdx, Reloc},
     traits::{CallParams, CallResults},
 };
