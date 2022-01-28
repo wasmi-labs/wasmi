@@ -52,12 +52,12 @@ impl<'a> ModuleResources<'a> {
     }
 
     /// Returns the [`FuncType`] at the given index.
-    pub fn get_func_type(&self, func_type_idx: FuncTypeIdx) -> &FuncType {
+    pub fn get_func_type(&self, func_type_idx: FuncTypeIdx) -> &'a FuncType {
         &self.res.func_types[func_type_idx.into_usize()]
     }
 
     /// Returns the [`FuncType`] of the indexed function.
-    pub fn get_type_of_func(&self, func_idx: FuncIdx) -> &FuncType {
+    pub fn get_type_of_func(&self, func_idx: FuncIdx) -> &'a FuncType {
         self.get_func_type(self.res.funcs[func_idx.into_usize()])
     }
 }
