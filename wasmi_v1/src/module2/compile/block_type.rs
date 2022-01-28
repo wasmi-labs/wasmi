@@ -1,4 +1,4 @@
-use super::super::{utils::value_type_from_wasmparser, FuncTypeIdx};
+use super::super::{utils::value_type_from_wasmparser, FuncTypeIdx, ModuleResources};
 use crate::{ModuleError, ValueType};
 use core::slice;
 
@@ -59,19 +59,23 @@ impl BlockType {
     }
 
     /// Returns the parameter types of the [`BlockType`].
-    pub fn params(&self) -> &[ValueType] {
+    pub fn params<'a>(&self, res: ModuleResources<'a>) -> &'a [ValueType] {
         match &self.inner {
             BlockTypeInner::Empty | BlockTypeInner::Returns(_) => &[],
-            BlockTypeInner::FuncType(func_type) => todo!(),
+            BlockTypeInner::FuncType(func_type) => res.get_func_type(*func_type).params(),
         }
     }
 
     /// Returns the result types of the [`BlockType`].
-    pub fn results(&self) -> &[ValueType] {
+    pub fn results<'a, 'b, 'c>(&'a self, res: ModuleResources<'b>) -> &'c [ValueType]
+    where
+        'a: 'c,
+        'b: 'c,
+    {
         match &self.inner {
             BlockTypeInner::Empty => &[],
             BlockTypeInner::Returns(return_type) => slice::from_ref(return_type),
-            BlockTypeInner::FuncType(func_type) => todo!(),
+            BlockTypeInner::FuncType(func_type) => res.get_func_type(*func_type).results(),
         }
     }
 }
