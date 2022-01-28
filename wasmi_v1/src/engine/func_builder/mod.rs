@@ -1,6 +1,7 @@
 mod control_frame;
+mod control_stack;
 
-use self::control_frame::ControlFrame;
+use self::{control_frame::ControlFrame, control_stack::ControlFlowStack};
 use crate::{
     module2::{BlockType, FuncIdx, ModuleResources},
     Engine,
@@ -17,7 +18,7 @@ pub struct FunctionBuilder<'engine, 'parser> {
     /// The immutable `wasmi` module resources.
     res: ModuleResources<'parser>,
     /// The control flow frame stack that represents the Wasm control flow.
-    control_frames: Vec<ControlFrame>,
+    control_frames: ControlFlowStack,
     /// The amount of local variables of the currently compiled function.
     len_locals: usize,
     /// The maximum stack height of the translated Wasm function.
@@ -45,7 +46,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             engine,
             func,
             res,
-            control_frames: Vec::new(),
+            control_frames: ControlFlowStack::default(),
             len_locals: 0,
             max_stack_height: 0,
             reachable: true,
