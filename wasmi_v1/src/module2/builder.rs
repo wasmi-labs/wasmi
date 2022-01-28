@@ -66,7 +66,7 @@ impl<'engine> ModuleBuilder<'engine> {
     /// Creates a new [`ModuleBuilder`] for the given [`Engine`].
     pub fn new(engine: &'engine Engine) -> Self {
         Self {
-            engine: engine,
+            engine,
             func_types: Vec::new(),
             imports: ModuleImports::default(),
             funcs: Vec::new(),
