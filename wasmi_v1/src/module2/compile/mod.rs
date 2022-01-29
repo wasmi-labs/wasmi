@@ -1,9 +1,10 @@
 pub use self::block_type::BlockType;
 use super::{utils::value_type_from_wasmparser, FuncIdx, ModuleResources};
 use crate::{engine::FunctionBuilder, Engine, ModuleError};
-use wasmparser::{FuncValidator, FunctionBody, Operator, TypeOrFuncType, ValidatorResources};
+use wasmparser::{FuncValidator, FunctionBody, Operator, ValidatorResources};
 
 mod block_type;
+mod operator;
 
 /// Translates the Wasm bytecode into `wasmi` bytecode.
 ///
@@ -100,27 +101,6 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
         Ok(())
     }
 
-    /// Translate a Wasm `block` control flow operator.
-    fn translate_block(&mut self, ty: TypeOrFuncType) -> Result<(), ModuleError> {
-        let block_type = BlockType::try_from(ty)?;
-        self.func_builder.translate_block(block_type)?;
-        Ok(())
-    }
-
-    /// Translate a Wasm `loop` control flow operator.
-    fn translate_loop(&mut self, ty: TypeOrFuncType) -> Result<(), ModuleError> {
-        let block_type = BlockType::try_from(ty)?;
-        self.func_builder.translate_loop(block_type)?;
-        Ok(())
-    }
-
-    /// Translate a Wasm `if` control flow operator.
-    fn translate_if(&mut self, ty: TypeOrFuncType) -> Result<(), ModuleError> {
-        let block_type = BlockType::try_from(ty)?;
-        self.func_builder.translate_if(block_type)?;
-        Ok(())
-    }
-
     /// Translate a single Wasm operator of the Wasm function.
     fn translate_operator(&mut self, operator: Operator) -> Result<(), ModuleError> {
         let unsupported_error = || Err(ModuleError::unsupported(&operator));
@@ -129,7 +109,7 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
             Operator::Nop => todo!(),
             Operator::Block { ty } => self.translate_block(ty),
             Operator::Loop { ty } => self.translate_loop(ty),
-            Operator::If { ty } => todo!(),
+            Operator::If { ty } => self.translate_if(ty),
             Operator::Else => todo!(),
             Operator::Try { .. }
             | Operator::Catch { .. }
