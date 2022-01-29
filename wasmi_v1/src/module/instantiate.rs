@@ -29,7 +29,7 @@ use super::{
     },
     Module,
 };
-use crate::{Value, ValueType, F32, F64};
+use crate::{GlobalType, Value, ValueType, F32, F64};
 use core::{fmt, fmt::Display};
 use parity_wasm::elements as pwasm;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
@@ -62,17 +62,9 @@ pub enum InstantiationError {
     /// Caused when a global variable has a mismatching global variable type and mutability.
     GlobalTypeMismatch {
         /// The expected global type for the global variable import.
-        ///
-        /// # Note
-        ///
-        /// The global type is required to match value type and mutability.
-        expected: pwasm::GlobalType,
-        /// The actual value type of the global variable import.
-        actual_type: ValueType,
-        /// The actual mutability of the global variable import.
-        ///
-        /// This is `true` if the global variable is mutable.
-        actual_mutability: bool,
+        expected: GlobalType,
+        /// The actual global type found for the global variable import.
+        actual: GlobalType,
     },
     /// Caused when an element segment does not fit into the specified table instance.
     ElementSegmentDoesNotFit {
@@ -114,18 +106,12 @@ impl Display for InstantiationError {
             }
             Self::GlobalTypeMismatch {
                 expected,
-                actual_type,
-                actual_mutability,
+                actual,
             } => write!(
                 f,
-                "expected {:?} global type but found {} {:?} value type",
+                "expected {:?} global type but found {:?} value type",
                 expected,
-                if *actual_mutability {
-                    "mutable"
-                } else {
-                    "immutable"
-                },
-                actual_type
+                actual,
             ),
             Self::ElementSegmentDoesNotFit {
                 table,
@@ -396,16 +382,12 @@ impl Module {
                     builder.push_memory(memory);
                 }
                 (pwasm::External::Global(global_type), Extern::Global(global)) => {
-                    let expected = *global_type;
-                    let expected_type = ValueType::from_elements(expected.content_type());
-                    let expected_mutability = expected.is_mutable();
-                    let actual_type = global.value_type(context.as_context());
-                    let actual_mutability = global.is_mutable(context.as_context());
-                    if expected_type != actual_type || expected_mutability != actual_mutability {
+                    let expected = GlobalType::from_elements(*global_type);
+                    let actual = global.global_type(&context);
+                    if expected != actual {
                         return Err(InstantiationError::GlobalTypeMismatch {
                             expected,
-                            actual_type,
-                            actual_mutability,
+                            actual,
                         });
                     }
                     builder.push_global(global);
