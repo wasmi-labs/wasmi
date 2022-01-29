@@ -1,7 +1,9 @@
 mod control_frame;
 mod control_stack;
+mod inst_builder;
 mod value_stack;
 
+pub use self::inst_builder::{InstructionIdx, InstructionsBuilder, LabelIdx, Reloc};
 use self::{control_frame::ControlFrame, control_stack::ControlFlowStack, value_stack::ValueStack};
 use crate::{
     module2::{BlockType, FuncIdx, ModuleResources},

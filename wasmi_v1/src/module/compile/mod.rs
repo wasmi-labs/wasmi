@@ -7,12 +7,11 @@ mod control_frame;
 mod utils;
 
 use self::control_frame::ControlFrame;
-use super::{
-    super::{
-        engine::{
-            bytecode::{FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx},
-            inst_builder::{Reloc, Signedness, WasmFloatType, WasmIntType},
-        },
+use crate::{
+    core::{Value, ValueType},
+    engine::{
+        bytecode::{FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx},
+        inst_builder::{Reloc, Signedness, WasmFloatType, WasmIntType},
         DropKeep,
         FuncBody,
         InstructionIdx,
@@ -22,7 +21,6 @@ use super::{
     },
     Engine,
 };
-use crate::core::{Value, ValueType};
 use alloc::vec::Vec;
 use parity_wasm::elements::{self as pwasm, Instruction};
 use validation::{
