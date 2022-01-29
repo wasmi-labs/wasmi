@@ -17,9 +17,9 @@ use self::{
     builder::ModuleBuilder,
     data::DataSegment,
     element::ElementSegment,
-    export::{Export, External, MemoryIdx, TableIdx},
-    global::{Global, GlobalIdx},
-    import::{FuncTypeIdx, Import, ImportKind, ImportName},
+    export::{Export, External},
+    global::Global,
+    import::{Import, ImportKind, ImportName},
     init_expr::{InitExpr, InitExprOperand},
     parser::parse,
     read::ReadError,
@@ -28,7 +28,9 @@ pub use self::{
     builder::ModuleResources,
     compile::BlockType,
     error::ModuleError,
-    export::FuncIdx,
+    export::{FuncIdx, MemoryIdx, TableIdx},
+    global::GlobalIdx,
+    import::FuncTypeIdx,
     read::Read,
 };
 use crate::Engine;

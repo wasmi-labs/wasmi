@@ -14,7 +14,7 @@ pub use self::inst_builder::{
 use self::{control_frame::ControlFrame, control_stack::ControlFlowStack, value_stack::ValueStack};
 use super::{DropKeep, Instruction, Target};
 use crate::{
-    module2::{BlockType, FuncIdx, ModuleResources},
+    module2::{BlockType, FuncIdx, FuncTypeIdx, ModuleResources, TableIdx},
     Engine,
     ModuleError,
 };
@@ -163,6 +163,20 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translates a Wasm `return` control flow operator.
     pub fn translate_return(&mut self) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translates a Wasm `call` instruction.
+    pub fn translate_call(&mut self, func_idx: FuncIdx) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translates a Wasm `call_indirect` instruction.
+    pub fn translate_call_indirect(
+        &mut self,
+        func_type_idx: FuncTypeIdx,
+        table_idx: TableIdx,
+    ) -> Result<(), ModuleError> {
         todo!()
     }
 }

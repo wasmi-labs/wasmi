@@ -121,8 +121,10 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
             Operator::BrIf { relative_depth } => self.translate_br_if(relative_depth),
             Operator::BrTable { table } => self.translate_br_table(table),
             Operator::Return => self.translate_return(),
-            Operator::Call { function_index } => todo!(),
-            Operator::CallIndirect { index, table_index } => todo!(),
+            Operator::Call { function_index } => self.translate_call(function_index),
+            Operator::CallIndirect { index, table_index } => {
+                self.translate_call_indirect(index, table_index)
+            }
             Operator::ReturnCall { .. }
             | Operator::ReturnCallIndirect { .. }
             | Operator::Delegate { .. }

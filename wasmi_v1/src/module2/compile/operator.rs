@@ -1,5 +1,8 @@
 use super::{br_table::WasmBrTable, BlockType, FunctionTranslator};
-use crate::ModuleError;
+use crate::{
+    module2::{export::TableIdx, import::FuncTypeIdx, FuncIdx},
+    ModuleError,
+};
 use wasmparser::TypeOrFuncType;
 
 impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
@@ -69,6 +72,23 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
     /// Translate a Wasm `return` control flow operator.
     pub fn translate_return(&mut self) -> Result<(), ModuleError> {
         self.func_builder.translate_return()?;
+        Ok(())
+    }
+
+    /// Translate a Wasm `call` instruction.
+    pub fn translate_call(&mut self, func_idx: u32) -> Result<(), ModuleError> {
+        self.func_builder.translate_call(FuncIdx(func_idx))?;
+        Ok(())
+    }
+
+    /// Translate a Wasm `call_indirect` instruction.
+    pub fn translate_call_indirect(
+        &mut self,
+        func_type_idx: u32,
+        table_idx: u32,
+    ) -> Result<(), ModuleError> {
+        self.func_builder
+            .translate_call_indirect(FuncTypeIdx(func_type_idx), TableIdx(table_idx))?;
         Ok(())
     }
 }
