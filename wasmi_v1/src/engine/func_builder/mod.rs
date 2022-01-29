@@ -3,7 +3,14 @@ mod control_stack;
 mod inst_builder;
 mod value_stack;
 
-pub use self::inst_builder::{InstructionIdx, InstructionsBuilder, LabelIdx, Reloc};
+pub use self::inst_builder::{
+    BrTable,
+    InstructionIdx,
+    InstructionsBuilder,
+    LabelIdx,
+    RelativeDepth,
+    Reloc,
+};
 use self::{control_frame::ControlFrame, control_stack::ControlFlowStack, value_stack::ValueStack};
 use super::{DropKeep, Instruction, Target};
 use crate::{
@@ -92,6 +99,11 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 }
 
 impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
+    /// Translates a Wasm `unreachable` instruction.
+    pub fn translate_unreachable(&mut self) -> Result<(), ModuleError> {
+        todo!()
+    }
+
     /// Translates a Wasm `block` control flow operator.
     pub fn translate_block(&mut self, _block_type: BlockType) -> Result<(), ModuleError> {
         let end_label = self.inst_builder.new_label();
@@ -122,5 +134,35 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         self.inst_builder
             .push_inst(Instruction::BrIfEqz(branch_target));
         Ok(())
+    }
+
+    /// Translates a Wasm `else` control flow operator.
+    pub fn translate_else(&mut self) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translates a Wasm `end` control flow operator.
+    pub fn translate_end(&mut self) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translates a Wasm `br` control flow operator.
+    pub fn translate_br(&mut self, relative_depth: u32) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translates a Wasm `br_if` control flow operator.
+    pub fn translate_br_if(&mut self, relative_depth: u32) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translates a Wasm `br_table` control flow operator.
+    pub fn translate_br_table(&mut self, br_table: impl BrTable) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translates a Wasm `return` control flow operator.
+    pub fn translate_return(&mut self) -> Result<(), ModuleError> {
+        todo!()
     }
 }

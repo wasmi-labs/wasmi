@@ -4,6 +4,7 @@ use crate::{engine::FunctionBuilder, Engine, ModuleError};
 use wasmparser::{FuncValidator, FunctionBody, Operator, ValidatorResources};
 
 mod block_type;
+mod br_table;
 mod operator;
 
 /// Translates the Wasm bytecode into `wasmi` bytecode.
@@ -105,17 +106,17 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
     fn translate_operator(&mut self, operator: Operator) -> Result<(), ModuleError> {
         let unsupported_error = || Err(ModuleError::unsupported(&operator));
         match operator {
-            Operator::Unreachable => todo!(),
-            Operator::Nop => todo!(),
+            Operator::Unreachable => self.translate_unreachable(),
+            Operator::Nop => self.translate_nop(),
             Operator::Block { ty } => self.translate_block(ty),
             Operator::Loop { ty } => self.translate_loop(ty),
             Operator::If { ty } => self.translate_if(ty),
-            Operator::Else => todo!(),
+            Operator::Else => self.translate_else(),
             Operator::Try { .. }
             | Operator::Catch { .. }
             | Operator::Throw { .. }
             | Operator::Rethrow { .. } => unsupported_error(),
-            Operator::End => todo!(),
+            Operator::End => self.translate_end(),
             Operator::Br { relative_depth } => todo!(),
             Operator::BrIf { relative_depth } => todo!(),
             Operator::BrTable { table } => todo!(),

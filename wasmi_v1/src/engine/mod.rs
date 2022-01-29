@@ -15,7 +15,7 @@ pub(crate) use self::func_args::{FuncParams, FuncResults, ReadParams, WasmType, 
 pub use self::{
     bytecode::{DropKeep, Target},
     code_map::FuncBody,
-    func_builder::{FunctionBuilder, InstructionIdx, LabelIdx, Reloc},
+    func_builder::{BrTable, FunctionBuilder, InstructionIdx, LabelIdx, RelativeDepth, Reloc},
     inst_builder::InstructionsBuilder,
     traits::{CallParams, CallResults},
 };
