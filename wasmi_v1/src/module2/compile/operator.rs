@@ -67,7 +67,7 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
     }
 
     /// Translate a Wasm `return` control flow operator.
-    pub fn translate_return(&mut self, relative_depth: u32) -> Result<(), ModuleError> {
+    pub fn translate_return(&mut self) -> Result<(), ModuleError> {
         self.func_builder.translate_return()?;
         Ok(())
     }

@@ -117,10 +117,10 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
             | Operator::Throw { .. }
             | Operator::Rethrow { .. } => unsupported_error(),
             Operator::End => self.translate_end(),
-            Operator::Br { relative_depth } => todo!(),
-            Operator::BrIf { relative_depth } => todo!(),
-            Operator::BrTable { table } => todo!(),
-            Operator::Return => todo!(),
+            Operator::Br { relative_depth } => self.translate_br(relative_depth),
+            Operator::BrIf { relative_depth } => self.translate_br_if(relative_depth),
+            Operator::BrTable { table } => self.translate_br_table(table),
+            Operator::Return => self.translate_return(),
             Operator::Call { function_index } => todo!(),
             Operator::CallIndirect { index, table_index } => todo!(),
             Operator::ReturnCall { .. }
