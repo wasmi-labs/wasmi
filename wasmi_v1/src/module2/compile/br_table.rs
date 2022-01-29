@@ -9,6 +9,7 @@ use core::slice;
 /// unfortunately. This is due to the fact that the API of `wasmparser`'s
 /// `BrTable::targets` does not return a concrete iterator type that we can
 /// thinnly wrap.
+/// Tracking issue: https://github.com/bytecodealliance/wasm-tools/issues/459
 ///
 /// # Note
 ///
