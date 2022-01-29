@@ -114,6 +114,13 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
         Ok(())
     }
 
+    /// Translate a Wasm `if` control flow operator.
+    fn translate_if(&mut self, ty: TypeOrFuncType) -> Result<(), ModuleError> {
+        let block_type = BlockType::try_from(ty)?;
+        self.func_builder.translate_if(block_type)?;
+        Ok(())
+    }
+
     /// Translate a single Wasm operator of the Wasm function.
     fn translate_operator(&mut self, operator: Operator) -> Result<(), ModuleError> {
         let unsupported_error = || Err(ModuleError::unsupported(&operator));

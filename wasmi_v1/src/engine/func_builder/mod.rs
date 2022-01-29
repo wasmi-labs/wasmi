@@ -5,6 +5,7 @@ mod value_stack;
 
 pub use self::inst_builder::{InstructionIdx, InstructionsBuilder, LabelIdx, Reloc};
 use self::{control_frame::ControlFrame, control_stack::ControlFlowStack, value_stack::ValueStack};
+use super::{DropKeep, Instruction, Target};
 use crate::{
     module2::{BlockType, FuncIdx, ModuleResources},
     Engine,
@@ -67,6 +68,18 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         }
     }
 
+    /// Try to resolve the given label.
+    ///
+    /// In case the label cannot yet be resolved register the [`Reloc`] as its user.
+    fn try_resolve_label<F>(&mut self, label: LabelIdx, reloc_provider: F) -> InstructionIdx
+    where
+        F: FnOnce(InstructionIdx) -> Reloc,
+    {
+        let pc = self.inst_builder.current_pc();
+        self.inst_builder
+            .try_resolve_label(label, || reloc_provider(pc))
+    }
+
     /// Translates the given local variables for the translated function.
     pub fn translate_locals(
         &mut self,
@@ -76,7 +89,9 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         self.len_locals += amount as usize;
         Ok(())
     }
+}
 
+impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Translates a Wasm `block` control flow operator.
     pub fn translate_block(&mut self, _block_type: BlockType) -> Result<(), ModuleError> {
         let end_label = self.inst_builder.new_label();
@@ -91,6 +106,21 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         self.inst_builder.resolve_label(header);
         self.control_frames
             .push_frame(ControlFrame::Loop { header });
+        Ok(())
+    }
+
+    /// Translates a Wasm `if` control flow operator.
+    pub fn translate_if(&mut self, _block_type: BlockType) -> Result<(), ModuleError> {
+        let else_label = self.inst_builder.new_label();
+        let end_label = self.inst_builder.new_label();
+        self.control_frames.push_frame(ControlFrame::If {
+            else_label,
+            end_label,
+        });
+        let dst_pc = self.try_resolve_label(else_label, |pc| Reloc::Br { inst_idx: pc });
+        let branch_target = Target::new(dst_pc, DropKeep::new(0, 0));
+        self.inst_builder
+            .push_inst(Instruction::BrIfEqz(branch_target));
         Ok(())
     }
 }
