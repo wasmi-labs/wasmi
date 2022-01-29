@@ -1,6 +1,6 @@
 use super::{br_table::WasmBrTable, BlockType, FunctionTranslator};
 use crate::{
-    module2::{export::TableIdx, import::FuncTypeIdx, FuncIdx},
+    module2::{export::TableIdx, import::FuncTypeIdx, FuncIdx, GlobalIdx},
     ModuleError,
 };
 use wasmparser::TypeOrFuncType;
@@ -89,6 +89,50 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
     ) -> Result<(), ModuleError> {
         self.func_builder
             .translate_call_indirect(FuncTypeIdx(func_type_idx), TableIdx(table_idx))?;
+        Ok(())
+    }
+
+    /// Translate a Wasm `drop` instruction.
+    pub fn translate_drop(&mut self) -> Result<(), ModuleError> {
+        self.func_builder.translate_drop()?;
+        Ok(())
+    }
+
+    /// Translate a Wasm `select` instruction.
+    pub fn translate_select(&mut self) -> Result<(), ModuleError> {
+        self.func_builder.translate_select()?;
+        Ok(())
+    }
+
+    /// Translate a Wasm `local.get` instruction.
+    pub fn translate_local_get(&mut self, local_idx: u32) -> Result<(), ModuleError> {
+        self.func_builder.translate_local_get(local_idx)?;
+        Ok(())
+    }
+
+    /// Translate a Wasm `local.set` instruction.
+    pub fn translate_local_set(&mut self, local_idx: u32) -> Result<(), ModuleError> {
+        self.func_builder.translate_local_set(local_idx)?;
+        Ok(())
+    }
+
+    /// Translate a Wasm `local.tee` instruction.
+    pub fn translate_local_tee(&mut self, local_idx: u32) -> Result<(), ModuleError> {
+        self.func_builder.translate_local_tee(local_idx)?;
+        Ok(())
+    }
+
+    /// Translate a Wasm `global.get` instruction.
+    pub fn translate_global_get(&mut self, global_idx: u32) -> Result<(), ModuleError> {
+        self.func_builder
+            .translate_global_get(GlobalIdx(global_idx))?;
+        Ok(())
+    }
+
+    /// Translate a Wasm `global.set` instruction.
+    pub fn translate_global_set(&mut self, global_idx: u32) -> Result<(), ModuleError> {
+        self.func_builder
+            .translate_global_set(GlobalIdx(global_idx))?;
         Ok(())
     }
 }

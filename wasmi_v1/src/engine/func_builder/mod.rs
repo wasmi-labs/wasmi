@@ -14,7 +14,7 @@ pub use self::inst_builder::{
 use self::{control_frame::ControlFrame, control_stack::ControlFlowStack, value_stack::ValueStack};
 use super::{DropKeep, Instruction, Target};
 use crate::{
-    module2::{BlockType, FuncIdx, FuncTypeIdx, ModuleResources, TableIdx},
+    module2::{BlockType, FuncIdx, FuncTypeIdx, GlobalIdx, ModuleResources, TableIdx},
     Engine,
     ModuleError,
 };
@@ -177,6 +177,41 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         func_type_idx: FuncTypeIdx,
         table_idx: TableIdx,
     ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translates a Wasm `drop` instruction.
+    pub fn translate_drop(&mut self) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translates a Wasm `select` instruction.
+    pub fn translate_select(&mut self) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `local.get` instruction.
+    pub fn translate_local_get(&mut self, local_idx: u32) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `local.set` instruction.
+    pub fn translate_local_set(&mut self, local_idx: u32) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `local.tee` instruction.
+    pub fn translate_local_tee(&mut self, local_idx: u32) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `global.get` instruction.
+    pub fn translate_global_get(&mut self, global_idx: GlobalIdx) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `global.set` instruction.
+    pub fn translate_global_set(&mut self, global_idx: GlobalIdx) -> Result<(), ModuleError> {
         todo!()
     }
 }
