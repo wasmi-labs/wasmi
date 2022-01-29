@@ -104,14 +104,10 @@ impl Display for InstantiationError {
                     expected, actual
                 )
             }
-            Self::GlobalTypeMismatch {
-                expected,
-                actual,
-            } => write!(
+            Self::GlobalTypeMismatch { expected, actual } => write!(
                 f,
                 "expected {:?} global type but found {:?} value type",
-                expected,
-                actual,
+                expected, actual,
             ),
             Self::ElementSegmentDoesNotFit {
                 table,
@@ -385,10 +381,7 @@ impl Module {
                     let expected = GlobalType::from_elements(*global_type);
                     let actual = global.global_type(&context);
                     if expected != actual {
-                        return Err(InstantiationError::GlobalTypeMismatch {
-                            expected,
-                            actual,
-                        });
+                        return Err(InstantiationError::GlobalTypeMismatch { expected, actual });
                     }
                     builder.push_global(global);
                 }
