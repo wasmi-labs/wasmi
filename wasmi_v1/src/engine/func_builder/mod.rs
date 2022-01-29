@@ -25,6 +25,12 @@ pub struct FunctionBuilder<'engine, 'parser> {
     control_frames: ControlFlowStack,
     /// The emulated value stack.
     value_stack: ValueStack,
+    /// The instruction builder.
+    ///
+    /// # Note
+    ///
+    /// Allows to incrementally construct the instruction of a function.
+    inst_builder: InstructionsBuilder,
     /// The amount of local variables of the currently compiled function.
     len_locals: usize,
     /// The maximum height of the emulated value stack of the translated function.
@@ -54,6 +60,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             res,
             control_frames: ControlFlowStack::default(),
             value_stack: ValueStack::default(),
+            inst_builder: InstructionsBuilder::default(),
             len_locals: 0,
             max_stack_height: 0,
             reachable: true,
