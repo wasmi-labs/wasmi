@@ -18,7 +18,7 @@ use crate::{
     Engine,
     ModuleError,
 };
-use wasmi_core::ValueType;
+use wasmi_core::{ValueType, F32, F64};
 
 /// The interface to translate a `wasmi` bytecode function using Wasm bytecode.
 #[derive(Debug)]
@@ -419,6 +419,36 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `memory.size` instruction.
+    pub fn translate_memory_size(&mut self, memory_idx: MemoryIdx) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `memory.grow` instruction.
+    pub fn translate_memory_grow(&mut self, memory_idx: MemoryIdx) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i32.const` instruction.
+    pub fn translate_i32_const(&mut self, value: i32) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i64.const` instruction.
+    pub fn translate_i64_const(&mut self, value: i64) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `f32.const` instruction.
+    pub fn translate_f32_const(&mut self, value: F32) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `f64.const` instruction.
+    pub fn translate_f64_const(&mut self, value: F64) -> Result<(), ModuleError> {
         todo!()
     }
 }

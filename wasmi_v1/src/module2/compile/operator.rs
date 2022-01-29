@@ -3,7 +3,7 @@ use crate::{
     module2::{export::TableIdx, import::FuncTypeIdx, FuncIdx, GlobalIdx, MemoryIdx},
     ModuleError,
 };
-use wasmparser::TypeOrFuncType;
+use wasmparser::{Ieee32, Ieee64, TypeOrFuncType};
 
 impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
     /// Translate a Wasm `unreachable` instruction.
@@ -401,6 +401,49 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
         let offset = memarg.offset as u32;
         self.func_builder
             .translate_i64_store_i32(memory_idx, offset)?;
+        Ok(())
+    }
+
+    /// Translate a Wasm `memory.size` instruction.
+    pub fn translate_memory_size(
+        &mut self,
+        memory_idx: u32,
+        _memory_byte: u8,
+    ) -> Result<(), ModuleError> {
+        self.func_builder
+            .translate_memory_size(MemoryIdx(memory_idx))?;
+        Ok(())
+    }
+
+    /// Translate a Wasm `memory.grow` instruction.
+    pub fn translate_memory_grow(
+        &mut self,
+        memory_idx: u32,
+        _memory_byte: u8,
+    ) -> Result<(), ModuleError> {
+        self.func_builder
+            .translate_memory_grow(MemoryIdx(memory_idx))?;
+        Ok(())
+    }
+
+    /// Translate a Wasm `i32.const` instruction.
+    pub fn translate_i32_const(&mut self, value: i32) -> Result<(), ModuleError> {
+        self.func_builder.translate_i32_const(value)?;
+        Ok(())
+    }
+    /// Translate a Wasm `i64.const` instruction.
+    pub fn translate_i64_const(&mut self, value: i64) -> Result<(), ModuleError> {
+        self.func_builder.translate_i64_const(value)?;
+        Ok(())
+    }
+    /// Translate a Wasm `f32.const` instruction.
+    pub fn translate_f32_const(&mut self, value: Ieee32) -> Result<(), ModuleError> {
+        self.func_builder.translate_f32_const(value.bits().into())?;
+        Ok(())
+    }
+    /// Translate a Wasm `f64.const` instruction.
+    pub fn translate_f64_const(&mut self, value: Ieee64) -> Result<(), ModuleError> {
+        self.func_builder.translate_f64_const(value.bits().into())?;
         Ok(())
     }
 }

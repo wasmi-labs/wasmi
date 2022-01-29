@@ -160,12 +160,12 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
             Operator::I64Store8 { memarg } => self.translate_i64_store_i8(memarg),
             Operator::I64Store16 { memarg } => self.translate_i64_store_i16(memarg),
             Operator::I64Store32 { memarg } => self.translate_i64_store_i32(memarg),
-            Operator::MemorySize { mem, mem_byte } => todo!(),
-            Operator::MemoryGrow { mem, mem_byte } => todo!(),
-            Operator::I32Const { value } => todo!(),
-            Operator::I64Const { value } => todo!(),
-            Operator::F32Const { value } => todo!(),
-            Operator::F64Const { value } => todo!(),
+            Operator::MemorySize { mem, mem_byte } => self.translate_memory_size(mem, mem_byte),
+            Operator::MemoryGrow { mem, mem_byte } => self.translate_memory_grow(mem, mem_byte),
+            Operator::I32Const { value } => self.translate_i32_const(value),
+            Operator::I64Const { value } => self.translate_i64_const(value),
+            Operator::F32Const { value } => self.translate_f32_const(value),
+            Operator::F64Const { value } => self.translate_f64_const(value),
             Operator::RefNull { .. } | Operator::RefIsNull | Operator::RefFunc { .. } => {
                 unsupported_error()
             }
