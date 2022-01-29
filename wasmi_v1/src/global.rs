@@ -51,7 +51,7 @@ impl Display for GlobalError {
 }
 
 /// The mutability of a global variable.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Mutability {
     /// The value of the global variable is a constant.
     Const,
@@ -60,7 +60,7 @@ pub enum Mutability {
 }
 
 /// The type of a global variable.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct GlobalType {
     /// The value type of the global variable.
     value_type: ValueType,
