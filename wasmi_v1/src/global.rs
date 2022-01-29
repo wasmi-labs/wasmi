@@ -1,6 +1,7 @@
 use super::{AsContext, AsContextMut, Index, Stored};
 use crate::{Value, ValueType};
 use core::{fmt, fmt::Display};
+use parity_wasm::elements as pwasm;
 
 /// A raw index to a global variable entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -73,6 +74,17 @@ impl GlobalType {
             value_type,
             mutability,
         }
+    }
+
+    /// Converts into [`GlobalType`] from [`pwasm::GlobalType`].
+    pub fn from_elements(global_type: pwasm::GlobalType) -> Self {
+        let value_type = ValueType::from_elements(global_type.content_type());
+        let mutability = if global_type.is_mutable() {
+            Mutability::Mutable
+        } else {
+            Mutability::Const
+        };
+        Self::new(value_type, mutability)
     }
 
     /// Returns the [`ValueType`] of the global variable.
