@@ -3,6 +3,13 @@ use core::slice;
 
 /// A thin-wrapper around a Wasm `br_table` construct.
 ///
+/// # ToDo
+///
+/// The current implementation of the [`WasmBrTable`] requires heap allocation
+/// unfortunately. This is due to the fact that the API of `wasmparser`'s
+/// `BrTable::targets` does not return a concrete iterator type that we can
+/// thinnly wrap.
+///
 /// # Note
 ///
 /// This wrapper assumes that Wasm validation of the `br_table` has already
