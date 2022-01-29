@@ -1,6 +1,7 @@
 use super::{AsContext, AsContextMut, Index, Stored};
 use crate::{Value, ValueType};
 use core::{fmt, fmt::Display};
+use parity_wasm::elements as pwasm;
 
 /// A raw index to a global variable entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -50,7 +51,7 @@ impl Display for GlobalError {
 }
 
 /// The mutability of a global variable.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Mutability {
     /// The value of the global variable is a constant.
     Const,
@@ -58,10 +59,51 @@ pub enum Mutability {
     Mutable,
 }
 
+/// The type of a global variable.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct GlobalType {
+    /// The value type of the global variable.
+    value_type: ValueType,
+    /// The mutability of the global variable.
+    mutability: Mutability,
+}
+
+impl GlobalType {
+    pub fn new(value_type: ValueType, mutability: Mutability) -> Self {
+        Self {
+            value_type,
+            mutability,
+        }
+    }
+
+    /// Converts into [`GlobalType`] from [`pwasm::GlobalType`].
+    pub fn from_elements(global_type: pwasm::GlobalType) -> Self {
+        let value_type = ValueType::from_elements(global_type.content_type());
+        let mutability = if global_type.is_mutable() {
+            Mutability::Mutable
+        } else {
+            Mutability::Const
+        };
+        Self::new(value_type, mutability)
+    }
+
+    /// Returns the [`ValueType`] of the global variable.
+    pub fn value_type(&self) -> ValueType {
+        self.value_type
+    }
+
+    /// Returns the [`Mutability`] of the global variable.
+    pub fn mutability(&self) -> Mutability {
+        self.mutability
+    }
+}
+
 /// A global variable entitiy.
 #[derive(Debug)]
 pub struct GlobalEntity {
+    /// The current value of the global variable.
     value: Value,
+    /// The mutability of the global variable.
     mutability: Mutability,
 }
 
@@ -82,6 +124,11 @@ impl GlobalEntity {
     /// Returns the type of the global variable value.
     pub fn value_type(&self) -> ValueType {
         self.value.value_type()
+    }
+
+    /// Returns the [`GlobalType`] of the global variable.
+    pub fn global_type(&self) -> GlobalType {
+        GlobalType::new(self.value_type(), self.mutability)
     }
 
     /// Sets a new value to the global variable.
@@ -155,6 +202,11 @@ impl Global {
     /// Panics if `ctx` does not own this [`Global`].
     pub fn value_type(&self, ctx: impl AsContext) -> ValueType {
         ctx.as_context().store.resolve_global(*self).value_type()
+    }
+
+    /// Returns the [`GlobalType`] of the global variable.
+    pub fn global_type(&self, ctx: impl AsContext) -> GlobalType {
+        ctx.as_context().store.resolve_global(*self).global_type()
     }
 
     /// Sets a new value to the global variable.
