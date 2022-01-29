@@ -80,7 +80,8 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Translates a Wasm `block` control flow operator.
     pub fn translate_block(&mut self, _block_type: BlockType) -> Result<(), ModuleError> {
         let end_label = self.inst_builder.new_label();
-        self.control_frames.push_frame(ControlFrame::Block { end_label });
+        self.control_frames
+            .push_frame(ControlFrame::Block { end_label });
         Ok(())
     }
 }
