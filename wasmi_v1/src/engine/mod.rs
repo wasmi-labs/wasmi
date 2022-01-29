@@ -28,10 +28,10 @@ use self::{
 use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func};
 use crate::{
     arena::{GuardedEntity, Index},
+    core::Trap,
     func::HostFuncEntity,
     FuncType,
     Instance,
-    Trap,
 };
 use alloc::sync::Arc;
 use core::{
