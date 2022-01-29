@@ -14,7 +14,7 @@ pub use self::inst_builder::{
 use self::{control_frame::ControlFrame, control_stack::ControlFlowStack, value_stack::ValueStack};
 use super::{DropKeep, Instruction, Target};
 use crate::{
-    module2::{BlockType, FuncIdx, FuncTypeIdx, GlobalIdx, ModuleResources, TableIdx},
+    module2::{BlockType, FuncIdx, FuncTypeIdx, GlobalIdx, MemoryIdx, ModuleResources, TableIdx},
     Engine,
     ModuleError,
 };
@@ -212,6 +212,213 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translate a Wasm `global.set` instruction.
     pub fn translate_global_set(&mut self, global_idx: GlobalIdx) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i32.load` instruction.
+    pub fn translate_i32_load(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i64.load` instruction.
+    pub fn translate_i64_load(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `f32.load` instruction.
+    pub fn translate_f32_load(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `f64.load` instruction.
+    pub fn translate_f64_load(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i32.load_i8` instruction.
+    pub fn translate_i32_load_i8(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i32.load_u8` instruction.
+    pub fn translate_i32_load_u8(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i32.load_i16` instruction.
+    pub fn translate_i32_load_i16(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i32.load_u16` instruction.
+    pub fn translate_i32_load_u16(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i64.load_i8` instruction.
+    pub fn translate_i64_load_i8(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i64.load_u8` instruction.
+    pub fn translate_i64_load_u8(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i64.load_i16` instruction.
+    pub fn translate_i64_load_i16(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i64.load_u16` instruction.
+    pub fn translate_i64_load_u16(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i64.load_i32` instruction.
+    pub fn translate_i64_load_i32(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i64.load_u32` instruction.
+    pub fn translate_i64_load_u32(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i32.store` instruction.
+    pub fn translate_i32_store(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i64.store` instruction.
+    pub fn translate_i64_store(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `f32.store` instruction.
+    pub fn translate_f32_store(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `f64.store` instruction.
+    pub fn translate_f64_store(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i32.store_i8` instruction.
+    pub fn translate_i32_store_i8(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i32.store_i16` instruction.
+    pub fn translate_i32_store_i16(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i64.store_i8` instruction.
+    pub fn translate_i64_store_i8(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i64.store_i16` instruction.
+    pub fn translate_i64_store_i16(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
+        todo!()
+    }
+
+    /// Translate a Wasm `i64.store_i32` instruction.
+    pub fn translate_i64_store_i32(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+    ) -> Result<(), ModuleError> {
         todo!()
     }
 }
