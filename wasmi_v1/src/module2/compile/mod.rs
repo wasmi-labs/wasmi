@@ -83,7 +83,7 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
             let (amount, value_type) = reader.read()?;
             self.validator.define_locals(offset, amount, value_type)?;
             let value_type = value_type_from_wasmparser(&value_type)?;
-            todo!() // TODO: inform backend about local variables
+            self.func_builder.translate_locals(amount, value_type)?;
         }
         Ok(())
     }

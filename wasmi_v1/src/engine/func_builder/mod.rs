@@ -8,6 +8,7 @@ use crate::{
     Engine,
     ModuleError,
 };
+use wasmi_core::ValueType;
 
 /// The interface to translate a `wasmi` bytecode function using Wasm bytecode.
 #[derive(Debug)]
@@ -24,7 +25,7 @@ pub struct FunctionBuilder<'engine, 'parser> {
     value_stack: ValueStack,
     /// The amount of local variables of the currently compiled function.
     len_locals: usize,
-    /// The maximum stack height of the translated Wasm function.
+    /// The maximum height of the emulated value stack of the translated function.
     ///
     /// # Note
     ///
@@ -55,6 +56,16 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             max_stack_height: 0,
             reachable: true,
         }
+    }
+
+    /// Translates the given local variables for the translated function.
+    pub fn translate_locals(
+        &mut self,
+        amount: u32,
+        _value_type: ValueType,
+    ) -> Result<(), ModuleError> {
+        self.len_locals += amount as usize;
+        Ok(())
     }
 
     /// Translates a Wasm `block` control flow operator.
