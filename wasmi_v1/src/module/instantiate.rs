@@ -29,7 +29,7 @@ use super::{
     },
     Module,
 };
-use crate::{Value, ValueType, F32, F64};
+use crate::core::{Value, ValueType, F32, F64};
 use core::{fmt, fmt::Display};
 use parity_wasm::elements as pwasm;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};

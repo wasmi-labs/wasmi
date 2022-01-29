@@ -1,5 +1,5 @@
 use super::super::{utils::value_type_from_wasmparser, FuncTypeIdx, ModuleResources};
-use crate::{ModuleError, ValueType};
+use crate::{core::ValueType, ModuleError};
 use core::slice;
 
 /// The type of a Wasm control flow block.

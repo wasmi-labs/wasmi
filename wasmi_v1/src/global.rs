@@ -1,5 +1,5 @@
 use super::{AsContext, AsContextMut, Index, Stored};
-use crate::{Value, ValueType};
+use crate::core::{Value, ValueType};
 use core::{fmt, fmt::Display};
 
 /// A raw index to a global variable entity.
