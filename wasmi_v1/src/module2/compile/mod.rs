@@ -107,6 +107,13 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
         Ok(())
     }
 
+    /// Translate a Wasm `loop` control flow operator.
+    fn translate_loop(&mut self, ty: TypeOrFuncType) -> Result<(), ModuleError> {
+        let block_type = BlockType::try_from(ty)?;
+        self.func_builder.translate_loop(block_type)?;
+        Ok(())
+    }
+
     /// Translate a single Wasm operator of the Wasm function.
     fn translate_operator(&mut self, operator: Operator) -> Result<(), ModuleError> {
         let unsupported_error = || Err(ModuleError::unsupported(&operator));
@@ -114,7 +121,7 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
             Operator::Unreachable => todo!(),
             Operator::Nop => todo!(),
             Operator::Block { ty } => self.translate_block(ty),
-            Operator::Loop { ty } => todo!(),
+            Operator::Loop { ty } => self.translate_loop(ty),
             Operator::If { ty } => todo!(),
             Operator::Else => todo!(),
             Operator::Try { .. }
