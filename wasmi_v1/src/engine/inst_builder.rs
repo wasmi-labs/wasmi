@@ -6,7 +6,7 @@ use super::{
     FuncBody,
     Instruction,
 };
-use crate::{Value, ValueType};
+use crate::core::{Value, ValueType};
 use alloc::vec::Vec;
 use core::{fmt, fmt::Display, mem};
 

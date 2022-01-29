@@ -7,7 +7,7 @@ use super::errors::{
     TableError,
     TranslationError,
 };
-use crate::Trap;
+use crate::core::Trap;
 use core::{fmt, fmt::Display};
 
 /// An error that may occur upon operating on Wasm modules or module instances.

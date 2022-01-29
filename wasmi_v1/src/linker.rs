@@ -8,7 +8,7 @@ use super::{
     Module,
     TableType,
 };
-use crate::{FuncType, ValueType};
+use crate::{core::ValueType, FuncType};
 use alloc::{
     collections::{btree_map::Entry, BTreeMap},
     string::{String, ToString},

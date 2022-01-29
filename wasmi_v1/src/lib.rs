@@ -27,7 +27,9 @@ mod module;
 mod store;
 mod table;
 
-use wasmi_core::{Trap, TrapCode, Value, ValueType, F32, F64};
+/// Definitions from the `wasmi_core` crate.
+#[doc(inline)]
+pub use wasmi_core as core;
 
 /// Defines some errors that may occur upon interaction with `wasmi`.
 pub mod errors {

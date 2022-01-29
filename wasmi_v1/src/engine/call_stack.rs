@@ -15,7 +15,7 @@ use super::{
     ValueStack,
     DEFAULT_CALL_STACK_LIMIT,
 };
-use crate::TrapCode;
+use crate::core::TrapCode;
 use alloc::vec::Vec;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 

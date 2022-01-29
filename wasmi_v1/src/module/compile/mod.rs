@@ -22,7 +22,7 @@ use super::{
     },
     Engine,
 };
-use crate::{Value, ValueType};
+use crate::core::{Value, ValueType};
 use alloc::vec::Vec;
 use parity_wasm::elements::{self as pwasm, Instruction};
 use validation::{

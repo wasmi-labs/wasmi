@@ -1,10 +1,10 @@
 use super::{into_func::WasmTypeList, Func, FuncError};
 use crate::{
+    core::Value,
     engine::{CallParams, CallResults},
     AsContext,
     AsContextMut,
     Error,
-    Value,
 };
 use core::{fmt, fmt::Debug, marker::PhantomData};
 use wasmi_core::Trap;
