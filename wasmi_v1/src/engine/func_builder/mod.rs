@@ -98,12 +98,21 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         self.len_locals += amount as usize;
         Ok(())
     }
+
+    /// Returns `true` if the code at the current translation position is reachable.
+    fn is_reachable(&self) -> bool {
+        self.reachable
+    }
 }
 
 impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Translates a Wasm `unreachable` instruction.
     pub fn translate_unreachable(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        if self.is_reachable() {
+            self.inst_builder.push_inst(Instruction::Unreachable);
+        }
+        self.reachable = false;
+        Ok(())
     }
 
     /// Translates a Wasm `block` control flow operator.
