@@ -1,4 +1,4 @@
-#![allow(dead_code, unused_variables)]
+#![allow(dead_code, unused_variables)] // TODO: remove annotation once done
 
 mod control_frame;
 mod control_stack;

@@ -1,4 +1,4 @@
-#![allow(dead_code, unused_imports)]
+#![allow(dead_code, unused_imports)] // TODO: remove annotation once done
 
 mod builder;
 mod compile;
