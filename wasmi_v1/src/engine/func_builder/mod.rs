@@ -13,7 +13,11 @@ pub use self::inst_builder::{
     RelativeDepth,
     Reloc,
 };
-use self::{control_frame::ControlFrame, control_stack::ControlFlowStack, value_stack::ValueStack};
+use self::{
+    control_frame::{BlockControlFrame, ControlFrame, IfControlFrame, LoopControlFrame},
+    control_stack::ControlFlowStack,
+    value_stack::ValueStack,
+};
 use super::{DropKeep, Instruction, Target};
 use crate::{
     module2::{BlockType, FuncIdx, FuncTypeIdx, GlobalIdx, MemoryIdx, ModuleResources, TableIdx},
@@ -116,30 +120,35 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     }
 
     /// Translates a Wasm `block` control flow operator.
-    pub fn translate_block(&mut self, _block_type: BlockType) -> Result<(), ModuleError> {
+    pub fn translate_block(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
         let end_label = self.inst_builder.new_label();
+        let stack_height = self.value_stack.len();
         self.control_frames
-            .push_frame(ControlFrame::Block { end_label });
+            .push_frame(BlockControlFrame::new(block_type, end_label, stack_height));
         Ok(())
     }
 
     /// Translates a Wasm `block` control flow operator.
-    pub fn translate_loop(&mut self, _block_type: BlockType) -> Result<(), ModuleError> {
+    pub fn translate_loop(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
         let header = self.inst_builder.new_label();
         self.inst_builder.resolve_label(header);
+        let stack_height = self.value_stack.len();
         self.control_frames
-            .push_frame(ControlFrame::Loop { header });
+            .push_frame(LoopControlFrame::new(block_type, header, stack_height));
         Ok(())
     }
 
     /// Translates a Wasm `if` control flow operator.
-    pub fn translate_if(&mut self, _block_type: BlockType) -> Result<(), ModuleError> {
+    pub fn translate_if(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
         let else_label = self.inst_builder.new_label();
         let end_label = self.inst_builder.new_label();
-        self.control_frames.push_frame(ControlFrame::If {
-            else_label,
+        let stack_height = self.value_stack.len();
+        self.control_frames.push_frame(IfControlFrame::new(
+            block_type,
             end_label,
-        });
+            else_label,
+            stack_height,
+        ));
         let dst_pc = self.try_resolve_label(else_label, |pc| Reloc::Br { inst_idx: pc });
         let branch_target = Target::new(dst_pc, DropKeep::new(0, 0));
         self.inst_builder

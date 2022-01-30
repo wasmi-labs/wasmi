@@ -13,8 +13,11 @@ impl ControlFlowStack {
     }
 
     /// Pushes a new control flow frame to the [`ControlFlowStack`].
-    pub fn push_frame(&mut self, frame: ControlFrame) {
-        self.frames.push(frame)
+    pub fn push_frame<T>(&mut self, frame: T)
+    where
+        T: Into<ControlFrame>,
+    {
+        self.frames.push(frame.into())
     }
 
     /// Pops the last control flow frame from the [`ControlFlowStack`].
