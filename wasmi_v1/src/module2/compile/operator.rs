@@ -411,16 +411,19 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
         self.func_builder.translate_i32_const(value)?;
         Ok(())
     }
+
     /// Translate a Wasm `i64.const` instruction.
     pub fn translate_i64_const(&mut self, value: i64) -> Result<(), ModuleError> {
         self.func_builder.translate_i64_const(value)?;
         Ok(())
     }
+
     /// Translate a Wasm `f32.const` instruction.
     pub fn translate_f32_const(&mut self, value: Ieee32) -> Result<(), ModuleError> {
         self.func_builder.translate_f32_const(value.bits().into())?;
         Ok(())
     }
+
     /// Translate a Wasm `f64.const` instruction.
     pub fn translate_f64_const(&mut self, value: Ieee64) -> Result<(), ModuleError> {
         self.func_builder.translate_f64_const(value.bits().into())?;
