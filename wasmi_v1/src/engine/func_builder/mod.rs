@@ -151,7 +151,19 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translates a Wasm `else` control flow operator.
     pub fn translate_else(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        let if_frame = match self.control_frames.pop_frame() {
+            ControlFrame::If(if_frame) => if_frame,
+            unexpected => panic!(
+                "expected `if` control flow frame on top for `else` but found: {:?}",
+                unexpected,
+            ),
+        };
+        let dst_pc = self.try_resolve_label(if_frame.end_label(), |pc| Reloc::Br { inst_idx: pc });
+        let target = Target::new(dst_pc, DropKeep::new(0, 0));
+        self.inst_builder.push_inst(Instruction::Br(target));
+        self.inst_builder.resolve_label(if_frame.else_label());
+        self.control_frames.push_frame(if_frame);
+        Ok(())
     }
 
     /// Translates a Wasm `end` control flow operator.
