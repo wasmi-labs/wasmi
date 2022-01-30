@@ -131,7 +131,7 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
             | Operator::CatchAll => unsupported_error(),
             Operator::Drop => self.translate_drop(),
             Operator::Select => self.translate_select(),
-            Operator::TypedSelect { ty } => unsupported_error(),
+            Operator::TypedSelect { ty: _ } => unsupported_error(),
             Operator::LocalGet { local_index } => self.translate_local_get(local_index),
             Operator::LocalSet { local_index } => self.translate_local_set(local_index),
             Operator::LocalTee { local_index } => self.translate_local_tee(local_index),

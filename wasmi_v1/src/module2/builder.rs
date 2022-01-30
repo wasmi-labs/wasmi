@@ -83,7 +83,7 @@ impl<'engine> ModuleBuilder<'engine> {
 
     /// Returns a shared reference to the [`Engine`] of the [`Module`] under construction.
     pub fn engine(&self) -> &Engine {
-        &self.engine
+        self.engine
     }
 
     /// Pushes the given function types to the [`Module`] under construction.

@@ -1,3 +1,5 @@
+#![allow(dead_code, unused_variables)]
+
 mod control_frame;
 mod control_stack;
 mod inst_builder;

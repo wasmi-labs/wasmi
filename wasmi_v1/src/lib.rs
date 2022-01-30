@@ -46,7 +46,7 @@ pub mod errors {
 
 use self::{
     arena::{GuardedEntity, Index},
-    engine::{DropKeep, FuncBody, InstructionIdx, InstructionsBuilder, LabelIdx, Target},
+    engine::{DropKeep, FuncBody, LabelIdx},
     func::{FuncEntity, FuncEntityInternal, FuncIdx},
     global::{GlobalEntity, GlobalIdx},
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
