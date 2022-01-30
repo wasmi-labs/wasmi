@@ -4,7 +4,6 @@ use crate::{engine::FunctionBuilder, Engine, ModuleError};
 use wasmparser::{FuncValidator, FunctionBody, Operator, ValidatorResources};
 
 mod block_type;
-mod br_table;
 mod operator;
 
 /// Translates the Wasm bytecode into `wasmi` bytecode.

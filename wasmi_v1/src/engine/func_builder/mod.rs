@@ -5,14 +5,7 @@ mod control_stack;
 mod inst_builder;
 mod value_stack;
 
-pub use self::inst_builder::{
-    BrTable,
-    InstructionIdx,
-    InstructionsBuilder,
-    LabelIdx,
-    RelativeDepth,
-    Reloc,
-};
+pub use self::inst_builder::{InstructionIdx, InstructionsBuilder, LabelIdx, RelativeDepth, Reloc};
 use self::{
     control_frame::{BlockControlFrame, ControlFrame, IfControlFrame, LoopControlFrame},
     control_stack::ControlFlowStack,
@@ -177,7 +170,14 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     }
 
     /// Translates a Wasm `br_table` control flow operator.
-    pub fn translate_br_table(&mut self, br_table: impl BrTable) -> Result<(), ModuleError> {
+    pub fn translate_br_table<T>(
+        &mut self,
+        default: RelativeDepth,
+        targets: T,
+    ) -> Result<(), ModuleError>
+    where
+        T: IntoIterator<Item = RelativeDepth>,
+    {
         todo!()
     }
 

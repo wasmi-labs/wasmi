@@ -83,28 +83,6 @@ pub enum Reloc {
     },
 }
 
-/// Types implementing this trait can be used to query information about `br_table`.
-pub trait BrTable {
-    /// The type of the iterator over all non-default target relative depths.
-    type Targets: Iterator<Item = RelativeDepth>;
-
-    /// Returns the number of `br_table` targets not including the default.
-    fn len(&self) -> u32;
-
-    /// Returns `true` if the `br_table` does not contain any targets besides the default.
-    fn is_empty(&self) -> bool;
-
-    /// Returns the default target relativ depth.
-    fn default(&self) -> RelativeDepth;
-
-    /// Returns an iterator yielding the relative depths of all targets in order.
-    ///
-    /// # Note
-    ///
-    /// This does not yield for the default target.
-    fn targets(&self) -> Self::Targets;
-}
-
 /// The relative depth of a Wasm branching target.
 #[derive(Debug, Copy, Clone)]
 pub struct RelativeDepth(u32);

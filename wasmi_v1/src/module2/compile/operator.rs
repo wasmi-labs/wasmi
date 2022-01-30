@@ -1,5 +1,6 @@
-use super::{br_table::WasmBrTable, BlockType, FunctionTranslator};
+use super::{BlockType, FunctionTranslator};
 use crate::{
+    engine::RelativeDepth,
     module2::{export::TableIdx, import::FuncTypeIdx, FuncIdx, GlobalIdx, MemoryIdx},
     ModuleError,
 };
@@ -46,8 +47,19 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
 
     /// Translate a Wasm `br_table` control flow operator.
     pub fn translate_br_table(&mut self, br_table: wasmparser::BrTable) -> Result<(), ModuleError> {
-        let br_table = WasmBrTable::new(br_table);
-        self.func_builder.translate_br_table(&br_table)?;
+        let default = RelativeDepth::from_u32(br_table.default());
+        let targets = br_table
+            .targets()
+            .map(|relative_depth| {
+                relative_depth.unwrap_or_else(|error| {
+                    panic!(
+                        "encountered unexpected invalid relative depth for `br_table` target: {}",
+                        error,
+                    )
+                })
+            })
+            .map(RelativeDepth::from_u32);
+        self.func_builder.translate_br_table(default, targets)?;
         Ok(())
     }
 
