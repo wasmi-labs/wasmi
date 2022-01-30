@@ -1,4 +1,4 @@
-use super::super::super::LabelIdx;
+use crate::engine::LabelIdx;
 
 /// A control flow frame.
 #[derive(Debug)]
