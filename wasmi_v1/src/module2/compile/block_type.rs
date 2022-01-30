@@ -3,7 +3,7 @@ use crate::{core::ValueType, ModuleError};
 use core::slice;
 
 /// The type of a Wasm control flow block.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct BlockType {
     inner: BlockTypeInner,
 }
