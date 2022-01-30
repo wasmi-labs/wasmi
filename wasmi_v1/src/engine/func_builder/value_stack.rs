@@ -25,7 +25,7 @@ impl ValueStack {
     /// # Panics
     ///
     /// If the emulated [`ValueStack`] is empty.
-    fn pop1(&mut self) -> ValueType {
+    pub fn pop1(&mut self) -> ValueType {
         self.values
             .pop()
             .expect("tried to pop value from an empty emulated value stack")
@@ -36,7 +36,7 @@ impl ValueStack {
     /// # Panics
     ///
     /// If the emulated [`ValueStack`] is empty.
-    fn pop2(&mut self) -> (ValueType, ValueType) {
+    pub fn pop2(&mut self) -> (ValueType, ValueType) {
         let rhs = self.pop1();
         let lhs = self.pop1();
         (lhs, rhs)
@@ -47,7 +47,7 @@ impl ValueStack {
     /// # Panics
     ///
     /// If the emulated [`ValueStack`] is empty.
-    fn pop3(&mut self) -> (ValueType, ValueType, ValueType) {
+    pub fn pop3(&mut self) -> (ValueType, ValueType, ValueType) {
         let v2 = self.pop1();
         let v1 = self.pop1();
         let v0 = self.pop1();
@@ -55,12 +55,12 @@ impl ValueStack {
     }
 
     /// Returns the current length of the emulated [`ValueStack`].
-    fn len(&self) -> usize {
-        self.values.len()
+    pub fn len(&self) -> u32 {
+        self.values.len() as u32
     }
 
     /// Returns `true` if the emulated [`ValueStack`] is empty.
-    fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 }
