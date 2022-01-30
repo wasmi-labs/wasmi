@@ -134,6 +134,11 @@ impl IfControlFrame {
         self.end_label
     }
 
+    /// Returns the label to the optional `else` of the [`IfControlFrame`].
+    pub fn else_label(&self) -> LabelIdx {
+        self.else_label
+    }
+
     /// Returns the value stack height upon entering the [`IfControlFrame`].
     pub fn stack_height(&self) -> u32 {
         self.stack_height
