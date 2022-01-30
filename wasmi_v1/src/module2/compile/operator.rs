@@ -6,12 +6,6 @@ use crate::{
 use wasmparser::{Ieee32, Ieee64, TypeOrFuncType};
 
 impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
-    /// Translate a Wasm `unreachable` instruction.
-    pub fn translate_unreachable(&mut self) -> Result<(), ModuleError> {
-        self.func_builder.translate_unreachable()?;
-        Ok(())
-    }
-
     /// Translate a Wasm `nop` (no operation) instruction.
     pub fn translate_nop(&mut self) -> Result<(), ModuleError> {
         Ok(())
@@ -38,18 +32,6 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
         Ok(())
     }
 
-    /// Translate a Wasm `else` control flow operator.
-    pub fn translate_else(&mut self) -> Result<(), ModuleError> {
-        self.func_builder.translate_else()?;
-        Ok(())
-    }
-
-    /// Translate a Wasm `end` control flow operator.
-    pub fn translate_end(&mut self) -> Result<(), ModuleError> {
-        self.func_builder.translate_end()?;
-        Ok(())
-    }
-
     /// Translate a Wasm `br` control flow operator.
     pub fn translate_br(&mut self, relative_depth: u32) -> Result<(), ModuleError> {
         self.func_builder.translate_br(relative_depth)?;
@@ -69,12 +51,6 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
         Ok(())
     }
 
-    /// Translate a Wasm `return` control flow operator.
-    pub fn translate_return(&mut self) -> Result<(), ModuleError> {
-        self.func_builder.translate_return()?;
-        Ok(())
-    }
-
     /// Translate a Wasm `call` instruction.
     pub fn translate_call(&mut self, func_idx: u32) -> Result<(), ModuleError> {
         self.func_builder.translate_call(FuncIdx(func_idx))?;
@@ -89,18 +65,6 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
     ) -> Result<(), ModuleError> {
         self.func_builder
             .translate_call_indirect(FuncTypeIdx(func_type_idx), TableIdx(table_idx))?;
-        Ok(())
-    }
-
-    /// Translate a Wasm `drop` instruction.
-    pub fn translate_drop(&mut self) -> Result<(), ModuleError> {
-        self.func_builder.translate_drop()?;
-        Ok(())
-    }
-
-    /// Translate a Wasm `select` instruction.
-    pub fn translate_select(&mut self) -> Result<(), ModuleError> {
-        self.func_builder.translate_select()?;
         Ok(())
     }
 
@@ -467,6 +431,19 @@ macro_rules! define_translate_fn {
 
 impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
     define_translate_fn! {
+        /// Translate a Wasm `unreachable` instruction.
+        fn translate_unreachable();
+        /// Translate a Wasm `else` control flow operator.
+        fn translate_else();
+        /// Translate a Wasm `end` control flow operator.
+        fn translate_end();
+        /// Translate a Wasm `return` control flow operator.
+        fn translate_return();
+        /// Translate a Wasm `drop` instruction.
+        fn translate_drop();
+        /// Translate a Wasm `select` instruction.
+        fn translate_select();
+
         /// Translate a Wasm `i32_eqz` instruction.
         fn translate_i32_eqz();
         /// Translate a Wasm `i32_eq` instruction.
