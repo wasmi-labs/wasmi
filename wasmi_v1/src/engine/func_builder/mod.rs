@@ -662,8 +662,8 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_remS` instruction.
-    pub fn translate_i32_remS(&mut self) -> Result<(), ModuleError> {
+    /// Translate a Wasm `i32_rem` instruction.
+    pub fn translate_i32_rem(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
@@ -782,8 +782,8 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_shrS` instruction.
-    pub fn translate_i64_shrS(&mut self) -> Result<(), ModuleError> {
+    /// Translate a Wasm `i64_shr` instruction.
+    pub fn translate_i64_shr(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
@@ -977,23 +977,23 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_trunc_F3` instruction.
-    pub fn translate_i64_trunc_F3(&mut self) -> Result<(), ModuleError> {
+    /// Translate a Wasm `i64_trunc_f32` instruction.
+    pub fn translate_i64_trunc_f32(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u64_trunc_F3` instruction.
-    pub fn translate_u64_trunc_F3(&mut self) -> Result<(), ModuleError> {
+    /// Translate a Wasm `u64_trunc_f32` instruction.
+    pub fn translate_u64_trunc_f32(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_trunc_F6` instruction.
-    pub fn translate_i64_trunc_F6(&mut self) -> Result<(), ModuleError> {
+    /// Translate a Wasm `i64_trunc_f64` instruction.
+    pub fn translate_i64_trunc_f64(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u64_trunc_F6` instruction.
-    pub fn translate_u64_trunc_F6(&mut self) -> Result<(), ModuleError> {
+    /// Translate a Wasm `u64_trunc_f64` instruction.
+    pub fn translate_u64_trunc_f64(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
