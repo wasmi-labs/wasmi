@@ -78,4 +78,26 @@ impl BlockType {
             BlockTypeInner::FuncType(func_type) => res.get_func_type(*func_type).results(),
         }
     }
+
+    /// Returns the parameter and result types of the [`BlockType`].
+    ///
+    /// # Note
+    ///
+    /// This can sometimes be superior than using [`BlockType::params`] and
+    /// [`BlockType::results`] separately due to lifetime constraints. Also it
+    /// should be insignificantly more efficient.
+    pub fn params_results<'a, 'b, 'c>(
+        &'a self,
+        res: ModuleResources<'b>,
+    ) -> (&'b [ValueType], &'c [ValueType])
+    where
+        'a: 'c,
+        'b: 'c,
+    {
+        match &self.inner {
+            BlockTypeInner::Empty => (&[], &[]),
+            BlockTypeInner::Returns(return_type) => (&[], slice::from_ref(return_type)),
+            BlockTypeInner::FuncType(func_type) => res.get_func_type(*func_type).params_results(),
+        }
+    }
 }
