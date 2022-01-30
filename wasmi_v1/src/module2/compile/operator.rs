@@ -9,6 +9,10 @@ use wasmparser::{Ieee32, Ieee64, TypeOrFuncType};
 impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
     /// Translate a Wasm `nop` (no operation) instruction.
     pub fn translate_nop(&mut self) -> Result<(), ModuleError> {
+        // We can simply ignore Wasm `nop` instructions.
+        //
+        // In most cases they should not be included in well optimized
+        // Wasm binaries anyways.
         Ok(())
     }
 
