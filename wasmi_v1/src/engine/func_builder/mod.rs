@@ -100,16 +100,31 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     fn is_reachable(&self) -> bool {
         self.reachable
     }
+
+    /// Translates into `wasmi` bytecode if the current code path is reachable.
+    ///
+    /// # Note
+    ///
+    /// Ignores the `translator` closure if the current code path is unreachable.
+    fn translate_if_reachable<F>(&mut self, translator: F) -> Result<(), ModuleError>
+    where
+        F: FnOnce(&mut Self) -> Result<(), ModuleError>,
+    {
+        if self.is_reachable() {
+            translator(self)?;
+        }
+        Ok(())
+    }
 }
 
 impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Translates a Wasm `unreachable` instruction.
     pub fn translate_unreachable(&mut self) -> Result<(), ModuleError> {
-        if self.is_reachable() {
-            self.inst_builder.push_inst(Instruction::Unreachable);
-        }
-        self.reachable = false;
-        Ok(())
+        self.translate_if_reachable(|builder| {
+            builder.inst_builder.push_inst(Instruction::Unreachable);
+            builder.reachable = false;
+            Ok(())
+        })
     }
 
     /// Translates a Wasm `block` control flow operator.
