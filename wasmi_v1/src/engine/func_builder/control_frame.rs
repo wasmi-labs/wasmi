@@ -197,10 +197,10 @@ pub enum ControlFrameKind {
 
 impl UnreachableControlFrame {
     /// Creates a new [`UnreachableControlFrame`] with the given type and kind.
-    pub fn new(block_type: BlockType, kind: ControlFrameKind, stack_height: u32) -> Self {
+    pub fn new(kind: ControlFrameKind, block_type: BlockType, stack_height: u32) -> Self {
         Self {
-            block_type,
             kind,
+            block_type,
             stack_height,
         }
     }
