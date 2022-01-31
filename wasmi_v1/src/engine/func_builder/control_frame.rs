@@ -150,6 +150,54 @@ impl IfControlFrame {
     }
 }
 
+/// An unreachable control flow frame of any kind.
+#[derive(Debug, Copy, Clone)]
+pub struct UnreachableControlFrame {
+    /// The non-SSA input and output types of the unreachable control frame.
+    pub block_type: BlockType,
+    /// The kind of the unreachable control flow frame.
+    pub kind: ControlFrameKind,
+    /// The value stack size upon entering the unreachable control frame.
+    pub stack_height: u32,
+}
+
+/// The kind of a control flow frame.
+#[derive(Debug, Copy, Clone)]
+pub enum ControlFrameKind {
+    /// A basic `block` control flow frame.
+    Block,
+    /// A `loop` control flow frame.
+    Loop,
+    /// An `if` and `else` block control flow frame.
+    If,
+}
+
+impl UnreachableControlFrame {
+    /// Creates a new [`UnreachableControlFrame`] with the given type and kind.
+    pub fn new(block_type: BlockType, kind: ControlFrameKind, stack_height: u32) -> Self {
+        Self {
+            block_type,
+            kind,
+            stack_height,
+        }
+    }
+
+    /// Returns the [`ControlFrameKind`] of the [`UnreachableControlFrame`].
+    pub fn kind(&self) -> ControlFrameKind {
+        self.kind
+    }
+
+    /// Returns the value stack height upon entering the [`IfControlFrame`].
+    pub fn stack_height(&self) -> u32 {
+        self.stack_height
+    }
+
+    /// Returns the [`BlockType`] of the [`IfControlFrame`].
+    pub fn block_type(&self) -> BlockType {
+        self.block_type
+    }
+}
+
 /// A control flow frame.
 #[derive(Debug, Copy, Clone)]
 pub enum ControlFrame {
@@ -159,6 +207,8 @@ pub enum ControlFrame {
     Loop(LoopControlFrame),
     /// If and else control frame.
     If(IfControlFrame),
+    /// An unreachable control frame.
+    Unreachable(UnreachableControlFrame),
 }
 
 impl From<BlockControlFrame> for ControlFrame {
@@ -179,13 +229,23 @@ impl From<IfControlFrame> for ControlFrame {
     }
 }
 
+impl From<UnreachableControlFrame> for ControlFrame {
+    fn from(frame: UnreachableControlFrame) -> Self {
+        Self::Unreachable(frame)
+    }
+}
+
 impl ControlFrame {
     /// Returns the label for the branch destination of the [`ControlFrame`].
     pub fn branch_destination(&self) -> LabelIdx {
         match self {
-            Self::Block(block_frame) => block_frame.branch_destination(),
-            Self::Loop(loop_frame) => loop_frame.branch_destination(),
-            Self::If(if_frame) => if_frame.branch_destination(),
+            Self::Block(frame) => frame.branch_destination(),
+            Self::Loop(frame) => frame.branch_destination(),
+            Self::If(frame) => frame.branch_destination(),
+            Self::Unreachable(frame) => panic!(
+                "tried to get `branch_destination` for an unreachable control frame: {:?}",
+                frame,
+            ),
         }
     }
 
@@ -196,11 +256,15 @@ impl ControlFrame {
     /// to be wrapped in another control frame such as [`ControlFrame::Block`].
     pub fn end_label(&self) -> LabelIdx {
         match self {
-            Self::Block(block_frame) => block_frame.end_label(),
-            Self::If(if_frame) => if_frame.end_label(),
-            Self::Loop(loop_frame) => panic!(
-                "tried to receive `end_label` which is not supported for loop control frames: {:?}",
-                loop_frame
+            Self::Block(frame) => frame.end_label(),
+            Self::If(frame) => frame.end_label(),
+            Self::Loop(frame) => panic!(
+                "tried to get `end_label` for a loop control frame: {:?}",
+                frame
+            ),
+            Self::Unreachable(frame) => panic!(
+                "tried to get `end_label` for an unreachable control frame: {:?}",
+                frame
             ),
         }
     }
@@ -208,18 +272,20 @@ impl ControlFrame {
     /// Returns the value stack height upon entering the control flow frame.
     pub fn stack_height(&self) -> u32 {
         match self {
-            Self::Block(block_frame) => block_frame.stack_height(),
-            Self::Loop(loop_frame) => loop_frame.stack_height(),
-            Self::If(if_frame) => if_frame.stack_height(),
+            Self::Block(frame) => frame.stack_height(),
+            Self::Loop(frame) => frame.stack_height(),
+            Self::If(frame) => frame.stack_height(),
+            Self::Unreachable(frame) => frame.stack_height(),
         }
     }
 
     /// Returns the [`BlockType`] of the control flow frame.
     pub fn block_type(&self) -> BlockType {
         match self {
-            Self::Block(block_frame) => block_frame.block_type(),
-            Self::Loop(loop_frame) => loop_frame.block_type(),
-            Self::If(if_frame) => if_frame.block_type(),
+            Self::Block(frame) => frame.block_type(),
+            Self::Loop(frame) => frame.block_type(),
+            Self::If(frame) => frame.block_type(),
+            Self::Unreachable(frame) => frame.block_type(),
         }
     }
 }
