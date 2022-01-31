@@ -7,7 +7,14 @@ mod value_stack;
 
 pub use self::inst_builder::{InstructionIdx, InstructionsBuilder, LabelIdx, RelativeDepth, Reloc};
 use self::{
-    control_frame::{BlockControlFrame, ControlFrame, IfControlFrame, LoopControlFrame},
+    control_frame::{
+        BlockControlFrame,
+        ControlFrame,
+        ControlFrameKind,
+        IfControlFrame,
+        LoopControlFrame,
+        UnreachableControlFrame,
+    },
     control_stack::ControlFlowStack,
     value_stack::ValueStack,
 };
@@ -129,55 +136,98 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translates a Wasm `block` control flow operator.
     pub fn translate_block(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
-        let end_label = self.inst_builder.new_label();
         let stack_height = self.value_stack.len();
-        self.control_frames
-            .push_frame(BlockControlFrame::new(block_type, end_label, stack_height));
+        if self.is_reachable() {
+            let end_label = self.inst_builder.new_label();
+            self.control_frames.push_frame(BlockControlFrame::new(
+                block_type,
+                end_label,
+                stack_height,
+            ));
+        } else {
+            self.control_frames.push_frame(UnreachableControlFrame::new(
+                ControlFrameKind::Block,
+                block_type,
+                stack_height,
+            ));
+        }
         Ok(())
     }
 
     /// Translates a Wasm `block` control flow operator.
     pub fn translate_loop(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
-        let header = self.inst_builder.new_label();
-        self.inst_builder.resolve_label(header);
         let stack_height = self.value_stack.len();
-        self.control_frames
-            .push_frame(LoopControlFrame::new(block_type, header, stack_height));
+        if self.is_reachable() {
+            let header = self.inst_builder.new_label();
+            self.inst_builder.resolve_label(header);
+            self.control_frames
+                .push_frame(LoopControlFrame::new(block_type, header, stack_height));
+        } else {
+            self.control_frames.push_frame(UnreachableControlFrame::new(
+                ControlFrameKind::Loop,
+                block_type,
+                stack_height,
+            ));
+        }
         Ok(())
     }
 
     /// Translates a Wasm `if` control flow operator.
     pub fn translate_if(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
-        let else_label = self.inst_builder.new_label();
-        let end_label = self.inst_builder.new_label();
         let stack_height = self.value_stack.len();
-        self.control_frames.push_frame(IfControlFrame::new(
-            block_type,
-            end_label,
-            else_label,
-            stack_height,
-        ));
-        let dst_pc = self.try_resolve_label(else_label, |pc| Reloc::Br { inst_idx: pc });
-        let branch_target = Target::new(dst_pc, DropKeep::new(0, 0));
-        self.inst_builder
-            .push_inst(Instruction::BrIfEqz(branch_target));
+        if self.is_reachable() {
+            let else_label = self.inst_builder.new_label();
+            let end_label = self.inst_builder.new_label();
+            self.control_frames.push_frame(IfControlFrame::new(
+                block_type,
+                end_label,
+                else_label,
+                stack_height,
+            ));
+            let dst_pc = self.try_resolve_label(else_label, |pc| Reloc::Br { inst_idx: pc });
+            let branch_target = Target::new(dst_pc, DropKeep::new(0, 0));
+            self.inst_builder
+                .push_inst(Instruction::BrIfEqz(branch_target));
+        } else {
+            self.control_frames.push_frame(UnreachableControlFrame::new(
+                ControlFrameKind::If,
+                block_type,
+                stack_height,
+            ));
+        }
         Ok(())
     }
 
     /// Translates a Wasm `else` control flow operator.
     pub fn translate_else(&mut self) -> Result<(), ModuleError> {
-        let if_frame = match self.control_frames.pop_frame() {
-            ControlFrame::If(if_frame) => if_frame,
-            unexpected => panic!(
-                "expected `if` control flow frame on top for `else` but found: {:?}",
-                unexpected,
-            ),
-        };
-        let dst_pc = self.try_resolve_label(if_frame.end_label(), |pc| Reloc::Br { inst_idx: pc });
-        let target = Target::new(dst_pc, DropKeep::new(0, 0));
-        self.inst_builder.push_inst(Instruction::Br(target));
-        self.inst_builder.resolve_label(if_frame.else_label());
-        self.control_frames.push_frame(if_frame);
+        if self.is_reachable() {
+            let if_frame = match self.control_frames.pop_frame() {
+                ControlFrame::If(if_frame) => if_frame,
+                unexpected => panic!(
+                    "expected `if` control flow frame on top for `else` but found: {:?}",
+                    unexpected,
+                ),
+            };
+            let dst_pc =
+                self.try_resolve_label(if_frame.end_label(), |pc| Reloc::Br { inst_idx: pc });
+            let target = Target::new(dst_pc, DropKeep::new(0, 0));
+            self.inst_builder.push_inst(Instruction::Br(target));
+            self.inst_builder.resolve_label(if_frame.else_label());
+            self.control_frames.push_frame(if_frame);
+        } else {
+            match self.control_frames.last() {
+                ControlFrame::Unreachable(frame)
+                    if matches!(frame.kind(), ControlFrameKind::If) =>
+                {
+                    return Ok(())
+                }
+                unexpected => panic!(
+                    "expected unreachable `if` control flow frame on top of the \
+                    control flow frame stack but found: {:?}",
+                    unexpected
+                ),
+            }
+        }
         Ok(())
     }
 
