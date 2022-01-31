@@ -98,6 +98,18 @@ pub struct IfControlFrame {
     block_type: BlockType,
     /// The value stack height upon entering the [`IfControlFrame`].
     stack_height: u32,
+    /// End of `then` branch is reachable.
+    ///
+    /// # Note
+    ///
+    /// - This is `None` upon entering the `if` control flow frame.
+    ///   Once the optional `else` case or the `end` of the `if` control
+    ///   flow frame is reached this field will be computed.
+    /// - This information is important to know how to continue after a
+    ///   diverging `if` control flow frame.
+    /// - An `end_of_else_is_reachable` field is not needed since it will
+    ///   be easily computed once the translation reaches the end of the `if`.
+    end_of_then_is_reachable: Option<bool>,
 }
 
 impl IfControlFrame {
@@ -117,6 +129,7 @@ impl IfControlFrame {
             end_label,
             else_label,
             stack_height,
+            end_of_then_is_reachable: None,
         }
     }
 
@@ -147,6 +160,16 @@ impl IfControlFrame {
     /// Returns the [`BlockType`] of the [`IfControlFrame`].
     pub fn block_type(&self) -> BlockType {
         self.block_type
+    }
+
+    /// Updates the reachability of the end of the `then` branch.
+    ///
+    /// # Panics
+    ///
+    /// If this information has already been provided prior.
+    pub fn update_end_of_then_reachability(&mut self, reachable: bool) {
+        assert!(self.end_of_then_is_reachable.is_none());
+        self.end_of_then_is_reachable = Some(reachable);
     }
 }
 
