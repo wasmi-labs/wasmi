@@ -259,6 +259,16 @@ impl From<UnreachableControlFrame> for ControlFrame {
 }
 
 impl ControlFrame {
+    /// Returns the [`ControlFrameKind`] of the [`ControlFrame`].
+    pub fn kind(&self) -> ControlFrameKind {
+        match self {
+            ControlFrame::Block(_) => ControlFrameKind::Block,
+            ControlFrame::Loop(_) => ControlFrameKind::Loop,
+            ControlFrame::If(_) => ControlFrameKind::If,
+            ControlFrame::Unreachable(frame) => frame.kind(),
+        }
+    }
+
     /// Returns the label for the branch destination of the [`ControlFrame`].
     pub fn branch_destination(&self) -> LabelIdx {
         match self {
