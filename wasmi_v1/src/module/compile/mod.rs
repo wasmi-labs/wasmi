@@ -927,7 +927,7 @@ impl<'engine> FuncBodyTranslator<'engine> {
             let drop_keep = drop_keep.unwrap_or_else(|error| {
                 panic!(
                     "due to validation the value stack must not have underflowed. \
-                            Validation also ensures that the frame stack is not empty: {:?}",
+                     Validation also ensures that the frame stack is not empty: {:?}",
                     error
                 )
             });
