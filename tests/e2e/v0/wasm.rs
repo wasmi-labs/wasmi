@@ -98,7 +98,7 @@ fn load_from_file(filename: &str) -> Module {
     let mut file = File::open(filename).unwrap();
     let mut buf = Vec::new();
     file.read_to_end(&mut buf).unwrap();
-    let wasm_buf = ::wabt::wat2wasm(&buf).unwrap();
+    let wasm_buf = ::wat::parse_bytes(&buf).unwrap().into_owned();
     Module::from_buffer(wasm_buf).unwrap()
 }
 

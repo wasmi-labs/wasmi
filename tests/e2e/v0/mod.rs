@@ -39,6 +39,6 @@ fn unsigned_to_value() {
 }
 
 pub fn parse_wat(source: &str) -> Module {
-    let wasm_binary = wabt::wat2wasm(source).expect("Failed to parse wat source");
+    let wasm_binary = wat::parse_str(source).expect("Failed to parse wat source");
     Module::from_buffer(wasm_binary).expect("Failed to load parsed module")
 }
