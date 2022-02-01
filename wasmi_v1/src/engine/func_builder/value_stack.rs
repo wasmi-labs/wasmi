@@ -63,4 +63,28 @@ impl ValueStack {
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    /// Shrinks the [`ValueStack`] to the given height.
+    ///
+    /// # Panics
+    ///
+    /// If the [`ValueStack`] height already is below the height since this
+    /// usually indicates a bug in the translation of the Wasm to `wasmi`
+    /// bytecode procedures.
+    pub fn shrink_to(&mut self, height: u32) {
+        let new_height = usize::try_from(height).unwrap_or_else(|error| {
+            panic!(
+                "could not convert stack height from `u32` to `usize`: {}",
+                error
+            )
+        });
+        let current_height = self.len();
+        assert!(
+            new_height < new_height,
+            "tried to shrink the value stack of height {} to height {}",
+            current_height,
+            new_height
+        );
+        self.values.resize(new_height, ValueType::I32);
+    }
 }
