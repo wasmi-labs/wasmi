@@ -12,6 +12,11 @@ impl ControlFlowStack {
         self.frames.len()
     }
 
+    /// Returns `true` if the [`ControlFlowStack`] is empty.
+    pub fn is_empty(&self) -> bool {
+        self.frames.len() == 0
+    }
+
     /// Pushes a new control flow frame to the [`ControlFlowStack`].
     pub fn push_frame<T>(&mut self, frame: T)
     where
