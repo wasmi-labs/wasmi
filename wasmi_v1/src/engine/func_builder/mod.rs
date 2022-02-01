@@ -233,7 +233,33 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translates a Wasm `end` control flow operator.
     pub fn translate_end(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        let frame = self.control_frames.pop_frame();
+        if let ControlFrame::If(if_frame) = &frame {
+            // At this point we can resolve the `Else` label.
+            self.inst_builder.resolve_label(if_frame.else_label());
+        }
+        if !matches!(frame.kind(), ControlFrameKind::Loop) {
+            // At this point we can resolve the `End` labels.
+            // Note that `loop` control frames do not have an `End` label.
+            self.inst_builder.resolve_label(frame.end_label());
+        }
+        if self.is_reachable() {
+            if self.control_frames.is_empty() {
+                // If the control flow frames stack is empty at this point
+                // we know that we have just popped the function body `block`
+                // frame and therefore we have to return from the function.
+                //
+                // TODO: properly calculate DropKeep of returning at this point
+                let drop_keep = DropKeep::new(0, 0);
+                self.inst_builder.push_inst(Instruction::Return(drop_keep));
+            }
+        } else {
+            // We reset the reachability if the popped control flow
+            // frame was reachable to begin with.
+            self.reachable = frame.is_reachable();
+        }
+        self.value_stack.shrink_to(frame.stack_height());
+        Ok(())
     }
 
     /// Translates a Wasm `br` control flow operator.
