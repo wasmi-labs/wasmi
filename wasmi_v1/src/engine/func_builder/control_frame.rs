@@ -311,4 +311,9 @@ impl ControlFrame {
             Self::Unreachable(frame) => frame.block_type(),
         }
     }
+
+    /// Returns `true` if the control flow frame is reachable.
+    pub fn is_reachable(&self) -> bool {
+        !matches!(self, ControlFrame::Unreachable(_))
+    }
 }
