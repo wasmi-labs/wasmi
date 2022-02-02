@@ -98,6 +98,7 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
             self.translate_operator(operator)?;
         }
         reader.ensure_end()?;
+        self.validator.finish(reader.original_position())?;
         Ok(())
     }
 
