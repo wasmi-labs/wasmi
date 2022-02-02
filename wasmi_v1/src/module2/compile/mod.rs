@@ -1,6 +1,10 @@
 pub use self::block_type::BlockType;
 use super::{utils::value_type_from_wasmparser, FuncIdx, ModuleResources};
-use crate::{engine::FunctionBuilder, Engine, ModuleError};
+use crate::{
+    engine::{DropKeep, FunctionBuilder},
+    Engine,
+    ModuleError,
+};
 use wasmparser::{FuncValidator, FunctionBody, Operator, ValidatorResources};
 
 mod block_type;

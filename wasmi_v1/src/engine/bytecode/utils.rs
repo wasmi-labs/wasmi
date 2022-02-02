@@ -26,6 +26,11 @@ impl DropKeep {
         Self { drop, keep }
     }
 
+    /// Creates a new [`DropKeep`] from the given amounts to drop and keep.
+    pub fn new32(drop: u32, keep: u32) -> Self {
+        Self { drop, keep }
+    }
+
     /// Returns the amount of stack values to drop.
     pub fn drop(self) -> usize {
         self.drop as usize
