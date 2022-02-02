@@ -66,6 +66,27 @@ impl ControlFlowStack {
         )
     }
 
+    /// Returns a shared reference to the control flow frame at the given `depth`.
+    ///
+    /// A `depth` of 0 is equal to calling [`ControlFlowStack::last`].
+    ///
+    /// # Panics
+    ///
+    /// If `depth` exceeds the length of the stack of control flow frames.
+    pub fn nth_back(&self, depth: u32) -> &ControlFrame {
+        let len = self.len();
+        self.frames
+            .iter()
+            .nth_back(depth as usize)
+            .unwrap_or_else(|| {
+                panic!(
+                    "tried to peek the {}-th control flow frame \
+                    but there are only {} control flow frames",
+                    depth, len
+                )
+            })
+    }
+
     /// Returns an exclusive reference to the control flow frame at the given `depth`.
     ///
     /// A `depth` of 0 is equal to calling [`ControlFlowStack::last_mut`].
