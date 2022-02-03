@@ -1,12 +1,28 @@
+use core::cmp;
+
 use wasmi_core::ValueType;
 
 /// The value stack that is emulated during Wasm to `wasmi` bytecode translation.
 #[derive(Debug, Default)]
 pub struct ValueStack {
+    /// The values of the emulated value stack.
     values: Vec<ValueType>,
+    /// The maximum height of the emulated value stack of the translated function.
+    ///
+    /// # Note
+    ///
+    /// This does not include input parameters and local variables.
+    max_stack_height: u32,
 }
 
 impl ValueStack {
+    /// Updates the pinned maximum stack height.
+    fn update_max_height(&mut self) {
+        let max = self.max_stack_height;
+        let len = self.len();
+        self.max_stack_height = cmp::max(len, max);
+    }
+
     /// Pushes the [`ValueType`] to the emulated [`ValueStack`].
     ///
     /// # Note
@@ -17,7 +33,8 @@ impl ValueStack {
     ///
     /// [`Value`]: [`wasmi_core::Value`]
     pub fn push(&mut self, value_type: ValueType) {
-        self.values.push(value_type)
+        self.values.push(value_type);
+        self.update_max_height();
     }
 
     /// Pops the top most [`ValueType`] from the emulated [`ValueStack`].

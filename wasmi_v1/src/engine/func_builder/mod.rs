@@ -5,6 +5,8 @@ mod control_stack;
 mod inst_builder;
 mod value_stack;
 
+use core::cmp;
+
 pub use self::inst_builder::{InstructionIdx, InstructionsBuilder, LabelIdx, RelativeDepth, Reloc};
 use self::{
     control_frame::{
@@ -47,12 +49,6 @@ pub struct FunctionBuilder<'engine, 'parser> {
     inst_builder: InstructionsBuilder,
     /// The amount of local variables of the currently compiled function.
     len_locals: usize,
-    /// The maximum height of the emulated value stack of the translated function.
-    ///
-    /// # Note
-    ///
-    /// This does not include input parameters and local variables.
-    max_stack_height: usize,
     /// This represents the reachability of the currently translated code.
     ///
     /// - `true`: The currently translated code is reachable.
@@ -81,7 +77,6 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             value_stack,
             inst_builder,
             len_locals: 0,
-            max_stack_height: 0,
             reachable: true,
         }
     }
@@ -105,11 +100,12 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         func: FuncIdx,
         res: ModuleResources<'parser>,
         value_stack: &mut ValueStack,
-    ) {
+    ) -> usize {
         let params = res.get_type_of_func(func).params();
         for param in params {
             value_stack.push(*param);
         }
+        params.len()
     }
 
     /// Try to resolve the given label.
