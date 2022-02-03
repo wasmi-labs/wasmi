@@ -386,7 +386,15 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translates a Wasm `br_if` control flow operator.
     pub fn translate_br_if(&mut self, relative_depth: u32) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_if_reachable(|builder| {
+            let (end_label, drop_keep) = builder.acquire_target(relative_depth);
+            let dst_pc = builder.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
+            builder
+                .inst_builder
+                .push_inst(Instruction::Br(Target::new(dst_pc, drop_keep)));
+            builder.reachable = false;
+            Ok(())
+        })
     }
 
     /// Translates a Wasm `br_table` control flow operator.
