@@ -56,6 +56,11 @@ impl<'a> ModuleResources<'a> {
         &self.res.func_types[func_type_idx.into_usize()]
     }
 
+    /// Returns the [`FuncTypeIdx`] of the indexed function.
+    pub fn get_type_idx_of_func(&self, func_idx: FuncIdx) -> FuncTypeIdx {
+        self.res.funcs[func_idx.into_usize()]
+    }
+
     /// Returns the [`FuncType`] of the indexed function.
     pub fn get_type_of_func(&self, func_idx: FuncIdx) -> &'a FuncType {
         self.get_func_type(self.res.funcs[func_idx.into_usize()])

@@ -54,7 +54,7 @@ impl BlockType {
     }
 
     /// Creates a [`BlockType`] with parameters and results.
-    fn func_type(func_type: FuncTypeIdx) -> Self {
+    pub(crate) fn func_type(func_type: FuncTypeIdx) -> Self {
         Self::from_inner(BlockTypeInner::FuncType(func_type))
     }
 

@@ -68,17 +68,34 @@ pub struct FunctionBuilder<'engine, 'parser> {
 impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Creates a new [`FunctionBuilder`].
     pub fn new(engine: &'engine Engine, func: FuncIdx, res: ModuleResources<'parser>) -> Self {
+        let mut inst_builder = InstructionsBuilder::default();
+        let mut control_frames = ControlFlowStack::default();
+        Self::register_func_body_block(func, res, &mut inst_builder, &mut control_frames);
         Self {
             engine,
             func,
             res,
-            control_frames: ControlFlowStack::default(),
+            control_frames,
             value_stack: ValueStack::default(),
-            inst_builder: InstructionsBuilder::default(),
+            inst_builder,
             len_locals: 0,
             max_stack_height: 0,
             reachable: true,
         }
+    }
+
+    /// Creates the `block` control frame surrounding the entire function body.
+    fn register_func_body_block(
+        func: FuncIdx,
+        res: ModuleResources<'parser>,
+        inst_builder: &mut InstructionsBuilder,
+        control_frames: &mut ControlFlowStack,
+    ) {
+        let func_type = res.get_type_idx_of_func(func);
+        let block_type = BlockType::func_type(func_type);
+        let end_label = inst_builder.new_label();
+        let block_frame = BlockControlFrame::new(block_type, end_label, 0);
+        control_frames.push_frame(block_frame);
     }
 
     /// Try to resolve the given label.
