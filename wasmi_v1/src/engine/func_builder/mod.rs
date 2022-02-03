@@ -246,7 +246,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         Ok(())
     }
 
-    /// Translates a Wasm `block` control flow operator.
+    /// Translates a Wasm `loop` control flow operator.
     pub fn translate_loop(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
         let stack_height = self.value_stack.len();
         if self.is_reachable() {
