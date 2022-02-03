@@ -5,8 +5,6 @@ mod control_stack;
 mod inst_builder;
 mod value_stack;
 
-use core::cmp;
-
 pub use self::inst_builder::{InstructionIdx, InstructionsBuilder, LabelIdx, RelativeDepth, Reloc};
 use self::{
     control_frame::{
