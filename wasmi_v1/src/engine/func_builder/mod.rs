@@ -71,12 +71,14 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         let mut inst_builder = InstructionsBuilder::default();
         let mut control_frames = ControlFlowStack::default();
         Self::register_func_body_block(func, res, &mut inst_builder, &mut control_frames);
+        let mut value_stack = ValueStack::default();
+        Self::register_func_params(func, res, &mut value_stack);
         Self {
             engine,
             func,
             res,
             control_frames,
-            value_stack: ValueStack::default(),
+            value_stack,
             inst_builder,
             len_locals: 0,
             max_stack_height: 0,
@@ -84,7 +86,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         }
     }
 
-    /// Creates the `block` control frame surrounding the entire function body.
+    /// Registers the `block` control frame surrounding the entire function body.
     fn register_func_body_block(
         func: FuncIdx,
         res: ModuleResources<'parser>,
@@ -96,6 +98,18 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         let end_label = inst_builder.new_label();
         let block_frame = BlockControlFrame::new(block_type, end_label, 0);
         control_frames.push_frame(block_frame);
+    }
+
+    /// Registers the function parameters in the emulated value stack.
+    fn register_func_params(
+        func: FuncIdx,
+        res: ModuleResources<'parser>,
+        value_stack: &mut ValueStack,
+    ) {
+        let params = res.get_type_of_func(func).params();
+        for param in params {
+            value_stack.push(*param);
+        }
     }
 
     /// Try to resolve the given label.
