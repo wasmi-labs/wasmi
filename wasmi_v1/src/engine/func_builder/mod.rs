@@ -22,6 +22,7 @@ use self::{
 };
 use super::{DropKeep, Instruction, Target};
 use crate::{
+    engine::bytecode::Offset,
     module2::{BlockType, FuncIdx, FuncTypeIdx, GlobalIdx, MemoryIdx, ModuleResources, TableIdx},
     Engine,
     ModuleError,
@@ -571,13 +572,37 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         Ok(())
     }
 
+    /// Translate a Wasm `<ty>.load` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is used as the backend of the following Wasm instructions:
+    ///
+    /// - `i32.load`
+    /// - `i64.load`
+    /// - `f32.load`
+    /// - `f64.load`
+    fn translate_load(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+        value_type: ValueType,
+        make_inst: fn(Offset) -> Instruction,
+    ) -> Result<(), ModuleError> {
+        debug_assert_eq!(memory_idx.into_u32(), 0);
+        self.value_stack.push(value_type);
+        let offset = Offset::from(offset);
+        self.inst_builder.push_inst(make_inst(offset));
+        Ok(())
+    }
+
     /// Translate a Wasm `i32.load` instruction.
     pub fn translate_i32_load(
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_load(memory_idx, offset, ValueType::I32, Instruction::I32Load)
     }
 
     /// Translate a Wasm `i64.load` instruction.
@@ -586,7 +611,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_load(memory_idx, offset, ValueType::I64, Instruction::I64Load)
     }
 
     /// Translate a Wasm `f32.load` instruction.
@@ -595,7 +620,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_load(memory_idx, offset, ValueType::F32, Instruction::F32Load)
     }
 
     /// Translate a Wasm `f64.load` instruction.
@@ -604,7 +629,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_load(memory_idx, offset, ValueType::F64, Instruction::F64Load)
     }
 
     /// Translate a Wasm `i32.load_i8` instruction.
