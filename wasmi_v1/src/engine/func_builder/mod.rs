@@ -415,7 +415,39 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     where
         T: IntoIterator<Item = RelativeDepth>,
     {
-        todo!()
+        self.translate_if_reachable(|builder| {
+            builder.value_stack.pop1();
+
+            let mut compute_target = |n: usize, depth: RelativeDepth| {
+                let (label, drop_keep) = builder.acquire_target(depth.into_u32());
+                let dst_pc = builder.try_resolve_label(label, |pc| Reloc::BrTable {
+                    inst_idx: pc,
+                    target_idx: n,
+                });
+                Target::new(dst_pc, drop_keep)
+            };
+
+            let targets = targets
+                .into_iter()
+                .enumerate()
+                .map(|(n, depth)| compute_target(n, depth))
+                .collect::<Vec<_>>();
+            let len_targets = targets.len();
+            let default = compute_target(len_targets, default);
+            builder
+                .inst_builder
+                .push_inst(Instruction::BrTable { len_targets });
+            for target in targets {
+                builder
+                    .inst_builder
+                    .push_inst(Instruction::BrTableTarget(target));
+            }
+            builder
+                .inst_builder
+                .push_inst(Instruction::BrTableTarget(default));
+            builder.reachable = false;
+            Ok(())
+        })
     }
 
     /// Translates a Wasm `return` control flow operator.
