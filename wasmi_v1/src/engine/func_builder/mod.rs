@@ -20,7 +20,7 @@ use self::{
     locals_registry::LocalsRegistry,
     value_stack::ValueStack,
 };
-use super::{DropKeep, Instruction, StackEntry, Target};
+use super::{DropKeep, Instruction, Target};
 use crate::{
     engine::bytecode::Offset,
     module2::{BlockType, FuncIdx, FuncTypeIdx, GlobalIdx, MemoryIdx, ModuleResources, TableIdx},
