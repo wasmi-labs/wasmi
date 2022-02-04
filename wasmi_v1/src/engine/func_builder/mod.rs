@@ -736,13 +736,47 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         self.translate_load(memory_idx, offset, ValueType::I64, Instruction::I64Load32U)
     }
 
+    /// Translate a Wasm `<ty>.store` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is used as the translation backend of the following Wasm instructions:
+    ///
+    /// - `i32.store`
+    /// - `i64.store`
+    /// - `f32.store`
+    /// - `f64.store`
+    /// - `i32.store_i8`
+    /// - `i32.store_i16`
+    /// - `i64.store_i8`
+    /// - `i64.store_i16`
+    /// - `i64.store_i32`
+    fn translate_store(
+        &mut self,
+        memory_idx: MemoryIdx,
+        offset: u32,
+        stored_value: ValueType,
+        make_inst: fn(Offset) -> Instruction,
+    ) -> Result<(), ModuleError> {
+        /// The default memory index.
+        const DEFAULT_MEMORY_INDEX: u32 = 0;
+        debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
+        let pointer = self.value_stack.pop1();
+        debug_assert_eq!(pointer, ValueType::I32);
+        let expected = self.value_stack.pop1();
+        assert_eq!(stored_value, expected);
+        let offset = Offset::from(offset);
+        self.inst_builder.push_inst(make_inst(offset));
+        Ok(())
+    }
+
     /// Translate a Wasm `i32.store` instruction.
     pub fn translate_i32_store(
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_store(memory_idx, offset, ValueType::I32, Instruction::I32Store)
     }
 
     /// Translate a Wasm `i64.store` instruction.
@@ -751,7 +785,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_store(memory_idx, offset, ValueType::I64, Instruction::I64Store)
     }
 
     /// Translate a Wasm `f32.store` instruction.
@@ -760,7 +794,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_store(memory_idx, offset, ValueType::F32, Instruction::F32Store)
     }
 
     /// Translate a Wasm `f64.store` instruction.
@@ -769,7 +803,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_store(memory_idx, offset, ValueType::F64, Instruction::F64Store)
     }
 
     /// Translate a Wasm `i32.store_i8` instruction.
@@ -778,7 +812,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_store(memory_idx, offset, ValueType::I32, Instruction::I32Store8)
     }
 
     /// Translate a Wasm `i32.store_i16` instruction.
@@ -787,7 +821,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_store(memory_idx, offset, ValueType::I32, Instruction::I32Store16)
     }
 
     /// Translate a Wasm `i64.store_i8` instruction.
@@ -796,7 +830,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_store(memory_idx, offset, ValueType::I64, Instruction::I64Store8)
     }
 
     /// Translate a Wasm `i64.store_i16` instruction.
@@ -805,7 +839,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_store(memory_idx, offset, ValueType::I64, Instruction::I64Store16)
     }
 
     /// Translate a Wasm `i64.store_i32` instruction.
@@ -814,7 +848,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_store(memory_idx, offset, ValueType::I64, Instruction::I64Store32)
     }
 
     /// Translate a Wasm `memory.size` instruction.
