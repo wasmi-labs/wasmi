@@ -462,17 +462,23 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translates a Wasm `return` control flow operator.
     pub fn translate_return(&mut self) -> Result<(), ModuleError> {
-        let drop_keep = self.drop_keep_return();
-        self.inst_builder.push_inst(Instruction::Return(drop_keep));
-        self.reachable = false;
-        Ok(())
+        self.translate_if_reachable(|builder| {
+            let drop_keep = builder.drop_keep_return();
+            builder
+                .inst_builder
+                .push_inst(Instruction::Return(drop_keep));
+            builder.reachable = false;
+            Ok(())
+        })
     }
 
     /// Translates a Wasm `call` instruction.
     pub fn translate_call(&mut self, func_idx: FuncIdx) -> Result<(), ModuleError> {
-        let func_idx = func_idx.into_u32().into();
-        self.inst_builder.push_inst(Instruction::Call(func_idx));
-        Ok(())
+        self.translate_if_reachable(|builder| {
+            let func_idx = func_idx.into_u32().into();
+            builder.inst_builder.push_inst(Instruction::Call(func_idx));
+            Ok(())
+        })
     }
 
     /// Translates a Wasm `call_indirect` instruction.
@@ -481,95 +487,117 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         func_type_idx: FuncTypeIdx,
         table_idx: TableIdx,
     ) -> Result<(), ModuleError> {
-        /// The default Wasm MVP table index.
-        const DEFAULT_TABLE_INDEX: u32 = 0;
-        assert_eq!(table_idx.into_u32(), DEFAULT_TABLE_INDEX);
-        let func_type = self.value_stack.pop1();
-        debug_assert_eq!(func_type, ValueType::I32);
-        let func_type_idx = func_type_idx.into_u32().into();
-        self.inst_builder
-            .push_inst(Instruction::CallIndirect(func_type_idx));
-        Ok(())
+        self.translate_if_reachable(|builder| {
+            /// The default Wasm MVP table index.
+            const DEFAULT_TABLE_INDEX: u32 = 0;
+            assert_eq!(table_idx.into_u32(), DEFAULT_TABLE_INDEX);
+            let func_type = builder.value_stack.pop1();
+            debug_assert_eq!(func_type, ValueType::I32);
+            let func_type_idx = func_type_idx.into_u32().into();
+            builder
+                .inst_builder
+                .push_inst(Instruction::CallIndirect(func_type_idx));
+            Ok(())
+        })
     }
 
     /// Translates a Wasm `drop` instruction.
     pub fn translate_drop(&mut self) -> Result<(), ModuleError> {
-        self.value_stack.pop1();
-        Ok(())
+        self.translate_if_reachable(|builder| {
+            builder.value_stack.pop1();
+            Ok(())
+        })
     }
 
     /// Translates a Wasm `select` instruction.
     pub fn translate_select(&mut self) -> Result<(), ModuleError> {
-        let (v0, v1, selector) = self.value_stack.pop3();
-        debug_assert_eq!(selector, ValueType::I32);
-        debug_assert_eq!(v0, v1);
-        self.value_stack.push(v0);
-        self.inst_builder.push_inst(Instruction::Select);
-        Ok(())
+        self.translate_if_reachable(|builder| {
+            let (v0, v1, selector) = builder.value_stack.pop3();
+            debug_assert_eq!(selector, ValueType::I32);
+            debug_assert_eq!(v0, v1);
+            builder.value_stack.push(v0);
+            builder.inst_builder.push_inst(Instruction::Select);
+            Ok(())
+        })
     }
 
     /// Translate a Wasm `local.get` instruction.
     pub fn translate_local_get(&mut self, local_idx: u32) -> Result<(), ModuleError> {
-        let local_depth = self.relative_local_depth(local_idx).into();
-        self.inst_builder
-            .push_inst(Instruction::GetLocal { local_depth });
-        let value_type = self
-            .locals
-            .resolve_local(local_idx)
-            .unwrap_or_else(|| panic!("failed to resolve local {}", local_idx));
-        self.value_stack.push(value_type);
-        Ok(())
+        self.translate_if_reachable(|builder| {
+            let local_depth = builder.relative_local_depth(local_idx).into();
+            builder
+                .inst_builder
+                .push_inst(Instruction::GetLocal { local_depth });
+            let value_type = builder
+                .locals
+                .resolve_local(local_idx)
+                .unwrap_or_else(|| panic!("failed to resolve local {}", local_idx));
+            builder.value_stack.push(value_type);
+            Ok(())
+        })
     }
 
     /// Translate a Wasm `local.set` instruction.
     pub fn translate_local_set(&mut self, local_idx: u32) -> Result<(), ModuleError> {
-        let local_depth = self.relative_local_depth(local_idx).into();
-        self.inst_builder
-            .push_inst(Instruction::SetLocal { local_depth });
-        let expected = self
-            .locals
-            .resolve_local(local_idx)
-            .unwrap_or_else(|| panic!("failed to resolve local {}", local_idx));
-        let actual = self.value_stack.pop1();
-        debug_assert_eq!(actual, expected);
-        Ok(())
+        self.translate_if_reachable(|builder| {
+            let local_depth = builder.relative_local_depth(local_idx).into();
+            builder
+                .inst_builder
+                .push_inst(Instruction::SetLocal { local_depth });
+            let expected = builder
+                .locals
+                .resolve_local(local_idx)
+                .unwrap_or_else(|| panic!("failed to resolve local {}", local_idx));
+            let actual = builder.value_stack.pop1();
+            debug_assert_eq!(actual, expected);
+            Ok(())
+        })
     }
 
     /// Translate a Wasm `local.tee` instruction.
     pub fn translate_local_tee(&mut self, local_idx: u32) -> Result<(), ModuleError> {
-        let local_depth = self.relative_local_depth(local_idx).into();
-        self.inst_builder
-            .push_inst(Instruction::TeeLocal { local_depth });
-        let expected = self
-            .locals
-            .resolve_local(local_idx)
-            .unwrap_or_else(|| panic!("failed to resolve local {}", local_idx));
-        let actual = self.value_stack.top();
-        debug_assert_eq!(actual, expected);
-        Ok(())
+        self.translate_if_reachable(|builder| {
+            let local_depth = builder.relative_local_depth(local_idx).into();
+            builder
+                .inst_builder
+                .push_inst(Instruction::TeeLocal { local_depth });
+            let expected = builder
+                .locals
+                .resolve_local(local_idx)
+                .unwrap_or_else(|| panic!("failed to resolve local {}", local_idx));
+            let actual = builder.value_stack.top();
+            debug_assert_eq!(actual, expected);
+            Ok(())
+        })
     }
 
     /// Translate a Wasm `global.get` instruction.
     pub fn translate_global_get(&mut self, global_idx: GlobalIdx) -> Result<(), ModuleError> {
-        let global_type = self.res.get_type_of_global(global_idx);
-        self.value_stack.push(global_type.value_type());
-        let global_idx = global_idx.into_u32().into();
-        self.inst_builder
-            .push_inst(Instruction::GetGlobal(global_idx));
-        Ok(())
+        self.translate_if_reachable(|builder| {
+            let global_type = builder.res.get_type_of_global(global_idx);
+            builder.value_stack.push(global_type.value_type());
+            let global_idx = global_idx.into_u32().into();
+            builder
+                .inst_builder
+                .push_inst(Instruction::GetGlobal(global_idx));
+            Ok(())
+        })
     }
 
     /// Translate a Wasm `global.set` instruction.
     pub fn translate_global_set(&mut self, global_idx: GlobalIdx) -> Result<(), ModuleError> {
-        let global_type = self.res.get_type_of_global(global_idx);
-        debug_assert_eq!(global_type.mutability(), Mutability::Mutable);
-        let expected = global_type.value_type();
-        let actual = self.value_stack.pop1();
-        debug_assert_eq!(actual, expected);
-        let global_idx = global_idx.into_u32().into();
-        self.inst_builder
-            .push_inst(Instruction::SetGlobal(global_idx));
-        Ok(())
+        self.translate_if_reachable(|builder| {
+            let global_type = builder.res.get_type_of_global(global_idx);
+            debug_assert_eq!(global_type.mutability(), Mutability::Mutable);
+            let expected = global_type.value_type();
+            let actual = builder.value_stack.pop1();
+            debug_assert_eq!(actual, expected);
+            let global_idx = global_idx.into_u32().into();
+            builder
+                .inst_builder
+                .push_inst(Instruction::SetGlobal(global_idx));
+            Ok(())
+        })
     }
 
     /// The default memory index.
@@ -602,13 +630,15 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         loaded_type: ValueType,
         make_inst: fn(Offset) -> Instruction,
     ) -> Result<(), ModuleError> {
-        debug_assert_eq!(memory_idx.into_u32(), Self::DEFAULT_MEMORY_INDEX);
-        let pointer = self.value_stack.pop1();
-        debug_assert_eq!(pointer, ValueType::I32);
-        self.value_stack.push(loaded_type);
-        let offset = Offset::from(offset);
-        self.inst_builder.push_inst(make_inst(offset));
-        Ok(())
+        self.translate_if_reachable(|builder| {
+            debug_assert_eq!(memory_idx.into_u32(), Self::DEFAULT_MEMORY_INDEX);
+            let pointer = builder.value_stack.pop1();
+            debug_assert_eq!(pointer, ValueType::I32);
+            builder.value_stack.push(loaded_type);
+            let offset = Offset::from(offset);
+            builder.inst_builder.push_inst(make_inst(offset));
+            Ok(())
+        })
     }
 
     /// Translate a Wasm `i32.load` instruction.
@@ -759,14 +789,16 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         stored_value: ValueType,
         make_inst: fn(Offset) -> Instruction,
     ) -> Result<(), ModuleError> {
-        debug_assert_eq!(memory_idx.into_u32(), Self::DEFAULT_MEMORY_INDEX);
-        let pointer = self.value_stack.pop1();
-        debug_assert_eq!(pointer, ValueType::I32);
-        let expected = self.value_stack.pop1();
-        assert_eq!(stored_value, expected);
-        let offset = Offset::from(offset);
-        self.inst_builder.push_inst(make_inst(offset));
-        Ok(())
+        self.translate_if_reachable(|builder| {
+            debug_assert_eq!(memory_idx.into_u32(), Self::DEFAULT_MEMORY_INDEX);
+            let pointer = builder.value_stack.pop1();
+            debug_assert_eq!(pointer, ValueType::I32);
+            let expected = builder.value_stack.pop1();
+            assert_eq!(stored_value, expected);
+            let offset = Offset::from(offset);
+            builder.inst_builder.push_inst(make_inst(offset));
+            Ok(())
+        })
     }
 
     /// Translate a Wasm `i32.store` instruction.
