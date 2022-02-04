@@ -642,7 +642,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_load(memory_idx, offset, ValueType::I32, Instruction::I32Load8S)
     }
 
     /// Translate a Wasm `i32.load_u8` instruction.
@@ -651,7 +651,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_load(memory_idx, offset, ValueType::I32, Instruction::I32Load8U)
     }
 
     /// Translate a Wasm `i32.load_i16` instruction.
@@ -660,7 +660,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_load(memory_idx, offset, ValueType::I32, Instruction::I32Load16S)
     }
 
     /// Translate a Wasm `i32.load_u16` instruction.
@@ -669,7 +669,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_load(memory_idx, offset, ValueType::I32, Instruction::I32Load16U)
     }
 
     /// Translate a Wasm `i64.load_i8` instruction.
@@ -678,7 +678,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_load(memory_idx, offset, ValueType::I64, Instruction::I64Load8S)
     }
 
     /// Translate a Wasm `i64.load_u8` instruction.
@@ -687,7 +687,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_load(memory_idx, offset, ValueType::I64, Instruction::I64Load8U)
     }
 
     /// Translate a Wasm `i64.load_i16` instruction.
@@ -696,7 +696,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_load(memory_idx, offset, ValueType::I64, Instruction::I64Load16S)
     }
 
     /// Translate a Wasm `i64.load_u16` instruction.
@@ -705,7 +705,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_load(memory_idx, offset, ValueType::I64, Instruction::I64Load16U)
     }
 
     /// Translate a Wasm `i64.load_i32` instruction.
@@ -714,7 +714,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_load(memory_idx, offset, ValueType::I64, Instruction::I64Load32S)
     }
 
     /// Translate a Wasm `i64.load_u32` instruction.
@@ -723,7 +723,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_load(memory_idx, offset, ValueType::I64, Instruction::I64Load32U)
     }
 
     /// Translate a Wasm `i32.store` instruction.
