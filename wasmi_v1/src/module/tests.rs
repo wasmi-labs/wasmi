@@ -10,7 +10,7 @@ use crate::{
 };
 
 fn wat2wasm(wat: &str) -> Vec<u8> {
-    wabt::wat2wasm(wat).unwrap()
+    wat::parse_str(wat).unwrap()
 }
 
 fn compile(bytes: impl AsRef<[u8]>) -> (Engine, Vec<FuncBody>) {

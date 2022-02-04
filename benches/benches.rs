@@ -8,6 +8,7 @@ use self::bench::{
     load_module_from_file_v0,
     load_module_from_file_v1,
     load_wasm_from_file,
+    wat2wasm,
 };
 use assert_matches::assert_matches;
 use criterion::{criterion_group, criterion_main, Criterion};
@@ -520,7 +521,7 @@ fn bench_execute_recursive_trap_v1(c: &mut Criterion) {
 const HOST_CALLS_REPETITIONS: i64 = 1000;
 
 fn bench_execute_host_calls_v0(c: &mut Criterion) {
-    let wasm = wabt::wat2wasm(include_bytes!("wat/host_calls.wat")).unwrap();
+    let wasm = wat2wasm(include_bytes!("wat/host_calls.wat"));
     let module = v0::Module::from_buffer(&wasm).unwrap();
     let instance = v0::ModuleInstance::new(&module, &BenchExternals)
         .expect("failed to instantiate wasm module")
@@ -619,7 +620,7 @@ fn bench_execute_host_calls_v0(c: &mut Criterion) {
 }
 
 fn bench_execute_host_calls_v1(c: &mut Criterion) {
-    let wasm = wabt::wat2wasm(include_bytes!("wat/host_calls.wat")).unwrap();
+    let wasm = wat2wasm(include_bytes!("wat/host_calls.wat"));
     let engine = v1::Engine::default();
     let module = v1::Module::new(&engine, &wasm).unwrap();
     let mut linker = <v1::Linker<()>>::default();

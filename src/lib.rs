@@ -49,14 +49,14 @@
 //!
 //! ```rust
 //! extern crate wasmi;
-//! extern crate wabt;
+//! extern crate wat;
 //!
 //! use wasmi::{ModuleInstance, ImportsBuilder, NopExternals, RuntimeValue};
 //!
 //! fn main() {
 //!     // Parse WAT (WebAssembly Text format) into wasm bytecode.
 //!     let wasm_binary: Vec<u8> =
-//!         wabt::wat2wasm(
+//!         wat::parse_str(
 //!             r#"
 //!             (module
 //!                 (func (export "test") (result i32)
@@ -370,10 +370,10 @@ impl Module {
     ///
     /// ```rust
     /// # extern crate wasmi;
-    /// # extern crate wabt;
+    /// # extern crate wat;
     ///
     /// let wasm_binary: Vec<u8> =
-    ///     wabt::wat2wasm(
+    ///     wat::parse_str(
     ///         r#"
     ///         (module
     ///          (func $add (param $lhs i32) (param $rhs i32) (result i32)
@@ -389,7 +389,7 @@ impl Module {
     /// assert!(module.deny_floating_point().is_ok());
     ///
     /// let wasm_binary: Vec<u8> =
-    ///     wabt::wat2wasm(
+    ///     wat::parse_str(
     ///         r#"
     ///         (module
     ///          (func $add (param $lhs f32) (param $rhs f32) (result f32)
@@ -404,7 +404,7 @@ impl Module {
     /// assert!(module.deny_floating_point().is_err());
     ///
     /// let wasm_binary: Vec<u8> =
-    ///     wabt::wat2wasm(
+    ///     wat::parse_str(
     ///         r#"
     ///         (module
     ///          (func $add (param $lhs f32) (param $rhs f32) (result f32)
