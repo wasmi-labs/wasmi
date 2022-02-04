@@ -291,6 +291,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translates a Wasm `if` control flow operator.
     pub fn translate_if(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
+        self.value_stack.pop1();
         let stack_height = self.value_stack.len();
         if self.is_reachable() {
             let else_label = self.inst_builder.new_label();
@@ -395,6 +396,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Translates a Wasm `br_if` control flow operator.
     pub fn translate_br_if(&mut self, relative_depth: u32) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
+            builder.value_stack.pop1();
             let (end_label, drop_keep) = builder.acquire_target(relative_depth);
             let dst_pc = builder.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
             builder
