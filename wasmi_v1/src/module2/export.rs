@@ -44,6 +44,11 @@ impl TableIdx {
 pub struct MemoryIdx(pub(super) u32);
 
 impl MemoryIdx {
+    /// Returns the [`MemoryIdx`] as `u32`.
+    pub fn into_u32(self) -> u32 {
+        self.0
+    }
+
     /// Returns the [`MemoryIdx`] as `usize`.
     pub fn into_usize(self) -> usize {
         self.0 as usize
