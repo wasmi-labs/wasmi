@@ -8,6 +8,11 @@ use crate::{GlobalType, ModuleError};
 pub struct GlobalIdx(pub(super) u32);
 
 impl GlobalIdx {
+    /// Returns the [`GlobalIdx`] as `u32`.
+    pub fn into_u32(self) -> u32 {
+        self.0
+    }
+
     /// Returns the [`GlobalIdx`] as `usize`.
     pub fn into_usize(self) -> usize {
         self.0 as usize
