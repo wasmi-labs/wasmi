@@ -592,6 +592,8 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         /// The default memory index.
         const DEFAULT_MEMORY_INDEX: u32 = 0;
         debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
+        let pointer = self.value_stack.pop1();
+        debug_assert_eq!(pointer, ValueType::I32);
         self.value_stack.push(value_type);
         let offset = Offset::from(offset);
         self.inst_builder.push_inst(make_inst(offset));
