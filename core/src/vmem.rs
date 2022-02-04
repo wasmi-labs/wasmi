@@ -20,6 +20,7 @@ pub enum VirtualMemoryError {
 }
 
 impl From<region::Error> for VirtualMemoryError {
+    #[inline]
     fn from(error: region::Error) -> Self {
         Self::Region(error)
     }
@@ -77,6 +78,7 @@ impl VirtualMemory {
     }
 
     /// Returns a shared slice over the bytes of the virtual memory allocation.
+    #[inline]
     pub fn data(&self) -> &[u8] {
         // # SAFETY
         //
@@ -89,6 +91,7 @@ impl VirtualMemory {
     }
 
     /// Returns an exclusive slice over the bytes of the virtual memory allocation.
+    #[inline]
     pub fn data_mut(&mut self) -> &mut [u8] {
         // # SAFETY
         //

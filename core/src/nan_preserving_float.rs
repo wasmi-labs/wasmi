@@ -11,6 +11,7 @@ macro_rules! impl_binop {
         impl<T: Into<$for>> $op<T> for $for {
             type Output = Self;
 
+            #[inline]
             fn $func_name(self, other: T) -> Self {
                 $for(
                     $op::$func_name($is::from_bits(self.0), $is::from_bits(other.into().0))
@@ -41,54 +42,65 @@ macro_rules! float {
         impl_binop!($for, $is, Rem, rem);
 
         impl $for {
+            #[inline]
             pub fn from_bits(other: $rep) -> Self {
                 $for(other)
             }
 
+            #[inline]
             pub fn to_bits(self) -> $rep {
                 self.0
             }
 
+            #[inline]
             pub fn from_float(fl: $is) -> Self {
                 fl.into()
             }
 
+            #[inline]
             pub fn to_float(self) -> $is {
                 self.into()
             }
 
+            #[inline]
             pub fn is_nan(self) -> bool {
                 self.to_float().is_nan()
             }
 
             #[must_use]
+            #[inline]
             pub fn abs(self) -> Self {
                 $for(self.0 & !$sign_bit)
             }
 
             #[must_use]
+            #[inline]
             pub fn fract(self) -> Self {
                 FloatCore::fract(self.to_float()).into()
             }
 
             #[must_use]
+            #[inline]
             pub fn min(self, other: Self) -> Self {
                 Self::from(self.to_float().min(other.to_float()))
             }
 
             #[must_use]
+            #[inline]
             pub fn max(self, other: Self) -> Self {
                 Self::from(self.to_float().max(other.to_float()))
             }
         }
 
         impl From<$is> for $for {
+            #[inline]
             fn from(other: $is) -> $for {
                 $for(other.to_bits())
             }
         }
 
         impl From<$for> for $is {
+            #[inline]
             fn from(other: $for) -> $is {
                 <$is>::from_bits(other.0)
             }
@@ -97,6 +109,7 @@ macro_rules! float {
         impl Neg for $for {
             type Output = Self;
 
+            #[inline]
             fn neg(self) -> Self {
                 $for(self.0 ^ $sign_bit)
             }
@@ -105,12 +118,14 @@ macro_rules! float {
         // clippy suggestion would fail some tests
         #[allow(clippy::cmp_owned)]
         impl<T: Into<$for> + Copy> PartialEq<T> for $for {
+            #[inline]
             fn eq(&self, other: &T) -> bool {
                 $is::from(*self) == $is::from((*other).into())
             }
         }
 
         impl<T: Into<$for> + Copy> PartialOrd<T> for $for {
+            #[inline]
             fn partial_cmp(&self, other: &T) -> Option<Ordering> {
                 $is::from(*self).partial_cmp(&$is::from((*other).into()))
             }
@@ -128,24 +143,28 @@ float!(F32, u32, f32);
 float!(F64, u64, f64);
 
 impl From<u32> for F32 {
+    #[inline]
     fn from(other: u32) -> Self {
         Self::from_bits(other)
     }
 }
 
 impl From<F32> for u32 {
+    #[inline]
     fn from(other: F32) -> Self {
         other.to_bits()
     }
 }
 
 impl From<u64> for F64 {
+    #[inline]
     fn from(other: u64) -> Self {
         Self::from_bits(other)
     }
 }
 
 impl From<F64> for u64 {
+    #[inline]
     fn from(other: F64) -> Self {
         other.to_bits()
     }

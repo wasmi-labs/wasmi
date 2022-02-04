@@ -9,7 +9,7 @@ use crate::isa;
 use parity_wasm::{deserialize_buffer, elements::Module};
 
 fn validate(wat: &str) -> CompiledModule {
-    let wasm = wabt::wat2wasm(wat).unwrap();
+    let wasm = wat::parse_str(wat).unwrap();
     let module = deserialize_buffer::<Module>(&wasm).unwrap();
     compile_module(module).unwrap()
 }
