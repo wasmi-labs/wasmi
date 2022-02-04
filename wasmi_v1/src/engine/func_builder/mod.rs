@@ -17,6 +17,7 @@ use self::{
         UnreachableControlFrame,
     },
     control_stack::ControlFlowStack,
+    locals_registry::LocalsRegistry,
     value_stack::ValueStack,
 };
 use super::{DropKeep, Instruction, Target};
@@ -46,8 +47,8 @@ pub struct FunctionBuilder<'engine, 'parser> {
     ///
     /// Allows to incrementally construct the instruction of a function.
     inst_builder: InstructionsBuilder,
-    /// The amount of local variables of the currently compiled function.
-    len_locals: usize,
+    /// Stores and resolves local variable types.
+    locals: LocalsRegistry,
     /// This represents the reachability of the currently translated code.
     ///
     /// - `true`: The currently translated code is reachable.
@@ -67,7 +68,8 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         let mut control_frames = ControlFlowStack::default();
         Self::register_func_body_block(func, res, &mut inst_builder, &mut control_frames);
         let mut value_stack = ValueStack::default();
-        Self::register_func_params(func, res, &mut value_stack);
+        let mut locals = LocalsRegistry::default();
+        Self::register_func_params(func, res, &mut value_stack, &mut locals);
         Self {
             engine,
             func,
@@ -75,7 +77,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             control_frames,
             value_stack,
             inst_builder,
-            len_locals: 0,
+            locals,
             reachable: true,
         }
     }
@@ -99,10 +101,12 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         func: FuncIdx,
         res: ModuleResources<'parser>,
         value_stack: &mut ValueStack,
+        locals: &mut LocalsRegistry,
     ) -> usize {
         let params = res.get_type_of_func(func).params();
-        for param in params {
-            value_stack.push(*param);
+        for param_type in params {
+            value_stack.push(*param_type);
+            locals.register_locals(*param_type, 1);
         }
         params.len()
     }
@@ -123,9 +127,9 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     pub fn translate_locals(
         &mut self,
         amount: u32,
-        _value_type: ValueType,
+        value_type: ValueType,
     ) -> Result<(), ModuleError> {
-        self.len_locals += amount as usize;
+        self.locals.register_locals(value_type, amount);
         Ok(())
     }
 
@@ -204,7 +208,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             .checked_sub(1)
             .expect("control flow frame stack must not be empty") as u32;
         let drop_keep = self.compute_drop_keep(max_depth);
-        let len_locals = self.len_locals;
+        let len_locals = self.locals.len_registered() as usize;
         let len_params = self.res.get_type_of_func(self.func).params().len();
         DropKeep::new(
             // Drop all local variables and parameters upon exit.
@@ -220,7 +224,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// See stack layout definition in `isa.rs`.
     pub fn relative_local_depth(&self, local_idx: u32) -> u32 {
         let stack_height = self.value_stack.len();
-        let len_locals = self.len_locals as u32;
+        let len_locals = self.locals.len_registered();
         let len_params = self.res.get_type_of_func(self.func).params().len() as u32;
         stack_height
             .checked_add(len_params)
