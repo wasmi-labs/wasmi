@@ -37,6 +37,14 @@ impl ValueStack {
         self.update_max_height();
     }
 
+    /// Returns the top most [`ValueType`] form the emulated [`ValueStack`].
+    pub fn top(&self) -> ValueType {
+        *self
+            .values
+            .last()
+            .expect("tried to peek last value from empty emulated value stack")
+    }
+
     /// Pops the top most [`ValueType`] from the emulated [`ValueStack`].
     ///
     /// # Panics
