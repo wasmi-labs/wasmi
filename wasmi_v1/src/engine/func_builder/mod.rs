@@ -296,7 +296,8 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translates a Wasm `if` control flow operator.
     pub fn translate_if(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
-        self.value_stack.pop1();
+        let condition = self.value_stack.pop1();
+        debug_assert_eq!(condition, ValueType::I32);
         let stack_height = self.value_stack.len();
         if self.is_reachable() {
             let else_label = self.inst_builder.new_label();
@@ -401,7 +402,8 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Translates a Wasm `br_if` control flow operator.
     pub fn translate_br_if(&mut self, relative_depth: u32) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
-            builder.value_stack.pop1();
+            let condition = builder.value_stack.pop1();
+            debug_assert_eq!(condition, ValueType::I32);
             let (end_label, drop_keep) = builder.acquire_target(relative_depth);
             let dst_pc = builder.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
             builder
@@ -421,7 +423,8 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         T: IntoIterator<Item = RelativeDepth>,
     {
         self.translate_if_reachable(|builder| {
-            builder.value_stack.pop1();
+            let case = builder.value_stack.pop1();
+            debug_assert_eq!(case, ValueType::I32);
 
             let mut compute_target = |n: usize, depth: RelativeDepth| {
                 let (label, drop_keep) = builder.acquire_target(depth.into_u32());
@@ -479,7 +482,8 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         /// The default Wasm MVP table index.
         const DEFAULT_TABLE_INDEX: u32 = 0;
         assert_eq!(table_idx.into_u32(), DEFAULT_TABLE_INDEX);
-        self.value_stack.pop1();
+        let func_type = self.value_stack.pop1();
+        debug_assert_eq!(func_type, ValueType::I32);
         let func_type_idx = func_type_idx.into_u32().into();
         self.inst_builder
             .push_inst(Instruction::CallIndirect(func_type_idx));
