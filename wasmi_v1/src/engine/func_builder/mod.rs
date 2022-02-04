@@ -25,6 +25,7 @@ use crate::{
     module2::{BlockType, FuncIdx, FuncTypeIdx, GlobalIdx, MemoryIdx, ModuleResources, TableIdx},
     Engine,
     ModuleError,
+    Mutability,
 };
 use wasmi_core::{ValueType, F32, F64};
 
@@ -549,12 +550,25 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translate a Wasm `global.get` instruction.
     pub fn translate_global_get(&mut self, global_idx: GlobalIdx) -> Result<(), ModuleError> {
-        todo!()
+        let global_type = self.res.get_type_of_global(global_idx);
+        self.value_stack.push(global_type.value_type());
+        let global_idx = global_idx.into_u32().into();
+        self.inst_builder
+            .push_inst(Instruction::GetGlobal(global_idx));
+        Ok(())
     }
 
     /// Translate a Wasm `global.set` instruction.
     pub fn translate_global_set(&mut self, global_idx: GlobalIdx) -> Result<(), ModuleError> {
-        todo!()
+        let global_type = self.res.get_type_of_global(global_idx);
+        debug_assert_eq!(global_type.mutability(), Mutability::Mutable);
+        let expected = global_type.value_type();
+        let actual = self.value_stack.pop1();
+        debug_assert_eq!(actual, expected);
+        let global_idx = global_idx.into_u32().into();
+        self.inst_builder
+            .push_inst(Instruction::SetGlobal(global_idx));
+        Ok(())
     }
 
     /// Translate a Wasm `i32.load` instruction.
