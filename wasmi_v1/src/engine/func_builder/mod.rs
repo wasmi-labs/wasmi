@@ -572,6 +572,9 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         Ok(())
     }
 
+    /// The default memory index.
+    const DEFAULT_MEMORY_INDEX: u32 = 0;
+
     /// Translate a Wasm `<ty>.load` instruction.
     ///
     /// # Note
@@ -599,9 +602,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         loaded_type: ValueType,
         make_inst: fn(Offset) -> Instruction,
     ) -> Result<(), ModuleError> {
-        /// The default memory index.
-        const DEFAULT_MEMORY_INDEX: u32 = 0;
-        debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
+        debug_assert_eq!(memory_idx.into_u32(), Self::DEFAULT_MEMORY_INDEX);
         let pointer = self.value_stack.pop1();
         debug_assert_eq!(pointer, ValueType::I32);
         self.value_stack.push(loaded_type);
@@ -758,9 +759,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         stored_value: ValueType,
         make_inst: fn(Offset) -> Instruction,
     ) -> Result<(), ModuleError> {
-        /// The default memory index.
-        const DEFAULT_MEMORY_INDEX: u32 = 0;
-        debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
+        debug_assert_eq!(memory_idx.into_u32(), Self::DEFAULT_MEMORY_INDEX);
         let pointer = self.value_stack.pop1();
         debug_assert_eq!(pointer, ValueType::I32);
         let expected = self.value_stack.pop1();
