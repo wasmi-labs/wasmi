@@ -20,7 +20,7 @@ use self::{
     locals_registry::LocalsRegistry,
     value_stack::ValueStack,
 };
-use super::{DropKeep, Instruction, Target};
+use super::{DropKeep, Instruction, StackEntry, Target};
 use crate::{
     engine::bytecode::Offset,
     module2::{BlockType, FuncIdx, FuncTypeIdx, GlobalIdx, MemoryIdx, ModuleResources, TableIdx},
@@ -28,7 +28,7 @@ use crate::{
     ModuleError,
     Mutability,
 };
-use wasmi_core::{ValueType, F32, F64};
+use wasmi_core::{Value, ValueType, F32, F64};
 
 /// The interface to translate a `wasmi` bytecode function using Wasm bytecode.
 #[derive(Debug)]
@@ -902,24 +902,46 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         })
     }
 
+    /// Translate a Wasm `<ty>.const` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is used as the translation backend of the following Wasm instructions:
+    ///
+    /// - `i32.const`
+    /// - `i64.const`
+    /// - `f32.const`
+    /// - `f64.const`
+    fn translate_const<T>(&mut self, value: T) -> Result<(), ModuleError>
+    where
+        T: Into<Value>,
+    {
+        self.translate_if_reachable(|builder| {
+            let value = value.into();
+            builder.value_stack.push(value.value_type());
+            builder.inst_builder.push_inst(Instruction::constant(value));
+            Ok(())
+        })
+    }
+
     /// Translate a Wasm `i32.const` instruction.
     pub fn translate_i32_const(&mut self, value: i32) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_const(value)
     }
 
     /// Translate a Wasm `i64.const` instruction.
     pub fn translate_i64_const(&mut self, value: i64) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_const(value)
     }
 
     /// Translate a Wasm `f32.const` instruction.
     pub fn translate_f32_const(&mut self, value: F32) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_const(value)
     }
 
     /// Translate a Wasm `f64.const` instruction.
     pub fn translate_f64_const(&mut self, value: F64) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_const(value)
     }
 
     /// Translate a Wasm `i32_eqz` instruction.
