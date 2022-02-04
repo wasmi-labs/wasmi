@@ -68,11 +68,6 @@ impl LocalGroup {
     pub fn max_index(&self) -> u32 {
         self.max_index
     }
-
-    /// Returns the amount of local variables in the local group.
-    pub fn amount(&self) -> u32 {
-        self.max_index - self.min_index
-    }
 }
 
 impl LocalsRegistry {
