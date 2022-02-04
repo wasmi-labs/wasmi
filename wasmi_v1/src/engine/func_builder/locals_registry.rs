@@ -1,0 +1,223 @@
+use alloc::{
+    collections::{btree_map, BTreeMap},
+    vec::Vec,
+};
+use core::cmp::Ordering;
+use wasmi_core::ValueType;
+
+/// A registry where local variables of a function are registered and resolved.
+#[derive(Debug, Default)]
+pub struct LocalsRegistry {
+    /// A cache that tracks actually used local variable indices and their types.
+    used: BTreeMap<u32, ValueType>,
+    /// An efficient store for the registered local variable groups.
+    groups: Vec<LocalGroup>,
+    /// Max local index.
+    max_index: u32,
+}
+
+/// A group of local values as encoded in the Wasm binary.
+#[derive(Debug, Copy, Clone)]
+pub struct LocalGroup {
+    /// The shared [`ValueType`] of the local variables in the group.
+    value_type: ValueType,
+    /// The (included) minimum local index of the local variable group.
+    min_index: u32,
+    /// The (excluded) maximum local index of the local variable group.
+    max_index: u32,
+}
+
+impl LocalGroup {
+    /// Creates a new [`LocalGroup`] with the given `amount` of local of shared [`ValueType`].
+    pub fn new(value_type: ValueType, min_index: u32, max_index: u32) -> Self {
+        assert!(min_index < max_index);
+        Self {
+            value_type,
+            min_index,
+            max_index,
+        }
+    }
+
+    /// Returns the shared [`ValueType`] of the local group.
+    pub fn value_type(&self) -> ValueType {
+        self.value_type
+    }
+
+    /// Returns the minimum viable local index for the local group.
+    pub fn min_index(&self) -> u32 {
+        self.min_index
+    }
+
+    /// Returns the maximum viable local index for the local group.
+    pub fn max_index(&self) -> u32 {
+        self.max_index
+    }
+
+    /// Returns the amount of local variables in the local group.
+    pub fn amount(&self) -> u32 {
+        self.max_index - self.min_index
+    }
+}
+
+impl LocalsRegistry {
+    /// Returns the number of registered local variables.
+    pub fn len_registered(&self) -> u32 {
+        self.max_index
+    }
+
+    /// Returns the number of actually used local variables.
+    pub fn len_used(&self) -> u32 {
+        self.used.len() as u32
+    }
+
+    /// Registers the `amount` of locals with their shared [`ValueType`].
+    pub fn register_locals(&mut self, value_type: ValueType, amount: u32) {
+        let min_index = self.max_index;
+        let max_index = self.max_index + amount;
+        self.groups
+            .push(LocalGroup::new(value_type, min_index, max_index));
+        self.max_index += amount;
+    }
+
+    /// Resolves the local variable at the given index.
+    pub fn resolve_local(&mut self, local_index: u32) -> Option<ValueType> {
+        if local_index >= self.max_index {
+            // Bail out early if the local index is invalid.
+            return None;
+        }
+        match self.used.entry(local_index) {
+            btree_map::Entry::Occupied(occupied) => Some(occupied.get()).copied(),
+            btree_map::Entry::Vacant(vacant) => {
+                // Actually search for the local variable type in the groups
+                // array using efficient binary search, insert it into the
+                // `used` cache and return it to the caller.
+                match self.groups.binary_search_by(|group| {
+                    if local_index < group.min_index() {
+                        return Ordering::Greater;
+                    }
+                    if local_index >= group.max_index() {
+                        return Ordering::Less;
+                    }
+                    Ordering::Equal
+                }) {
+                    Ok(found_index) => {
+                        let value_type = self.groups[found_index].value_type();
+                        self.used.insert(local_index, value_type);
+                        Some(value_type)
+                    }
+                    Err(_) => unreachable!(
+                        "unexectedly could not find valid local group index \
+                        using `local_index` = {}",
+                        local_index
+                    ),
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_works() {
+        let mut registry = LocalsRegistry::default();
+        for local_index in 0..10 {
+            assert!(registry.resolve_local(local_index).is_none());
+        }
+        assert_eq!(registry.len_registered(), 0);
+        assert_eq!(registry.len_used(), 0);
+    }
+
+    #[test]
+    fn single_works() {
+        let mut registry = LocalsRegistry::default();
+        registry.register_locals(ValueType::I32, 1);
+        registry.register_locals(ValueType::I64, 1);
+        registry.register_locals(ValueType::F32, 1);
+        registry.register_locals(ValueType::F64, 1);
+        // Duplicate value types with another set of local groups.
+        registry.register_locals(ValueType::I32, 1);
+        registry.register_locals(ValueType::I64, 1);
+        registry.register_locals(ValueType::F32, 1);
+        registry.register_locals(ValueType::F64, 1);
+        fn assert_valid_accesses(registry: &mut LocalsRegistry, offset: u32) {
+            assert_eq!(registry.resolve_local(offset + 0), Some(ValueType::I32));
+            assert_eq!(registry.resolve_local(offset + 1), Some(ValueType::I64));
+            assert_eq!(registry.resolve_local(offset + 2), Some(ValueType::F32));
+            assert_eq!(registry.resolve_local(offset + 3), Some(ValueType::F64));
+        }
+        // Assert the value types of the first group.
+        assert_valid_accesses(&mut registry, 0);
+        // Assert that also the second bunch of local groups work properly.
+        assert_valid_accesses(&mut registry, 4);
+        // Repeat the process to also check if the cache works.
+        assert_valid_accesses(&mut registry, 0);
+        assert_valid_accesses(&mut registry, 4);
+        // Assert that an index out of bounds yields `None`.
+        assert!(registry.resolve_local(registry.len_registered()).is_none());
+        // Assert that by now all locals are in use:
+        assert_eq!(registry.len_registered(), registry.len_used(),);
+    }
+
+    #[test]
+    fn multiple_works() {
+        let mut registry = LocalsRegistry::default();
+        let amount = 10;
+        registry.register_locals(ValueType::I32, amount);
+        registry.register_locals(ValueType::I64, amount);
+        registry.register_locals(ValueType::F32, amount);
+        registry.register_locals(ValueType::F64, amount);
+        // Duplicate value types with another set of local groups.
+        registry.register_locals(ValueType::I32, amount);
+        registry.register_locals(ValueType::I64, amount);
+        registry.register_locals(ValueType::F32, amount);
+        registry.register_locals(ValueType::F64, amount);
+        fn assert_local_group(
+            registry: &mut LocalsRegistry,
+            offset: u32,
+            amount: u32,
+            value_type: ValueType,
+        ) {
+            for local_index in 0..amount {
+                println!(
+                    "assert_local_group({}, {}, {:?})",
+                    offset, amount, value_type
+                );
+                assert_eq!(
+                    registry.resolve_local(offset + local_index),
+                    Some(value_type)
+                );
+            }
+        }
+        fn assert_valid_accesses(registry: &mut LocalsRegistry, offset: u32, amount: u32) {
+            println!("assert_valid_accesses");
+            let value_types = [
+                ValueType::I32,
+                ValueType::I64,
+                ValueType::F32,
+                ValueType::F64,
+            ];
+            for i in 0..4 {
+                assert_local_group(
+                    registry,
+                    offset + i * amount,
+                    amount,
+                    value_types[i as usize],
+                );
+            }
+        }
+        // Assert the value types of the first group.
+        assert_valid_accesses(&mut registry, 0, amount);
+        // Assert that also the second bunch of local groups work properly.
+        assert_valid_accesses(&mut registry, 4 * amount, amount);
+        // Repeat the process to also check if the cache works.
+        assert_valid_accesses(&mut registry, 0, amount);
+        assert_valid_accesses(&mut registry, 4 * amount, amount);
+        // Assert that an index out of bounds yields `None`.
+        assert!(registry.resolve_local(registry.len_registered()).is_none());
+        // Assert that by now all locals are in use:
+        assert_eq!(registry.len_registered(), registry.len_used(),);
+    }
+}
