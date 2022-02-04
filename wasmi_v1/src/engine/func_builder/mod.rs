@@ -460,7 +460,9 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translates a Wasm `call` instruction.
     pub fn translate_call(&mut self, func_idx: FuncIdx) -> Result<(), ModuleError> {
-        todo!()
+        let func_idx = func_idx.into_u32().into();
+        self.inst_builder.push_inst(Instruction::Call(func_idx));
+        Ok(())
     }
 
     /// Translates a Wasm `call_indirect` instruction.
@@ -469,7 +471,14 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         func_type_idx: FuncTypeIdx,
         table_idx: TableIdx,
     ) -> Result<(), ModuleError> {
-        todo!()
+        /// The default Wasm MVP table index.
+        const DEFAULT_TABLE_INDEX: u32 = 0;
+        assert_eq!(table_idx.into_u32(), DEFAULT_TABLE_INDEX);
+        self.value_stack.pop1();
+        let func_type_idx = func_type_idx.into_u32().into();
+        self.inst_builder
+            .push_inst(Instruction::CallIndirect(func_type_idx));
+        Ok(())
     }
 
     /// Translates a Wasm `drop` instruction.

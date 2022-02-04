@@ -8,6 +8,11 @@ use crate::ModuleError;
 pub struct FuncIdx(pub(super) u32);
 
 impl FuncIdx {
+    /// Returns the [`FuncIdx`] as `u32`.
+    pub fn into_u32(self) -> u32 {
+        self.0
+    }
+
     /// Returns the [`FuncIdx`] as `usize`.
     pub fn into_usize(self) -> usize {
         self.0 as usize
@@ -21,6 +26,11 @@ impl FuncIdx {
 pub struct TableIdx(pub(super) u32);
 
 impl TableIdx {
+    /// Returns the [`TableIdx`] as `u32`.
+    pub fn into_u32(self) -> u32 {
+        self.0
+    }
+
     /// Returns the [`TableIdx`] as `usize`.
     pub fn into_usize(self) -> usize {
         self.0 as usize
