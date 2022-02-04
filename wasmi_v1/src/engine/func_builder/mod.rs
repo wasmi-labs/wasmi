@@ -586,7 +586,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
-        value_type: ValueType,
+        loaded_type: ValueType,
         make_inst: fn(Offset) -> Instruction,
     ) -> Result<(), ModuleError> {
         /// The default memory index.
@@ -594,7 +594,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
         let pointer = self.value_stack.pop1();
         debug_assert_eq!(pointer, ValueType::I32);
-        self.value_stack.push(value_type);
+        self.value_stack.push(loaded_type);
         let offset = Offset::from(offset);
         self.inst_builder.push_inst(make_inst(offset));
         Ok(())
