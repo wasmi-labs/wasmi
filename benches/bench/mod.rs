@@ -98,6 +98,11 @@ pub fn load_instance_from_file_v1(file_name: &str) -> (v1::Store<()>, v1::Instan
     (store, instance)
 }
 
+/// Converts the `.wat` encoded `bytes` into `.wasm` encoded bytes.
+pub fn wat2wasm(bytes: &[u8]) -> Vec<u8> {
+    wat::parse_bytes(bytes).unwrap().into_owned()
+}
+
 /// Parses the Wasm source from the given `.wat` bytes into a `wasmi` `v0` module.
 ///
 /// # Note
@@ -108,7 +113,7 @@ pub fn load_instance_from_file_v1(file_name: &str) -> (v1::Store<()>, v1::Instan
 ///
 /// If the benchmark Wasm file could not be opened, read or parsed.
 pub fn load_instance_from_wat_v0(wat_bytes: &[u8]) -> v0::ModuleRef {
-    let wasm = wabt::wat2wasm(wat_bytes).unwrap();
+    let wasm = wat2wasm(wat_bytes);
     let module = v0::Module::from_buffer(&wasm).unwrap();
     v0::ModuleInstance::new(&module, &v0::ImportsBuilder::default())
         .expect("failed to instantiate wasm module")
@@ -126,7 +131,7 @@ pub fn load_instance_from_wat_v0(wat_bytes: &[u8]) -> v0::ModuleRef {
 ///
 /// If the benchmark Wasm file could not be opened, read or parsed.
 pub fn load_instance_from_wat_v1(wat_bytes: &[u8]) -> (v1::Store<()>, v1::Instance) {
-    let wasm = wabt::wat2wasm(wat_bytes).unwrap();
+    let wasm = wat2wasm(wat_bytes);
     let engine = v1::Engine::default();
     let module = v1::Module::new(&engine, &wasm).unwrap();
     let mut linker = <v1::Linker<()>>::default();

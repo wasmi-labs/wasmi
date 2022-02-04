@@ -18,7 +18,11 @@ use super::{
     StoreContext,
     Stored,
 };
-use crate::{Error, FuncType, Trap, Value};
+use crate::{
+    core::{Trap, Value},
+    Error,
+    FuncType,
+};
 use alloc::sync::Arc;
 use core::{fmt, fmt::Debug};
 

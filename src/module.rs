@@ -604,10 +604,10 @@ impl ModuleInstance {
     ///
     /// ```rust
     /// # extern crate wasmi;
-    /// # extern crate wabt;
+    /// # extern crate wat;
     /// # use wasmi::{ModuleInstance, ImportsBuilder, NopExternals, RuntimeValue};
     /// # fn main() {
-    /// # let wasm_binary: Vec<u8> = wabt::wat2wasm(
+    /// # let wasm_binary: Vec<u8> = wat::parse_str(
     /// #   r#"
     /// #   (module
     /// #       (func (export "add") (param i32 i32) (result i32)
@@ -845,7 +845,7 @@ mod tests {
     use crate::{func::FuncInstance, imports::ImportsBuilder, types::Signature, Module, ValueType};
 
     fn parse_wat(source: &str) -> Module {
-        let wasm_binary = wabt::wat2wasm(source).expect("Failed to parse wat source");
+        let wasm_binary = wat::parse_str(source).expect("Failed to parse wat source");
         Module::from_buffer(wasm_binary).expect("Failed to load parsed module")
     }
 

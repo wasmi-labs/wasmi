@@ -1,4 +1,4 @@
-use crate::ValueType;
+use crate::core::ValueType;
 use alloc::{sync::Arc, vec::Vec};
 
 /// A function type representing a function's parameter and result types.

@@ -13,7 +13,10 @@ use super::{
     ValueStack,
     VisitInstruction,
 };
-use crate::{Func, Trap, TrapCode, F32, F64};
+use crate::{
+    core::{Trap, TrapCode, F32, F64},
+    Func,
+};
 use core::ops::{BitAnd, BitOr, BitXor, Neg, Shl, Shr};
 use wasmi_core::{
     memory_units::Pages,

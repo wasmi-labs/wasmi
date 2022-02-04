@@ -3,13 +3,13 @@ use super::{
     HostFuncTrampoline,
 };
 use crate::{
+    core::{FromValue, Trap, Value, ValueType, F32, F64},
     engine::{ReadParams, WriteResults},
     foreach_tuple::for_each_tuple,
     Caller,
     FuncType,
 };
 use core::{array, iter::FusedIterator};
-use wasmi_core::{FromValue, Trap, Value, ValueType, F32, F64};
 
 /// Closures and functions that can be used as host functions.
 pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {

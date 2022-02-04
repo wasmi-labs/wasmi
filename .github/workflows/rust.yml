@@ -43,17 +43,19 @@ jobs:
     name: Test
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        # windows-latest was pinned to windows-2019
+        # because of https://github.com/paritytech/wasmi/runs/5021520759
+        os: [ubuntu-latest, windows-2019, macos-latest]
         include:
           # Include a new variable `rustc-args` with `-- --test-threads 1`
-          # for windows-latest to be used with virtual_memory crate feature
+          # for windows-2019 to be used with virtual_memory crate feature
           # enabled while testing.
-          - os: windows-latest
+          - os: windows-2019
             test-args: "--test-threads 1"
     runs-on: ${{ matrix.os }}
     steps:
       - name: Configure Pagefile for Windows
-        if: matrix.os == 'windows-latest'
+        if: matrix.os == 'windows-2019'
         uses: al-cheb/configure-pagefile-action@v1.2
         with:
           minimum-size: 6GB

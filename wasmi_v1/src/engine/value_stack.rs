@@ -1,7 +1,7 @@
 //! Data structures to represent the Wasm value stack during execution.
 
 use super::{DropKeep, DEFAULT_VALUE_STACK_LIMIT};
-use crate::{TrapCode, Value, ValueType, F32, F64};
+use crate::core::{TrapCode, Value, ValueType, F32, F64};
 use alloc::vec::Vec;
 use core::{fmt, fmt::Debug, iter, mem};
 
