@@ -576,12 +576,22 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     ///
     /// # Note
     ///
-    /// This is used as the backend of the following Wasm instructions:
+    /// This is used as the translation backend of the following Wasm instructions:
     ///
     /// - `i32.load`
     /// - `i64.load`
     /// - `f32.load`
     /// - `f64.load`
+    /// - `i32.load_i8`
+    /// - `i32.load_u8`
+    /// - `i32.load_i16`
+    /// - `i32.load_u16`
+    /// - `i64.load_i8`
+    /// - `i64.load_u8`
+    /// - `i64.load_i16`
+    /// - `i64.load_u16`
+    /// - `i64.load_i32`
+    /// - `i64.load_u32`
     fn translate_load(
         &mut self,
         memory_idx: MemoryIdx,
