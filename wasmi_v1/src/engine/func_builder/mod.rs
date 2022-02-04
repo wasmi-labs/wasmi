@@ -484,7 +484,8 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translates a Wasm `drop` instruction.
     pub fn translate_drop(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.value_stack.pop1();
+        Ok(())
     }
 
     /// Translates a Wasm `select` instruction.
