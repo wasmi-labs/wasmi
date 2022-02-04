@@ -6,6 +6,22 @@ use core::cmp::Ordering;
 use wasmi_core::ValueType;
 
 /// A registry where local variables of a function are registered and resolved.
+///
+/// # Note
+///
+/// The locals registry efficiently registers and resolves local variables.
+/// The problem is that the Wasm specification allows to encode up to `u32::MAX`
+/// local variables in a small and constant space via the binary encoding.
+/// Therefore we need a way to efficiently cope with this worst-case scenario
+/// in order to protect the `wasmi` interpreter against exploitations.
+///
+/// This implementation allows to access local variables in this worst-case
+/// scenario with a worst time complexity of O(log n) and space requirement
+/// of O(m + n) where n is the number of registered groups of local variables
+/// and m is the number of actually used local variables.
+///
+/// Besides that local variable usages are cached to further minimize potential
+/// exploitation impact.
 #[derive(Debug, Default)]
 pub struct LocalsRegistry {
     /// A cache that tracks actually used local variable indices and their types.
