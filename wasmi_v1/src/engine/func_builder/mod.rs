@@ -498,7 +498,12 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translates a Wasm `select` instruction.
     pub fn translate_select(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        let (v0, v1, selector) = self.value_stack.pop3();
+        debug_assert_eq!(selector, ValueType::I32);
+        debug_assert_eq!(v0, v1);
+        self.value_stack.push(v0);
+        self.inst_builder.push_inst(Instruction::Select);
+        Ok(())
     }
 
     /// Translate a Wasm `local.get` instruction.
