@@ -5,6 +5,7 @@ use super::{
     Export,
     FuncIdx,
     Global,
+    GlobalIdx,
     Import,
     ImportKind,
     ImportName,
@@ -64,6 +65,11 @@ impl<'a> ModuleResources<'a> {
     /// Returns the [`FuncType`] of the indexed function.
     pub fn get_type_of_func(&self, func_idx: FuncIdx) -> &'a FuncType {
         self.get_func_type(self.res.funcs[func_idx.into_usize()])
+    }
+
+    /// Returns the [`GlobalType`] the the indexed global variable.
+    pub fn get_type_of_global(&self, global_idx: GlobalIdx) -> GlobalType {
+        self.res.globals[global_idx.into_usize()]
     }
 }
 
