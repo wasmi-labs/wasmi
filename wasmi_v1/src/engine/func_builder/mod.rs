@@ -508,17 +508,43 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translate a Wasm `local.get` instruction.
     pub fn translate_local_get(&mut self, local_idx: u32) -> Result<(), ModuleError> {
-        todo!()
+        let local_depth = self.relative_local_depth(local_idx).into();
+        self.inst_builder
+            .push_inst(Instruction::GetLocal { local_depth });
+        let value_type = self
+            .locals
+            .resolve_local(local_idx)
+            .unwrap_or_else(|| panic!("failed to resolve local {}", local_idx));
+        self.value_stack.push(value_type);
+        Ok(())
     }
 
     /// Translate a Wasm `local.set` instruction.
     pub fn translate_local_set(&mut self, local_idx: u32) -> Result<(), ModuleError> {
-        todo!()
+        let local_depth = self.relative_local_depth(local_idx).into();
+        self.inst_builder
+            .push_inst(Instruction::SetLocal { local_depth });
+        let expected = self
+            .locals
+            .resolve_local(local_idx)
+            .unwrap_or_else(|| panic!("failed to resolve local {}", local_idx));
+        let actual = self.value_stack.pop1();
+        debug_assert_eq!(actual, expected);
+        Ok(())
     }
 
     /// Translate a Wasm `local.tee` instruction.
     pub fn translate_local_tee(&mut self, local_idx: u32) -> Result<(), ModuleError> {
-        todo!()
+        let local_depth = self.relative_local_depth(local_idx).into();
+        self.inst_builder
+            .push_inst(Instruction::TeeLocal { local_depth });
+        let expected = self
+            .locals
+            .resolve_local(local_idx)
+            .unwrap_or_else(|| panic!("failed to resolve local {}", local_idx));
+        let actual = self.value_stack.top();
+        debug_assert_eq!(actual, expected);
+        Ok(())
     }
 
     /// Translate a Wasm `global.get` instruction.
