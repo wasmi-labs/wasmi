@@ -452,7 +452,10 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translates a Wasm `return` control flow operator.
     pub fn translate_return(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        let drop_keep = self.drop_keep_return();
+        self.inst_builder.push_inst(Instruction::Return(drop_keep));
+        self.reachable = false;
+        Ok(())
     }
 
     /// Translates a Wasm `call` instruction.
