@@ -19,6 +19,7 @@ pub enum Trap {
 
 impl Trap {
     /// Wraps the host error in a [`Trap`].
+    #[inline]
     pub fn host<U>(host_error: U) -> Self
     where
         U: HostError + Sized,
@@ -27,11 +28,13 @@ impl Trap {
     }
 
     /// Returns `true` if `self` trap originating from host code.
+    #[inline]
     pub fn is_host(&self) -> bool {
         matches!(self, Self::Host(_))
     }
 
     /// Returns the [`TrapCode`] traps originating from Wasm execution.
+    #[inline]
     pub fn code(&self) -> Option<TrapCode> {
         if let Self::Code(trap_code) = self {
             return Some(*trap_code);
@@ -41,6 +44,7 @@ impl Trap {
 }
 
 impl From<TrapCode> for Trap {
+    #[inline]
     fn from(error: TrapCode) -> Self {
         Self::Code(error)
     }
@@ -50,6 +54,7 @@ impl<U> From<U> for Trap
 where
     U: HostError + Sized,
 {
+    #[inline]
     fn from(e: U) -> Self {
         Trap::host(e)
     }
