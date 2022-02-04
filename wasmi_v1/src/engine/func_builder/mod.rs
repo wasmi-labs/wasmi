@@ -852,12 +852,18 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translate a Wasm `memory.size` instruction.
     pub fn translate_memory_size(&mut self, memory_idx: MemoryIdx) -> Result<(), ModuleError> {
-        todo!()
+        debug_assert_eq!(memory_idx.into_u32(), Self::DEFAULT_MEMORY_INDEX);
+        self.value_stack.push(ValueType::I32);
+        self.inst_builder.push_inst(Instruction::CurrentMemory);
+        Ok(())
     }
 
     /// Translate a Wasm `memory.grow` instruction.
     pub fn translate_memory_grow(&mut self, memory_idx: MemoryIdx) -> Result<(), ModuleError> {
-        todo!()
+        debug_assert_eq!(memory_idx.into_u32(), Self::DEFAULT_MEMORY_INDEX);
+        debug_assert_eq!(self.value_stack.top(), ValueType::I32);
+        self.inst_builder.push_inst(Instruction::GrowMemory);
+        Ok(())
     }
 
     /// Translate a Wasm `i32.const` instruction.
