@@ -589,7 +589,9 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         value_type: ValueType,
         make_inst: fn(Offset) -> Instruction,
     ) -> Result<(), ModuleError> {
-        debug_assert_eq!(memory_idx.into_u32(), 0);
+        /// The default memory index.
+        const DEFAULT_MEMORY_INDEX: u32 = 0;
+        debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
         self.value_stack.push(value_type);
         let offset = Offset::from(offset);
         self.inst_builder.push_inst(make_inst(offset));
