@@ -1163,19 +1163,37 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         self.translate_binary_cmp(ValueType::F64, Instruction::F64Ge)
     }
 
+    /// Translate a unary Wasm instruction.
+    ///
+    /// # Note
+    ///
+    /// This is used to translate the following Wasm instructions:
+    ///
+    /// - `i32.clz`
+    /// - `i32.ctz`
+    /// - `i32.popcnt`
+    pub fn translate_unary_operation(&mut self, value_type: ValueType, inst: Instruction) -> Result<(), ModuleError> {
+        self.translate_if_reachable(|builder| {
+            let actual_type = builder.value_stack.top();
+            debug_assert_eq!(actual_type, value_type);
+            builder.inst_builder.push_inst(inst);
+            Ok(())
+        })
+    }
+
     /// Translate a Wasm `i32.clz` instruction.
     pub fn translate_i32_clz(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_operation(ValueType::I32, Instruction::I32Clz)
     }
 
     /// Translate a Wasm `i32.ctz` instruction.
     pub fn translate_i32_ctz(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_operation(ValueType::I32, Instruction::I32Ctz)
     }
 
     /// Translate a Wasm `i32.popcnt` instruction.
     pub fn translate_i32_popcnt(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_operation(ValueType::I32, Instruction::I32Popcnt)
     }
 
     /// Translate a Wasm `i32.add` instruction.
@@ -1255,17 +1273,17 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translate a Wasm `i64.clz` instruction.
     pub fn translate_i64_clz(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_operation(ValueType::I64, Instruction::I64Clz)
     }
 
     /// Translate a Wasm `i64.ctz` instruction.
     pub fn translate_i64_ctz(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_operation(ValueType::I64, Instruction::I64Ctz)
     }
 
     /// Translate a Wasm `i64.popcnt` instruction.
     pub fn translate_i64_popcnt(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_operation(ValueType::I64, Instruction::I64Popcnt)
     }
 
     /// Translate a Wasm `i64.add` instruction.
