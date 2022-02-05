@@ -1221,6 +1221,13 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// - `{i32, u32, i64, u64}.shr`
     /// - `{i32, i64}.rotl`
     /// - `{i32, i64}.rotr`
+    /// - `{f32, f64}.add`
+    /// - `{f32, f64}.sub`
+    /// - `{f32, f64}.mul`
+    /// - `{f32, f64}.div`
+    /// - `{f32, f64}.min`
+    /// - `{f32, f64}.max`
+    /// - `{f32, f64}.copysign`
     pub fn translate_binary_operation(
         &mut self,
         value_type: ValueType,
@@ -1438,37 +1445,37 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translate a Wasm `f32.add` instruction.
     pub fn translate_f32_add(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_operation(ValueType::F32, Instruction::F32Add)
     }
 
     /// Translate a Wasm `f32.sub` instruction.
     pub fn translate_f32_sub(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_operation(ValueType::F32, Instruction::F32Sub)
     }
 
     /// Translate a Wasm `f32.mul` instruction.
     pub fn translate_f32_mul(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_operation(ValueType::F32, Instruction::F32Mul)
     }
 
     /// Translate a Wasm `f32.div` instruction.
     pub fn translate_f32_div(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_operation(ValueType::F32, Instruction::F32Div)
     }
 
     /// Translate a Wasm `f32.min` instruction.
     pub fn translate_f32_min(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_operation(ValueType::F32, Instruction::F32Min)
     }
 
     /// Translate a Wasm `f32.max` instruction.
     pub fn translate_f32_max(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_operation(ValueType::F32, Instruction::F32Max)
     }
 
     /// Translate a Wasm `f32.copysign` instruction.
     pub fn translate_f32_copysign(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_operation(ValueType::F32, Instruction::F32Copysign)
     }
 
     /// Translate a Wasm `f64.abs` instruction.
@@ -1508,37 +1515,37 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translate a Wasm `f64.add` instruction.
     pub fn translate_f64_add(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_operation(ValueType::F64, Instruction::F64Add)
     }
 
     /// Translate a Wasm `f64.sub` instruction.
     pub fn translate_f64_sub(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_operation(ValueType::F64, Instruction::F64Sub)
     }
 
     /// Translate a Wasm `f64.mul` instruction.
     pub fn translate_f64_mul(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_operation(ValueType::F64, Instruction::F64Mul)
     }
 
     /// Translate a Wasm `f64.div` instruction.
     pub fn translate_f64_div(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_operation(ValueType::F64, Instruction::F64Div)
     }
 
     /// Translate a Wasm `f64.min` instruction.
     pub fn translate_f64_min(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_operation(ValueType::F64, Instruction::F64Min)
     }
 
     /// Translate a Wasm `f64.max` instruction.
     pub fn translate_f64_max(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_operation(ValueType::F64, Instruction::F64Max)
     }
 
     /// Translate a Wasm `f64.copysign` instruction.
     pub fn translate_f64_copysign(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_operation(ValueType::F64, Instruction::F64Copysign)
     }
 
     /// Translate a Wasm `i32.wrap_i64` instruction.
