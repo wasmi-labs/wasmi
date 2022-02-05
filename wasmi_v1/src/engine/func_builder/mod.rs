@@ -25,6 +25,7 @@ use crate::{
     engine::bytecode::Offset,
     module2::{BlockType, FuncIdx, FuncTypeIdx, GlobalIdx, MemoryIdx, ModuleResources, TableIdx},
     Engine,
+    FuncType,
     ModuleError,
     Mutability,
 };
@@ -472,9 +473,23 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         })
     }
 
+    /// Adjusts the emulated [`ValueStack`] given the [`FuncType`] of the call.
+    fn adjust_value_stack_for_call(&mut self, func_type: &FuncType) {
+        let (params, results) = func_type.params_results();
+        for param in params {
+            let popped = self.value_stack.pop1();
+            debug_assert_eq!(popped, *param);
+        }
+        for result in results {
+            self.value_stack.push(*result);
+        }
+    }
+
     /// Translates a Wasm `call` instruction.
     pub fn translate_call(&mut self, func_idx: FuncIdx) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
+            let func_type = builder.res.get_type_of_func(func_idx);
+            builder.adjust_value_stack_for_call(func_type);
             let func_idx = func_idx.into_u32().into();
             builder.inst_builder.push_inst(Instruction::Call(func_idx));
             Ok(())
@@ -493,6 +508,8 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             assert_eq!(table_idx.into_u32(), DEFAULT_TABLE_INDEX);
             let func_type = builder.value_stack.pop1();
             debug_assert_eq!(func_type, ValueType::I32);
+            let func_type = builder.res.get_func_type(func_type_idx);
+            builder.adjust_value_stack_for_call(func_type);
             let func_type_idx = func_type_idx.into_u32().into();
             builder
                 .inst_builder
