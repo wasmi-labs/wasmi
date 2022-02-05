@@ -360,32 +360,35 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translates a Wasm `end` control flow operator.
     pub fn translate_end(&mut self) -> Result<(), ModuleError> {
-        let frame = self.control_frames.pop_frame();
+        let frame = self.control_frames.last();
         if let ControlFrame::If(if_frame) = &frame {
             // At this point we can resolve the `Else` label.
-            self.inst_builder.resolve_label(if_frame.else_label());
+            //
+            // Note: The `Else` label might have already been resolved
+            //       in case there was an `Else` block.
+            self.inst_builder
+                .resolve_label_if_unresolved(if_frame.else_label());
         }
         if !matches!(frame.kind(), ControlFrameKind::Loop) {
             // At this point we can resolve the `End` labels.
             // Note that `loop` control frames do not have an `End` label.
             self.inst_builder.resolve_label(frame.end_label());
         }
-        if self.is_reachable() {
-            if self.control_frames.is_empty() {
-                // If the control flow frames stack is empty at this point
-                // we know that we have just popped the function body `block`
-                // frame and therefore we have to return from the function.
-                //
-                // TODO: properly calculate DropKeep of returning at this point
-                let drop_keep = DropKeep::new(0, 0);
-                self.inst_builder.push_inst(Instruction::Return(drop_keep));
-            }
+        // These bindings are required because of borrowing issues.
+        let frame_reachable = frame.is_reachable();
+        let frame_stack_height = frame.stack_height();
+        if self.control_frames.len() == 1 {
+            // If the control flow frames stack is empty after this point
+            // we know that we are endeding the function body `block`
+            // frame and therefore we have to return from the function.
+            self.translate_return()?;
         } else {
-            // We reset the reachability if the popped control flow
-            // frame was reachable to begin with.
-            self.reachable = frame.is_reachable();
+            // The following code is only reachable if the ended control flow
+            // frame was reachable upon entering to begin with.
+            self.reachable = frame_reachable;
         }
-        self.value_stack.shrink_to(frame.stack_height());
+        self.control_frames.pop_frame();
+        self.value_stack.shrink_to(frame_stack_height);
         Ok(())
     }
 
