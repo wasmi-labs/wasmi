@@ -172,9 +172,9 @@ impl<'engine> ModuleParser<'engine> {
             }
             Payload::ModuleSectionEntry { range, .. } => self.process_module_entry(range),
             Payload::UnknownSection { id, range, .. } => self.process_unknown(id, range),
-            Payload::End => return Ok(false),
+            Payload::End => return Ok(true),
         }?;
-        Ok(true)
+        Ok(false)
     }
 
     /// Validates the Wasm version section.
