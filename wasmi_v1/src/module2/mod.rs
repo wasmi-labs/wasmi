@@ -117,7 +117,7 @@ impl Module {
             globals: builder.globals.into(),
             globals_init: builder.globals_init.into(),
             exports: builder.exports.into(),
-            start: builder.start.into(),
+            start: builder.start,
             element_segments: builder.element_segments.into(),
             data_segments: builder.data_segments.into(),
         }
