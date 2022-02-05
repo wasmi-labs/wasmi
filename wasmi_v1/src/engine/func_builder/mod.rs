@@ -1172,7 +1172,11 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// - `i32.clz`
     /// - `i32.ctz`
     /// - `i32.popcnt`
-    pub fn translate_unary_operation(&mut self, value_type: ValueType, inst: Instruction) -> Result<(), ModuleError> {
+    pub fn translate_unary_operation(
+        &mut self,
+        value_type: ValueType,
+        inst: Instruction,
+    ) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
             let actual_type = builder.value_stack.top();
             debug_assert_eq!(actual_type, value_type);
