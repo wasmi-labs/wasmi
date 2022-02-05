@@ -944,174 +944,223 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         self.translate_const(value)
     }
 
+    /// Translate a Wasm unary comparison instruction.
+    ///
+    /// # Note
+    ///
+    /// This is used to translate the following Wasm instructions:
+    ///
+    /// - `i32.eqz`
+    /// - `i64.eqz`
+    fn translate_unary_cmp(
+        &mut self,
+        input_type: ValueType,
+        inst: Instruction,
+    ) -> Result<(), ModuleError> {
+        self.translate_if_reachable(|builder| {
+            let condition = builder.value_stack.pop1();
+            debug_assert_eq!(condition, input_type);
+            builder.value_stack.push(ValueType::I32);
+            builder.inst_builder.push_inst(Instruction::I32Eqz);
+            Ok(())
+        })
+    }
+
     /// Translate a Wasm `i32.eqz` instruction.
     pub fn translate_i32_eqz(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_cmp(ValueType::I32, Instruction::I32Eqz)
+    }
+
+    /// Translate a Wasm binary comparison instruction.
+    ///
+    /// # Note
+    ///
+    /// This is used to translate the following Wasm instructions:
+    ///
+    /// - `{i32, i64, f32, f64}.eq`
+    /// - `{i32, i64, f32, f64}.ne`
+    /// - `{i32, u32, i64, u64, f32, f64}.lt`
+    /// - `{i32, u32, i64, u64, f32, f64}.le`
+    /// - `{i32, u32, i64, u64, f32, f64}.gt`
+    /// - `{i32, u32, i64, u64, f32, f64}.ge`
+    fn translate_binary_cmp(
+        &mut self,
+        input_type: ValueType,
+        inst: Instruction,
+    ) -> Result<(), ModuleError> {
+        self.translate_if_reachable(|builder| {
+            let (v0, v1) = builder.value_stack.pop2();
+            debug_assert_eq!(v0, v1);
+            debug_assert_eq!(v0, input_type);
+            builder.value_stack.push(ValueType::I32);
+            builder.inst_builder.push_inst(inst);
+            Ok(())
+        })
     }
 
     /// Translate a Wasm `i32.eq` instruction.
     pub fn translate_i32_eq(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::I32, Instruction::I32Eq)
     }
 
     /// Translate a Wasm `i32.ne` instruction.
     pub fn translate_i32_ne(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::I32, Instruction::I32Ne)
     }
 
     /// Translate a Wasm `i32.lt` instruction.
     pub fn translate_i32_lt(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::I32, Instruction::I32LtS)
     }
 
     /// Translate a Wasm `u32.lt` instruction.
     pub fn translate_u32_lt(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::I32, Instruction::I32LtU)
     }
 
     /// Translate a Wasm `i32.gt` instruction.
     pub fn translate_i32_gt(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::I32, Instruction::I32GtS)
     }
 
     /// Translate a Wasm `u32.gt` instruction.
     pub fn translate_u32_gt(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::I32, Instruction::I32GtU)
     }
 
     /// Translate a Wasm `i32.le` instruction.
     pub fn translate_i32_le(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::I32, Instruction::I32LeS)
     }
 
     /// Translate a Wasm `u32.le` instruction.
     pub fn translate_u32_le(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::I32, Instruction::I32LeU)
     }
 
     /// Translate a Wasm `i32.ge` instruction.
     pub fn translate_i32_ge(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::I32, Instruction::I32GeS)
     }
 
     /// Translate a Wasm `u32.ge` instruction.
     pub fn translate_u32_ge(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::I32, Instruction::I32GeU)
     }
 
     /// Translate a Wasm `i64.eqz` instruction.
     pub fn translate_i64_eqz(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_cmp(ValueType::I64, Instruction::I64Eqz)
     }
 
     /// Translate a Wasm `i64.eq` instruction.
     pub fn translate_i64_eq(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::I64, Instruction::I64Eq)
     }
 
     /// Translate a Wasm `i64.ne` instruction.
     pub fn translate_i64_ne(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::I64, Instruction::I64Ne)
     }
 
     /// Translate a Wasm `i64.lt` instruction.
     pub fn translate_i64_lt(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::I64, Instruction::I64LtS)
     }
 
     /// Translate a Wasm `u64.lt` instruction.
     pub fn translate_u64_lt(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::I64, Instruction::I64LtU)
     }
 
     /// Translate a Wasm `i64.gt` instruction.
     pub fn translate_i64_gt(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::I64, Instruction::I64GtS)
     }
 
     /// Translate a Wasm `u64.gt` instruction.
     pub fn translate_u64_gt(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::I64, Instruction::I64GtU)
     }
 
     /// Translate a Wasm `i64.le` instruction.
     pub fn translate_i64_le(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::I64, Instruction::I64LeS)
     }
 
     /// Translate a Wasm `u64.le` instruction.
     pub fn translate_u64_le(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::I64, Instruction::I64LeU)
     }
 
     /// Translate a Wasm `i64.ge` instruction.
     pub fn translate_i64_ge(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::I64, Instruction::I64GeS)
     }
 
     /// Translate a Wasm `u64.ge` instruction.
     pub fn translate_u64_ge(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::I64, Instruction::I64GeU)
     }
 
     /// Translate a Wasm `f32.eq` instruction.
     pub fn translate_f32_eq(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::F32, Instruction::F32Eq)
     }
 
     /// Translate a Wasm `f32.ne` instruction.
     pub fn translate_f32_ne(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::F32, Instruction::F32Ne)
     }
 
     /// Translate a Wasm `f32.lt` instruction.
     pub fn translate_f32_lt(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::F32, Instruction::F32Lt)
     }
 
     /// Translate a Wasm `f32.gt` instruction.
     pub fn translate_f32_gt(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::F32, Instruction::F32Gt)
     }
 
     /// Translate a Wasm `f32.le` instruction.
     pub fn translate_f32_le(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::F32, Instruction::F32Le)
     }
 
     /// Translate a Wasm `f32.ge` instruction.
     pub fn translate_f32_ge(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::F32, Instruction::F32Ge)
     }
 
     /// Translate a Wasm `f64.eq` instruction.
     pub fn translate_f64_eq(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::F64, Instruction::F64Eq)
     }
 
     /// Translate a Wasm `f64.ne` instruction.
     pub fn translate_f64_ne(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::F64, Instruction::F64Ne)
     }
 
     /// Translate a Wasm `f64.lt` instruction.
     pub fn translate_f64_lt(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::F64, Instruction::F64Lt)
     }
 
     /// Translate a Wasm `f64.gt` instruction.
     pub fn translate_f64_gt(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::F64, Instruction::F64Gt)
     }
 
     /// Translate a Wasm `f64.le` instruction.
     pub fn translate_f64_le(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::F64, Instruction::F64Le)
     }
 
     /// Translate a Wasm `f64.ge` instruction.
     pub fn translate_f64_ge(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_binary_cmp(ValueType::F64, Instruction::F64Ge)
     }
 
     /// Translate a Wasm `i32.clz` instruction.
