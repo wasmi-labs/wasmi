@@ -55,13 +55,19 @@ pub struct Module {
 /// An imported item declaration in the [`Module`].
 #[derive(Debug)]
 pub enum Imported {
-    /// The name of an imported [`Func`]
+    /// The name of an imported [`Func`].
+    ///
+    /// [`Func`]: [`crate::Func`]
     Func(ImportName),
-    /// The name of an imported [`Table`]
+    /// The name of an imported [`Table`].
+    ///
+    /// [`Table`]: [`crate::Table`]
     Table(ImportName),
-    /// The name of an imported [`Memory`]
+    /// The name of an imported [`Memory`].
+    ///
+    /// [`Memory`]: [`crate::Memory`]
     Memory(ImportName),
-    /// The name of an imported [`Global`]
+    /// The name of an imported [`Global`].
     Global(ImportName),
 }
 
