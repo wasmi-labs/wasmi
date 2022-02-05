@@ -99,7 +99,7 @@ impl ValueStack {
     pub fn shrink_to(&mut self, new_height: u32) {
         let current_height = self.len();
         assert!(
-            new_height < current_height,
+            new_height <= current_height,
             "tried to shrink the value stack of height {} to height {}",
             current_height,
             new_height

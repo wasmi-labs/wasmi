@@ -176,14 +176,14 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             let current_height = self.value_stack.len();
             let origin_height = frame.stack_height();
             assert!(
-                origin_height < current_height,
+                origin_height <= current_height,
                 "encountered value stack underflow: current height {}, original height {}",
                 current_height,
                 origin_height,
             );
             let height_diff = current_height - origin_height;
             assert!(
-                keep < height_diff,
+                keep <= height_diff,
                 "tried to keep {} values while having only {} values available on the frame",
                 keep,
                 current_height - origin_height,
@@ -791,10 +791,9 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     ) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
             debug_assert_eq!(memory_idx.into_u32(), Self::DEFAULT_MEMORY_INDEX);
-            let pointer = builder.value_stack.pop1();
+            let (pointer, stored) = builder.value_stack.pop2();
             debug_assert_eq!(pointer, ValueType::I32);
-            let expected = builder.value_stack.pop1();
-            assert_eq!(stored_value, expected);
+            assert_eq!(stored_value, stored);
             let offset = Offset::from(offset);
             builder.inst_builder.push_inst(make_inst(offset));
             Ok(())
