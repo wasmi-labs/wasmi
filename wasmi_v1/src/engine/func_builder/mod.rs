@@ -1548,128 +1548,160 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         self.translate_binary_operation(ValueType::F64, Instruction::F64Copysign)
     }
 
+    /// Translate a Wasm conversion instruction.
+    pub fn translate_conversion(
+        &mut self,
+        input_type: ValueType,
+        output_type: ValueType,
+        inst: Instruction,
+    ) -> Result<(), ModuleError> {
+        self.translate_if_reachable(|builder| {
+            let input = builder.value_stack.pop1();
+            debug_assert_eq!(input, input_type);
+            builder.value_stack.push(output_type);
+            builder.inst_builder.push_inst(inst);
+            Ok(())
+        })
+    }
+
     /// Translate a Wasm `i32.wrap_i64` instruction.
     pub fn translate_i32_wrap_i64(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::I64, ValueType::I32, Instruction::I32WrapI64)
     }
 
     /// Translate a Wasm `i32.trunc_f32` instruction.
     pub fn translate_i32_trunc_f32(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncSF32)
     }
 
     /// Translate a Wasm `u32.trunc_f32` instruction.
     pub fn translate_u32_trunc_f32(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncUF32)
     }
 
     /// Translate a Wasm `i32.trunc_f64` instruction.
     pub fn translate_i32_trunc_f64(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncSF64)
     }
 
     /// Translate a Wasm `u32.trunc_f64` instruction.
     pub fn translate_u32_trunc_f64(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncUF64)
     }
 
     /// Translate a Wasm `i64.extend_i32` instruction.
     pub fn translate_i64_extend_i32(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::I32, ValueType::I64, Instruction::I64ExtendSI32)
     }
 
     /// Translate a Wasm `u64.extend_i32` instruction.
     pub fn translate_u64_extend_i32(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::I32, ValueType::I64, Instruction::I64ExtendUI32)
     }
 
     /// Translate a Wasm `i64.trunc_f32` instruction.
     pub fn translate_i64_trunc_f32(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncSF32)
     }
 
     /// Translate a Wasm `u64.trunc_f32` instruction.
     pub fn translate_u64_trunc_f32(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncUF32)
     }
 
     /// Translate a Wasm `i64.trunc_f64` instruction.
     pub fn translate_i64_trunc_f64(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncSF64)
     }
 
     /// Translate a Wasm `u64.trunc_f64` instruction.
     pub fn translate_u64_trunc_f64(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncUF64)
     }
 
     /// Translate a Wasm `f32.convert_i32` instruction.
     pub fn translate_f32_convert_i32(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::I32, ValueType::F32, Instruction::F32ConvertSI32)
     }
 
     /// Translate a Wasm `f32.convert_u32` instruction.
     pub fn translate_f32_convert_u32(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::I32, ValueType::F32, Instruction::F32ConvertUI32)
     }
 
     /// Translate a Wasm `f32.convert_i64` instruction.
     pub fn translate_f32_convert_i64(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::I64, ValueType::F32, Instruction::F32ConvertSI64)
     }
 
     /// Translate a Wasm `f32.convert_u64` instruction.
     pub fn translate_f32_convert_u64(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::I64, ValueType::F32, Instruction::F32ConvertUI64)
     }
 
     /// Translate a Wasm `f32.demote_f64` instruction.
     pub fn translate_f32_demote_f64(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::F64, ValueType::F32, Instruction::F32DemoteF64)
     }
 
     /// Translate a Wasm `f64.convert_i32` instruction.
     pub fn translate_f64_convert_i32(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::I32, ValueType::F64, Instruction::F64ConvertSI32)
     }
 
     /// Translate a Wasm `f64.convert_u32` instruction.
     pub fn translate_f64_convert_u32(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::I32, ValueType::F64, Instruction::F64ConvertUI32)
     }
 
     /// Translate a Wasm `f64.convert_i64` instruction.
     pub fn translate_f64_convert_i64(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::I64, ValueType::F64, Instruction::F64ConvertSI64)
     }
 
     /// Translate a Wasm `f64.convert_u64` instruction.
     pub fn translate_f64_convert_u64(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::I64, ValueType::F64, Instruction::F64ConvertUI64)
     }
 
     /// Translate a Wasm `f64.promote_f32` instruction.
     pub fn translate_f64_promote_f32(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(ValueType::F32, ValueType::F64, Instruction::F64PromoteF32)
     }
 
     /// Translate a Wasm `i32.reinterpret_f32` instruction.
     pub fn translate_i32_reinterpret_f32(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(
+            ValueType::F32,
+            ValueType::I32,
+            Instruction::I32ReinterpretF32,
+        )
     }
 
     /// Translate a Wasm `i64.reinterpret_f64` instruction.
     pub fn translate_i64_reinterpret_f64(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(
+            ValueType::F64,
+            ValueType::I64,
+            Instruction::I64ReinterpretF64,
+        )
     }
 
     /// Translate a Wasm `f32.reinterpret_i32` instruction.
     pub fn translate_f32_reinterpret_i32(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(
+            ValueType::I32,
+            ValueType::F32,
+            Instruction::F32ReinterpretI32,
+        )
     }
 
     /// Translate a Wasm `f64.reinterpret_i64` instruction.
     pub fn translate_f64_reinterpret_i64(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_conversion(
+            ValueType::I64,
+            ValueType::F64,
+            Instruction::F64ReinterpretI64,
+        )
     }
 }
