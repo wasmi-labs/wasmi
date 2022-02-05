@@ -25,7 +25,8 @@ const REVCOMP_OUTPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-outpu
 criterion_group!(
     bench_compile_and_validate,
     bench_compile_and_validate_v0,
-    bench_compile_and_validate_v1
+    bench_compile_and_validate_v1,
+    bench_compile_and_validate_v1b
 );
 criterion_group!(
     bench_instantiate,
@@ -71,6 +72,16 @@ fn bench_compile_and_validate_v1(c: &mut Criterion) {
         b.iter(|| {
             let engine = v1::Engine::default();
             let _module = v1::Module::new(&engine, &wasm_bytes).unwrap();
+        })
+    });
+}
+
+fn bench_compile_and_validate_v1b(c: &mut Criterion) {
+    let wasm_bytes = load_wasm_from_file(WASM_KERNEL);
+    c.bench_function("compile_and_validate/v1b", |b| {
+        b.iter(|| {
+            let engine = v1::Engine::default();
+            let _module = v1::Module2::new(&engine, &wasm_bytes[..]).unwrap();
         })
     });
 }
