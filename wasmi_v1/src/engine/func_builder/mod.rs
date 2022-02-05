@@ -944,617 +944,617 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         self.translate_const(value)
     }
 
-    /// Translate a Wasm `i32_eqz` instruction.
+    /// Translate a Wasm `i32.eqz` instruction.
     pub fn translate_i32_eqz(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_eq` instruction.
+    /// Translate a Wasm `i32.eq` instruction.
     pub fn translate_i32_eq(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_ne` instruction.
+    /// Translate a Wasm `i32.ne` instruction.
     pub fn translate_i32_ne(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_lt` instruction.
+    /// Translate a Wasm `i32.lt` instruction.
     pub fn translate_i32_lt(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u32_lt` instruction.
+    /// Translate a Wasm `u32.lt` instruction.
     pub fn translate_u32_lt(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_gt` instruction.
+    /// Translate a Wasm `i32.gt` instruction.
     pub fn translate_i32_gt(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u32_gt` instruction.
+    /// Translate a Wasm `u32.gt` instruction.
     pub fn translate_u32_gt(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_le` instruction.
+    /// Translate a Wasm `i32.le` instruction.
     pub fn translate_i32_le(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u32_le` instruction.
+    /// Translate a Wasm `u32.le` instruction.
     pub fn translate_u32_le(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_ge` instruction.
+    /// Translate a Wasm `i32.ge` instruction.
     pub fn translate_i32_ge(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u32_ge` instruction.
+    /// Translate a Wasm `u32.ge` instruction.
     pub fn translate_u32_ge(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_eqz` instruction.
+    /// Translate a Wasm `i64.eqz` instruction.
     pub fn translate_i64_eqz(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_eq` instruction.
+    /// Translate a Wasm `i64.eq` instruction.
     pub fn translate_i64_eq(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_ne` instruction.
+    /// Translate a Wasm `i64.ne` instruction.
     pub fn translate_i64_ne(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_lt` instruction.
+    /// Translate a Wasm `i64.lt` instruction.
     pub fn translate_i64_lt(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u64_lt` instruction.
+    /// Translate a Wasm `u64.lt` instruction.
     pub fn translate_u64_lt(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_gt` instruction.
+    /// Translate a Wasm `i64.gt` instruction.
     pub fn translate_i64_gt(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u64_gt` instruction.
+    /// Translate a Wasm `u64.gt` instruction.
     pub fn translate_u64_gt(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_le` instruction.
+    /// Translate a Wasm `i64.le` instruction.
     pub fn translate_i64_le(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u64_le` instruction.
+    /// Translate a Wasm `u64.le` instruction.
     pub fn translate_u64_le(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_ge` instruction.
+    /// Translate a Wasm `i64.ge` instruction.
     pub fn translate_i64_ge(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u64_ge` instruction.
+    /// Translate a Wasm `u64.ge` instruction.
     pub fn translate_u64_ge(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_eq` instruction.
+    /// Translate a Wasm `f32.eq` instruction.
     pub fn translate_f32_eq(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_ne` instruction.
+    /// Translate a Wasm `f32.ne` instruction.
     pub fn translate_f32_ne(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_lt` instruction.
+    /// Translate a Wasm `f32.lt` instruction.
     pub fn translate_f32_lt(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_gt` instruction.
+    /// Translate a Wasm `f32.gt` instruction.
     pub fn translate_f32_gt(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_le` instruction.
+    /// Translate a Wasm `f32.le` instruction.
     pub fn translate_f32_le(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_ge` instruction.
+    /// Translate a Wasm `f32.ge` instruction.
     pub fn translate_f32_ge(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_eq` instruction.
+    /// Translate a Wasm `f64.eq` instruction.
     pub fn translate_f64_eq(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_ne` instruction.
+    /// Translate a Wasm `f64.ne` instruction.
     pub fn translate_f64_ne(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_lt` instruction.
+    /// Translate a Wasm `f64.lt` instruction.
     pub fn translate_f64_lt(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_gt` instruction.
+    /// Translate a Wasm `f64.gt` instruction.
     pub fn translate_f64_gt(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_le` instruction.
+    /// Translate a Wasm `f64.le` instruction.
     pub fn translate_f64_le(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_ge` instruction.
+    /// Translate a Wasm `f64.ge` instruction.
     pub fn translate_f64_ge(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_clz` instruction.
+    /// Translate a Wasm `i32.clz` instruction.
     pub fn translate_i32_clz(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_ctz` instruction.
+    /// Translate a Wasm `i32.ctz` instruction.
     pub fn translate_i32_ctz(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_popcnt` instruction.
+    /// Translate a Wasm `i32.popcnt` instruction.
     pub fn translate_i32_popcnt(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_add` instruction.
+    /// Translate a Wasm `i32.add` instruction.
     pub fn translate_i32_add(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_sub` instruction.
+    /// Translate a Wasm `i32.sub` instruction.
     pub fn translate_i32_sub(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_mul` instruction.
+    /// Translate a Wasm `i32.mul` instruction.
     pub fn translate_i32_mul(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_div` instruction.
+    /// Translate a Wasm `i32.div` instruction.
     pub fn translate_i32_div(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u32_div` instruction.
+    /// Translate a Wasm `u32.div` instruction.
     pub fn translate_u32_div(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_rem` instruction.
+    /// Translate a Wasm `i32.rem` instruction.
     pub fn translate_i32_rem(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u32_rem` instruction.
+    /// Translate a Wasm `u32.rem` instruction.
     pub fn translate_u32_rem(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_and` instruction.
+    /// Translate a Wasm `i32.and` instruction.
     pub fn translate_i32_and(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_or` instruction.
+    /// Translate a Wasm `i32.or` instruction.
     pub fn translate_i32_or(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_xor` instruction.
+    /// Translate a Wasm `i32.xor` instruction.
     pub fn translate_i32_xor(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_shl` instruction.
+    /// Translate a Wasm `i32.shl` instruction.
     pub fn translate_i32_shl(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_shr` instruction.
+    /// Translate a Wasm `i32.shr` instruction.
     pub fn translate_i32_shr(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u32_shr` instruction.
+    /// Translate a Wasm `u32.shr` instruction.
     pub fn translate_u32_shr(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_rotl` instruction.
+    /// Translate a Wasm `i32.rotl` instruction.
     pub fn translate_i32_rotl(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_rotr` instruction.
+    /// Translate a Wasm `i32.rotr` instruction.
     pub fn translate_i32_rotr(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_clz` instruction.
+    /// Translate a Wasm `i64.clz` instruction.
     pub fn translate_i64_clz(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_ctz` instruction.
+    /// Translate a Wasm `i64.ctz` instruction.
     pub fn translate_i64_ctz(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_popcnt` instruction.
+    /// Translate a Wasm `i64.popcnt` instruction.
     pub fn translate_i64_popcnt(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_add` instruction.
+    /// Translate a Wasm `i64.add` instruction.
     pub fn translate_i64_add(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_sub` instruction.
+    /// Translate a Wasm `i64.sub` instruction.
     pub fn translate_i64_sub(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_mul` instruction.
+    /// Translate a Wasm `i64.mul` instruction.
     pub fn translate_i64_mul(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_div` instruction.
+    /// Translate a Wasm `i64.div` instruction.
     pub fn translate_i64_div(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u64_div` instruction.
+    /// Translate a Wasm `u64.div` instruction.
     pub fn translate_u64_div(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_rem` instruction.
+    /// Translate a Wasm `i64.rem` instruction.
     pub fn translate_i64_rem(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u64_rem` instruction.
+    /// Translate a Wasm `u64.rem` instruction.
     pub fn translate_u64_rem(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_and` instruction.
+    /// Translate a Wasm `i64.and` instruction.
     pub fn translate_i64_and(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_or` instruction.
+    /// Translate a Wasm `i64.or` instruction.
     pub fn translate_i64_or(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_xor` instruction.
+    /// Translate a Wasm `i64.xor` instruction.
     pub fn translate_i64_xor(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_shl` instruction.
+    /// Translate a Wasm `i64.shl` instruction.
     pub fn translate_i64_shl(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_shr` instruction.
+    /// Translate a Wasm `i64.shr` instruction.
     pub fn translate_i64_shr(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u64_shr` instruction.
+    /// Translate a Wasm `u64.shr` instruction.
     pub fn translate_u64_shr(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_rotl` instruction.
+    /// Translate a Wasm `i64.rotl` instruction.
     pub fn translate_i64_rotl(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_rotr` instruction.
+    /// Translate a Wasm `i64.rotr` instruction.
     pub fn translate_i64_rotr(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_abs` instruction.
+    /// Translate a Wasm `f32.abs` instruction.
     pub fn translate_f32_abs(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_neg` instruction.
+    /// Translate a Wasm `f32.neg` instruction.
     pub fn translate_f32_neg(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_ceil` instruction.
+    /// Translate a Wasm `f32.ceil` instruction.
     pub fn translate_f32_ceil(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_floor` instruction.
+    /// Translate a Wasm `f32.floor` instruction.
     pub fn translate_f32_floor(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_trunc` instruction.
+    /// Translate a Wasm `f32.trunc` instruction.
     pub fn translate_f32_trunc(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_nearest` instruction.
+    /// Translate a Wasm `f32.nearest` instruction.
     pub fn translate_f32_nearest(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_sqrt` instruction.
+    /// Translate a Wasm `f32.sqrt` instruction.
     pub fn translate_f32_sqrt(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_add` instruction.
+    /// Translate a Wasm `f32.add` instruction.
     pub fn translate_f32_add(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_sub` instruction.
+    /// Translate a Wasm `f32.sub` instruction.
     pub fn translate_f32_sub(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_mul` instruction.
+    /// Translate a Wasm `f32.mul` instruction.
     pub fn translate_f32_mul(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_div` instruction.
+    /// Translate a Wasm `f32.div` instruction.
     pub fn translate_f32_div(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_min` instruction.
+    /// Translate a Wasm `f32.min` instruction.
     pub fn translate_f32_min(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_max` instruction.
+    /// Translate a Wasm `f32.max` instruction.
     pub fn translate_f32_max(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_copysign` instruction.
+    /// Translate a Wasm `f32.copysign` instruction.
     pub fn translate_f32_copysign(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_abs` instruction.
+    /// Translate a Wasm `f64.abs` instruction.
     pub fn translate_f64_abs(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_neg` instruction.
+    /// Translate a Wasm `f64.neg` instruction.
     pub fn translate_f64_neg(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_ceil` instruction.
+    /// Translate a Wasm `f64.ceil` instruction.
     pub fn translate_f64_ceil(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_floor` instruction.
+    /// Translate a Wasm `f64.floor` instruction.
     pub fn translate_f64_floor(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_trunc` instruction.
+    /// Translate a Wasm `f64.trunc` instruction.
     pub fn translate_f64_trunc(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_nearest` instruction.
+    /// Translate a Wasm `f64.nearest` instruction.
     pub fn translate_f64_nearest(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_sqrt` instruction.
+    /// Translate a Wasm `f64.sqrt` instruction.
     pub fn translate_f64_sqrt(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_add` instruction.
+    /// Translate a Wasm `f64.add` instruction.
     pub fn translate_f64_add(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_sub` instruction.
+    /// Translate a Wasm `f64.sub` instruction.
     pub fn translate_f64_sub(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_mul` instruction.
+    /// Translate a Wasm `f64.mul` instruction.
     pub fn translate_f64_mul(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_div` instruction.
+    /// Translate a Wasm `f64.div` instruction.
     pub fn translate_f64_div(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_min` instruction.
+    /// Translate a Wasm `f64.min` instruction.
     pub fn translate_f64_min(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_max` instruction.
+    /// Translate a Wasm `f64.max` instruction.
     pub fn translate_f64_max(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_copysign` instruction.
+    /// Translate a Wasm `f64.copysign` instruction.
     pub fn translate_f64_copysign(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_wrap_i64` instruction.
+    /// Translate a Wasm `i32.wrap_i64` instruction.
     pub fn translate_i32_wrap_i64(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_trunc_f32` instruction.
+    /// Translate a Wasm `i32.trunc_f32` instruction.
     pub fn translate_i32_trunc_f32(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u32_trunc_f32` instruction.
+    /// Translate a Wasm `u32.trunc_f32` instruction.
     pub fn translate_u32_trunc_f32(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_trunc_f64` instruction.
+    /// Translate a Wasm `i32.trunc_f64` instruction.
     pub fn translate_i32_trunc_f64(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u32_trunc_f64` instruction.
+    /// Translate a Wasm `u32.trunc_f64` instruction.
     pub fn translate_u32_trunc_f64(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_extend_i32` instruction.
+    /// Translate a Wasm `i64.extend_i32` instruction.
     pub fn translate_i64_extend_i32(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u64_extend_i32` instruction.
+    /// Translate a Wasm `u64.extend_i32` instruction.
     pub fn translate_u64_extend_i32(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_trunc_f32` instruction.
+    /// Translate a Wasm `i64.trunc_f32` instruction.
     pub fn translate_i64_trunc_f32(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u64_trunc_f32` instruction.
+    /// Translate a Wasm `u64.trunc_f32` instruction.
     pub fn translate_u64_trunc_f32(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_trunc_f64` instruction.
+    /// Translate a Wasm `i64.trunc_f64` instruction.
     pub fn translate_i64_trunc_f64(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `u64_trunc_f64` instruction.
+    /// Translate a Wasm `u64.trunc_f64` instruction.
     pub fn translate_u64_trunc_f64(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_convert_i32` instruction.
+    /// Translate a Wasm `f32.convert_i32` instruction.
     pub fn translate_f32_convert_i32(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_convert_u32` instruction.
+    /// Translate a Wasm `f32.convert_u32` instruction.
     pub fn translate_f32_convert_u32(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_convert_i64` instruction.
+    /// Translate a Wasm `f32.convert_i64` instruction.
     pub fn translate_f32_convert_i64(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_convert_u64` instruction.
+    /// Translate a Wasm `f32.convert_u64` instruction.
     pub fn translate_f32_convert_u64(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_demote_f64` instruction.
+    /// Translate a Wasm `f32.demote_f64` instruction.
     pub fn translate_f32_demote_f64(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_convert_i32` instruction.
+    /// Translate a Wasm `f64.convert_i32` instruction.
     pub fn translate_f64_convert_i32(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_convert_u32` instruction.
+    /// Translate a Wasm `f64.convert_u32` instruction.
     pub fn translate_f64_convert_u32(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_convert_i64` instruction.
+    /// Translate a Wasm `f64.convert_i64` instruction.
     pub fn translate_f64_convert_i64(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_convert_u64` instruction.
+    /// Translate a Wasm `f64.convert_u64` instruction.
     pub fn translate_f64_convert_u64(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_promote_f32` instruction.
+    /// Translate a Wasm `f64.promote_f32` instruction.
     pub fn translate_f64_promote_f32(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i32_reinterpret_f32` instruction.
+    /// Translate a Wasm `i32.reinterpret_f32` instruction.
     pub fn translate_i32_reinterpret_f32(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `i64_reinterpret_f64` instruction.
+    /// Translate a Wasm `i64.reinterpret_f64` instruction.
     pub fn translate_i64_reinterpret_f64(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f32_reinterpret_i32` instruction.
+    /// Translate a Wasm `f32.reinterpret_i32` instruction.
     pub fn translate_f32_reinterpret_i32(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
 
-    /// Translate a Wasm `f64_reinterpret_i64` instruction.
+    /// Translate a Wasm `f64.reinterpret_i64` instruction.
     pub fn translate_f64_reinterpret_i64(&mut self) -> Result<(), ModuleError> {
         todo!()
     }
