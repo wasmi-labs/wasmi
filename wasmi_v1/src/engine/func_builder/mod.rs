@@ -1172,6 +1172,13 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// - `i32.clz`
     /// - `i32.ctz`
     /// - `i32.popcnt`
+    /// - `{f32, f64}.abs`
+    /// - `{f32, f64}.neg`
+    /// - `{f32, f64}.ceil`
+    /// - `{f32, f64}.floor`
+    /// - `{f32, f64}.trunc`
+    /// - `{f32, f64}.nearest`
+    /// - `{f32, f64}.sqrt`
     pub fn translate_unary_operation(
         &mut self,
         value_type: ValueType,
