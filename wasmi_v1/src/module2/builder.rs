@@ -172,8 +172,9 @@ impl<'engine> ModuleBuilder<'engine> {
         T: IntoIterator<Item = Result<FuncTypeIdx, ModuleError>>,
         T::IntoIter: ExactSizeIterator,
     {
-        assert!(
-            self.funcs.len().saturating_sub(self.imports.funcs.len()) > 0,
+        assert_eq!(
+            self.funcs.len(),
+            self.imports.funcs.len(),
             "tried to initialize module function declarations twice"
         );
         self.funcs
@@ -195,8 +196,9 @@ impl<'engine> ModuleBuilder<'engine> {
         T: IntoIterator<Item = Result<TableType, ModuleError>>,
         T::IntoIter: ExactSizeIterator,
     {
-        assert!(
-            self.tables.len().saturating_sub(self.imports.tables.len()) > 0,
+        assert_eq!(
+            self.tables.len(),
+            self.imports.tables.len(),
             "tried to initialize module table declarations twice"
         );
         self.tables
@@ -218,11 +220,9 @@ impl<'engine> ModuleBuilder<'engine> {
         T: IntoIterator<Item = Result<MemoryType, ModuleError>>,
         T::IntoIter: ExactSizeIterator,
     {
-        assert!(
-            self.memories
-                .len()
-                .saturating_sub(self.imports.memories.len())
-                > 0,
+        assert_eq!(
+            self.memories.len(),
+            self.imports.memories.len(),
             "tried to initialize module linear memory declarations twice"
         );
         self.memories
@@ -244,11 +244,9 @@ impl<'engine> ModuleBuilder<'engine> {
         T: IntoIterator<Item = Result<Global, ModuleError>>,
         T::IntoIter: ExactSizeIterator,
     {
-        assert!(
-            self.globals
-                .len()
-                .saturating_sub(self.imports.globals.len())
-                > 0,
+        assert_eq!(
+            self.globals.len(),
+            self.imports.globals.len(),
             "tried to initialize module global variable declarations twice"
         );
         let (global_decls, global_inits): (Vec<_>, Vec<_>) = globals
