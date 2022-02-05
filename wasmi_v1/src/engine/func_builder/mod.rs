@@ -1396,37 +1396,37 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translate a Wasm `f32.abs` instruction.
     pub fn translate_f32_abs(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_operation(ValueType::F32, Instruction::F32Abs)
     }
 
     /// Translate a Wasm `f32.neg` instruction.
     pub fn translate_f32_neg(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_operation(ValueType::F32, Instruction::F32Neg)
     }
 
     /// Translate a Wasm `f32.ceil` instruction.
     pub fn translate_f32_ceil(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_operation(ValueType::F32, Instruction::F32Ceil)
     }
 
     /// Translate a Wasm `f32.floor` instruction.
     pub fn translate_f32_floor(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_operation(ValueType::F32, Instruction::F32Floor)
     }
 
     /// Translate a Wasm `f32.trunc` instruction.
     pub fn translate_f32_trunc(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_operation(ValueType::F32, Instruction::F32Trunc)
     }
 
     /// Translate a Wasm `f32.nearest` instruction.
     pub fn translate_f32_nearest(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_operation(ValueType::F32, Instruction::F32Nearest)
     }
 
     /// Translate a Wasm `f32.sqrt` instruction.
     pub fn translate_f32_sqrt(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_operation(ValueType::F32, Instruction::F32Sqrt)
     }
 
     /// Translate a Wasm `f32.add` instruction.
@@ -1466,37 +1466,37 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translate a Wasm `f64.abs` instruction.
     pub fn translate_f64_abs(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_operation(ValueType::F64, Instruction::F64Abs)
     }
 
     /// Translate a Wasm `f64.neg` instruction.
     pub fn translate_f64_neg(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_operation(ValueType::F64, Instruction::F64Neg)
     }
 
     /// Translate a Wasm `f64.ceil` instruction.
     pub fn translate_f64_ceil(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_operation(ValueType::F64, Instruction::F64Ceil)
     }
 
     /// Translate a Wasm `f64.floor` instruction.
     pub fn translate_f64_floor(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_operation(ValueType::F64, Instruction::F64Floor)
     }
 
     /// Translate a Wasm `f64.trunc` instruction.
     pub fn translate_f64_trunc(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_operation(ValueType::F64, Instruction::F64Trunc)
     }
 
     /// Translate a Wasm `f64.nearest` instruction.
     pub fn translate_f64_nearest(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_operation(ValueType::F64, Instruction::F64Nearest)
     }
 
     /// Translate a Wasm `f64.sqrt` instruction.
     pub fn translate_f64_sqrt(&mut self) -> Result<(), ModuleError> {
-        todo!()
+        self.translate_unary_operation(ValueType::F64, Instruction::F64Sqrt)
     }
 
     /// Translate a Wasm `f64.add` instruction.
