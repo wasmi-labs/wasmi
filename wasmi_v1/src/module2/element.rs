@@ -16,7 +16,7 @@ impl TryFrom<wasmparser::Element<'_>> for ElementSegment {
     type Error = ModuleError;
 
     fn try_from(element: wasmparser::Element<'_>) -> Result<Self, Self::Error> {
-        if !matches!(element.ty, wasmparser::Type::Func) {
+        if !matches!(element.ty, wasmparser::Type::FuncRef) {
             return Err(ModuleError::unsupported(element.ty));
         }
         let (table_index, offset) = match element.kind {

@@ -5,7 +5,7 @@ impl TryFrom<wasmparser::TableType> for TableType {
     type Error = ModuleError;
 
     fn try_from(table_type: wasmparser::TableType) -> Result<Self, Self::Error> {
-        if table_type.element_type != wasmparser::Type::Func {
+        if table_type.element_type != wasmparser::Type::FuncRef {
             return Err(ModuleError::unsupported(table_type));
         }
         let initial = table_type.initial as usize;
