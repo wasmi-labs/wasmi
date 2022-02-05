@@ -125,7 +125,34 @@ impl InstructionsBuilder {
         idx
     }
 
+    /// Returns `true` if `label` has been resolved.
+    fn is_resolved(&self, label: LabelIdx) -> bool {
+        if let Label::Resolved(_) = &self.labels[label.0] {
+            return true;
+        }
+        false
+    }
+
     /// Resolve the label at the current instruction position.
+    ///
+    /// Does nothing if the label has already been resolved.
+    ///
+    /// # Note
+    ///
+    /// This is used at a position of the Wasm bytecode where it is clear that
+    /// the given label can be resolved properly.
+    /// This usually takes place when encountering the Wasm `End` operand for example.
+    pub fn resolve_label_if_unresolved(&mut self, label: LabelIdx) {
+        if self.is_resolved(label) {
+            // Nothing to do in this case.
+            return;
+        }
+        self.resolve_label(label);
+    }
+
+    /// Resolve the label at the current instruction position.
+    ///
+    /// # Note
     ///
     /// This is used at a position of the Wasm bytecode where it is clear that
     /// the given label can be resolved properly.
