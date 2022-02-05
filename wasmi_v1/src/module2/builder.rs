@@ -17,27 +17,27 @@ use crate::{Engine, FuncType, GlobalType, MemoryType, ModuleError, TableType};
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug)]
 pub struct ModuleBuilder<'engine> {
-    engine: &'engine Engine,
-    func_types: Vec<FuncType>,
-    imports: ModuleImports,
-    funcs: Vec<FuncTypeIdx>,
-    tables: Vec<TableType>,
-    memories: Vec<MemoryType>,
-    globals: Vec<GlobalType>,
-    globals_init: Vec<InitExpr>,
-    exports: Vec<Export>,
-    start: Option<FuncIdx>,
-    element_segments: Vec<ElementSegment>,
-    data_segments: Vec<DataSegment>,
+    pub(super) engine: &'engine Engine,
+    pub(super) func_types: Vec<FuncType>,
+    pub(super) imports: ModuleImports,
+    pub(super) funcs: Vec<FuncTypeIdx>,
+    pub(super) tables: Vec<TableType>,
+    pub(super) memories: Vec<MemoryType>,
+    pub(super) globals: Vec<GlobalType>,
+    pub(super) globals_init: Vec<InitExpr>,
+    pub(super) exports: Vec<Export>,
+    pub(super) start: Option<FuncIdx>,
+    pub(super) element_segments: Vec<ElementSegment>,
+    pub(super) data_segments: Vec<DataSegment>,
 }
 
 /// The import names of the [`Module`] imports.
 #[derive(Debug, Default)]
 pub struct ModuleImports {
-    funcs: Vec<ImportName>,
-    tables: Vec<ImportName>,
-    memories: Vec<ImportName>,
-    globals: Vec<ImportName>,
+    pub(super) funcs: Vec<ImportName>,
+    pub(super) tables: Vec<ImportName>,
+    pub(super) memories: Vec<ImportName>,
+    pub(super) globals: Vec<ImportName>,
 }
 
 /// The resources of a [`Module`] required for translating function bodies.
@@ -345,6 +345,6 @@ impl<'engine> ModuleBuilder<'engine> {
 
     /// Finishes construction of the WebAssembly [`Module`].
     pub fn finish(self) -> Module {
-        todo!()
+        Module::from_builder(self)
     }
 }

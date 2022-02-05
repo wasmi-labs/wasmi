@@ -93,7 +93,7 @@ impl<'engine> ModuleParser<'engine> {
     /// # Errors
     ///
     /// If the Wasm bytecode stream fails to validate.
-    pub fn parse(&mut self, mut stream: impl Read) -> Result<Module, ModuleError> {
+    pub fn parse(mut self, mut stream: impl Read) -> Result<Module, ModuleError> {
         let mut buffer = Vec::new();
         let mut eof = false;
         'outer: loop {
@@ -112,7 +112,7 @@ impl<'engine> ModuleParser<'engine> {
                 }
             }
         }
-        todo!()
+        Ok(self.builder.finish())
     }
 
     /// Pulls more bytes from the `stream` in order to produce Wasm payload.

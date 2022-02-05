@@ -33,11 +33,60 @@ pub use self::{
     import::FuncTypeIdx,
     read::Read,
 };
-use crate::Engine;
+use crate::{Engine, FuncType, GlobalType, MemoryType, TableType};
 
 /// A parsed and validated WebAssembly module.
 #[derive(Debug)]
-pub struct Module {}
+pub struct Module {
+    engine: Engine,
+    func_types: Box<[FuncType]>,
+    imports: ModuleImports,
+    funcs: Box<[FuncTypeIdx]>,
+    tables: Box<[TableType]>,
+    memories: Box<[MemoryType]>,
+    globals: Box<[GlobalType]>,
+    globals_init: Box<[InitExpr]>,
+    exports: Box<[Export]>,
+    start: Option<FuncIdx>,
+    element_segments: Box<[ElementSegment]>,
+    data_segments: Box<[DataSegment]>,
+}
+
+/// An imported item declaration in the [`Module`].
+#[derive(Debug)]
+pub enum Imported {
+    /// The name of an imported [`Func`]
+    Func(ImportName),
+    /// The name of an imported [`Table`]
+    Table(ImportName),
+    /// The name of an imported [`Memory`]
+    Memory(ImportName),
+    /// The name of an imported [`Global`]
+    Global(ImportName),
+}
+
+/// The import names of the [`Module`] imports.
+#[derive(Debug)]
+pub struct ModuleImports {
+    items: Box<[Imported]>,
+}
+
+impl ModuleImports {
+    /// Creates a new [`ModuleImports`] from the [`ModuleBuilder`] definitions.
+    fn from_builder(imports: builder::ModuleImports) -> Self {
+        let funcs = imports.funcs.into_iter().map(Imported::Func);
+        let tables = imports.tables.into_iter().map(Imported::Table);
+        let memories = imports.memories.into_iter().map(Imported::Memory);
+        let globals = imports.globals.into_iter().map(Imported::Global);
+        let items = funcs
+            .chain(tables)
+            .chain(memories)
+            .chain(globals)
+            .collect::<Vec<_>>()
+            .into();
+        Self { items }
+    }
+}
 
 impl Module {
     /// Creates a new Wasm [`Module`] from the given byte stream.
@@ -48,5 +97,23 @@ impl Module {
     /// - If unsupported Wasm proposals are encounterd.
     pub fn new(engine: &Engine, stream: impl Read) -> Result<Self, ModuleError> {
         parse(engine, stream)
+    }
+
+    /// Creates a new [`Module`] from the [`ModuleBuilder`].
+    fn from_builder(builder: ModuleBuilder) -> Self {
+        Self {
+            engine: builder.engine.clone(),
+            func_types: builder.func_types.into(),
+            imports: ModuleImports::from_builder(builder.imports),
+            funcs: builder.funcs.into(),
+            tables: builder.tables.into(),
+            memories: builder.memories.into(),
+            globals: builder.globals.into(),
+            globals_init: builder.globals_init.into(),
+            exports: builder.exports.into(),
+            start: builder.start.into(),
+            element_segments: builder.element_segments.into(),
+            data_segments: builder.data_segments.into(),
+        }
     }
 }
