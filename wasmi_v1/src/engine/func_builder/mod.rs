@@ -1549,6 +1549,21 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     }
 
     /// Translate a Wasm conversion instruction.
+    ///
+    /// - `i32.wrap_i64`
+    /// - `{i32, u32}.trunc_f32
+    /// - `{i32, u32}.trunc_f64`
+    /// - `{i64, u64}.extend_i32`
+    /// - `{i64, u64}.trunc_f32`
+    /// - `{i64, u64}.trunc_f64`
+    /// - `f32.convert_{i32, u32, i64, u64}`
+    /// - `f32.demote_f64`
+    /// - `f64.convert_{i32, u32, i64, u64}`
+    /// - `f64.promote_f32`
+    /// - `i32.reinterpret_f32`
+    /// - `i64.reinterpret_f64`
+    /// - `f32.reinterpret_i32`
+    /// - `f64.reinterpret_i64`
     pub fn translate_conversion(
         &mut self,
         input_type: ValueType,
