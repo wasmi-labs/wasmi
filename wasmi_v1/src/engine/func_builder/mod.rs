@@ -200,7 +200,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     ///
     /// - If the control flow frame stack is empty.
     /// - If the value stack is underflown.
-    pub fn drop_keep_return(&self) -> DropKeep {
+    fn drop_keep_return(&self) -> DropKeep {
         assert!(
             !self.control_frames.is_empty(),
             "drop_keep_return cannot be called with the frame stack empty"
@@ -225,7 +225,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// # Note
     ///
     /// See stack layout definition in `isa.rs`.
-    pub fn relative_local_depth(&self, local_idx: u32) -> u32 {
+    fn relative_local_depth(&self, local_idx: u32) -> u32 {
         let stack_height = self.value_stack.len();
         let len_locals = self.locals.len_registered();
         let len_params = self.res.get_type_of_func(self.func).params().len() as u32;
@@ -242,7 +242,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     ///
     /// - If the `depth` is greater than the current height of the control frame stack.
     /// - If the value stack underflowed.
-    pub fn acquire_target(&self, depth: u32) -> (LabelIdx, DropKeep) {
+    fn acquire_target(&self, depth: u32) -> (LabelIdx, DropKeep) {
         let label = self.control_frames.nth_back(depth).branch_destination();
         let drop_keep = self.compute_drop_keep(depth);
         (label, drop_keep)
