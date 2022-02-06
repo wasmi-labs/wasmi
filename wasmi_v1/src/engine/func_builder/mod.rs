@@ -139,7 +139,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Finishes constructing the function and returns its [`FuncBody`].
     pub fn finish(mut self) -> FuncBody {
         self.inst_builder.finish(
-            &self.engine,
+            self.engine,
             self.locals.len_registered() as usize,
             self.value_stack.max_stack_height() as usize,
         )
