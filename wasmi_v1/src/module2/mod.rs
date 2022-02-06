@@ -120,6 +120,11 @@ impl Module {
         parse(engine, stream)
     }
 
+    /// Returns the [`Engine`] used during creation of the [`Module`].
+    pub fn engine(&self) -> &Engine {
+        &self.engine
+    }
+
     /// Creates a new [`Module`] from the [`ModuleBuilder`].
     fn from_builder(builder: ModuleBuilder) -> Self {
         Self {
