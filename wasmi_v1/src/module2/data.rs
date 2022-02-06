@@ -40,6 +40,8 @@ impl TryFrom<wasmparser::Data<'_>> for DataSegment {
 
 impl DataSegment {
     /// Returns the index of the [`Memory`] manipulated by the [`DataSegment`].
+    ///
+    /// [`Memory`]: [`crate::Memory`]
     pub fn memory_index(&self) -> MemoryIdx {
         self.memory_index
     }

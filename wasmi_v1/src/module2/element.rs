@@ -56,6 +56,8 @@ impl TryFrom<wasmparser::Element<'_>> for ElementSegment {
 
 impl ElementSegment {
     /// Returns the index of the [`Table`] manipulated by the [`ElementSegment`].
+    ///
+    /// [`Table`]: [`crate::Table`]
     pub fn table_index(&self) -> TableIdx {
         self.table_index
     }

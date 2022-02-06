@@ -81,6 +81,8 @@ pub struct ModuleImports {
     /// All names and types of all imported items.
     items: Box<[Imported]>,
     /// The amount of imported [`Func`].
+    ///
+    /// [`Func`]: [`crate::Func`]
     len_funcs: usize,
     /// The amount of imported [`Global`].
     len_globals: usize,
@@ -162,6 +164,8 @@ impl Module {
     }
 
     /// Returns an iterator over the internally defined [`Func`].
+    ///
+    /// [`Func`]: [`crate::Func`]
     fn internal_funcs(&self) -> InternalFuncsIter {
         let len_imported = self.imports.len_funcs;
         // We skip the first `len_imported` elements in `funcs`
@@ -289,10 +293,16 @@ impl<'a> ModuleImport<'a> {
 #[derive(Debug, Clone)]
 pub enum ModuleImportType {
     /// An imported [`Func`].
+    ///
+    /// [`Func`]: [`crate::Func`]
     Func(FuncType),
     /// An imported [`Table`].
+    ///
+    /// [`Table`]: [`crate::Table`]
     Table(TableType),
     /// An imported [`Memory`].
+    ///
+    /// [`Memory`]: [`crate::Memory`]
     Memory(MemoryType),
     /// An imported [`Global`].
     Global(GlobalType),
