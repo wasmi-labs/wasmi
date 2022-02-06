@@ -12,7 +12,7 @@ use super::{
     InitExpr,
     Module,
 };
-use crate::{Engine, FuncType, GlobalType, MemoryType, ModuleError, TableType};
+use crate::{engine::FuncBody, Engine, FuncType, GlobalType, MemoryType, ModuleError, TableType};
 
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug)]
@@ -27,6 +27,7 @@ pub struct ModuleBuilder<'engine> {
     pub(super) globals_init: Vec<InitExpr>,
     pub(super) exports: Vec<Export>,
     pub(super) start: Option<FuncIdx>,
+    pub(super) func_bodies: Vec<FuncBody>,
     pub(super) element_segments: Vec<ElementSegment>,
     pub(super) data_segments: Vec<DataSegment>,
 }
@@ -87,6 +88,7 @@ impl<'engine> ModuleBuilder<'engine> {
             globals_init: Vec::new(),
             exports: Vec::new(),
             start: None,
+            func_bodies: Vec::new(),
             element_segments: Vec::new(),
             data_segments: Vec::new(),
         }

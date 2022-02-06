@@ -16,6 +16,11 @@ pub struct ValueStack {
 }
 
 impl ValueStack {
+    /// Returns the maximum value stack height.
+    pub fn max_stack_height(&self) -> u32 {
+        self.max_stack_height
+    }
+
     /// Updates the pinned maximum stack height.
     fn update_max_height(&mut self) {
         let max = self.max_stack_height;

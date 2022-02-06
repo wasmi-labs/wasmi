@@ -33,7 +33,7 @@ pub use self::{
     import::FuncTypeIdx,
     read::Read,
 };
-use crate::{Engine, FuncType, GlobalType, MemoryType, TableType};
+use crate::{engine::FuncBody, Engine, FuncType, GlobalType, MemoryType, TableType};
 
 /// A parsed and validated WebAssembly module.
 #[derive(Debug)]
@@ -48,6 +48,7 @@ pub struct Module {
     globals_init: Box<[InitExpr]>,
     exports: Box<[Export]>,
     start: Option<FuncIdx>,
+    func_bodies: Box<[FuncBody]>,
     element_segments: Box<[ElementSegment]>,
     data_segments: Box<[DataSegment]>,
 }
@@ -118,6 +119,7 @@ impl Module {
             globals_init: builder.globals_init.into(),
             exports: builder.exports.into(),
             start: builder.start,
+            func_bodies: builder.func_bodies.into(),
             element_segments: builder.element_segments.into(),
             data_segments: builder.data_segments.into(),
         }

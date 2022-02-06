@@ -20,7 +20,7 @@ use self::{
     locals_registry::LocalsRegistry,
     value_stack::ValueStack,
 };
-use super::{DropKeep, Instruction, Target};
+use super::{DropKeep, FuncBody, Instruction, Target};
 use crate::{
     engine::bytecode::Offset,
     module2::{BlockType, FuncIdx, FuncTypeIdx, GlobalIdx, MemoryIdx, ModuleResources, TableIdx},
@@ -134,6 +134,15 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     ) -> Result<(), ModuleError> {
         self.locals.register_locals(value_type, amount);
         Ok(())
+    }
+
+    /// Finishes constructing the function and returns its [`FuncBody`].
+    pub fn finish(mut self) -> FuncBody {
+        self.inst_builder.finish(
+            &self.engine,
+            self.locals.len_registered() as usize,
+            self.value_stack.max_stack_height() as usize,
+        )
     }
 
     /// Returns `true` if the code at the current translation position is reachable.

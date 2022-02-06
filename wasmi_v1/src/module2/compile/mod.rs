@@ -1,7 +1,7 @@
 pub use self::block_type::BlockType;
 use super::{utils::value_type_from_wasmparser, FuncIdx, ModuleResources};
 use crate::{
-    engine::{DropKeep, FunctionBuilder},
+    engine::{DropKeep, FuncBody, FunctionBuilder},
     Engine,
     ModuleError,
 };
@@ -29,7 +29,7 @@ pub fn translate<'parser>(
     func_body: FunctionBody<'parser>,
     validator: FuncValidator<ValidatorResources>,
     res: ModuleResources<'parser>,
-) -> Result<(), ModuleError> {
+) -> Result<FuncBody, ModuleError> {
     FunctionTranslator::new(engine, func, func_body, validator, res).translate()
 }
 
@@ -73,10 +73,16 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
     }
 
     /// Starts translation of the Wasm stream into `wasmi` bytecode.
-    fn translate(&mut self) -> Result<(), ModuleError> {
+    fn translate(&mut self) -> Result<FuncBody, ModuleError> {
         self.translate_locals()?;
         self.translate_operators()?;
-        Ok(())
+        let func_body = self.finish();
+        Ok(func_body)
+    }
+
+    /// Finishes construction of the function and returns its [`FuncBody`].
+    fn finish(&mut self) -> FuncBody {
+        self.func_builder.finish()
     }
 
     /// Translates local variables of the Wasm function.
