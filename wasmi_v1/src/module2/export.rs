@@ -76,6 +76,18 @@ impl TryFrom<wasmparser::Export<'_>> for Export {
     }
 }
 
+impl Export {
+    /// Returns the field name of the [`Export`].
+    pub fn field(&self) -> &str {
+        &self.field
+    }
+
+    /// Returns the [`External`] item of the [`Export`].
+    pub fn external(&self) -> External {
+        self.external
+    }
+}
+
 /// An external item of an [`Export`] definition within a [`Module`].
 ///
 /// [`Module`]: [`super::Module`]

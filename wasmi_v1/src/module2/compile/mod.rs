@@ -73,7 +73,7 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
     }
 
     /// Starts translation of the Wasm stream into `wasmi` bytecode.
-    fn translate(&mut self) -> Result<FuncBody, ModuleError> {
+    fn translate(mut self) -> Result<FuncBody, ModuleError> {
         self.translate_locals()?;
         self.translate_operators()?;
         let func_body = self.finish();
@@ -81,7 +81,7 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
     }
 
     /// Finishes construction of the function and returns its [`FuncBody`].
-    fn finish(&mut self) -> FuncBody {
+    fn finish(self) -> FuncBody {
         self.func_builder.finish()
     }
 

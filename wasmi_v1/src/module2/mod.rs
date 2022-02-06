@@ -9,6 +9,7 @@ mod export;
 mod global;
 mod import;
 mod init_expr;
+mod instantiate;
 mod parser;
 mod read;
 mod utils;
@@ -17,7 +18,7 @@ use self::{
     builder::ModuleBuilder,
     data::DataSegment,
     element::ElementSegment,
-    export::{Export, External},
+    export::Export,
     global::Global,
     import::{Import, ImportKind, ImportName},
     init_expr::{InitExpr, InitExprOperand},
@@ -31,9 +32,11 @@ pub use self::{
     export::{FuncIdx, MemoryIdx, TableIdx},
     global::GlobalIdx,
     import::FuncTypeIdx,
+    instantiate::{InstancePre, InstantiationError},
     read::Read,
 };
 use crate::{engine::FuncBody, Engine, FuncType, GlobalType, MemoryType, TableType};
+use core::{iter, slice::Iter as SliceIter};
 
 /// A parsed and validated WebAssembly module.
 #[derive(Debug)]
@@ -75,12 +78,19 @@ pub enum Imported {
 /// The import names of the [`Module`] imports.
 #[derive(Debug)]
 pub struct ModuleImports {
+    /// All names and types of all imported items.
     items: Box<[Imported]>,
+    /// The amount of imported [`Func`].
+    len_funcs: usize,
+    /// The amount of imported [`Global`].
+    len_globals: usize,
 }
 
 impl ModuleImports {
     /// Creates a new [`ModuleImports`] from the [`ModuleBuilder`] definitions.
     fn from_builder(imports: builder::ModuleImports) -> Self {
+        let len_funcs = imports.funcs.len();
+        let len_globals = imports.globals.len();
         let funcs = imports.funcs.into_iter().map(Imported::Func);
         let tables = imports.tables.into_iter().map(Imported::Table);
         let memories = imports.memories.into_iter().map(Imported::Memory);
@@ -91,7 +101,11 @@ impl ModuleImports {
             .chain(globals)
             .collect::<Vec<_>>()
             .into();
-        Self { items }
+        Self {
+            items,
+            len_funcs,
+            len_globals,
+        }
     }
 }
 
@@ -123,5 +137,234 @@ impl Module {
             element_segments: builder.element_segments.into(),
             data_segments: builder.data_segments.into(),
         }
+    }
+
+    /// Returns a slice over the [`FuncType`] of the [`Module`].
+    fn func_types(&self) -> &[FuncType] {
+        &self.func_types[..]
+    }
+
+    /// Returns an iterator over the imports of the [`Module`].
+    fn imports(&self) -> ModuleImportsIter {
+        ModuleImportsIter {
+            names: self.imports.items.iter(),
+            funcs: self.funcs.iter(),
+            tables: self.tables.iter(),
+            memories: self.memories.iter(),
+            globals: self.globals.iter(),
+            func_types: &self.func_types[..],
+        }
+    }
+
+    /// Returns an iterator over the internally defined [`Func`].
+    fn internal_funcs(&self) -> InternalFuncsIter {
+        let len_imported = self.imports.len_funcs;
+        // We skip the first `len_imported` elements in `funcs`
+        // since they refer to imported and not internally defined
+        // functions.
+        let funcs = self.funcs[len_imported..].iter();
+        let func_bodies = self.func_bodies.iter();
+        let func_types = &self.func_types[..];
+        InternalFuncsIter {
+            iter: funcs.zip(func_bodies),
+            func_types,
+        }
+    }
+
+    /// Returns an iterator over the internally defined [`Global`].
+    fn internal_globals(&self) -> InternalGlobalsIter {
+        let len_imported = self.imports.len_globals;
+        // We skip the first `len_imported` elements in `globals`
+        // since they refer to imported and not internally defined
+        // global variables.
+        let globals = self.globals[len_imported..].iter();
+        let global_inits = self.globals_init.iter();
+        InternalGlobalsIter {
+            iter: globals.zip(global_inits),
+        }
+    }
+}
+
+/// An iterator over the imports of a [`Module`].
+#[derive(Debug)]
+pub struct ModuleImportsIter<'a> {
+    names: SliceIter<'a, Imported>,
+    funcs: SliceIter<'a, FuncTypeIdx>,
+    tables: SliceIter<'a, TableType>,
+    memories: SliceIter<'a, MemoryType>,
+    globals: SliceIter<'a, GlobalType>,
+    func_types: &'a [FuncType],
+}
+
+impl<'a> Iterator for ModuleImportsIter<'a> {
+    type Item = ModuleImport<'a>;
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.names.size_hint()
+    }
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let import = match self.names.next() {
+            None => return None,
+            Some(imported) => match imported {
+                Imported::Func(name) => {
+                    let func_type_idx = self.funcs.next().unwrap_or_else(|| {
+                        panic!("unexpected missing imported function for {:?}", name)
+                    });
+                    let func_type = &self.func_types[func_type_idx.into_usize()];
+                    ModuleImport::new(name, func_type.clone())
+                }
+                Imported::Table(name) => {
+                    let table_type = self.tables.next().unwrap_or_else(|| {
+                        panic!("unexpected missing imported table for {:?}", name)
+                    });
+                    ModuleImport::new(name, *table_type)
+                }
+                Imported::Memory(name) => {
+                    let memory_type = self.memories.next().unwrap_or_else(|| {
+                        panic!("unexpected missing imported linear memory for {:?}", name)
+                    });
+                    ModuleImport::new(name, *memory_type)
+                }
+                Imported::Global(name) => {
+                    let global_type = self.globals.next().unwrap_or_else(|| {
+                        panic!("unexpected missing imported global variable for {:?}", name)
+                    });
+                    ModuleImport::new(name, *global_type)
+                }
+            },
+        };
+        Some(import)
+    }
+}
+
+impl<'a> ExactSizeIterator for ModuleImportsIter<'a> {
+    fn len(&self) -> usize {
+        ExactSizeIterator::len(&self.names)
+    }
+}
+
+/// A [`Module`] import item.
+#[derive(Debug)]
+pub struct ModuleImport<'a> {
+    /// The name of the imported item.
+    name: &'a ImportName,
+    /// The external item type.
+    item_type: ModuleImportType,
+}
+
+impl<'a> ModuleImport<'a> {
+    pub fn new<T>(name: &'a ImportName, ty: T) -> Self
+    where
+        T: Into<ModuleImportType>,
+    {
+        Self {
+            name,
+            item_type: ty.into(),
+        }
+    }
+
+    /// Returns the module import name.
+    pub fn module(&self) -> &str {
+        self.name.module()
+    }
+
+    /// Returns the field import name.
+    pub fn field(&self) -> Option<&str> {
+        self.name.field()
+    }
+
+    /// Returns the import item type.
+    pub fn item_type(&self) -> &ModuleImportType {
+        &self.item_type
+    }
+}
+
+/// The type of the imported module item.
+#[derive(Debug, Clone)]
+pub enum ModuleImportType {
+    /// An imported [`Func`].
+    Func(FuncType),
+    /// An imported [`Table`].
+    Table(TableType),
+    /// An imported [`Memory`].
+    Memory(MemoryType),
+    /// An imported [`Global`].
+    Global(GlobalType),
+}
+
+impl From<FuncType> for ModuleImportType {
+    fn from(func_type: FuncType) -> Self {
+        Self::Func(func_type)
+    }
+}
+
+impl From<TableType> for ModuleImportType {
+    fn from(table_type: TableType) -> Self {
+        Self::Table(table_type)
+    }
+}
+
+impl From<MemoryType> for ModuleImportType {
+    fn from(memory_type: MemoryType) -> Self {
+        Self::Memory(memory_type)
+    }
+}
+
+impl From<GlobalType> for ModuleImportType {
+    fn from(global_type: GlobalType) -> Self {
+        Self::Global(global_type)
+    }
+}
+
+/// An iterator over the internally defined functions of a [`Module`].
+#[derive(Debug)]
+pub struct InternalFuncsIter<'a> {
+    iter: iter::Zip<SliceIter<'a, FuncTypeIdx>, SliceIter<'a, FuncBody>>,
+    func_types: &'a [FuncType],
+}
+
+impl<'a> Iterator for InternalFuncsIter<'a> {
+    type Item = (FuncType, FuncBody);
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(|(func_type_idx, func_body)| {
+            let func_type = &self.func_types[func_type_idx.into_usize()];
+            (func_type.clone(), *func_body)
+        })
+    }
+}
+
+impl<'a> ExactSizeIterator for InternalFuncsIter<'a> {
+    fn len(&self) -> usize {
+        ExactSizeIterator::len(&self.iter)
+    }
+}
+
+/// An iterator over the internally defined functions of a [`Module`].
+#[derive(Debug)]
+pub struct InternalGlobalsIter<'a> {
+    iter: iter::Zip<SliceIter<'a, GlobalType>, SliceIter<'a, InitExpr>>,
+}
+
+impl<'a> Iterator for InternalGlobalsIter<'a> {
+    type Item = (&'a GlobalType, &'a InitExpr);
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+}
+
+impl<'a> ExactSizeIterator for InternalGlobalsIter<'a> {
+    fn len(&self) -> usize {
+        ExactSizeIterator::len(&self.iter)
     }
 }

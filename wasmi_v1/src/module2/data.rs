@@ -1,11 +1,5 @@
 use super::{InitExpr, MemoryIdx, ModuleError};
 
-// pub struct Data<'a> {
-//     pub kind: DataKind<'a>,
-//     pub data: &'a [u8],
-//     pub range: Range,
-// }
-
 /// A linear memory data segment within a [`Module`].
 ///
 /// [`Module`]: [`super::Module`]
@@ -41,5 +35,22 @@ impl TryFrom<wasmparser::Data<'_>> for DataSegment {
             offset,
             data,
         })
+    }
+}
+
+impl DataSegment {
+    /// Returns the index of the [`Memory`] manipulated by the [`DataSegment`].
+    pub fn memory_index(&self) -> MemoryIdx {
+        self.memory_index
+    }
+
+    /// Returns the offset expression of the [`DataSegment`].
+    pub fn offset(&self) -> &InitExpr {
+        &self.offset
+    }
+
+    /// Returns the element items of the [`DataSegment`].
+    pub fn data(&self) -> &[u8] {
+        &self.data[..]
     }
 }

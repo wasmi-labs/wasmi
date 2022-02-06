@@ -33,6 +33,13 @@ impl TryFrom<wasmparser::InitExpr<'_>> for InitExpr {
     }
 }
 
+impl InitExpr {
+    /// Returns a slice over the operators of the [`InitExpr`].
+    pub fn operators(&self) -> &[InitExprOperand] {
+        core::slice::from_ref(&self.op)
+    }
+}
+
 /// A single operand of an initializer expression.
 ///
 /// # Note

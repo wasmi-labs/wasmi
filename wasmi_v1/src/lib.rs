@@ -40,6 +40,7 @@ pub mod errors {
         linker::LinkerError,
         memory::MemoryError,
         module::{InstantiationError, TranslationError},
+        module2::InstantiationError as InstantiationError2,
         table::TableError,
     };
 }
@@ -65,7 +66,7 @@ pub use self::{
     linker::Linker,
     memory::{Memory, MemoryType},
     module::{InstancePre, Module},
-    module2::{Module as Module2, ModuleError, Read},
+    module2::{InstancePre as InstancePre2, Module as Module2, ModuleError, Read},
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
 };

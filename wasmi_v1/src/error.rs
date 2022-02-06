@@ -2,6 +2,7 @@ use super::errors::{
     FuncError,
     GlobalError,
     InstantiationError,
+    InstantiationError2,
     LinkerError,
     MemoryError,
     TableError,
@@ -26,6 +27,8 @@ pub enum Error {
     Translation(TranslationError),
     /// A module instantiation error.
     Instantiation(InstantiationError),
+    /// A module instantiation error. (v2)
+    Instantiation2(InstantiationError2),
     /// A function error.
     Func(FuncError),
     /// A trap as defined by the WebAssembly specification.
@@ -46,6 +49,7 @@ impl Display for Error {
             Self::Translation(error) => Display::fmt(error, f),
             Self::Func(error) => Display::fmt(error, f),
             Self::Instantiation(error) => Display::fmt(error, f),
+            Self::Instantiation2(error) => Display::fmt(error, f),
         }
     }
 }
@@ -89,6 +93,12 @@ impl From<TranslationError> for Error {
 impl From<InstantiationError> for Error {
     fn from(error: InstantiationError) -> Self {
         Self::Instantiation(error)
+    }
+}
+
+impl From<InstantiationError2> for Error {
+    fn from(error: InstantiationError2) -> Self {
+        Self::Instantiation2(error)
     }
 }
 
