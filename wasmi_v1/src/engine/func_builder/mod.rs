@@ -161,7 +161,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// # Panics
     ///
     /// If underflow of the value stack is detected.
-    pub fn compute_drop_keep(&self, depth: u32) -> DropKeep {
+    fn compute_drop_keep(&self, depth: u32) -> DropKeep {
         let frame = self.control_frames.nth_back(depth);
         // Find out how many values we need to keep (copy to the new stack location after the drop).
         let keep = match frame.kind() {
