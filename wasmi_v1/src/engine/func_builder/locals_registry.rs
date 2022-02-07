@@ -192,10 +192,6 @@ mod tests {
             value_type: ValueType,
         ) {
             for local_index in 0..amount {
-                println!(
-                    "assert_local_group({}, {}, {:?})",
-                    offset, amount, value_type
-                );
                 assert_eq!(
                     registry.resolve_local(offset + local_index),
                     Some(value_type)
@@ -203,7 +199,6 @@ mod tests {
             }
         }
         fn assert_valid_accesses(registry: &mut LocalsRegistry, offset: u32, amount: u32) {
-            println!("assert_valid_accesses");
             let value_types = [
                 ValueType::I32,
                 ValueType::I64,
