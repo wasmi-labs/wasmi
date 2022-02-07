@@ -94,13 +94,17 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Resolves the [`FuncType`] of the given [`FuncTypeIdx`].
     fn func_type_at(&self, func_type_index: FuncTypeIdx) -> FuncType {
         let dedup_func_type = self.res.get_func_type(func_type_index);
-        self.res.engine().resolve_func_type(dedup_func_type, Clone::clone)
+        self.res
+            .engine()
+            .resolve_func_type(dedup_func_type, Clone::clone)
     }
 
     /// Resolves the [`FuncType`] of the given [`FuncIdx`].
     fn func_type_of(&self, func_index: FuncIdx) -> FuncType {
         let dedup_func_type = self.res.get_type_of_func(func_index);
-        self.res.engine().resolve_func_type(dedup_func_type, Clone::clone)
+        self.res
+            .engine()
+            .resolve_func_type(dedup_func_type, Clone::clone)
     }
 
     /// Registers the `block` control frame surrounding the entire function body.
