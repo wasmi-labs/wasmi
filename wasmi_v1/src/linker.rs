@@ -604,7 +604,7 @@ impl<T> Linker<T> {
                     if &actual_global_type != expected_global_type {
                         return Err(LinkerError::GlobalTypeMismatch2 {
                             name: import.name().clone(),
-                            expected: expected_global_type.clone(),
+                            expected: *expected_global_type,
                             actual: actual_global_type,
                         })
                         .map_err(Into::into);
