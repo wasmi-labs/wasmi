@@ -51,7 +51,7 @@ pub struct Module {
     engine: Engine,
     func_types: Box<[DedupFuncType]>,
     imports: ModuleImports,
-    funcs: Box<[FuncTypeIdx]>,
+    funcs: Box<[DedupFuncType]>,
     tables: Box<[TableType]>,
     memories: Box<[MemoryType]>,
     globals: Box<[GlobalType]>,
@@ -166,7 +166,6 @@ impl Module {
             tables: self.tables.iter(),
             memories: self.memories.iter(),
             globals: self.globals.iter(),
-            func_types: &self.func_types[..],
         }
     }
 
@@ -180,10 +179,8 @@ impl Module {
         // functions.
         let funcs = self.funcs[len_imported..].iter();
         let func_bodies = self.func_bodies.iter();
-        let func_types = &self.func_types[..];
         InternalFuncsIter {
             iter: funcs.zip(func_bodies),
-            func_types,
         }
     }
 
@@ -205,11 +202,10 @@ impl Module {
 #[derive(Debug)]
 pub struct ModuleImportsIter<'a> {
     names: SliceIter<'a, Imported>,
-    funcs: SliceIter<'a, FuncTypeIdx>,
+    funcs: SliceIter<'a, DedupFuncType>,
     tables: SliceIter<'a, TableType>,
     memories: SliceIter<'a, MemoryType>,
     globals: SliceIter<'a, GlobalType>,
-    func_types: &'a [DedupFuncType],
 }
 
 impl<'a> Iterator for ModuleImportsIter<'a> {
@@ -224,10 +220,9 @@ impl<'a> Iterator for ModuleImportsIter<'a> {
             None => return None,
             Some(imported) => match imported {
                 Imported::Func(name) => {
-                    let func_type_idx = self.funcs.next().unwrap_or_else(|| {
+                    let func_type = self.funcs.next().unwrap_or_else(|| {
                         panic!("unexpected missing imported function for {:?}", name)
                     });
-                    let func_type = &self.func_types[func_type_idx.into_usize()];
                     ModuleImport::new(name, *func_type)
                 }
                 Imported::Table(name) => {
@@ -348,8 +343,7 @@ impl From<GlobalType> for ModuleImportType {
 /// An iterator over the internally defined functions of a [`Module`].
 #[derive(Debug)]
 pub struct InternalFuncsIter<'a> {
-    iter: iter::Zip<SliceIter<'a, FuncTypeIdx>, SliceIter<'a, FuncBody>>,
-    func_types: &'a [DedupFuncType],
+    iter: iter::Zip<SliceIter<'a, DedupFuncType>, SliceIter<'a, FuncBody>>,
 }
 
 impl<'a> Iterator for InternalFuncsIter<'a> {
@@ -360,10 +354,9 @@ impl<'a> Iterator for InternalFuncsIter<'a> {
     }
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|(func_type_idx, func_body)| {
-            let func_type = &self.func_types[func_type_idx.into_usize()];
-            (*func_type, *func_body)
-        })
+        self.iter
+            .next()
+            .map(|(func_type, func_body)| (*func_type, *func_body))
     }
 }
 

@@ -28,7 +28,7 @@ pub struct ModuleBuilder<'engine> {
     pub(super) engine: &'engine Engine,
     pub(super) func_types: Vec<DedupFuncType>,
     pub(super) imports: ModuleImports,
-    pub(super) funcs: Vec<FuncTypeIdx>,
+    pub(super) funcs: Vec<DedupFuncType>,
     pub(super) tables: Vec<TableType>,
     pub(super) memories: Vec<MemoryType>,
     pub(super) globals: Vec<GlobalType>,
@@ -71,14 +71,9 @@ impl<'a> ModuleResources<'a> {
         self.res.func_types[func_type_idx.into_usize()]
     }
 
-    /// Returns the [`FuncTypeIdx`] of the indexed function.
-    pub fn get_type_idx_of_func(&self, func_idx: FuncIdx) -> FuncTypeIdx {
-        self.res.funcs[func_idx.into_usize()]
-    }
-
     /// Returns the [`FuncType`] of the indexed function.
     pub fn get_type_of_func(&self, func_idx: FuncIdx) -> DedupFuncType {
-        self.get_func_type(self.res.funcs[func_idx.into_usize()])
+        self.res.funcs[func_idx.into_usize()]
     }
 
     /// Returns the [`GlobalType`] the the indexed global variable.
@@ -159,7 +154,8 @@ impl<'engine> ModuleBuilder<'engine> {
             match kind {
                 ImportKind::Func(func_type_idx) => {
                     self.imports.funcs.push(name);
-                    self.funcs.push(func_type_idx);
+                    let func_type = self.func_types[func_type_idx.into_usize()];
+                    self.funcs.push(func_type);
                 }
                 ImportKind::Table(table_type) => {
                     self.imports.tables.push(name);
@@ -197,8 +193,14 @@ impl<'engine> ModuleBuilder<'engine> {
             self.imports.funcs.len(),
             "tried to initialize module function declarations twice"
         );
-        self.funcs
-            .extend(funcs.into_iter().collect::<Result<Vec<_>, _>>()?);
+        self.funcs.extend(
+            funcs
+                .into_iter()
+                .collect::<Result<Vec<_>, _>>()?
+                .into_iter()
+                .map(|func_type_idx| self.func_types[func_type_idx.into_usize()])
+                .collect::<Vec<_>>(),
+        );
         Ok(())
     }
 
