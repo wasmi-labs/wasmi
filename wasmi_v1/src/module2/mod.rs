@@ -228,7 +228,7 @@ impl<'a> Iterator for ModuleImportsIter<'a> {
                         panic!("unexpected missing imported function for {:?}", name)
                     });
                     let func_type = &self.func_types[func_type_idx.into_usize()];
-                    ModuleImport::new(name, func_type.clone())
+                    ModuleImport::new(name, *func_type)
                 }
                 Imported::Table(name) => {
                     let table_type = self.tables.next().unwrap_or_else(|| {
@@ -362,7 +362,7 @@ impl<'a> Iterator for InternalFuncsIter<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next().map(|(func_type_idx, func_body)| {
             let func_type = &self.func_types[func_type_idx.into_usize()];
-            (func_type.clone(), *func_body)
+            (*func_type, *func_body)
         })
     }
 }

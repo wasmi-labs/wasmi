@@ -98,7 +98,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         inst_builder: &mut InstructionsBuilder,
         control_frames: &mut ControlFlowStack,
     ) {
-        let func_type = res.get_type_idx_of_func(func);
+        let func_type = res.get_type_of_func(func);
         let block_type = BlockType::func_type(func_type);
         let end_label = inst_builder.new_label();
         let block_frame = BlockControlFrame::new(block_type, end_label, 0);
@@ -185,9 +185,9 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         // Find out how many values we need to keep (copy to the new stack location after the drop).
         let keep = match frame.kind() {
             ControlFrameKind::Block | ControlFrameKind::If => {
-                frame.block_type().len_results(self.res)
+                frame.block_type().len_results(self.engine)
             }
-            ControlFrameKind::Loop => frame.block_type().len_params(self.res),
+            ControlFrameKind::Loop => frame.block_type().len_params(self.engine),
         };
         // Find out how many values we need to drop.
         let drop = if !self.is_reachable() {
