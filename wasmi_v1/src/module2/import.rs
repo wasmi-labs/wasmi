@@ -1,3 +1,5 @@
+use core::fmt::{self, Display};
+
 use crate::{GlobalType, MemoryType, ModuleError, TableType};
 use wasmparser::ImportSectionEntryType;
 
@@ -23,6 +25,17 @@ pub struct ImportName {
     ///
     /// [`Module`]: [`super::Module`]
     field: Option<Box<str>>,
+}
+
+impl Display for ImportName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let module_name = &*self.module;
+        if let Some(field_name) = self.field.as_deref() {
+            write!(f, "{}::{}", module_name, field_name)
+        } else {
+            write!(f, "{}", module_name)
+        }
+    }
 }
 
 impl ImportName {
