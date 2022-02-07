@@ -1,7 +1,4 @@
-use alloc::{
-    collections::{btree_map, BTreeMap},
-    vec::Vec,
-};
+use alloc::vec::Vec;
 use core::cmp::Ordering;
 use wasmi_core::ValueType;
 
@@ -24,8 +21,6 @@ use wasmi_core::ValueType;
 /// exploitation impact.
 #[derive(Debug, Default)]
 pub struct LocalsRegistry {
-    /// A cache that tracks actually used local variable indices and their types.
-    used: BTreeMap<u32, ValueType>,
     /// An efficient store for the registered local variable groups.
     groups: Vec<LocalGroup>,
     /// Max local index.
@@ -76,11 +71,6 @@ impl LocalsRegistry {
         self.max_index
     }
 
-    /// Returns the number of actually used local variables.
-    pub fn len_used(&self) -> u32 {
-        self.used.len() as u32
-    }
-
     /// Registers the `amount` of locals with their shared [`ValueType`].
     pub fn register_locals(&mut self, value_type: ValueType, amount: u32) {
         let min_index = self.max_index;
@@ -96,33 +86,27 @@ impl LocalsRegistry {
             // Bail out early if the local index is invalid.
             return None;
         }
-        match self.used.entry(local_index) {
-            btree_map::Entry::Occupied(occupied) => Some(occupied.get()).copied(),
-            btree_map::Entry::Vacant(vacant) => {
-                // Actually search for the local variable type in the groups
-                // array using efficient binary search, insert it into the
-                // `used` cache and return it to the caller.
-                match self.groups.binary_search_by(|group| {
-                    if local_index < group.min_index() {
-                        return Ordering::Greater;
-                    }
-                    if local_index >= group.max_index() {
-                        return Ordering::Less;
-                    }
-                    Ordering::Equal
-                }) {
-                    Ok(found_index) => {
-                        let value_type = self.groups[found_index].value_type();
-                        vacant.insert(value_type);
-                        Some(value_type)
-                    }
-                    Err(_) => unreachable!(
-                        "unexectedly could not find valid local group index \
-                        using `local_index` = {}",
-                        local_index
-                    ),
-                }
+        // Search for the local variable type in the groups
+        // array using efficient binary search, insert it into the
+        // `used` cache and return it to the caller.
+        match self.groups.binary_search_by(|group| {
+            if local_index < group.min_index() {
+                return Ordering::Greater;
             }
+            if local_index >= group.max_index() {
+                return Ordering::Less;
+            }
+            Ordering::Equal
+        }) {
+            Ok(found_index) => {
+                let value_type = self.groups[found_index].value_type();
+                Some(value_type)
+            }
+            Err(_) => unreachable!(
+                "unexectedly could not find valid local group index \
+                using `local_index` = {}",
+                local_index
+            ),
         }
     }
 }
@@ -138,7 +122,6 @@ mod tests {
             assert!(registry.resolve_local(local_index).is_none());
         }
         assert_eq!(registry.len_registered(), 0);
-        assert_eq!(registry.len_used(), 0);
     }
 
     #[test]
@@ -168,8 +151,6 @@ mod tests {
         assert_valid_accesses(&mut registry, 4);
         // Assert that an index out of bounds yields `None`.
         assert!(registry.resolve_local(registry.len_registered()).is_none());
-        // Assert that by now all locals are in use:
-        assert_eq!(registry.len_registered(), registry.len_used(),);
     }
 
     #[test]
@@ -223,7 +204,5 @@ mod tests {
         assert_valid_accesses(&mut registry, 4 * amount, amount);
         // Assert that an index out of bounds yields `None`.
         assert!(registry.resolve_local(registry.len_registered()).is_none());
-        // Assert that by now all locals are in use:
-        assert_eq!(registry.len_registered(), registry.len_used(),);
     }
 }
