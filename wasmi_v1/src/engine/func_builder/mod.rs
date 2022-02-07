@@ -91,6 +91,18 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         self.engine.resolve_func_type(dedup_func_type, Clone::clone)
     }
 
+    /// Resolves the [`FuncType`] of the given [`FuncTypeIdx`].
+    fn func_type_at(&self, func_type_index: FuncTypeIdx) -> FuncType {
+        let dedup_func_type = self.res.get_func_type(func_type_index);
+        self.res.engine().resolve_func_type(dedup_func_type, Clone::clone)
+    }
+
+    /// Resolves the [`FuncType`] of the given [`FuncIdx`].
+    fn func_type_of(&self, func_index: FuncIdx) -> FuncType {
+        let dedup_func_type = self.res.get_type_of_func(func_index);
+        self.res.engine().resolve_func_type(dedup_func_type, Clone::clone)
+    }
+
     /// Registers the `block` control frame surrounding the entire function body.
     fn register_func_body_block(
         func: FuncIdx,
@@ -501,7 +513,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Adjusts the emulated [`ValueStack`] given the [`FuncType`] of the call.
     fn adjust_value_stack_for_call(&mut self, func_type: &FuncType) {
         let (params, results) = func_type.params_results();
-        for param in params {
+        for param in params.iter().rev() {
             let popped = self.value_stack.pop1();
             debug_assert_eq!(popped, *param);
         }
@@ -513,7 +525,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Translates a Wasm `call` instruction.
     pub fn translate_call(&mut self, func_idx: FuncIdx) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
-            let func_type = builder.func_type();
+            let func_type = builder.func_type_of(func_idx);
             builder.adjust_value_stack_for_call(&func_type);
             let func_idx = func_idx.into_u32().into();
             builder.inst_builder.push_inst(Instruction::Call(func_idx));
@@ -531,9 +543,9 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             /// The default Wasm MVP table index.
             const DEFAULT_TABLE_INDEX: u32 = 0;
             assert_eq!(table_idx.into_u32(), DEFAULT_TABLE_INDEX);
-            let func_type = builder.value_stack.pop1();
-            debug_assert_eq!(func_type, ValueType::I32);
-            let func_type = builder.func_type();
+            let func_type_offset = builder.value_stack.pop1();
+            debug_assert_eq!(func_type_offset, ValueType::I32);
+            let func_type = builder.func_type_at(func_type_idx);
             builder.adjust_value_stack_for_call(&func_type);
             let func_type_idx = func_type_idx.into_u32().into();
             builder
