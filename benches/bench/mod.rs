@@ -60,6 +60,26 @@ pub fn load_module_from_file_v1(file_name: &str) -> v1::Module {
     })
 }
 
+/// Parses the Wasm binary at the given `file_name` into a `wasmi` module.
+///
+/// # Note
+///
+/// This includes validation and compilation to `wasmi` bytecode.
+///
+/// # Panics
+///
+/// If the benchmark Wasm file could not be opened, read or parsed.
+pub fn load_module_from_file_v1b(file_name: &str) -> v1::Module2 {
+    let wasm = load_wasm_from_file(file_name);
+    let engine = v1::Engine::default();
+    v1::Module2::new(&engine, &wasm[..]).unwrap_or_else(|error| {
+        panic!(
+            "could not parse Wasm module from file {}: {}",
+            file_name, error
+        )
+    })
+}
+
 /// Parses the Wasm binary from the given `file_name` into a `wasmi` `v0` module.
 ///
 /// # Note

@@ -7,6 +7,7 @@ use self::bench::{
     load_instance_from_wat_v1,
     load_module_from_file_v0,
     load_module_from_file_v1,
+    load_module_from_file_v1b,
     load_wasm_from_file,
     wat2wasm,
 };
@@ -31,7 +32,8 @@ criterion_group!(
 criterion_group!(
     bench_instantiate,
     bench_instantiate_v0,
-    bench_instantiate_v1
+    bench_instantiate_v1,
+    bench_instantiate_v1b
 );
 criterion_group!(
     bench_execute,
@@ -106,6 +108,18 @@ fn bench_instantiate_v1(c: &mut Criterion) {
         b.iter(|| {
             let mut store = v1::Store::new(module.engine(), ());
             let _instance = linker.instantiate(&mut store, &module).unwrap();
+        })
+    });
+}
+
+fn bench_instantiate_v1b(c: &mut Criterion) {
+    let module = load_module_from_file_v1b(WASM_KERNEL);
+    let mut linker = <v1::Linker<()>>::default();
+
+    c.bench_function("instantiate/v1b", |b| {
+        b.iter(|| {
+            let mut store = v1::Store::new(module.engine(), ());
+            let _instance = linker.instantiate_2(&mut store, &module).unwrap();
         })
     });
 }
