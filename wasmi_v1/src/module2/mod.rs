@@ -263,6 +263,7 @@ pub struct ModuleImport<'a> {
 }
 
 impl<'a> ModuleImport<'a> {
+    /// Creates a new [`ModuleImport`].
     pub fn new<T>(name: &'a ImportName, ty: T) -> Self
     where
         T: Into<ModuleImportType>,
