@@ -13,7 +13,7 @@ pub struct Import {
 }
 
 /// The name or namespace of an imported item.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ImportName {
     /// The name of the [`Module`] that defines the imported item.
     ///
