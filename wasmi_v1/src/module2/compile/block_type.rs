@@ -65,9 +65,7 @@ impl BlockType {
             BlockTypeInner::FuncType(func_type) => {
                 let dedup_func_type = res.get_func_type(*func_type);
                 res.engine()
-                    .resolve_func_type(dedup_func_type)
-                    .params()
-                    .len() as u32
+                    .resolve_func_type(dedup_func_type, |func_type| func_type.params().len() as u32)
             }
         }
     }
@@ -80,9 +78,9 @@ impl BlockType {
             BlockTypeInner::FuncType(func_type) => {
                 let dedup_func_type = res.get_func_type(*func_type);
                 res.engine()
-                    .resolve_func_type(dedup_func_type)
-                    .results()
-                    .len() as u32
+                    .resolve_func_type(dedup_func_type, |func_type| {
+                        func_type.results().len() as u32
+                    })
             }
         }
     }

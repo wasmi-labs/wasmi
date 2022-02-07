@@ -158,13 +158,15 @@ impl Engine {
     ///
     /// - If the deduplicated function type is not owned by the engine.
     /// - If the deduplicated function type cannot be resolved to its entity.
-    pub(super) fn resolve_func_type(&self, func_type: DedupFuncType) -> FuncType {
+    pub(super) fn resolve_func_type<F, R>(&self, func_type: DedupFuncType, f: F) -> R
+    where
+        F: FnOnce(&FuncType) -> R,
+    {
         // Note: The clone operation on FuncType is intentionally cheap.
-        self.inner
+        f(self.inner
             .lock()
             .func_types
-            .resolve_func_type(func_type)
-            .clone()
+            .resolve_func_type(func_type))
     }
 
     /// Allocates the instructions of a Wasm function body to the [`Engine`].

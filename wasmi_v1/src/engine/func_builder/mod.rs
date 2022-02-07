@@ -88,7 +88,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Returns the [`FuncType`] of the function that is currently translated.
     fn func_type(&self) -> FuncType {
         let dedup_func_type = self.res.get_type_of_func(self.func);
-        self.engine.resolve_func_type(dedup_func_type)
+        self.engine.resolve_func_type(dedup_func_type, Clone::clone)
     }
 
     /// Registers the `block` control frame surrounding the entire function body.
@@ -113,7 +113,9 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         locals: &mut LocalsRegistry,
     ) -> usize {
         let dedup_func_type = res.get_type_of_func(func);
-        let func_type = res.engine().resolve_func_type(dedup_func_type);
+        let func_type = res
+            .engine()
+            .resolve_func_type(dedup_func_type, Clone::clone);
         let params = func_type.params();
         for param_type in params {
             value_stack.push(*param_type);
@@ -248,9 +250,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         let dedup_func_type = self.res.get_type_of_func(self.func);
         let len_params = self
             .engine
-            .resolve_func_type(dedup_func_type)
-            .params()
-            .len() as u32;
+            .resolve_func_type(dedup_func_type, |func_type| func_type.params().len() as u32);
         stack_height
             .checked_add(len_params)
             .and_then(|x| x.checked_add(len_locals))

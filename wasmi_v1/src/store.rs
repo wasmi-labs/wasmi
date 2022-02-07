@@ -209,7 +209,7 @@ impl<T> Store<T> {
     /// - If the deduplicated function type does not originate from this store.
     /// - If the deduplicated function type cannot be resolved to its entity.
     pub(super) fn resolve_func_type(&self, func_type: DedupFuncType) -> FuncType {
-        self.engine.resolve_func_type(func_type)
+        self.engine.resolve_func_type(func_type, Clone::clone)
     }
 
     /// Returns a shared reference to the associated entity of the global variable.
