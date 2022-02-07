@@ -148,7 +148,7 @@ impl Engine {
     }
 
     /// Allocates a new function type to the engine.
-    pub(super) fn alloc_func_type(&mut self, func_type: FuncType) -> DedupFuncType {
+    pub(super) fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
         self.inner.lock().func_types.alloc_func_type(func_type)
     }
 

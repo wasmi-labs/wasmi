@@ -35,14 +35,21 @@ pub use self::{
     instantiate::{InstancePre, InstantiationError},
     read::Read,
 };
-use crate::{engine::FuncBody, Engine, FuncType, GlobalType, MemoryType, TableType};
+use crate::{
+    engine::{DedupFuncType, FuncBody},
+    Engine,
+    FuncType,
+    GlobalType,
+    MemoryType,
+    TableType,
+};
 use core::{iter, slice::Iter as SliceIter};
 
 /// A parsed and validated WebAssembly module.
 #[derive(Debug)]
 pub struct Module {
     engine: Engine,
-    func_types: Box<[FuncType]>,
+    func_types: Box<[DedupFuncType]>,
     imports: ModuleImports,
     funcs: Box<[FuncTypeIdx]>,
     tables: Box<[TableType]>,
@@ -147,7 +154,7 @@ impl Module {
     }
 
     /// Returns a slice over the [`FuncType`] of the [`Module`].
-    fn func_types(&self) -> &[FuncType] {
+    fn func_types(&self) -> &[DedupFuncType] {
         &self.func_types[..]
     }
 
@@ -202,7 +209,7 @@ pub struct ModuleImportsIter<'a> {
     tables: SliceIter<'a, TableType>,
     memories: SliceIter<'a, MemoryType>,
     globals: SliceIter<'a, GlobalType>,
-    func_types: &'a [FuncType],
+    func_types: &'a [DedupFuncType],
 }
 
 impl<'a> Iterator for ModuleImportsIter<'a> {
@@ -301,7 +308,7 @@ pub enum ModuleImportType {
     /// An imported [`Func`].
     ///
     /// [`Func`]: [`crate::Func`]
-    Func(FuncType),
+    Func(DedupFuncType),
     /// An imported [`Table`].
     ///
     /// [`Table`]: [`crate::Table`]
@@ -314,8 +321,8 @@ pub enum ModuleImportType {
     Global(GlobalType),
 }
 
-impl From<FuncType> for ModuleImportType {
-    fn from(func_type: FuncType) -> Self {
+impl From<DedupFuncType> for ModuleImportType {
+    fn from(func_type: DedupFuncType) -> Self {
         Self::Func(func_type)
     }
 }
@@ -342,11 +349,11 @@ impl From<GlobalType> for ModuleImportType {
 #[derive(Debug)]
 pub struct InternalFuncsIter<'a> {
     iter: iter::Zip<SliceIter<'a, FuncTypeIdx>, SliceIter<'a, FuncBody>>,
-    func_types: &'a [FuncType],
+    func_types: &'a [DedupFuncType],
 }
 
 impl<'a> Iterator for InternalFuncsIter<'a> {
-    type Item = (FuncType, FuncBody);
+    type Item = (DedupFuncType, FuncBody);
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter.size_hint()

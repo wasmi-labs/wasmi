@@ -78,15 +78,11 @@ impl Module {
     /// [`Store`]: struct.Store.html
     fn extract_func_types(
         &self,
-        context: &mut impl AsContextMut,
+        _context: &mut impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) {
         for func_type in self.func_types() {
-            let dedup = context
-                .as_context_mut()
-                .store
-                .alloc_func_type(func_type.clone());
-            builder.push_func_type(dedup);
+            builder.push_func_type(*func_type);
         }
     }
 
@@ -128,20 +124,16 @@ impl Module {
                 }
             };
             match (import.item_type(), external) {
-                (ModuleImportType::Func(func_type), Extern::Func(func)) => {
-                    let expected_signature = context
-                        .as_context_mut()
-                        .store
-                        .alloc_func_type(func_type.clone());
+                (ModuleImportType::Func(expected_signature), Extern::Func(func)) => {
                     let actual_signature = func.signature(context.as_context());
                     // Note: We can compare function signatures without resolving them because
                     //       we deduplicate them before registering. Therefore two equal instances of
                     //       [`SignatureEntity`] will be associated to the same [`Signature`].
-                    if expected_signature != actual_signature {
+                    if &actual_signature != expected_signature {
                         // Note: In case of error we could resolve the signatures for better error readability.
                         return Err(InstantiationError::SignatureMismatch {
                             actual: actual_signature,
-                            expected: expected_signature,
+                            expected: *expected_signature,
                         });
                     }
                     builder.push_func(func);
@@ -188,10 +180,6 @@ impl Module {
         handle: Instance,
     ) {
         for (func_type, func_body) in self.internal_funcs() {
-            let func_type = context
-                .as_context_mut()
-                .store
-                .alloc_func_type(func_type.clone());
             let func = context
                 .as_context_mut()
                 .store

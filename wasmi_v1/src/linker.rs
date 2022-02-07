@@ -566,12 +566,18 @@ impl<T> Linker<T> {
                         .resolve(module_name, field_name)
                         .and_then(Extern::into_func)
                         .ok_or_else(|| LinkerError::cannot_find_definition_of_import(&import))?;
-                    let actual_func_type = func.func_type(context.as_context());
+                    let actual_func_type = func.signature(&context);
                     if &actual_func_type != expected_func_type {
                         return Err(LinkerError::FuncTypeMismatch {
                             name: import.name().clone(),
-                            expected: expected_func_type.clone(),
-                            actual: actual_func_type,
+                            expected: context
+                                .as_context()
+                                .store
+                                .resolve_func_type(*expected_func_type),
+                            actual: context
+                                .as_context()
+                                .store
+                                .resolve_func_type(actual_func_type),
                         })
                         .map_err(Into::into);
                     }

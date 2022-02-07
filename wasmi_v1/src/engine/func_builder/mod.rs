@@ -85,6 +85,12 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         }
     }
 
+    /// Returns the [`FuncType`] of the function that is currently translated.
+    fn func_type(&self) -> FuncType {
+        let dedup_func_type = self.res.get_type_of_func(self.func);
+        self.engine.resolve_func_type(dedup_func_type)
+    }
+
     /// Registers the `block` control frame surrounding the entire function body.
     fn register_func_body_block(
         func: FuncIdx,
@@ -106,7 +112,9 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         value_stack: &mut ValueStack,
         locals: &mut LocalsRegistry,
     ) -> usize {
-        let params = res.get_type_of_func(func).params();
+        let dedup_func_type = res.get_type_of_func(func);
+        let func_type = res.engine().resolve_func_type(dedup_func_type);
+        let params = func_type.params();
         for param_type in params {
             value_stack.push(*param_type);
             locals.register_locals(*param_type, 1);
@@ -175,9 +183,9 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         // Find out how many values we need to keep (copy to the new stack location after the drop).
         let keep = match frame.kind() {
             ControlFrameKind::Block | ControlFrameKind::If => {
-                frame.block_type().results(self.res).len() as u32
+                frame.block_type().len_results(self.res)
             }
-            ControlFrameKind::Loop => frame.block_type().params(self.res).len() as u32,
+            ControlFrameKind::Loop => frame.block_type().len_params(self.res),
         };
         // Find out how many values we need to drop.
         let drop = if !self.is_reachable() {
@@ -221,7 +229,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             .expect("control flow frame stack must not be empty") as u32;
         let drop_keep = self.compute_drop_keep(max_depth);
         let len_locals = self.locals.len_registered() as usize;
-        let len_params = self.res.get_type_of_func(self.func).params().len();
+        let len_params = self.func_type().params().len();
         DropKeep::new(
             // Drop all local variables and parameters upon exit.
             drop_keep.drop() + len_locals + len_params,
@@ -237,7 +245,12 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     fn relative_local_depth(&self, local_idx: u32) -> u32 {
         let stack_height = self.value_stack.len();
         let len_locals = self.locals.len_registered();
-        let len_params = self.res.get_type_of_func(self.func).params().len() as u32;
+        let dedup_func_type = self.res.get_type_of_func(self.func);
+        let len_params = self
+            .engine
+            .resolve_func_type(dedup_func_type)
+            .params()
+            .len() as u32;
         stack_height
             .checked_add(len_params)
             .and_then(|x| x.checked_add(len_locals))
@@ -500,8 +513,8 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Translates a Wasm `call` instruction.
     pub fn translate_call(&mut self, func_idx: FuncIdx) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
-            let func_type = builder.res.get_type_of_func(func_idx);
-            builder.adjust_value_stack_for_call(func_type);
+            let func_type = builder.func_type();
+            builder.adjust_value_stack_for_call(&func_type);
             let func_idx = func_idx.into_u32().into();
             builder.inst_builder.push_inst(Instruction::Call(func_idx));
             Ok(())
@@ -520,8 +533,8 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             assert_eq!(table_idx.into_u32(), DEFAULT_TABLE_INDEX);
             let func_type = builder.value_stack.pop1();
             debug_assert_eq!(func_type, ValueType::I32);
-            let func_type = builder.res.get_func_type(func_type_idx);
-            builder.adjust_value_stack_for_call(func_type);
+            let func_type = builder.func_type();
+            builder.adjust_value_stack_for_call(&func_type);
             let func_type_idx = func_type_idx.into_u32().into();
             builder
                 .inst_builder

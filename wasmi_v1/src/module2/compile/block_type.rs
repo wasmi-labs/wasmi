@@ -58,46 +58,32 @@ impl BlockType {
         Self::from_inner(BlockTypeInner::FuncType(func_type))
     }
 
-    /// Returns the parameter types of the [`BlockType`].
-    pub fn params<'a>(&self, res: ModuleResources<'a>) -> &'a [ValueType] {
+    /// Returns the number of parameters of the [`BlockType`].
+    pub fn len_params(&self, res: ModuleResources) -> u32 {
         match &self.inner {
-            BlockTypeInner::Empty | BlockTypeInner::Returns(_) => &[],
-            BlockTypeInner::FuncType(func_type) => res.get_func_type(*func_type).params(),
+            BlockTypeInner::Empty | BlockTypeInner::Returns(_) => 0,
+            BlockTypeInner::FuncType(func_type) => {
+                let dedup_func_type = res.get_func_type(*func_type);
+                res.engine()
+                    .resolve_func_type(dedup_func_type)
+                    .params()
+                    .len() as u32
+            }
         }
     }
 
-    /// Returns the result types of the [`BlockType`].
-    pub fn results<'a, 'b, 'c>(&'a self, res: ModuleResources<'b>) -> &'c [ValueType]
-    where
-        'a: 'c,
-        'b: 'c,
-    {
+    /// Returns the number of results of the [`BlockType`].
+    pub fn len_results(&self, res: ModuleResources) -> u32 {
         match &self.inner {
-            BlockTypeInner::Empty => &[],
-            BlockTypeInner::Returns(return_type) => slice::from_ref(return_type),
-            BlockTypeInner::FuncType(func_type) => res.get_func_type(*func_type).results(),
-        }
-    }
-
-    /// Returns the parameter and result types of the [`BlockType`].
-    ///
-    /// # Note
-    ///
-    /// This can sometimes be superior than using [`BlockType::params`] and
-    /// [`BlockType::results`] separately due to lifetime constraints. Also it
-    /// should be insignificantly more efficient.
-    pub fn params_results<'a, 'b, 'c>(
-        &'a self,
-        res: ModuleResources<'b>,
-    ) -> (&'b [ValueType], &'c [ValueType])
-    where
-        'a: 'c,
-        'b: 'c,
-    {
-        match &self.inner {
-            BlockTypeInner::Empty => (&[], &[]),
-            BlockTypeInner::Returns(return_type) => (&[], slice::from_ref(return_type)),
-            BlockTypeInner::FuncType(func_type) => res.get_func_type(*func_type).params_results(),
+            BlockTypeInner::Empty => 0,
+            BlockTypeInner::Returns(_) => 1,
+            BlockTypeInner::FuncType(func_type) => {
+                let dedup_func_type = res.get_func_type(*func_type);
+                res.engine()
+                    .resolve_func_type(dedup_func_type)
+                    .results()
+                    .len() as u32
+            }
         }
     }
 }

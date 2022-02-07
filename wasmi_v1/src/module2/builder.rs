@@ -12,13 +12,21 @@ use super::{
     InitExpr,
     Module,
 };
-use crate::{engine::FuncBody, Engine, FuncType, GlobalType, MemoryType, ModuleError, TableType};
+use crate::{
+    engine::{DedupFuncType, FuncBody},
+    Engine,
+    FuncType,
+    GlobalType,
+    MemoryType,
+    ModuleError,
+    TableType,
+};
 
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug)]
 pub struct ModuleBuilder<'engine> {
     pub(super) engine: &'engine Engine,
-    pub(super) func_types: Vec<FuncType>,
+    pub(super) func_types: Vec<DedupFuncType>,
     pub(super) imports: ModuleImports,
     pub(super) funcs: Vec<FuncTypeIdx>,
     pub(super) tables: Vec<TableType>,
@@ -48,14 +56,19 @@ pub struct ModuleResources<'a> {
 }
 
 impl<'a> ModuleResources<'a> {
+    /// Returns the [`Engine`] of the [`ModuleResources`].
+    pub fn engine(&'a self) -> &'a Engine {
+        self.res.engine
+    }
+
     /// Creates new [`ModuleResources`] from the given [`ModuleBuilder`].
     pub fn new(res: &'a ModuleBuilder) -> Self {
         Self { res }
     }
 
     /// Returns the [`FuncType`] at the given index.
-    pub fn get_func_type(&self, func_type_idx: FuncTypeIdx) -> &'a FuncType {
-        &self.res.func_types[func_type_idx.into_usize()]
+    pub fn get_func_type(&self, func_type_idx: FuncTypeIdx) -> DedupFuncType {
+        self.res.func_types[func_type_idx.into_usize()]
     }
 
     /// Returns the [`FuncTypeIdx`] of the indexed function.
@@ -64,7 +77,7 @@ impl<'a> ModuleResources<'a> {
     }
 
     /// Returns the [`FuncType`] of the indexed function.
-    pub fn get_type_of_func(&self, func_idx: FuncIdx) -> &'a FuncType {
+    pub fn get_type_of_func(&self, func_idx: FuncIdx) -> DedupFuncType {
         self.get_func_type(self.res.funcs[func_idx.into_usize()])
     }
 
@@ -117,7 +130,12 @@ impl<'engine> ModuleBuilder<'engine> {
             self.func_types.is_empty(),
             "tried to initialize module function types twice"
         );
-        self.func_types = imports.into_iter().collect::<Result<Vec<_>, _>>()?;
+        self.func_types = imports
+            .into_iter()
+            .collect::<Result<Vec<_>, _>>()?
+            .into_iter()
+            .map(|func_type| self.engine.alloc_func_type(func_type))
+            .collect::<Vec<_>>();
         Ok(())
     }
 
