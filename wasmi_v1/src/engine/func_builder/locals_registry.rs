@@ -113,7 +113,7 @@ impl LocalsRegistry {
                 }) {
                     Ok(found_index) => {
                         let value_type = self.groups[found_index].value_type();
-                        self.used.insert(local_index, value_type);
+                        vacant.insert(value_type);
                         Some(value_type)
                     }
                     Err(_) => unreachable!(
