@@ -273,6 +273,11 @@ impl<'a> ModuleImport<'a> {
         }
     }
 
+    /// Returns the import name.
+    pub fn name(&self) -> &ImportName {
+        &self.name
+    }
+
     /// Returns the module import name.
     pub fn module(&self) -> &str {
         self.name.module()
