@@ -125,12 +125,13 @@ impl<'engine> ModuleBuilder<'engine> {
             self.func_types.is_empty(),
             "tried to initialize module function types twice"
         );
-        self.func_types = imports
-            .into_iter()
-            .collect::<Result<Vec<_>, _>>()?
-            .into_iter()
-            .map(|func_type| self.engine.alloc_func_type(func_type))
-            .collect::<Vec<_>>();
+        let imports = imports.into_iter();
+        self.func_types.reserve_exact(imports.len());
+        for func_type in imports {
+            let func_type = func_type?;
+            let dedup = self.engine.alloc_func_type(func_type);
+            self.func_types.push(dedup)
+        }
         Ok(())
     }
 
@@ -193,14 +194,13 @@ impl<'engine> ModuleBuilder<'engine> {
             self.imports.funcs.len(),
             "tried to initialize module function declarations twice"
         );
-        self.funcs.extend(
-            funcs
-                .into_iter()
-                .collect::<Result<Vec<_>, _>>()?
-                .into_iter()
-                .map(|func_type_idx| self.func_types[func_type_idx.into_usize()])
-                .collect::<Vec<_>>(),
-        );
+        let funcs = funcs.into_iter();
+        self.funcs.reserve_exact(funcs.len());
+        for func in funcs {
+            let func_type_idx = func?;
+            let func = self.func_types[func_type_idx.into_usize()];
+            self.funcs.push(func);
+        }
         Ok(())
     }
 
@@ -223,8 +223,12 @@ impl<'engine> ModuleBuilder<'engine> {
             self.imports.tables.len(),
             "tried to initialize module table declarations twice"
         );
-        self.tables
-            .extend(tables.into_iter().collect::<Result<Vec<_>, _>>()?);
+        let tables = tables.into_iter();
+        self.tables.reserve_exact(tables.len());
+        for table in tables {
+            let table = table?;
+            self.tables.push(table);
+        }
         Ok(())
     }
 
@@ -247,8 +251,12 @@ impl<'engine> ModuleBuilder<'engine> {
             self.imports.memories.len(),
             "tried to initialize module linear memory declarations twice"
         );
-        self.memories
-            .extend(memories.into_iter().collect::<Result<Vec<_>, _>>()?);
+        let memories = memories.into_iter();
+        self.memories.reserve_exact(memories.len());
+        for memory in memories {
+            let memory = memory?;
+            self.memories.push(memory);
+        }
         Ok(())
     }
 
@@ -271,14 +279,16 @@ impl<'engine> ModuleBuilder<'engine> {
             self.imports.globals.len(),
             "tried to initialize module global variable declarations twice"
         );
-        let (global_decls, global_inits): (Vec<_>, Vec<_>) = globals
-            .into_iter()
-            .collect::<Result<Vec<_>, _>>()?
-            .into_iter()
-            .map(Global::into_type_and_init)
-            .unzip();
-        self.globals.extend(global_decls);
-        self.globals_init.extend(global_inits);
+        let globals = globals.into_iter();
+        let len_globals = globals.len();
+        self.globals.reserve_exact(len_globals);
+        self.globals_init.reserve_exact(len_globals);
+        for global in globals {
+            let global = global?;
+            let (global_decl, global_init) = global.into_type_and_init();
+            self.globals.push(global_decl);
+            self.globals_init.push(global_init);
+        }
         Ok(())
     }
 
