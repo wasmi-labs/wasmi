@@ -20,7 +20,7 @@ use self::{
     element::ElementSegment,
     export::Export,
     global::Global,
-    import::{Import, ImportKind, ImportName},
+    import::{Import, ImportKind},
     init_expr::{InitExpr, InitExprOperand},
     parser::parse,
     read::ReadError,
@@ -31,7 +31,7 @@ pub use self::{
     error::ModuleError,
     export::{FuncIdx, MemoryIdx, TableIdx},
     global::GlobalIdx,
-    import::FuncTypeIdx,
+    import::{FuncTypeIdx, ImportName},
     instantiate::{InstancePre, InstantiationError},
     read::Read,
 };
@@ -152,7 +152,7 @@ impl Module {
     }
 
     /// Returns an iterator over the imports of the [`Module`].
-    fn imports(&self) -> ModuleImportsIter {
+    pub(crate) fn imports(&self) -> ModuleImportsIter {
         ModuleImportsIter {
             names: self.imports.items.iter(),
             funcs: self.funcs.iter(),

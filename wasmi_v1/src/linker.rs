@@ -4,14 +4,20 @@ use super::{
     Error,
     Extern,
     InstancePre,
+    InstancePre2,
     MemoryType,
     Module,
     TableType,
 };
-use crate::{core::ValueType, FuncType};
+use crate::{
+    core::ValueType,
+    module2::{ImportName, ModuleImport, ModuleImportType},
+    FuncType,
+    GlobalType,
+    Module2,
+};
 use alloc::{
     collections::{btree_map::Entry, BTreeMap},
-    string::{String, ToString},
     sync::Arc,
     vec::Vec,
 };
@@ -30,7 +36,7 @@ pub enum LinkerError {
     /// Encountered duplicate definitions for the same name.
     DuplicateDefinition {
         /// The duplicate import name of the definition.
-        import_name: String,
+        import_name: ImportName,
         /// The duplicated imported item.
         ///
         /// This refers to the second inserted item.
@@ -41,12 +47,32 @@ pub enum LinkerError {
         /// The module import that had no definition in the linker.
         import: pwasm::ImportEntry,
     },
+    /// Encountered when no definition for an import is found.
+    CannotFindDefinitionForImport2 {
+        /// The name of the import for which no definition was found.
+        name: ImportName,
+        // /// The module name of the import for which no definition has been found.
+        // module_name: String,
+        // /// The field name of the import for which no definition has been found.
+        // field_name: Option<String>,
+        /// The type of the import for which no definition has been found.
+        item_type: ModuleImportType,
+    },
     /// Encountered when a function signature does not match the expected signature.
     SignatureMismatch {
         /// The function import that had a mismatching signature.
         import: pwasm::ImportEntry,
         /// The expected function type.
         expected: pwasm::FunctionType,
+        /// The actual function signature found.
+        actual: FuncType,
+    },
+    /// Encountered when a function signature does not match the expected signature.
+    FuncTypeMismatch {
+        /// The name of the import with the mismatched type.
+        name: ImportName,
+        /// The expected function type.
+        expected: FuncType,
         /// The actual function signature found.
         actual: FuncType,
     },
@@ -67,6 +93,25 @@ pub enum LinkerError {
         /// The actual global variable mutability.
         actual_mutability: bool,
     },
+    /// Encountered when an imported global variable has a mismatching global variable type.
+    GlobalTypeMismatch2 {
+        /// The name of the import with the mismatched type.
+        name: ImportName,
+        /// The expected global variable type.
+        expected: GlobalType,
+        /// The actual global variable type found.
+        actual: GlobalType,
+    },
+}
+
+impl LinkerError {
+    /// Creates a new [`LinkerError`] for when an imported definition was not found.
+    pub fn cannot_find_definition_of_import(import: &ModuleImport) -> Self {
+        Self::CannotFindDefinitionForImport2 {
+            name: import.name().clone(),
+            item_type: import.item_type().clone(),
+        }
+    }
 }
 
 impl From<TableError> for LinkerError {
@@ -106,6 +151,13 @@ impl Display for LinkerError {
                     module_name, field_name, import
                 )
             }
+            Self::CannotFindDefinitionForImport2 { name, item_type } => {
+                write!(
+                    f,
+                    "cannot find definition for import {}: {:?}",
+                    name, item_type
+                )
+            }
             Self::SignatureMismatch {
                 import,
                 expected,
@@ -117,6 +169,17 @@ impl Display for LinkerError {
                     f,
                     "expected {:?} function type for import {:?} at {}::{} but found {:?}",
                     expected, import, module_name, field_name, actual
+                )
+            }
+            Self::FuncTypeMismatch {
+                name,
+                expected,
+                actual,
+            } => {
+                write!(
+                    f,
+                    "function type mismatch for import {}: expected {:?} but found {:?}",
+                    name, expected, actual
                 )
             }
             Self::GlobalTypeMismatch {
@@ -146,6 +209,17 @@ impl Display for LinkerError {
                     field_name,
                     actual_mutability,
                     actual_value_type
+                )
+            }
+            Self::GlobalTypeMismatch2 {
+                name,
+                expected,
+                actual,
+            } => {
+                write!(
+                    f,
+                    "global variable type mismatch for import {}: expected {:?} but found {:?}",
+                    name, expected, actual
                 )
             }
             Self::Table(error) => Display::fmt(error, f),
@@ -328,13 +402,10 @@ impl<T> Linker<T> {
     fn insert(&mut self, key: ImportKey, item: Extern) -> Result<(), LinkerError> {
         match self.definitions.entry(key) {
             Entry::Occupied(_) => {
-                let (module_name, item_name) = self.resolve_import_key(key).unwrap_or_else(|| {
+                let (module_name, field_name) = self.resolve_import_key(key).unwrap_or_else(|| {
                     panic!("encountered missing import names for key {:?}", key)
                 });
-                let import_name = match item_name {
-                    Some(item_name) => format!("{}::{}", module_name, item_name),
-                    None => module_name.to_string(),
-                };
+                let import_name = ImportName::new(module_name, field_name);
                 return Err(LinkerError::DuplicateDefinition {
                     import_name,
                     import_item: item,
@@ -475,5 +546,74 @@ impl<T> Linker<T> {
             self.externals.push(external);
         }
         wasmi_module.instantiate(context, self.externals.drain(..))
+    }
+
+    /// Instantiates the given [`Module`] using the definitions in the [`Linker`].
+    pub fn instantiate_2<'a>(
+        &mut self,
+        context: impl AsContextMut,
+        module: &'a Module2,
+    ) -> Result<InstancePre2<'a>, Error> {
+        // Clear the cached externals buffer.
+        self.externals.clear();
+
+        for import in module.imports() {
+            let module_name = import.module();
+            let field_name = import.field();
+            let external = match import.item_type() {
+                ModuleImportType::Func(expected_func_type) => {
+                    let func = self
+                        .resolve(module_name, field_name)
+                        .and_then(Extern::into_func)
+                        .ok_or_else(|| LinkerError::cannot_find_definition_of_import(&import))?;
+                    let actual_func_type = func.func_type(context.as_context());
+                    if &actual_func_type != expected_func_type {
+                        return Err(LinkerError::FuncTypeMismatch {
+                            name: import.name().clone(),
+                            expected: expected_func_type.clone(),
+                            actual: actual_func_type,
+                        })
+                        .map_err(Into::into);
+                    }
+                    Extern::Func(func)
+                }
+                ModuleImportType::Table(expected_table_type) => {
+                    let table = self
+                        .resolve(module_name, field_name)
+                        .and_then(Extern::into_table)
+                        .ok_or_else(|| LinkerError::cannot_find_definition_of_import(&import))?;
+                    let actual_table_type = table.table_type(context.as_context());
+                    actual_table_type.satisfies(expected_table_type)?;
+                    Extern::Table(table)
+                }
+                ModuleImportType::Memory(expected_memory_type) => {
+                    let memory = self
+                        .resolve(module_name, field_name)
+                        .and_then(Extern::into_memory)
+                        .ok_or_else(|| LinkerError::cannot_find_definition_of_import(&import))?;
+                    let actual_memory_type = memory.memory_type(context.as_context());
+                    actual_memory_type.satisfies(expected_memory_type)?;
+                    Extern::Memory(memory)
+                }
+                ModuleImportType::Global(expected_global_type) => {
+                    let global = self
+                        .resolve(module_name, field_name)
+                        .and_then(Extern::into_global)
+                        .ok_or_else(|| LinkerError::cannot_find_definition_of_import(&import))?;
+                    let actual_global_type = global.global_type(context.as_context());
+                    if &actual_global_type != expected_global_type {
+                        return Err(LinkerError::GlobalTypeMismatch2 {
+                            name: import.name().clone(),
+                            expected: expected_global_type.clone(),
+                            actual: actual_global_type,
+                        })
+                        .map_err(Into::into);
+                    }
+                    Extern::Global(global)
+                }
+            };
+            self.externals.push(external);
+        }
+        module.instantiate(context, self.externals.drain(..))
     }
 }
