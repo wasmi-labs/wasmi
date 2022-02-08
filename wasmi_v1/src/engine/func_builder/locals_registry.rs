@@ -30,12 +30,12 @@ pub struct LocalsRegistry {
 /// A group of local values as encoded in the Wasm binary.
 #[derive(Debug, Copy, Clone)]
 pub struct LocalGroup {
-    /// The shared [`ValueType`] of the local variables in the group.
-    value_type: ValueType,
     /// The (included) minimum local index of the local variable group.
     min_index: u32,
     /// The (excluded) maximum local index of the local variable group.
     max_index: u32,
+    /// The shared [`ValueType`] of the local variables in the group.
+    value_type: ValueType,
 }
 
 impl LocalGroup {
