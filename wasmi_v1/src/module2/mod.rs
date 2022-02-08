@@ -14,6 +14,9 @@ mod parser;
 mod read;
 mod utils;
 
+#[cfg(test)]
+mod tests;
+
 use self::{
     builder::ModuleBuilder,
     data::DataSegment,
