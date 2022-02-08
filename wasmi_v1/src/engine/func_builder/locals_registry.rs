@@ -74,10 +74,16 @@ impl LocalsRegistry {
     /// Registers the `amount` of locals with their shared [`ValueType`].
     pub fn register_locals(&mut self, value_type: ValueType, amount: u32) {
         let min_index = self.max_index;
-        let max_index = self.max_index + amount;
+        let max_index = self.max_index.checked_add(amount).unwrap_or_else(|| {
+            panic!(
+                "encountered local variable index overflow \
+                 upon registering {} locals of type {:?}",
+                amount, value_type
+            )
+        });
         self.groups
             .push(LocalGroup::new(value_type, min_index, max_index));
-        self.max_index += amount;
+        self.max_index = max_index;
     }
 
     /// Resolves the local variable at the given index.
