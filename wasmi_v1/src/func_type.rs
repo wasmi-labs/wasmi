@@ -1,5 +1,6 @@
 use crate::core::ValueType;
 use alloc::{sync::Arc, vec::Vec};
+use core::fmt::{self, Display};
 
 /// A function type representing a function's parameter and result types.
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
@@ -16,6 +17,34 @@ pub struct FuncType {
     /// The `len_params` field denotes how many parameters there are in
     /// the head of the vector before the results.
     params_results: Arc<[ValueType]>,
+}
+
+impl Display for FuncType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "fn(")?;
+        let (params, results) = self.params_results();
+        if let Some((first, rest)) = params.split_first() {
+            write!(f, "{}", first)?;
+            for param in rest {
+                write!(f, ", {}", param)?;
+            }
+        }
+        write!(f, ")")?;
+        if let Some((first, rest)) = results.split_first() {
+            write!(f, " -> ")?;
+            if !rest.is_empty() {
+                write!(f, "(")?;
+            }
+            write!(f, "{}", first)?;
+            for result in rest {
+                write!(f, ", {}", result)?;
+            }
+            if !rest.is_empty() {
+                write!(f, ")")?;
+            }
+        }
+        Ok(())
+    }
 }
 
 impl FuncType {
@@ -51,5 +80,78 @@ impl FuncType {
     /// Returns the pair of parameter and result types of the function type.
     pub(crate) fn params_results(&self) -> (&[ValueType], &[ValueType]) {
         self.params_results.split_at(self.len_params)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display_0in_0out() {
+        let func_type = FuncType::new([], []);
+        assert_eq!(format!("{}", func_type), String::from("fn()"),);
+    }
+
+    #[test]
+    fn display_1in_1out() {
+        let func_type = FuncType::new([ValueType::I32], [ValueType::I32]);
+        assert_eq!(format!("{}", func_type), String::from("fn(i32) -> i32"),);
+    }
+
+    #[test]
+    fn display_4in_0out() {
+        let func_type = FuncType::new(
+            [
+                ValueType::I32,
+                ValueType::I64,
+                ValueType::F32,
+                ValueType::F64,
+            ],
+            [],
+        );
+        assert_eq!(
+            format!("{}", func_type),
+            String::from("fn(i32, i64, f32, f64)"),
+        );
+    }
+
+    #[test]
+    fn display_0in_4out() {
+        let func_type = FuncType::new(
+            [],
+            [
+                ValueType::I32,
+                ValueType::I64,
+                ValueType::F32,
+                ValueType::F64,
+            ],
+        );
+        assert_eq!(
+            format!("{}", func_type),
+            String::from("fn() -> (i32, i64, f32, f64)"),
+        );
+    }
+
+    #[test]
+    fn display_4in_4out() {
+        let func_type = FuncType::new(
+            [
+                ValueType::I32,
+                ValueType::I64,
+                ValueType::F32,
+                ValueType::F64,
+            ],
+            [
+                ValueType::I32,
+                ValueType::I64,
+                ValueType::F32,
+                ValueType::F64,
+            ],
+        );
+        assert_eq!(
+            format!("{}", func_type),
+            String::from("fn(i32, i64, f32, f64) -> (i32, i64, f32, f64)"),
+        );
     }
 }
