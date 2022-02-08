@@ -13,47 +13,6 @@ use crate::core::{Value, ValueType};
 use alloc::vec::Vec;
 use core::{fmt, fmt::Display, mem};
 
-// /// A reference to an instruction of the partially
-// /// constructed function body of the [`InstructionsBuilder`].
-// #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-// pub struct InstructionIdx(u32);
-
-// impl InstructionIdx {
-//     /// An invalid instruction index.
-//     ///
-//     /// # Note
-//     ///
-//     /// This can be used to represent temporarily invalid [`InstructionIdx`]
-//     /// without major performance implications for the bytecode itself, e.g.
-//     /// when representing invalid [`InstructionIdx`] by wrapping them in an
-//     /// `Option`.
-//     pub const INVALID: Self = Self(u32::MAX);
-
-//     /// Creates an [`InstructionIdx`] from the given `usize` value.
-//     ///
-//     /// # Note
-//     ///
-//     /// This intentionally is an API intended for test purposes only.
-//     ///
-//     /// # Panics
-//     ///
-//     /// If the `value` exceeds limitations for [`InstructionIdx`].
-//     pub fn from_usize(value: usize) -> Self {
-//         let value = value.try_into().unwrap_or_else(|error| {
-//             panic!(
-//                 "encountered invalid value of {} for `InstructionIdx`: {}",
-//                 value, error
-//             )
-//         });
-//         Self(value)
-//     }
-
-//     /// Returns the underlying `usize` value of the instruction index.
-//     pub fn into_usize(self) -> usize {
-//         self.0 as usize
-//     }
-// }
-
 /// A resolved or unresolved label.
 #[derive(Debug, PartialEq, Eq)]
 enum Label {
@@ -75,22 +34,6 @@ impl Default for Label {
         Self::Unresolved { uses: Vec::new() }
     }
 }
-
-// /// A unique label identifier.
-// #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-// pub struct LabelIdx(usize);
-
-// /// A relocation entry that specifies.
-// #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-// pub enum Reloc {
-//     /// Patch the target of the `br`, `br_eqz` or `br_nez` instruction.
-//     Br { inst_idx: InstructionIdx },
-//     /// Patch the specified target index inside of a Wasm `br_table` instruction.
-//     BrTable {
-//         inst_idx: InstructionIdx,
-//         target_idx: usize,
-//     },
-// }
 
 /// An instruction builder.
 ///
