@@ -6,6 +6,8 @@ use wasmi_core::ValueType;
 ///
 /// # Note
 ///
+/// Note that in WebAssembly function parameters are also local variables.
+///
 /// The locals registry efficiently registers and resolves local variables.
 /// The problem is that the Wasm specification allows to encode up to `u32::MAX`
 /// local variables in a small and constant space via the binary encoding.
@@ -67,6 +69,12 @@ impl LocalGroup {
 
 impl LocalsRegistry {
     /// Returns the number of registered local variables.
+    ///
+    /// # Note
+    ///
+    /// Since in WebAssembly function parameters are also local variables
+    /// this function actually returns the amount of function parameters
+    /// and explicitly defined local variables.
     pub fn len_registered(&self) -> u32 {
         self.max_index
     }
