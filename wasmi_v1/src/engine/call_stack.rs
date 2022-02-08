@@ -20,7 +20,7 @@ use alloc::vec::Vec;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 
 /// A function frame of a function in the call stack.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct FunctionFrame {
     /// Is `true` if the function frame has already been instantiated.
     ///
