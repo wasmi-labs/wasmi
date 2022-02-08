@@ -556,6 +556,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     pub fn translate_drop(&mut self) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
             builder.value_stack.pop1();
+            builder.inst_builder.push_inst(Instruction::Drop);
             Ok(())
         })
     }
