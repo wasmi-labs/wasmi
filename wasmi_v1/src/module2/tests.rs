@@ -85,3 +85,35 @@ fn implicit_return_no_value() {
     let expected = [Instruction::Return(DropKeep::new(0, 0))];
     assert_func_bodies(&wasm, [expected]);
 }
+
+#[test]
+fn implicit_return_with_value() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (result i32)
+                i32.const 0
+            )
+        )
+    "#,
+    );
+    let expected = [
+        Instruction::constant(0),
+        Instruction::Return(DropKeep::new(0, 1)),
+    ];
+    assert_func_bodies(&wasm, [expected]);
+}
+
+#[test]
+fn implicit_return_param() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (param i32)
+            )
+        )
+    "#,
+    );
+    let expected = [Instruction::Return(DropKeep::new(1, 0))];
+    assert_func_bodies(&wasm, [expected]);
+}
