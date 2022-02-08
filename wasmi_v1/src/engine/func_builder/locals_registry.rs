@@ -72,6 +72,10 @@ impl LocalsRegistry {
     }
 
     /// Registers the `amount` of locals with their shared [`ValueType`].
+    ///
+    /// # Panics
+    ///
+    /// If too many local variables have been registered.
     pub fn register_locals(&mut self, value_type: ValueType, amount: u32) {
         let min_index = self.max_index;
         let max_index = self.max_index.checked_add(amount).unwrap_or_else(|| {
@@ -120,6 +124,14 @@ impl LocalsRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    #[should_panic]
+    fn register_too_many() {
+        let mut registry = LocalsRegistry::default();
+        registry.register_locals(ValueType::I32, u32::MAX);
+        registry.register_locals(ValueType::I32, 1);
+    }
 
     #[test]
     fn empty_works() {
