@@ -279,8 +279,8 @@ fn drop_locals() {
         (module
             (func (export "call") (param i32)
                 (local i32)
-                get_local 0
-                set_local 1
+                local.get 0
+                local.set 1
             )
         )
     "#,
@@ -339,10 +339,10 @@ fn if_else() {
                 i32.const 1
                 if
                     i32.const 2
-                    set_local 0
+                    local.set 0
                 else
                     i32.const 3
-                    set_local 0
+                    local.set 0
                 end
             )
         )
