@@ -206,26 +206,22 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             ControlFrameKind::Loop => frame.block_type().len_params(self.engine),
         };
         // Find out how many values we need to drop.
-        let drop = if !self.is_reachable() {
-            0
-        } else {
-            let current_height = self.value_stack.len();
-            let origin_height = frame.stack_height();
-            assert!(
-                origin_height <= current_height,
-                "encountered value stack underflow: current height {}, original height {}",
-                current_height,
-                origin_height,
-            );
-            let height_diff = current_height - origin_height;
-            assert!(
-                keep <= height_diff,
-                "tried to keep {} values while having only {} values available on the frame",
-                keep,
-                current_height - origin_height,
-            );
-            height_diff - keep
-        };
+        let current_height = self.value_stack.len();
+        let origin_height = frame.stack_height();
+        assert!(
+            origin_height <= current_height,
+            "encountered value stack underflow: current height {}, original height {}",
+            current_height,
+            origin_height,
+        );
+        let height_diff = current_height - origin_height;
+        assert!(
+            keep <= height_diff,
+            "tried to keep {} values while having only {} values available on the frame",
+            keep,
+            height_diff,
+        );
+        let drop = height_diff - keep;
         DropKeep::new32(drop, keep)
     }
 
