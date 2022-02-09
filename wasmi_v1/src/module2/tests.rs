@@ -37,11 +37,23 @@ fn assert_func_body<E>(
     expected_instructions: E,
 ) where
     E: IntoIterator<Item = Instruction>,
+    <E as IntoIterator>::IntoIter: ExactSizeIterator,
 {
-    for (index, actual, expected) in expected_instructions
-        .into_iter()
-        .enumerate()
-        .map(|(index, expected)| (index, engine.resolve_inst(func_body, index), expected))
+    let expected_instructions = expected_instructions.into_iter();
+    let len_expected = expected_instructions.len();
+    for (index, actual, expected) in
+        expected_instructions
+            .into_iter()
+            .enumerate()
+            .map(|(index, expected)| {
+                (
+                    index,
+                    engine.resolve_inst(func_body, index).unwrap_or_else(|| {
+                        panic!("encountered missing instruction at position {}", index)
+                    }),
+                    expected,
+                )
+            })
     {
         assert_eq!(
             actual,
@@ -49,6 +61,12 @@ fn assert_func_body<E>(
             "encountered instruction mismatch for {} at position {}",
             engine.resolve_func_type(func_type, Clone::clone),
             index
+        );
+    }
+    if let Some(unexpected) = engine.resolve_inst(func_body, len_expected) {
+        panic!(
+            "encountered unexpected instruction at position {}: {:?}",
+            len_expected, unexpected,
         );
     }
 }
@@ -63,6 +81,7 @@ fn assert_func_bodies<E, T>(wasm_bytes: impl AsRef<[u8]>, expected: E)
 where
     E: IntoIterator<Item = T>,
     T: IntoIterator<Item = Instruction>,
+    <T as IntoIterator>::IntoIter: ExactSizeIterator,
 {
     let wasm_bytes = wasm_bytes.as_ref();
     let module = create_module(wasm_bytes);

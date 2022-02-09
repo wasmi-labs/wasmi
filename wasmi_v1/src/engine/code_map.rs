@@ -159,8 +159,8 @@ impl ResolvedFuncBody<'_> {
     ///
     /// If there is no instruction at the given index.
     #[cfg(test)]
-    pub fn get(&self, index: usize) -> &Instruction {
-        &self.insts[index]
+    pub fn get(&self, index: usize) -> Option<&Instruction> {
+        self.insts.get(index)
     }
 
     /// Returns the amount of local variable of the function.

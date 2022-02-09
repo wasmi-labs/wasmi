@@ -196,13 +196,13 @@ impl Engine {
     ///
     /// If the [`FuncBody`] is invalid for the [`Engine`].
     #[cfg(test)]
-    pub(crate) fn resolve_inst(&self, func_body: FuncBody, index: usize) -> Instruction {
+    pub(crate) fn resolve_inst(&self, func_body: FuncBody, index: usize) -> Option<Instruction> {
         self.inner
             .lock()
             .code_map
             .resolve(func_body)
             .get(index)
-            .clone()
+            .map(Clone::clone)
     }
 
     /// Executes the given [`Func`] using the given arguments `params` and stores the result into `results`.
