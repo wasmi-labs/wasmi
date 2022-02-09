@@ -592,6 +592,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Translate a Wasm `local.set` instruction.
     pub fn translate_local_set(&mut self, local_idx: u32) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
+            let actual = builder.value_stack.pop1();
             let local_depth = builder.relative_local_depth(local_idx);
             builder
                 .inst_builder
@@ -600,7 +601,6 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
                 .locals
                 .resolve_local(local_idx)
                 .unwrap_or_else(|| panic!("failed to resolve local {}", local_idx));
-            let actual = builder.value_stack.pop1();
             debug_assert_eq!(actual, expected);
             Ok(())
         })
