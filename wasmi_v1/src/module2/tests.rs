@@ -149,9 +149,7 @@ fn get_local() {
     "#,
     );
     let expected = [
-        Instruction::GetLocal {
-            local_depth: LocalIdx::from(1),
-        },
+        Instruction::local_get(1),
         Instruction::Return(DropKeep::new(1, 1)),
     ];
     assert_func_bodies(&wasm, [expected]);
@@ -171,12 +169,8 @@ fn get_local_2() {
     "#,
     );
     let expected = [
-        Instruction::GetLocal {
-            local_depth: LocalIdx::from(2),
-        },
-        Instruction::GetLocal {
-            local_depth: LocalIdx::from(2),
-        },
+        Instruction::local_get(2),
+        Instruction::local_get(2),
         Instruction::Drop,
         Instruction::Return(DropKeep::new(2, 1)),
     ];
@@ -198,12 +192,8 @@ fn get_local_3() {
     "#,
     );
     let expected = [
-        Instruction::GetLocal {
-            local_depth: LocalIdx::from(2),
-        },
-        Instruction::GetLocal {
-            local_depth: LocalIdx::from(2),
-        },
+        Instruction::local_get(2),
+        Instruction::local_get(2),
         Instruction::Drop,
         Instruction::Drop,
         Instruction::Return(DropKeep::new(2, 0)),
@@ -224,9 +214,7 @@ fn explicit_return() {
     "#,
     );
     let expected = [
-        Instruction::GetLocal {
-            local_depth: LocalIdx::from(1),
-        },
+        Instruction::local_get(1),
         Instruction::Return(DropKeep::new(1, 1)),
     ];
     assert_func_bodies(&wasm, [expected]);

@@ -576,10 +576,10 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Translate a Wasm `local.get` instruction.
     pub fn translate_local_get(&mut self, local_idx: u32) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
-            let local_depth = builder.relative_local_depth(local_idx).into();
+            let local_depth = builder.relative_local_depth(local_idx);
             builder
                 .inst_builder
-                .push_inst(Instruction::GetLocal { local_depth });
+                .push_inst(Instruction::local_get(local_depth));
             let value_type = builder
                 .locals
                 .resolve_local(local_idx)
@@ -592,10 +592,10 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Translate a Wasm `local.set` instruction.
     pub fn translate_local_set(&mut self, local_idx: u32) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
-            let local_depth = builder.relative_local_depth(local_idx).into();
+            let local_depth = builder.relative_local_depth(local_idx);
             builder
                 .inst_builder
-                .push_inst(Instruction::SetLocal { local_depth });
+                .push_inst(Instruction::local_set(local_depth));
             let expected = builder
                 .locals
                 .resolve_local(local_idx)
@@ -609,10 +609,10 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Translate a Wasm `local.tee` instruction.
     pub fn translate_local_tee(&mut self, local_idx: u32) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
-            let local_depth = builder.relative_local_depth(local_idx).into();
+            let local_depth = builder.relative_local_depth(local_idx);
             builder
                 .inst_builder
-                .push_inst(Instruction::TeeLocal { local_depth });
+                .push_inst(Instruction::local_tee(local_depth));
             let expected = builder
                 .locals
                 .resolve_local(local_idx)

@@ -242,4 +242,34 @@ impl Instruction {
     {
         Self::Const(value.into())
     }
+
+    /// Creates a new `local.get` instruction from the given local depth.
+    pub fn local_get<T>(local_depth: T) -> Self
+    where
+        T: Into<LocalIdx>,
+    {
+        Self::GetLocal {
+            local_depth: local_depth.into(),
+        }
+    }
+
+    /// Creates a new `local.set` instruction from the given local depth.
+    pub fn local_set<T>(local_depth: T) -> Self
+    where
+        T: Into<LocalIdx>,
+    {
+        Self::SetLocal {
+            local_depth: local_depth.into(),
+        }
+    }
+
+    /// Creates a new `local.tee` instruction from the given local depth.
+    pub fn local_tee<T>(local_depth: T) -> Self
+    where
+        T: Into<LocalIdx>,
+    {
+        Self::TeeLocal {
+            local_depth: local_depth.into(),
+        }
+    }
 }
