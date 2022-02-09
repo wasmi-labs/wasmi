@@ -210,3 +210,24 @@ fn get_local_3() {
     ];
     assert_func_bodies(&wasm, [expected]);
 }
+
+#[test]
+fn explicit_return() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (param i32) (result i32)
+                get_local 0
+                return
+            )
+        )
+    "#,
+    );
+    let expected = [
+        Instruction::GetLocal {
+            local_depth: LocalIdx::from(1),
+        },
+        Instruction::Return(DropKeep::new(1, 1)),
+    ];
+    assert_func_bodies(&wasm, [expected]);
+}
