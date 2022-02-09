@@ -246,7 +246,13 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             .len()
             .checked_sub(1)
             .expect("control flow frame stack must not be empty") as u32;
-        self.compute_drop_keep(max_depth)
+        let drop_keep = self.compute_drop_keep(max_depth);
+        let len_params_locals = self.locals.len_registered() as usize;
+        DropKeep::new(
+            // Drop all local variables and parameters upon exit.
+            drop_keep.drop() + len_params_locals,
+            drop_keep.keep(),
+        )
     }
 
     /// Returns the relative depth on the stack of the local variable.
