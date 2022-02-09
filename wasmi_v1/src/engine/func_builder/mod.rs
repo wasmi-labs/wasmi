@@ -418,8 +418,11 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             // frame was reachable upon entering to begin with.
             self.reachable = frame_reachable;
         }
-        self.control_frames.pop_frame();
         self.value_stack.shrink_to(frame_stack_height);
+        let frame = self.control_frames.pop_frame();
+        frame
+            .block_type()
+            .foreach_result(self.engine, |result| self.value_stack.push(result));
         Ok(())
     }
 
