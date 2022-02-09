@@ -257,6 +257,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     ///
     /// See stack layout definition in `isa.rs`.
     fn relative_local_depth(&self, local_idx: u32) -> u32 {
+        debug_assert!(self.is_reachable());
         let stack_height = self.value_stack.len();
         let len_locals = self.locals.len_registered();
         let dedup_func_type = self.res.get_type_of_func(self.func);
