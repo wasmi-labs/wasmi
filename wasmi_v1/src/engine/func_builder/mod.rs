@@ -259,14 +259,9 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     fn relative_local_depth(&self, local_idx: u32) -> u32 {
         debug_assert!(self.is_reachable());
         let stack_height = self.value_stack.len();
-        let len_locals = self.locals.len_registered();
-        let dedup_func_type = self.res.get_type_of_func(self.func);
-        let len_params = self
-            .engine
-            .resolve_func_type(dedup_func_type, |func_type| func_type.params().len() as u32);
+        let len_params_locals = self.locals.len_registered();
         stack_height
-            .checked_add(len_params)
-            .and_then(|x| x.checked_add(len_locals))
+            .checked_add(len_params_locals)
             .and_then(|x| x.checked_sub(local_idx))
             .unwrap_or_else(|| panic!("cannot convert local index into local depth: {}", local_idx))
     }
