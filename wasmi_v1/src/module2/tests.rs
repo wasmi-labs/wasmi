@@ -239,8 +239,5 @@ fn simple_add() {
         Instruction::I32Add,
         Instruction::Return(DropKeep::new(2, 1)),
     ];
-    assert_func_bodies(
-        &wasm,
-        [expected],
-    );
+    assert_func_bodies(&wasm, [expected]);
 }
