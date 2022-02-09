@@ -513,17 +513,17 @@ fn spec_as_br_if_value_cond() {
             (func (export "as-br_if-value-cond") (result i32)
                 (block (result i32)
                     (drop
-                    (br_if 0
-                        (i32.const 6)
-                        (br_table 0 0
-                            (i32.const 9)
-                            (i32.const 0)
+                        (br_if 0
+                            (i32.const 6)
+                            (br_table 0 0
+                                (i32.const 9)
+                                (i32.const 0)
+                            )
                         )
                     )
+                    (i32.const 7)
                 )
-                (i32.const 7)
             )
-        )
     "#,
     );
     let expected = [
@@ -531,12 +531,9 @@ fn spec_as_br_if_value_cond() {
         /* 1 */ Instruction::constant(9),
         /* 2 */ Instruction::constant(0),
         /* 3 */ Instruction::BrTable { len_targets: 2 },
-        /* 4 */ Instruction::BrTableTarget(target!(9, drop: 1, keep: 1)),
-        /* 5 */ Instruction::BrTableTarget(target!(9, drop: 1, keep: 1)),
-        /* 6 */ Instruction::BrTableTarget(target!(9, drop: 0, keep: 1)),
-        /* 7 */ Instruction::Drop,
-        /* 8 */ Instruction::constant(7),
-        /* 9 */ Instruction::Return(DropKeep::new(0, 1)),
+        /* 4 */ Instruction::BrTableTarget(target!(6, drop: 1, keep: 1)),
+        /* 5 */ Instruction::BrTableTarget(target!(6, drop: 1, keep: 1)),
+        /* 6 */ Instruction::Return(DropKeep::new(0, 1)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
