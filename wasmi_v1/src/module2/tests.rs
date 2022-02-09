@@ -143,7 +143,7 @@ fn get_local() {
         r#"
         (module
             (func (export "call") (param i32) (result i32)
-                get_local 0
+                local.get 0
             )
         )
     "#,
@@ -161,8 +161,8 @@ fn get_local_2() {
         r#"
         (module
             (func (export "call") (param i32) (param i32) (result i32)
-                get_local 0
-                get_local 1
+                local.get 0
+                local.get 1
                 drop
             )
         )
@@ -207,7 +207,7 @@ fn explicit_return() {
         r#"
         (module
             (func (export "call") (param i32) (result i32)
-                get_local 0
+                local.get 0
                 return
             )
         )
