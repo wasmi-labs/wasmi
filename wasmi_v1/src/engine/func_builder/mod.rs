@@ -196,6 +196,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     ///
     /// If underflow of the value stack is detected.
     fn compute_drop_keep(&self, depth: u32) -> DropKeep {
+        debug_assert!(self.is_reachable());
         let frame = self.control_frames.nth_back(depth);
         // Find out how many values we need to keep (copy to the new stack location after the drop).
         let keep = match frame.kind() {
@@ -235,6 +236,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// - If the control flow frame stack is empty.
     /// - If the value stack is underflown.
     fn drop_keep_return(&self) -> DropKeep {
+        debug_assert!(self.is_reachable());
         assert!(
             !self.control_frames.is_empty(),
             "drop_keep_return cannot be called with the frame stack empty"
@@ -273,6 +275,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// - If the `depth` is greater than the current height of the control frame stack.
     /// - If the value stack underflowed.
     fn acquire_target(&self, depth: u32) -> (LabelIdx, DropKeep) {
+        debug_assert!(self.is_reachable());
         let label = self.control_frames.nth_back(depth).branch_destination();
         let drop_keep = self.compute_drop_keep(depth);
         (label, drop_keep)
