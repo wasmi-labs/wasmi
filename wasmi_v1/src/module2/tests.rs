@@ -241,3 +241,33 @@ fn simple_add() {
     ];
     assert_func_bodies(&wasm, [expected]);
 }
+
+#[test]
+fn simple_mul_add() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (param i32) (param i32) (result i32)
+                local.get 0
+                local.get 1
+                local.get 0
+                local.get 1
+                i32.add
+                i32.add
+                i32.mul
+            )
+        )
+    "#,
+    );
+    let expected = [
+        Instruction::local_get(2),
+        Instruction::local_get(2),
+        Instruction::local_get(4),
+        Instruction::local_get(4),
+        Instruction::I32Add,
+        Instruction::I32Add,
+        Instruction::I32Mul,
+        Instruction::Return(DropKeep::new(2, 1)),
+    ];
+    assert_func_bodies(&wasm, [expected]);
+}
