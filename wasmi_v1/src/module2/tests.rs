@@ -117,3 +117,77 @@ fn implicit_return_param() {
     let expected = [Instruction::Return(DropKeep::new(1, 0))];
     assert_func_bodies(&wasm, [expected]);
 }
+
+#[test]
+fn get_local() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (param i32) (result i32)
+                get_local 0
+            )
+        )
+    "#,
+    );
+    let expected = [
+        Instruction::GetLocal {
+            local_depth: LocalIdx::from(1),
+        },
+        Instruction::Return(DropKeep::new(1, 1)),
+    ];
+    assert_func_bodies(&wasm, [expected]);
+}
+
+#[test]
+fn get_local_2() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (param i32) (param i32) (result i32)
+                get_local 0
+                get_local 1
+                drop
+            )
+        )
+    "#,
+    );
+    let expected = [
+        Instruction::GetLocal {
+            local_depth: LocalIdx::from(2),
+        },
+        Instruction::GetLocal {
+            local_depth: LocalIdx::from(2),
+        },
+        Instruction::Drop,
+        Instruction::Return(DropKeep::new(2, 1)),
+    ];
+    assert_func_bodies(&wasm, [expected]);
+}
+
+#[test]
+fn get_local_3() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (param i32) (param i32)
+                local.get 0
+                local.get 1
+                drop
+                drop
+            )
+        )
+    "#,
+    );
+    let expected = [
+        Instruction::GetLocal {
+            local_depth: LocalIdx::from(2),
+        },
+        Instruction::GetLocal {
+            local_depth: LocalIdx::from(2),
+        },
+        Instruction::Drop,
+        Instruction::Drop,
+        Instruction::Return(DropKeep::new(2, 0)),
+    ];
+    assert_func_bodies(&wasm, [expected]);
+}
