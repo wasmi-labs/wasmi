@@ -292,3 +292,45 @@ fn drop_locals() {
     ];
     assert_func_bodies(&wasm, [expected]);
 }
+
+macro_rules! target {
+    ( $inst_idx:expr, drop: $drop:expr, keep: $keep:expr ) => {
+        Target::new(
+            InstructionIdx::from_usize($inst_idx),
+            DropKeep::new($drop, $keep),
+        )
+    };
+}
+
+#[test]
+fn if_without_else() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (param i32) (result i32)
+                i32.const 1
+                if
+                    i32.const 2
+                    return
+                end
+                i32.const 3
+            )
+        )
+    "#,
+    );
+    let expected = [
+        // 0
+        Instruction::constant(1),
+        // 1
+        Instruction::BrIfEqz(target!(4, drop: 0, keep: 0)),
+        // 2
+        Instruction::constant(2),
+        // 3
+        Instruction::Return(DropKeep::new(1, 1)),
+        // 4
+        Instruction::constant(3),
+        // 5
+        Instruction::Return(DropKeep::new(1, 1)),
+    ];
+    assert_func_bodies(&wasm, [expected]);
+}
