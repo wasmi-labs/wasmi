@@ -360,3 +360,270 @@ fn if_else() {
     ];
     assert_func_bodies(&wasm, [expected]);
 }
+
+#[test]
+fn if_else_returns_result() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call")
+                i32.const 1
+                if (result i32)
+                    i32.const 2
+                else
+                    i32.const 3
+                end
+                drop
+            )
+        )
+    "#,
+    );
+    let expected = [
+        /* 0 */ Instruction::constant(1),
+        /* 1 */ Instruction::BrIfEqz(target!(4, drop: 0, keep: 0)),
+        /* 2 */ Instruction::constant(2),
+        /* 3 */ Instruction::Br(target!(5, drop: 0, keep: 0)),
+        /* 4 */ Instruction::constant(3),
+        /* 5 */ Instruction::Drop,
+        /* 6 */ Instruction::Return(DropKeep::new(0, 0)),
+    ];
+    assert_func_bodies(&wasm, [expected]);
+}
+
+#[test]
+fn if_else_branch_from_true_branch() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call")
+                i32.const 1
+                if (result i32)
+                    i32.const 1
+                    i32.const 1
+                    br_if 0
+                    drop
+                    i32.const 2
+                else
+                    i32.const 3
+                end
+                drop
+            )
+        )
+    "#,
+    );
+    let expected = [
+        /*  0 */ Instruction::constant(1),
+        /*  1 */ Instruction::BrIfEqz(target!(8, drop: 0, keep: 0)),
+        /*  2 */ Instruction::constant(1),
+        /*  3 */ Instruction::constant(1),
+        /*  4 */ Instruction::BrIfNez(target!(9, drop: 0, keep: 1)),
+        /*  5 */ Instruction::Drop,
+        /*  6 */ Instruction::constant(2),
+        /*  7 */ Instruction::Br(target!(9, drop: 0, keep: 0)),
+        /*  8 */ Instruction::constant(3),
+        /*  9 */ Instruction::Drop,
+        /* 10 */ Instruction::Return(DropKeep::new(0, 0)),
+    ];
+    assert_func_bodies(&wasm, [expected]);
+}
+
+#[test]
+fn if_else_branch_from_false_branch() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call")
+                i32.const 1
+                if (result i32)
+                    i32.const 1
+                else
+                    i32.const 2
+                    i32.const 1
+                    br_if 0
+                    drop
+                    i32.const 3
+                end
+                drop
+            )
+        )
+    "#,
+    );
+    let expected = [
+        /*  0 */ Instruction::constant(1),
+        /*  1 */ Instruction::BrIfEqz(target!(4, drop: 0, keep: 0)),
+        /*  2 */ Instruction::constant(1),
+        /*  3 */ Instruction::Br(target!(9, drop: 0, keep: 0)),
+        /*  4 */ Instruction::constant(2),
+        /*  5 */ Instruction::constant(1),
+        /*  6 */ Instruction::BrIfNez(target!(9, drop: 0, keep: 1)),
+        /*  7 */ Instruction::Drop,
+        /*  8 */ Instruction::constant(3),
+        /*  9 */ Instruction::Drop,
+        /* 10 */ Instruction::Return(DropKeep::new(0, 0)),
+    ];
+    assert_func_bodies(&wasm, [expected]);
+}
+
+#[test]
+fn loop_() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call")
+                loop (result i32)
+                    i32.const 1
+                    br_if 0
+                    i32.const 2
+                end
+                drop
+            )
+        )
+    "#,
+    );
+    let expected = [
+        Instruction::constant(1),
+        Instruction::BrIfNez(target!(0, drop: 0, keep: 0)),
+        Instruction::constant(2),
+        Instruction::Drop,
+        Instruction::Return(DropKeep::new(0, 0)),
+    ];
+    assert_func_bodies(&wasm, [expected]);
+}
+
+#[test]
+fn loop_empty() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call")
+                loop
+                end
+            )
+        )
+    "#,
+    );
+    let expected = [Instruction::Return(DropKeep::new(0, 0))];
+    assert_func_bodies(&wasm, [expected]);
+}
+
+#[test]
+fn spec_as_br_if_value_cond() {
+    let wasm = wat2wasm(
+        r#"
+            (func (export "as-br_if-value-cond") (result i32)
+                (block (result i32)
+                    (drop
+                    (br_if 0
+                        (i32.const 6)
+                        (br_table 0 0
+                            (i32.const 9)
+                            (i32.const 0)
+                        )
+                    )
+                )
+                (i32.const 7)
+            )
+        )
+    "#,
+    );
+    let expected = [
+        /* 0 */ Instruction::constant(6),
+        /* 1 */ Instruction::constant(9),
+        /* 2 */ Instruction::constant(0),
+        /* 3 */ Instruction::BrTable { len_targets: 2 },
+        /* 4 */ Instruction::BrTableTarget(target!(9, drop: 1, keep: 1)),
+        /* 5 */ Instruction::BrTableTarget(target!(9, drop: 1, keep: 1)),
+        /* 6 */ Instruction::BrTableTarget(target!(9, drop: 0, keep: 1)),
+        /* 7 */ Instruction::Drop,
+        /* 8 */ Instruction::constant(7),
+        /* 9 */ Instruction::Return(DropKeep::new(0, 1)),
+    ];
+    assert_func_bodies(&wasm, [expected]);
+}
+
+#[test]
+fn br_table() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call")
+                block $1
+                    loop $2
+                        i32.const 0
+                        br_table $2 $1
+                    end
+                end
+            )
+        )
+    "#,
+    );
+    let expected = [
+        /* 0 */ Instruction::constant(0),
+        /* 1 */ Instruction::BrTable { len_targets: 2 },
+        /* 2 */ Instruction::BrTableTarget(target!(0, drop: 0, keep: 0)),
+        /* 3 */ Instruction::BrTableTarget(target!(4, drop: 0, keep: 0)),
+        /* 4 */ Instruction::Return(DropKeep::new(0, 0)),
+    ];
+    assert_func_bodies(&wasm, [expected]);
+}
+
+#[test]
+fn br_table_returns_result() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call")
+                block $1 (result i32)
+                    block $2 (result i32)
+                        i32.const 0
+                        i32.const 1
+                        br_table $2 $1
+                    end
+                    unreachable
+                end
+                drop
+            )
+        )
+    "#,
+    );
+    let expected = [
+        /* 0 */ Instruction::constant(0),
+        /* 1 */ Instruction::constant(1),
+        /* 2 */ Instruction::BrTable { len_targets: 2 },
+        /* 3 */ Instruction::BrTableTarget(target!(5, drop: 0, keep: 1)),
+        /* 4 */ Instruction::BrTableTarget(target!(6, drop: 0, keep: 1)),
+        /* 5 */ Instruction::Unreachable,
+        /* 6 */ Instruction::Drop,
+        /* 7 */ Instruction::Return(DropKeep::new(0, 0)),
+    ];
+    assert_func_bodies(&wasm, [expected]);
+}
+
+#[test]
+fn wabt_example() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (param i32) (result i32)
+                block $exit
+                    get_local 0
+                    br_if $exit
+                    i32.const 1
+                    return
+                end
+                i32.const 2
+                return
+            )
+        )
+    "#,
+    );
+    let expected = [
+        /* 0 */ Instruction::local_get(1),
+        /* 1 */ Instruction::BrIfNez(target!(4, drop: 0, keep: 0)),
+        /* 2 */ Instruction::constant(1),
+        /* 3 */ Instruction::Return(DropKeep::new(1, 1)),
+        /* 4 */ Instruction::constant(2),
+        /* 5 */ Instruction::Return(DropKeep::new(1, 1)),
+    ];
+    assert_func_bodies(&wasm, [expected]);
+}
