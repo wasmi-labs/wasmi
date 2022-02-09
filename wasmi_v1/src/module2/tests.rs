@@ -271,3 +271,24 @@ fn simple_mul_add() {
     ];
     assert_func_bodies(&wasm, [expected]);
 }
+
+#[test]
+fn drop_locals() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (param i32)
+                (local i32)
+                get_local 0
+                set_local 1
+            )
+        )
+    "#,
+    );
+    let expected = [
+        Instruction::local_get(2),
+        Instruction::local_set(1),
+        Instruction::Return(DropKeep::new(2, 0)),
+    ];
+    assert_func_bodies(&wasm, [expected]);
+}
