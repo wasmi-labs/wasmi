@@ -134,7 +134,6 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             .resolve_func_type(dedup_func_type, Clone::clone);
         let params = func_type.params();
         for param_type in params {
-            value_stack.push(*param_type);
             locals.register_locals(*param_type, 1);
         }
         params.len()
