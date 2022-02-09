@@ -463,25 +463,30 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             let case = builder.value_stack.pop1();
             debug_assert_eq!(case, ValueType::I32);
 
-            let mut compute_target = |n: usize, depth: RelativeDepth| {
+            fn compute_target(
+                builder: &mut FunctionBuilder,
+                n: usize,
+                depth: RelativeDepth,
+            ) -> Target {
                 let (label, drop_keep) = builder.acquire_target(depth.into_u32());
                 let dst_pc = builder.try_resolve_label(label, |pc| Reloc::BrTable {
                     inst_idx: pc,
                     target_idx: n,
                 });
                 Target::new(dst_pc, drop_keep)
-            };
+            }
 
             let targets = targets
                 .into_iter()
                 .enumerate()
-                .map(|(n, depth)| compute_target(n, depth))
+                .map(|(n, depth)| compute_target(builder, n, depth))
                 .collect::<Vec<_>>();
+            // We include the default target in `len_targets`.
             let len_targets = targets.len();
-            let default = compute_target(len_targets, default);
-            builder
-                .inst_builder
-                .push_inst(Instruction::BrTable { len_targets });
+            let default_target = compute_target(builder, len_targets, default);
+            builder.inst_builder.push_inst(Instruction::BrTable {
+                len_targets: len_targets + 1,
+            });
             for target in targets {
                 builder
                     .inst_builder
@@ -489,7 +494,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             }
             builder
                 .inst_builder
-                .push_inst(Instruction::BrTableTarget(default));
+                .push_inst(Instruction::BrTableTarget(default_target));
             builder.reachable = false;
             Ok(())
         })
