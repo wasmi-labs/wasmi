@@ -33,8 +33,7 @@ impl<'a> InstancePre<'a> {
     ///
     /// Returns `None` if the [`Module`] does not have a `start` function.
     fn start_fn(&self) -> Option<u32> {
-        // self.module.module.start_section()
-        todo!()
+        self.module.start.map(|idx| idx.into_u32())
     }
 
     /// Runs the `start` function of the [`Instance`] and returns its handle.
