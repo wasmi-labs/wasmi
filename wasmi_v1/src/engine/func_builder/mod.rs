@@ -289,10 +289,10 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     ///
     /// - If the `depth` is greater than the current height of the control frame stack.
     /// - If the value stack underflowed.
-    fn acquire_target(&self, depth: u32) -> (LabelIdx, DropKeep) {
+    fn acquire_target(&self, relative_depth: u32) -> (LabelIdx, DropKeep) {
         debug_assert!(self.is_reachable());
-        let label = self.control_frames.nth_back(depth).branch_destination();
-        let drop_keep = self.compute_drop_keep(depth);
+        let label = self.control_frames.nth_back(relative_depth).branch_destination();
+        let drop_keep = self.compute_drop_keep(relative_depth);
         (label, drop_keep)
     }
 }
