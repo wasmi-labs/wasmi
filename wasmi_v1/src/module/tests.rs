@@ -480,18 +480,22 @@ fn if_else_both_unreachable_before_end() {
                     return
                     i32.const 200 ;; unreachable
                 end
+                drop
                 i32.const 3
             )
         )
     "#,
     );
     let expected = [
-        /* 0 */ Instruction::local_get(0),
+        /* 0 */ Instruction::local_get(1),
         /* 1 */ Instruction::BrIfEqz(target!(4, drop: 0, keep: 0)),
         /* 2 */ Instruction::constant(1),
         /* 3 */ Instruction::Return(DropKeep::new(1, 1)),
         /* 4 */ Instruction::constant(2),
         /* 5 */ Instruction::Return(DropKeep::new(1, 1)),
+        /* 6 */ Instruction::Drop,
+        /* 7 */ Instruction::constant(3),
+        /* 8 */ Instruction::Return(DropKeep::new(1, 1)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
