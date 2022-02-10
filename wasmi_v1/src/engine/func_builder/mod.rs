@@ -1073,7 +1073,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             let condition = builder.value_stack.pop1();
             debug_assert_eq!(condition, input_type);
             builder.value_stack.push(ValueType::I32);
-            builder.inst_builder.push_inst(Instruction::I32Eqz);
+            builder.inst_builder.push_inst(inst);
             Ok(())
         })
     }
