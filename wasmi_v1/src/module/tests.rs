@@ -465,6 +465,38 @@ fn if_else_branch_from_false_branch() {
 }
 
 #[test]
+fn if_else_both_unreachable_before_end() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (param i32) (result i32)
+                local.get 0
+                if (result i32)
+                    i32.const 1
+                    return
+                    i32.const 100 ;; unreachable
+                else
+                    i32.const 2
+                    return
+                    i32.const 200 ;; unreachable
+                end
+                i32.const 3
+            )
+        )
+    "#,
+    );
+    let expected = [
+        /* 0 */ Instruction::local_get(0),
+        /* 1 */ Instruction::BrIfEqz(target!(4, drop: 0, keep: 0)),
+        /* 2 */ Instruction::constant(1),
+        /* 3 */ Instruction::Return(DropKeep::new(1, 1)),
+        /* 4 */ Instruction::constant(2),
+        /* 5 */ Instruction::Return(DropKeep::new(1, 1)),
+    ];
+    assert_func_bodies(&wasm, [expected]);
+}
+
+#[test]
 fn loop_() {
     let wasm = wat2wasm(
         r#"
