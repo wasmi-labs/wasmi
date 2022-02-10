@@ -4,7 +4,7 @@ mod pre;
 pub use self::{error::InstantiationError, pre::InstancePre};
 use super::{export, InitExpr, Module, ModuleImportType};
 use crate::{
-    module::init_expr::InitExprOperand,
+    module::{init_expr::InitExprOperand, DEFAULT_MEMORY_INDEX},
     AsContext,
     AsContextMut,
     Error,
@@ -373,9 +373,6 @@ impl Module {
         Ok(())
     }
 
-    /// The index of the default Wasm linear memory.
-    const DEFAULT_MEMORY_INDEX: u32 = 0;
-
     /// Initializes the [`Instance`] linear memories with the Wasm data segments of the [`Module`].
     fn initialize_memory_data(
         &self,
@@ -397,7 +394,7 @@ impl Module {
                 .unwrap_or_else(|| {
                     panic!(
                         "expected default memory at index {} but found none",
-                        Self::DEFAULT_MEMORY_INDEX
+                        DEFAULT_MEMORY_INDEX
                     )
                 });
             memory.write(context.as_context_mut(), offset, data_segment.data())?;

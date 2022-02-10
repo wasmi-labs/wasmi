@@ -7,7 +7,6 @@ use super::{
     Module,
 };
 use crate::{
-    core::ValueType,
     module::{ImportName, ModuleImport, ModuleImportType},
     FuncType,
     GlobalType,
@@ -24,7 +23,6 @@ use core::{
     num::NonZeroUsize,
     ops::Deref,
 };
-use parity_wasm::elements as pwasm;
 
 /// An error that may occur upon operating with [`Linker`] instances.
 #[derive(Debug)]
@@ -40,11 +38,6 @@ pub enum LinkerError {
     },
     /// Encountered when no definition for an import is found.
     CannotFindDefinitionForImport {
-        /// The module import that had no definition in the linker.
-        import: pwasm::ImportEntry,
-    },
-    /// Encountered when no definition for an import is found.
-    CannotFindDefinitionForImport2 {
         /// The name of the import for which no definition was found.
         name: ImportName,
         // /// The module name of the import for which no definition has been found.
@@ -53,15 +46,6 @@ pub enum LinkerError {
         // field_name: Option<String>,
         /// The type of the import for which no definition has been found.
         item_type: ModuleImportType,
-    },
-    /// Encountered when a function signature does not match the expected signature.
-    SignatureMismatch {
-        /// The function import that had a mismatching signature.
-        import: pwasm::ImportEntry,
-        /// The expected function type.
-        expected: pwasm::FunctionType,
-        /// The actual function signature found.
-        actual: FuncType,
     },
     /// Encountered when a function signature does not match the expected signature.
     FuncTypeMismatch {
@@ -78,19 +62,6 @@ pub enum LinkerError {
     Memory(MemoryError),
     /// Encountered when an imported global variable has a mismatching global variable type.
     GlobalTypeMismatch {
-        /// The global variable import that had a mismatching global variable type.
-        import: pwasm::ImportEntry,
-        /// The expected global variable memory type.
-        expected_value_type: ValueType,
-        /// The expected global variable mutability.
-        expected_mutability: bool,
-        /// The actual global variable memory type.
-        actual_value_type: ValueType,
-        /// The actual global variable mutability.
-        actual_mutability: bool,
-    },
-    /// Encountered when an imported global variable has a mismatching global variable type.
-    GlobalTypeMismatch2 {
         /// The name of the import with the mismatched type.
         name: ImportName,
         /// The expected global variable type.
@@ -103,7 +74,7 @@ pub enum LinkerError {
 impl LinkerError {
     /// Creates a new [`LinkerError`] for when an imported definition was not found.
     pub fn cannot_find_definition_of_import(import: &ModuleImport) -> Self {
-        Self::CannotFindDefinitionForImport2 {
+        Self::CannotFindDefinitionForImport {
             name: import.name().clone(),
             item_type: import.item_type().clone(),
         }
@@ -138,33 +109,11 @@ impl Display for LinkerError {
                     import_name, import_item
                 )
             }
-            Self::CannotFindDefinitionForImport { import } => {
-                let module_name = import.module();
-                let field_name = import.field();
-                write!(
-                    f,
-                    "cannot find definition for import {}::{}: {:?}",
-                    module_name, field_name, import
-                )
-            }
-            Self::CannotFindDefinitionForImport2 { name, item_type } => {
+            Self::CannotFindDefinitionForImport { name, item_type } => {
                 write!(
                     f,
                     "cannot find definition for import {}: {:?}",
                     name, item_type
-                )
-            }
-            Self::SignatureMismatch {
-                import,
-                expected,
-                actual,
-            } => {
-                let module_name = import.module();
-                let field_name = import.field();
-                write!(
-                    f,
-                    "expected {:?} function type for import {:?} at {}::{} but found {:?}",
-                    expected, import, module_name, field_name, actual
                 )
             }
             Self::FuncTypeMismatch {
@@ -179,35 +128,6 @@ impl Display for LinkerError {
                 )
             }
             Self::GlobalTypeMismatch {
-                import,
-                expected_value_type,
-                expected_mutability,
-                actual_value_type,
-                actual_mutability,
-            } => {
-                let module_name = import.module();
-                let field_name = import.field();
-                fn bool_to_mutability_str(is_mutable: bool) -> &'static str {
-                    match is_mutable {
-                        true => "mutable",
-                        false => "immutable",
-                    }
-                }
-                let expected_mutability = bool_to_mutability_str(*expected_mutability);
-                let actual_mutability = bool_to_mutability_str(*actual_mutability);
-                write!(
-                    f,
-                    "expected {} {:?} global variable for import {:?} at {}::{} but found {} {:?}",
-                    expected_mutability,
-                    expected_value_type,
-                    import,
-                    module_name,
-                    field_name,
-                    actual_mutability,
-                    actual_value_type
-                )
-            }
-            Self::GlobalTypeMismatch2 {
                 name,
                 expected,
                 actual,
@@ -489,7 +409,7 @@ impl<T> Linker<T> {
                         .ok_or_else(|| LinkerError::cannot_find_definition_of_import(&import))?;
                     let actual_global_type = global.global_type(context.as_context());
                     if &actual_global_type != expected_global_type {
-                        return Err(LinkerError::GlobalTypeMismatch2 {
+                        return Err(LinkerError::GlobalTypeMismatch {
                             name: import.name().clone(),
                             expected: *expected_global_type,
                             actual: actual_global_type,

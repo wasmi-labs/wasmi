@@ -23,7 +23,16 @@ use self::{
 use super::{DropKeep, FuncBody, Instruction, Target};
 use crate::{
     engine::bytecode::Offset,
-    module::{BlockType, FuncIdx, FuncTypeIdx, GlobalIdx, MemoryIdx, ModuleResources, TableIdx},
+    module::{
+        BlockType,
+        FuncIdx,
+        FuncTypeIdx,
+        GlobalIdx,
+        MemoryIdx,
+        ModuleResources,
+        TableIdx,
+        DEFAULT_MEMORY_INDEX,
+    },
     Engine,
     FuncType,
     ModuleError,
@@ -692,9 +701,6 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         })
     }
 
-    /// The default memory index.
-    const DEFAULT_MEMORY_INDEX: u32 = 0;
-
     /// Translate a Wasm `<ty>.load` instruction.
     ///
     /// # Note
@@ -723,7 +729,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         make_inst: fn(Offset) -> Instruction,
     ) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
-            debug_assert_eq!(memory_idx.into_u32(), Self::DEFAULT_MEMORY_INDEX);
+            debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
             let pointer = builder.value_stack.pop1();
             debug_assert_eq!(pointer, ValueType::I32);
             builder.value_stack.push(loaded_type);
@@ -882,7 +888,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         make_inst: fn(Offset) -> Instruction,
     ) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
-            debug_assert_eq!(memory_idx.into_u32(), Self::DEFAULT_MEMORY_INDEX);
+            debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
             let (pointer, stored) = builder.value_stack.pop2();
             debug_assert_eq!(pointer, ValueType::I32);
             assert_eq!(stored_value, stored);
@@ -976,7 +982,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Translate a Wasm `memory.size` instruction.
     pub fn translate_memory_size(&mut self, memory_idx: MemoryIdx) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
-            debug_assert_eq!(memory_idx.into_u32(), Self::DEFAULT_MEMORY_INDEX);
+            debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
             builder.value_stack.push(ValueType::I32);
             builder.inst_builder.push_inst(Instruction::CurrentMemory);
             Ok(())
@@ -986,7 +992,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Translate a Wasm `memory.grow` instruction.
     pub fn translate_memory_grow(&mut self, memory_idx: MemoryIdx) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
-            debug_assert_eq!(memory_idx.into_u32(), Self::DEFAULT_MEMORY_INDEX);
+            debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
             debug_assert_eq!(builder.value_stack.top(), ValueType::I32);
             builder.inst_builder.push_inst(Instruction::GrowMemory);
             Ok(())

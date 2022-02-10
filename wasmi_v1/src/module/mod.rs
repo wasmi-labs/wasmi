@@ -67,6 +67,12 @@ pub struct Module {
     data_segments: Box<[DataSegment]>,
 }
 
+/// The index of the default Wasm linear memory.
+pub(crate) const DEFAULT_MEMORY_INDEX: u32 = 0;
+
+/// The index of the default Wasm table.
+pub(crate) const DEFAULT_TABLE_INDEX: u32 = 0;
+
 /// An imported item declaration in the [`Module`].
 #[derive(Debug)]
 pub enum Imported {

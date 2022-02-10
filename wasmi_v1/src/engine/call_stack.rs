@@ -15,9 +15,11 @@ use super::{
     ValueStack,
     DEFAULT_CALL_STACK_LIMIT,
 };
-use crate::core::TrapCode;
+use crate::{
+    core::TrapCode,
+    module::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
+};
 use alloc::vec::Vec;
-use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 
 /// A function frame of a function in the call stack.
 #[derive(Debug, Copy, Clone)]
