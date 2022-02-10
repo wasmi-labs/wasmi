@@ -9,7 +9,6 @@ mod byte_buffer;
 use self::byte_buffer::{ByteBuffer, VirtualMemoryError};
 use super::{AsContext, AsContextMut, Index, StoreContext, StoreContextMut, Stored};
 use core::{fmt, fmt::Display};
-use parity_wasm::elements as pwasm;
 use wasmi_core::memory_units::{Bytes, Pages};
 
 /// A raw index to a linear memory entity.
@@ -99,13 +98,6 @@ impl MemoryType {
             initial_pages: Pages(initial as usize),
             maximum_pages: maximum.map(|value| Pages(value as usize)),
         }
-    }
-
-    /// Creates a new [`MemoryType`] from the given [`pwasm::MemoryType`].
-    pub(crate) fn from_elements(memory_type: &pwasm::MemoryType) -> Self {
-        let initial = memory_type.limits().initial();
-        let maximum = memory_type.limits().maximum();
-        MemoryType::new(initial, maximum)
     }
 
     /// Returns the initial pages of the memory type.
