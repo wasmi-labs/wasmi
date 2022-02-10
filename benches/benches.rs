@@ -7,7 +7,6 @@ use self::bench::{
     load_instance_from_wat_v1,
     load_module_from_file_v0,
     load_module_from_file_v1,
-    load_module_from_file_v1b,
     load_wasm_from_file,
     wat2wasm,
 };
@@ -27,13 +26,11 @@ criterion_group!(
     bench_compile_and_validate,
     bench_compile_and_validate_v0,
     bench_compile_and_validate_v1,
-    bench_compile_and_validate_v1b
 );
 criterion_group!(
     bench_instantiate,
     bench_instantiate_v0,
     bench_instantiate_v1,
-    bench_instantiate_v1b
 );
 criterion_group!(
     bench_execute,
@@ -73,17 +70,7 @@ fn bench_compile_and_validate_v1(c: &mut Criterion) {
     c.bench_function("compile_and_validate/v1", |b| {
         b.iter(|| {
             let engine = v1::Engine::default();
-            let _module = v1::Module::new(&engine, &wasm_bytes).unwrap();
-        })
-    });
-}
-
-fn bench_compile_and_validate_v1b(c: &mut Criterion) {
-    let wasm_bytes = load_wasm_from_file(WASM_KERNEL);
-    c.bench_function("compile_and_validate/v1b", |b| {
-        b.iter(|| {
-            let engine = v1::Engine::default();
-            let _module = v1::Module2::new(&engine, &wasm_bytes[..]).unwrap();
+            let _module = v1::Module::new(&engine, &wasm_bytes[..]).unwrap();
         })
     });
 }
@@ -108,18 +95,6 @@ fn bench_instantiate_v1(c: &mut Criterion) {
         b.iter(|| {
             let mut store = v1::Store::new(module.engine(), ());
             let _instance = linker.instantiate(&mut store, &module).unwrap();
-        })
-    });
-}
-
-fn bench_instantiate_v1b(c: &mut Criterion) {
-    let module = load_module_from_file_v1b(WASM_KERNEL);
-    let mut linker = <v1::Linker<()>>::default();
-
-    c.bench_function("instantiate/v1b", |b| {
-        b.iter(|| {
-            let mut store = v1::Store::new(module.engine(), ());
-            let _instance = linker.instantiate_2(&mut store, &module).unwrap();
         })
     });
 }
@@ -647,7 +622,7 @@ fn bench_execute_host_calls_v0(c: &mut Criterion) {
 fn bench_execute_host_calls_v1(c: &mut Criterion) {
     let wasm = wat2wasm(include_bytes!("wat/host_calls.wat"));
     let engine = v1::Engine::default();
-    let module = v1::Module::new(&engine, &wasm).unwrap();
+    let module = v1::Module::new(&engine, &wasm[..]).unwrap();
     let mut linker = <v1::Linker<()>>::default();
     let mut store = v1::Store::new(&engine, ());
     let host_call = v1::Func::wrap(&mut store, |value: i64| value);

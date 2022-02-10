@@ -23,7 +23,6 @@ mod global;
 mod instance;
 mod linker;
 mod memory;
-mod module;
 mod module2;
 mod store;
 mod table;
@@ -39,15 +38,14 @@ pub mod errors {
         global::GlobalError,
         linker::LinkerError,
         memory::MemoryError,
-        module::{InstantiationError, TranslationError},
-        module2::InstantiationError as InstantiationError2,
+        module2::{InstantiationError, ModuleError},
         table::TableError,
     };
 }
 
 use self::{
     arena::{GuardedEntity, Index},
-    engine::{DropKeep, FuncBody, LabelIdx},
+    engine::FuncBody,
     func::{FuncEntity, FuncEntityInternal, FuncIdx},
     global::{GlobalEntity, GlobalIdx},
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
@@ -65,8 +63,7 @@ pub use self::{
     instance::{ExportsIter, Instance},
     linker::Linker,
     memory::{Memory, MemoryType},
-    module::{InstancePre, Module},
-    module2::{InstancePre as InstancePre2, Module as Module2, ModuleError, Read},
+    module2::{InstancePre, Module, ModuleError, Read},
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
 };

@@ -2,11 +2,10 @@ use super::errors::{
     FuncError,
     GlobalError,
     InstantiationError,
-    InstantiationError2,
     LinkerError,
     MemoryError,
+    ModuleError,
     TableError,
-    TranslationError,
 };
 use crate::core::Trap;
 use core::{fmt, fmt::Display};
@@ -23,12 +22,10 @@ pub enum Error {
     Table(TableError),
     /// A linker error.
     Linker(LinkerError),
-    /// A Wasm to `wasmi` bytecode translation error.
-    Translation(TranslationError),
     /// A module instantiation error.
     Instantiation(InstantiationError),
-    /// A module instantiation error. (v2)
-    Instantiation2(InstantiationError2),
+    /// A module compilation, validation and translation error.
+    Module(ModuleError),
     /// A function error.
     Func(FuncError),
     /// A trap as defined by the WebAssembly specification.
@@ -46,10 +43,9 @@ impl Display for Error {
             Self::Memory(error) => Display::fmt(error, f),
             Self::Table(error) => Display::fmt(error, f),
             Self::Linker(error) => Display::fmt(error, f),
-            Self::Translation(error) => Display::fmt(error, f),
             Self::Func(error) => Display::fmt(error, f),
             Self::Instantiation(error) => Display::fmt(error, f),
-            Self::Instantiation2(error) => Display::fmt(error, f),
+            Self::Module(error) => Display::fmt(error, f),
         }
     }
 }
@@ -84,21 +80,15 @@ impl From<LinkerError> for Error {
     }
 }
 
-impl From<TranslationError> for Error {
-    fn from(error: TranslationError) -> Self {
-        Self::Translation(error)
-    }
-}
-
 impl From<InstantiationError> for Error {
     fn from(error: InstantiationError) -> Self {
         Self::Instantiation(error)
     }
 }
 
-impl From<InstantiationError2> for Error {
-    fn from(error: InstantiationError2) -> Self {
-        Self::Instantiation2(error)
+impl From<ModuleError> for Error {
+    fn from(error: ModuleError) -> Self {
+        Self::Module(error)
     }
 }
 

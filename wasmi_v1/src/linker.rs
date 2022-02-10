@@ -4,17 +4,13 @@ use super::{
     Error,
     Extern,
     InstancePre,
-    InstancePre2,
-    MemoryType,
     Module,
-    TableType,
 };
 use crate::{
     core::ValueType,
     module2::{ImportName, ModuleImport, ModuleImportType},
     FuncType,
     GlobalType,
-    Module2,
 };
 use alloc::{
     collections::{btree_map::Entry, BTreeMap},
@@ -437,123 +433,8 @@ impl<T> Linker<T> {
     pub fn instantiate<'a>(
         &mut self,
         context: impl AsContextMut,
-        wasmi_module: &'a Module,
+        module: &'a Module,
     ) -> Result<InstancePre<'a>, Error> {
-        let wasm_module = &wasmi_module.module;
-
-        // Clear the cached externals buffer.
-        self.externals.clear();
-
-        let imports = wasm_module
-            .import_section()
-            .map(pwasm::ImportSection::entries)
-            .unwrap_or(&[]);
-        let signatures = wasm_module
-            .type_section()
-            .map(pwasm::TypeSection::types)
-            .unwrap_or(&[]);
-        for import in imports {
-            let module_name = import.module();
-            let field_name = import.field();
-            let external = match *import.external() {
-                pwasm::External::Function(signature_index) => {
-                    let pwasm::Type::Function(func_type) =
-                        signatures.get(signature_index as usize).unwrap_or_else(|| {
-                            panic!(
-                                "missing expected function signature at index {}",
-                                signature_index
-                            )
-                        });
-                    let func = self
-                        .resolve(module_name, Some(field_name))
-                        .and_then(Extern::into_func)
-                        .ok_or_else(|| LinkerError::CannotFindDefinitionForImport {
-                            import: import.clone(),
-                        })?;
-                    let expected_inputs = func_type
-                        .params()
-                        .iter()
-                        .copied()
-                        .map(ValueType::from_elements);
-                    let expected_outputs = func_type
-                        .results()
-                        .iter()
-                        .copied()
-                        .map(ValueType::from_elements);
-                    let signature = func.func_type(context.as_context());
-                    if expected_inputs.ne(signature.params().iter().copied())
-                        || expected_outputs.ne(signature.results().iter().copied())
-                    {
-                        return Err(LinkerError::SignatureMismatch {
-                            import: import.clone(),
-                            expected: func_type.clone(),
-                            actual: signature,
-                        })
-                        .map_err(Into::into);
-                    }
-                    Extern::Func(func)
-                }
-                pwasm::External::Table(table_type) => {
-                    let expected_type = TableType::from_elements(&table_type);
-                    let table = self
-                        .resolve(module_name, Some(field_name))
-                        .and_then(Extern::into_table)
-                        .ok_or_else(|| LinkerError::CannotFindDefinitionForImport {
-                            import: import.clone(),
-                        })?;
-                    let actual_type = table.table_type(context.as_context());
-                    actual_type.satisfies(&expected_type)?;
-                    Extern::Table(table)
-                }
-                pwasm::External::Memory(memory_type) => {
-                    let expected_type = MemoryType::from_elements(&memory_type);
-                    let memory = self
-                        .resolve(module_name, Some(field_name))
-                        .and_then(Extern::into_memory)
-                        .ok_or_else(|| LinkerError::CannotFindDefinitionForImport {
-                            import: import.clone(),
-                        })?;
-                    let actual_type = memory.memory_type(context.as_context());
-                    actual_type.satisfies(&expected_type)?;
-                    Extern::Memory(memory)
-                }
-                pwasm::External::Global(global_type) => {
-                    let global = self
-                        .resolve(module_name, Some(field_name))
-                        .and_then(Extern::into_global)
-                        .ok_or_else(|| LinkerError::CannotFindDefinitionForImport {
-                            import: import.clone(),
-                        })?;
-                    let expected_value_type = ValueType::from_elements(global_type.content_type());
-                    let expected_mutability = global_type.is_mutable();
-                    let actual_value_type = global.value_type(context.as_context());
-                    let actual_mutability = global.is_mutable(context.as_context());
-                    if expected_value_type != actual_value_type
-                        || expected_mutability != actual_mutability
-                    {
-                        return Err(LinkerError::GlobalTypeMismatch {
-                            import: import.clone(),
-                            expected_value_type,
-                            expected_mutability,
-                            actual_value_type,
-                            actual_mutability,
-                        })
-                        .map_err(Into::into);
-                    }
-                    Extern::Global(global)
-                }
-            };
-            self.externals.push(external);
-        }
-        wasmi_module.instantiate(context, self.externals.drain(..))
-    }
-
-    /// Instantiates the given [`Module`] using the definitions in the [`Linker`].
-    pub fn instantiate_2<'a>(
-        &mut self,
-        context: impl AsContextMut,
-        module: &'a Module2,
-    ) -> Result<InstancePre2<'a>, Error> {
         // Clear the cached externals buffer.
         self.externals.clear();
 
