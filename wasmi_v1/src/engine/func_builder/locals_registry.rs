@@ -85,6 +85,9 @@ impl LocalsRegistry {
     ///
     /// If too many local variables have been registered.
     pub fn register_locals(&mut self, value_type: ValueType, amount: u32) {
+        if amount == 0 {
+            return
+        }
         let min_index = self.max_index;
         let max_index = self.max_index.checked_add(amount).unwrap_or_else(|| {
             panic!(
