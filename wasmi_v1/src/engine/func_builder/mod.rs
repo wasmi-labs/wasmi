@@ -396,6 +396,13 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             let target = Target::new(dst_pc, DropKeep::new(0, 0));
             self.inst_builder.push_inst(Instruction::Br(target));
             self.inst_builder.resolve_label(if_frame.else_label());
+            // We need to reset the value stack to exactly how it has been
+            // when entering the `if` in the first place so that the `else`
+            // block has the same parameters on top of the stack.
+            self.value_stack.shrink_to(if_frame.stack_height());
+            if_frame.block_type().foreach_param(self.engine, |param| {
+                self.value_stack.push(param);
+            });
             self.control_frames.push_frame(if_frame);
         } else {
             match self.control_frames.last() {
