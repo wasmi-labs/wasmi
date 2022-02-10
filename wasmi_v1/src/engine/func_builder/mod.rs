@@ -290,9 +290,34 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         })
     }
 
+    /// Calculates the stack height upon entering a control flow frame.
+    ///
+    /// # Note
+    ///
+    /// This does not include the parameters of the control flow frame
+    /// so that when shrinking the emulated value stack to the control flow
+    /// frame's original stack height the control flow frame parameters are
+    /// no longer on the emulated value stack.
+    ///
+    /// # Panics
+    ///
+    /// When the emulated value stack underflows. This should not happen
+    /// since we have already validated the input Wasm prior.
+    fn frame_stack_height(&self, block_type: BlockType) -> u32 {
+        let len_params = block_type.len_params(self.engine);
+        let stack_height = self.value_stack.len();
+        stack_height.checked_sub(len_params).unwrap_or_else(|| {
+            panic!(
+                "encountered emulated value stack underflow with \
+                 stack height {} and {} block parameters",
+                stack_height, len_params
+            )
+        })
+    }
+
     /// Translates a Wasm `block` control flow operator.
     pub fn translate_block(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
-        let stack_height = self.value_stack.len();
+        let stack_height = self.frame_stack_height(block_type);
         if self.is_reachable() {
             let end_label = self.inst_builder.new_label();
             self.control_frames.push_frame(BlockControlFrame::new(
@@ -312,7 +337,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translates a Wasm `loop` control flow operator.
     pub fn translate_loop(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
-        let stack_height = self.value_stack.len();
+        let stack_height = self.frame_stack_height(block_type);
         if self.is_reachable() {
             let header = self.inst_builder.new_label();
             self.inst_builder.resolve_label(header);
@@ -332,7 +357,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     pub fn translate_if(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
         let condition = self.value_stack.pop1();
         debug_assert_eq!(condition, ValueType::I32);
-        let stack_height = self.value_stack.len();
+        let stack_height = self.frame_stack_height(block_type);
         if self.is_reachable() {
             let else_label = self.inst_builder.new_label();
             let end_label = self.inst_builder.new_label();
