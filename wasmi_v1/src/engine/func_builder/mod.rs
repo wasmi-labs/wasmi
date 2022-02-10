@@ -456,7 +456,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             self.inst_builder
                 .resolve_label_if_unresolved(if_frame.else_label());
         }
-        if !matches!(frame.kind(), ControlFrameKind::Loop) {
+        if frame.is_reachable() && !matches!(frame.kind(), ControlFrameKind::Loop) {
             // At this point we can resolve the `End` labels.
             // Note that `loop` control frames do not have an `End` label.
             self.inst_builder.resolve_label(frame.end_label());
