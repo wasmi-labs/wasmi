@@ -170,11 +170,19 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         Ok(())
     }
 
+    /// Returns the number of local variables of the function under construction.
+    fn len_locals(&self) -> usize {
+        let len_params_locals = self.locals.len_registered() as usize;
+        let len_params = self.func_type().params().len();
+        debug_assert!(len_params_locals >= len_params);
+        len_params_locals - len_params
+    }
+
     /// Finishes constructing the function and returns its [`FuncBody`].
     pub fn finish(mut self) -> FuncBody {
         self.inst_builder.finish(
             self.engine,
-            self.locals.len_registered() as usize,
+            self.len_locals(),
             self.value_stack.max_stack_height() as usize,
         )
     }
