@@ -1,7 +1,7 @@
 use super::{BlockType, FunctionTranslator};
 use crate::{
     engine::RelativeDepth,
-    module2::{export::TableIdx, import::FuncTypeIdx, FuncIdx, GlobalIdx, MemoryIdx},
+    module::{export::TableIdx, import::FuncTypeIdx, FuncIdx, GlobalIdx, MemoryIdx},
     ModuleError,
 };
 use wasmparser::{Ieee32, Ieee64, TypeOrFuncType};

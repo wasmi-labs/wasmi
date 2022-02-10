@@ -23,7 +23,7 @@ mod global;
 mod instance;
 mod linker;
 mod memory;
-mod module2;
+mod module;
 mod store;
 mod table;
 
@@ -38,7 +38,7 @@ pub mod errors {
         global::GlobalError,
         linker::LinkerError,
         memory::MemoryError,
-        module2::{InstantiationError, ModuleError},
+        module::{InstantiationError, ModuleError},
         table::TableError,
     };
 }
@@ -63,7 +63,7 @@ pub use self::{
     instance::{ExportsIter, Instance},
     linker::Linker,
     memory::{Memory, MemoryType},
-    module2::{InstancePre, Module, ModuleError, Read},
+    module::{InstancePre, Module, ModuleError, Read},
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
 };

@@ -23,7 +23,7 @@ use self::{
 use super::{DropKeep, FuncBody, Instruction, Target};
 use crate::{
     engine::bytecode::Offset,
-    module2::{BlockType, FuncIdx, FuncTypeIdx, GlobalIdx, MemoryIdx, ModuleResources, TableIdx},
+    module::{BlockType, FuncIdx, FuncTypeIdx, GlobalIdx, MemoryIdx, ModuleResources, TableIdx},
     Engine,
     FuncType,
     ModuleError,

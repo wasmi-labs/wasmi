@@ -1,4 +1,4 @@
-use crate::{engine::LabelIdx, module2::BlockType};
+use crate::{engine::LabelIdx, module::BlockType};
 
 /// A Wasm `block` control flow frame.
 #[derive(Debug, Copy, Clone)]

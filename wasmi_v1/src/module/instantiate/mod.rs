@@ -4,7 +4,7 @@ mod pre;
 pub use self::{error::InstantiationError, pre::InstancePre};
 use super::{export, InitExpr, Module, ModuleImportType};
 use crate::{
-    module2::init_expr::InitExprOperand,
+    module::init_expr::InitExprOperand,
     AsContext,
     AsContextMut,
     Error,

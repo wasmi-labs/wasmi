@@ -8,7 +8,7 @@ use super::{
 };
 use crate::{
     core::ValueType,
-    module2::{ImportName, ModuleImport, ModuleImportType},
+    module::{ImportName, ModuleImport, ModuleImportType},
     FuncType,
     GlobalType,
 };
