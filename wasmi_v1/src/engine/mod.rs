@@ -7,7 +7,6 @@ pub mod exec_context;
 mod func_args;
 mod func_builder;
 mod func_types;
-pub mod inst_builder;
 mod traits;
 pub mod value_stack;
 
@@ -16,7 +15,6 @@ pub use self::{
     bytecode::{DropKeep, Target},
     code_map::FuncBody,
     func_builder::{FunctionBuilder, InstructionIdx, LabelIdx, RelativeDepth, Reloc},
-    inst_builder::InstructionsBuilder,
     traits::{CallParams, CallResults},
 };
 use self::{
