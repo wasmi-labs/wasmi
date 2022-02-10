@@ -372,10 +372,10 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translates a Wasm `if` control flow operator.
     pub fn translate_if(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
-        let condition = self.value_stack.pop1();
-        debug_assert_eq!(condition, ValueType::I32);
-        let stack_height = self.frame_stack_height(block_type);
         if self.is_reachable() {
+            let condition = self.value_stack.pop1();
+            debug_assert_eq!(condition, ValueType::I32);
+            let stack_height = self.frame_stack_height(block_type);
             let else_label = self.inst_builder.new_label();
             let end_label = self.inst_builder.new_label();
             self.control_frames.push_frame(IfControlFrame::new(
@@ -389,6 +389,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             self.inst_builder
                 .push_inst(Instruction::BrIfEqz(branch_target));
         } else {
+            let stack_height = self.frame_stack_height(block_type);
             self.control_frames.push_frame(UnreachableControlFrame::new(
                 ControlFrameKind::If,
                 block_type,
