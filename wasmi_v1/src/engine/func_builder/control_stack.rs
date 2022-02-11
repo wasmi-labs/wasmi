@@ -9,7 +9,7 @@ pub struct ControlFlowStack {
 impl ControlFlowStack {
     /// Returns `true` if `relative_depth` points to the first control flow frame.
     pub fn is_root(&self, relative_depth: u32) -> bool {
-        debug_assert!(self.len() >= 1);
+        debug_assert!(!self.is_empty());
         relative_depth as usize == self.len() - 1
     }
 
