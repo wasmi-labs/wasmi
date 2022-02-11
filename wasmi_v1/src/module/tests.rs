@@ -660,3 +660,40 @@ fn wabt_example() {
     ];
     assert_func_bodies(&wasm, [expected]);
 }
+
+#[test]
+fn br_return() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call")
+                br 0
+                return
+            )
+        )
+    "#,
+    );
+    let expected = [Instruction::Return(DropKeep::new(0, 0))];
+    assert_func_bodies(&wasm, [expected]);
+}
+
+#[test]
+fn br_if_return() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (param i32)
+                local.get 0
+                br_if 0
+                return
+            )
+        )
+    "#,
+    );
+    let expected = [
+        Instruction::local_get(1),
+        Instruction::ReturnIfNez(DropKeep::new(1, 0)),
+        Instruction::Return(DropKeep::new(1, 0)),
+    ];
+    assert_func_bodies(&wasm, [expected]);
+}
