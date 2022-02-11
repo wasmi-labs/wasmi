@@ -511,11 +511,19 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Translates a Wasm `br` control flow operator.
     pub fn translate_br(&mut self, relative_depth: u32) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
-            let (end_label, drop_keep) = builder.acquire_target(relative_depth);
-            let dst_pc = builder.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
-            builder
-                .inst_builder
-                .push_inst(Instruction::Br(Target::new(dst_pc, drop_keep)));
+            match builder.acquire_target(relative_depth) {
+                AquiredTarget::Branch(end_label, drop_keep) => {
+                    let dst_pc =
+                        builder.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
+                    builder
+                        .inst_builder
+                        .push_inst(Instruction::Br(Target::new(dst_pc, drop_keep)));
+                }
+                AquiredTarget::Return(drop_keep) => {
+                    // In this case the `br` can be directly translated as `return`.
+                    builder.translate_return()?;
+                }
+            }
             builder.reachable = false;
             Ok(())
         })
