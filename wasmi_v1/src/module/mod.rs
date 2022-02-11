@@ -170,12 +170,14 @@ impl Module {
 
     /// Returns an iterator over the imports of the [`Module`].
     pub(crate) fn imports(&self) -> ModuleImportsIter {
+        let len_imported_funcs = self.imports.len_funcs;
+        let len_imported_globals = self.imports.len_globals;
         ModuleImportsIter {
             names: self.imports.items.iter(),
-            funcs: self.funcs.iter(),
+            funcs: self.funcs[..len_imported_funcs].iter(),
             tables: self.tables.iter(),
             memories: self.memories.iter(),
-            globals: self.globals.iter(),
+            globals: self.globals[..len_imported_globals].iter(),
         }
     }
 
