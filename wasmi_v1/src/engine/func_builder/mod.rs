@@ -534,11 +534,20 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         self.translate_if_reachable(|builder| {
             let condition = builder.value_stack.pop1();
             debug_assert_eq!(condition, ValueType::I32);
-            let (end_label, drop_keep) = builder.acquire_target(relative_depth);
-            let dst_pc = builder.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
-            builder
-                .inst_builder
-                .push_inst(Instruction::BrIfNez(Target::new(dst_pc, drop_keep)));
+            match builder.acquire_target(relative_depth) {
+                AquiredTarget::Branch(end_label, drop_keep) => {
+                    let dst_pc =
+                        builder.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
+                    builder
+                        .inst_builder
+                        .push_inst(Instruction::BrIfNez(Target::new(dst_pc, drop_keep)));
+                }
+                AquiredTarget::Return(drop_keep) => {
+                    builder
+                        .inst_builder
+                        .push_inst(Instruction::ReturnIfNez(drop_keep));
+                }
+            }
             Ok(())
         })
     }

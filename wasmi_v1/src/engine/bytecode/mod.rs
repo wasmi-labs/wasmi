@@ -34,6 +34,7 @@ pub enum Instruction {
     Br(Target),
     BrIfEqz(Target),
     BrIfNez(Target),
+    ReturnIfNez(DropKeep),
     BrTable {
         len_targets: usize,
     },

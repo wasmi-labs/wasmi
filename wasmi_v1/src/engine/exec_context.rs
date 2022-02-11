@@ -688,6 +688,15 @@ where
         }
     }
 
+    fn visit_return_if_nez(&mut self, drop_keep: DropKeep) -> Self::Outcome {
+        let condition = self.value_stack.pop_as();
+        if condition {
+            Ok(ExecutionOutcome::Return(drop_keep))
+        } else {
+            Ok(ExecutionOutcome::Continue)
+        }
+    }
+
     fn visit_br_table(&mut self, br_table: BrTable) -> Self::Outcome {
         let index: u32 = self.value_stack.pop_as();
         match br_table.branch_or_default(index as usize) {

@@ -210,6 +210,7 @@ impl<'a> ResolvedFuncBody<'a> {
             Instruction::Br(target) => visitor.visit_br(*target),
             Instruction::BrIfEqz(target) => visitor.visit_br_if_eqz(*target),
             Instruction::BrIfNez(target) => visitor.visit_br_if_nez(*target),
+            Instruction::ReturnIfNez(drop_keep) => visitor.visit_return_if_nez(*drop_keep),
             Instruction::BrTable { len_targets } => visitor.visit_br_table(BrTable::new(
                 &self.insts[(index + 1)..(index + 1 + len_targets)],
             )),
