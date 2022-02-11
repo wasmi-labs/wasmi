@@ -187,10 +187,11 @@ impl Module {
         // We skip the first `len_imported` elements in `funcs`
         // since they refer to imported and not internally defined
         // functions.
-        let funcs = self.funcs[len_imported..].iter();
-        let func_bodies = self.func_bodies.iter();
+        let funcs = &self.funcs[len_imported..];
+        let func_bodies = &self.func_bodies[..];
+        assert_eq!(funcs.len(), func_bodies.len());
         InternalFuncsIter {
-            iter: funcs.zip(func_bodies),
+            iter: funcs.iter().zip(func_bodies),
         }
     }
 
