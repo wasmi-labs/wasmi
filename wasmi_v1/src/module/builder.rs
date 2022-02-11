@@ -198,8 +198,8 @@ impl<'engine> ModuleBuilder<'engine> {
         self.funcs.reserve_exact(funcs.len());
         for func in funcs {
             let func_type_idx = func?;
-            let func = self.func_types[func_type_idx.into_usize()];
-            self.funcs.push(func);
+            let func_type = self.func_types[func_type_idx.into_usize()];
+            self.funcs.push(func_type);
         }
         Ok(())
     }
