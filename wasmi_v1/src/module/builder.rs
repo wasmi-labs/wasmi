@@ -116,7 +116,7 @@ impl<'engine> ModuleBuilder<'engine> {
     /// # Panics
     ///
     /// If this function has already been called on the same [`ModuleBuilder`].
-    pub fn push_func_types<T>(&mut self, imports: T) -> Result<(), ModuleError>
+    pub fn push_func_types<T>(&mut self, func_types: T) -> Result<(), ModuleError>
     where
         T: IntoIterator<Item = Result<FuncType, ModuleError>>,
         T::IntoIter: ExactSizeIterator,
@@ -125,9 +125,9 @@ impl<'engine> ModuleBuilder<'engine> {
             self.func_types.is_empty(),
             "tried to initialize module function types twice"
         );
-        let imports = imports.into_iter();
-        self.func_types.reserve_exact(imports.len());
-        for func_type in imports {
+        let func_types = func_types.into_iter();
+        self.func_types.reserve_exact(func_types.len());
+        for func_type in func_types {
             let func_type = func_type?;
             let dedup = self.engine.alloc_func_type(func_type);
             self.func_types.push(dedup)
