@@ -417,9 +417,12 @@ impl<'engine> ModuleParser<'engine> {
     ///
     /// If the code start section fails to validate.
     fn process_code_start(&mut self, count: u32, range: Range) -> Result<(), ModuleError> {
-        self.validator
-            .code_section_start(count, &range)
-            .map_err(Into::into)
+        self.validator.code_section_start(count, &range)?;
+        // We have to adjust the initial func reference to the first
+        // internal function before we process any of the internal functions.
+        let len_func_imports = self.builder.imports.funcs.len() as u32;
+        self.func = FuncIdx(len_func_imports);
+        Ok(())
     }
 
     /// Returns the next `FuncIdx` for processing of its function body.
