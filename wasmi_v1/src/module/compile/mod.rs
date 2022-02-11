@@ -1,1070 +1,652 @@
-//! Definitions to compile a Wasm module into `wasmi` bytecode.
-//!
-//! The implementation is specific to the underlying Wasm parser
-//! framework used by `wasmi` which currently is `parity_wasm`.
-
-mod control_frame;
-mod utils;
-
-use self::control_frame::ControlFrame;
-use super::{
-    super::{
-        engine::{
-            bytecode::{FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx},
-            inst_builder::{Reloc, Signedness, WasmFloatType, WasmIntType},
-        },
-        DropKeep,
-        FuncBody,
-        InstructionIdx,
-        InstructionsBuilder,
-        LabelIdx,
-        Target,
-    },
+pub use self::block_type::BlockType;
+use super::{utils::value_type_from_wasmparser, FuncIdx, ModuleResources};
+use crate::{
+    engine::{DropKeep, FuncBody, FunctionBuilder},
     Engine,
+    ModuleError,
 };
-use crate::core::{Value, ValueType};
-use alloc::vec::Vec;
-use parity_wasm::elements::{self as pwasm, Instruction};
-use validation::{
-    func::{top_label, FunctionValidationContext, StartedWith},
-    Error,
-    FuncValidator,
-};
+use wasmparser::{FuncValidator, FunctionBody, Operator, ValidatorResources};
 
-/// Allows to translate a Wasm functions into `wasmi` bytecode.
-#[derive(Debug)]
-pub struct FuncBodyTranslator<'engine> {
-    /// The underlying engine which the translator feeds.
+mod block_type;
+mod operator;
+
+/// Translates the Wasm bytecode into `wasmi` bytecode.
+///
+/// # Note
+///
+/// - Uses the given `engine` as target for the translation.
+/// - Uses the given `parser` and `validator` for parsing and validation of
+///   the incoming Wasm bytecode stream.
+/// - Uses the given module resources `res` as shared immutable data of the
+///   already parsed and validated module parts required for the translation.
+///
+/// # Errors
+///
+/// If the function body fails to validate.
+pub fn translate<'parser>(
+    engine: &Engine,
+    func: FuncIdx,
+    func_body: FunctionBody<'parser>,
+    validator: FuncValidator<ValidatorResources>,
+    res: ModuleResources<'parser>,
+) -> Result<FuncBody, ModuleError> {
+    FunctionTranslator::new(engine, func, func_body, validator, res).translate()
+}
+
+/// Translates Wasm bytecode into `wasmi` bytecode for a single Wasm function.
+struct FunctionTranslator<'engine, 'parser> {
+    /// The target `wasmi` engine for `wasmi` bytecode translation.
     engine: &'engine Engine,
-    /// The underlying instruction builder to incrementally build up `wasmi` bytecode.
-    inst_builder: InstructionsBuilder,
-    /// The underlying control flow frames representing Wasm control flow.
-    control_frames: Vec<ControlFrame>,
-    /// The amount of local variables of the currently compiled function.
-    len_locals: usize,
-    /// The maximum stack height of the translated Wasm function.
+    /// The index of the translated function.
+    func: FuncIdx,
+    /// The function body that shall be translated.
+    func_body: FunctionBody<'parser>,
+    /// The interface to incrementally build up the `wasmi` bytecode function.
+    func_builder: FunctionBuilder<'engine, 'parser>,
+    /// The Wasm validator.
+    validator: FuncValidator<ValidatorResources>,
+    /// The `wasmi` module resources.
     ///
-    /// # Note
-    ///
-    /// This does not include input parameters and local variables.
-    max_stack_height: usize,
+    /// Provides immutable information about the translated Wasm module
+    /// required for function translation to `wasmi` bytecode.
+    res: ModuleResources<'parser>,
 }
 
-impl<'engine> FuncValidator for FuncBodyTranslator<'engine> {
-    type Input = (&'engine Engine, InstructionsBuilder);
-    type Output = (FuncBody, InstructionsBuilder);
-
+impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
+    /// Creates a new Wasm to `wasmi` bytecode function translator.
     fn new(
-        _ctx: &FunctionValidationContext,
-        body: &pwasm::FuncBody,
-        (engine, inst_builder): Self::Input,
-    ) -> Self {
-        let len_locals = body
-            .locals()
-            .iter()
-            .map(|local| local.count() as usize)
-            .sum();
-        FuncBodyTranslator::new(engine, inst_builder, len_locals)
-    }
-
-    #[inline(always)]
-    fn next_instruction(
-        &mut self,
-        ctx: &mut FunctionValidationContext,
-        instruction: &Instruction,
-    ) -> Result<(), Error> {
-        self.translate_instruction(ctx, instruction)
-    }
-
-    fn finish(mut self, ctx: &FunctionValidationContext) -> Self::Output {
-        self.pin_max_stack_height(ctx);
-        let func_body =
-            self.inst_builder
-                .finish(self.engine, self.len_locals, self.max_stack_height);
-        (func_body, self.inst_builder)
-    }
-}
-
-impl<'engine> FuncBodyTranslator<'engine> {
-    /// Creates a new Wasm function body translator for the given [`Engine`].
-    pub fn new(
         engine: &'engine Engine,
-        mut inst_builder: InstructionsBuilder,
-        len_locals: usize,
+        func: FuncIdx,
+        func_body: FunctionBody<'parser>,
+        validator: FuncValidator<ValidatorResources>,
+        res: ModuleResources<'parser>,
     ) -> Self {
-        // Push implicit frame for the whole function block.
-        let end_label = inst_builder.new_label();
-        let control_frames = vec![ControlFrame::Block { end_label }];
+        let func_builder = FunctionBuilder::new(engine, func, res);
         Self {
             engine,
-            inst_builder,
-            control_frames,
-            len_locals,
-            max_stack_height: 0,
+            func,
+            func_body,
+            func_builder,
+            validator,
+            res,
         }
     }
 
-    /// Updates the maximum stack height of the function.
-    ///
-    /// # Note
-    ///
-    /// - This only updates the maximum stack height value of `self` in
-    ///   case the current stack height is greater than the maximum seen
-    ///   so far.
-    /// - This function needs to be called once for every instruction seen
-    ///   in order for the whole construction to work properly.
-    fn pin_max_stack_height(&mut self, ctx: &FunctionValidationContext) {
-        let current_stack_height = ctx.value_stack.len() + self.len_locals;
-        if current_stack_height > self.max_stack_height {
-            self.max_stack_height = current_stack_height;
-        }
+    /// Starts translation of the Wasm stream into `wasmi` bytecode.
+    fn translate(mut self) -> Result<FuncBody, ModuleError> {
+        self.translate_locals()?;
+        self.translate_operators()?;
+        let func_body = self.finish();
+        Ok(func_body)
     }
 
-    /// Pops the top most control frame.
-    ///
-    /// # Panics
-    ///
-    /// If the control flow frame stack is empty.
-    fn pop_control_frame(&mut self) -> ControlFrame {
-        self.control_frames
-            .pop()
-            .expect("encountered unexpected empty control frame stack")
+    /// Finishes construction of the function and returns its [`FuncBody`].
+    fn finish(self) -> FuncBody {
+        self.func_builder.finish()
     }
 
-    /// Try to resolve the given label.
-    ///
-    /// In case the label cannot yet be resolved register the [`Reloc`] as its user.
-    fn try_resolve_label<F>(&mut self, label: LabelIdx, reloc_provider: F) -> InstructionIdx
-    where
-        F: FnOnce(InstructionIdx) -> Reloc,
-    {
-        let pc = self.inst_builder.current_pc();
-        self.inst_builder
-            .try_resolve_label(label, || reloc_provider(pc))
-    }
-
-    /// Validate the Wasm `inst` and translate the respective `wasmi` bytecode.
-    #[inline(always)]
-    fn validate_translate<F, R>(
-        &mut self,
-        validator: &mut FunctionValidationContext,
-        inst: &Instruction,
-        f: F,
-    ) -> Result<(), Error>
-    where
-        F: FnOnce(&mut InstructionsBuilder) -> R,
-    {
-        validator.step(inst)?;
-        f(&mut self.inst_builder);
-        Ok(())
-    }
-
-    /// Translates a single Wasm instruction into `wasmi` bytecode.
-    ///
-    /// # Errors
-    ///
-    /// If there are validation or translation problems.
-    #[inline(always)]
-    fn translate_instruction(
-        &mut self,
-        validator: &mut FunctionValidationContext,
-        inst: &Instruction,
-    ) -> Result<(), Error> {
-        use Instruction as Inst;
-        self.pin_max_stack_height(validator);
-        match inst {
-            Inst::Unreachable => {
-                self.validate_translate(validator, inst, InstructionsBuilder::unreachable)?;
-            }
-            Inst::Nop => {
-                // No need to translate a no-op into `wasmi` bytecode.
-                validator.step(inst)?;
-            }
-            Inst::Block(_block_type) => {
-                self.translate_block(validator, inst)?;
-            }
-            Inst::Loop(_block_type) => {
-                self.translate_loop(validator, inst)?;
-            }
-            Inst::If(_block_type) => {
-                self.translate_if(validator, inst)?;
-            }
-            Inst::Else => {
-                self.translate_else(validator, inst)?;
-            }
-            Inst::End => {
-                self.translate_end(validator, inst)?;
-            }
-            Inst::Br(depth) => {
-                self.translate_br(depth, validator, inst)?;
-            }
-            Inst::BrIf(depth) => {
-                self.translate_br_if(validator, inst, depth)?;
-            }
-            Inst::BrTable(br_table) => {
-                self.translate_br_table(validator, br_table, inst)?;
-            }
-            Inst::Return => {
-                self.translate_return(validator, inst)?;
-            }
-            Inst::Call(func_idx) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.call(FuncIdx::from(*func_idx))
-                })?;
-            }
-            Inst::CallIndirect(signature_idx, _table_ref) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.call_indirect(SignatureIdx::from(*signature_idx))
-                })?;
-            }
-            Inst::Drop => self.validate_translate(validator, inst, InstructionsBuilder::drop)?,
-            Inst::Select => {
-                self.validate_translate(validator, inst, InstructionsBuilder::select)?
-            }
-            Inst::GetLocal(index) => {
-                // Note: We need to calculate relative depth _before_ validation
-                //       since it will change the value stack size.
-                let local_depth =
-                    utils::relative_local_depth(*index, &validator.locals, &validator.value_stack)?;
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.get_local(LocalIdx::from(local_depth))
-                })?
-            }
-            Inst::SetLocal(index) => {
-                // Note: We need to calculate relative depth _after_ validation
-                //       since it will change the value stack size.
-                validator.step(inst)?;
-                let local_depth =
-                    utils::relative_local_depth(*index, &validator.locals, &validator.value_stack)?;
-                self.inst_builder.set_local(LocalIdx::from(local_depth));
-            }
-            Inst::TeeLocal(index) => {
-                // Note: We need to calculate relative depth _after_ validation
-                //       since it will change the value stack size.
-                validator.step(inst)?;
-                let local_depth =
-                    utils::relative_local_depth(*index, &validator.locals, &validator.value_stack)?;
-                self.inst_builder.tee_local(LocalIdx::from(local_depth));
-            }
-            Inst::GetGlobal(index) => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.get_global(GlobalIdx::from(*index))
-            })?,
-            Inst::SetGlobal(index) => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.set_global(GlobalIdx::from(*index))
-            })?,
-            Inst::I32Load(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.load(ValueType::I32, Offset::from(*offset))
-                })?
-            }
-            Inst::I64Load(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.load(ValueType::I64, Offset::from(*offset))
-                })?
-            }
-            Inst::F32Load(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.load(ValueType::F32, Offset::from(*offset))
-                })?
-            }
-            Inst::F64Load(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.load(ValueType::F64, Offset::from(*offset))
-                })?
-            }
-            Inst::I32Load8S(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.load_extend::<i32, i8>(Offset::from(*offset))
-                })?
-            }
-            Inst::I32Load8U(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.load_extend::<i32, u8>(Offset::from(*offset))
-                })?
-            }
-            Inst::I32Load16S(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.load_extend::<i32, i16>(Offset::from(*offset))
-                })?
-            }
-            Inst::I32Load16U(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.load_extend::<i32, u16>(Offset::from(*offset))
-                })?
-            }
-            Inst::I64Load8S(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.load_extend::<i64, i8>(Offset::from(*offset))
-                })?
-            }
-            Inst::I64Load8U(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.load_extend::<i64, u8>(Offset::from(*offset))
-                })?
-            }
-            Inst::I64Load16S(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.load_extend::<i64, i16>(Offset::from(*offset))
-                })?
-            }
-            Inst::I64Load16U(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.load_extend::<i64, u16>(Offset::from(*offset))
-                })?
-            }
-            Inst::I64Load32S(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.load_extend::<i64, i32>(Offset::from(*offset))
-                })?
-            }
-            Inst::I64Load32U(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.load_extend::<i64, u32>(Offset::from(*offset))
-                })?
-            }
-            Inst::I32Store(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.store(ValueType::I32, Offset::from(*offset))
-                })?
-            }
-            Inst::I64Store(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.store(ValueType::I64, Offset::from(*offset))
-                })?
-            }
-            Inst::F32Store(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.store(ValueType::F32, Offset::from(*offset))
-                })?
-            }
-            Inst::F64Store(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.store(ValueType::F64, Offset::from(*offset))
-                })?
-            }
-            Inst::I32Store8(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.store_truncate::<i32, i8>(Offset::from(*offset))
-                })?
-            }
-            Inst::I32Store16(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.store_truncate::<i32, i16>(Offset::from(*offset))
-                })?
-            }
-            Inst::I64Store8(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.store_truncate::<i64, i8>(Offset::from(*offset))
-                })?
-            }
-            Inst::I64Store16(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.store_truncate::<i64, i16>(Offset::from(*offset))
-                })?
-            }
-            Inst::I64Store32(_memory_idx, offset) => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.store_truncate::<i64, i32>(Offset::from(*offset))
-                })?
-            }
-            Inst::CurrentMemory(_) => {
-                self.validate_translate(validator, inst, InstructionsBuilder::memory_size)?
-            }
-            Inst::GrowMemory(_) => {
-                self.validate_translate(validator, inst, InstructionsBuilder::memory_grow)?
-            }
-            Inst::I32Const(value) => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.constant(Value::from(*value))
-            })?,
-            Inst::I64Const(value) => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.constant(Value::from(*value))
-            })?,
-            Inst::F32Const(value) => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.constant(Value::from(*value))
-            })?,
-            Inst::F64Const(value) => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.constant(Value::from(*value))
-            })?,
-            Inst::I32Eqz => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_eqz(WasmIntType::I32)
-            })?,
-            Inst::I32Eq => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.eq(ValueType::I32)
-            })?,
-            Inst::I32Ne => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.ne(ValueType::I32)
-            })?,
-            Inst::I32LtS => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_lt(WasmIntType::I32, Signedness::Signed)
-            })?,
-            Inst::I32LtU => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_lt(WasmIntType::I32, Signedness::Unsigned)
-            })?,
-            Inst::I32GtS => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_gt(WasmIntType::I32, Signedness::Signed)
-            })?,
-            Inst::I32GtU => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_gt(WasmIntType::I32, Signedness::Unsigned)
-            })?,
-            Inst::I32LeS => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_le(WasmIntType::I32, Signedness::Signed)
-            })?,
-            Inst::I32LeU => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_le(WasmIntType::I32, Signedness::Unsigned)
-            })?,
-            Inst::I32GeS => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_ge(WasmIntType::I32, Signedness::Signed)
-            })?,
-            Inst::I32GeU => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_ge(WasmIntType::I32, Signedness::Unsigned)
-            })?,
-            Inst::I64Eqz => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_eqz(WasmIntType::I64)
-            })?,
-            Inst::I64Eq => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.eq(ValueType::I64)
-            })?,
-            Inst::I64Ne => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.ne(ValueType::I64)
-            })?,
-            Inst::I64LtS => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_lt(WasmIntType::I64, Signedness::Signed)
-            })?,
-            Inst::I64LtU => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_lt(WasmIntType::I64, Signedness::Unsigned)
-            })?,
-            Inst::I64GtS => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_gt(WasmIntType::I64, Signedness::Signed)
-            })?,
-            Inst::I64GtU => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_gt(WasmIntType::I64, Signedness::Unsigned)
-            })?,
-            Inst::I64LeS => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_le(WasmIntType::I64, Signedness::Signed)
-            })?,
-            Inst::I64LeU => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_le(WasmIntType::I64, Signedness::Unsigned)
-            })?,
-            Inst::I64GeS => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_ge(WasmIntType::I64, Signedness::Signed)
-            })?,
-            Inst::I64GeU => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_ge(WasmIntType::I64, Signedness::Unsigned)
-            })?,
-            Inst::F32Eq => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.eq(ValueType::F32)
-            })?,
-            Inst::F32Ne => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.ne(ValueType::F32)
-            })?,
-            Inst::F32Lt => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_lt(WasmFloatType::F32)
-            })?,
-            Inst::F32Gt => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_gt(WasmFloatType::F32)
-            })?,
-            Inst::F32Le => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_le(WasmFloatType::F32)
-            })?,
-            Inst::F32Ge => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_ge(WasmFloatType::F32)
-            })?,
-            Inst::F64Eq => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.eq(ValueType::F64)
-            })?,
-            Inst::F64Ne => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.ne(ValueType::F64)
-            })?,
-            Inst::F64Lt => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_lt(WasmFloatType::F64)
-            })?,
-            Inst::F64Gt => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_gt(WasmFloatType::F64)
-            })?,
-            Inst::F64Le => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_le(WasmFloatType::F64)
-            })?,
-            Inst::F64Ge => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_ge(WasmFloatType::F64)
-            })?,
-            Inst::I32Clz => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_clz(WasmIntType::I32)
-            })?,
-            Inst::I32Ctz => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_ctz(WasmIntType::I32)
-            })?,
-            Inst::I32Popcnt => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_popcnt(WasmIntType::I32)
-            })?,
-            Inst::I32Add => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_add(WasmIntType::I32)
-            })?,
-            Inst::I32Sub => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_sub(WasmIntType::I32)
-            })?,
-            Inst::I32Mul => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_mul(WasmIntType::I32)
-            })?,
-            Inst::I32DivS => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_div(WasmIntType::I32, Signedness::Signed)
-            })?,
-            Inst::I32DivU => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_div(WasmIntType::I32, Signedness::Unsigned)
-            })?,
-            Inst::I32RemS => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_rem(WasmIntType::I32, Signedness::Signed)
-            })?,
-            Inst::I32RemU => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_rem(WasmIntType::I32, Signedness::Unsigned)
-            })?,
-            Inst::I32And => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_and(WasmIntType::I32)
-            })?,
-            Inst::I32Or => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_or(WasmIntType::I32)
-            })?,
-            Inst::I32Xor => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_xor(WasmIntType::I32)
-            })?,
-            Inst::I32Shl => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_shl(WasmIntType::I32)
-            })?,
-            Inst::I32ShrS => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_shr(WasmIntType::I32, Signedness::Signed)
-            })?,
-            Inst::I32ShrU => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_shr(WasmIntType::I32, Signedness::Unsigned)
-            })?,
-            Inst::I32Rotl => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_rotl(WasmIntType::I32)
-            })?,
-            Inst::I32Rotr => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_rotr(WasmIntType::I32)
-            })?,
-            Inst::I64Clz => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_clz(WasmIntType::I64)
-            })?,
-            Inst::I64Ctz => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_ctz(WasmIntType::I64)
-            })?,
-            Inst::I64Popcnt => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_popcnt(WasmIntType::I64)
-            })?,
-            Inst::I64Add => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_add(WasmIntType::I64)
-            })?,
-            Inst::I64Sub => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_sub(WasmIntType::I64)
-            })?,
-            Inst::I64Mul => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_mul(WasmIntType::I64)
-            })?,
-            Inst::I64DivS => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_div(WasmIntType::I64, Signedness::Signed)
-            })?,
-            Inst::I64DivU => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_div(WasmIntType::I64, Signedness::Unsigned)
-            })?,
-            Inst::I64RemS => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_rem(WasmIntType::I64, Signedness::Signed)
-            })?,
-            Inst::I64RemU => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_rem(WasmIntType::I64, Signedness::Unsigned)
-            })?,
-            Inst::I64And => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_and(WasmIntType::I64)
-            })?,
-            Inst::I64Or => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_or(WasmIntType::I64)
-            })?,
-            Inst::I64Xor => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_xor(WasmIntType::I64)
-            })?,
-            Inst::I64Shl => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_shl(WasmIntType::I64)
-            })?,
-            Inst::I64ShrS => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_shr(WasmIntType::I64, Signedness::Signed)
-            })?,
-            Inst::I64ShrU => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_shr(WasmIntType::I64, Signedness::Unsigned)
-            })?,
-            Inst::I64Rotl => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_rotl(WasmIntType::I64)
-            })?,
-            Inst::I64Rotr => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_rotr(WasmIntType::I64)
-            })?,
-            Inst::F32Abs => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_abs(WasmFloatType::F32)
-            })?,
-            Inst::F32Neg => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_neg(WasmFloatType::F32)
-            })?,
-            Inst::F32Ceil => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_ceil(WasmFloatType::F32)
-            })?,
-            Inst::F32Floor => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_floor(WasmFloatType::F32)
-            })?,
-            Inst::F32Trunc => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_trunc(WasmFloatType::F32)
-            })?,
-            Inst::F32Nearest => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_nearest(WasmFloatType::F32)
-            })?,
-            Inst::F32Sqrt => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_sqrt(WasmFloatType::F32)
-            })?,
-            Inst::F32Add => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_add(WasmFloatType::F32)
-            })?,
-            Inst::F32Sub => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_sub(WasmFloatType::F32)
-            })?,
-            Inst::F32Mul => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_mul(WasmFloatType::F32)
-            })?,
-            Inst::F32Div => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_div(WasmFloatType::F32)
-            })?,
-            Inst::F32Min => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_min(WasmFloatType::F32)
-            })?,
-            Inst::F32Max => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_max(WasmFloatType::F32)
-            })?,
-            Inst::F32Copysign => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_copysign(WasmFloatType::F32)
-            })?,
-            Inst::F64Abs => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_abs(WasmFloatType::F64)
-            })?,
-            Inst::F64Neg => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_neg(WasmFloatType::F64)
-            })?,
-            Inst::F64Ceil => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_ceil(WasmFloatType::F64)
-            })?,
-            Inst::F64Floor => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_floor(WasmFloatType::F64)
-            })?,
-            Inst::F64Trunc => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_trunc(WasmFloatType::F64)
-            })?,
-            Inst::F64Nearest => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_nearest(WasmFloatType::F64)
-            })?,
-            Inst::F64Sqrt => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_sqrt(WasmFloatType::F64)
-            })?,
-            Inst::F64Add => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_add(WasmFloatType::F64)
-            })?,
-            Inst::F64Sub => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_sub(WasmFloatType::F64)
-            })?,
-            Inst::F64Mul => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_mul(WasmFloatType::F64)
-            })?,
-            Inst::F64Div => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_div(WasmFloatType::F64)
-            })?,
-            Inst::F64Min => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_min(WasmFloatType::F64)
-            })?,
-            Inst::F64Max => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_max(WasmFloatType::F64)
-            })?,
-            Inst::F64Copysign => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_copysign(WasmFloatType::F64)
-            })?,
-            Inst::I32WrapI64 => {
-                self.validate_translate(validator, inst, InstructionsBuilder::wrap)?
-            }
-            Inst::I32TruncSF32 => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_truncate_to_int(
-                    WasmFloatType::F32,
-                    WasmIntType::I32,
-                    Signedness::Signed,
-                )
-            })?,
-            Inst::I32TruncUF32 => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_truncate_to_int(
-                    WasmFloatType::F32,
-                    WasmIntType::I32,
-                    Signedness::Unsigned,
-                )
-            })?,
-            Inst::I32TruncSF64 => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_truncate_to_int(
-                    WasmFloatType::F64,
-                    WasmIntType::I32,
-                    Signedness::Signed,
-                )
-            })?,
-            Inst::I32TruncUF64 => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_truncate_to_int(
-                    WasmFloatType::F64,
-                    WasmIntType::I32,
-                    Signedness::Unsigned,
-                )
-            })?,
-            Inst::I64ExtendSI32 => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.extend(Signedness::Signed)
-            })?,
-            Inst::I64ExtendUI32 => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.extend(Signedness::Unsigned)
-            })?,
-            Inst::I64TruncSF32 => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_truncate_to_int(
-                    WasmFloatType::F32,
-                    WasmIntType::I64,
-                    Signedness::Signed,
-                )
-            })?,
-            Inst::I64TruncUF32 => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_truncate_to_int(
-                    WasmFloatType::F32,
-                    WasmIntType::I64,
-                    Signedness::Unsigned,
-                )
-            })?,
-            Inst::I64TruncSF64 => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_truncate_to_int(
-                    WasmFloatType::F64,
-                    WasmIntType::I64,
-                    Signedness::Signed,
-                )
-            })?,
-            Inst::I64TruncUF64 => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.float_truncate_to_int(
-                    WasmFloatType::F64,
-                    WasmIntType::I64,
-                    Signedness::Unsigned,
-                )
-            })?,
-            Inst::F32ConvertSI32 => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_convert_to_float(
-                    WasmIntType::I32,
-                    Signedness::Signed,
-                    WasmFloatType::F32,
-                )
-            })?,
-            Inst::F32ConvertUI32 => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_convert_to_float(
-                    WasmIntType::I32,
-                    Signedness::Unsigned,
-                    WasmFloatType::F32,
-                )
-            })?,
-            Inst::F32ConvertSI64 => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_convert_to_float(
-                    WasmIntType::I64,
-                    Signedness::Signed,
-                    WasmFloatType::F32,
-                )
-            })?,
-            Inst::F32ConvertUI64 => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_convert_to_float(
-                    WasmIntType::I64,
-                    Signedness::Unsigned,
-                    WasmFloatType::F32,
-                )
-            })?,
-            Inst::F32DemoteF64 => {
-                self.validate_translate(validator, inst, InstructionsBuilder::demote)?
-            }
-            Inst::F64ConvertSI32 => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_convert_to_float(
-                    WasmIntType::I32,
-                    Signedness::Signed,
-                    WasmFloatType::F64,
-                )
-            })?,
-            Inst::F64ConvertUI32 => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_convert_to_float(
-                    WasmIntType::I32,
-                    Signedness::Unsigned,
-                    WasmFloatType::F64,
-                )
-            })?,
-            Inst::F64ConvertSI64 => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_convert_to_float(
-                    WasmIntType::I64,
-                    Signedness::Signed,
-                    WasmFloatType::F64,
-                )
-            })?,
-            Inst::F64ConvertUI64 => self.validate_translate(validator, inst, |inst_builder| {
-                inst_builder.int_convert_to_float(
-                    WasmIntType::I64,
-                    Signedness::Unsigned,
-                    WasmFloatType::F64,
-                )
-            })?,
-            Inst::F64PromoteF32 => {
-                self.validate_translate(validator, inst, InstructionsBuilder::promote)?
-            }
-            Inst::I32ReinterpretF32 => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.reinterpret::<f32, i32>()
-                })?
-            }
-            Inst::I64ReinterpretF64 => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.reinterpret::<f64, i64>()
-                })?
-            }
-            Inst::F32ReinterpretI32 => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.reinterpret::<i32, f32>()
-                })?
-            }
-            Inst::F64ReinterpretI64 => {
-                self.validate_translate(validator, inst, |inst_builder| {
-                    inst_builder.reinterpret::<i64, f64>()
-                })?
-            }
+    /// Translates local variables of the Wasm function.
+    fn translate_locals(&mut self) -> Result<(), ModuleError> {
+        let mut reader = self.func_body.get_locals_reader()?;
+        let len_locals = reader.get_count();
+        for _ in 0..len_locals {
+            let offset = reader.original_position();
+            let (amount, value_type) = reader.read()?;
+            self.validator.define_locals(offset, amount, value_type)?;
+            let value_type = value_type_from_wasmparser(&value_type)?;
+            self.func_builder.translate_locals(amount, value_type)?;
         }
         Ok(())
     }
 
-    /// Translates a Wasm `block` control flow instruction into `wasmi` bytecode.
-    fn translate_block(
-        &mut self,
-        validator: &mut FunctionValidationContext,
-        inst: &Instruction,
-    ) -> Result<(), Error> {
-        validator.step(inst)?;
-        let end_label = self.inst_builder.new_label();
-        self.control_frames.push(ControlFrame::Block { end_label });
-        Ok(())
-    }
-
-    /// Translates a Wasm `loop` control flow instruction into `wasmi` bytecode.
-    fn translate_loop(
-        &mut self,
-        validator: &mut FunctionValidationContext,
-        inst: &Instruction,
-    ) -> Result<(), Error> {
-        validator.step(inst)?;
-        let header = self.inst_builder.new_label();
-        self.inst_builder.resolve_label(header);
-        self.control_frames.push(ControlFrame::Loop { header });
-        Ok(())
-    }
-
-    /// Translates a Wasm `if` control flow instruction into `wasmi` bytecode.
-    fn translate_if(
-        &mut self,
-        validator: &mut FunctionValidationContext,
-        inst: &Instruction,
-    ) -> Result<(), Error> {
-        validator.step(inst)?;
-        let else_label = self.inst_builder.new_label();
-        let end_label = self.inst_builder.new_label();
-        self.control_frames.push(ControlFrame::If {
-            else_label,
-            end_label,
-        });
-        let dst_pc = self.try_resolve_label(else_label, |pc| Reloc::Br { inst_idx: pc });
-        self.inst_builder
-            .branch_eqz(Target::new(dst_pc, DropKeep::new(0, 0)));
-        Ok(())
-    }
-
-    /// Translates a Wasm `else` control flow instruction into `wasmi` bytecode.
-    fn translate_else(
-        &mut self,
-        validator: &mut FunctionValidationContext,
-        inst: &Instruction,
-    ) -> Result<(), Error> {
-        validator.step(inst)?;
-        let top_frame = self.pop_control_frame();
-        let (else_label, end_label) = match top_frame {
-            ControlFrame::If { else_label, end_label } => (else_label, end_label),
-            unexpected => unreachable!(
-                "expect Wasm `if` control flow frame at this point due to validation but found: {:?}",
-                unexpected,
-            ),
-        };
-        let dst_pc = self.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
-        self.inst_builder
-            .branch(Target::new(dst_pc, DropKeep::new(0, 0)));
-        self.inst_builder.resolve_label(else_label);
-        self.control_frames.push(ControlFrame::Else { end_label });
-        Ok(())
-    }
-
-    /// Translates a Wasm `end` control flow instruction into `wasmi` bytecode.
-    fn translate_end(
-        &mut self,
-        validator: &mut FunctionValidationContext,
-        inst: &Instruction,
-    ) -> Result<(), Error> {
-        let started_with = top_label(&validator.frame_stack).started_with;
-        let return_drop_keep = if validator.frame_stack.len() == 1 {
-            // We are about to close the last frame.
-            Some(utils::drop_keep_return(
-                &validator.locals,
-                &validator.value_stack,
-                &validator.frame_stack,
-            ))
-        } else {
-            None
-        };
-        validator.step(inst)?;
-        let top_frame = self.pop_control_frame();
-        if let ControlFrame::If { else_label, .. } = top_frame {
-            // At this point we can resolve the `Else` label.
-            self.inst_builder.resolve_label(else_label);
+    /// Translates the Wasm operators of the Wasm function.
+    fn translate_operators(&mut self) -> Result<(), ModuleError> {
+        let mut reader = self.func_body.get_operators_reader()?;
+        while !reader.eof() {
+            let (operator, offset) = reader.read_with_offset()?;
+            self.validator.op(offset, &operator)?;
+            self.translate_operator(operator)?;
         }
-        if started_with != StartedWith::Loop {
-            let end_label = top_frame.end_label();
-            self.inst_builder.resolve_label(end_label);
+        reader.ensure_end()?;
+        self.validator.finish(reader.original_position())?;
+        Ok(())
+    }
+
+    /// Translate a single Wasm operator of the Wasm function.
+    fn translate_operator(&mut self, operator: Operator) -> Result<(), ModuleError> {
+        let unsupported_error = || Err(ModuleError::unsupported(&operator));
+        match operator {
+            Operator::Unreachable => self.translate_unreachable(),
+            Operator::Nop => self.translate_nop(),
+            Operator::Block { ty } => self.translate_block(ty),
+            Operator::Loop { ty } => self.translate_loop(ty),
+            Operator::If { ty } => self.translate_if(ty),
+            Operator::Else => self.translate_else(),
+            Operator::Try { .. }
+            | Operator::Catch { .. }
+            | Operator::Throw { .. }
+            | Operator::Rethrow { .. } => unsupported_error(),
+            Operator::End => self.translate_end(),
+            Operator::Br { relative_depth } => self.translate_br(relative_depth),
+            Operator::BrIf { relative_depth } => self.translate_br_if(relative_depth),
+            Operator::BrTable { table } => self.translate_br_table(table),
+            Operator::Return => self.translate_return(),
+            Operator::Call { function_index } => self.translate_call(function_index),
+            Operator::CallIndirect { index, table_index } => {
+                self.translate_call_indirect(index, table_index)
+            }
+            Operator::ReturnCall { .. }
+            | Operator::ReturnCallIndirect { .. }
+            | Operator::Delegate { .. }
+            | Operator::CatchAll => unsupported_error(),
+            Operator::Drop => self.translate_drop(),
+            Operator::Select => self.translate_select(),
+            Operator::TypedSelect { ty: _ } => unsupported_error(),
+            Operator::LocalGet { local_index } => self.translate_local_get(local_index),
+            Operator::LocalSet { local_index } => self.translate_local_set(local_index),
+            Operator::LocalTee { local_index } => self.translate_local_tee(local_index),
+            Operator::GlobalGet { global_index } => self.translate_global_get(global_index),
+            Operator::GlobalSet { global_index } => self.translate_global_set(global_index),
+            Operator::I32Load { memarg } => self.translate_i32_load(memarg),
+            Operator::I64Load { memarg } => self.translate_i64_load(memarg),
+            Operator::F32Load { memarg } => self.translate_f32_load(memarg),
+            Operator::F64Load { memarg } => self.translate_f64_load(memarg),
+            Operator::I32Load8S { memarg } => self.translate_i32_load_i8(memarg),
+            Operator::I32Load8U { memarg } => self.translate_i32_load_u8(memarg),
+            Operator::I32Load16S { memarg } => self.translate_i32_load_i16(memarg),
+            Operator::I32Load16U { memarg } => self.translate_i32_load_u16(memarg),
+            Operator::I64Load8S { memarg } => self.translate_i64_load_i8(memarg),
+            Operator::I64Load8U { memarg } => self.translate_i64_load_u8(memarg),
+            Operator::I64Load16S { memarg } => self.translate_i64_load_i16(memarg),
+            Operator::I64Load16U { memarg } => self.translate_i64_load_u16(memarg),
+            Operator::I64Load32S { memarg } => self.translate_i64_load_i32(memarg),
+            Operator::I64Load32U { memarg } => self.translate_i64_load_u32(memarg),
+            Operator::I32Store { memarg } => self.translate_i32_store(memarg),
+            Operator::I64Store { memarg } => self.translate_i64_store(memarg),
+            Operator::F32Store { memarg } => self.translate_f32_store(memarg),
+            Operator::F64Store { memarg } => self.translate_f64_store(memarg),
+            Operator::I32Store8 { memarg } => self.translate_i32_store_i8(memarg),
+            Operator::I32Store16 { memarg } => self.translate_i32_store_i16(memarg),
+            Operator::I64Store8 { memarg } => self.translate_i64_store_i8(memarg),
+            Operator::I64Store16 { memarg } => self.translate_i64_store_i16(memarg),
+            Operator::I64Store32 { memarg } => self.translate_i64_store_i32(memarg),
+            Operator::MemorySize { mem, mem_byte } => self.translate_memory_size(mem, mem_byte),
+            Operator::MemoryGrow { mem, mem_byte } => self.translate_memory_grow(mem, mem_byte),
+            Operator::I32Const { value } => self.translate_i32_const(value),
+            Operator::I64Const { value } => self.translate_i64_const(value),
+            Operator::F32Const { value } => self.translate_f32_const(value),
+            Operator::F64Const { value } => self.translate_f64_const(value),
+            Operator::RefNull { .. } | Operator::RefIsNull | Operator::RefFunc { .. } => {
+                unsupported_error()
+            }
+            Operator::I32Eqz => self.translate_i32_eqz(),
+            Operator::I32Eq => self.translate_i32_eq(),
+            Operator::I32Ne => self.translate_i32_ne(),
+            Operator::I32LtS => self.translate_i32_lt(),
+            Operator::I32LtU => self.translate_u32_lt(),
+            Operator::I32GtS => self.translate_i32_gt(),
+            Operator::I32GtU => self.translate_u32_gt(),
+            Operator::I32LeS => self.translate_i32_le(),
+            Operator::I32LeU => self.translate_u32_le(),
+            Operator::I32GeS => self.translate_i32_ge(),
+            Operator::I32GeU => self.translate_u32_ge(),
+            Operator::I64Eqz => self.translate_i64_eqz(),
+            Operator::I64Eq => self.translate_i64_eq(),
+            Operator::I64Ne => self.translate_i64_ne(),
+            Operator::I64LtS => self.translate_i64_lt(),
+            Operator::I64LtU => self.translate_u64_lt(),
+            Operator::I64GtS => self.translate_i64_gt(),
+            Operator::I64GtU => self.translate_u64_gt(),
+            Operator::I64LeS => self.translate_i64_le(),
+            Operator::I64LeU => self.translate_u64_le(),
+            Operator::I64GeS => self.translate_i64_ge(),
+            Operator::I64GeU => self.translate_u64_ge(),
+            Operator::F32Eq => self.translate_f32_eq(),
+            Operator::F32Ne => self.translate_f32_ne(),
+            Operator::F32Lt => self.translate_f32_lt(),
+            Operator::F32Gt => self.translate_f32_gt(),
+            Operator::F32Le => self.translate_f32_le(),
+            Operator::F32Ge => self.translate_f32_ge(),
+            Operator::F64Eq => self.translate_f64_eq(),
+            Operator::F64Ne => self.translate_f64_ne(),
+            Operator::F64Lt => self.translate_f64_lt(),
+            Operator::F64Gt => self.translate_f64_gt(),
+            Operator::F64Le => self.translate_f64_le(),
+            Operator::F64Ge => self.translate_f64_ge(),
+            Operator::I32Clz => self.translate_i32_clz(),
+            Operator::I32Ctz => self.translate_i32_ctz(),
+            Operator::I32Popcnt => self.translate_i32_popcnt(),
+            Operator::I32Add => self.translate_i32_add(),
+            Operator::I32Sub => self.translate_i32_sub(),
+            Operator::I32Mul => self.translate_i32_mul(),
+            Operator::I32DivS => self.translate_i32_div(),
+            Operator::I32DivU => self.translate_u32_div(),
+            Operator::I32RemS => self.translate_i32_rem(),
+            Operator::I32RemU => self.translate_u32_rem(),
+            Operator::I32And => self.translate_i32_and(),
+            Operator::I32Or => self.translate_i32_or(),
+            Operator::I32Xor => self.translate_i32_xor(),
+            Operator::I32Shl => self.translate_i32_shl(),
+            Operator::I32ShrS => self.translate_i32_shr(),
+            Operator::I32ShrU => self.translate_u32_shr(),
+            Operator::I32Rotl => self.translate_i32_rotl(),
+            Operator::I32Rotr => self.translate_i32_rotr(),
+            Operator::I64Clz => self.translate_i64_clz(),
+            Operator::I64Ctz => self.translate_i64_ctz(),
+            Operator::I64Popcnt => self.translate_i64_popcnt(),
+            Operator::I64Add => self.translate_i64_add(),
+            Operator::I64Sub => self.translate_i64_sub(),
+            Operator::I64Mul => self.translate_i64_mul(),
+            Operator::I64DivS => self.translate_i64_div(),
+            Operator::I64DivU => self.translate_u64_div(),
+            Operator::I64RemS => self.translate_i64_rem(),
+            Operator::I64RemU => self.translate_u64_rem(),
+            Operator::I64And => self.translate_i64_and(),
+            Operator::I64Or => self.translate_i64_or(),
+            Operator::I64Xor => self.translate_i64_xor(),
+            Operator::I64Shl => self.translate_i64_shl(),
+            Operator::I64ShrS => self.translate_i64_shr(),
+            Operator::I64ShrU => self.translate_u64_shr(),
+            Operator::I64Rotl => self.translate_i64_rotl(),
+            Operator::I64Rotr => self.translate_i64_rotr(),
+            Operator::F32Abs => self.translate_f32_abs(),
+            Operator::F32Neg => self.translate_f32_neg(),
+            Operator::F32Ceil => self.translate_f32_ceil(),
+            Operator::F32Floor => self.translate_f32_floor(),
+            Operator::F32Trunc => self.translate_f32_trunc(),
+            Operator::F32Nearest => self.translate_f32_nearest(),
+            Operator::F32Sqrt => self.translate_f32_sqrt(),
+            Operator::F32Add => self.translate_f32_add(),
+            Operator::F32Sub => self.translate_f32_sub(),
+            Operator::F32Mul => self.translate_f32_mul(),
+            Operator::F32Div => self.translate_f32_div(),
+            Operator::F32Min => self.translate_f32_min(),
+            Operator::F32Max => self.translate_f32_max(),
+            Operator::F32Copysign => self.translate_f32_copysign(),
+            Operator::F64Abs => self.translate_f64_abs(),
+            Operator::F64Neg => self.translate_f64_neg(),
+            Operator::F64Ceil => self.translate_f64_ceil(),
+            Operator::F64Floor => self.translate_f64_floor(),
+            Operator::F64Trunc => self.translate_f64_trunc(),
+            Operator::F64Nearest => self.translate_f64_nearest(),
+            Operator::F64Sqrt => self.translate_f64_sqrt(),
+            Operator::F64Add => self.translate_f64_add(),
+            Operator::F64Sub => self.translate_f64_sub(),
+            Operator::F64Mul => self.translate_f64_mul(),
+            Operator::F64Div => self.translate_f64_div(),
+            Operator::F64Min => self.translate_f64_min(),
+            Operator::F64Max => self.translate_f64_max(),
+            Operator::F64Copysign => self.translate_f64_copysign(),
+            Operator::I32WrapI64 => self.translate_i32_wrap_i64(),
+            Operator::I32TruncF32S => self.translate_i32_trunc_f32(),
+            Operator::I32TruncF32U => self.translate_u32_trunc_f32(),
+            Operator::I32TruncF64S => self.translate_i32_trunc_f64(),
+            Operator::I32TruncF64U => self.translate_u32_trunc_f64(),
+            Operator::I64ExtendI32S => self.translate_i64_extend_i32(),
+            Operator::I64ExtendI32U => self.translate_u64_extend_i32(),
+            Operator::I64TruncF32S => self.translate_i64_trunc_f32(),
+            Operator::I64TruncF32U => self.translate_u64_trunc_f32(),
+            Operator::I64TruncF64S => self.translate_i64_trunc_f64(),
+            Operator::I64TruncF64U => self.translate_u64_trunc_f64(),
+            Operator::F32ConvertI32S => self.translate_f32_convert_i32(),
+            Operator::F32ConvertI32U => self.translate_f32_convert_u32(),
+            Operator::F32ConvertI64S => self.translate_f32_convert_i64(),
+            Operator::F32ConvertI64U => self.translate_f32_convert_u64(),
+            Operator::F32DemoteF64 => self.translate_f32_demote_f64(),
+            Operator::F64ConvertI32S => self.translate_f64_convert_i32(),
+            Operator::F64ConvertI32U => self.translate_f64_convert_u32(),
+            Operator::F64ConvertI64S => self.translate_f64_convert_i64(),
+            Operator::F64ConvertI64U => self.translate_f64_convert_u64(),
+            Operator::F64PromoteF32 => self.translate_f64_promote_f32(),
+            Operator::I32ReinterpretF32 => self.translate_i32_reinterpret_f32(),
+            Operator::I64ReinterpretF64 => self.translate_i64_reinterpret_f64(),
+            Operator::F32ReinterpretI32 => self.translate_f32_reinterpret_i32(),
+            Operator::F64ReinterpretI64 => self.translate_f64_reinterpret_i64(),
+            Operator::I32Extend8S
+            | Operator::I32Extend16S
+            | Operator::I64Extend8S
+            | Operator::I64Extend16S
+            | Operator::I64Extend32S
+            | Operator::I32TruncSatF32S
+            | Operator::I32TruncSatF32U
+            | Operator::I32TruncSatF64S
+            | Operator::I32TruncSatF64U
+            | Operator::I64TruncSatF32S
+            | Operator::I64TruncSatF32U
+            | Operator::I64TruncSatF64S
+            | Operator::I64TruncSatF64U
+            | Operator::MemoryInit { .. }
+            | Operator::DataDrop { .. }
+            | Operator::MemoryCopy { .. }
+            | Operator::MemoryFill { .. }
+            | Operator::TableInit { .. }
+            | Operator::ElemDrop { .. }
+            | Operator::TableCopy { .. }
+            | Operator::TableFill { .. }
+            | Operator::TableGet { .. }
+            | Operator::TableSet { .. }
+            | Operator::TableGrow { .. }
+            | Operator::TableSize { .. }
+            | Operator::MemoryAtomicNotify { .. }
+            | Operator::MemoryAtomicWait32 { .. }
+            | Operator::MemoryAtomicWait64 { .. }
+            | Operator::AtomicFence { .. }
+            | Operator::I32AtomicLoad { .. }
+            | Operator::I64AtomicLoad { .. }
+            | Operator::I32AtomicLoad8U { .. }
+            | Operator::I32AtomicLoad16U { .. }
+            | Operator::I64AtomicLoad8U { .. }
+            | Operator::I64AtomicLoad16U { .. }
+            | Operator::I64AtomicLoad32U { .. }
+            | Operator::I32AtomicStore { .. }
+            | Operator::I64AtomicStore { .. }
+            | Operator::I32AtomicStore8 { .. }
+            | Operator::I32AtomicStore16 { .. }
+            | Operator::I64AtomicStore8 { .. }
+            | Operator::I64AtomicStore16 { .. }
+            | Operator::I64AtomicStore32 { .. }
+            | Operator::I32AtomicRmwAdd { .. }
+            | Operator::I64AtomicRmwAdd { .. }
+            | Operator::I32AtomicRmw8AddU { .. }
+            | Operator::I32AtomicRmw16AddU { .. }
+            | Operator::I64AtomicRmw8AddU { .. }
+            | Operator::I64AtomicRmw16AddU { .. }
+            | Operator::I64AtomicRmw32AddU { .. }
+            | Operator::I32AtomicRmwSub { .. }
+            | Operator::I64AtomicRmwSub { .. }
+            | Operator::I32AtomicRmw8SubU { .. }
+            | Operator::I32AtomicRmw16SubU { .. }
+            | Operator::I64AtomicRmw8SubU { .. }
+            | Operator::I64AtomicRmw16SubU { .. }
+            | Operator::I64AtomicRmw32SubU { .. }
+            | Operator::I32AtomicRmwAnd { .. }
+            | Operator::I64AtomicRmwAnd { .. }
+            | Operator::I32AtomicRmw8AndU { .. }
+            | Operator::I32AtomicRmw16AndU { .. }
+            | Operator::I64AtomicRmw8AndU { .. }
+            | Operator::I64AtomicRmw16AndU { .. }
+            | Operator::I64AtomicRmw32AndU { .. }
+            | Operator::I32AtomicRmwOr { .. }
+            | Operator::I64AtomicRmwOr { .. }
+            | Operator::I32AtomicRmw8OrU { .. }
+            | Operator::I32AtomicRmw16OrU { .. }
+            | Operator::I64AtomicRmw8OrU { .. }
+            | Operator::I64AtomicRmw16OrU { .. }
+            | Operator::I64AtomicRmw32OrU { .. }
+            | Operator::I32AtomicRmwXor { .. }
+            | Operator::I64AtomicRmwXor { .. }
+            | Operator::I32AtomicRmw8XorU { .. }
+            | Operator::I32AtomicRmw16XorU { .. }
+            | Operator::I64AtomicRmw8XorU { .. }
+            | Operator::I64AtomicRmw16XorU { .. }
+            | Operator::I64AtomicRmw32XorU { .. }
+            | Operator::I32AtomicRmwXchg { .. }
+            | Operator::I64AtomicRmwXchg { .. }
+            | Operator::I32AtomicRmw8XchgU { .. }
+            | Operator::I32AtomicRmw16XchgU { .. }
+            | Operator::I64AtomicRmw8XchgU { .. }
+            | Operator::I64AtomicRmw16XchgU { .. }
+            | Operator::I64AtomicRmw32XchgU { .. }
+            | Operator::I32AtomicRmwCmpxchg { .. }
+            | Operator::I64AtomicRmwCmpxchg { .. }
+            | Operator::I32AtomicRmw8CmpxchgU { .. }
+            | Operator::I32AtomicRmw16CmpxchgU { .. }
+            | Operator::I64AtomicRmw8CmpxchgU { .. }
+            | Operator::I64AtomicRmw16CmpxchgU { .. }
+            | Operator::I64AtomicRmw32CmpxchgU { .. }
+            | Operator::V128Load { .. }
+            | Operator::V128Load8x8S { .. }
+            | Operator::V128Load8x8U { .. }
+            | Operator::V128Load16x4S { .. }
+            | Operator::V128Load16x4U { .. }
+            | Operator::V128Load32x2S { .. }
+            | Operator::V128Load32x2U { .. }
+            | Operator::V128Load8Splat { .. }
+            | Operator::V128Load16Splat { .. }
+            | Operator::V128Load32Splat { .. }
+            | Operator::V128Load64Splat { .. }
+            | Operator::V128Load32Zero { .. }
+            | Operator::V128Load64Zero { .. }
+            | Operator::V128Store { .. }
+            | Operator::V128Load8Lane { .. }
+            | Operator::V128Load16Lane { .. }
+            | Operator::V128Load32Lane { .. }
+            | Operator::V128Load64Lane { .. }
+            | Operator::V128Store8Lane { .. }
+            | Operator::V128Store16Lane { .. }
+            | Operator::V128Store32Lane { .. }
+            | Operator::V128Store64Lane { .. }
+            | Operator::V128Const { .. }
+            | Operator::I8x16Shuffle { .. }
+            | Operator::I8x16ExtractLaneS { .. }
+            | Operator::I8x16ExtractLaneU { .. }
+            | Operator::I8x16ReplaceLane { .. }
+            | Operator::I16x8ExtractLaneS { .. }
+            | Operator::I16x8ExtractLaneU { .. }
+            | Operator::I16x8ReplaceLane { .. }
+            | Operator::I32x4ExtractLane { .. }
+            | Operator::I32x4ReplaceLane { .. }
+            | Operator::I64x2ExtractLane { .. }
+            | Operator::I64x2ReplaceLane { .. }
+            | Operator::F32x4ExtractLane { .. }
+            | Operator::F32x4ReplaceLane { .. }
+            | Operator::F64x2ExtractLane { .. }
+            | Operator::F64x2ReplaceLane { .. }
+            | Operator::I8x16Swizzle
+            | Operator::I8x16Splat
+            | Operator::I16x8Splat
+            | Operator::I32x4Splat
+            | Operator::I64x2Splat
+            | Operator::F32x4Splat
+            | Operator::F64x2Splat
+            | Operator::I8x16Eq
+            | Operator::I8x16Ne
+            | Operator::I8x16LtS
+            | Operator::I8x16LtU
+            | Operator::I8x16GtS
+            | Operator::I8x16GtU
+            | Operator::I8x16LeS
+            | Operator::I8x16LeU
+            | Operator::I8x16GeS
+            | Operator::I8x16GeU
+            | Operator::I16x8Eq
+            | Operator::I16x8Ne
+            | Operator::I16x8LtS
+            | Operator::I16x8LtU
+            | Operator::I16x8GtS
+            | Operator::I16x8GtU
+            | Operator::I16x8LeS
+            | Operator::I16x8LeU
+            | Operator::I16x8GeS
+            | Operator::I16x8GeU
+            | Operator::I32x4Eq
+            | Operator::I32x4Ne
+            | Operator::I32x4LtS
+            | Operator::I32x4LtU
+            | Operator::I32x4GtS
+            | Operator::I32x4GtU
+            | Operator::I32x4LeS
+            | Operator::I32x4LeU
+            | Operator::I32x4GeS
+            | Operator::I32x4GeU
+            | Operator::I64x2Eq
+            | Operator::I64x2Ne
+            | Operator::I64x2LtS
+            | Operator::I64x2GtS
+            | Operator::I64x2LeS
+            | Operator::I64x2GeS
+            | Operator::F32x4Eq
+            | Operator::F32x4Ne
+            | Operator::F32x4Lt
+            | Operator::F32x4Gt
+            | Operator::F32x4Le
+            | Operator::F32x4Ge
+            | Operator::F64x2Eq
+            | Operator::F64x2Ne
+            | Operator::F64x2Lt
+            | Operator::F64x2Gt
+            | Operator::F64x2Le
+            | Operator::F64x2Ge
+            | Operator::V128Not
+            | Operator::V128And
+            | Operator::V128AndNot
+            | Operator::V128Or
+            | Operator::V128Xor
+            | Operator::V128Bitselect
+            | Operator::V128AnyTrue
+            | Operator::I8x16Abs
+            | Operator::I8x16Neg
+            | Operator::I8x16Popcnt
+            | Operator::I8x16AllTrue
+            | Operator::I8x16Bitmask
+            | Operator::I8x16NarrowI16x8S
+            | Operator::I8x16NarrowI16x8U
+            | Operator::I8x16Shl
+            | Operator::I8x16ShrS
+            | Operator::I8x16ShrU
+            | Operator::I8x16Add
+            | Operator::I8x16AddSatS
+            | Operator::I8x16AddSatU
+            | Operator::I8x16Sub
+            | Operator::I8x16SubSatS
+            | Operator::I8x16SubSatU
+            | Operator::I8x16MinS
+            | Operator::I8x16MinU
+            | Operator::I8x16MaxS
+            | Operator::I8x16MaxU
+            | Operator::I8x16RoundingAverageU
+            | Operator::I16x8ExtAddPairwiseI8x16S
+            | Operator::I16x8ExtAddPairwiseI8x16U
+            | Operator::I16x8Abs
+            | Operator::I16x8Neg
+            | Operator::I16x8Q15MulrSatS
+            | Operator::I16x8AllTrue
+            | Operator::I16x8Bitmask
+            | Operator::I16x8NarrowI32x4S
+            | Operator::I16x8NarrowI32x4U
+            | Operator::I16x8ExtendLowI8x16S
+            | Operator::I16x8ExtendHighI8x16S
+            | Operator::I16x8ExtendLowI8x16U
+            | Operator::I16x8ExtendHighI8x16U
+            | Operator::I16x8Shl
+            | Operator::I16x8ShrS
+            | Operator::I16x8ShrU
+            | Operator::I16x8Add
+            | Operator::I16x8AddSatS
+            | Operator::I16x8AddSatU
+            | Operator::I16x8Sub
+            | Operator::I16x8SubSatS
+            | Operator::I16x8SubSatU
+            | Operator::I16x8Mul
+            | Operator::I16x8MinS
+            | Operator::I16x8MinU
+            | Operator::I16x8MaxS
+            | Operator::I16x8MaxU
+            | Operator::I16x8RoundingAverageU
+            | Operator::I16x8ExtMulLowI8x16S
+            | Operator::I16x8ExtMulHighI8x16S
+            | Operator::I16x8ExtMulLowI8x16U
+            | Operator::I16x8ExtMulHighI8x16U
+            | Operator::I32x4ExtAddPairwiseI16x8S
+            | Operator::I32x4ExtAddPairwiseI16x8U
+            | Operator::I32x4Abs
+            | Operator::I32x4Neg
+            | Operator::I32x4AllTrue
+            | Operator::I32x4Bitmask
+            | Operator::I32x4ExtendLowI16x8S
+            | Operator::I32x4ExtendHighI16x8S
+            | Operator::I32x4ExtendLowI16x8U
+            | Operator::I32x4ExtendHighI16x8U
+            | Operator::I32x4Shl
+            | Operator::I32x4ShrS
+            | Operator::I32x4ShrU
+            | Operator::I32x4Add
+            | Operator::I32x4Sub
+            | Operator::I32x4Mul
+            | Operator::I32x4MinS
+            | Operator::I32x4MinU
+            | Operator::I32x4MaxS
+            | Operator::I32x4MaxU
+            | Operator::I32x4DotI16x8S
+            | Operator::I32x4ExtMulLowI16x8S
+            | Operator::I32x4ExtMulHighI16x8S
+            | Operator::I32x4ExtMulLowI16x8U
+            | Operator::I32x4ExtMulHighI16x8U
+            | Operator::I64x2Abs
+            | Operator::I64x2Neg
+            | Operator::I64x2AllTrue
+            | Operator::I64x2Bitmask
+            | Operator::I64x2ExtendLowI32x4S
+            | Operator::I64x2ExtendHighI32x4S
+            | Operator::I64x2ExtendLowI32x4U
+            | Operator::I64x2ExtendHighI32x4U
+            | Operator::I64x2Shl
+            | Operator::I64x2ShrS
+            | Operator::I64x2ShrU
+            | Operator::I64x2Add
+            | Operator::I64x2Sub
+            | Operator::I64x2Mul
+            | Operator::I64x2ExtMulLowI32x4S
+            | Operator::I64x2ExtMulHighI32x4S
+            | Operator::I64x2ExtMulLowI32x4U
+            | Operator::I64x2ExtMulHighI32x4U
+            | Operator::F32x4Ceil
+            | Operator::F32x4Floor
+            | Operator::F32x4Trunc
+            | Operator::F32x4Nearest
+            | Operator::F32x4Abs
+            | Operator::F32x4Neg
+            | Operator::F32x4Sqrt
+            | Operator::F32x4Add
+            | Operator::F32x4Sub
+            | Operator::F32x4Mul
+            | Operator::F32x4Div
+            | Operator::F32x4Min
+            | Operator::F32x4Max
+            | Operator::F32x4PMin
+            | Operator::F32x4PMax
+            | Operator::F64x2Ceil
+            | Operator::F64x2Floor
+            | Operator::F64x2Trunc
+            | Operator::F64x2Nearest
+            | Operator::F64x2Abs
+            | Operator::F64x2Neg
+            | Operator::F64x2Sqrt
+            | Operator::F64x2Add
+            | Operator::F64x2Sub
+            | Operator::F64x2Mul
+            | Operator::F64x2Div
+            | Operator::F64x2Min
+            | Operator::F64x2Max
+            | Operator::F64x2PMin
+            | Operator::F64x2PMax
+            | Operator::I32x4TruncSatF32x4S
+            | Operator::I32x4TruncSatF32x4U
+            | Operator::F32x4ConvertI32x4S
+            | Operator::F32x4ConvertI32x4U
+            | Operator::I32x4TruncSatF64x2SZero
+            | Operator::I32x4TruncSatF64x2UZero
+            | Operator::F64x2ConvertLowI32x4S
+            | Operator::F64x2ConvertLowI32x4U
+            | Operator::F32x4DemoteF64x2Zero
+            | Operator::F64x2PromoteLowF32x4
+            | Operator::I8x16SwizzleRelaxed
+            | Operator::I32x4TruncSatF32x4SRelaxed
+            | Operator::I32x4TruncSatF32x4URelaxed
+            | Operator::I32x4TruncSatF64x2SZeroRelaxed
+            | Operator::I32x4TruncSatF64x2UZeroRelaxed
+            | Operator::F32x4FmaRelaxed
+            | Operator::F32x4FmsRelaxed
+            | Operator::F64x2FmaRelaxed
+            | Operator::F64x2FmsRelaxed
+            | Operator::I8x16LaneSelect
+            | Operator::I16x8LaneSelect
+            | Operator::I32x4LaneSelect
+            | Operator::I64x2LaneSelect
+            | Operator::F32x4MinRelaxed
+            | Operator::F32x4MaxRelaxed
+            | Operator::F64x2MinRelaxed
+            | Operator::F64x2MaxRelaxed => unsupported_error(),
         }
-        if let Some(drop_keep) = return_drop_keep {
-            // It was the last instruction therefore we emit the explicit return instruction.
-            let drop_keep = drop_keep.unwrap_or_else(|error| {
-                panic!(
-                    "due to validation the value stack must not have underflowed. \
-                            Validation also ensures that the frame stack is not empty: {:?}",
-                    error
-                )
-            });
-            self.inst_builder.ret(drop_keep);
-        }
-        Ok(())
-    }
-
-    /// Translates a Wasm `br` control flow instruction into `wasmi` bytecode.
-    fn translate_br(
-        &mut self,
-        depth: &u32,
-        validator: &mut FunctionValidationContext,
-        inst: &Instruction,
-    ) -> Result<(), Error> {
-        let target = utils::require_target(
-            *depth,
-            validator.value_stack.len(),
-            &validator.frame_stack,
-            &self.control_frames,
-        );
-        validator.step(inst)?;
-        let (end_label, drop_keep) = target.unwrap_or_else(|error| {
-            panic!(
-                "due to validation the value stack must not underflow \
-                        and the branching depth is valid at this point: {:?}",
-                error
-            )
-        });
-        let dst_pc = self.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
-        self.inst_builder.branch(Target::new(dst_pc, drop_keep));
-        Ok(())
-    }
-
-    /// Translates a Wasm `br_if` control flow instruction into `wasmi` bytecode.
-    fn translate_br_if(
-        &mut self,
-        validator: &mut FunctionValidationContext,
-        inst: &Instruction,
-        depth: &u32,
-    ) -> Result<(), Error> {
-        validator.step(inst)?;
-        let (end_label, drop_keep) = utils::require_target(
-            *depth,
-            validator.value_stack.len(),
-            &validator.frame_stack,
-            &self.control_frames,
-        )
-        .unwrap_or_else(|error| {
-            panic!(
-                "due to validation the value stack must not underflow \
-                        and the branching depth is valid at this point: {:?}",
-                error
-            )
-        });
-        let dst_pc = self.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
-        self.inst_builder.branch_nez(Target::new(dst_pc, drop_keep));
-        Ok(())
-    }
-
-    /// Translates a Wasm `br_table` control flow instruction into `wasmi` bytecode.
-    fn translate_br_table(
-        &mut self,
-        validator: &mut FunctionValidationContext,
-        br_table: &pwasm::BrTableData,
-        inst: &Instruction,
-    ) -> Result<(), Error> {
-        // At this point, the condition value is at the top of the stack.
-        // But at the point of actual jump the condition will already be
-        // popped off.
-        let value_stack_height = validator.value_stack.len().saturating_sub(1);
-        let targets = br_table
-            .table
-            .iter()
-            .map(|depth| {
-                utils::require_target(
-                    *depth,
-                    value_stack_height,
-                    &validator.frame_stack,
-                    &self.control_frames,
-                )
-            })
-            .collect::<Result<Vec<_>, _>>();
-        let default_target = utils::require_target(
-            br_table.default,
-            value_stack_height,
-            &validator.frame_stack,
-            &self.control_frames,
-        );
-        validator.step(inst)?;
-        const REQUIRE_TARGET_PROOF: &str = "could not resolve targets or default target of the \
-                    `br_table` even though it validated properly";
-        let targets = targets.unwrap_or_else(|error| panic!("{}: {}", REQUIRE_TARGET_PROOF, error));
-        let default_target =
-            default_target.unwrap_or_else(|error| panic!("{}: {}", REQUIRE_TARGET_PROOF, error));
-        let mut branch_arm_target = |index, label, drop_keep| {
-            let dst_pc = self.try_resolve_label(label, |pc| Reloc::BrTable {
-                inst_idx: pc,
-                target_idx: index,
-            });
-            Target::new(dst_pc, drop_keep)
-        };
-        let targets = targets
-            .into_iter()
-            .enumerate()
-            .map(|(target_idx, (label, drop_keep))| branch_arm_target(target_idx, label, drop_keep))
-            .collect::<Vec<_>>();
-        let default_target = {
-            let (label_idx, drop_keep) = default_target;
-            branch_arm_target(targets.len(), label_idx, drop_keep)
-        };
-        self.inst_builder.branch_table(default_target, targets);
-        Ok(())
-    }
-
-    /// Translates a Wasm `return` control flow instruction into `wasmi` bytecode.
-    fn translate_return(
-        &mut self,
-        validator: &mut FunctionValidationContext,
-        inst: &Instruction,
-    ) -> Result<(), Error> {
-        let drop_keep = utils::drop_keep_return(
-            &validator.locals,
-            &validator.value_stack,
-            &validator.frame_stack,
-        );
-        validator.step(inst)?;
-        let drop_keep = drop_keep.unwrap_or_else(|error| {
-            panic!(
-                "due to validation the value stack must not have underflowed. \
-                         Validation also ensures that the frame stack is not empty: {:?}",
-                error
-            )
-        });
-        self.inst_builder.ret(drop_keep);
-        Ok(())
     }
 }

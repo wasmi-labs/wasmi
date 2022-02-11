@@ -1,35 +1,52 @@
-use core::{fmt, fmt::Display};
-use parity_wasm::elements as pwasm;
+use super::ReadError;
+use core::{
+    fmt,
+    fmt::{Debug, Display},
+};
+use wasmparser::BinaryReaderError as ParserError;
 
-/// An error that may occur upon translating Wasm to `wasmi` bytecode.
 #[derive(Debug)]
-pub enum TranslationError {
-    /// An error that may occur upon Wasm validation.
-    Validation(validation::Error),
-    /// An error that may occur upon compiling Wasm to `wasmi` bytecode.
-    Compilation(pwasm::Error),
+pub enum ModuleError {
+    /// Encountered when there is a problem with the Wasm input stream.
+    Read(ReadError),
+    /// Encountered when there is a Wasm parsing error.
+    Parser(ParserError),
+    /// Encountered when unsupported Wasm proposal definitions are used.
+    Unsupported { message: String },
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for TranslationError {}
-
-impl Display for TranslationError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            TranslationError::Validation(error) => Display::fmt(error, f),
-            TranslationError::Compilation(error) => Display::fmt(error, f),
+impl ModuleError {
+    pub(crate) fn unsupported(definition: impl Debug) -> Self {
+        Self::Unsupported {
+            message: format!("{:?}", definition),
         }
     }
 }
 
-impl From<validation::Error> for TranslationError {
-    fn from(error: validation::Error) -> Self {
-        TranslationError::Validation(error)
+impl Display for ModuleError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ModuleError::Read(error) => Display::fmt(error, f),
+            ModuleError::Parser(error) => Display::fmt(error, f),
+            ModuleError::Unsupported { message } => {
+                write!(
+                    f,
+                    "encountered unsupported Wasm proposal definition: {:?}",
+                    message
+                )
+            }
+        }
     }
 }
 
-impl From<pwasm::Error> for TranslationError {
-    fn from(error: pwasm::Error) -> Self {
-        TranslationError::Compilation(error)
+impl From<ReadError> for ModuleError {
+    fn from(error: ReadError) -> Self {
+        Self::Read(error)
+    }
+}
+
+impl From<ParserError> for ModuleError {
+    fn from(error: ParserError) -> Self {
+        Self::Parser(error)
     }
 }

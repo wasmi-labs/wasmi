@@ -141,7 +141,7 @@ impl TestContext<'_> {
                 error
             )
         });
-        let module = Module::new(self.engine(), wasm)?;
+        let module = Module::new(self.engine(), &wasm[..])?;
         let instance_pre = self.linker.instantiate(&mut self.store, &module)?;
         let instance = instance_pre.start(&mut self.store)?;
         self.modules.push(module);

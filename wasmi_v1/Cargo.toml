@@ -11,9 +11,8 @@ description = "WebAssembly interpreter"
 keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
 
 [dependencies]
+wasmparser = { version = "0.82", package = "wasmparser-nostd", default-features = false }
 wasmi_core = { version = "0.1", path = "../core", default-features = false }
-validation = { package = "wasmi-validation", version = "0.4", path = "../validation", default-features = false }
-parity-wasm = { version = "0.42.0", default-features = false }
 spin = { version = "0.9", default-features = false, features = ["mutex", "spin_mutex"] }
 
 [dev-dependencies]
@@ -23,8 +22,7 @@ wat = "1"
 default = ["std"]
 # Use `no-default-features` for a `no_std` build.
 std = [
-    "parity-wasm/std",
-    "validation/std",
+    "wasmparser/std",
     "spin/std",
 ]
 # Enables OS supported virtual memory.

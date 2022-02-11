@@ -5,8 +5,8 @@ pub mod call_stack;
 pub mod code_map;
 pub mod exec_context;
 mod func_args;
+mod func_builder;
 mod func_types;
-pub mod inst_builder;
 mod traits;
 pub mod value_stack;
 
@@ -14,7 +14,7 @@ pub(crate) use self::func_args::{FuncParams, FuncResults, ReadParams, WasmType, 
 pub use self::{
     bytecode::{DropKeep, Target},
     code_map::FuncBody,
-    inst_builder::{InstructionIdx, InstructionsBuilder, LabelIdx, Reloc},
+    func_builder::{FunctionBuilder, InstructionIdx, LabelIdx, RelativeDepth, Reloc},
     traits::{CallParams, CallResults},
 };
 use self::{
@@ -146,7 +146,7 @@ impl Engine {
     }
 
     /// Allocates a new function type to the engine.
-    pub(super) fn alloc_func_type(&mut self, func_type: FuncType) -> DedupFuncType {
+    pub(super) fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
         self.inner.lock().func_types.alloc_func_type(func_type)
     }
 
@@ -156,13 +156,12 @@ impl Engine {
     ///
     /// - If the deduplicated function type is not owned by the engine.
     /// - If the deduplicated function type cannot be resolved to its entity.
-    pub(super) fn resolve_func_type(&self, func_type: DedupFuncType) -> FuncType {
+    pub(super) fn resolve_func_type<F, R>(&self, func_type: DedupFuncType, f: F) -> R
+    where
+        F: FnOnce(&FuncType) -> R,
+    {
         // Note: The clone operation on FuncType is intentionally cheap.
-        self.inner
-            .lock()
-            .func_types
-            .resolve_func_type(func_type)
-            .clone()
+        f(self.inner.lock().func_types.resolve_func_type(func_type))
     }
 
     /// Allocates the instructions of a Wasm function body to the [`Engine`].
@@ -195,13 +194,13 @@ impl Engine {
     ///
     /// If the [`FuncBody`] is invalid for the [`Engine`].
     #[cfg(test)]
-    pub(crate) fn resolve_inst(&self, func_body: FuncBody, index: usize) -> Instruction {
+    pub(crate) fn resolve_inst(&self, func_body: FuncBody, index: usize) -> Option<Instruction> {
         self.inner
             .lock()
             .code_map
             .resolve(func_body)
             .get(index)
-            .clone()
+            .map(Clone::clone)
     }
 
     /// Executes the given [`Func`] using the given arguments `params` and stores the result into `results`.

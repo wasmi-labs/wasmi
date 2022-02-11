@@ -7,6 +7,7 @@ pub trait VisitInstruction {
     fn visit_br(&mut self, target: Target) -> Self::Outcome;
     fn visit_br_if_eqz(&mut self, target: Target) -> Self::Outcome;
     fn visit_br_if_nez(&mut self, target: Target) -> Self::Outcome;
+    fn visit_return_if_nez(&mut self, drop_keep: DropKeep) -> Self::Outcome;
     fn visit_br_table(&mut self, br_table: BrTable) -> Self::Outcome;
     fn visit_ret(&mut self, drop_keep: DropKeep) -> Self::Outcome;
     fn visit_get_local(&mut self, local_depth: LocalIdx) -> Self::Outcome;

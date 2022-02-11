@@ -26,6 +26,11 @@ impl DropKeep {
         Self { drop, keep }
     }
 
+    /// Creates a new [`DropKeep`] from the given amounts to drop and keep.
+    pub fn new32(drop: u32, keep: u32) -> Self {
+        Self { drop, keep }
+    }
+
     /// Returns the amount of stack values to drop.
     pub fn drop(self) -> usize {
         self.drop as usize
@@ -190,12 +195,12 @@ impl Offset {
 /// A reference to a `wasmi` bytecode `br_table`.
 #[derive(Debug)]
 pub struct BrTable<'a> {
-    /// The targets of the `wasmi` bytecode `br_table` including the default target.
+    /// The branches of the `wasmi` bytecode `br_table` including the default target.
     ///
     /// # Note
     ///
-    /// All elements of this slice are of variant [`Instruction::BrTableTarget`].
-    targets: &'a [Instruction],
+    /// All elements of this slice are of variant [`Instruction::Br`] or [`Instruction::Return`].
+    branches: &'a [Instruction],
 }
 
 impl<'a> BrTable<'a> {
@@ -208,34 +213,28 @@ impl<'a> BrTable<'a> {
     /// # Panics (Debug Mode)
     ///
     /// If the `targets` slice does not represent a `wasmi` bytecode `br_table`.
-    pub fn new(targets: &'a [Instruction]) -> Self {
+    pub fn new(branches: &'a [Instruction]) -> Self {
         assert!(
-            !targets.is_empty(),
+            !branches.is_empty(),
             "the targets slice must not be empty since the \
             default target must be included at least",
         );
         debug_assert!(
-            targets
+            branches
                 .iter()
-                .all(|inst| matches!(inst, Instruction::BrTableTarget(_))),
-            "the targets slice contains non br_table instructions: {:?}",
-            targets,
+                .all(|inst| matches!(inst, Instruction::Br(_) | Instruction::Return(_))),
+            "the branches slice contains non `br` or `return` instructions: {:?}",
+            branches,
         );
-        Self { targets }
+        Self { branches }
     }
 
-    /// Returns the target at the given `index` if any or the default target.
-    pub fn target_or_default(&self, index: usize) -> &Target {
+    /// Returns the branch at the given `index` if any or the default target.
+    pub fn branch_or_default(&self, index: usize) -> &Instruction {
         // The index of the default target which is the last target of the slice.
-        let max_index = self.targets.len() - 1;
+        let max_index = self.branches.len() - 1;
         // A normalized index will always yield a target without panicking.
         let normalized_index = cmp::min(index, max_index);
-        match &self.targets[normalized_index] {
-            Instruction::BrTableTarget(target) => target,
-            unexpected => panic!(
-                "encountered unexpected non `br_table` instruction: {:?}",
-                unexpected
-            ),
-        }
+        &self.branches[normalized_index]
     }
 }

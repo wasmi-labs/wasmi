@@ -93,7 +93,7 @@ define_tests! {
     fn wasm_type("type");
     fn wasm_typecheck("typecheck");
     fn wasm_unreachable("unreachable");
-    fn wasm_unreached_invalid("unreached-invalid");
+    #[ignore] fn wasm_unreached_invalid("unreached-invalid");
     fn wasm_unwind("unwind");
     fn wasm_utf8_custom_section_id("utf8-custom-section-id");
     fn wasm_utf8_import_field("utf8-import-field");

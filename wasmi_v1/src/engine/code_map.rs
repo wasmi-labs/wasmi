@@ -159,8 +159,8 @@ impl ResolvedFuncBody<'_> {
     ///
     /// If there is no instruction at the given index.
     #[cfg(test)]
-    pub fn get(&self, index: usize) -> &Instruction {
-        &self.insts[index]
+    pub fn get(&self, index: usize) -> Option<&Instruction> {
+        self.insts.get(index)
     }
 
     /// Returns the amount of local variable of the function.
@@ -210,13 +210,10 @@ impl<'a> ResolvedFuncBody<'a> {
             Instruction::Br(target) => visitor.visit_br(*target),
             Instruction::BrIfEqz(target) => visitor.visit_br_if_eqz(*target),
             Instruction::BrIfNez(target) => visitor.visit_br_if_nez(*target),
+            Instruction::ReturnIfNez(drop_keep) => visitor.visit_return_if_nez(*drop_keep),
             Instruction::BrTable { len_targets } => visitor.visit_br_table(BrTable::new(
                 &self.insts[(index + 1)..(index + 1 + len_targets)],
             )),
-            Instruction::BrTableTarget(_) => panic!(
-                "expected start of a new instruction at index {} but found: {:?}",
-                index, inst
-            ),
             Instruction::Unreachable => visitor.visit_unreachable(),
             Instruction::Return(drop_keep) => visitor.visit_ret(*drop_keep),
             Instruction::Call(func) => visitor.visit_call(*func),

@@ -52,7 +52,7 @@ pub fn load_module_from_file_v0(file_name: &str) -> v0::Module {
 pub fn load_module_from_file_v1(file_name: &str) -> v1::Module {
     let wasm = load_wasm_from_file(file_name);
     let engine = v1::Engine::default();
-    v1::Module::new(&engine, wasm).unwrap_or_else(|error| {
+    v1::Module::new(&engine, &wasm[..]).unwrap_or_else(|error| {
         panic!(
             "could not parse Wasm module from file {}: {}",
             file_name, error
@@ -133,7 +133,7 @@ pub fn load_instance_from_wat_v0(wat_bytes: &[u8]) -> v0::ModuleRef {
 pub fn load_instance_from_wat_v1(wat_bytes: &[u8]) -> (v1::Store<()>, v1::Instance) {
     let wasm = wat2wasm(wat_bytes);
     let engine = v1::Engine::default();
-    let module = v1::Module::new(&engine, &wasm).unwrap();
+    let module = v1::Module::new(&engine, &wasm[..]).unwrap();
     let mut linker = <v1::Linker<()>>::default();
     let mut store = v1::Store::new(&engine, ());
     let instance = linker
