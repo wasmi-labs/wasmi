@@ -1,6 +1,6 @@
 use super::GlobalIdx;
 use crate::ModuleError;
-use wasmi_core::Value;
+use wasmi_core::{Value, F32, F64};
 
 /// An initializer expression.
 ///
@@ -59,18 +59,28 @@ pub enum InitExprOperand {
     GlobalGet(GlobalIdx),
 }
 
+impl InitExprOperand {
+    /// Creates a new constant [`InitExprOperand`].
+    fn constant<T>(value: T) -> Self
+    where
+        T: Into<Value>,
+    {
+        Self::Const(value.into())
+    }
+}
+
 impl TryFrom<wasmparser::Operator<'_>> for InitExprOperand {
     type Error = ModuleError;
 
     fn try_from(operator: wasmparser::Operator<'_>) -> Result<Self, Self::Error> {
         match operator {
-            wasmparser::Operator::I32Const { value } => Ok(InitExprOperand::Const(value.into())),
-            wasmparser::Operator::I64Const { value } => Ok(InitExprOperand::Const(value.into())),
+            wasmparser::Operator::I32Const { value } => Ok(InitExprOperand::constant(value)),
+            wasmparser::Operator::I64Const { value } => Ok(InitExprOperand::constant(value)),
             wasmparser::Operator::F32Const { value } => {
-                Ok(InitExprOperand::Const(value.bits().into()))
+                Ok(InitExprOperand::constant(F32::from(value.bits())))
             }
             wasmparser::Operator::F64Const { value } => {
-                Ok(InitExprOperand::Const(value.bits().into()))
+                Ok(InitExprOperand::constant(F64::from(value.bits())))
             }
             wasmparser::Operator::GlobalGet { global_index } => {
                 Ok(InitExprOperand::GlobalGet(GlobalIdx(global_index)))
