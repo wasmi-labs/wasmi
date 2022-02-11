@@ -172,9 +172,18 @@ impl<'engine> ModuleParser<'engine> {
             }
             Payload::ModuleSectionEntry { range, .. } => self.process_module_entry(range),
             Payload::UnknownSection { id, range, .. } => self.process_unknown(id, range),
-            Payload::End => return Ok(true),
+            Payload::End => {
+                self.process_end()?;
+                return Ok(true);
+            }
         }?;
         Ok(false)
+    }
+
+    /// Processes the end of the Wasm binary.
+    fn process_end(&mut self) -> Result<(), ModuleError> {
+        self.validator.end()?;
+        Ok(())
     }
 
     /// Validates the Wasm version section.
