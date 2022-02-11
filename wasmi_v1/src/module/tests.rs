@@ -697,3 +697,31 @@ fn br_if_return() {
     ];
     assert_func_bodies(&wasm, [expected]);
 }
+
+#[test]
+fn br_table_return() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (param i32)
+                block $1
+                    block $0
+                        local.get 0
+                        br_table $0 $1 2
+                    end
+                end
+                return
+            )
+        )
+    "#,
+    );
+    let expected = [
+        /* 0 */ Instruction::local_get(1),
+        /* 1 */ Instruction::BrTable { len_targets: 3 },
+        /* 2 */ Instruction::Br(target!(5, drop: 0, keep: 0)),
+        /* 3 */ Instruction::Br(target!(5, drop: 0, keep: 0)),
+        /* 4 */ Instruction::Return(DropKeep::new(1, 0)),
+        /* 5 */ Instruction::Return(DropKeep::new(1, 0)),
+    ];
+    assert_func_bodies(&wasm, [expected]);
+}
