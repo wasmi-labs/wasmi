@@ -213,10 +213,6 @@ impl<'a> ResolvedFuncBody<'a> {
             Instruction::BrTable { len_targets } => visitor.visit_br_table(BrTable::new(
                 &self.insts[(index + 1)..(index + 1 + len_targets)],
             )),
-            Instruction::BrTableTarget(_) => panic!(
-                "expected start of a new instruction at index {} but found: {:?}",
-                index, inst
-            ),
             Instruction::Unreachable => visitor.visit_unreachable(),
             Instruction::Return(drop_keep) => visitor.visit_ret(*drop_keep),
             Instruction::Call(func) => visitor.visit_call(*func),

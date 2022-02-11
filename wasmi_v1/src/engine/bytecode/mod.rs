@@ -37,7 +37,6 @@ pub enum Instruction {
     BrTable {
         len_targets: usize,
     },
-    BrTableTarget(Target),
     Unreachable,
     Return(DropKeep),
     Call(FuncIdx),

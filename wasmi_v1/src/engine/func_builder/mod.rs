@@ -289,12 +289,37 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     ///
     /// - If the `depth` is greater than the current height of the control frame stack.
     /// - If the value stack underflowed.
-    fn acquire_target(&self, relative_depth: u32) -> (LabelIdx, DropKeep) {
+    fn acquire_target(&self, relative_depth: u32) -> AquiredTarget {
         debug_assert!(self.is_reachable());
-        let label = self.control_frames.nth_back(relative_depth).branch_destination();
-        let drop_keep = self.compute_drop_keep(relative_depth);
-        (label, drop_keep)
+        if self.control_frames.is_root(relative_depth) {
+            let drop_keep = self.drop_keep_return();
+            AquiredTarget::Return(drop_keep)
+        } else {
+            let label = self
+                .control_frames
+                .nth_back(relative_depth)
+                .branch_destination();
+            let drop_keep = self.compute_drop_keep(relative_depth);
+            AquiredTarget::Branch(label, drop_keep)
+        }
     }
+}
+
+/// An aquired target.
+///
+/// Returned by [`FunctionBuilder::acquire_target`].
+#[derive(Debug)]
+pub enum AquiredTarget {
+    /// The branch jumps to the label.
+    Branch(LabelIdx, DropKeep),
+    /// The branch returns to the caller.
+    ///
+    /// # Note
+    ///
+    /// This is returned if the `relative_depth` points to the outmost
+    /// function body `block`. WebAssembly defines branches to this control
+    /// flow frame as equivalent to returning from the function.
+    Return(DropKeep),
 }
 
 impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
@@ -523,38 +548,38 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             let case = builder.value_stack.pop1();
             debug_assert_eq!(case, ValueType::I32);
 
-            fn compute_target(
+            fn compute_inst(
                 builder: &mut FunctionBuilder,
                 n: usize,
                 depth: RelativeDepth,
-            ) -> Target {
-                let (label, drop_keep) = builder.acquire_target(depth.into_u32());
-                let dst_pc = builder.try_resolve_label(label, |pc| Reloc::BrTable {
-                    inst_idx: pc,
-                    target_idx: n,
-                });
-                Target::new(dst_pc, drop_keep)
+            ) -> Instruction {
+                match builder.acquire_target(depth.into_u32()) {
+                    AquiredTarget::Branch(label_idx, drop_keep) => {
+                        let dst_pc = builder.try_resolve_label(label_idx, |pc| Reloc::BrTable {
+                            inst_idx: pc,
+                            target_idx: n,
+                        });
+                        Instruction::Br(Target::new(dst_pc, drop_keep))
+                    }
+                    AquiredTarget::Return(drop_keep) => Instruction::Return(drop_keep),
+                }
             }
 
-            let targets = targets
+            let branches = targets
                 .into_iter()
                 .enumerate()
-                .map(|(n, depth)| compute_target(builder, n, depth))
+                .map(|(n, depth)| compute_inst(builder, n, depth))
                 .collect::<Vec<_>>();
-            // We include the default target in `len_targets`.
-            let len_targets = targets.len();
-            let default_target = compute_target(builder, len_targets, default);
+            // We include the default target in `len_branches`.
+            let len_branches = branches.len();
+            let default_branch = compute_inst(builder, len_branches, default);
             builder.inst_builder.push_inst(Instruction::BrTable {
-                len_targets: len_targets + 1,
+                len_targets: len_branches + 1,
             });
-            for target in targets {
-                builder
-                    .inst_builder
-                    .push_inst(Instruction::BrTableTarget(target));
+            for branch in branches {
+                builder.inst_builder.push_inst(branch);
             }
-            builder
-                .inst_builder
-                .push_inst(Instruction::BrTableTarget(default_target));
+            builder.inst_builder.push_inst(default_branch);
             builder.reachable = false;
             Ok(())
         })

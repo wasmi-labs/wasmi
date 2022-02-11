@@ -222,11 +222,11 @@ impl InstructionsBuilder {
                 inst_idx,
                 target_idx,
             } => match &mut self.insts[inst_idx.into_usize() + target_idx + 1] {
-                Instruction::BrTableTarget(target) => {
+                Instruction::Br(target) => {
                     target.update_destination_pc(dst_pc);
                 }
                 _ => panic!(
-                    "branch table relocation points to a non branch table instruction: {:?}",
+                    "`br_table` relocation points to a non-`br_table` instruction: {:?}",
                     reloc
                 ),
             },

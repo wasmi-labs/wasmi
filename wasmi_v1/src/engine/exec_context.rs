@@ -1,6 +1,6 @@
 use super::{
     super::{Global, Memory, Table},
-    bytecode::{BrTable, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx},
+    bytecode::{BrTable, FuncIdx, GlobalIdx, Instruction, LocalIdx, Offset, SignatureIdx},
     AsContextMut,
     DropKeep,
     EngineInner,
@@ -690,8 +690,14 @@ where
 
     fn visit_br_table(&mut self, br_table: BrTable) -> Self::Outcome {
         let index: u32 = self.value_stack.pop_as();
-        let target = br_table.target_or_default(index as usize);
-        Ok(ExecutionOutcome::Branch(*target))
+        match br_table.branch_or_default(index as usize) {
+            Instruction::Br(target) => Ok(ExecutionOutcome::Branch(*target)),
+            Instruction::Return(drop_keep) => Ok(ExecutionOutcome::Return(*drop_keep)),
+            unexpected => panic!(
+                "encountered unexpected `br_table` branch arm: {:?}",
+                unexpected
+            ),
+        }
     }
 
     fn visit_ret(&mut self, drop_keep: DropKeep) -> Self::Outcome {

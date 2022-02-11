@@ -567,8 +567,8 @@ fn spec_as_br_if_value_cond() {
         /* 1 */ Instruction::constant(9),
         /* 2 */ Instruction::constant(0),
         /* 3 */ Instruction::BrTable { len_targets: 2 },
-        /* 4 */ Instruction::BrTableTarget(target!(6, drop: 1, keep: 1)),
-        /* 5 */ Instruction::BrTableTarget(target!(6, drop: 1, keep: 1)),
+        /* 4 */ Instruction::Br(target!(6, drop: 1, keep: 1)),
+        /* 5 */ Instruction::Br(target!(6, drop: 1, keep: 1)),
         /* 6 */ Instruction::Return(DropKeep::new(0, 1)),
     ];
     assert_func_bodies(&wasm, [expected]);
@@ -593,8 +593,8 @@ fn br_table() {
     let expected = [
         /* 0 */ Instruction::constant(0),
         /* 1 */ Instruction::BrTable { len_targets: 2 },
-        /* 2 */ Instruction::BrTableTarget(target!(0, drop: 0, keep: 0)),
-        /* 3 */ Instruction::BrTableTarget(target!(4, drop: 0, keep: 0)),
+        /* 2 */ Instruction::Br(target!(0, drop: 0, keep: 0)),
+        /* 3 */ Instruction::Br(target!(4, drop: 0, keep: 0)),
         /* 4 */ Instruction::Return(DropKeep::new(0, 0)),
     ];
     assert_func_bodies(&wasm, [expected]);
@@ -623,8 +623,8 @@ fn br_table_returns_result() {
         /* 0 */ Instruction::constant(0),
         /* 1 */ Instruction::constant(1),
         /* 2 */ Instruction::BrTable { len_targets: 2 },
-        /* 3 */ Instruction::BrTableTarget(target!(5, drop: 0, keep: 1)),
-        /* 4 */ Instruction::BrTableTarget(target!(6, drop: 0, keep: 1)),
+        /* 3 */ Instruction::Br(target!(5, drop: 0, keep: 1)),
+        /* 4 */ Instruction::Br(target!(6, drop: 0, keep: 1)),
         /* 5 */ Instruction::Unreachable,
         /* 6 */ Instruction::Drop,
         /* 7 */ Instruction::Return(DropKeep::new(0, 0)),
