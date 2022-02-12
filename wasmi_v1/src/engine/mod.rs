@@ -100,7 +100,7 @@ pub struct Engine {
 }
 
 /// Configuration for an [`Engine`].
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Config {
     /// The internal value stack limit.
     ///
@@ -116,6 +116,8 @@ pub struct Config {
     /// Reaching this limit during execution of a Wasm function will
     /// cause a stack overflow trap.
     call_stack_limit: usize,
+    /// Is `true` if the `multi-value` Wasm proposal is enabled.
+    multi_value: bool,
 }
 
 impl Default for Config {
@@ -123,7 +125,21 @@ impl Default for Config {
         Self {
             value_stack_limit: DEFAULT_VALUE_STACK_LIMIT,
             call_stack_limit: DEFAULT_CALL_STACK_LIMIT,
+            multi_value: false,
         }
+    }
+}
+
+impl Config {
+    /// Enables the `multi-value` Wasm proposal.
+    pub fn enable_multi_value(mut self) -> Self {
+        self.multi_value = true;
+        self
+    }
+
+    /// Returns `true` if the `multi-value` Wasm proposal is enabled.
+    pub fn multi_value(&self) -> bool {
+        self.multi_value
     }
 }
 
@@ -139,10 +155,15 @@ impl Engine {
     /// # Note
     ///
     /// Users should ues [`Engine::default`] to construct a default [`Engine`].
-    fn new(config: &Config) -> Self {
+    pub fn new(config: &Config) -> Self {
         Self {
             inner: Arc::new(Mutex::new(EngineInner::new(config))),
         }
+    }
+
+    /// Returns a shared reference to the [`Config`] of the [`Engine`].
+    pub fn config(&self) -> Config {
+        self.inner.lock().config().clone()
     }
 
     /// Allocates a new function type to the engine.
@@ -238,6 +259,8 @@ impl Engine {
 /// The internal state of the `wasmi` engine.
 #[derive(Debug)]
 pub struct EngineInner {
+    /// The configuration with which the [`Engine`] has been created.
+    config: Config,
     /// Stores the value stack of live values on the Wasm stack.
     value_stack: ValueStack,
     /// Stores the call stack of live function invocations.
@@ -258,11 +281,17 @@ impl EngineInner {
     pub fn new(config: &Config) -> Self {
         let engine_idx = EngineIdx::new();
         Self {
+            config: *config,
             value_stack: ValueStack::new(64, config.value_stack_limit),
             call_stack: CallStack::new(config.call_stack_limit),
             code_map: CodeMap::default(),
             func_types: FuncTypeRegistry::new(engine_idx),
         }
+    }
+
+    /// Returns a shared reference to the [`Config`] of the [`Engine`].
+    pub fn config(&self) -> &Config {
+        &self.config
     }
 
     // /// Unpacks the entity and checks if it is owned by the engine.

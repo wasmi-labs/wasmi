@@ -1,7 +1,7 @@
 use super::{error::TestError, TestContext, TestDescriptor};
 use anyhow::Result;
 use wasmi_core::{Trap, Value, F32, F64};
-use wasmi_v1::Error as WasmiError;
+use wasmi_v1::{Config, Error as WasmiError};
 use wast::{
     lexer::Lexer,
     parser::ParseBuffer,
@@ -16,9 +16,9 @@ use wast::{
 };
 
 /// Runs the Wasm test spec identified by the given name.
-pub fn run_wasm_spec_test(name: &str) {
+pub fn run_wasm_spec_test(name: &str, config: Config) {
     let test = TestDescriptor::new(name);
-    let mut context = TestContext::new(&test);
+    let mut context = TestContext::new(&test, config);
 
     let mut lexer = Lexer::new(test.file());
     lexer.allow_confusing_unicode(true);
