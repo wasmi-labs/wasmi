@@ -163,7 +163,7 @@ impl Engine {
 
     /// Returns a shared reference to the [`Config`] of the [`Engine`].
     pub fn config(&self) -> Config {
-        self.inner.lock().config().clone()
+        *self.inner.lock().config()
     }
 
     /// Allocates a new function type to the engine.
