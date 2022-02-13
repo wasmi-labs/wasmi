@@ -1874,4 +1874,29 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             Instruction::F64ReinterpretI64,
         )
     }
+
+    pub fn translate_i32_truncate_saturate_f32(&mut self) -> Result<(), ModuleError> {
+        self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncSatF32S)
+    }
+    pub fn translate_u32_truncate_saturate_f32(&mut self) -> Result<(), ModuleError> {
+        self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncSatF32U)
+    }
+    pub fn translate_i32_truncate_saturate_f64(&mut self) -> Result<(), ModuleError> {
+        self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncSatF64S)
+    }
+    pub fn translate_u32_truncate_saturate_f64(&mut self) -> Result<(), ModuleError> {
+        self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncSatF64U)
+    }
+    pub fn translate_i64_truncate_saturate_f32(&mut self) -> Result<(), ModuleError> {
+        self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncSatF32S)
+    }
+    pub fn translate_u64_truncate_saturate_f32(&mut self) -> Result<(), ModuleError> {
+        self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I64TruncSatF32U)
+    }
+    pub fn translate_i64_truncate_saturate_f64(&mut self) -> Result<(), ModuleError> {
+        self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncSatF64S)
+    }
+    pub fn translate_u64_truncate_saturate_f64(&mut self) -> Result<(), ModuleError> {
+        self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I64TruncSatF64U)
+    }
 }

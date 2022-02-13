@@ -32,6 +32,7 @@ pub use self::{
         Integer,
         LittleEndianConvert,
         TransmuteInto,
+        TruncateSaturateInto,
         TryTruncateInto,
         Value,
         ValueType,

@@ -22,6 +22,15 @@ macro_rules! define_tests {
         )*
     };
 }
+
+mod non_trapping_float_to_int_conversions {
+    use super::*;
+
+    define_tests! {
+        fn wasm_conversions("proposals/nontrapping-float-to-int-conversions/conversions");
+    }
+}
+
 define_tests! {
     fn wasm_address("address");
     fn wasm_align("align");

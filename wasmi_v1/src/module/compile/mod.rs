@@ -302,19 +302,19 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
             Operator::I64ReinterpretF64 => self.translate_i64_reinterpret_f64(),
             Operator::F32ReinterpretI32 => self.translate_f32_reinterpret_i32(),
             Operator::F64ReinterpretI64 => self.translate_f64_reinterpret_i64(),
+            Operator::I32TruncSatF32S => self.translate_i32_truncate_saturate_f32(),
+            Operator::I32TruncSatF32U => self.translate_u32_truncate_saturate_f32(),
+            Operator::I32TruncSatF64S => self.translate_i32_truncate_saturate_f64(),
+            Operator::I32TruncSatF64U => self.translate_u32_truncate_saturate_f64(),
+            Operator::I64TruncSatF32S => self.translate_i64_truncate_saturate_f32(),
+            Operator::I64TruncSatF32U => self.translate_u64_truncate_saturate_f32(),
+            Operator::I64TruncSatF64S => self.translate_i64_truncate_saturate_f64(),
+            Operator::I64TruncSatF64U => self.translate_u64_truncate_saturate_f64(),
             Operator::I32Extend8S
             | Operator::I32Extend16S
             | Operator::I64Extend8S
             | Operator::I64Extend16S
             | Operator::I64Extend32S
-            | Operator::I32TruncSatF32S
-            | Operator::I32TruncSatF32U
-            | Operator::I32TruncSatF64S
-            | Operator::I32TruncSatF64U
-            | Operator::I64TruncSatF32S
-            | Operator::I64TruncSatF32U
-            | Operator::I64TruncSatF64S
-            | Operator::I64TruncSatF64U
             | Operator::MemoryInit { .. }
             | Operator::DataDrop { .. }
             | Operator::MemoryCopy { .. }
