@@ -1874,4 +1874,29 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             Instruction::F64ReinterpretI64,
         )
     }
+
+    /// Translate a Wasm `i32.extend_8s` instruction.
+    pub fn translate_i32_sign_extend8(&mut self) -> Result<(), ModuleError> {
+        self.translate_unary_operation(ValueType::I32, Instruction::I32Extend8S)
+    }
+
+    /// Translate a Wasm `i32.extend_16s` instruction.
+    pub fn translate_i32_sign_extend16(&mut self) -> Result<(), ModuleError> {
+        self.translate_unary_operation(ValueType::I32, Instruction::I32Extend16S)
+    }
+
+    /// Translate a Wasm `i64.extend_8s` instruction.
+    pub fn translate_i64_sign_extend8(&mut self) -> Result<(), ModuleError> {
+        self.translate_unary_operation(ValueType::I64, Instruction::I64Extend8S)
+    }
+
+    /// Translate a Wasm `i64.extend_16s` instruction.
+    pub fn translate_i64_sign_extend16(&mut self) -> Result<(), ModuleError> {
+        self.translate_unary_operation(ValueType::I64, Instruction::I64Extend16S)
+    }
+
+    /// Translate a Wasm `i64.extend_32s` instruction.
+    pub fn translate_i64_sign_extend32(&mut self) -> Result<(), ModuleError> {
+        self.translate_unary_operation(ValueType::I64, Instruction::I64Extend32S)
+    }
 }

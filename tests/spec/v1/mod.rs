@@ -22,6 +22,16 @@ macro_rules! define_tests {
         )*
     };
 }
+
+mod sign_extension_ops {
+    use super::*;
+
+    define_tests! {
+        fn wasm_i32("proposals/sign-extension-ops/i32");
+        fn wasm_i64("proposals/sign-extension-ops/i32");
+    }
+}
+
 define_tests! {
     fn wasm_address("address");
     fn wasm_align("align");

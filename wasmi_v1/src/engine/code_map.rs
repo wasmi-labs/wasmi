@@ -371,6 +371,11 @@ impl<'a> ResolvedFuncBody<'a> {
             Instruction::I64ReinterpretF64 => visitor.visit_i64_reinterpret_f64(),
             Instruction::F32ReinterpretI32 => visitor.visit_f32_reinterpret_i32(),
             Instruction::F64ReinterpretI64 => visitor.visit_f64_reinterpret_i64(),
+            Instruction::I32Extend8S => visitor.visit_i32_sign_extend8(),
+            Instruction::I32Extend16S => visitor.visit_i32_sign_extend16(),
+            Instruction::I64Extend8S => visitor.visit_i64_sign_extend8(),
+            Instruction::I64Extend16S => visitor.visit_i64_sign_extend16(),
+            Instruction::I64Extend32S => visitor.visit_i64_sign_extend32(),
             Instruction::FuncBodyStart { .. } | Instruction::FuncBodyEnd => panic!(
                 "expected start of a new instruction at index {} but found: {:?}",
                 index, inst

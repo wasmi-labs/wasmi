@@ -709,5 +709,15 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
         fn translate_f32_reinterpret_i32();
         /// Translate a Wasm `f64_reinterpret_i64` instruction.
         fn translate_f64_reinterpret_i64();
+        /// Translate a Wasm `i32.extend_i8` instruction.
+        fn translate_i32_sign_extend8();
+        /// Translate a Wasm `i32.extend_i16` instruction.
+        fn translate_i32_sign_extend16();
+        /// Translate a Wasm `i64.extend_i8` instruction.
+        fn translate_i64_sign_extend8();
+        /// Translate a Wasm `i64.extend_i16` instruction.
+        fn translate_i64_sign_extend16();
+        /// Translate a Wasm `i64.extend_i32` instruction.
+        fn translate_i64_sign_extend32();
     }
 }
