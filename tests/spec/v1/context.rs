@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use wasmi::nan_preserving_float::{F32, F64};
 use wasmi_core::Value;
 use wasmi_v1::{
+    Config,
     Engine,
     Extern,
     Func,
@@ -47,8 +48,8 @@ pub struct TestContext<'a> {
 
 impl<'a> TestContext<'a> {
     /// Creates a new [`TestContext`] with the given [`TestDescriptor`].
-    pub fn new(descriptor: &'a TestDescriptor) -> Self {
-        let engine = Engine::default();
+    pub fn new(descriptor: &'a TestDescriptor, config: Config) -> Self {
+        let engine = Engine::new(&config);
         let mut linker = Linker::default();
         let mut store = Store::new(&engine, ());
         let default_memory = Memory::new(&mut store, MemoryType::new(1, Some(2))).unwrap();
