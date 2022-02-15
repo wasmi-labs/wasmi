@@ -10,6 +10,12 @@ use self::{
     error::TestError,
     profile::TestProfile,
 };
+use wasmi_v1::Config;
+
+/// Run Wasm spec test suite using default `wasmi` configuration.
+fn run_wasm_spec_test(file_name: &str) {
+    self::run::run_wasm_spec_test(file_name, Config::default())
+}
 
 macro_rules! define_tests {
     ( $( $(#[$attr:meta])* fn $test_name:ident($file_name:expr); )* ) => {
@@ -17,18 +23,40 @@ macro_rules! define_tests {
             #[test]
             $( #[$attr] )*
             fn $test_name() {
-                self::run::run_wasm_spec_test($file_name)
+                run_wasm_spec_test($file_name)
             }
         )*
     };
 }
 
 mod sign_extension_ops {
-    use super::*;
+    use super::run_wasm_spec_test;
 
     define_tests! {
         fn wasm_i32("proposals/sign-extension-ops/i32");
         fn wasm_i64("proposals/sign-extension-ops/i32");
+    }
+}
+
+mod multi_value {
+    use super::Config;
+
+    /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
+    fn run_wasm_spec_test(file_name: &str) {
+        super::run::run_wasm_spec_test(file_name, Config::default().enable_multi_value())
+    }
+
+    define_tests! {
+        fn wasm_binary("proposals/multi-value/binary");
+        fn wasm_block("proposals/multi-value/block");
+        fn wasm_br("proposals/multi-value/br");
+        fn wasm_call("proposals/multi-value/call");
+        fn wasm_call_indirect("proposals/multi-value/call_indirect");
+        fn wasm_fac("proposals/multi-value/fac");
+        fn wasm_func("proposals/multi-value/func");
+        fn wasm_if("proposals/multi-value/if");
+        fn wasm_loop("proposals/multi-value/loop");
+        fn wasm_type("proposals/multi-value/type");
     }
 }
 
