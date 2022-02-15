@@ -57,7 +57,7 @@ impl<'engine> ModuleParser<'engine> {
     fn new(engine: &'engine Engine) -> Self {
         let builder = ModuleBuilder::new(engine);
         let mut validator = Validator::default();
-        validator.wasm_features(Self::features());
+        validator.wasm_features(Self::features(engine));
         let parser = WasmParser::new(0);
         Self {
             builder,
@@ -68,10 +68,10 @@ impl<'engine> ModuleParser<'engine> {
     }
 
     /// Returns the Wasm features supported by `wasmi`.
-    fn features() -> WasmFeatures {
+    fn features(engine: &Engine) -> WasmFeatures {
         WasmFeatures {
             reference_types: false,
-            multi_value: false,
+            multi_value: engine.config().multi_value(),
             bulk_memory: false,
             module_linking: false,
             simd: false,
