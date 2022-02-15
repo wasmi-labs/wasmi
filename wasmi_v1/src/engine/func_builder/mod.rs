@@ -1875,28 +1875,68 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         )
     }
 
+    /// Translate a Wasm `i32.truncate_sat_f32` instruction.
     pub fn translate_i32_truncate_saturate_f32(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncSatF32S)
     }
+
+    /// Translate a Wasm `u32.truncate_sat_f32` instruction.
     pub fn translate_u32_truncate_saturate_f32(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncSatF32U)
     }
+
+    /// Translate a Wasm `i32.truncate_sat_f64` instruction.
     pub fn translate_i32_truncate_saturate_f64(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncSatF64S)
     }
+
+    /// Translate a Wasm `u32.truncate_sat_f64` instruction.
     pub fn translate_u32_truncate_saturate_f64(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncSatF64U)
     }
+
+    /// Translate a Wasm `i64.truncate_sat_f32` instruction.
     pub fn translate_i64_truncate_saturate_f32(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncSatF32S)
     }
+
+    /// Translate a Wasm `u64.truncate_sat_f32` instruction.
     pub fn translate_u64_truncate_saturate_f32(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I64TruncSatF32U)
     }
+
+    /// Translate a Wasm `i64.truncate_sat_f64` instruction.
     pub fn translate_i64_truncate_saturate_f64(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncSatF64S)
     }
+
+    /// Translate a Wasm `u64.truncate_sat_f64` instruction.
     pub fn translate_u64_truncate_saturate_f64(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I64TruncSatF64U)
+    }
+
+    /// Translate a Wasm `i32.extend_8s` instruction.
+    pub fn translate_i32_sign_extend8(&mut self) -> Result<(), ModuleError> {
+        self.translate_unary_operation(ValueType::I32, Instruction::I32Extend8S)
+    }
+
+    /// Translate a Wasm `i32.extend_16s` instruction.
+    pub fn translate_i32_sign_extend16(&mut self) -> Result<(), ModuleError> {
+        self.translate_unary_operation(ValueType::I32, Instruction::I32Extend16S)
+    }
+
+    /// Translate a Wasm `i64.extend_8s` instruction.
+    pub fn translate_i64_sign_extend8(&mut self) -> Result<(), ModuleError> {
+        self.translate_unary_operation(ValueType::I64, Instruction::I64Extend8S)
+    }
+
+    /// Translate a Wasm `i64.extend_16s` instruction.
+    pub fn translate_i64_sign_extend16(&mut self) -> Result<(), ModuleError> {
+        self.translate_unary_operation(ValueType::I64, Instruction::I64Extend16S)
+    }
+
+    /// Translate a Wasm `i64.extend_32s` instruction.
+    pub fn translate_i64_sign_extend32(&mut self) -> Result<(), ModuleError> {
+        self.translate_unary_operation(ValueType::I64, Instruction::I64Extend32S)
     }
 }

@@ -37,6 +37,15 @@ mod saturating_float_to_int {
     }
 }
 
+mod sign_extension_ops {
+    use super::run_wasm_spec_test;
+
+    define_tests! {
+        fn wasm_i32("proposals/sign-extension-ops/i32");
+        fn wasm_i64("proposals/sign-extension-ops/i64");
+    }
+}
+
 mod multi_value {
     use super::Config;
 

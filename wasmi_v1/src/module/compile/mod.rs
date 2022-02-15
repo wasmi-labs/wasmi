@@ -310,12 +310,12 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
             Operator::I64TruncSatF32U => self.translate_u64_truncate_saturate_f32(),
             Operator::I64TruncSatF64S => self.translate_i64_truncate_saturate_f64(),
             Operator::I64TruncSatF64U => self.translate_u64_truncate_saturate_f64(),
-            Operator::I32Extend8S
-            | Operator::I32Extend16S
-            | Operator::I64Extend8S
-            | Operator::I64Extend16S
-            | Operator::I64Extend32S
-            | Operator::MemoryInit { .. }
+            Operator::I32Extend8S => self.translate_i32_sign_extend8(),
+            Operator::I32Extend16S => self.translate_i32_sign_extend16(),
+            Operator::I64Extend8S => self.translate_i64_sign_extend8(),
+            Operator::I64Extend16S => self.translate_i64_sign_extend16(),
+            Operator::I64Extend32S => self.translate_i64_sign_extend32(),
+            Operator::MemoryInit { .. }
             | Operator::DataDrop { .. }
             | Operator::MemoryCopy { .. }
             | Operator::MemoryFill { .. }
