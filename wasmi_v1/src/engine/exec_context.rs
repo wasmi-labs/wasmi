@@ -26,6 +26,7 @@ use wasmi_core::{
     Integer,
     LittleEndianConvert,
     SignExtendFrom,
+    TruncateSaturateInto,
     TryTruncateInto,
     WrapInto,
 };
@@ -643,6 +644,17 @@ where
     {
         let entry = self.value_stack.last_mut();
         let value = T::from_stack_entry(*entry).try_truncate_into()?;
+        *entry = value.into();
+        Ok(ExecutionOutcome::Continue)
+    }
+
+    fn execute_trunc_sat_to_int<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
+    where
+        StackEntry: From<U>,
+        T: TruncateSaturateInto<U> + FromStackEntry,
+    {
+        let entry = self.value_stack.last_mut();
+        let value = T::from_stack_entry(*entry).truncate_saturate_into();
         *entry = value.into();
         Ok(ExecutionOutcome::Continue)
     }
@@ -1420,6 +1432,38 @@ where
 
     fn visit_f64_reinterpret_i64(&mut self) -> Self::Outcome {
         self.execute_reinterpret::<i64, F64>()
+    }
+
+    fn visit_i32_trunc_sat_f32(&mut self) -> Self::Outcome {
+        self.execute_trunc_sat_to_int::<F32, i32>()
+    }
+
+    fn visit_u32_trunc_sat_f32(&mut self) -> Self::Outcome {
+        self.execute_trunc_sat_to_int::<F32, u32>()
+    }
+
+    fn visit_i32_trunc_sat_f64(&mut self) -> Self::Outcome {
+        self.execute_trunc_sat_to_int::<F64, i32>()
+    }
+
+    fn visit_u32_trunc_sat_f64(&mut self) -> Self::Outcome {
+        self.execute_trunc_sat_to_int::<F64, u32>()
+    }
+
+    fn visit_i64_trunc_sat_f32(&mut self) -> Self::Outcome {
+        self.execute_trunc_sat_to_int::<F32, i64>()
+    }
+
+    fn visit_u64_trunc_sat_f32(&mut self) -> Self::Outcome {
+        self.execute_trunc_sat_to_int::<F32, u64>()
+    }
+
+    fn visit_i64_trunc_sat_f64(&mut self) -> Self::Outcome {
+        self.execute_trunc_sat_to_int::<F64, i64>()
+    }
+
+    fn visit_u64_trunc_sat_f64(&mut self) -> Self::Outcome {
+        self.execute_trunc_sat_to_int::<F64, u64>()
     }
 
     fn visit_i32_sign_extend8(&mut self) -> Self::Outcome {

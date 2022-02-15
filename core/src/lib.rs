@@ -33,6 +33,7 @@ pub use self::{
         LittleEndianConvert,
         SignExtendFrom,
         TransmuteInto,
+        TruncateSaturateInto,
         TryTruncateInto,
         Value,
         ValueType,

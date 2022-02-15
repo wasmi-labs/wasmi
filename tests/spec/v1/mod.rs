@@ -29,6 +29,14 @@ macro_rules! define_tests {
     };
 }
 
+mod saturating_float_to_int {
+    use super::run_wasm_spec_test;
+
+    define_tests! {
+        fn wasm_conversions("proposals/nontrapping-float-to-int-conversions/conversions");
+    }
+}
+
 mod sign_extension_ops {
     use super::run_wasm_spec_test;
 

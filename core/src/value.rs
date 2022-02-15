@@ -105,9 +105,30 @@ pub trait WrapInto<T> {
 }
 
 /// Convert one type to another by rounding to the nearest integer towards zero.
+///
+/// # Errors
+///
+/// Traps when the input float cannot be represented by the target integer or
+/// when the input float is NaN.
 pub trait TryTruncateInto<T, E> {
     /// Convert one type to another by rounding to the nearest integer towards zero.
     fn try_truncate_into(self) -> Result<T, E>;
+}
+
+/// Convert one type to another by rounding to the nearest integer towards zero.
+///
+/// # Note
+///
+/// This has saturating semantics for when the integer cannot represent the float.
+///
+/// Returns
+///
+/// - `0` when the input is NaN.
+/// - `int::MIN` when the input is -INF.
+/// - `int::MAX` when the input is +INF.
+pub trait TruncateSaturateInto<T> {
+    /// Convert one type to another by rounding to the nearest integer towards zero.
+    fn truncate_saturate_into(self) -> T;
 }
 
 /// Convert one type to another by extending with leading zeroes.
@@ -509,12 +530,35 @@ macro_rules! impl_try_truncate_into {
                     .ok_or(TrapCode::IntegerOverflow)
             }
         }
+
+        impl TruncateSaturateInto<$into> for $from {
+            #[inline]
+            fn truncate_saturate_into(self) -> $into {
+                if self.is_nan() {
+                    return <$into as Default>::default();
+                }
+                if self.is_infinite() && self.is_sign_positive() {
+                    return <$into>::MAX;
+                }
+                if self.is_infinite() && self.is_sign_negative() {
+                    return <$into>::MIN;
+                }
+                self as _
+            }
+        }
     };
     (@wrapped $from:ident, $intermediate:ident, $into:ident) => {
         impl TryTruncateInto<$into, TrapCode> for $from {
             #[inline]
             fn try_truncate_into(self) -> Result<$into, TrapCode> {
                 $intermediate::from(self).try_truncate_into()
+            }
+        }
+
+        impl TruncateSaturateInto<$into> for $from {
+            #[inline]
+            fn truncate_saturate_into(self) -> $into {
+                $intermediate::from(self).truncate_saturate_into()
             }
         }
     };
