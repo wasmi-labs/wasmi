@@ -31,6 +31,7 @@ pub use self::{
         FromValue,
         Integer,
         LittleEndianConvert,
+        SignExtendFrom,
         TransmuteInto,
         TryTruncateInto,
         Value,

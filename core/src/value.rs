@@ -116,6 +116,12 @@ pub trait ExtendInto<T> {
     fn extend_into(self) -> T;
 }
 
+/// Sign-extends `Self` integer type from `T` integer type.
+pub trait SignExtendFrom<T> {
+    /// Convert one type to another by extending with leading zeroes.
+    fn sign_extend_from(self) -> Self;
+}
+
 /// Reinterprets the bits of a value of one type as another type.
 pub trait TransmuteInto<T> {
     /// Reinterprets the bits of a value of one type as another type.
@@ -582,6 +588,26 @@ impl ExtendInto<F64> for F32 {
     fn extend_into(self) -> F64 {
         (f32::from(self) as f64).into()
     }
+}
+
+macro_rules! impl_sign_extend_from {
+    ( $( impl SignExtendFrom<$from_type:ty> for $for_type:ty; )* ) => {
+        $(
+            impl SignExtendFrom<$from_type> for $for_type {
+                #[inline]
+                fn sign_extend_from(self) -> Self {
+                    (self as $from_type) as Self
+                }
+            }
+        )*
+    };
+}
+impl_sign_extend_from! {
+    impl SignExtendFrom<i8> for i32;
+    impl SignExtendFrom<i16> for i32;
+    impl SignExtendFrom<i8> for i64;
+    impl SignExtendFrom<i16> for i64;
+    impl SignExtendFrom<i32> for i64;
 }
 
 macro_rules! impl_transmute_into_self {

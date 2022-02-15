@@ -29,12 +29,21 @@ macro_rules! define_tests {
     };
 }
 
+mod sign_extension_ops {
+    use super::run_wasm_spec_test;
+
+    define_tests! {
+        fn wasm_i32("proposals/sign-extension-ops/i32");
+        fn wasm_i64("proposals/sign-extension-ops/i64");
+    }
+}
+
 mod multi_value {
-    use super::*;
+    use super::Config;
 
     /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
     fn run_wasm_spec_test(file_name: &str) {
-        self::run::run_wasm_spec_test(file_name, Config::default().enable_multi_value())
+        super::run::run_wasm_spec_test(file_name, Config::default().enable_multi_value())
     }
 
     define_tests! {

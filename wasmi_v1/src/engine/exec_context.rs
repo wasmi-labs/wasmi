@@ -25,6 +25,7 @@ use wasmi_core::{
     Float,
     Integer,
     LittleEndianConvert,
+    SignExtendFrom,
     TryTruncateInto,
     WrapInto,
 };
@@ -652,6 +653,17 @@ where
         T: FromStackEntry,
     {
         // Nothing to do for `wasmi` bytecode.
+        Ok(ExecutionOutcome::Continue)
+    }
+
+    fn execute_sign_extend<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
+    where
+        StackEntry: From<T>,
+        T: SignExtendFrom<U> + FromStackEntry,
+    {
+        let entry = self.value_stack.last_mut();
+        let value = T::from_stack_entry(*entry).sign_extend_from();
+        *entry = value.into();
         Ok(ExecutionOutcome::Continue)
     }
 }
@@ -1408,5 +1420,25 @@ where
 
     fn visit_f64_reinterpret_i64(&mut self) -> Self::Outcome {
         self.execute_reinterpret::<i64, F64>()
+    }
+
+    fn visit_i32_sign_extend8(&mut self) -> Self::Outcome {
+        self.execute_sign_extend::<i32, i8>()
+    }
+
+    fn visit_i32_sign_extend16(&mut self) -> Self::Outcome {
+        self.execute_sign_extend::<i32, i16>()
+    }
+
+    fn visit_i64_sign_extend8(&mut self) -> Self::Outcome {
+        self.execute_sign_extend::<i64, i8>()
+    }
+
+    fn visit_i64_sign_extend16(&mut self) -> Self::Outcome {
+        self.execute_sign_extend::<i64, i16>()
+    }
+
+    fn visit_i64_sign_extend32(&mut self) -> Self::Outcome {
+        self.execute_sign_extend::<i64, i32>()
     }
 }
