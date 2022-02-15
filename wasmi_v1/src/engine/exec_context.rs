@@ -1434,6 +1434,26 @@ where
         self.execute_reinterpret::<i64, F64>()
     }
 
+    fn visit_i32_sign_extend8(&mut self) -> Self::Outcome {
+        self.execute_sign_extend::<i32, i8>()
+    }
+
+    fn visit_i32_sign_extend16(&mut self) -> Self::Outcome {
+        self.execute_sign_extend::<i32, i16>()
+    }
+
+    fn visit_i64_sign_extend8(&mut self) -> Self::Outcome {
+        self.execute_sign_extend::<i64, i8>()
+    }
+
+    fn visit_i64_sign_extend16(&mut self) -> Self::Outcome {
+        self.execute_sign_extend::<i64, i16>()
+    }
+
+    fn visit_i64_sign_extend32(&mut self) -> Self::Outcome {
+        self.execute_sign_extend::<i64, i32>()
+    }
+
     fn visit_i32_trunc_sat_f32(&mut self) -> Self::Outcome {
         self.execute_trunc_sat_to_int::<F32, i32>()
     }
@@ -1464,25 +1484,5 @@ where
 
     fn visit_u64_trunc_sat_f64(&mut self) -> Self::Outcome {
         self.execute_trunc_sat_to_int::<F64, u64>()
-    }
-
-    fn visit_i32_sign_extend8(&mut self) -> Self::Outcome {
-        self.execute_sign_extend::<i32, i8>()
-    }
-
-    fn visit_i32_sign_extend16(&mut self) -> Self::Outcome {
-        self.execute_sign_extend::<i32, i16>()
-    }
-
-    fn visit_i64_sign_extend8(&mut self) -> Self::Outcome {
-        self.execute_sign_extend::<i64, i8>()
-    }
-
-    fn visit_i64_sign_extend16(&mut self) -> Self::Outcome {
-        self.execute_sign_extend::<i64, i16>()
-    }
-
-    fn visit_i64_sign_extend32(&mut self) -> Self::Outcome {
-        self.execute_sign_extend::<i64, i32>()
     }
 }

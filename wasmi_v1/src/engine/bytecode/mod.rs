@@ -195,6 +195,11 @@ pub enum Instruction {
     I64ReinterpretF64,
     F32ReinterpretI32,
     F64ReinterpretI64,
+    I32Extend8S,
+    I32Extend16S,
+    I64Extend8S,
+    I64Extend16S,
+    I64Extend32S,
     I32TruncSatF32S,
     I32TruncSatF32U,
     I32TruncSatF64S,
@@ -203,11 +208,6 @@ pub enum Instruction {
     I64TruncSatF32U,
     I64TruncSatF64S,
     I64TruncSatF64U,
-    I32Extend8S,
-    I32Extend16S,
-    I64Extend8S,
-    I64Extend16S,
-    I64Extend32S,
 
     /// The start of a Wasm function body.
     ///

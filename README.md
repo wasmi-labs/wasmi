@@ -32,6 +32,30 @@ The following list states some of the distinct features of `wasmi`.
 - Low-overhead and cross-platform WebAssembly runtime.
 - New experimental `v1` engine allows to be used as a drop-in solution for Wasmtime.
 
+# Wasm Proposals
+
+The new `wasmi_v1` engine supports a variety of WebAssembly proposals and will support even more of them in the future.
+
+| Wasm Proposal | Status | Comment |
+|:--|:--:|:--|
+| [`mutable-global`] | ❌ | Planned but not yet implemented. High priority. |
+| [`saturating-float-to-int`] | ✅ | |
+| [`sign-extension`] | ✅ | |
+| [`multi-value`] | ✅ | |
+| [`reference-types`] | ❌ | No support is planned for `wasmi`. |
+| [`bulk-memory`] | ⌛ | Planned but not yet implemented. Low priority. |
+| [`simd`] | ❌ | No support is planned for `wasmi`. |
+| [`tail-calls`] | ⌛ | Not yet part of the Wasm standard but support in `wasmi` is planned. Low priority. |
+
+[`mutable-global`]: https://github.com/WebAssembly/mutable-global
+[`saturating-float-to-int`]: https://github.com/WebAssembly/nontrapping-float-to-int-conversions
+[`sign-extension`]: https://github.com/WebAssembly/sign-extension-ops
+[`multi-value`]: https://github.com/WebAssembly/multi-value
+[`reference-types`]: https://github.com/WebAssembly/reference-types
+[`bulk-memory`]: https://github.com/WebAssembly/bulk-memory-operations
+[`simd` ]: https://github.com/webassembly/simd
+[`tail-calls`]: https://github.com/WebAssembly/tail-call
+
 # Developer Notes
 
 ## Building
@@ -105,10 +129,10 @@ cargo build --features virtual_memory
 We are currently building an experimental new `wasmi` engine that mirrors the Wasmtime APIs
 and has an improved performance and decreased overhead compared to the old `wasmi` engine.
 
-You can enable and start using it today via the `v1` crate feature:
+You can enable and start using it today by using the `wasmi_v1` workspace package:
 
 ```
-cargo build --features v1
+cargo build --package wasmi_v1
 ```
 
 #### Note

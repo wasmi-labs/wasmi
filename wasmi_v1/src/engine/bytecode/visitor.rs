@@ -169,6 +169,11 @@ pub trait VisitInstruction {
     fn visit_i64_reinterpret_f64(&mut self) -> Self::Outcome;
     fn visit_f32_reinterpret_i32(&mut self) -> Self::Outcome;
     fn visit_f64_reinterpret_i64(&mut self) -> Self::Outcome;
+    fn visit_i32_sign_extend8(&mut self) -> Self::Outcome;
+    fn visit_i32_sign_extend16(&mut self) -> Self::Outcome;
+    fn visit_i64_sign_extend8(&mut self) -> Self::Outcome;
+    fn visit_i64_sign_extend16(&mut self) -> Self::Outcome;
+    fn visit_i64_sign_extend32(&mut self) -> Self::Outcome;
     fn visit_i32_trunc_sat_f32(&mut self) -> Self::Outcome;
     fn visit_u32_trunc_sat_f32(&mut self) -> Self::Outcome;
     fn visit_i32_trunc_sat_f64(&mut self) -> Self::Outcome;
@@ -177,9 +182,4 @@ pub trait VisitInstruction {
     fn visit_u64_trunc_sat_f32(&mut self) -> Self::Outcome;
     fn visit_i64_trunc_sat_f64(&mut self) -> Self::Outcome;
     fn visit_u64_trunc_sat_f64(&mut self) -> Self::Outcome;
-    fn visit_i32_sign_extend8(&mut self) -> Self::Outcome;
-    fn visit_i32_sign_extend16(&mut self) -> Self::Outcome;
-    fn visit_i64_sign_extend8(&mut self) -> Self::Outcome;
-    fn visit_i64_sign_extend16(&mut self) -> Self::Outcome;
-    fn visit_i64_sign_extend32(&mut self) -> Self::Outcome;
 }
