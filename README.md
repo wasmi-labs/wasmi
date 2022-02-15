@@ -105,10 +105,10 @@ cargo build --features virtual_memory
 We are currently building an experimental new `wasmi` engine that mirrors the Wasmtime APIs
 and has an improved performance and decreased overhead compared to the old `wasmi` engine.
 
-You can enable and start using it today via the `v1` crate feature:
+You can enable and start using it today by using the `wasmi_v1` workspace package:
 
 ```
-cargo build --features v1
+cargo build --package wasmi_v1
 ```
 
 #### Note
