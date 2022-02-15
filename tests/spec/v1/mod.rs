@@ -34,7 +34,7 @@ mod sign_extension_ops {
 
     define_tests! {
         fn wasm_i32("proposals/sign-extension-ops/i32");
-        fn wasm_i64("proposals/sign-extension-ops/i32");
+        fn wasm_i64("proposals/sign-extension-ops/i64");
     }
 }
 
