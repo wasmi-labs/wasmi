@@ -38,7 +38,7 @@ The new `wasmi_v1` engine supports a variety of WebAssembly proposals and will s
 
 | Wasm Proposal | Status | Comment |
 |:--|:--:|:--|
-| [`mutable-global`] | ❌ | Planned but not yet implemented. High priority. |
+| [`mutable-global`] | ✅ | |
 | [`saturating-float-to-int`] | ✅ | |
 | [`sign-extension`] | ✅ | |
 | [`multi-value`] | ✅ | |
