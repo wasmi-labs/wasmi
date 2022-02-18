@@ -169,7 +169,7 @@ impl Config {
     /// # Note
     ///
     /// The Wasm MVP has no Wasm proposals enabled by default.
-    pub fn mvp() -> Self {
+    pub const fn mvp() -> Self {
         Self {
             value_stack_limit: DEFAULT_VALUE_STACK_LIMIT,
             call_stack_limit: DEFAULT_CALL_STACK_LIMIT,
@@ -181,46 +181,46 @@ impl Config {
     }
 
     /// Enables the `mutable-global` Wasm proposal.
-    pub fn enable_mutable_global(mut self, enable: bool) -> Self {
+    pub const fn enable_mutable_global(mut self, enable: bool) -> Self {
         self.mutable_global = enable;
         self
     }
 
     /// Returns `true` if the `mutable-global` Wasm proposal is enabled.
-    pub fn mutable_global(&self) -> bool {
+    pub const fn mutable_global(&self) -> bool {
         self.mutable_global
     }
 
     /// Enables the `sign-extension` Wasm proposal.
-    pub fn enable_sign_extension(mut self, enable: bool) -> Self {
+    pub const fn enable_sign_extension(mut self, enable: bool) -> Self {
         self.sign_extension = enable;
         self
     }
 
     /// Returns `true` if the `sign-extension` Wasm proposal is enabled.
-    pub fn sign_extension(&self) -> bool {
+    pub const fn sign_extension(&self) -> bool {
         self.sign_extension
     }
 
     /// Enables the `saturating-float-to-int` Wasm proposal.
-    pub fn enable_saturating_float_to_int(mut self, enable: bool) -> Self {
+    pub const fn enable_saturating_float_to_int(mut self, enable: bool) -> Self {
         self.saturating_float_to_int = enable;
         self
     }
 
     /// Returns `true` if the `saturating-float-to-int` Wasm proposal is enabled.
-    pub fn saturating_float_to_int(&self) -> bool {
+    pub const fn saturating_float_to_int(&self) -> bool {
         self.saturating_float_to_int
     }
 
     /// Enables the `multi-value` Wasm proposal.
-    pub fn enable_multi_value(mut self, enable: bool) -> Self {
+    pub const fn enable_multi_value(mut self, enable: bool) -> Self {
         self.multi_value = enable;
         self
     }
 
     /// Returns `true` if the `multi-value` Wasm proposal is enabled.
-    pub fn multi_value(&self) -> bool {
+    pub const fn multi_value(&self) -> bool {
         self.multi_value
     }
 }
