@@ -83,6 +83,9 @@ impl<'engine> ModuleParser<'engine> {
             exceptions: false,
             memory64: false,
             extended_const: false,
+            mutable_global: engine.config().mutable_global(),
+            saturating_float_to_int: engine.config().saturating_float_to_int(),
+            sign_extension: engine.config().sign_extension(),
         }
     }
 

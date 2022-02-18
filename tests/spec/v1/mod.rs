@@ -12,9 +12,14 @@ use self::{
 };
 use wasmi_v1::Config;
 
-/// Run Wasm spec test suite using default `wasmi` configuration.
+/// Run Wasm spec test suite using MVP `wasmi` configuration.
+///
+/// # Note
+///
+/// The Wasm MVP has no Wasm proposals enabled.
 fn run_wasm_spec_test(file_name: &str) {
-    self::run::run_wasm_spec_test(file_name, Config::default())
+    let config = Config::mvp().enable_mutable_global(true);
+    self::run::run_wasm_spec_test(file_name, config)
 }
 
 macro_rules! define_tests {
@@ -30,7 +35,13 @@ macro_rules! define_tests {
 }
 
 mod saturating_float_to_int {
-    use super::run_wasm_spec_test;
+    use super::Config;
+
+    /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
+    fn run_wasm_spec_test(file_name: &str) {
+        let config = Config::mvp().enable_saturating_float_to_int(true);
+        super::run::run_wasm_spec_test(file_name, config)
+    }
 
     define_tests! {
         fn wasm_conversions("proposals/nontrapping-float-to-int-conversions/conversions");
@@ -38,7 +49,13 @@ mod saturating_float_to_int {
 }
 
 mod sign_extension_ops {
-    use super::run_wasm_spec_test;
+    use super::Config;
+
+    /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
+    fn run_wasm_spec_test(file_name: &str) {
+        let config = Config::mvp().enable_sign_extension(true);
+        super::run::run_wasm_spec_test(file_name, config)
+    }
 
     define_tests! {
         fn wasm_i32("proposals/sign-extension-ops/i32");
@@ -51,7 +68,8 @@ mod multi_value {
 
     /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
     fn run_wasm_spec_test(file_name: &str) {
-        super::run::run_wasm_spec_test(file_name, Config::default().enable_multi_value())
+        let config = Config::mvp().enable_multi_value(true);
+        super::run::run_wasm_spec_test(file_name, config)
     }
 
     define_tests! {

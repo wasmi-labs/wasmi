@@ -630,23 +630,23 @@ impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
             | Operator::F64x2ConvertLowI32x4U
             | Operator::F32x4DemoteF64x2Zero
             | Operator::F64x2PromoteLowF32x4
-            | Operator::I8x16SwizzleRelaxed
-            | Operator::I32x4TruncSatF32x4SRelaxed
-            | Operator::I32x4TruncSatF32x4URelaxed
-            | Operator::I32x4TruncSatF64x2SZeroRelaxed
-            | Operator::I32x4TruncSatF64x2UZeroRelaxed
-            | Operator::F32x4FmaRelaxed
-            | Operator::F32x4FmsRelaxed
-            | Operator::F64x2FmaRelaxed
-            | Operator::F64x2FmsRelaxed
+            | Operator::I8x16RelaxedSwizzle
+            | Operator::I32x4RelaxedTruncSatF32x4S
+            | Operator::I32x4RelaxedTruncSatF32x4U
+            | Operator::I32x4RelaxedTruncSatF64x2SZero
+            | Operator::I32x4RelaxedTruncSatF64x2UZero
+            | Operator::F32x4Fma
+            | Operator::F32x4Fms
+            | Operator::F64x2Fma
+            | Operator::F64x2Fms
             | Operator::I8x16LaneSelect
             | Operator::I16x8LaneSelect
             | Operator::I32x4LaneSelect
             | Operator::I64x2LaneSelect
-            | Operator::F32x4MinRelaxed
-            | Operator::F32x4MaxRelaxed
-            | Operator::F64x2MinRelaxed
-            | Operator::F64x2MaxRelaxed => unsupported_error(),
+            | Operator::F32x4RelaxedMin
+            | Operator::F32x4RelaxedMax
+            | Operator::F64x2RelaxedMin
+            | Operator::F64x2RelaxedMax => unsupported_error(),
         }
     }
 }
