@@ -12,35 +12,79 @@ use self::{
 };
 use wasmi_v1::Config;
 
-/// Run Wasm spec test suite using default `wasmi` configuration.
+/// Run Wasm spec test suite using MVP `wasmi` configuration.
+///
+/// # Note
+///
+/// The Wasm MVP has no Wasm proposals enabled.
 fn run_wasm_spec_test(file_name: &str) {
-    self::run::run_wasm_spec_test(file_name, Config::default())
+    let config = Config::mvp().enable_mutable_global(true);
+    self::run::run_wasm_spec_test(file_name, config)
 }
 
-macro_rules! define_tests {
+macro_rules! define_local_tests {
     ( $( $(#[$attr:meta])* fn $test_name:ident($file_name:expr); )* ) => {
         $(
             #[test]
             $( #[$attr] )*
             fn $test_name() {
-                run_wasm_spec_test($file_name)
+                run_wasm_spec_test(&format!("local/{}", $file_name))
+            }
+        )*
+    };
+}
+
+mod missing_features {
+    use super::Config;
+
+    /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
+    fn run_wasm_spec_test(file_name: &str) {
+        super::run::run_wasm_spec_test(file_name, Config::mvp())
+    }
+
+    define_local_tests! {
+        fn wasm_mutable_global("missing-features/mutable-global-disabled");
+        fn wasm_sign_extension("missing-features/sign-extension-disabled");
+        fn wasm_saturating_float_to_int("missing-features/saturating-float-to-int-disabled");
+    }
+}
+
+macro_rules! define_spec_tests {
+    ( $( $(#[$attr:meta])* fn $test_name:ident($file_name:expr); )* ) => {
+        $(
+            #[test]
+            $( #[$attr] )*
+            fn $test_name() {
+                run_wasm_spec_test(&format!("testsuite-v1/{}", $file_name))
             }
         )*
     };
 }
 
 mod saturating_float_to_int {
-    use super::run_wasm_spec_test;
+    use super::Config;
 
-    define_tests! {
+    /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
+    fn run_wasm_spec_test(file_name: &str) {
+        let config = Config::mvp().enable_saturating_float_to_int(true);
+        super::run::run_wasm_spec_test(file_name, config)
+    }
+
+    define_spec_tests! {
         fn wasm_conversions("proposals/nontrapping-float-to-int-conversions/conversions");
     }
 }
 
 mod sign_extension_ops {
-    use super::run_wasm_spec_test;
+    use super::Config;
 
-    define_tests! {
+    /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
+    fn run_wasm_spec_test(file_name: &str) {
+        let config = Config::mvp().enable_sign_extension(true);
+        super::run::run_wasm_spec_test(file_name, config)
+    }
+
+    define_spec_tests! {
         fn wasm_i32("proposals/sign-extension-ops/i32");
         fn wasm_i64("proposals/sign-extension-ops/i64");
     }
@@ -51,10 +95,11 @@ mod multi_value {
 
     /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
     fn run_wasm_spec_test(file_name: &str) {
-        super::run::run_wasm_spec_test(file_name, Config::default().enable_multi_value())
+        let config = Config::mvp().enable_multi_value(true);
+        super::run::run_wasm_spec_test(file_name, config)
     }
 
-    define_tests! {
+    define_spec_tests! {
         fn wasm_binary("proposals/multi-value/binary");
         fn wasm_block("proposals/multi-value/block");
         fn wasm_br("proposals/multi-value/br");
@@ -68,7 +113,7 @@ mod multi_value {
     }
 }
 
-define_tests! {
+define_spec_tests! {
     fn wasm_address("address");
     fn wasm_align("align");
     fn wasm_binary("binary");

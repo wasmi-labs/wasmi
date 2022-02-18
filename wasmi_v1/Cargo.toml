@@ -11,7 +11,7 @@ description = "WebAssembly interpreter"
 keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
 
 [dependencies]
-wasmparser = { version = "0.82", package = "wasmparser-nostd", default-features = false }
+wasmparser = { version = "0.83", package = "wasmparser-nostd", default-features = false }
 wasmi_core = { version = "0.1", path = "../core", default-features = false }
 spin = { version = "0.9", default-features = false, features = ["mutex", "spin_mutex"] }
 
