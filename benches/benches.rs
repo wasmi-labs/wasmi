@@ -657,11 +657,8 @@ fn bench_execute_fibonacci_recursive_v0(c: &mut Criterion) {
     let instance = load_instance_from_wat_v0(include_bytes!("wat/fibonacci.wat"));
     c.bench_function("execute/fib_recursive/v0", |b| {
         b.iter(|| {
-            let result = instance.invoke_export(
-                "fib_recursive",
-                &[Value::I32(25)],
-                &mut v0::NopExternals,
-            );
+            let result =
+                instance.invoke_export("fib_recursive", &[Value::I32(25)], &mut v0::NopExternals);
             assert_matches!(result, Ok(Some(Value::I32(75025))));
         })
     });
