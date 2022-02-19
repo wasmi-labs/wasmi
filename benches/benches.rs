@@ -659,10 +659,10 @@ fn bench_execute_fibonacci_recursive_v0(c: &mut Criterion) {
         b.iter(|| {
             let result = instance.invoke_export(
                 "fib_recursive",
-                &[Value::I32(26000)],
+                &[Value::I32(25)],
                 &mut v0::NopExternals,
             );
-            assert_matches!(result, Ok(Some(Value::I32(169000000))));
+            assert_matches!(result, Ok(Some(Value::I32(75025))));
         })
     });
 }
@@ -676,9 +676,9 @@ fn bench_execute_fibonacci_recursive_v1(c: &mut Criterion) {
     let mut result = [Value::I32(0)];
     c.bench_function("execute/fib_recursive/v1", |b| {
         b.iter(|| {
-            let result = bench_call.call(&mut store, &[Value::I32(26000)], &mut result);
+            let result = bench_call.call(&mut store, &[Value::I32(25)], &mut result);
             assert_matches!(result, Ok(_));
         });
-        assert_eq!(result, [Value::I32(169000000)]);
+        assert_eq!(result, [Value::I32(75025)]);
     });
 }
