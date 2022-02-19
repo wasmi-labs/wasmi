@@ -51,7 +51,9 @@ criterion_group!(
     bench_execute_recursive_trap_v0,
     bench_execute_recursive_trap_v1,
     bench_execute_host_calls_v0,
-    bench_execute_host_calls_v1
+    bench_execute_host_calls_v1,
+    bench_execute_fibonacci_recursive_v0,
+    bench_execute_fibonacci_recursive_v1,
 );
 
 criterion_main!(bench_compile_and_validate, bench_instantiate, bench_execute);
@@ -648,5 +650,35 @@ fn bench_execute_host_calls_v1(c: &mut Criterion) {
             .unwrap();
             assert_matches!(result, [Value::I64(0)]);
         })
+    });
+}
+
+fn bench_execute_fibonacci_recursive_v0(c: &mut Criterion) {
+    let instance = load_instance_from_wat_v0(include_bytes!("wat/fibonacci.wat"));
+    c.bench_function("execute/fib_recursive/v0", |b| {
+        b.iter(|| {
+            let result = instance.invoke_export(
+                "fib_recursive",
+                &[Value::I32(26000)],
+                &mut v0::NopExternals,
+            );
+            assert_matches!(result, Ok(Some(Value::I32(169000000))));
+        })
+    });
+}
+
+fn bench_execute_fibonacci_recursive_v1(c: &mut Criterion) {
+    let (mut store, instance) = load_instance_from_wat_v1(include_bytes!("wat/fibonacci.wat"));
+    let bench_call = instance
+        .get_export(&store, "fib_recursive")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    let mut result = [Value::I32(0)];
+    c.bench_function("execute/fib_recursive/v1", |b| {
+        b.iter(|| {
+            let result = bench_call.call(&mut store, &[Value::I32(26000)], &mut result);
+            assert_matches!(result, Ok(_));
+        });
+        assert_eq!(result, [Value::I32(169000000)]);
     });
 }
