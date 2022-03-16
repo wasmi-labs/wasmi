@@ -14,8 +14,11 @@ mod parser;
 mod read;
 mod utils;
 
+// #[cfg(test)]
+// mod tests;
+
 #[cfg(test)]
-mod tests;
+mod tests2;
 
 use self::{
     builder::ModuleBuilder,

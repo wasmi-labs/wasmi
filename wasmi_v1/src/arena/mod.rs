@@ -24,6 +24,7 @@ use core::{
 pub trait Index: Copy {
     /// Converts the [`Index`] into the underlying `usize` value.
     fn into_usize(self) -> usize;
+
     /// Converts the `usize` value into the associated [`Index`].
     fn from_usize(value: usize) -> Self;
 }

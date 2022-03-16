@@ -1,7 +1,7 @@
 pub use self::block_type::BlockType;
 use super::{utils::value_type_from_wasmparser, FuncIdx, ModuleResources};
 use crate::{
-    engine::{DropKeep, FuncBody, FunctionBuilder},
+    engine::{FuncBody, FunctionBuilder},
     Engine,
     ModuleError,
 };
@@ -42,7 +42,7 @@ struct FunctionTranslator<'engine, 'parser> {
     /// The function body that shall be translated.
     func_body: FunctionBody<'parser>,
     /// The interface to incrementally build up the `wasmi` bytecode function.
-    func_builder: FunctionBuilder<'engine, 'parser>,
+    func_builder: FunctionBuilder<'parser>,
     /// The Wasm validator.
     validator: FuncValidator<ValidatorResources>,
     /// The `wasmi` module resources.

@@ -1,7 +1,7 @@
 use super::*;
 use crate::{
     engine::{
-        bytecode::{Instruction, LocalIdx},
+        bytecode::{Instruction},
         DropKeep,
         InstructionIdx,
         Target,

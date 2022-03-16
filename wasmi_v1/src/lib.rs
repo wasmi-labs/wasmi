@@ -14,7 +14,7 @@ extern crate std as alloc;
 mod foreach_tuple;
 
 mod arena;
-mod engine;
+// mod engine;
 mod engine2;
 mod error;
 mod external;
@@ -44,9 +44,11 @@ pub mod errors {
     };
 }
 
+use engine2 as engine;
 use self::{
     arena::{GuardedEntity, Index},
-    engine::FuncBody,
+    // engine::FuncBody,
+    engine2::FuncBody,
     func::{FuncEntity, FuncEntityInternal, FuncIdx},
     global::{GlobalEntity, GlobalIdx},
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
@@ -55,7 +57,7 @@ use self::{
     table::{TableEntity, TableIdx},
 };
 pub use self::{
-    engine::{Config, Engine},
+    engine2::{Config, Engine},
     error::Error,
     external::Extern,
     func::{Caller, Func, TypedFunc, WasmParams, WasmResults},
