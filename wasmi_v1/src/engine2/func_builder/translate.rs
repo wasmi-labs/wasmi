@@ -72,7 +72,7 @@ impl OpaqueInstruction {
             }
             Self::I32Ne { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
-                    ExecInstruction::I32Eq { result, lhs, rhs }
+                    ExecInstruction::I32Ne { result, lhs, rhs }
                 })
             }
             Self::I32LtS { result, lhs, rhs } => {
@@ -123,7 +123,7 @@ impl OpaqueInstruction {
             }
             Self::I64Ne { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
-                    ExecInstruction::I64Eq { result, lhs, rhs }
+                    ExecInstruction::I64Ne { result, lhs, rhs }
                 })
             }
             Self::I64LtS { result, lhs, rhs } => {
