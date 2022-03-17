@@ -111,6 +111,15 @@ where
         len_targets: usize,
     },
     /// Equivalent to the Wasm `unreachable` instruction.
+    ///
+    /// # Note
+    ///
+    /// This allows to represent Wasm's `unreachable` instruction but also
+    /// allows to represent other invalid instructions.
+    /// This is especially useful for constant folding fallible instructions
+    /// such as `i32.div 42 0` which can be evaluated to a trap at compilation
+    /// time. Instead of trapping during compilation of such code `wasmi` simply
+    /// emits the proper trap instead of the `i32.div` instruction.
     Trap { trap_code: TrapCode },
     /// Equivalent to the Wasm `return` instruction.
     Return {
