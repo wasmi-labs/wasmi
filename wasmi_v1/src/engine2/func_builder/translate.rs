@@ -64,6 +64,94 @@ impl OpaqueInstruction {
                     ExecInstruction::I32Add { result, lhs, rhs }
                 })
             }
+            Self::I32Mul { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::I32Mul { result, lhs, rhs }
+                })
+            }
+            Self::I32And { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::I32And { result, lhs, rhs }
+                })
+            }
+            Self::I32Or { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::I32Or { result, lhs, rhs }
+                })
+            }
+            Self::I32Xor { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::I32Xor { result, lhs, rhs }
+                })
+            }
+
+            Self::I64Add { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::I64Add { result, lhs, rhs }
+                })
+            }
+            Self::I64Mul { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::I64Mul { result, lhs, rhs }
+                })
+            }
+            Self::I64And { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::I64And { result, lhs, rhs }
+                })
+            }
+            Self::I64Or { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::I64Or { result, lhs, rhs }
+                })
+            }
+            Self::I64Xor { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::I64Xor { result, lhs, rhs }
+                })
+            }
+
+            Self::F32Add { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::F32Add { result, lhs, rhs }
+                })
+            }
+            Self::F32Mul { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::F32Mul { result, lhs, rhs }
+                })
+            }
+            Self::F32Min { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::F32Min { result, lhs, rhs }
+                })
+            }
+            Self::F32Max { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::F32Max { result, lhs, rhs }
+                })
+            }
+
+            Self::F64Add { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::F64Add { result, lhs, rhs }
+                })
+            }
+            Self::F64Mul { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::F64Mul { result, lhs, rhs }
+                })
+            }
+            Self::F64Min { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::F64Min { result, lhs, rhs }
+                })
+            }
+            Self::F64Max { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::F64Max { result, lhs, rhs }
+                })
+            }
 
             Self::I32Eq { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
@@ -167,6 +255,16 @@ impl OpaqueInstruction {
                 })
             }
 
+            Self::F32Eq { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::F32Eq { result, lhs, rhs }
+                })
+            }
+            Self::F32Ne { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::F32Ne { result, lhs, rhs }
+                })
+            }
             Self::F32Lt { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
                     ExecInstruction::F32Lt { result, lhs, rhs }
@@ -188,6 +286,16 @@ impl OpaqueInstruction {
                 })
             }
 
+            Self::F64Eq { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::F64Eq { result, lhs, rhs }
+                })
+            }
+            Self::F64Ne { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
+                    ExecInstruction::F64Ne { result, lhs, rhs }
+                })
+            }
             Self::F64Lt { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, |result, lhs, rhs| {
                     ExecInstruction::F64Lt { result, lhs, rhs }
