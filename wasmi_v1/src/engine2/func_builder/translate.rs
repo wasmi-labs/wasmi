@@ -1,5 +1,3 @@
-use wasmi_core::Value;
-
 use super::{
     super::{bytecode::Register as ExecRegister, ExecInstruction, Provider as ExecProvider},
     locals_registry::LocalsRegistry,
@@ -10,6 +8,7 @@ use super::{
     Register as OpaqueRegister,
 };
 use crate::Engine;
+use wasmi_core::Value;
 
 /// Creates a closure taking 3 parameters and constructing a `wasmi` instruction.
 macro_rules! make_op {
