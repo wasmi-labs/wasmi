@@ -58,6 +58,13 @@ impl_wasm_type_name! {
     type bool = "i32";
 }
 
+/// Creates a closure taking 3 parameters and constructing a `wasmi` instruction.
+macro_rules! make_op {
+    ( $name:ident ) => {{
+        |result, lhs, rhs| ExecInstruction::$name { result, lhs, rhs }
+    }};
+}
+
 /// Converts the `wat` string source into `wasm` encoded byte.
 fn wat2wasm(wat: &str) -> Vec<u8> {
     wat::parse_str(wat).unwrap()
@@ -193,13 +200,6 @@ fn add_registers() {
         },
     ];
     assert_func_bodies(&wasm, [expected]);
-}
-
-/// Creates a closure taking 3 parameters and constructing a `wasmi` instruction.
-macro_rules! make_op {
-    ( $name:ident ) => {{
-        |result, lhs, rhs| ExecInstruction::$name { result, lhs, rhs }
-    }};
 }
 
 /// Tests compilation of all commutative binary Wasm instructions.
