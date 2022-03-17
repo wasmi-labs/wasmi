@@ -23,6 +23,7 @@ pub(crate) use self::{
     func_args::{FuncParams, FuncResults, ReadParams, WasmType, WriteResults},
     func_builder::{FunctionBuilder, Instr, LabelIdx, Reloc},
     provider::{DedupProviderSlice, DedupProviderSliceArena, Provider, RegisterOrImmediate},
+    register::{FromRegisterEntry, RegisterEntry},
     traits::{CallParams, CallResults},
 };
 use self::{
@@ -30,7 +31,6 @@ use self::{
     func_types::FuncTypeRegistry,
     ident::{EngineIdent, Guarded},
 };
-pub(crate) use self::register::{FromRegisterEntry, RegisterEntry};
 pub use self::{
     code_map::FuncBody,
     config::Config,
@@ -151,7 +151,9 @@ impl Engine {
     where
         T: Into<RegisterEntry>,
     {
-        self.inner.lock().alloc_const(Const::from_inner(value.into().to_bits()))
+        self.inner
+            .lock()
+            .alloc_const(Const::from_inner(value.into().to_bits()))
     }
 
     /// Executes the given [`Func`] using the given arguments `params` and stores the result into `results`.

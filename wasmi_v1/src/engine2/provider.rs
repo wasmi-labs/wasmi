@@ -1,7 +1,7 @@
 use super::{bytecode::Register, ConstRef};
 use crate::arena::Index;
+use alloc::collections::{btree_map::Entry, BTreeMap};
 use core::ops::Neg;
-use alloc::collections::{BTreeMap, btree_map::Entry};
 
 #[derive(Debug)]
 pub struct DedupProviderSliceArena {
@@ -29,16 +29,14 @@ impl DedupProviderSliceArena {
         self.scratch.clear();
         self.scratch.extend(registers);
         match self.dedup.entry(self.scratch.clone().into_boxed_slice()) {
-            Entry::Occupied(occupied) => {
-                *occupied.get()
-            }
+            Entry::Occupied(occupied) => *occupied.get(),
             Entry::Vacant(vacant) => {
                 let first = self.providers.len();
                 self.providers.extend_from_slice(&self.scratch[..]);
                 let len = self.providers.len() - first;
-                let first = first
-                    .try_into()
-                    .unwrap_or_else(|error| panic!("out of bounds index for register slice: {}", first));
+                let first = first.try_into().unwrap_or_else(|error| {
+                    panic!("out of bounds index for register slice: {}", first)
+                });
                 let len = len
                     .try_into()
                     .unwrap_or_else(|error| panic!("register slice too long: {}", len));

@@ -44,10 +44,8 @@ pub mod errors {
     };
 }
 
-use engine2 as engine;
 use self::{
     arena::{GuardedEntity, Index},
-    // engine::FuncBody,
     engine2::FuncBody,
     func::{FuncEntity, FuncEntityInternal, FuncIdx},
     global::{GlobalEntity, GlobalIdx},
@@ -70,3 +68,4 @@ pub use self::{
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
 };
+use engine2 as engine;

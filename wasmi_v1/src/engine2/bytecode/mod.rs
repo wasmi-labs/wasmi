@@ -5,14 +5,8 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
-use super::{Provider, DedupProviderSlice};
-pub use self::utils::{
-    Target,
-    Register,
-    ContiguousRegisterSlice,
-    Global,
-    Offset,
-};
+pub use self::utils::{ContiguousRegisterSlice, Global, Offset, Register, Target};
+use super::{DedupProviderSlice, Provider};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum ExecuteTypes {}

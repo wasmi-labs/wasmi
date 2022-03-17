@@ -1,11 +1,12 @@
 use crate::Engine;
 
-use super::LocalsRegistry;
-use core::cmp::max;
+use super::{
+    super::{bytecode::Register as ExecRegister, Provider as ExecProvider},
+    LocalsRegistry,
+};
 use alloc::vec::Drain;
+use core::cmp::max;
 use wasmi_core::{Value, ValueType};
-use super::super::Provider as ExecProvider;
-use super::super::bytecode::Register as ExecRegister;
 
 /// A stack of provided inputs for constructed instructions.
 #[derive(Debug, Default)]
@@ -63,9 +64,7 @@ impl Providers {
             Provider::Register(register) => {
                 ExecProvider::from_register(self.compile_register(register))
             }
-            Provider::Immediate(value) => {
-    ExecProvider::from_immediate(engine.alloc_const(value))
-            }
+            Provider::Immediate(value) => ExecProvider::from_immediate(engine.alloc_const(value)),
         }
     }
 
@@ -85,7 +84,6 @@ impl Providers {
         });
         ExecRegister::from_inner(bounded)
     }
-
 
     /// Registers the `amount` of locals with their shared [`ValueType`].
     ///

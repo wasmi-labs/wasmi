@@ -1,7 +1,6 @@
-use crate::{arena::Index};
+use super::super::{func_builder::Instr, ConstRef};
+use crate::arena::Index;
 use core::ops::Neg;
-use super::super::ConstRef;
-use super::super::func_builder::Instr;
 
 /// A branching target.
 ///

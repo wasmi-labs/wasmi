@@ -26,10 +26,11 @@ use super::{
     bytecode::Offset,
     register::RegisterEntry,
     Engine,
+    ExecInstruction,
     FromRegisterEntry,
     FuncBody,
     Instruction,
-    InstructionTypes, ExecInstruction,
+    InstructionTypes,
 };
 use crate::{
     module::{
@@ -1133,11 +1134,7 @@ impl<'parser> FunctionBuilder<'parser> {
     /// - `{i32, i64}.eqz`
     /// - `{i32, i64, f32, f64}.eq`
     /// - `{i32, i64, f32, f64}.ne`
-    fn translate_binary_cmp<T, F>(
-        &mut self,
-        make_op: T,
-        exec_op: F,
-    ) -> Result<(), ModuleError>
+    fn translate_binary_cmp<T, F>(&mut self, make_op: T, exec_op: F) -> Result<(), ModuleError>
     where
         T: FnOnce(Register, Register, Provider) -> OpaqueInstruction,
         F: FnOnce(RegisterEntry, RegisterEntry) -> bool,
@@ -1608,7 +1605,11 @@ impl<'parser> FunctionBuilder<'parser> {
     /// - `{i32, i64}.xor`
     /// - `{f32, f64}.min`
     /// - `{f32, f64}.max`
-    fn translate_commutative_binary_operation<F, E, R>(&mut self, make_op: F, exec_op: E) -> Result<(), ModuleError>
+    fn translate_commutative_binary_operation<F, E, R>(
+        &mut self,
+        make_op: F,
+        exec_op: E,
+    ) -> Result<(), ModuleError>
     where
         F: FnOnce(Register, Register, Provider) -> OpaqueInstruction,
         E: FnOnce(RegisterEntry, RegisterEntry) -> R,
@@ -1620,9 +1621,7 @@ impl<'parser> FunctionBuilder<'parser> {
             match (lhs, rhs) {
                 (Provider::Register(lhs), rhs @ Provider::Register(_))
                 | (Provider::Register(lhs), rhs @ Provider::Immediate(_)) => {
-                    builder
-                        .inst_builder
-                        .push_inst(make_op(result, lhs, rhs));
+                    builder.inst_builder.push_inst(make_op(result, lhs, rhs));
                 }
                 (lhs @ Provider::Immediate(_), Provider::Register(rhs)) => {
                     // Note: due to commutativity of the operation we can swap the parameters.
@@ -1647,7 +1646,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 let lhs = i32::from_stack_entry(lhs);
                 let rhs = i32::from_stack_entry(rhs);
                 lhs.wrapping_add(rhs)
-            }
+            },
         )
     }
 
@@ -1667,7 +1666,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 let lhs = i32::from_stack_entry(lhs);
                 let rhs = i32::from_stack_entry(rhs);
                 lhs.wrapping_mul(rhs)
-            }
+            },
         )
     }
 
@@ -1711,7 +1710,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 let lhs = i32::from_stack_entry(lhs);
                 let rhs = i32::from_stack_entry(rhs);
                 lhs & rhs
-            }
+            },
         )
     }
 
@@ -1723,7 +1722,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 let lhs = i32::from_stack_entry(lhs);
                 let rhs = i32::from_stack_entry(rhs);
                 lhs | rhs
-            }
+            },
         )
     }
 
@@ -1735,7 +1734,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 let lhs = i32::from_stack_entry(lhs);
                 let rhs = i32::from_stack_entry(rhs);
                 lhs ^ rhs
-            }
+            },
         )
     }
 
@@ -1811,7 +1810,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 let lhs = i64::from_stack_entry(lhs);
                 let rhs = i64::from_stack_entry(rhs);
                 lhs.wrapping_add(rhs)
-            }
+            },
         )
     }
 
@@ -1831,7 +1830,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 let lhs = i64::from_stack_entry(lhs);
                 let rhs = i64::from_stack_entry(rhs);
                 lhs.wrapping_mul(rhs)
-            }
+            },
         )
     }
 
@@ -1875,7 +1874,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 let lhs = i64::from_stack_entry(lhs);
                 let rhs = i64::from_stack_entry(rhs);
                 lhs & rhs
-            }
+            },
         )
     }
 
@@ -1887,7 +1886,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 let lhs = i64::from_stack_entry(lhs);
                 let rhs = i64::from_stack_entry(rhs);
                 lhs | rhs
-            }
+            },
         )
     }
 
@@ -1899,7 +1898,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 let lhs = i64::from_stack_entry(lhs);
                 let rhs = i64::from_stack_entry(rhs);
                 lhs ^ rhs
-            }
+            },
         )
     }
 
@@ -2007,7 +2006,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 let lhs = F32::from_stack_entry(lhs);
                 let rhs = F32::from_stack_entry(rhs);
                 lhs + rhs
-            }
+            },
         )
     }
 
@@ -2027,7 +2026,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 let lhs = F32::from_stack_entry(lhs);
                 let rhs = F32::from_stack_entry(rhs);
                 lhs * rhs
-            }
+            },
         )
     }
 
@@ -2047,7 +2046,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 let lhs = F32::from_stack_entry(lhs);
                 let rhs = F32::from_stack_entry(rhs);
                 lhs.min(rhs)
-            }
+            },
         )
     }
 
@@ -2059,7 +2058,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 let lhs = F32::from_stack_entry(lhs);
                 let rhs = F32::from_stack_entry(rhs);
                 lhs.max(rhs)
-            }
+            },
         )
     }
 
@@ -2135,7 +2134,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 let lhs = F64::from_stack_entry(lhs);
                 let rhs = F64::from_stack_entry(rhs);
                 lhs + rhs
-            }
+            },
         )
     }
 
@@ -2155,7 +2154,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 let lhs = F64::from_stack_entry(lhs);
                 let rhs = F64::from_stack_entry(rhs);
                 lhs * rhs
-            }
+            },
         )
     }
 
@@ -2175,7 +2174,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 let lhs = F64::from_stack_entry(lhs);
                 let rhs = F64::from_stack_entry(rhs);
                 lhs.min(rhs)
-            }
+            },
         )
     }
 
@@ -2187,7 +2186,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 let lhs = F64::from_stack_entry(lhs);
                 let rhs = F64::from_stack_entry(rhs);
                 lhs.max(rhs)
-            }
+            },
         )
     }
 

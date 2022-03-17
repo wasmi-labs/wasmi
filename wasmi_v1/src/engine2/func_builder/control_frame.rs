@@ -1,5 +1,5 @@
-use crate::module::BlockType;
 use super::LabelIdx;
+use crate::module::BlockType;
 
 /// A Wasm `block` control flow frame.
 #[derive(Debug, Copy, Clone)]
