@@ -8,7 +8,7 @@ use super::{
     Register as OpaqueRegister,
 };
 use crate::Engine;
-use wasmi_core::Value;
+use wasmi_core::{TrapCode, Value};
 
 /// Creates a closure taking 3 parameters and constructing a `wasmi` instruction.
 macro_rules! make_op {
@@ -53,7 +53,7 @@ impl OpaqueInstruction {
             providers,
         };
         match self {
-            Self::Unreachable => ExecInstruction::Unreachable,
+            Self::Trap { trap_code } => ExecInstruction::Trap { trap_code },
             Self::Return { results } => {
                 let providers = reg_slices
                     .resolve(results)

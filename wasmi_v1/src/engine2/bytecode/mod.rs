@@ -5,6 +5,8 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
+use wasmi_core::TrapCode;
+
 pub use self::utils::{ContiguousRegisterSlice, Global, Offset, Register, Target};
 use super::{DedupProviderSlice, Provider};
 
@@ -109,7 +111,7 @@ where
         len_targets: usize,
     },
     /// Equivalent to the Wasm `unreachable` instruction.
-    Unreachable,
+    Trap { trap_code: TrapCode },
     /// Equivalent to the Wasm `return` instruction.
     Return {
         /// The registers used as return values of the function.

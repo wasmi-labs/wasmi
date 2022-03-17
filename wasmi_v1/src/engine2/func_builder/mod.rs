@@ -47,7 +47,7 @@ use crate::{
     ModuleError,
     Mutability,
 };
-use wasmi_core::{Value, ValueType, F32, F64};
+use wasmi_core::{TrapCode, Value, ValueType, F32, F64};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum OpaqueTypes {}
@@ -62,7 +62,9 @@ impl InstructionTypes for OpaqueTypes {
 pub type OpaqueInstruction = Instruction<OpaqueTypes>;
 
 /// TODO: remove again when done
-const DUMMY_INSTRUCTION: OpaqueInstruction = Instruction::Unreachable;
+const DUMMY_INSTRUCTION: OpaqueInstruction = Instruction::Trap {
+    trap_code: TrapCode::Unreachable,
+};
 
 /// TODO: remove again when done
 fn make_dummy_instruction(_offset: Offset) -> OpaqueInstruction {
