@@ -402,13 +402,6 @@ where
         /// The amount of additional linear memory pages.
         amount: T::Provider,
     },
-    /// Equivalent to the Wasm `i32.eqz` instruction.
-    I32Eqz {
-        /// Stores the result of the instruction evaluation.
-        result: T::Register,
-        /// The condition value that is checked against equality with zero.
-        condition: T::Register,
-    },
     /// Equivalent to the Wasm `i32.eq` instruction.
     I32Eq {
         /// Stores the result of the instruction evaluation.
@@ -498,13 +491,6 @@ where
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
         rhs: T::Provider,
-    },
-    /// Equivalent to the Wasm `i64.eqz` instruction.
-    I64Eqz {
-        /// Stores the result of the instruction evaluation.
-        result: T::Register,
-        /// The condition value that is checked against equality with zero.
-        condition: T::Register,
     },
     /// Equivalent to the Wasm `i64.eq` instruction.
     I64Eq {
