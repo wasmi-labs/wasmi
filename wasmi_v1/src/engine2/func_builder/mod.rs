@@ -1560,14 +1560,15 @@ impl<'parser> FunctionBuilder<'parser> {
     /// - `{i32, i64}.xor`
     /// - `{f32, f64}.min`
     /// - `{f32, f64}.max`
-    fn translate_commutative_binary_operation<F, E, R>(
+    fn translate_commutative_binary_operation<F, E, T, R>(
         &mut self,
         make_op: F,
         exec_op: E,
     ) -> Result<(), ModuleError>
     where
         F: FnOnce(Register, Register, Provider) -> OpaqueInstruction,
-        E: FnOnce(RegisterEntry, RegisterEntry) -> R,
+        E: FnOnce(T, T) -> R,
+        T: FromRegisterEntry,
         R: Into<Value>,
     {
         self.translate_if_reachable(|builder| {
@@ -1583,8 +1584,8 @@ impl<'parser> FunctionBuilder<'parser> {
                     builder.inst_builder.push_inst(make_op(result, rhs, lhs));
                 }
                 (Provider::Immediate(lhs), Provider::Immediate(rhs)) => {
-                    let lhs = RegisterEntry::from(lhs);
-                    let rhs = RegisterEntry::from(rhs);
+                    let lhs = T::from_stack_entry(RegisterEntry::from(lhs));
+                    let rhs = T::from_stack_entry(RegisterEntry::from(rhs));
                     let result = exec_op(lhs, rhs);
                     builder.providers.push_const(result.into());
                 }
@@ -1595,11 +1596,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `i32.add` instruction.
     pub fn translate_i32_add(&mut self) -> Result<(), ModuleError> {
-        self.translate_commutative_binary_operation(make_op!(I32Add), |lhs, rhs| {
-            let lhs = i32::from_stack_entry(lhs);
-            let rhs = i32::from_stack_entry(rhs);
-            lhs.wrapping_add(rhs)
-        })
+        self.translate_commutative_binary_operation(make_op!(I32Add), i32::wrapping_add)
     }
 
     /// Translate a Wasm `i32.sub` instruction.
@@ -1612,11 +1609,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `i32.mul` instruction.
     pub fn translate_i32_mul(&mut self) -> Result<(), ModuleError> {
-        self.translate_commutative_binary_operation(make_op!(I32Mul), |lhs, rhs| {
-            let lhs = i32::from_stack_entry(lhs);
-            let rhs = i32::from_stack_entry(rhs);
-            lhs.wrapping_mul(rhs)
-        })
+        self.translate_commutative_binary_operation(make_op!(I32Mul), i32::wrapping_mul)
     }
 
     /// Translate a Wasm `i32.div` instruction.
@@ -1653,27 +1646,19 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `i32.and` instruction.
     pub fn translate_i32_and(&mut self) -> Result<(), ModuleError> {
-        self.translate_commutative_binary_operation(make_op!(I32And), |lhs, rhs| {
-            let lhs = i32::from_stack_entry(lhs);
-            let rhs = i32::from_stack_entry(rhs);
+        self.translate_commutative_binary_operation(make_op!(I32And), |lhs: i32, rhs: i32| {
             lhs & rhs
         })
     }
 
     /// Translate a Wasm `i32.or` instruction.
     pub fn translate_i32_or(&mut self) -> Result<(), ModuleError> {
-        self.translate_commutative_binary_operation(make_op!(I32Or), |lhs, rhs| {
-            let lhs = i32::from_stack_entry(lhs);
-            let rhs = i32::from_stack_entry(rhs);
-            lhs | rhs
-        })
+        self.translate_commutative_binary_operation(make_op!(I32Or), |lhs: i32, rhs: i32| lhs | rhs)
     }
 
     /// Translate a Wasm `i32.xor` instruction.
     pub fn translate_i32_xor(&mut self) -> Result<(), ModuleError> {
-        self.translate_commutative_binary_operation(make_op!(I32Xor), |lhs, rhs| {
-            let lhs = i32::from_stack_entry(lhs);
-            let rhs = i32::from_stack_entry(rhs);
+        self.translate_commutative_binary_operation(make_op!(I32Xor), |lhs: i32, rhs: i32| {
             lhs ^ rhs
         })
     }
@@ -1744,11 +1729,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `i64.add` instruction.
     pub fn translate_i64_add(&mut self) -> Result<(), ModuleError> {
-        self.translate_commutative_binary_operation(make_op!(I64Add), |lhs, rhs| {
-            let lhs = i64::from_stack_entry(lhs);
-            let rhs = i64::from_stack_entry(rhs);
-            lhs.wrapping_add(rhs)
-        })
+        self.translate_commutative_binary_operation(make_op!(I64Add), i64::wrapping_add)
     }
 
     /// Translate a Wasm `i64.sub` instruction.
@@ -1761,11 +1742,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `i64.mul` instruction.
     pub fn translate_i64_mul(&mut self) -> Result<(), ModuleError> {
-        self.translate_commutative_binary_operation(make_op!(I64Mul), |lhs, rhs| {
-            let lhs = i64::from_stack_entry(lhs);
-            let rhs = i64::from_stack_entry(rhs);
-            lhs.wrapping_mul(rhs)
-        })
+        self.translate_commutative_binary_operation(make_op!(I64Mul), i64::wrapping_mul)
     }
 
     /// Translate a Wasm `i64.div` instruction.
@@ -1802,27 +1779,19 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `i64.and` instruction.
     pub fn translate_i64_and(&mut self) -> Result<(), ModuleError> {
-        self.translate_commutative_binary_operation(make_op!(I64And), |lhs, rhs| {
-            let lhs = i64::from_stack_entry(lhs);
-            let rhs = i64::from_stack_entry(rhs);
+        self.translate_commutative_binary_operation(make_op!(I64And), |lhs: i64, rhs: i64| {
             lhs & rhs
         })
     }
 
     /// Translate a Wasm `i64.or` instruction.
     pub fn translate_i64_or(&mut self) -> Result<(), ModuleError> {
-        self.translate_commutative_binary_operation(make_op!(I64Or), |lhs, rhs| {
-            let lhs = i64::from_stack_entry(lhs);
-            let rhs = i64::from_stack_entry(rhs);
-            lhs | rhs
-        })
+        self.translate_commutative_binary_operation(make_op!(I64Or), |lhs: i64, rhs: i64| lhs | rhs)
     }
 
     /// Translate a Wasm `i64.xor` instruction.
     pub fn translate_i64_xor(&mut self) -> Result<(), ModuleError> {
-        self.translate_commutative_binary_operation(make_op!(I64Xor), |lhs, rhs| {
-            let lhs = i64::from_stack_entry(lhs);
-            let rhs = i64::from_stack_entry(rhs);
+        self.translate_commutative_binary_operation(make_op!(I64Xor), |lhs: i64, rhs: i64| {
             lhs ^ rhs
         })
     }
@@ -1925,9 +1894,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `f32.add` instruction.
     pub fn translate_f32_add(&mut self) -> Result<(), ModuleError> {
-        self.translate_commutative_binary_operation(make_op!(F32Add), |lhs, rhs| {
-            let lhs = F32::from_stack_entry(lhs);
-            let rhs = F32::from_stack_entry(rhs);
+        self.translate_commutative_binary_operation(make_op!(F32Add), |lhs: F32, rhs: F32| {
             lhs + rhs
         })
     }
@@ -1942,9 +1909,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `f32.mul` instruction.
     pub fn translate_f32_mul(&mut self) -> Result<(), ModuleError> {
-        self.translate_commutative_binary_operation(make_op!(F32Mul), |lhs, rhs| {
-            let lhs = F32::from_stack_entry(lhs);
-            let rhs = F32::from_stack_entry(rhs);
+        self.translate_commutative_binary_operation(make_op!(F32Mul), |lhs: F32, rhs: F32| {
             lhs * rhs
         })
     }
@@ -1959,20 +1924,12 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `f32.min` instruction.
     pub fn translate_f32_min(&mut self) -> Result<(), ModuleError> {
-        self.translate_commutative_binary_operation(make_op!(F32Min), |lhs, rhs| {
-            let lhs = F32::from_stack_entry(lhs);
-            let rhs = F32::from_stack_entry(rhs);
-            lhs.min(rhs)
-        })
+        self.translate_commutative_binary_operation(make_op!(F32Min), F32::min)
     }
 
     /// Translate a Wasm `f32.max` instruction.
     pub fn translate_f32_max(&mut self) -> Result<(), ModuleError> {
-        self.translate_commutative_binary_operation(make_op!(F32Max), |lhs, rhs| {
-            let lhs = F32::from_stack_entry(lhs);
-            let rhs = F32::from_stack_entry(rhs);
-            lhs.max(rhs)
-        })
+        self.translate_commutative_binary_operation(make_op!(F32Max), F32::max)
     }
 
     /// Translate a Wasm `f32.copysign` instruction.
@@ -2041,9 +1998,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `f64.add` instruction.
     pub fn translate_f64_add(&mut self) -> Result<(), ModuleError> {
-        self.translate_commutative_binary_operation(make_op!(F64Add), |lhs, rhs| {
-            let lhs = F64::from_stack_entry(lhs);
-            let rhs = F64::from_stack_entry(rhs);
+        self.translate_commutative_binary_operation(make_op!(F64Add), |lhs: F64, rhs: F64| {
             lhs + rhs
         })
     }
@@ -2058,9 +2013,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `f64.mul` instruction.
     pub fn translate_f64_mul(&mut self) -> Result<(), ModuleError> {
-        self.translate_commutative_binary_operation(make_op!(F64Mul), |lhs, rhs| {
-            let lhs = F64::from_stack_entry(lhs);
-            let rhs = F64::from_stack_entry(rhs);
+        self.translate_commutative_binary_operation(make_op!(F64Mul), |lhs: F64, rhs: F64| {
             lhs * rhs
         })
     }
@@ -2075,20 +2028,12 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `f64.min` instruction.
     pub fn translate_f64_min(&mut self) -> Result<(), ModuleError> {
-        self.translate_commutative_binary_operation(make_op!(F64Min), |lhs, rhs| {
-            let lhs = F64::from_stack_entry(lhs);
-            let rhs = F64::from_stack_entry(rhs);
-            lhs.min(rhs)
-        })
+        self.translate_commutative_binary_operation(make_op!(F64Min), F64::min)
     }
 
     /// Translate a Wasm `f64.max` instruction.
     pub fn translate_f64_max(&mut self) -> Result<(), ModuleError> {
-        self.translate_commutative_binary_operation(make_op!(F64Max), |lhs, rhs| {
-            let lhs = F64::from_stack_entry(lhs);
-            let rhs = F64::from_stack_entry(rhs);
-            lhs.max(rhs)
-        })
+        self.translate_commutative_binary_operation(make_op!(F64Max), F64::max)
     }
 
     /// Translate a Wasm `f64.copysign` instruction.
