@@ -1153,8 +1153,7 @@ impl<'parser> FunctionBuilder<'parser> {
             let (lhs, rhs) = builder.providers.pop2();
             let result = builder.providers.push_dynamic();
             match (lhs, rhs) {
-                (Provider::Register(lhs), rhs @ Provider::Register(_))
-                | (Provider::Register(lhs), rhs @ Provider::Immediate(_)) => {
+                (Provider::Register(lhs), rhs) => {
                     builder.inst_builder.push_inst(make_op(result, lhs, rhs));
                 }
                 (lhs @ Provider::Immediate(_), Provider::Register(rhs)) => {
@@ -1209,8 +1208,7 @@ impl<'parser> FunctionBuilder<'parser> {
             let (lhs, rhs) = builder.providers.pop2();
             let result = builder.providers.push_dynamic();
             match (lhs, rhs) {
-                (Provider::Register(lhs), rhs @ Provider::Register(_))
-                | (Provider::Register(lhs), rhs @ Provider::Immediate(_)) => {
+                (Provider::Register(lhs), rhs) => {
                     builder.inst_builder.push_inst(make_op(result, lhs, rhs));
                 }
                 (lhs @ Provider::Immediate(_), Provider::Register(rhs)) => {
@@ -1575,8 +1573,7 @@ impl<'parser> FunctionBuilder<'parser> {
             let (lhs, rhs) = builder.providers.pop2();
             let result = builder.providers.push_dynamic();
             match (lhs, rhs) {
-                (Provider::Register(lhs), rhs @ Provider::Register(_))
-                | (Provider::Register(lhs), rhs @ Provider::Immediate(_)) => {
+                (Provider::Register(lhs), rhs) => {
                     builder.inst_builder.push_inst(make_op(result, lhs, rhs));
                 }
                 (lhs @ Provider::Immediate(_), Provider::Register(rhs)) => {
