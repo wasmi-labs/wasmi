@@ -1151,13 +1151,14 @@ impl<'parser> FunctionBuilder<'parser> {
     {
         self.translate_if_reachable(|builder| {
             let (lhs, rhs) = builder.providers.pop2();
-            let result = builder.providers.push_dynamic();
             match (lhs, rhs) {
                 (Provider::Register(lhs), rhs) => {
+                    let result = builder.providers.push_dynamic();
                     builder.inst_builder.push_inst(make_op(result, lhs, rhs));
                 }
                 (lhs @ Provider::Immediate(_), Provider::Register(rhs)) => {
                     // Note: we can swap the operands to avoid having to copy `rhs`.
+                    let result = builder.providers.push_dynamic();
                     builder.inst_builder.push_inst(make_op(result, rhs, lhs));
                 }
                 (Provider::Immediate(lhs), Provider::Immediate(rhs)) => {
@@ -1206,13 +1207,14 @@ impl<'parser> FunctionBuilder<'parser> {
     {
         self.translate_if_reachable(|builder| {
             let (lhs, rhs) = builder.providers.pop2();
-            let result = builder.providers.push_dynamic();
             match (lhs, rhs) {
                 (Provider::Register(lhs), rhs) => {
+                    let result = builder.providers.push_dynamic();
                     builder.inst_builder.push_inst(make_op(result, lhs, rhs));
                 }
                 (lhs @ Provider::Immediate(_), Provider::Register(rhs)) => {
                     // Note: we can swap the operands to avoid having to copy `rhs`.
+                    let result = builder.providers.push_dynamic();
                     builder.inst_builder.push_inst(swap_op(result, rhs, lhs));
                 }
                 (Provider::Immediate(lhs), Provider::Immediate(rhs)) => {
@@ -1571,13 +1573,14 @@ impl<'parser> FunctionBuilder<'parser> {
     {
         self.translate_if_reachable(|builder| {
             let (lhs, rhs) = builder.providers.pop2();
-            let result = builder.providers.push_dynamic();
             match (lhs, rhs) {
                 (Provider::Register(lhs), rhs) => {
+                    let result = builder.providers.push_dynamic();
                     builder.inst_builder.push_inst(make_op(result, lhs, rhs));
                 }
                 (lhs @ Provider::Immediate(_), Provider::Register(rhs)) => {
                     // Note: due to commutativity of the operation we can swap the parameters.
+                    let result = builder.providers.push_dynamic();
                     builder.inst_builder.push_inst(make_op(result, rhs, lhs));
                 }
                 (Provider::Immediate(lhs), Provider::Immediate(rhs)) => {
