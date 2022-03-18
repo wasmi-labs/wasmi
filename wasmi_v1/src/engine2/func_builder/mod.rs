@@ -47,8 +47,22 @@ use crate::{
     ModuleError,
     Mutability,
 };
-use core::{cmp::PartialOrd, ops};
-use wasmi_core::{Float, SignExtendFrom, TrapCode, Value, ValueType, F32, F64};
+use core::{
+    cmp::PartialOrd,
+    ops,
+    ops::{Shl, Shr},
+};
+use wasmi_core::{
+    ArithmeticOps,
+    Float,
+    Integer,
+    SignExtendFrom,
+    TrapCode,
+    Value,
+    ValueType,
+    F32,
+    F64,
+};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum OpaqueTypes {}
@@ -1506,41 +1520,112 @@ impl<'parser> FunctionBuilder<'parser> {
         )
     }
 
-    /// Translate a binary Wasm instruction.
+    /// Translate a non-commutative binary Wasm instruction.
     ///
-    /// - `{i32, i64}.add`
-    /// - `{i32, i64}.sub`
-    /// - `{i32, i64}.mul`
-    /// - `{i32, u32, i64, u64}.div`
-    /// - `{i32, u32, i64, u64}.rem`
-    /// - `{i32, i64}.and`
-    /// - `{i32, i64}.or`
-    /// - `{i32, i64}.xor`
+    /// - `{i32, i64, f32, f64}.sub`
     /// - `{i32, i64}.shl`
     /// - `{i32, u32, i64, u64}.shr`
     /// - `{i32, i64}.rotl`
     /// - `{i32, i64}.rotr`
-    /// - `{f32, f64}.add`
-    /// - `{f32, f64}.sub`
-    /// - `{f32, f64}.mul`
-    /// - `{f32, f64}.div`
-    /// - `{f32, f64}.min`
-    /// - `{f32, f64}.max`
     /// - `{f32, f64}.copysign`
-    pub fn translate_binary_operation(
+    pub fn translate_binary_operation<F, E, T, R>(
         &mut self,
-        value_type: ValueType,
-        inst: OpaqueInstruction,
-    ) -> Result<(), ModuleError> {
-        // self.translate_if_reachable(|builder| {
-        //     let (v0, v1) = builder.value_stack.pop2();
-        //     debug_assert_eq!(v0, v1);
-        //     debug_assert_eq!(v0, value_type);
-        //     builder.value_stack.push(value_type);
-        //     builder.inst_builder.push_inst(inst);
-        //     Ok(())
-        // })
-        todo!()
+        make_op: F,
+        exec_op: E,
+    ) -> Result<(), ModuleError>
+    where
+        F: FnOnce(Register, Register, Provider) -> OpaqueInstruction,
+        E: FnOnce(T, T) -> R,
+        T: FromRegisterEntry,
+        R: Into<Value>,
+    {
+        self.translate_if_reachable(|builder| {
+            let (lhs, rhs) = builder.providers.pop2();
+            match (lhs, rhs) {
+                (Provider::Register(lhs), rhs) => {
+                    let result = builder.providers.push_dynamic();
+                    builder.inst_builder.push_inst(make_op(result, lhs, rhs));
+                }
+                (lhs @ Provider::Immediate(_), Provider::Register(rhs)) => {
+                    // Note: this case is a bit tricky for non-commutative operations.
+                    //
+                    // In order to be able to represent the constant left-hand side
+                    // operand for the instruction we need to `copy` it into a register
+                    // first.
+                    let result = builder.providers.push_dynamic();
+                    builder
+                        .inst_builder
+                        .push_inst(Instruction::Copy { result, value: lhs });
+                    builder
+                        .inst_builder
+                        .push_inst(make_op(result, result, rhs.into()));
+                }
+                (Provider::Immediate(lhs), Provider::Immediate(rhs)) => {
+                    // Note: both operands are constant so we can evaluate the result.
+                    let lhs = T::from_stack_entry(RegisterEntry::from(lhs));
+                    let rhs = T::from_stack_entry(RegisterEntry::from(rhs));
+                    let result = exec_op(lhs, rhs);
+                    builder.providers.push_const(result.into());
+                }
+            }
+            Ok(())
+        })
+    }
+
+    /// Translate a fallible non-commutative binary Wasm instruction.
+    ///
+    /// - `{i32, u32, i64, u64, f32, f64}.div`
+    /// - `{i32, u32, i64, u64}.rem`
+    pub fn translate_fallible_binary_operation<F, E, T>(
+        &mut self,
+        make_op: F,
+        exec_op: E,
+    ) -> Result<(), ModuleError>
+    where
+        F: FnOnce(Register, Register, Provider) -> OpaqueInstruction,
+        E: FnOnce(T, T) -> Result<T, TrapCode>,
+        T: FromRegisterEntry + Into<Value>,
+    {
+        self.translate_if_reachable(|builder| {
+            let (lhs, rhs) = builder.providers.pop2();
+            match (lhs, rhs) {
+                (Provider::Register(lhs), rhs) => {
+                    let result = builder.providers.push_dynamic();
+                    builder.inst_builder.push_inst(make_op(result, lhs, rhs));
+                }
+                (lhs @ Provider::Immediate(_), Provider::Register(rhs)) => {
+                    // Note: this case is a bit tricky for non-commutative operations.
+                    //
+                    // In order to be able to represent the constant left-hand side
+                    // operand for the instruction we need to `copy` it into a register
+                    // first.
+                    let result = builder.providers.push_dynamic();
+                    builder
+                        .inst_builder
+                        .push_inst(Instruction::Copy { result, value: lhs });
+                    builder
+                        .inst_builder
+                        .push_inst(make_op(result, result, rhs.into()));
+                }
+                (Provider::Immediate(lhs), Provider::Immediate(rhs)) => {
+                    // Note: both operands are constant so we can evaluate the result.
+                    let lhs = T::from_stack_entry(RegisterEntry::from(lhs));
+                    let rhs = T::from_stack_entry(RegisterEntry::from(rhs));
+                    match exec_op(lhs, rhs) {
+                        Ok(result) => {
+                            builder.providers.push_const(result.into());
+                        }
+                        Err(trap_code) => {
+                            builder
+                                .inst_builder
+                                .push_inst(Instruction::Trap { trap_code });
+                            builder.reachable = false;
+                        }
+                    }
+                }
+            }
+            Ok(())
+        })
     }
 
     /// Translates commutative binary Wasm operators.
@@ -1601,10 +1686,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `i32.sub` instruction.
     pub fn translate_i32_sub(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32Sub */
-        )
+        self.translate_binary_operation(make_op!(I32Sub), i32::wrapping_sub)
     }
 
     /// Translate a Wasm `i32.mul` instruction.
@@ -1614,34 +1696,22 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `i32.div` instruction.
     pub fn translate_i32_div(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32DivS */
-        )
+        self.translate_fallible_binary_operation(make_op!(I32DivS), i32::div)
     }
 
     /// Translate a Wasm `u32.div` instruction.
     pub fn translate_u32_div(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32DivU */
-        )
+        self.translate_fallible_binary_operation(make_op!(I32DivU), u32::div)
     }
 
     /// Translate a Wasm `i32.rem` instruction.
     pub fn translate_i32_rem(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32RemS */
-        )
+        self.translate_fallible_binary_operation(make_op!(I32RemS), i32::rem)
     }
 
     /// Translate a Wasm `u32.rem` instruction.
     pub fn translate_u32_rem(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32RemU */
-        )
+        self.translate_fallible_binary_operation(make_op!(I32RemU), u32::rem)
     }
 
     /// Translate a Wasm `i32.and` instruction.
@@ -1665,42 +1735,27 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `i32.shl` instruction.
     pub fn translate_i32_shl(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32Shl */
-        )
+        self.translate_binary_operation(make_op!(I32Shl), |lhs: i32, rhs: i32| lhs.shl(rhs & 0x1F))
     }
 
     /// Translate a Wasm `i32.shr` instruction.
     pub fn translate_i32_shr(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32ShrS */
-        )
+        self.translate_binary_operation(make_op!(I32ShrS), |lhs: i32, rhs: i32| lhs.shr(rhs & 0x1F))
     }
 
     /// Translate a Wasm `u32.shr` instruction.
     pub fn translate_u32_shr(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32ShrU */
-        )
+        self.translate_binary_operation(make_op!(I32ShrU), |lhs: u32, rhs: u32| lhs.shr(rhs & 0x1F))
     }
 
     /// Translate a Wasm `i32.rotl` instruction.
     pub fn translate_i32_rotl(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32Rotl */
-        )
+        self.translate_binary_operation(make_op!(I32Rotl), i32::rotl)
     }
 
     /// Translate a Wasm `i32.rotr` instruction.
     pub fn translate_i32_rotr(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32Rotr */
-        )
+        self.translate_binary_operation(make_op!(I32Rotr), i32::rotr)
     }
 
     /// Translate a Wasm `i64.clz` instruction.
@@ -1734,10 +1789,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `i64.sub` instruction.
     pub fn translate_i64_sub(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64Sub */
-        )
+        self.translate_binary_operation(make_op!(I64Sub), i64::wrapping_sub)
     }
 
     /// Translate a Wasm `i64.mul` instruction.
@@ -1747,34 +1799,22 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `i64.div` instruction.
     pub fn translate_i64_div(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64DivS */
-        )
+        self.translate_fallible_binary_operation(make_op!(I64DivS), i64::div)
     }
 
     /// Translate a Wasm `u64.div` instruction.
     pub fn translate_u64_div(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64DivU */
-        )
+        self.translate_fallible_binary_operation(make_op!(I64DivU), u64::div)
     }
 
     /// Translate a Wasm `i64.rem` instruction.
     pub fn translate_i64_rem(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64RemS */
-        )
+        self.translate_fallible_binary_operation(make_op!(I64RemS), i64::rem)
     }
 
     /// Translate a Wasm `u64.rem` instruction.
     pub fn translate_u64_rem(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64RemU */
-        )
+        self.translate_fallible_binary_operation(make_op!(I64RemU), u64::rem)
     }
 
     /// Translate a Wasm `i64.and` instruction.
@@ -1798,42 +1838,27 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `i64.shl` instruction.
     pub fn translate_i64_shl(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64Shl */
-        )
+        self.translate_binary_operation(make_op!(I64Shl), |lhs: i64, rhs: i64| lhs.shl(rhs & 0x3F))
     }
 
     /// Translate a Wasm `i64.shr` instruction.
     pub fn translate_i64_shr(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64ShrS */
-        )
+        self.translate_binary_operation(make_op!(I64ShrS), |lhs: i64, rhs: i64| lhs.shr(rhs & 0x3F))
     }
 
     /// Translate a Wasm `u64.shr` instruction.
     pub fn translate_u64_shr(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64ShrU */
-        )
+        self.translate_binary_operation(make_op!(I64ShrU), |lhs: u64, rhs: u64| lhs.shr(rhs & 0x3F))
     }
 
     /// Translate a Wasm `i64.rotl` instruction.
     pub fn translate_i64_rotl(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64Rotl */
-        )
+        self.translate_binary_operation(make_op!(I64Rotl), i64::rotl)
     }
 
     /// Translate a Wasm `i64.rotr` instruction.
     pub fn translate_i64_rotr(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64Rotr */
-        )
+        self.translate_binary_operation(make_op!(I64Rotr), i64::rotr)
     }
 
     /// Translate a Wasm `f32.abs` instruction.
@@ -1901,10 +1926,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `f32.sub` instruction.
     pub fn translate_f32_sub(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::F32,
-            DUMMY_INSTRUCTION, /* Instruction::F32Sub */
-        )
+        self.translate_binary_operation(make_op!(F32Sub), F32::sub)
     }
 
     /// Translate a Wasm `f32.mul` instruction.
@@ -1916,10 +1938,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `f32.div` instruction.
     pub fn translate_f32_div(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::F32,
-            DUMMY_INSTRUCTION, /* Instruction::F32Div */
-        )
+        self.translate_fallible_binary_operation(make_op!(F32Div), F32::div)
     }
 
     /// Translate a Wasm `f32.min` instruction.
@@ -1934,10 +1953,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `f32.copysign` instruction.
     pub fn translate_f32_copysign(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::F32,
-            DUMMY_INSTRUCTION, /* Instruction::F32Copysign */
-        )
+        self.translate_binary_operation(make_op!(F32Copysign), F32::copysign)
     }
 
     /// Translate a Wasm `f64.abs` instruction.
@@ -2005,10 +2021,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `f64.sub` instruction.
     pub fn translate_f64_sub(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::F64,
-            DUMMY_INSTRUCTION, /* Instruction::F64Sub */
-        )
+        self.translate_binary_operation(make_op!(F64Sub), F64::sub)
     }
 
     /// Translate a Wasm `f64.mul` instruction.
@@ -2020,10 +2033,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `f64.div` instruction.
     pub fn translate_f64_div(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::F64,
-            DUMMY_INSTRUCTION, /* Instruction::F64Div */
-        )
+        self.translate_fallible_binary_operation(make_op!(F64Div), F64::div)
     }
 
     /// Translate a Wasm `f64.min` instruction.
@@ -2038,10 +2048,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `f64.copysign` instruction.
     pub fn translate_f64_copysign(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_operation(
-            ValueType::F64,
-            DUMMY_INSTRUCTION, /* Instruction::F64Copysign */
-        )
+        self.translate_binary_operation(make_op!(F64Copysign), F64::copysign)
     }
 
     /// Translate a Wasm conversion instruction.
