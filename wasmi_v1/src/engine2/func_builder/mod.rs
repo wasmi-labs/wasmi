@@ -1143,10 +1143,11 @@ impl<'parser> FunctionBuilder<'parser> {
     /// - `{i32, i64}.eqz`
     /// - `{i32, i64, f32, f64}.eq`
     /// - `{i32, i64, f32, f64}.ne`
-    fn translate_binary_cmp<T, F>(&mut self, make_op: T, exec_op: F) -> Result<(), ModuleError>
+    fn translate_binary_cmp<O, E, T>(&mut self, make_op: O, exec_op: E) -> Result<(), ModuleError>
     where
-        T: FnOnce(Register, Register, Provider) -> OpaqueInstruction,
-        F: FnOnce(RegisterEntry, RegisterEntry) -> bool,
+        O: FnOnce(Register, Register, Provider) -> OpaqueInstruction,
+        E: FnOnce(T, T) -> bool,
+        T: FromRegisterEntry,
     {
         self.translate_if_reachable(|builder| {
             let (lhs, rhs) = builder.providers.pop2();
@@ -1162,8 +1163,8 @@ impl<'parser> FunctionBuilder<'parser> {
                 }
                 (Provider::Immediate(lhs), Provider::Immediate(rhs)) => {
                     // Note: precompute result and push onto provider stack
-                    let lhs = RegisterEntry::from(lhs);
-                    let rhs = RegisterEntry::from(rhs);
+                    let lhs = T::from_stack_entry(RegisterEntry::from(lhs));
+                    let rhs = T::from_stack_entry(RegisterEntry::from(rhs));
                     let result = RegisterEntry::from(exec_op(lhs, rhs)).with_type(ValueType::I32);
                     builder.providers.push_const(result);
                 }
@@ -1174,16 +1175,12 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `i32.eq` instruction.
     pub fn translate_i32_eq(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_cmp(make_op!(I32Eq), |lhs, rhs| {
-            i32::from_stack_entry(lhs) == i32::from_stack_entry(rhs)
-        })
+        self.translate_binary_cmp(make_op!(I32Eq), |lhs: i32, rhs: i32| lhs == rhs)
     }
 
     /// Translate a Wasm `i32.ne` instruction.
     pub fn translate_i32_ne(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_cmp(make_op!(I32Ne), |lhs, rhs| {
-            i32::from_stack_entry(lhs) != i32::from_stack_entry(rhs)
-        })
+        self.translate_binary_cmp(make_op!(I32Ne), |lhs: i32, rhs: i32| lhs != rhs)
     }
 
     /// Translate a Wasm binary ordering instruction.
@@ -1299,16 +1296,12 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `i64.eq` instruction.
     pub fn translate_i64_eq(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_cmp(make_op!(I64Eq), |lhs, rhs| {
-            i64::from_stack_entry(lhs) == i64::from_stack_entry(rhs)
-        })
+        self.translate_binary_cmp(make_op!(I64Eq), |lhs: i64, rhs: i64| lhs == rhs)
     }
 
     /// Translate a Wasm `i64.ne` instruction.
     pub fn translate_i64_ne(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_cmp(make_op!(I64Ne), |lhs, rhs| {
-            i64::from_stack_entry(lhs) != i64::from_stack_entry(rhs)
-        })
+        self.translate_binary_cmp(make_op!(I64Ne), |lhs: i64, rhs: i64| lhs != rhs)
     }
 
     /// Translate a Wasm `i64.lt` instruction.
@@ -1369,16 +1362,12 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `f32.eq` instruction.
     pub fn translate_f32_eq(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_cmp(make_op!(F32Eq), |lhs, rhs| {
-            f32::from_stack_entry(lhs) == f32::from_stack_entry(rhs)
-        })
+        self.translate_binary_cmp(make_op!(F32Eq), |lhs: f32, rhs: f32| lhs == rhs)
     }
 
     /// Translate a Wasm `f32.ne` instruction.
     pub fn translate_f32_ne(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_cmp(make_op!(F32Ne), |lhs, rhs| {
-            f32::from_stack_entry(lhs) != f32::from_stack_entry(rhs)
-        })
+        self.translate_binary_cmp(make_op!(F32Ne), |lhs: f32, rhs: f32| lhs != rhs)
     }
 
     /// Translate a Wasm `f32.lt` instruction.
@@ -1411,16 +1400,12 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `f64.eq` instruction.
     pub fn translate_f64_eq(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_cmp(make_op!(F64Eq), |lhs, rhs| {
-            f64::from_stack_entry(lhs) == f64::from_stack_entry(rhs)
-        })
+        self.translate_binary_cmp(make_op!(F64Eq), |lhs: f64, rhs: f64| lhs == rhs)
     }
 
     /// Translate a Wasm `f64.ne` instruction.
     pub fn translate_f64_ne(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_cmp(make_op!(F64Ne), |lhs, rhs| {
-            f64::from_stack_entry(lhs) != f64::from_stack_entry(rhs)
-        })
+        self.translate_binary_cmp(make_op!(F64Ne), |lhs: f64, rhs: f64| lhs != rhs)
     }
 
     /// Translate a Wasm `f64.lt` instruction.
