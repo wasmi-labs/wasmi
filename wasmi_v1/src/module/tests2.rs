@@ -6,7 +6,8 @@ use crate::{
     engine2::{ExecInstruction, Provider, Register, RegisterEntry, WasmType},
     Engine,
 };
-use wasmi_core::{Float, SignExtendFrom, Value, F32, F64};
+use core::ops::{Shl, Shr};
+use wasmi_core::{ArithmeticOps, Float, Integer, SignExtendFrom, TrapCode, Value, F32, F64};
 
 /// Allows to create a `1` instance for a type.
 pub trait One {
@@ -226,15 +227,28 @@ fn add_registers() {
 /// - `{i32, i64, f32, f64}.eq`
 /// - `{i32, i64, f32, f64}.ne`
 /// - `{i32, i64, f32, f64}.add`
+/// - `{i32, i64, f32, f64}.sub`
 /// - `{i32, i64, f32, f64}.mul`
+/// - `{i32, i64}.div_s`
+/// - `{i32, i64}.div_u`
+/// - `{i32, i64}.rem_s`
+/// - `{i32, i64}.rem_u`
+/// - `{i32, i64}.shl`
+/// - `{i32, i64}.shr_s`
+/// - `{i32, i64}.shr_u`
+/// - `{i32, i64}.rotl`
+/// - `{i32, i64}.rotr`
 /// - `{i32, i64}.and`
 /// - `{i32, i64}.or`
 /// - `{i32, i64}.xor`
+/// - `{f32, f64}.div`
+/// - `{f32, f64}.rem`
 /// - `{f32, f64}.min`
 /// - `{f32, f64}.max`
+/// - `{f32, f64}.copysign`
 #[test]
-fn commutative_registers() {
-    fn run_test<T, F, R>(wasm_op: &str, make_op: F)
+fn binary_simple() {
+    fn test_register_register<T, F, R>(wasm_op: &str, make_op: F)
     where
         T: Display + WasmTypeName + Into<RegisterEntry>,
         F: FnOnce(Register, Register, Provider) -> ExecInstruction,
@@ -266,20 +280,54 @@ fn commutative_registers() {
         assert_func_bodies_for_module(&module, [expected]);
     }
 
+    fn test_register_const<T, F, R>(wasm_op: &str, make_op: F)
+    where
+        T: Display + WasmTypeName + Into<RegisterEntry> + One,
+        F: FnOnce(Register, Register, Provider) -> ExecInstruction,
+        R: WasmTypeName,
+    {
+        let input_type = <T as WasmTypeName>::NAME;
+        let output_type = <R as WasmTypeName>::NAME;
+        let wasm = wat2wasm(&format!(
+            r#"
+            (module
+                (func (export "call") (param {input_type}) (result {output_type})
+                    local.get 0
+                    {input_type}.const 1
+                    {input_type}.{wasm_op}
+                )
+            )
+        "#,
+        ));
+        let module = create_module(&wasm[..]);
+        let engine = module.engine();
+        let lhs = Register::from_inner(0);
+        let rhs = Provider::from_immediate(engine.alloc_const(T::one()));
+        let result = Register::from_inner(1);
+        let results = engine.alloc_provider_slice([Provider::from_register(result)]);
+        let expected = [
+            make_op(result, lhs, rhs),
+            ExecInstruction::Return { results },
+        ];
+        assert_func_bodies_for_module(&module, [expected]);
+    }
+
     fn run_test_bin<T, F>(wasm_op: &str, make_op: F)
     where
-        T: Display + WasmTypeName + Into<RegisterEntry>,
-        F: FnOnce(Register, Register, Provider) -> ExecInstruction,
+        T: Display + WasmTypeName + Into<RegisterEntry> + One,
+        F: FnOnce(Register, Register, Provider) -> ExecInstruction + Copy,
     {
-        run_test::<T, F, T>(wasm_op, make_op)
+        test_register_register::<T, F, T>(wasm_op, make_op);
+        test_register_const::<T, F, T>(wasm_op, make_op);
     }
 
     fn run_test_cmp<T, F>(wasm_op: &str, make_op: F)
     where
-        T: Display + WasmTypeName + Into<RegisterEntry>,
-        F: FnOnce(Register, Register, Provider) -> ExecInstruction,
+        T: Display + WasmTypeName + Into<RegisterEntry> + One,
+        F: FnOnce(Register, Register, Provider) -> ExecInstruction + Copy,
     {
-        run_test::<T, F, bool>(wasm_op, make_op)
+        test_register_register::<T, F, bool>(wasm_op, make_op);
+        test_register_const::<T, F, bool>(wasm_op, make_op);
     }
 
     run_test_cmp::<i32, _>("eq", make_op!(I32Eq));
@@ -289,8 +337,26 @@ fn commutative_registers() {
 
     run_test_bin::<i32, _>("add", make_op!(I32Add));
     run_test_bin::<i64, _>("add", make_op!(I64Add));
+    run_test_bin::<i32, _>("sub", make_op!(I32Sub));
+    run_test_bin::<i64, _>("sub", make_op!(I64Sub));
     run_test_bin::<i32, _>("mul", make_op!(I32Mul));
     run_test_bin::<i64, _>("mul", make_op!(I64Mul));
+    run_test_bin::<i32, _>("div_s", make_op!(I32DivS));
+    run_test_bin::<i64, _>("div_s", make_op!(I64DivS));
+    run_test_bin::<i32, _>("div_u", make_op!(I32DivU));
+    run_test_bin::<i64, _>("div_u", make_op!(I64DivU));
+    run_test_bin::<i32, _>("rem_s", make_op!(I32RemS));
+    run_test_bin::<i64, _>("rem_s", make_op!(I64RemS));
+    run_test_bin::<i32, _>("rem_u", make_op!(I32RemU));
+    run_test_bin::<i64, _>("rem_u", make_op!(I64RemU));
+    run_test_bin::<i32, _>("shl", make_op!(I32Shl));
+    run_test_bin::<i64, _>("shl", make_op!(I64Shl));
+    run_test_bin::<i32, _>("shr_s", make_op!(I32ShrS));
+    run_test_bin::<i64, _>("shr_s", make_op!(I64ShrS));
+    run_test_bin::<i32, _>("shr_u", make_op!(I32ShrU));
+    run_test_bin::<i64, _>("shr_u", make_op!(I64ShrU));
+    run_test_bin::<i32, _>("rotl", make_op!(I32Rotl));
+    run_test_bin::<i64, _>("rotr", make_op!(I64Rotr));
     run_test_bin::<i32, _>("and", make_op!(I32And));
     run_test_bin::<i64, _>("and", make_op!(I64And));
     run_test_bin::<i32, _>("or", make_op!(I32Or));
@@ -305,12 +371,107 @@ fn commutative_registers() {
 
     run_test_bin::<f32, _>("add", make_op!(F32Add));
     run_test_bin::<f64, _>("add", make_op!(F64Add));
+    run_test_bin::<f32, _>("sub", make_op!(F32Sub));
+    run_test_bin::<f64, _>("sub", make_op!(F64Sub));
     run_test_bin::<f32, _>("mul", make_op!(F32Mul));
     run_test_bin::<f64, _>("mul", make_op!(F64Mul));
+    run_test_bin::<f32, _>("div", make_op!(F32Div));
+    run_test_bin::<f64, _>("div", make_op!(F64Div));
     run_test_bin::<f32, _>("min", make_op!(F32Min));
     run_test_bin::<f64, _>("min", make_op!(F64Min));
     run_test_bin::<f32, _>("max", make_op!(F32Max));
     run_test_bin::<f64, _>("max", make_op!(F64Max));
+    run_test_bin::<f32, _>("copysign", make_op!(F32Copysign));
+    run_test_bin::<f64, _>("copysign", make_op!(F64Copysign));
+}
+
+/// Tests compilation of all commutative binary Wasm instructions.
+///
+/// # Note
+///
+/// This test specializes on cases where one of the inputs is a constant value
+/// (e.g. `i32.const 1`) and the other a register input (e.g. `local.get 0`).
+/// In this case the `wasmi` compiler unfortunately has to insert an artificial
+/// `copy` instruction in between in order to be able to properly represent
+/// the underlying instruction. This is due to the fact that due to performance
+/// reasons the `lhs` operand of an instruction can only be a register and
+/// never an immediate value unlike the right-hand side operand. Fortunately
+/// having an immediate value as the left-hand operand is quite uncommon.
+///
+/// This includes the following Wasm instructions:
+///
+/// - `{i32, i64, f32, f64}.sub`
+/// - `{i32, i64}.div_s`
+/// - `{i32, i64}.div_u`
+/// - `{i32, i64}.rem_s`
+/// - `{i32, i64}.rem_u`
+/// - `{i32, i64}.shl`
+/// - `{i32, i64}.shr_s`
+/// - `{i32, i64}.shr_u`
+/// - `{i32, i64}.rotl`
+/// - `{i32, i64}.rotr`
+/// - `{f32, f64}.div`
+/// - `{f32, f64}.copysign`
+#[test]
+fn binary_const_register() {
+    fn test_const_register<T, F>(wasm_op: &str, make_op: F)
+    where
+        T: Display + WasmTypeName + One + Into<RegisterEntry>,
+        F: FnOnce(Register, Register, Provider) -> ExecInstruction,
+    {
+        let input_type = <T as WasmTypeName>::NAME;
+        let output_type = <T as WasmTypeName>::NAME;
+        let wasm = wat2wasm(&format!(
+            r#"
+            (module
+                (func (export "call") (param {input_type}) (result {output_type})
+                    {input_type}.const 1
+                    local.get 0
+                    {input_type}.{wasm_op}
+                )
+            )
+        "#,
+        ));
+        let module = create_module(&wasm[..]);
+        let engine = module.engine();
+        let input = Provider::from_immediate(engine.alloc_const(T::one()));
+        let rhs = Register::from_inner(0);
+        let result = Register::from_inner(1);
+        let results = engine.alloc_provider_slice([Provider::from_register(result)]);
+        let expected = [
+            ExecInstruction::Copy { result, input },
+            make_op(result, result, rhs.into()),
+            ExecInstruction::Return { results },
+        ];
+        assert_func_bodies_for_module(&module, [expected]);
+    }
+
+    test_const_register::<i32, _>("sub", make_op!(I32Sub));
+    test_const_register::<i64, _>("sub", make_op!(I64Sub));
+    test_const_register::<i32, _>("div_s", make_op!(I32DivS));
+    test_const_register::<i64, _>("div_s", make_op!(I64DivS));
+    test_const_register::<i32, _>("div_u", make_op!(I32DivU));
+    test_const_register::<i64, _>("div_u", make_op!(I64DivU));
+    test_const_register::<i32, _>("rem_s", make_op!(I32RemS));
+    test_const_register::<i64, _>("rem_s", make_op!(I64RemS));
+    test_const_register::<i32, _>("rem_u", make_op!(I32RemU));
+    test_const_register::<i64, _>("rem_u", make_op!(I64RemU));
+    test_const_register::<i32, _>("shl", make_op!(I32Shl));
+    test_const_register::<i64, _>("shl", make_op!(I64Shl));
+    test_const_register::<i32, _>("shr_s", make_op!(I32ShrS));
+    test_const_register::<i64, _>("shr_s", make_op!(I64ShrS));
+    test_const_register::<i32, _>("shr_u", make_op!(I32ShrU));
+    test_const_register::<i64, _>("shr_u", make_op!(I64ShrU));
+    test_const_register::<i32, _>("rotl", make_op!(I32Rotl));
+    test_const_register::<i64, _>("rotl", make_op!(I64Rotl));
+    test_const_register::<i32, _>("rotr", make_op!(I32Rotr));
+    test_const_register::<i64, _>("rotr", make_op!(I64Rotr));
+    test_const_register::<f32, _>("sub", make_op!(F32Sub));
+    test_const_register::<f64, _>("sub", make_op!(F64Sub));
+    test_const_register::<f32, _>("div", make_op!(F32Div));
+    test_const_register::<f64, _>("div", make_op!(F64Div));
+    test_const_register::<f32, _>("copysign", make_op!(F32Copysign));
+    test_const_register::<f64, _>("copysign", make_op!(F64Copysign));
 }
 
 /// Tests compilation of all commutative binary Wasm instructions.
@@ -334,17 +495,29 @@ fn commutative_registers() {
 /// - `{f32, f64}.min`
 /// - `{f32, f64}.max`
 #[test]
-fn commutative_const_register() {
-    fn run_test<T, F, R>(wasm: &[u8], wasm_op: &str, make_op: F)
+fn binary_const_register_commutative() {
+    fn test_const_register<T, F, R>(wasm_op: &str, make_op: F)
     where
         T: Display + WasmTypeName + One + Into<RegisterEntry>,
         F: FnOnce(Register, Register, Provider) -> ExecInstruction,
         R: WasmTypeName,
     {
-        let one = T::one();
+        let input_type = <T as WasmTypeName>::NAME;
+        let output_type = <R as WasmTypeName>::NAME;
+        let wasm = wat2wasm(&format!(
+            r#"
+            (module
+                (func (export "call") (param {input_type}) (result {output_type})
+                    {input_type}.const 1
+                    local.get 0
+                    {input_type}.{wasm_op}
+                )
+            )
+        "#,
+        ));
         let module = create_module(&wasm[..]);
         let engine = module.engine();
-        let rhs = engine.alloc_const(one);
+        let rhs = engine.alloc_const(T::one());
         let result = Register::from_inner(1);
         let results = engine.alloc_provider_slice([Provider::from_register(result)]);
         let expected = [
@@ -354,57 +527,12 @@ fn commutative_const_register() {
         assert_func_bodies_for_module(&module, [expected]);
     }
 
-    fn run_test_cr<T, F, R>(wasm_op: &str, make_op: F)
-    where
-        T: Display + WasmTypeName + One + Into<RegisterEntry>,
-        F: FnOnce(Register, Register, Provider) -> ExecInstruction,
-        R: WasmTypeName,
-    {
-        let input_type = <T as WasmTypeName>::NAME;
-        let output_type = <R as WasmTypeName>::NAME;
-        let wasm = wat2wasm(&format!(
-            r#"
-            (module
-                (func (export "call") (param {input_type}) (result {output_type})
-                    {input_type}.const 1
-                    local.get 0
-                    {input_type}.{wasm_op}
-                )
-            )
-        "#,
-        ));
-        run_test::<T, F, R>(&wasm[..], wasm_op, make_op);
-    }
-
-    fn run_test_rc<T, F, R>(wasm_op: &str, make_op: F)
-    where
-        T: Display + WasmTypeName + One + Into<RegisterEntry>,
-        F: FnOnce(Register, Register, Provider) -> ExecInstruction,
-        R: WasmTypeName,
-    {
-        let input_type = <T as WasmTypeName>::NAME;
-        let output_type = <R as WasmTypeName>::NAME;
-        let wasm = wat2wasm(&format!(
-            r#"
-            (module
-                (func (export "call") (param {input_type}) (result {output_type})
-                    local.get 0
-                    {input_type}.const 1
-                    {input_type}.{wasm_op}
-                )
-            )
-        "#,
-        ));
-        run_test::<T, F, R>(&wasm[..], wasm_op, make_op);
-    }
-
     fn run_test_bin<T, F>(wasm_op: &str, make_op: F)
     where
         T: Display + Into<RegisterEntry> + WasmTypeName + One,
         F: FnOnce(Register, Register, Provider) -> ExecInstruction + Copy,
     {
-        run_test_cr::<T, F, T>(wasm_op, make_op);
-        run_test_rc::<T, F, T>(wasm_op, make_op);
+        test_const_register::<T, F, T>(wasm_op, make_op);
     }
 
     fn run_test_cmp<T, F>(wasm_op: &str, make_op: F)
@@ -412,8 +540,7 @@ fn commutative_const_register() {
         T: Display + Into<RegisterEntry> + WasmTypeName + One,
         F: FnOnce(Register, Register, Provider) -> ExecInstruction + Copy,
     {
-        run_test_cr::<T, F, bool>(wasm_op, make_op);
-        run_test_rc::<T, F, bool>(wasm_op, make_op);
+        test_const_register::<T, F, bool>(wasm_op, make_op);
     }
 
     run_test_cmp::<i32, _>("eq", make_op!(I32Eq));
@@ -447,7 +574,87 @@ fn commutative_const_register() {
     run_test_bin::<f64, _>("max", make_op!(F64Max));
 }
 
-/// Tests compilation of all commutative binary Wasm instructions.
+/// Tests compilation of all fallible binary Wasm instructions.
+///
+/// # Note
+///
+/// This test specializes on cases where both inputs are constant values.
+/// In this case the `wasmi` compiler will directly evaluate the results.
+///
+/// This includes the following Wasm instructions:
+///
+/// - `{i32, i64}.div_s`
+/// - `{i32, i64}.div_u`
+/// - `{i32, i64}.rem_s`
+/// - `{i32, i64}.rem_u`
+#[test]
+fn binary_const_const_fallible() {
+    /// The expected outcome of the constant evaluation.
+    #[derive(Debug, Copy, Clone)]
+    pub enum Outcome {
+        /// The instruction evaluation resulted in a proper value.
+        Eval,
+        /// The instruction evaluation resulted in a trap.
+        Trap,
+    }
+
+    fn test_const_const<T, E>(wasm_op: &str, outcome: Outcome, lhs: T, rhs: T, exec_op: E)
+    where
+        T: Display + WasmTypeName + Into<RegisterEntry>,
+        E: FnOnce(T, T) -> Result<T, TrapCode>,
+    {
+        let input_type = <T as WasmTypeName>::NAME;
+        let output_type = <T as WasmTypeName>::NAME;
+        let wasm = wat2wasm(&format!(
+            r#"
+            (module
+                (func (export "call") (result {output_type})
+                    {input_type}.const {lhs}
+                    {input_type}.const {rhs}
+                    {input_type}.{wasm_op}
+                )
+            )
+        "#,
+        ));
+        let module = create_module(&wasm[..]);
+        let engine = module.engine();
+        let expected = match exec_op(lhs, rhs) {
+            Ok(result) => {
+                assert!(matches!(outcome, Outcome::Eval));
+                let result = engine.alloc_const(result.into());
+                let results = engine.alloc_provider_slice([Provider::from(result)]);
+                [ExecInstruction::Return { results }]
+            }
+            Err(trap_code) => {
+                assert!(matches!(outcome, Outcome::Trap));
+                [ExecInstruction::Trap { trap_code }]
+            }
+        };
+        assert_func_bodies(&wasm, [expected]);
+    }
+
+    test_const_const::<i32, _>("div_s", Outcome::Eval, 1, 2, |lhs, rhs| lhs.div(rhs));
+    test_const_const::<i32, _>("div_s", Outcome::Trap, 1, 0, |lhs, rhs| lhs.div(rhs));
+    test_const_const::<i64, _>("div_s", Outcome::Eval, 1, 2, |lhs, rhs| lhs.div(rhs));
+    test_const_const::<i64, _>("div_s", Outcome::Trap, 1, 0, |lhs, rhs| lhs.div(rhs));
+
+    test_const_const::<u32, _>("div_u", Outcome::Eval, 1, 2, |lhs, rhs| lhs.div(rhs));
+    test_const_const::<u32, _>("div_u", Outcome::Trap, 1, 0, |lhs, rhs| lhs.div(rhs));
+    test_const_const::<u64, _>("div_u", Outcome::Eval, 1, 2, |lhs, rhs| lhs.div(rhs));
+    test_const_const::<u64, _>("div_u", Outcome::Trap, 1, 0, |lhs, rhs| lhs.div(rhs));
+
+    test_const_const::<i32, _>("rem_s", Outcome::Eval, 1, 2, |lhs, rhs| lhs.rem(rhs));
+    test_const_const::<i32, _>("rem_s", Outcome::Trap, 1, 0, |lhs, rhs| lhs.rem(rhs));
+    test_const_const::<i64, _>("rem_s", Outcome::Eval, 1, 2, |lhs, rhs| lhs.rem(rhs));
+    test_const_const::<i64, _>("rem_s", Outcome::Trap, 1, 0, |lhs, rhs| lhs.rem(rhs));
+
+    test_const_const::<u32, _>("rem_u", Outcome::Eval, 1, 2, |lhs, rhs| lhs.rem(rhs));
+    test_const_const::<u32, _>("rem_u", Outcome::Trap, 1, 0, |lhs, rhs| lhs.rem(rhs));
+    test_const_const::<u64, _>("rem_u", Outcome::Eval, 1, 2, |lhs, rhs| lhs.rem(rhs));
+    test_const_const::<u64, _>("rem_u", Outcome::Trap, 1, 0, |lhs, rhs| lhs.rem(rhs));
+}
+
+/// Tests compilation of all infallible binary Wasm instructions.
 ///
 /// # Note
 ///
@@ -459,14 +666,21 @@ fn commutative_const_register() {
 /// - `{i32, i64, f32, f64}.eq`
 /// - `{i32, i64, f32, f64}.ne`
 /// - `{i32, i64, f32, f64}.add`
+/// - `{i32, i64, f32, f64}.sub`
 /// - `{i32, i64, f32, f64}.mul`
+/// - `{i32, i64}.shl`
+/// - `{i32, i64}.shr_s`
+/// - `{i32, i64}.shr_u`
+/// - `{i32, i64}.rotl`
+/// - `{i32, i64}.rotr`
 /// - `{i32, i64}.and`
 /// - `{i32, i64}.or`
 /// - `{i32, i64}.xor`
 /// - `{f32, f64}.min`
 /// - `{f32, f64}.max`
+/// - `{i32, i64}.copysign`
 #[test]
-fn commutative_consts() {
+fn binary_const_const_infallible() {
     fn run_test<T, E, R>(wasm_op: &str, lhs: T, rhs: T, exec_op: E)
     where
         T: Display + WasmTypeName,
@@ -517,8 +731,20 @@ fn commutative_consts() {
 
     run_test_bin::<i32, _>("add", 1, 2, |lhs, rhs| lhs.wrapping_add(rhs));
     run_test_bin::<i64, _>("add", 1, 2, |lhs, rhs| lhs.wrapping_add(rhs));
+    run_test_bin::<i32, _>("sub", 1, 2, |lhs, rhs| lhs.wrapping_sub(rhs));
+    run_test_bin::<i64, _>("sub", 1, 2, |lhs, rhs| lhs.wrapping_sub(rhs));
     run_test_bin::<i32, _>("mul", 1, 2, |lhs, rhs| lhs.wrapping_mul(rhs));
     run_test_bin::<i64, _>("mul", 1, 2, |lhs, rhs| lhs.wrapping_mul(rhs));
+    run_test_bin::<i32, _>("shl", 1, 2, |lhs, rhs| lhs.shl(rhs & 0x1F));
+    run_test_bin::<i64, _>("shl", 1, 2, |lhs, rhs| lhs.shl(rhs & 0x3F));
+    run_test_bin::<i32, _>("shr_s", 1, 2, |lhs, rhs| lhs.shr(rhs & 0x1F));
+    run_test_bin::<i64, _>("shr_s", 1, 2, |lhs, rhs| lhs.shr(rhs & 0x3F));
+    run_test_bin::<u32, _>("shr_u", 1, 2, |lhs, rhs| lhs.shr(rhs & 0x1F));
+    run_test_bin::<u64, _>("shr_u", 1, 2, |lhs, rhs| lhs.shr(rhs & 0x3F));
+    run_test_bin::<i32, _>("rotl", 1, 2, |lhs, rhs| lhs.rotl(rhs));
+    run_test_bin::<i64, _>("rotl", 1, 2, |lhs, rhs| lhs.rotl(rhs));
+    run_test_bin::<i32, _>("rotr", 1, 2, |lhs, rhs| lhs.rotr(rhs));
+    run_test_bin::<i64, _>("rotr", 1, 2, |lhs, rhs| lhs.rotr(rhs));
     run_test_bin::<i32, _>("and", 1, 2, |lhs, rhs| lhs & rhs);
     run_test_bin::<i64, _>("and", 1, 2, |lhs, rhs| lhs & rhs);
     run_test_bin::<i32, _>("or", 1, 2, |lhs, rhs| lhs | rhs);
@@ -537,11 +763,23 @@ fn commutative_consts() {
     run_test_bin::<f64, _>("add", 1.0, 2.0, |lhs, rhs| {
         (F64::from(lhs) + F64::from(rhs)).into()
     });
+    run_test_bin::<f32, _>("sub", 1.0, 2.0, |lhs, rhs| {
+        (F32::from(lhs) - F32::from(rhs)).into()
+    });
+    run_test_bin::<f64, _>("sub", 1.0, 2.0, |lhs, rhs| {
+        (F64::from(lhs) - F64::from(rhs)).into()
+    });
     run_test_bin::<f32, _>("mul", 1.0, 2.0, |lhs, rhs| {
         (F32::from(lhs) * F32::from(rhs)).into()
     });
     run_test_bin::<f64, _>("mul", 1.0, 2.0, |lhs, rhs| {
         (F64::from(lhs) * F64::from(rhs)).into()
+    });
+    run_test_bin::<f32, _>("div", 1.0, 2.0, |lhs, rhs| {
+        (F32::from(lhs) / F32::from(rhs)).into()
+    });
+    run_test_bin::<f64, _>("div", 1.0, 2.0, |lhs, rhs| {
+        (F64::from(lhs) / F64::from(rhs)).into()
     });
     run_test_bin::<f32, _>("min", 1.0, 2.0, |lhs, rhs| {
         F32::from(lhs).min(F32::from(rhs)).into()
@@ -554,6 +792,12 @@ fn commutative_consts() {
     });
     run_test_bin::<f64, _>("max", 1.0, 2.0, |lhs, rhs| {
         F64::from(lhs).max(F64::from(rhs)).into()
+    });
+    run_test_bin::<f32, _>("copysign", 1.0, 2.0, |lhs, rhs| {
+        F32::from(lhs).copysign(F32::from(rhs)).into()
+    });
+    run_test_bin::<f64, _>("copysign", 1.0, 2.0, |lhs, rhs| {
+        F64::from(lhs).copysign(F64::from(rhs)).into()
     });
 }
 
