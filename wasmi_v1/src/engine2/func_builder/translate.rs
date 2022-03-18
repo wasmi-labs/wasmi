@@ -63,6 +63,21 @@ impl OpaqueInstruction {
         make_op(result, input)
     }
 
+    fn compile_rp<F>(
+        self,
+        ctx: &CompileContext,
+        result: OpaqueRegister,
+        input: OpaqueProvider,
+        make_op: F,
+    ) -> ExecInstruction
+    where
+        F: FnOnce(ExecRegister, ExecProvider) -> ExecInstruction,
+    {
+        let result = ctx.providers.compile_register(result);
+        let input = ctx.providers.compile_provider(ctx.engine, input);
+        make_op(result, input)
+    }
+
     pub fn compile(
         self,
         engine: &Engine,
@@ -87,6 +102,8 @@ impl OpaqueInstruction {
                 ExecInstruction::Return { results: dedup }
             }
 
+            Self::Copy { result, input } => self.compile_rp(&ctx, result, input, make_op2!(Copy)),
+
             Self::I32Clz { result, input } => {
                 self.compile_rr(&ctx, result, input, make_op2!(I32Clz))
             }
@@ -100,8 +117,38 @@ impl OpaqueInstruction {
             Self::I32Add { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I32Add))
             }
+            Self::I32Sub { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I32Sub))
+            }
             Self::I32Mul { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I32Mul))
+            }
+            Self::I32DivS { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I32DivS))
+            }
+            Self::I32DivU { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I32DivU))
+            }
+            Self::I32RemS { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I32RemS))
+            }
+            Self::I32RemU { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I32RemU))
+            }
+            Self::I32Shl { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I32Shl))
+            }
+            Self::I32ShrS { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I32ShrS))
+            }
+            Self::I32ShrU { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I32ShrU))
+            }
+            Self::I32Rotl { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I32Rotl))
+            }
+            Self::I32Rotr { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I32Rotr))
             }
             Self::I32And { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I32And))
@@ -126,8 +173,38 @@ impl OpaqueInstruction {
             Self::I64Add { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I64Add))
             }
+            Self::I64Sub { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I64Sub))
+            }
             Self::I64Mul { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I64Mul))
+            }
+            Self::I64DivS { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I64DivS))
+            }
+            Self::I64DivU { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I64DivU))
+            }
+            Self::I64RemS { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I64RemS))
+            }
+            Self::I64RemU { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I64RemU))
+            }
+            Self::I64Shl { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I64Shl))
+            }
+            Self::I64ShrS { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I64ShrS))
+            }
+            Self::I64ShrU { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I64ShrU))
+            }
+            Self::I64Rotl { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I64Rotl))
+            }
+            Self::I64Rotr { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I64Rotr))
             }
             Self::I64And { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I64And))
@@ -142,8 +219,14 @@ impl OpaqueInstruction {
             Self::F32Add { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, make_op!(F32Add))
             }
+            Self::F32Sub { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(F32Sub))
+            }
             Self::F32Mul { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, make_op!(F32Mul))
+            }
+            Self::F32Div { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(F32Div))
             }
             Self::F32Min { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, make_op!(F32Min))
@@ -151,18 +234,30 @@ impl OpaqueInstruction {
             Self::F32Max { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, make_op!(F32Max))
             }
+            Self::F32Copysign { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(F32Copysign))
+            }
 
             Self::F64Add { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, make_op!(F64Add))
             }
+            Self::F64Sub { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(F64Sub))
+            }
             Self::F64Mul { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, make_op!(F64Mul))
+            }
+            Self::F64Div { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(F64Div))
             }
             Self::F64Min { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, make_op!(F64Min))
             }
             Self::F64Max { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, make_op!(F64Max))
+            }
+            Self::F64Copysign { result, lhs, rhs } => {
+                self.compile_rrp(&ctx, result, lhs, rhs, make_op!(F64Copysign))
             }
 
             Self::I32Eq { result, lhs, rhs } => {
