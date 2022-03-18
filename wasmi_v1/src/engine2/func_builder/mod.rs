@@ -1555,7 +1555,7 @@ impl<'parser> FunctionBuilder<'parser> {
                     let result = builder.providers.push_dynamic();
                     builder
                         .inst_builder
-                        .push_inst(Instruction::Copy { result, value: lhs });
+                        .push_inst(Instruction::Copy { result, input: lhs });
                     builder
                         .inst_builder
                         .push_inst(make_op(result, result, rhs.into()));
@@ -1602,7 +1602,7 @@ impl<'parser> FunctionBuilder<'parser> {
                     let result = builder.providers.push_dynamic();
                     builder
                         .inst_builder
-                        .push_inst(Instruction::Copy { result, value: lhs });
+                        .push_inst(Instruction::Copy { result, input: lhs });
                     builder
                         .inst_builder
                         .push_inst(make_op(result, result, rhs.into()));

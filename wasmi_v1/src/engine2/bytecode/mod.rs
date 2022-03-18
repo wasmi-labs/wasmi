@@ -171,7 +171,7 @@ where
         /// The register where the copy will be stored.
         result: T::Register,
         /// The input register or immediate value to copy.
-        value: T::Provider,
+        input: T::Provider,
     },
     /// Equivalent to the Wasm `select` instruction.
     Select {
