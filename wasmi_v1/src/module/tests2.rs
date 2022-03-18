@@ -1,13 +1,12 @@
 use std::fmt::Display;
 
-use wasmi_core::{Value, F32, F64};
-
 use super::*;
 use crate::{
     engine::{DedupProviderSlice, Instr, Target},
-    engine2::{ExecInstruction, Provider, Register, RegisterEntry},
+    engine2::{ExecInstruction, Provider, Register, RegisterEntry, WasmType},
     Engine,
 };
+use wasmi_core::{Float, SignExtendFrom, Value, F32, F64};
 
 /// Allows to create a `1` instance for a type.
 pub trait One {
@@ -52,9 +51,13 @@ macro_rules! impl_wasm_type_name {
 
 impl_wasm_type_name! {
     type i32 = "i32";
+    type u32 = "i32";
     type i64 = "i64";
+    type u64 = "i64";
     type f32 = "f32";
     type f64 = "f64";
+    type F32 = "f32";
+    type F64 = "f64";
     type bool = "i32";
 }
 
@@ -62,6 +65,13 @@ impl_wasm_type_name! {
 macro_rules! make_op {
     ( $name:ident ) => {{
         |result, lhs, rhs| ExecInstruction::$name { result, lhs, rhs }
+    }};
+}
+
+/// Creates a closure taking 2 parameters and constructing a `wasmi` instruction.
+macro_rules! make_op2 {
+    ( $name:ident ) => {{
+        |result, input| ExecInstruction::$name { result, input }
     }};
 }
 
@@ -843,4 +853,174 @@ fn cmp_const_and_const() {
     run_test("f64", "le", 1.0_f64, 2.0_f64, |l, r| l <= r);
     run_test("f64", "gt", 1.0_f64, 2.0_f64, |l, r| l > r);
     run_test("f64", "ge", 1.0_f64, 2.0_f64, |l, r| l >= r);
+}
+
+/// Tests translation of all unary Wasm instructions.
+///
+/// # Note
+///
+/// In this test all Wasm functions have a register input (e.g. via `local.get`).
+///
+/// This tests the following Wasm instructions:
+///
+/// - `{i32, i64}.clz`
+/// - `{i32, i64}.ctz`
+/// - `{i32, i64}.popcnt`
+/// - `{i32, i64}.extend_8s`
+/// - `{i32, i64}.extend_16s`
+/// - `i64.extend_32s`
+/// - `{f32, f64}.abs`
+/// - `{f32, f64}.neg`
+/// - `{f32, f64}.ceil`
+/// - `{f32, f64}.floor`
+/// - `{f32, f64}.trunc`
+/// - `{f32, f64}.nearest`
+/// - `{f32, f64}.sqrt`
+#[test]
+fn unary_register() {
+    fn run_test<T, F>(wasm_op: &str, make_op: F)
+    where
+        T: WasmTypeName,
+        F: FnOnce(Register, Register) -> ExecInstruction,
+    {
+        let input_type = <T as WasmTypeName>::NAME;
+        let wasm = wat2wasm(&format!(
+            r#"
+            (module
+                (func (export "call") (param {input_type}) (result {input_type})
+                    local.get 0
+                    {input_type}.{wasm_op}
+                )
+            )
+        "#
+        ));
+        let module = create_module(&wasm[..]);
+        let engine = module.engine();
+        let result = Register::from_inner(1);
+        let results = engine.alloc_provider_slice([Provider::from_register(result)]);
+        let input = Register::from_inner(0);
+        let expected = [make_op(result, input), ExecInstruction::Return { results }];
+        assert_func_bodies(&wasm, [expected]);
+    }
+
+    run_test::<i32, _>("clz", make_op2!(I32Clz));
+    run_test::<i64, _>("clz", make_op2!(I64Clz));
+    run_test::<i32, _>("ctz", make_op2!(I32Ctz));
+    run_test::<i64, _>("ctz", make_op2!(I64Ctz));
+    run_test::<i32, _>("popcnt", make_op2!(I32Popcnt));
+    run_test::<i64, _>("popcnt", make_op2!(I64Popcnt));
+    run_test::<i32, _>("extend8_s", make_op2!(I32Extend8S));
+    run_test::<i64, _>("extend8_s", make_op2!(I64Extend8S));
+    run_test::<i32, _>("extend16_s", make_op2!(I32Extend16S));
+    run_test::<i64, _>("extend16_s", make_op2!(I64Extend16S));
+    run_test::<i64, _>("extend32_s", make_op2!(I64Extend32S));
+    run_test::<f32, _>("abs", make_op2!(F32Abs));
+    run_test::<f64, _>("abs", make_op2!(F64Abs));
+    run_test::<f32, _>("neg", make_op2!(F32Neg));
+    run_test::<f64, _>("neg", make_op2!(F64Neg));
+    run_test::<f32, _>("ceil", make_op2!(F32Ceil));
+    run_test::<f64, _>("ceil", make_op2!(F64Ceil));
+    run_test::<f32, _>("floor", make_op2!(F32Floor));
+    run_test::<f64, _>("floor", make_op2!(F64Floor));
+    run_test::<f32, _>("trunc", make_op2!(F32Trunc));
+    run_test::<f64, _>("trunc", make_op2!(F64Trunc));
+    run_test::<f32, _>("nearest", make_op2!(F32Nearest));
+    run_test::<f64, _>("nearest", make_op2!(F64Nearest));
+    run_test::<f32, _>("sqrt", make_op2!(F32Sqrt));
+    run_test::<f64, _>("sqrt", make_op2!(F64Sqrt));
+}
+
+/// Tests translation of all unary Wasm instructions.
+///
+/// # Note
+///
+/// In this test all Wasm functions have a constant input (e.g. via `i32.const`).
+///
+/// This tests the following Wasm instructions:
+///
+/// - `{i32, i64}.clz`
+/// - `{i32, i64}.ctz`
+/// - `{i32, i64}.popcnt`
+/// - `{i32, i64}.extend_8s`
+/// - `{i32, i64}.extend_16s`
+/// - `i64.extend_32s`
+/// - `{f32, f64}.abs`
+/// - `{f32, f64}.neg`
+/// - `{f32, f64}.ceil`
+/// - `{f32, f64}.floor`
+/// - `{f32, f64}.trunc`
+/// - `{f32, f64}.nearest`
+/// - `{f32, f64}.sqrt`
+#[test]
+fn unary_const() {
+    fn run_test<T, F, R>(wasm_op: &str, input: T, exec_op: F)
+    where
+        T: Display + WasmTypeName + Into<RegisterEntry>,
+        F: FnOnce(T) -> R,
+        R: Into<RegisterEntry> + WasmTypeName,
+    {
+        let input_type = <T as WasmTypeName>::NAME;
+        let wasm = wat2wasm(&format!(
+            r#"
+            (module
+                (func (export "call") (param {input_type}) (result {input_type})
+                    {input_type}.const {input}
+                    {input_type}.{wasm_op}
+                )
+            )
+        "#
+        ));
+        let module = create_module(&wasm[..]);
+        let engine = module.engine();
+        let result = engine.alloc_const(exec_op(input));
+        let results = engine.alloc_provider_slice([Provider::from_immediate(result)]);
+        let expected = [ExecInstruction::Return { results }];
+        assert_func_bodies(&wasm, [expected]);
+    }
+
+    run_test("clz", 1, i32::leading_zeros);
+    run_test("clz", 1, i64::leading_zeros);
+    run_test("ctz", 1, i32::trailing_zeros);
+    run_test("ctz", 1, i64::trailing_zeros);
+    run_test("popcnt", 1, i32::count_ones);
+    run_test("popcnt", 1, i64::count_ones);
+    run_test(
+        "extend8_s",
+        1,
+        <i32 as SignExtendFrom<i8>>::sign_extend_from,
+    );
+    run_test(
+        "extend16_s",
+        1,
+        <i32 as SignExtendFrom<i16>>::sign_extend_from,
+    );
+    run_test(
+        "extend8_s",
+        1,
+        <i64 as SignExtendFrom<i8>>::sign_extend_from,
+    );
+    run_test(
+        "extend16_s",
+        1,
+        <i64 as SignExtendFrom<i16>>::sign_extend_from,
+    );
+    run_test(
+        "extend16_s",
+        1,
+        <i64 as SignExtendFrom<i32>>::sign_extend_from,
+    );
+    run_test("abs", 1.0, |input| F32::from(input).abs());
+    run_test("abs", 1.0, |input| F64::from(input).abs());
+    run_test("neg", 1.0, |input| -F32::from(input));
+    run_test("neg", 1.0, |input| -F64::from(input));
+    run_test("ceil", 1.0, |input| F32::from(input).ceil());
+    run_test("ceil", 1.0, |input| F64::from(input).ceil());
+    run_test("floor", 1.0, |input| F32::from(input).floor());
+    run_test("floor", 1.0, |input| F64::from(input).floor());
+    run_test("trunc", 1.0, |input| F32::from(input).trunc());
+    run_test("trunc", 1.0, |input| F64::from(input).trunc());
+    run_test("nearest", 1.0, |input| F32::from(input).nearest());
+    run_test("nearest", 1.0, |input| F64::from(input).nearest());
+    run_test("sqrt", 1.0, |input| F32::from(input).sqrt());
+    run_test("sqrt", 1.0, |input| F64::from(input).sqrt());
 }
