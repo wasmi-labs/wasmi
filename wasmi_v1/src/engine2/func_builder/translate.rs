@@ -17,6 +17,13 @@ macro_rules! make_op {
     }};
 }
 
+/// Creates a closure taking 2 parameters and constructing a `wasmi` instruction.
+macro_rules! make_op2 {
+    ( $name:ident ) => {{
+        |result, input| ExecInstruction::$name { result, input }
+    }};
+}
+
 pub struct CompileContext<'a> {
     engine: &'a Engine,
     reg_slices: &'a ProviderSliceArena,
@@ -39,6 +46,21 @@ impl OpaqueInstruction {
         let lhs = ctx.providers.compile_register(lhs);
         let rhs = ctx.providers.compile_provider(ctx.engine, rhs);
         make_op(result, lhs, rhs)
+    }
+
+    fn compile_rr<F>(
+        self,
+        ctx: &CompileContext,
+        result: OpaqueRegister,
+        input: OpaqueRegister,
+        make_op: F,
+    ) -> ExecInstruction
+    where
+        F: FnOnce(ExecRegister, ExecRegister) -> ExecInstruction,
+    {
+        let result = ctx.providers.compile_register(result);
+        let input = ctx.providers.compile_register(input);
+        make_op(result, input)
     }
 
     pub fn compile(
@@ -65,6 +87,16 @@ impl OpaqueInstruction {
                 ExecInstruction::Return { results: dedup }
             }
 
+            Self::I32Clz { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(I32Clz))
+            }
+            Self::I32Ctz { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(I32Ctz))
+            }
+            Self::I32Popcnt { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(I32Popcnt))
+            }
+
             Self::I32Add { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I32Add))
             }
@@ -79,6 +111,16 @@ impl OpaqueInstruction {
             }
             Self::I32Xor { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, make_op!(I32Xor))
+            }
+
+            Self::I64Clz { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(I64Clz))
+            }
+            Self::I64Ctz { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(I64Ctz))
+            }
+            Self::I64Popcnt { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(I64Popcnt))
             }
 
             Self::I64Add { result, lhs, rhs } => {
@@ -221,6 +263,66 @@ impl OpaqueInstruction {
             }
             Self::F64Ge { result, lhs, rhs } => {
                 self.compile_rrp(&ctx, result, lhs, rhs, make_op!(F64Ge))
+            }
+
+            Self::F32Abs { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(F32Abs))
+            }
+            Self::F32Neg { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(F32Neg))
+            }
+            Self::F32Ceil { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(F32Ceil))
+            }
+            Self::F32Floor { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(F32Floor))
+            }
+            Self::F32Trunc { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(F32Trunc))
+            }
+            Self::F32Nearest { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(F32Nearest))
+            }
+            Self::F32Sqrt { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(F32Sqrt))
+            }
+
+            Self::F64Abs { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(F64Abs))
+            }
+            Self::F64Neg { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(F64Neg))
+            }
+            Self::F64Ceil { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(F64Ceil))
+            }
+            Self::F64Floor { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(F64Floor))
+            }
+            Self::F64Trunc { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(F64Trunc))
+            }
+            Self::F64Nearest { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(F64Nearest))
+            }
+            Self::F64Sqrt { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(F64Sqrt))
+            }
+
+            Self::I32Extend8S { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(I32Extend8S))
+            }
+            Self::I32Extend16S { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(I32Extend16S))
+            }
+            Self::I64Extend8S { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(I64Extend8S))
+            }
+            Self::I64Extend16S { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(I64Extend16S))
+            }
+            Self::I64Extend32S { result, input } => {
+                self.compile_rr(&ctx, result, input, make_op2!(I64Extend32S))
             }
 
             _ => todo!(),
