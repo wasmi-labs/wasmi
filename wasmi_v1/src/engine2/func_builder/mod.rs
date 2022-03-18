@@ -47,7 +47,8 @@ use crate::{
     ModuleError,
     Mutability,
 };
-use wasmi_core::{TrapCode, Value, ValueType, F32, F64};
+use core::ops;
+use wasmi_core::{Float, SignExtendFrom, TrapCode, Value, ValueType, F32, F64};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum OpaqueTypes {}
@@ -1505,9 +1506,12 @@ impl<'parser> FunctionBuilder<'parser> {
     ///
     /// This is used to translate the following Wasm instructions:
     ///
-    /// - `i32.clz`
-    /// - `i32.ctz`
-    /// - `i32.popcnt`
+    /// - `{i32, i64}.clz`
+    /// - `{i32, i64}.ctz`
+    /// - `{i32, i64}.popcnt`
+    /// - `{i32, i64}.extend_8s`
+    /// - `{i32, i64}.extend_16s`
+    /// - `i64.extend_32s`
     /// - `{f32, f64}.abs`
     /// - `{f32, f64}.neg`
     /// - `{f32, f64}.ceil`
@@ -1515,41 +1519,54 @@ impl<'parser> FunctionBuilder<'parser> {
     /// - `{f32, f64}.trunc`
     /// - `{f32, f64}.nearest`
     /// - `{f32, f64}.sqrt`
-    pub fn translate_unary_operation(
+    pub fn translate_unary_operation<F, E, T, R>(
         &mut self,
-        value_type: ValueType,
-        inst: OpaqueInstruction,
-    ) -> Result<(), ModuleError> {
-        // self.translate_if_reachable(|builder| {
-        //     let actual_type = builder.value_stack.top();
-        //     debug_assert_eq!(actual_type, value_type);
-        //     builder.inst_builder.push_inst(inst);
-        //     Ok(())
-        // })
-        todo!()
+        make_op: F,
+        exec_op: E,
+    ) -> Result<(), ModuleError>
+    where
+        F: FnOnce(Register, Register) -> OpaqueInstruction,
+        E: FnOnce(T) -> R,
+        T: FromRegisterEntry,
+        R: Into<Value>,
+    {
+        self.translate_if_reachable(|builder| {
+            let input = builder.providers.pop();
+            match input {
+                Provider::Register(input) => {
+                    let result = builder.providers.push_dynamic();
+                    builder.inst_builder.push_inst(make_op(result, input));
+                }
+                Provider::Immediate(input) => {
+                    let result = exec_op(T::from_stack_entry(input.into()));
+                    builder.providers.push_const(result.into());
+                }
+            }
+            Ok(())
+        })
     }
 
     /// Translate a Wasm `i32.clz` instruction.
     pub fn translate_i32_clz(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32Clz */
+            |result, input| Instruction::I32Clz { result, input },
+            i32::leading_zeros,
         )
     }
 
     /// Translate a Wasm `i32.ctz` instruction.
     pub fn translate_i32_ctz(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32Ctz */
+            |result, input| Instruction::I32Ctz { result, input },
+            i32::trailing_zeros,
         )
     }
 
     /// Translate a Wasm `i32.popcnt` instruction.
     pub fn translate_i32_popcnt(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32Popcnt */
+            |result, input| Instruction::I32Popcnt { result, input },
+            i32::count_ones,
         )
     }
 
@@ -1783,24 +1800,24 @@ impl<'parser> FunctionBuilder<'parser> {
     /// Translate a Wasm `i64.clz` instruction.
     pub fn translate_i64_clz(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64Clz */
+            |result, input| Instruction::I64Clz { result, input },
+            i64::leading_zeros,
         )
     }
 
     /// Translate a Wasm `i64.ctz` instruction.
     pub fn translate_i64_ctz(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64Ctz */
+            |result, input| Instruction::I64Ctz { result, input },
+            i64::trailing_zeros,
         )
     }
 
     /// Translate a Wasm `i64.popcnt` instruction.
     pub fn translate_i64_popcnt(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64Popcnt */
+            |result, input| Instruction::I64Popcnt { result, input },
+            i64::count_ones,
         )
     }
 
@@ -1947,56 +1964,56 @@ impl<'parser> FunctionBuilder<'parser> {
     /// Translate a Wasm `f32.abs` instruction.
     pub fn translate_f32_abs(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::F32,
-            DUMMY_INSTRUCTION, /* Instruction::F32Abs */
+            |result, input| Instruction::F32Abs { result, input },
+            F32::abs,
         )
     }
 
     /// Translate a Wasm `f32.neg` instruction.
     pub fn translate_f32_neg(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::F32,
-            DUMMY_INSTRUCTION, /* Instruction::F32Neg */
+            |result, input| Instruction::F32Neg { result, input },
+            <F32 as ops::Neg>::neg,
         )
     }
 
     /// Translate a Wasm `f32.ceil` instruction.
     pub fn translate_f32_ceil(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::F32,
-            DUMMY_INSTRUCTION, /* Instruction::F32Ceil */
+            |result, input| Instruction::F32Ceil { result, input },
+            F32::ceil,
         )
     }
 
     /// Translate a Wasm `f32.floor` instruction.
     pub fn translate_f32_floor(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::F32,
-            DUMMY_INSTRUCTION, /* Instruction::F32Floor */
+            |result, input| Instruction::F32Floor { result, input },
+            F32::floor,
         )
     }
 
     /// Translate a Wasm `f32.trunc` instruction.
     pub fn translate_f32_trunc(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::F32,
-            DUMMY_INSTRUCTION, /* Instruction::F32Trunc */
+            |result, input| Instruction::F32Trunc { result, input },
+            F32::trunc,
         )
     }
 
     /// Translate a Wasm `f32.nearest` instruction.
     pub fn translate_f32_nearest(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::F32,
-            DUMMY_INSTRUCTION, /* Instruction::F32Nearest */
+            |result, input| Instruction::F32Nearest { result, input },
+            F32::nearest,
         )
     }
 
     /// Translate a Wasm `f32.sqrt` instruction.
     pub fn translate_f32_sqrt(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::F32,
-            DUMMY_INSTRUCTION, /* Instruction::F32Sqrt */
+            |result, input| Instruction::F32Sqrt { result, input },
+            F32::sqrt,
         )
     }
 
@@ -2075,56 +2092,56 @@ impl<'parser> FunctionBuilder<'parser> {
     /// Translate a Wasm `f64.abs` instruction.
     pub fn translate_f64_abs(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::F64,
-            DUMMY_INSTRUCTION, /* Instruction::F64Abs */
+            |result, input| Instruction::F64Abs { result, input },
+            F64::abs,
         )
     }
 
     /// Translate a Wasm `f64.neg` instruction.
     pub fn translate_f64_neg(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::F64,
-            DUMMY_INSTRUCTION, /* Instruction::F64Neg */
+            |result, input| Instruction::F64Neg { result, input },
+            <F64 as ops::Neg>::neg,
         )
     }
 
     /// Translate a Wasm `f64.ceil` instruction.
     pub fn translate_f64_ceil(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::F64,
-            DUMMY_INSTRUCTION, /* Instruction::F64Ceil */
+            |result, input| Instruction::F64Ceil { result, input },
+            F64::ceil,
         )
     }
 
     /// Translate a Wasm `f64.floor` instruction.
     pub fn translate_f64_floor(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::F64,
-            DUMMY_INSTRUCTION, /* Instruction::F64Floor */
+            |result, input| Instruction::F64Floor { result, input },
+            F64::floor,
         )
     }
 
     /// Translate a Wasm `f64.trunc` instruction.
     pub fn translate_f64_trunc(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::F64,
-            DUMMY_INSTRUCTION, /* Instruction::F64Trunc */
+            |result, input| Instruction::F64Trunc { result, input },
+            F64::trunc,
         )
     }
 
     /// Translate a Wasm `f64.nearest` instruction.
     pub fn translate_f64_nearest(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::F64,
-            DUMMY_INSTRUCTION, /* Instruction::F64Nearest */
+            |result, input| Instruction::F64Nearest { result, input },
+            F64::nearest,
         )
     }
 
     /// Translate a Wasm `f64.sqrt` instruction.
     pub fn translate_f64_sqrt(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::F64,
-            DUMMY_INSTRUCTION, /* Instruction::F64Sqrt */
+            |result, input| Instruction::F64Sqrt { result, input },
+            F64::sqrt,
         )
     }
 
@@ -2460,40 +2477,40 @@ impl<'parser> FunctionBuilder<'parser> {
     /// Translate a Wasm `i32.extend_8s` instruction.
     pub fn translate_i32_sign_extend8(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32Extend8S */
+            |result, input| Instruction::I32Extend8S { result, input },
+            <i32 as SignExtendFrom<i8>>::sign_extend_from,
         )
     }
 
     /// Translate a Wasm `i32.extend_16s` instruction.
     pub fn translate_i32_sign_extend16(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32Extend16S */
+            |result, input| Instruction::I32Extend16S { result, input },
+            <i32 as SignExtendFrom<i16>>::sign_extend_from,
         )
     }
 
     /// Translate a Wasm `i64.extend_8s` instruction.
     pub fn translate_i64_sign_extend8(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64Extend8S */
+            |result, input| Instruction::I64Extend8S { result, input },
+            <i64 as SignExtendFrom<i8>>::sign_extend_from,
         )
     }
 
     /// Translate a Wasm `i64.extend_16s` instruction.
     pub fn translate_i64_sign_extend16(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64Extend16S */
+            |result, input| Instruction::I64Extend16S { result, input },
+            <i64 as SignExtendFrom<i16>>::sign_extend_from,
         )
     }
 
     /// Translate a Wasm `i64.extend_32s` instruction.
     pub fn translate_i64_sign_extend32(&mut self) -> Result<(), ModuleError> {
         self.translate_unary_operation(
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64Extend32S */
+            |result, input| Instruction::I64Extend32S { result, input },
+            <i64 as SignExtendFrom<i32>>::sign_extend_from,
         )
     }
 
