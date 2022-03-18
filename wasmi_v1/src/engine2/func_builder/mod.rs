@@ -7,6 +7,7 @@ mod locals_registry;
 mod providers;
 mod translate;
 
+use core::cmp::PartialOrd;
 pub use self::inst_builder::{Instr, LabelIdx, RelativeDepth, Reloc};
 use self::{
     control_frame::{
@@ -1192,16 +1193,17 @@ impl<'parser> FunctionBuilder<'parser> {
     /// - `{i32, u32, i64, u64, f32, f64}.le`
     /// - `{i32, u32, i64, u64, f32, f64}.gt`
     /// - `{i32, u32, i64, u64, f32, f64}.ge`
-    fn translate_ord<T1, T2, F>(
+    fn translate_ord<O1, O2, E, T>(
         &mut self,
-        make_op: T1,
-        swap_op: T2,
-        exec_op: F,
+        make_op: O1,
+        swap_op: O2,
+        exec_op: E,
     ) -> Result<(), ModuleError>
     where
-        T1: FnOnce(Register, Register, Provider) -> OpaqueInstruction,
-        T2: FnOnce(Register, Register, Provider) -> OpaqueInstruction,
-        F: FnOnce(RegisterEntry, RegisterEntry) -> bool,
+        O1: FnOnce(Register, Register, Provider) -> OpaqueInstruction,
+        O2: FnOnce(Register, Register, Provider) -> OpaqueInstruction,
+        E: FnOnce(T, T) -> bool,
+        T: FromRegisterEntry,
     {
         self.translate_if_reachable(|builder| {
             let (lhs, rhs) = builder.providers.pop2();
@@ -1217,8 +1219,8 @@ impl<'parser> FunctionBuilder<'parser> {
                 }
                 (Provider::Immediate(lhs), Provider::Immediate(rhs)) => {
                     // Note: precompute result and push onto provider stack
-                    let lhs = RegisterEntry::from(lhs);
-                    let rhs = RegisterEntry::from(rhs);
+                    let lhs = T::from_stack_entry(RegisterEntry::from(lhs));
+                    let rhs = T::from_stack_entry(RegisterEntry::from(rhs));
                     let result = RegisterEntry::from(exec_op(lhs, rhs)).with_type(ValueType::I32);
                     builder.providers.push_const(result);
                 }
@@ -1232,7 +1234,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::I32LtS { result, lhs, rhs },
             |result, lhs, rhs| Instruction::I32GtS { result, lhs, rhs },
-            |lhs, rhs| i32::from_stack_entry(lhs) < i32::from_stack_entry(rhs),
+            |lhs: i32, rhs: i32| lhs < rhs,
         )
     }
 
@@ -1241,7 +1243,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::I32LtU { result, lhs, rhs },
             |result, lhs, rhs| Instruction::I32GtU { result, lhs, rhs },
-            |lhs, rhs| u32::from_stack_entry(lhs) < u32::from_stack_entry(rhs),
+            |lhs: u32, rhs: u32| lhs < rhs,
         )
     }
 
@@ -1250,7 +1252,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::I32GtS { result, lhs, rhs },
             |result, lhs, rhs| Instruction::I32LtS { result, lhs, rhs },
-            |lhs, rhs| i32::from_stack_entry(lhs) > i32::from_stack_entry(rhs),
+            |lhs: i32, rhs: i32| lhs > rhs,
         )
     }
 
@@ -1259,7 +1261,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::I32GtU { result, lhs, rhs },
             |result, lhs, rhs| Instruction::I32LtU { result, lhs, rhs },
-            |lhs, rhs| u32::from_stack_entry(lhs) > u32::from_stack_entry(rhs),
+            |lhs: u32, rhs: u32| lhs > rhs,
         )
     }
 
@@ -1268,7 +1270,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::I32LeS { result, lhs, rhs },
             |result, lhs, rhs| Instruction::I32GeS { result, lhs, rhs },
-            |lhs, rhs| i32::from_stack_entry(lhs) <= i32::from_stack_entry(rhs),
+            |lhs: i32, rhs: i32| lhs <= rhs,
         )
     }
 
@@ -1277,7 +1279,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::I32LeU { result, lhs, rhs },
             |result, lhs, rhs| Instruction::I32GeU { result, lhs, rhs },
-            |lhs, rhs| u32::from_stack_entry(lhs) <= u32::from_stack_entry(rhs),
+            |lhs: u32, rhs: u32| lhs <= rhs,
         )
     }
 
@@ -1286,7 +1288,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::I32GeS { result, lhs, rhs },
             |result, lhs, rhs| Instruction::I32LeS { result, lhs, rhs },
-            |lhs, rhs| i32::from_stack_entry(lhs) >= i32::from_stack_entry(rhs),
+            |lhs: i32, rhs: i32| lhs >= rhs,
         )
     }
 
@@ -1295,7 +1297,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::I32GeU { result, lhs, rhs },
             |result, lhs, rhs| Instruction::I32LeU { result, lhs, rhs },
-            |lhs, rhs| u32::from_stack_entry(lhs) >= u32::from_stack_entry(rhs),
+            |lhs: u32, rhs: u32| lhs >= rhs,
         )
     }
 
@@ -1329,7 +1331,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::I64LtS { result, lhs, rhs },
             |result, lhs, rhs| Instruction::I64GtS { result, lhs, rhs },
-            |lhs, rhs| i64::from_stack_entry(lhs) < i64::from_stack_entry(rhs),
+            |lhs: i64, rhs: i64| lhs < rhs,
         )
     }
 
@@ -1338,7 +1340,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::I64LtU { result, lhs, rhs },
             |result, lhs, rhs| Instruction::I64GtU { result, lhs, rhs },
-            |lhs, rhs| u64::from_stack_entry(lhs) < u64::from_stack_entry(rhs),
+            |lhs: u64, rhs: u64| lhs < rhs,
         )
     }
 
@@ -1347,7 +1349,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::I64GtS { result, lhs, rhs },
             |result, lhs, rhs| Instruction::I64LtS { result, lhs, rhs },
-            |lhs, rhs| i64::from_stack_entry(lhs) > i64::from_stack_entry(rhs),
+            |lhs: i64, rhs: i64| lhs > rhs,
         )
     }
 
@@ -1356,7 +1358,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::I64GtU { result, lhs, rhs },
             |result, lhs, rhs| Instruction::I64LtU { result, lhs, rhs },
-            |lhs, rhs| u64::from_stack_entry(lhs) > u64::from_stack_entry(rhs),
+            |lhs: u64, rhs: u64| lhs > rhs,
         )
     }
 
@@ -1365,7 +1367,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::I64LeS { result, lhs, rhs },
             |result, lhs, rhs| Instruction::I64GeS { result, lhs, rhs },
-            |lhs, rhs| i64::from_stack_entry(lhs) <= i64::from_stack_entry(rhs),
+            |lhs: i64, rhs: i64| lhs <= rhs,
         )
     }
 
@@ -1374,7 +1376,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::I64LeU { result, lhs, rhs },
             |result, lhs, rhs| Instruction::I64GeU { result, lhs, rhs },
-            |lhs, rhs| u64::from_stack_entry(lhs) <= u64::from_stack_entry(rhs),
+            |lhs: u64, rhs: u64| lhs <= rhs,
         )
     }
 
@@ -1383,7 +1385,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::I64GeS { result, lhs, rhs },
             |result, lhs, rhs| Instruction::I64LeS { result, lhs, rhs },
-            |lhs, rhs| i64::from_stack_entry(lhs) >= i64::from_stack_entry(rhs),
+            |lhs: i64, rhs: i64| lhs >= rhs,
         )
     }
 
@@ -1392,7 +1394,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::I64GeU { result, lhs, rhs },
             |result, lhs, rhs| Instruction::I64LeU { result, lhs, rhs },
-            |lhs, rhs| u64::from_stack_entry(lhs) >= u64::from_stack_entry(rhs),
+            |lhs: u64, rhs: u64| lhs >= rhs,
         )
     }
 
@@ -1417,7 +1419,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::F32Lt { result, lhs, rhs },
             |result, lhs, rhs| Instruction::F32Gt { result, lhs, rhs },
-            |lhs, rhs| f32::from_stack_entry(lhs) < f32::from_stack_entry(rhs),
+            |lhs: f32, rhs: f32| lhs < rhs,
         )
     }
 
@@ -1426,7 +1428,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::F32Gt { result, lhs, rhs },
             |result, lhs, rhs| Instruction::F32Lt { result, lhs, rhs },
-            |lhs, rhs| f32::from_stack_entry(lhs) > f32::from_stack_entry(rhs),
+            |lhs: f32, rhs: f32| lhs > rhs,
         )
     }
 
@@ -1435,7 +1437,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::F32Le { result, lhs, rhs },
             |result, lhs, rhs| Instruction::F32Ge { result, lhs, rhs },
-            |lhs, rhs| f32::from_stack_entry(lhs) <= f32::from_stack_entry(rhs),
+            |lhs: f32, rhs: f32| lhs <= rhs,
         )
     }
 
@@ -1444,7 +1446,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::F32Ge { result, lhs, rhs },
             |result, lhs, rhs| Instruction::F32Le { result, lhs, rhs },
-            |lhs, rhs| f32::from_stack_entry(lhs) >= f32::from_stack_entry(rhs),
+            |lhs: f32, rhs: f32| lhs >= rhs,
         )
     }
 
@@ -1469,7 +1471,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::F64Lt { result, lhs, rhs },
             |result, lhs, rhs| Instruction::F64Gt { result, lhs, rhs },
-            |lhs, rhs| f64::from_stack_entry(lhs) < f64::from_stack_entry(rhs),
+            |lhs: f64, rhs: f64| lhs < rhs,
         )
     }
 
@@ -1478,7 +1480,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::F64Gt { result, lhs, rhs },
             |result, lhs, rhs| Instruction::F64Lt { result, lhs, rhs },
-            |lhs, rhs| f64::from_stack_entry(lhs) > f64::from_stack_entry(rhs),
+            |lhs: f64, rhs: f64| lhs > rhs,
         )
     }
 
@@ -1487,7 +1489,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::F64Le { result, lhs, rhs },
             |result, lhs, rhs| Instruction::F64Ge { result, lhs, rhs },
-            |lhs, rhs| f64::from_stack_entry(lhs) <= f64::from_stack_entry(rhs),
+            |lhs: f64, rhs: f64| lhs <= rhs,
         )
     }
 
@@ -1496,7 +1498,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_ord(
             |result, lhs, rhs| Instruction::F64Ge { result, lhs, rhs },
             |result, lhs, rhs| Instruction::F64Le { result, lhs, rhs },
-            |lhs, rhs| f64::from_stack_entry(lhs) >= f64::from_stack_entry(rhs),
+            |lhs: f64, rhs: f64| lhs >= rhs,
         )
     }
 
