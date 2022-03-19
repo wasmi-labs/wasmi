@@ -54,12 +54,16 @@ use core::{
 };
 use wasmi_core::{
     ArithmeticOps,
+    ExtendInto,
     Float,
     Integer,
     SignExtendFrom,
     TrapCode,
+    TruncateSaturateInto,
+    TryTruncateInto,
     Value,
     ValueType,
+    WrapInto,
     F32,
     F64,
 };
@@ -79,6 +83,12 @@ pub type OpaqueInstruction = Instruction<OpaqueTypes>;
 macro_rules! make_op {
     ( $name:ident ) => {{
         |result, lhs, rhs| Instruction::$name { result, lhs, rhs }
+    }};
+}
+
+macro_rules! unary_op {
+    ( $name:ident ) => {{
+        |result, input| Instruction::$name { result, input }
     }};
 }
 
@@ -1469,7 +1479,7 @@ impl<'parser> FunctionBuilder<'parser> {
     /// - `{f32, f64}.trunc`
     /// - `{f32, f64}.nearest`
     /// - `{f32, f64}.sqrt`
-    pub fn translate_unary_operation<F, E, T, R>(
+    fn translate_unary_operation<F, E, T, R>(
         &mut self,
         make_op: F,
         exec_op: E,
@@ -2051,7 +2061,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_binary_operation(make_op!(F64Copysign), F64::copysign)
     }
 
-    /// Translate a Wasm conversion instruction.
+    /// Translate an infallible Wasm conversion instruction.
     ///
     /// - `i32.wrap_i64`
     /// - `{i32, u32}.trunc_f32
@@ -2067,283 +2077,300 @@ impl<'parser> FunctionBuilder<'parser> {
     /// - `i64.reinterpret_f64`
     /// - `f32.reinterpret_i32`
     /// - `f64.reinterpret_i64`
-    pub fn translate_conversion(
+    fn translate_conversion<F, E, T, R>(
         &mut self,
-        input_type: ValueType,
-        output_type: ValueType,
-        inst: OpaqueInstruction,
-    ) -> Result<(), ModuleError> {
-        // self.translate_if_reachable(|builder| {
-        //     let input = builder.value_stack.pop1();
-        //     debug_assert_eq!(input, input_type);
-        //     builder.value_stack.push(output_type);
-        //     builder.inst_builder.push_inst(inst);
-        //     Ok(())
-        // })
-        todo!()
+        make_op: F,
+        exec_op: E,
+    ) -> Result<(), ModuleError>
+    where
+        F: FnOnce(Register, Register) -> OpaqueInstruction,
+        E: FnOnce(T) -> R,
+        T: FromRegisterEntry,
+        R: Into<Value>,
+    {
+        self.translate_unary_operation(make_op, exec_op)
+    }
+
+    /// Translate an infallible Wasm conversion instruction.
+    ///
+    /// - `{i32, u32}.trunc_f32
+    /// - `{i32, u32}.trunc_f64`
+    /// - `{i64, u64}.trunc_f32`
+    /// - `{i64, u64}.trunc_f64`
+    /// - `f32.convert_{i32, u32, i64, u64}`
+    /// - `f64.convert_{i32, u32, i64, u64}`
+    fn translate_fallible_conversion<F, E, T, R>(
+        &mut self,
+        make_op: F,
+        exec_op: E,
+    ) -> Result<(), ModuleError>
+    where
+        F: FnOnce(Register, Register) -> OpaqueInstruction,
+        E: FnOnce(T) -> Result<R, TrapCode>,
+        T: FromRegisterEntry,
+        R: Into<Value>,
+    {
+        self.translate_if_reachable(|builder| {
+            let input = builder.providers.pop();
+            match input {
+                Provider::Register(input) => {
+                    let result = builder.providers.push_dynamic();
+                    builder.inst_builder.push_inst(make_op(result, input));
+                }
+                Provider::Immediate(input) => match exec_op(T::from_stack_entry(input.into())) {
+                    Ok(result) => {
+                        builder.providers.push_const(result.into());
+                    }
+                    Err(trap_code) => {
+                        builder
+                            .inst_builder
+                            .push_inst(Instruction::Trap { trap_code });
+                        builder.reachable = false;
+                    }
+                },
+            }
+            Ok(())
+        })
     }
 
     /// Translate a Wasm `i32.wrap_i64` instruction.
     pub fn translate_i32_wrap_i64(&mut self) -> Result<(), ModuleError> {
-        self.translate_conversion(
-            ValueType::I64,
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32WrapI64 */
-        )
+        self.translate_conversion(unary_op!(I32WrapI64), <i64 as WrapInto<i32>>::wrap_into)
     }
 
     /// Translate a Wasm `i32.trunc_f32` instruction.
     pub fn translate_i32_trunc_f32(&mut self) -> Result<(), ModuleError> {
-        self.translate_conversion(
-            ValueType::F32,
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32TruncSF32 */
+        self.translate_fallible_conversion(
+            unary_op!(I32TruncSF32),
+            <f32 as TryTruncateInto<i32, TrapCode>>::try_truncate_into,
         )
     }
 
     /// Translate a Wasm `u32.trunc_f32` instruction.
     pub fn translate_u32_trunc_f32(&mut self) -> Result<(), ModuleError> {
-        self.translate_conversion(
-            ValueType::F32,
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32TruncUF32 */
+        self.translate_fallible_conversion(
+            unary_op!(I32TruncUF32),
+            <f32 as TryTruncateInto<u32, TrapCode>>::try_truncate_into,
         )
     }
 
     /// Translate a Wasm `i32.trunc_f64` instruction.
     pub fn translate_i32_trunc_f64(&mut self) -> Result<(), ModuleError> {
-        self.translate_conversion(
-            ValueType::F64,
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32TruncSF64 */
+        self.translate_fallible_conversion(
+            unary_op!(I32TruncSF64),
+            <f64 as TryTruncateInto<i32, TrapCode>>::try_truncate_into,
         )
     }
 
     /// Translate a Wasm `u32.trunc_f64` instruction.
     pub fn translate_u32_trunc_f64(&mut self) -> Result<(), ModuleError> {
-        self.translate_conversion(
-            ValueType::F64,
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32TruncUF64 */
+        self.translate_fallible_conversion(
+            unary_op!(I32TruncUF64),
+            <f64 as TryTruncateInto<u32, TrapCode>>::try_truncate_into,
         )
     }
 
     /// Translate a Wasm `i64.extend_i32` instruction.
     pub fn translate_i64_extend_i32(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(
-            ValueType::I32,
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64ExtendSI32 */
+            unary_op!(I64ExtendSI32),
+            <i32 as ExtendInto<i64>>::extend_into,
         )
     }
 
     /// Translate a Wasm `u64.extend_i32` instruction.
     pub fn translate_u64_extend_i32(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(
-            ValueType::I32,
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64ExtendUI32 */
+            unary_op!(I64ExtendUI32),
+            <u32 as ExtendInto<i64>>::extend_into,
         )
     }
 
     /// Translate a Wasm `i64.trunc_f32` instruction.
     pub fn translate_i64_trunc_f32(&mut self) -> Result<(), ModuleError> {
-        self.translate_conversion(
-            ValueType::F32,
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64TruncSF32 */
+        self.translate_fallible_conversion(
+            unary_op!(I64TruncSF32),
+            <f32 as TryTruncateInto<i64, TrapCode>>::try_truncate_into,
         )
     }
 
     /// Translate a Wasm `u64.trunc_f32` instruction.
     pub fn translate_u64_trunc_f32(&mut self) -> Result<(), ModuleError> {
-        self.translate_conversion(
-            ValueType::F32,
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64TruncUF32 */
+        self.translate_fallible_conversion(
+            unary_op!(I64TruncUF32),
+            <f32 as TryTruncateInto<u64, TrapCode>>::try_truncate_into,
         )
     }
 
     /// Translate a Wasm `i64.trunc_f64` instruction.
     pub fn translate_i64_trunc_f64(&mut self) -> Result<(), ModuleError> {
-        self.translate_conversion(
-            ValueType::F64,
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64TruncSF64 */
+        self.translate_fallible_conversion(
+            unary_op!(I64TruncSF64),
+            <f64 as TryTruncateInto<i64, TrapCode>>::try_truncate_into,
         )
     }
 
     /// Translate a Wasm `u64.trunc_f64` instruction.
     pub fn translate_u64_trunc_f64(&mut self) -> Result<(), ModuleError> {
-        self.translate_conversion(
-            ValueType::F64,
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64TruncUF64 */
+        self.translate_fallible_conversion(
+            unary_op!(I64TruncUF64),
+            <f64 as TryTruncateInto<u64, TrapCode>>::try_truncate_into,
         )
     }
 
     /// Translate a Wasm `f32.convert_i32` instruction.
     pub fn translate_f32_convert_i32(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(
-            ValueType::I32,
-            ValueType::F32,
-            DUMMY_INSTRUCTION, /* Instruction::F32ConvertSI32 */
+            unary_op!(F32ConvertSI32),
+            <i32 as ExtendInto<F32>>::extend_into,
         )
     }
 
     /// Translate a Wasm `f32.convert_u32` instruction.
     pub fn translate_f32_convert_u32(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(
-            ValueType::I32,
-            ValueType::F32,
-            DUMMY_INSTRUCTION, /* Instruction::F32ConvertUI32 */
+            unary_op!(F32ConvertUI32),
+            <u32 as ExtendInto<F32>>::extend_into,
         )
     }
 
     /// Translate a Wasm `f32.convert_i64` instruction.
     pub fn translate_f32_convert_i64(&mut self) -> Result<(), ModuleError> {
-        self.translate_conversion(
-            ValueType::I64,
-            ValueType::F32,
-            DUMMY_INSTRUCTION, /* Instruction::F32ConvertSI64 */
-        )
+        self.translate_conversion(unary_op!(F32ConvertSI64), <i64 as WrapInto<F32>>::wrap_into)
     }
 
     /// Translate a Wasm `f32.convert_u64` instruction.
     pub fn translate_f32_convert_u64(&mut self) -> Result<(), ModuleError> {
-        self.translate_conversion(
-            ValueType::I64,
-            ValueType::F32,
-            DUMMY_INSTRUCTION, /* Instruction::F32ConvertUI64 */
-        )
+        self.translate_conversion(unary_op!(F32ConvertUI64), <u64 as WrapInto<F32>>::wrap_into)
     }
 
     /// Translate a Wasm `f32.demote_f64` instruction.
     pub fn translate_f32_demote_f64(&mut self) -> Result<(), ModuleError> {
-        self.translate_conversion(
-            ValueType::F64,
-            ValueType::F32,
-            DUMMY_INSTRUCTION, /* Instruction::F32DemoteF64 */
-        )
+        self.translate_conversion(unary_op!(F32DemoteF64), <F64 as WrapInto<F32>>::wrap_into)
     }
 
     /// Translate a Wasm `f64.convert_i32` instruction.
     pub fn translate_f64_convert_i32(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(
-            ValueType::I32,
-            ValueType::F64,
-            DUMMY_INSTRUCTION, /* Instruction::F64ConvertSI32 */
+            unary_op!(F64ConvertSI32),
+            <i32 as ExtendInto<F64>>::extend_into,
         )
     }
 
     /// Translate a Wasm `f64.convert_u32` instruction.
     pub fn translate_f64_convert_u32(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(
-            ValueType::I32,
-            ValueType::F64,
-            DUMMY_INSTRUCTION, /* Instruction::F64ConvertUI32 */
+            unary_op!(F64ConvertUI32),
+            <u32 as ExtendInto<F64>>::extend_into,
         )
     }
 
     /// Translate a Wasm `f64.convert_i64` instruction.
     pub fn translate_f64_convert_i64(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(
-            ValueType::I64,
-            ValueType::F64,
-            DUMMY_INSTRUCTION, /* Instruction::F64ConvertSI64 */
+            unary_op!(F64ConvertSI64),
+            <i64 as ExtendInto<F64>>::extend_into,
         )
     }
 
     /// Translate a Wasm `f64.convert_u64` instruction.
     pub fn translate_f64_convert_u64(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(
-            ValueType::I64,
-            ValueType::F64,
-            DUMMY_INSTRUCTION, /* Instruction::F64ConvertUI64 */
+            unary_op!(F64ConvertUI64),
+            <u64 as ExtendInto<F64>>::extend_into,
         )
     }
 
     /// Translate a Wasm `f64.promote_f32` instruction.
     pub fn translate_f64_promote_f32(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(
-            ValueType::F32,
-            ValueType::F64,
-            DUMMY_INSTRUCTION, /* Instruction::F64PromoteF32 */
+            unary_op!(F64PromoteF32),
+            <F32 as ExtendInto<F64>>::extend_into,
         )
     }
 
     /// Translate a Wasm `i32.reinterpret_f32` instruction.
     pub fn translate_i32_reinterpret_f32(&mut self) -> Result<(), ModuleError> {
-        self.translate_conversion(
-            ValueType::F32,
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32ReinterpretF32 */
-        )
+        // Note: since `wasmi` engine treats its values internally as untyped
+        //       bits we have to do nothing for reinterpret casts.
+        //
+        // -> `i32.reinterpret_f32` compiles to a no-op.
+        Ok(())
     }
 
     /// Translate a Wasm `i64.reinterpret_f64` instruction.
     pub fn translate_i64_reinterpret_f64(&mut self) -> Result<(), ModuleError> {
-        self.translate_conversion(
-            ValueType::F64,
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64ReinterpretF64 */
-        )
+        // Note: since `wasmi` engine treats its values internally as untyped
+        //       bits we have to do nothing for reinterpret casts.
+        //
+        // -> `i64.reinterpret_f64` compiles to a no-op.
+        Ok(())
     }
 
     /// Translate a Wasm `f32.reinterpret_i32` instruction.
     pub fn translate_f32_reinterpret_i32(&mut self) -> Result<(), ModuleError> {
-        self.translate_conversion(
-            ValueType::I32,
-            ValueType::F32,
-            DUMMY_INSTRUCTION, /* Instruction::F32ReinterpretI32 */
-        )
+        // Note: since `wasmi` engine treats its values internally as untyped
+        //       bits we have to do nothing for reinterpret casts.
+        //
+        // -> `f32.reinterpret_i32` compiles to a no-op.
+        Ok(())
     }
 
     /// Translate a Wasm `f64.reinterpret_i64` instruction.
     pub fn translate_f64_reinterpret_i64(&mut self) -> Result<(), ModuleError> {
-        self.translate_conversion(
-            ValueType::I64,
-            ValueType::F64,
-            DUMMY_INSTRUCTION, /* Instruction::F64ReinterpretI64 */
-        )
+        // Note: since `wasmi` engine treats its values internally as untyped
+        //       bits we have to do nothing for reinterpret casts.
+        //
+        // -> `f64.reinterpret_i64` compiles to a no-op.
+        Ok(())
     }
 
     /// Translate a Wasm `i32.extend_8s` instruction.
     pub fn translate_i32_sign_extend8(&mut self) -> Result<(), ModuleError> {
+        // Note: we do not consider sign-extend operations to be conversion
+        //       routines since they do not alter the type of the operand.
         self.translate_unary_operation(
-            |result, input| Instruction::I32Extend8S { result, input },
+            unary_op!(I32Extend8S),
             <i32 as SignExtendFrom<i8>>::sign_extend_from,
         )
     }
 
     /// Translate a Wasm `i32.extend_16s` instruction.
     pub fn translate_i32_sign_extend16(&mut self) -> Result<(), ModuleError> {
+        // Note: we do not consider sign-extend operations to be conversion
+        //       routines since they do not alter the type of the operand.
         self.translate_unary_operation(
-            |result, input| Instruction::I32Extend16S { result, input },
+            unary_op!(I32Extend16S),
             <i32 as SignExtendFrom<i16>>::sign_extend_from,
         )
     }
 
     /// Translate a Wasm `i64.extend_8s` instruction.
     pub fn translate_i64_sign_extend8(&mut self) -> Result<(), ModuleError> {
+        // Note: we do not consider sign-extend operations to be conversion
+        //       routines since they do not alter the type of the operand.
         self.translate_unary_operation(
-            |result, input| Instruction::I64Extend8S { result, input },
+            unary_op!(I64Extend8S),
             <i64 as SignExtendFrom<i8>>::sign_extend_from,
         )
     }
 
     /// Translate a Wasm `i64.extend_16s` instruction.
     pub fn translate_i64_sign_extend16(&mut self) -> Result<(), ModuleError> {
+        // Note: we do not consider sign-extend operations to be conversion
+        //       routines since they do not alter the type of the operand.
         self.translate_unary_operation(
-            |result, input| Instruction::I64Extend16S { result, input },
+            unary_op!(I64Extend16S),
             <i64 as SignExtendFrom<i16>>::sign_extend_from,
         )
     }
 
     /// Translate a Wasm `i64.extend_32s` instruction.
     pub fn translate_i64_sign_extend32(&mut self) -> Result<(), ModuleError> {
+        // Note: we do not consider sign-extend operations to be conversion
+        //       routines since they do not alter the type of the operand.
         self.translate_unary_operation(
-            |result, input| Instruction::I64Extend32S { result, input },
+            unary_op!(I64Extend32S),
             <i64 as SignExtendFrom<i32>>::sign_extend_from,
         )
     }
@@ -2351,72 +2378,64 @@ impl<'parser> FunctionBuilder<'parser> {
     /// Translate a Wasm `i32.truncate_sat_f32` instruction.
     pub fn translate_i32_truncate_saturate_f32(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(
-            ValueType::F32,
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32TruncSatF32S */
+            unary_op!(I32TruncSatF32S),
+            <F32 as TruncateSaturateInto<i32>>::truncate_saturate_into,
         )
     }
 
     /// Translate a Wasm `u32.truncate_sat_f32` instruction.
     pub fn translate_u32_truncate_saturate_f32(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(
-            ValueType::F32,
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32TruncSatF32U */
+            unary_op!(I32TruncSatF32U),
+            <F32 as TruncateSaturateInto<u32>>::truncate_saturate_into,
         )
     }
 
     /// Translate a Wasm `i32.truncate_sat_f64` instruction.
     pub fn translate_i32_truncate_saturate_f64(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(
-            ValueType::F64,
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32TruncSatF64S */
+            unary_op!(I32TruncSatF64S),
+            <F64 as TruncateSaturateInto<i32>>::truncate_saturate_into,
         )
     }
 
     /// Translate a Wasm `u32.truncate_sat_f64` instruction.
     pub fn translate_u32_truncate_saturate_f64(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(
-            ValueType::F64,
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I32TruncSatF64U */
+            unary_op!(I32TruncSatF64U),
+            <F64 as TruncateSaturateInto<u32>>::truncate_saturate_into,
         )
     }
 
     /// Translate a Wasm `i64.truncate_sat_f32` instruction.
     pub fn translate_i64_truncate_saturate_f32(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(
-            ValueType::F32,
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64TruncSatF32S */
+            unary_op!(I64TruncSatF32S),
+            <F32 as TruncateSaturateInto<i64>>::truncate_saturate_into,
         )
     }
 
     /// Translate a Wasm `u64.truncate_sat_f32` instruction.
     pub fn translate_u64_truncate_saturate_f32(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(
-            ValueType::F32,
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I64TruncSatF32U */
+            unary_op!(I64TruncSatF32U),
+            <F32 as TruncateSaturateInto<u64>>::truncate_saturate_into,
         )
     }
 
     /// Translate a Wasm `i64.truncate_sat_f64` instruction.
     pub fn translate_i64_truncate_saturate_f64(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(
-            ValueType::F64,
-            ValueType::I64,
-            DUMMY_INSTRUCTION, /* Instruction::I64TruncSatF64S */
+            unary_op!(I64TruncSatF64S),
+            <F64 as TruncateSaturateInto<i64>>::truncate_saturate_into,
         )
     }
 
     /// Translate a Wasm `u64.truncate_sat_f64` instruction.
     pub fn translate_u64_truncate_saturate_f64(&mut self) -> Result<(), ModuleError> {
         self.translate_conversion(
-            ValueType::F64,
-            ValueType::I32,
-            DUMMY_INSTRUCTION, /* Instruction::I64TruncSatF64U */
+            unary_op!(I64TruncSatF64U),
+            <F64 as TruncateSaturateInto<u64>>::truncate_saturate_into,
         )
     }
 }
