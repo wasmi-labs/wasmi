@@ -7,7 +7,20 @@ use crate::{
     Engine,
 };
 use core::ops::{Shl, Shr};
-use wasmi_core::{ArithmeticOps, Float, Integer, SignExtendFrom, TrapCode, Value, F32, F64};
+use wasmi_core::{
+    ArithmeticOps,
+    ExtendInto,
+    Float,
+    Integer,
+    SignExtendFrom,
+    TrapCode,
+    TruncateSaturateInto,
+    TryTruncateInto,
+    Value,
+    WrapInto,
+    F32,
+    F64,
+};
 
 /// Allows to create a `1` instance for a type.
 pub trait One {
@@ -574,6 +587,15 @@ fn binary_const_register_commutative() {
     run_test_bin::<f64, _>("max", make_op!(F64Max));
 }
 
+/// The expected outcome of a fallible constant evaluation.
+#[derive(Debug, Copy, Clone)]
+pub enum Outcome {
+    /// The instruction evaluation resulted in a proper value.
+    Eval,
+    /// The instruction evaluation resulted in a trap.
+    Trap,
+}
+
 /// Tests compilation of all fallible binary Wasm instructions.
 ///
 /// # Note
@@ -589,15 +611,6 @@ fn binary_const_register_commutative() {
 /// - `{i32, i64}.rem_u`
 #[test]
 fn binary_const_const_fallible() {
-    /// The expected outcome of the constant evaluation.
-    #[derive(Debug, Copy, Clone)]
-    pub enum Outcome {
-        /// The instruction evaluation resulted in a proper value.
-        Eval,
-        /// The instruction evaluation resulted in a trap.
-        Trap,
-    }
-
     fn test_const_const<T, E>(wasm_op: &str, outcome: Outcome, lhs: T, rhs: T, exec_op: E)
     where
         T: Display + WasmTypeName + Into<RegisterEntry>,
@@ -1122,18 +1135,20 @@ fn cmp_const_and_const() {
 /// - `{f32, f64}.sqrt`
 #[test]
 fn unary_register() {
-    fn run_test<T, F>(wasm_op: &str, make_op: F)
+    fn test<T, R, F>(wasm_op: &str, make_op: F)
     where
         T: WasmTypeName,
+        R: WasmTypeName,
         F: FnOnce(Register, Register) -> ExecInstruction,
     {
         let input_type = <T as WasmTypeName>::NAME;
+        let result_type = <R as WasmTypeName>::NAME;
         let wasm = wat2wasm(&format!(
             r#"
             (module
-                (func (export "call") (param {input_type}) (result {input_type})
+                (func (export "call") (param {input_type}) (result {result_type})
                     local.get 0
-                    {input_type}.{wasm_op}
+                    {result_type}.{wasm_op}
                 )
             )
         "#
@@ -1147,31 +1162,78 @@ fn unary_register() {
         assert_func_bodies(&wasm, [expected]);
     }
 
-    run_test::<i32, _>("clz", make_op2!(I32Clz));
-    run_test::<i64, _>("clz", make_op2!(I64Clz));
-    run_test::<i32, _>("ctz", make_op2!(I32Ctz));
-    run_test::<i64, _>("ctz", make_op2!(I64Ctz));
-    run_test::<i32, _>("popcnt", make_op2!(I32Popcnt));
-    run_test::<i64, _>("popcnt", make_op2!(I64Popcnt));
-    run_test::<i32, _>("extend8_s", make_op2!(I32Extend8S));
-    run_test::<i64, _>("extend8_s", make_op2!(I64Extend8S));
-    run_test::<i32, _>("extend16_s", make_op2!(I32Extend16S));
-    run_test::<i64, _>("extend16_s", make_op2!(I64Extend16S));
-    run_test::<i64, _>("extend32_s", make_op2!(I64Extend32S));
-    run_test::<f32, _>("abs", make_op2!(F32Abs));
-    run_test::<f64, _>("abs", make_op2!(F64Abs));
-    run_test::<f32, _>("neg", make_op2!(F32Neg));
-    run_test::<f64, _>("neg", make_op2!(F64Neg));
-    run_test::<f32, _>("ceil", make_op2!(F32Ceil));
-    run_test::<f64, _>("ceil", make_op2!(F64Ceil));
-    run_test::<f32, _>("floor", make_op2!(F32Floor));
-    run_test::<f64, _>("floor", make_op2!(F64Floor));
-    run_test::<f32, _>("trunc", make_op2!(F32Trunc));
-    run_test::<f64, _>("trunc", make_op2!(F64Trunc));
-    run_test::<f32, _>("nearest", make_op2!(F32Nearest));
-    run_test::<f64, _>("nearest", make_op2!(F64Nearest));
-    run_test::<f32, _>("sqrt", make_op2!(F32Sqrt));
-    run_test::<f64, _>("sqrt", make_op2!(F64Sqrt));
+    fn test_unary<T, F>(wasm_op: &str, make_op: F)
+    where
+        T: WasmTypeName,
+        F: FnOnce(Register, Register) -> ExecInstruction,
+    {
+        test::<T, T, F>(wasm_op, make_op)
+    }
+
+    test_unary::<i32, _>("clz", make_op2!(I32Clz));
+    test_unary::<i64, _>("clz", make_op2!(I64Clz));
+    test_unary::<i32, _>("ctz", make_op2!(I32Ctz));
+    test_unary::<i64, _>("ctz", make_op2!(I64Ctz));
+    test_unary::<i32, _>("popcnt", make_op2!(I32Popcnt));
+    test_unary::<i64, _>("popcnt", make_op2!(I64Popcnt));
+    test_unary::<i32, _>("extend8_s", make_op2!(I32Extend8S));
+    test_unary::<i64, _>("extend8_s", make_op2!(I64Extend8S));
+    test_unary::<i32, _>("extend16_s", make_op2!(I32Extend16S));
+    test_unary::<i64, _>("extend16_s", make_op2!(I64Extend16S));
+    test_unary::<i64, _>("extend32_s", make_op2!(I64Extend32S));
+    test_unary::<f32, _>("abs", make_op2!(F32Abs));
+    test_unary::<f64, _>("abs", make_op2!(F64Abs));
+    test_unary::<f32, _>("neg", make_op2!(F32Neg));
+    test_unary::<f64, _>("neg", make_op2!(F64Neg));
+    test_unary::<f32, _>("ceil", make_op2!(F32Ceil));
+    test_unary::<f64, _>("ceil", make_op2!(F64Ceil));
+    test_unary::<f32, _>("floor", make_op2!(F32Floor));
+    test_unary::<f64, _>("floor", make_op2!(F64Floor));
+    test_unary::<f32, _>("trunc", make_op2!(F32Trunc));
+    test_unary::<f64, _>("trunc", make_op2!(F64Trunc));
+    test_unary::<f32, _>("nearest", make_op2!(F32Nearest));
+    test_unary::<f64, _>("nearest", make_op2!(F64Nearest));
+    test_unary::<f32, _>("sqrt", make_op2!(F32Sqrt));
+    test_unary::<f64, _>("sqrt", make_op2!(F64Sqrt));
+
+    fn test_conversion<From, Into, F>(wasm_op: &str, make_op: F)
+    where
+        From: WasmTypeName,
+        Into: WasmTypeName,
+        F: FnOnce(Register, Register) -> ExecInstruction,
+    {
+        test::<From, Into, F>(wasm_op, make_op)
+    }
+
+    test::<i64, i32, _>("wrap_i64", make_op2!(I32WrapI64));
+    test::<F32, i32, _>("trunc_f32_s", make_op2!(I32TruncSF32));
+    test::<F32, u32, _>("trunc_f32_u", make_op2!(I32TruncUF32));
+    test::<F64, i32, _>("trunc_f64_s", make_op2!(I32TruncSF64));
+    test::<F64, u32, _>("trunc_f64_u", make_op2!(I32TruncUF64));
+    test::<i32, i64, _>("extend_i32_s", make_op2!(I64ExtendSI32));
+    test::<u32, i64, _>("extend_i32_u", make_op2!(I64ExtendUI32));
+    test::<F32, i64, _>("trunc_f32_s", make_op2!(I64TruncSF32));
+    test::<F32, u64, _>("trunc_f32_u", make_op2!(I64TruncUF32));
+    test::<F64, i64, _>("trunc_f64_s", make_op2!(I64TruncSF64));
+    test::<F64, u64, _>("trunc_f64_u", make_op2!(I64TruncUF64));
+    test::<i32, F32, _>("convert_i32_s", make_op2!(F32ConvertSI32));
+    test::<u32, F32, _>("convert_i32_u", make_op2!(F32ConvertUI32));
+    test::<i64, F32, _>("convert_i64_s", make_op2!(F32ConvertSI64));
+    test::<u64, F32, _>("convert_i64_u", make_op2!(F32ConvertUI64));
+    test::<F64, F32, _>("demote_f64", make_op2!(F32DemoteF64));
+    test::<i32, F64, _>("convert_i32_s", make_op2!(F64ConvertSI32));
+    test::<u32, F64, _>("convert_i32_u", make_op2!(F64ConvertUI32));
+    test::<i64, F64, _>("convert_i64_s", make_op2!(F64ConvertSI64));
+    test::<u64, F64, _>("convert_i64_u", make_op2!(F64ConvertUI64));
+    test::<F32, F64, _>("promote_f32", make_op2!(F64PromoteF32));
+    test::<F32, i32, _>("trunc_sat_f32_s", make_op2!(I32TruncSatF32S));
+    test::<F32, u32, _>("trunc_sat_f32_u", make_op2!(I32TruncSatF32U));
+    test::<F64, i32, _>("trunc_sat_f64_s", make_op2!(I32TruncSatF64S));
+    test::<F64, u32, _>("trunc_sat_f64_u", make_op2!(I32TruncSatF64U));
+    test::<F32, i64, _>("trunc_sat_f32_s", make_op2!(I64TruncSatF32S));
+    test::<F32, u64, _>("trunc_sat_f32_u", make_op2!(I64TruncSatF32U));
+    test::<F64, i64, _>("trunc_sat_f64_s", make_op2!(I64TruncSatF64S));
+    test::<F64, u64, _>("trunc_sat_f64_u", make_op2!(I64TruncSatF64U));
 }
 
 /// Tests translation of all unary Wasm instructions.
@@ -1180,7 +1242,7 @@ fn unary_register() {
 ///
 /// In this test all Wasm functions have a constant input (e.g. via `i32.const`).
 ///
-/// This tests the following Wasm instructions:
+/// This tests the following unary Wasm instructions:
 ///
 /// - `{i32, i64}.clz`
 /// - `{i32, i64}.ctz`
@@ -1195,21 +1257,38 @@ fn unary_register() {
 /// - `{f32, f64}.trunc`
 /// - `{f32, f64}.nearest`
 /// - `{f32, f64}.sqrt`
+///
+/// And also this tests the following Wasm conversion instructions:
+///
+/// - `i32.wrap_i64`
+/// - `i64.extend_i32_s`
+/// - `i64.extend_i32_u`
+/// - `{f32, f64}.convert_i32_s`
+/// - `{f32, f64}.convert_i32_u`
+/// - `{f32, f64}.convert_i64_s`
+/// - `{f32, f64}.convert_i64_u`
+/// - `f32.demote_f64`
+/// - `f64.promote_f32`
+/// - `{i32, i64}.trunc_sat_f32_s`
+/// - `{i32, i64}.trunc_sat_f32_u`
+/// - `{i32, i64}.trunc_sat_f64_s`
+/// - `{i32, i64}.trunc_sat_f64_u`
 #[test]
-fn unary_const() {
-    fn run_test<T, F, R>(wasm_op: &str, input: T, exec_op: F)
+fn unary_const_infallible() {
+    fn test<T, R, F>(wasm_op: &str, input: T, exec_op: F)
     where
         T: Display + WasmTypeName + Into<RegisterEntry>,
         F: FnOnce(T) -> R,
         R: Into<RegisterEntry> + WasmTypeName,
     {
         let input_type = <T as WasmTypeName>::NAME;
+        let result_type = <R as WasmTypeName>::NAME;
         let wasm = wat2wasm(&format!(
             r#"
             (module
-                (func (export "call") (param {input_type}) (result {input_type})
+                (func (export "call") (param {input_type}) (result {result_type})
                     {input_type}.const {input}
-                    {input_type}.{wasm_op}
+                    {result_type}.{wasm_op}
                 )
             )
         "#
@@ -1222,49 +1301,281 @@ fn unary_const() {
         assert_func_bodies(&wasm, [expected]);
     }
 
-    run_test("clz", 1, i32::leading_zeros);
-    run_test("clz", 1, i64::leading_zeros);
-    run_test("ctz", 1, i32::trailing_zeros);
-    run_test("ctz", 1, i64::trailing_zeros);
-    run_test("popcnt", 1, i32::count_ones);
-    run_test("popcnt", 1, i64::count_ones);
-    run_test(
+    fn test_unary<T, F>(wasm_op: &str, input: T, exec_op: F)
+    where
+        T: Display + WasmTypeName + Into<RegisterEntry>,
+        F: FnOnce(T) -> T,
+    {
+        test::<T, T, F>(wasm_op, input, exec_op)
+    }
+
+    test_unary("clz", 1, <i32 as Integer<i32>>::leading_zeros);
+    test_unary("clz", 1, <i64 as Integer<i64>>::leading_zeros);
+    test_unary("ctz", 1, <i32 as Integer<i32>>::trailing_zeros);
+    test_unary("ctz", 1, <i64 as Integer<i64>>::trailing_zeros);
+    test_unary("popcnt", 1, <i32 as Integer<i32>>::count_ones);
+    test_unary("popcnt", 1, <i64 as Integer<i64>>::count_ones);
+    test_unary(
         "extend8_s",
         1,
         <i32 as SignExtendFrom<i8>>::sign_extend_from,
     );
-    run_test(
+    test_unary(
         "extend16_s",
         1,
         <i32 as SignExtendFrom<i16>>::sign_extend_from,
     );
-    run_test(
+    test_unary(
         "extend8_s",
         1,
         <i64 as SignExtendFrom<i8>>::sign_extend_from,
     );
-    run_test(
+    test_unary(
         "extend16_s",
         1,
         <i64 as SignExtendFrom<i16>>::sign_extend_from,
     );
-    run_test(
+    test_unary(
         "extend16_s",
         1,
         <i64 as SignExtendFrom<i32>>::sign_extend_from,
     );
-    run_test("abs", 1.0, |input| F32::from(input).abs());
-    run_test("abs", 1.0, |input| F64::from(input).abs());
-    run_test("neg", 1.0, |input| -F32::from(input));
-    run_test("neg", 1.0, |input| -F64::from(input));
-    run_test("ceil", 1.0, |input| F32::from(input).ceil());
-    run_test("ceil", 1.0, |input| F64::from(input).ceil());
-    run_test("floor", 1.0, |input| F32::from(input).floor());
-    run_test("floor", 1.0, |input| F64::from(input).floor());
-    run_test("trunc", 1.0, |input| F32::from(input).trunc());
-    run_test("trunc", 1.0, |input| F64::from(input).trunc());
-    run_test("nearest", 1.0, |input| F32::from(input).nearest());
-    run_test("nearest", 1.0, |input| F64::from(input).nearest());
-    run_test("sqrt", 1.0, |input| F32::from(input).sqrt());
-    run_test("sqrt", 1.0, |input| F64::from(input).sqrt());
+    test("abs", 1.0, |input| F32::from(input).abs());
+    test("abs", 1.0, |input| F64::from(input).abs());
+    test("neg", 1.0, |input| -F32::from(input));
+    test("neg", 1.0, |input| -F64::from(input));
+    test("ceil", 1.0, |input| F32::from(input).ceil());
+    test("ceil", 1.0, |input| F64::from(input).ceil());
+    test("floor", 1.0, |input| F32::from(input).floor());
+    test("floor", 1.0, |input| F64::from(input).floor());
+    test("trunc", 1.0, |input| F32::from(input).trunc());
+    test("trunc", 1.0, |input| F64::from(input).trunc());
+    test("nearest", 1.0, |input| F32::from(input).nearest());
+    test("nearest", 1.0, |input| F64::from(input).nearest());
+    test("sqrt", 1.0, |input| F32::from(input).sqrt());
+    test("sqrt", 1.0, |input| F64::from(input).sqrt());
+
+    fn test_f32<R, F>(wasm_op: &str, input: f32, exec_op: F)
+    where
+        F: FnOnce(F32) -> R,
+        R: Into<RegisterEntry> + WasmTypeName,
+    {
+        test::<f32, R, _>(wasm_op, input, |input| exec_op(F32::from(input)))
+    }
+
+    fn test_f64<R, F>(wasm_op: &str, input: f64, exec_op: F)
+    where
+        F: FnOnce(F64) -> R,
+        R: Into<RegisterEntry> + WasmTypeName,
+    {
+        test::<f64, R, _>(wasm_op, input, |input| exec_op(F64::from(input)))
+    }
+
+    test::<i64, i32, _>("wrap_i64", 1, <i64 as WrapInto<i32>>::wrap_into);
+
+    test::<i32, i64, _>("extend_i32_s", 1, <i32 as ExtendInto<i64>>::extend_into);
+    test::<u32, i64, _>("extend_i32_u", 1, <u32 as ExtendInto<i64>>::extend_into);
+
+    test::<i32, F32, _>("convert_i32_s", 1, <i32 as ExtendInto<F32>>::extend_into);
+    test::<u32, F32, _>("convert_i32_u", 1, <u32 as ExtendInto<F32>>::extend_into);
+    test::<i64, F32, _>("convert_i64_s", 1, <i64 as WrapInto<F32>>::wrap_into);
+    test::<u64, F32, _>("convert_i64_u", 1, <u64 as WrapInto<F32>>::wrap_into);
+    test::<f64, f32, _>("demote_f64", 1.0, |input| input.wrap_into());
+    test::<i32, F64, _>("convert_i32_s", 1, <i32 as ExtendInto<F64>>::extend_into);
+    test::<u32, F64, _>("convert_i32_u", 1, <u32 as ExtendInto<F64>>::extend_into);
+    test::<i64, F64, _>("convert_i64_s", 1, <i64 as ExtendInto<F64>>::extend_into);
+    test::<u64, F64, _>("convert_i64_u", 1, <u64 as ExtendInto<F64>>::extend_into);
+    test::<f32, f64, _>("promote_f32", 1.0, |input| input.extend_into());
+    test::<f32, i32, _>(
+        "trunc_sat_f32_s",
+        1.0,
+        <f32 as TruncateSaturateInto<i32>>::truncate_saturate_into,
+    );
+    test::<f32, u32, _>(
+        "trunc_sat_f32_u",
+        1.0,
+        <f32 as TruncateSaturateInto<u32>>::truncate_saturate_into,
+    );
+    test::<f64, i32, _>(
+        "trunc_sat_f64_s",
+        1.0,
+        <f64 as TruncateSaturateInto<i32>>::truncate_saturate_into,
+    );
+    test::<f64, u32, _>(
+        "trunc_sat_f64_u",
+        1.0,
+        <f64 as TruncateSaturateInto<u32>>::truncate_saturate_into,
+    );
+    test::<f32, i64, _>(
+        "trunc_sat_f32_s",
+        1.0,
+        <f32 as TruncateSaturateInto<i64>>::truncate_saturate_into,
+    );
+    test::<f32, u64, _>(
+        "trunc_sat_f32_u",
+        1.0,
+        <f32 as TruncateSaturateInto<u64>>::truncate_saturate_into,
+    );
+    test::<f64, i64, _>(
+        "trunc_sat_f64_s",
+        1.0,
+        <f64 as TruncateSaturateInto<i64>>::truncate_saturate_into,
+    );
+    test::<f64, u64, _>(
+        "trunc_sat_f64_u",
+        1.0,
+        <f64 as TruncateSaturateInto<u64>>::truncate_saturate_into,
+    );
+}
+
+#[test]
+fn unary_const_fallible() {
+    fn test<T, R, F>(wasm_op: &str, outcome: Outcome, input: T, exec_op: F)
+    where
+        T: Display + WasmTypeName + Into<RegisterEntry>,
+        F: FnOnce(T) -> Result<R, TrapCode>,
+        R: Into<RegisterEntry> + WasmTypeName,
+    {
+        let input_type = <T as WasmTypeName>::NAME;
+        let result_type = <R as WasmTypeName>::NAME;
+        let wasm = wat2wasm(&format!(
+            r#"
+            (module
+                (func (export "call") (param {input_type}) (result {result_type})
+                    {input_type}.const {input}
+                    {result_type}.{wasm_op}
+                )
+            )
+        "#
+        ));
+        let module = create_module(&wasm[..]);
+        let engine = module.engine();
+        let expected = match exec_op(input) {
+            Ok(result) => {
+                assert!(matches!(outcome, Outcome::Eval));
+                let result = engine.alloc_const(result);
+                let results = engine.alloc_provider_slice([Provider::from_immediate(result)]);
+                [ExecInstruction::Return { results }]
+            }
+            Err(trap_code) => {
+                assert!(matches!(outcome, Outcome::Trap));
+                [ExecInstruction::Trap { trap_code }]
+            }
+        };
+        assert_func_bodies(&wasm, [expected]);
+    }
+
+    fn test_f32<R, F>(wasm_op: &str, outcome: Outcome, input: f32, exec_op: F)
+    where
+        F: FnOnce(F32) -> Result<R, TrapCode>,
+        R: Into<RegisterEntry> + WasmTypeName,
+    {
+        test::<f32, R, _>(wasm_op, outcome, input, |input| exec_op(F32::from(input)))
+    }
+
+    fn test_f64<R, F>(wasm_op: &str, outcome: Outcome, input: f64, exec_op: F)
+    where
+        F: FnOnce(F64) -> Result<R, TrapCode>,
+        R: Into<RegisterEntry> + WasmTypeName,
+    {
+        test::<f64, R, _>(wasm_op, outcome, input, |input| exec_op(F64::from(input)))
+    }
+
+    test_f32::<i32, _>(
+        "trunc_f32_s",
+        Outcome::Eval,
+        1.0,
+        <F32 as TryTruncateInto<i32, TrapCode>>::try_truncate_into,
+    );
+    test_f32::<u32, _>(
+        "trunc_f32_u",
+        Outcome::Eval,
+        1.0,
+        <F32 as TryTruncateInto<u32, TrapCode>>::try_truncate_into,
+    );
+    test_f64::<i32, _>(
+        "trunc_f64_s",
+        Outcome::Eval,
+        1.0,
+        <F64 as TryTruncateInto<i32, TrapCode>>::try_truncate_into,
+    );
+    test_f64::<u32, _>(
+        "trunc_f64_u",
+        Outcome::Eval,
+        1.0,
+        <F64 as TryTruncateInto<u32, TrapCode>>::try_truncate_into,
+    );
+    test_f32::<i64, _>(
+        "trunc_f32_s",
+        Outcome::Eval,
+        1.0,
+        <F32 as TryTruncateInto<i64, TrapCode>>::try_truncate_into,
+    );
+    test_f32::<u64, _>(
+        "trunc_f32_u",
+        Outcome::Eval,
+        1.0,
+        <F32 as TryTruncateInto<u64, TrapCode>>::try_truncate_into,
+    );
+    test_f64::<i64, _>(
+        "trunc_f64_s",
+        Outcome::Eval,
+        1.0,
+        <F64 as TryTruncateInto<i64, TrapCode>>::try_truncate_into,
+    );
+    test_f64::<u64, _>(
+        "trunc_f64_u",
+        Outcome::Eval,
+        1.0,
+        <F64 as TryTruncateInto<u64, TrapCode>>::try_truncate_into,
+    );
+
+    test_f32::<i32, _>(
+        "trunc_f32_s",
+        Outcome::Trap,
+        f32::MAX,
+        <F32 as TryTruncateInto<i32, TrapCode>>::try_truncate_into,
+    );
+    test_f32::<u32, _>(
+        "trunc_f32_u",
+        Outcome::Trap,
+        f32::MAX,
+        <F32 as TryTruncateInto<u32, TrapCode>>::try_truncate_into,
+    );
+    test_f64::<i32, _>(
+        "trunc_f64_s",
+        Outcome::Trap,
+        f64::MAX,
+        <F64 as TryTruncateInto<i32, TrapCode>>::try_truncate_into,
+    );
+    test_f64::<u32, _>(
+        "trunc_f64_u",
+        Outcome::Trap,
+        f64::MAX,
+        <F64 as TryTruncateInto<u32, TrapCode>>::try_truncate_into,
+    );
+    test_f32::<i64, _>(
+        "trunc_f32_s",
+        Outcome::Trap,
+        f32::MAX,
+        <F32 as TryTruncateInto<i64, TrapCode>>::try_truncate_into,
+    );
+    test_f32::<u64, _>(
+        "trunc_f32_u",
+        Outcome::Trap,
+        f32::MAX,
+        <F32 as TryTruncateInto<u64, TrapCode>>::try_truncate_into,
+    );
+    test_f64::<i64, _>(
+        "trunc_f64_s",
+        Outcome::Trap,
+        f64::MAX,
+        <F64 as TryTruncateInto<i64, TrapCode>>::try_truncate_into,
+    );
+    test_f64::<u64, _>(
+        "trunc_f64_u",
+        Outcome::Trap,
+        f64::MAX,
+        <F64 as TryTruncateInto<u64, TrapCode>>::try_truncate_into,
+    );
 }
