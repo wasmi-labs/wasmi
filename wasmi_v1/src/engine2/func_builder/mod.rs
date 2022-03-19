@@ -2073,10 +2073,6 @@ impl<'parser> FunctionBuilder<'parser> {
     /// - `f32.demote_f64`
     /// - `f64.convert_{i32, u32, i64, u64}`
     /// - `f64.promote_f32`
-    /// - `i32.reinterpret_f32`
-    /// - `i64.reinterpret_f64`
-    /// - `f32.reinterpret_i32`
-    /// - `f64.reinterpret_i64`
     fn translate_conversion<F, E, T, R>(
         &mut self,
         make_op: F,
