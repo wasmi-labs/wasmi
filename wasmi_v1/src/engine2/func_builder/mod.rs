@@ -33,6 +33,7 @@ use super::{
     InstructionTypes,
 };
 use crate::{
+    engine2::bytecode::Global,
     module::{
         BlockType,
         FuncIdx,
@@ -678,33 +679,26 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `global.get` instruction.
     pub fn translate_global_get(&mut self, global_idx: GlobalIdx) -> Result<(), ModuleError> {
-        // self.translate_if_reachable(|builder| {
-        //     let global_type = builder.res.get_type_of_global(global_idx);
-        //     builder.value_stack.push(global_type.value_type());
-        //     let global_idx = global_idx.into_u32().into();
-        //     builder
-        //         .inst_builder
-        //         .push_inst(Instruction::GetGlobal(global_idx));
-        //     Ok(())
-        // })
-        todo!()
+        self.translate_if_reachable(|builder| {
+            let result = builder.providers.push_dynamic();
+            let global = Global::from(global_idx.into_u32());
+            builder
+                .inst_builder
+                .push_inst(Instruction::GlobalGet { result, global });
+            Ok(())
+        })
     }
 
     /// Translate a Wasm `global.set` instruction.
     pub fn translate_global_set(&mut self, global_idx: GlobalIdx) -> Result<(), ModuleError> {
-        // self.translate_if_reachable(|builder| {
-        //     let global_type = builder.res.get_type_of_global(global_idx);
-        //     debug_assert_eq!(global_type.mutability(), Mutability::Mutable);
-        //     let expected = global_type.value_type();
-        //     let actual = builder.value_stack.pop1();
-        //     debug_assert_eq!(actual, expected);
-        //     let global_idx = global_idx.into_u32().into();
-        //     builder
-        //         .inst_builder
-        //         .push_inst(Instruction::SetGlobal(global_idx));
-        //     Ok(())
-        // })
-        todo!()
+        self.translate_if_reachable(|builder| {
+            let global = Global::from(global_idx.into_u32());
+            let value = builder.providers.pop();
+            builder
+                .inst_builder
+                .push_inst(Instruction::GlobalSet { global, value });
+            Ok(())
+        })
     }
 
     /// Translate a Wasm `<ty>.load` instruction.

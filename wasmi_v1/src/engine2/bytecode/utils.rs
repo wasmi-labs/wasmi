@@ -79,6 +79,12 @@ pub struct ContiguousRegisterSlice {
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Global(u32);
 
+impl From<u32> for Global {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
+
 /// An offset for a linear memory operation.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Offset(u32);

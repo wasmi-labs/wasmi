@@ -154,6 +154,15 @@ impl OpaqueInstruction {
 
             Self::Copy { result, input } => self.compile_rp(&ctx, result, input, make_op2!(Copy)),
 
+            Self::GlobalGet { result, global } => {
+                let result = ctx.providers.compile_register(result);
+                ExecInstruction::GlobalGet { result, global }
+            }
+            Self::GlobalSet { global, value } => {
+                let value = ctx.providers.compile_provider(ctx.engine, value);
+                ExecInstruction::GlobalSet { global, value }
+            }
+
             Self::I32Load {
                 result,
                 ptr,
