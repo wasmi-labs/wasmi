@@ -102,6 +102,12 @@ macro_rules! load_op {
     }};
 }
 
+macro_rules! store_op {
+    ( $name:ident ) => {{
+        |ptr, offset, value| Instruction::$name { ptr, offset, value }
+    }};
+}
+
 /// TODO: remove again when done
 const DUMMY_INSTRUCTION: OpaqueInstruction = Instruction::Trap {
     trap_code: TrapCode::Unreachable,
@@ -877,32 +883,47 @@ impl<'parser> FunctionBuilder<'parser> {
     ///
     /// This is used as the translation backend of the following Wasm instructions:
     ///
-    /// - `i32.store`
-    /// - `i64.store`
-    /// - `f32.store`
-    /// - `f64.store`
-    /// - `i32.store_i8`
-    /// - `i32.store_i16`
-    /// - `i64.store_i8`
-    /// - `i64.store_i16`
+    /// - `{i32, i64, f32, f64}.store`
+    /// - `{i32, i64}.store_i8`
+    /// - `{i32, i64}.store_i16`
     /// - `i64.store_i32`
     fn translate_store(
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
-        stored_value: ValueType,
-        make_inst: fn(Offset) -> OpaqueInstruction,
+        make_inst: fn(Register, Offset, Provider) -> OpaqueInstruction,
     ) -> Result<(), ModuleError> {
-        // self.translate_if_reachable(|builder| {
-        //     debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
-        //     let (pointer, stored) = builder.value_stack.pop2();
-        //     debug_assert_eq!(pointer, ValueType::I32);
-        //     assert_eq!(stored_value, stored);
-        //     let offset = Offset::from(offset);
-        //     builder.inst_builder.push_inst(make_inst(offset));
-        //     Ok(())
-        // })
-        todo!()
+        self.translate_if_reachable(|builder| {
+            debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
+            let offset = Offset::from(offset);
+            let (ptr, value) = builder.providers.pop2();
+            match ptr {
+                Provider::Register(ptr) => {
+                    builder
+                        .inst_builder
+                        .push_inst(make_inst(ptr, offset, value));
+                }
+                Provider::Immediate(ptr) => {
+                    // Note: store the constant pointer value into a temporary
+                    //       `temp` register and use the register instead since
+                    //       otherwise we cannot construct the `wasmi` bytecode
+                    //       that expects the pointer value to be provided in
+                    //       a register.
+                    //       After the store instruction we immediate have to
+                    //       pop the temporarily used register again.
+                    let temp = builder.providers.push_dynamic();
+                    builder.inst_builder.push_inst(Instruction::Copy {
+                        result: temp,
+                        input: ptr.into(),
+                    });
+                    builder
+                        .inst_builder
+                        .push_inst(make_inst(temp, offset, value));
+                    builder.providers.pop();
+                }
+            };
+            Ok(())
+        })
     }
 
     /// Translate a Wasm `i32.store` instruction.
@@ -911,12 +932,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(
-            memory_idx,
-            offset,
-            ValueType::I32,
-            make_dummy_instruction, /* Instruction::I32Store */
-        )
+        self.translate_store(memory_idx, offset, store_op!(I32Store))
     }
 
     /// Translate a Wasm `i64.store` instruction.
@@ -925,12 +941,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(
-            memory_idx,
-            offset,
-            ValueType::I64,
-            make_dummy_instruction, /* Instruction::I64Store */
-        )
+        self.translate_store(memory_idx, offset, store_op!(I64Store))
     }
 
     /// Translate a Wasm `f32.store` instruction.
@@ -939,12 +950,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(
-            memory_idx,
-            offset,
-            ValueType::F32,
-            make_dummy_instruction, /* Instruction::F32Store */
-        )
+        self.translate_store(memory_idx, offset, store_op!(F32Store))
     }
 
     /// Translate a Wasm `f64.store` instruction.
@@ -953,12 +959,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(
-            memory_idx,
-            offset,
-            ValueType::F64,
-            make_dummy_instruction, /* Instruction::F64Store */
-        )
+        self.translate_store(memory_idx, offset, store_op!(F64Store))
     }
 
     /// Translate a Wasm `i32.store_i8` instruction.
@@ -967,12 +968,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(
-            memory_idx,
-            offset,
-            ValueType::I32,
-            make_dummy_instruction, /* Instruction::I32Store8 */
-        )
+        self.translate_store(memory_idx, offset, store_op!(I32Store8))
     }
 
     /// Translate a Wasm `i32.store_i16` instruction.
@@ -981,12 +977,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(
-            memory_idx,
-            offset,
-            ValueType::I32,
-            make_dummy_instruction, /* Instruction::I32Store16 */
-        )
+        self.translate_store(memory_idx, offset, store_op!(I32Store16))
     }
 
     /// Translate a Wasm `i64.store_i8` instruction.
@@ -995,12 +986,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(
-            memory_idx,
-            offset,
-            ValueType::I64,
-            make_dummy_instruction, /* Instruction::I64Store8 */
-        )
+        self.translate_store(memory_idx, offset, store_op!(I64Store8))
     }
 
     /// Translate a Wasm `i64.store_i16` instruction.
@@ -1009,12 +995,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(
-            memory_idx,
-            offset,
-            ValueType::I64,
-            make_dummy_instruction, /* Instruction::I64Store16 */
-        )
+        self.translate_store(memory_idx, offset, store_op!(I64Store16))
     }
 
     /// Translate a Wasm `i64.store_i32` instruction.
@@ -1023,12 +1004,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(
-            memory_idx,
-            offset,
-            ValueType::I64,
-            make_dummy_instruction, /* Instruction::I64Store32 */
-        )
+        self.translate_store(memory_idx, offset, store_op!(I64Store32))
     }
 
     /// Translate a Wasm `memory.size` instruction.

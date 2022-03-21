@@ -327,7 +327,7 @@ where
     /// Equivalent to the Wasm `i32.store` instruction.
     I32Store {
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
         /// The value to be stored into linear memory.
@@ -336,7 +336,7 @@ where
     /// Equivalent to the Wasm `i64.store` instruction.
     I64Store {
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
         /// The value to be stored in linear memory.
@@ -345,7 +345,7 @@ where
     /// Equivalent to the Wasm `f32.store` instruction.
     F32Store {
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
         /// The value to be stored in linear memory.
@@ -354,7 +354,7 @@ where
     /// Equivalent to the Wasm `f64.store` instruction.
     F64Store {
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
         /// The value to be stored in linear memory.
@@ -363,7 +363,7 @@ where
     /// Equivalent to the Wasm `i32.store8` instruction.
     I32Store8 {
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
         /// The value to be stored in linear memory.
@@ -372,7 +372,7 @@ where
     /// Equivalent to the Wasm `i32.store16` instruction.
     I32Store16 {
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
         /// The value to be stored in linear memory.
@@ -381,7 +381,7 @@ where
     /// Equivalent to the Wasm `i64.store8` instruction.
     I64Store8 {
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
         /// The value to be stored in linear memory.
@@ -390,7 +390,7 @@ where
     /// Equivalent to the Wasm `i64.store16` instruction.
     I64Store16 {
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
         /// The value to be stored in linear memory.
@@ -399,7 +399,7 @@ where
     /// Equivalent to the Wasm `i64.store32` instruction.
     I64Store32 {
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
         /// The value to be stored in linear memory.

@@ -24,7 +24,7 @@ macro_rules! make_op2 {
     }};
 }
 
-/// Creates a closure taking 3 parameters and constructing a `wasmi` load instruction.
+/// Creates a closure for constructing a `wasmi` load instruction.
 macro_rules! load_op {
     ( $name:ident ) => {{
         |result, ptr, offset| ExecInstruction::$name {
@@ -32,6 +32,13 @@ macro_rules! load_op {
             ptr,
             offset,
         }
+    }};
+}
+
+/// Creates a closure for constructing a `wasmi` store instruction.
+macro_rules! store_op {
+    ( $name:ident ) => {{
+        |ptr, offset, value| ExecInstruction::$name { ptr, offset, value }
     }};
 }
 
@@ -103,6 +110,22 @@ impl OpaqueInstruction {
         let result = ctx.providers.compile_register(result);
         let ptr = ctx.providers.compile_register(ptr);
         make_op(result, ptr, offset)
+    }
+
+    fn compile_store<F>(
+        self,
+        ctx: &CompileContext,
+        ptr: OpaqueRegister,
+        offset: Offset,
+        value: OpaqueProvider,
+        make_op: F,
+    ) -> ExecInstruction
+    where
+        F: FnOnce(ExecRegister, Offset, ExecProvider) -> ExecInstruction,
+    {
+        let ptr = ctx.providers.compile_register(ptr);
+        let value = ctx.providers.compile_provider(ctx.engine, value);
+        make_op(ptr, offset, value)
     }
 
     pub fn compile(
@@ -201,6 +224,34 @@ impl OpaqueInstruction {
                 ptr,
                 offset,
             } => self.compile_load(&ctx, result, ptr, offset, load_op!(I64Load32U)),
+
+            Self::I32Store { ptr, offset, value } => {
+                self.compile_store(&ctx, ptr, offset, value, store_op!(I32Store))
+            }
+            Self::I64Store { ptr, offset, value } => {
+                self.compile_store(&ctx, ptr, offset, value, store_op!(I64Store))
+            }
+            Self::F32Store { ptr, offset, value } => {
+                self.compile_store(&ctx, ptr, offset, value, store_op!(F32Store))
+            }
+            Self::F64Store { ptr, offset, value } => {
+                self.compile_store(&ctx, ptr, offset, value, store_op!(F64Store))
+            }
+            Self::I32Store8 { ptr, offset, value } => {
+                self.compile_store(&ctx, ptr, offset, value, store_op!(I32Store8))
+            }
+            Self::I32Store16 { ptr, offset, value } => {
+                self.compile_store(&ctx, ptr, offset, value, store_op!(I32Store16))
+            }
+            Self::I64Store8 { ptr, offset, value } => {
+                self.compile_store(&ctx, ptr, offset, value, store_op!(I64Store8))
+            }
+            Self::I64Store16 { ptr, offset, value } => {
+                self.compile_store(&ctx, ptr, offset, value, store_op!(I64Store16))
+            }
+            Self::I64Store32 { ptr, offset, value } => {
+                self.compile_store(&ctx, ptr, offset, value, store_op!(I64Store32))
+            }
 
             Self::I32Clz { result, input } => {
                 self.compile_rr(&ctx, result, input, make_op2!(I32Clz))
