@@ -2010,3 +2010,72 @@ fn drop() {
     let expected = [ExecInstruction::Return { results }];
     assert_func_bodies_for_module(&module, [expected]);
 }
+
+#[test]
+fn select_register() {
+    let wasm = wat2wasm(&format!(
+        r#"
+            (module
+                (memory 1)
+                (func (export "call") (param $condition i32) (param $if_true f64) (param $if_false f64) (result f64)
+                    local.get $if_true
+                    local.get $if_false
+                    local.get $condition
+                    select
+                )
+            )
+        "#
+    ));
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let condition = Register::from_inner(0);
+    let if_true = Register::from_inner(1).into();
+    let if_false = Register::from_inner(2).into();
+    let result = Register::from_inner(3);
+    let results = engine.alloc_provider_slice([result.into()]);
+    let expected = [
+        ExecInstruction::Select {
+            result,
+            condition,
+            if_true,
+            if_false,
+        },
+        ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+#[test]
+fn select_const() {
+    fn test(condition: bool) {
+        let condition_flag = condition as i32;
+        let wasm = wat2wasm(&format!(
+            r#"
+                (module
+                    (memory 1)
+                    (func (export "call") (param $if_true f64) (param $if_false f64) (result f64)
+                        local.get $if_true
+                        local.get $if_false
+                        i32.const {condition_flag}
+                        select
+                    )
+                )
+            "#
+        ));
+        let module = create_module(&wasm[..]);
+        let engine = module.engine();
+        let if_true = Register::from_inner(0).into();
+        let if_false = Register::from_inner(1).into();
+        let input = if condition { if_true } else { if_false };
+        let result = Register::from_inner(2);
+        let results = engine.alloc_provider_slice([result.into()]);
+        let expected = [
+            ExecInstruction::Copy { result, input },
+            ExecInstruction::Return { results },
+        ];
+        assert_func_bodies_for_module(&module, [expected]);
+    }
+
+    test(true);
+    test(false);
+}

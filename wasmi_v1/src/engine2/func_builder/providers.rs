@@ -139,6 +139,13 @@ impl Providers {
         (lhs, rhs)
     }
 
+    pub fn pop3(&mut self) -> (Provider, Provider, Provider) {
+        let v2 = self.pop();
+        let v1 = self.pop();
+        let v0 = self.pop();
+        (v0, v1, v2)
+    }
+
     pub fn pop_n(&mut self, depth: usize) -> Drain<Provider> {
         let max_index = self.len() as usize;
         debug_assert!(depth <= max_index);

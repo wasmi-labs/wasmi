@@ -153,6 +153,23 @@ impl OpaqueInstruction {
             }
 
             Self::Copy { result, input } => self.compile_rp(&ctx, result, input, make_op2!(Copy)),
+            Self::Select {
+                result,
+                condition,
+                if_true,
+                if_false,
+            } => {
+                let result = ctx.providers.compile_register(result);
+                let condition = ctx.providers.compile_register(condition);
+                let if_true = ctx.providers.compile_provider(ctx.engine, if_true);
+                let if_false = ctx.providers.compile_provider(ctx.engine, if_false);
+                ExecInstruction::Select {
+                    result,
+                    condition,
+                    if_true,
+                    if_false,
+                }
+            }
 
             Self::MemorySize { result } => {
                 let result = ctx.providers.compile_register(result);

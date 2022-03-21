@@ -623,15 +623,30 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translates a Wasm `select` instruction.
     pub fn translate_select(&mut self) -> Result<(), ModuleError> {
-        // self.translate_if_reachable(|builder| {
-        //     let (v0, v1, selector) = builder.value_stack.pop3();
-        //     debug_assert_eq!(selector, ValueType::I32);
-        //     debug_assert_eq!(v0, v1);
-        //     builder.value_stack.push(v0);
-        //     builder.inst_builder.push_inst(Instruction::Select);
-        //     Ok(())
-        // })
-        todo!()
+        self.translate_if_reachable(|builder| {
+            let (v0, v1, selector) = builder.providers.pop3();
+            let result = builder.providers.push_dynamic();
+            match selector {
+                Provider::Register(condition) => {
+                    builder.inst_builder.push_inst(Instruction::Select {
+                        result,
+                        condition,
+                        if_true: v0,
+                        if_false: v1,
+                    });
+                }
+                Provider::Immediate(condition) => {
+                    // Note: if the condition is a constant we can replace the
+                    //       `select` instruction with one of its arms.
+                    let condition = bool::from_stack_entry(RegisterEntry::from(condition));
+                    let input = if condition { v0 } else { v1 };
+                    builder
+                        .inst_builder
+                        .push_inst(Instruction::Copy { result, input });
+                }
+            }
+            Ok(())
+        })
     }
 
     /// Translate a Wasm `local.get` instruction.
