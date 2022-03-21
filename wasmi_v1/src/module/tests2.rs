@@ -1831,3 +1831,83 @@ fn global_get() {
     test::<f32>(0, 42.0);
     test::<f64>(0, 42.0);
 }
+
+#[test]
+fn global_set_register() {
+    use crate::engine2::Global as GlobalIndex;
+
+    fn test<T>(global_index: u32, init_value: T)
+    where
+        T: WasmTypeName + Display,
+    {
+        let wasm_type = <T as WasmTypeName>::NAME;
+        let wasm = wat2wasm(&format!(
+            r#"
+                (module
+                    (global (mut {wasm_type}) ({wasm_type}.const {init_value}))
+                    (func (export "call") (param {wasm_type})
+                        local.get 0
+                        global.set {global_index}
+                    )
+                )
+            "#
+        ));
+        let module = create_module(&wasm[..]);
+        let engine = module.engine();
+        let value = Register::from_inner(0);
+        let results = engine.alloc_provider_slice([]);
+        let expected = [
+            ExecInstruction::GlobalSet {
+                global: GlobalIndex::from(global_index),
+                value: value.into(),
+            },
+            ExecInstruction::Return { results },
+        ];
+        assert_func_bodies_for_module(&module, [expected]);
+    }
+
+    test::<i32>(0, 42);
+    test::<i64>(0, 42);
+    test::<f32>(0, 42.0);
+    test::<f64>(0, 42.0);
+}
+
+#[test]
+fn global_set_const() {
+    use crate::engine2::Global as GlobalIndex;
+
+    fn test<T>(global_index: u32, init_value: T, new_value: T)
+    where
+        T: WasmTypeName + Display + Into<RegisterEntry>,
+    {
+        let wasm_type = <T as WasmTypeName>::NAME;
+        let wasm = wat2wasm(&format!(
+            r#"
+                (module
+                    (global (mut {wasm_type}) ({wasm_type}.const {init_value}))
+                    (func (export "call")
+                        {wasm_type}.const {new_value}
+                        global.set {global_index}
+                    )
+                )
+            "#
+        ));
+        let module = create_module(&wasm[..]);
+        let engine = module.engine();
+        let value = Provider::from_immediate(engine.alloc_const(new_value));
+        let results = engine.alloc_provider_slice([]);
+        let expected = [
+            ExecInstruction::GlobalSet {
+                global: GlobalIndex::from(global_index),
+                value: value.into(),
+            },
+            ExecInstruction::Return { results },
+        ];
+        assert_func_bodies_for_module(&module, [expected]);
+    }
+
+    test::<i32>(0, 42, 77);
+    test::<i64>(0, 42, 77);
+    test::<f32>(0, 42.0, 77.0);
+    test::<f64>(0, 42.0, 77.0);
+}
