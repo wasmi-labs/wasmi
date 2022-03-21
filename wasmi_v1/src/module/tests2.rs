@@ -1985,3 +1985,28 @@ fn memory_grow_const() {
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
+
+#[test]
+fn drop() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (param i32) (param i64) (param f32) (param f64)
+                local.get 0
+                local.get 1
+                local.get 2
+                local.get 3
+                drop
+                drop
+                drop
+                drop
+            )
+        )
+        "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let results = engine.alloc_provider_slice([]);
+    let expected = [ExecInstruction::Return { results }];
+    assert_func_bodies_for_module(&module, [expected]);
+}

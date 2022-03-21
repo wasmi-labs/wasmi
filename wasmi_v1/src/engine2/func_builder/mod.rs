@@ -612,12 +612,13 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translates a Wasm `drop` instruction.
     pub fn translate_drop(&mut self) -> Result<(), ModuleError> {
-        // self.translate_if_reachable(|builder| {
-        //     builder.value_stack.pop1();
-        //     builder.inst_builder.push_inst(Instruction::Drop);
-        //     Ok(())
-        // })
-        todo!()
+        self.translate_if_reachable(|builder| {
+            // Note: there is no need to synthesize a `drop` instruction for
+            //       the register machine based `wasmi` bytecode. It is enough
+            //       to remove the emulated stack entry during compilation.
+            builder.providers.pop();
+            Ok(())
+        })
     }
 
     /// Translates a Wasm `select` instruction.
