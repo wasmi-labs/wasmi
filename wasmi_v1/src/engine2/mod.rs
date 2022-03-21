@@ -15,7 +15,7 @@ mod register;
 mod traits;
 
 #[cfg(test)]
-pub use self::bytecode::Register;
+pub use self::bytecode::{Offset, Register};
 
 pub(crate) use self::{
     bytecode::{ContiguousRegisterSlice, ExecInstruction, Instruction, InstructionTypes, Target},

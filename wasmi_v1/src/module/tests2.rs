@@ -3,7 +3,7 @@ use std::fmt::Display;
 use super::*;
 use crate::{
     engine::{DedupProviderSlice, Instr, Target},
-    engine2::{ExecInstruction, Provider, Register, RegisterEntry, WasmType},
+    engine2::{ExecInstruction, Offset, Provider, Register, RegisterEntry, WasmType},
     Engine,
 };
 use core::ops::{Shl, Shr};
@@ -86,6 +86,24 @@ macro_rules! make_op {
 macro_rules! make_op2 {
     ( $name:ident ) => {{
         |result, input| ExecInstruction::$name { result, input }
+    }};
+}
+
+/// Creates a closure for constructing a `wasmi` load instruction.
+macro_rules! load_op {
+    ( $name:ident ) => {{
+        |result, ptr, offset| ExecInstruction::$name {
+            result,
+            ptr,
+            offset,
+        }
+    }};
+}
+
+/// Creates a closure for constructing a `wasmi` store instruction.
+macro_rules! store_op {
+    ( $name:ident ) => {{
+        |ptr, offset, value| ExecInstruction::$name { ptr, offset, value }
     }};
 }
 
@@ -1578,4 +1596,106 @@ fn unary_const_fallible() {
         f64::MAX,
         <F64 as TryTruncateInto<u64, TrapCode>>::try_truncate_into,
     );
+}
+
+#[test]
+fn load_from_register() {
+    fn test<T, F>(load_op: &str, offset: u32, make_op: F)
+    where
+        T: Display + WasmTypeName + Into<RegisterEntry>,
+        F: FnOnce(Register, Register, Offset) -> ExecInstruction,
+    {
+        let load_type = <T as WasmTypeName>::NAME;
+        let wasm = wat2wasm(&format!(
+            r#"
+            (module
+                (memory 1)
+                (func (export "call") (param i32) (result {load_type})
+                    local.get 0
+                    {load_type}.{load_op} 0 offset={offset}
+                )
+            )
+        "#
+        ));
+        let module = create_module(&wasm[..]);
+        let engine = module.engine();
+        let ptr = Register::from_inner(0);
+        let result = Register::from_inner(1);
+        let results = engine.alloc_provider_slice([Provider::from_register(result)]);
+        let expected = [
+            make_op(result, ptr, offset.into()),
+            ExecInstruction::Return { results },
+        ];
+        assert_func_bodies_for_module(&module, [expected]);
+    }
+
+    test::<i32, _>("load", 42, load_op!(I32Load));
+    test::<i64, _>("load", 42, load_op!(I64Load));
+    test::<f32, _>("load", 42, load_op!(F32Load));
+    test::<f64, _>("load", 42, load_op!(F64Load));
+
+    test::<i32, _>("load8_s", 42, load_op!(I32Load8S));
+    test::<i32, _>("load16_s", 42, load_op!(I32Load16S));
+    test::<i64, _>("load8_s", 42, load_op!(I64Load8S));
+    test::<i64, _>("load16_s", 42, load_op!(I64Load16S));
+    test::<i64, _>("load32_s", 42, load_op!(I64Load32S));
+
+    test::<i32, _>("load8_u", 42, load_op!(I32Load8U));
+    test::<i32, _>("load16_u", 42, load_op!(I32Load16U));
+    test::<i64, _>("load8_u", 42, load_op!(I64Load8U));
+    test::<i64, _>("load16_u", 42, load_op!(I64Load16U));
+    test::<i64, _>("load32_u", 42, load_op!(I64Load32U));
+}
+
+#[test]
+fn load_from_const() {
+    fn test<T, F>(load_op: &str, offset: u32, make_op: F)
+    where
+        T: Display + WasmTypeName + Into<RegisterEntry>,
+        F: FnOnce(Register, Register, Offset) -> ExecInstruction,
+    {
+        let load_type = <T as WasmTypeName>::NAME;
+        let wasm = wat2wasm(&format!(
+            r#"
+            (module
+                (memory 1)
+                (func (export "call") (result {load_type})
+                    i32.const 100
+                    {load_type}.{load_op} 0 offset={offset}
+                )
+            )
+        "#
+        ));
+        let module = create_module(&wasm[..]);
+        let engine = module.engine();
+        let const_ptr = engine.alloc_const(100);
+        let result = Register::from_inner(0);
+        let results = engine.alloc_provider_slice([Provider::from_register(result)]);
+        let expected = [
+            ExecInstruction::Copy {
+                result,
+                input: const_ptr.into(),
+            },
+            make_op(result, result, offset.into()),
+            ExecInstruction::Return { results },
+        ];
+        assert_func_bodies_for_module(&module, [expected]);
+    }
+
+    test::<i32, _>("load", 42, load_op!(I32Load));
+    test::<i64, _>("load", 42, load_op!(I64Load));
+    test::<f32, _>("load", 42, load_op!(F32Load));
+    test::<f64, _>("load", 42, load_op!(F64Load));
+
+    test::<i32, _>("load8_s", 42, load_op!(I32Load8S));
+    test::<i32, _>("load16_s", 42, load_op!(I32Load16S));
+    test::<i64, _>("load8_s", 42, load_op!(I64Load8S));
+    test::<i64, _>("load16_s", 42, load_op!(I64Load16S));
+    test::<i64, _>("load32_s", 42, load_op!(I64Load32S));
+
+    test::<i32, _>("load8_u", 42, load_op!(I32Load8U));
+    test::<i32, _>("load16_u", 42, load_op!(I32Load16U));
+    test::<i64, _>("load8_u", 42, load_op!(I64Load8U));
+    test::<i64, _>("load16_u", 42, load_op!(I64Load16U));
+    test::<i64, _>("load32_u", 42, load_op!(I64Load32U));
 }
