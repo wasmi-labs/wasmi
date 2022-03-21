@@ -1797,10 +1797,9 @@ fn store_to_const() {
 fn global_get() {
     use crate::engine2::Global as GlobalIndex;
 
-    fn test<T, F>(global_index: u32, init_value: T, make_op: F)
+    fn test<T>(global_index: u32, init_value: T)
     where
         T: WasmTypeName + Display,
-        F: FnOnce(Register, GlobalIndex) -> ExecInstruction,
     {
         let wasm_type = <T as WasmTypeName>::NAME;
         let wasm = wat2wasm(&format!(
@@ -1818,16 +1817,17 @@ fn global_get() {
         let result = Register::from_inner(0);
         let results = engine.alloc_provider_slice([Provider::from_register(result)]);
         let expected = [
-            make_op(result, GlobalIndex::from(global_index)),
+            ExecInstruction::GlobalGet {
+                result,
+                global: GlobalIndex::from(global_index),
+            },
             ExecInstruction::Return { results },
         ];
         assert_func_bodies_for_module(&module, [expected]);
     }
 
-    let global_get = |result, global| ExecInstruction::GlobalGet { result, global };
-
-    test(0, 42_i32, global_get);
-    test(0, 42_i64, global_get);
-    test(0, 42.0_f32, global_get);
-    test(0, 42.0_f64, global_get);
+    test::<i32>(0, 42);
+    test::<i64>(0, 42);
+    test::<f32>(0, 42.0);
+    test::<f64>(0, 42.0);
 }
