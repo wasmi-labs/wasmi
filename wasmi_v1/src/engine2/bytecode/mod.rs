@@ -1386,62 +1386,6 @@ where
         /// Stores the input to the instruction evaluation.
         input: T::Register,
     },
-    /// Equivalent to the Wasm `i32.reinterpret_f32` instruction.
-    ///
-    /// # Note
-    ///
-    /// Since `wasmi` bytecode is generally untyped we do not
-    /// have the need for reinterpretation instructions. Therefore
-    /// we should be able to safely ignore these.
-    /// TODO: Remove these instructions from the bytecode.
-    I32ReinterpretF32 {
-        /// Stores the result of the instruction evaluation.
-        result: T::Register,
-        /// Stores the input to the instruction evaluation.
-        input: T::Register,
-    },
-    /// Equivalent to the Wasm `i64.reinterpret_f64` instruction.
-    ///
-    /// # Note
-    ///
-    /// Since `wasmi` bytecode is generally untyped we do not
-    /// have the need for reinterpretation instructions. Therefore
-    /// we should be able to safely ignore these.
-    /// TODO: Remove these instructions from the bytecode.
-    I64ReinterpretF64 {
-        /// Stores the result of the instruction evaluation.
-        result: T::Register,
-        /// Stores the input to the instruction evaluation.
-        input: T::Register,
-    },
-    /// Equivalent to the Wasm `f32.reinterpret_i32` instruction.
-    ///
-    /// # Note
-    ///
-    /// Since `wasmi` bytecode is generally untyped we do not
-    /// have the need for reinterpretation instructions. Therefore
-    /// we should be able to safely ignore these.
-    /// TODO: Remove these instructions from the bytecode.
-    F32ReinterpretI32 {
-        /// Stores the result of the instruction evaluation.
-        result: T::Register,
-        /// Stores the input to the instruction evaluation.
-        input: T::Register,
-    },
-    /// Equivalent to the Wasm `f64.reinterpret_i64` instruction.
-    ///
-    /// # Note
-    ///
-    /// Since `wasmi` bytecode is generally untyped we do not
-    /// have the need for reinterpretation instructions. Therefore
-    /// we should be able to safely ignore these.
-    /// TODO: Remove these instructions from the bytecode.
-    F64ReinterpretI64 {
-        /// Stores the result of the instruction evaluation.
-        result: T::Register,
-        /// Stores the input to the instruction evaluation.
-        input: T::Register,
-    },
     /// Equivalent to the Wasm `i32.extend8_s` instruction.
     ///
     /// # Note
