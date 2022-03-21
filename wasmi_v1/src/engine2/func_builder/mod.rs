@@ -92,6 +92,16 @@ macro_rules! unary_op {
     }};
 }
 
+macro_rules! load_op {
+    ( $name:ident ) => {{
+        |result, ptr, offset| Instruction::$name {
+            result,
+            ptr,
+            offset,
+        }
+    }};
+}
+
 /// TODO: remove again when done
 const DUMMY_INSTRUCTION: OpaqueInstruction = Instruction::Trap {
     trap_code: TrapCode::Unreachable,
@@ -697,37 +707,42 @@ impl<'parser> FunctionBuilder<'parser> {
     ///
     /// This is used as the translation backend of the following Wasm instructions:
     ///
-    /// - `i32.load`
-    /// - `i64.load`
-    /// - `f32.load`
-    /// - `f64.load`
-    /// - `i32.load_i8`
-    /// - `i32.load_u8`
-    /// - `i32.load_i16`
-    /// - `i32.load_u16`
-    /// - `i64.load_i8`
-    /// - `i64.load_u8`
-    /// - `i64.load_i16`
-    /// - `i64.load_u16`
+    /// - `{i32, i64, f32, f64}.load`
+    /// - `{i32, i64}.load_i8`
+    /// - `{i32, i64}.load_u8`
+    /// - `{i32, i64}.load_i16`
+    /// - `{i32, i64}.load_u16`
     /// - `i64.load_i32`
     /// - `i64.load_u32`
     fn translate_load(
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
-        loaded_type: ValueType,
-        make_inst: fn(Offset) -> OpaqueInstruction,
+        make_inst: fn(Register, Register, Offset) -> OpaqueInstruction,
     ) -> Result<(), ModuleError> {
-        // self.translate_if_reachable(|builder| {
-        //     debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
-        //     let pointer = builder.value_stack.pop1();
-        //     debug_assert_eq!(pointer, ValueType::I32);
-        //     builder.value_stack.push(loaded_type);
-        //     let offset = Offset::from(offset);
-        //     builder.inst_builder.push_inst(make_inst(offset));
-        //     Ok(())
-        // })
-        todo!()
+        self.translate_if_reachable(|builder| {
+            debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
+            let ptr = builder.providers.pop();
+            let result = builder.providers.push_dynamic();
+            let offset = Offset::from(offset);
+            match ptr {
+                Provider::Register(ptr) => {
+                    builder
+                        .inst_builder
+                        .push_inst(make_inst(result, ptr, offset));
+                }
+                Provider::Immediate(ptr) => {
+                    builder.inst_builder.push_inst(Instruction::Copy {
+                        result,
+                        input: ptr.into(),
+                    });
+                    builder
+                        .inst_builder
+                        .push_inst(make_inst(result, result, offset));
+                }
+            }
+            Ok(())
+        })
     }
 
     /// Translate a Wasm `i32.load` instruction.
@@ -736,12 +751,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_load(
-            memory_idx,
-            offset,
-            ValueType::I32,
-            make_dummy_instruction, /* Instruction::I32Load */
-        )
+        self.translate_load(memory_idx, offset, load_op!(I32Load))
     }
 
     /// Translate a Wasm `i64.load` instruction.
@@ -750,12 +760,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_load(
-            memory_idx,
-            offset,
-            ValueType::I64,
-            make_dummy_instruction, /* Instruction::I64Load */
-        )
+        self.translate_load(memory_idx, offset, load_op!(I64Load))
     }
 
     /// Translate a Wasm `f32.load` instruction.
@@ -764,12 +769,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_load(
-            memory_idx,
-            offset,
-            ValueType::F32,
-            make_dummy_instruction, /* Instruction::F32Load */
-        )
+        self.translate_load(memory_idx, offset, load_op!(F32Load))
     }
 
     /// Translate a Wasm `f64.load` instruction.
@@ -778,12 +778,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_load(
-            memory_idx,
-            offset,
-            ValueType::F64,
-            make_dummy_instruction, /* Instruction::F64Load */
-        )
+        self.translate_load(memory_idx, offset, load_op!(F64Load))
     }
 
     /// Translate a Wasm `i32.load_i8` instruction.
@@ -792,12 +787,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_load(
-            memory_idx,
-            offset,
-            ValueType::I32,
-            make_dummy_instruction, /* Instruction::I32Load8S */
-        )
+        self.translate_load(memory_idx, offset, load_op!(I32Load8S))
     }
 
     /// Translate a Wasm `i32.load_u8` instruction.
@@ -806,12 +796,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_load(
-            memory_idx,
-            offset,
-            ValueType::I32,
-            make_dummy_instruction, /* Instruction::I32Load8U */
-        )
+        self.translate_load(memory_idx, offset, load_op!(I32Load8U))
     }
 
     /// Translate a Wasm `i32.load_i16` instruction.
@@ -820,12 +805,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_load(
-            memory_idx,
-            offset,
-            ValueType::I32,
-            make_dummy_instruction, /* Instruction::I32Load16S */
-        )
+        self.translate_load(memory_idx, offset, load_op!(I32Load16S))
     }
 
     /// Translate a Wasm `i32.load_u16` instruction.
@@ -834,12 +814,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_load(
-            memory_idx,
-            offset,
-            ValueType::I32,
-            make_dummy_instruction, /* Instruction::I32Load16U */
-        )
+        self.translate_load(memory_idx, offset, load_op!(I32Load16U))
     }
 
     /// Translate a Wasm `i64.load_i8` instruction.
@@ -848,12 +823,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_load(
-            memory_idx,
-            offset,
-            ValueType::I64,
-            make_dummy_instruction, /* Instruction::I64Load8S */
-        )
+        self.translate_load(memory_idx, offset, load_op!(I64Load8S))
     }
 
     /// Translate a Wasm `i64.load_u8` instruction.
@@ -862,12 +832,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_load(
-            memory_idx,
-            offset,
-            ValueType::I64,
-            make_dummy_instruction, /* Instruction::I64Load8U */
-        )
+        self.translate_load(memory_idx, offset, load_op!(I64Load8U))
     }
 
     /// Translate a Wasm `i64.load_i16` instruction.
@@ -876,12 +841,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_load(
-            memory_idx,
-            offset,
-            ValueType::I64,
-            make_dummy_instruction, /* Instruction::I64Load16S */
-        )
+        self.translate_load(memory_idx, offset, load_op!(I64Load16S))
     }
 
     /// Translate a Wasm `i64.load_u16` instruction.
@@ -890,12 +850,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_load(
-            memory_idx,
-            offset,
-            ValueType::I64,
-            make_dummy_instruction, /* Instruction::I64Load16U */
-        )
+        self.translate_load(memory_idx, offset, load_op!(I64Load16U))
     }
 
     /// Translate a Wasm `i64.load_i32` instruction.
@@ -904,12 +859,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_load(
-            memory_idx,
-            offset,
-            ValueType::I64,
-            make_dummy_instruction, /* Instruction::I64Load32S */
-        )
+        self.translate_load(memory_idx, offset, load_op!(I64Load32S))
     }
 
     /// Translate a Wasm `i64.load_u32` instruction.
@@ -918,12 +868,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_load(
-            memory_idx,
-            offset,
-            ValueType::I64,
-            make_dummy_instruction, /* Instruction::I64Load32U */
-        )
+        self.translate_load(memory_idx, offset, load_op!(I64Load32U))
     }
 
     /// Translate a Wasm `<ty>.store` instruction.

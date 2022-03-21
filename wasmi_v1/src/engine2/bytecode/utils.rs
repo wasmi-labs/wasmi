@@ -82,3 +82,9 @@ pub struct Global(u32);
 /// An offset for a linear memory operation.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Offset(u32);
+
+impl From<u32> for Offset {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}

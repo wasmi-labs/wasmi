@@ -202,7 +202,9 @@ where
     I32Load {
         /// Stores the result of the instruction evaluation.
         result: T::Register,
-        ptr: T::Provider,
+        /// The base pointer to the linear memory region.
+        ptr: T::Register,
+        /// The offset added to the base pointer for the instruction.
         offset: Offset,
     },
     /// Equivalent to the Wasm `i64.load` instruction.
@@ -210,7 +212,7 @@ where
         /// Stores the result of the instruction evaluation.
         result: T::Register,
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
     },
@@ -219,7 +221,7 @@ where
         /// Stores the result of the instruction evaluation.
         result: T::Register,
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
     },
@@ -228,7 +230,7 @@ where
         /// Stores the result of the instruction evaluation.
         result: T::Register,
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
     },
@@ -237,7 +239,7 @@ where
         /// Stores the result of the instruction evaluation.
         result: T::Register,
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
     },
@@ -246,7 +248,7 @@ where
         /// Stores the result of the instruction evaluation.
         result: T::Register,
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
     },
@@ -255,7 +257,7 @@ where
         /// Stores the result of the instruction evaluation.
         result: T::Register,
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
     },
@@ -264,7 +266,7 @@ where
         /// Stores the result of the instruction evaluation.
         result: T::Register,
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
     },
@@ -273,7 +275,7 @@ where
         /// Stores the result of the instruction evaluation.
         result: T::Register,
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
     },
@@ -282,7 +284,7 @@ where
         /// Stores the result of the instruction evaluation.
         result: T::Register,
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
     },
@@ -291,7 +293,7 @@ where
         /// Stores the result of the instruction evaluation.
         result: T::Register,
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
     },
@@ -300,7 +302,7 @@ where
         /// Stores the result of the instruction evaluation.
         result: T::Register,
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
     },
@@ -309,7 +311,7 @@ where
         /// Stores the result of the instruction evaluation.
         result: T::Register,
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
     },
@@ -318,7 +320,7 @@ where
         /// Stores the result of the instruction evaluation.
         result: T::Register,
         /// The base pointer to the linear memory region.
-        ptr: T::Provider,
+        ptr: T::Register,
         /// The offset added to the base pointer for the instruction.
         offset: Offset,
     },

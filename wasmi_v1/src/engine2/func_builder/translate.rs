@@ -7,7 +7,7 @@ use super::{
     ProviderSliceArena,
     Register as OpaqueRegister,
 };
-use crate::Engine;
+use crate::{engine2::bytecode::Offset, Engine};
 use wasmi_core::{TrapCode, Value};
 
 /// Creates a closure taking 3 parameters and constructing a `wasmi` instruction.
@@ -21,6 +21,17 @@ macro_rules! make_op {
 macro_rules! make_op2 {
     ( $name:ident ) => {{
         |result, input| ExecInstruction::$name { result, input }
+    }};
+}
+
+/// Creates a closure taking 3 parameters and constructing a `wasmi` load instruction.
+macro_rules! load_op {
+    ( $name:ident ) => {{
+        |result, ptr, offset| ExecInstruction::$name {
+            result,
+            ptr,
+            offset,
+        }
     }};
 }
 
@@ -78,6 +89,22 @@ impl OpaqueInstruction {
         make_op(result, input)
     }
 
+    fn compile_load<F>(
+        self,
+        ctx: &CompileContext,
+        result: OpaqueRegister,
+        ptr: OpaqueRegister,
+        offset: Offset,
+        make_op: F,
+    ) -> ExecInstruction
+    where
+        F: FnOnce(ExecRegister, ExecRegister, Offset) -> ExecInstruction,
+    {
+        let result = ctx.providers.compile_register(result);
+        let ptr = ctx.providers.compile_register(ptr);
+        make_op(result, ptr, offset)
+    }
+
     pub fn compile(
         self,
         engine: &Engine,
@@ -103,6 +130,77 @@ impl OpaqueInstruction {
             }
 
             Self::Copy { result, input } => self.compile_rp(&ctx, result, input, make_op2!(Copy)),
+
+            Self::I32Load {
+                result,
+                ptr,
+                offset,
+            } => self.compile_load(&ctx, result, ptr, offset, load_op!(I32Load)),
+            Self::I64Load {
+                result,
+                ptr,
+                offset,
+            } => self.compile_load(&ctx, result, ptr, offset, load_op!(I64Load)),
+            Self::F32Load {
+                result,
+                ptr,
+                offset,
+            } => self.compile_load(&ctx, result, ptr, offset, load_op!(F32Load)),
+            Self::F64Load {
+                result,
+                ptr,
+                offset,
+            } => self.compile_load(&ctx, result, ptr, offset, load_op!(F64Load)),
+            Self::I32Load8S {
+                result,
+                ptr,
+                offset,
+            } => self.compile_load(&ctx, result, ptr, offset, load_op!(I32Load8S)),
+            Self::I32Load8U {
+                result,
+                ptr,
+                offset,
+            } => self.compile_load(&ctx, result, ptr, offset, load_op!(I32Load8U)),
+            Self::I32Load16S {
+                result,
+                ptr,
+                offset,
+            } => self.compile_load(&ctx, result, ptr, offset, load_op!(I32Load16S)),
+            Self::I32Load16U {
+                result,
+                ptr,
+                offset,
+            } => self.compile_load(&ctx, result, ptr, offset, load_op!(I32Load16U)),
+            Self::I64Load8S {
+                result,
+                ptr,
+                offset,
+            } => self.compile_load(&ctx, result, ptr, offset, load_op!(I64Load8S)),
+            Self::I64Load8U {
+                result,
+                ptr,
+                offset,
+            } => self.compile_load(&ctx, result, ptr, offset, load_op!(I64Load8U)),
+            Self::I64Load16S {
+                result,
+                ptr,
+                offset,
+            } => self.compile_load(&ctx, result, ptr, offset, load_op!(I64Load16S)),
+            Self::I64Load16U {
+                result,
+                ptr,
+                offset,
+            } => self.compile_load(&ctx, result, ptr, offset, load_op!(I64Load16U)),
+            Self::I64Load32S {
+                result,
+                ptr,
+                offset,
+            } => self.compile_load(&ctx, result, ptr, offset, load_op!(I64Load32S)),
+            Self::I64Load32U {
+                result,
+                ptr,
+                offset,
+            } => self.compile_load(&ctx, result, ptr, offset, load_op!(I64Load32U)),
 
             Self::I32Clz { result, input } => {
                 self.compile_rr(&ctx, result, input, make_op2!(I32Clz))
