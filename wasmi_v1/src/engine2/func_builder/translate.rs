@@ -154,6 +154,16 @@ impl OpaqueInstruction {
 
             Self::Copy { result, input } => self.compile_rp(&ctx, result, input, make_op2!(Copy)),
 
+            Self::MemorySize { result } => {
+                let result = ctx.providers.compile_register(result);
+                ExecInstruction::MemorySize { result }
+            }
+            Self::MemoryGrow { result, amount } => {
+                let result = ctx.providers.compile_register(result);
+                let amount = ctx.providers.compile_provider(ctx.engine, amount);
+                ExecInstruction::MemoryGrow { result, amount }
+            }
+
             Self::GlobalGet { result, global } => {
                 let result = ctx.providers.compile_register(result);
                 ExecInstruction::GlobalGet { result, global }

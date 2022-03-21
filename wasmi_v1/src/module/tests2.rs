@@ -1911,3 +1911,77 @@ fn global_set_const() {
     test::<f32>(0, 42.0, 77.0);
     test::<f64>(0, 42.0, 77.0);
 }
+
+#[test]
+fn memory_size() {
+    let wasm = wat2wasm(
+        r#"
+            (module
+                (memory 1)
+                (func (export "call") (result i32)
+                    memory.size
+                )
+            )
+        "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let result = Register::from_inner(0);
+    let results = engine.alloc_provider_slice([result.into()]);
+    let expected = [
+        ExecInstruction::MemorySize { result },
+        ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+#[test]
+fn memory_grow_register() {
+    let wasm = wat2wasm(
+        r#"
+            (module
+                (memory 1)
+                (func (export "call") (param i32) (result i32)
+                    local.get 0
+                    memory.grow
+                )
+            )
+        "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let amount = Register::from_inner(0).into();
+    let result = Register::from_inner(1);
+    let results = engine.alloc_provider_slice([result.into()]);
+    let expected = [
+        ExecInstruction::MemoryGrow { result, amount },
+        ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+#[test]
+fn memory_grow_const() {
+    let amount = 1;
+    let wasm = wat2wasm(&format!(
+        r#"
+            (module
+                (memory 1)
+                (func (export "call") (result i32)
+                    i32.const {amount}
+                    memory.grow
+                )
+            )
+        "#
+    ));
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let amount = engine.alloc_const(amount).into();
+    let result = Register::from_inner(0);
+    let results = engine.alloc_provider_slice([result.into()]);
+    let expected = [
+        ExecInstruction::MemoryGrow { result, amount },
+        ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}

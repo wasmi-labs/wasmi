@@ -1003,24 +1003,27 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `memory.size` instruction.
     pub fn translate_memory_size(&mut self, memory_idx: MemoryIdx) -> Result<(), ModuleError> {
-        // self.translate_if_reachable(|builder| {
-        //     debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
-        //     builder.value_stack.push(ValueType::I32);
-        //     builder.inst_builder.push_inst(Instruction::CurrentMemory);
-        //     Ok(())
-        // })
-        todo!()
+        debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
+        self.translate_if_reachable(|builder| {
+            let result = builder.providers.push_dynamic();
+            builder
+                .inst_builder
+                .push_inst(Instruction::MemorySize { result });
+            Ok(())
+        })
     }
 
     /// Translate a Wasm `memory.grow` instruction.
     pub fn translate_memory_grow(&mut self, memory_idx: MemoryIdx) -> Result<(), ModuleError> {
-        // self.translate_if_reachable(|builder| {
-        //     debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
-        //     debug_assert_eq!(builder.value_stack.top(), ValueType::I32);
-        //     builder.inst_builder.push_inst(Instruction::GrowMemory);
-        //     Ok(())
-        // })
-        todo!()
+        debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
+        self.translate_if_reachable(|builder| {
+            let amount = builder.providers.pop();
+            let result = builder.providers.push_dynamic();
+            builder
+                .inst_builder
+                .push_inst(Instruction::MemoryGrow { result, amount });
+            Ok(())
+        })
     }
 
     /// Translate a Wasm `<ty>.const` instruction.

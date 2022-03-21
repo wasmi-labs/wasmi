@@ -412,6 +412,8 @@ where
     },
     /// Equivalent to the Wasm `memory.grow` instruction.
     MemoryGrow {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
         /// The amount of additional linear memory pages.
         amount: T::Provider,
     },
