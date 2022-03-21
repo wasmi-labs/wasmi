@@ -1699,3 +1699,96 @@ fn load_from_const() {
     test::<i64, _>("load16_u", 42, load_op!(I64Load16U));
     test::<i64, _>("load32_u", 42, load_op!(I64Load32U));
 }
+
+#[test]
+fn store_to_register() {
+    fn test<T, F>(store_op: &str, offset: u32, make_op: F)
+    where
+        T: Display + WasmTypeName + Into<RegisterEntry>,
+        F: FnOnce(Register, Offset, Provider) -> ExecInstruction,
+    {
+        let store_type = <T as WasmTypeName>::NAME;
+        let wasm = wat2wasm(&format!(
+            r#"
+            (module
+                (memory 1)
+                (func (export "call") (param i32) (param {store_type})
+                    local.get 0
+                    local.get 1
+                    {store_type}.{store_op} 0 offset={offset}
+                )
+            )
+        "#
+        ));
+        let module = create_module(&wasm[..]);
+        let engine = module.engine();
+        let ptr = Register::from_inner(0);
+        let value = Register::from_inner(1);
+        let results = engine.alloc_provider_slice([]);
+        let expected = [
+            make_op(ptr, offset.into(), value.into()),
+            ExecInstruction::Return { results },
+        ];
+        assert_func_bodies_for_module(&module, [expected]);
+    }
+
+    test::<i32, _>("store", 42, store_op!(I32Store));
+    test::<i64, _>("store", 42, store_op!(I64Store));
+    test::<f32, _>("store", 42, store_op!(F32Store));
+    test::<f64, _>("store", 42, store_op!(F64Store));
+
+    test::<i32, _>("store8", 42, store_op!(I32Store8));
+    test::<i32, _>("store16", 42, store_op!(I32Store16));
+    test::<i64, _>("store8", 42, store_op!(I64Store8));
+    test::<i64, _>("store16", 42, store_op!(I64Store16));
+    test::<i64, _>("store32", 42, store_op!(I64Store32));
+}
+
+#[test]
+fn store_to_const() {
+    fn test<T, F>(store_op: &str, offset: u32, make_op: F)
+    where
+        T: Display + WasmTypeName + Into<RegisterEntry>,
+        F: FnOnce(Register, Offset, Provider) -> ExecInstruction,
+    {
+        let store_type = <T as WasmTypeName>::NAME;
+        let wasm = wat2wasm(&format!(
+            r#"
+            (module
+                (memory 1)
+                (func (export "call") (param {store_type})
+                    i32.const 100 ;; ptr
+                    local.get 0   ;; stored value
+                    {store_type}.{store_op} 0 offset={offset}
+                )
+            )
+        "#
+        ));
+        let module = create_module(&wasm[..]);
+        let engine = module.engine();
+        let const_ptr = engine.alloc_const(100);
+        let value = Register::from_inner(0);
+        let temp = Register::from_inner(1);
+        let results = engine.alloc_provider_slice([]);
+        let expected = [
+            ExecInstruction::Copy {
+                result: temp,
+                input: const_ptr.into(),
+            },
+            make_op(temp, offset.into(), value.into()),
+            ExecInstruction::Return { results },
+        ];
+        assert_func_bodies_for_module(&module, [expected]);
+    }
+
+    test::<i32, _>("store", 42, store_op!(I32Store));
+    test::<i64, _>("store", 42, store_op!(I64Store));
+    test::<f32, _>("store", 42, store_op!(F32Store));
+    test::<f64, _>("store", 42, store_op!(F64Store));
+
+    test::<i32, _>("store8", 42, store_op!(I32Store8));
+    test::<i32, _>("store16", 42, store_op!(I32Store16));
+    test::<i64, _>("store8", 42, store_op!(I64Store8));
+    test::<i64, _>("store16", 42, store_op!(I64Store16));
+    test::<i64, _>("store32", 42, store_op!(I64Store32));
+}
