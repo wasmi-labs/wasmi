@@ -3,6 +3,7 @@
 mod control_frame;
 mod control_stack;
 mod inst_builder;
+mod inst_result;
 mod locals_registry;
 mod providers;
 mod translate;
@@ -659,20 +660,46 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `local.set` instruction.
     pub fn translate_local_set(&mut self, local_idx: u32) -> Result<(), ModuleError> {
-        // self.translate_if_reachable(|builder| {
-        //     let actual = builder.value_stack.pop1();
-        //     let local_depth = builder.relative_local_depth(local_idx);
-        //     builder
-        //         .inst_builder
-        //         .push_inst(Instruction::local_set(local_depth));
-        //     let expected = builder
-        //         .locals
-        //         .resolve_local(local_idx)
-        //         .unwrap_or_else(|| panic!("failed to resolve local {}", local_idx));
-        //     debug_assert_eq!(actual, expected);
-        //     Ok(())
-        // })
-        todo!()
+        self.translate_if_reachable(|builder| {
+            let input = builder.providers.pop();
+            let result = Register::Local(local_idx as usize);
+            let copy_preserve =
+                if let Some(preserved) = builder.providers.preserve_locals(local_idx) {
+                    // Note: insert a `copy` instruction to preserve previous
+                    //       values of all `local.get` calls to the same index.
+                    let replace = Register::Local(local_idx as usize);
+                    Some(Instruction::Copy {
+                        result: preserved,
+                        input: replace.into(),
+                    })
+                } else {
+                    None
+                };
+            let last_inst = builder.inst_builder.peek_mut();
+            if let Some(last_inst) = last_inst {
+                if let Some(last_result) = last_inst.result_mut() {
+                    if !last_result.is_local() {
+                        // Note: - the last instruction emits a single result
+                        //         value that we can simply alter.
+                        //       - we prevent from re-overriding via the
+                        //         `is_local` check above.
+                        *last_result = result;
+                        if let Some(copy_preserve) = copy_preserve {
+                            builder.inst_builder.push_inst(copy_preserve);
+                        }
+                        return Ok(());
+                    }
+                }
+            }
+            if let Some(copy_preserve) = copy_preserve {
+                builder.inst_builder.push_inst(copy_preserve);
+            }
+            // Note: we simply emit a `copy` instruction as a fall back.
+            builder
+                .inst_builder
+                .push_inst(Instruction::Copy { result, input });
+            Ok(())
+        })
     }
 
     /// Translate a Wasm `local.tee` instruction.

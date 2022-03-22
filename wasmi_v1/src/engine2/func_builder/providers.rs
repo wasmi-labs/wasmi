@@ -85,6 +85,30 @@ impl Providers {
         ExecRegister::from_inner(bounded)
     }
 
+    /// Preserves `local.get` values on the provider stack if any.
+    ///
+    /// Returns `Some` preserved register if any provider had to be preserved.
+    pub fn preserve_locals(&mut self, preserve_index: u32) -> Option<Register> {
+        let preserve_index = preserve_index as usize;
+        let mut preserved: Option<Register> = None;
+        for provider in &mut self.providers {
+            if let Provider::Register(Register::Local(local_index)) = provider {
+                if *local_index == preserve_index {
+                    let preserved_register = match preserved {
+                        Some(register) => register,
+                        None => {
+                            let new_preserved = self.stacks.bump_preserved();
+                            preserved = Some(new_preserved);
+                            new_preserved
+                        }
+                    };
+                    *provider = Provider::Register(preserved_register);
+                }
+            }
+        }
+        preserved
+    }
+
     /// Registers the `amount` of locals with their shared [`ValueType`].
     ///
     /// # Panics

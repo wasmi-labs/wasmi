@@ -2079,3 +2079,253 @@ fn select_const() {
     test(true);
     test(false);
 }
+
+#[test]
+fn local_set_copy() {
+    let wasm = wat2wasm(
+        r#"
+            (module
+                (func (export "call") (param i32) (param i32) (result i32)
+                    local.get 0
+                    local.set 1
+                    local.get 1
+                )
+            )
+        "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let local_0 = Register::from_inner(0);
+    let local_1 = Register::from_inner(1);
+    let results = engine.alloc_provider_slice([local_1.into()]);
+    let expected = [
+        ExecInstruction::Copy {
+            result: local_1,
+            input: local_0.into(),
+        },
+        ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+#[test]
+fn local_set_override() {
+    let wasm = wat2wasm(
+        r#"
+            (module
+                (func (export "call") (param i32) (param i32) (result i32)
+                    local.get 0
+                    local.get 1
+                    i32.add
+                    local.set 0
+                    local.get 0
+                )
+            )
+        "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let local_0 = Register::from_inner(0);
+    let local_1 = Register::from_inner(1);
+    let results = engine.alloc_provider_slice([local_0.into()]);
+    let expected = [
+        ExecInstruction::I32Add {
+            result: local_0,
+            lhs: local_0.into(),
+            rhs: local_1.into(),
+        },
+        ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+#[test]
+fn local_set_override_and_copy() {
+    let wasm = wat2wasm(
+        r#"
+            (module
+                (func (export "call") (param i32) (param i32) (result i32)
+                    local.get 0
+                    local.get 1
+                    i32.add
+                    local.set 0
+                    local.get 0
+                    local.set 1 ;; this must not override `i32.add` result again
+                    local.get 1
+                )
+            )
+        "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let local_0 = Register::from_inner(0);
+    let local_1 = Register::from_inner(1);
+    let results = engine.alloc_provider_slice([local_1.into()]);
+    let expected = [
+        ExecInstruction::I32Add {
+            result: local_0,
+            lhs: local_0.into(),
+            rhs: local_1.into(),
+        },
+        ExecInstruction::Copy {
+            result: local_1,
+            input: local_0.into(),
+        },
+        ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+#[test]
+fn local_set_preserve_single() {
+    let wasm = wat2wasm(
+        r#"
+            (module
+                (func (export "call") (param i32) (param i32) (result i32)
+                    local.get 0 ;; this is being returned later before `local.set 0`
+                    local.get 0
+                    local.get 1
+                    i32.add
+                    local.set 0
+                )
+            )
+        "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let local_0 = Register::from_inner(0);
+    let local_1 = Register::from_inner(1);
+    // Note: we skip Register(2) since we do not currently
+    //       perform proper dead register elimination.
+    let preserve = Register::from_inner(3);
+    let results = engine.alloc_provider_slice([preserve.into()]);
+    let expected = [
+        ExecInstruction::I32Add {
+            result: local_0,
+            lhs: local_0.into(),
+            rhs: local_1.into(),
+        },
+        ExecInstruction::Copy {
+            result: preserve,
+            input: local_0.into(),
+        },
+        ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+#[test]
+fn local_set_preserve_multiple() {
+    // This test pushes both local variables to the Wasm stack
+    // then sets their values both to zero and afterwards uses their
+    // previous values to compute their sum which is finally returned
+    // to the caller.
+    let wasm = wat2wasm(
+        r#"
+            (module
+                (func (export "call") (param i32) (param i32) (result i32)
+                    ;; sets both parameters to 0 and returns the sum
+                    ;; of their previous values afterwards
+                    local.get 0 ;; this is being used after `local.set 0`
+                    local.get 1 ;; this is being used after `local.set 1`
+                    i32.const 0
+                    i32.const 0
+                    local.set 0
+                    local.set 1
+                    i32.add
+                )
+            )
+        "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let local_0 = Register::from_inner(0);
+    let local_1 = Register::from_inner(1);
+    let zero = Provider::from(engine.alloc_const(0_i32));
+    let result = Register::from_inner(2);
+    let preserve_0 = Register::from_inner(3);
+    let preserve_1 = Register::from_inner(4);
+    let results = engine.alloc_provider_slice([result.into()]);
+    let expected = [
+        ExecInstruction::Copy {
+            result: preserve_0,
+            input: local_0.into(),
+        },
+        ExecInstruction::Copy {
+            result: local_0,
+            input: zero,
+        },
+        ExecInstruction::Copy {
+            result: preserve_1,
+            input: local_1.into(),
+        },
+        ExecInstruction::Copy {
+            result: local_1,
+            input: zero,
+        },
+        ExecInstruction::I32Add {
+            result,
+            lhs: preserve_0.into(),
+            rhs: preserve_1.into(),
+        },
+        ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+#[test]
+fn local_set_preserve_multi_phase() {
+    // The `.wasm` for this test pushes 2 `local.get 0` to the stack
+    // but modifies the 2nd `local.get 0` to be equal to `local.get 1`
+    // so that the `i32.add` afterwards effectively computes the sum
+    // of both local variables.
+    let wasm = wat2wasm(
+        r#"
+            (module
+                (func (export "call") (param i32) (param i32) (result i32)
+                    local.get 0 ;; this is being used after the 2nd `local.set 0`
+                    local.get 1
+                    local.set 0
+                    local.get 0 ;; this is being used after the 1st `local.set 0`
+                    i32.const 0
+                    local.set 0
+                    i32.add
+                )
+            )
+        "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let local_0 = Register::from_inner(0);
+    let local_1 = Register::from_inner(1);
+    let zero = Provider::from(engine.alloc_const(0_i32));
+    let result = Register::from_inner(2);
+    let preserve_0 = Register::from_inner(3);
+    let preserve_1 = Register::from_inner(4);
+    let results = engine.alloc_provider_slice([result.into()]);
+    let expected = [
+        ExecInstruction::Copy {
+            result: preserve_0,
+            input: local_0.into(),
+        },
+        ExecInstruction::Copy {
+            result: local_0,
+            input: local_1.into(),
+        },
+        ExecInstruction::Copy {
+            result: preserve_1,
+            input: local_0.into(),
+        },
+        ExecInstruction::Copy {
+            result: local_0,
+            input: zero,
+        },
+        ExecInstruction::I32Add {
+            result,
+            lhs: preserve_0.into(),
+            rhs: preserve_1.into(),
+        },
+        ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
