@@ -240,6 +240,16 @@ impl InstructionsBuilder {
         }
     }
 
+    /// Peeks the last instruction pushed to the instruction builder if any.
+    pub fn peek(&self) -> Option<&OpaqueInstruction> {
+        self.insts.last()
+    }
+
+    /// Peeks the last instruction pushed to the instruction builder if any.
+    pub fn peek_mut(&mut self) -> Option<&mut OpaqueInstruction> {
+        self.insts.last_mut()
+    }
+
     /// Finishes construction of the function body instructions.
     ///
     /// # Note
