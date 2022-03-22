@@ -2182,7 +2182,7 @@ fn local_set_preserve_single() {
         r#"
             (module
                 (func (export "call") (param i32) (param i32) (result i32)
-                    local.get 0 ;; this is being returned later before `local.set 0`
+                    local.get 0 ;; preserved
                     local.get 0
                     local.get 1
                     i32.add
@@ -2197,6 +2197,9 @@ fn local_set_preserve_single() {
     let local_1 = Register::from_inner(1);
     // Note: we skip Register(2) since we do not currently
     //       perform proper dead register elimination.
+    //       Register(2) is temporarily allocated during
+    //       compilation for `i32.add` before changing its
+    //       result register via `local.set 0`.
     let preserve = Register::from_inner(3);
     let results = engine.alloc_provider_slice([preserve.into()]);
     let expected = [
@@ -2226,8 +2229,8 @@ fn local_set_preserve_multiple() {
                 (func (export "call") (param i32) (param i32) (result i32)
                     ;; sets both parameters to 0 and returns the sum
                     ;; of their previous values afterwards
-                    local.get 0 ;; this is being used after `local.set 0`
-                    local.get 1 ;; this is being used after `local.set 1`
+                    local.get 0 ;; preserved
+                    local.get 1 ;; preserved
                     i32.const 0
                     i32.const 0
                     local.set 0
@@ -2283,10 +2286,10 @@ fn local_set_preserve_multi_phase() {
         r#"
             (module
                 (func (export "call") (param i32) (param i32) (result i32)
-                    local.get 0 ;; this is being used after the 2nd `local.set 0`
+                    local.get 0 ;; preserved
                     local.get 1
                     local.set 0
-                    local.get 0 ;; this is being used after the 1st `local.set 0`
+                    local.get 0 ;; preserved
                     i32.const 0
                     local.set 0
                     i32.add
