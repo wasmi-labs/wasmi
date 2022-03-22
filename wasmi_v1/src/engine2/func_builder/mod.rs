@@ -704,20 +704,11 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `local.tee` instruction.
     pub fn translate_local_tee(&mut self, local_idx: u32) -> Result<(), ModuleError> {
-        // self.translate_if_reachable(|builder| {
-        //     let local_depth = builder.relative_local_depth(local_idx);
-        //     builder
-        //         .inst_builder
-        //         .push_inst(Instruction::local_tee(local_depth));
-        //     let expected = builder
-        //         .locals
-        //         .resolve_local(local_idx)
-        //         .unwrap_or_else(|| panic!("failed to resolve local {}", local_idx));
-        //     let actual = builder.value_stack.top();
-        //     debug_assert_eq!(actual, expected);
-        //     Ok(())
-        // })
-        todo!()
+        self.translate_if_reachable(|builder| {
+            builder.translate_local_set(local_idx)?;
+            builder.providers.push_local(local_idx);
+            Ok(())
+        })
     }
 
     /// Translate a Wasm `global.get` instruction.
