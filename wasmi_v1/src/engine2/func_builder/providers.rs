@@ -29,9 +29,16 @@ impl Stacks {
         self.max_dynamic
     }
 
-    fn bump_dynamic(&mut self) -> Register {
+    /// Bumps the dynamic register space by the amount of new registers.
+    ///
+    /// Returns the first register in the continuous slice of registers.
+    ///
+    /// # Note
+    ///
+    /// All registers allocated this way are contiguous in their indices.
+    fn bump_dynamic(&mut self, amount: usize) -> Register {
         let register = Register::Dynamic(self.len_dynamic);
-        self.len_dynamic += 1;
+        self.len_dynamic += amount;
         self.max_dynamic = max(self.max_dynamic, self.len_dynamic);
         register
     }
@@ -126,9 +133,21 @@ impl Providers {
     }
 
     pub fn push_dynamic(&mut self) -> Register {
-        let register = self.stacks.bump_dynamic();
+        let register = self.stacks.bump_dynamic(1);
         self.providers.push(register.into());
         register
+    }
+
+    pub fn push_dynamic_many(&mut self, amount: usize) -> ContiguousRegisterSlice {
+        let len = u16::try_from(amount).unwrap_or_else(|error| {
+            panic!("tried to push too many dynamic registers ({amount}): {error}")
+        });
+        let first = self.stacks.bump_dynamic(amount);
+        let slice = ContiguousRegisterSlice::new(first, len);
+        for register in slice {
+            self.providers.push(register.into());
+        }
+        slice
     }
 
     pub fn push_preserved(&mut self) -> Register {
@@ -149,10 +168,7 @@ impl Providers {
     ///
     /// If the stack is empty.
     pub fn pop(&mut self) -> Provider {
-        let popped = self
-            .providers
-            .pop()
-            .unwrap_or_else(|| panic!("unexpected missing provider"));
+        let popped = self.providers.pop().expect("unexpected missing provider");
         self.stacks.pop(&popped);
         popped
     }
@@ -218,7 +234,7 @@ impl Providers {
 }
 
 /// A register provider of any of the existing register space.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Register {
     /// The provided value lives in the local register space.
     ///
@@ -254,6 +270,102 @@ pub enum Register {
     /// of function parameters, function locals and dynamically required
     /// function registers.
     Preserved(usize),
+}
+
+impl Register {
+    /// Returns a new [`Register`] with its index offset by the given amount.
+    pub fn offset(self, amount: usize) -> Self {
+        match self {
+            Self::Local(index) => Self::Local(index + amount),
+            Self::Dynamic(index) => Self::Dynamic(index + amount),
+            Self::Preserved(index) => Self::Preserved(index + amount),
+        }
+    }
+}
+
+/// Used to more efficiently represent [`RegisterSlice`].
+///
+/// # Note
+///
+/// Can only be used if all registers in the slice are
+/// contiguous, e.g. `[r4, r5, r6]`.
+/// This can usually be used for the results of call instructions.
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct ContiguousRegisterSlice {
+    /// The index of the first register.
+    start: Register,
+    /// The amount of registers in the contiguous slice of registers.
+    len: u16,
+}
+
+impl ContiguousRegisterSlice {
+    /// Creates a new [`ContiguousRegisterSlice`].
+    pub fn new(start: Register, len: u16) -> Self {
+        Self { start, len }
+    }
+
+    /// Returns the length of the register slice.
+    pub fn len(&self) -> u16 {
+        self.len
+    }
+
+    /// Returns the starting register of the slice if the length is 1.
+    ///
+    /// Returns `None` otherwise.
+    pub fn single_mut(&mut self) -> Option<&mut Register> {
+        if self.len == 1 {
+            return Some(&mut self.start);
+        }
+        None
+    }
+
+    /// Returns the [`Register`] at the `index` if within bounds.
+    ///
+    /// Returns `None` otherwise.
+    pub fn get(&self, index: u16) -> Option<Register> {
+        if index < self.len {
+            return self.start.offset(index as usize).into();
+        }
+        None
+    }
+
+    /// Returns an iterator over the registers of the [`ContiguousRegisterSlice`].
+    pub fn iter(&self) -> ContiguousRegisterSliceIter {
+        ContiguousRegisterSliceIter {
+            slice: *self,
+            current: 0,
+        }
+    }
+}
+
+impl IntoIterator for ContiguousRegisterSlice {
+    type Item = Register;
+    type IntoIter = ContiguousRegisterSliceIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+/// An iterator over the registers of a [`ContiguousRegisterSlice`].
+#[derive(Debug)]
+pub struct ContiguousRegisterSliceIter {
+    slice: ContiguousRegisterSlice,
+    current: u16,
+}
+
+impl Iterator for ContiguousRegisterSliceIter {
+    type Item = Register;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.slice.get(self.current) {
+            Some(register) => {
+                self.current += 1;
+                Some(register)
+            }
+            None => None,
+        }
+    }
 }
 
 /// A provided input for instruction construction.

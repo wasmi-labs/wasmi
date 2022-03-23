@@ -21,11 +21,19 @@ use self::{
     control_stack::ControlFlowStack,
     inst_builder::InstructionsBuilder,
     locals_registry::LocalsRegistry,
-    providers::{Provider, ProviderSlice, ProviderSliceArena, Providers, Register},
+    providers::{
+        ContiguousRegisterSlice as OpaqueContiguousRegisterSlice,
+        Provider,
+        ProviderSlice,
+        ProviderSliceArena,
+        Providers,
+        Register,
+    },
 };
 use super::{
     bytecode::Offset,
     register::RegisterEntry,
+    ContiguousRegisterSlice as ExecContiguousRegisterSlice,
     Engine,
     ExecInstruction,
     FromRegisterEntry,
@@ -77,7 +85,7 @@ impl InstructionTypes for OpaqueTypes {
     type Register = Register;
     type Provider = Provider;
     type ProviderSlice = ProviderSlice;
-    type RegisterSlice = ProviderSlice;
+    type RegisterSlice = OpaqueContiguousRegisterSlice;
 }
 
 pub type OpaqueInstruction = Instruction<OpaqueTypes>;

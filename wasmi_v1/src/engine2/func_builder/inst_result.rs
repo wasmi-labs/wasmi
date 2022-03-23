@@ -26,10 +26,7 @@ impl Instruction {
             | Self::BrTable { .. }
             | Self::Trap { .. }
             | Self::Return { .. } => None,
-            Self::Call { results, .. } | Self::CallIndirect { results, .. } => {
-                // Extract single result from `results` slice.
-                todo!()
-            }
+            Self::Call { results, .. } | Self::CallIndirect { results, .. } => results.single_mut(),
             Self::Copy { result, .. }
             | Self::Select { result, .. }
             | Self::GlobalGet { result, .. } => Some(result),
