@@ -140,7 +140,7 @@ pub enum ImportKind {
 ///
 /// [`Module`]: [`super::Module`]
 /// [`FuncType`]: [`crate::FuncType`]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct FuncTypeIdx(pub(super) u32);
 
 impl FuncTypeIdx {

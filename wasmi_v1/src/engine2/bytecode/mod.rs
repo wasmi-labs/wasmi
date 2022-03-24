@@ -9,6 +9,7 @@ use wasmi_core::TrapCode;
 
 pub use self::utils::{ContiguousRegisterSlice, Global, Offset, Register, Target};
 use super::{DedupProviderSlice, Provider};
+use crate::module::{FuncIdx, FuncTypeIdx};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum ExecuteTypes {}
@@ -128,6 +129,8 @@ where
     },
     /// Equivalent to the Wasm `call` instruction.
     Call {
+        /// The function index of the called function.
+        func_idx: FuncIdx,
         /// The registers used as result values of the call.
         ///
         /// # Note
@@ -143,6 +146,8 @@ where
     },
     /// Equivalent to the Wasm `call_indirect` instruction.
     CallIndirect {
+        /// The index of the function type of the indirectly called function.
+        func_type_idx: FuncTypeIdx,
         /// The registers used as result values of the call.
         ///
         /// # Note
@@ -154,7 +159,9 @@ where
         /// we are required to represent more than one result value.
         results: T::RegisterSlice,
         /// The index into the table used for the indirect function call.
-        index: T::Register,
+        ///
+        /// TODO: might `T::Register` be more useful here?
+        index: T::Provider,
         /// The parameters of the indirect function call.
         params: T::ProviderSlice,
     },

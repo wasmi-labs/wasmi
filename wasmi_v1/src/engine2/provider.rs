@@ -57,12 +57,12 @@ impl DedupProviderSliceArena {
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct DedupProviderSlice {
-    first: u32,
-    len: u32,
+    first: u16,
+    len: u16,
 }
 
 impl DedupProviderSlice {
-    pub fn new(first: u32, len: u32) -> Self {
+    pub fn new(first: u16, len: u16) -> Self {
         Self { first, len }
     }
 

@@ -4,7 +4,7 @@ use crate::ModuleError;
 /// The index of a function declaration within a [`Module`].
 ///
 /// [`Module`]: [`super::Module`]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct FuncIdx(pub(super) u32);
 
 impl FuncIdx {
