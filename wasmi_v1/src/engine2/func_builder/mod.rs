@@ -268,6 +268,28 @@ impl<'parser> FunctionBuilder<'parser> {
         let providers = self.providers.pop_n(len_results);
         self.reg_slices.alloc(providers)
     }
+
+    /// Returns the [`FuncType`] of the function that is currently translated.
+    fn func_type(&self) -> FuncType {
+        let dedup_func_type = self.res.get_type_of_func(self.func);
+        self.engine.resolve_func_type(dedup_func_type, Clone::clone)
+    }
+
+    /// Resolves the [`FuncType`] of the given [`FuncTypeIdx`].
+    fn func_type_at(&self, func_type_index: FuncTypeIdx) -> FuncType {
+        let dedup_func_type = self.res.get_func_type(func_type_index);
+        self.res
+            .engine()
+            .resolve_func_type(dedup_func_type, Clone::clone)
+    }
+
+    /// Resolves the [`FuncType`] of the given [`FuncIdx`].
+    fn func_type_of(&self, func_index: FuncIdx) -> FuncType {
+        let dedup_func_type = self.res.get_type_of_func(func_index);
+        self.res
+            .engine()
+            .resolve_func_type(dedup_func_type, Clone::clone)
+    }
 }
 
 impl<'parser> FunctionBuilder<'parser> {
@@ -571,29 +593,30 @@ impl<'parser> FunctionBuilder<'parser> {
         })
     }
 
-    /// Adjusts the emulated [`ValueStack`] given the [`FuncType`] of the call.
-    fn adjust_value_stack_for_call(&mut self, func_type: &FuncType) {
-        // let (params, results) = func_type.params_results();
-        // for param in params.iter().rev() {
-        //     let popped = self.value_stack.pop1();
-        //     debug_assert_eq!(popped, *param);
-        // }
-        // for result in results {
-        //     self.value_stack.push(*result);
-        // }
-        todo!()
+    /// Adjusts the emulated provider stack given the [`FuncType`] of the call.
+    fn adjust_provider_stack_for_call(
+        &mut self,
+        func_type: &FuncType,
+    ) -> (ProviderSlice, OpaqueContiguousRegisterSlice) {
+        let (params, results) = func_type.params_results();
+        let params_providers = self.providers.pop_n(params.len());
+        let params_slice = self.reg_slices.alloc(params_providers.rev());
+        let results_slice = self.providers.push_dynamic_many(results.len());
+        (params_slice, results_slice)
     }
 
     /// Translates a Wasm `call` instruction.
     pub fn translate_call(&mut self, func_idx: FuncIdx) -> Result<(), ModuleError> {
-        // self.translate_if_reachable(|builder| {
-        //     let func_type = builder.func_type_of(func_idx);
-        //     builder.adjust_value_stack_for_call(&func_type);
-        //     let func_idx = func_idx.into_u32().into();
-        //     builder.inst_builder.push_inst(Instruction::Call(func_idx));
-        //     Ok(())
-        // })
-        todo!()
+        self.translate_if_reachable(|builder| {
+            let func_type = builder.func_type_of(func_idx);
+            let (params, results) = builder.adjust_provider_stack_for_call(&func_type);
+            builder.inst_builder.push_inst(Instruction::Call {
+                func_idx,
+                results,
+                params,
+            });
+            Ok(())
+        })
     }
 
     /// Translates a Wasm `call_indirect` instruction.
@@ -602,21 +625,21 @@ impl<'parser> FunctionBuilder<'parser> {
         func_type_idx: FuncTypeIdx,
         table_idx: TableIdx,
     ) -> Result<(), ModuleError> {
-        // self.translate_if_reachable(|builder| {
-        //     /// The default Wasm MVP table index.
-        //     const DEFAULT_TABLE_INDEX: u32 = 0;
-        //     assert_eq!(table_idx.into_u32(), DEFAULT_TABLE_INDEX);
-        //     let func_type_offset = builder.value_stack.pop1();
-        //     debug_assert_eq!(func_type_offset, ValueType::I32);
-        //     let func_type = builder.func_type_at(func_type_idx);
-        //     builder.adjust_value_stack_for_call(&func_type);
-        //     let func_type_idx = func_type_idx.into_u32().into();
-        //     builder
-        //         .inst_builder
-        //         .push_inst(Instruction::CallIndirect(func_type_idx));
-        //     Ok(())
-        // })
-        todo!()
+        self.translate_if_reachable(|builder| {
+            /// The default Wasm MVP table index.
+            const DEFAULT_TABLE_INDEX: u32 = 0;
+            assert_eq!(table_idx.into_u32(), DEFAULT_TABLE_INDEX);
+            let index = builder.providers.pop();
+            let func_type = builder.func_type_at(func_type_idx);
+            let (params, results) = builder.adjust_provider_stack_for_call(&func_type);
+            builder.inst_builder.push_inst(Instruction::CallIndirect {
+                func_type_idx,
+                results,
+                index,
+                params,
+            });
+            Ok(())
+        })
     }
 
     /// Translates a Wasm `drop` instruction.
