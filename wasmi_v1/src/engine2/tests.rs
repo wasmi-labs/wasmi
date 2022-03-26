@@ -5,6 +5,7 @@ use crate::{
     engine::{DedupProviderSlice, Instr, Target},
     engine2::{ExecInstruction, Offset, Provider, Register, RegisterEntry, WasmType},
     Engine,
+    Module,
 };
 use core::ops::{Shl, Shr};
 use wasmi_core::{

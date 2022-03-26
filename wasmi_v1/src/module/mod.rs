@@ -17,9 +17,6 @@ mod utils;
 // #[cfg(test)]
 // mod tests;
 
-#[cfg(test)]
-mod tests2;
-
 use self::{
     builder::ModuleBuilder,
     data::DataSegment,
@@ -187,7 +184,7 @@ impl Module {
     /// Returns an iterator over the internally defined [`Func`].
     ///
     /// [`Func`]: [`crate::Func`]
-    fn internal_funcs(&self) -> InternalFuncsIter {
+    pub(crate) fn internal_funcs(&self) -> InternalFuncsIter {
         let len_imported = self.imports.len_funcs;
         // We skip the first `len_imported` elements in `funcs`
         // since they refer to imported and not internally defined

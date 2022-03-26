@@ -16,6 +16,9 @@ mod register;
 mod traits;
 
 #[cfg(test)]
+mod tests;
+
+#[cfg(test)]
 pub use self::bytecode::{Global, Offset, Register};
 
 pub(crate) use self::{
