@@ -113,8 +113,11 @@ impl EngineInner {
         self.provider_slices.alloc(providers)
     }
 
-    pub fn alloc_const(&mut self, value: Const) -> ConstRef {
-        self.const_pool.alloc_const(value)
+    pub fn alloc_const<T>(&mut self, value: T) -> ConstRef
+    where
+        T: Into<RegisterEntry>,
+    {
+        self.res.alloc_const(value)
     }
 
     /// Executes the given [`Func`] using the given arguments `args` and stores the result into `results`.
