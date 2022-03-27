@@ -2736,3 +2736,44 @@ fn call_2_params_2_results() {
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
+
+/// This tests that a `local.set` instruction that follows a `call` instruction
+/// with exactly one result will alter the result of the `call` instruction
+/// instead of inserting a `copy` instruction.
+///
+/// This is kinda special since `call` and `call_indirect` instructions may
+/// return multiple results unlike most Wasm instructions.
+#[test]
+fn call_local_tee() {
+    let wasm = wat2wasm(
+        r#"
+            (module
+                (import "module" "field" (func $imported_func (param i32) (result i32)))
+                (func (export "call") (param i32) (result i32)
+                    local.get 0
+                    call $imported_func
+                    local.tee 0
+                )
+            )
+        "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let call_result = ExecRegister::from_inner(0);
+    let call_results = ExecRegisterSlice::new(call_result, 1);
+    let param = ExecRegister::from_inner(0);
+    let params = engine.alloc_provider_slice([param.into()]);
+    let return_result = call_result;
+    let return_results = engine.alloc_provider_slice([return_result.into()]);
+    let expected = [
+        ExecInstruction::Call {
+            func_idx: FuncIdx::from_u32(0),
+            results: call_results,
+            params,
+        },
+        ExecInstruction::Return {
+            results: return_results,
+        },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
