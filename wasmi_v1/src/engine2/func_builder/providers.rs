@@ -304,8 +304,8 @@ impl IrRegisterSlice {
     }
 
     /// Returns an iterator over the registers of the [`ContiguousRegisterSlice`].
-    pub fn iter(&self) -> ContiguousRegisterSliceIter {
-        ContiguousRegisterSliceIter {
+    pub fn iter(&self) -> IrRegisterSliceIter {
+        IrRegisterSliceIter {
             slice: *self,
             current: 0,
         }
@@ -314,7 +314,7 @@ impl IrRegisterSlice {
 
 impl IntoIterator for IrRegisterSlice {
     type Item = IrRegister;
-    type IntoIter = ContiguousRegisterSliceIter;
+    type IntoIter = IrRegisterSliceIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
@@ -323,12 +323,12 @@ impl IntoIterator for IrRegisterSlice {
 
 /// An iterator over the registers of a [`ContiguousRegisterSlice`].
 #[derive(Debug)]
-pub struct ContiguousRegisterSliceIter {
+pub struct IrRegisterSliceIter {
     slice: IrRegisterSlice,
     current: u16,
 }
 
-impl Iterator for ContiguousRegisterSliceIter {
+impl Iterator for IrRegisterSliceIter {
     type Item = IrRegister;
 
     fn next(&mut self) -> Option<Self::Item> {
