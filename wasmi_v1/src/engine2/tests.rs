@@ -2366,7 +2366,6 @@ fn local_set_after_call_indirect() {
     let wasm = wat2wasm(
         r#"
             (module
-                (import "module" "func" (func $imported_func (param i32) (result i32)))
                 (import "module" "table" (table $t 1 funcref))
                 (func (export "call") (param i32) (result i32)
                     local.get 0
@@ -2703,7 +2702,6 @@ fn local_tee_after_call_indirect() {
     let wasm = wat2wasm(
         r#"
             (module
-                (import "module" "func" (func $imported_func (param i32) (result i32)))
                 (import "module" "table" (table $t 1 funcref))
                 (func (export "call") (param i32) (result i32)
                     local.get 0
