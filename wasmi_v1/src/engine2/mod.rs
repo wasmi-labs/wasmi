@@ -35,7 +35,7 @@ pub(crate) use self::{
 };
 use self::{
     code_map::CodeMap,
-    func_builder::{CompileContext, OpaqueInstruction},
+    func_builder::{CompileContext, IrInstruction},
     func_types::FuncTypeRegistry,
     ident::{EngineIdent, Guarded},
     inner::EngineInner,
@@ -159,7 +159,7 @@ impl Engine {
 
     pub fn compile<I>(&self, context: &CompileContext, insts: I) -> FuncBody
     where
-        I: IntoIterator<Item = OpaqueInstruction>,
+        I: IntoIterator<Item = IrInstruction>,
     {
         self.inner.lock().compile(context, insts)
     }

@@ -1,7 +1,7 @@
 mod compile;
 
 use super::{
-    func_builder::{CompileContext, OpaqueInstruction},
+    func_builder::{CompileContext, IrInstruction},
     CallParams,
     CallResults,
     CodeMap,

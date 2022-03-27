@@ -4,7 +4,7 @@ use super::{
     EngineResources,
 };
 use crate::engine2::{
-    func_builder::{CompileContext, IrProviderSlice, OpaqueInstruction},
+    func_builder::{CompileContext, IrInstruction, IrProviderSlice},
     ConstPool,
     ExecInstruction,
     ExecProvider,
@@ -50,7 +50,7 @@ macro_rules! store_op {
 impl EngineInner {
     pub fn compile<I>(&mut self, context: &CompileContext, insts: I) -> FuncBody
     where
-        I: IntoIterator<Item = OpaqueInstruction>,
+        I: IntoIterator<Item = IrInstruction>,
     {
         let insts = insts
             .into_iter()
@@ -163,7 +163,7 @@ impl EngineInner {
     fn compile_inst(
         res: &mut EngineResources,
         context: &CompileContext,
-        inst: OpaqueInstruction,
+        inst: IrInstruction,
     ) -> ExecInstruction {
         match inst {
             Instruction::Trap { trap_code } => ExecInstruction::Trap { trap_code },

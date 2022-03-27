@@ -1,4 +1,4 @@
-use super::{IrRegister, OpaqueInstruction as Instruction};
+use super::{IrInstruction, IrRegister};
 
 impl IrRegister {
     /// Returns `true` if the [`Register`] is in the local register space.
@@ -10,7 +10,7 @@ impl IrRegister {
     }
 }
 
-impl Instruction {
+impl IrInstruction {
     /// Returns the single result [`Register`] of the instruction if any.
     ///
     /// # Note

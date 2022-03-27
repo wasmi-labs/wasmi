@@ -104,16 +104,16 @@ impl CompileContext<'_> {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum OpaqueTypes {}
+pub enum IrTypes {}
 
-impl InstructionTypes for OpaqueTypes {
+impl InstructionTypes for IrTypes {
     type Register = IrRegister;
     type Provider = IrProvider;
     type ProviderSlice = IrProviderSlice;
     type RegisterSlice = IrRegisterSlice;
 }
 
-pub type OpaqueInstruction = Instruction<OpaqueTypes>;
+pub type IrInstruction = Instruction<IrTypes>;
 
 macro_rules! make_op {
     ( $name:ident ) => {{
@@ -144,12 +144,12 @@ macro_rules! store_op {
 }
 
 /// TODO: remove again when done
-const DUMMY_INSTRUCTION: OpaqueInstruction = Instruction::Trap {
+const DUMMY_INSTRUCTION: IrInstruction = Instruction::Trap {
     trap_code: TrapCode::Unreachable,
 };
 
 /// TODO: remove again when done
-fn make_dummy_instruction(_offset: Offset) -> OpaqueInstruction {
+fn make_dummy_instruction(_offset: Offset) -> IrInstruction {
     DUMMY_INSTRUCTION
 }
 
@@ -808,7 +808,7 @@ impl<'parser> FunctionBuilder<'parser> {
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
-        make_inst: fn(IrRegister, IrRegister, Offset) -> OpaqueInstruction,
+        make_inst: fn(IrRegister, IrRegister, Offset) -> IrInstruction,
     ) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
@@ -975,7 +975,7 @@ impl<'parser> FunctionBuilder<'parser> {
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
-        make_inst: fn(IrRegister, Offset, IrProvider) -> OpaqueInstruction,
+        make_inst: fn(IrRegister, Offset, IrProvider) -> IrInstruction,
     ) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
@@ -1177,7 +1177,7 @@ impl<'parser> FunctionBuilder<'parser> {
     /// - `{i32, i64, f32, f64}.ne`
     fn translate_binary_cmp<O, E, T>(&mut self, make_op: O, exec_op: E) -> Result<(), ModuleError>
     where
-        O: FnOnce(IrRegister, IrRegister, IrProvider) -> OpaqueInstruction,
+        O: FnOnce(IrRegister, IrRegister, IrProvider) -> IrInstruction,
         E: FnOnce(T, T) -> bool,
         T: FromRegisterEntry,
     {
@@ -1232,8 +1232,8 @@ impl<'parser> FunctionBuilder<'parser> {
         exec_op: E,
     ) -> Result<(), ModuleError>
     where
-        O1: FnOnce(IrRegister, IrRegister, IrProvider) -> OpaqueInstruction,
-        O2: FnOnce(IrRegister, IrRegister, IrProvider) -> OpaqueInstruction,
+        O1: FnOnce(IrRegister, IrRegister, IrProvider) -> IrInstruction,
+        O2: FnOnce(IrRegister, IrRegister, IrProvider) -> IrInstruction,
         E: FnOnce(T, T) -> bool,
         T: FromRegisterEntry,
     {
@@ -1493,7 +1493,7 @@ impl<'parser> FunctionBuilder<'parser> {
         exec_op: E,
     ) -> Result<(), ModuleError>
     where
-        F: FnOnce(IrRegister, IrRegister) -> OpaqueInstruction,
+        F: FnOnce(IrRegister, IrRegister) -> IrInstruction,
         E: FnOnce(T) -> R,
         T: FromRegisterEntry,
         R: Into<Value>,
@@ -1552,7 +1552,7 @@ impl<'parser> FunctionBuilder<'parser> {
         exec_op: E,
     ) -> Result<(), ModuleError>
     where
-        F: FnOnce(IrRegister, IrRegister, IrProvider) -> OpaqueInstruction,
+        F: FnOnce(IrRegister, IrRegister, IrProvider) -> IrInstruction,
         E: FnOnce(T, T) -> R,
         T: FromRegisterEntry,
         R: Into<Value>,
@@ -1600,7 +1600,7 @@ impl<'parser> FunctionBuilder<'parser> {
         exec_op: E,
     ) -> Result<(), ModuleError>
     where
-        F: FnOnce(IrRegister, IrRegister, IrProvider) -> OpaqueInstruction,
+        F: FnOnce(IrRegister, IrRegister, IrProvider) -> IrInstruction,
         E: FnOnce(T, T) -> Result<T, TrapCode>,
         T: FromRegisterEntry + Into<Value>,
     {
@@ -1669,7 +1669,7 @@ impl<'parser> FunctionBuilder<'parser> {
         exec_op: E,
     ) -> Result<(), ModuleError>
     where
-        F: FnOnce(IrRegister, IrRegister, IrProvider) -> OpaqueInstruction,
+        F: FnOnce(IrRegister, IrRegister, IrProvider) -> IrInstruction,
         E: FnOnce(T, T) -> R,
         T: FromRegisterEntry,
         R: Into<Value>,
@@ -2087,7 +2087,7 @@ impl<'parser> FunctionBuilder<'parser> {
         exec_op: E,
     ) -> Result<(), ModuleError>
     where
-        F: FnOnce(IrRegister, IrRegister) -> OpaqueInstruction,
+        F: FnOnce(IrRegister, IrRegister) -> IrInstruction,
         E: FnOnce(T) -> R,
         T: FromRegisterEntry,
         R: Into<Value>,
@@ -2109,7 +2109,7 @@ impl<'parser> FunctionBuilder<'parser> {
         exec_op: E,
     ) -> Result<(), ModuleError>
     where
-        F: FnOnce(IrRegister, IrRegister) -> OpaqueInstruction,
+        F: FnOnce(IrRegister, IrRegister) -> IrInstruction,
         E: FnOnce(T) -> Result<R, TrapCode>,
         T: FromRegisterEntry,
         R: Into<Value>,

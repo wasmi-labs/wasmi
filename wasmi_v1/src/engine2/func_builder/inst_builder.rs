@@ -6,7 +6,7 @@ use super::{
     CompileContext,
     Engine,
     FuncBody,
-    OpaqueInstruction,
+    IrInstruction,
     ProviderSliceArena,
 };
 use crate::arena::Index;
@@ -115,7 +115,7 @@ impl RelativeDepth {
 #[derive(Debug, Default)]
 pub struct InstructionsBuilder {
     /// The instructions of the partially constructed function body.
-    insts: Vec<OpaqueInstruction>,
+    insts: Vec<IrInstruction>,
     /// All labels and their uses.
     labels: Vec<Label>,
 }
@@ -206,7 +206,7 @@ impl InstructionsBuilder {
     /// Pushes the internal instruction bytecode to the [`InstructionsBuilder`].
     ///
     /// Returns an [`InstructionIdx`] to refer to the pushed instruction.
-    pub fn push_inst(&mut self, inst: OpaqueInstruction) -> Instr {
+    pub fn push_inst(&mut self, inst: IrInstruction) -> Instr {
         let idx = self.current_pc();
         self.insts.push(inst);
         idx
@@ -216,9 +216,9 @@ impl InstructionsBuilder {
     pub fn patch_relocation(&mut self, reloc: Reloc, dst_pc: Instr) {
         match reloc {
             Reloc::Br { inst_idx } => match &mut self.insts[inst_idx.into_usize()] {
-                OpaqueInstruction::Br { target }
-                | OpaqueInstruction::BrIfEqz { target, .. }
-                | OpaqueInstruction::BrIfNez { target, .. } => {
+                IrInstruction::Br { target }
+                | IrInstruction::BrIfEqz { target, .. }
+                | IrInstruction::BrIfNez { target, .. } => {
                     target.update_destination(dst_pc);
                 }
                 _ => panic!(
@@ -230,7 +230,7 @@ impl InstructionsBuilder {
                 inst_idx,
                 target_idx,
             } => match &mut self.insts[inst_idx.into_usize() + target_idx + 1] {
-                OpaqueInstruction::Br { target } => {
+                IrInstruction::Br { target } => {
                     target.update_destination(dst_pc);
                 }
                 _ => panic!(
@@ -242,12 +242,12 @@ impl InstructionsBuilder {
     }
 
     /// Peeks the last instruction pushed to the instruction builder if any.
-    pub fn peek(&self) -> Option<&OpaqueInstruction> {
+    pub fn peek(&self) -> Option<&IrInstruction> {
         self.insts.last()
     }
 
     /// Peeks the last instruction pushed to the instruction builder if any.
-    pub fn peek_mut(&mut self) -> Option<&mut OpaqueInstruction> {
+    pub fn peek_mut(&mut self) -> Option<&mut IrInstruction> {
         self.insts.last_mut()
     }
 
