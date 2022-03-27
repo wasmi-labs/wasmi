@@ -1,10 +1,10 @@
 use super::{
-    super::{IrProvider, IrRegister},
+    super::{ExecRegisterSlice, IrProvider, IrRegister},
     EngineInner,
     EngineResources,
 };
 use crate::engine2::{
-    func_builder::{CompileContext, IrInstruction, IrProviderSlice},
+    func_builder::{CompileContext, IrInstruction, IrProviderSlice, IrRegisterSlice},
     ConstPool,
     ExecInstruction,
     ExecProvider,
@@ -60,6 +60,20 @@ impl EngineInner {
 
     fn compile_register(context: &CompileContext, register: IrRegister) -> ExecRegister {
         context.compile_register(register)
+    }
+
+    fn compile_register_slice(
+        context: &CompileContext,
+        slice: IrRegisterSlice,
+    ) -> ExecRegisterSlice {
+        match slice.first() {
+            Some(first) => {
+                let first = context.compile_register(first);
+                let len = slice.len();
+                ExecRegisterSlice::new(first, len)
+            }
+            None => ExecRegisterSlice::empty(),
+        }
     }
 
     fn compile_provider_impl(
@@ -170,6 +184,36 @@ impl EngineInner {
             Instruction::Return { results } => {
                 let results = Self::compile_provider_slice(res, context, results);
                 ExecInstruction::Return { results }
+            }
+
+            Instruction::Call {
+                func_idx,
+                results,
+                params,
+            } => {
+                let results = Self::compile_register_slice(context, results);
+                let params = Self::compile_provider_slice(res, context, params);
+                ExecInstruction::Call {
+                    func_idx,
+                    results,
+                    params,
+                }
+            }
+            Instruction::CallIndirect {
+                func_type_idx,
+                results,
+                index,
+                params,
+            } => {
+                let results = Self::compile_register_slice(context, results);
+                let index = Self::compile_provider(res, context, index);
+                let params = Self::compile_provider_slice(res, context, params);
+                ExecInstruction::CallIndirect {
+                    func_type_idx,
+                    results,
+                    index,
+                    params,
+                }
             }
 
             Instruction::Copy { result, input } => {

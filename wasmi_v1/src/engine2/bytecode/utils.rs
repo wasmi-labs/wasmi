@@ -75,6 +75,19 @@ pub struct ExecRegisterSlice {
     len: u16,
 }
 
+impl ExecRegisterSlice {
+    pub fn empty() -> Self {
+        Self {
+            start: ExecRegister::from_inner(0),
+            len: 0,
+        }
+    }
+
+    pub fn new(start: ExecRegister, len: u16) -> Self {
+        Self { start, len }
+    }
+}
+
 /// An index representing a global variable.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Global(u32);

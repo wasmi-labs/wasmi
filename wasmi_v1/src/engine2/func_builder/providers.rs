@@ -293,6 +293,14 @@ impl IrRegisterSlice {
         None
     }
 
+    /// Returns the first [`Register`] of the slice the slice is non-empty.
+    pub fn first(&self) -> Option<IrRegister> {
+        if self.len == 0 {
+            return None;
+        }
+        Some(self.start)
+    }
+
     /// Returns the [`Register`] at the `index` if within bounds.
     ///
     /// Returns `None` otherwise.

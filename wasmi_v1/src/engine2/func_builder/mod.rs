@@ -19,11 +19,11 @@ use self::{
     control_stack::ControlFlowStack,
     inst_builder::InstructionsBuilder,
     locals_registry::LocalsRegistry,
-    providers::{IrRegisterSlice, ProviderSliceArena, Providers},
+    providers::{ProviderSliceArena, Providers},
 };
 pub use self::{
     inst_builder::{Instr, LabelIdx, RelativeDepth, Reloc},
-    providers::{IrProvider, IrProviderSlice, IrRegister},
+    providers::{IrProvider, IrProviderSlice, IrRegister, IrRegisterSlice},
 };
 use super::{
     bytecode::Offset,
