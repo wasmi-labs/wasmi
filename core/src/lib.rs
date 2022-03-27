@@ -1,6 +1,7 @@
 mod host_error;
 mod nan_preserving_float;
 mod trap;
+mod untyped;
 mod value;
 
 #[cfg(feature = "virtual_memory")]
@@ -24,6 +25,7 @@ pub use self::{
     host_error::HostError,
     nan_preserving_float::{F32, F64},
     trap::{Trap, TrapCode},
+    untyped::UntypedValue,
     value::{
         ArithmeticOps,
         ExtendInto,
