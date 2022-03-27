@@ -11,9 +11,9 @@ use wasmi_core::{Value, ValueType};
 /// A stack of provided inputs for constructed instructions.
 #[derive(Debug, Default)]
 pub struct Providers {
-    locals: LocalsRegistry,
+    pub(super) locals: LocalsRegistry,
     providers: Vec<Provider>,
-    stacks: Stacks,
+    pub(super) stacks: Stacks,
 }
 
 #[derive(Debug, Default)]
