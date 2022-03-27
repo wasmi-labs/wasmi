@@ -102,7 +102,6 @@ impl ExecProvider {
     }
 
     pub fn from_immediate(immediate: ConstRef) -> Self {
-        println!("ExecProvider::from_immediate({immediate:?})");
         let index = u32::from(immediate.into_inner());
         assert!(
             index < i32::MAX as u32,
