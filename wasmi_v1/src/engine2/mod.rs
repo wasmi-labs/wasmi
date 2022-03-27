@@ -18,12 +18,6 @@ mod traits;
 #[cfg(test)]
 mod tests;
 
-#[cfg(test)]
-pub use self::bytecode::{ExecRegister, Global, Offset};
-
-#[cfg(not(test))]
-use self::bytecode::{ExecRegister, Offset};
-
 pub(crate) use self::{
     bytecode::{ExecInstruction, ExecRegisterSlice, Instruction, InstructionTypes, Target},
     code_map::ResolvedFuncBody,
@@ -34,6 +28,7 @@ pub(crate) use self::{
     traits::{CallParams, CallResults},
 };
 use self::{
+    bytecode::{ExecRegister, Offset},
     code_map::CodeMap,
     func_builder::{CompileContext, IrInstruction},
     func_types::FuncTypeRegistry,

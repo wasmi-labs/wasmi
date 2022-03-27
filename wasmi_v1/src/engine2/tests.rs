@@ -2,8 +2,8 @@ use std::fmt::Display;
 
 use super::*;
 use crate::{
-    engine::{ExecProviderSlice, Instr, Target},
-    engine2::{ExecInstruction, ExecProvider, ExecRegister, Offset, RegisterEntry, WasmType},
+    engine::ExecProviderSlice,
+    engine2::{ExecInstruction, ExecProvider, ExecRegister, Offset, RegisterEntry},
     Engine,
     Module,
 };
@@ -17,7 +17,6 @@ use wasmi_core::{
     TrapCode,
     TruncateSaturateInto,
     TryTruncateInto,
-    Value,
     WrapInto,
     F32,
     F64,
@@ -1219,15 +1218,6 @@ fn unary_register() {
     test_unary::<f32, _>("sqrt", make_op2!(F32Sqrt));
     test_unary::<f64, _>("sqrt", make_op2!(F64Sqrt));
 
-    fn test_conversion<From, Into, F>(wasm_op: &str, make_op: F)
-    where
-        From: WasmTypeName,
-        Into: WasmTypeName,
-        F: FnOnce(ExecRegister, ExecRegister) -> ExecInstruction,
-    {
-        test::<From, Into, F>(wasm_op, make_op)
-    }
-
     test::<i64, i32, _>("wrap_i64", make_op2!(I32WrapI64));
     test::<F32, i32, _>("trunc_f32_s", make_op2!(I32TruncSF32));
     test::<F32, u32, _>("trunc_f32_u", make_op2!(I32TruncUF32));
@@ -1377,22 +1367,6 @@ fn unary_const_infallible() {
     test("nearest", 1.0, |input| F64::from(input).nearest());
     test("sqrt", 1.0, |input| F32::from(input).sqrt());
     test("sqrt", 1.0, |input| F64::from(input).sqrt());
-
-    fn test_f32<R, F>(wasm_op: &str, input: f32, exec_op: F)
-    where
-        F: FnOnce(F32) -> R,
-        R: Into<RegisterEntry> + WasmTypeName,
-    {
-        test::<f32, R, _>(wasm_op, input, |input| exec_op(F32::from(input)))
-    }
-
-    fn test_f64<R, F>(wasm_op: &str, input: f64, exec_op: F)
-    where
-        F: FnOnce(F64) -> R,
-        R: Into<RegisterEntry> + WasmTypeName,
-    {
-        test::<f64, R, _>(wasm_op, input, |input| exec_op(F64::from(input)))
-    }
 
     test::<i64, i32, _>("wrap_i64", 1, <i64 as WrapInto<i32>>::wrap_into);
 
@@ -1800,7 +1774,7 @@ fn store_to_const() {
 
 #[test]
 fn global_get() {
-    use crate::engine2::Global as GlobalIndex;
+    use super::bytecode::Global as GlobalIndex;
 
     fn test<T>(global_index: u32, init_value: T)
     where
@@ -1839,7 +1813,7 @@ fn global_get() {
 
 #[test]
 fn global_set_register() {
-    use crate::engine2::Global as GlobalIndex;
+    use super::bytecode::Global as GlobalIndex;
 
     fn test<T>(global_index: u32, init_value: T)
     where
@@ -1879,7 +1853,7 @@ fn global_set_register() {
 
 #[test]
 fn global_set_const() {
-    use crate::engine2::Global as GlobalIndex;
+    use super::bytecode::Global as GlobalIndex;
 
     fn test<T>(global_index: u32, init_value: T, new_value: T)
     where
