@@ -8,7 +8,6 @@ mod locals_registry;
 mod providers;
 mod translate;
 
-pub use self::inst_builder::{Instr, LabelIdx, RelativeDepth, Reloc};
 use self::{
     control_frame::{
         BlockControlFrame,
@@ -23,12 +22,13 @@ use self::{
     locals_registry::LocalsRegistry,
     providers::{
         ContiguousRegisterSlice as OpaqueContiguousRegisterSlice,
-        Provider,
-        ProviderSlice,
         ProviderSliceArena,
         Providers,
-        Register,
     },
+};
+pub use self::{
+    inst_builder::{Instr, LabelIdx, RelativeDepth, Reloc},
+    providers::{Provider, ProviderSlice, Register},
 };
 use super::{
     bytecode::Offset,
@@ -40,6 +40,7 @@ use super::{
     FuncBody,
     Instruction,
     InstructionTypes,
+    Register as ExecRegister,
 };
 use crate::{
     engine2::bytecode::Global,
@@ -77,6 +78,36 @@ use wasmi_core::{
     F32,
     F64,
 };
+
+pub struct CompileContext<'a> {
+    reg_slices: &'a ProviderSliceArena,
+    providers: &'a Providers,
+}
+
+impl CompileContext<'_> {
+    pub fn resolve_provider_slice(&self, slice: ProviderSlice) -> &[Provider] {
+        self.reg_slices.resolve(slice)
+    }
+
+    pub fn compile_register(&self, register: Register) -> ExecRegister {
+        let index = match register {
+            Register::Local(index) => index,
+            Register::Dynamic(index) => self.providers.locals.len_registered() as usize + index,
+            Register::Preserved(index) => {
+                self.providers.locals.len_registered() as usize
+                    + self.providers.stacks.max_dynamic()
+                    + index
+            }
+        };
+        let bounded = index.try_into().unwrap_or_else(|error| {
+            panic!(
+                "encountered out of bounds register index ({}): {}",
+                index, error
+            )
+        });
+        ExecRegister::from_inner(bounded)
+    }
+}
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum OpaqueTypes {}
