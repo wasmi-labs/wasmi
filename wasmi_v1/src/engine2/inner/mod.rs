@@ -1,4 +1,6 @@
+
 use super::{
+    func_builder::{CompileContext, OpaqueInstruction},
     CallParams,
     CallResults,
     CodeMap,
@@ -13,6 +15,7 @@ use super::{
     FuncBody,
     FuncTypeRegistry,
     Provider,
+    RegisterEntry,
 };
 use crate::{AsContextMut, Config, Func, FuncType};
 use wasmi_core::Trap;
@@ -22,6 +25,14 @@ use wasmi_core::Trap;
 pub struct EngineInner {
     /// The configuration with which the [`Engine`] has been created.
     config: Config,
+    /// Stores all Wasm function bodies that the interpreter is aware of.
+    code_map: CodeMap,
+    res: EngineResources,
+}
+
+/// The internal resources of an [`EngineInner`].
+#[derive(Debug)]
+pub struct EngineResources {
     /// Deduplicated function types.
     ///
     /// # Note
@@ -29,22 +40,57 @@ pub struct EngineInner {
     /// The engine deduplicates function types to make the equality
     /// comparison very fast. This helps to speed up indirect calls.
     func_types: FuncTypeRegistry,
-    /// Stores all Wasm function bodies that the interpreter is aware of.
-    code_map: CodeMap,
     provider_slices: DedupProviderSliceArena,
     const_pool: ConstPool,
+}
+
+impl EngineResources {
+    fn new(engine_ident: EngineIdent) -> Self {
+        Self {
+            func_types: FuncTypeRegistry::new(engine_ident),
+            provider_slices: DedupProviderSliceArena::default(),
+            const_pool: ConstPool::default(),
+        }
+    }
+}
+
+impl EngineResources {
+    /// Resolves a deduplicated function type into a [`FuncType`] entity.
+    ///
+    /// # Panics
+    ///
+    /// - If the deduplicated function type is not owned by the engine.
+    /// - If the deduplicated function type cannot be resolved to its entity.
+    pub(super) fn resolve_func_type<F, R>(&self, func_type: DedupFuncType, f: F) -> R
+    where
+        F: FnOnce(&FuncType) -> R,
+    {
+        f(self.func_types.resolve_func_type(func_type))
+    }
+    pub fn alloc_provider_slice<I>(&mut self, providers: I) -> DedupProviderSlice
+    where
+        I: IntoIterator<Item = Provider>,
+        I::IntoIter: ExactSizeIterator,
+    {
+        self.provider_slices.alloc(providers)
+    }
+
+    pub fn alloc_const<T>(&mut self, value: T) -> ConstRef
+    where
+        T: Into<RegisterEntry>,
+    {
+        self.const_pool.alloc_const(value)
+    }
 }
 
 impl EngineInner {
     /// Creates a new [`EngineInner`] with the given [`Config`].
     pub fn new(config: &Config) -> Self {
-        let engine_idx = EngineIdent::new();
+        let engine_ident = EngineIdent::new();
         Self {
             config: *config,
-            func_types: FuncTypeRegistry::new(engine_idx),
             code_map: CodeMap::default(),
-            provider_slices: DedupProviderSliceArena::default(),
-            const_pool: ConstPool::default(),
+            res: EngineResources::new(engine_ident),
         }
     }
 
@@ -55,7 +101,7 @@ impl EngineInner {
 
     /// Allocates a new function type to the engine.
     pub(super) fn alloc_func_type(&mut self, func_type: FuncType) -> DedupFuncType {
-        self.func_types.alloc_func_type(func_type)
+        self.res.func_types.alloc_func_type(func_type)
     }
 
     /// Resolves the [`FuncBody`] to the underlying `wasmi` bytecode instructions.
@@ -91,7 +137,7 @@ impl EngineInner {
     where
         F: FnOnce(&FuncType) -> R,
     {
-        f(self.func_types.resolve_func_type(func_type))
+        self.res.resolve_func_type(func_type, f)
     }
 
     /// Allocates the instructions of a Wasm function body to the [`Engine`].
@@ -110,7 +156,7 @@ impl EngineInner {
         I: IntoIterator<Item = Provider>,
         I::IntoIter: ExactSizeIterator,
     {
-        self.provider_slices.alloc(providers)
+        self.res.alloc_provider_slice(providers)
     }
 
     pub fn alloc_const<T>(&mut self, value: T) -> ConstRef
