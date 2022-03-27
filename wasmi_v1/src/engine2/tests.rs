@@ -4,7 +4,7 @@ use super::*;
 use crate::{
     engine::ExecProviderSlice,
     engine2::{ExecInstruction, ExecProvider, ExecRegister, Offset, RegisterEntry},
-    module::FuncIdx,
+    module::{FuncIdx, FuncTypeIdx},
     Engine,
     Module,
 };
@@ -2768,6 +2768,51 @@ fn call_local_tee() {
     let expected = [
         ExecInstruction::Call {
             func_idx: FuncIdx::from_u32(0),
+            results: call_results,
+            params,
+        },
+        ExecInstruction::Return {
+            results: return_results,
+        },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+/// This tests that a `local.set` instruction that follows a `call_indirect`
+/// instruction with exactly one result will alter the result of the `call`
+/// instruction instead of inserting a `copy` instruction.
+///
+/// This is kinda special since `call` and `call_indirect` instructions may
+/// return multiple results unlike most Wasm instructions.
+#[test]
+fn call_indirect_local_tee() {
+    let wasm = wat2wasm(
+        r#"
+            (module
+                (import "module" "func" (func $imported_func (param i32) (result i32)))
+                (import "module" "table" (table $t 1 funcref))
+                (func (export "call") (param i32) (result i32)
+                    local.get 0
+                    i32.const 1
+                    call_indirect (param i32) (result i32)
+                    local.tee 0
+                )
+            )
+        "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let index = ExecProvider::from_immediate(engine.alloc_const(1_i32));
+    let call_result = ExecRegister::from_inner(0);
+    let call_results = ExecRegisterSlice::new(call_result, 1);
+    let param = ExecRegister::from_inner(0);
+    let params = engine.alloc_provider_slice([param.into()]);
+    let return_result = call_result;
+    let return_results = engine.alloc_provider_slice([return_result.into()]);
+    let expected = [
+        ExecInstruction::CallIndirect {
+            func_type_idx: FuncTypeIdx::from_u32(0),
+            index,
             results: call_results,
             params,
         },

@@ -144,6 +144,12 @@ pub enum ImportKind {
 pub struct FuncTypeIdx(pub(super) u32);
 
 impl FuncTypeIdx {
+    /// Creates a new [`FuncTypeIdx`] from the given raw `u32` value.
+    #[cfg(test)]
+    pub fn from_u32(value: u32) -> Self {
+        Self(value)
+    }
+
     /// Returns the [`FuncTypeIdx`] as `u32`.
     ///
     /// # Note

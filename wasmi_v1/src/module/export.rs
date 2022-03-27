@@ -8,7 +8,9 @@ use crate::ModuleError;
 pub struct FuncIdx(pub(super) u32);
 
 impl FuncIdx {
-    pub(crate) fn from_u32(value: u32) -> Self {
+    /// Creates a new [`FuncIdx`] from the given raw `u32` value.
+    #[cfg(test)]
+    pub fn from_u32(value: u32) -> Self {
         Self(value)
     }
 
