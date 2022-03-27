@@ -3,7 +3,7 @@ use std::fmt::Display;
 use super::*;
 use crate::{
     engine::{DedupProviderSlice, Instr, Target},
-    engine2::{ExecInstruction, ExecRegister, Offset, Provider, RegisterEntry, WasmType},
+    engine2::{ExecInstruction, ExecProvider, ExecRegister, Offset, RegisterEntry, WasmType},
     Engine,
     Module,
 };
@@ -283,7 +283,7 @@ fn binary_simple() {
     fn test_register_register<T, F, R>(wasm_op: &str, make_op: F)
     where
         T: Display + WasmTypeName + Into<RegisterEntry>,
-        F: FnOnce(ExecRegister, ExecRegister, Provider) -> ExecInstruction,
+        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
         R: WasmTypeName,
     {
         let input_type = <T as WasmTypeName>::NAME;
@@ -304,7 +304,7 @@ fn binary_simple() {
         let lhs = ExecRegister::from_inner(0);
         let rhs = ExecRegister::from_inner(1);
         let result = ExecRegister::from_inner(2);
-        let results = engine.alloc_provider_slice([Provider::from_register(result)]);
+        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
             make_op(result, lhs, rhs.into()),
             ExecInstruction::Return { results },
@@ -315,7 +315,7 @@ fn binary_simple() {
     fn test_register_const<T, F, R>(wasm_op: &str, make_op: F)
     where
         T: Display + WasmTypeName + Into<RegisterEntry> + One,
-        F: FnOnce(ExecRegister, ExecRegister, Provider) -> ExecInstruction,
+        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
         R: WasmTypeName,
     {
         let input_type = <T as WasmTypeName>::NAME;
@@ -334,9 +334,9 @@ fn binary_simple() {
         let module = create_module(&wasm[..]);
         let engine = module.engine();
         let lhs = ExecRegister::from_inner(0);
-        let rhs = Provider::from_immediate(engine.alloc_const(T::one()));
+        let rhs = ExecProvider::from_immediate(engine.alloc_const(T::one()));
         let result = ExecRegister::from_inner(1);
-        let results = engine.alloc_provider_slice([Provider::from_register(result)]);
+        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
             make_op(result, lhs, rhs),
             ExecInstruction::Return { results },
@@ -347,7 +347,7 @@ fn binary_simple() {
     fn run_test_bin<T, F>(wasm_op: &str, make_op: F)
     where
         T: Display + WasmTypeName + Into<RegisterEntry> + One,
-        F: FnOnce(ExecRegister, ExecRegister, Provider) -> ExecInstruction + Copy,
+        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction + Copy,
     {
         test_register_register::<T, F, T>(wasm_op, make_op);
         test_register_const::<T, F, T>(wasm_op, make_op);
@@ -356,7 +356,7 @@ fn binary_simple() {
     fn run_test_cmp<T, F>(wasm_op: &str, make_op: F)
     where
         T: Display + WasmTypeName + Into<RegisterEntry> + One,
-        F: FnOnce(ExecRegister, ExecRegister, Provider) -> ExecInstruction + Copy,
+        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction + Copy,
     {
         test_register_register::<T, F, bool>(wasm_op, make_op);
         test_register_const::<T, F, bool>(wasm_op, make_op);
@@ -449,7 +449,7 @@ fn binary_const_register() {
     fn test_const_register<T, F>(wasm_op: &str, make_op: F)
     where
         T: Display + WasmTypeName + One + Into<RegisterEntry>,
-        F: FnOnce(ExecRegister, ExecRegister, Provider) -> ExecInstruction,
+        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
     {
         let input_type = <T as WasmTypeName>::NAME;
         let output_type = <T as WasmTypeName>::NAME;
@@ -466,10 +466,10 @@ fn binary_const_register() {
         ));
         let module = create_module(&wasm[..]);
         let engine = module.engine();
-        let input = Provider::from_immediate(engine.alloc_const(T::one()));
+        let input = ExecProvider::from_immediate(engine.alloc_const(T::one()));
         let rhs = ExecRegister::from_inner(0);
         let result = ExecRegister::from_inner(1);
-        let results = engine.alloc_provider_slice([Provider::from_register(result)]);
+        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
             ExecInstruction::Copy { result, input },
             make_op(result, result, rhs.into()),
@@ -531,7 +531,7 @@ fn binary_const_register_commutative() {
     fn test_const_register<T, F, R>(wasm_op: &str, make_op: F)
     where
         T: Display + WasmTypeName + One + Into<RegisterEntry>,
-        F: FnOnce(ExecRegister, ExecRegister, Provider) -> ExecInstruction,
+        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
         R: WasmTypeName,
     {
         let input_type = <T as WasmTypeName>::NAME;
@@ -551,7 +551,7 @@ fn binary_const_register_commutative() {
         let engine = module.engine();
         let rhs = engine.alloc_const(T::one());
         let result = ExecRegister::from_inner(1);
-        let results = engine.alloc_provider_slice([Provider::from_register(result)]);
+        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
             make_op(
                 ExecRegister::from_inner(1),
@@ -566,7 +566,7 @@ fn binary_const_register_commutative() {
     fn run_test_bin<T, F>(wasm_op: &str, make_op: F)
     where
         T: Display + Into<RegisterEntry> + WasmTypeName + One,
-        F: FnOnce(ExecRegister, ExecRegister, Provider) -> ExecInstruction + Copy,
+        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction + Copy,
     {
         test_const_register::<T, F, T>(wasm_op, make_op);
     }
@@ -574,7 +574,7 @@ fn binary_const_register_commutative() {
     fn run_test_cmp<T, F>(wasm_op: &str, make_op: F)
     where
         T: Display + Into<RegisterEntry> + WasmTypeName + One,
-        F: FnOnce(ExecRegister, ExecRegister, Provider) -> ExecInstruction + Copy,
+        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction + Copy,
     {
         test_const_register::<T, F, bool>(wasm_op, make_op);
     }
@@ -658,7 +658,7 @@ fn binary_const_const_fallible() {
             Ok(result) => {
                 assert!(matches!(outcome, Outcome::Eval));
                 let result = engine.alloc_const(result.into());
-                let results = engine.alloc_provider_slice([Provider::from(result)]);
+                let results = engine.alloc_provider_slice([ExecProvider::from(result)]);
                 [ExecInstruction::Return { results }]
             }
             Err(trap_code) => {
@@ -739,7 +739,7 @@ fn binary_const_const_infallible() {
         let module = create_module(&wasm[..]);
         let engine = module.engine();
         let result = engine.alloc_const(exec_op(lhs, rhs).into());
-        let results = engine.alloc_provider_slice([Provider::from(result)]);
+        let results = engine.alloc_provider_slice([ExecProvider::from(result)]);
         let expected = [ExecInstruction::Return { results }];
         assert_func_bodies(&wasm, [expected]);
     }
@@ -847,7 +847,7 @@ fn cmp_zero_register() {
     fn run_test<T, F>(ty: &str, make_op: F)
     where
         T: Default + Into<RegisterEntry>,
-        F: FnOnce(ExecRegister, ExecRegister, Provider) -> ExecInstruction,
+        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
     {
         let wasm = wat2wasm(&format!(
             r#"
@@ -863,7 +863,7 @@ fn cmp_zero_register() {
         let engine = module.engine();
         let rhs = engine.alloc_const(T::default());
         let result = ExecRegister::from_inner(1);
-        let results = engine.alloc_provider_slice([Provider::from_register(result)]);
+        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
             make_op(result, ExecRegister::from_inner(0), rhs.into()),
             ExecInstruction::Return { results },
@@ -900,7 +900,7 @@ fn cmp_zero_const() {
         let module = create_module(&wasm[..]);
         let engine = module.engine();
         let result = engine.alloc_const(exec_op(value));
-        let results = engine.alloc_provider_slice([Provider::from(result)]);
+        let results = engine.alloc_provider_slice([ExecProvider::from(result)]);
         let expected = [ExecInstruction::Return { results }];
         assert_func_bodies(&wasm, [expected]);
     }
@@ -919,7 +919,7 @@ fn cmp_zero_const() {
 fn cmp_registers() {
     fn run_test<F>(ty: &str, wasm_op: &str, make_op: F)
     where
-        F: FnOnce(ExecRegister, ExecRegister, Provider) -> ExecInstruction,
+        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
     {
         let wasm = wat2wasm(&format!(
             r#"
@@ -935,7 +935,7 @@ fn cmp_registers() {
         let module = create_module(&wasm[..]);
         let engine = module.engine();
         let result = ExecRegister::from_inner(2);
-        let results = engine.alloc_provider_slice([Provider::from_register(result)]);
+        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
             make_op(
                 result,
@@ -979,7 +979,7 @@ fn cmp_register_and_const() {
     fn run_test<T, F>(ty: &str, wasm_op: &str, value: T, make_op: F)
     where
         T: Display + Into<RegisterEntry>,
-        F: FnOnce(ExecRegister, ExecRegister, Provider) -> ExecInstruction,
+        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
     {
         let wasm = wat2wasm(&format!(
             r#"
@@ -995,7 +995,7 @@ fn cmp_register_and_const() {
         let module = create_module(&wasm[..]);
         let engine = module.engine();
         let result = ExecRegister::from_inner(1);
-        let results = engine.alloc_provider_slice([Provider::from_register(result)]);
+        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let rhs = engine.alloc_const(value);
         let expected = [
             make_op(result, ExecRegister::from_inner(0), rhs.into()),
@@ -1038,7 +1038,7 @@ fn cmp_const_and_register() {
     fn run_test<T, F>(ty: &str, wasm_op: &str, value: T, make_op: F)
     where
         T: Display + Into<RegisterEntry>,
-        F: FnOnce(ExecRegister, ExecRegister, Provider) -> ExecInstruction,
+        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
     {
         let wasm = wat2wasm(&format!(
             r#"
@@ -1054,7 +1054,7 @@ fn cmp_const_and_register() {
         let module = create_module(&wasm[..]);
         let engine = module.engine();
         let result = ExecRegister::from_inner(1);
-        let results = engine.alloc_provider_slice([Provider::from_register(result)]);
+        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let rhs = engine.alloc_const(value);
         let expected = [
             make_op(result, ExecRegister::from_inner(0), rhs.into()),
@@ -1111,7 +1111,7 @@ fn cmp_const_and_const() {
         let module = create_module(&wasm[..]);
         let engine = module.engine();
         let result = engine.alloc_const(exec_op(lhs, rhs) as i32);
-        let results = engine.alloc_provider_slice([Provider::from(result)]);
+        let results = engine.alloc_provider_slice([ExecProvider::from(result)]);
         let expected = [ExecInstruction::Return { results }];
         assert_func_bodies(&wasm, [expected]);
     }
@@ -1179,7 +1179,7 @@ fn unary_register() {
         let module = create_module(&wasm[..]);
         let engine = module.engine();
         let result = ExecRegister::from_inner(1);
-        let results = engine.alloc_provider_slice([Provider::from_register(result)]);
+        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let input = ExecRegister::from_inner(0);
         let expected = [make_op(result, input), ExecInstruction::Return { results }];
         assert_func_bodies(&wasm, [expected]);
@@ -1319,7 +1319,7 @@ fn unary_const_infallible() {
         let module = create_module(&wasm[..]);
         let engine = module.engine();
         let result = engine.alloc_const(exec_op(input));
-        let results = engine.alloc_provider_slice([Provider::from_immediate(result)]);
+        let results = engine.alloc_provider_slice([ExecProvider::from_immediate(result)]);
         let expected = [ExecInstruction::Return { results }];
         assert_func_bodies(&wasm, [expected]);
     }
@@ -1477,7 +1477,7 @@ fn unary_const_fallible() {
             Ok(result) => {
                 assert!(matches!(outcome, Outcome::Eval));
                 let result = engine.alloc_const(result);
-                let results = engine.alloc_provider_slice([Provider::from_immediate(result)]);
+                let results = engine.alloc_provider_slice([ExecProvider::from_immediate(result)]);
                 [ExecInstruction::Return { results }]
             }
             Err(trap_code) => {
@@ -1626,7 +1626,7 @@ fn load_from_register() {
         let engine = module.engine();
         let ptr = ExecRegister::from_inner(0);
         let result = ExecRegister::from_inner(1);
-        let results = engine.alloc_provider_slice([Provider::from_register(result)]);
+        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
             make_op(result, ptr, offset.into()),
             ExecInstruction::Return { results },
@@ -1675,7 +1675,7 @@ fn load_from_const() {
         let engine = module.engine();
         let const_ptr = engine.alloc_const(100);
         let result = ExecRegister::from_inner(0);
-        let results = engine.alloc_provider_slice([Provider::from_register(result)]);
+        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
             ExecInstruction::Copy {
                 result,
@@ -1710,7 +1710,7 @@ fn store_to_register() {
     fn test<T, F>(store_op: &str, offset: u32, make_op: F)
     where
         T: Display + WasmTypeName + Into<RegisterEntry>,
-        F: FnOnce(ExecRegister, Offset, Provider) -> ExecInstruction,
+        F: FnOnce(ExecRegister, Offset, ExecProvider) -> ExecInstruction,
     {
         let store_type = <T as WasmTypeName>::NAME;
         let wasm = wat2wasm(&format!(
@@ -1754,7 +1754,7 @@ fn store_to_const() {
     fn test<T, F>(store_op: &str, offset: u32, make_op: F)
     where
         T: Display + WasmTypeName + Into<RegisterEntry>,
-        F: FnOnce(ExecRegister, Offset, Provider) -> ExecInstruction,
+        F: FnOnce(ExecRegister, Offset, ExecProvider) -> ExecInstruction,
     {
         let store_type = <T as WasmTypeName>::NAME;
         let wasm = wat2wasm(&format!(
@@ -1820,7 +1820,7 @@ fn global_get() {
         let module = create_module(&wasm[..]);
         let engine = module.engine();
         let result = ExecRegister::from_inner(0);
-        let results = engine.alloc_provider_slice([Provider::from_register(result)]);
+        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
             ExecInstruction::GlobalGet {
                 result,
@@ -1899,7 +1899,7 @@ fn global_set_const() {
         ));
         let module = create_module(&wasm[..]);
         let engine = module.engine();
-        let value = Provider::from_immediate(engine.alloc_const(new_value));
+        let value = ExecProvider::from_immediate(engine.alloc_const(new_value));
         let results = engine.alloc_provider_slice([]);
         let expected = [
             ExecInstruction::GlobalSet {
@@ -2249,7 +2249,7 @@ fn local_set_preserve_multiple() {
     let engine = module.engine();
     let local_0 = ExecRegister::from_inner(0);
     let local_1 = ExecRegister::from_inner(1);
-    let zero = Provider::from(engine.alloc_const(0_i32));
+    let zero = ExecProvider::from(engine.alloc_const(0_i32));
     let result = ExecRegister::from_inner(2);
     let preserve_0 = ExecRegister::from_inner(3);
     let preserve_1 = ExecRegister::from_inner(4);
@@ -2306,7 +2306,7 @@ fn local_set_preserve_multi_phase() {
     let engine = module.engine();
     let local_0 = ExecRegister::from_inner(0);
     let local_1 = ExecRegister::from_inner(1);
-    let zero = Provider::from(engine.alloc_const(0_i32));
+    let zero = ExecProvider::from(engine.alloc_const(0_i32));
     let result = ExecRegister::from_inner(2);
     let preserve_0 = ExecRegister::from_inner(3);
     let preserve_1 = ExecRegister::from_inner(4);
@@ -2499,7 +2499,7 @@ fn local_tee_preserve_multiple() {
     let engine = module.engine();
     let local_0 = ExecRegister::from_inner(0);
     let local_1 = ExecRegister::from_inner(1);
-    let zero = Provider::from(engine.alloc_const(0_i32));
+    let zero = ExecProvider::from(engine.alloc_const(0_i32));
     let result = ExecRegister::from_inner(2);
     let preserve_0 = ExecRegister::from_inner(3);
     let preserve_1 = ExecRegister::from_inner(4);
@@ -2556,7 +2556,7 @@ fn local_tee_preserve_multi_phase() {
     let engine = module.engine();
     let local_0 = ExecRegister::from_inner(0);
     let local_1 = ExecRegister::from_inner(1);
-    let zero = Provider::from(engine.alloc_const(0_i32));
+    let zero = ExecProvider::from(engine.alloc_const(0_i32));
     let result = ExecRegister::from_inner(2);
     let preserve_0 = ExecRegister::from_inner(3);
     let preserve_1 = ExecRegister::from_inner(4);

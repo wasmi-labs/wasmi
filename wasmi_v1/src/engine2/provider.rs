@@ -5,9 +5,9 @@ use core::ops::Neg;
 
 #[derive(Debug)]
 pub struct DedupProviderSliceArena {
-    scratch: Vec<Provider>,
-    dedup: BTreeMap<Box<[Provider]>, DedupProviderSlice>,
-    providers: Vec<Provider>,
+    scratch: Vec<ExecProvider>,
+    dedup: BTreeMap<Box<[ExecProvider]>, DedupProviderSlice>,
+    providers: Vec<ExecProvider>,
 }
 
 impl Default for DedupProviderSliceArena {
@@ -24,7 +24,7 @@ impl DedupProviderSliceArena {
     // /// Allocates a new [`RegisterSlice`] consisting of the given registers.
     pub fn alloc<T>(&mut self, registers: T) -> DedupProviderSlice
     where
-        T: IntoIterator<Item = Provider>,
+        T: IntoIterator<Item = ExecProvider>,
     {
         self.scratch.clear();
         self.scratch.extend(registers);
@@ -48,7 +48,7 @@ impl DedupProviderSliceArena {
     }
 
     /// Resolves a [`RegisterSlice`] to its underlying registers or immediates.
-    pub fn resolve(&self, slice: DedupProviderSlice) -> &[Provider] {
+    pub fn resolve(&self, slice: DedupProviderSlice) -> &[ExecProvider] {
         let first = slice.first as usize;
         let len = slice.len as usize;
         &self.providers[first..first + len]
@@ -81,21 +81,21 @@ impl DedupProviderSlice {
 /// are `u16`, therefore it is possible to represent them using a
 /// value of type `i32`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Provider(i32);
+pub struct ExecProvider(i32);
 
-impl From<ExecRegister> for Provider {
+impl From<ExecRegister> for ExecProvider {
     fn from(register: ExecRegister) -> Self {
         Self::from_register(register)
     }
 }
 
-impl From<ConstRef> for Provider {
+impl From<ConstRef> for ExecProvider {
     fn from(const_ref: ConstRef) -> Self {
         Self::from_immediate(const_ref)
     }
 }
 
-impl Provider {
+impl ExecProvider {
     pub fn from_register(register: ExecRegister) -> Self {
         let inner = register.into_inner() as u32 as i32;
         Self(inner)
@@ -107,7 +107,7 @@ impl Provider {
     }
 }
 
-impl Provider {
+impl ExecProvider {
     pub fn decode(self) -> RegisterOrImmediate {
         if self.0.is_negative() {
             return ConstRef::from_usize(self.0.abs() as usize).into();

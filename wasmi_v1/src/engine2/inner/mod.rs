@@ -13,9 +13,9 @@ use super::{
     DedupProviderSliceArena,
     EngineIdent,
     ExecInstruction,
+    ExecProvider,
     FuncBody,
     FuncTypeRegistry,
-    Provider,
     RegisterEntry,
 };
 use crate::{AsContextMut, Config, Func, FuncType};
@@ -70,7 +70,7 @@ impl EngineResources {
     }
     pub fn alloc_provider_slice<I>(&mut self, providers: I) -> DedupProviderSlice
     where
-        I: IntoIterator<Item = Provider>,
+        I: IntoIterator<Item = ExecProvider>,
         I::IntoIter: ExactSizeIterator,
     {
         self.provider_slices.alloc(providers)
@@ -154,7 +154,7 @@ impl EngineInner {
 
     pub fn alloc_provider_slice<I>(&mut self, providers: I) -> DedupProviderSlice
     where
-        I: IntoIterator<Item = Provider>,
+        I: IntoIterator<Item = ExecProvider>,
         I::IntoIter: ExactSizeIterator,
     {
         self.res.alloc_provider_slice(providers)

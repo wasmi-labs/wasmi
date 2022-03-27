@@ -8,11 +8,11 @@ use crate::engine2::{
     ConstPool,
     DedupProviderSlice as ExecProviderSlice,
     ExecInstruction,
+    ExecProvider,
     ExecRegister,
     FuncBody,
     Instruction,
     Offset,
-    Provider as ExecProvider,
 };
 
 /// Creates a closure constructing a `wasmi` unary instruction.
