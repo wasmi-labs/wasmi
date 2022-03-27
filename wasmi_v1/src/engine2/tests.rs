@@ -2698,3 +2698,41 @@ fn call_1_params_2_results() {
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
+
+#[test]
+fn call_2_params_2_results() {
+    let wasm = wat2wasm(
+        r#"
+            (module
+                (import "module" "field" (func $imported_func (param i32) (param f32) (result i32) (result f32)))
+                (func (export "call") (param i32) (param f32) (result i32) (result f32)
+                    local.get 0
+                    local.get 1
+                    call $imported_func
+                )
+            )
+        "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let call_result = ExecRegister::from_inner(2);
+    let call_results = ExecRegisterSlice::new(call_result, 2);
+    let param_0 = ExecRegister::from_inner(0);
+    let param_1 = ExecRegister::from_inner(1);
+    let params = engine.alloc_provider_slice([param_0.into(), param_1.into()]);
+    let return_result_0 = call_result;
+    let return_result_1 = ExecRegister::from_inner(3);
+    let return_results =
+        engine.alloc_provider_slice([return_result_0.into(), return_result_1.into()]);
+    let expected = [
+        ExecInstruction::Call {
+            func_idx: FuncIdx::from_u32(0),
+            results: call_results,
+            params,
+        },
+        ExecInstruction::Return {
+            results: return_results,
+        },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
