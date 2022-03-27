@@ -112,12 +112,12 @@ impl Providers {
         register
     }
 
-    pub fn push_dynamic_many(&mut self, amount: usize) -> ContiguousRegisterSlice {
+    pub fn push_dynamic_many(&mut self, amount: usize) -> IrRegisterSlice {
         let len = u16::try_from(amount).unwrap_or_else(|error| {
             panic!("tried to push too many dynamic registers ({amount}): {error}")
         });
         let first = self.stacks.bump_dynamic(amount);
-        let slice = ContiguousRegisterSlice::new(first, len);
+        let slice = IrRegisterSlice::new(first, len);
         for register in slice {
             self.providers.push(register.into());
         }
@@ -265,14 +265,14 @@ impl IrRegister {
 /// contiguous, e.g. `[r4, r5, r6]`.
 /// This can usually be used for the results of call instructions.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct ContiguousRegisterSlice {
+pub struct IrRegisterSlice {
     /// The index of the first register.
     start: IrRegister,
     /// The amount of registers in the contiguous slice of registers.
     len: u16,
 }
 
-impl ContiguousRegisterSlice {
+impl IrRegisterSlice {
     /// Creates a new [`ContiguousRegisterSlice`].
     pub fn new(start: IrRegister, len: u16) -> Self {
         Self { start, len }
@@ -312,7 +312,7 @@ impl ContiguousRegisterSlice {
     }
 }
 
-impl IntoIterator for ContiguousRegisterSlice {
+impl IntoIterator for IrRegisterSlice {
     type Item = IrRegister;
     type IntoIter = ContiguousRegisterSliceIter;
 
@@ -324,7 +324,7 @@ impl IntoIterator for ContiguousRegisterSlice {
 /// An iterator over the registers of a [`ContiguousRegisterSlice`].
 #[derive(Debug)]
 pub struct ContiguousRegisterSliceIter {
-    slice: ContiguousRegisterSlice,
+    slice: IrRegisterSlice,
     current: u16,
 }
 

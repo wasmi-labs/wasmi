@@ -31,9 +31,9 @@ pub(crate) use self::{
     func_builder::{
         FunctionBuilder,
         Instr,
+        IrRegister,
         LabelIdx,
         Provider as OpaqueProvider,
-        IrRegister,
         Reloc,
     },
     provider::{DedupProviderSliceArena, ExecProvider, ExecProviderSlice, RegisterOrImmediate},

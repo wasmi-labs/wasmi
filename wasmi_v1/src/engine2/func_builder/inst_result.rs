@@ -1,4 +1,4 @@
-use super::{OpaqueInstruction as Instruction, IrRegister};
+use super::{IrRegister, OpaqueInstruction as Instruction};
 
 impl IrRegister {
     /// Returns `true` if the [`Register`] is in the local register space.

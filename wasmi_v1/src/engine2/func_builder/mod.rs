@@ -19,15 +19,11 @@ use self::{
     control_stack::ControlFlowStack,
     inst_builder::InstructionsBuilder,
     locals_registry::LocalsRegistry,
-    providers::{
-        ContiguousRegisterSlice as OpaqueContiguousRegisterSlice,
-        ProviderSliceArena,
-        Providers,
-    },
+    providers::{IrRegisterSlice, ProviderSliceArena, Providers},
 };
 pub use self::{
     inst_builder::{Instr, LabelIdx, RelativeDepth, Reloc},
-    providers::{Provider, ProviderSlice, IrRegister},
+    providers::{IrRegister, Provider, ProviderSlice},
 };
 use super::{
     bytecode::Offset,
@@ -114,7 +110,7 @@ impl InstructionTypes for OpaqueTypes {
     type Register = IrRegister;
     type Provider = Provider;
     type ProviderSlice = ProviderSlice;
-    type RegisterSlice = OpaqueContiguousRegisterSlice;
+    type RegisterSlice = IrRegisterSlice;
 }
 
 pub type OpaqueInstruction = Instruction<OpaqueTypes>;
@@ -626,7 +622,7 @@ impl<'parser> FunctionBuilder<'parser> {
     fn adjust_provider_stack_for_call(
         &mut self,
         func_type: &FuncType,
-    ) -> (ProviderSlice, OpaqueContiguousRegisterSlice) {
+    ) -> (ProviderSlice, IrRegisterSlice) {
         let (params, results) = func_type.params_results();
         let params_providers = self.providers.pop_n(params.len());
         let params_slice = self.reg_slices.alloc(params_providers.rev());

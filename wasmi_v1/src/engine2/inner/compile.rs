@@ -1,5 +1,5 @@
 use super::{
-    super::{OpaqueProvider, IrRegister},
+    super::{IrRegister, OpaqueProvider},
     EngineInner,
     EngineResources,
 };
