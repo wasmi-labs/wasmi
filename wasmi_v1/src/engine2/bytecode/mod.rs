@@ -5,7 +5,7 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
-pub use self::utils::{ContiguousRegisterSlice, ExecRegister, Global, Offset, Target};
+pub use self::utils::{ExecRegister, ExecRegisterSlice, Global, Offset, Target};
 use super::{DedupProviderSlice, Provider};
 use crate::module::{FuncIdx, FuncTypeIdx};
 use wasmi_core::TrapCode;
@@ -17,7 +17,7 @@ impl InstructionTypes for ExecuteTypes {
     type Register = ExecRegister;
     type Provider = Provider;
     type ProviderSlice = DedupProviderSlice;
-    type RegisterSlice = ContiguousRegisterSlice;
+    type RegisterSlice = ExecRegisterSlice;
 }
 
 pub type ExecInstruction = Instruction<ExecuteTypes>;

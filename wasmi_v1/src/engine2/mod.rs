@@ -25,7 +25,7 @@ pub use self::bytecode::{ExecRegister, Global, Offset};
 use self::bytecode::{ExecRegister, Offset};
 
 pub(crate) use self::{
-    bytecode::{ContiguousRegisterSlice, ExecInstruction, Instruction, InstructionTypes, Target},
+    bytecode::{ExecInstruction, ExecRegisterSlice, Instruction, InstructionTypes, Target},
     code_map::ResolvedFuncBody,
     func_args::{FuncParams, FuncResults, ReadParams, WasmType, WriteResults},
     func_builder::{

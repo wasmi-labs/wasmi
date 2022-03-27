@@ -32,7 +32,6 @@ pub use self::{
 use super::{
     bytecode::Offset,
     register::RegisterEntry,
-    ContiguousRegisterSlice as ExecContiguousRegisterSlice,
     Engine,
     ExecInstruction,
     ExecRegister,

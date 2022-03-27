@@ -68,7 +68,7 @@ impl ExecRegister {
 /// contiguous, e.g. `[r4, r5, r6]`.
 /// This can usually be used for the results of call instructions.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct ContiguousRegisterSlice {
+pub struct ExecRegisterSlice {
     /// The index of the first register.
     start: ExecRegister,
     /// The amount of registers in the contiguous slice of registers.
