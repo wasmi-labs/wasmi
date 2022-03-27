@@ -8,6 +8,10 @@ use crate::ModuleError;
 pub struct FuncIdx(pub(super) u32);
 
 impl FuncIdx {
+    pub(crate) fn from_u32(value: u32) -> Self {
+        Self(value)
+    }
+
     /// Returns the [`FuncIdx`] as `u32`.
     pub fn into_u32(self) -> u32 {
         self.0
