@@ -47,9 +47,9 @@ impl Target {
 
 /// The index of a register in the register machine.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Register(u16);
+pub struct ExecRegister(u16);
 
-impl Register {
+impl ExecRegister {
     pub(crate) fn from_inner(index: u16) -> Self {
         Self(index)
     }
@@ -70,7 +70,7 @@ impl Register {
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct ContiguousRegisterSlice {
     /// The index of the first register.
-    start: Register,
+    start: ExecRegister,
     /// The amount of registers in the contiguous slice of registers.
     len: u16,
 }

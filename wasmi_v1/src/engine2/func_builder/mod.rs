@@ -35,11 +35,11 @@ use super::{
     ContiguousRegisterSlice as ExecContiguousRegisterSlice,
     Engine,
     ExecInstruction,
+    ExecRegister,
     FromRegisterEntry,
     FuncBody,
     Instruction,
     InstructionTypes,
-    Register as ExecRegister,
 };
 use crate::{
     engine2::bytecode::Global,

@@ -19,10 +19,10 @@ mod traits;
 mod tests;
 
 #[cfg(test)]
-pub use self::bytecode::{Global, Offset, Register};
+pub use self::bytecode::{ExecRegister, Global, Offset};
 
 #[cfg(not(test))]
-use self::bytecode::{Offset, Register};
+use self::bytecode::{ExecRegister, Offset};
 
 pub(crate) use self::{
     bytecode::{ContiguousRegisterSlice, ExecInstruction, Instruction, InstructionTypes, Target},

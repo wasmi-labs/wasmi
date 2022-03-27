@@ -1,7 +1,7 @@
 use crate::Engine;
 
 use super::{
-    super::{bytecode::Register as ExecRegister, Provider as ExecProvider},
+    super::{bytecode::ExecRegister, Provider as ExecProvider},
     LocalsRegistry,
 };
 use alloc::vec::Drain;

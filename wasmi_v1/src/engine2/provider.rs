@@ -1,4 +1,4 @@
-use super::{bytecode::Register, ConstRef};
+use super::{bytecode::ExecRegister, ConstRef};
 use crate::arena::Index;
 use alloc::collections::{btree_map::Entry, BTreeMap};
 use core::ops::Neg;
@@ -83,8 +83,8 @@ impl DedupProviderSlice {
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Provider(i32);
 
-impl From<Register> for Provider {
-    fn from(register: Register) -> Self {
+impl From<ExecRegister> for Provider {
+    fn from(register: ExecRegister) -> Self {
         Self::from_register(register)
     }
 }
@@ -96,7 +96,7 @@ impl From<ConstRef> for Provider {
 }
 
 impl Provider {
-    pub fn from_register(register: Register) -> Self {
+    pub fn from_register(register: ExecRegister) -> Self {
         let inner = register.into_inner() as u32 as i32;
         Self(inner)
     }
@@ -112,18 +112,18 @@ impl Provider {
         if self.0.is_negative() {
             return ConstRef::from_usize(self.0.abs() as usize).into();
         }
-        Register::from_inner(self.0 as u16).into()
+        ExecRegister::from_inner(self.0 as u16).into()
     }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum RegisterOrImmediate {
-    Register(Register),
+    Register(ExecRegister),
     Immediate(ConstRef),
 }
 
-impl From<Register> for RegisterOrImmediate {
-    fn from(register: Register) -> Self {
+impl From<ExecRegister> for RegisterOrImmediate {
+    fn from(register: ExecRegister) -> Self {
         Self::Register(register)
     }
 }
