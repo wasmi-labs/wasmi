@@ -23,7 +23,7 @@ use self::{
 };
 pub use self::{
     inst_builder::{Instr, LabelIdx, RelativeDepth, Reloc},
-    providers::{IrRegister, Provider, ProviderSlice},
+    providers::{IrProvider, IrProviderSlice, IrRegister},
 };
 use super::{
     bytecode::Offset,
@@ -79,7 +79,7 @@ pub struct CompileContext<'a> {
 }
 
 impl CompileContext<'_> {
-    pub fn resolve_provider_slice(&self, slice: ProviderSlice) -> &[Provider] {
+    pub fn resolve_provider_slice(&self, slice: IrProviderSlice) -> &[IrProvider] {
         self.reg_slices.resolve(slice)
     }
 
@@ -108,8 +108,8 @@ pub enum OpaqueTypes {}
 
 impl InstructionTypes for OpaqueTypes {
     type Register = IrRegister;
-    type Provider = Provider;
-    type ProviderSlice = ProviderSlice;
+    type Provider = IrProvider;
+    type ProviderSlice = IrProviderSlice;
     type RegisterSlice = IrRegisterSlice;
 }
 
@@ -280,7 +280,7 @@ impl<'parser> FunctionBuilder<'parser> {
     ///
     /// - If the control flow frame stack is empty.
     /// - If the value stack is underflown.
-    fn return_provider_slice(&mut self) -> ProviderSlice {
+    fn return_provider_slice(&mut self) -> IrProviderSlice {
         debug_assert!(self.is_reachable());
         assert!(
             !self.control_frames.is_empty(),
@@ -622,7 +622,7 @@ impl<'parser> FunctionBuilder<'parser> {
     fn adjust_provider_stack_for_call(
         &mut self,
         func_type: &FuncType,
-    ) -> (ProviderSlice, IrRegisterSlice) {
+    ) -> (IrProviderSlice, IrRegisterSlice) {
         let (params, results) = func_type.params_results();
         let params_providers = self.providers.pop_n(params.len());
         let params_slice = self.reg_slices.alloc(params_providers.rev());
@@ -684,7 +684,7 @@ impl<'parser> FunctionBuilder<'parser> {
             let (v0, v1, selector) = builder.providers.pop3();
             let result = builder.providers.push_dynamic();
             match selector {
-                Provider::Register(condition) => {
+                IrProvider::Register(condition) => {
                     builder.inst_builder.push_inst(Instruction::Select {
                         result,
                         condition,
@@ -692,7 +692,7 @@ impl<'parser> FunctionBuilder<'parser> {
                         if_false: v1,
                     });
                 }
-                Provider::Immediate(condition) => {
+                IrProvider::Immediate(condition) => {
                     // Note: if the condition is a constant we can replace the
                     //       `select` instruction with one of its arms.
                     let condition = bool::from_stack_entry(RegisterEntry::from(condition));
@@ -816,12 +816,12 @@ impl<'parser> FunctionBuilder<'parser> {
             let result = builder.providers.push_dynamic();
             let offset = Offset::from(offset);
             match ptr {
-                Provider::Register(ptr) => {
+                IrProvider::Register(ptr) => {
                     builder
                         .inst_builder
                         .push_inst(make_inst(result, ptr, offset));
                 }
-                Provider::Immediate(ptr) => {
+                IrProvider::Immediate(ptr) => {
                     builder.inst_builder.push_inst(Instruction::Copy {
                         result,
                         input: ptr.into(),
@@ -975,19 +975,19 @@ impl<'parser> FunctionBuilder<'parser> {
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
-        make_inst: fn(IrRegister, Offset, Provider) -> OpaqueInstruction,
+        make_inst: fn(IrRegister, Offset, IrProvider) -> OpaqueInstruction,
     ) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
             let offset = Offset::from(offset);
             let (ptr, value) = builder.providers.pop2();
             match ptr {
-                Provider::Register(ptr) => {
+                IrProvider::Register(ptr) => {
                     builder
                         .inst_builder
                         .push_inst(make_inst(ptr, offset, value));
                 }
-                Provider::Immediate(ptr) => {
+                IrProvider::Immediate(ptr) => {
                     // Note: store the constant pointer value into a temporary
                     //       `temp` register and use the register instead since
                     //       otherwise we cannot construct the `wasmi` bytecode
@@ -1177,23 +1177,23 @@ impl<'parser> FunctionBuilder<'parser> {
     /// - `{i32, i64, f32, f64}.ne`
     fn translate_binary_cmp<O, E, T>(&mut self, make_op: O, exec_op: E) -> Result<(), ModuleError>
     where
-        O: FnOnce(IrRegister, IrRegister, Provider) -> OpaqueInstruction,
+        O: FnOnce(IrRegister, IrRegister, IrProvider) -> OpaqueInstruction,
         E: FnOnce(T, T) -> bool,
         T: FromRegisterEntry,
     {
         self.translate_if_reachable(|builder| {
             let (lhs, rhs) = builder.providers.pop2();
             match (lhs, rhs) {
-                (Provider::Register(lhs), rhs) => {
+                (IrProvider::Register(lhs), rhs) => {
                     let result = builder.providers.push_dynamic();
                     builder.inst_builder.push_inst(make_op(result, lhs, rhs));
                 }
-                (lhs @ Provider::Immediate(_), Provider::Register(rhs)) => {
+                (lhs @ IrProvider::Immediate(_), IrProvider::Register(rhs)) => {
                     // Note: we can swap the operands to avoid having to copy `rhs`.
                     let result = builder.providers.push_dynamic();
                     builder.inst_builder.push_inst(make_op(result, rhs, lhs));
                 }
-                (Provider::Immediate(lhs), Provider::Immediate(rhs)) => {
+                (IrProvider::Immediate(lhs), IrProvider::Immediate(rhs)) => {
                     // Note: precompute result and push onto provider stack
                     let lhs = T::from_stack_entry(RegisterEntry::from(lhs));
                     let rhs = T::from_stack_entry(RegisterEntry::from(rhs));
@@ -1232,24 +1232,24 @@ impl<'parser> FunctionBuilder<'parser> {
         exec_op: E,
     ) -> Result<(), ModuleError>
     where
-        O1: FnOnce(IrRegister, IrRegister, Provider) -> OpaqueInstruction,
-        O2: FnOnce(IrRegister, IrRegister, Provider) -> OpaqueInstruction,
+        O1: FnOnce(IrRegister, IrRegister, IrProvider) -> OpaqueInstruction,
+        O2: FnOnce(IrRegister, IrRegister, IrProvider) -> OpaqueInstruction,
         E: FnOnce(T, T) -> bool,
         T: FromRegisterEntry,
     {
         self.translate_if_reachable(|builder| {
             let (lhs, rhs) = builder.providers.pop2();
             match (lhs, rhs) {
-                (Provider::Register(lhs), rhs) => {
+                (IrProvider::Register(lhs), rhs) => {
                     let result = builder.providers.push_dynamic();
                     builder.inst_builder.push_inst(make_op(result, lhs, rhs));
                 }
-                (lhs @ Provider::Immediate(_), Provider::Register(rhs)) => {
+                (lhs @ IrProvider::Immediate(_), IrProvider::Register(rhs)) => {
                     // Note: we can swap the operands to avoid having to copy `rhs`.
                     let result = builder.providers.push_dynamic();
                     builder.inst_builder.push_inst(swap_op(result, rhs, lhs));
                 }
-                (Provider::Immediate(lhs), Provider::Immediate(rhs)) => {
+                (IrProvider::Immediate(lhs), IrProvider::Immediate(rhs)) => {
                     // Note: precompute result and push onto provider stack
                     let lhs = T::from_stack_entry(RegisterEntry::from(lhs));
                     let rhs = T::from_stack_entry(RegisterEntry::from(rhs));
@@ -1501,11 +1501,11 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let input = builder.providers.pop();
             match input {
-                Provider::Register(input) => {
+                IrProvider::Register(input) => {
                     let result = builder.providers.push_dynamic();
                     builder.inst_builder.push_inst(make_op(result, input));
                 }
-                Provider::Immediate(input) => {
+                IrProvider::Immediate(input) => {
                     let result = exec_op(T::from_stack_entry(input.into()));
                     builder.providers.push_const(result.into());
                 }
@@ -1552,7 +1552,7 @@ impl<'parser> FunctionBuilder<'parser> {
         exec_op: E,
     ) -> Result<(), ModuleError>
     where
-        F: FnOnce(IrRegister, IrRegister, Provider) -> OpaqueInstruction,
+        F: FnOnce(IrRegister, IrRegister, IrProvider) -> OpaqueInstruction,
         E: FnOnce(T, T) -> R,
         T: FromRegisterEntry,
         R: Into<Value>,
@@ -1560,11 +1560,11 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let (lhs, rhs) = builder.providers.pop2();
             match (lhs, rhs) {
-                (Provider::Register(lhs), rhs) => {
+                (IrProvider::Register(lhs), rhs) => {
                     let result = builder.providers.push_dynamic();
                     builder.inst_builder.push_inst(make_op(result, lhs, rhs));
                 }
-                (lhs @ Provider::Immediate(_), Provider::Register(rhs)) => {
+                (lhs @ IrProvider::Immediate(_), IrProvider::Register(rhs)) => {
                     // Note: this case is a bit tricky for non-commutative operations.
                     //
                     // In order to be able to represent the constant left-hand side
@@ -1578,7 +1578,7 @@ impl<'parser> FunctionBuilder<'parser> {
                         .inst_builder
                         .push_inst(make_op(result, result, rhs.into()));
                 }
-                (Provider::Immediate(lhs), Provider::Immediate(rhs)) => {
+                (IrProvider::Immediate(lhs), IrProvider::Immediate(rhs)) => {
                     // Note: both operands are constant so we can evaluate the result.
                     let lhs = T::from_stack_entry(RegisterEntry::from(lhs));
                     let rhs = T::from_stack_entry(RegisterEntry::from(rhs));
@@ -1600,18 +1600,18 @@ impl<'parser> FunctionBuilder<'parser> {
         exec_op: E,
     ) -> Result<(), ModuleError>
     where
-        F: FnOnce(IrRegister, IrRegister, Provider) -> OpaqueInstruction,
+        F: FnOnce(IrRegister, IrRegister, IrProvider) -> OpaqueInstruction,
         E: FnOnce(T, T) -> Result<T, TrapCode>,
         T: FromRegisterEntry + Into<Value>,
     {
         self.translate_if_reachable(|builder| {
             let (lhs, rhs) = builder.providers.pop2();
             match (lhs, rhs) {
-                (Provider::Register(lhs), rhs) => {
+                (IrProvider::Register(lhs), rhs) => {
                     let result = builder.providers.push_dynamic();
                     builder.inst_builder.push_inst(make_op(result, lhs, rhs));
                 }
-                (lhs @ Provider::Immediate(_), Provider::Register(rhs)) => {
+                (lhs @ IrProvider::Immediate(_), IrProvider::Register(rhs)) => {
                     // Note: this case is a bit tricky for non-commutative operations.
                     //
                     // In order to be able to represent the constant left-hand side
@@ -1625,7 +1625,7 @@ impl<'parser> FunctionBuilder<'parser> {
                         .inst_builder
                         .push_inst(make_op(result, result, rhs.into()));
                 }
-                (Provider::Immediate(lhs), Provider::Immediate(rhs)) => {
+                (IrProvider::Immediate(lhs), IrProvider::Immediate(rhs)) => {
                     // Note: both operands are constant so we can evaluate the result.
                     let lhs = T::from_stack_entry(RegisterEntry::from(lhs));
                     let rhs = T::from_stack_entry(RegisterEntry::from(rhs));
@@ -1669,7 +1669,7 @@ impl<'parser> FunctionBuilder<'parser> {
         exec_op: E,
     ) -> Result<(), ModuleError>
     where
-        F: FnOnce(IrRegister, IrRegister, Provider) -> OpaqueInstruction,
+        F: FnOnce(IrRegister, IrRegister, IrProvider) -> OpaqueInstruction,
         E: FnOnce(T, T) -> R,
         T: FromRegisterEntry,
         R: Into<Value>,
@@ -1677,16 +1677,16 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let (lhs, rhs) = builder.providers.pop2();
             match (lhs, rhs) {
-                (Provider::Register(lhs), rhs) => {
+                (IrProvider::Register(lhs), rhs) => {
                     let result = builder.providers.push_dynamic();
                     builder.inst_builder.push_inst(make_op(result, lhs, rhs));
                 }
-                (lhs @ Provider::Immediate(_), Provider::Register(rhs)) => {
+                (lhs @ IrProvider::Immediate(_), IrProvider::Register(rhs)) => {
                     // Note: due to commutativity of the operation we can swap the parameters.
                     let result = builder.providers.push_dynamic();
                     builder.inst_builder.push_inst(make_op(result, rhs, lhs));
                 }
-                (Provider::Immediate(lhs), Provider::Immediate(rhs)) => {
+                (IrProvider::Immediate(lhs), IrProvider::Immediate(rhs)) => {
                     let lhs = T::from_stack_entry(RegisterEntry::from(lhs));
                     let rhs = T::from_stack_entry(RegisterEntry::from(rhs));
                     let result = exec_op(lhs, rhs);
@@ -2117,11 +2117,11 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let input = builder.providers.pop();
             match input {
-                Provider::Register(input) => {
+                IrProvider::Register(input) => {
                     let result = builder.providers.push_dynamic();
                     builder.inst_builder.push_inst(make_op(result, input));
                 }
-                Provider::Immediate(input) => match exec_op(T::from_stack_entry(input.into())) {
+                IrProvider::Immediate(input) => match exec_op(T::from_stack_entry(input.into())) {
                     Ok(result) => {
                         builder.providers.push_const(result.into());
                     }

@@ -12,7 +12,7 @@ use wasmi_core::{Value, ValueType};
 #[derive(Debug, Default)]
 pub struct Providers {
     pub(super) locals: LocalsRegistry,
-    providers: Vec<Provider>,
+    providers: Vec<IrProvider>,
     pub(super) stacks: Stacks,
 }
 
@@ -50,13 +50,13 @@ impl Stacks {
         register
     }
 
-    fn pop(&mut self, popped: &Provider) {
+    fn pop(&mut self, popped: &IrProvider) {
         match popped {
-            Provider::Register(IrRegister::Dynamic(_)) => {
+            IrProvider::Register(IrRegister::Dynamic(_)) => {
                 debug_assert!(self.len_dynamic > 0);
                 self.len_dynamic -= 1;
             }
-            Provider::Register(IrRegister::Preserved(_)) => {
+            IrProvider::Register(IrRegister::Preserved(_)) => {
                 debug_assert!(self.len_preserved > 0);
                 self.len_preserved -= 1;
             }
@@ -73,7 +73,7 @@ impl Providers {
         let preserve_index = preserve_index as usize;
         let mut preserved: Option<IrRegister> = None;
         for provider in &mut self.providers {
-            if let Provider::Register(IrRegister::Local(local_index)) = provider {
+            if let IrProvider::Register(IrRegister::Local(local_index)) = provider {
                 if *local_index == preserve_index {
                     let preserved_register = match preserved {
                         Some(register) => register,
@@ -83,7 +83,7 @@ impl Providers {
                             new_preserved
                         }
                     };
-                    *provider = Provider::Register(preserved_register);
+                    *provider = IrProvider::Register(preserved_register);
                 }
             }
         }
@@ -130,8 +130,8 @@ impl Providers {
         register
     }
 
-    pub fn push_const(&mut self, value: Value) -> Provider {
-        let provider = Provider::from(value);
+    pub fn push_const(&mut self, value: Value) -> IrProvider {
+        let provider = IrProvider::from(value);
         self.providers.push(provider);
         provider
     }
@@ -141,26 +141,26 @@ impl Providers {
     /// # Panics
     ///
     /// If the stack is empty.
-    pub fn pop(&mut self) -> Provider {
+    pub fn pop(&mut self) -> IrProvider {
         let popped = self.providers.pop().expect("unexpected missing provider");
         self.stacks.pop(&popped);
         popped
     }
 
-    pub fn pop2(&mut self) -> (Provider, Provider) {
+    pub fn pop2(&mut self) -> (IrProvider, IrProvider) {
         let rhs = self.pop();
         let lhs = self.pop();
         (lhs, rhs)
     }
 
-    pub fn pop3(&mut self) -> (Provider, Provider, Provider) {
+    pub fn pop3(&mut self) -> (IrProvider, IrProvider, IrProvider) {
         let v2 = self.pop();
         let v1 = self.pop();
         let v0 = self.pop();
         (v0, v1, v2)
     }
 
-    pub fn pop_n(&mut self, depth: usize) -> Drain<Provider> {
+    pub fn pop_n(&mut self, depth: usize) -> Drain<IrProvider> {
         let max_index = self.len() as usize;
         debug_assert!(depth <= max_index);
         let min_index = max_index - depth;
@@ -344,39 +344,39 @@ impl Iterator for IrRegisterSliceIter {
 
 /// A provided input for instruction construction.
 #[derive(Debug, Copy, Clone)]
-pub enum Provider {
+pub enum IrProvider {
     /// The input is stored in a register.
     Register(IrRegister),
     /// The input is an immediate constant value.
     Immediate(Value),
 }
 
-impl From<IrRegister> for Provider {
+impl From<IrRegister> for IrProvider {
     fn from(register: IrRegister) -> Self {
         Self::Register(register)
     }
 }
 
-impl From<Value> for Provider {
+impl From<Value> for IrProvider {
     fn from(value: Value) -> Self {
         Self::Immediate(value)
     }
 }
 
-impl Provider {
+impl IrProvider {
     /// Returns `Some` if the [`RegisterOrImmediate`] is a `Register`.
     pub fn filter_register(&self) -> Option<IrRegister> {
         match self {
-            Provider::Register(register) => Some(*register),
-            Provider::Immediate(_) => None,
+            IrProvider::Register(register) => Some(*register),
+            IrProvider::Immediate(_) => None,
         }
     }
 
     /// Returns `Some` if the [`RegisterOrImmediate`] is an immediate value.
     pub fn filter_immediate(&self) -> Option<Value> {
         match self {
-            Provider::Register(_) => None,
-            Provider::Immediate(value) => Some(*value),
+            IrProvider::Register(_) => None,
+            IrProvider::Immediate(value) => Some(*value),
         }
     }
 }
@@ -391,7 +391,7 @@ impl Provider {
 /// Use [`RegisterSliceArena::resolve`] to access the
 /// registers of the [`RegisterSlice`].
 #[derive(Debug, Copy, Clone)]
-pub struct ProviderSlice {
+pub struct IrProviderSlice {
     /// The index to the first [`Register`] of the slice.
     first: u32,
     /// The number of registers in the slice.
@@ -405,14 +405,14 @@ pub struct ProviderSlice {
 /// This implementation does not deduplicate equivalent register slices.
 #[derive(Debug, Default)]
 pub struct ProviderSliceArena {
-    providers: Vec<Provider>,
+    providers: Vec<IrProvider>,
 }
 
 impl ProviderSliceArena {
     /// Allocates a new [`RegisterSlice`] consisting of the given registers.
-    pub fn alloc<T>(&mut self, registers: T) -> ProviderSlice
+    pub fn alloc<T>(&mut self, registers: T) -> IrProviderSlice
     where
-        T: IntoIterator<Item = Provider>,
+        T: IntoIterator<Item = IrProvider>,
     {
         let first = self.providers.len();
         self.providers.extend(registers);
@@ -423,11 +423,11 @@ impl ProviderSliceArena {
         let len = len
             .try_into()
             .unwrap_or_else(|error| panic!("register slice too long: {}", len));
-        ProviderSlice { first, len }
+        IrProviderSlice { first, len }
     }
 
     /// Resolves a [`RegisterSlice`] to its underlying registers or immediates.
-    pub fn resolve(&self, slice: ProviderSlice) -> &[Provider] {
+    pub fn resolve(&self, slice: IrProviderSlice) -> &[IrProvider] {
         let first = slice.first as usize;
         let len = slice.len as usize;
         &self.providers[first..first + len]

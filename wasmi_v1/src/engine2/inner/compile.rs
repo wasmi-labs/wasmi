@@ -1,10 +1,10 @@
 use super::{
-    super::{IrRegister, OpaqueProvider},
+    super::{IrProvider, IrRegister},
     EngineInner,
     EngineResources,
 };
 use crate::engine2::{
-    func_builder::{CompileContext, OpaqueInstruction, ProviderSlice as OpaqueProviderSlice},
+    func_builder::{CompileContext, IrProviderSlice, OpaqueInstruction},
     ConstPool,
     ExecInstruction,
     ExecProvider,
@@ -65,13 +65,13 @@ impl EngineInner {
     fn compile_provider_impl(
         const_pool: &mut ConstPool,
         context: &CompileContext,
-        provider: OpaqueProvider,
+        provider: IrProvider,
     ) -> ExecProvider {
         match provider {
-            OpaqueProvider::Register(register) => {
+            IrProvider::Register(register) => {
                 ExecProvider::from_register(Self::compile_register(context, register))
             }
-            OpaqueProvider::Immediate(value) => {
+            IrProvider::Immediate(value) => {
                 ExecProvider::from_immediate(const_pool.alloc_const(value))
             }
         }
@@ -80,7 +80,7 @@ impl EngineInner {
     fn compile_provider(
         res: &mut EngineResources,
         context: &CompileContext,
-        provider: OpaqueProvider,
+        provider: IrProvider,
     ) -> ExecProvider {
         Self::compile_provider_impl(&mut res.const_pool, context, provider)
     }
@@ -88,7 +88,7 @@ impl EngineInner {
     fn compile_provider_slice(
         res: &mut EngineResources,
         context: &CompileContext,
-        provider: OpaqueProviderSlice,
+        provider: IrProviderSlice,
     ) -> ExecProviderSlice {
         let providers = context
             .resolve_provider_slice(provider)
@@ -113,7 +113,7 @@ impl EngineInner {
         res: &mut EngineResources,
         context: &CompileContext,
         result: IrRegister,
-        input: OpaqueProvider,
+        input: IrProvider,
         make_op: fn(ExecRegister, ExecProvider) -> ExecInstruction,
     ) -> ExecInstruction {
         let result = Self::compile_register(context, result);
@@ -126,7 +126,7 @@ impl EngineInner {
         context: &CompileContext,
         result: IrRegister,
         lhs: IrRegister,
-        rhs: OpaqueProvider,
+        rhs: IrProvider,
         make_op: fn(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
     ) -> ExecInstruction {
         let result = Self::compile_register(context, result);
@@ -152,7 +152,7 @@ impl EngineInner {
         context: &CompileContext,
         ptr: IrRegister,
         offset: Offset,
-        value: OpaqueProvider,
+        value: IrProvider,
         make_op: fn(ExecRegister, Offset, ExecProvider) -> ExecInstruction,
     ) -> ExecInstruction {
         let ptr = Self::compile_register(context, ptr);
