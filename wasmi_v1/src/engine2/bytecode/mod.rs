@@ -5,11 +5,10 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
-use wasmi_core::TrapCode;
-
 pub use self::utils::{ContiguousRegisterSlice, Global, Offset, Register, Target};
 use super::{DedupProviderSlice, Provider};
 use crate::module::{FuncIdx, FuncTypeIdx};
+use wasmi_core::TrapCode;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum ExecuteTypes {}
