@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use super::*;
 use crate::{
-    engine::{DedupProviderSlice, Instr, Target},
+    engine::{ExecProviderSlice, Instr, Target},
     engine2::{ExecInstruction, ExecProvider, ExecRegister, Offset, RegisterEntry, WasmType},
     Engine,
     Module,
@@ -214,7 +214,7 @@ fn implicit_return_no_value() {
     "#,
     );
     let expected = [ExecInstruction::Return {
-        results: DedupProviderSlice::empty(),
+        results: ExecProviderSlice::empty(),
     }];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -239,7 +239,7 @@ fn add_registers() {
             rhs: ExecRegister::from_inner(1).into(),
         },
         ExecInstruction::Return {
-            results: DedupProviderSlice::new(0, 1),
+            results: ExecProviderSlice::new(0, 1),
         },
     ];
     assert_func_bodies(&wasm, [expected]);

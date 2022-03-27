@@ -9,11 +9,11 @@ use super::{
     ConstPool,
     ConstRef,
     DedupFuncType,
-    DedupProviderSlice,
     DedupProviderSliceArena,
     EngineIdent,
     ExecInstruction,
     ExecProvider,
+    ExecProviderSlice,
     FuncBody,
     FuncTypeRegistry,
     RegisterEntry,
@@ -68,7 +68,7 @@ impl EngineResources {
     {
         f(self.func_types.resolve_func_type(func_type))
     }
-    pub fn alloc_provider_slice<I>(&mut self, providers: I) -> DedupProviderSlice
+    pub fn alloc_provider_slice<I>(&mut self, providers: I) -> ExecProviderSlice
     where
         I: IntoIterator<Item = ExecProvider>,
         I::IntoIter: ExactSizeIterator,
@@ -152,7 +152,7 @@ impl EngineInner {
         self.code_map.alloc(insts)
     }
 
-    pub fn alloc_provider_slice<I>(&mut self, providers: I) -> DedupProviderSlice
+    pub fn alloc_provider_slice<I>(&mut self, providers: I) -> ExecProviderSlice
     where
         I: IntoIterator<Item = ExecProvider>,
         I::IntoIter: ExactSizeIterator,

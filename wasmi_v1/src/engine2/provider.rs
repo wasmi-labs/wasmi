@@ -6,7 +6,7 @@ use core::ops::Neg;
 #[derive(Debug)]
 pub struct DedupProviderSliceArena {
     scratch: Vec<ExecProvider>,
-    dedup: BTreeMap<Box<[ExecProvider]>, DedupProviderSlice>,
+    dedup: BTreeMap<Box<[ExecProvider]>, ExecProviderSlice>,
     providers: Vec<ExecProvider>,
 }
 
@@ -22,7 +22,7 @@ impl Default for DedupProviderSliceArena {
 
 impl DedupProviderSliceArena {
     // /// Allocates a new [`RegisterSlice`] consisting of the given registers.
-    pub fn alloc<T>(&mut self, registers: T) -> DedupProviderSlice
+    pub fn alloc<T>(&mut self, registers: T) -> ExecProviderSlice
     where
         T: IntoIterator<Item = ExecProvider>,
     {
@@ -40,7 +40,7 @@ impl DedupProviderSliceArena {
                 let len = len
                     .try_into()
                     .unwrap_or_else(|error| panic!("register slice too long: {}", len));
-                let dedup = DedupProviderSlice { first, len };
+                let dedup = ExecProviderSlice { first, len };
                 vacant.insert(dedup);
                 dedup
             }
@@ -48,7 +48,7 @@ impl DedupProviderSliceArena {
     }
 
     /// Resolves a [`RegisterSlice`] to its underlying registers or immediates.
-    pub fn resolve(&self, slice: DedupProviderSlice) -> &[ExecProvider] {
+    pub fn resolve(&self, slice: ExecProviderSlice) -> &[ExecProvider] {
         let first = slice.first as usize;
         let len = slice.len as usize;
         &self.providers[first..first + len]
@@ -56,12 +56,12 @@ impl DedupProviderSliceArena {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct DedupProviderSlice {
+pub struct ExecProviderSlice {
     first: u16,
     len: u16,
 }
 
-impl DedupProviderSlice {
+impl ExecProviderSlice {
     pub fn new(first: u16, len: u16) -> Self {
         Self { first, len }
     }

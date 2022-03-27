@@ -1,5 +1,5 @@
 use super::{
-    super::{DedupProviderSlice, DedupProviderSliceArena, ExecProvider},
+    super::{DedupProviderSliceArena, ExecProvider, ExecProviderSlice},
     ExecInstruction,
 };
 

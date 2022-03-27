@@ -6,9 +6,9 @@ use super::{
 use crate::engine2::{
     func_builder::{CompileContext, OpaqueInstruction, ProviderSlice as OpaqueProviderSlice},
     ConstPool,
-    DedupProviderSlice as ExecProviderSlice,
     ExecInstruction,
     ExecProvider,
+    ExecProviderSlice,
     ExecRegister,
     FuncBody,
     Instruction,

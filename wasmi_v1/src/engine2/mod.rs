@@ -36,7 +36,7 @@ pub(crate) use self::{
         Register as OpaqueRegister,
         Reloc,
     },
-    provider::{DedupProviderSlice, DedupProviderSliceArena, ExecProvider, RegisterOrImmediate},
+    provider::{DedupProviderSliceArena, ExecProvider, ExecProviderSlice, RegisterOrImmediate},
     register::{FromRegisterEntry, RegisterEntry},
     traits::{CallParams, CallResults},
 };
@@ -149,7 +149,7 @@ impl Engine {
         self.inner.lock().alloc_func_body(insts)
     }
 
-    pub(super) fn alloc_provider_slice<I>(&self, providers: I) -> DedupProviderSlice
+    pub(super) fn alloc_provider_slice<I>(&self, providers: I) -> ExecProviderSlice
     where
         I: IntoIterator<Item = ExecProvider>,
         I::IntoIter: ExactSizeIterator,
