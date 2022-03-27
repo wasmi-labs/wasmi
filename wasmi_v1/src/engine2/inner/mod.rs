@@ -1,3 +1,4 @@
+mod compile;
 
 use super::{
     func_builder::{CompileContext, OpaqueInstruction},

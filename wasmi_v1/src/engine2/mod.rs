@@ -21,17 +21,28 @@ mod tests;
 #[cfg(test)]
 pub use self::bytecode::{Global, Offset, Register};
 
+#[cfg(not(test))]
+use self::bytecode::{Offset, Register};
+
 pub(crate) use self::{
     bytecode::{ContiguousRegisterSlice, ExecInstruction, Instruction, InstructionTypes, Target},
     code_map::ResolvedFuncBody,
     func_args::{FuncParams, FuncResults, ReadParams, WasmType, WriteResults},
-    func_builder::{FunctionBuilder, Instr, LabelIdx, Reloc},
+    func_builder::{
+        FunctionBuilder,
+        Instr,
+        LabelIdx,
+        Provider as OpaqueProvider,
+        Register as OpaqueRegister,
+        Reloc,
+    },
     provider::{DedupProviderSlice, DedupProviderSliceArena, Provider, RegisterOrImmediate},
     register::{FromRegisterEntry, RegisterEntry},
     traits::{CallParams, CallResults},
 };
 use self::{
     code_map::CodeMap,
+    func_builder::{CompileContext, OpaqueInstruction},
     func_types::FuncTypeRegistry,
     ident::{EngineIdent, Guarded},
     inner::EngineInner,
@@ -151,6 +162,13 @@ impl Engine {
         T: Into<RegisterEntry>,
     {
         self.inner.lock().alloc_const(value)
+    }
+
+    pub fn compile<I>(&self, context: &CompileContext, insts: I) -> FuncBody
+    where
+        I: IntoIterator<Item = OpaqueInstruction>,
+    {
+        self.inner.lock().compile(context, insts)
     }
 
     /// Executes the given [`Func`] using the given arguments `params` and stores the result into `results`.

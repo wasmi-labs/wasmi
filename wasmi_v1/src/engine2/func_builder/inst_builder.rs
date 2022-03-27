@@ -3,6 +3,7 @@
 use super::{
     locals_registry::LocalsRegistry,
     providers::{Providers, Stacks},
+    CompileContext,
     Engine,
     FuncBody,
     OpaqueInstruction,
@@ -262,14 +263,13 @@ impl InstructionsBuilder {
     pub fn finish(
         &mut self,
         engine: &Engine,
-        reg_arena: &ProviderSliceArena,
+        reg_slices: &ProviderSliceArena,
         providers: &Providers,
     ) -> FuncBody {
-        let instrs = self
-            .insts
-            .drain(..)
-            .map(|instr| instr.compile(engine, reg_arena, providers))
-            .collect::<Vec<_>>(); // TODO: replace collect usage
-        engine.alloc_func_body(instrs)
+        let context = CompileContext {
+            reg_slices,
+            providers,
+        };
+        engine.compile(&context, self.insts.drain(..))
     }
 }

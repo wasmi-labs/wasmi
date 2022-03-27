@@ -6,7 +6,6 @@ mod inst_builder;
 mod inst_result;
 mod locals_registry;
 mod providers;
-mod translate;
 
 use self::{
     control_frame::{
