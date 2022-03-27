@@ -66,32 +66,6 @@ impl Stacks {
 }
 
 impl Providers {
-    pub fn compile_provider(&self, engine: &Engine, provider: Provider) -> ExecProvider {
-        match provider {
-            Provider::Register(register) => {
-                ExecProvider::from_register(self.compile_register(register))
-            }
-            Provider::Immediate(value) => ExecProvider::from_immediate(engine.alloc_const(value)),
-        }
-    }
-
-    pub fn compile_register(&self, register: Register) -> ExecRegister {
-        let index = match register {
-            Register::Local(index) => index,
-            Register::Dynamic(index) => self.locals.len_registered() as usize + index,
-            Register::Preserved(index) => {
-                self.locals.len_registered() as usize + self.stacks.max_dynamic() + index
-            }
-        };
-        let bounded = index.try_into().unwrap_or_else(|error| {
-            panic!(
-                "encountered out of bounds register index ({}): {}",
-                index, error
-            )
-        });
-        ExecRegister::from_inner(bounded)
-    }
-
     /// Preserves `local.get` values on the provider stack if any.
     ///
     /// Returns `Some` preserved register if any provider had to be preserved.
