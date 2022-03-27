@@ -2908,3 +2908,192 @@ fn call_2_params_2_results() {
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
+
+#[test]
+fn call_indirect_0_params_0_results() {
+    let wasm = wat2wasm(
+        r#"
+            (module
+                (import "module" "table" (table 1 funcref))
+                (func (export "call")
+                    i32.const 1 ;; table index
+                    call_indirect
+                )
+            )
+        "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let index = ExecProvider::from_immediate(engine.alloc_const(1_i32));
+    let call_results = ExecRegisterSlice::empty();
+    let params = engine.alloc_provider_slice([]);
+    let return_results = engine.alloc_provider_slice([]);
+    let expected = [
+        ExecInstruction::CallIndirect {
+            func_type_idx: FuncTypeIdx::from_u32(0),
+            index,
+            results: call_results,
+            params,
+        },
+        ExecInstruction::Return {
+            results: return_results,
+        },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+#[test]
+fn call_indirect_1_params_1_results() {
+    let wasm = wat2wasm(
+        r#"
+            (module
+                (import "module" "table" (table 1 funcref))
+                (func (export "call") (param i32) (result i32)
+                    local.get 0 ;; first param
+                    i32.const 1 ;; table index
+                    call_indirect (param i32) (result i32)
+                )
+            )
+        "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let index = ExecProvider::from_immediate(engine.alloc_const(1_i32));
+    let call_result = ExecRegister::from_inner(1);
+    let call_results = ExecRegisterSlice::new(call_result, 1);
+    let param = ExecRegister::from_inner(0);
+    let params = engine.alloc_provider_slice([param.into()]);
+    let return_result = call_result;
+    let return_results = engine.alloc_provider_slice([return_result.into()]);
+    let expected = [
+        ExecInstruction::CallIndirect {
+            func_type_idx: FuncTypeIdx::from_u32(0),
+            index,
+            results: call_results,
+            params,
+        },
+        ExecInstruction::Return {
+            results: return_results,
+        },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+#[test]
+fn call_indirect_2_params_1_results() {
+    let wasm = wat2wasm(
+        r#"
+            (module
+                (import "module" "table" (table 1 funcref))
+                (func (export "call") (param i32) (param f32) (result i32)
+                    local.get 0 ;; 1st param
+                    local.get 1 ;; 2nd param
+                    i32.const 1 ;; table index
+                    call_indirect (param i32) (param f32) (result i32)
+                )
+            )
+        "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let index = ExecProvider::from_immediate(engine.alloc_const(1_i32));
+    let call_result = ExecRegister::from_inner(2);
+    let call_results = ExecRegisterSlice::new(call_result, 1);
+    let param_0 = ExecRegister::from_inner(0);
+    let param_1 = ExecRegister::from_inner(1);
+    let params = engine.alloc_provider_slice([param_0.into(), param_1.into()]);
+    let return_result = call_result;
+    let return_results = engine.alloc_provider_slice([return_result.into()]);
+    let expected = [
+        ExecInstruction::CallIndirect {
+            func_type_idx: FuncTypeIdx::from_u32(0),
+            index,
+            results: call_results,
+            params,
+        },
+        ExecInstruction::Return {
+            results: return_results,
+        },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+#[test]
+fn call_indirect_1_params_2_results() {
+    let wasm = wat2wasm(
+        r#"
+            (module
+                (import "module" "table" (table 1 funcref))
+                (func (export "call") (param i32) (result i32) (result f32)
+                    local.get 0 ;; 1st param
+                    i32.const 1 ;; table index
+                    call_indirect (param i32) (result i32) (result f32)
+                )
+            )
+        "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let index = ExecProvider::from_immediate(engine.alloc_const(1_i32));
+    let call_result = ExecRegister::from_inner(1);
+    let call_results = ExecRegisterSlice::new(call_result, 2);
+    let param = ExecRegister::from_inner(0);
+    let params = engine.alloc_provider_slice([param.into()]);
+    let return_result_0 = call_result;
+    let return_result_1 = ExecRegister::from_inner(2);
+    let return_results =
+        engine.alloc_provider_slice([return_result_0.into(), return_result_1.into()]);
+    let expected = [
+        ExecInstruction::CallIndirect {
+            func_type_idx: FuncTypeIdx::from_u32(0),
+            index,
+            results: call_results,
+            params,
+        },
+        ExecInstruction::Return {
+            results: return_results,
+        },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+#[test]
+fn call_indirect_2_params_2_results() {
+    let wasm = wat2wasm(
+        r#"
+            (module
+                (import "module" "table" (table 1 funcref))
+                (func (export "call") (param i32) (param f32) (result i32) (result f32)
+                    local.get 0 ;; 1st param
+                    local.get 1 ;; 2nd param
+                    i32.const 1 ;; table index
+                    call_indirect (param i32) (param f32) (result i32) (result f32)
+                )
+            )
+        "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let index = ExecProvider::from_immediate(engine.alloc_const(1_i32));
+    let call_result = ExecRegister::from_inner(2);
+    let call_results = ExecRegisterSlice::new(call_result, 2);
+    let param_0 = ExecRegister::from_inner(0);
+    let param_1 = ExecRegister::from_inner(1);
+    let params = engine.alloc_provider_slice([param_0.into(), param_1.into()]);
+    let return_result_0 = call_result;
+    let return_result_1 = ExecRegister::from_inner(3);
+    let return_results =
+        engine.alloc_provider_slice([return_result_0.into(), return_result_1.into()]);
+    let expected = [
+        ExecInstruction::CallIndirect {
+            func_type_idx: FuncTypeIdx::from_u32(0),
+            index,
+            results: call_results,
+            params,
+        },
+        ExecInstruction::Return {
+            results: return_results,
+        },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
