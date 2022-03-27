@@ -102,7 +102,13 @@ impl ExecProvider {
     }
 
     pub fn from_immediate(immediate: ConstRef) -> Self {
-        let inner = (u32::from(immediate.into_inner()) as i32).neg();
+        println!("ExecProvider::from_immediate({immediate:?})");
+        let index = u32::from(immediate.into_inner());
+        assert!(
+            index < i32::MAX as u32,
+            "encountered out of bounds constant index: {index}"
+        );
+        let inner = (index as i32).wrapping_add(1).neg();
         Self(inner)
     }
 }
@@ -110,7 +116,7 @@ impl ExecProvider {
 impl ExecProvider {
     pub fn decode(self) -> RegisterOrImmediate {
         if self.0.is_negative() {
-            return ConstRef::from_usize(self.0.abs() as usize).into();
+            return ConstRef::from_usize(self.0.abs().wrapping_sub(1) as usize).into();
         }
         ExecRegister::from_inner(self.0 as u16).into()
     }
