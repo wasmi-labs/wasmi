@@ -2494,7 +2494,7 @@ fn local_tee_preserve_multiple() {
         },
         ExecInstruction::Copy {
             result: local_1,
-            input: zero,
+            input: local_0.into(),
         },
         ExecInstruction::I32Add {
             result,
