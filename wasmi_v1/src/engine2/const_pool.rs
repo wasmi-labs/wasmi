@@ -1,3 +1,4 @@
+use super::RegisterEntry;
 use crate::arena::{DedupArena, Index};
 
 /// The index of a constant stored in the [`ConstPool`].
@@ -71,8 +72,11 @@ impl ConstPool {
     }
 
     /// Allocates a new constant value and returns a unique index to it.
-    pub fn alloc_const(&mut self, value: Const) -> ConstRef {
-        self.values.alloc(value)
+    pub fn alloc_const<T>(&mut self, value: T) -> ConstRef
+    where
+        T: Into<RegisterEntry>,
+    {
+        self.values.alloc(Const::from_inner(value.into().to_bits()))
     }
 
     /// Resolves the index to a stored constant if any.
