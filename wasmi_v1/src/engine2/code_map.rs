@@ -83,18 +83,18 @@ impl CodeMap {
     pub fn alloc<I>(&mut self, insts: I) -> FuncBody
     where
         I: IntoIterator<Item = ExecInstruction>,
-        I::IntoIter: ExactSizeIterator,
     {
         let inst = self.next_index();
         let insts = insts.into_iter();
-        let len_insts = insts.len();
-        let len_insts = len_insts.try_into().unwrap_or_else(|error| {
+        let len_before = self.insts.len();
+        self.insts.extend(insts);
+        let len_after = self.insts.len();
+        let len_insts = (len_after - len_before).try_into().unwrap_or_else(|error| {
             panic!(
                 "tried to allocate function with too many instructions ({}): {}",
-                len_insts, error
+                len_before, error
             )
         });
-        self.insts.extend(insts);
         FuncBody::new(inst, len_insts)
     }
 
