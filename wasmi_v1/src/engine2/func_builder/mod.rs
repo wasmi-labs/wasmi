@@ -625,7 +625,7 @@ impl<'parser> FunctionBuilder<'parser> {
     ) -> (IrProviderSlice, IrRegisterSlice) {
         let (params, results) = func_type.params_results();
         let params_providers = self.providers.pop_n(params.len());
-        let params_slice = self.reg_slices.alloc(params_providers.rev());
+        let params_slice = self.reg_slices.alloc(params_providers);
         let results_slice = self.providers.push_dynamic_many(results.len());
         (params_slice, results_slice)
     }
