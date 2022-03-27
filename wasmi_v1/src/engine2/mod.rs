@@ -150,9 +150,7 @@ impl Engine {
     where
         T: Into<RegisterEntry>,
     {
-        self.inner
-            .lock()
-            .alloc_const(Const::from_inner(value.into().to_bits()))
+        self.inner.lock().alloc_const(value)
     }
 
     /// Executes the given [`Func`] using the given arguments `params` and stores the result into `results`.
