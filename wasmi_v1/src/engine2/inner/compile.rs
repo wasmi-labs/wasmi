@@ -1,5 +1,5 @@
 use super::{
-    super::{OpaqueProvider, OpaqueRegister},
+    super::{OpaqueProvider, IrRegister},
     EngineInner,
     EngineResources,
 };
@@ -58,7 +58,7 @@ impl EngineInner {
         self.code_map.alloc(insts)
     }
 
-    fn compile_register(context: &CompileContext, register: OpaqueRegister) -> ExecRegister {
+    fn compile_register(context: &CompileContext, register: IrRegister) -> ExecRegister {
         context.compile_register(register)
     }
 
@@ -100,8 +100,8 @@ impl EngineInner {
 
     fn compile_inst_rr(
         context: &CompileContext,
-        result: OpaqueRegister,
-        input: OpaqueRegister,
+        result: IrRegister,
+        input: IrRegister,
         make_op: fn(ExecRegister, ExecRegister) -> ExecInstruction,
     ) -> ExecInstruction {
         let result = Self::compile_register(context, result);
@@ -112,7 +112,7 @@ impl EngineInner {
     fn compile_inst_rp(
         res: &mut EngineResources,
         context: &CompileContext,
-        result: OpaqueRegister,
+        result: IrRegister,
         input: OpaqueProvider,
         make_op: fn(ExecRegister, ExecProvider) -> ExecInstruction,
     ) -> ExecInstruction {
@@ -124,8 +124,8 @@ impl EngineInner {
     fn compile_inst_rrp(
         res: &mut EngineResources,
         context: &CompileContext,
-        result: OpaqueRegister,
-        lhs: OpaqueRegister,
+        result: IrRegister,
+        lhs: IrRegister,
         rhs: OpaqueProvider,
         make_op: fn(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
     ) -> ExecInstruction {
@@ -137,8 +137,8 @@ impl EngineInner {
 
     fn compile_load(
         context: &CompileContext,
-        result: OpaqueRegister,
-        ptr: OpaqueRegister,
+        result: IrRegister,
+        ptr: IrRegister,
         offset: Offset,
         make_op: fn(ExecRegister, ExecRegister, Offset) -> ExecInstruction,
     ) -> ExecInstruction {
@@ -150,7 +150,7 @@ impl EngineInner {
     fn compile_store(
         res: &mut EngineResources,
         context: &CompileContext,
-        ptr: OpaqueRegister,
+        ptr: IrRegister,
         offset: Offset,
         value: OpaqueProvider,
         make_op: fn(ExecRegister, Offset, ExecProvider) -> ExecInstruction,

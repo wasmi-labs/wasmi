@@ -33,7 +33,7 @@ pub(crate) use self::{
         Instr,
         LabelIdx,
         Provider as OpaqueProvider,
-        Register as OpaqueRegister,
+        IrRegister,
         Reloc,
     },
     provider::{DedupProviderSliceArena, ExecProvider, ExecProviderSlice, RegisterOrImmediate},

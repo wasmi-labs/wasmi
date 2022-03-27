@@ -27,7 +27,7 @@ use self::{
 };
 pub use self::{
     inst_builder::{Instr, LabelIdx, RelativeDepth, Reloc},
-    providers::{Provider, ProviderSlice, Register},
+    providers::{Provider, ProviderSlice, IrRegister},
 };
 use super::{
     bytecode::Offset,
@@ -87,11 +87,11 @@ impl CompileContext<'_> {
         self.reg_slices.resolve(slice)
     }
 
-    pub fn compile_register(&self, register: Register) -> ExecRegister {
+    pub fn compile_register(&self, register: IrRegister) -> ExecRegister {
         let index = match register {
-            Register::Local(index) => index,
-            Register::Dynamic(index) => self.providers.locals.len_registered() as usize + index,
-            Register::Preserved(index) => {
+            IrRegister::Local(index) => index,
+            IrRegister::Dynamic(index) => self.providers.locals.len_registered() as usize + index,
+            IrRegister::Preserved(index) => {
                 self.providers.locals.len_registered() as usize
                     + self.providers.stacks.max_dynamic()
                     + index
@@ -111,7 +111,7 @@ impl CompileContext<'_> {
 pub enum OpaqueTypes {}
 
 impl InstructionTypes for OpaqueTypes {
-    type Register = Register;
+    type Register = IrRegister;
     type Provider = Provider;
     type ProviderSlice = ProviderSlice;
     type RegisterSlice = OpaqueContiguousRegisterSlice;
@@ -722,12 +722,12 @@ impl<'parser> FunctionBuilder<'parser> {
     pub fn translate_local_set(&mut self, local_idx: u32) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
             let input = builder.providers.pop();
-            let result = Register::Local(local_idx as usize);
+            let result = IrRegister::Local(local_idx as usize);
             let copy_preserve =
                 if let Some(preserved) = builder.providers.preserve_locals(local_idx) {
                     // Note: insert a `copy` instruction to preserve previous
                     //       values of all `local.get` calls to the same index.
-                    let replace = Register::Local(local_idx as usize);
+                    let replace = IrRegister::Local(local_idx as usize);
                     Some(Instruction::Copy {
                         result: preserved,
                         input: replace.into(),
@@ -812,7 +812,7 @@ impl<'parser> FunctionBuilder<'parser> {
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
-        make_inst: fn(Register, Register, Offset) -> OpaqueInstruction,
+        make_inst: fn(IrRegister, IrRegister, Offset) -> OpaqueInstruction,
     ) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
@@ -979,7 +979,7 @@ impl<'parser> FunctionBuilder<'parser> {
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
-        make_inst: fn(Register, Offset, Provider) -> OpaqueInstruction,
+        make_inst: fn(IrRegister, Offset, Provider) -> OpaqueInstruction,
     ) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
@@ -1181,7 +1181,7 @@ impl<'parser> FunctionBuilder<'parser> {
     /// - `{i32, i64, f32, f64}.ne`
     fn translate_binary_cmp<O, E, T>(&mut self, make_op: O, exec_op: E) -> Result<(), ModuleError>
     where
-        O: FnOnce(Register, Register, Provider) -> OpaqueInstruction,
+        O: FnOnce(IrRegister, IrRegister, Provider) -> OpaqueInstruction,
         E: FnOnce(T, T) -> bool,
         T: FromRegisterEntry,
     {
@@ -1236,8 +1236,8 @@ impl<'parser> FunctionBuilder<'parser> {
         exec_op: E,
     ) -> Result<(), ModuleError>
     where
-        O1: FnOnce(Register, Register, Provider) -> OpaqueInstruction,
-        O2: FnOnce(Register, Register, Provider) -> OpaqueInstruction,
+        O1: FnOnce(IrRegister, IrRegister, Provider) -> OpaqueInstruction,
+        O2: FnOnce(IrRegister, IrRegister, Provider) -> OpaqueInstruction,
         E: FnOnce(T, T) -> bool,
         T: FromRegisterEntry,
     {
@@ -1497,7 +1497,7 @@ impl<'parser> FunctionBuilder<'parser> {
         exec_op: E,
     ) -> Result<(), ModuleError>
     where
-        F: FnOnce(Register, Register) -> OpaqueInstruction,
+        F: FnOnce(IrRegister, IrRegister) -> OpaqueInstruction,
         E: FnOnce(T) -> R,
         T: FromRegisterEntry,
         R: Into<Value>,
@@ -1556,7 +1556,7 @@ impl<'parser> FunctionBuilder<'parser> {
         exec_op: E,
     ) -> Result<(), ModuleError>
     where
-        F: FnOnce(Register, Register, Provider) -> OpaqueInstruction,
+        F: FnOnce(IrRegister, IrRegister, Provider) -> OpaqueInstruction,
         E: FnOnce(T, T) -> R,
         T: FromRegisterEntry,
         R: Into<Value>,
@@ -1604,7 +1604,7 @@ impl<'parser> FunctionBuilder<'parser> {
         exec_op: E,
     ) -> Result<(), ModuleError>
     where
-        F: FnOnce(Register, Register, Provider) -> OpaqueInstruction,
+        F: FnOnce(IrRegister, IrRegister, Provider) -> OpaqueInstruction,
         E: FnOnce(T, T) -> Result<T, TrapCode>,
         T: FromRegisterEntry + Into<Value>,
     {
@@ -1673,7 +1673,7 @@ impl<'parser> FunctionBuilder<'parser> {
         exec_op: E,
     ) -> Result<(), ModuleError>
     where
-        F: FnOnce(Register, Register, Provider) -> OpaqueInstruction,
+        F: FnOnce(IrRegister, IrRegister, Provider) -> OpaqueInstruction,
         E: FnOnce(T, T) -> R,
         T: FromRegisterEntry,
         R: Into<Value>,
@@ -2091,7 +2091,7 @@ impl<'parser> FunctionBuilder<'parser> {
         exec_op: E,
     ) -> Result<(), ModuleError>
     where
-        F: FnOnce(Register, Register) -> OpaqueInstruction,
+        F: FnOnce(IrRegister, IrRegister) -> OpaqueInstruction,
         E: FnOnce(T) -> R,
         T: FromRegisterEntry,
         R: Into<Value>,
@@ -2113,7 +2113,7 @@ impl<'parser> FunctionBuilder<'parser> {
         exec_op: E,
     ) -> Result<(), ModuleError>
     where
-        F: FnOnce(Register, Register) -> OpaqueInstruction,
+        F: FnOnce(IrRegister, IrRegister) -> OpaqueInstruction,
         E: FnOnce(T) -> Result<R, TrapCode>,
         T: FromRegisterEntry,
         R: Into<Value>,

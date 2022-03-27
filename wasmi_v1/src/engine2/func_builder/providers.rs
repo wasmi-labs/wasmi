@@ -36,15 +36,15 @@ impl Stacks {
     /// # Note
     ///
     /// All registers allocated this way are contiguous in their indices.
-    fn bump_dynamic(&mut self, amount: usize) -> Register {
-        let register = Register::Dynamic(self.len_dynamic);
+    fn bump_dynamic(&mut self, amount: usize) -> IrRegister {
+        let register = IrRegister::Dynamic(self.len_dynamic);
         self.len_dynamic += amount;
         self.max_dynamic = max(self.max_dynamic, self.len_dynamic);
         register
     }
 
-    fn bump_preserved(&mut self) -> Register {
-        let register = Register::Preserved(self.len_preserved);
+    fn bump_preserved(&mut self) -> IrRegister {
+        let register = IrRegister::Preserved(self.len_preserved);
         self.len_preserved += 1;
         self.max_preserved = max(self.max_preserved, self.len_preserved);
         register
@@ -52,11 +52,11 @@ impl Stacks {
 
     fn pop(&mut self, popped: &Provider) {
         match popped {
-            Provider::Register(Register::Dynamic(_)) => {
+            Provider::Register(IrRegister::Dynamic(_)) => {
                 debug_assert!(self.len_dynamic > 0);
                 self.len_dynamic -= 1;
             }
-            Provider::Register(Register::Preserved(_)) => {
+            Provider::Register(IrRegister::Preserved(_)) => {
                 debug_assert!(self.len_preserved > 0);
                 self.len_preserved -= 1;
             }
@@ -69,11 +69,11 @@ impl Providers {
     /// Preserves `local.get` values on the provider stack if any.
     ///
     /// Returns `Some` preserved register if any provider had to be preserved.
-    pub fn preserve_locals(&mut self, preserve_index: u32) -> Option<Register> {
+    pub fn preserve_locals(&mut self, preserve_index: u32) -> Option<IrRegister> {
         let preserve_index = preserve_index as usize;
-        let mut preserved: Option<Register> = None;
+        let mut preserved: Option<IrRegister> = None;
         for provider in &mut self.providers {
-            if let Provider::Register(Register::Local(local_index)) = provider {
+            if let Provider::Register(IrRegister::Local(local_index)) = provider {
                 if *local_index == preserve_index {
                     let preserved_register = match preserved {
                         Some(register) => register,
@@ -99,14 +99,14 @@ impl Providers {
         self.locals.register_locals(value_type, amount)
     }
 
-    pub fn push_local(&mut self, local_id: u32) -> Register {
+    pub fn push_local(&mut self, local_id: u32) -> IrRegister {
         assert!(local_id < self.locals.len_registered());
-        let register = Register::Local(local_id as usize);
+        let register = IrRegister::Local(local_id as usize);
         self.providers.push(register.into());
         register
     }
 
-    pub fn push_dynamic(&mut self) -> Register {
+    pub fn push_dynamic(&mut self) -> IrRegister {
         let register = self.stacks.bump_dynamic(1);
         self.providers.push(register.into());
         register
@@ -124,7 +124,7 @@ impl Providers {
         slice
     }
 
-    pub fn push_preserved(&mut self) -> Register {
+    pub fn push_preserved(&mut self) -> IrRegister {
         let register = self.stacks.bump_preserved();
         self.providers.push(register.into());
         register
@@ -209,7 +209,7 @@ impl Providers {
 
 /// A register provider of any of the existing register space.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum Register {
+pub enum IrRegister {
     /// The provided value lives in the local register space.
     ///
     /// # Note
@@ -246,7 +246,7 @@ pub enum Register {
     Preserved(usize),
 }
 
-impl Register {
+impl IrRegister {
     /// Returns a new [`Register`] with its index offset by the given amount.
     pub fn offset(self, amount: usize) -> Self {
         match self {
@@ -267,14 +267,14 @@ impl Register {
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct ContiguousRegisterSlice {
     /// The index of the first register.
-    start: Register,
+    start: IrRegister,
     /// The amount of registers in the contiguous slice of registers.
     len: u16,
 }
 
 impl ContiguousRegisterSlice {
     /// Creates a new [`ContiguousRegisterSlice`].
-    pub fn new(start: Register, len: u16) -> Self {
+    pub fn new(start: IrRegister, len: u16) -> Self {
         Self { start, len }
     }
 
@@ -286,7 +286,7 @@ impl ContiguousRegisterSlice {
     /// Returns the starting register of the slice if the length is 1.
     ///
     /// Returns `None` otherwise.
-    pub fn single_mut(&mut self) -> Option<&mut Register> {
+    pub fn single_mut(&mut self) -> Option<&mut IrRegister> {
         if self.len == 1 {
             return Some(&mut self.start);
         }
@@ -296,7 +296,7 @@ impl ContiguousRegisterSlice {
     /// Returns the [`Register`] at the `index` if within bounds.
     ///
     /// Returns `None` otherwise.
-    pub fn get(&self, index: u16) -> Option<Register> {
+    pub fn get(&self, index: u16) -> Option<IrRegister> {
         if index < self.len {
             return self.start.offset(index as usize).into();
         }
@@ -313,7 +313,7 @@ impl ContiguousRegisterSlice {
 }
 
 impl IntoIterator for ContiguousRegisterSlice {
-    type Item = Register;
+    type Item = IrRegister;
     type IntoIter = ContiguousRegisterSliceIter;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -329,7 +329,7 @@ pub struct ContiguousRegisterSliceIter {
 }
 
 impl Iterator for ContiguousRegisterSliceIter {
-    type Item = Register;
+    type Item = IrRegister;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.slice.get(self.current) {
@@ -346,13 +346,13 @@ impl Iterator for ContiguousRegisterSliceIter {
 #[derive(Debug, Copy, Clone)]
 pub enum Provider {
     /// The input is stored in a register.
-    Register(Register),
+    Register(IrRegister),
     /// The input is an immediate constant value.
     Immediate(Value),
 }
 
-impl From<Register> for Provider {
-    fn from(register: Register) -> Self {
+impl From<IrRegister> for Provider {
+    fn from(register: IrRegister) -> Self {
         Self::Register(register)
     }
 }
@@ -365,7 +365,7 @@ impl From<Value> for Provider {
 
 impl Provider {
     /// Returns `Some` if the [`RegisterOrImmediate`] is a `Register`.
-    pub fn filter_register(&self) -> Option<Register> {
+    pub fn filter_register(&self) -> Option<IrRegister> {
         match self {
             Provider::Register(register) => Some(*register),
             Provider::Immediate(_) => None,

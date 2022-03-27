@@ -1,6 +1,6 @@
-use super::{OpaqueInstruction as Instruction, Register};
+use super::{OpaqueInstruction as Instruction, IrRegister};
 
-impl Register {
+impl IrRegister {
     /// Returns `true` if the [`Register`] is in the local register space.
     pub fn is_local(&self) -> bool {
         match self {
@@ -17,7 +17,7 @@ impl Instruction {
     ///
     /// For instructions with potentially multiple result [`Register`] they only
     /// return `Some` if they actually have a single result and `None` otherwise.
-    pub fn result_mut(&mut self) -> Option<&mut Register> {
+    pub fn result_mut(&mut self) -> Option<&mut IrRegister> {
         match self {
             Self::Br { .. }
             | Self::BrIfEqz { .. }
