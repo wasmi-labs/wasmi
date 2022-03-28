@@ -1,123 +1,10 @@
 //! Data structures to represent the Wasm value stack during execution.
 
 use super::{DropKeep, DEFAULT_VALUE_STACK_LIMIT};
-use crate::core::{TrapCode, Value, ValueType, F32, F64};
+use crate::core::TrapCode;
 use alloc::vec::Vec;
 use core::{fmt, fmt::Debug, iter, mem};
-
-/// A single entry or register in the value stack.
-///
-/// # Note
-///
-/// This is a thin-wrapper around [`u64`] to allow us to treat runtime values
-/// as efficient tag-free [`u64`] values. Bits that are not required by the runtime
-/// value are set to zero.
-/// This is safe since all of the supported runtime values fit into [`u64`] and since
-/// Wasm modules are validated before execution so that invalid representations do not
-/// occur, e.g. interpreting a value of 42 as a [`bool`] value.
-///
-/// At the boundary between the interpreter and the outside world we convert the
-/// stack entry value into the required `Value` type which can then be matched on.
-/// It is only possible to convert a [`StackEntry`] into a [`Value`] if and only if
-/// the type is statically known which always is the case at these boundaries.
-#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
-#[repr(transparent)]
-pub struct StackEntry(u64);
-
-impl StackEntry {
-    /// Returns the underlying bits of the [`StackEntry`].
-    pub fn to_bits(self) -> u64 {
-        self.0
-    }
-
-    /// Converts the untyped [`StackEntry`] value into a typed [`Value`].
-    pub fn with_type(self, value_type: ValueType) -> Value {
-        match value_type {
-            ValueType::I32 => Value::I32(<_>::from_stack_entry(self)),
-            ValueType::I64 => Value::I64(<_>::from_stack_entry(self)),
-            ValueType::F32 => Value::F32(<_>::from_stack_entry(self)),
-            ValueType::F64 => Value::F64(<_>::from_stack_entry(self)),
-        }
-    }
-}
-
-impl From<Value> for StackEntry {
-    fn from(value: Value) -> Self {
-        match value {
-            Value::I32(value) => value.into(),
-            Value::I64(value) => value.into(),
-            Value::F32(value) => value.into(),
-            Value::F64(value) => value.into(),
-        }
-    }
-}
-
-/// Trait used to convert untyped values of [`StackEntry`] into typed values.
-pub trait FromStackEntry
-where
-    Self: Sized,
-{
-    /// Converts the untyped [`StackEntry`] into the typed `Self` value.
-    ///
-    /// # Note
-    ///
-    /// This heavily relies on the fact that executed Wasm is validated
-    /// before execution and therefore might result in conversions that
-    /// are only valid in a validated context, e.g. so that a stack entry
-    /// with a value of 42 is not interpreted as [`bool`] which does not
-    /// have a corresponding representation for 42.
-    fn from_stack_entry(entry: StackEntry) -> Self;
-}
-
-macro_rules! impl_from_stack_entry_integer {
-	($($t:ty),* $(,)?) =>	{
-		$(
-			impl FromStackEntry for $t {
-				fn from_stack_entry(entry: StackEntry) -> Self {
-					entry.to_bits() as _
-				}
-			}
-
-			impl From<$t> for StackEntry {
-				fn from(value: $t) -> Self {
-					Self(value as _)
-				}
-			}
-		)*
-	};
-}
-impl_from_stack_entry_integer!(i8, u8, i16, u16, i32, u32, i64, u64);
-
-macro_rules! impl_from_stack_entry_float {
-	($($t:ty),*) =>	{
-		$(
-			impl FromStackEntry for $t {
-				fn from_stack_entry(entry: StackEntry) -> Self {
-					Self::from_bits(entry.to_bits() as _)
-				}
-			}
-
-			impl From<$t> for StackEntry {
-				fn from(value: $t) -> Self {
-					Self(value.to_bits() as _)
-				}
-			}
-		)*
-	};
-}
-impl_from_stack_entry_float!(f32, f64, F32, F64);
-
-impl From<bool> for StackEntry {
-    fn from(value: bool) -> Self {
-        Self(value as _)
-    }
-}
-
-impl FromStackEntry for bool {
-    fn from_stack_entry(entry: StackEntry) -> Self {
-        entry.to_bits() != 0
-    }
-}
+use wasmi_core::UntypedValue;
 
 /// The value stack that is used to execute Wasm bytecode.
 ///
@@ -128,7 +15,7 @@ impl FromStackEntry for bool {
 #[derive(Clone)]
 pub struct ValueStack {
     /// All currently live stack entries.
-    entries: Vec<StackEntry>,
+    entries: Vec<UntypedValue>,
     /// Index of the first free place in the stack.
     stack_ptr: usize,
     /// The maximum value stack height.
@@ -161,16 +48,16 @@ impl Eq for ValueStack {}
 impl Default for ValueStack {
     fn default() -> Self {
         Self::new(
-            DEFAULT_VALUE_STACK_LIMIT / mem::size_of::<StackEntry>(),
-            1024 * DEFAULT_VALUE_STACK_LIMIT / mem::size_of::<StackEntry>(),
+            DEFAULT_VALUE_STACK_LIMIT / mem::size_of::<UntypedValue>(),
+            1024 * DEFAULT_VALUE_STACK_LIMIT / mem::size_of::<UntypedValue>(),
         )
     }
 }
 
-impl Extend<StackEntry> for ValueStack {
+impl Extend<UntypedValue> for ValueStack {
     fn extend<I>(&mut self, iter: I)
     where
-        I: IntoIterator<Item = StackEntry>,
+        I: IntoIterator<Item = UntypedValue>,
     {
         for item in iter {
             self.push(item)
@@ -178,10 +65,10 @@ impl Extend<StackEntry> for ValueStack {
     }
 }
 
-impl FromIterator<StackEntry> for ValueStack {
+impl FromIterator<UntypedValue> for ValueStack {
     fn from_iter<I>(iter: I) -> Self
     where
-        I: IntoIterator<Item = StackEntry>,
+        I: IntoIterator<Item = UntypedValue>,
     {
         let mut stack = ValueStack::default();
         stack.extend(iter);
@@ -200,7 +87,7 @@ impl ValueStack {
             initial_len > 0,
             "cannot initialize the value stack with zero length"
         );
-        let entries = vec![StackEntry(0x00); initial_len];
+        let entries = vec![UntypedValue::default(); initial_len];
         Self {
             entries,
             stack_ptr: 0,
@@ -259,7 +146,7 @@ impl ValueStack {
     /// # Note
     ///
     /// This has the same effect as [`ValueStack::peek`]`(0)`.
-    pub fn last(&self) -> StackEntry {
+    pub fn last(&self) -> UntypedValue {
         self.entries[self.stack_ptr - 1]
     }
 
@@ -268,7 +155,7 @@ impl ValueStack {
     /// # Note
     ///
     /// This has the same effect as [`ValueStack::peek`]`(0)`.
-    pub fn last_mut(&mut self) -> &mut StackEntry {
+    pub fn last_mut(&mut self) -> &mut UntypedValue {
         &mut self.entries[self.stack_ptr - 1]
     }
 
@@ -277,7 +164,7 @@ impl ValueStack {
     /// # Note
     ///
     /// Given a `depth` of 0 has the same effect as [`ValueStack::last`].
-    pub fn peek(&self, depth: usize) -> StackEntry {
+    pub fn peek(&self, depth: usize) -> UntypedValue {
         self.entries[self.stack_ptr - depth - 1]
     }
 
@@ -286,17 +173,17 @@ impl ValueStack {
     /// # Note
     ///
     /// Given a `depth` of 0 has the same effect as [`ValueStack::last_mut`].
-    pub fn peek_mut(&mut self, depth: usize) -> &mut StackEntry {
+    pub fn peek_mut(&mut self, depth: usize) -> &mut UntypedValue {
         &mut self.entries[self.stack_ptr - depth - 1]
     }
 
-    /// Pops the last [`StackEntry`] from the [`ValueStack`].
+    /// Pops the last [`UntypedValue`] from the [`ValueStack`].
     ///
     /// # Note
     ///
     /// This operation heavily relies on the prior validation of
     /// the executed WebAssembly bytecode for correctness.
-    pub fn pop(&mut self) -> StackEntry {
+    pub fn pop(&mut self) -> UntypedValue {
         self.stack_ptr -= 1;
         self.entries[self.stack_ptr]
     }
@@ -305,15 +192,15 @@ impl ValueStack {
         self.stack_ptr -= depth;
     }
 
-    /// Pops the last [`StackEntry`] from the [`ValueStack`] as `T`.
+    /// Pops the last [`UntypedValue`] from the [`ValueStack`] as `T`.
     pub fn pop_as<T>(&mut self) -> T
     where
-        T: FromStackEntry,
+        T: From<UntypedValue>,
     {
-        T::from_stack_entry(self.pop())
+        T::from(self.pop())
     }
 
-    /// Pops the last pair of [`StackEntry`] from the [`ValueStack`].
+    /// Pops the last pair of [`UntypedValue`] from the [`ValueStack`].
     ///
     /// # Note
     ///
@@ -321,7 +208,7 @@ impl ValueStack {
     ///   [`ValueStack::pop`] twice.
     /// - This operation heavily relies on the prior validation of
     ///   the executed WebAssembly bytecode for correctness.
-    pub fn pop2(&mut self) -> (StackEntry, StackEntry) {
+    pub fn pop2(&mut self) -> (UntypedValue, UntypedValue) {
         self.stack_ptr -= 2;
         (
             self.entries[self.stack_ptr],
@@ -339,14 +226,14 @@ impl ValueStack {
     /// - Evaluate `f(e1_ptr, e2, e3)`.
     pub fn pop2_eval<F>(&mut self, f: F)
     where
-        F: FnOnce(&mut StackEntry, StackEntry, StackEntry),
+        F: FnOnce(&mut UntypedValue, UntypedValue, UntypedValue),
     {
         let (e2, e3) = self.pop2();
         let e1 = self.last_mut();
         f(e1, e2, e3)
     }
 
-    /// Pushes the [`StackEntry`] to the end of the [`ValueStack`].
+    /// Pushes the [`UntypedValue`] to the end of the [`ValueStack`].
     ///
     /// # Note
     ///
@@ -357,7 +244,7 @@ impl ValueStack {
     ///   procedure from panicking.
     pub fn push<T>(&mut self, entry: T)
     where
-        T: Into<StackEntry>,
+        T: Into<UntypedValue>,
     {
         self.entries[self.stack_ptr] = entry.into();
         self.stack_ptr += 1;
@@ -396,7 +283,7 @@ impl ValueStack {
             // the current value stack length and add the additional flat amount
             // on top. This avoids too many frequent reallocations.
             self.entries
-                .extend(iter::repeat(StackEntry(0x00)).take(required_len));
+                .extend(iter::repeat(UntypedValue::default()).take(required_len));
         }
         Ok(())
     }
@@ -407,14 +294,14 @@ impl ValueStack {
     ///
     /// This API is mostly used when writing results back to the
     /// caller after function execution has finished.
-    pub fn drain(&mut self) -> &[StackEntry] {
+    pub fn drain(&mut self) -> &[UntypedValue] {
         let len = self.stack_ptr;
         self.stack_ptr = 0;
         &self.entries[0..len]
     }
 
     /// Returns an exclusive slice to the last `depth` entries in the value stack.
-    pub fn peek_as_slice_mut(&mut self, depth: usize) -> &mut [StackEntry] {
+    pub fn peek_as_slice_mut(&mut self, depth: usize) -> &mut [UntypedValue] {
         let start = self.stack_ptr - depth;
         let end = self.stack_ptr;
         &mut self.entries[start..end]
@@ -442,7 +329,7 @@ mod tests {
         fn assert_drop_keep<E>(stack: &ValueStack, drop_keep: DropKeep, expected: E)
         where
             E: IntoIterator,
-            E::Item: Into<StackEntry>,
+            E::Item: Into<UntypedValue>,
         {
             let mut s = stack.clone();
             s.drop_keep(drop_keep);
@@ -455,7 +342,7 @@ mod tests {
         let test_inputs = [1, 2, 3, 4, 5, 6];
         let stack = test_inputs
             .into_iter()
-            .map(StackEntry::from)
+            .map(UntypedValue::from)
             .collect::<ValueStack>();
 
         // Drop is always 0 but keep varies:

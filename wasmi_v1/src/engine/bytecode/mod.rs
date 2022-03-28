@@ -10,7 +10,7 @@ pub use self::{
     utils::{BrTable, DropKeep, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, Target},
     visitor::VisitInstruction,
 };
-use super::value_stack::StackEntry;
+use wasmi_core::UntypedValue;
 
 /// The internal `wasmi` bytecode that is stored for Wasm functions.
 ///
@@ -71,7 +71,7 @@ pub enum Instruction {
     I64Store32(Offset),
     CurrentMemory,
     GrowMemory,
-    Const(StackEntry),
+    Const(UntypedValue),
     I32Eqz,
     I32Eq,
     I32Ne,
@@ -251,7 +251,7 @@ impl Instruction {
     /// Creates a new `Const` instruction from the given value.
     pub fn constant<T>(value: T) -> Self
     where
-        T: Into<StackEntry>,
+        T: Into<UntypedValue>,
     {
         Self::Const(value.into())
     }

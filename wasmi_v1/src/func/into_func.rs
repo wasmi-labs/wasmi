@@ -1,15 +1,15 @@
 use super::{
-    super::engine::{FuncParams, FuncResults, WasmType as InternalWasmType},
+    super::engine::{FuncParams, FuncResults},
     HostFuncTrampoline,
 };
 use crate::{
     core::{FromValue, Trap, Value, ValueType, F32, F64},
-    engine::{ReadParams, WriteResults},
     foreach_tuple::for_each_tuple,
     Caller,
     FuncType,
 };
 use core::{array, iter::FusedIterator};
+use wasmi_core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedValue};
 
 /// Closures and functions that can be used as host functions.
 pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {
@@ -139,7 +139,7 @@ macro_rules! impl_wasm_return_type {
 for_each_tuple!(impl_wasm_return_type);
 
 /// Types that can be used as parameters or results of host functions.
-pub trait WasmType: FromValue + Into<Value> + InternalWasmType {
+pub trait WasmType: FromValue + Into<Value> + From<UntypedValue> + Into<UntypedValue> {
     /// Returns the value type of the Wasm type.
     fn value_type() -> ValueType;
 }
@@ -174,7 +174,7 @@ impl_wasm_type! {
 /// - Write host function results into a region of the value stack.
 /// - Iterate over the value types of the Wasm type sequence
 ///     - This is useful to construct host function signatures.
-pub trait WasmTypeList: ReadParams + WriteResults + Sized {
+pub trait WasmTypeList: DecodeUntypedSlice + EncodeUntypedSlice + Sized {
     /// The number of Wasm types in the list.
     const LEN: usize;
 
