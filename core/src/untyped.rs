@@ -51,7 +51,7 @@ macro_rules! impl_from_untyped_for_int {
         )*
     };
 }
-impl_from_untyped_for_int!(i32, i64, u32, u64);
+impl_from_untyped_for_int!(i8, i16, i32, i64, u8, u16, u32, u64);
 
 macro_rules! impl_from_untyped_for_float {
     ( $( $float:ty ),* $(,)? ) => {
@@ -65,6 +65,12 @@ macro_rules! impl_from_untyped_for_float {
     };
 }
 impl_from_untyped_for_float!(f32, f64, F32, F64);
+
+impl From<UntypedValue> for bool {
+    fn from(untyped: UntypedValue) -> Self {
+        untyped.to_bits() != 0
+    }
+}
 
 impl From<Value> for UntypedValue {
     fn from(value: Value) -> Self {
