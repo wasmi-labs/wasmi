@@ -308,75 +308,24 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
-    fn execute_eqz<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        T: From<UntypedValue>,
-        T: PartialEq<T> + Default,
-    {
+    fn execute_eqz(
+        &mut self,
+        f: fn(UntypedValue) -> UntypedValue,
+    ) -> Result<ExecutionOutcome, Trap> {
         let entry = self.value_stack.last_mut();
-        let value = T::from(*entry);
-        let zero = Default::default();
-        let result = value == zero;
-        *entry = result.into();
+        *entry = f(*entry);
         Ok(ExecutionOutcome::Continue)
     }
 
-    /// Executes a relative operation given the top two stack values.
-    ///
-    /// After success the top of the stack will store the result.
-    fn execute_relop<T, F>(&mut self, f: F) -> Result<ExecutionOutcome, Trap>
-    where
-        T: From<UntypedValue>,
-        F: FnOnce(T, T) -> bool,
-    {
-        let right = self.value_stack.pop_as::<T>();
+    fn execute_cmp(
+        &mut self,
+        f: fn(UntypedValue, UntypedValue) -> UntypedValue,
+    ) -> Result<ExecutionOutcome, Trap> {
+        let right = self.value_stack.pop();
         let entry = self.value_stack.last_mut();
-        let left = T::from(*entry);
-        let result = f(left, right);
-        *entry = result.into();
+        let left = *entry;
+        *entry = f(left, right);
         Ok(ExecutionOutcome::Continue)
-    }
-
-    fn execute_eq<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        T: From<UntypedValue> + PartialEq,
-    {
-        self.execute_relop(|left: T, right: T| left == right)
-    }
-
-    fn execute_ne<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        T: From<UntypedValue> + PartialEq,
-    {
-        self.execute_relop(|left: T, right: T| left != right)
-    }
-
-    fn execute_lt<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        T: From<UntypedValue> + PartialOrd,
-    {
-        self.execute_relop(|left: T, right: T| left < right)
-    }
-
-    fn execute_le<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        T: From<UntypedValue> + PartialOrd,
-    {
-        self.execute_relop(|left: T, right: T| left <= right)
-    }
-
-    fn execute_gt<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        T: From<UntypedValue> + PartialOrd,
-    {
-        self.execute_relop(|left: T, right: T| left > right)
-    }
-
-    fn execute_ge<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        T: From<UntypedValue> + PartialOrd,
-    {
-        self.execute_relop(|left: T, right: T| left >= right)
     }
 
     fn execute_unop<T, U, F>(&mut self, f: F) -> Result<ExecutionOutcome, Trap>
@@ -942,139 +891,139 @@ where
     }
 
     fn visit_i32_eqz(&mut self) -> Self::Outcome {
-        self.execute_eqz::<i32>()
+        self.execute_eqz(UntypedValue::i32_eqz)
     }
 
     fn visit_i32_eq(&mut self) -> Self::Outcome {
-        self.execute_eq::<i32>()
+        self.execute_cmp(UntypedValue::i32_eq)
     }
 
     fn visit_i32_ne(&mut self) -> Self::Outcome {
-        self.execute_ne::<i32>()
+        self.execute_cmp(UntypedValue::i32_ne)
     }
 
     fn visit_i32_lt_s(&mut self) -> Self::Outcome {
-        self.execute_lt::<i32>()
+        self.execute_cmp(UntypedValue::i32_lt_s)
     }
 
     fn visit_i32_lt_u(&mut self) -> Self::Outcome {
-        self.execute_lt::<u32>()
+        self.execute_cmp(UntypedValue::i32_lt_u)
     }
 
     fn visit_i32_gt_s(&mut self) -> Self::Outcome {
-        self.execute_gt::<i32>()
+        self.execute_cmp(UntypedValue::i32_gt_s)
     }
 
     fn visit_i32_gt_u(&mut self) -> Self::Outcome {
-        self.execute_gt::<u32>()
+        self.execute_cmp(UntypedValue::i32_gt_u)
     }
 
     fn visit_i32_le_s(&mut self) -> Self::Outcome {
-        self.execute_le::<i32>()
+        self.execute_cmp(UntypedValue::i32_le_s)
     }
 
     fn visit_i32_le_u(&mut self) -> Self::Outcome {
-        self.execute_le::<u32>()
+        self.execute_cmp(UntypedValue::i32_le_u)
     }
 
     fn visit_i32_ge_s(&mut self) -> Self::Outcome {
-        self.execute_ge::<i32>()
+        self.execute_cmp(UntypedValue::i32_ge_s)
     }
 
     fn visit_i32_ge_u(&mut self) -> Self::Outcome {
-        self.execute_ge::<u32>()
+        self.execute_cmp(UntypedValue::i32_ge_u)
     }
 
     fn visit_i64_eqz(&mut self) -> Self::Outcome {
-        self.execute_eqz::<i64>()
+        self.execute_eqz(UntypedValue::i64_eqz)
     }
 
     fn visit_i64_eq(&mut self) -> Self::Outcome {
-        self.execute_eq::<i64>()
+        self.execute_cmp(UntypedValue::i64_eq)
     }
 
     fn visit_i64_ne(&mut self) -> Self::Outcome {
-        self.execute_ne::<i64>()
+        self.execute_cmp(UntypedValue::i64_ne)
     }
 
     fn visit_i64_lt_s(&mut self) -> Self::Outcome {
-        self.execute_lt::<i64>()
+        self.execute_cmp(UntypedValue::i64_lt_s)
     }
 
     fn visit_i64_lt_u(&mut self) -> Self::Outcome {
-        self.execute_lt::<u64>()
+        self.execute_cmp(UntypedValue::i64_lt_u)
     }
 
     fn visit_i64_gt_s(&mut self) -> Self::Outcome {
-        self.execute_gt::<i64>()
+        self.execute_cmp(UntypedValue::i64_gt_s)
     }
 
     fn visit_i64_gt_u(&mut self) -> Self::Outcome {
-        self.execute_gt::<u64>()
+        self.execute_cmp(UntypedValue::i64_gt_u)
     }
 
     fn visit_i64_le_s(&mut self) -> Self::Outcome {
-        self.execute_le::<i64>()
+        self.execute_cmp(UntypedValue::i64_le_s)
     }
 
     fn visit_i64_le_u(&mut self) -> Self::Outcome {
-        self.execute_le::<u64>()
+        self.execute_cmp(UntypedValue::i64_le_u)
     }
 
     fn visit_i64_ge_s(&mut self) -> Self::Outcome {
-        self.execute_ge::<i64>()
+        self.execute_cmp(UntypedValue::i64_ge_s)
     }
 
     fn visit_i64_ge_u(&mut self) -> Self::Outcome {
-        self.execute_ge::<u64>()
+        self.execute_cmp(UntypedValue::i64_ge_u)
     }
 
     fn visit_f32_eq(&mut self) -> Self::Outcome {
-        self.execute_eq::<F32>()
+        self.execute_cmp(UntypedValue::f32_eq)
     }
 
     fn visit_f32_ne(&mut self) -> Self::Outcome {
-        self.execute_ne::<F32>()
+        self.execute_cmp(UntypedValue::f32_ne)
     }
 
     fn visit_f32_lt(&mut self) -> Self::Outcome {
-        self.execute_lt::<F32>()
+        self.execute_cmp(UntypedValue::f32_lt)
     }
 
     fn visit_f32_gt(&mut self) -> Self::Outcome {
-        self.execute_gt::<F32>()
+        self.execute_cmp(UntypedValue::f32_gt)
     }
 
     fn visit_f32_le(&mut self) -> Self::Outcome {
-        self.execute_le::<F32>()
+        self.execute_cmp(UntypedValue::f32_le)
     }
 
     fn visit_f32_ge(&mut self) -> Self::Outcome {
-        self.execute_ge::<F32>()
+        self.execute_cmp(UntypedValue::f32_ge)
     }
 
     fn visit_f64_eq(&mut self) -> Self::Outcome {
-        self.execute_eq::<F64>()
+        self.execute_cmp(UntypedValue::f64_eq)
     }
 
     fn visit_f64_ne(&mut self) -> Self::Outcome {
-        self.execute_ne::<F64>()
+        self.execute_cmp(UntypedValue::f64_ne)
     }
 
     fn visit_f64_lt(&mut self) -> Self::Outcome {
-        self.execute_lt::<F64>()
+        self.execute_cmp(UntypedValue::f64_lt)
     }
 
     fn visit_f64_gt(&mut self) -> Self::Outcome {
-        self.execute_gt::<F64>()
+        self.execute_cmp(UntypedValue::f64_gt)
     }
 
     fn visit_f64_le(&mut self) -> Self::Outcome {
-        self.execute_le::<F64>()
+        self.execute_cmp(UntypedValue::f64_le)
     }
 
     fn visit_f64_ge(&mut self) -> Self::Outcome {
-        self.execute_ge::<F64>()
+        self.execute_cmp(UntypedValue::f64_ge)
     }
 
     fn visit_i32_clz(&mut self) -> Self::Outcome {
