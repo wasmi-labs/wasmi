@@ -953,7 +953,7 @@ macro_rules! impl_decode_untyped_slice {
                             <$tuple as From<UntypedValue>>::from($tuple),
                         )*
                     )),
-                    unexpected => {
+                    _unexpected => {
                         Err(UntypedError::InvalidLen {
                             expected: $n,
                             found: results.len(),
