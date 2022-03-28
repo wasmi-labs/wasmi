@@ -1,6 +1,5 @@
-use super::{FromRegisterEntry, RegisterEntry};
-use crate::foreach_tuple::for_each_tuple;
 use core::cmp;
+use wasmi_core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedValue};
 
 #[derive(Debug)]
 pub struct FuncParams<'a> {
@@ -11,7 +10,7 @@ pub struct FuncParams<'a> {
     /// Therefore the length of the slice must be large enough
     /// to hold all parameters and all results but not both at
     /// the same time.
-    params_results: &'a mut [RegisterEntry],
+    params_results: &'a mut [UntypedValue],
     /// The length of the expected parameters of the function invocation.
     len_params: usize,
     /// The length of the expected results of the function invocation.
@@ -31,7 +30,7 @@ impl<'a> FuncParams<'a> {
     /// If the length of hte `params_results` slice does not match the maximum
     /// of the `len_params` and `Len_results`.
     pub fn new(
-        params_results: &'a mut [RegisterEntry],
+        params_results: &'a mut [UntypedValue],
         len_params: usize,
         len_results: usize,
     ) -> Self {
@@ -50,10 +49,11 @@ impl<'a> FuncParams<'a> {
     /// If the number of function parameters dictated by `T` does not match.
     pub fn read_params<T>(&self) -> T
     where
-        T: ReadParams,
+        T: DecodeUntypedSlice,
     {
         let params_buffer = &self.params_results[..self.len_params];
-        <T as ReadParams>::read_params(params_buffer)
+        UntypedValue::decode_slice::<T>(params_buffer)
+            .unwrap_or_else(|error| panic!("encountered unexpected invalid tuple length: {error}"))
     }
 
     /// Sets the results of the function invocation.
@@ -63,116 +63,11 @@ impl<'a> FuncParams<'a> {
     /// If the number of results does not match the expected amount.
     pub fn write_results<T>(self, results: T) -> FuncResults
     where
-        T: WriteResults,
+        T: EncodeUntypedSlice,
     {
         let results_buffer = &mut self.params_results[..self.len_results];
-        <T as WriteResults>::write_results(results, results_buffer);
+        UntypedValue::encode_slice::<T>(results_buffer, results)
+            .unwrap_or_else(|error| panic!("encountered unexpected invalid tuple length: {error}"));
         FuncResults {}
     }
 }
-
-/// Types that can be used with the `wasmi` `v1` engine as inputs and outputs.
-pub trait WasmType: FromRegisterEntry + Into<RegisterEntry> {}
-
-impl<T> WasmType for T where T: FromRegisterEntry + Into<RegisterEntry> {}
-
-/// Type sequences that can read host function parameters from the [`ValueStack`].
-///
-/// [`ValueStack`]: [`crate::engine::ValueStack`]
-pub trait ReadParams {
-    /// Reads the host parameters from the given [`ValueStack`] region.
-    ///
-    /// # Panics
-    ///
-    /// If the length of the [`ValueStack`] region does not match.
-    ///
-    /// [`ValueStack`]: [`crate::engine::ValueStack`]
-    fn read_params(params: &[RegisterEntry]) -> Self;
-}
-
-impl<T1> ReadParams for T1
-where
-    T1: WasmType,
-{
-    fn read_params(results: &[RegisterEntry]) -> Self {
-        assert_eq!(results.len(), 1);
-        <T1 as FromRegisterEntry>::from_stack_entry(results[0])
-    }
-}
-
-macro_rules! impl_read_params {
-    ( $n:literal $( $tuple:ident )* ) => {
-        impl<$($tuple),*> ReadParams for ($($tuple,)*)
-        where
-            $(
-                $tuple: WasmType
-            ),*
-        {
-            #[allow(non_snake_case)]
-            fn read_params(results: &[RegisterEntry]) -> Self {
-                match results {
-                    &[$($tuple),*] => (
-                        $(
-                            <$tuple as FromRegisterEntry>::from_stack_entry($tuple),
-                        )*
-                    ),
-                    unexpected => {
-                        panic!(
-                            "expected slice with {} elements but found: {:?}",
-                            $n,
-                            unexpected,
-                        )
-                    }
-                }
-            }
-        }
-    };
-}
-for_each_tuple!(impl_read_params);
-
-/// Type sequences that can write results back into the [`ValueStack`].
-///
-/// [`ValueStack`]: [`crate::engine::ValueStack`]
-pub trait WriteResults {
-    /// Writes the `results` into the given [`ValueStack`] region.
-    ///
-    /// # Panics
-    ///
-    /// If the length of the [`ValueStack`] region does not match.
-    ///
-    /// [`ValueStack`]: [`crate::engine::ValueStack`]
-    fn write_results(self, results: &mut [RegisterEntry]);
-}
-
-impl<T1> WriteResults for T1
-where
-    T1: WasmType,
-{
-    fn write_results(self, results: &mut [RegisterEntry]) {
-        assert_eq!(results.len(), 1);
-        results[0] = self.into();
-    }
-}
-
-macro_rules! impl_write_params {
-    ( $n:literal $( $tuple:ident )* ) => {
-        impl<$($tuple),*> WriteResults for ($($tuple,)*)
-        where
-            $(
-                $tuple: WasmType
-            ),*
-        {
-            #[allow(non_snake_case)]
-            fn write_results(self, results: &mut [RegisterEntry]) {
-                let ($($tuple,)*) = self;
-                let converted: [RegisterEntry; $n] = [
-                    $(
-                        <$tuple as Into<RegisterEntry>>::into($tuple)
-                    ),*
-                ];
-                results.copy_from_slice(&converted);
-            }
-        }
-    };
-}
-for_each_tuple!(impl_write_params);
