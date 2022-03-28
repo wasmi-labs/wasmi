@@ -19,9 +19,6 @@ use wasmi_core::{
     memory_units::Pages,
     ExtendInto,
     LittleEndianConvert,
-    SignExtendFrom,
-    TruncateSaturateInto,
-    TryTruncateInto,
     UntypedValue,
     WrapInto,
 };
@@ -313,6 +310,15 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
+    fn try_execute_unary(
+        &mut self,
+        f: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
+    ) -> Result<ExecutionOutcome, Trap> {
+        let entry = self.value_stack.last_mut();
+        *entry = f(*entry)?;
+        Ok(ExecutionOutcome::Continue)
+    }
+
     fn execute_binary(
         &mut self,
         f: fn(UntypedValue, UntypedValue) -> UntypedValue,
@@ -335,74 +341,12 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
-    fn execute_unop<T, U, F>(&mut self, f: F) -> Result<ExecutionOutcome, Trap>
-    where
-        F: FnOnce(T) -> U,
-        T: From<UntypedValue>,
-        UntypedValue: From<U>,
-    {
-        let entry = self.value_stack.last_mut();
-        let value = T::from(*entry);
-        let result = f(value);
-        *entry = result.into();
-        Ok(ExecutionOutcome::Continue)
-    }
-
-    fn execute_wrap<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<U>,
-        T: WrapInto<U> + From<UntypedValue>,
-    {
-        self.execute_unop(|value: T| value.wrap_into())
-    }
-
-    fn execute_extend<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<U>,
-        T: ExtendInto<U> + From<UntypedValue>,
-    {
-        self.execute_unop(|value: T| value.extend_into())
-    }
-
-    fn execute_trunc_to_int<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<U>,
-        T: TryTruncateInto<U, TrapCode> + From<UntypedValue>,
-    {
-        let entry = self.value_stack.last_mut();
-        let value = T::from(*entry).try_truncate_into()?;
-        *entry = value.into();
-        Ok(ExecutionOutcome::Continue)
-    }
-
-    fn execute_trunc_sat_to_int<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<U>,
-        T: TruncateSaturateInto<U> + From<UntypedValue>,
-    {
-        let entry = self.value_stack.last_mut();
-        let value = T::from(*entry).truncate_saturate_into();
-        *entry = value.into();
-        Ok(ExecutionOutcome::Continue)
-    }
-
     fn execute_reinterpret<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
         UntypedValue: From<U>,
         T: From<UntypedValue>,
     {
         // Nothing to do for `wasmi` bytecode.
-        Ok(ExecutionOutcome::Continue)
-    }
-
-    fn execute_sign_extend<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: SignExtendFrom<U> + From<UntypedValue>,
-    {
-        let entry = self.value_stack.last_mut();
-        let value = T::from(*entry).sign_extend_from();
-        *entry = value.into();
         Ok(ExecutionOutcome::Continue)
     }
 }
@@ -1062,87 +1006,87 @@ where
     }
 
     fn visit_i32_wrap_i64(&mut self) -> Self::Outcome {
-        self.execute_wrap::<i64, i32>()
+        self.execute_unary(UntypedValue::i32_wrap_i64)
     }
 
     fn visit_i32_trunc_f32(&mut self) -> Self::Outcome {
-        self.execute_trunc_to_int::<F32, i32>()
+        self.try_execute_unary(UntypedValue::i32_trunc_f32_s)
     }
 
     fn visit_u32_trunc_f32(&mut self) -> Self::Outcome {
-        self.execute_trunc_to_int::<F32, u32>()
+        self.try_execute_unary(UntypedValue::i32_trunc_f32_u)
     }
 
     fn visit_i32_trunc_f64(&mut self) -> Self::Outcome {
-        self.execute_trunc_to_int::<F64, i32>()
+        self.try_execute_unary(UntypedValue::i32_trunc_f64_s)
     }
 
     fn visit_u32_trunc_f64(&mut self) -> Self::Outcome {
-        self.execute_trunc_to_int::<F64, u32>()
+        self.try_execute_unary(UntypedValue::i32_trunc_f64_u)
     }
 
     fn visit_i64_extend_i32(&mut self) -> Self::Outcome {
-        self.execute_extend::<i32, i64>()
+        self.execute_unary(UntypedValue::i64_extend_i32_s)
     }
 
     fn visit_i64_extend_u32(&mut self) -> Self::Outcome {
-        self.execute_extend::<u32, u64>()
+        self.execute_unary(UntypedValue::i64_extend_i32_u)
     }
 
     fn visit_i64_trunc_f32(&mut self) -> Self::Outcome {
-        self.execute_trunc_to_int::<F32, i64>()
+        self.try_execute_unary(UntypedValue::i64_trunc_f32_s)
     }
 
     fn visit_u64_trunc_f32(&mut self) -> Self::Outcome {
-        self.execute_trunc_to_int::<F32, u64>()
+        self.try_execute_unary(UntypedValue::i64_trunc_f32_u)
     }
 
     fn visit_i64_trunc_f64(&mut self) -> Self::Outcome {
-        self.execute_trunc_to_int::<F64, i64>()
+        self.try_execute_unary(UntypedValue::i64_trunc_f64_s)
     }
 
     fn visit_u64_trunc_f64(&mut self) -> Self::Outcome {
-        self.execute_trunc_to_int::<F64, u64>()
+        self.try_execute_unary(UntypedValue::i64_trunc_f64_u)
     }
 
     fn visit_f32_convert_i32(&mut self) -> Self::Outcome {
-        self.execute_extend::<i32, F32>()
+        self.execute_unary(UntypedValue::f32_convert_i32_s)
     }
 
     fn visit_f32_convert_u32(&mut self) -> Self::Outcome {
-        self.execute_extend::<u32, F32>()
+        self.execute_unary(UntypedValue::f32_convert_i32_u)
     }
 
     fn visit_f32_convert_i64(&mut self) -> Self::Outcome {
-        self.execute_wrap::<i64, F32>()
+        self.execute_unary(UntypedValue::f32_convert_i64_s)
     }
 
     fn visit_f32_convert_u64(&mut self) -> Self::Outcome {
-        self.execute_wrap::<u64, F32>()
+        self.execute_unary(UntypedValue::f32_convert_i64_u)
     }
 
     fn visit_f32_demote_f64(&mut self) -> Self::Outcome {
-        self.execute_wrap::<F64, F32>()
+        self.execute_unary(UntypedValue::f32_demote_f64)
     }
 
     fn visit_f64_convert_i32(&mut self) -> Self::Outcome {
-        self.execute_extend::<i32, F64>()
+        self.execute_unary(UntypedValue::f64_convert_i32_s)
     }
 
     fn visit_f64_convert_u32(&mut self) -> Self::Outcome {
-        self.execute_extend::<u32, F64>()
+        self.execute_unary(UntypedValue::f64_convert_i32_u)
     }
 
     fn visit_f64_convert_i64(&mut self) -> Self::Outcome {
-        self.execute_extend::<i64, F64>()
+        self.execute_unary(UntypedValue::f64_convert_i64_s)
     }
 
     fn visit_f64_convert_u64(&mut self) -> Self::Outcome {
-        self.execute_extend::<u64, F64>()
+        self.execute_unary(UntypedValue::f64_convert_i64_u)
     }
 
     fn visit_f64_promote_f32(&mut self) -> Self::Outcome {
-        self.execute_extend::<F32, F64>()
+        self.execute_unary(UntypedValue::f64_promote_f32)
     }
 
     fn visit_i32_reinterpret_f32(&mut self) -> Self::Outcome {
@@ -1162,54 +1106,54 @@ where
     }
 
     fn visit_i32_sign_extend8(&mut self) -> Self::Outcome {
-        self.execute_sign_extend::<i32, i8>()
+        self.execute_unary(UntypedValue::i32_extend8_s)
     }
 
     fn visit_i32_sign_extend16(&mut self) -> Self::Outcome {
-        self.execute_sign_extend::<i32, i16>()
+        self.execute_unary(UntypedValue::i32_extend16_s)
     }
 
     fn visit_i64_sign_extend8(&mut self) -> Self::Outcome {
-        self.execute_sign_extend::<i64, i8>()
+        self.execute_unary(UntypedValue::i64_extend8_s)
     }
 
     fn visit_i64_sign_extend16(&mut self) -> Self::Outcome {
-        self.execute_sign_extend::<i64, i16>()
+        self.execute_unary(UntypedValue::i64_extend16_s)
     }
 
     fn visit_i64_sign_extend32(&mut self) -> Self::Outcome {
-        self.execute_sign_extend::<i64, i32>()
+        self.execute_unary(UntypedValue::i64_extend32_s)
     }
 
     fn visit_i32_trunc_sat_f32(&mut self) -> Self::Outcome {
-        self.execute_trunc_sat_to_int::<F32, i32>()
+        self.execute_unary(UntypedValue::i32_trunc_sat_f32_s)
     }
 
     fn visit_u32_trunc_sat_f32(&mut self) -> Self::Outcome {
-        self.execute_trunc_sat_to_int::<F32, u32>()
+        self.execute_unary(UntypedValue::i32_trunc_sat_f32_u)
     }
 
     fn visit_i32_trunc_sat_f64(&mut self) -> Self::Outcome {
-        self.execute_trunc_sat_to_int::<F64, i32>()
+        self.execute_unary(UntypedValue::i32_trunc_sat_f64_s)
     }
 
     fn visit_u32_trunc_sat_f64(&mut self) -> Self::Outcome {
-        self.execute_trunc_sat_to_int::<F64, u32>()
+        self.execute_unary(UntypedValue::i32_trunc_sat_f64_u)
     }
 
     fn visit_i64_trunc_sat_f32(&mut self) -> Self::Outcome {
-        self.execute_trunc_sat_to_int::<F32, i64>()
+        self.execute_unary(UntypedValue::i64_trunc_sat_f32_s)
     }
 
     fn visit_u64_trunc_sat_f32(&mut self) -> Self::Outcome {
-        self.execute_trunc_sat_to_int::<F32, u64>()
+        self.execute_unary(UntypedValue::i64_trunc_sat_f32_u)
     }
 
     fn visit_i64_trunc_sat_f64(&mut self) -> Self::Outcome {
-        self.execute_trunc_sat_to_int::<F64, i64>()
+        self.execute_unary(UntypedValue::i64_trunc_sat_f64_s)
     }
 
     fn visit_u64_trunc_sat_f64(&mut self) -> Self::Outcome {
-        self.execute_trunc_sat_to_int::<F64, u64>()
+        self.execute_unary(UntypedValue::i64_trunc_sat_f64_u)
     }
 }
