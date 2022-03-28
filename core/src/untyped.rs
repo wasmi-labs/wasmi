@@ -351,6 +351,16 @@ impl UntypedValue {
         self.execute_binary(rhs, <i64 as Integer<i64>>::rotr)
     }
 
+    /// Execute `i32.eqz` Wasm operation.
+    pub fn i32_eqz(self) -> Self {
+        self.execute_unary::<i32, bool>(|value| value == 0)
+    }
+
+    /// Execute `i64.eqz` Wasm operation.
+    pub fn i64_eqz(self) -> Self {
+        self.execute_unary::<i64, bool>(|value| value == 0)
+    }
+
     /// Execute `i32.eq` Wasm operation.
     pub fn i32_eq(self, rhs: Self) -> Self {
         self.execute_binary::<i32, bool>(rhs, op!(==))
