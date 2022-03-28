@@ -13,10 +13,16 @@ use crate::{
     F32,
     F64,
 };
-use core::ops::{Neg, Shl, Shr};
+use core::{
+    fmt::{self, Display},
+    ops::{Neg, Shl, Shr},
+};
 
 /// An untyped [`Value`].
+///
+/// Provides a dense and simple interface to all functional Wasm operations.
 #[derive(Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(transparent)]
 pub struct UntypedValue {
     /// This inner value is required to have enough bits to represent
     /// all fundamental WebAssembly types `i32`, `i64`, `f32` and `f64`.
@@ -815,3 +821,208 @@ impl UntypedValue {
         self.execute_unary(<F64 as TruncateSaturateInto<u64>>::truncate_saturate_into)
     }
 }
+
+/// Macro to help implement generic trait implementations for tuple types.
+macro_rules! for_each_tuple {
+    ($mac:ident) => {
+        $mac!( 0 );
+        $mac!( 1 T1);
+        $mac!( 2 T1 T2);
+        $mac!( 3 T1 T2 T3);
+        $mac!( 4 T1 T2 T3 T4);
+        $mac!( 5 T1 T2 T3 T4 T5);
+        $mac!( 6 T1 T2 T3 T4 T5 T6);
+        $mac!( 7 T1 T2 T3 T4 T5 T6 T7);
+        $mac!( 8 T1 T2 T3 T4 T5 T6 T7 T8);
+        $mac!( 9 T1 T2 T3 T4 T5 T6 T7 T8 T9);
+        $mac!(10 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10);
+        $mac!(11 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11);
+        $mac!(12 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12);
+        $mac!(13 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13);
+        $mac!(14 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13 T14);
+        $mac!(15 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13 T14 T15);
+        $mac!(16 T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13 T14 T15 T16);
+    }
+}
+
+/// An error that may occur upon encoding or decoding slices of [`UntypedValue`].
+#[derive(Debug, Copy, Clone)]
+pub enum UntypedError {
+    /// The [`UntypedValue`] slice length did not match.
+    InvalidLen {
+        /// Expected number of [`UntypedValue`] elements.
+        expected: usize,
+        /// Found number of [`UntypedValue`] elements.
+        found: usize,
+    },
+}
+
+impl Display for UntypedError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            UntypedError::InvalidLen { expected, found } => {
+                write!(
+                    f,
+                    "encountered invalid length for untyped slice. \
+                     expected: {expected}, found: {found}"
+                )
+            }
+        }
+    }
+}
+
+impl UntypedValue {
+    /// Decodes the slice of [`UntypedValue`] as a value of type `T`.
+    ///
+    /// # Note
+    ///
+    /// `T` can either be a single type or a tuple of types depending
+    /// on the length of the `slice`.
+    ///
+    /// # Errors
+    ///
+    /// If the tuple length of `T` and the length of `slice` does not match.
+    pub fn decode_slice<T>(slice: &[Self]) -> Result<T, UntypedError>
+    where
+        T: DecodeUntypedSlice,
+    {
+        <T as DecodeUntypedSlice>::decode_untyped_slice(slice)
+    }
+
+    /// Encodes the slice of [`UntypedValue`] from the given value of type `T`.
+    ///
+    /// # Note
+    ///
+    /// `T` can either be a single type or a tuple of types depending
+    /// on the length of the `slice`.
+    ///
+    /// # Errors
+    ///
+    /// If the tuple length of `T` and the length of `slice` does not match.
+    pub fn encode_slice<T>(slice: &mut [Self], input: T) -> Result<(), UntypedError>
+    where
+        T: EncodeUntypedSlice,
+    {
+        <T as EncodeUntypedSlice>::encode_untyped_slice(input, slice)
+    }
+}
+
+/// Tuple types that allow to decode a slice of [`UntypedValue`].
+pub trait DecodeUntypedSlice: Sized {
+    /// Decodes the slice of [`UntypedValue`] as a value of type `Self`.
+    ///
+    /// # Note
+    ///
+    /// `Self` can either be a single type or a tuple of types depending
+    /// on the length of the `slice`.
+    ///
+    /// # Errors
+    ///
+    /// If the tuple length of `Self` and the length of `slice` does not match.
+    fn decode_untyped_slice(params: &[UntypedValue]) -> Result<Self, UntypedError>;
+}
+
+impl<T1> DecodeUntypedSlice for T1
+where
+    T1: From<UntypedValue>,
+{
+    fn decode_untyped_slice(results: &[UntypedValue]) -> Result<Self, UntypedError> {
+        if results.len() != 1 {
+            return Err(UntypedError::InvalidLen {
+                expected: 1,
+                found: results.len(),
+            });
+        }
+        Ok(<T1 as From<UntypedValue>>::from(results[0]))
+    }
+}
+
+macro_rules! impl_decode_untyped_slice {
+    ( $n:literal $( $tuple:ident )* ) => {
+        impl<$($tuple),*> DecodeUntypedSlice for ($($tuple,)*)
+        where
+            $(
+                $tuple: From<UntypedValue>
+            ),*
+        {
+            #[allow(non_snake_case)]
+            fn decode_untyped_slice(results: &[UntypedValue]) -> Result<Self, UntypedError> {
+                match results {
+                    &[$($tuple),*] => Ok((
+                        $(
+                            <$tuple as From<UntypedValue>>::from($tuple),
+                        )*
+                    )),
+                    unexpected => {
+                        Err(UntypedError::InvalidLen {
+                            expected: $n,
+                            found: results.len(),
+                        })
+                    }
+                }
+            }
+        }
+    };
+}
+for_each_tuple!(impl_decode_untyped_slice);
+
+/// Tuple types that allow to encode a slice of [`UntypedValue`].
+pub trait EncodeUntypedSlice {
+    /// Encodes the slice of [`UntypedValue`] from the given value of type `Self`.
+    ///
+    /// # Note
+    ///
+    /// `Self` can either be a single type or a tuple of types depending
+    /// on the length of the `slice`.
+    ///
+    /// # Errors
+    ///
+    /// If the tuple length of `Self` and the length of `slice` does not match.
+    fn encode_untyped_slice(self, results: &mut [UntypedValue]) -> Result<(), UntypedError>;
+}
+
+impl<T1> EncodeUntypedSlice for T1
+where
+    T1: Into<UntypedValue>,
+{
+    fn encode_untyped_slice(self, results: &mut [UntypedValue]) -> Result<(), UntypedError> {
+        if results.len() != 1 {
+            return Err(UntypedError::InvalidLen {
+                expected: 1,
+                found: results.len(),
+            });
+        }
+        results[0] = self.into();
+        Ok(())
+    }
+}
+
+macro_rules! impl_encode_untyped_slice {
+    ( $n:literal $( $tuple:ident )* ) => {
+        impl<$($tuple),*> EncodeUntypedSlice for ($($tuple,)*)
+        where
+            $(
+                $tuple: Into<UntypedValue>
+            ),*
+        {
+            #[allow(non_snake_case)]
+            fn encode_untyped_slice(self, results: &mut [UntypedValue]) -> Result<(), UntypedError> {
+                if results.len() != $n {
+                    return Err(UntypedError::InvalidLen {
+                        expected: $n,
+                        found: results.len(),
+                    })
+                }
+                let ($($tuple,)*) = self;
+                let converted: [UntypedValue; $n] = [
+                    $(
+                        <$tuple as Into<UntypedValue>>::into($tuple)
+                    ),*
+                ];
+                results.copy_from_slice(&converted);
+                Ok(())
+            }
+        }
+    };
+}
+for_each_tuple!(impl_encode_untyped_slice);
