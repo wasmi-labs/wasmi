@@ -15,13 +15,7 @@ use crate::{
     core::{Trap, TrapCode, F32, F64},
     Func,
 };
-use wasmi_core::{
-    memory_units::Pages,
-    ExtendInto,
-    LittleEndianConvert,
-    UntypedValue,
-    WrapInto,
-};
+use wasmi_core::{memory_units::Pages, ExtendInto, LittleEndianConvert, UntypedValue, WrapInto};
 
 /// The outcome of a `wasmi` instruction execution.
 ///
