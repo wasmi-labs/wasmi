@@ -10,7 +10,7 @@ mod func_types;
 mod traits;
 pub mod value_stack;
 
-pub(crate) use self::func_args::{FuncParams, FuncResults, ReadParams, WasmType, WriteResults};
+pub(crate) use self::func_args::{FuncParams, FuncResults};
 pub use self::{
     bytecode::{DropKeep, Target},
     code_map::FuncBody,
@@ -23,7 +23,7 @@ use self::{
     code_map::{CodeMap, ResolvedFuncBody},
     exec_context::ExecutionContext,
     func_types::FuncTypeRegistry,
-    value_stack::{FromStackEntry, StackEntry, ValueStack},
+    value_stack::{StackEntry, ValueStack},
 };
 use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func};
 use crate::{

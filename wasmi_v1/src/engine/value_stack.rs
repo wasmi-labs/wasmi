@@ -1,123 +1,12 @@
 //! Data structures to represent the Wasm value stack during execution.
 
 use super::{DropKeep, DEFAULT_VALUE_STACK_LIMIT};
-use crate::core::{TrapCode, Value, ValueType, F32, F64};
+use crate::core::TrapCode;
 use alloc::vec::Vec;
 use core::{fmt, fmt::Debug, iter, mem};
+use wasmi_core::UntypedValue;
 
-/// A single entry or register in the value stack.
-///
-/// # Note
-///
-/// This is a thin-wrapper around [`u64`] to allow us to treat runtime values
-/// as efficient tag-free [`u64`] values. Bits that are not required by the runtime
-/// value are set to zero.
-/// This is safe since all of the supported runtime values fit into [`u64`] and since
-/// Wasm modules are validated before execution so that invalid representations do not
-/// occur, e.g. interpreting a value of 42 as a [`bool`] value.
-///
-/// At the boundary between the interpreter and the outside world we convert the
-/// stack entry value into the required `Value` type which can then be matched on.
-/// It is only possible to convert a [`StackEntry`] into a [`Value`] if and only if
-/// the type is statically known which always is the case at these boundaries.
-#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
-#[repr(transparent)]
-pub struct StackEntry(u64);
-
-impl StackEntry {
-    /// Returns the underlying bits of the [`StackEntry`].
-    pub fn to_bits(self) -> u64 {
-        self.0
-    }
-
-    /// Converts the untyped [`StackEntry`] value into a typed [`Value`].
-    pub fn with_type(self, value_type: ValueType) -> Value {
-        match value_type {
-            ValueType::I32 => Value::I32(<_>::from_stack_entry(self)),
-            ValueType::I64 => Value::I64(<_>::from_stack_entry(self)),
-            ValueType::F32 => Value::F32(<_>::from_stack_entry(self)),
-            ValueType::F64 => Value::F64(<_>::from_stack_entry(self)),
-        }
-    }
-}
-
-impl From<Value> for StackEntry {
-    fn from(value: Value) -> Self {
-        match value {
-            Value::I32(value) => value.into(),
-            Value::I64(value) => value.into(),
-            Value::F32(value) => value.into(),
-            Value::F64(value) => value.into(),
-        }
-    }
-}
-
-/// Trait used to convert untyped values of [`StackEntry`] into typed values.
-pub trait FromStackEntry
-where
-    Self: Sized,
-{
-    /// Converts the untyped [`StackEntry`] into the typed `Self` value.
-    ///
-    /// # Note
-    ///
-    /// This heavily relies on the fact that executed Wasm is validated
-    /// before execution and therefore might result in conversions that
-    /// are only valid in a validated context, e.g. so that a stack entry
-    /// with a value of 42 is not interpreted as [`bool`] which does not
-    /// have a corresponding representation for 42.
-    fn from_stack_entry(entry: StackEntry) -> Self;
-}
-
-macro_rules! impl_from_stack_entry_integer {
-	($($t:ty),* $(,)?) =>	{
-		$(
-			impl FromStackEntry for $t {
-				fn from_stack_entry(entry: StackEntry) -> Self {
-					entry.to_bits() as _
-				}
-			}
-
-			impl From<$t> for StackEntry {
-				fn from(value: $t) -> Self {
-					Self(value as _)
-				}
-			}
-		)*
-	};
-}
-impl_from_stack_entry_integer!(i8, u8, i16, u16, i32, u32, i64, u64);
-
-macro_rules! impl_from_stack_entry_float {
-	($($t:ty),*) =>	{
-		$(
-			impl FromStackEntry for $t {
-				fn from_stack_entry(entry: StackEntry) -> Self {
-					Self::from_bits(entry.to_bits() as _)
-				}
-			}
-
-			impl From<$t> for StackEntry {
-				fn from(value: $t) -> Self {
-					Self(value.to_bits() as _)
-				}
-			}
-		)*
-	};
-}
-impl_from_stack_entry_float!(f32, f64, F32, F64);
-
-impl From<bool> for StackEntry {
-    fn from(value: bool) -> Self {
-        Self(value as _)
-    }
-}
-
-impl FromStackEntry for bool {
-    fn from_stack_entry(entry: StackEntry) -> Self {
-        entry.to_bits() != 0
-    }
-}
+pub type StackEntry = UntypedValue;
 
 /// The value stack that is used to execute Wasm bytecode.
 ///
@@ -200,7 +89,7 @@ impl ValueStack {
             initial_len > 0,
             "cannot initialize the value stack with zero length"
         );
-        let entries = vec![StackEntry(0x00); initial_len];
+        let entries = vec![StackEntry::default(); initial_len];
         Self {
             entries,
             stack_ptr: 0,
@@ -308,9 +197,9 @@ impl ValueStack {
     /// Pops the last [`StackEntry`] from the [`ValueStack`] as `T`.
     pub fn pop_as<T>(&mut self) -> T
     where
-        T: FromStackEntry,
+        T: From<StackEntry>,
     {
-        T::from_stack_entry(self.pop())
+        T::from(self.pop())
     }
 
     /// Pops the last pair of [`StackEntry`] from the [`ValueStack`].
@@ -396,7 +285,7 @@ impl ValueStack {
             // the current value stack length and add the additional flat amount
             // on top. This avoids too many frequent reallocations.
             self.entries
-                .extend(iter::repeat(StackEntry(0x00)).take(required_len));
+                .extend(iter::repeat(StackEntry::default()).take(required_len));
         }
         Ok(())
     }
