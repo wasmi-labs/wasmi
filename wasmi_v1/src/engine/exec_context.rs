@@ -308,7 +308,7 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
-    fn execute_eqz(
+    fn execute_unary(
         &mut self,
         f: fn(UntypedValue) -> UntypedValue,
     ) -> Result<ExecutionOutcome, Trap> {
@@ -317,7 +317,7 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
-    fn execute_cmp(
+    fn execute_binary(
         &mut self,
         f: fn(UntypedValue, UntypedValue) -> UntypedValue,
     ) -> Result<ExecutionOutcome, Trap> {
@@ -891,139 +891,139 @@ where
     }
 
     fn visit_i32_eqz(&mut self) -> Self::Outcome {
-        self.execute_eqz(UntypedValue::i32_eqz)
+        self.execute_unary(UntypedValue::i32_eqz)
     }
 
     fn visit_i32_eq(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::i32_eq)
+        self.execute_binary(UntypedValue::i32_eq)
     }
 
     fn visit_i32_ne(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::i32_ne)
+        self.execute_binary(UntypedValue::i32_ne)
     }
 
     fn visit_i32_lt_s(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::i32_lt_s)
+        self.execute_binary(UntypedValue::i32_lt_s)
     }
 
     fn visit_i32_lt_u(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::i32_lt_u)
+        self.execute_binary(UntypedValue::i32_lt_u)
     }
 
     fn visit_i32_gt_s(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::i32_gt_s)
+        self.execute_binary(UntypedValue::i32_gt_s)
     }
 
     fn visit_i32_gt_u(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::i32_gt_u)
+        self.execute_binary(UntypedValue::i32_gt_u)
     }
 
     fn visit_i32_le_s(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::i32_le_s)
+        self.execute_binary(UntypedValue::i32_le_s)
     }
 
     fn visit_i32_le_u(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::i32_le_u)
+        self.execute_binary(UntypedValue::i32_le_u)
     }
 
     fn visit_i32_ge_s(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::i32_ge_s)
+        self.execute_binary(UntypedValue::i32_ge_s)
     }
 
     fn visit_i32_ge_u(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::i32_ge_u)
+        self.execute_binary(UntypedValue::i32_ge_u)
     }
 
     fn visit_i64_eqz(&mut self) -> Self::Outcome {
-        self.execute_eqz(UntypedValue::i64_eqz)
+        self.execute_unary(UntypedValue::i64_eqz)
     }
 
     fn visit_i64_eq(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::i64_eq)
+        self.execute_binary(UntypedValue::i64_eq)
     }
 
     fn visit_i64_ne(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::i64_ne)
+        self.execute_binary(UntypedValue::i64_ne)
     }
 
     fn visit_i64_lt_s(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::i64_lt_s)
+        self.execute_binary(UntypedValue::i64_lt_s)
     }
 
     fn visit_i64_lt_u(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::i64_lt_u)
+        self.execute_binary(UntypedValue::i64_lt_u)
     }
 
     fn visit_i64_gt_s(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::i64_gt_s)
+        self.execute_binary(UntypedValue::i64_gt_s)
     }
 
     fn visit_i64_gt_u(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::i64_gt_u)
+        self.execute_binary(UntypedValue::i64_gt_u)
     }
 
     fn visit_i64_le_s(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::i64_le_s)
+        self.execute_binary(UntypedValue::i64_le_s)
     }
 
     fn visit_i64_le_u(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::i64_le_u)
+        self.execute_binary(UntypedValue::i64_le_u)
     }
 
     fn visit_i64_ge_s(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::i64_ge_s)
+        self.execute_binary(UntypedValue::i64_ge_s)
     }
 
     fn visit_i64_ge_u(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::i64_ge_u)
+        self.execute_binary(UntypedValue::i64_ge_u)
     }
 
     fn visit_f32_eq(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::f32_eq)
+        self.execute_binary(UntypedValue::f32_eq)
     }
 
     fn visit_f32_ne(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::f32_ne)
+        self.execute_binary(UntypedValue::f32_ne)
     }
 
     fn visit_f32_lt(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::f32_lt)
+        self.execute_binary(UntypedValue::f32_lt)
     }
 
     fn visit_f32_gt(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::f32_gt)
+        self.execute_binary(UntypedValue::f32_gt)
     }
 
     fn visit_f32_le(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::f32_le)
+        self.execute_binary(UntypedValue::f32_le)
     }
 
     fn visit_f32_ge(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::f32_ge)
+        self.execute_binary(UntypedValue::f32_ge)
     }
 
     fn visit_f64_eq(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::f64_eq)
+        self.execute_binary(UntypedValue::f64_eq)
     }
 
     fn visit_f64_ne(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::f64_ne)
+        self.execute_binary(UntypedValue::f64_ne)
     }
 
     fn visit_f64_lt(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::f64_lt)
+        self.execute_binary(UntypedValue::f64_lt)
     }
 
     fn visit_f64_gt(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::f64_gt)
+        self.execute_binary(UntypedValue::f64_gt)
     }
 
     fn visit_f64_le(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::f64_le)
+        self.execute_binary(UntypedValue::f64_le)
     }
 
     fn visit_f64_ge(&mut self) -> Self::Outcome {
-        self.execute_cmp(UntypedValue::f64_ge)
+        self.execute_binary(UntypedValue::f64_ge)
     }
 
     fn visit_i32_clz(&mut self) -> Self::Outcome {
