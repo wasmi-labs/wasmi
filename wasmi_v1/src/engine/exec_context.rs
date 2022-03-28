@@ -15,13 +15,9 @@ use crate::{
     core::{Trap, TrapCode, F32, F64},
     Func,
 };
-use core::ops::{BitAnd, BitOr, BitXor, Neg, Shl, Shr};
 use wasmi_core::{
     memory_units::Pages,
-    ArithmeticOps,
     ExtendInto,
-    Float,
-    Integer,
     LittleEndianConvert,
     SignExtendFrom,
     TruncateSaturateInto,
@@ -328,6 +324,17 @@ where
         Ok(ExecutionOutcome::Continue)
     }
 
+    fn try_execute_binary(
+        &mut self,
+        f: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
+    ) -> Result<ExecutionOutcome, Trap> {
+        let right = self.value_stack.pop();
+        let entry = self.value_stack.last_mut();
+        let left = *entry;
+        *entry = f(left, right)?;
+        Ok(ExecutionOutcome::Continue)
+    }
+
     fn execute_unop<T, U, F>(&mut self, f: F) -> Result<ExecutionOutcome, Trap>
     where
         F: FnOnce(T) -> U,
@@ -339,234 +346,6 @@ where
         let result = f(value);
         *entry = result.into();
         Ok(ExecutionOutcome::Continue)
-    }
-
-    fn execute_clz<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: Integer<T> + From<UntypedValue>,
-    {
-        self.execute_unop(|v: T| v.leading_zeros())
-    }
-
-    fn execute_ctz<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: Integer<T> + From<UntypedValue>,
-    {
-        self.execute_unop(|v: T| v.trailing_zeros())
-    }
-
-    fn execute_popcnt<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: Integer<T> + From<UntypedValue>,
-    {
-        self.execute_unop(|v: T| v.count_ones())
-    }
-
-    fn execute_binop<T, R, F>(&mut self, f: F) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<R>,
-        T: From<UntypedValue>,
-        F: FnOnce(T, T) -> R,
-    {
-        let right = self.value_stack.pop_as::<T>();
-        let entry = self.value_stack.last_mut();
-        let left = T::from(*entry);
-        let result = f(left, right);
-        *entry = result.into();
-        Ok(ExecutionOutcome::Continue)
-    }
-
-    fn execute_add<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: From<UntypedValue> + ArithmeticOps<T>,
-    {
-        self.execute_binop(|left: T, right: T| left.add(right))
-    }
-
-    fn execute_sub<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: From<UntypedValue> + ArithmeticOps<T>,
-    {
-        self.execute_binop(|left: T, right: T| left.sub(right))
-    }
-
-    fn execute_mul<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: From<UntypedValue> + ArithmeticOps<T>,
-    {
-        self.execute_binop(|left: T, right: T| left.mul(right))
-    }
-
-    fn try_execute_binop<T, F>(&mut self, f: F) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: From<UntypedValue>,
-        F: FnOnce(T, T) -> Result<T, TrapCode>,
-    {
-        let right = self.value_stack.pop_as::<T>();
-        let entry = self.value_stack.last_mut();
-        let left = T::from(*entry);
-        let result = f(left, right)?;
-        *entry = result.into();
-        Ok(ExecutionOutcome::Continue)
-    }
-
-    fn execute_div<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: From<UntypedValue> + ArithmeticOps<T>,
-    {
-        self.try_execute_binop(|left, right| left.div(right))
-    }
-
-    fn execute_rem<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: From<UntypedValue> + Integer<T>,
-    {
-        self.try_execute_binop(|left, right| left.rem(right))
-    }
-
-    fn execute_and<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<<T as BitAnd>::Output>,
-        T: From<UntypedValue> + BitAnd<T>,
-    {
-        self.execute_binop(|left: T, right: T| left.bitand(right))
-    }
-
-    fn execute_or<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<<T as BitOr>::Output>,
-        T: From<UntypedValue> + BitOr<T>,
-    {
-        self.execute_binop(|left: T, right: T| left.bitor(right))
-    }
-
-    fn execute_xor<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<<T as BitXor>::Output>,
-        T: From<UntypedValue> + BitXor<T>,
-    {
-        self.execute_binop(|left: T, right: T| left.bitxor(right))
-    }
-
-    fn execute_shl<T>(&mut self, mask: T) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<<T as Shl>::Output>,
-        T: From<UntypedValue> + Shl<T> + BitAnd<T, Output = T>,
-    {
-        self.execute_binop(|left: T, right: T| left.shl(right & mask))
-    }
-
-    fn execute_shr<T>(&mut self, mask: T) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<<T as Shr>::Output>,
-        T: From<UntypedValue> + Shr<T> + BitAnd<T, Output = T>,
-    {
-        self.execute_binop(|left: T, right: T| left.shr(right & mask))
-    }
-
-    fn execute_rotl<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: Integer<T> + From<UntypedValue>,
-    {
-        self.execute_binop(|left: T, right: T| left.rotl(right))
-    }
-
-    fn execute_rotr<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: Integer<T> + From<UntypedValue>,
-    {
-        self.execute_binop(|left: T, right: T| left.rotr(right))
-    }
-
-    fn execute_abs<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: Float<T> + From<UntypedValue>,
-    {
-        self.execute_unop(|v: T| v.abs())
-    }
-
-    fn execute_neg<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<<T as Neg>::Output>,
-        T: Neg + From<UntypedValue>,
-    {
-        self.execute_unop(|v: T| v.neg())
-    }
-
-    fn execute_ceil<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: Float<T> + From<UntypedValue>,
-    {
-        self.execute_unop(|v: T| v.ceil())
-    }
-
-    fn execute_floor<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: Float<T> + From<UntypedValue>,
-    {
-        self.execute_unop(|v: T| v.floor())
-    }
-
-    fn execute_trunc<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: Float<T> + From<UntypedValue>,
-    {
-        self.execute_unop(|v: T| v.trunc())
-    }
-
-    fn execute_nearest<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: Float<T> + From<UntypedValue>,
-    {
-        self.execute_unop(|v: T| v.nearest())
-    }
-
-    fn execute_sqrt<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: Float<T> + From<UntypedValue>,
-    {
-        self.execute_unop(|v: T| v.sqrt())
-    }
-
-    fn execute_min<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: Float<T> + From<UntypedValue>,
-    {
-        self.execute_binop(|left: T, right: T| left.min(right))
-    }
-
-    fn execute_max<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: Float<T> + From<UntypedValue>,
-    {
-        self.execute_binop(|left: T, right: T| left.max(right))
-    }
-
-    fn execute_copysign<T>(&mut self) -> Result<ExecutionOutcome, Trap>
-    where
-        UntypedValue: From<T>,
-        T: Float<T> + From<UntypedValue>,
-    {
-        self.execute_binop(|left: T, right: T| left.copysign(right))
     }
 
     fn execute_wrap<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
@@ -1027,259 +806,259 @@ where
     }
 
     fn visit_i32_clz(&mut self) -> Self::Outcome {
-        self.execute_clz::<i32>()
+        self.execute_unary(UntypedValue::i32_clz)
     }
 
     fn visit_i32_ctz(&mut self) -> Self::Outcome {
-        self.execute_ctz::<i32>()
+        self.execute_unary(UntypedValue::i32_ctz)
     }
 
     fn visit_i32_popcnt(&mut self) -> Self::Outcome {
-        self.execute_popcnt::<i32>()
+        self.execute_unary(UntypedValue::i32_popcnt)
     }
 
     fn visit_i32_add(&mut self) -> Self::Outcome {
-        self.execute_add::<i32>()
+        self.execute_binary(UntypedValue::i32_add)
     }
 
     fn visit_i32_sub(&mut self) -> Self::Outcome {
-        self.execute_sub::<i32>()
+        self.execute_binary(UntypedValue::i32_sub)
     }
 
     fn visit_i32_mul(&mut self) -> Self::Outcome {
-        self.execute_mul::<i32>()
+        self.execute_binary(UntypedValue::i32_mul)
     }
 
     fn visit_i32_div_s(&mut self) -> Self::Outcome {
-        self.execute_div::<i32>()
+        self.try_execute_binary(UntypedValue::i32_div_s)
     }
 
     fn visit_i32_div_u(&mut self) -> Self::Outcome {
-        self.execute_div::<u32>()
+        self.try_execute_binary(UntypedValue::i32_div_u)
     }
 
     fn visit_i32_rem_s(&mut self) -> Self::Outcome {
-        self.execute_rem::<i32>()
+        self.try_execute_binary(UntypedValue::i32_rem_s)
     }
 
     fn visit_i32_rem_u(&mut self) -> Self::Outcome {
-        self.execute_rem::<u32>()
+        self.try_execute_binary(UntypedValue::i32_rem_u)
     }
 
     fn visit_i32_and(&mut self) -> Self::Outcome {
-        self.execute_and::<i32>()
+        self.execute_binary(UntypedValue::i32_and)
     }
 
     fn visit_i32_or(&mut self) -> Self::Outcome {
-        self.execute_or::<i32>()
+        self.execute_binary(UntypedValue::i32_or)
     }
 
     fn visit_i32_xor(&mut self) -> Self::Outcome {
-        self.execute_xor::<i32>()
+        self.execute_binary(UntypedValue::i32_xor)
     }
 
     fn visit_i32_shl(&mut self) -> Self::Outcome {
-        self.execute_shl::<i32>(0x1F)
+        self.execute_binary(UntypedValue::i32_shl)
     }
 
     fn visit_i32_shr_s(&mut self) -> Self::Outcome {
-        self.execute_shr::<i32>(0x1F)
+        self.execute_binary(UntypedValue::i32_shr_s)
     }
 
     fn visit_i32_shr_u(&mut self) -> Self::Outcome {
-        self.execute_shr::<u32>(0x1F)
+        self.execute_binary(UntypedValue::i32_shr_u)
     }
 
     fn visit_i32_rotl(&mut self) -> Self::Outcome {
-        self.execute_rotl::<i32>()
+        self.execute_binary(UntypedValue::i32_rotl)
     }
 
     fn visit_i32_rotr(&mut self) -> Self::Outcome {
-        self.execute_rotr::<i32>()
+        self.execute_binary(UntypedValue::i32_rotr)
     }
 
     fn visit_i64_clz(&mut self) -> Self::Outcome {
-        self.execute_clz::<i64>()
+        self.execute_unary(UntypedValue::i64_clz)
     }
 
     fn visit_i64_ctz(&mut self) -> Self::Outcome {
-        self.execute_ctz::<i64>()
+        self.execute_unary(UntypedValue::i64_ctz)
     }
 
     fn visit_i64_popcnt(&mut self) -> Self::Outcome {
-        self.execute_popcnt::<i64>()
+        self.execute_unary(UntypedValue::i64_popcnt)
     }
 
     fn visit_i64_add(&mut self) -> Self::Outcome {
-        self.execute_add::<i64>()
+        self.execute_binary(UntypedValue::i64_add)
     }
 
     fn visit_i64_sub(&mut self) -> Self::Outcome {
-        self.execute_sub::<i64>()
+        self.execute_binary(UntypedValue::i64_sub)
     }
 
     fn visit_i64_mul(&mut self) -> Self::Outcome {
-        self.execute_mul::<i64>()
+        self.execute_binary(UntypedValue::i64_mul)
     }
 
     fn visit_i64_div_s(&mut self) -> Self::Outcome {
-        self.execute_div::<i64>()
+        self.try_execute_binary(UntypedValue::i64_div_s)
     }
 
     fn visit_i64_div_u(&mut self) -> Self::Outcome {
-        self.execute_div::<u64>()
+        self.try_execute_binary(UntypedValue::i64_div_u)
     }
 
     fn visit_i64_rem_s(&mut self) -> Self::Outcome {
-        self.execute_rem::<i64>()
+        self.try_execute_binary(UntypedValue::i64_rem_s)
     }
 
     fn visit_i64_rem_u(&mut self) -> Self::Outcome {
-        self.execute_rem::<u64>()
+        self.try_execute_binary(UntypedValue::i64_rem_u)
     }
 
     fn visit_i64_and(&mut self) -> Self::Outcome {
-        self.execute_and::<i64>()
+        self.execute_binary(UntypedValue::i64_and)
     }
 
     fn visit_i64_or(&mut self) -> Self::Outcome {
-        self.execute_or::<i64>()
+        self.execute_binary(UntypedValue::i64_or)
     }
 
     fn visit_i64_xor(&mut self) -> Self::Outcome {
-        self.execute_xor::<i64>()
+        self.execute_binary(UntypedValue::i64_xor)
     }
 
     fn visit_i64_shl(&mut self) -> Self::Outcome {
-        self.execute_shl::<i64>(0x3F)
+        self.execute_binary(UntypedValue::i64_shl)
     }
 
     fn visit_i64_shr_s(&mut self) -> Self::Outcome {
-        self.execute_shr::<i64>(0x3F)
+        self.execute_binary(UntypedValue::i64_shr_s)
     }
 
     fn visit_i64_shr_u(&mut self) -> Self::Outcome {
-        self.execute_shr::<u64>(0x3F)
+        self.execute_binary(UntypedValue::i64_shr_u)
     }
 
     fn visit_i64_rotl(&mut self) -> Self::Outcome {
-        self.execute_rotl::<i64>()
+        self.execute_binary(UntypedValue::i64_rotl)
     }
 
     fn visit_i64_rotr(&mut self) -> Self::Outcome {
-        self.execute_rotr::<i64>()
+        self.execute_binary(UntypedValue::i64_rotr)
     }
 
     fn visit_f32_abs(&mut self) -> Self::Outcome {
-        self.execute_abs::<F32>()
+        self.execute_unary(UntypedValue::f32_abs)
     }
 
     fn visit_f32_neg(&mut self) -> Self::Outcome {
-        self.execute_neg::<F32>()
+        self.execute_unary(UntypedValue::f32_neg)
     }
 
     fn visit_f32_ceil(&mut self) -> Self::Outcome {
-        self.execute_ceil::<F32>()
+        self.execute_unary(UntypedValue::f32_ceil)
     }
 
     fn visit_f32_floor(&mut self) -> Self::Outcome {
-        self.execute_floor::<F32>()
+        self.execute_unary(UntypedValue::f32_floor)
     }
 
     fn visit_f32_trunc(&mut self) -> Self::Outcome {
-        self.execute_trunc::<F32>()
+        self.execute_unary(UntypedValue::f32_trunc)
     }
 
     fn visit_f32_nearest(&mut self) -> Self::Outcome {
-        self.execute_nearest::<F32>()
+        self.execute_unary(UntypedValue::f32_nearest)
     }
 
     fn visit_f32_sqrt(&mut self) -> Self::Outcome {
-        self.execute_sqrt::<F32>()
+        self.execute_unary(UntypedValue::f32_sqrt)
     }
 
     fn visit_f32_add(&mut self) -> Self::Outcome {
-        self.execute_add::<F32>()
+        self.execute_binary(UntypedValue::f32_add)
     }
 
     fn visit_f32_sub(&mut self) -> Self::Outcome {
-        self.execute_sub::<F32>()
+        self.execute_binary(UntypedValue::f32_sub)
     }
 
     fn visit_f32_mul(&mut self) -> Self::Outcome {
-        self.execute_mul::<F32>()
+        self.execute_binary(UntypedValue::f32_mul)
     }
 
     fn visit_f32_div(&mut self) -> Self::Outcome {
-        self.execute_div::<F32>()
+        self.try_execute_binary(UntypedValue::f32_div)
     }
 
     fn visit_f32_min(&mut self) -> Self::Outcome {
-        self.execute_min::<F32>()
+        self.execute_binary(UntypedValue::f32_min)
     }
 
     fn visit_f32_max(&mut self) -> Self::Outcome {
-        self.execute_max::<F32>()
+        self.execute_binary(UntypedValue::f32_max)
     }
 
     fn visit_f32_copysign(&mut self) -> Self::Outcome {
-        self.execute_copysign::<F32>()
+        self.execute_binary(UntypedValue::f32_copysign)
     }
 
     fn visit_f64_abs(&mut self) -> Self::Outcome {
-        self.execute_abs::<F64>()
+        self.execute_unary(UntypedValue::f64_abs)
     }
 
     fn visit_f64_neg(&mut self) -> Self::Outcome {
-        self.execute_neg::<F64>()
+        self.execute_unary(UntypedValue::f64_neg)
     }
 
     fn visit_f64_ceil(&mut self) -> Self::Outcome {
-        self.execute_ceil::<F64>()
+        self.execute_unary(UntypedValue::f64_ceil)
     }
 
     fn visit_f64_floor(&mut self) -> Self::Outcome {
-        self.execute_floor::<F64>()
+        self.execute_unary(UntypedValue::f64_floor)
     }
 
     fn visit_f64_trunc(&mut self) -> Self::Outcome {
-        self.execute_trunc::<F64>()
+        self.execute_unary(UntypedValue::f64_trunc)
     }
 
     fn visit_f64_nearest(&mut self) -> Self::Outcome {
-        self.execute_nearest::<F64>()
+        self.execute_unary(UntypedValue::f64_nearest)
     }
 
     fn visit_f64_sqrt(&mut self) -> Self::Outcome {
-        self.execute_sqrt::<F64>()
+        self.execute_unary(UntypedValue::f64_sqrt)
     }
 
     fn visit_f64_add(&mut self) -> Self::Outcome {
-        self.execute_add::<F64>()
+        self.execute_binary(UntypedValue::f64_add)
     }
 
     fn visit_f64_sub(&mut self) -> Self::Outcome {
-        self.execute_sub::<F64>()
+        self.execute_binary(UntypedValue::f64_sub)
     }
 
     fn visit_f64_mul(&mut self) -> Self::Outcome {
-        self.execute_mul::<F64>()
+        self.execute_binary(UntypedValue::f64_mul)
     }
 
     fn visit_f64_div(&mut self) -> Self::Outcome {
-        self.execute_div::<F64>()
+        self.try_execute_binary(UntypedValue::f64_div)
     }
 
     fn visit_f64_min(&mut self) -> Self::Outcome {
-        self.execute_min::<F64>()
+        self.execute_binary(UntypedValue::f64_min)
     }
 
     fn visit_f64_max(&mut self) -> Self::Outcome {
-        self.execute_max::<F64>()
+        self.execute_binary(UntypedValue::f64_max)
     }
 
     fn visit_f64_copysign(&mut self) -> Self::Outcome {
-        self.execute_copysign::<F64>()
+        self.execute_binary(UntypedValue::f64_copysign)
     }
 
     fn visit_i32_wrap_i64(&mut self) -> Self::Outcome {
