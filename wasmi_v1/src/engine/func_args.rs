@@ -1,6 +1,5 @@
-use super::StackEntry;
 use core::cmp;
-use wasmi_core::{DecodeUntypedSlice, EncodeUntypedSlice};
+use wasmi_core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedValue};
 
 #[derive(Debug)]
 pub struct FuncParams<'a> {
@@ -11,7 +10,7 @@ pub struct FuncParams<'a> {
     /// Therefore the length of the slice must be large enough
     /// to hold all parameters and all results but not both at
     /// the same time.
-    params_results: &'a mut [StackEntry],
+    params_results: &'a mut [UntypedValue],
     /// The length of the expected parameters of the function invocation.
     len_params: usize,
     /// The length of the expected results of the function invocation.
@@ -31,7 +30,7 @@ impl<'a> FuncParams<'a> {
     /// If the length of hte `params_results` slice does not match the maximum
     /// of the `len_params` and `Len_results`.
     pub fn new(
-        params_results: &'a mut [StackEntry],
+        params_results: &'a mut [UntypedValue],
         len_params: usize,
         len_results: usize,
     ) -> Self {
@@ -53,7 +52,7 @@ impl<'a> FuncParams<'a> {
         T: DecodeUntypedSlice,
     {
         let params_buffer = &self.params_results[..self.len_params];
-        StackEntry::decode_slice::<T>(params_buffer)
+        UntypedValue::decode_slice::<T>(params_buffer)
             .unwrap_or_else(|error| panic!("encountered unexpected invalid tuple length: {error}"))
     }
 
@@ -67,7 +66,7 @@ impl<'a> FuncParams<'a> {
         T: EncodeUntypedSlice,
     {
         let results_buffer = &mut self.params_results[..self.len_results];
-        StackEntry::encode_slice::<T>(results_buffer, results)
+        UntypedValue::encode_slice::<T>(results_buffer, results)
             .unwrap_or_else(|error| panic!("encountered unexpected invalid tuple length: {error}"));
         FuncResults {}
     }

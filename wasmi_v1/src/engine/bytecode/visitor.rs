@@ -1,5 +1,5 @@
 use super::{BrTable, DropKeep, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, Target};
-use crate::engine::value_stack::StackEntry;
+use wasmi_core::UntypedValue;
 
 pub trait VisitInstruction {
     type Outcome;
@@ -17,7 +17,7 @@ pub trait VisitInstruction {
     fn visit_set_global(&mut self, global_idx: GlobalIdx) -> Self::Outcome;
     fn visit_call(&mut self, func: FuncIdx) -> Self::Outcome;
     fn visit_call_indirect(&mut self, signature: SignatureIdx) -> Self::Outcome;
-    fn visit_const(&mut self, bytes: StackEntry) -> Self::Outcome;
+    fn visit_const(&mut self, bytes: UntypedValue) -> Self::Outcome;
     fn visit_unreachable(&mut self) -> Self::Outcome;
     fn visit_drop(&mut self) -> Self::Outcome;
     fn visit_select(&mut self) -> Self::Outcome;

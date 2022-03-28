@@ -23,7 +23,7 @@ use self::{
     code_map::{CodeMap, ResolvedFuncBody},
     exec_context::ExecutionContext,
     func_types::FuncTypeRegistry,
-    value_stack::{StackEntry, ValueStack},
+    value_stack::ValueStack,
 };
 use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func};
 use crate::{

@@ -6,8 +6,6 @@ use alloc::vec::Vec;
 use core::{fmt, fmt::Debug, iter, mem};
 use wasmi_core::UntypedValue;
 
-pub type StackEntry = UntypedValue;
-
 /// The value stack that is used to execute Wasm bytecode.
 ///
 /// # Note
@@ -17,7 +15,7 @@ pub type StackEntry = UntypedValue;
 #[derive(Clone)]
 pub struct ValueStack {
     /// All currently live stack entries.
-    entries: Vec<StackEntry>,
+    entries: Vec<UntypedValue>,
     /// Index of the first free place in the stack.
     stack_ptr: usize,
     /// The maximum value stack height.
@@ -50,16 +48,16 @@ impl Eq for ValueStack {}
 impl Default for ValueStack {
     fn default() -> Self {
         Self::new(
-            DEFAULT_VALUE_STACK_LIMIT / mem::size_of::<StackEntry>(),
-            1024 * DEFAULT_VALUE_STACK_LIMIT / mem::size_of::<StackEntry>(),
+            DEFAULT_VALUE_STACK_LIMIT / mem::size_of::<UntypedValue>(),
+            1024 * DEFAULT_VALUE_STACK_LIMIT / mem::size_of::<UntypedValue>(),
         )
     }
 }
 
-impl Extend<StackEntry> for ValueStack {
+impl Extend<UntypedValue> for ValueStack {
     fn extend<I>(&mut self, iter: I)
     where
-        I: IntoIterator<Item = StackEntry>,
+        I: IntoIterator<Item = UntypedValue>,
     {
         for item in iter {
             self.push(item)
@@ -67,10 +65,10 @@ impl Extend<StackEntry> for ValueStack {
     }
 }
 
-impl FromIterator<StackEntry> for ValueStack {
+impl FromIterator<UntypedValue> for ValueStack {
     fn from_iter<I>(iter: I) -> Self
     where
-        I: IntoIterator<Item = StackEntry>,
+        I: IntoIterator<Item = UntypedValue>,
     {
         let mut stack = ValueStack::default();
         stack.extend(iter);
@@ -89,7 +87,7 @@ impl ValueStack {
             initial_len > 0,
             "cannot initialize the value stack with zero length"
         );
-        let entries = vec![StackEntry::default(); initial_len];
+        let entries = vec![UntypedValue::default(); initial_len];
         Self {
             entries,
             stack_ptr: 0,
@@ -148,7 +146,7 @@ impl ValueStack {
     /// # Note
     ///
     /// This has the same effect as [`ValueStack::peek`]`(0)`.
-    pub fn last(&self) -> StackEntry {
+    pub fn last(&self) -> UntypedValue {
         self.entries[self.stack_ptr - 1]
     }
 
@@ -157,7 +155,7 @@ impl ValueStack {
     /// # Note
     ///
     /// This has the same effect as [`ValueStack::peek`]`(0)`.
-    pub fn last_mut(&mut self) -> &mut StackEntry {
+    pub fn last_mut(&mut self) -> &mut UntypedValue {
         &mut self.entries[self.stack_ptr - 1]
     }
 
@@ -166,7 +164,7 @@ impl ValueStack {
     /// # Note
     ///
     /// Given a `depth` of 0 has the same effect as [`ValueStack::last`].
-    pub fn peek(&self, depth: usize) -> StackEntry {
+    pub fn peek(&self, depth: usize) -> UntypedValue {
         self.entries[self.stack_ptr - depth - 1]
     }
 
@@ -175,7 +173,7 @@ impl ValueStack {
     /// # Note
     ///
     /// Given a `depth` of 0 has the same effect as [`ValueStack::last_mut`].
-    pub fn peek_mut(&mut self, depth: usize) -> &mut StackEntry {
+    pub fn peek_mut(&mut self, depth: usize) -> &mut UntypedValue {
         &mut self.entries[self.stack_ptr - depth - 1]
     }
 
@@ -185,7 +183,7 @@ impl ValueStack {
     ///
     /// This operation heavily relies on the prior validation of
     /// the executed WebAssembly bytecode for correctness.
-    pub fn pop(&mut self) -> StackEntry {
+    pub fn pop(&mut self) -> UntypedValue {
         self.stack_ptr -= 1;
         self.entries[self.stack_ptr]
     }
@@ -197,7 +195,7 @@ impl ValueStack {
     /// Pops the last [`StackEntry`] from the [`ValueStack`] as `T`.
     pub fn pop_as<T>(&mut self) -> T
     where
-        T: From<StackEntry>,
+        T: From<UntypedValue>,
     {
         T::from(self.pop())
     }
@@ -210,7 +208,7 @@ impl ValueStack {
     ///   [`ValueStack::pop`] twice.
     /// - This operation heavily relies on the prior validation of
     ///   the executed WebAssembly bytecode for correctness.
-    pub fn pop2(&mut self) -> (StackEntry, StackEntry) {
+    pub fn pop2(&mut self) -> (UntypedValue, UntypedValue) {
         self.stack_ptr -= 2;
         (
             self.entries[self.stack_ptr],
@@ -228,7 +226,7 @@ impl ValueStack {
     /// - Evaluate `f(e1_ptr, e2, e3)`.
     pub fn pop2_eval<F>(&mut self, f: F)
     where
-        F: FnOnce(&mut StackEntry, StackEntry, StackEntry),
+        F: FnOnce(&mut UntypedValue, UntypedValue, UntypedValue),
     {
         let (e2, e3) = self.pop2();
         let e1 = self.last_mut();
@@ -246,7 +244,7 @@ impl ValueStack {
     ///   procedure from panicking.
     pub fn push<T>(&mut self, entry: T)
     where
-        T: Into<StackEntry>,
+        T: Into<UntypedValue>,
     {
         self.entries[self.stack_ptr] = entry.into();
         self.stack_ptr += 1;
@@ -285,7 +283,7 @@ impl ValueStack {
             // the current value stack length and add the additional flat amount
             // on top. This avoids too many frequent reallocations.
             self.entries
-                .extend(iter::repeat(StackEntry::default()).take(required_len));
+                .extend(iter::repeat(UntypedValue::default()).take(required_len));
         }
         Ok(())
     }
@@ -296,14 +294,14 @@ impl ValueStack {
     ///
     /// This API is mostly used when writing results back to the
     /// caller after function execution has finished.
-    pub fn drain(&mut self) -> &[StackEntry] {
+    pub fn drain(&mut self) -> &[UntypedValue] {
         let len = self.stack_ptr;
         self.stack_ptr = 0;
         &self.entries[0..len]
     }
 
     /// Returns an exclusive slice to the last `depth` entries in the value stack.
-    pub fn peek_as_slice_mut(&mut self, depth: usize) -> &mut [StackEntry] {
+    pub fn peek_as_slice_mut(&mut self, depth: usize) -> &mut [UntypedValue] {
         let start = self.stack_ptr - depth;
         let end = self.stack_ptr;
         &mut self.entries[start..end]
@@ -331,7 +329,7 @@ mod tests {
         fn assert_drop_keep<E>(stack: &ValueStack, drop_keep: DropKeep, expected: E)
         where
             E: IntoIterator,
-            E::Item: Into<StackEntry>,
+            E::Item: Into<UntypedValue>,
         {
             let mut s = stack.clone();
             s.drop_keep(drop_keep);
@@ -344,7 +342,7 @@ mod tests {
         let test_inputs = [1, 2, 3, 4, 5, 6];
         let stack = test_inputs
             .into_iter()
-            .map(StackEntry::from)
+            .map(UntypedValue::from)
             .collect::<ValueStack>();
 
         // Drop is always 0 but keep varies:

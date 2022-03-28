@@ -7,7 +7,6 @@ use super::{
     FunctionExecutionOutcome,
     FunctionFrame,
     ResolvedFuncBody,
-    StackEntry,
     Target,
     ValueStack,
     VisitInstruction,
@@ -27,6 +26,7 @@ use wasmi_core::{
     SignExtendFrom,
     TruncateSaturateInto,
     TryTruncateInto,
+    UntypedValue,
     WrapInto,
 };
 
@@ -206,7 +206,7 @@ where
     /// - `f64.load`
     fn execute_load<T>(&mut self, offset: Offset) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
+        UntypedValue: From<T>,
         T: LittleEndianConvert,
     {
         let memory = self.default_memory();
@@ -241,7 +241,7 @@ where
     fn execute_load_extend<T, U>(&mut self, offset: Offset) -> Result<ExecutionOutcome, Trap>
     where
         T: ExtendInto<U> + LittleEndianConvert,
-        StackEntry: From<U>,
+        UntypedValue: From<U>,
     {
         let memory = self.default_memory();
         let entry = self.value_stack.last_mut();
@@ -268,7 +268,7 @@ where
     /// - `f64.store`
     fn execute_store<T>(&mut self, offset: Offset) -> Result<ExecutionOutcome, Trap>
     where
-        T: LittleEndianConvert + From<StackEntry>,
+        T: LittleEndianConvert + From<UntypedValue>,
     {
         let stack_value = self.value_stack.pop_as::<T>();
         let raw_address = self.value_stack.pop_as::<u32>();
@@ -294,7 +294,7 @@ where
     /// - `i64.store32`
     fn execute_store_wrap<T, U>(&mut self, offset: Offset) -> Result<ExecutionOutcome, Trap>
     where
-        T: WrapInto<U> + From<StackEntry>,
+        T: WrapInto<U> + From<UntypedValue>,
         U: LittleEndianConvert,
     {
         let wrapped_value = self.value_stack.pop_as::<T>().wrap_into();
@@ -310,7 +310,7 @@ where
 
     fn execute_eqz<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        T: From<StackEntry>,
+        T: From<UntypedValue>,
         T: PartialEq<T> + Default,
     {
         let entry = self.value_stack.last_mut();
@@ -326,7 +326,7 @@ where
     /// After success the top of the stack will store the result.
     fn execute_relop<T, F>(&mut self, f: F) -> Result<ExecutionOutcome, Trap>
     where
-        T: From<StackEntry>,
+        T: From<UntypedValue>,
         F: FnOnce(T, T) -> bool,
     {
         let right = self.value_stack.pop_as::<T>();
@@ -339,42 +339,42 @@ where
 
     fn execute_eq<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        T: From<StackEntry> + PartialEq,
+        T: From<UntypedValue> + PartialEq,
     {
         self.execute_relop(|left: T, right: T| left == right)
     }
 
     fn execute_ne<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        T: From<StackEntry> + PartialEq,
+        T: From<UntypedValue> + PartialEq,
     {
         self.execute_relop(|left: T, right: T| left != right)
     }
 
     fn execute_lt<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        T: From<StackEntry> + PartialOrd,
+        T: From<UntypedValue> + PartialOrd,
     {
         self.execute_relop(|left: T, right: T| left < right)
     }
 
     fn execute_le<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        T: From<StackEntry> + PartialOrd,
+        T: From<UntypedValue> + PartialOrd,
     {
         self.execute_relop(|left: T, right: T| left <= right)
     }
 
     fn execute_gt<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        T: From<StackEntry> + PartialOrd,
+        T: From<UntypedValue> + PartialOrd,
     {
         self.execute_relop(|left: T, right: T| left > right)
     }
 
     fn execute_ge<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        T: From<StackEntry> + PartialOrd,
+        T: From<UntypedValue> + PartialOrd,
     {
         self.execute_relop(|left: T, right: T| left >= right)
     }
@@ -382,8 +382,8 @@ where
     fn execute_unop<T, U, F>(&mut self, f: F) -> Result<ExecutionOutcome, Trap>
     where
         F: FnOnce(T) -> U,
-        T: From<StackEntry>,
-        StackEntry: From<U>,
+        T: From<UntypedValue>,
+        UntypedValue: From<U>,
     {
         let entry = self.value_stack.last_mut();
         let value = T::from(*entry);
@@ -394,32 +394,32 @@ where
 
     fn execute_clz<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: Integer<T> + From<StackEntry>,
+        UntypedValue: From<T>,
+        T: Integer<T> + From<UntypedValue>,
     {
         self.execute_unop(|v: T| v.leading_zeros())
     }
 
     fn execute_ctz<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: Integer<T> + From<StackEntry>,
+        UntypedValue: From<T>,
+        T: Integer<T> + From<UntypedValue>,
     {
         self.execute_unop(|v: T| v.trailing_zeros())
     }
 
     fn execute_popcnt<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: Integer<T> + From<StackEntry>,
+        UntypedValue: From<T>,
+        T: Integer<T> + From<UntypedValue>,
     {
         self.execute_unop(|v: T| v.count_ones())
     }
 
     fn execute_binop<T, R, F>(&mut self, f: F) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<R>,
-        T: From<StackEntry>,
+        UntypedValue: From<R>,
+        T: From<UntypedValue>,
         F: FnOnce(T, T) -> R,
     {
         let right = self.value_stack.pop_as::<T>();
@@ -432,32 +432,32 @@ where
 
     fn execute_add<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: From<StackEntry> + ArithmeticOps<T>,
+        UntypedValue: From<T>,
+        T: From<UntypedValue> + ArithmeticOps<T>,
     {
         self.execute_binop(|left: T, right: T| left.add(right))
     }
 
     fn execute_sub<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: From<StackEntry> + ArithmeticOps<T>,
+        UntypedValue: From<T>,
+        T: From<UntypedValue> + ArithmeticOps<T>,
     {
         self.execute_binop(|left: T, right: T| left.sub(right))
     }
 
     fn execute_mul<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: From<StackEntry> + ArithmeticOps<T>,
+        UntypedValue: From<T>,
+        T: From<UntypedValue> + ArithmeticOps<T>,
     {
         self.execute_binop(|left: T, right: T| left.mul(right))
     }
 
     fn try_execute_binop<T, F>(&mut self, f: F) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: From<StackEntry>,
+        UntypedValue: From<T>,
+        T: From<UntypedValue>,
         F: FnOnce(T, T) -> Result<T, TrapCode>,
     {
         let right = self.value_stack.pop_as::<T>();
@@ -470,176 +470,176 @@ where
 
     fn execute_div<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: From<StackEntry> + ArithmeticOps<T>,
+        UntypedValue: From<T>,
+        T: From<UntypedValue> + ArithmeticOps<T>,
     {
         self.try_execute_binop(|left, right| left.div(right))
     }
 
     fn execute_rem<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: From<StackEntry> + Integer<T>,
+        UntypedValue: From<T>,
+        T: From<UntypedValue> + Integer<T>,
     {
         self.try_execute_binop(|left, right| left.rem(right))
     }
 
     fn execute_and<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<<T as BitAnd>::Output>,
-        T: From<StackEntry> + BitAnd<T>,
+        UntypedValue: From<<T as BitAnd>::Output>,
+        T: From<UntypedValue> + BitAnd<T>,
     {
         self.execute_binop(|left: T, right: T| left.bitand(right))
     }
 
     fn execute_or<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<<T as BitOr>::Output>,
-        T: From<StackEntry> + BitOr<T>,
+        UntypedValue: From<<T as BitOr>::Output>,
+        T: From<UntypedValue> + BitOr<T>,
     {
         self.execute_binop(|left: T, right: T| left.bitor(right))
     }
 
     fn execute_xor<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<<T as BitXor>::Output>,
-        T: From<StackEntry> + BitXor<T>,
+        UntypedValue: From<<T as BitXor>::Output>,
+        T: From<UntypedValue> + BitXor<T>,
     {
         self.execute_binop(|left: T, right: T| left.bitxor(right))
     }
 
     fn execute_shl<T>(&mut self, mask: T) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<<T as Shl>::Output>,
-        T: From<StackEntry> + Shl<T> + BitAnd<T, Output = T>,
+        UntypedValue: From<<T as Shl>::Output>,
+        T: From<UntypedValue> + Shl<T> + BitAnd<T, Output = T>,
     {
         self.execute_binop(|left: T, right: T| left.shl(right & mask))
     }
 
     fn execute_shr<T>(&mut self, mask: T) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<<T as Shr>::Output>,
-        T: From<StackEntry> + Shr<T> + BitAnd<T, Output = T>,
+        UntypedValue: From<<T as Shr>::Output>,
+        T: From<UntypedValue> + Shr<T> + BitAnd<T, Output = T>,
     {
         self.execute_binop(|left: T, right: T| left.shr(right & mask))
     }
 
     fn execute_rotl<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: Integer<T> + From<StackEntry>,
+        UntypedValue: From<T>,
+        T: Integer<T> + From<UntypedValue>,
     {
         self.execute_binop(|left: T, right: T| left.rotl(right))
     }
 
     fn execute_rotr<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: Integer<T> + From<StackEntry>,
+        UntypedValue: From<T>,
+        T: Integer<T> + From<UntypedValue>,
     {
         self.execute_binop(|left: T, right: T| left.rotr(right))
     }
 
     fn execute_abs<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: Float<T> + From<StackEntry>,
+        UntypedValue: From<T>,
+        T: Float<T> + From<UntypedValue>,
     {
         self.execute_unop(|v: T| v.abs())
     }
 
     fn execute_neg<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<<T as Neg>::Output>,
-        T: Neg + From<StackEntry>,
+        UntypedValue: From<<T as Neg>::Output>,
+        T: Neg + From<UntypedValue>,
     {
         self.execute_unop(|v: T| v.neg())
     }
 
     fn execute_ceil<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: Float<T> + From<StackEntry>,
+        UntypedValue: From<T>,
+        T: Float<T> + From<UntypedValue>,
     {
         self.execute_unop(|v: T| v.ceil())
     }
 
     fn execute_floor<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: Float<T> + From<StackEntry>,
+        UntypedValue: From<T>,
+        T: Float<T> + From<UntypedValue>,
     {
         self.execute_unop(|v: T| v.floor())
     }
 
     fn execute_trunc<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: Float<T> + From<StackEntry>,
+        UntypedValue: From<T>,
+        T: Float<T> + From<UntypedValue>,
     {
         self.execute_unop(|v: T| v.trunc())
     }
 
     fn execute_nearest<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: Float<T> + From<StackEntry>,
+        UntypedValue: From<T>,
+        T: Float<T> + From<UntypedValue>,
     {
         self.execute_unop(|v: T| v.nearest())
     }
 
     fn execute_sqrt<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: Float<T> + From<StackEntry>,
+        UntypedValue: From<T>,
+        T: Float<T> + From<UntypedValue>,
     {
         self.execute_unop(|v: T| v.sqrt())
     }
 
     fn execute_min<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: Float<T> + From<StackEntry>,
+        UntypedValue: From<T>,
+        T: Float<T> + From<UntypedValue>,
     {
         self.execute_binop(|left: T, right: T| left.min(right))
     }
 
     fn execute_max<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: Float<T> + From<StackEntry>,
+        UntypedValue: From<T>,
+        T: Float<T> + From<UntypedValue>,
     {
         self.execute_binop(|left: T, right: T| left.max(right))
     }
 
     fn execute_copysign<T>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: Float<T> + From<StackEntry>,
+        UntypedValue: From<T>,
+        T: Float<T> + From<UntypedValue>,
     {
         self.execute_binop(|left: T, right: T| left.copysign(right))
     }
 
     fn execute_wrap<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<U>,
-        T: WrapInto<U> + From<StackEntry>,
+        UntypedValue: From<U>,
+        T: WrapInto<U> + From<UntypedValue>,
     {
         self.execute_unop(|value: T| value.wrap_into())
     }
 
     fn execute_extend<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<U>,
-        T: ExtendInto<U> + From<StackEntry>,
+        UntypedValue: From<U>,
+        T: ExtendInto<U> + From<UntypedValue>,
     {
         self.execute_unop(|value: T| value.extend_into())
     }
 
     fn execute_trunc_to_int<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<U>,
-        T: TryTruncateInto<U, TrapCode> + From<StackEntry>,
+        UntypedValue: From<U>,
+        T: TryTruncateInto<U, TrapCode> + From<UntypedValue>,
     {
         let entry = self.value_stack.last_mut();
         let value = T::from(*entry).try_truncate_into()?;
@@ -649,8 +649,8 @@ where
 
     fn execute_trunc_sat_to_int<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<U>,
-        T: TruncateSaturateInto<U> + From<StackEntry>,
+        UntypedValue: From<U>,
+        T: TruncateSaturateInto<U> + From<UntypedValue>,
     {
         let entry = self.value_stack.last_mut();
         let value = T::from(*entry).truncate_saturate_into();
@@ -660,8 +660,8 @@ where
 
     fn execute_reinterpret<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<U>,
-        T: From<StackEntry>,
+        UntypedValue: From<U>,
+        T: From<UntypedValue>,
     {
         // Nothing to do for `wasmi` bytecode.
         Ok(ExecutionOutcome::Continue)
@@ -669,8 +669,8 @@ where
 
     fn execute_sign_extend<T, U>(&mut self) -> Result<ExecutionOutcome, Trap>
     where
-        StackEntry: From<T>,
-        T: SignExtendFrom<U> + From<StackEntry>,
+        UntypedValue: From<T>,
+        T: SignExtendFrom<U> + From<UntypedValue>,
     {
         let entry = self.value_stack.last_mut();
         let value = T::from(*entry).sign_extend_from();
@@ -808,7 +808,7 @@ where
         Ok(ExecutionOutcome::ExecuteCall(func))
     }
 
-    fn visit_const(&mut self, bytes: StackEntry) -> Self::Outcome {
+    fn visit_const(&mut self, bytes: UntypedValue) -> Self::Outcome {
         self.value_stack.push(bytes);
         Ok(ExecutionOutcome::Continue)
     }
@@ -820,7 +820,7 @@ where
 
     fn visit_select(&mut self) -> Self::Outcome {
         self.value_stack.pop2_eval(|e1, e2, e3| {
-            let condition = <bool as From<StackEntry>>::from(e3);
+            let condition = <bool as From<UntypedValue>>::from(e3);
             let result = if condition { *e1 } else { e2 };
             *e1 = result;
         });
