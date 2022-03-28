@@ -177,7 +177,7 @@ impl ValueStack {
         &mut self.entries[self.stack_ptr - depth - 1]
     }
 
-    /// Pops the last [`StackEntry`] from the [`ValueStack`].
+    /// Pops the last [`UntypedValue`] from the [`ValueStack`].
     ///
     /// # Note
     ///
@@ -192,7 +192,7 @@ impl ValueStack {
         self.stack_ptr -= depth;
     }
 
-    /// Pops the last [`StackEntry`] from the [`ValueStack`] as `T`.
+    /// Pops the last [`UntypedValue`] from the [`ValueStack`] as `T`.
     pub fn pop_as<T>(&mut self) -> T
     where
         T: From<UntypedValue>,
@@ -200,7 +200,7 @@ impl ValueStack {
         T::from(self.pop())
     }
 
-    /// Pops the last pair of [`StackEntry`] from the [`ValueStack`].
+    /// Pops the last pair of [`UntypedValue`] from the [`ValueStack`].
     ///
     /// # Note
     ///
@@ -233,7 +233,7 @@ impl ValueStack {
         f(e1, e2, e3)
     }
 
-    /// Pushes the [`StackEntry`] to the end of the [`ValueStack`].
+    /// Pushes the [`UntypedValue`] to the end of the [`ValueStack`].
     ///
     /// # Note
     ///
