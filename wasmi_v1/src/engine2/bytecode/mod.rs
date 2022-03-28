@@ -159,7 +159,9 @@ where
         results: T::RegisterSlice,
         /// The index into the table used for the indirect function call.
         ///
-        /// TODO: might `T::Register` be more useful here?
+        /// TODO 1: might `T::Register` be more useful here?
+        /// TODO 2: we might be able to embed this into the `params` field
+        ///         to save some data structure space.
         index: T::Provider,
         /// The parameters of the indirect function call.
         params: T::ProviderSlice,
