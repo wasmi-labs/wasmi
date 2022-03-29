@@ -204,6 +204,41 @@ where
     }
 }
 
+#[test]
+fn unreachable() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call")
+                unreachable
+            )
+        )
+    "#,
+    );
+    let expected = [ExecInstruction::Trap {
+        trap_code: TrapCode::Unreachable,
+    }];
+    assert_func_bodies(&wasm, [expected]);
+}
+
+#[test]
+fn unreachable_double() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call")
+                unreachable
+                unreachable
+            )
+        )
+    "#,
+    );
+    let expected = [ExecInstruction::Trap {
+        trap_code: TrapCode::Unreachable,
+    }];
+    assert_func_bodies(&wasm, [expected]);
+}
+
 /// Tests compilation of a no-op function.
 #[test]
 fn implicit_return_no_value() {

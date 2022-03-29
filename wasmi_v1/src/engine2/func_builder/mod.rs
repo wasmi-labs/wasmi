@@ -278,12 +278,13 @@ impl<'parser> FunctionBuilder<'parser> {
 impl<'parser> FunctionBuilder<'parser> {
     /// Translates a Wasm `unreachable` instruction.
     pub fn translate_unreachable(&mut self) -> Result<(), ModuleError> {
-        // self.translate_if_reachable(|builder| {
-        //     builder.inst_builder.push_inst(Instruction::Unreachable);
-        //     builder.reachable = false;
-        //     Ok(())
-        // })
-        todo!()
+        self.translate_if_reachable(|builder| {
+            builder.inst_builder.push_inst(Instruction::Trap {
+                trap_code: TrapCode::Unreachable,
+            });
+            builder.reachable = false;
+            Ok(())
+        })
     }
 
     /// Calculates the stack height upon entering a control flow frame.
