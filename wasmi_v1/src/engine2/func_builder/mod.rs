@@ -23,7 +23,15 @@ pub use self::{
     inst_builder::{Instr, LabelIdx, RelativeDepth, Reloc},
     providers::{IrProvider, IrProviderSlice, IrRegister, IrRegisterSlice},
 };
-use super::{bytecode::Offset, Engine, ExecRegister, FuncBody, Instruction, InstructionTypes};
+use super::{
+    bytecode::Offset,
+    Engine,
+    ExecRegister,
+    FuncBody,
+    Instruction,
+    InstructionTypes,
+    Target,
+};
 use crate::{
     engine2::bytecode::Global,
     module::{
@@ -196,6 +204,18 @@ impl<'parser> FunctionBuilder<'parser> {
         params.len()
     }
 
+    /// Try to resolve the given label.
+    ///
+    /// In case the label cannot yet be resolved register the [`Reloc`] as its user.
+    fn try_resolve_label<F>(&mut self, label: LabelIdx, reloc_provider: F) -> Instr
+    where
+        F: FnOnce(Instr) -> Reloc,
+    {
+        let pc = self.inst_builder.current_pc();
+        self.inst_builder
+            .try_resolve_label(label, || reloc_provider(pc))
+    }
+
     /// Translates the given local variables for the translated function.
     pub fn translate_locals(
         &mut self,
@@ -273,6 +293,42 @@ impl<'parser> FunctionBuilder<'parser> {
             .engine()
             .resolve_func_type(dedup_func_type, Clone::clone)
     }
+
+    /// Returns the target at the given `depth`.
+    ///
+    /// # Panics
+    ///
+    /// - If the `depth` is greater than the current height of the control frame stack.
+    /// - If the value stack underflowed.
+    fn acquire_target(&self, relative_depth: u32) -> AquiredTarget {
+        debug_assert!(self.is_reachable());
+        if self.control_frames.is_root(relative_depth) {
+            AquiredTarget::Return
+        } else {
+            let label = self
+                .control_frames
+                .nth_back(relative_depth)
+                .branch_destination();
+            AquiredTarget::Branch(label)
+        }
+    }
+}
+
+/// An aquired target for a branch instruction.
+#[derive(Debug, Copy, Clone)]
+pub enum AquiredTarget {
+    /// The branching targets a branching destination (label).
+    ///
+    /// # Note
+    ///
+    /// This is the usual case.
+    Branch(LabelIdx),
+    /// The branching target is ending the called function.
+    ///
+    /// # Note
+    ///
+    /// This happens for example when branching to the function enclosing block.
+    Return,
 }
 
 impl<'parser> FunctionBuilder<'parser> {
@@ -301,134 +357,155 @@ impl<'parser> FunctionBuilder<'parser> {
     /// When the emulated value stack underflows. This should not happen
     /// since we have already validated the input Wasm prior.
     fn frame_stack_height(&self, block_type: BlockType) -> u32 {
-        // let len_params = block_type.len_params(self.engine);
-        // let stack_height = self.value_stack.len();
-        // stack_height.checked_sub(len_params).unwrap_or_else(|| {
-        //     panic!(
-        //         "encountered emulated value stack underflow with \
-        //          stack height {} and {} block parameters",
-        //         stack_height, len_params
-        //     )
-        // })
-        todo!()
+        let len_params = block_type.len_params(&self.engine);
+        let stack_height = self.providers.len();
+        stack_height.checked_sub(len_params).unwrap_or_else(|| {
+            panic!(
+                "encountered emulated value stack underflow with \
+                 stack height {} and {} block parameters",
+                stack_height, len_params
+            )
+        })
     }
 
     /// Translates a Wasm `block` control flow operator.
     pub fn translate_block(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
-        // let stack_height = self.frame_stack_height(block_type);
-        // if self.is_reachable() {
-        //     let end_label = self.inst_builder.new_label();
-        //     self.control_frames.push_frame(BlockControlFrame::new(
-        //         block_type,
-        //         end_label,
-        //         stack_height,
-        //     ));
-        // } else {
-        //     self.control_frames.push_frame(UnreachableControlFrame::new(
-        //         ControlFrameKind::Block,
-        //         block_type,
-        //         stack_height,
-        //     ));
-        // }
-        // Ok(())
-        todo!()
+        let stack_height = self.frame_stack_height(block_type);
+        if self.is_reachable() {
+            let end_label = self.inst_builder.new_label();
+            self.control_frames.push_frame(BlockControlFrame::new(
+                block_type,
+                end_label,
+                stack_height,
+            ));
+        } else {
+            self.control_frames.push_frame(UnreachableControlFrame::new(
+                ControlFrameKind::Block,
+                block_type,
+                stack_height,
+            ));
+        }
+        Ok(())
     }
 
     /// Translates a Wasm `loop` control flow operator.
     pub fn translate_loop(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
-        // let stack_height = self.frame_stack_height(block_type);
-        // if self.is_reachable() {
-        //     let header = self.inst_builder.new_label();
-        //     self.inst_builder.resolve_label(header);
-        //     self.control_frames
-        //         .push_frame(LoopControlFrame::new(block_type, header, stack_height));
-        // } else {
-        //     self.control_frames.push_frame(UnreachableControlFrame::new(
-        //         ControlFrameKind::Loop,
-        //         block_type,
-        //         stack_height,
-        //     ));
-        // }
-        // Ok(())
-        todo!()
+        let stack_height = self.frame_stack_height(block_type);
+        if self.is_reachable() {
+            let header = self.inst_builder.new_label();
+            self.inst_builder.resolve_label(header);
+            self.control_frames
+                .push_frame(LoopControlFrame::new(block_type, header, stack_height));
+        } else {
+            self.control_frames.push_frame(UnreachableControlFrame::new(
+                ControlFrameKind::Loop,
+                block_type,
+                stack_height,
+            ));
+        }
+        Ok(())
     }
 
     /// Translates a Wasm `if` control flow operator.
     pub fn translate_if(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
-        // if self.is_reachable() {
-        //     let condition = self.value_stack.pop1();
-        //     debug_assert_eq!(condition, ValueType::I32);
-        //     let stack_height = self.frame_stack_height(block_type);
-        //     let else_label = self.inst_builder.new_label();
-        //     let end_label = self.inst_builder.new_label();
-        //     self.control_frames.push_frame(IfControlFrame::new(
-        //         block_type,
-        //         end_label,
-        //         else_label,
-        //         stack_height,
-        //     ));
-        //     let dst_pc = self.try_resolve_label(else_label, |pc| Reloc::Br { inst_idx: pc });
-        //     let branch_target = Target::new(dst_pc, DropKeep::new(0, 0));
-        //     self.inst_builder
-        //         .push_inst(Instruction::BrIfEqz(branch_target));
-        // } else {
-        //     let stack_height = self.frame_stack_height(block_type);
-        //     self.control_frames.push_frame(UnreachableControlFrame::new(
-        //         ControlFrameKind::If,
-        //         block_type,
-        //         stack_height,
-        //     ));
-        // }
-        // Ok(())
-        todo!()
+        let stack_height = self.frame_stack_height(block_type);
+        if self.is_reachable() {
+            let condition = self.providers.pop();
+            match condition {
+                IrProvider::Register(condition) => {
+                    // We duplicate the `if` parameters on the provider stack
+                    // so that we do not have to store the `if` parameters for
+                    // the optional `else` block somewhere else.
+                    // We do this despite the fact that we do not know at this
+                    // point if the `if` block actually has an `else` block.
+                    // The `else_height` stores the height to which we have to
+                    // prune the provider stack upon visiting the `else` block.
+                    // The `stack_height` is still denoting the height of the
+                    // provider stack upon entering the outer `if` block.
+                    let len_params = block_type.len_params(&self.engine);
+                    self.providers.duplicate_n(len_params as usize);
+                    let else_height = self.frame_stack_height(block_type);
+                    let else_label = self.inst_builder.new_label();
+                    let end_label = self.inst_builder.new_label();
+                    self.control_frames.push_frame(IfControlFrame::new(
+                        block_type,
+                        end_label,
+                        else_label,
+                        stack_height,
+                        else_height,
+                    ));
+                    let dst_pc =
+                        self.try_resolve_label(else_label, |pc| Reloc::Br { inst_idx: pc });
+                    let branch_target = Target::from(dst_pc);
+                    self.inst_builder.push_inst(Instruction::BrEqz {
+                        target: branch_target,
+                        condition,
+                    });
+                }
+                IrProvider::Immediate(condition) => {
+                    // TODO: ideally we flatten the entire if-block
+                    //       to its `then` block if the condition is true OR
+                    //       to its `else` block if the condition is false.
+                    //
+                    // We have not yet implemented this `if` flattening since
+                    // it is potentially a ton of complicated work.
+                    todo!()
+                }
+            }
+        } else {
+            self.control_frames.push_frame(UnreachableControlFrame::new(
+                ControlFrameKind::If,
+                block_type,
+                stack_height,
+            ));
+        }
+        Ok(())
     }
 
     /// Translates a Wasm `else` control flow operator.
     pub fn translate_else(&mut self) -> Result<(), ModuleError> {
-        // let mut if_frame = match self.control_frames.pop_frame() {
-        //     ControlFrame::If(if_frame) => if_frame,
-        //     ControlFrame::Unreachable(frame) if matches!(frame.kind(), ControlFrameKind::If) => {
-        //         // Encountered `Else` block for unreachable `If` block.
-        //         //
-        //         // In this case we can simply ignore the entire `Else` block
-        //         // since it is unreachable anyways.
-        //         self.control_frames.push_frame(frame);
-        //         return Ok(());
-        //     }
-        //     unexpected => panic!(
-        //         "expected `if` control flow frame on top for `else` but found: {:?}",
-        //         unexpected,
-        //     ),
-        // };
-        // let reachable = self.is_reachable();
-        // // At this point we know if the end of the `then` block of the paren
-        // // `if` block is reachable so we update the parent `if` frame.
-        // //
-        // // Note: This information is important to decide whether code is
-        // //       reachable after the `if` block (including `else`) ends.
-        // if_frame.update_end_of_then_reachability(reachable);
-        // // Create the jump from the end of the `then` block to the `if`
-        // // block's end label in case the end of `then` is reachable.
-        // if reachable {
-        //     let dst_pc =
-        //         self.try_resolve_label(if_frame.end_label(), |pc| Reloc::Br { inst_idx: pc });
-        //     let target = Target::new(dst_pc, DropKeep::new(0, 0));
-        //     self.inst_builder.push_inst(Instruction::Br(target));
-        // }
-        // // Now resolve labels for the instructions of the `else` block
-        // self.inst_builder.resolve_label(if_frame.else_label());
-        // // We need to reset the value stack to exactly how it has been
-        // // when entering the `if` in the first place so that the `else`
-        // // block has the same parameters on top of the stack.
-        // self.value_stack.shrink_to(if_frame.stack_height());
-        // if_frame.block_type().foreach_param(self.engine, |param| {
-        //     self.value_stack.push(param);
-        // });
-        // self.control_frames.push_frame(if_frame);
-        // // We can reset reachability now since the parent `if` block was reachable.
-        // self.reachable = true;
-        // Ok(())
-        todo!()
+        let mut if_frame = match self.control_frames.pop_frame() {
+            ControlFrame::If(if_frame) => if_frame,
+            ControlFrame::Unreachable(frame) if matches!(frame.kind(), ControlFrameKind::If) => {
+                // Encountered `Else` block for unreachable `If` block.
+                //
+                // In this case we can simply ignore the entire `Else` block
+                // since it is unreachable anyways.
+                self.control_frames.push_frame(frame);
+                return Ok(());
+            }
+            unexpected => panic!(
+                "expected `if` control flow frame on top for `else` but found: {:?}",
+                unexpected,
+            ),
+        };
+        let reachable = self.is_reachable();
+        // At this point we know if the end of the `then` block of the paren
+        // `if` block is reachable so we update the parent `if` frame.
+        //
+        // Note: This information is important to decide whether code is
+        //       reachable after the `if` block (including `else`) ends.
+        if_frame.update_end_of_then_reachability(reachable);
+        // Create the jump from the end of the `then` block to the `if`
+        // block's end label in case the end of `then` is reachable.
+        if reachable {
+            let dst_pc =
+                self.try_resolve_label(if_frame.end_label(), |pc| Reloc::Br { inst_idx: pc });
+            let target = Target::from(dst_pc);
+            self.inst_builder.push_inst(Instruction::Br { target });
+        }
+        // Now resolve labels for the instructions of the `else` block
+        self.inst_builder.resolve_label(if_frame.else_label());
+        // We need to reset the value stack to exactly how it has been
+        // when entering the `if` in the first place so that the `else`
+        // block has the same parameters on top of the stack.
+        self.providers.shrink_to(if_frame.else_height());
+        let len_params = if_frame.block_type().len_params(&self.engine);
+        self.providers.push_dynamic_many(len_params as usize);
+        self.control_frames.push_frame(if_frame);
+        // We can reset reachability now since the parent `if` block was reachable.
+        self.reachable = true;
+        Ok(())
     }
 
     /// Translates a Wasm `end` control flow operator.
@@ -470,48 +547,60 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translates a Wasm `br` control flow operator.
     pub fn translate_br(&mut self, relative_depth: u32) -> Result<(), ModuleError> {
-        // self.translate_if_reachable(|builder| {
-        //     match builder.acquire_target(relative_depth) {
-        //         AquiredTarget::Branch(end_label, drop_keep) => {
-        //             let dst_pc =
-        //                 builder.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
-        //             builder
-        //                 .inst_builder
-        //                 .push_inst(Instruction::Br(Target::new(dst_pc, drop_keep)));
-        //         }
-        //         AquiredTarget::Return(drop_keep) => {
-        //             // In this case the `br` can be directly translated as `return`.
-        //             builder.translate_return()?;
-        //         }
-        //     }
-        //     builder.reachable = false;
-        //     Ok(())
-        // })
-        todo!()
+        self.translate_if_reachable(|builder| {
+            match builder.acquire_target(relative_depth) {
+                AquiredTarget::Branch(label) => {
+                    let dst_pc = builder.try_resolve_label(label, |pc| Reloc::Br { inst_idx: pc });
+                    builder.inst_builder.push_inst(Instruction::Br {
+                        target: Target::from(dst_pc),
+                    });
+                }
+                AquiredTarget::Return => {
+                    // In this case the `br` can be directly translated as `return`.
+                    builder.translate_return()?;
+                }
+            }
+            builder.reachable = false;
+            Ok(())
+        })
     }
 
     /// Translates a Wasm `br_if` control flow operator.
     pub fn translate_br_if(&mut self, relative_depth: u32) -> Result<(), ModuleError> {
-        // self.translate_if_reachable(|builder| {
-        //     let condition = builder.value_stack.pop1();
-        //     debug_assert_eq!(condition, ValueType::I32);
-        //     match builder.acquire_target(relative_depth) {
-        //         AquiredTarget::Branch(end_label, drop_keep) => {
-        //             let dst_pc =
-        //                 builder.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
-        //             builder
-        //                 .inst_builder
-        //                 .push_inst(Instruction::BrIfNez(Target::new(dst_pc, drop_keep)));
-        //         }
-        //         AquiredTarget::Return(drop_keep) => {
-        //             builder
-        //                 .inst_builder
-        //                 .push_inst(Instruction::ReturnIfNez(drop_keep));
-        //         }
-        //     }
-        //     Ok(())
-        // })
-        todo!()
+        self.translate_if_reachable(|builder| {
+            let condition = builder.providers.pop();
+            match condition {
+                IrProvider::Register(condition) => match builder.acquire_target(relative_depth) {
+                    AquiredTarget::Branch(label) => {
+                        let dst_pc =
+                            builder.try_resolve_label(label, |pc| Reloc::Br { inst_idx: pc });
+                        builder.inst_builder.push_inst(Instruction::BrNez {
+                            target: Target::from(dst_pc),
+                            condition,
+                        });
+                    }
+                    AquiredTarget::Return => {
+                        let results = builder.return_provider_slice();
+                        builder
+                            .inst_builder
+                            .push_inst(Instruction::ReturnNez { results, condition });
+                    }
+                },
+                IrProvider::Immediate(condition) => {
+                    if bool::from(condition) {
+                        // In this case the branch always takes place and
+                        // therefore is unconditional so we can replace it
+                        // with a `br` instruction.
+                        return builder.translate_br(relative_depth);
+                    } else {
+                        // In this case the branch never takes place and
+                        // therefore is a no-op. We simply do nothing in this
+                        // case.
+                    }
+                }
+            }
+            Ok(())
+        })
     }
 
     /// Translates a Wasm `br_table` control flow operator.
@@ -523,46 +612,63 @@ impl<'parser> FunctionBuilder<'parser> {
     where
         T: IntoIterator<Item = RelativeDepth>,
     {
-        // self.translate_if_reachable(|builder| {
-        //     let case = builder.value_stack.pop1();
-        //     debug_assert_eq!(case, ValueType::I32);
+        self.translate_if_reachable(|builder| {
+            fn compute_instr(
+                builder: &mut FunctionBuilder,
+                n: usize,
+                depth: RelativeDepth,
+            ) -> IrInstruction {
+                match builder.acquire_target(depth.into_u32()) {
+                    AquiredTarget::Branch(label) => {
+                        let destination = builder.try_resolve_label(label, |pc| Reloc::BrTable {
+                            inst_idx: pc,
+                            target_idx: n,
+                        });
+                        Instruction::Br {
+                            target: Target::from(destination),
+                        }
+                    }
+                    AquiredTarget::Return => {
+                        let results = builder.return_provider_slice();
+                        Instruction::Return { results }
+                    }
+                }
+            }
 
-        //     fn compute_inst(
-        //         builder: &mut FunctionBuilder,
-        //         n: usize,
-        //         depth: RelativeDepth,
-        //     ) -> Instruction {
-        //         match builder.acquire_target(depth.into_u32()) {
-        //             AquiredTarget::Branch(label_idx, drop_keep) => {
-        //                 let dst_pc = builder.try_resolve_label(label_idx, |pc| Reloc::BrTable {
-        //                     inst_idx: pc,
-        //                     target_idx: n,
-        //                 });
-        //                 Instruction::Br(Target::new(dst_pc, drop_keep))
-        //             }
-        //             AquiredTarget::Return(drop_keep) => Instruction::Return(drop_keep),
-        //         }
-        //     }
-
-        //     let branches = targets
-        //         .into_iter()
-        //         .enumerate()
-        //         .map(|(n, depth)| compute_inst(builder, n, depth))
-        //         .collect::<Vec<_>>();
-        //     // We include the default target in `len_branches`.
-        //     let len_branches = branches.len();
-        //     let default_branch = compute_inst(builder, len_branches, default);
-        //     builder.inst_builder.push_inst(Instruction::BrTable {
-        //         len_targets: len_branches + 1,
-        //     });
-        //     for branch in branches {
-        //         builder.inst_builder.push_inst(branch);
-        //     }
-        //     builder.inst_builder.push_inst(default_branch);
-        //     builder.reachable = false;
-        //     Ok(())
-        // })
-        todo!()
+            let case = builder.providers.pop();
+            let branches = targets
+                .into_iter()
+                .enumerate()
+                .map(|(n, depth)| compute_instr(builder, n, depth))
+                .collect::<Vec<_>>();
+            // We do not include the default target in `len_branches`.
+            let len_non_default_targets = branches.len();
+            let default_branch = compute_instr(builder, len_non_default_targets, default);
+            match case {
+                IrProvider::Register(case) => {
+                    // Note: We include the default branch in this amount.
+                    let len_targets = len_non_default_targets + 1;
+                    builder
+                        .inst_builder
+                        .push_inst(Instruction::BrTable { case, len_targets });
+                    for branch in branches {
+                        builder.inst_builder.push_inst(branch);
+                    }
+                    builder.inst_builder.push_inst(default_branch);
+                    builder.reachable = false;
+                }
+                IrProvider::Immediate(case) => {
+                    // In this case the case is a constant value and therefore
+                    // it is possible to pre-compute the label which is going to
+                    // be used for branching always.
+                    let index = u32::from(case) as usize;
+                    let case = branches.get(index).cloned().unwrap_or(default_branch);
+                    builder.inst_builder.push_inst(case);
+                    builder.reachable = false;
+                }
+            }
+            Ok(())
+        })
     }
 
     /// Translates a Wasm `return` control flow operator.

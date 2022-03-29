@@ -97,8 +97,19 @@ pub struct IfControlFrame {
     else_label: LabelIdx,
     /// The type of the [`IfControlFrame`].
     block_type: BlockType,
-    /// The value stack height upon entering the [`IfControlFrame`].
+    /// The provider stack height upon entering the [`IfControlFrame`].
     stack_height: u32,
+    /// The provider stack height for the otional `else` block.
+    ///
+    /// # Note
+    ///
+    /// Upon entering an `if` block we duplicate the parameters for the `if`
+    /// block so that we can reuse the provider stack for both, the parameters
+    /// of the `if` block as well as for the parameters of the optional `else`
+    /// block.
+    /// This way we do not have to store the block parameters out of space,
+    /// for example in this structure which would not be as efficient.
+    else_height: u32,
     /// End of `then` branch is reachable.
     ///
     /// # Note
@@ -120,6 +131,7 @@ impl IfControlFrame {
         end_label: LabelIdx,
         else_label: LabelIdx,
         stack_height: u32,
+        else_height: u32,
     ) -> Self {
         assert_ne!(
             end_label, else_label,
@@ -130,6 +142,7 @@ impl IfControlFrame {
             end_label,
             else_label,
             stack_height,
+            else_height,
             end_of_then_is_reachable: None,
         }
     }
@@ -155,6 +168,11 @@ impl IfControlFrame {
 
     /// Returns the value stack height upon entering the [`IfControlFrame`].
     pub fn stack_height(&self) -> u32 {
+        self.stack_height
+    }
+
+    /// Returns the value stack height prepared for the `else` of the [`IfControlFrame`].
+    pub fn else_height(&self) -> u32 {
         self.stack_height
     }
 

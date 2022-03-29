@@ -1,8 +1,7 @@
 //! Abstractions to build up instructions forming Wasm function bodies.
 
 use super::{
-    locals_registry::LocalsRegistry,
-    providers::{Providers, Stacks},
+    providers::Providers,
     CompileContext,
     Engine,
     FuncBody,

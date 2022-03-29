@@ -107,6 +107,8 @@ where
     /// This instruction must be followed by `len_targets` instructions
     /// that are either [`Instruction::Br`] or [`Instruction::Return`].
     BrTable {
+        /// The case for the branch.
+        case: T::Register,
         /// The amount of targets of this branching table including the default.
         len_targets: usize,
     },

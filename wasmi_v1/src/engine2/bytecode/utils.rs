@@ -9,23 +9,18 @@ use core::ops::Neg;
 /// This is the local index of an instruction within the same function.
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(transparent)]
-pub struct Target(u32);
+pub struct Target(Instr);
 
 impl From<Instr> for Target {
     fn from(instr: Instr) -> Self {
-        Self(instr.into_inner())
+        Self(instr)
     }
 }
 
 impl Target {
-    /// Returns the internal representation of the [`Target`].
-    pub fn into_inner(self) -> u32 {
-        self.0
-    }
-
     /// Returns the destination program counter (as index).
     pub fn destination(self) -> Instr {
-        Instr::from_inner(self.0)
+        self.0
     }
 
     /// Updates the destination program counter (as index).
@@ -41,7 +36,7 @@ impl Target {
             destination pc but found a valid one: {:?}",
             self.destination(),
         );
-        self.0 = new_destination.into_inner();
+        self.0 = new_destination;
     }
 }
 

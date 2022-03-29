@@ -168,6 +168,29 @@ impl Providers {
         self.providers.drain(min_index..)
     }
 
+    /// Returns a shared slice of the last `depth` providers on the stack.
+    pub fn peek_n(&self, depth: usize) -> &[IrProvider] {
+        let max_index = self.len() as usize;
+        debug_assert!(depth <= max_index);
+        let min_index = max_index - depth;
+        &self.providers[min_index..]
+    }
+
+    /// Duplicates the last `depth` providers on the stack.
+    ///
+    /// Returns a shared slice over the duplicated providers.
+    pub fn duplicate_n(&mut self, depth: usize) -> &[IrProvider] {
+        let max_index = self.len() as usize;
+        debug_assert!(depth <= max_index);
+        let min_index = max_index - depth;
+        let mut n = 0;
+        while n < depth {
+            self.providers.push(self.providers[min_index + n]);
+            n += 1;
+        }
+        self.peek_n(depth)
+    }
+
     /// Returns the current length of the emulated [`Providers`].
     pub fn len(&self) -> u32 {
         self.providers.len() as u32
