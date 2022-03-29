@@ -1,5 +1,3 @@
-#![allow(dead_code, unused_imports)]
-
 mod control_frame;
 mod control_stack;
 mod inst_builder;
@@ -47,22 +45,7 @@ use core::{
     ops,
     ops::{Shl, Shr},
 };
-use wasmi_core::{
-    ArithmeticOps,
-    ExtendInto,
-    Float,
-    Integer,
-    SignExtendFrom,
-    TrapCode,
-    TruncateSaturateInto,
-    TryTruncateInto,
-    UntypedValue,
-    Value,
-    ValueType,
-    WrapInto,
-    F32,
-    F64,
-};
+use wasmi_core::{TrapCode, UntypedValue, ValueType, F32, F64};
 
 pub struct CompileContext<'a> {
     reg_slices: &'a ProviderSliceArena,
