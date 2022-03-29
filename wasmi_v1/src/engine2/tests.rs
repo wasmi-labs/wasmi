@@ -1,14 +1,15 @@
-use std::fmt::Display;
-
 use super::*;
 use crate::{
     engine::ExecProviderSlice,
-    engine2::{ExecInstruction, ExecProvider, ExecRegister, Offset, RegisterEntry},
+    engine2::{ExecInstruction, ExecProvider, ExecRegister, Offset},
     module::{FuncIdx, FuncTypeIdx},
     Engine,
     Module,
 };
-use core::ops::{Shl, Shr};
+use core::{
+    fmt::Display,
+    ops::{Shl, Shr},
+};
 use wasmi_core::{
     ArithmeticOps,
     ExtendInto,
@@ -18,6 +19,7 @@ use wasmi_core::{
     TrapCode,
     TruncateSaturateInto,
     TryTruncateInto,
+    UntypedValue,
     WrapInto,
     F32,
     F64,
@@ -282,7 +284,7 @@ fn add_registers() {
 fn binary_simple() {
     fn test_register_register<T, F, R>(wasm_op: &str, make_op: F)
     where
-        T: Display + WasmTypeName + Into<RegisterEntry>,
+        T: Display + WasmTypeName + Into<UntypedValue>,
         F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
         R: WasmTypeName,
     {
@@ -314,18 +316,19 @@ fn binary_simple() {
 
     fn test_register_const<T, F, R>(wasm_op: &str, make_op: F)
     where
-        T: Display + WasmTypeName + Into<RegisterEntry> + One,
+        T: Display + WasmTypeName + Into<UntypedValue> + One,
         F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
         R: WasmTypeName,
     {
         let input_type = <T as WasmTypeName>::NAME;
         let output_type = <R as WasmTypeName>::NAME;
+        let one = T::one();
         let wasm = wat2wasm(&format!(
             r#"
             (module
                 (func (export "call") (param {input_type}) (result {output_type})
                     local.get 0
-                    {input_type}.const 1
+                    {input_type}.const {one}
                     {input_type}.{wasm_op}
                 )
             )
@@ -334,7 +337,7 @@ fn binary_simple() {
         let module = create_module(&wasm[..]);
         let engine = module.engine();
         let lhs = ExecRegister::from_inner(0);
-        let rhs = ExecProvider::from_immediate(engine.alloc_const(T::one()));
+        let rhs = ExecProvider::from_immediate(engine.alloc_const(one));
         let result = ExecRegister::from_inner(1);
         let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
@@ -346,7 +349,7 @@ fn binary_simple() {
 
     fn run_test_bin<T, F>(wasm_op: &str, make_op: F)
     where
-        T: Display + WasmTypeName + Into<RegisterEntry> + One,
+        T: Display + WasmTypeName + Into<UntypedValue> + One,
         F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction + Copy,
     {
         test_register_register::<T, F, T>(wasm_op, make_op);
@@ -355,7 +358,7 @@ fn binary_simple() {
 
     fn run_test_cmp<T, F>(wasm_op: &str, make_op: F)
     where
-        T: Display + WasmTypeName + Into<RegisterEntry> + One,
+        T: Display + WasmTypeName + Into<UntypedValue> + One,
         F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction + Copy,
     {
         test_register_register::<T, F, bool>(wasm_op, make_op);
@@ -448,7 +451,7 @@ fn binary_simple() {
 fn binary_const_register() {
     fn test_const_register<T, F>(wasm_op: &str, make_op: F)
     where
-        T: Display + WasmTypeName + One + Into<RegisterEntry>,
+        T: Display + WasmTypeName + One + Into<UntypedValue>,
         F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
     {
         let input_type = <T as WasmTypeName>::NAME;
@@ -530,7 +533,7 @@ fn binary_const_register() {
 fn binary_const_register_commutative() {
     fn test_const_register<T, F, R>(wasm_op: &str, make_op: F)
     where
-        T: Display + WasmTypeName + One + Into<RegisterEntry>,
+        T: Display + WasmTypeName + One + Into<UntypedValue>,
         F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
         R: WasmTypeName,
     {
@@ -565,7 +568,7 @@ fn binary_const_register_commutative() {
 
     fn run_test_bin<T, F>(wasm_op: &str, make_op: F)
     where
-        T: Display + Into<RegisterEntry> + WasmTypeName + One,
+        T: Display + Into<UntypedValue> + WasmTypeName + One,
         F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction + Copy,
     {
         test_const_register::<T, F, T>(wasm_op, make_op);
@@ -573,7 +576,7 @@ fn binary_const_register_commutative() {
 
     fn run_test_cmp<T, F>(wasm_op: &str, make_op: F)
     where
-        T: Display + Into<RegisterEntry> + WasmTypeName + One,
+        T: Display + Into<UntypedValue> + WasmTypeName + One,
         F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction + Copy,
     {
         test_const_register::<T, F, bool>(wasm_op, make_op);
@@ -636,7 +639,7 @@ pub enum Outcome {
 fn binary_const_const_fallible() {
     fn test_const_const<T, E>(wasm_op: &str, outcome: Outcome, lhs: T, rhs: T, exec_op: E)
     where
-        T: Display + WasmTypeName + Into<RegisterEntry>,
+        T: Display + WasmTypeName + Into<UntypedValue>,
         E: FnOnce(T, T) -> Result<T, TrapCode>,
     {
         let input_type = <T as WasmTypeName>::NAME;
@@ -721,7 +724,7 @@ fn binary_const_const_infallible() {
     where
         T: Display + WasmTypeName,
         E: FnOnce(T, T) -> R,
-        R: Into<RegisterEntry> + WasmTypeName,
+        R: Into<UntypedValue> + WasmTypeName,
     {
         let input_type = <T as WasmTypeName>::NAME;
         let output_type = <R as WasmTypeName>::NAME;
@@ -746,7 +749,7 @@ fn binary_const_const_infallible() {
 
     fn run_test_bin<T, E>(wasm_op: &str, lhs: T, rhs: T, exec_op: E)
     where
-        T: Display + Into<RegisterEntry> + WasmTypeName,
+        T: Display + Into<UntypedValue> + WasmTypeName,
         E: FnOnce(T, T) -> T,
     {
         run_test::<T, E, T>(wasm_op, lhs, rhs, exec_op)
@@ -846,7 +849,7 @@ fn binary_const_const_infallible() {
 fn cmp_zero_register() {
     fn run_test<T, F>(ty: &str, make_op: F)
     where
-        T: Default + Into<RegisterEntry>,
+        T: Default + Into<UntypedValue>,
         F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
     {
         let wasm = wat2wasm(&format!(
@@ -884,7 +887,7 @@ fn cmp_zero_register() {
 fn cmp_zero_const() {
     fn run_test<T, F>(ty: &str, value: T, exec_op: F)
     where
-        T: Default + Display + Into<RegisterEntry>,
+        T: Default + Display + Into<UntypedValue>,
         F: FnOnce(T) -> bool,
     {
         let wasm = wat2wasm(&format!(
@@ -978,7 +981,7 @@ fn cmp_registers() {
 fn cmp_register_and_const() {
     fn run_test<T, F>(ty: &str, wasm_op: &str, value: T, make_op: F)
     where
-        T: Display + Into<RegisterEntry>,
+        T: Display + Into<UntypedValue>,
         F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
     {
         let wasm = wat2wasm(&format!(
@@ -1037,7 +1040,7 @@ fn cmp_register_and_const() {
 fn cmp_const_and_register() {
     fn run_test<T, F>(ty: &str, wasm_op: &str, value: T, make_op: F)
     where
-        T: Display + Into<RegisterEntry>,
+        T: Display + Into<UntypedValue>,
         F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
     {
         let wasm = wat2wasm(&format!(
@@ -1094,7 +1097,7 @@ fn cmp_const_and_register() {
 fn cmp_const_and_const() {
     fn run_test<T, E>(ty: &str, wasm_op: &str, lhs: T, rhs: T, exec_op: E)
     where
-        T: Display + Into<RegisterEntry> + PartialOrd,
+        T: Display + Into<UntypedValue> + PartialOrd,
         E: FnOnce(T, T) -> bool,
     {
         let wasm = wat2wasm(&format!(
@@ -1291,9 +1294,9 @@ fn unary_register() {
 fn unary_const_infallible() {
     fn test<T, R, F>(wasm_op: &str, input: T, exec_op: F)
     where
-        T: Display + WasmTypeName + Into<RegisterEntry>,
+        T: Display + WasmTypeName + Into<UntypedValue>,
         F: FnOnce(T) -> R,
-        R: Into<RegisterEntry> + WasmTypeName,
+        R: Into<UntypedValue> + WasmTypeName,
     {
         let input_type = <T as WasmTypeName>::NAME;
         let result_type = <R as WasmTypeName>::NAME;
@@ -1317,7 +1320,7 @@ fn unary_const_infallible() {
 
     fn test_unary<T, F>(wasm_op: &str, input: T, exec_op: F)
     where
-        T: Display + WasmTypeName + Into<RegisterEntry>,
+        T: Display + WasmTypeName + Into<UntypedValue>,
         F: FnOnce(T) -> T,
     {
         test::<T, T, F>(wasm_op, input, exec_op)
@@ -1430,9 +1433,9 @@ fn unary_const_infallible() {
 fn unary_const_fallible() {
     fn test<T, R, F>(wasm_op: &str, outcome: Outcome, input: T, exec_op: F)
     where
-        T: Display + WasmTypeName + Into<RegisterEntry>,
+        T: Display + WasmTypeName + Into<UntypedValue>,
         F: FnOnce(T) -> Result<R, TrapCode>,
-        R: Into<RegisterEntry> + WasmTypeName,
+        R: Into<UntypedValue> + WasmTypeName,
     {
         let input_type = <T as WasmTypeName>::NAME;
         let result_type = <R as WasmTypeName>::NAME;
@@ -1466,7 +1469,7 @@ fn unary_const_fallible() {
     fn test_f32<R, F>(wasm_op: &str, outcome: Outcome, input: f32, exec_op: F)
     where
         F: FnOnce(F32) -> Result<R, TrapCode>,
-        R: Into<RegisterEntry> + WasmTypeName,
+        R: Into<UntypedValue> + WasmTypeName,
     {
         test::<f32, R, _>(wasm_op, outcome, input, |input| exec_op(F32::from(input)))
     }
@@ -1474,7 +1477,7 @@ fn unary_const_fallible() {
     fn test_f64<R, F>(wasm_op: &str, outcome: Outcome, input: f64, exec_op: F)
     where
         F: FnOnce(F64) -> Result<R, TrapCode>,
-        R: Into<RegisterEntry> + WasmTypeName,
+        R: Into<UntypedValue> + WasmTypeName,
     {
         test::<f64, R, _>(wasm_op, outcome, input, |input| exec_op(F64::from(input)))
     }
@@ -1582,7 +1585,7 @@ fn unary_const_fallible() {
 fn load_from_register() {
     fn test<T, F>(load_op: &str, offset: u32, make_op: F)
     where
-        T: Display + WasmTypeName + Into<RegisterEntry>,
+        T: Display + WasmTypeName + Into<UntypedValue>,
         F: FnOnce(ExecRegister, ExecRegister, Offset) -> ExecInstruction,
     {
         let load_type = <T as WasmTypeName>::NAME;
@@ -1631,7 +1634,7 @@ fn load_from_register() {
 fn load_from_const() {
     fn test<T, F>(load_op: &str, offset: u32, make_op: F)
     where
-        T: Display + WasmTypeName + Into<RegisterEntry>,
+        T: Display + WasmTypeName + Into<UntypedValue>,
         F: FnOnce(ExecRegister, ExecRegister, Offset) -> ExecInstruction,
     {
         let load_type = <T as WasmTypeName>::NAME;
@@ -1684,7 +1687,7 @@ fn load_from_const() {
 fn store_to_register() {
     fn test<T, F>(store_op: &str, offset: u32, make_op: F)
     where
-        T: Display + WasmTypeName + Into<RegisterEntry>,
+        T: Display + WasmTypeName + Into<UntypedValue>,
         F: FnOnce(ExecRegister, Offset, ExecProvider) -> ExecInstruction,
     {
         let store_type = <T as WasmTypeName>::NAME;
@@ -1728,7 +1731,7 @@ fn store_to_register() {
 fn store_to_const() {
     fn test<T, F>(store_op: &str, offset: u32, make_op: F)
     where
-        T: Display + WasmTypeName + Into<RegisterEntry>,
+        T: Display + WasmTypeName + Into<UntypedValue>,
         F: FnOnce(ExecRegister, Offset, ExecProvider) -> ExecInstruction,
     {
         let store_type = <T as WasmTypeName>::NAME;
@@ -1858,7 +1861,7 @@ fn global_set_const() {
 
     fn test<T>(global_index: u32, init_value: T, new_value: T)
     where
-        T: WasmTypeName + Display + Into<RegisterEntry>,
+        T: WasmTypeName + Display + Into<UntypedValue>,
     {
         let wasm_type = <T as WasmTypeName>::NAME;
         let wasm = wat2wasm(&format!(

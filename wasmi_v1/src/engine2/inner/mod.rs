@@ -1,11 +1,8 @@
 mod compile;
-
 use super::{
-    func_builder::{CompileContext, IrInstruction},
     CallParams,
     CallResults,
     CodeMap,
-    Const,
     ConstPool,
     ConstRef,
     DedupFuncType,
@@ -16,10 +13,9 @@ use super::{
     ExecProviderSlice,
     FuncBody,
     FuncTypeRegistry,
-    RegisterEntry,
 };
 use crate::{AsContextMut, Config, Func, FuncType};
-use wasmi_core::Trap;
+use wasmi_core::{Trap, UntypedValue};
 
 /// The internal state of the `wasmi` engine.
 #[derive(Debug)]
@@ -78,7 +74,7 @@ impl EngineResources {
 
     pub fn alloc_const<T>(&mut self, value: T) -> ConstRef
     where
-        T: Into<RegisterEntry>,
+        T: Into<UntypedValue>,
     {
         self.const_pool.alloc_const(value)
     }
@@ -162,7 +158,7 @@ impl EngineInner {
 
     pub fn alloc_const<T>(&mut self, value: T) -> ConstRef
     where
-        T: Into<RegisterEntry>,
+        T: Into<UntypedValue>,
     {
         self.res.alloc_const(value)
     }

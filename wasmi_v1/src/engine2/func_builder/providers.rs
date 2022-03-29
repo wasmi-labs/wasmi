@@ -1,12 +1,11 @@
-use crate::Engine;
-
 use super::{
     super::{bytecode::ExecRegister, ExecProvider},
     LocalsRegistry,
 };
+use crate::Engine;
 use alloc::vec::Drain;
 use core::cmp::max;
-use wasmi_core::{Value, ValueType};
+use wasmi_core::{UntypedValue, Value, ValueType};
 
 /// A stack of provided inputs for constructed instructions.
 #[derive(Debug, Default)]
@@ -130,8 +129,11 @@ impl Providers {
         register
     }
 
-    pub fn push_const(&mut self, value: Value) -> IrProvider {
-        let provider = IrProvider::from(value);
+    pub fn push_const<T>(&mut self, value: T) -> IrProvider
+    where
+        T: Into<UntypedValue>,
+    {
+        let provider = IrProvider::from(value.into());
         self.providers.push(provider);
         provider
     }
@@ -356,7 +358,7 @@ pub enum IrProvider {
     /// The input is stored in a register.
     Register(IrRegister),
     /// The input is an immediate constant value.
-    Immediate(Value),
+    Immediate(UntypedValue),
 }
 
 impl From<IrRegister> for IrProvider {
@@ -365,8 +367,8 @@ impl From<IrRegister> for IrProvider {
     }
 }
 
-impl From<Value> for IrProvider {
-    fn from(value: Value) -> Self {
+impl From<UntypedValue> for IrProvider {
+    fn from(value: UntypedValue) -> Self {
         Self::Immediate(value)
     }
 }
@@ -381,7 +383,7 @@ impl IrProvider {
     }
 
     /// Returns `Some` if the [`RegisterOrImmediate`] is an immediate value.
-    pub fn filter_immediate(&self) -> Option<Value> {
+    pub fn filter_immediate(&self) -> Option<UntypedValue> {
         match self {
             IrProvider::Register(_) => None,
             IrProvider::Immediate(value) => Some(*value),

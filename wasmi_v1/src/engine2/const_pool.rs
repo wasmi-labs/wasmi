@@ -1,5 +1,5 @@
-use super::RegisterEntry;
 use crate::arena::{DedupArena, Index};
+use wasmi_core::UntypedValue;
 
 /// The index of a constant stored in the [`ConstPool`].
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -31,22 +31,6 @@ impl Index for ConstRef {
     }
 }
 
-/// The value of a constant stored in the [`ConstPool`].
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
-pub struct Const(u64);
-
-impl Const {
-    /// Returns the `u64` value of the [`Const`].
-    pub fn into_inner(self) -> u64 {
-        self.0
-    }
-
-    /// Creates [`Const`] from the `u64` value.
-    pub fn from_inner(bits: u64) -> Self {
-        Self(bits)
-    }
-}
-
 /// A constant pool that stores unique untyped constant values.
 ///
 /// This allows to efficiently deduplicate constant values and use
@@ -57,7 +41,7 @@ impl Const {
 /// their original constant data.
 #[derive(Debug, Default)]
 pub struct ConstPool {
-    values: DedupArena<ConstRef, Const>,
+    values: DedupArena<ConstRef, UntypedValue>,
 }
 
 impl ConstPool {
@@ -74,13 +58,13 @@ impl ConstPool {
     /// Allocates a new constant value and returns a unique index to it.
     pub fn alloc_const<T>(&mut self, value: T) -> ConstRef
     where
-        T: Into<RegisterEntry>,
+        T: Into<UntypedValue>,
     {
-        self.values.alloc(Const::from_inner(value.into().to_bits()))
+        self.values.alloc(value.into())
     }
 
     /// Resolves the index to a stored constant if any.
-    pub fn resolve(&self, index: ConstRef) -> Option<Const> {
+    pub fn resolve(&self, index: ConstRef) -> Option<UntypedValue> {
         self.values.get(index).copied()
     }
 }

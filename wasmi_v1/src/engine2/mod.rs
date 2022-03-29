@@ -12,7 +12,6 @@ mod func_types;
 mod ident;
 mod inner;
 mod provider;
-mod register;
 mod traits;
 
 #[cfg(test)]
@@ -24,7 +23,6 @@ pub(crate) use self::{
     func_args::{FuncParams, FuncResults},
     func_builder::{FunctionBuilder, Instr, IrProvider, IrRegister, LabelIdx, Reloc},
     provider::{DedupProviderSliceArena, ExecProvider, ExecProviderSlice, RegisterOrImmediate},
-    register::{FromRegisterEntry, RegisterEntry},
     traits::{CallParams, CallResults},
 };
 use self::{
@@ -38,14 +36,14 @@ use self::{
 pub use self::{
     code_map::FuncBody,
     config::Config,
-    const_pool::{Const, ConstPool, ConstRef},
+    const_pool::{ConstPool, ConstRef},
     func_builder::RelativeDepth,
     func_types::DedupFuncType,
 };
 use crate::{AsContextMut, Func, FuncType};
 use alloc::sync::Arc;
 use spin::mutex::Mutex;
-use wasmi_core::Trap;
+use wasmi_core::{Trap, UntypedValue};
 
 /// Maximum number of bytes on the value stack.
 pub const DEFAULT_VALUE_STACK_LIMIT: usize = 1024 * 1024;
@@ -147,7 +145,7 @@ impl Engine {
 
     pub fn alloc_const<T>(&self, value: T) -> ConstRef
     where
-        T: Into<RegisterEntry>,
+        T: Into<UntypedValue>,
     {
         self.inner.lock().alloc_const(value)
     }

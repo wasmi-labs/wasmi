@@ -25,17 +25,7 @@ pub use self::{
     inst_builder::{Instr, LabelIdx, RelativeDepth, Reloc},
     providers::{IrProvider, IrProviderSlice, IrRegister, IrRegisterSlice},
 };
-use super::{
-    bytecode::Offset,
-    register::RegisterEntry,
-    Engine,
-    ExecInstruction,
-    ExecRegister,
-    FromRegisterEntry,
-    FuncBody,
-    Instruction,
-    InstructionTypes,
-};
+use super::{bytecode::Offset, Engine, ExecRegister, FuncBody, Instruction, InstructionTypes};
 use crate::{
     engine2::bytecode::Global,
     module::{
@@ -66,6 +56,7 @@ use wasmi_core::{
     TrapCode,
     TruncateSaturateInto,
     TryTruncateInto,
+    UntypedValue,
     Value,
     ValueType,
     WrapInto,
@@ -695,7 +686,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 IrProvider::Immediate(condition) => {
                     // Note: if the condition is a constant we can replace the
                     //       `select` instruction with one of its arms.
-                    let condition = bool::from_stack_entry(RegisterEntry::from(condition));
+                    let condition = bool::from(UntypedValue::from(condition));
                     let input = if condition { v0 } else { v1 };
                     builder
                         .inst_builder
@@ -1179,7 +1170,7 @@ impl<'parser> FunctionBuilder<'parser> {
     where
         O: FnOnce(IrRegister, IrRegister, IrProvider) -> IrInstruction,
         E: FnOnce(T, T) -> bool,
-        T: FromRegisterEntry,
+        T: From<UntypedValue>,
     {
         self.translate_if_reachable(|builder| {
             let (lhs, rhs) = builder.providers.pop2();
@@ -1195,9 +1186,9 @@ impl<'parser> FunctionBuilder<'parser> {
                 }
                 (IrProvider::Immediate(lhs), IrProvider::Immediate(rhs)) => {
                     // Note: precompute result and push onto provider stack
-                    let lhs = T::from_stack_entry(RegisterEntry::from(lhs));
-                    let rhs = T::from_stack_entry(RegisterEntry::from(rhs));
-                    let result = RegisterEntry::from(exec_op(lhs, rhs)).with_type(ValueType::I32);
+                    let lhs = T::from(UntypedValue::from(lhs));
+                    let rhs = T::from(UntypedValue::from(rhs));
+                    let result = UntypedValue::from(exec_op(lhs, rhs)).with_type(ValueType::I32);
                     builder.providers.push_const(result);
                 }
             };
@@ -1235,7 +1226,7 @@ impl<'parser> FunctionBuilder<'parser> {
         O1: FnOnce(IrRegister, IrRegister, IrProvider) -> IrInstruction,
         O2: FnOnce(IrRegister, IrRegister, IrProvider) -> IrInstruction,
         E: FnOnce(T, T) -> bool,
-        T: FromRegisterEntry,
+        T: From<UntypedValue>,
     {
         self.translate_if_reachable(|builder| {
             let (lhs, rhs) = builder.providers.pop2();
@@ -1251,9 +1242,9 @@ impl<'parser> FunctionBuilder<'parser> {
                 }
                 (IrProvider::Immediate(lhs), IrProvider::Immediate(rhs)) => {
                     // Note: precompute result and push onto provider stack
-                    let lhs = T::from_stack_entry(RegisterEntry::from(lhs));
-                    let rhs = T::from_stack_entry(RegisterEntry::from(rhs));
-                    let result = RegisterEntry::from(exec_op(lhs, rhs)).with_type(ValueType::I32);
+                    let lhs = T::from(UntypedValue::from(lhs));
+                    let rhs = T::from(UntypedValue::from(rhs));
+                    let result = UntypedValue::from(exec_op(lhs, rhs)).with_type(ValueType::I32);
                     builder.providers.push_const(result);
                 }
             };
@@ -1495,7 +1486,7 @@ impl<'parser> FunctionBuilder<'parser> {
     where
         F: FnOnce(IrRegister, IrRegister) -> IrInstruction,
         E: FnOnce(T) -> R,
-        T: FromRegisterEntry,
+        T: From<UntypedValue>,
         R: Into<Value>,
     {
         self.translate_if_reachable(|builder| {
@@ -1506,7 +1497,7 @@ impl<'parser> FunctionBuilder<'parser> {
                     builder.inst_builder.push_inst(make_op(result, input));
                 }
                 IrProvider::Immediate(input) => {
-                    let result = exec_op(T::from_stack_entry(input.into()));
+                    let result = exec_op(T::from(input.into()));
                     builder.providers.push_const(result.into());
                 }
             }
@@ -1554,7 +1545,7 @@ impl<'parser> FunctionBuilder<'parser> {
     where
         F: FnOnce(IrRegister, IrRegister, IrProvider) -> IrInstruction,
         E: FnOnce(T, T) -> R,
-        T: FromRegisterEntry,
+        T: From<UntypedValue>,
         R: Into<Value>,
     {
         self.translate_if_reachable(|builder| {
@@ -1580,8 +1571,8 @@ impl<'parser> FunctionBuilder<'parser> {
                 }
                 (IrProvider::Immediate(lhs), IrProvider::Immediate(rhs)) => {
                     // Note: both operands are constant so we can evaluate the result.
-                    let lhs = T::from_stack_entry(RegisterEntry::from(lhs));
-                    let rhs = T::from_stack_entry(RegisterEntry::from(rhs));
+                    let lhs = T::from(UntypedValue::from(lhs));
+                    let rhs = T::from(UntypedValue::from(rhs));
                     let result = exec_op(lhs, rhs);
                     builder.providers.push_const(result.into());
                 }
@@ -1602,7 +1593,7 @@ impl<'parser> FunctionBuilder<'parser> {
     where
         F: FnOnce(IrRegister, IrRegister, IrProvider) -> IrInstruction,
         E: FnOnce(T, T) -> Result<T, TrapCode>,
-        T: FromRegisterEntry + Into<Value>,
+        T: From<UntypedValue> + Into<Value>,
     {
         self.translate_if_reachable(|builder| {
             let (lhs, rhs) = builder.providers.pop2();
@@ -1627,8 +1618,8 @@ impl<'parser> FunctionBuilder<'parser> {
                 }
                 (IrProvider::Immediate(lhs), IrProvider::Immediate(rhs)) => {
                     // Note: both operands are constant so we can evaluate the result.
-                    let lhs = T::from_stack_entry(RegisterEntry::from(lhs));
-                    let rhs = T::from_stack_entry(RegisterEntry::from(rhs));
+                    let lhs = T::from(UntypedValue::from(lhs));
+                    let rhs = T::from(UntypedValue::from(rhs));
                     match exec_op(lhs, rhs) {
                         Ok(result) => {
                             builder.providers.push_const(result.into());
@@ -1671,7 +1662,7 @@ impl<'parser> FunctionBuilder<'parser> {
     where
         F: FnOnce(IrRegister, IrRegister, IrProvider) -> IrInstruction,
         E: FnOnce(T, T) -> R,
-        T: FromRegisterEntry,
+        T: From<UntypedValue>,
         R: Into<Value>,
     {
         self.translate_if_reachable(|builder| {
@@ -1687,8 +1678,8 @@ impl<'parser> FunctionBuilder<'parser> {
                     builder.inst_builder.push_inst(make_op(result, rhs, lhs));
                 }
                 (IrProvider::Immediate(lhs), IrProvider::Immediate(rhs)) => {
-                    let lhs = T::from_stack_entry(RegisterEntry::from(lhs));
-                    let rhs = T::from_stack_entry(RegisterEntry::from(rhs));
+                    let lhs = T::from(UntypedValue::from(lhs));
+                    let rhs = T::from(UntypedValue::from(rhs));
                     let result = exec_op(lhs, rhs);
                     builder.providers.push_const(result.into());
                 }
@@ -2089,7 +2080,7 @@ impl<'parser> FunctionBuilder<'parser> {
     where
         F: FnOnce(IrRegister, IrRegister) -> IrInstruction,
         E: FnOnce(T) -> R,
-        T: FromRegisterEntry,
+        T: From<UntypedValue>,
         R: Into<Value>,
     {
         self.translate_unary_operation(make_op, exec_op)
@@ -2111,7 +2102,7 @@ impl<'parser> FunctionBuilder<'parser> {
     where
         F: FnOnce(IrRegister, IrRegister) -> IrInstruction,
         E: FnOnce(T) -> Result<R, TrapCode>,
-        T: FromRegisterEntry,
+        T: From<UntypedValue>,
         R: Into<Value>,
     {
         self.translate_if_reachable(|builder| {
@@ -2121,7 +2112,7 @@ impl<'parser> FunctionBuilder<'parser> {
                     let result = builder.providers.push_dynamic();
                     builder.inst_builder.push_inst(make_op(result, input));
                 }
-                IrProvider::Immediate(input) => match exec_op(T::from_stack_entry(input.into())) {
+                IrProvider::Immediate(input) => match exec_op(T::from(input.into())) {
                     Ok(result) => {
                         builder.providers.push_const(result.into());
                     }
