@@ -217,8 +217,8 @@ impl InstructionsBuilder {
         match reloc {
             Reloc::Br { inst_idx } => match &mut self.insts[inst_idx.into_usize()] {
                 IrInstruction::Br { target }
-                | IrInstruction::BrIfEqz { target, .. }
-                | IrInstruction::BrIfNez { target, .. } => {
+                | IrInstruction::BrEqz { target, .. }
+                | IrInstruction::BrNez { target, .. } => {
                     target.update_destination(dst_pc);
                 }
                 _ => panic!(

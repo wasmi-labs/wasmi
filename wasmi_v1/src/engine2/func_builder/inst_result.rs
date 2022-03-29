@@ -20,9 +20,9 @@ impl IrInstruction {
     pub fn result_mut(&mut self) -> Option<&mut IrRegister> {
         match self {
             Self::Br { .. }
-            | Self::BrIfEqz { .. }
-            | Self::BrIfNez { .. }
-            | Self::ReturnIfNez { .. }
+            | Self::BrEqz { .. }
+            | Self::BrNez { .. }
+            | Self::ReturnNez { .. }
             | Self::BrTable { .. }
             | Self::Trap { .. }
             | Self::Return { .. } => None,
