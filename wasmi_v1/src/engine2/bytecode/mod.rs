@@ -70,7 +70,7 @@ where
     /// # Note
     ///
     /// This instruction does not correspond to any Wasm instruction directly.
-    BrIfEqz {
+    BrEqz {
         /// The target instruction to conditionally branch to.
         target: Target,
         /// The branching condition.
@@ -82,7 +82,7 @@ where
     ///
     /// This instruction represents `br_if` only if the branch does not
     /// target the function body `block` and therefore does not return.
-    BrIfNez {
+    BrNez {
         /// The target instruction to conditionally branch to.
         target: Target,
         /// The branching condition.
@@ -94,7 +94,7 @@ where
     ///
     /// This instruction represents `br_if` only if the branch targets
     /// the function body `block` and therefore returns to the caller.
-    ReturnIfNez {
+    ReturnNez {
         /// The registers used as return values of the function.
         results: T::ProviderSlice,
         /// The branching condition.
