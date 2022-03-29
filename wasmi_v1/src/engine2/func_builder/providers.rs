@@ -1,11 +1,7 @@
-use super::{
-    super::{bytecode::ExecRegister, ExecProvider},
-    LocalsRegistry,
-};
-use crate::Engine;
+use super::LocalsRegistry;
 use alloc::vec::Drain;
 use core::cmp::max;
-use wasmi_core::{UntypedValue, Value, ValueType};
+use wasmi_core::{UntypedValue, ValueType};
 
 /// A stack of provided inputs for constructed instructions.
 #[derive(Debug, Default)]

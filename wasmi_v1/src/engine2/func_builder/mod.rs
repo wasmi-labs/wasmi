@@ -38,12 +38,6 @@ use crate::{
     },
     FuncType,
     ModuleError,
-    Mutability,
-};
-use core::{
-    cmp::PartialOrd,
-    ops,
-    ops::{Shl, Shr},
 };
 use wasmi_core::{TrapCode, UntypedValue, ValueType, F32, F64};
 
@@ -115,16 +109,6 @@ macro_rules! store_op {
     ( $name:ident ) => {{
         |ptr, offset, value| Instruction::$name { ptr, offset, value }
     }};
-}
-
-/// TODO: remove again when done
-const DUMMY_INSTRUCTION: IrInstruction = Instruction::Trap {
-    trap_code: TrapCode::Unreachable,
-};
-
-/// TODO: remove again when done
-fn make_dummy_instruction(_offset: Offset) -> IrInstruction {
-    DUMMY_INSTRUCTION
 }
 
 /// The interface to translate a `wasmi` bytecode function using Wasm bytecode.
