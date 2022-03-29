@@ -181,9 +181,27 @@ impl EngineInner {
     ) -> ExecInstruction {
         match inst {
             Instruction::Trap { trap_code } => ExecInstruction::Trap { trap_code },
+            Instruction::Br { target } => ExecInstruction::Br { target },
+            Instruction::BrEqz { target, condition } => {
+                let condition = Self::compile_register(context, condition);
+                Instruction::BrEqz { target, condition }
+            }
+            Instruction::BrNez { target, condition } => {
+                let condition = Self::compile_register(context, condition);
+                Instruction::BrNez { target, condition }
+            }
             Instruction::Return { results } => {
                 let results = Self::compile_provider_slice(res, context, results);
                 ExecInstruction::Return { results }
+            }
+            Instruction::ReturnNez { results, condition } => {
+                let results = Self::compile_provider_slice(res, context, results);
+                let condition = Self::compile_register(context, condition);
+                ExecInstruction::ReturnNez { results, condition }
+            }
+            Instruction::BrTable { case, len_targets } => {
+                let case = Self::compile_register(context, case);
+                ExecInstruction::BrTable { case, len_targets }
             }
 
             Instruction::Call {
@@ -759,8 +777,6 @@ impl EngineInner {
             Instruction::I64TruncSatF64U { result, input } => {
                 Self::compile_inst_rr(context, result, input, unary_op!(I64TruncSatF64U))
             }
-
-            _ => todo!(),
         }
     }
 }
