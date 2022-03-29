@@ -173,7 +173,7 @@ impl IfControlFrame {
 
     /// Returns the value stack height prepared for the `else` of the [`IfControlFrame`].
     pub fn else_height(&self) -> u32 {
-        self.stack_height
+        self.else_height
     }
 
     /// Returns the [`BlockType`] of the [`IfControlFrame`].
