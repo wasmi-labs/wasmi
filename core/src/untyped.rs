@@ -94,7 +94,7 @@ macro_rules! impl_from_prim {
         $(
             impl From<$prim> for UntypedValue {
                 fn from(value: $prim) -> Self {
-                    Self { bits: value as u64 }
+                    Self { bits: value as _ }
                 }
             }
         )*
@@ -105,24 +105,22 @@ impl_from_prim!(
     bool,
     i8, i16, i32, i64,
     u8, u16, u32, u64,
-    f32, f64,
 );
 
-impl From<F32> for UntypedValue {
-    fn from(value: F32) -> Self {
-        Self {
-            bits: value.to_bits() as u64,
-        }
-    }
+macro_rules! impl_from_float {
+    ( $( $float:ty ),* $(,)? ) => {
+        $(
+            impl From<$float> for UntypedValue {
+                fn from(value: $float) -> Self {
+                    Self {
+                        bits: value.to_bits() as _,
+                    }
+                }
+            }
+        )*
+    };
 }
-
-impl From<F64> for UntypedValue {
-    fn from(value: F64) -> Self {
-        Self {
-            bits: value.to_bits() as u64,
-        }
-    }
-}
+impl_from_float!(f32, f64, F32, F64);
 
 macro_rules! op {
     ( $operator:tt ) => {{
