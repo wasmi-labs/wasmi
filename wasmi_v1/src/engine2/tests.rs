@@ -204,6 +204,8 @@ where
     }
 }
 
+/// This test has a function that only has a single `unreachable` instruction.
+/// We expect to see exactly that as the only emitted instruction.
 #[test]
 fn unreachable() {
     let wasm = wat2wasm(
@@ -221,6 +223,9 @@ fn unreachable() {
     assert_func_bodies(&wasm, [expected]);
 }
 
+/// This test has 2 consecutive `unreachable` instructions of which we expect
+/// just one to be emitted since the `wasmi` translator sees that the other
+/// one is unreachable.
 #[test]
 fn unreachable_double() {
     let wasm = wat2wasm(
@@ -237,6 +242,366 @@ fn unreachable_double() {
         trap_code: TrapCode::Unreachable,
     }];
     assert_func_bodies(&wasm, [expected]);
+}
+
+/// The `br` instructions ends its enclosing block.
+/// We expect to see just a single `br` instruction branching to its next
+/// instructions which is a `return` instruction.
+#[test]
+fn br_simple() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call")
+                block
+                    br 0
+                end
+            )
+        )
+    "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let results = engine.alloc_provider_slice([]);
+    let expected = [
+        ExecInstruction::Br {
+            target: Target::from_inner(1),
+        },
+        ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+/// The `br` ends function execution immediately.
+/// We expect to see just a single `return` instruction since the translation
+/// process is in an unreachable state when encountering the `end` instruction.
+#[test]
+fn br_as_return_unnested() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call")
+                br 0
+            )
+        )
+    "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let results = engine.alloc_provider_slice([]);
+    let expected = [ExecInstruction::Return { results }];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+/// The `br` ends function execution immediately but is nested in a `block`.
+/// Therefore we expect to see 2 `return` instructions.
+/// - 1 for the `br` instruction
+/// - 2 for the `end` instruction since the translation process does not
+///   notice that all paths to it are unreachable
+#[test]
+fn br_as_return_nested() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call")
+                block
+                    br 1
+                end
+            )
+        )
+    "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let results = engine.alloc_provider_slice([]);
+    let expected = [
+        ExecInstruction::Return { results },
+        ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+/// The `br` instruction targets its enclosing loop header so it is jumping back.
+/// This modules an infinite loop but we are not interested in actual code
+/// semantics for this unit test.
+/// We expect to see a `br` instruction that targets itself since it is the first
+/// instruction of the loop body, followed by a `return` instruction for the
+/// `end` instruction of the `loop` in order to end function execution.
+/// The `wasmi` translator cannot detect (yet) that the `end` is unreachable
+/// in this case.
+#[test]
+fn br_to_loop_header() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call")
+                loop
+                    br 0
+                end
+            )
+        )
+    "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let results = engine.alloc_provider_slice([]);
+    let loop_header = Target::from_inner(0);
+    let expected = [
+        ExecInstruction::Br {
+            target: loop_header,
+        },
+        ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+/// The `br_if` instructions ends its enclosing block.
+/// We expect to see just a single `br` instruction branching to its next
+/// instructions which is a `return` instruction.
+#[test]
+fn br_if_simple() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (param i32)
+                block
+                    local.get 0
+                    br_if 0
+                end
+            )
+        )
+    "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let condition = ExecRegister::from_inner(0);
+    let results = engine.alloc_provider_slice([]);
+    let expected = [
+        ExecInstruction::BrNez {
+            target: Target::from_inner(1),
+            condition,
+        },
+        ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+/// The `br_if` ends function execution immediately.
+/// We expect to see just 2 `return` instructions since the translation
+/// process is not always in an unreachable state when encountering the
+/// `end` instruction.
+#[test]
+fn br_if_as_return_unnested() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (param i32)
+                local.get 0
+                br_if 0
+            )
+        )
+    "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let condition = ExecRegister::from_inner(0);
+    let results = engine.alloc_provider_slice([]);
+    let expected = [
+        ExecInstruction::ReturnNez { results, condition },
+        ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+/// The `br_if` ends function execution immediately but is nested in a `block`.
+/// We expect to see 3 `return[nez]` instructions.
+/// - 1 for the `br_if` instruction
+/// - 1 for the `br` instruction that follows the `br_if`.
+/// - 1 for the `end` instruction since the translation process does not
+///   notice that all paths to it are unreachable
+#[test]
+fn br_if_as_return_nested() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (param i32)
+                block
+                    local.get 0
+                    br_if 1
+                    br 1
+                end
+            )
+        )
+    "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let condition = ExecRegister::from_inner(0);
+    let results = engine.alloc_provider_slice([]);
+    let expected = [
+        ExecInstruction::ReturnNez { results, condition },
+        ExecInstruction::Return { results },
+        ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+/// The test `.wat` features a `loop` within a `block`.
+/// In the loop the `br_if` continues to the loop header and is followed
+/// by a `br` that ends the loop.
+/// Obviously this models an infinite loop but this is just a test.
+#[test]
+fn br_if_to_loop_header() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (param i32)
+                block
+                    loop
+                        local.get 0
+                        br_if 0
+                        br 1
+                    end
+                end
+            )
+        )
+    "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let condition = ExecRegister::from_inner(0);
+    let results = engine.alloc_provider_slice([]);
+    let loop_header = Target::from_inner(0);
+    let loop_end = Target::from_inner(2);
+    let expected = [
+        ExecInstruction::BrNez {
+            target: loop_header,
+            condition,
+        },
+        ExecInstruction::Br { target: loop_end },
+        ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+/// The `br_if` is equivalent to a `br` instruction since its condition
+/// is always `true`.
+/// Therefore we expect to see a single `return` instruction only since
+/// unreachable code detection prevents emitting of the `end` return
+/// instruction.
+#[test]
+fn br_if_const_true() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call")
+                i32.const 1
+                br_if 0
+            )
+        )
+    "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let results = engine.alloc_provider_slice([]);
+    let expected = [ExecInstruction::Return { results }];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+/// The `br_if` is like a `br` instruction since its condition is always `true`.
+/// Therefore we jump to the final `result` instruction that returns `10` instead
+/// of returning `20` in the block since we know that this part of the code
+/// is unreachable.
+#[test]
+fn br_if_const_true_return() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (result i32)
+                block
+                    i32.const 1
+                    br_if 0
+                    i32.const 20
+                    return
+                end
+                i32.const 10
+                return
+            )
+        )
+    "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let result = engine.alloc_const(10_i32);
+    let results = engine.alloc_provider_slice([result.into()]);
+    let block_end = Target::from_inner(1);
+    let expected = [
+        ExecInstruction::Br { target: block_end },
+        ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+/// The `br_if` is equivalent to a `nop` (do nothing) instruction since
+/// its condition is always `false`.
+/// We expect to see a single `return` instruction  the `end` instruction
+/// will emit a `return` instruction.
+#[test]
+fn br_if_const_false() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call")
+                i32.const 0
+                br_if 0
+            )
+        )
+    "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let results = engine.alloc_provider_slice([]);
+    let expected = [ExecInstruction::Return { results }];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+/// The `br_if` is just a `nop` since its condition is always `false`.
+/// Therefore we are returning `20` always.
+/// Still we expect a `return` instruction afterwards since the translation
+/// cannot guarantee that this part of the code is unreachable (yet).
+#[test]
+fn br_if_const_false_return() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (result i32)
+                block
+                    i32.const 0
+                    br_if 0
+                    i32.const 20
+                    return
+                end
+                i32.const 10
+                return
+            )
+        )
+    "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let const_10 = engine.alloc_const(10_i32);
+    let const_20 = engine.alloc_const(20_i32);
+    let results_10 = engine.alloc_provider_slice([const_10.into()]);
+    let results_20 = engine.alloc_provider_slice([const_20.into()]);
+    let expected = [
+        ExecInstruction::Return {
+            results: results_20,
+        },
+        ExecInstruction::Return {
+            results: results_10,
+        },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
 }
 
 /// Tests compilation of a no-op function.

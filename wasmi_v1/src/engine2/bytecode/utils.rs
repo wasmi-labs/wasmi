@@ -18,6 +18,13 @@ impl From<Instr> for Target {
 }
 
 impl Target {
+    #[cfg(test)]
+    pub fn from_inner(value: u32) -> Self {
+        Self(Instr::from_inner(value))
+    }
+}
+
+impl Target {
     /// Returns the destination program counter (as index).
     pub fn destination(self) -> Instr {
         self.0
