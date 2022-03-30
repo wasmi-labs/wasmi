@@ -621,32 +621,6 @@ fn implicit_return_no_value() {
     assert_func_bodies(&wasm, [expected]);
 }
 
-#[test]
-fn add_registers() {
-    let wasm = wat2wasm(
-        r#"
-        (module
-            (func (export "call") (param i32) (param i32) (result i32)
-                local.get 0
-                local.get 1
-                i32.add
-            )
-        )
-    "#,
-    );
-    let expected = [
-        ExecInstruction::I32Add {
-            result: ExecRegister::from_inner(2),
-            lhs: ExecRegister::from_inner(0),
-            rhs: ExecRegister::from_inner(1).into(),
-        },
-        ExecInstruction::Return {
-            results: ExecProviderSlice::new(0, 1),
-        },
-    ];
-    assert_func_bodies(&wasm, [expected]);
-}
-
 /// Tests compilation of all commutative binary Wasm instructions.
 ///
 /// # Note
