@@ -1,4 +1,4 @@
-use super::*;
+use super::{bytecode::Global, *};
 use crate::{
     engine::ExecProviderSlice,
     engine2::{ExecInstruction, ExecProvider, ExecRegister, Offset},
@@ -600,6 +600,267 @@ fn br_if_const_false_return() {
         ExecInstruction::Return {
             results: results_10,
         },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+/// The `br_table` sets different constant values to the global variable
+/// via different branches taken.
+/// The default branch does not modify the global variable and instead
+/// immediately bails out of the function execution.
+#[test]
+fn br_table_simple() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (global $result (mut i32) (i32.const 0))
+            (func (export "call") (param i32)
+                block
+                    block
+                        block
+                            local.get 0
+                            br_table 0 1 2 3
+                        end
+                        i32.const 10
+                        global.set $result
+                        return
+                    end
+                    i32.const 20
+                    global.set $result
+                    return
+                end
+                i32.const 30
+                global.set $result
+            )
+        )
+    "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let c10 = ExecProvider::from_immediate(engine.alloc_const(10_i32));
+    let c20 = ExecProvider::from_immediate(engine.alloc_const(20_i32));
+    let c30 = ExecProvider::from_immediate(engine.alloc_const(30_i32));
+    let reg0 = ExecRegister::from_inner(0);
+    let results = engine.alloc_provider_slice([]);
+    let global = Global::from(0);
+    #[rustfmt::skip]
+    let expected = [
+        /* 0 */ ExecInstruction::BrTable {
+            case: reg0,
+            len_targets: 4, // note: amount is including the default target
+        },
+        /* 1 */ ExecInstruction::Br { target: Target::from_inner(5) },  // case 0
+        /* 2 */ ExecInstruction::Br { target: Target::from_inner(7) },  // case 1
+        /* 3 */ ExecInstruction::Br { target: Target::from_inner(9) },  // case 2
+        /* 4 */ ExecInstruction::Return { results },                    // default case
+        // branch for case 0
+        /* 5 */ ExecInstruction::GlobalSet {
+            global,
+            value: c10,
+        },
+        /* 6 */ ExecInstruction::Return { results },
+        // branch for case 1
+        /* 7 */ ExecInstruction::GlobalSet {
+            global,
+            value: c20,
+        },
+        /* 8 */ ExecInstruction::Return { results },
+        // branch for case 2
+        /* 9 */ ExecInstruction::GlobalSet {
+            global,
+            value: c30,
+        },
+        /* 10 */ ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+/// The `br_table` add different constant offsets to the function parameter
+/// and returns the result of the computation.
+#[test]
+fn br_table_return() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (param i32) (result i32)
+                block
+                    block
+                        block
+                            block
+                                local.get 0
+                                br_table 0 1 2 3
+                            end
+                            local.get 0
+                            i32.const 10
+                            i32.add
+                            return
+                        end
+                        local.get 0
+                        i32.const 20
+                        i32.add
+                        return
+                    end
+                    local.get 0
+                    i32.const 30
+                    i32.add
+                    return
+                end
+                local.get 0
+            )
+        )
+    "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let c10 = ExecProvider::from_immediate(engine.alloc_const(10_i32));
+    let c20 = ExecProvider::from_immediate(engine.alloc_const(20_i32));
+    let c30 = ExecProvider::from_immediate(engine.alloc_const(30_i32));
+    let reg0 = ExecRegister::from_inner(0);
+    let reg1 = ExecRegister::from_inner(1);
+    let results_reg1 = engine.alloc_provider_slice([reg1.into()]);
+    let results_reg0 = engine.alloc_provider_slice([reg0.into()]);
+    #[rustfmt::skip]
+    let expected = [
+        /* 0 */ ExecInstruction::BrTable {
+            case: reg0,
+            len_targets: 4, // note: amount is including the default target
+        },
+        /* 1 */ ExecInstruction::Br { target: Target::from_inner(5) }, // case 0
+        /* 2 */ ExecInstruction::Br { target: Target::from_inner(7) }, // case 1
+        /* 3 */ ExecInstruction::Br { target: Target::from_inner(9) }, // case 2
+        /* 4 */ ExecInstruction::Br { target: Target::from_inner(11) }, // default case
+        // branch for case 0
+        /* 5 */ ExecInstruction::I32Add {
+            result: reg1,
+            lhs: reg0,
+            rhs: c10,
+        },
+        /* 6 */ ExecInstruction::Return { results: results_reg1 },
+        // branch for case 1
+        /* 7 */ ExecInstruction::I32Add {
+            result: reg1,
+            lhs: reg0,
+            rhs: c20,
+        },
+        /* 8 */ ExecInstruction::Return { results: results_reg1 },
+        // branch for case 2
+        /* 9 */ ExecInstruction::I32Add {
+            result: reg1,
+            lhs: reg0,
+            rhs: c30,
+        },
+        /* 10 */ ExecInstruction::Return { results: results_reg1 },
+        // end of function implicit return
+        /* 11 */ ExecInstruction::Return { results: results_reg0 },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+/// The `br_table` has a constant value case and therefore the `wasmi`
+/// translation reduces the entire `br_table` down to the constant known
+/// branch.
+#[test]
+fn br_table_const_case() {
+    fn test(const_case: i32, expect_branch: fn(&Engine) -> ExecInstruction) {
+        let wasm = wat2wasm(&format!(
+            r#"
+            (module
+                (global $result (mut i32) (i32.const 0))
+                (func (export "call")
+                    block
+                        block
+                            block
+                                i32.const {const_case}
+                                br_table 0 1 2 3
+                            end
+                            i32.const 10
+                            global.set $result
+                            return
+                        end
+                        i32.const 20
+                        global.set $result
+                        return
+                    end
+                    i32.const 30
+                    global.set $result
+                )
+            )
+        "#,
+        ));
+        let module = create_module(&wasm[..]);
+        let engine = module.engine();
+        let c10 = ExecProvider::from_immediate(engine.alloc_const(10_i32));
+        let c20 = ExecProvider::from_immediate(engine.alloc_const(20_i32));
+        let c30 = ExecProvider::from_immediate(engine.alloc_const(30_i32));
+        let reg0 = ExecRegister::from_inner(0);
+        let results = engine.alloc_provider_slice([]);
+        let global = Global::from(0);
+        #[rustfmt::skip]
+        let expected = [
+            /* 0 */ expect_branch(engine),
+            // branch for case 0
+            /* 1 */ ExecInstruction::GlobalSet {
+                global,
+                value: c10,
+            },
+            /* 2 */ ExecInstruction::Return { results },
+            // branch for case 1
+            /* 3 */ ExecInstruction::GlobalSet {
+                global,
+                value: c20,
+            },
+            /* 4 */ ExecInstruction::Return { results },
+            // branch for case 2
+            /* 5 */ ExecInstruction::GlobalSet {
+                global,
+                value: c30,
+            },
+            /* 6 */ ExecInstruction::Return { results },
+        ];
+        assert_func_bodies_for_module(&module, [expected]);
+    }
+
+    test(0, |_engine| ExecInstruction::Br {
+        target: Target::from_inner(1),
+    });
+    test(1, |_engine| ExecInstruction::Br {
+        target: Target::from_inner(3),
+    });
+    test(2, |_engine| ExecInstruction::Br {
+        target: Target::from_inner(5),
+    });
+    test(3, |engine| {
+        let results = engine.alloc_provider_slice([]);
+        ExecInstruction::Return { results }
+    });
+}
+
+#[test]
+fn add_10_assign() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (export "call") (param i32) (result i32)
+                local.get 0
+                i32.const 10
+                i32.add
+                local.tee 0
+            )
+        )
+    "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let c10 = engine.alloc_const(10_i32).into();
+    let local_0 = ExecRegister::from_inner(0);
+    let results = engine.alloc_provider_slice([local_0.into()]);
+    let expected = [
+        ExecInstruction::I32Add {
+            result: local_0,
+            lhs: local_0,
+            rhs: c10,
+        },
+        ExecInstruction::Return { results },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
