@@ -613,17 +613,17 @@ impl<'parser> FunctionBuilder<'parser> {
         T: IntoIterator<Item = RelativeDepth>,
     {
         self.translate_if_reachable(|builder| {
-            fn compute_instr(
+            fn make_branch_instr<F>(
                 builder: &mut FunctionBuilder,
-                n: usize,
                 depth: RelativeDepth,
-            ) -> IrInstruction {
+                make_reloc: F,
+            ) -> IrInstruction
+            where
+                F: FnOnce(Instr) -> Reloc,
+            {
                 match builder.acquire_target(depth.into_u32()) {
                     AquiredTarget::Branch(label) => {
-                        let destination = builder.try_resolve_label(label, |pc| Reloc::BrTable {
-                            inst_idx: pc,
-                            target_idx: n,
-                        });
+                        let destination = builder.try_resolve_label(label, make_reloc);
                         Instruction::Br {
                             target: Target::from(destination),
                         }
@@ -635,17 +635,35 @@ impl<'parser> FunctionBuilder<'parser> {
                 }
             }
 
+            fn make_branch(
+                builder: &mut FunctionBuilder,
+                n: usize,
+                depth: RelativeDepth,
+            ) -> IrInstruction {
+                make_branch_instr(builder, depth, |pc| Reloc::BrTable {
+                    inst_idx: pc,
+                    target_idx: n,
+                })
+            }
+
+            fn make_const_branch(
+                builder: &mut FunctionBuilder,
+                depth: RelativeDepth,
+            ) -> IrInstruction {
+                make_branch_instr(builder, depth, |pc| Reloc::Br { inst_idx: pc })
+            }
+
             let case = builder.providers.pop();
-            let branches = targets
-                .into_iter()
-                .enumerate()
-                .map(|(n, depth)| compute_instr(builder, n, depth))
-                .collect::<Vec<_>>();
-            // We do not include the default target in `len_branches`.
-            let len_non_default_targets = branches.len();
-            let default_branch = compute_instr(builder, len_non_default_targets, default);
             match case {
                 IrProvider::Register(case) => {
+                    let branches = targets
+                        .into_iter()
+                        .enumerate()
+                        .map(|(n, depth)| make_branch(builder, n, depth))
+                        .collect::<Vec<_>>();
+                    // We do not include the default target in `len_branches`.
+                    let len_non_default_targets = branches.len();
+                    let default_branch = make_branch(builder, len_non_default_targets, default);
                     // Note: We include the default branch in this amount.
                     let len_targets = len_non_default_targets + 1;
                     builder
@@ -662,7 +680,12 @@ impl<'parser> FunctionBuilder<'parser> {
                     // it is possible to pre-compute the label which is going to
                     // be used for branching always.
                     let index = u32::from(case) as usize;
-                    let case = branches.get(index).cloned().unwrap_or(default_branch);
+                    let branches = targets.into_iter().collect::<Vec<_>>();
+                    let case = branches
+                        .get(index)
+                        .cloned()
+                        .map(|depth| make_const_branch(builder, depth))
+                        .unwrap_or_else(|| make_const_branch(builder, default));
                     builder.inst_builder.push_inst(case);
                     builder.reachable = false;
                 }
