@@ -3735,3 +3735,175 @@ fn call_indirect_2_params_2_results() {
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
+
+/// The `if` and `else` blocks can be constant folded since the condition
+/// is a constant value.
+/// This test demonstrates a simple case where it is easy for the translation
+/// process to perform this flattening.
+#[test]
+fn if_simple() {
+    let wasm = wat2wasm(&format!(
+        r#"
+            (module
+                (import "module" "table" (table 1 funcref))
+                (func (export "call") (param i32) (param i32) (param i32) (result i32)
+                    (local $result i32)
+                    local.get 0
+                    if
+                        local.get 1
+                        local.get 2
+                        i32.add
+                        local.set $result
+                    else
+                        local.get 1
+                        local.get 2
+                        i32.mul
+                        local.set $result
+                    end
+                    local.get $result
+                )
+            )
+        "#
+    ));
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let result = ExecRegister::from_inner(3);
+    let results = engine.alloc_provider_slice([result.into()]);
+    let else_label = Target::from_inner(3);
+    let end_label = Target::from_inner(4);
+    let reg0 = ExecRegister::from_inner(0);
+    let reg1 = ExecRegister::from_inner(1);
+    let reg2 = ExecRegister::from_inner(2);
+    let reg3 = ExecRegister::from_inner(3);
+    let expected = [
+        /* 0 */
+        ExecInstruction::BrEqz {
+            target: else_label,
+            condition: reg0,
+        },
+        /* 1 */
+        ExecInstruction::I32Add {
+            result: reg3,
+            lhs: reg1,
+            rhs: reg2.into(),
+        },
+        /* 2 */ ExecInstruction::Br { target: end_label },
+        /* 3 */
+        ExecInstruction::I32Mul {
+            result: reg3,
+            lhs: reg1,
+            rhs: reg2.into(),
+        },
+        /* 4 */ ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+/// The `if` and `else` blocks can be constant folded since the condition
+/// is a constant value.
+/// This test demonstrates a simple case where it is easy for the translation
+/// process to perform this flattening.
+#[test]
+fn if_const_simple() {
+    fn test(condition: bool, expected_op: fn() -> ExecInstruction) {
+        let condition = condition as i32;
+        let wasm = wat2wasm(&format!(
+            r#"
+            (module
+                (import "module" "table" (table 1 funcref))
+                (func (export "call") (param i32) (param i32) (result i32)
+                    (local $result i32)
+                    i32.const {condition}
+                    if
+                        local.get 0
+                        local.get 1
+                        i32.add
+                        local.set $result
+                    else
+                        local.get 0
+                        local.get 1
+                        i32.mul
+                        local.set $result
+                    end
+                    local.get $result
+                )
+            )
+        "#
+        ));
+        let module = create_module(&wasm[..]);
+        let engine = module.engine();
+        let result = ExecRegister::from_inner(2);
+        let results = engine.alloc_provider_slice([result.into()]);
+        let expected = [expected_op(), ExecInstruction::Return { results }];
+        assert_func_bodies_for_module(&module, [expected]);
+    }
+
+    test(true, || ExecInstruction::I32Add {
+        result: ExecRegister::from_inner(2),
+        lhs: ExecRegister::from_inner(0),
+        rhs: ExecRegister::from_inner(1).into(),
+    });
+    test(false, || ExecInstruction::I32Mul {
+        result: ExecRegister::from_inner(2),
+        lhs: ExecRegister::from_inner(0),
+        rhs: ExecRegister::from_inner(1).into(),
+    });
+}
+
+/// The `if` and `else` blocks can be constant folded since the condition
+/// is a constant value.
+/// This test demonstrates a case where there is a block nested in the `if`
+/// `then` and `else` sub blocks which make it slightly harder for the
+/// unreachability checker of the translation process to do the right job.
+#[test]
+fn if_const_nested() {
+    fn test(condition: bool, expected_op: fn() -> ExecInstruction) {
+        let condition = condition as i32;
+        let wasm = wat2wasm(&format!(
+            r#"
+            (module
+                (import "module" "table" (table 1 funcref))
+                (func (export "call") (param i32) (param i32) (result i32)
+                    (local $result i32)
+                    i32.const {condition}
+                    if
+                        local.get 0
+                        block
+                            nop
+                        end
+                        local.get 1
+                        i32.add
+                        local.set $result
+                    else
+                        local.get 0
+                        block
+                            nop
+                        end
+                        local.get 1
+                        i32.mul
+                        local.set $result
+                    end
+                    local.get $result
+                )
+            )
+        "#
+        ));
+        let module = create_module(&wasm[..]);
+        let engine = module.engine();
+        let result = ExecRegister::from_inner(2);
+        let results = engine.alloc_provider_slice([result.into()]);
+        let expected = [expected_op(), ExecInstruction::Return { results }];
+        assert_func_bodies_for_module(&module, [expected]);
+    }
+
+    test(true, || ExecInstruction::I32Add {
+        result: ExecRegister::from_inner(2),
+        lhs: ExecRegister::from_inner(0),
+        rhs: ExecRegister::from_inner(1).into(),
+    });
+    test(false, || ExecInstruction::I32Mul {
+        result: ExecRegister::from_inner(2),
+        lhs: ExecRegister::from_inner(0),
+        rhs: ExecRegister::from_inner(1).into(),
+    });
+}

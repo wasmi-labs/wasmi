@@ -11,6 +11,7 @@ use self::{
         ControlFrame,
         ControlFrameKind,
         IfControlFrame,
+        IfReachability,
         LoopControlFrame,
         UnreachableControlFrame,
     },
@@ -408,9 +409,9 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translates a Wasm `if` control flow operator.
     pub fn translate_if(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
-        let stack_height = self.frame_stack_height(block_type);
         if self.is_reachable() {
             let condition = self.providers.pop();
+            let stack_height = self.frame_stack_height(block_type);
             match condition {
                 IrProvider::Register(condition) => {
                     // We duplicate the `if` parameters on the provider stack
@@ -430,9 +431,10 @@ impl<'parser> FunctionBuilder<'parser> {
                     self.control_frames.push_frame(IfControlFrame::new(
                         block_type,
                         end_label,
-                        else_label,
+                        Some(else_label),
                         stack_height,
-                        else_height,
+                        Some(else_height),
+                        IfReachability::Both,
                     ));
                     let dst_pc =
                         self.try_resolve_label(else_label, |pc| Reloc::Br { inst_idx: pc });
@@ -449,10 +451,39 @@ impl<'parser> FunctionBuilder<'parser> {
                     //
                     // We have not yet implemented this `if` flattening since
                     // it is potentially a ton of complicated work.
-                    todo!()
+                    let reachability = if bool::from(condition) {
+                        IfReachability::OnlyThen
+                    } else {
+                        // Note in this case we know all code is unreachable
+                        // until we enter the `else` block of this `if`.
+                        self.reachable = false;
+                        IfReachability::OnlyElse
+                    };
+                    // We are still in need of the `end_label` since jumps
+                    // from within the `else` or `then` blocks might occur to
+                    // the end of this `if`.
+                    let end_label = self.inst_builder.new_label();
+                    // Since in this case we know that only one of `then` or
+                    // `else` are reachable we do not require to duplicate the
+                    // `if` parameters on the provider stack as in the general
+                    // case.
+                    let else_height = None;
+                    // We are not in need of an `else` label if either `then`
+                    // or `else` are unreachable since there won't be a `br_nez`
+                    // instruction that would usually target it.
+                    let else_label = None;
+                    self.control_frames.push_frame(IfControlFrame::new(
+                        block_type,
+                        end_label,
+                        else_label,
+                        stack_height,
+                        else_height,
+                        reachability,
+                    ));
                 }
             }
         } else {
+            let stack_height = self.frame_stack_height(block_type);
             self.control_frames.push_frame(UnreachableControlFrame::new(
                 ControlFrameKind::If,
                 block_type,
@@ -486,25 +517,32 @@ impl<'parser> FunctionBuilder<'parser> {
         // Note: This information is important to decide whether code is
         //       reachable after the `if` block (including `else`) ends.
         if_frame.update_end_of_then_reachability(reachable);
+        // We need to check if the `else` block is known to be reachable.
+        let then_reachable = if_frame.is_then_reachable();
+        let else_reachable = if_frame.is_else_reachable();
         // Create the jump from the end of the `then` block to the `if`
         // block's end label in case the end of `then` is reachable.
-        if reachable {
+        if then_reachable && else_reachable {
             let dst_pc =
                 self.try_resolve_label(if_frame.end_label(), |pc| Reloc::Br { inst_idx: pc });
             let target = Target::from(dst_pc);
             self.inst_builder.push_inst(Instruction::Br { target });
         }
         // Now resolve labels for the instructions of the `else` block
-        self.inst_builder.resolve_label(if_frame.else_label());
+        if let Some(else_label) = if_frame.else_label() {
+            self.inst_builder.resolve_label(else_label);
+        }
         // We need to reset the value stack to exactly how it has been
         // when entering the `if` in the first place so that the `else`
         // block has the same parameters on top of the stack.
-        self.providers.shrink_to(if_frame.else_height());
-        let len_params = if_frame.block_type().len_params(&self.engine);
-        self.providers.push_dynamic_many(len_params as usize);
+        if let Some(else_height) = if_frame.else_height() {
+            self.providers.shrink_to(else_height);
+            let len_params = if_frame.block_type().len_params(&self.engine);
+            self.providers.push_dynamic_many(len_params as usize);
+        }
         self.control_frames.push_frame(if_frame);
         // We can reset reachability now since the parent `if` block was reachable.
-        self.reachable = true;
+        self.reachable = else_reachable;
         Ok(())
     }
 
@@ -516,8 +554,9 @@ impl<'parser> FunctionBuilder<'parser> {
             //
             // Note: The `Else` label might have already been resolved
             //       in case there was an `Else` block.
-            self.inst_builder
-                .resolve_label_if_unresolved(if_frame.else_label());
+            if let Some(else_label) = if_frame.else_label() {
+                self.inst_builder.resolve_label_if_unresolved(else_label)
+            }
         }
         if frame.is_reachable() && !matches!(frame.kind(), ControlFrameKind::Loop) {
             // At this point we can resolve the `End` labels.
