@@ -119,12 +119,6 @@ impl Providers {
         slice
     }
 
-    pub fn push_preserved(&mut self) -> IrRegister {
-        let register = self.stacks.bump_preserved();
-        self.providers.push(register.into());
-        register
-    }
-
     pub fn push_const<T>(&mut self, value: T) -> IrProvider
     where
         T: Into<UntypedValue>,
@@ -197,6 +191,7 @@ impl Providers {
     }
 
     /// Returns `true` if the emulated [`Providers`] is empty.
+    #[allow(dead_code)] // TODO: remove annotation, exists because of clippy
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -460,10 +455,5 @@ impl ProviderSliceArena {
         let first = slice.first as usize;
         let len = slice.len as usize;
         &self.providers[first..first + len]
-    }
-
-    /// Removes all previously allocated register slices from this arena.
-    pub fn clear(&mut self) {
-        self.providers.clear()
     }
 }

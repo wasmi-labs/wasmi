@@ -273,12 +273,6 @@ impl<'parser> FunctionBuilder<'parser> {
         self.reg_slices.alloc(providers)
     }
 
-    /// Returns the [`FuncType`] of the function that is currently translated.
-    fn func_type(&self) -> FuncType {
-        let dedup_func_type = self.res.get_type_of_func(self.func);
-        self.engine.resolve_func_type(dedup_func_type, Clone::clone)
-    }
-
     /// Resolves the [`FuncType`] of the given [`FuncTypeIdx`].
     fn func_type_at(&self, func_type_index: FuncTypeIdx) -> FuncType {
         let dedup_func_type = self.res.get_func_type(func_type_index);

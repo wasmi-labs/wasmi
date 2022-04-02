@@ -241,11 +241,6 @@ impl InstructionsBuilder {
     }
 
     /// Peeks the last instruction pushed to the instruction builder if any.
-    pub fn peek(&self) -> Option<&IrInstruction> {
-        self.insts.last()
-    }
-
-    /// Peeks the last instruction pushed to the instruction builder if any.
     pub fn peek_mut(&mut self) -> Option<&mut IrInstruction> {
         self.insts.last_mut()
     }
