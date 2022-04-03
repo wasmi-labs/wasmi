@@ -1,5 +1,5 @@
 use crate::arena::{GuardedEntity, Index};
-use alloc::sync::atomic::{AtomicUsize, Ordering};
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 /// A unique identifier for an [`Engine`] instance.
 ///
