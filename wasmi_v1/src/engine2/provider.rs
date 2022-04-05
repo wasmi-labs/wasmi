@@ -2,6 +2,7 @@ use super::{bytecode::ExecRegister, ConstRef};
 use crate::arena::Index;
 use alloc::collections::{btree_map::Entry, BTreeMap};
 use core::ops::Neg;
+use wasmi_core::UntypedValue;
 
 #[derive(Debug)]
 pub struct DedupProviderSliceArena {
@@ -118,6 +119,17 @@ impl ExecProvider {
             return ConstRef::from_usize(self.0.abs().wrapping_sub(1) as usize).into();
         }
         ExecRegister::from_inner(self.0 as u16).into()
+    }
+
+    pub fn decode_using(
+        self,
+        resolve_register: impl FnOnce(ExecRegister) -> UntypedValue,
+        resolve_const: impl FnOnce(ConstRef) -> UntypedValue,
+    ) -> UntypedValue {
+        match self.decode() {
+            RegisterOrImmediate::Register(register) => resolve_register(register),
+            RegisterOrImmediate::Immediate(cref) => resolve_const(cref),
+        }
     }
 }
 

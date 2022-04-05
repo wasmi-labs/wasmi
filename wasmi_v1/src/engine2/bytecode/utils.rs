@@ -77,7 +77,17 @@ pub struct ExecRegisterSlice {
     len: u16,
 }
 
+impl From<ExecRegister> for ExecRegisterSlice {
+    fn from(register: ExecRegister) -> Self {
+        Self {
+            start: register,
+            len: 1,
+        }
+    }
+}
+
 impl ExecRegisterSlice {
+    /// Creates the empty [`ExecRegisterSlice`].
     pub fn empty() -> Self {
         Self {
             start: ExecRegister::from_inner(0),
@@ -85,8 +95,51 @@ impl ExecRegisterSlice {
         }
     }
 
+    /// Creates an [`ExecRegisterSlice`] with a `start` [`ExecRegister`] of `len`.
     pub fn new(start: ExecRegister, len: u16) -> Self {
         Self { start, len }
+    }
+
+    /// Returns the length of the [`ExecRegisterSlice`].
+    pub fn len(self) -> usize {
+        self.len as usize
+    }
+
+    /// Returns an iterator over the registers of the [`ExecRegisterSlice`].
+    pub fn iter(self) -> ExecRegisterSliceIter {
+        self.into_iter()
+    }
+}
+
+impl IntoIterator for ExecRegisterSlice {
+    type Item = ExecRegister;
+    type IntoIter = ExecRegisterSliceIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        ExecRegisterSliceIter {
+            slice: self,
+            current: 0,
+        }
+    }
+}
+
+/// An iterator over the registes of an [`ExecRegisterSlice`].
+#[derive(Debug, Copy, Clone)]
+pub struct ExecRegisterSliceIter {
+    slice: ExecRegisterSlice,
+    current: u16,
+}
+
+impl Iterator for ExecRegisterSliceIter {
+    type Item = ExecRegister;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current == self.slice.len {
+            return None;
+        }
+        Some(ExecRegister::from_inner(
+            self.slice.start.into_inner() + self.current,
+        ))
     }
 }
 

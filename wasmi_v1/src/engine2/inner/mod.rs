@@ -1,4 +1,6 @@
 mod compile;
+mod execute;
+
 use super::{
     CallParams,
     CallResults,
@@ -15,6 +17,7 @@ use super::{
     FuncTypeRegistry,
 };
 use crate::{AsContextMut, Config, Func, FuncType};
+use execute::Stack;
 use wasmi_core::{Trap, UntypedValue};
 
 /// The internal state of the `wasmi` engine.
@@ -24,6 +27,9 @@ pub struct EngineInner {
     config: Config,
     /// Stores all Wasm function bodies that the interpreter is aware of.
     code_map: CodeMap,
+    /// The execution stack that manages registers and call frames.
+    stack: Stack,
+    /// The engine's resources that do not change during execution.
     res: EngineResources,
 }
 
@@ -87,6 +93,7 @@ impl EngineInner {
         Self {
             config: *config,
             code_map: CodeMap::default(),
+            stack: Stack::default(),
             res: EngineResources::new(engine_ident),
         }
     }
@@ -161,26 +168,5 @@ impl EngineInner {
         T: Into<UntypedValue>,
     {
         self.res.alloc_const(value)
-    }
-
-    /// Executes the given [`Func`] using the given arguments `args` and stores the result into `results`.
-    ///
-    /// # Errors
-    ///
-    /// - If the given arguments `args` do not match the expected parameters of `func`.
-    /// - If the given `results` do not match the the length of the expected results of `func`.
-    /// - When encountering a Wasm trap during the execution of `func`.
-    pub fn execute_func<Params, Results>(
-        &mut self,
-        mut _ctx: impl AsContextMut,
-        _func: Func,
-        _params: Params,
-        _results: Results,
-    ) -> Result<<Results as CallResults>::Results, Trap>
-    where
-        Params: CallParams,
-        Results: CallResults,
-    {
-        todo!()
     }
 }
