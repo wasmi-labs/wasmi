@@ -1,5 +1,13 @@
-use crate::engine2::{bytecode::ExecRegister, ConstRef, ExecProvider, ExecRegisterSlice};
-use wasmi_core::UntypedValue;
+use crate::engine2::{
+    bytecode::ExecRegister,
+    CallParams,
+    CallResults,
+    ConstRef,
+    ExecProvider,
+    ExecProviderSlice,
+    ExecRegisterSlice,
+};
+use wasmi_core::{UntypedValue, ValueType};
 
 /// The execution stack.
 #[derive(Debug, Default)]
@@ -11,22 +19,117 @@ pub struct Stack {
 }
 
 impl Stack {
+    /// Initializes the [`Stack`] with the initial parameters.
+    pub fn push_init(&mut self, len_frame: usize, initial_params: impl CallParams) {
+        let len_params = initial_params.len_params();
+        assert!(
+            len_params < len_frame,
+            "encountered more parameters in init frame than frame can handle. \
+            #params: {len_params}, #registers: {len_frame}",
+        );
+        self.entries.clear();
+        self.frames.clear();
+        let params = initial_params.feed_params();
+        self.entries.resize_with(len_frame, UntypedValue::default);
+        self.entries[..len_params]
+            .iter_mut()
+            .zip(params)
+            .for_each(|(slot, param)| {
+                *slot = param.into();
+            });
+        self.frames.push(StackFrame {
+            region: FrameRegion {
+                start: 0,
+                len: len_frame,
+            },
+            results: ExecRegisterSlice::empty(),
+        });
+    }
+
+    /// Pops the initial frame on the [`Stack`] and returns its results.
+    pub fn pop_init<Results>(
+        &mut self,
+        result_types: &[ValueType],
+        resolve_const: impl Fn(ConstRef) -> UntypedValue,
+        returned_values: ExecProviderSlice,
+        results: Results,
+    ) -> <Results as CallResults>::Results
+    where
+        Results: CallResults,
+    {
+        self.frames
+            .pop()
+            .expect("encountered unexpected empty frame stack");
+        assert!(
+            self.frames.is_empty(),
+            "unexpected frames left on the frame stack after execution"
+        );
+        let len_entries = self.entries.len();
+        let len_results = results.len_results();
+        assert_eq!(len_results, result_types.len());
+        assert_eq!(
+            len_entries, len_results,
+            "expected {len_results} values on the stack after function execution \
+            but found {len_entries}",
+        );
+        results.feed_results(
+            self.entries
+                .drain(..)
+                .zip(result_types)
+                .map(|(raw_value, value_type)| raw_value.with_type(*value_type)),
+        )
+    }
+
     /// Pushes a new [`StackFrame`] to the [`Stack`].
     ///
     /// Calls `make_frame` in order to create the new [`StackFrame`] in place.
-    pub fn push_frame<F>(
+    pub fn push_frame(
         &mut self,
         len: usize,
         results: ExecRegisterSlice,
-        make_frame: impl FnOnce(FrameRegion) -> StackFrame,
+        params: &[ExecProvider],
+        resolve_const: impl Fn(ConstRef) -> UntypedValue,
     ) {
+        debug_assert!(!self.frames.is_empty());
+        assert!(
+            params.len() < len,
+            "encountered more parameters than register in function frame: #params {}, #registers {}",
+            params.len(),
+            len
+        );
         let start = self.entries.len();
         self.entries.resize_with(start + len, Default::default);
-        if let Some(last) = self.frames.last_mut() {
-            last.results = results;
+        let last = self
+            .frames
+            .last_mut()
+            .expect("encountered unexpected empty frame stack");
+        // Update the results of the last frame before we push another.
+        // These `results` are used when the newly pushed frame is popped again
+        // to write back the results.
+        last.results = results;
+        let last_region = last.region;
+        self.frames.push(StackFrame {
+            results: ExecRegisterSlice::empty(),
+            region: FrameRegion { start, len },
+        });
+        self.entries
+            .resize_with(self.entries.len() + len, UntypedValue::default);
+        let (last_view, mut pushed_view) = {
+            let (previous_entries, popped_entries) =
+                self.entries[last_region.start..].split_at_mut(last_region.len);
+            (
+                StackFrameView::from(previous_entries),
+                StackFrameView::from(popped_entries),
+            )
+        };
+        let param_slots = ExecRegisterSlice::params(params.len() as u16);
+        for (param, slot) in params.iter().zip(param_slots) {
+            let param_value = param.decode_using(
+                |register| last_view.get(register),
+                |cref| resolve_const(cref),
+            );
+            pushed_view.set(slot, param_value);
         }
-        let region = FrameRegion { start, len };
-        self.frames.push(make_frame(region));
     }
 
     /// Pops the most recently pushed [`StackFrame`] from the [`Stack`] if any.
@@ -39,9 +142,10 @@ impl Stack {
     /// If the amount of [`StackFrame`] on the frame stack is less than 2.
     pub fn pop_frame(
         &mut self,
-        returns: &[ExecProvider],
+        returned_values: &[ExecProvider],
         resolve_const: impl Fn(ConstRef) -> UntypedValue,
     ) {
+        debug_assert!(!self.frames.is_empty());
         let frame = self
             .frames
             .pop()
@@ -50,23 +154,23 @@ impl Stack {
             .frames
             .last()
             .expect("expected previous frame but stack is empty");
-        let (previous_entries, popped_entries) =
-            self.entries[previous.region.start..].split_at_mut(previous.region.len);
-        let mut previous_view = StackFrameView {
-            entries: previous_entries,
-        };
-        let popped_view = StackFrameView {
-            entries: popped_entries,
-        };
         let results = previous.results;
         assert_eq!(
             results.len(),
-            returns.len(),
+            returned_values.len(),
             "encountered mismatch in returned values: expected {}, got {}",
             results.len(),
-            returns.len()
+            returned_values.len()
         );
-        for (result, returns) in results.iter().zip(returns) {
+        let (mut previous_view, popped_view) = {
+            let (previous_entries, popped_entries) =
+                self.entries[previous.region.start..].split_at_mut(previous.region.len);
+            (
+                StackFrameView::from(previous_entries),
+                StackFrameView::from(popped_entries),
+            )
+        };
+        for (result, returns) in results.iter().zip(returned_values) {
             let return_value = returns.decode_using(
                 |register| popped_view.get(register),
                 |cref| resolve_const(cref),
@@ -82,23 +186,7 @@ impl Stack {
     ///
     /// If the [`FrameRegion`] is invalid.
     pub fn frame_at(&mut self, region: FrameRegion) -> StackFrameView {
-        StackFrameView {
-            entries: &mut self.entries[region.start..(region.start + region.len)],
-        }
-    }
-
-    /// Returns the consecutive [`StackFrameView`] of the region and its
-    pub fn frames_at(&mut self, region: FrameRegion) -> (StackFrameView, StackFrameView) {
-        let (previous_entries, popped_entries) =
-            self.entries[region.start..].split_at_mut(region.len);
-        (
-            StackFrameView {
-                entries: previous_entries,
-            },
-            StackFrameView {
-                entries: popped_entries,
-            },
-        )
+        StackFrameView::from(&mut self.entries[region.start..(region.start + region.len)])
     }
 }
 
@@ -114,7 +202,9 @@ pub struct StackFrame {
 /// The region of a [`StackFrame`] within the [`Stack`].
 #[derive(Debug, Copy, Clone)]
 pub struct FrameRegion {
+    /// The index to the first register on the global [`Stack`].
     start: usize,
+    /// The amount of registers of the [`StackFrame`] belonging to this [`FrameRegion`].
     len: usize,
 }
 
@@ -122,6 +212,12 @@ pub struct FrameRegion {
 #[derive(Debug)]
 pub struct StackFrameView<'a> {
     entries: &'a mut [UntypedValue],
+}
+
+impl<'a> From<&'a mut [UntypedValue]> for StackFrameView<'a> {
+    fn from(entries: &'a mut [UntypedValue]) -> Self {
+        Self { entries }
+    }
 }
 
 impl StackFrameView<'_> {
