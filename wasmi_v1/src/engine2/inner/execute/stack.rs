@@ -51,13 +51,14 @@ impl Stack {
         &mut self,
         result_types: &[ValueType],
         resolve_const: impl Fn(ConstRef) -> UntypedValue,
-        returned_values: ExecProviderSlice,
+        returned_values: &[ExecProvider],
         results: Results,
     ) -> <Results as CallResults>::Results
     where
         Results: CallResults,
     {
-        self.frames
+        let init_frame = self
+            .frames
             .pop()
             .expect("encountered unexpected empty frame stack");
         assert!(
@@ -72,12 +73,22 @@ impl Stack {
             "expected {len_results} values on the stack after function execution \
             but found {len_entries}",
         );
-        results.feed_results(
-            self.entries
-                .drain(..)
-                .zip(result_types)
-                .map(|(raw_value, value_type)| raw_value.with_type(*value_type)),
-        )
+        let region = init_frame.region;
+        let init_view =
+            StackFrameView::from(&mut self.entries[region.start..(region.start + region.len)]);
+        let returned_values = returned_values
+            .iter()
+            .map(|returned_value| {
+                returned_value.decode_using(
+                    |register| init_view.get(register),
+                    |cref| resolve_const(cref),
+                )
+            })
+            .zip(result_types)
+            .map(|(returned_value, expected_type)| {
+                returned_value.with_type(*expected_type)
+            });
+        results.feed_results(returned_values)
     }
 
     /// Pushes a new [`StackFrame`] to the [`Stack`].
@@ -123,13 +134,13 @@ impl Stack {
             )
         };
         let param_slots = ExecRegisterSlice::params(params.len() as u16);
-        for (param, slot) in params.iter().zip(param_slots) {
+        params.iter().zip(param_slots).for_each(|(param, slot)| {
             let param_value = param.decode_using(
                 |register| last_view.get(register),
                 |cref| resolve_const(cref),
             );
             pushed_view.set(slot, param_value);
-        }
+        });
     }
 
     /// Pops the most recently pushed [`StackFrame`] from the [`Stack`] if any.
@@ -170,13 +181,16 @@ impl Stack {
                 StackFrameView::from(popped_entries),
             )
         };
-        for (result, returns) in results.iter().zip(returned_values) {
-            let return_value = returns.decode_using(
-                |register| popped_view.get(register),
-                |cref| resolve_const(cref),
-            );
-            previous_view.set(result, return_value);
-        }
+        results
+            .iter()
+            .zip(returned_values)
+            .for_each(|(result, returns)| {
+                let return_value = returns.decode_using(
+                    |register| popped_view.get(register),
+                    |cref| resolve_const(cref),
+                );
+                previous_view.set(result, return_value);
+            });
         self.entries.shrink_to(frame.region.start);
     }
 
