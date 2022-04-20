@@ -10,13 +10,19 @@ pub struct FuncBody {
     /// The offset within the [`CodeMap`] to the first instruction.
     inst: FirstInstr,
     /// The number of instructions of the [`FuncBody`].
-    len: u32,
+    len_insts: u16,
+    /// The number of registers that the function requires for execution.
+    len_regs: u16,
 }
 
 impl FuncBody {
     /// Creates a new [`FuncBody`].
-    pub fn new(inst: FirstInstr, len: u32) -> Self {
-        Self { inst, len }
+    pub fn new(inst: FirstInstr, len_insts: u16, len_regs: u16) -> Self {
+        Self {
+            inst,
+            len_insts,
+            len_regs,
+        }
     }
 
     /// Returns the index to the first instruction stored in the [`CodeMap`].
@@ -34,8 +40,13 @@ impl FuncBody {
     }
 
     /// Returns the number of instruction of the [`FuncBody`].
-    pub(super) fn len(self) -> u32 {
-        self.len
+    pub(super) fn len_insts(self) -> u16 {
+        self.len_insts
+    }
+
+    /// Returns the number of registers the function requires for execution.
+    pub(super) fn len_regs(self) -> u16 {
+        self.len_regs
     }
 }
 
@@ -80,7 +91,7 @@ impl CodeMap {
     /// Returns a reference to the allocated function body that can
     /// be used with [`CodeMap::resolve`] in order to resolve its
     /// instructions.
-    pub fn alloc<I>(&mut self, insts: I) -> FuncBody
+    pub fn alloc<I>(&mut self, insts: I, len_regs: u16) -> FuncBody
     where
         I: IntoIterator<Item = ExecInstruction>,
     {
@@ -95,7 +106,7 @@ impl CodeMap {
                 len_before, error
             )
         });
-        FuncBody::new(inst, len_insts)
+        FuncBody::new(inst, len_insts, len_regs)
     }
 
     /// Resolves the instruction of the function body.
@@ -105,7 +116,7 @@ impl CodeMap {
     /// If the given `func_body` is invalid for this [`CodeMap`].
     pub fn resolve(&self, func_body: FuncBody) -> ResolvedFuncBody {
         let first_inst = func_body.inst().into_usize();
-        let len_insts = func_body.len() as usize;
+        let len_insts = func_body.len_insts() as usize;
         let insts = &self.insts[first_inst..(first_inst + len_insts)];
         ResolvedFuncBody { insts }
     }

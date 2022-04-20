@@ -52,10 +52,11 @@ impl EngineInner {
     where
         I: IntoIterator<Item = IrInstruction>,
     {
+        let len_regs = context.len_registers();
         let insts = insts
             .into_iter()
             .map(|inst| Self::compile_inst(&mut self.res, context, inst));
-        self.code_map.alloc(insts)
+        self.code_map.alloc(insts, len_regs)
     }
 
     fn compile_register(context: &CompileContext, register: IrRegister) -> ExecRegister {

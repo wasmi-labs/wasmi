@@ -24,6 +24,10 @@ impl Stacks {
         self.max_dynamic
     }
 
+    pub fn max_preserved(&self) -> usize {
+        self.max_preserved
+    }
+
     /// Bumps the dynamic register space by the amount of new registers.
     ///
     /// Returns the first register in the continuous slice of registers.
@@ -220,6 +224,16 @@ impl Providers {
         for popped in self.providers.drain(new_height..) {
             self.stacks.pop(&popped);
         }
+    }
+
+    /// Returns the required number of registers for the constructed function.
+    pub fn len_required_registers(&self) -> u16 {
+        let len_registers = self.stacks.max_dynamic()
+            + self.stacks.max_preserved()
+            + self.locals.len_registered() as usize;
+        len_registers.try_into().unwrap_or_else(|error| {
+            panic!("out of bounds function registers required (= {len_registers}): {error}")
+        })
     }
 }
 

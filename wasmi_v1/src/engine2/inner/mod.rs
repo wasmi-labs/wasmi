@@ -147,12 +147,12 @@ impl EngineInner {
     /// Allocates the instructions of a Wasm function body to the [`Engine`].
     ///
     /// Returns a [`FuncBody`] reference to the allocated function body.
-    pub fn alloc_func_body<I>(&mut self, insts: I) -> FuncBody
+    pub fn alloc_func_body<I>(&mut self, insts: I, len_registers: u16) -> FuncBody
     where
         I: IntoIterator<Item = ExecInstruction>,
         I::IntoIter: ExactSizeIterator,
     {
-        self.code_map.alloc(insts)
+        self.code_map.alloc(insts, len_registers)
     }
 
     pub fn alloc_provider_slice<I>(&mut self, providers: I) -> ExecProviderSlice

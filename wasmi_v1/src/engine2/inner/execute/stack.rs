@@ -85,9 +85,7 @@ impl Stack {
                 )
             })
             .zip(result_types)
-            .map(|(returned_value, expected_type)| {
-                returned_value.with_type(*expected_type)
-            });
+            .map(|(returned_value, expected_type)| returned_value.with_type(*expected_type));
         results.feed_results(returned_values)
     }
 

@@ -56,6 +56,10 @@ pub struct CompileContext<'a> {
 }
 
 impl CompileContext<'_> {
+    pub fn len_registers(&self) -> u16 {
+        self.providers.len_required_registers()
+    }
+
     pub fn resolve_provider_slice(&self, slice: IrProviderSlice) -> &[IrProvider] {
         self.reg_slices.resolve(slice)
     }

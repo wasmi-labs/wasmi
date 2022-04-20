@@ -73,16 +73,9 @@ impl EngineInner {
     }
 
     /// Initializes the value stack with the given arguments `params`.
-    fn initialize_args<Params>(&mut self, params: Params)
-    where
-        Params: CallParams,
-    {
-        // self.value_stack.clear();
-        // self.call_stack.clear();
-        // for param in params.feed_params() {
-        //     self.value_stack.push(param);
-        // }
-        todo!()
+    fn initialize_args(&mut self, params: impl CallParams) {
+        let len_frame = todo!();
+        self.stack.push_init(len_frame, params);
     }
 
     /// Writes the results of the function execution back into the `results` buffer.
