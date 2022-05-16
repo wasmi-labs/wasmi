@@ -1,7 +1,5 @@
 #![no_main]
-#[macro_use]
-extern crate libfuzzer_sys;
-extern crate wasmi;
+use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|data: &[u8]| {
 	// Just check if loading some arbitrary buffer doesn't panic.

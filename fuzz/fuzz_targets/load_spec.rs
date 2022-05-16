@@ -1,9 +1,6 @@
 #![no_main]
-#[macro_use]
-extern crate libfuzzer_sys;
-extern crate wabt;
-extern crate wasmi;
-extern crate tempdir;
+
+use libfuzzer_sys::fuzz_target;
 
 use std::fs::File;
 use std::io::Write;

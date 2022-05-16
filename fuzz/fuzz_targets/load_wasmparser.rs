@@ -1,21 +1,9 @@
 #![no_main]
-#[macro_use]
-extern crate libfuzzer_sys;
-extern crate wasmi;
-extern crate wasmparser;
 
-use wasmparser::WasmDecoder;
+use libfuzzer_sys::fuzz_target;
 
 fn run_wasmparser(data: &[u8]) -> bool {
-	let mut parser = wasmparser::ValidatingParser::new(data, None);
-	let result = loop {
-		match *parser.read() {
-			wasmparser::ParserState::Error(..) => break false,
-			wasmparser::ParserState::EndWasm => break true,
-			_ => (),
-		}
-	};
-	result
+	wasmparser::validate(data).is_ok()
 }
 
 fn run_wasmi(data: &[u8]) -> bool {

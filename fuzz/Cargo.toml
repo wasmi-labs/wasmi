@@ -4,6 +4,7 @@ name = "wasmi-fuzz"
 version = "0.0.1"
 authors = ["Automatically generated"]
 publish = false
+edition = "2018"
 
 [package.metadata]
 cargo-fuzz = true
@@ -11,8 +12,8 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 wasmi = { path = ".." }
-wabt = "0.9"
-wasmparser = "0.14.1"
+wabt = "0.10"
+wasmparser = "0.84.0"
 tempdir = "0.3.6"
 
 # Prevent this from interfering with workspaces
