@@ -340,7 +340,7 @@ impl<'args> FuncInvocation<'args> {
                 if interpreter.state().is_resumable() {
                     Ok(interpreter.resume_execution(return_val, externals)?)
                 } else {
-                    Err(ResumableError::AlreadyStarted)
+                    Err(ResumableError::NotResumable)
                 }
             }
             FuncInvocationKind::Host { .. } => Err(ResumableError::NotResumable),
