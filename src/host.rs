@@ -1,4 +1,6 @@
-use crate::{value::FromValue, RuntimeValue, Trap, TrapCode};
+use crate::{value::FromValue, RuntimeValue, Error};
+use core::marker::PhantomData;
+use wasmi_core::{CanResume, TrapCode};
 
 /// Wrapper around slice of [`Value`] for using it
 /// as an argument list conveniently.
@@ -25,14 +27,13 @@ impl<'a> RuntimeArgs<'a> {
     /// # Errors
     ///
     /// Returns `Err` if cast is invalid or not enough arguments.
-    pub fn nth_checked<T>(&self, idx: usize) -> Result<T, Trap>
+    pub fn nth_checked<T>(&self, idx: usize) -> Result<T, TrapCode>
     where
         T: FromValue,
     {
         self.nth_value_checked(idx)?
             .try_into()
             .ok_or(TrapCode::UnexpectedSignature)
-            .map_err(Into::into)
     }
 
     /// Extract argument as a [`Value`] by index `idx`.
@@ -42,7 +43,7 @@ impl<'a> RuntimeArgs<'a> {
     /// Returns `Err` if this list has not enough arguments.
     ///
     /// [`Value`]: enum.Value.html
-    pub fn nth_value_checked(&self, idx: usize) -> Result<RuntimeValue, Trap> {
+    pub fn nth_value_checked(&self, idx: usize) -> Result<RuntimeValue, TrapCode> {
         if self.0.len() <= idx {
             return Err(TrapCode::UnexpectedSignature.into());
         }
@@ -75,7 +76,7 @@ impl<'a> RuntimeArgs<'a> {
 /// ```rust
 /// use wasmi::{
 ///     Externals, RuntimeValue, RuntimeArgs, Error, ModuleImportResolver,
-///     FuncRef, ValueType, Signature, FuncInstance, Trap,
+///     FuncRef, ValueType, Signature, FuncInstance,
 /// };
 ///
 /// struct HostExternals {
@@ -85,11 +86,12 @@ impl<'a> RuntimeArgs<'a> {
 /// const ADD_FUNC_INDEX: usize = 0;
 ///
 /// impl Externals for HostExternals {
+///     type Error = wasmi::Error;
 ///     fn invoke_index(
 ///         &mut self,
 ///         index: usize,
 ///         args: RuntimeArgs,
-///     ) -> Result<Option<RuntimeValue>, Trap> {
+///     ) -> Result<Option<RuntimeValue>, Self::Error> {
 ///         match index {
 ///             ADD_FUNC_INDEX => {
 ///                 let a: u32 = args.nth_checked(0)?;
@@ -146,27 +148,33 @@ impl<'a> RuntimeArgs<'a> {
 /// }
 /// ```
 pub trait Externals {
+    /// Type of error the host can yield while executing a host function.
+    type Error: CanResume + From<Error>;
     /// Perform invoke of a host function by specified `index`.
     fn invoke_index(
         &mut self,
         index: usize,
         args: RuntimeArgs,
-    ) -> Result<Option<RuntimeValue>, Trap>;
+    ) -> Result<Option<RuntimeValue>, Self::Error>;
 }
 
 /// Implementation of [`Externals`] that just traps on [`invoke_index`].
 ///
 /// [`Externals`]: trait.Externals.html
 /// [`invoke_index`]: trait.Externals.html#tymethod.invoke_index
-pub struct NopExternals;
+pub struct NopExternals<E>(pub PhantomData<E>);
 
-impl Externals for NopExternals {
+impl<E> Externals for NopExternals<E>
+where
+    E: CanResume + From<Error>,
+{
+    type Error = E;
     fn invoke_index(
         &mut self,
         _index: usize,
         _args: RuntimeArgs,
-    ) -> Result<Option<RuntimeValue>, Trap> {
-        Err(TrapCode::Unreachable.into())
+    ) -> Result<Option<RuntimeValue>, Self::Error> {
+        Err(Error::Trap(TrapCode::Unreachable).into())
     }
 }
 
@@ -174,7 +182,6 @@ impl Externals for NopExternals {
 mod tests {
     use super::RuntimeArgs;
     use crate::RuntimeValue;
-    use wasmi_core::HostError;
 
     #[test]
     fn i32_runtime_args() {
@@ -188,7 +195,4 @@ mod tests {
         let args: RuntimeArgs = (&[RuntimeValue::I64(90534534545322)][..]).into();
         assert!(args.nth_checked::<i32>(0).is_err());
     }
-
-    // Tests that `HostError` trait is object safe.
-    fn _host_error_is_object_safe(_: &dyn HostError) {}
 }

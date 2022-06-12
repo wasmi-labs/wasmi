@@ -3,13 +3,13 @@ use super::{
     HostFuncTrampoline,
 };
 use crate::{
-    core::{FromValue, Trap, Value, ValueType, F32, F64},
+    core::{FromValue, Value, ValueType, F32, F64},
     foreach_tuple::for_each_tuple,
     Caller,
     FuncType,
 };
 use core::{array, iter::FusedIterator};
-use wasmi_core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedValue};
+use wasmi_core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedValue, TrapCode};
 
 /// Closures and functions that can be used as host functions.
 pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {
@@ -73,7 +73,7 @@ macro_rules! impl_into_func {
                     <Self::Results as WasmTypeList>::value_types(),
                 );
                 let trampoline = HostFuncTrampoline::new(
-                    move |caller: Caller<T>, params_results: FuncParams| -> Result<FuncResults, Trap> {
+                    move |caller: Caller<T>, params_results: FuncParams| -> Result<FuncResults, TrapCode> {
                         let ($($tuple,)*): Self::Params = params_results.read_params();
                         let results: Self::Results =
                             (self)(caller, $($tuple),*).into_fallible()?;
@@ -93,7 +93,7 @@ pub trait WasmResults {
     type Ok: WasmTypeList;
 
     #[doc(hidden)]
-    fn into_fallible(self) -> Result<<Self as WasmResults>::Ok, Trap>;
+    fn into_fallible(self) -> Result<<Self as WasmResults>::Ok, TrapCode>;
 }
 
 impl<T1> WasmResults for T1
@@ -102,7 +102,7 @@ where
 {
     type Ok = T1;
 
-    fn into_fallible(self) -> Result<Self::Ok, Trap> {
+    fn into_fallible(self) -> Result<Self::Ok, TrapCode> {
         Ok(self)
     }
 }
@@ -117,12 +117,12 @@ macro_rules! impl_wasm_return_type {
         {
             type Ok = ($($tuple,)*);
 
-            fn into_fallible(self) -> Result<Self::Ok, Trap> {
+            fn into_fallible(self) -> Result<Self::Ok, TrapCode> {
                 Ok(self)
             }
         }
 
-        impl<$($tuple),*> WasmResults for Result<($($tuple,)*), Trap>
+        impl<$($tuple),*> WasmResults for Result<($($tuple,)*), TrapCode>
         where
             $(
                 $tuple: WasmType
@@ -130,7 +130,7 @@ macro_rules! impl_wasm_return_type {
         {
             type Ok = ($($tuple,)*);
 
-            fn into_fallible(self) -> Result<<Self as WasmResults>::Ok, Trap> {
+            fn into_fallible(self) -> Result<<Self as WasmResults>::Ok, TrapCode> {
                 self
             }
         }

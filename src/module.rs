@@ -9,13 +9,7 @@ use crate::{
     runner::StackRecycler,
     table::TableRef,
     types::{GlobalDescriptor, MemoryDescriptor, TableDescriptor},
-    Error,
-    MemoryInstance,
-    Module,
-    RuntimeValue,
-    Signature,
-    TableInstance,
-    Trap,
+    Error, MemoryInstance, Module, RuntimeValue, Signature, TableInstance,
 };
 use alloc::{
     borrow::ToOwned,
@@ -512,7 +506,7 @@ impl ModuleInstance {
     ///     &ImportsBuilder::default()
     /// )?;
     /// // Call `start` function if any.
-    /// let instance = not_started.run_start(&mut NopExternals)?;
+    /// let instance = not_started.run_start(&mut NopExternals(core::marker::PhantomData::<wasmi::Error>))?;
     ///
     /// # Ok(())
     /// # }
@@ -627,7 +621,7 @@ impl ModuleInstance {
     ///     instance.invoke_export(
     ///         "add",
     ///         &[RuntimeValue::I32(5), RuntimeValue::I32(3)],
-    ///         &mut NopExternals,
+    ///         &mut NopExternals(core::marker::PhantomData::<wasmi::Error>),
     ///     ).expect("failed to execute export"),
     ///     Some(RuntimeValue::I32(8)),
     /// );
@@ -638,10 +632,13 @@ impl ModuleInstance {
         func_name: &str,
         args: &[RuntimeValue],
         externals: &mut E,
-    ) -> Result<Option<RuntimeValue>, Error> {
+    ) -> Result<Option<RuntimeValue>, E::Error>
+    where
+        E::Error: From<Error>,
+    {
         let func_instance = self.func_by_name(func_name)?;
 
-        FuncInstance::invoke(&func_instance, args, externals).map_err(Error::Trap)
+        FuncInstance::invoke(&func_instance, args, externals)
     }
 
     /// Invoke exported function by a name using recycled stacks.
@@ -657,11 +654,13 @@ impl ModuleInstance {
         args: &[RuntimeValue],
         externals: &mut E,
         stack_recycler: &mut StackRecycler,
-    ) -> Result<Option<RuntimeValue>, Error> {
+    ) -> Result<Option<RuntimeValue>, E::Error>
+    where
+        E::Error: From<Error>,
+    {
         let func_instance = self.func_by_name(func_name)?;
 
         FuncInstance::invoke_with_stack(&func_instance, args, externals, stack_recycler)
-            .map_err(Error::Trap)
     }
 
     fn func_by_name(&self, func_name: &str) -> Result<FuncRef, Error> {
@@ -728,7 +727,7 @@ impl<'a> NotStartedModuleRef<'a> {
     /// # Errors
     ///
     /// Returns `Err` if start function traps.
-    pub fn run_start<E: Externals>(self, state: &mut E) -> Result<ModuleRef, Trap> {
+    pub fn run_start<E: Externals>(self, state: &mut E) -> Result<ModuleRef, E::Error> {
         if let Some(start_fn_idx) = self.loaded_module.module().start_section() {
             let start_func = self
                 .instance
@@ -748,7 +747,7 @@ impl<'a> NotStartedModuleRef<'a> {
         self,
         state: &mut E,
         stack_recycler: &mut StackRecycler,
-    ) -> Result<ModuleRef, Trap> {
+    ) -> Result<ModuleRef, E::Error> {
         if let Some(start_fn_idx) = self.loaded_module.module().start_section() {
             let start_func = self
                 .instance

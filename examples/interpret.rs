@@ -2,7 +2,7 @@
 
 extern crate wasmi;
 
-use std::{env::args, fs::File};
+use std::{env::args, fs::File, marker::PhantomData};
 use wasmi::{ImportsBuilder, Module, ModuleInstance, NopExternals, RuntimeValue};
 
 fn load_from_file(filename: &str) -> Module {
@@ -32,7 +32,7 @@ fn main() {
     // This test shows how to implement native module https://github.com/NikVolf/parity-wasm/blob/master/src/interpreter/tests/basics.rs#L197
     let main = ModuleInstance::new(&module, &ImportsBuilder::default())
         .expect("Failed to instantiate module")
-        .run_start(&mut NopExternals)
+        .run_start(&mut NopExternals(PhantomData::<wasmi::Error>))
         .expect("Failed to run start function in module");
 
     // The argument should be parsable as a valid integer
@@ -41,6 +41,10 @@ fn main() {
     // "_call" export of function to be executed with an i32 argument and prints the result of execution
     println!(
         "Result: {:?}",
-        main.invoke_export("_call", &[RuntimeValue::I32(argument)], &mut NopExternals)
+        main.invoke_export(
+            "_call",
+            &[RuntimeValue::I32(argument)],
+            &mut NopExternals(PhantomData::<wasmi::Error>)
+        )
     );
 }

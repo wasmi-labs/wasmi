@@ -3,10 +3,7 @@ use crate::{
     isa,
     module::ModuleInstance,
     runner::{check_function_args, Interpreter, InterpreterState, StackRecycler},
-    RuntimeValue,
-    Signature,
-    Trap,
-    ValueType,
+    Error, RuntimeValue, Signature, ValueType,
 };
 use alloc::{
     borrow::Cow,
@@ -15,6 +12,7 @@ use alloc::{
 };
 use core::fmt;
 use parity_wasm::elements::Local;
+use wasmi_core::TrapCode;
 
 /// Reference to a function (See [`FuncInstance`] for details).
 ///
@@ -141,11 +139,11 @@ impl FuncInstance {
         func: &FuncRef,
         args: &[RuntimeValue],
         externals: &mut E,
-    ) -> Result<Option<RuntimeValue>, Trap> {
+    ) -> Result<Option<RuntimeValue>, E::Error> {
         check_function_args(func.signature(), args)?;
         match *func.as_internal() {
             FuncInstanceInternal::Internal { .. } => {
-                let mut interpreter = Interpreter::new(func, args, None)?;
+                let mut interpreter = Interpreter::new::<E::Error>(func, args, None)?;
                 interpreter.start_execution(externals)
             }
             FuncInstanceInternal::Host {
@@ -167,11 +165,12 @@ impl FuncInstance {
         args: &[RuntimeValue],
         externals: &mut E,
         stack_recycler: &mut StackRecycler,
-    ) -> Result<Option<RuntimeValue>, Trap> {
+    ) -> Result<Option<RuntimeValue>, E::Error> {
         check_function_args(func.signature(), args)?;
         match *func.as_internal() {
             FuncInstanceInternal::Internal { .. } => {
-                let mut interpreter = Interpreter::new(func, args, Some(stack_recycler))?;
+                let mut interpreter =
+                    Interpreter::new::<E::Error>(func, args, Some(stack_recycler))?;
                 let return_value = interpreter.start_execution(externals);
                 stack_recycler.recycle(interpreter);
                 return_value
@@ -197,15 +196,15 @@ impl FuncInstance {
     /// [`Trap`]: #enum.Trap.html
     /// [`start_execution`]: struct.FuncInvocation.html#method.start_execution
     /// [`resume_execution`]: struct.FuncInvocation.html#method.resume_execution
-    pub fn invoke_resumable<'args>(
+    pub fn invoke_resumable<'args, T: From<Error>, U: Into<Cow<'args, [RuntimeValue]>>>(
         func: &FuncRef,
-        args: impl Into<Cow<'args, [RuntimeValue]>>,
-    ) -> Result<FuncInvocation<'args>, Trap> {
+        args: U,
+    ) -> Result<FuncInvocation<'args>, T> {
         let args = args.into();
         check_function_args(func.signature(), &args)?;
         match *func.as_internal() {
             FuncInstanceInternal::Internal { .. } => {
-                let interpreter = Interpreter::new(func, &args, None)?;
+                let interpreter = Interpreter::new::<T>(func, &args, None)?;
                 Ok(FuncInvocation {
                     kind: FuncInvocationKind::Internal(interpreter),
                 })
@@ -225,10 +224,8 @@ impl FuncInstance {
 }
 
 /// A resumable invocation error.
-#[derive(Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum ResumableError {
-    /// Trap happened.
-    Trap(Trap),
     /// The invocation is not resumable.
     ///
     /// Invocations are only resumable if a host function is called, and the host function returns a trap of `Host` kind. For other cases, this error will be returned. This includes:
@@ -246,12 +243,6 @@ pub enum ResumableError {
     ///
     /// [`start_execution`]: struct.FuncInvocation.html#method.start_execution
     AlreadyStarted,
-}
-
-impl From<Trap> for ResumableError {
-    fn from(trap: Trap) -> Self {
-        ResumableError::Trap(trap)
-    }
 }
 
 /// A resumable invocation handle. This struct is returned by `FuncInstance::invoke_resumable`.
@@ -292,11 +283,14 @@ impl<'args> FuncInvocation<'args> {
     pub fn start_execution<'externals, E: Externals + 'externals>(
         &mut self,
         externals: &'externals mut E,
-    ) -> Result<Option<RuntimeValue>, ResumableError> {
+    ) -> Result<Option<RuntimeValue>, E::Error>
+    where
+        E::Error: From<ResumableError>,
+    {
         match self.kind {
             FuncInvocationKind::Internal(ref mut interpreter) => {
                 if interpreter.state() != &InterpreterState::Initialized {
-                    return Err(ResumableError::AlreadyStarted);
+                    return Err(ResumableError::AlreadyStarted.into());
                 }
                 Ok(interpreter.start_execution(externals)?)
             }
@@ -306,7 +300,7 @@ impl<'args> FuncInvocation<'args> {
                 ref host_func_index,
             } => {
                 if *finished {
-                    return Err(ResumableError::AlreadyStarted);
+                    return Err(ResumableError::AlreadyStarted.into());
                 }
                 *finished = true;
                 Ok(externals.invoke_index(*host_func_index, args.as_ref().into())?)
@@ -326,13 +320,12 @@ impl<'args> FuncInvocation<'args> {
         &mut self,
         return_val: Option<RuntimeValue>,
         externals: &'externals mut E,
-    ) -> Result<Option<RuntimeValue>, ResumableError> {
-        use crate::TrapCode;
-
+    ) -> Result<Option<RuntimeValue>, E::Error>
+    where
+        E::Error: From<ResumableError>,
+    {
         if return_val.map(|v| v.value_type()) != self.resumable_value_type() {
-            return Err(ResumableError::Trap(Trap::from(
-                TrapCode::UnexpectedSignature,
-            )));
+            return Err(Error::Trap(TrapCode::UnexpectedSignature).into());
         }
 
         match &mut self.kind {
@@ -340,10 +333,10 @@ impl<'args> FuncInvocation<'args> {
                 if interpreter.state().is_resumable() {
                     Ok(interpreter.resume_execution(return_val, externals)?)
                 } else {
-                    Err(ResumableError::AlreadyStarted)
+                    Err(ResumableError::AlreadyStarted.into())
                 }
             }
-            FuncInvocationKind::Host { .. } => Err(ResumableError::NotResumable),
+            FuncInvocationKind::Host { .. } => Err(ResumableError::NotResumable.into()),
         }
     }
 }

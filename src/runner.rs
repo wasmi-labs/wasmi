@@ -9,25 +9,16 @@ use crate::{
     module::ModuleRef,
     nan_preserving_float::{F32, F64},
     value::{
-        ArithmeticOps,
-        ExtendInto,
-        Float,
-        Integer,
-        LittleEndianConvert,
-        TransmuteInto,
-        TryTruncateInto,
-        WrapInto,
+        ArithmeticOps, ExtendInto, Float, Integer, LittleEndianConvert, TransmuteInto,
+        TryTruncateInto, WrapInto,
     },
-    RuntimeValue,
-    Signature,
-    Trap,
-    TrapCode,
-    ValueType,
+    Error, RuntimeValue, Signature, ValueType,
 };
 use alloc::{boxed::Box, vec::Vec};
 use core::{fmt, ops, u32, usize};
 use parity_wasm::elements::Local;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
+use wasmi_core::{CanResume, TrapCode};
 
 /// Maximum number of bytes on the value stack.
 pub const DEFAULT_VALUE_STACK_LIMIT: usize = 1024 * 1024;
@@ -181,18 +172,18 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
-    pub fn new(
+    pub fn new<T: From<Error>>(
         func: &FuncRef,
         args: &[RuntimeValue],
         mut stack_recycler: Option<&mut StackRecycler>,
-    ) -> Result<Interpreter, Trap> {
+    ) -> Result<Interpreter, T> {
         let mut value_stack = StackRecycler::recreate_value_stack(&mut stack_recycler);
         for &arg in args {
             let arg = arg.into();
             value_stack.push(arg).map_err(
                 // There is not enough space for pushing initial arguments.
                 // Weird, but bail out anyway.
-                |_| Trap::from(TrapCode::StackOverflow),
+                |_| TrapCode::StackOverflow.into(),
             )?;
         }
 
@@ -218,7 +209,7 @@ impl Interpreter {
     pub fn start_execution<'a, E: Externals + 'a>(
         &mut self,
         externals: &'a mut E,
-    ) -> Result<Option<RuntimeValue>, Trap> {
+    ) -> Result<Option<RuntimeValue>, E::Error> {
         // Ensure that the VM has not been executed. This is checked in `FuncInvocation::start_execution`.
         assert!(self.state == InterpreterState::Initialized);
 
@@ -239,7 +230,7 @@ impl Interpreter {
         &mut self,
         return_val: Option<RuntimeValue>,
         externals: &'a mut E,
-    ) -> Result<Option<RuntimeValue>, Trap> {
+    ) -> Result<Option<RuntimeValue>, E::Error> {
         use core::mem::swap;
 
         // Ensure that the VM is resumable. This is checked in `FuncInvocation::resume_execution`.
@@ -251,7 +242,7 @@ impl Interpreter {
         if let Some(return_val) = return_val {
             self.value_stack
                 .push(return_val.into())
-                .map_err(Trap::from)?;
+                .map_err(Error::Trap)?;
         }
 
         self.run_interpreter_loop(externals)?;
@@ -269,7 +260,7 @@ impl Interpreter {
     fn run_interpreter_loop<'a, E: Externals + 'a>(
         &mut self,
         externals: &'a mut E,
-    ) -> Result<(), Trap> {
+    ) -> Result<(), E::Error> {
         loop {
             let mut function_context = self.call_stack.pop().expect(
                 "on loop entry - not empty; on loop continue - checking for emptiness; qed",
@@ -283,12 +274,14 @@ impl Interpreter {
 
             if !function_context.is_initialized() {
                 // Initialize stack frame for the function call.
-                function_context.initialize(&function_body.locals, &mut self.value_stack)?;
+                function_context
+                    .initialize(&function_body.locals, &mut self.value_stack)
+                    .map_err(Error::Trap)?;
             }
 
             let function_return = self
                 .do_run_function(&mut function_context, &function_body.code)
-                .map_err(Trap::from)?;
+                .map_err(Error::Trap)?;
 
             match function_return {
                 RunResult::Return => {
@@ -300,7 +293,7 @@ impl Interpreter {
                 }
                 RunResult::NestedCall(nested_func) => {
                     if self.call_stack.is_full() {
-                        return Err(TrapCode::StackOverflow.into());
+                        return Err(Error::Trap(TrapCode::StackOverflow).into());
                     }
 
                     match *nested_func.as_internal() {
@@ -325,7 +318,7 @@ impl Interpreter {
                             ) {
                                 Ok(val) => val,
                                 Err(trap) => {
-                                    if trap.is_host() {
+                                    if trap.can_resume() {
                                         self.state = InterpreterState::Resumable(
                                             nested_func.signature().return_type(),
                                         );
@@ -338,13 +331,13 @@ impl Interpreter {
                             let value_ty = return_val.as_ref().map(|val| val.value_type());
                             let expected_ty = nested_func.signature().return_type();
                             if value_ty != expected_ty {
-                                return Err(TrapCode::UnexpectedSignature.into());
+                                return Err(Error::Trap(TrapCode::UnexpectedSignature).into());
                             }
 
                             if let Some(return_val) = return_val {
                                 self.value_stack
                                     .push(return_val.into())
-                                    .map_err(Trap::from)?;
+                                    .map_err(Error::Trap)?;
                             }
                         }
                     }
@@ -1353,7 +1346,10 @@ fn prepare_function_args(
     host_args.extend(prepared_args);
 }
 
-pub fn check_function_args(signature: &Signature, args: &[RuntimeValue]) -> Result<(), Trap> {
+pub fn check_function_args<T: From<TrapCode>>(
+    signature: &Signature,
+    args: &[RuntimeValue],
+) -> Result<(), T> {
     if signature.params().len() != args.len() {
         return Err(TrapCode::UnexpectedSignature.into());
     }

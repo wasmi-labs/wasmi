@@ -1,8 +1,7 @@
 extern crate parity_wasm;
 extern crate wasmi;
 
-use std::env::args;
-
+use std::{env::args, marker::PhantomData};
 use parity_wasm::elements::{External, FunctionType, Internal, Module, Type, ValueType};
 use wasmi::{ImportsBuilder, ModuleInstance, NopExternals, RuntimeValue};
 
@@ -107,13 +106,17 @@ fn main() {
     // This test shows how to implement native module https://github.com/NikVolf/parity-wasm/blob/master/src/interpreter/tests/basics.rs#L197
     let main = ModuleInstance::new(&loaded_module, &ImportsBuilder::default())
         .expect("Failed to instantiate module")
-        .run_start(&mut NopExternals)
+        .run_start(&mut NopExternals(PhantomData::<wasmi::Error>))
         .expect("Failed to run start function in module");
 
     println!(
         "Result: {:?}",
-        main.invoke_export(func_name, &args, &mut NopExternals)
-            .expect("")
+        main.invoke_export(
+            func_name,
+            &args,
+            &mut NopExternals(PhantomData::<wasmi::Error>)
+        )
+        .expect("")
     );
 }
 

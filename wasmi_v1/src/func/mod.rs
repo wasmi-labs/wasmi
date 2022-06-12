@@ -19,11 +19,12 @@ use super::{
     Stored,
 };
 use crate::{
-    core::{Trap, Value},
+    core::Value,
     Error,
     FuncType,
 };
 use alloc::sync::Arc;
+use wasmi_core::TrapCode;
 use core::{fmt, fmt::Debug};
 
 /// A raw index to a function entity.
@@ -167,7 +168,7 @@ impl<T> Clone for HostFuncEntity<T> {
 }
 
 type HostFuncTrampolineFn<T> =
-    dyn Fn(Caller<T>, FuncParams) -> Result<FuncResults, Trap> + Send + Sync + 'static;
+    dyn Fn(Caller<T>, FuncParams) -> Result<FuncResults, TrapCode> + Send + Sync + 'static;
 
 pub struct HostFuncTrampoline<T> {
     closure: Arc<HostFuncTrampolineFn<T>>,
@@ -177,7 +178,7 @@ impl<T> HostFuncTrampoline<T> {
     /// Creates a new [`HostFuncTrampoline`] from the given trampoline function.
     pub fn new<F>(trampoline: F) -> Self
     where
-        F: Fn(Caller<T>, FuncParams) -> Result<FuncResults, Trap>,
+        F: Fn(Caller<T>, FuncParams) -> Result<FuncResults, TrapCode>,
         F: Send + Sync + 'static,
     {
         Self {
@@ -227,7 +228,7 @@ impl<T> HostFuncEntity<T> {
         mut ctx: impl AsContextMut<UserState = T>,
         instance: Option<Instance>,
         params: FuncParams,
-    ) -> Result<FuncResults, Trap> {
+    ) -> Result<FuncResults, TrapCode> {
         let caller = <Caller<T>>::new(&mut ctx, instance);
         (self.trampoline.closure)(caller, params)
     }

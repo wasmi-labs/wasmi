@@ -28,12 +28,12 @@ pub use self::{
 use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func};
 use crate::{
     arena::{GuardedEntity, Index},
-    core::Trap,
     func::HostFuncEntity,
     FuncType,
     Instance,
 };
 use alloc::sync::Arc;
+use wasmi_core::TrapCode;
 use core::{
     cmp,
     sync::atomic::{AtomicUsize, Ordering},
@@ -329,7 +329,7 @@ impl Engine {
         func: Func,
         params: Params,
         results: Results,
-    ) -> Result<<Results as CallResults>::Results, Trap>
+    ) -> Result<<Results as CallResults>::Results, TrapCode>
     where
         Params: CallParams,
         Results: CallResults,
@@ -405,7 +405,7 @@ impl EngineInner {
         func: Func,
         params: Params,
         results: Results,
-    ) -> Result<<Results as CallResults>::Results, Trap>
+    ) -> Result<<Results as CallResults>::Results, TrapCode>
     where
         Params: CallParams,
         Results: CallResults,
@@ -486,7 +486,7 @@ impl EngineInner {
     /// - If the given arguments `args` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm trap during the execution of `func`.
-    fn execute_wasm_func(&mut self, mut ctx: impl AsContextMut, func: Func) -> Result<(), Trap> {
+    fn execute_wasm_func(&mut self, mut ctx: impl AsContextMut, func: Func) -> Result<(), TrapCode> {
         let mut function_frame = FunctionFrame::new(&ctx, func);
         'outer: loop {
             match self.execute_frame(&mut ctx, &mut function_frame)? {
@@ -523,7 +523,7 @@ impl EngineInner {
         &mut self,
         mut ctx: impl AsContextMut,
         frame: &mut FunctionFrame,
-    ) -> Result<CallOutcome, Trap> {
+    ) -> Result<CallOutcome, TrapCode> {
         FunctionExecutor::new(self, frame)?.execute_frame(&mut ctx)
     }
 
@@ -539,7 +539,7 @@ impl EngineInner {
         mut ctx: C,
         host_func: HostFuncEntity<<C as AsContext>::UserState>,
         instance: Option<Instance>,
-    ) -> Result<(), Trap>
+    ) -> Result<(), TrapCode>
     where
         C: AsContextMut,
     {

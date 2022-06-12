@@ -4,43 +4,39 @@ extern crate std;
 use super::parse_wat;
 use std::println;
 use wasmi::{
-    memory_units::Pages,
-    Error,
-    Externals,
-    FuncInstance,
-    FuncRef,
-    HostError,
-    ImportsBuilder,
-    MemoryDescriptor,
-    MemoryInstance,
-    MemoryRef,
-    ModuleImportResolver,
-    ModuleInstance,
-    ModuleRef,
-    ResumableError,
-    RuntimeArgs,
-    RuntimeValue,
-    Signature,
-    TableDescriptor,
-    TableInstance,
-    TableRef,
-    Trap,
-    TrapCode,
-    ValueType,
+    memory_units::Pages, Error, Externals, FuncInstance, FuncRef, ImportsBuilder, MemoryDescriptor,
+    MemoryInstance, MemoryRef, ModuleImportResolver, ModuleInstance, ModuleRef, RuntimeArgs,
+    RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef, ValueType,
 };
+use wasmi_core::{CanResume, TrapCode};
 
-#[derive(Debug, Clone, PartialEq)]
-struct HostErrorWithCode {
-    error_code: u32,
+#[derive(Clone, PartialEq, Eq, Debug)]
+enum HostError {
+    HostCode { error_code: u32 },
+    Interpreter(wasmi::Error),
+    ResumableInterpreter(wasmi::ResumableError),
 }
 
-impl ::core::fmt::Display for HostErrorWithCode {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> Result<(), ::core::fmt::Error> {
-        write!(f, "{}", self.error_code)
+impl CanResume for HostError {
+    fn can_resume(&self) -> bool {
+        match self {
+            HostError::HostCode { .. } => true,
+            _ => false
+        }
     }
 }
 
-impl HostError for HostErrorWithCode {}
+impl From<wasmi::ResumableError> for HostError {
+    fn from(e: wasmi::ResumableError) -> Self {
+        Self::ResumableInterpreter(e)
+    }
+}
+
+impl From<wasmi::Error> for HostError {
+    fn from(e: wasmi::Error) -> Self {
+        Self::Interpreter(e)
+    }
+}
 
 /// Host state for the test environment.
 ///
@@ -107,11 +103,12 @@ const RECURSE_FUNC_INDEX: usize = 4;
 const TRAP_SUB_FUNC_INDEX: usize = 5;
 
 impl Externals for TestHost {
+    type Error = HostError;
     fn invoke_index(
         &mut self,
         index: usize,
         args: RuntimeArgs,
-    ) -> Result<Option<RuntimeValue>, Trap> {
+    ) -> Result<Option<RuntimeValue>, Self::Error> {
         match index {
             SUB_FUNC_INDEX => {
                 let a: i32 = args.nth(0);
@@ -123,8 +120,8 @@ impl Externals for TestHost {
             }
             ERR_FUNC_INDEX => {
                 let error_code: u32 = args.nth(0);
-                let error = HostErrorWithCode { error_code };
-                Err(Trap::host(error))
+                let error = HostError::HostCode { error_code };
+                Err(error)
             }
             INC_MEM_FUNC_INDEX => {
                 let ptr: u32 = args.nth(0);
@@ -168,9 +165,10 @@ impl Externals for TestHost {
                     .expect("expected to be Some");
 
                 if val.value_type() != result.value_type() {
-                    return Err(Trap::host(HostErrorWithCode { error_code: 123 }));
+                    Err(HostError::HostCode { error_code: 123 })
+                } else {
+                    Ok(Some(result))
                 }
-                Ok(Some(result))
             }
             TRAP_SUB_FUNC_INDEX => {
                 let a: i32 = args.nth(0);
@@ -178,7 +176,7 @@ impl Externals for TestHost {
 
                 let result: RuntimeValue = (a - b).into();
                 self.trap_sub_result = Some(result);
-                Err(Trap::host(HostErrorWithCode { error_code: 301 }))
+                Err(HostError::HostCode { error_code: 301 })
             }
             _ => panic!("env doesn't provide function at index {}", index),
         }
@@ -305,12 +303,11 @@ fn resume_call_host_func() {
     let export = instance.export_by_name("test").unwrap();
     let func_instance = export.as_func().unwrap();
 
-    let mut invocation = FuncInstance::invoke_resumable(&func_instance, &[][..]).unwrap();
+    let mut invocation =
+        FuncInstance::invoke_resumable::<HostError, _>(&func_instance, &[][..]).unwrap();
     let result = invocation.start_execution(&mut env);
-    match result {
-        Err(ResumableError::Trap(_)) => {}
-        _ => panic!(),
-    }
+
+    assert_eq!(result, Err(HostError::HostCode { error_code: 301 }));
 
     assert!(invocation.is_resumable());
     let trap_sub_result = env.trap_sub_result.take();
@@ -350,17 +347,16 @@ fn resume_call_host_func_type_mismatch() {
         let export = instance.export_by_name("test").unwrap();
         let func_instance = export.as_func().unwrap();
 
-        let mut invocation = FuncInstance::invoke_resumable(&func_instance, &[][..]).unwrap();
+        let mut invocation =
+            FuncInstance::invoke_resumable::<HostError, _>(&func_instance, &[][..]).unwrap();
         let result = invocation.start_execution(&mut env);
-        match result {
-            Err(ResumableError::Trap(_)) => {}
-            _ => panic!(),
-        }
+
+        assert_eq!(result, Err(HostError::HostCode { error_code: 301 }));
 
         assert!(invocation.is_resumable());
         let err = invocation.resume_execution(val, &mut env).unwrap_err();
 
-        if let ResumableError::Trap(Trap::Code(TrapCode::UnexpectedSignature)) = &err {
+        if let HostError::Interpreter(wasmi::Error::Trap(TrapCode::UnexpectedSignature)) = &err {
             return;
         }
 
@@ -404,12 +400,7 @@ fn host_err() {
         .expect_err("`test` expected to return error");
 
     println!("err = {:?}", error);
-    let error_with_code = error
-        .as_host_error()
-        .expect("Expected host error")
-        .downcast_ref::<HostErrorWithCode>()
-        .expect("Failed to downcast to expected error type");
-    assert_eq!(error_with_code.error_code, 228);
+    assert_matches::assert_matches!(error, HostError::HostCode { error_code: 228 });
 }
 
 #[test]
@@ -598,11 +589,12 @@ fn defer_providing_externals() {
     }
 
     impl<'a> Externals for HostExternals<'a> {
+        type Error = HostError;
         fn invoke_index(
             &mut self,
             index: usize,
             args: RuntimeArgs,
-        ) -> Result<Option<RuntimeValue>, Trap> {
+        ) -> Result<Option<RuntimeValue>, Self::Error> {
             match index {
                 INC_FUNC_INDEX => {
                     let a = args.nth::<u32>(0);
@@ -664,11 +656,12 @@ fn two_envs_one_externals() {
     struct HostExternals;
 
     impl Externals for HostExternals {
+        type Error = HostError;
         fn invoke_index(
             &mut self,
             index: usize,
             _args: RuntimeArgs,
-        ) -> Result<Option<RuntimeValue>, Trap> {
+        ) -> Result<Option<RuntimeValue>, Self::Error> {
             match index {
                 PRIVILEGED_FUNC_INDEX => {
                     println!("privileged!");
@@ -780,11 +773,12 @@ fn dynamically_add_host_func() {
     }
 
     impl Externals for HostExternals {
+        type Error = HostError;
         fn invoke_index(
             &mut self,
             index: usize,
             _args: RuntimeArgs,
-        ) -> Result<Option<RuntimeValue>, Trap> {
+        ) -> Result<Option<RuntimeValue>, Self::Error> {
             match index {
                 ADD_FUNC_FUNC_INDEX => {
                     // Allocate indicies for the new function.
@@ -799,7 +793,7 @@ fn dynamically_add_host_func() {
                     );
                     self.table
                         .set(table_index, Some(added_func))
-                        .map_err(|_| TrapCode::TableAccessOutOfBounds)?;
+                        .map_err(|_| wasmi::Error::Trap(TrapCode::TableAccessOutOfBounds))?;
 
                     Ok(Some(RuntimeValue::I32(table_index as i32)))
                 }

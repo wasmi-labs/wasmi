@@ -1,3 +1,5 @@
+use wasmi_core::TrapCode;
+
 use super::{into_func::WasmTypeList, Func, FuncError};
 use crate::{
     core::Value,
@@ -7,7 +9,6 @@ use crate::{
     Error,
 };
 use core::{fmt, fmt::Debug, marker::PhantomData};
-use wasmi_core::Trap;
 
 /// A typed [`Func`] instance.
 ///
@@ -94,7 +95,7 @@ where
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`TypedFunc`].
-    pub fn call(&self, mut ctx: impl AsContextMut, params: Params) -> Result<Results, Trap> {
+    pub fn call(&self, mut ctx: impl AsContextMut, params: Params) -> Result<Results, TrapCode> {
         // Note: Cloning an [`Engine`] is intentionally a cheap operation.
         ctx.as_context().store.engine().clone().execute_func(
             ctx.as_context_mut(),

@@ -4,31 +4,12 @@ use std::{collections::HashMap, fs::File};
 
 use wabt::script::{self, Action, Command, CommandKind, ScriptParser, Value as WabtValue};
 use wasmi::{
-    memory_units::Pages,
-    Error as InterpreterError,
-    Externals,
-    FuncInstance,
-    FuncRef,
-    GlobalDescriptor,
-    GlobalInstance,
-    GlobalRef,
-    ImportResolver,
-    ImportsBuilder,
-    MemoryDescriptor,
-    MemoryInstance,
-    MemoryRef,
-    Module,
-    ModuleImportResolver,
-    ModuleInstance,
-    ModuleRef,
-    RuntimeArgs,
-    RuntimeValue,
-    Signature,
-    TableDescriptor,
-    TableInstance,
-    TableRef,
-    Trap,
+    memory_units::Pages, Error as InterpreterError, Externals, FuncInstance, FuncRef,
+    GlobalDescriptor, GlobalInstance, GlobalRef, ImportResolver, ImportsBuilder, MemoryDescriptor,
+    MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance, ModuleRef,
+    RuntimeArgs, RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef,
 };
+use wasmi_core::CanResume;
 
 fn spec_to_value(val: WabtValue<u32, u64>) -> RuntimeValue {
     match val {
@@ -43,9 +24,9 @@ fn spec_to_value(val: WabtValue<u32, u64>) -> RuntimeValue {
 #[derive(Debug)]
 enum Error {
     Load(String),
-    Start(Trap),
     Script(script::Error),
     Interpreter(InterpreterError),
+    ResumableInterpreter(wasmi::ResumableError),
 }
 
 impl From<InterpreterError> for Error {
@@ -57,6 +38,18 @@ impl From<InterpreterError> for Error {
 impl From<script::Error> for Error {
     fn from(e: script::Error) -> Error {
         Error::Script(e)
+    }
+}
+
+impl From<wasmi::ResumableError> for Error {
+    fn from(e: wasmi::ResumableError) -> Self {
+        Self::ResumableInterpreter(e)
+    }
+}
+
+impl CanResume for Error {
+    fn can_resume(&self) -> bool {
+        false
     }
 }
 
@@ -83,11 +76,12 @@ impl SpecModule {
 const PRINT_FUNC_INDEX: usize = 0;
 
 impl Externals for SpecModule {
+    type Error = Error;
     fn invoke_index(
         &mut self,
         index: usize,
         args: RuntimeArgs,
-    ) -> Result<Option<RuntimeValue>, Trap> {
+    ) -> Result<Option<RuntimeValue>, Self::Error> {
         match index {
             PRINT_FUNC_INDEX => {
                 println!("print: {:?}", args);
@@ -285,8 +279,7 @@ fn try_load(wasm: &[u8], spec_driver: &mut SpecDriver) -> Result<(), Error> {
     let module = try_load_module(wasm)?;
     let instance = ModuleInstance::new(&module, &ImportsBuilder::default())?;
     instance
-        .run_start(spec_driver.spec_module())
-        .map_err(Error::Start)?;
+        .run_start(spec_driver.spec_module())?;
     Ok(())
 }
 
@@ -298,9 +291,7 @@ fn load_module(
     let module = try_load_module(wasm)?;
     let instance = ModuleInstance::new(&module, spec_driver)
         .map_err(|e| Error::Load(e.to_string()))?
-        .run_start(spec_driver.spec_module())
-        .map_err(Error::Start)?;
-
+        .run_start(spec_driver.spec_module())?;
     let module_name = name.clone();
     spec_driver.add_module(module_name, instance.clone());
 
@@ -310,7 +301,7 @@ fn load_module(
 fn run_action(
     program: &mut SpecDriver,
     action: &Action<u32, u64>,
-) -> Result<Option<RuntimeValue>, InterpreterError> {
+) -> Result<Option<RuntimeValue>, Error> {
     match *action {
         Action::Invoke {
             ref module,

@@ -87,7 +87,7 @@
 //!         instance.invoke_export(
 //!             "test",
 //!             &[],
-//!             &mut NopExternals,
+//!             &mut NopExternals(core::marker::PhantomData::<wasmi::Error>),
 //!         ).expect("failed to execute export"),
 //!         Some(RuntimeValue::I32(1337)),
 //!     );
@@ -106,16 +106,16 @@ extern crate alloc;
 extern crate std as alloc;
 
 use alloc::{
-    boxed::Box,
     string::{String, ToString},
     vec::Vec,
 };
 use core::fmt;
 #[cfg(feature = "std")]
 use std::error;
+use wasmi_core::TrapCode;
 
 /// Internal interpreter error.
-#[derive(Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Error {
     /// Module validation error. Might occur only at load time.
     Validation(String),
@@ -132,68 +132,8 @@ pub enum Error {
     Global(String),
     /// Value-level error.
     Value(String),
-    /// Trap.
-    Trap(Trap),
-    /// Custom embedder error.
-    Host(Box<dyn HostError>),
-}
-
-impl Error {
-    /// Creates a new host error.
-    pub fn host<T>(host_error: T) -> Self
-    where
-        T: HostError + Sized,
-    {
-        Self::Host(Box::new(host_error))
-    }
-
-    /// Returns a reference to a [`HostError`] if this `Error` represents some host error.
-    ///
-    /// I.e. if this error have variant [`Host`] or [`Trap`][`Trap`] with [host][`TrapKind::Host`] error.
-    ///
-    /// [`HostError`]: trait.HostError.html
-    /// [`Host`]: enum.Error.html#variant.Host
-    /// [`Trap`]: enum.Error.html#variant.Trap
-    /// [`TrapKind::Host`]: enum.TrapKind.html#variant.Host
-    pub fn as_host_error(&self) -> Option<&dyn HostError> {
-        match self {
-            Self::Host(host_error) => Some(&**host_error),
-            Self::Trap(Trap::Host(host_error)) => Some(&**host_error),
-            _ => None,
-        }
-    }
-
-    /// Returns [`HostError`] if this `Error` represents some host error.
-    ///
-    /// I.e. if this error have variant [`Host`] or [`Trap`][`Trap`] with [host][`TrapKind::Host`] error.
-    ///
-    /// [`HostError`]: trait.HostError.html
-    /// [`Host`]: enum.Error.html#variant.Host
-    /// [`Trap`]: enum.Error.html#variant.Trap
-    /// [`TrapKind::Host`]: enum.TrapKind.html#variant.Host
-    pub fn into_host_error(self) -> Option<Box<dyn HostError>> {
-        match self {
-            Error::Host(host_error) => Some(host_error),
-            Self::Trap(Trap::Host(host_error)) => Some(host_error),
-            _ => None,
-        }
-    }
-
-    /// Returns [`HostError`] if this `Error` represents some host error, otherwise returns the original error.
-    ///
-    /// I.e. if this error have variant [`Host`] or [`Trap`][`Trap`] with [host][`TrapKind::Host`] error.
-    ///
-    /// [`HostError`]: trait.HostError.html
-    /// [`Host`]: enum.Error.html#variant.Host
-    /// [`Trap`]: enum.Error.html#variant.Trap
-    /// [`TrapKind::Host`]: enum.TrapKind.html#variant.Host
-    pub fn try_into_host_error(self) -> Result<Box<dyn HostError>, Self> {
-        match self {
-            Error::Host(host_error) => Ok(host_error),
-            Self::Trap(Trap::Host(host_error)) => Ok(host_error),
-            other => Err(other),
-        }
-    }
+    /// Low-level trap.
+    Trap(TrapCode),
 }
 
 #[allow(clippy::from_over_into)]
@@ -208,7 +148,6 @@ impl Into<String> for Error {
             Error::Global(s) => s,
             Error::Value(s) => s,
             Error::Trap(s) => format!("trap: {:?}", s),
-            Error::Host(e) => format!("user: {}", e),
         }
     }
 }
@@ -224,7 +163,6 @@ impl fmt::Display for Error {
             Error::Global(ref s) => write!(f, "Global: {}", s),
             Error::Value(ref s) => write!(f, "Value: {}", s),
             Error::Trap(ref s) => write!(f, "Trap: {:?}", s),
-            Error::Host(ref e) => write!(f, "User: {}", e),
         }
     }
 }
@@ -241,20 +179,25 @@ impl error::Error for Error {
             Error::Global(ref s) => s,
             Error::Value(ref s) => s,
             Error::Trap(_) => "Trap",
-            Error::Host(_) => "Host error",
         }
-    }
-}
-
-impl From<Trap> for Error {
-    fn from(e: Trap) -> Error {
-        Error::Trap(e)
     }
 }
 
 impl From<validation::Error> for Error {
     fn from(e: validation::Error) -> Error {
         Error::Validation(e.to_string())
+    }
+}
+
+impl From<TrapCode> for Error {
+    fn from(e: TrapCode) -> Self {
+        Self::Trap(e)
+    }
+}
+
+impl CanResume for Error {
+    fn can_resume(&self) -> bool {
+        false
     }
 }
 
@@ -282,31 +225,14 @@ pub use self::{
     types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor},
 };
 #[doc(inline)]
-pub use wasmi_core::Value as RuntimeValue;
-pub use wasmi_core::{
-    memory_units,
-    FromValue,
-    HostError,
-    LittleEndianConvert,
-    Trap,
-    TrapCode,
-    ValueType,
-};
+pub use wasmi_core::{Value as RuntimeValue, CanResume};
+pub use wasmi_core::{memory_units, FromValue, LittleEndianConvert, ValueType};
 
 /// Mirrors the old value module.
 pub(crate) mod value {
     pub use wasmi_core::{
-        ArithmeticOps,
-        ExtendInto,
-        Float,
-        FromValue,
-        Integer,
-        LittleEndianConvert,
-        TransmuteInto,
-        TryTruncateInto,
-        Value as RuntimeValue,
-        ValueType,
-        WrapInto,
+        ArithmeticOps, ExtendInto, Float, FromValue, Integer, LittleEndianConvert, TransmuteInto,
+        TryTruncateInto, Value as RuntimeValue, ValueType, WrapInto,
     };
 }
 

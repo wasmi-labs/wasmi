@@ -5,23 +5,13 @@ extern crate wasmi;
 
 use std::{env, fmt, fs::File};
 use wasmi::{
-    Error as InterpreterError,
-    Externals,
-    FuncInstance,
-    FuncRef,
-    HostError,
-    ImportsBuilder,
-    ModuleImportResolver,
-    ModuleInstance,
-    ModuleRef,
-    RuntimeArgs,
-    RuntimeValue,
-    Signature,
-    Trap,
+    Error as InterpreterError, Externals, FuncInstance, FuncRef, ImportsBuilder,
+    ModuleImportResolver, ModuleInstance, ModuleRef, RuntimeArgs, RuntimeValue, Signature,
     ValueType,
 };
+use wasmi_core::CanResume;
 
-#[derive(Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Error {
     OutOfRange,
     AlreadyOccupied,
@@ -40,7 +30,11 @@ impl From<InterpreterError> for Error {
     }
 }
 
-impl HostError for Error {}
+impl CanResume for Error {
+    fn can_resume(&self) -> bool {
+        false
+    }
+}
 
 mod tictactoe {
     use super::Error;
@@ -152,11 +146,12 @@ const SET_FUNC_INDEX: usize = 0;
 const GET_FUNC_INDEX: usize = 1;
 
 impl<'a> Externals for Runtime<'a> {
+    type Error = Error;
     fn invoke_index(
         &mut self,
         index: usize,
         args: RuntimeArgs,
-    ) -> Result<Option<RuntimeValue>, Trap> {
+    ) -> Result<Option<RuntimeValue>, Error> {
         match index {
             SET_FUNC_INDEX => {
                 let idx: i32 = args.nth(0);

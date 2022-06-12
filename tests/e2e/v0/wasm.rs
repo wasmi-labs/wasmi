@@ -1,26 +1,11 @@
 // Test-only code importing std for no-std testing
 extern crate std;
 
-use std::{fs::File, vec::Vec};
+use std::{fs::File, marker::PhantomData, vec::Vec};
 use wasmi::{
-    memory_units::Pages,
-    Error,
-    FuncRef,
-    GlobalDescriptor,
-    GlobalInstance,
-    GlobalRef,
-    ImportsBuilder,
-    MemoryDescriptor,
-    MemoryInstance,
-    MemoryRef,
-    Module,
-    ModuleImportResolver,
-    ModuleInstance,
-    NopExternals,
-    RuntimeValue,
-    Signature,
-    TableDescriptor,
-    TableInstance,
+    memory_units::Pages, Error, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef,
+    ImportsBuilder, MemoryDescriptor, MemoryInstance, MemoryRef, Module, ModuleImportResolver,
+    ModuleInstance, NopExternals, RuntimeValue, Signature, TableDescriptor, TableInstance,
     TableRef,
 };
 
@@ -121,9 +106,12 @@ fn interpreter_inc_i32() {
     // the functions expects a single i32 parameter
     let args = &[RuntimeValue::I32(i32_val)];
     let exp_retval = Some(RuntimeValue::I32(i32_val + 1));
-
     let retval = instance
-        .invoke_export(FUNCTION_NAME, args, &mut NopExternals)
+        .invoke_export(
+            FUNCTION_NAME,
+            args,
+            &mut NopExternals(PhantomData::<wasmi::Error>),
+        )
         .expect("");
     assert_eq!(exp_retval, retval);
 }
@@ -157,7 +145,11 @@ fn interpreter_accumulate_u8() {
         RuntimeValue::I32(offset as i32),
     ];
     let retval = instance
-        .invoke_export(FUNCTION_NAME, args, &mut NopExternals)
+        .invoke_export(
+            FUNCTION_NAME,
+            args,
+            &mut NopExternals(PhantomData::<wasmi::Error>),
+        )
         .expect("Failed to execute function");
 
     // For verification, repeat accumulation using native code

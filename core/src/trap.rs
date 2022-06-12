@@ -1,78 +1,17 @@
-use crate::HostError;
-use alloc::boxed::Box;
 use core::fmt::{self, Display};
 
-#[cfg(feature = "std")]
-use std::error::Error as StdError;
-
-/// Error type which can be thrown by wasm code or by host environment.
-///
-/// Under some conditions, wasm execution may produce a `Trap`, which immediately aborts execution.
-/// Traps can't be handled by WebAssembly code, but are reported to the embedder.
-#[derive(Debug)]
-pub enum Trap {
-    /// Traps during Wasm execution.
-    Code(TrapCode),
-    /// Traps and errors during host execution.
-    Host(Box<dyn HostError>),
+/// Whether we are allowed to resume execution after the error occured.
+pub trait CanResume {
+    fn can_resume(&self) -> bool;
 }
 
-impl Trap {
-    /// Wraps the host error in a [`Trap`].
-    #[inline]
-    pub fn host<U>(host_error: U) -> Self
-    where
-        U: HostError + Sized,
-    {
-        Self::Host(Box::new(host_error))
-    }
+/// Handy newtype for constant false `CanResume` implementation.
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
+pub struct NonResumable<T>(T);
 
-    /// Returns `true` if `self` trap originating from host code.
-    #[inline]
-    pub fn is_host(&self) -> bool {
-        matches!(self, Self::Host(_))
-    }
-
-    /// Returns the [`TrapCode`] traps originating from Wasm execution.
-    #[inline]
-    pub fn code(&self) -> Option<TrapCode> {
-        if let Self::Code(trap_code) = self {
-            return Some(*trap_code);
-        }
-        None
-    }
-}
-
-impl From<TrapCode> for Trap {
-    #[inline]
-    fn from(error: TrapCode) -> Self {
-        Self::Code(error)
-    }
-}
-
-impl<U> From<U> for Trap
-where
-    U: HostError + Sized,
-{
-    #[inline]
-    fn from(e: U) -> Self {
-        Trap::host(e)
-    }
-}
-
-impl Display for Trap {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Trap::Code(trap_code) => Display::fmt(trap_code, f),
-            Trap::Host(host_error) => Display::fmt(host_error, f),
-        }
-    }
-}
-
-#[cfg(feature = "std")]
-impl StdError for Trap {
-    fn description(&self) -> &str {
-        self.code().map(|code| code.trap_message()).unwrap_or("")
+impl<T> CanResume for NonResumable<T> {
+    fn can_resume(&self) -> bool {
+        false
     }
 }
 
@@ -81,7 +20,7 @@ impl StdError for Trap {
 /// See [`Trap`] for details.
 ///
 /// [`Trap`]: struct.Trap.html
-#[derive(Debug, Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum TrapCode {
     /// Wasm code executed `unreachable` opcode.
     ///
@@ -169,6 +108,12 @@ impl TrapCode {
             TrapCode::StackOverflow => "call stack exhausted",
             TrapCode::UnexpectedSignature => "indirect call type mismatch",
         }
+    }
+}
+
+impl CanResume for TrapCode {
+    fn can_resume(&self) -> bool {
+        false
     }
 }
 

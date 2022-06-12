@@ -1,6 +1,6 @@
 use super::{error::TestError, TestContext, TestDescriptor};
 use anyhow::Result;
-use wasmi_core::{Trap, Value, F32, F64};
+use wasmi_core::{Value, F32, F64};
 use wasmi_v1::{Config, Error as WasmiError};
 use wast::{
     lexer::Lexer,
@@ -200,7 +200,7 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
 /// - If the trap message of the `error` is not as expected.
 fn assert_trap(test_context: &TestContext, span: Span, error: TestError, message: &str) {
     match error {
-        TestError::Wasmi(WasmiError::Trap(Trap::Code(trap_code))) => {
+        TestError::Wasmi(WasmiError::Trap(trap_code)) => {
             assert_eq!(
                 trap_code.trap_message(),
                 message,

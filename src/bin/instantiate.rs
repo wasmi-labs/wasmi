@@ -3,27 +3,11 @@
 
 extern crate wasmi;
 
-use std::{env::args, fs::File};
+use std::{env::args, fs::File, marker::PhantomData};
 use wasmi::{
-    memory_units::*,
-    Error,
-    FuncInstance,
-    FuncRef,
-    GlobalDescriptor,
-    GlobalInstance,
-    GlobalRef,
-    ImportsBuilder,
-    MemoryDescriptor,
-    MemoryInstance,
-    MemoryRef,
-    Module,
-    ModuleImportResolver,
-    ModuleInstance,
-    NopExternals,
-    RuntimeValue,
-    Signature,
-    TableDescriptor,
-    TableInstance,
+    memory_units::*, Error, FuncInstance, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef,
+    ImportsBuilder, MemoryDescriptor, MemoryInstance, MemoryRef, Module, ModuleImportResolver,
+    ModuleInstance, NopExternals, RuntimeValue, Signature, TableDescriptor, TableInstance,
     TableRef,
 };
 
@@ -93,6 +77,6 @@ fn main() {
             .with_resolver("spectest", &ResolveAll),
     )
     .expect("Failed to instantiate module")
-    .run_start(&mut NopExternals)
+    .run_start(&mut NopExternals(PhantomData::<Error>))
     .expect("Failed to run start function in module");
 }
