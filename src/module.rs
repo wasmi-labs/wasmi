@@ -8,6 +8,7 @@ use crate::{
     nan_preserving_float::{F32, F64},
     runner::StackRecycler,
     table::TableRef,
+    tracer::Tracer,
     types::{GlobalDescriptor, MemoryDescriptor, TableDescriptor},
     Error,
     MemoryInstance,
@@ -44,7 +45,7 @@ use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 /// should be retained.
 ///
 /// [`ModuleInstance`]: struct.ModuleInstance.html
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ModuleRef(pub(crate) Rc<ModuleInstance>);
 
 impl ::core::ops::Deref for ModuleRef {
@@ -56,6 +57,7 @@ impl ::core::ops::Deref for ModuleRef {
 
 /// An external value is the runtime representation of an entity
 /// that can be imported or exported.
+#[derive(PartialEq)]
 pub enum ExternVal {
     /// [Function][`FuncInstance`].
     ///
@@ -162,7 +164,7 @@ impl ExternVal {
 /// [`TableInstance`]: struct.TableInstance.html
 /// [`GlobalInstance`]: struct.GlobalInstance.html
 /// [`invoke_export`]: #method.invoke_export
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ModuleInstance {
     signatures: RefCell<Vec<Rc<Signature>>>,
     tables: RefCell<Vec<TableRef>>,
@@ -642,6 +644,18 @@ impl ModuleInstance {
         let func_instance = self.func_by_name(func_name)?;
 
         FuncInstance::invoke(&func_instance, args, externals).map_err(Error::Trap)
+    }
+
+    pub fn invoke_export_trace<E: Externals>(
+        &self,
+        func_name: &str,
+        args: &[RuntimeValue],
+        externals: &mut E,
+        tracer: Tracer,
+    ) -> Result<Option<RuntimeValue>, Error> {
+        let func_instance = self.func_by_name(func_name)?;
+
+        FuncInstance::invoke_trace(&func_instance, args, externals, tracer).map_err(Error::Trap)
     }
 
     /// Invoke exported function by a name using recycled stacks.

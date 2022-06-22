@@ -3,6 +3,7 @@ use crate::{
     isa,
     module::ModuleInstance,
     runner::{check_function_args, Interpreter, InterpreterState, StackRecycler},
+    tracer::Tracer,
     RuntimeValue,
     Signature,
     Trap,
@@ -21,7 +22,7 @@ use parity_wasm::elements::Local;
 /// This reference has a reference-counting semantics.
 ///
 /// [`FuncInstance`]: struct.FuncInstance.html
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FuncRef(Rc<FuncInstance>);
 
 impl ::core::ops::Deref for FuncRef {
@@ -45,6 +46,7 @@ impl ::core::ops::Deref for FuncRef {
 ///   See more in [`Externals`].
 ///
 /// [`Externals`]: trait.Externals.html
+#[derive(PartialEq)]
 pub struct FuncInstance(FuncInstanceInternal);
 
 #[derive(Clone)]
@@ -58,6 +60,36 @@ pub(crate) enum FuncInstanceInternal {
         signature: Signature,
         host_func_index: usize,
     },
+}
+
+impl PartialEq for FuncInstanceInternal {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (
+                Self::Internal {
+                    signature: l_signature,
+                    body: l_body,
+                    ..
+                },
+                Self::Internal {
+                    signature: r_signature,
+                    body: r_body,
+                    ..
+                },
+            ) => l_signature == r_signature && l_body == r_body,
+            (
+                Self::Host {
+                    signature: l_signature,
+                    host_func_index: l_host_func_index,
+                },
+                Self::Host {
+                    signature: r_signature,
+                    host_func_index: r_host_func_index,
+                },
+            ) => l_signature == r_signature && l_host_func_index == r_host_func_index,
+            _ => false,
+        }
+    }
 }
 
 impl fmt::Debug for FuncInstance {
@@ -152,6 +184,23 @@ impl FuncInstance {
                 ref host_func_index,
                 ..
             } => externals.invoke_index(*host_func_index, args.into()),
+        }
+    }
+
+    pub fn invoke_trace<E: Externals>(
+        func: &FuncRef,
+        args: &[RuntimeValue],
+        externals: &mut E,
+        tracer: Tracer,
+    ) -> Result<Option<RuntimeValue>, Trap> {
+        check_function_args(func.signature(), args)?;
+        match *func.as_internal() {
+            FuncInstanceInternal::Internal { .. } => {
+                let mut interpreter = Interpreter::new(func, args, None)?;
+                interpreter.tracer = Some(tracer);
+                interpreter.start_execution(externals)
+            }
+            FuncInstanceInternal::Host { .. } => unreachable!(),
         }
     }
 
@@ -348,7 +397,7 @@ impl<'args> FuncInvocation<'args> {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FuncBody {
     pub locals: Vec<Local>,
     pub code: isa::Instructions,

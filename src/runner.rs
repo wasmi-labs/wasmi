@@ -3,11 +3,15 @@
 use crate::{
     func::{FuncInstance, FuncInstanceInternal, FuncRef},
     host::Externals,
-    isa,
+    isa::{self, DropKeep, Keep},
     memory::MemoryRef,
     memory_units::Pages,
     module::ModuleRef,
     nan_preserving_float::{F32, F64},
+    tracer::{
+        etable::{RunInstructionTracePre, RunInstructionTraceStep},
+        Tracer,
+    },
     value::{
         ArithmeticOps,
         ExtendInto,
@@ -47,7 +51,7 @@ pub const DEFAULT_CALL_STACK_LIMIT: usize = 64 * 1024;
 /// at these boundaries.
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 #[repr(transparent)]
-struct ValueInternal(pub u64);
+pub struct ValueInternal(pub u64);
 
 impl ValueInternal {
     pub fn with_type(self, ty: ValueType) -> RuntimeValue {
@@ -178,6 +182,7 @@ pub struct Interpreter {
     return_type: Option<ValueType>,
     state: InterpreterState,
     scratch: Vec<RuntimeValue>,
+    pub(crate) tracer: Option<Tracer>,
 }
 
 impl Interpreter {
@@ -208,6 +213,7 @@ impl Interpreter {
             return_type,
             state: InterpreterState::Initialized,
             scratch: Vec::new(),
+            tracer: None,
         })
     }
 
@@ -353,6 +359,109 @@ impl Interpreter {
         }
     }
 
+    fn run_instruction_pre(
+        &mut self,
+        instructions: &isa::Instruction,
+    ) -> Option<RunInstructionTracePre> {
+        match *instructions {
+            isa::Instruction::BrIfNez(_) => Some(RunInstructionTracePre::BrIfNez {
+                value: <_>::from_value_internal(*self.value_stack.pick(0)),
+            }),
+            isa::Instruction::Return(_) => None,
+
+            isa::Instruction::Call(_) => None,
+
+            isa::Instruction::GetLocal(depth) => {
+                let value = self.value_stack.pick(depth as usize);
+                Some(RunInstructionTracePre::GetLocal {
+                    depth,
+                    value: value.clone(),
+                })
+            }
+            isa::Instruction::I32Const(_) => None,
+
+            isa::Instruction::I32Ne => Some(RunInstructionTracePre::I32Comp {
+                left: <_>::from_value_internal(*self.value_stack.pick(1)),
+                right: <_>::from_value_internal(*self.value_stack.pick(0)),
+            }),
+
+            isa::Instruction::I32Add | isa::Instruction::I32Or => {
+                Some(RunInstructionTracePre::I32BinOp {
+                    left: <_>::from_value_internal(*self.value_stack.pick(1)),
+                    right: <_>::from_value_internal(*self.value_stack.pick(0)),
+                })
+            }
+
+            _ => {
+                println!("{:?}", *instructions);
+                unimplemented!()
+            }
+        }
+    }
+
+    fn run_instruction_post(
+        &mut self,
+        pre_status: Option<RunInstructionTracePre>,
+        instructions: &isa::Instruction,
+    ) -> RunInstructionTraceStep {
+        match *instructions {
+            isa::Instruction::BrIfNez(target) => {
+                if let RunInstructionTracePre::BrIfNez { value } = pre_status.unwrap() {
+                    RunInstructionTraceStep::BrIfNez {
+                        value,
+                        dst_pc: target.dst_pc,
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+
+            isa::Instruction::Return(DropKeep { drop, keep }) => RunInstructionTraceStep::Return {
+                drop,
+                keep: if keep == Keep::Single { 1 } else { 0 },
+            },
+
+            isa::Instruction::Call(index) => RunInstructionTraceStep::Call { index },
+
+            isa::Instruction::GetLocal(_) => {
+                if let RunInstructionTracePre::GetLocal { depth, value } = pre_status.unwrap() {
+                    RunInstructionTraceStep::GetLocal { depth, value }
+                } else {
+                    unreachable!()
+                }
+            }
+
+            isa::Instruction::I32Const(_) => RunInstructionTraceStep::I32Const {
+                value: <_>::from_value_internal(*self.value_stack.pick(0)),
+            },
+
+            isa::Instruction::I32Ne => {
+                if let RunInstructionTracePre::I32Comp { left, right } = pre_status.unwrap() {
+                    RunInstructionTraceStep::I32Comp {
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.pick(0)),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+
+            isa::Instruction::I32Add | isa::Instruction::I32Or => {
+                if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
+                    RunInstructionTraceStep::I32BinOp {
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.pick(0)),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            _ => unimplemented!(),
+        }
+    }
+
     fn do_run_function(
         &mut self,
         function_context: &mut FunctionContext,
@@ -361,23 +470,50 @@ impl Interpreter {
         let mut iter = instructions.iterate_from(function_context.position);
 
         loop {
+            let pc = iter.position();
+            let sp = self.value_stack.sp;
+
             let instruction = iter.next().expect(
                 "Ran out of instructions, this should be impossible \
                  since validation ensures that we either have an explicit \
                  return or an implicit block `end`.",
             );
 
+            let pre_status = self.run_instruction_pre(&instruction);
+
+            macro_rules! trace_post {
+                () => {
+                    let post_status = self.run_instruction_post(pre_status, &instruction);
+                    if let Some(tracer) = self.tracer.as_mut() {
+                        tracer.etable.push(
+                            tracer.lookup_module_instance(&function_context.module),
+                            tracer.lookup_function(&function_context.function),
+                            sp as u64,
+                            pc,
+                            instruction.into(),
+                            post_status,
+                        );
+                    }
+                };
+            }
+
             match self.run_instruction(function_context, &instruction)? {
-                InstructionOutcome::RunNextInstruction => {}
+                InstructionOutcome::RunNextInstruction => {
+                    trace_post!();
+                }
                 InstructionOutcome::Branch(target) => {
+                    trace_post!();
                     iter = instructions.iterate_from(target.dst_pc);
                     self.value_stack.drop_keep(target.drop_keep);
                 }
                 InstructionOutcome::ExecuteCall(func_ref) => {
+                    // We don't record updated pc, the value should be recorded in the next trace log.
+                    trace_post!();
                     function_context.position = iter.position();
                     return Ok(RunResult::NestedCall(func_ref));
                 }
                 InstructionOutcome::Return(drop_keep) => {
+                    trace_post!();
                     self.value_stack.drop_keep(drop_keep);
                     break;
                 }

@@ -9,7 +9,7 @@ use parity_wasm::elements::ResizableLimits;
 ///
 /// [`TableInstance`]: struct.TableInstance.html
 ///
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct TableRef(Rc<TableInstance>);
 
 impl ::core::ops::Deref for TableRef {
@@ -32,6 +32,7 @@ impl ::core::ops::Deref for TableRef {
 ///
 /// [`grow`]: #method.grow
 ///
+#[derive(PartialEq)]
 pub struct TableInstance {
     /// Table limits.
     limits: ResizableLimits,

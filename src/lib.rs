@@ -94,7 +94,7 @@
 //! }
 //! ```
 
-#![warn(missing_docs)]
+// #![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::len_without_is_empty)]
 #![allow(clippy::new_ret_no_self)]
@@ -269,6 +269,8 @@ mod prepare;
 mod runner;
 mod table;
 mod types;
+/// Tracer lib for zkWasm
+pub mod tracer;
 
 pub use self::{
     func::{FuncInstance, FuncInvocation, FuncRef, ResumableError},

@@ -8,7 +8,7 @@ use parity_wasm::elements::ValueType as EValueType;
 /// This reference has a reference-counting semantics.
 ///
 /// [`GlobalInstance`]: struct.GlobalInstance.html
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct GlobalRef(Rc<GlobalInstance>);
 
 impl ::core::ops::Deref for GlobalRef {
@@ -29,7 +29,7 @@ impl ::core::ops::Deref for GlobalRef {
 ///
 /// [`I32`]: enum.Value.html#variant.I32
 /// [`I64`]: enum.Value.html#variant.I64
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct GlobalInstance {
     val: Cell<RuntimeValue>,
     mutable: bool,
