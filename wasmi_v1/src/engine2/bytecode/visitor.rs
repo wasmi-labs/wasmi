@@ -236,16 +236,16 @@ where
         Instr::F32ConvertSI64 { result, input } => visitor.visit_f32_convert_i64_s(result, input),
         Instr::F32ConvertUI64 { result, input } => visitor.visit_f32_convert_i64_u(result, input),
         Instr::F32DemoteF64 { result, input } => visitor.visit_f32_demote_f64(result, input),
-        Instr::F64ConvertSI32 { result, input } => visitor.visit_f64_converti32_s(result, input),
-        Instr::F64ConvertUI32 { result, input } => visitor.visit_f64_converti32_u(result, input),
-        Instr::F64ConvertSI64 { result, input } => visitor.visit_f64_converti64_s(result, input),
-        Instr::F64ConvertUI64 { result, input } => visitor.visit_f64_converti64_u(result, input),
+        Instr::F64ConvertSI32 { result, input } => visitor.visit_f64_convert_i32_s(result, input),
+        Instr::F64ConvertUI32 { result, input } => visitor.visit_f64_convert_i32_u(result, input),
+        Instr::F64ConvertSI64 { result, input } => visitor.visit_f64_convert_i64_s(result, input),
+        Instr::F64ConvertUI64 { result, input } => visitor.visit_f64_convert_i64_u(result, input),
         Instr::F64PromoteF32 { result, input } => visitor.visit_f64_promote_f32(result, input),
-        Instr::I32Extend8S { result, input } => visitor.visit_i32_extend_8_s(result, input),
-        Instr::I32Extend16S { result, input } => visitor.visit_i32_extend_16_s(result, input),
-        Instr::I64Extend8S { result, input } => visitor.visit_i64_extend_8_s(result, input),
-        Instr::I64Extend16S { result, input } => visitor.visit_i64_extend_16_s(result, input),
-        Instr::I64Extend32S { result, input } => visitor.visit_i64_extend_32_s(result, input),
+        Instr::I32Extend8S { result, input } => visitor.visit_i32_extend8_s(result, input),
+        Instr::I32Extend16S { result, input } => visitor.visit_i32_extend16_s(result, input),
+        Instr::I64Extend8S { result, input } => visitor.visit_i64_extend8_s(result, input),
+        Instr::I64Extend16S { result, input } => visitor.visit_i64_extend16_s(result, input),
+        Instr::I64Extend32S { result, input } => visitor.visit_i64_extend32_s(result, input),
         Instr::I32TruncSatF32S { result, input } => {
             visitor.visit_i32_trunc_sat_f32_s(result, input)
         }
@@ -287,1055 +287,1263 @@ where
     fn visit_br(&mut self, target: Target) -> Self::Outcome;
 
     /// Visits the `wasmi` `br_eqz` instruction.
-    fn visit_br_eqz(&mut self, target: Target, condition: T::Register) -> Self::Outcome;
+    fn visit_br_eqz(
+        &mut self,
+        target: Target,
+        condition: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `br_nez` instruction.
-    fn visit_br_nez(&mut self, target: Target, condition: T::Register) -> Self::Outcome;
+    fn visit_br_nez(
+        &mut self,
+        target: Target,
+        condition: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `return_nez` instruction.
     fn visit_return_nez(
         &mut self,
-        results: T::ProviderSlice,
-        condition: T::Register,
+        results: <T as InstructionTypes>::ProviderSlice,
+        condition: <T as InstructionTypes>::Register,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `br_table` instruction.
-    fn visit_br_table(&mut self, case: T::Register, len_targets: usize) -> Self::Outcome;
+    fn visit_br_table(
+        &mut self,
+        case: <T as InstructionTypes>::Register,
+        len_targets: usize,
+    ) -> Self::Outcome;
 
     /// Vitis the `wasmi` `trap` instruction.
     fn visit_trap(&mut self, trap_code: TrapCode) -> Self::Outcome;
 
     /// Visits the `wasmi` `return` instruction.
-    fn visit_return(&mut self, results: T::ProviderSlice) -> Self::Outcome;
+    fn visit_return(&mut self, results: <T as InstructionTypes>::ProviderSlice) -> Self::Outcome;
 
     /// Visits the `wasmi` `call` instruction.
     fn visit_call(
         &mut self,
         func: FuncIdx,
-        results: T::RegisterSlice,
-        params: T::ProviderSlice,
+        results: <T as InstructionTypes>::RegisterSlice,
+        params: <T as InstructionTypes>::ProviderSlice,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `call_indirect` instruction.
     fn visit_call_indirect(
         &mut self,
         func_type: FuncTypeIdx,
-        results: T::RegisterSlice,
-        index: T::Provider,
-        params: T::ProviderSlice,
+        results: <T as InstructionTypes>::RegisterSlice,
+        index: <T as InstructionTypes>::Provider,
+        params: <T as InstructionTypes>::ProviderSlice,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `copy` instruction.
-    fn visit_copy(&mut self, result: T::Register, input: T::Provider) -> Self::Outcome;
+    fn visit_copy(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Provider,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `select` instruction.
     fn visit_select(
         &mut self,
-        result: T::Register,
-        condition: T::Register,
-        if_true: T::Provider,
-        if_false: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        condition: <T as InstructionTypes>::Register,
+        if_true: <T as InstructionTypes>::Provider,
+        if_false: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `global.get` instruction.
-    fn visit_global_get(&mut self, result: T::Register, global: Global) -> Self::Outcome;
+    fn visit_global_get(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        global: Global,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `global.set` instruction.
-    fn visit_global_set(&mut self, global: Global, value: T::Provider) -> Self::Outcome;
+    fn visit_global_set(
+        &mut self,
+        global: Global,
+        value: <T as InstructionTypes>::Provider,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.load` instruction.
     fn visit_i32_load(
         &mut self,
-        result: T::Register,
-        ptr: T::Register,
+        result: <T as InstructionTypes>::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.load` instruction.
     fn visit_i64_load(
         &mut self,
-        result: T::Register,
-        ptr: T::Register,
+        result: <T as InstructionTypes>::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.load` instruction.
     fn visit_f32_load(
         &mut self,
-        result: T::Register,
-        ptr: T::Register,
+        result: <T as InstructionTypes>::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.load` instruction.
     fn visit_f64_load(
         &mut self,
-        result: T::Register,
-        ptr: T::Register,
+        result: <T as InstructionTypes>::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.load_8_s` instruction.
     fn visit_i32_load_8_s(
         &mut self,
-        result: T::Register,
-        ptr: T::Register,
+        result: <T as InstructionTypes>::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.load_8_u` instruction.
     fn visit_i32_load_8_u(
         &mut self,
-        result: T::Register,
-        ptr: T::Register,
+        result: <T as InstructionTypes>::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.load_16_s` instruction.
     fn visit_i32_load_16_s(
         &mut self,
-        result: T::Register,
-        ptr: T::Register,
+        result: <T as InstructionTypes>::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.load_16_u` instruction.
     fn visit_i32_load_16_u(
         &mut self,
-        result: T::Register,
-        ptr: T::Register,
+        result: <T as InstructionTypes>::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.load_8_s` instruction.
     fn visit_i64_load_8_s(
         &mut self,
-        result: T::Register,
-        ptr: T::Register,
+        result: <T as InstructionTypes>::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.load_8_u` instruction.
     fn visit_i64_load_8_u(
         &mut self,
-        result: T::Register,
-        ptr: T::Register,
+        result: <T as InstructionTypes>::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.load_16_s` instruction.
     fn visit_i64_load_16_s(
         &mut self,
-        result: T::Register,
-        ptr: T::Register,
+        result: <T as InstructionTypes>::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.load_16_u` instruction.
     fn visit_i64_load_16_u(
         &mut self,
-        result: T::Register,
-        ptr: T::Register,
+        result: <T as InstructionTypes>::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.load_32_s` instruction.
     fn visit_i64_load_32_s(
         &mut self,
-        result: T::Register,
-        ptr: T::Register,
+        result: <T as InstructionTypes>::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.load_32_u` instruction.
     fn visit_i64_load_32_u(
         &mut self,
-        result: T::Register,
-        ptr: T::Register,
+        result: <T as InstructionTypes>::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.store` instruction.
     fn visit_i32_store(
         &mut self,
-        ptr: T::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
-        value: T::Provider,
+        value: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.store` instruction.
     fn visit_i64_store(
         &mut self,
-        ptr: T::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
-        value: T::Provider,
+        value: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.store` instruction.
     fn visit_f32_store(
         &mut self,
-        ptr: T::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
-        value: T::Provider,
+        value: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.store` instruction.
     fn visit_f64_store(
         &mut self,
-        ptr: T::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
-        value: T::Provider,
+        value: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.store_8` instruction.
     fn visit_i32_store_8(
         &mut self,
-        ptr: T::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
-        value: T::Provider,
+        value: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.store_16` instruction.
     fn visit_i32_store_16(
         &mut self,
-        ptr: T::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
-        value: T::Provider,
+        value: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.store_8` instruction.
     fn visit_i64_store_8(
         &mut self,
-        ptr: T::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
-        value: T::Provider,
+        value: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.store_16` instruction.
     fn visit_i64_store_16(
         &mut self,
-        ptr: T::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
-        value: T::Provider,
+        value: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.store_32` instruction.
     fn visit_i64_store_32(
         &mut self,
-        ptr: T::Register,
+        ptr: <T as InstructionTypes>::Register,
         offset: Offset,
-        value: T::Provider,
+        value: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `memory.size` instruction.
-    fn visit_memory_size(&mut self, result: T::Register) -> Self::Outcome;
+    fn visit_memory_size(&mut self, result: <T as InstructionTypes>::Register) -> Self::Outcome;
 
     /// Visits the `wasmi` `memory.grow` instruction.
-    fn visit_memory_grow(&mut self, result: T::Register, amount: T::Provider) -> Self::Outcome;
+    fn visit_memory_grow(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        amount: <T as InstructionTypes>::Provider,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.eq` instruction.
     fn visit_i32_eq(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.ne` instruction.
     fn visit_i32_ne(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.lt_s` instruction.
     fn visit_i32_lt_s(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.lt_u` instruction.
     fn visit_i32_lt_u(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.gt_s` instruction.
     fn visit_i32_gt_s(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.gt_u` instruction.
     fn visit_i32_gt_u(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.le_s` instruction.
     fn visit_i32_le_s(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.le_u` instruction.
     fn visit_i32_le_u(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.ge_s` instruction.
     fn visit_i32_ge_s(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.ge_u` instruction.
     fn visit_i32_ge_u(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.eq` instruction.
     fn visit_i64_eq(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.ne` instruction.
     fn visit_i64_ne(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.lt_s` instruction.
     fn visit_i64_lt_s(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.lt_u` instruction.
     fn visit_i64_lt_u(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.gt_s` instruction.
     fn visit_i64_gt_s(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.gt_u` instruction.
     fn visit_i64_gt_u(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.le_s` instruction.
     fn visit_i64_le_s(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.le_u` instruction.
     fn visit_i64_le_u(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.ge_s` instruction.
     fn visit_i64_ge_s(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.ge_u` instruction.
     fn visit_i64_ge_u(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.eq` instruction.
     fn visit_f32_eq(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.ne` instruction.
     fn visit_f32_ne(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.lt` instruction.
     fn visit_f32_lt(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.gt` instruction.
     fn visit_f32_gt(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.le` instruction.
     fn visit_f32_le(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.ge` instruction.
     fn visit_f32_ge(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.eq` instruction.
     fn visit_f64_eq(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.ne` instruction.
     fn visit_f64_ne(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.lt` instruction.
     fn visit_f64_lt(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.gt` instruction.
     fn visit_f64_gt(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.le` instruction.
     fn visit_f64_le(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.ge` instruction.
     fn visit_f64_ge(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.clz` instruction.
-    fn visit_i32_clz(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i32_clz(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.ctz` instruction.
-    fn visit_i32_ctz(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i32_ctz(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.popcnt` instruction.
-    fn visit_i32_popcnt(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i32_popcnt(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.add` instruction.
     fn visit_i32_add(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.sub` instruction.
     fn visit_i32_sub(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.mul` instruction.
     fn visit_i32_mul(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.div_s` instruction.
     fn visit_i32_div_s(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.div_u` instruction.
     fn visit_i32_div_u(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.rem_s` instruction.
     fn visit_i32_rem_s(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.rem_u` instruction.
     fn visit_i32_rem_u(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.and` instruction.
     fn visit_i32_and(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.or` instruction.
     fn visit_i32_or(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.xor` instruction.
     fn visit_i32_xor(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.shl` instruction.
     fn visit_i32_shl(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.shr_s` instruction.
     fn visit_i32_shr_s(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.shr_u` instruction.
     fn visit_i32_shr_u(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.rotl` instruction.
     fn visit_i32_rotl(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.rotr` instruction.
     fn visit_i32_rotr(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.clz` instruction.
-    fn visit_i64_clz(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i64_clz(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.ctz` instruction.
-    fn visit_i64_ctz(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i64_ctz(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.popcnt` instruction.
-    fn visit_i64_popcnt(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i64_popcnt(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.add` instruction.
     fn visit_i64_add(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.sub` instruction.
     fn visit_i64_sub(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.mul` instruction.
     fn visit_i64_mul(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.div_s` instruction.
     fn visit_i64_div_s(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.div_u` instruction.
     fn visit_i64_div_u(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.rem_s` instruction.
     fn visit_i64_rem_s(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.rem_u` instruction.
     fn visit_i64_rem_u(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.and` instruction.
     fn visit_i64_and(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.or` instruction.
     fn visit_i64_or(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.xor` instruction.
     fn visit_i64_xor(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.shl` instruction.
     fn visit_i64_shl(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.shr_s` instruction.
     fn visit_i64_shr_s(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.shr_u` instruction.
     fn visit_i64_shr_u(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.rotl` instruction.
     fn visit_i64_rotl(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.rotr` instruction.
     fn visit_i64_rotr(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.abs` instruction.
-    fn visit_f32_abs(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_f32_abs(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.neg` instruction.
-    fn visit_f32_neg(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_f32_neg(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.ceil` instruction.
-    fn visit_f32_ceil(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_f32_ceil(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.floor` instruction.
-    fn visit_f32_floor(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_f32_floor(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.trunc` instruction.
-    fn visit_f32_trunc(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_f32_trunc(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.nearest` instruction.
-    fn visit_f32_nearest(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_f32_nearest(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.sqrt` instruction.
-    fn visit_f32_sqrt(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_f32_sqrt(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.add` instruction.
     fn visit_f32_add(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.sub` instruction.
     fn visit_f32_sub(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.mul` instruction.
     fn visit_f32_mul(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.div` instruction.
     fn visit_f32_div(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.min` instruction.
     fn visit_f32_min(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.max` instruction.
     fn visit_f32_max(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.copysign` instruction.
     fn visit_f32_copysign(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.abs` instruction.
-    fn visit_f64_abs(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_f64_abs(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.neg` instruction.
-    fn visit_f64_neg(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_f64_neg(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.ceil` instruction.
-    fn visit_f64_ceil(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_f64_ceil(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.floor` instruction.
-    fn visit_f64_floor(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_f64_floor(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.trunc` instruction.
-    fn visit_f64_trunc(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_f64_trunc(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.nearest` instruction.
-    fn visit_f64_nearest(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_f64_nearest(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.sqrt` instruction.
-    fn visit_f64_sqrt(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_f64_sqrt(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.add` instruction.
     fn visit_f64_add(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.sub` instruction.
     fn visit_f64_sub(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.mul` instruction.
     fn visit_f64_mul(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.div` instruction.
     fn visit_f64_div(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.min` instruction.
     fn visit_f64_min(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.max` instruction.
     fn visit_f64_max(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.copysign` instruction.
     fn visit_f64_copysign(
         &mut self,
-        result: T::Register,
-        lhs: T::Register,
-        rhs: T::Provider,
+        result: <T as InstructionTypes>::Register,
+        lhs: <T as InstructionTypes>::Register,
+        rhs: <T as InstructionTypes>::Provider,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.wrap_i64` instruction.
-    fn visit_i32_wrap_i64(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i32_wrap_i64(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.trunc_f32_s` instruction.
-    fn visit_i32_trunc_f32_s(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i32_trunc_f32_s(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.trunc_f32_u` instruction.
-    fn visit_i32_trunc_f32_u(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i32_trunc_f32_u(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.trunc_f64_s` instruction.
-    fn visit_i32_trunc_f64_s(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i32_trunc_f64_s(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.trunc_f64_u` instruction.
-    fn visit_i32_trunc_f64_u(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i32_trunc_f64_u(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.extend_i32_s` instruction.
-    fn visit_i64_extend_i32_s(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i64_extend_i32_s(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.extend_i32_u` instruction.
-    fn visit_i64_extend_i32_u(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i64_extend_i32_u(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.trunc_f32_s` instruction.
-    fn visit_i64_trunc_f32_s(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i64_trunc_f32_s(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.trunc_f32_u` instruction.
-    fn visit_i64_trunc_f32_u(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i64_trunc_f32_u(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.trunc_f64_s` instruction.
-    fn visit_i64_trunc_f64_s(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i64_trunc_f64_s(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.trunc_f64_u` instruction.
-    fn visit_i64_trunc_f64_u(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i64_trunc_f64_u(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.convert_i32_s` instruction.
-    fn visit_f32_convert_i32_s(&mut self, result: T::Register, input: T::Register)
-        -> Self::Outcome;
+    fn visit_f32_convert_i32_s(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.convert_i32_u` instruction.
-    fn visit_f32_convert_i32_u(&mut self, result: T::Register, input: T::Register)
-        -> Self::Outcome;
+    fn visit_f32_convert_i32_u(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.convert_i64_s` instruction.
-    fn visit_f32_convert_i64_s(&mut self, result: T::Register, input: T::Register)
-        -> Self::Outcome;
+    fn visit_f32_convert_i64_s(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.convert_i64_u` instruction.
-    fn visit_f32_convert_i64_u(&mut self, result: T::Register, input: T::Register)
-        -> Self::Outcome;
+    fn visit_f32_convert_i64_u(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f32.demote_f64` instruction.
-    fn visit_f32_demote_f64(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_f32_demote_f64(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.converti32_s` instruction.
-    fn visit_f64_converti32_s(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_f64_convert_i32_s(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.converti32_u` instruction.
-    fn visit_f64_converti32_u(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_f64_convert_i32_u(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.converti64_s` instruction.
-    fn visit_f64_converti64_s(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_f64_convert_i64_s(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.converti64_u` instruction.
-    fn visit_f64_converti64_u(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_f64_convert_i64_u(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `f64.promote_f32` instruction.
-    fn visit_f64_promote_f32(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_f64_promote_f32(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.extend_8_s` instruction.
-    fn visit_i32_extend_8_s(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i32_extend8_s(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.extend_16_s` instruction.
-    fn visit_i32_extend_16_s(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i32_extend16_s(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.extend_8_s` instruction.
-    fn visit_i64_extend_8_s(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i64_extend8_s(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.extend_16_s` instruction.
-    fn visit_i64_extend_16_s(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i64_extend16_s(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.extend_32_s` instruction.
-    fn visit_i64_extend_32_s(&mut self, result: T::Register, input: T::Register) -> Self::Outcome;
+    fn visit_i64_extend32_s(
+        &mut self,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.trunc_sat_f32_s` instruction.
     fn visit_i32_trunc_sat_f32_s(
         &mut self,
-        result: T::Register,
-        input: T::Register,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.trunc_sat_f32_u` instruction.
     fn visit_i32_trunc_sat_f32_u(
         &mut self,
-        result: T::Register,
-        input: T::Register,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.trunc_sat_f64_s` instruction.
     fn visit_i32_trunc_sat_f64_s(
         &mut self,
-        result: T::Register,
-        input: T::Register,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i32.trunc_sat_f64_u` instruction.
     fn visit_i32_trunc_sat_f64_u(
         &mut self,
-        result: T::Register,
-        input: T::Register,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.trunc_sat_f32_s` instruction.
     fn visit_i64_trunc_sat_f32_s(
         &mut self,
-        result: T::Register,
-        input: T::Register,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.trunc_sat_f32_u` instruction.
     fn visit_i64_trunc_sat_f32_u(
         &mut self,
-        result: T::Register,
-        input: T::Register,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.trunc_sat_f64_s` instruction.
     fn visit_i64_trunc_sat_f64_s(
         &mut self,
-        result: T::Register,
-        input: T::Register,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `i64.trunc_sat_f64_u` instruction.
     fn visit_i64_trunc_sat_f64_u(
         &mut self,
-        result: T::Register,
-        input: T::Register,
+        result: <T as InstructionTypes>::Register,
+        input: <T as InstructionTypes>::Register,
     ) -> Self::Outcome;
 }
