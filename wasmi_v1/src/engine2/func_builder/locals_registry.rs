@@ -1,3 +1,5 @@
+#![allow(dead_code)] // TODO: remove this line when WIP is done
+
 use alloc::vec::Vec;
 use core::cmp::Ordering;
 use wasmi_core::ValueType;
