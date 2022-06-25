@@ -12,6 +12,11 @@ pub struct FuncBody {
     /// The number of instructions of the [`FuncBody`].
     len_insts: u16,
     /// The number of registers that the function requires for execution.
+    ///
+    /// # Note
+    ///
+    /// This _does_ include registers for function parameters, local variables
+    /// and auxiliary registers required for execution.
     len_regs: u16,
 }
 
@@ -45,6 +50,10 @@ impl FuncBody {
     }
 
     /// Returns the number of registers the function requires for execution.
+    ///
+    /// # Note
+    ///
+    /// This does include registers for parameters and local variables.
     pub(super) fn len_regs(self) -> u16 {
         self.len_regs
     }
