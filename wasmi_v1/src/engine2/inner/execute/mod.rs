@@ -35,6 +35,23 @@ use crate::{
 use core::cmp;
 use wasmi_core::Trap;
 
+/// The possible outcomes of a function execution.
+#[derive(Debug, Copy, Clone)]
+enum CallOutcome {
+    /// Returns the result of the function execution.
+    Return {
+        /// The returned result values.
+        results: ExecProviderSlice,
+    },
+    /// Persons a nested function call.
+    Call {
+        /// The results of the function call.
+        results: ExecRegisterSlice,
+        /// The called function.
+        callee: Func,
+    },
+}
+
 impl EngineInner {
     /// Executes the given [`Func`] using the given arguments `args` and stores the result into `results`.
     ///
