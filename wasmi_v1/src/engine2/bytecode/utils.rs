@@ -161,6 +161,13 @@ impl From<u32> for Global {
     }
 }
 
+impl Global {
+    /// Returns the inner `u32` representation of the [`Global`].
+    pub fn into_inner(self) -> u32 {
+        self.0
+    }
+}
+
 /// An offset for a linear memory operation.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Offset(u32);
@@ -168,5 +175,12 @@ pub struct Offset(u32);
 impl From<u32> for Offset {
     fn from(value: u32) -> Self {
         Self(value)
+    }
+}
+
+impl Offset {
+    /// Returns the inner `u32` representation of the [`Offset`].
+    pub fn into_inner(self) -> u32 {
+        self.0
     }
 }
