@@ -5,7 +5,6 @@ use crate::{
         CallResults,
         ConstRef,
         ExecProvider,
-        ExecProviderSlice,
         ExecRegisterSlice,
         FuncBody,
     },

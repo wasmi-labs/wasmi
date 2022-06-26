@@ -1,41 +1,15 @@
-#![allow(dead_code, unused_imports, unused_mut)] // TODO: remove
-
 mod instrs;
 mod stack;
 
 pub use self::stack::Stack;
-use self::{
-    instrs::execute_frame,
-    stack::{StackFrameRef, StackFrameView},
-};
-use super::{
-    super::{ExecRegisterSlice, IrProvider, IrRegister},
-    EngineInner,
-    EngineResources,
-};
+use self::{instrs::execute_frame, stack::StackFrameRef};
+use super::{super::ExecRegisterSlice, EngineInner};
 use crate::{
-    engine2::{
-        func_builder::{CompileContext, IrInstruction, IrProviderSlice, IrRegisterSlice},
-        CallParams,
-        CallResults,
-        ConstPool,
-        DedupFuncType,
-        ExecInstruction,
-        ExecProvider,
-        ExecProviderSlice,
-        ExecRegister,
-        FuncBody,
-        FuncParams,
-        Instruction,
-        Offset,
-    },
-    func::{FuncEntityInternal, HostFuncEntity, WasmFuncEntity},
-    AsContext,
+    engine2::{CallParams, CallResults, DedupFuncType, ExecProviderSlice},
+    func::{FuncEntityInternal, WasmFuncEntity},
     AsContextMut,
     Func,
-    Instance,
 };
-use core::cmp;
 use wasmi_core::Trap;
 
 /// The possible outcomes of a function execution.
@@ -84,7 +58,7 @@ impl EngineInner {
                 let results = self.return_func_result(signature, returned_values, results);
                 Ok(results)
             }
-            FuncEntityInternal::Host(host_func) => {
+            FuncEntityInternal::Host(_host_func) => {
                 todo!()
             }
         }
