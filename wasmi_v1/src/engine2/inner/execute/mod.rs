@@ -53,9 +53,9 @@ impl EngineInner {
         match func.as_internal(&ctx) {
             FuncEntityInternal::Wasm(wasm_func) => {
                 let signature = wasm_func.signature();
-                let frame = self.initialize_func_args(wasm_func, params);
-                let returned_values = self.execute_func_insts(&mut ctx, func, frame)?;
-                let results = self.return_func_result(signature, returned_values, results);
+                let frame = self.initialize_args(wasm_func, params);
+                let returned_values = self.execute_frame(&mut ctx, frame)?;
+                let results = self.return_result(signature, returned_values, results);
                 Ok(results)
             }
             FuncEntityInternal::Host(_host_func) => {
@@ -71,7 +71,7 @@ impl EngineInner {
     /// This initializes the registers holding the parameters of the called
     /// root function.
     /// Registers for the local variables are initialized to zero.
-    fn initialize_func_args(
+    fn initialize_args(
         &mut self,
         func: &WasmFuncEntity,
         params: impl CallParams,
@@ -90,10 +90,9 @@ impl EngineInner {
     /// - If the given arguments `args` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm trap during the execution of `func`.
-    fn execute_func_insts(
+    fn execute_frame(
         &mut self,
         mut ctx: impl AsContextMut,
-        func: Func,
         mut frame: StackFrameRef,
     ) -> Result<ExecProviderSlice, Trap> {
         let code_map = &self.code_map;
@@ -154,7 +153,7 @@ impl EngineInner {
     /// # Panics
     ///
     /// - If the `results` buffer length does not match the remaining amount of stack values.
-    fn return_func_result<Results>(
+    fn return_result<Results>(
         &mut self,
         func_type: DedupFuncType,
         returned_values: ExecProviderSlice,
