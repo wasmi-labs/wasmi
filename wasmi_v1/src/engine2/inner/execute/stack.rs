@@ -9,6 +9,8 @@ use crate::{
         ExecRegisterSlice,
     },
     func::WasmFuncEntity,
+    module::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
+    AsContext,
     Instance,
     Memory,
     Table,
@@ -289,8 +291,10 @@ pub struct FrameRegion {
 /// Allow to efficiently operate on the stack frame.
 #[derive(Debug)]
 pub struct StackFrameView<'a> {
-    regs: StackFrameRegisters<'a>,
-    instance: Instance,
+    /// The registers of the [`StackFrameView`].
+    pub regs: StackFrameRegisters<'a>,
+    /// The instances of the [`StackFrameView`].
+    pub instance: Instance,
     default_memory: &'a mut Option<Memory>,
     default_table: &'a mut Option<Table>,
 }
@@ -311,22 +315,62 @@ impl<'a> StackFrameView<'a> {
         }
     }
 
-    /// Returns the value of the `register`.
+    /// Returns the default linear memory of the [`StackFrameView`] if any.
+    ///
+    /// # Note
+    ///
+    /// This API allows to lazily and efficiently load the default linear memory if available.
     ///
     /// # Panics
     ///
-    /// If the `register` is invalid for this [`StackFrameView`].
-    pub fn get(&self, register: ExecRegister) -> UntypedValue {
-        self.regs.get(register)
+    /// If there is no default linear memory.
+    pub fn default_memory(&mut self, ctx: impl AsContext) -> Memory {
+        match self.default_memory {
+            Some(default_memory) => *default_memory,
+            None => {
+                // Try to lazily load the default memory.
+                let default_memory = self
+                    .instance
+                    .get_memory(ctx.as_context(), DEFAULT_MEMORY_INDEX)
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "could not resolve default memory for instance: {:?}",
+                            self.instance
+                        )
+                    });
+                *self.default_memory = Some(default_memory);
+                default_memory
+            }
+        }
     }
 
-    /// Sets the value of the `register` to `new_value`.
+    /// Returns the default table of the [`StackFrameView`] if any.
+    ///
+    /// # Note
+    ///
+    /// This API allows to lazily and efficiently load the default table if available.
     ///
     /// # Panics
     ///
-    /// If the `register` is invalid for this [`StackFrameView`].
-    pub fn set(&mut self, register: ExecRegister, new_value: UntypedValue) {
-        self.regs.set(register, new_value)
+    /// If there is no default table.
+    pub fn default_table(&mut self, ctx: impl AsContext) -> Table {
+        match self.default_table {
+            Some(default_table) => *default_table,
+            None => {
+                // Try to lazily load the default table.
+                let default_table = self
+                    .instance
+                    .get_table(ctx.as_context(), DEFAULT_TABLE_INDEX)
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "could not resolve default table for instance: {:?}",
+                            self.instance
+                        )
+                    });
+                *self.default_table = Some(default_table);
+                default_table
+            }
+        }
     }
 }
 

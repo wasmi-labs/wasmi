@@ -11,6 +11,10 @@ use crate::{
         Target,
     },
     Func,
+    Instance,
+    Memory,
+    StoreContextMut,
+    Table,
 };
 use wasmi_core::{Trap, TrapCode, UntypedValue};
 
@@ -40,16 +44,18 @@ pub enum ExecOutcome {
 
 /// State that is used during Wasm function execution.
 #[derive(Debug)]
-pub struct ExecContext<'engine, 'func> {
+pub struct ExecContext<'engine, 'func, 'ctx, T> {
     /// The function frame that is being executed.
     frame: StackFrameView<'func>,
     /// The resolved function body of the executed function frame.
     func_body: ResolvedFuncBody<'engine>,
     /// The read-only engine resources.
     res: &'engine EngineResources,
+    /// The associated store context.
+    ctx: StoreContextMut<'ctx, T>,
 }
 
-impl<'engine, 'func> ExecContext<'engine, 'func> {
+impl<'engine, 'func, 'ctx, T> ExecContext<'engine, 'func, 'ctx, T> {
     /// Returns the [`ExecOutcome`] to continue to the next instruction.
     ///
     /// # Note
@@ -78,8 +84,8 @@ impl<'engine, 'func> ExecContext<'engine, 'func> {
         input: ExecRegister,
         op: fn(UntypedValue) -> UntypedValue,
     ) -> Result<ExecOutcome, Trap> {
-        let input = self.frame.get(input);
-        self.frame.set(result, op(input));
+        let input = self.frame.regs.get(input);
+        self.frame.regs.set(result, op(input));
         self.next_instr()
     }
 
@@ -100,8 +106,8 @@ impl<'engine, 'func> ExecContext<'engine, 'func> {
         input: ExecRegister,
         op: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<ExecOutcome, Trap> {
-        let input = self.frame.get(input);
-        self.frame.set(result, op(input)?);
+        let input = self.frame.regs.get(input);
+        self.frame.regs.set(result, op(input)?);
         self.next_instr()
     }
 
@@ -113,7 +119,7 @@ impl<'engine, 'func> ExecContext<'engine, 'func> {
     /// Note that reaching this case reflects a bug in the interpreter.
     fn load_provider(&self, provider: ExecProvider) -> UntypedValue {
         provider.decode_using(
-            |rhs| self.frame.get(rhs),
+            |rhs| self.frame.regs.get(rhs),
             |imm| {
                 self.res.const_pool.resolve(imm).unwrap_or_else(|| {
                     panic!("unexpectedly failed to resolve immediate at {:?}", imm)
@@ -140,9 +146,9 @@ impl<'engine, 'func> ExecContext<'engine, 'func> {
         rhs: ExecProvider,
         op: fn(UntypedValue, UntypedValue) -> UntypedValue,
     ) -> Result<ExecOutcome, Trap> {
-        let lhs = self.frame.get(lhs);
+        let lhs = self.frame.regs.get(lhs);
         let rhs = self.load_provider(rhs);
-        self.frame.set(result, op(lhs, rhs));
+        self.frame.regs.set(result, op(lhs, rhs));
         self.next_instr()
     }
 
@@ -164,9 +170,9 @@ impl<'engine, 'func> ExecContext<'engine, 'func> {
         rhs: ExecProvider,
         op: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<ExecOutcome, Trap> {
-        let lhs = self.frame.get(lhs);
+        let lhs = self.frame.regs.get(lhs);
         let rhs = self.load_provider(rhs);
-        self.frame.set(result, op(lhs, rhs)?);
+        self.frame.regs.set(result, op(lhs, rhs)?);
         self.next_instr()
     }
 
@@ -183,7 +189,7 @@ impl<'engine, 'func> ExecContext<'engine, 'func> {
         condition: ExecRegister,
         op: fn(UntypedValue) -> bool,
     ) -> Result<ExecOutcome, Trap> {
-        let condition = self.frame.get(condition);
+        let condition = self.frame.regs.get(condition);
         if op(condition) {
             return Ok(ExecOutcome::Branch { target });
         }
@@ -191,7 +197,9 @@ impl<'engine, 'func> ExecContext<'engine, 'func> {
     }
 }
 
-impl<'engine, 'func> VisitInstruction<ExecuteTypes> for ExecContext<'engine, 'func> {
+impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
+    for ExecContext<'engine, 'func, 'ctx, T>
+{
     type Outcome = Result<ExecOutcome, Trap>;
 
     fn visit_br(&mut self, target: Target) -> Self::Outcome {
@@ -223,7 +231,7 @@ impl<'engine, 'func> VisitInstruction<ExecuteTypes> for ExecContext<'engine, 'fu
         results: <ExecuteTypes as InstructionTypes>::ProviderSlice,
         condition: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Self::Outcome {
-        let condition = self.frame.get(condition);
+        let condition = self.frame.regs.get(condition);
         let zero = UntypedValue::from(0_i32);
         if condition != zero {
             return Ok(ExecOutcome::Return { results });
@@ -275,7 +283,7 @@ impl<'engine, 'func> VisitInstruction<ExecuteTypes> for ExecContext<'engine, 'fu
         input: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
         let input = self.load_provider(input);
-        self.frame.set(result, input);
+        self.frame.regs.set(result, input);
         self.next_instr()
     }
 
@@ -286,14 +294,14 @@ impl<'engine, 'func> VisitInstruction<ExecuteTypes> for ExecContext<'engine, 'fu
         if_true: <ExecuteTypes as InstructionTypes>::Provider,
         if_false: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
-        let condition = self.frame.get(condition);
+        let condition = self.frame.regs.get(condition);
         let zero = UntypedValue::from(0_i32);
         let case = if condition != zero {
             self.load_provider(if_true)
         } else {
             self.load_provider(if_false)
         };
-        self.frame.set(result, case);
+        self.frame.regs.set(result, case);
         self.next_instr()
     }
 
