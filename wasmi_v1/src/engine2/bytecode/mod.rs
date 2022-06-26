@@ -14,7 +14,7 @@ use super::{ExecProvider, ExecProviderSlice};
 use crate::module::{FuncIdx, FuncTypeIdx};
 use wasmi_core::TrapCode;
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ExecuteTypes {}
 
 impl InstructionTypes for ExecuteTypes {

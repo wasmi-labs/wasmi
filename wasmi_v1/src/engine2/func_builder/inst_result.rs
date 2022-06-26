@@ -3,10 +3,7 @@ use super::{IrInstruction, IrRegister};
 impl IrRegister {
     /// Returns `true` if the [`Register`] is in the local register space.
     pub fn is_local(&self) -> bool {
-        match self {
-            Self::Local(_) => true,
-            _ => false,
-        }
+        matches!(self, Self::Local(_))
     }
 }
 

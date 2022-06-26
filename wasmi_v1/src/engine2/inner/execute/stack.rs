@@ -45,8 +45,8 @@ impl Stack {
     /// # Note
     ///
     /// This initializes the root function parameters and its call frame.
-    pub(super) fn init<'frame>(
-        &'frame mut self,
+    pub(super) fn init(
+        &mut self,
         func: &WasmFuncEntity,
         initial_params: impl CallParams,
     ) -> StackFrameRef {
@@ -123,10 +123,7 @@ impl Stack {
         let returned_values = returned_values
             .iter()
             .map(|returned_value| {
-                returned_value.decode_using(
-                    |register| init_view.get(register),
-                    |cref| resolve_const(cref),
-                )
+                returned_value.decode_using(|register| init_view.get(register), &resolve_const)
             })
             .zip(result_types)
             .map(|(returned_value, expected_type)| returned_value.with_type(*expected_type));
@@ -136,8 +133,8 @@ impl Stack {
     /// Pushes a new [`StackFrame`] to the [`Stack`].
     ///
     /// Calls `make_frame` in order to create the new [`StackFrame`] in place.
-    pub(super) fn push_frame<'frame>(
-        &'frame mut self,
+    pub(super) fn push_frame(
+        &mut self,
         func: &WasmFuncEntity,
         results: ExecRegisterSlice,
         params: &[ExecProvider],
@@ -188,10 +185,8 @@ impl Stack {
         };
         let param_slots = ExecRegisterSlice::params(params.len() as u16);
         params.iter().zip(param_slots).for_each(|(param, slot)| {
-            let param_value = param.decode_using(
-                |register| last_view.get(register),
-                |cref| resolve_const(cref),
-            );
+            let param_value =
+                param.decode_using(|register| last_view.get(register), &resolve_const);
             pushed_view.set(slot, param_value);
         });
         StackFrameRef(frame_idx)
@@ -253,10 +248,8 @@ impl Stack {
             .iter()
             .zip(returned_values)
             .for_each(|(result, returns)| {
-                let return_value = returns.decode_using(
-                    |register| popped_view.get(register),
-                    |cref| resolve_const(cref),
-                );
+                let return_value =
+                    returns.decode_using(|register| popped_view.get(register), &resolve_const);
                 previous_view.set(result, return_value);
             });
         self.entries.shrink_to(frame.region.start);

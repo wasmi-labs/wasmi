@@ -238,7 +238,7 @@ impl Providers {
 }
 
 /// A register provider of any of the existing register space.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum IrRegister {
     /// The provided value lives in the local register space.
     ///
@@ -294,7 +294,7 @@ impl IrRegister {
 /// Can only be used if all registers in the slice are
 /// contiguous, e.g. `[r4, r5, r6]`.
 /// This can usually be used for the results of call instructions.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct IrRegisterSlice {
     /// The index of the first register.
     start: IrRegister,

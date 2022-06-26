@@ -4,21 +4,11 @@ use alloc::collections::{btree_map::Entry, BTreeMap};
 use core::ops::Neg;
 use wasmi_core::UntypedValue;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct DedupProviderSliceArena {
     scratch: Vec<ExecProvider>,
     dedup: BTreeMap<Box<[ExecProvider]>, ExecProviderSlice>,
     providers: Vec<ExecProvider>,
-}
-
-impl Default for DedupProviderSliceArena {
-    fn default() -> Self {
-        Self {
-            scratch: Vec::default(),
-            dedup: BTreeMap::new(),
-            providers: Vec::default(),
-        }
-    }
 }
 
 impl DedupProviderSliceArena {
@@ -56,7 +46,7 @@ impl DedupProviderSliceArena {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ExecProviderSlice {
     first: u16,
     len: u16,
@@ -107,7 +97,7 @@ impl ExecProvider {
     }
 
     pub fn from_immediate(immediate: ConstRef) -> Self {
-        let index = u32::from(immediate.into_inner());
+        let index = immediate.into_inner();
         assert!(
             index < i32::MAX as u32,
             "encountered out of bounds constant index: {index}"
@@ -137,7 +127,7 @@ impl ExecProvider {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum RegisterOrImmediate {
     Register(ExecRegister),
     Immediate(ConstRef),

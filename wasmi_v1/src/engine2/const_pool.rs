@@ -2,7 +2,7 @@ use crate::arena::{DedupArena, Index};
 use wasmi_core::UntypedValue;
 
 /// The index of a constant stored in the [`ConstPool`].
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ConstRef(u32);
 
 impl ConstRef {

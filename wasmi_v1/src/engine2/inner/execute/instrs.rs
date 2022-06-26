@@ -78,7 +78,7 @@ pub(super) fn execute_frame<'engine, 'func>(
     let func_body = code_map.resolve(frame.func_body);
     let mut exec_ctx = ExecContext {
         frame,
-        res: &res,
+        res,
         ctx: ctx.as_context_mut(),
     };
     loop {

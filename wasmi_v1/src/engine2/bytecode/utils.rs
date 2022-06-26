@@ -7,7 +7,7 @@ use core::ops::Neg;
 /// # Note
 ///
 /// This is the local index of an instruction within the same function.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct Target(Instr);
 
@@ -48,7 +48,7 @@ impl Target {
 }
 
 /// The index of a register in the register machine.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ExecRegister(u16);
 
 impl ExecRegister {
@@ -69,7 +69,7 @@ impl ExecRegister {
 /// Can only be used if all registers in the slice are
 /// contiguous, e.g. `[r4, r5, r6]`.
 /// This can usually be used for the results of call instructions.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ExecRegisterSlice {
     /// The index of the first register.
     start: ExecRegister,
@@ -152,7 +152,7 @@ impl Iterator for ExecRegisterSliceIter {
 }
 
 /// An index representing a global variable.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Global(u32);
 
 impl From<u32> for Global {
@@ -169,7 +169,7 @@ impl Global {
 }
 
 /// An offset for a linear memory operation.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Offset(u32);
 
 impl From<u32> for Offset {

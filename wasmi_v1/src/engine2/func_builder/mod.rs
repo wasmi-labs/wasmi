@@ -84,7 +84,7 @@ impl CompileContext<'_> {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum IrTypes {}
 
 impl InstructionTypes for IrTypes {
@@ -820,7 +820,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 IrProvider::Immediate(condition) => {
                     // Note: if the condition is a constant we can replace the
                     //       `select` instruction with one of its arms.
-                    let condition = bool::from(UntypedValue::from(condition));
+                    let condition = bool::from(condition);
                     let input = if condition { v0 } else { v1 };
                     builder
                         .inst_builder
