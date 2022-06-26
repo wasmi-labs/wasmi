@@ -4,6 +4,7 @@ use super::{stack::StackFrameView, CallOutcome};
 use crate::{
     engine2::{
         bytecode::{self, visit_instr, ExecRegister, ExecuteTypes, VisitInstruction},
+        code_map::CodeMap,
         inner::{EngineInner, EngineResources},
         ExecProvider,
         ExecProviderSlice,
@@ -72,13 +73,14 @@ pub enum ExecOutcome {
 /// For example, a linear memory instance, global variable, etc.
 pub(super) fn execute_frame<'engine, 'func>(
     mut ctx: impl AsContextMut,
-    engine: &'engine mut EngineInner,
+    code_map: &'engine CodeMap,
+    res: &'engine EngineResources,
     frame: StackFrameView<'func>,
 ) -> Result<CallOutcome, Trap> {
-    let func_body = engine.code_map.resolve(frame.func_body);
+    let func_body = code_map.resolve(frame.func_body);
     let mut exec_ctx = ExecContext {
         frame,
-        res: &engine.res,
+        res: &res,
         ctx: ctx.as_context_mut(),
     };
     loop {
