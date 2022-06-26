@@ -18,7 +18,7 @@ use crate::{
     StoreContextMut,
     Table,
 };
-use wasmi_core::{LittleEndianConvert, Trap, TrapCode, UntypedValue};
+use wasmi_core::{ExtendInto, LittleEndianConvert, Trap, TrapCode, UntypedValue};
 
 /// The possible outcomes of an instruction execution.
 #[derive(Debug, Copy, Clone)]
@@ -166,6 +166,39 @@ impl<'engine, 'func, 'ctx, T> ExecContext<'engine, 'func, 'ctx, T> {
         self.load_bytes(result, ptr, offset, buffer.as_mut())?;
         let value = <V as LittleEndianConvert>::from_le_bytes(buffer);
         self.frame.regs.set(result, value.into());
+        self.next_instr()
+    }
+
+    /// Loads a vaoue of type `U` from the default memory at the given address offset and extends it into `T`.
+    ///
+    /// # Note
+    ///
+    /// This can be used to emuate the following Wasm operands:
+    ///
+    /// - `i32.load_8s`
+    /// - `i32.load_8u`
+    /// - `i32.load_16s`
+    /// - `i32.load_16u`
+    /// - `i64.load_8s`
+    /// - `i64.load_8u`
+    /// - `i64.load_16s`
+    /// - `i64.load_16u`
+    /// - `i64.load_32s`
+    /// - `i64.load_32u`
+    fn exec_load_extend<V, U>(
+        &mut self,
+        result: ExecRegister,
+        ptr: ExecRegister,
+        offset: bytecode::Offset,
+    ) -> Result<ExecOutcome, Trap>
+    where
+        V: ExtendInto<U> + LittleEndianConvert,
+        U: Into<UntypedValue>,
+    {
+        let mut buffer = <<V as LittleEndianConvert>::Bytes as Default>::default();
+        self.load_bytes(result, ptr, offset, buffer.as_mut())?;
+        let extended = <V as LittleEndianConvert>::from_le_bytes(buffer).extend_into();
+        self.frame.regs.set(result, extended.into());
         self.next_instr()
     }
 
@@ -465,7 +498,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_load_extend::<i8, i32>(result, ptr, offset)
     }
 
     fn visit_i32_load_8_u(
@@ -474,7 +507,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_load_extend::<u8, i32>(result, ptr, offset)
     }
 
     fn visit_i32_load_16_s(
@@ -483,7 +516,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_load_extend::<i16, i32>(result, ptr, offset)
     }
 
     fn visit_i32_load_16_u(
@@ -492,7 +525,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_load_extend::<u16, i32>(result, ptr, offset)
     }
 
     fn visit_i64_load_8_s(
@@ -501,7 +534,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_load_extend::<i8, i64>(result, ptr, offset)
     }
 
     fn visit_i64_load_8_u(
@@ -510,7 +543,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_load_extend::<u8, i64>(result, ptr, offset)
     }
 
     fn visit_i64_load_16_s(
@@ -519,7 +552,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_load_extend::<i16, i64>(result, ptr, offset)
     }
 
     fn visit_i64_load_16_u(
@@ -528,7 +561,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_load_extend::<u16, i64>(result, ptr, offset)
     }
 
     fn visit_i64_load_32_s(
@@ -537,7 +570,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_load_extend::<i32, i64>(result, ptr, offset)
     }
 
     fn visit_i64_load_32_u(
@@ -546,7 +579,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_load_extend::<u32, i64>(result, ptr, offset)
     }
 
     fn visit_i32_store(
