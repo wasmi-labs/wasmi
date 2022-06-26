@@ -156,4 +156,33 @@ impl ResolvedFuncBody<'_> {
     pub fn get(&self, index: usize) -> Option<&ExecInstruction> {
         self.insts.get(index)
     }
+
+    /// Returns the instruction at the given index.
+    ///
+    /// # Note
+    ///
+    /// This avoids bounds checking in `--release` builds.
+    /// For debugging purposes those bounds checks are enabled for `--debug`
+    /// builds.
+    ///
+    /// # Safety
+    ///
+    /// The caller is repsonsible to provide valid indices.
+    pub unsafe fn get_release_unchecked(&self, index: usize) -> &ExecInstruction {
+        debug_assert!(
+            self.insts.get(index).is_some(),
+            "expect to find instruction at index {} due to validation but found none",
+            index
+        );
+        // # Safety
+        //
+        // This access is safe if all possible accesses have already been
+        // checked during Wasm validation. Functions and their instructions including
+        // jump addresses are immutable after Wasm function compilation and validation
+        // and therefore this bounds check can be safely eliminated.
+        //
+        // Note that eliminating this bounds check is extremely valuable since this
+        // part of the `wasmi` interpreter is part of the interpreter's hot path.
+        unsafe { self.insts.get_unchecked(index) }
+    }
 }
