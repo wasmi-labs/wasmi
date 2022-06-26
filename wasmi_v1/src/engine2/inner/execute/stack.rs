@@ -7,6 +7,7 @@ use crate::{
         ExecProvider,
         ExecProviderSlice,
         ExecRegisterSlice,
+        FuncBody,
     },
     func::WasmFuncEntity,
     module::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
@@ -57,6 +58,7 @@ impl Stack {
                 len: len_regs,
             },
             results: ExecRegisterSlice::empty(),
+            func_body: func.func_body(),
             instance: func.instance(),
             default_memory: None,
             default_table: None,
@@ -141,6 +143,7 @@ impl Stack {
         self.frames.push(StackFrame {
             results: ExecRegisterSlice::empty(),
             region: FrameRegion { start, len },
+            func_body: func.func_body(),
             instance: func.instance(),
             default_memory: None,
             default_table: None,
@@ -229,6 +232,8 @@ impl Stack {
         let regs = &mut self.entries[region.start..(region.start + region.len)];
         StackFrameView::new(
             regs,
+            frame.func_body,
+            frame.pc,
             frame.instance,
             &mut frame.default_memory,
             &mut frame.default_table,
@@ -243,6 +248,8 @@ pub struct StackFrame {
     region: FrameRegion,
     /// The results slice of the [`StackFrame`].
     results: ExecRegisterSlice,
+    /// The instruction of the function.
+    func_body: FuncBody,
     /// The instance in which the function has been defined.
     ///
     /// # Note
@@ -293,6 +300,10 @@ pub struct FrameRegion {
 pub struct StackFrameView<'a> {
     /// The registers of the [`StackFrameView`].
     pub regs: StackFrameRegisters<'a>,
+    /// The instruction of the [`StackFrameView`].
+    pub func_body: FuncBody,
+    /// The current program counter.
+    pub pc: usize,
     /// The instances of the [`StackFrameView`].
     pub instance: Instance,
     default_memory: &'a mut Option<Memory>,
@@ -303,12 +314,16 @@ impl<'a> StackFrameView<'a> {
     /// Creates a new [`StackFrameView`].
     pub fn new(
         regs: &'a mut [UntypedValue],
+        func_body: FuncBody,
+        pc: usize,
         instance: Instance,
         default_memory: &'a mut Option<Memory>,
         default_table: &'a mut Option<Table>,
     ) -> Self {
         Self {
             regs: StackFrameRegisters::from(regs),
+            func_body,
+            pc,
             instance,
             default_memory,
             default_table,
