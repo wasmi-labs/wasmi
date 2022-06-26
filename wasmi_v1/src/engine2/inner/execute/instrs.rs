@@ -18,7 +18,7 @@ use crate::{
     StoreContextMut,
     Table,
 };
-use wasmi_core::{Trap, TrapCode, UntypedValue};
+use wasmi_core::{LittleEndianConvert, Trap, TrapCode, UntypedValue};
 
 /// The possible outcomes of an instruction execution.
 #[derive(Debug, Copy, Clone)]
@@ -109,13 +109,64 @@ impl<'engine, 'func, 'ctx, T> ExecContext<'engine, 'func, 'ctx, T> {
     /// # Errors
     ///
     /// If the resulting effective address overflows.
-    fn effective_address(offset: bytecode::Offset, address: u32) -> Result<usize, Trap> {
+    fn effective_address(offset: bytecode::Offset, ptr: UntypedValue) -> Result<usize, Trap> {
         offset
             .into_inner()
-            .checked_add(address)
+            .checked_add(u32::from(ptr))
             .map(|address| address as usize)
             .ok_or(TrapCode::MemoryAccessOutOfBounds)
             .map_err(Into::into)
+    }
+
+    /// Loads bytes from the default memory into the given `buffer`.
+    ///
+    /// # Errors
+    ///
+    /// If the memory access is out of bounds.
+    ///
+    /// # Panics
+    ///
+    /// If there exists is no linear memory for the instance.
+    fn load_bytes(
+        &mut self,
+        result: ExecRegister,
+        ptr: ExecRegister,
+        offset: bytecode::Offset,
+        buffer: &mut [u8],
+    ) -> Result<(), Trap> {
+        let memory = self.default_memory();
+        let ptr = self.frame.regs.get(ptr);
+        let address = Self::effective_address(offset, ptr)?;
+        memory
+            .read(&self.ctx, address, buffer.as_mut())
+            .map_err(|_| TrapCode::MemoryAccessOutOfBounds)?;
+        Ok(())
+    }
+
+    /// Loads a value of type `T` from the default memory at the given address offset.
+    ///
+    /// # Note
+    ///
+    /// This can be used to emulate the following Wasm operands:
+    ///
+    /// - `i32.load`
+    /// - `i64.load`
+    /// - `f32.load`
+    /// - `f64.load`
+    fn exec_load<V>(
+        &mut self,
+        result: ExecRegister,
+        ptr: ExecRegister,
+        offset: bytecode::Offset,
+    ) -> Result<ExecOutcome, Trap>
+    where
+        V: LittleEndianConvert + Into<UntypedValue>,
+    {
+        let mut buffer = <<V as LittleEndianConvert>::Bytes as Default>::default();
+        self.load_bytes(result, ptr, offset, buffer.as_mut())?;
+        let value = <V as LittleEndianConvert>::from_le_bytes(buffer);
+        self.frame.regs.set(result, value.into());
+        self.next_instr()
     }
 
     /// Executes the given unary `wasmi` operation.
@@ -378,7 +429,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_load::<i32>(result, ptr, offset)
     }
 
     fn visit_i64_load(
@@ -387,7 +438,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_load::<i64>(result, ptr, offset)
     }
 
     fn visit_f32_load(
@@ -396,7 +447,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_load::<f32>(result, ptr, offset)
     }
 
     fn visit_f64_load(
@@ -405,7 +456,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_load::<f64>(result, ptr, offset)
     }
 
     fn visit_i32_load_8_s(
