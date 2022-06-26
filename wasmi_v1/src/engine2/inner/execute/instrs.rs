@@ -19,7 +19,15 @@ use crate::{
     StoreContextMut,
     Table,
 };
-use wasmi_core::{ExtendInto, LittleEndianConvert, Trap, TrapCode, UntypedValue, WrapInto};
+use wasmi_core::{
+    memory_units::Pages,
+    ExtendInto,
+    LittleEndianConvert,
+    Trap,
+    TrapCode,
+    UntypedValue,
+    WrapInto,
+};
 
 /// The possible outcomes of an instruction execution.
 #[derive(Debug, Copy, Clone)]
@@ -757,7 +765,10 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Self::Outcome {
-        todo!()
+        let memory = self.default_memory();
+        let size = memory.current_pages(&self.ctx).0 as u32;
+        self.frame.regs.set(result, size.into());
+        self.next_instr()
     }
 
     fn visit_memory_grow(
@@ -765,7 +776,18 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         result: <ExecuteTypes as InstructionTypes>::Register,
         amount: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
-        todo!()
+        let amount = u32::from(self.load_provider(amount));
+        let memory = self.default_memory();
+        let old_size = match memory.grow(self.ctx.as_context_mut(), Pages(amount as usize)) {
+            Ok(Pages(old_size)) => old_size as u32,
+            Err(_) => {
+                // Note: The WebAssembly specification demands to return
+                //       `0xFFFF_FFFF` for the failure case of this instruction.
+                u32::MAX
+            }
+        };
+        self.frame.regs.set(result, old_size.into());
+        self.next_instr()
     }
 
     fn visit_i32_eq(
