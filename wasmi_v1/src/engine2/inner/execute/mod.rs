@@ -131,7 +131,7 @@ impl EngineInner {
                     params,
                 } => {
                     // Execute the nested function call.
-                    let internal = match func.as_internal(&ctx) {
+                   match callee.as_internal(&ctx) {
                         FuncEntityInternal::Wasm(wasm_func) => {
                             // Calls a Wasm function.
                             let params = self.res.provider_slices.resolve(params);
