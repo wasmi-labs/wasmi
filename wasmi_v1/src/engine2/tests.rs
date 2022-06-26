@@ -792,7 +792,6 @@ fn br_table_const_case() {
         let c10 = ExecProvider::from_immediate(engine.alloc_const(10_i32));
         let c20 = ExecProvider::from_immediate(engine.alloc_const(20_i32));
         let c30 = ExecProvider::from_immediate(engine.alloc_const(30_i32));
-        let reg0 = ExecRegister::from_inner(0);
         let results = engine.alloc_provider_slice([]);
         let global = Global::from(0);
         #[rustfmt::skip]

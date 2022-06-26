@@ -219,7 +219,7 @@ impl<T> HostFuncEntity<T> {
     /// Calls the host function with the given inputs.
     ///
     /// The result is written back into the `outputs` buffer.
-    pub fn call(
+    pub fn _call(
         &self,
         mut ctx: impl AsContextMut<UserState = T>,
         instance: Option<Instance>,

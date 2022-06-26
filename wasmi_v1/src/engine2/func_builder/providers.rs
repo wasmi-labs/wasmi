@@ -455,12 +455,12 @@ impl ProviderSliceArena {
         let first = self.providers.len();
         self.providers.extend(registers);
         let len = self.providers.len() - first;
-        let first = first
-            .try_into()
-            .unwrap_or_else(|error| panic!("out of bounds index for register slice: {}", first));
+        let first = first.try_into().unwrap_or_else(|error| {
+            panic!("out of bounds index for register slice {first}: {error}")
+        });
         let len = len
             .try_into()
-            .unwrap_or_else(|error| panic!("register slice too long: {}", len));
+            .unwrap_or_else(|error| panic!("register slice with length {len} too long: {error}"));
         IrProviderSlice { first, len }
     }
 

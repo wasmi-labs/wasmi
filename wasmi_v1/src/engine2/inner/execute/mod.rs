@@ -71,11 +71,7 @@ impl EngineInner {
     /// This initializes the registers holding the parameters of the called
     /// root function.
     /// Registers for the local variables are initialized to zero.
-    fn initialize_args(
-        &mut self,
-        func: &WasmFuncEntity,
-        params: impl CallParams,
-    ) -> StackFrameRef {
+    fn initialize_args(&mut self, func: &WasmFuncEntity, params: impl CallParams) -> StackFrameRef {
         self.stack.init(func, params)
     }
 
@@ -130,7 +126,7 @@ impl EngineInner {
                     params,
                 } => {
                     // Execute the nested function call.
-                   match callee.as_internal(&ctx) {
+                    match callee.as_internal(&ctx) {
                         FuncEntityInternal::Wasm(wasm_func) => {
                             // Calls a Wasm function.
                             let params = self.res.provider_slices.resolve(params);
@@ -138,7 +134,7 @@ impl EngineInner {
                                 .stack
                                 .push_frame(wasm_func, results, params, cref_resolve);
                         }
-                        FuncEntityInternal::Host(host_func) => {
+                        FuncEntityInternal::Host(_host_func) => {
                             // Calls a host function.
                             todo!()
                         }

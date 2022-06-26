@@ -36,11 +36,11 @@ impl DedupProviderSliceArena {
                 self.providers.extend_from_slice(&self.scratch[..]);
                 let len = self.providers.len() - first;
                 let first = first.try_into().unwrap_or_else(|error| {
-                    panic!("out of bounds index for register slice: {}", first)
+                    panic!("out of bounds index of {first} for register slice: {error}")
                 });
-                let len = len
-                    .try_into()
-                    .unwrap_or_else(|error| panic!("register slice too long: {}", len));
+                let len = len.try_into().unwrap_or_else(|error| {
+                    panic!("register slice of length {len} too long: {error}")
+                });
                 let dedup = ExecProviderSlice { first, len };
                 vacant.insert(dedup);
                 dedup
