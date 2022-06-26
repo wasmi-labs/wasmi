@@ -1,8 +1,8 @@
-use super::stack::StackFrameView;
+use super::{stack::StackFrameView, CallOutcome};
 use crate::{
     engine2::{
-        bytecode::{self, ExecRegister, ExecuteTypes, VisitInstruction},
-        inner::EngineResources,
+        bytecode::{self, visit_instr, ExecRegister, ExecuteTypes, VisitInstruction},
+        inner::{EngineInner, EngineResources},
         ExecProvider,
         ExecProviderSlice,
         ExecRegisterSlice,
@@ -56,13 +56,70 @@ pub enum ExecOutcome {
     },
 }
 
+/// Executes the given [`StackFrameView`].
+///
+/// Returns the outcome of the execution.
+///
+/// # Errors
+///
+/// If the execution traps.
+///
+/// # Panics
+///
+/// If resources are missing unexpectedly.
+/// For example, a linear memory instance, global variable, etc.
+pub(super) fn execute_frame<'engine, 'func>(
+    mut ctx: impl AsContextMut,
+    engine: &'engine mut EngineInner,
+    frame: StackFrameView<'func>,
+) -> Result<CallOutcome, Trap> {
+    let func_body = engine.code_map.resolve(frame.func_body);
+    let mut exec_ctx = ExecContext {
+        frame,
+        res: &engine.res,
+        ctx: ctx.as_context_mut(),
+    };
+    loop {
+        let pc = exec_ctx.frame.pc;
+        // # Safety
+        //
+        // Since the Wasm and `wasmi` bytecode has already been validated the
+        // indices passed at this point can be assumed to be valid always.
+        let instr = unsafe { func_body.get_release_unchecked(pc) };
+        match visit_instr(&mut exec_ctx, *instr)? {
+            ExecOutcome::Continue => {
+                // Advance program counter.
+                exec_ctx.frame.pc += 1;
+            }
+            ExecOutcome::Branch { target } => {
+                // Set program counter to the branch target.
+                exec_ctx.frame.pc = target.destination().into_inner() as usize;
+            }
+            ExecOutcome::Call {
+                results,
+                callee,
+                params,
+            } => {
+                // Advance program counter before calling.
+                exec_ctx.frame.pc += 1;
+                return Ok(CallOutcome::Call {
+                    results,
+                    callee,
+                    params,
+                });
+            }
+            ExecOutcome::Return { results } => {
+                return Ok(CallOutcome::Return { results });
+            }
+        }
+    }
+}
+
 /// State that is used during Wasm function execution.
 #[derive(Debug)]
 pub struct ExecContext<'engine, 'func, 'ctx, T> {
     /// The function frame that is being executed.
     frame: StackFrameView<'func>,
-    /// The resolved function body of the executed function frame.
-    func_body: ResolvedFuncBody<'engine>,
     /// The read-only engine resources.
     res: &'engine EngineResources,
     /// The associated store context.

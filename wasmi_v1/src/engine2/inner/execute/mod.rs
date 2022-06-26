@@ -49,6 +49,8 @@ enum CallOutcome {
         results: ExecRegisterSlice,
         /// The called function.
         callee: Func,
+        /// The parameters of the function call.
+        params: ExecProviderSlice,
     },
 }
 
