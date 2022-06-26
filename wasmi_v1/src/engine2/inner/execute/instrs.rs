@@ -538,7 +538,15 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         case: <ExecuteTypes as InstructionTypes>::Register,
         len_targets: usize,
     ) -> Self::Outcome {
-        todo!()
+        let index = u32::from(self.frame.regs.get(case)) as usize;
+        // The index of the default target is the last target of the `br_table`.
+        let max_index = len_targets - 1;
+        // A normalized index will always yield a target without panicking.
+        let normalized_index = cmp::min(index, max_index);
+        // Simply branch to the selected instruction which is going to be either
+        // a `br` or a `return` instruction as demanded by the `wasmi` bytecode.
+        let next_pc = self.frame.pc + normalized_index;
+        Ok(ExecOutcome::Branch { next_pc })
     }
 
     fn visit_trap(&mut self, trap_code: TrapCode) -> Self::Outcome {
