@@ -173,20 +173,13 @@ impl EngineInner {
             returned_values.len(),
         );
         assert_eq!(results.len_results(), result_types.len());
-        let view = self.stack.frame_at(StackFrameRef::root());
-        let resolve_register = |reg| view.regs.get(reg);
         let resolve_cref = |cref| {
             self.res
                 .const_pool
                 .resolve(cref)
                 .unwrap_or_else(|| panic!("failed to resolve constant reference: {:?}", cref))
         };
-        results.feed_results(
-            returned_values
-                .iter()
-                .map(|provider| provider.decode_using(resolve_register, resolve_cref))
-                .zip(result_types)
-                .map(|(raw_value, value_type)| raw_value.with_type(*value_type)),
-        )
+        self.stack
+            .finalize(result_types, resolve_cref, returned_values, results)
     }
 }

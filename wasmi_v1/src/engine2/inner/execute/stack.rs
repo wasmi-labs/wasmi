@@ -30,13 +30,6 @@ pub struct Stack {
 #[derive(Debug, Copy, Clone)]
 pub struct StackFrameRef(usize);
 
-impl StackFrameRef {
-    /// Returns the root [`StackFrameRef`].
-    pub fn root() -> Self {
-        Self(0)
-    }
-}
-
 impl Stack {
     /// Resets the [`Stack`] data entirely.
     fn reset(&mut self) {
