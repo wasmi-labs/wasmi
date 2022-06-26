@@ -27,13 +27,39 @@ pub struct Stack {
     frames: Vec<StackFrame>,
 }
 
+/// A reference to a [`StackFrame`] on the [`Stack`].
+#[derive(Debug, Copy, Clone)]
+pub struct StackFrameRef(usize);
+
+impl StackFrameRef {
+    /// Returns the root [`StackFrameRef`].
+    pub fn root() -> Self {
+        Self(0)
+    }
+}
+
 impl Stack {
-    /// Initializes the [`Stack`] with the initial parameters.
-    pub(super) fn push_init<'frame>(
+    /// Resets the [`Stack`] data entirely.
+    fn reset(&mut self) {
+        self.entries.clear();
+        self.frames.clear();
+    }
+
+    /// Initializes the [`Stack`] with the root function call frame.
+    ///
+    /// Returns the [`StackFrameRef`] to the root [`StackFrame`].
+    /// Resets the state of the [`Stack`] to start the new computation.
+    ///
+    /// # Note
+    ///
+    /// This initializes the root function parameters and its call frame.
+    pub(super) fn init<'frame>(
         &'frame mut self,
         func: &WasmFuncEntity,
         initial_params: impl CallParams,
-    ) -> StackFrameView<'frame> {
+    ) -> StackFrameRef {
+        self.reset();
+
         let len_regs = func.func_body().len_regs() as usize;
         let len_params = initial_params.len_params();
         assert!(
@@ -41,8 +67,6 @@ impl Stack {
             "encountered more parameters in init frame than frame can handle. \
             #params: {len_params}, #registers: {len_regs}",
         );
-        self.entries.clear();
-        self.frames.clear();
         let params = initial_params.feed_params();
         self.entries.resize_with(len_regs, UntypedValue::default);
         self.entries[..len_params]
@@ -64,11 +88,18 @@ impl Stack {
             default_table: None,
             pc: 0,
         });
-        self.frame_at(frame_idx)
+        StackFrameRef(frame_idx)
     }
 
-    /// Pops the initial frame on the [`Stack`] and returns its results.
-    pub(super) fn pop_init<Results>(
+    /// Finalizes the execution of the root [`StackFrame`].
+    ///
+    /// This reads back the result of the computation into `results`.
+    ///
+    /// # Panics
+    ///
+    /// If this is not called when only the root [`StackFrame`] is remaining
+    /// on the [`Stack`].
+    pub(super) fn finalize<Results>(
         &mut self,
         result_types: &[ValueType],
         resolve_const: impl Fn(ConstRef) -> UntypedValue,
@@ -119,7 +150,11 @@ impl Stack {
         results: ExecRegisterSlice,
         params: &[ExecProvider],
         resolve_const: impl Fn(ConstRef) -> UntypedValue,
-    ) -> StackFrameView<'frame> {
+    ) -> StackFrameRef {
+        debug_assert!(
+            !self.frames.is_empty(),
+            "the init stack frame must always be on the call stack"
+        );
         let len = func.func_body().len_regs() as usize;
         debug_assert!(!self.frames.is_empty());
         assert!(
@@ -167,7 +202,7 @@ impl Stack {
             );
             pushed_view.set(slot, param_value);
         });
-        self.frame_at(frame_idx)
+        StackFrameRef(frame_idx)
     }
 
     /// Pops the most recently pushed [`StackFrame`] from the [`Stack`] if any.
@@ -175,15 +210,29 @@ impl Stack {
     /// Returns the providers in `returns` to the `results` of the previous
     /// [`StackFrame`] on the [`Stack`].
     ///
-    /// # Panics
+    /// Returns the [`StackFrameRef`] to the last [`StackFrame`] on the [`Stack`]
+    /// after this operation has finished.
     ///
-    /// If the amount of [`StackFrame`] on the frame stack is less than 2.
+    /// # Note
+    ///
+    /// Returns `None` in case there is only the root [`StackFrame`] left
+    /// on the [`Stack`] indicating that the [`pop_init`] method should be used
+    /// instead.
     pub(super) fn pop_frame(
         &mut self,
         returned_values: &[ExecProvider],
         resolve_const: impl Fn(ConstRef) -> UntypedValue,
-    ) {
-        debug_assert!(!self.frames.is_empty());
+    ) -> Option<StackFrameRef> {
+        debug_assert!(
+            !self.frames.is_empty(),
+            "the init stack frame must always be on the call stack"
+        );
+        if self.frames.len() == 1 {
+            // Early return `None` to flag that only the root call
+            // frames remain on the stack which means that [`pop_init`]
+            // should be used instead.
+            return None;
+        }
         let frame = self
             .frames
             .pop()
@@ -219,6 +268,7 @@ impl Stack {
                 previous_view.set(result, return_value);
             });
         self.entries.shrink_to(frame.region.start);
+        Some(StackFrameRef(self.frames.len() - 1))
     }
 
     /// Returns the [`StackFrameView`] at the given frame index.
@@ -226,8 +276,8 @@ impl Stack {
     /// # Panics
     ///
     /// If the [`FrameRegion`] is invalid.
-    fn frame_at(&mut self, frame_idx: usize) -> StackFrameView {
-        let frame = &mut self.frames[frame_idx];
+    pub(super) fn frame_at(&mut self, frame_ref: StackFrameRef) -> StackFrameView {
+        let frame = &mut self.frames[frame_ref.0];
         let region = frame.region;
         let regs = &mut self.entries[region.start..(region.start + region.len)];
         StackFrameView::new(
