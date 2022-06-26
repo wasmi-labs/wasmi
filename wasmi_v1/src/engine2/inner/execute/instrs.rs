@@ -521,7 +521,9 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         result: <ExecuteTypes as InstructionTypes>::Register,
         global: bytecode::Global,
     ) -> Self::Outcome {
-        todo!()
+        let value = self.resolve_global(global).get(&self.ctx);
+        self.frame.regs.set(result, value.into());
+        self.next_instr()
     }
 
     fn visit_global_set(
@@ -529,7 +531,19 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         global: bytecode::Global,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
-        todo!()
+        let global_var = self.resolve_global(global);
+        let value = self
+            .load_provider(value)
+            .with_type(global_var.value_type(&self.ctx));
+        global_var
+            .set(&mut self.ctx, value)
+            .unwrap_or_else(|error| {
+                panic!(
+                    "unexpected type mismatch upon `global.set` for global {:?}: {}",
+                    global_var, error
+                )
+            });
+        self.next_instr()
     }
 
     fn visit_i32_load(
