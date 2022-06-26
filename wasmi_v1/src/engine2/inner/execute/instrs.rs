@@ -19,7 +19,7 @@ use crate::{
     StoreContextMut,
     Table,
 };
-use wasmi_core::{ExtendInto, LittleEndianConvert, Trap, TrapCode, UntypedValue};
+use wasmi_core::{ExtendInto, LittleEndianConvert, Trap, TrapCode, UntypedValue, WrapInto};
 
 /// The possible outcomes of an instruction execution.
 #[derive(Debug, Copy, Clone)]
@@ -247,6 +247,33 @@ impl<'engine, 'func, 'ctx, T> ExecContext<'engine, 'func, 'ctx, T> {
     {
         let new_value = V::from(self.load_provider(new_value));
         let bytes = <V as LittleEndianConvert>::into_le_bytes(new_value);
+        self.store_bytes(ptr, offset, bytes.as_ref())?;
+        self.next_instr()
+    }
+
+    /// Stores a value of type `T` wrapped to type `U` into the default memory at the given address offset.
+    ///
+    /// # Note
+    ///
+    /// This can be used to emulate the following Wasm operands:
+    ///
+    /// - `i32.store8`
+    /// - `i32.store16`
+    /// - `i64.store8`
+    /// - `i64.store16`
+    /// - `i64.store32`
+    fn exec_store_wrap<V, U>(
+        &mut self,
+        ptr: ExecRegister,
+        offset: bytecode::Offset,
+        new_value: ExecProvider,
+    ) -> Result<ExecOutcome, Trap>
+    where
+        V: From<UntypedValue> + WrapInto<U>,
+        U: LittleEndianConvert,
+    {
+        let new_value = V::from(self.load_provider(new_value)).wrap_into();
+        let bytes = <U as LittleEndianConvert>::into_le_bytes(new_value);
         self.store_bytes(ptr, offset, bytes.as_ref())?;
         self.next_instr()
     }
@@ -673,7 +700,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         offset: bytecode::Offset,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_store_wrap::<i32, i8>(ptr, offset, value)
     }
 
     fn visit_i32_store_16(
@@ -682,7 +709,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         offset: bytecode::Offset,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_store_wrap::<i32, i16>(ptr, offset, value)
     }
 
     fn visit_i64_store_8(
@@ -691,7 +718,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         offset: bytecode::Offset,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_store_wrap::<i64, i8>(ptr, offset, value)
     }
 
     fn visit_i64_store_16(
@@ -700,7 +727,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         offset: bytecode::Offset,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_store_wrap::<i64, i16>(ptr, offset, value)
     }
 
     fn visit_i64_store_32(
@@ -709,7 +736,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         offset: bytecode::Offset,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_store_wrap::<i64, i32>(ptr, offset, value)
     }
 
     fn visit_memory_size(
