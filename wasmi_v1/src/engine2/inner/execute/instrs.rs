@@ -1,3 +1,5 @@
+use core::cmp;
+
 use super::{stack::StackFrameView, CallOutcome};
 use crate::{
     engine2::{
@@ -37,8 +39,8 @@ pub enum ExecOutcome {
     Continue,
     /// Branch to the target instruction.
     Branch {
-        /// The target instruction to branch to.
-        target: Target,
+        /// The program counter to the branched to instruction.
+        next_pc: usize,
     },
     /// Returns the result of the function execution.
     Return {
@@ -91,9 +93,9 @@ pub(super) fn execute_frame<'engine, 'func>(
                 // Advance program counter.
                 exec_ctx.frame.pc += 1;
             }
-            ExecOutcome::Branch { target } => {
+            ExecOutcome::Branch { next_pc } => {
                 // Set program counter to the branch target.
-                exec_ctx.frame.pc = target.destination().into_inner() as usize;
+                exec_ctx.frame.pc = next_pc;
             }
             ExecOutcome::Call {
                 results,
@@ -136,6 +138,19 @@ impl<'engine, 'func, 'ctx, T> ExecContext<'engine, 'func, 'ctx, T> {
     /// for optimization purposes.
     fn next_instr(&self) -> Result<ExecOutcome, Trap> {
         Ok(ExecOutcome::Continue)
+    }
+
+    /// Returns the [`ExecOutcome`] to branch to the given `target`.
+    ///
+    /// # Note
+    ///
+    /// This is a convenience function with the purpose to simplify
+    /// the process to change the behavior of the dispatch once required
+    /// for optimization purposes.
+    fn branch_to_target(&self, target: Target) -> Result<ExecOutcome, Trap> {
+        Ok(ExecOutcome::Branch {
+            next_pc: target.destination().into_inner() as usize,
+        })
     }
 
     /// Returns the default linear memory.
@@ -470,7 +485,7 @@ impl<'engine, 'func, 'ctx, T> ExecContext<'engine, 'func, 'ctx, T> {
     ) -> Result<ExecOutcome, Trap> {
         let condition = self.frame.regs.get(condition);
         if op(condition) {
-            return Ok(ExecOutcome::Branch { target });
+            return self.branch_to_target(target);
         }
         self.next_instr()
     }
@@ -482,7 +497,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
     type Outcome = Result<ExecOutcome, Trap>;
 
     fn visit_br(&mut self, target: Target) -> Self::Outcome {
-        Ok(ExecOutcome::Branch { target })
+        self.branch_to_target(target)
     }
 
     fn visit_br_eqz(
