@@ -1,7 +1,7 @@
 use super::stack::StackFrameView;
 use crate::{
     engine2::{
-        bytecode::{ExecRegister, ExecuteTypes, VisitInstruction},
+        bytecode::{self, ExecRegister, ExecuteTypes, VisitInstruction},
         inner::EngineResources,
         ExecProvider,
         ExecProviderSlice,
@@ -10,7 +10,9 @@ use crate::{
         ResolvedFuncBody,
         Target,
     },
+    AsContext,
     Func,
+    Global,
     Instance,
     Memory,
     StoreContextMut,
@@ -65,6 +67,55 @@ impl<'engine, 'func, 'ctx, T> ExecContext<'engine, 'func, 'ctx, T> {
     /// for optimization purposes.
     fn next_instr(&self) -> Result<ExecOutcome, Trap> {
         Ok(ExecOutcome::Continue)
+    }
+
+    /// Returns the default linear memory.
+    ///
+    /// # Panics
+    ///
+    /// If there exists is no linear memory for the instance.
+    fn default_memory(&mut self) -> Memory {
+        self.frame.default_memory(&self.ctx)
+    }
+
+    /// Returns the default table.
+    ///
+    /// # Panics
+    ///
+    /// If there exists is no table for the instance.
+    fn default_table(&mut self) -> Table {
+        self.frame.default_table(&self.ctx)
+    }
+
+    /// Returns the global variable at the given global variable index.
+    ///
+    /// # Panics
+    ///
+    /// If there is no global variable at the given index.
+    fn resolve_global(&self, global_index: bytecode::Global) -> Global {
+        self.frame
+            .instance
+            .get_global(self.ctx.as_context(), global_index.into_inner())
+            .unwrap_or_else(|| {
+                panic!(
+                    "missing global at index {:?} for instance {:?}",
+                    global_index, self.frame.instance
+                )
+            })
+    }
+
+    /// Calculates the effective address of a linear memory access.
+    ///
+    /// # Errors
+    ///
+    /// If the resulting effective address overflows.
+    fn effective_address(offset: bytecode::Offset, address: u32) -> Result<usize, Trap> {
+        offset
+            .into_inner()
+            .checked_add(address)
+            .map(|address| address as usize)
+            .ok_or(TrapCode::MemoryAccessOutOfBounds)
+            .map_err(Into::into)
     }
 
     /// Executes the given unary `wasmi` operation.
