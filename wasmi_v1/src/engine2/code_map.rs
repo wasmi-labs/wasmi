@@ -183,6 +183,6 @@ impl ResolvedFuncBody<'_> {
         //
         // Note that eliminating this bounds check is extremely valuable since this
         // part of the `wasmi` interpreter is part of the interpreter's hot path.
-        unsafe { self.insts.get_unchecked(index) }
+        self.insts.get_unchecked(index)
     }
 }

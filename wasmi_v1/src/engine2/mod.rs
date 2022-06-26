@@ -19,10 +19,9 @@ mod tests;
 
 pub(crate) use self::{
     bytecode::{ExecInstruction, ExecRegisterSlice, Instruction, InstructionTypes, Target},
-    code_map::ResolvedFuncBody,
     func_args::{FuncParams, FuncResults},
-    func_builder::{FunctionBuilder, Instr, IrProvider, IrRegister, LabelIdx, Reloc},
-    provider::{DedupProviderSliceArena, ExecProvider, ExecProviderSlice, RegisterOrImmediate},
+    func_builder::{FunctionBuilder, IrProvider, IrRegister},
+    provider::{DedupProviderSliceArena, ExecProvider, ExecProviderSlice},
     traits::{CallParams, CallResults},
 };
 use self::{
@@ -124,17 +123,19 @@ impl Engine {
         self.inner.lock().resolve_inst(func_body, index)
     }
 
-    /// Allocates the instructions of a Wasm function body to the [`Engine`].
-    ///
-    /// Returns a [`FuncBody`] reference to the allocated function body.
-    pub(super) fn alloc_func_body<I>(&self, insts: I, len_registers: u16) -> FuncBody
-    where
-        I: IntoIterator<Item = ExecInstruction>,
-        I::IntoIter: ExactSizeIterator,
-    {
-        self.inner.lock().alloc_func_body(insts, len_registers)
-    }
+    // /// Allocates the instructions of a Wasm function body to the [`Engine`].
+    // ///
+    // /// Returns a [`FuncBody`] reference to the allocated function body.
+    // #[cfg(test)]
+    // pub(super) fn alloc_func_body<I>(&self, insts: I, len_registers: u16) -> FuncBody
+    // where
+    //     I: IntoIterator<Item = ExecInstruction>,
+    //     I::IntoIter: ExactSizeIterator,
+    // {
+    //     self.inner.lock().alloc_func_body(insts, len_registers)
+    // }
 
+    #[cfg(test)]
     pub(super) fn alloc_provider_slice<I>(&self, providers: I) -> ExecProviderSlice
     where
         I: IntoIterator<Item = ExecProvider>,

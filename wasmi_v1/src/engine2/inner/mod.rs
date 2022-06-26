@@ -2,23 +2,20 @@ mod compile;
 mod execute;
 
 use super::{
-    CallParams,
-    CallResults,
     CodeMap,
     ConstPool,
     ConstRef,
     DedupFuncType,
     DedupProviderSliceArena,
     EngineIdent,
-    ExecInstruction,
-    ExecProvider,
-    ExecProviderSlice,
-    FuncBody,
     FuncTypeRegistry,
 };
-use crate::{AsContextMut, Config, Func, FuncType};
+use crate::{Config, FuncType};
 use execute::Stack;
-use wasmi_core::{Trap, UntypedValue};
+use wasmi_core::UntypedValue;
+
+#[cfg(test)]
+use super::{ExecInstruction, ExecProvider, ExecProviderSlice, FuncBody};
 
 /// The internal state of the `wasmi` engine.
 #[derive(Debug)]
@@ -69,13 +66,6 @@ impl EngineResources {
         F: FnOnce(&FuncType) -> R,
     {
         f(self.func_types.resolve_func_type(func_type))
-    }
-    pub fn alloc_provider_slice<I>(&mut self, providers: I) -> ExecProviderSlice
-    where
-        I: IntoIterator<Item = ExecProvider>,
-        I::IntoIter: ExactSizeIterator,
-    {
-        self.provider_slices.alloc(providers)
     }
 
     pub fn alloc_const<T>(&mut self, value: T) -> ConstRef
@@ -144,23 +134,13 @@ impl EngineInner {
         self.res.resolve_func_type(func_type, f)
     }
 
-    /// Allocates the instructions of a Wasm function body to the [`Engine`].
-    ///
-    /// Returns a [`FuncBody`] reference to the allocated function body.
-    pub fn alloc_func_body<I>(&mut self, insts: I, len_registers: u16) -> FuncBody
-    where
-        I: IntoIterator<Item = ExecInstruction>,
-        I::IntoIter: ExactSizeIterator,
-    {
-        self.code_map.alloc(insts, len_registers)
-    }
-
-    pub fn alloc_provider_slice<I>(&mut self, providers: I) -> ExecProviderSlice
+    #[cfg(test)]
+    pub(super) fn alloc_provider_slice<I>(&mut self, providers: I) -> ExecProviderSlice
     where
         I: IntoIterator<Item = ExecProvider>,
         I::IntoIter: ExactSizeIterator,
     {
-        self.res.alloc_provider_slice(providers)
+        self.res.provider_slices.alloc(providers)
     }
 
     pub fn alloc_const<T>(&mut self, value: T) -> ConstRef

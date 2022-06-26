@@ -45,16 +45,6 @@ pub struct ConstPool {
 }
 
 impl ConstPool {
-    /// Returns the number of stored unique constants in the [`ConstPool`].
-    pub fn len(&self) -> usize {
-        self.values.len()
-    }
-
-    /// Returns `true` if the [`ConstPool`] is empty.
-    pub fn is_empty(&self) -> bool {
-        self.values.is_empty()
-    }
-
     /// Allocates a new constant value and returns a unique index to it.
     pub fn alloc_const<T>(&mut self, value: T) -> ConstRef
     where

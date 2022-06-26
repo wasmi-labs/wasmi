@@ -63,12 +63,16 @@ pub struct ExecProviderSlice {
 }
 
 impl ExecProviderSlice {
+    /// Creates a new [`ExecProviderSlice`] with the given properties.
+    #[cfg(test)]
     pub fn new(first: u16, len: u16) -> Self {
         Self { first, len }
     }
 
+    /// Creates a new empty [`ExecProviderSlice`].
+    #[cfg(test)]
     pub fn empty() -> Self {
-        Self { first: 0, len: 0 }
+        Self::new(0, 0)
     }
 }
 
