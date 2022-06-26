@@ -10,6 +10,7 @@ use crate::{
         ResolvedFuncBody,
         Target,
     },
+    module::{FuncIdx, FuncTypeIdx},
     AsContext,
     AsContextMut,
     Func,
@@ -50,6 +51,8 @@ pub enum ExecOutcome {
         results: ExecRegisterSlice,
         /// The called function.
         callee: Func,
+        /// The parameters of the function call.
+        params: ExecProviderSlice,
     },
 }
 
@@ -479,21 +482,59 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
 
     fn visit_call(
         &mut self,
-        func: crate::module::FuncIdx,
+        func: FuncIdx,
         results: <ExecuteTypes as InstructionTypes>::RegisterSlice,
         params: <ExecuteTypes as InstructionTypes>::ProviderSlice,
     ) -> Self::Outcome {
-        todo!()
+        let callee = self
+            .frame
+            .instance
+            .get_func(&mut self.ctx, func.into_u32())
+            .unwrap_or_else(|| {
+                panic!(
+                    "unexpected missing function at index {:?} for instance {:?}",
+                    func, self.frame.instance
+                )
+            });
+        Ok(ExecOutcome::Call {
+            results,
+            callee,
+            params,
+        })
     }
 
     fn visit_call_indirect(
         &mut self,
-        func_type: crate::module::FuncTypeIdx,
+        func_type: FuncTypeIdx,
         results: <ExecuteTypes as InstructionTypes>::RegisterSlice,
         index: <ExecuteTypes as InstructionTypes>::Provider,
         params: <ExecuteTypes as InstructionTypes>::ProviderSlice,
     ) -> Self::Outcome {
-        todo!()
+        let index = u32::from(self.load_provider(index));
+        let table = self.default_table();
+        let callee = table
+            .get(&self.ctx, index as usize)
+            .map_err(|_| TrapCode::TableAccessOutOfBounds)?
+            .ok_or(TrapCode::ElemUninitialized)?;
+        let actual_signature = callee.signature(&self.ctx);
+        let expected_signature = self
+            .frame
+            .instance
+            .get_signature(&self.ctx, func_type.into_u32())
+            .unwrap_or_else(|| {
+                panic!(
+                    "missing signature for `call_indirect` at index {:?} for instance {:?}",
+                    func_type, self.frame.instance
+                )
+            });
+        if actual_signature != expected_signature {
+            return Err(Trap::from(TrapCode::UnexpectedSignature));
+        }
+        Ok(ExecOutcome::Call {
+            results,
+            callee,
+            params,
+        })
     }
 
     fn visit_copy(
