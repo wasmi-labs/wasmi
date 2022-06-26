@@ -11,6 +11,7 @@ use crate::{
         Target,
     },
     AsContext,
+    AsContextMut,
     Func,
     Global,
     Instance,
@@ -142,6 +143,30 @@ impl<'engine, 'func, 'ctx, T> ExecContext<'engine, 'func, 'ctx, T> {
         Ok(())
     }
 
+    /// Stores bytes to the default memory from the given `buffer`.
+    ///
+    /// # Errors
+    ///
+    /// If the memory access is out of bounds.
+    ///
+    /// # Panics
+    ///
+    /// If there exists is no linear memory for the instance.
+    fn store_bytes(
+        &mut self,
+        ptr: ExecRegister,
+        offset: bytecode::Offset,
+        bytes: &[u8],
+    ) -> Result<(), Trap> {
+        let memory = self.default_memory();
+        let ptr = self.frame.regs.get(ptr);
+        let address = Self::effective_address(offset, ptr)?;
+        memory
+            .write(&mut self.ctx, address, bytes)
+            .map_err(|_| TrapCode::MemoryAccessOutOfBounds)?;
+        Ok(())
+    }
+
     /// Loads a value of type `T` from the default memory at the given address offset.
     ///
     /// # Note
@@ -198,6 +223,31 @@ impl<'engine, 'func, 'ctx, T> ExecContext<'engine, 'func, 'ctx, T> {
         self.load_bytes(ptr, offset, buffer.as_mut())?;
         let extended = <V as LittleEndianConvert>::from_le_bytes(buffer).extend_into();
         self.frame.regs.set(result, extended.into());
+        self.next_instr()
+    }
+
+    /// Stores a value of type `T` into the default memory at the given address offset.
+    ///
+    /// # Note
+    ///
+    /// This can be used to emulate the following Wasm operands:
+    ///
+    /// - `i32.store`
+    /// - `i64.store`
+    /// - `f32.store`
+    /// - `f64.store`
+    fn exec_store<V>(
+        &mut self,
+        ptr: ExecRegister,
+        offset: bytecode::Offset,
+        new_value: ExecProvider,
+    ) -> Result<ExecOutcome, Trap>
+    where
+        V: LittleEndianConvert + From<UntypedValue>,
+    {
+        let new_value = V::from(self.load_provider(new_value));
+        let bytes = <V as LittleEndianConvert>::into_le_bytes(new_value);
+        self.store_bytes(ptr, offset, bytes.as_ref())?;
         self.next_instr()
     }
 
@@ -587,7 +637,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         offset: bytecode::Offset,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_store::<i32>(ptr, offset, value)
     }
 
     fn visit_i64_store(
@@ -596,7 +646,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         offset: bytecode::Offset,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_store::<i64>(ptr, offset, value)
     }
 
     fn visit_f32_store(
@@ -605,7 +655,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         offset: bytecode::Offset,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_store::<f32>(ptr, offset, value)
     }
 
     fn visit_f64_store(
@@ -614,7 +664,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         offset: bytecode::Offset,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
-        todo!()
+        self.exec_store::<f64>(ptr, offset, value)
     }
 
     fn visit_i32_store_8(
