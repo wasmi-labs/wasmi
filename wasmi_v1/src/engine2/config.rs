@@ -2,7 +2,7 @@
 
 use super::{DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT};
 
-/// Configuration for an [`Engine`].
+/// Configuration for an [`Engine`][`super::Engine`].
 #[derive(Debug, Copy, Clone)]
 pub struct Config {
     /// The internal value stack limit.
