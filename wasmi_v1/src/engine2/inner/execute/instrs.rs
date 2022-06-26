@@ -129,7 +129,6 @@ impl<'engine, 'func, 'ctx, T> ExecContext<'engine, 'func, 'ctx, T> {
     /// If there exists is no linear memory for the instance.
     fn load_bytes(
         &mut self,
-        result: ExecRegister,
         ptr: ExecRegister,
         offset: bytecode::Offset,
         buffer: &mut [u8],
@@ -163,7 +162,7 @@ impl<'engine, 'func, 'ctx, T> ExecContext<'engine, 'func, 'ctx, T> {
         V: LittleEndianConvert + Into<UntypedValue>,
     {
         let mut buffer = <<V as LittleEndianConvert>::Bytes as Default>::default();
-        self.load_bytes(result, ptr, offset, buffer.as_mut())?;
+        self.load_bytes(ptr, offset, buffer.as_mut())?;
         let value = <V as LittleEndianConvert>::from_le_bytes(buffer);
         self.frame.regs.set(result, value.into());
         self.next_instr()
@@ -196,7 +195,7 @@ impl<'engine, 'func, 'ctx, T> ExecContext<'engine, 'func, 'ctx, T> {
         U: Into<UntypedValue>,
     {
         let mut buffer = <<V as LittleEndianConvert>::Bytes as Default>::default();
-        self.load_bytes(result, ptr, offset, buffer.as_mut())?;
+        self.load_bytes(ptr, offset, buffer.as_mut())?;
         let extended = <V as LittleEndianConvert>::from_le_bytes(buffer).extend_into();
         self.frame.regs.set(result, extended.into());
         self.next_instr()
