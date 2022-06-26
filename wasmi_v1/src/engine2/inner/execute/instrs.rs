@@ -359,14 +359,14 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
     fn visit_global_get(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
-        global: crate::engine2::bytecode::Global,
+        global: bytecode::Global,
     ) -> Self::Outcome {
         todo!()
     }
 
     fn visit_global_set(
         &mut self,
-        global: crate::engine2::bytecode::Global,
+        global: bytecode::Global,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
         todo!()
@@ -376,7 +376,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
     ) -> Self::Outcome {
         todo!()
     }
@@ -385,7 +385,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
     ) -> Self::Outcome {
         todo!()
     }
@@ -394,7 +394,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
     ) -> Self::Outcome {
         todo!()
     }
@@ -403,7 +403,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
     ) -> Self::Outcome {
         todo!()
     }
@@ -412,7 +412,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
     ) -> Self::Outcome {
         todo!()
     }
@@ -421,7 +421,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
     ) -> Self::Outcome {
         todo!()
     }
@@ -430,7 +430,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
     ) -> Self::Outcome {
         todo!()
     }
@@ -439,7 +439,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
     ) -> Self::Outcome {
         todo!()
     }
@@ -448,7 +448,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
     ) -> Self::Outcome {
         todo!()
     }
@@ -457,7 +457,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
     ) -> Self::Outcome {
         todo!()
     }
@@ -466,7 +466,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
     ) -> Self::Outcome {
         todo!()
     }
@@ -475,7 +475,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
     ) -> Self::Outcome {
         todo!()
     }
@@ -484,7 +484,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
     ) -> Self::Outcome {
         todo!()
     }
@@ -493,7 +493,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
     ) -> Self::Outcome {
         todo!()
     }
@@ -501,7 +501,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
     fn visit_i32_store(
         &mut self,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
         todo!()
@@ -510,7 +510,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
     fn visit_i64_store(
         &mut self,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
         todo!()
@@ -519,7 +519,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
     fn visit_f32_store(
         &mut self,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
         todo!()
@@ -528,7 +528,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
     fn visit_f64_store(
         &mut self,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
         todo!()
@@ -537,7 +537,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
     fn visit_i32_store_8(
         &mut self,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
         todo!()
@@ -546,7 +546,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
     fn visit_i32_store_16(
         &mut self,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
         todo!()
@@ -555,7 +555,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
     fn visit_i64_store_8(
         &mut self,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
         todo!()
@@ -564,7 +564,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
     fn visit_i64_store_16(
         &mut self,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
         todo!()
@@ -573,7 +573,7 @@ impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
     fn visit_i64_store_32(
         &mut self,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
-        offset: crate::engine2::bytecode::Offset,
+        offset: bytecode::Offset,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
         todo!()
