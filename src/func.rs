@@ -14,7 +14,7 @@ use alloc::{
     rc::{Rc, Weak},
     vec::Vec,
 };
-use core::fmt;
+use core::{fmt, cell::RefCell};
 use parity_wasm::elements::Local;
 
 /// Reference to a function (See [`FuncInstance`] for details).
@@ -191,7 +191,7 @@ impl FuncInstance {
         func: &FuncRef,
         args: &[RuntimeValue],
         externals: &mut E,
-        tracer: Tracer,
+        tracer: Rc<RefCell<Tracer>>,
     ) -> Result<Option<RuntimeValue>, Trap> {
         check_function_args(func.signature(), args)?;
         match *func.as_internal() {

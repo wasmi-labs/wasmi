@@ -2,10 +2,10 @@ use core::fmt::Debug;
 
 #[derive(Debug)]
 pub struct IEntry {
-    pub module_instance_index: u32,
-    pub func_index: u32,
-    pub pc: u32,
-    pub opcode: u32,
+    pub module_instance_index: u16,
+    pub func_index: u16,
+    pub pc: u16,
+    pub opcode: u64,
 }
 
 #[derive(Debug)]
@@ -26,10 +26,10 @@ impl ITable {
         opcode: u32,
     ) {
         self.0.push(IEntry {
-            module_instance_index,
-            func_index,
-            pc,
-            opcode,
+            module_instance_index: module_instance_index as u16,
+            func_index: func_index as u16,
+            pc: pc as u16,
+            opcode: opcode as u64,
         })
     }
 }

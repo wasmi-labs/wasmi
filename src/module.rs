@@ -651,7 +651,7 @@ impl ModuleInstance {
         func_name: &str,
         args: &[RuntimeValue],
         externals: &mut E,
-        tracer: Tracer,
+        tracer: Rc<RefCell<Tracer>>,
     ) -> Result<Option<RuntimeValue>, Error> {
         let func_instance = self.func_by_name(func_name)?;
 

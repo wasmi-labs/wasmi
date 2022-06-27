@@ -5,6 +5,7 @@ use self::{etable::ETable, itable::ITable};
 pub mod etable;
 pub mod itable;
 
+#[derive(Debug)]
 pub struct Tracer {
     pub itable: ITable,
     pub etable: ETable,

@@ -59,10 +59,10 @@ impl ETable {
             id: self.0.len() as u64,
             sp,
             inst: IEntry {
-                module_instance_index,
-                func_index,
-                pc,
-                opcode,
+                module_instance_index: module_instance_index as u16,
+                func_index: func_index as u16,
+                pc: pc as u16,
+                opcode: opcode as u64,
             },
             step,
         })

@@ -29,8 +29,9 @@ use crate::{
     ValueType,
 };
 use alloc::{boxed::Box, vec::Vec};
-use core::{fmt, ops, u32, usize};
+use core::{cell::RefCell, fmt, ops, u32, usize};
 use parity_wasm::elements::Local;
+use std::rc::Rc;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 
 /// Maximum number of bytes on the value stack.
@@ -182,7 +183,7 @@ pub struct Interpreter {
     return_type: Option<ValueType>,
     state: InterpreterState,
     scratch: Vec<RuntimeValue>,
-    pub(crate) tracer: Option<Tracer>,
+    pub(crate) tracer: Option<Rc<RefCell<Tracer>>>,
 }
 
 impl Interpreter {
@@ -485,14 +486,25 @@ impl Interpreter {
                 () => {
                     let post_status = self.run_instruction_post(pre_status, &instruction);
                     if let Some(tracer) = self.tracer.as_mut() {
-                        tracer.etable.push(
-                            tracer.lookup_module_instance(&function_context.module),
-                            tracer.lookup_function(&function_context.function),
-                            sp as u64,
-                            pc,
-                            instruction.into(),
-                            post_status,
-                        );
+                        // let ref_tracer = tracer.borrow();
+                        let module_instance = {
+                            (*tracer).borrow().lookup_module_instance(&function_context.module)
+                        };
+
+                        let function = {
+                            (*tracer).borrow().lookup_function(&function_context.function)
+                        };
+
+                        {
+                            (*tracer).borrow_mut().etable.push(
+                                module_instance,
+                                function,
+                                sp as u64,
+                                pc,
+                                instruction.into(),
+                                post_status,
+                            );
+                        }
                     }
                 };
             }
