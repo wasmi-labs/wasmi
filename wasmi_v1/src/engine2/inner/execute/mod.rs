@@ -1,12 +1,15 @@
 mod instrs;
 mod stack;
 
+use core::cmp;
+
 pub use self::stack::Stack;
 use self::{instrs::execute_frame, stack::StackFrameRef};
 use super::{super::ExecRegisterSlice, EngineInner};
 use crate::{
     engine2::{CallParams, CallResults, DedupFuncType, ExecProviderSlice},
-    func::{FuncEntityInternal, WasmFuncEntity},
+    func::{FuncEntityInternal, HostFuncEntity, WasmFuncEntity},
+    AsContext,
     AsContextMut,
     Func,
 };
@@ -91,23 +94,19 @@ impl EngineInner {
         mut ctx: impl AsContextMut,
         mut frame: StackFrameRef,
     ) -> Result<ExecProviderSlice, Trap> {
-        let code_map = &self.code_map;
-        let res = &self.res;
-        let cref_resolve = |cref| {
-            self.res
-                .const_pool
-                .resolve(cref)
-                .unwrap_or_else(|| panic!("failed to resolve constant reference: {:?}", cref))
-        };
         'outer: loop {
-            let view = self.stack.frame_at(frame);
-            match execute_frame(&mut ctx, code_map, res, view)? {
+            let mut view = self.stack.frame_at(frame);
+            match execute_frame(&mut ctx, &self.code_map, &self.res, &mut view)? {
                 CallOutcome::Return { results } => {
                     // Pop the last frame from the function frame stack and
                     // continue executing it OR finish execution if the call
                     // stack is empty.
                     let returned_values = self.res.provider_slices.resolve(results);
-                    match self.stack.pop_frame(returned_values, cref_resolve) {
+                    match self.stack.pop_frame(returned_values, |cref| {
+                        self.res.const_pool.resolve(cref).unwrap_or_else(|| {
+                            panic!("failed to resolve constant reference: {:?}", cref)
+                        })
+                    }) {
                         Some(last_frame) => {
                             frame = last_frame;
                             continue 'outer;
@@ -125,23 +124,78 @@ impl EngineInner {
                     callee,
                     params,
                 } => {
-                    // Execute the nested function call.
                     match callee.as_internal(&ctx) {
                         FuncEntityInternal::Wasm(wasm_func) => {
-                            // Calls a Wasm function.
                             let params = self.res.provider_slices.resolve(params);
-                            frame = self
-                                .stack
-                                .push_frame(wasm_func, results, params, cref_resolve);
+                            frame = self.stack.push_frame(wasm_func, results, params, |cref| {
+                                self.res.const_pool.resolve(cref).unwrap_or_else(|| {
+                                    panic!("failed to resolve constant reference: {:?}", cref)
+                                })
+                            });
                         }
-                        FuncEntityInternal::Host(_host_func) => {
-                            // Calls a host function.
-                            todo!()
+                        FuncEntityInternal::Host(host_func) => {
+                            let host_func = host_func.clone();
+                            self.execute_host_func(&mut ctx, frame, results, host_func, params)?;
                         }
                     };
                 }
             }
         }
+    }
+
+    /// Executes the given host function.
+    ///
+    /// # Errors
+    ///
+    /// - If the host function returns a host side error or trap.
+    #[inline(never)]
+    fn execute_host_func<C>(
+        &mut self,
+        ctx: C,
+        caller: StackFrameRef,
+        results: ExecRegisterSlice,
+        host_func: HostFuncEntity<<C as AsContext>::UserState>,
+        params: ExecProviderSlice,
+    ) -> Result<(), Trap>
+    where
+        C: AsContextMut,
+    {
+        // The host function signature is required for properly
+        // adjusting, inspecting and manipulating the value stack.
+        let (input_types, output_types) = self.res
+            .func_types
+            .resolve_func_type(host_func.signature())
+            .params_results();
+        // In case the host function returns more values than it takes
+        // we are required to extend the value stack.
+        let len_inputs = input_types.len();
+        let len_outputs = output_types.len();
+        let max_inout = cmp::max(len_inputs, len_outputs);
+        // self.value_stack.reserve(max_inout)?;
+        // if len_outputs > len_inputs {
+        //     let delta = len_outputs - len_inputs;
+        //     self.value_stack.extend_zeros(delta)?;
+        // }
+        // let params_results = FuncParams::new(
+        //     self.value_stack.peek_as_slice_mut(max_inout),
+        //     len_inputs,
+        //     len_outputs,
+        // );
+        // // Now we are ready to perform the host function call.
+        // // Note: We need to clone the host function due to some borrowing issues.
+        // //       This should not be a big deal since host functions usually are cheap to clone.
+        // host_func.call(ctx.as_context_mut(), instance, params_results)?;
+        // // If the host functions returns fewer results than it receives parameters
+        // // the value stack needs to be shrinked for the delta.
+        // if len_outputs < len_inputs {
+        //     let delta = len_inputs - len_outputs;
+        //     self.value_stack.drop(delta);
+        // }
+        // // At this point the host function has been called and has directly
+        // // written its results into the value stack so that the last entries
+        // // in the value stack are the result values of the host function call.
+        // Ok(())
+        todo!()
     }
 
     /// Writes the results of the function execution back into the `results` buffer.

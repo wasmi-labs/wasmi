@@ -69,11 +69,11 @@ pub enum ExecOutcome {
 ///
 /// If resources are missing unexpectedly.
 /// For example, a linear memory instance, global variable, etc.
-pub(super) fn execute_frame<'engine, 'func>(
+pub(super) fn execute_frame(
     mut ctx: impl AsContextMut,
-    code_map: &'engine CodeMap,
-    res: &'engine EngineResources,
-    frame: StackFrameView<'func>,
+    code_map: &CodeMap,
+    res: &EngineResources,
+    frame: &mut StackFrameView,
 ) -> Result<CallOutcome, Trap> {
     let func_body = code_map.resolve(frame.func_body);
     let mut exec_ctx = ExecContext {
@@ -119,16 +119,16 @@ pub(super) fn execute_frame<'engine, 'func>(
 
 /// State that is used during Wasm function execution.
 #[derive(Debug)]
-pub struct ExecContext<'engine, 'func, 'ctx, T> {
+pub struct ExecContext<'engine, 'func1, 'func2, 'ctx, T> {
     /// The function frame that is being executed.
-    frame: StackFrameView<'func>,
+    frame: &'func1 mut StackFrameView<'func2>,
     /// The read-only engine resources.
     res: &'engine EngineResources,
     /// The associated store context.
     ctx: StoreContextMut<'ctx, T>,
 }
 
-impl<'engine, 'func, 'ctx, T> ExecContext<'engine, 'func, 'ctx, T> {
+impl<'engine, 'func1, 'func2, 'ctx, T> ExecContext<'engine, 'func1, 'func2, 'ctx, T> {
     /// Returns the [`ExecOutcome`] to continue to the next instruction.
     ///
     /// # Note
@@ -491,8 +491,8 @@ impl<'engine, 'func, 'ctx, T> ExecContext<'engine, 'func, 'ctx, T> {
     }
 }
 
-impl<'engine, 'func, 'ctx, T> VisitInstruction<ExecuteTypes>
-    for ExecContext<'engine, 'func, 'ctx, T>
+impl<'engine, 'func1, 'func2, 'ctx, T> VisitInstruction<ExecuteTypes>
+    for ExecContext<'engine, 'func1, 'func2, 'ctx, T>
 {
     type Outcome = Result<ExecOutcome, Trap>;
 
