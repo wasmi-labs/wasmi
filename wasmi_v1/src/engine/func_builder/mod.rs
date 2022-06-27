@@ -34,7 +34,7 @@ use super::{
     Target,
 };
 use crate::{
-    engine2::bytecode::Global,
+    engine::bytecode::Global,
     module::{
         BlockType,
         FuncIdx,

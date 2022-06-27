@@ -14,7 +14,7 @@ extern crate std as alloc;
 mod foreach_tuple;
 
 mod arena;
-mod engine2;
+mod engine;
 mod error;
 mod external;
 mod func;
@@ -53,7 +53,7 @@ use self::{
     table::{TableEntity, TableIdx},
 };
 pub use self::{
-    engine2::{Config, Engine},
+    engine::{Config, Engine},
     error::Error,
     external::Extern,
     func::{Caller, Func, TypedFunc, WasmParams, WasmResults},
@@ -66,4 +66,3 @@ pub use self::{
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
 };
-use engine2 as engine;

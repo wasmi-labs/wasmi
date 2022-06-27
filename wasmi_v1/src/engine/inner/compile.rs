@@ -3,7 +3,7 @@ use super::{
     EngineInner,
     EngineResources,
 };
-use crate::engine2::{
+use crate::engine::{
     func_builder::{CompileContext, IrInstruction, IrProviderSlice, IrRegisterSlice},
     ConstPool,
     ExecInstruction,

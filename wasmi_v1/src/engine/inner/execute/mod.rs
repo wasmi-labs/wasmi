@@ -7,7 +7,7 @@ pub use self::stack::Stack;
 use self::{instrs::execute_frame, stack::StackFrameRef};
 use super::{super::ExecRegisterSlice, EngineInner};
 use crate::{
-    engine2::{CallParams, CallResults, DedupFuncType, ExecProviderSlice},
+    engine::{CallParams, CallResults, DedupFuncType, ExecProviderSlice},
     func::{FuncEntityInternal, HostFuncEntity, WasmFuncEntity},
     AsContext,
     AsContextMut,
@@ -162,7 +162,8 @@ impl EngineInner {
     {
         // The host function signature is required for properly
         // adjusting, inspecting and manipulating the value stack.
-        let (input_types, output_types) = self.res
+        let (input_types, output_types) = self
+            .res
             .func_types
             .resolve_func_type(host_func.signature())
             .params_results();

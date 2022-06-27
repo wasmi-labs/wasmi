@@ -2,7 +2,7 @@ use core::cmp;
 
 use super::{stack::StackFrameView, CallOutcome};
 use crate::{
-    engine2::{
+    engine::{
         bytecode::{self, visit_instr, ExecRegister, ExecuteTypes, VisitInstruction},
         code_map::CodeMap,
         inner::EngineResources,

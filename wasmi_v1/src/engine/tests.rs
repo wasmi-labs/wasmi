@@ -1,7 +1,6 @@
 use super::{bytecode::Global, *};
 use crate::{
-    engine::ExecProviderSlice,
-    engine2::{ExecInstruction, ExecProvider, ExecRegister, Offset},
+    engine::{ExecInstruction, ExecProvider, ExecProviderSlice, ExecRegister, Offset},
     module::{FuncIdx, FuncTypeIdx},
     Engine,
     Module,
