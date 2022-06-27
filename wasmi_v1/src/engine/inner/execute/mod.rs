@@ -151,11 +151,11 @@ impl EngineInner {
     #[inline(never)]
     fn execute_host_func<C>(
         &mut self,
-        ctx: C,
-        caller: StackFrameRef,
-        results: ExecRegisterSlice,
+        _ctx: C,
+        _caller: StackFrameRef,
+        _results: ExecRegisterSlice,
         host_func: HostFuncEntity<<C as AsContext>::UserState>,
-        params: ExecProviderSlice,
+        _params: ExecProviderSlice,
     ) -> Result<(), Trap>
     where
         C: AsContextMut,
@@ -171,7 +171,7 @@ impl EngineInner {
         // we are required to extend the value stack.
         let len_inputs = input_types.len();
         let len_outputs = output_types.len();
-        let max_inout = cmp::max(len_inputs, len_outputs);
+        let _max_inout = cmp::max(len_inputs, len_outputs);
         // self.value_stack.reserve(max_inout)?;
         // if len_outputs > len_inputs {
         //     let delta = len_outputs - len_inputs;
