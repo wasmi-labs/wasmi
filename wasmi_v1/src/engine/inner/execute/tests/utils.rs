@@ -1,5 +1,5 @@
+use crate::{Engine, Instance, Linker, Module, Store};
 use std::{fs::File, io::Read as _};
-use crate::{Module, Engine, Store, Linker, Instance};
 
 /// Returns the Wasm binary at the given `file_name` as `Vec<u8>`.
 ///
