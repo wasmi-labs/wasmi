@@ -109,14 +109,8 @@ impl Stack {
             self.frames.is_empty(),
             "unexpected frames left on the frame stack after execution"
         );
-        let len_entries = self.entries.len();
         let len_results = results.len_results();
         assert_eq!(len_results, result_types.len());
-        assert_eq!(
-            len_entries, len_results,
-            "expected {len_results} values on the stack after function execution \
-            but found {len_entries}",
-        );
         let region = init_frame.region;
         let init_view =
             StackFrameRegisters::from(&mut self.entries[region.start..(region.start + region.len)]);
