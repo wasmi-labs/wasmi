@@ -3,7 +3,7 @@ use crate::runner::ValueInternal;
 use super::itable::IEntry;
 
 pub enum RunInstructionTracePre {
-    BrIfNez { value: bool },
+    BrIfNez { value: i32 },
 
     GetLocal { depth: u32, value: ValueInternal },
 
@@ -14,7 +14,7 @@ pub enum RunInstructionTracePre {
 
 #[derive(Debug)]
 pub enum RunInstructionTraceStep {
-    BrIfNez { value: bool, dst_pc: u32 },
+    BrIfNez { value: i32, dst_pc: u32 },
     Return { drop: u32, keep: u32, drop_values: Vec<ValueInternal>, keep_values: Vec<ValueInternal> },
 
     Call { index: u32 },
