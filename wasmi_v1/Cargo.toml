@@ -17,6 +17,7 @@ spin = { version = "0.9", default-features = false, features = ["mutex", "spin_m
 
 [dev-dependencies]
 wat = "1"
+assert_matches = "1.5"
 
 [features]
 default = ["std"]

@@ -1,6 +1,9 @@
 mod instrs;
 mod stack;
 
+#[cfg(test)]
+mod tests;
+
 use core::cmp;
 
 pub use self::stack::Stack;
