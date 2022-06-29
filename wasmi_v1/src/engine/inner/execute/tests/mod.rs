@@ -13,9 +13,15 @@ use crate::Extern;
 use assert_matches::assert_matches;
 use wasmi_core::Value;
 
+macro_rules! load_test_instance {
+    ( $path:literal ) => {{
+        load_instance_from_wat(include_bytes!($path))
+    }};
+}
+
 #[test]
 fn test_add() {
-    let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/add.wat"));
+    let (mut store, instance) = load_test_instance!("wat/add.wat");
     let add = instance
         .get_export(&store, "add")
         .and_then(Extern::into_func)
@@ -28,7 +34,7 @@ fn test_add() {
 
 #[test]
 fn test_swap() {
-    let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/swap.wat"));
+    let (mut store, instance) = load_test_instance!("wat/swap.wat");
     let add = instance
         .get_export(&store, "swap")
         .and_then(Extern::into_func)
