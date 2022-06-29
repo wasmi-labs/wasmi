@@ -15,7 +15,7 @@ pub enum RunInstructionTracePre {
 #[derive(Debug)]
 pub enum RunInstructionTraceStep {
     BrIfNez { value: bool, dst_pc: u32 },
-    Return { drop: u32, keep: u32 },
+    Return { drop: u32, keep: u32, drop_values: Vec<ValueInternal>, keep_values: Vec<ValueInternal> },
 
     Call { index: u32 },
 

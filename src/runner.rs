@@ -417,10 +417,24 @@ impl Interpreter {
                 }
             }
 
-            isa::Instruction::Return(DropKeep { drop, keep }) => RunInstructionTraceStep::Return {
-                drop,
-                keep: if keep == Keep::Single { 1 } else { 0 },
-            },
+            isa::Instruction::Return(DropKeep { drop, keep }) => {
+                let mut drop_values = vec![];
+
+                for i in 0..drop {
+                    drop_values.push(*self.value_stack.pick(i as usize));
+                }
+
+                RunInstructionTraceStep::Return {
+                    drop,
+                    keep: if keep == Keep::Single { 1 } else { 0 },
+                    drop_values,
+                    keep_values: if keep == isa::Keep::Single {
+                        vec![*self.value_stack.top()]
+                    } else {
+                        vec![]
+                    },
+                }
+            }
 
             isa::Instruction::Call(index) => RunInstructionTraceStep::Call { index },
 
@@ -488,11 +502,15 @@ impl Interpreter {
                     if let Some(tracer) = self.tracer.as_mut() {
                         // let ref_tracer = tracer.borrow();
                         let module_instance = {
-                            (*tracer).borrow().lookup_module_instance(&function_context.module)
+                            (*tracer)
+                                .borrow()
+                                .lookup_module_instance(&function_context.module)
                         };
 
                         let function = {
-                            (*tracer).borrow().lookup_function(&function_context.function)
+                            (*tracer)
+                                .borrow()
+                                .lookup_function(&function_context.function)
                         };
 
                         {
