@@ -25,3 +25,16 @@ fn test_add() {
         .unwrap();
     assert_matches!(result, [Value::I32(3)]);
 }
+
+#[test]
+fn test_swap() {
+    let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/swap.wat"));
+    let add = instance
+        .get_export(&store, "swap")
+        .and_then(Extern::into_func)
+        .unwrap();
+    let mut result = [Value::I32(0), Value::I32(0)];
+    add.call(&mut store, &[Value::I32(1), Value::I32(2)], &mut result)
+        .unwrap();
+    assert_matches!(result, [Value::I32(2), Value::I32(1)]);
+}
