@@ -82,20 +82,19 @@ pub(super) fn execute_frame(
         ctx: ctx.as_context_mut(),
     };
     loop {
-        let pc = exec_ctx.frame.pc;
         // # Safety
         //
         // Since the Wasm and `wasmi` bytecode has already been validated the
         // indices passed at this point can be assumed to be valid always.
-        let instr = unsafe { func_body.get_release_unchecked(pc) };
+        let instr = unsafe { func_body.get_release_unchecked(*exec_ctx.frame.pc) };
         match visit_instr(&mut exec_ctx, *instr)? {
             ExecOutcome::Continue => {
                 // Advance program counter.
-                exec_ctx.frame.pc += 1;
+                *exec_ctx.frame.pc += 1;
             }
             ExecOutcome::Branch { next_pc } => {
                 // Set program counter to the branch target.
-                exec_ctx.frame.pc = next_pc;
+                *exec_ctx.frame.pc = next_pc;
             }
             ExecOutcome::Call {
                 results,
@@ -103,7 +102,7 @@ pub(super) fn execute_frame(
                 params,
             } => {
                 // Advance program counter before calling.
-                exec_ctx.frame.pc += 1;
+                *exec_ctx.frame.pc += 1;
                 return Ok(CallOutcome::Call {
                     results,
                     callee,
@@ -545,7 +544,7 @@ impl<'engine, 'func1, 'func2, 'ctx, T> VisitInstruction<ExecuteTypes>
         let normalized_index = cmp::min(index, max_index);
         // Simply branch to the selected instruction which is going to be either
         // a `br` or a `return` instruction as demanded by the `wasmi` bytecode.
-        let next_pc = self.frame.pc + normalized_index;
+        let next_pc = *self.frame.pc + normalized_index;
         Ok(ExecOutcome::Branch { next_pc })
     }
 

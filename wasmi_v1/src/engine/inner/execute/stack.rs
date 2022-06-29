@@ -262,7 +262,7 @@ impl Stack {
         StackFrameView::new(
             regs,
             frame.func_body,
-            frame.pc,
+            &mut frame.pc,
             frame.instance,
             &mut frame.default_memory,
             &mut frame.default_table,
@@ -332,7 +332,7 @@ pub struct StackFrameView<'a> {
     /// The instruction of the [`StackFrameView`].
     pub func_body: FuncBody,
     /// The current program counter.
-    pub pc: usize,
+    pub pc: &'a mut usize,
     /// The instances of the [`StackFrameView`].
     pub instance: Instance,
     default_memory: &'a mut Option<Memory>,
@@ -344,7 +344,7 @@ impl<'a> StackFrameView<'a> {
     pub fn new(
         regs: &'a mut [UntypedValue],
         func_body: FuncBody,
-        pc: usize,
+        pc: &'a mut usize,
         instance: Instance,
         default_memory: &'a mut Option<Memory>,
         default_table: &'a mut Option<Table>,
