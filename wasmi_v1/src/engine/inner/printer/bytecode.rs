@@ -117,3 +117,20 @@ impl Display for DisplayTarget {
         write!(f, "#{}", self.target.destination().into_usize())
     }
 }
+
+/// Display wrapper for `wasmi` bytecode [`Global`] variables.
+pub struct DisplayGlobal {
+    global: Global,
+}
+
+impl From<Global> for DisplayGlobal {
+    fn from(global: Global) -> Self {
+        Self { global }
+    }
+}
+
+impl Display for DisplayGlobal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "global({})", self.global.into_inner())
+    }
+}

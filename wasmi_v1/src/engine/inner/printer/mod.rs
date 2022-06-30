@@ -9,7 +9,12 @@ mod instr;
 mod utils;
 
 use self::{
-    bytecode::{DisplayExecProvider, DisplayExecRegister, DisplayTarget},
+    bytecode::{
+        DisplayExecProvider,
+        DisplayExecRegister,
+        DisplayGlobal,
+        DisplayTarget,
+    },
     func::{DisplayFunc, DisplayFuncType},
     instr::DisplayExecInstruction,
     utils::{DisplaySequence, DisplaySlice},

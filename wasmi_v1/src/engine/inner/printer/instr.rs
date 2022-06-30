@@ -4,6 +4,7 @@ use super::{
     DisplayExecProvider,
     DisplayExecRegister,
     DisplayFuncType,
+    DisplayGlobal,
     DisplaySequence,
     DisplayTarget,
     EngineInner,
@@ -236,16 +237,16 @@ impl Display for DisplayExecInstruction<'_, '_> {
             Instr::GlobalGet { result, global } => {
                 write!(
                     f,
-                    "{} <- global({})",
+                    "{} <- {}",
                     DisplayExecRegister::from(result),
-                    global.into_inner()
+                    DisplayGlobal::from(global),
                 )
             }
             Instr::GlobalSet { global, value } => {
                 write!(
                     f,
-                    "global({}) <- {}",
-                    global.into_inner(),
+                    "{} <- {}",
+                    DisplayGlobal::from(global),
                     DisplayExecProvider::new(engine, value),
                 )
             }
