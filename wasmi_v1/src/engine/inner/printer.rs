@@ -249,6 +249,7 @@ pub struct DisplayLocals {
 
 impl DisplayLocals {
     pub fn new(len_params: usize, len_locals: usize) -> Self {
+        assert!(len_params + len_locals < (u16::MAX as usize));
         Self {
             len_params,
             len_locals,
@@ -260,10 +261,10 @@ impl Display for DisplayLocals {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut locals = (0..self.len_locals).map(|local| local + self.len_params);
         if let Some(fst) = locals.next() {
-            write!(f, "         local x{}", fst)?;
+            write!(f, "         local {}", DisplayExecRegister::from_index(fst))?;
         }
         while let Some(next) = locals.next() {
-            write!(f, ", x{}", next)?;
+            write!(f, ", {}", DisplayExecRegister::from_index(next))?;
         }
         if self.len_locals > 0 {
             writeln!(f)?;
@@ -284,9 +285,25 @@ impl From<ExecRegister> for DisplayExecRegister {
     }
 }
 
+impl DisplayExecRegister {
+    /// Creates a new [`DisplayExecRegister`] for the given register `index`.
+    ///
+    /// # Panics
+    ///
+    /// If the given register `index` is out of bounds.
+    pub fn from_index(index: usize) -> Self {
+        let index: u16 = index.try_into().unwrap_or_else(|error| {
+            panic!("encountered invalid index {index} for register: {error}")
+        });
+        Self {
+            reg: ExecRegister::from_inner(index),
+        }
+    }
+}
+
 impl Display for DisplayExecRegister {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "x{}", self.reg.into_inner())
+        write!(f, "v{}", self.reg.into_inner())
     }
 }
 
