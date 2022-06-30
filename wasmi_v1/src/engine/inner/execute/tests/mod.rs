@@ -51,7 +51,9 @@ fn test_swap() {
 fn test_factorial_loop() {
     fn test_for(factorial: Func, store: &mut Store<()>, input: i64, expected: i64) {
         let mut result = [Value::I64(0)];
-        factorial.call(store, &[Value::I64(input)], &mut result).unwrap();
+        factorial
+            .call(store, &[Value::I64(input)], &mut result)
+            .unwrap();
         assert_eq!(result, [Value::I64(expected)]);
     }
 
