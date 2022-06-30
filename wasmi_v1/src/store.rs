@@ -303,13 +303,22 @@ impl<T> Store<T> {
     /// - If the Wasm or host function does not originate from this store.
     /// - If the Wasm or host function cannot be resolved to its entity.
     pub(super) fn resolve_func(&self, func: Func) -> &FuncEntity<T> {
-        let entity_index = self.unwrap_index(func.into_inner());
+        let entity_index = self.resolve_func_idx(func);
         self.funcs.get(entity_index).unwrap_or_else(|| {
             panic!(
                 "failed to resolve stored Wasm or host function: {:?}",
                 entity_index
             )
         })
+    }
+
+    /// Returns the [`FuncIdx`] of the given [`Func`].
+    ///
+    /// # Panics
+    ///
+    /// - If the Wasm or host function does not originate from this store.
+    pub(super) fn resolve_func_idx(&self, func: Func) -> FuncIdx {
+        self.unwrap_index(func.into_inner())
     }
 
     /// Returns a shared reference to the associated entity of the [`Instance`].
