@@ -1,12 +1,14 @@
 //! Definitions for visualization of `wasmi` bytecode components.
 
+use super::DisplaySequence;
 use crate::{
     engine::{
-        bytecode::ExecRegister,
+        bytecode::{ExecRegister, Global},
         provider::RegisterOrImmediate,
         ConstRef,
         EngineInner,
         ExecProvider,
+        ExecRegisterSlice,
         Target,
     },
     Index as _,
@@ -132,5 +134,26 @@ impl From<Global> for DisplayGlobal {
 impl Display for DisplayGlobal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "global({})", self.global.into_inner())
+    }
+}
+
+/// Display wrapper for `wasmi` bytecode [`ExecRegisterSlice`].
+pub struct DisplayExecRegisterSlice {
+    slice: ExecRegisterSlice,
+}
+
+impl From<ExecRegisterSlice> for DisplayExecRegisterSlice {
+    fn from(slice: ExecRegisterSlice) -> Self {
+        Self { slice }
+    }
+}
+
+impl Display for DisplayExecRegisterSlice {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            DisplaySequence::from(self.slice.iter().map(DisplayExecRegister::from))
+        )
     }
 }

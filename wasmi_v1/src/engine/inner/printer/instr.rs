@@ -3,6 +3,7 @@
 use super::{
     DisplayExecProvider,
     DisplayExecRegister,
+    DisplayExecRegisterSlice,
     DisplayFuncType,
     DisplayGlobal,
     DisplaySequence,
@@ -15,7 +16,6 @@ use crate::{
         ExecInstruction,
         ExecProvider,
         ExecProviderSlice,
-        ExecRegisterSlice,
         Instruction,
     },
     instance::InstanceEntity,
@@ -117,11 +117,6 @@ impl<'engine, 'inst> DisplayExecInstruction<'engine, 'inst> {
         )
     }
 
-    /// Returns a human readable display wrapper for the given [`ExecRegisterSlice`].
-    fn wrap_register_slice(registers: ExecRegisterSlice) -> impl Display {
-        DisplaySequence::from(registers.iter().map(DisplayExecRegister::from))
-    }
-
     /// Returns a human readable display wrapper for the given [`ExecProviderSlice`].
     fn wrap_provider_slice(&self, providers: ExecProviderSlice) -> impl Display + '_ {
         DisplaySequence::from(
@@ -186,7 +181,7 @@ impl Display for DisplayExecInstruction<'_, '_> {
                 params,
             } => {
                 writeln!(f, "{} <- call func({}) {}",
-                    Self::wrap_register_slice(results),
+                    DisplayExecRegisterSlice::from(results),
                     func_idx.into_u32(),
                     self.wrap_provider_slice(params),
                 )
@@ -209,7 +204,7 @@ impl Display for DisplayExecInstruction<'_, '_> {
                 write!(
                     f,
                     "{} <- call_indirect table[{}] {}: {}",
-                    Self::wrap_register_slice(results),
+                    DisplayExecRegisterSlice::from(results),
                     DisplayExecProvider::new(engine, index),
                     self.wrap_provider_slice(params),
                     DisplayFuncType::from(func_type),

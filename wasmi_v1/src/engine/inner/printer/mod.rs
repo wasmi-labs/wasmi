@@ -12,6 +12,7 @@ use self::{
     bytecode::{
         DisplayExecProvider,
         DisplayExecRegister,
+        DisplayExecRegisterSlice,
         DisplayGlobal,
         DisplayTarget,
     },
