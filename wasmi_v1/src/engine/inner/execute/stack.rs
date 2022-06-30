@@ -141,7 +141,7 @@ impl Stack {
         let len = func.func_body().len_regs() as usize;
         debug_assert!(!self.frames.is_empty());
         assert!(
-            params.len() < len,
+            params.len() <= len,
             "encountered more parameters than register in function frame: #params {}, #registers {}",
             params.len(),
             len
