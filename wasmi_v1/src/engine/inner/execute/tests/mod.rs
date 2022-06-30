@@ -46,3 +46,23 @@ fn test_swap() {
         .unwrap();
     assert_matches!(result, [Value::I32(2), Value::I32(1)]);
 }
+
+#[test]
+fn test_factorial_loop() {
+    fn test_for(factorial: Func, store: &mut Store<()>, input: i64, expected: i64) {
+        let mut result = [Value::I64(0)];
+        factorial.call(store, &[Value::I64(input)], &mut result).unwrap();
+        assert_eq!(result, [Value::I64(expected)]);
+    }
+
+    let (mut store, instance) = load_test_instance!("wat/factorial-iterative.wat");
+    let factorial = load_func(&store, &instance, "factorial_iter");
+
+    test_for(factorial, &mut store, 0, 1);
+    test_for(factorial, &mut store, 1, 1);
+    test_for(factorial, &mut store, 2, 2);
+    test_for(factorial, &mut store, 3, 6);
+    test_for(factorial, &mut store, 4, 24);
+    test_for(factorial, &mut store, 5, 120);
+    test_for(factorial, &mut store, 6, 720);
+}
