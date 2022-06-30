@@ -142,11 +142,13 @@ impl Iterator for ExecRegisterSliceIter {
     type Item = ExecRegister;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.current == self.slice.len {
+        let current = self.current;
+        if current == self.slice.len {
             return None;
         }
+        self.current += 1;
         Some(ExecRegister::from_inner(
-            self.slice.start.into_inner() + self.current,
+            self.slice.start.into_inner() + current,
         ))
     }
 }
