@@ -17,20 +17,40 @@ use self::{
         DisplayGlobal,
         DisplayTarget,
     },
-    func::{DisplayFunc, DisplayFuncIdx, DisplayFuncType},
-    instr::DisplayExecInstruction,
+    func::{DisplayFuncIdx, DisplayFuncType},
     utils::{DisplaySequence, DisplaySlice},
 };
-use super::EngineInner;
-use crate::{AsContext, Func};
+pub use self::{func::DisplayFunc, instr::DisplayExecInstruction};
+use super::{EngineInner, EngineResources};
+use crate::{engine::ExecInstruction, Func, Instance, StoreContext, AsContext};
 
 impl EngineInner {
-    /// Prints the given function in a human readable fashion.
+    /// Returns a [`Display`] wrapper to pretty print the given function.
     ///
     /// # Note
     ///
     /// This functionality is primarily for debugging purposes.
-    pub fn print_func(&self, ctx: impl AsContext, func: Func) {
-        println!("{}", DisplayFunc::new(ctx.as_context(), self, func));
+    pub fn print_func(
+        &self,
+        ctx: impl AsContext,
+        func: Func,
+    ) {
+        println!("{}", DisplayFunc::new(ctx.as_context(), self, func))
+    }
+}
+
+impl ExecInstruction {
+    /// Returns a [`Display`] wrapper to pretty print the given instruction.
+    ///
+    /// # Note
+    ///
+    /// This functionality is primarily for debugging purposes.
+    pub fn print_instr<'ctx, 'engine, T>(
+        &self,
+        ctx: StoreContext<'ctx, T>,
+        instance: Instance,
+        res: &'engine EngineResources,
+    ) -> DisplayExecInstruction<'ctx, 'engine, T> {
+        DisplayExecInstruction::new(ctx, res, instance, self)
     }
 }

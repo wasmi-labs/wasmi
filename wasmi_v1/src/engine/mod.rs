@@ -17,6 +17,8 @@ mod traits;
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+use crate::AsContext;
 pub(crate) use self::{
     bytecode::{ExecInstruction, ExecRegisterSlice, Instruction, InstructionTypes, Target},
     func_args::{FuncParams, FuncResults},
@@ -39,8 +41,6 @@ pub use self::{
     func_builder::RelativeDepth,
     func_types::DedupFuncType,
 };
-#[cfg(test)]
-use crate::AsContext;
 use crate::{AsContextMut, Func, FuncType};
 use alloc::sync::Arc;
 use spin::mutex::Mutex;
@@ -191,13 +191,17 @@ impl Engine {
         self.inner.lock().execute_func(ctx, func, params, results)
     }
 
-    /// Prints the given `func` in a human readable fashion.
+    /// Returns a [`Display`] wrapper to pretty print the given function.
     ///
     /// # Note
     ///
     /// This functionality is intended for debugging purposes.
     #[cfg(test)]
-    pub fn print_func(&self, ctx: impl AsContext, func: Func) {
+    pub fn print_func(
+        &self,
+        ctx: impl AsContext,
+        func: Func,
+    ) {
         self.inner.lock().print_func(ctx, func)
     }
 }
