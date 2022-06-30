@@ -361,6 +361,23 @@ impl<'engine> Display for DisplayConstRef<'engine> {
     }
 }
 
+/// Displays branching [`Target`] as human readable output.
+pub struct DisplayTarget {
+    target: Target,
+}
+
+impl From<Target> for DisplayTarget {
+    fn from(target: Target) -> Self {
+        Self { target }
+    }
+}
+
+impl Display for DisplayTarget {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "#{}", self.target.destination().into_usize())
+    }
+}
+
 /// Wrapper to display an [`ExecInstruction`] in a human readable way.
 #[derive(Debug)]
 pub struct DisplayExecInstruction<'engine, 'inst> {
@@ -370,6 +387,9 @@ pub struct DisplayExecInstruction<'engine, 'inst> {
 }
 
 impl<'engine, 'inst> DisplayExecInstruction<'engine, 'inst> {
+    /// Creates a new [`DisplayExecInstruction`] wrapper.
+    ///
+    /// Used to write the [`ExecInstruction`] in a human readable form.
     pub fn new(
         engine: &'engine EngineInner,
         instance: &'inst InstanceEntity,
@@ -465,11 +485,6 @@ impl<'engine, 'inst> DisplayExecInstruction<'engine, 'inst> {
                 .map(|result| DisplayExecProvider::new(self.engine, result)),
         )
     }
-
-    /// Returns the program pointer for the given [`Target`].
-    fn wrap_target(target: Target) -> usize {
-        target.destination().into_usize()
-    }
 }
 
 impl Display for DisplayExecInstruction<'_, '_> {
@@ -479,18 +494,18 @@ impl Display for DisplayExecInstruction<'_, '_> {
         use Instruction as Instr;
         match self.instr {
             Instr::Br { target } => {
-                writeln!(f, "br -> {}", Self::wrap_target(target))
+                writeln!(f, "br {}", DisplayTarget::from(target))
             }
             Instr::BrEqz { target, condition } => {
-                writeln!(f, "br_eqz {} -> {}",
+                writeln!(f, "br_eqz {} {}",
                     DisplayExecRegister::from(condition),
-                    Self::wrap_target(target),
+                    DisplayTarget::from(target),
                 )
             }
             Instr::BrNez { target, condition } => {
-                writeln!(f, "br_nez {} -> {}",
+                writeln!(f, "br_nez {} {}",
                     DisplayExecRegister::from(condition),
-                    Self::wrap_target(target),
+                    DisplayTarget::from(target),
                 )
             }
             Instr::ReturnNez { results, condition } => {
