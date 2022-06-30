@@ -426,6 +426,20 @@ pub struct StackFrameRegisters<'a> {
     regs: &'a mut [UntypedValue],
 }
 
+impl<'a> Display for StackFrameRegisters<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[")?;
+        if let Some((fst, rest)) = self.regs.split_first() {
+            write!(f, "0x{:X}", fst.to_bits())?;
+            for elem in rest {
+                write!(f, ", 0x{:X}", elem.to_bits())?;
+            }
+        }
+        write!(f, "]")?;
+        Ok(())
+    }
+}
+
 impl<'a> From<&'a mut [UntypedValue]> for StackFrameRegisters<'a> {
     fn from(regs: &'a mut [UntypedValue]) -> Self {
         Self { regs }
