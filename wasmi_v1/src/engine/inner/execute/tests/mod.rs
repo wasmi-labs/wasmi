@@ -9,7 +9,7 @@ use self::utils::{
     load_wasm_from_file,
     wat2wasm,
 };
-use crate::{Extern, Func, Instance, Store};
+use crate::{AsContext, Extern, Func, Instance, Store};
 use assert_matches::assert_matches;
 use wasmi_core::Value;
 
@@ -59,6 +59,28 @@ fn test_factorial_loop() {
 
     let (mut store, instance) = load_test_instance!("wat/factorial-iterative.wat");
     let factorial = load_func(&store, &instance, "factorial_iter");
+
+    test_for(factorial, &mut store, 0, 1);
+    test_for(factorial, &mut store, 1, 1);
+    test_for(factorial, &mut store, 2, 2);
+    test_for(factorial, &mut store, 3, 6);
+    test_for(factorial, &mut store, 4, 24);
+    test_for(factorial, &mut store, 5, 120);
+    test_for(factorial, &mut store, 6, 720);
+}
+
+#[test]
+fn test_factorial_recursive() {
+    fn test_for(factorial: Func, store: &mut Store<()>, input: i64, expected: i64) {
+        let mut result = [Value::I64(0)];
+        factorial
+            .call(store, &[Value::I64(input)], &mut result)
+            .unwrap();
+        assert_eq!(result, [Value::I64(expected)]);
+    }
+
+    let (mut store, instance) = load_test_instance!("wat/factorial-recursive.wat");
+    let factorial = load_func(&store, &instance, "factorial_rec");
 
     test_for(factorial, &mut store, 0, 1);
     test_for(factorial, &mut store, 1, 1);
