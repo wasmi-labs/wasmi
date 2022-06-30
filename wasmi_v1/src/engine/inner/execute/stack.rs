@@ -235,7 +235,7 @@ impl Stack {
                 self.entries[previous.region.start..].split_at_mut(previous.region.len);
             (
                 StackFrameRegisters::from(previous_entries),
-                StackFrameRegisters::from(popped_entries),
+                StackFrameRegisters::from(&mut popped_entries[..frame.region.len]),
             )
         };
         results
