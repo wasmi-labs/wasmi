@@ -18,29 +18,33 @@ use crate::{
         ExecProvider,
         Instruction,
     },
-    instance::InstanceEntity,
+    Instance,
+    StoreContext,
 };
 use core::{fmt, fmt::Display};
 use wasmi_core::TrapCode;
 
 /// Wrapper to display an [`ExecInstruction`] in a human readable way.
 #[derive(Debug)]
-pub struct DisplayExecInstruction<'engine, 'inst> {
+pub struct DisplayExecInstruction<'ctx, 'engine, T> {
+    ctx: StoreContext<'ctx, T>,
     res: &'engine EngineResources,
-    instance: &'inst InstanceEntity,
+    instance: Instance,
     instr: ExecInstruction,
 }
 
-impl<'engine, 'inst> DisplayExecInstruction<'engine, 'inst> {
+impl<'ctx, 'engine, T> DisplayExecInstruction<'ctx, 'engine, T> {
     /// Creates a new [`DisplayExecInstruction`] wrapper.
     ///
     /// Used to write the [`ExecInstruction`] in a human readable form.
     pub fn new(
+        ctx: StoreContext<'ctx, T>,
         res: &'engine EngineResources,
-        instance: &'inst InstanceEntity,
+        instance: Instance,
         instr: &ExecInstruction,
     ) -> Self {
         Self {
+            ctx,
             res,
             instance,
             instr: *instr,
@@ -118,7 +122,7 @@ impl<'engine, 'inst> DisplayExecInstruction<'engine, 'inst> {
     }
 }
 
-impl Display for DisplayExecInstruction<'_, '_> {
+impl<T> Display for DisplayExecInstruction<'_, '_, T> {
     #[rustfmt::skip]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let res = self.res;
@@ -186,7 +190,7 @@ impl Display for DisplayExecInstruction<'_, '_> {
                 index,
                 params,
             } => {
-                let func_type = self.instance
+                let func_type = self.ctx.store.resolve_instance(self.instance)
                     .get_signature(func_type_idx.into_u32())
                     .unwrap_or_else(|| {
                         panic!(

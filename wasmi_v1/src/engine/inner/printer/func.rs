@@ -12,6 +12,7 @@ use crate::{
     func,
     func::FuncEntityInternal,
     module,
+    AsContext,
     Func,
     FuncType,
     Index as _,
@@ -42,7 +43,6 @@ impl<'ctx, 'engine, T> Display for DisplayFunc<'ctx, 'engine, T> {
                 todo!()
             }
         };
-        let instance = self.ctx.store.resolve_instance(instance);
         let dedup_func_type = match self.func.as_internal(&self.ctx) {
             FuncEntityInternal::Wasm(wasm_func) => wasm_func.signature(),
             FuncEntityInternal::Host(host_func) => host_func.signature(),
@@ -66,7 +66,12 @@ impl<'ctx, 'engine, T> Display for DisplayFunc<'ctx, 'engine, T> {
                 f,
                 "{:5}    {}",
                 n,
-                DisplayExecInstruction::new(&self.engine.res, instance, instr)
+                DisplayExecInstruction::new(
+                    self.ctx.as_context(),
+                    &self.engine.res,
+                    instance,
+                    instr
+                )
             )?;
         }
         Ok(())
