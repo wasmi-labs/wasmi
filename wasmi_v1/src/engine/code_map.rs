@@ -149,6 +149,11 @@ pub struct ResolvedFuncBody<'a> {
 
 impl ResolvedFuncBody<'_> {
     /// Returns an iterator over the instructions of the resolved function body.
+    ///
+    /// # Note
+    ///
+    /// This API is currently in use mainly for debugging purposes.
+    #[cfg(test)]
     pub fn iter(&self) -> ResolvedFuncBodyIter {
         self.into_iter()
     }
