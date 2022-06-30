@@ -66,7 +66,7 @@ impl<'ctx, 'engine, T> Display for DisplayFunc<'ctx, 'engine, T> {
                 f,
                 "{:5}    {}",
                 n,
-                DisplayExecInstruction::new(self.engine, instance, instr)
+                DisplayExecInstruction::new(&self.engine.res, instance, instr)
             )?;
         }
         Ok(())

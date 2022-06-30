@@ -9,11 +9,11 @@ use super::{
     DisplayFuncType,
     DisplayGlobal,
     DisplayTarget,
-    EngineInner,
 };
 use crate::{
     engine::{
         bytecode::{ExecRegister, Offset},
+        inner::EngineResources,
         ExecInstruction,
         ExecProvider,
         Instruction,
@@ -26,7 +26,7 @@ use wasmi_core::TrapCode;
 /// Wrapper to display an [`ExecInstruction`] in a human readable way.
 #[derive(Debug)]
 pub struct DisplayExecInstruction<'engine, 'inst> {
-    engine: &'engine EngineInner,
+    res: &'engine EngineResources,
     instance: &'inst InstanceEntity,
     instr: ExecInstruction,
 }
@@ -36,12 +36,12 @@ impl<'engine, 'inst> DisplayExecInstruction<'engine, 'inst> {
     ///
     /// Used to write the [`ExecInstruction`] in a human readable form.
     pub fn new(
-        engine: &'engine EngineInner,
+        res: &'engine EngineResources,
         instance: &'inst InstanceEntity,
         instr: &ExecInstruction,
     ) -> Self {
         Self {
-            engine,
+            res,
             instance,
             instr: *instr,
         }
@@ -77,7 +77,7 @@ impl<'engine, 'inst> DisplayExecInstruction<'engine, 'inst> {
             "{} <- {name} {} {}",
             DisplayExecRegister::from(result),
             DisplayExecRegister::from(lhs),
-            DisplayExecProvider::new(self.engine, rhs),
+            DisplayExecProvider::new(self.res, rhs),
         )
     }
 
@@ -113,7 +113,7 @@ impl<'engine, 'inst> DisplayExecInstruction<'engine, 'inst> {
             "{name} mem[{}+{}] <- {}",
             DisplayExecRegister::from(ptr),
             offset.into_inner(),
-            DisplayExecProvider::new(self.engine, value),
+            DisplayExecProvider::new(self.res, value),
         )
     }
 }
@@ -121,7 +121,7 @@ impl<'engine, 'inst> DisplayExecInstruction<'engine, 'inst> {
 impl Display for DisplayExecInstruction<'_, '_> {
     #[rustfmt::skip]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let engine = self.engine;
+        let res = self.res;
         use Instruction as Instr;
         match self.instr {
             Instr::Br { target } => {
@@ -144,7 +144,7 @@ impl Display for DisplayExecInstruction<'_, '_> {
                     f,
                     "return_nez {} {}",
                     DisplayExecRegister::from(condition),
-                    DisplayExecProviderSlice::new(engine, results),
+                    DisplayExecProviderSlice::new(res, results),
                 )
             }
             Instr::BrTable { case: _, len_targets: _ } => todo!(),
@@ -166,7 +166,7 @@ impl Display for DisplayExecInstruction<'_, '_> {
                 writeln!(
                     f,
                     "return {}",
-                    DisplayExecProviderSlice::new(engine, results)
+                    DisplayExecProviderSlice::new(res, results)
                 )
             }
             Instr::Call {
@@ -177,7 +177,7 @@ impl Display for DisplayExecInstruction<'_, '_> {
                 writeln!(f, "{} <- call {} {}",
                     DisplayExecRegisterSlice::from(results),
                     DisplayFuncIdx::from(func_idx),
-                    DisplayExecProviderSlice::new(engine, params),
+                    DisplayExecProviderSlice::new(res, params),
                 )
             }
             Instr::CallIndirect {
@@ -194,20 +194,20 @@ impl Display for DisplayExecInstruction<'_, '_> {
                             func_type_idx.into_u32(),
                         )
                     });
-                let func_type = self.engine.res.func_types.resolve_func_type(func_type);
+                let func_type = res.func_types.resolve_func_type(func_type);
                 write!(
                     f,
                     "{} <- call_indirect table[{}] {}: {}",
                     DisplayExecRegisterSlice::from(results),
-                    DisplayExecProvider::new(engine, index),
-                    DisplayExecProviderSlice::new(engine, params),
+                    DisplayExecProvider::new(res, index),
+                    DisplayExecProviderSlice::new(res, params),
                     DisplayFuncType::from(func_type),
                 )
             }
             Instr::Copy { result, input } => {
                 writeln!(f, "{} <- {}",
                     DisplayExecRegister::from(result),
-                    DisplayExecProvider::new(engine, input),
+                    DisplayExecProvider::new(res, input),
                 )
             }
             Instr::Select {
@@ -219,8 +219,8 @@ impl Display for DisplayExecInstruction<'_, '_> {
                 writeln!(f, "{} <- if {} then {} else {}",
                     DisplayExecRegister::from(result),
                     DisplayExecRegister::from(condition),
-                    DisplayExecProvider::new(engine, if_true),
-                    DisplayExecProvider::new(engine, if_false),
+                    DisplayExecProvider::new(res, if_true),
+                    DisplayExecProvider::new(res, if_false),
                 )
             }
             Instr::GlobalGet { result, global } => {
@@ -236,7 +236,7 @@ impl Display for DisplayExecInstruction<'_, '_> {
                     f,
                     "{} <- {}",
                     DisplayGlobal::from(global),
-                    DisplayExecProvider::new(engine, value),
+                    DisplayExecProvider::new(res, value),
                 )
             }
             Instr::I32Load { result, ptr, offset } => self.write_load(f, "i32.load", result, ptr, offset),
@@ -270,7 +270,7 @@ impl Display for DisplayExecInstruction<'_, '_> {
                     f,
                     "{} <- memory.grow {}",
                     DisplayExecRegister::from(result),
-                    DisplayExecProvider::new(engine, amount)
+                    DisplayExecProvider::new(res, amount)
                 )
             }
             Instr::I32Eq { result, lhs, rhs } => self.write_binary(f, "i32.eq", result, lhs, rhs),

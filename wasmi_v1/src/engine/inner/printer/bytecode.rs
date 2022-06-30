@@ -4,9 +4,9 @@ use super::DisplaySequence;
 use crate::{
     engine::{
         bytecode::{ExecRegister, Global},
+        inner::EngineResources,
         provider::RegisterOrImmediate,
         ConstRef,
-        EngineInner,
         ExecProvider,
         ExecProviderSlice,
         ExecRegisterSlice,
@@ -53,13 +53,13 @@ impl Display for DisplayExecRegister {
 /// Wrapper to display an [`ExecProvider`] in a human readable way.
 #[derive(Debug)]
 pub struct DisplayExecProvider<'engine> {
-    engine: &'engine EngineInner,
+    res: &'engine EngineResources,
     provider: ExecProvider,
 }
 
 impl<'engine> DisplayExecProvider<'engine> {
-    pub fn new(engine: &'engine EngineInner, provider: ExecProvider) -> Self {
-        Self { engine, provider }
+    pub fn new(res: &'engine EngineResources, provider: ExecProvider) -> Self {
+        Self { res, provider }
     }
 }
 
@@ -70,7 +70,7 @@ impl<'engine> Display for DisplayExecProvider<'engine> {
                 write!(f, "{}", DisplayExecRegister::from(reg))
             }
             RegisterOrImmediate::Immediate(imm) => {
-                write!(f, "{}", DisplayConstRef::new(self.engine, imm))
+                write!(f, "{}", DisplayConstRef::new(self.res, imm))
             }
         }
     }
@@ -79,24 +79,19 @@ impl<'engine> Display for DisplayExecProvider<'engine> {
 /// Wrapper to display an [`ConstRef`] in a human readable way.
 #[derive(Debug)]
 pub struct DisplayConstRef<'engine> {
-    engine: &'engine EngineInner,
+    res: &'engine EngineResources,
     cref: ConstRef,
 }
 
 impl<'engine> DisplayConstRef<'engine> {
-    pub fn new(engine: &'engine EngineInner, cref: ConstRef) -> Self {
-        Self { engine, cref }
+    pub fn new(res: &'engine EngineResources, cref: ConstRef) -> Self {
+        Self { res, cref }
     }
 }
 
 impl<'engine> Display for DisplayConstRef<'engine> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let value = self
-            .engine
-            .res
-            .const_pool
-            .resolve(self.cref)
-            .unwrap_or_default();
+        let value = self.res.const_pool.resolve(self.cref).unwrap_or_default();
         // Note: We currently print all immediate values as bytes
         //       since `wasmi` bytecode does not store enough type
         //       information.
@@ -161,14 +156,14 @@ impl Display for DisplayExecRegisterSlice {
 
 /// Display wrapper for `wasmi` bytecode [`ExecProviderSlice`].
 pub struct DisplayExecProviderSlice<'engine> {
-    engine: &'engine EngineInner,
+    res: &'engine EngineResources,
     slice: ExecProviderSlice,
 }
 
 impl<'engine> DisplayExecProviderSlice<'engine> {
     /// Creates a new display wrapper for [`ExecProviderSlice`].
-    pub fn new(engine: &'engine EngineInner, slice: ExecProviderSlice) -> Self {
-        Self { engine, slice }
+    pub fn new(res: &'engine EngineResources, slice: ExecProviderSlice) -> Self {
+        Self { res, slice }
     }
 }
 
@@ -178,13 +173,12 @@ impl Display for DisplayExecProviderSlice<'_> {
             f,
             "{}",
             DisplaySequence::from(
-                self.engine
-                    .res
+                self.res
                     .provider_slices
                     .resolve(self.slice)
                     .iter()
                     .copied()
-                    .map(|result| DisplayExecProvider::new(self.engine, result)),
+                    .map(|result| DisplayExecProvider::new(self.res, result)),
             )
         )
     }
