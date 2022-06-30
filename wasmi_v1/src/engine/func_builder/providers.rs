@@ -264,7 +264,7 @@ pub enum IrRegister {
     ///
     /// The distinction between `Local`, `Dynamic` and `Preserved` is
     /// important since due to construction it is not possible to directly map
-    /// a preserved [`Register`] to a [`Register`] at time of construction
+    /// a preserved [`IrRegister`] to a [`IrRegister`] at time of construction
     /// but only after a function construction is about to be finalized
     /// and no further instructions are to be inserted.
     ///
@@ -277,7 +277,7 @@ pub enum IrRegister {
 }
 
 impl IrRegister {
-    /// Returns a new [`Register`] with its index offset by the given amount.
+    /// Returns a new [`IrRegister`] with its index offset by the given amount.
     pub fn offset(self, amount: usize) -> Self {
         match self {
             Self::Local(index) => Self::Local(index + amount),
@@ -287,7 +287,7 @@ impl IrRegister {
     }
 }
 
-/// Used to more efficiently represent [`RegisterSlice`].
+/// Used to more efficiently represent a slice of [`IrRegister`] elements.
 ///
 /// # Note
 ///
@@ -303,7 +303,7 @@ pub struct IrRegisterSlice {
 }
 
 impl IrRegisterSlice {
-    /// Creates a new [`ContiguousRegisterSlice`].
+    /// Creates a new register slice.
     pub fn new(start: IrRegister, len: u16) -> Self {
         Self { start, len }
     }
@@ -323,7 +323,7 @@ impl IrRegisterSlice {
         None
     }
 
-    /// Returns the first [`Register`] of the slice the slice is non-empty.
+    /// Returns the first [`IrRegister`] of the slice if the slice is non-empty.
     pub fn first(&self) -> Option<IrRegister> {
         if self.len == 0 {
             return None;
@@ -331,7 +331,7 @@ impl IrRegisterSlice {
         Some(self.start)
     }
 
-    /// Returns the [`Register`] at the `index` if within bounds.
+    /// Returns the [`IrRegister`] at the `index` if within bounds.
     ///
     /// Returns `None` otherwise.
     pub fn get(&self, index: u16) -> Option<IrRegister> {
@@ -341,7 +341,7 @@ impl IrRegisterSlice {
         None
     }
 
-    /// Returns an iterator over the registers of the [`ContiguousRegisterSlice`].
+    /// Returns an iterator over the registers of the register slice.
     pub fn iter(&self) -> IrRegisterSliceIter {
         IrRegisterSliceIter {
             slice: *self,
@@ -359,7 +359,7 @@ impl IntoIterator for IrRegisterSlice {
     }
 }
 
-/// An iterator over the registers of a [`ContiguousRegisterSlice`].
+/// An iterator over the registers of an [`IrRegisterSlice`].
 #[derive(Debug)]
 pub struct IrRegisterSliceIter {
     slice: IrRegisterSlice,
@@ -402,7 +402,7 @@ impl From<UntypedValue> for IrProvider {
 }
 
 impl IrProvider {
-    /// Returns `Some` if the [`RegisterOrImmediate`] is a `Register`.
+    /// Returns `Some` if the [`IrProvider`] is a `Register`.
     pub fn filter_register(&self) -> Option<IrRegister> {
         match self {
             IrProvider::Register(register) => Some(*register),
@@ -410,7 +410,7 @@ impl IrProvider {
         }
     }
 
-    /// Returns `Some` if the [`RegisterOrImmediate`] is an immediate value.
+    /// Returns `Some` if the [`IrProvider`] is an immediate value.
     pub fn filter_immediate(&self) -> Option<UntypedValue> {
         match self {
             IrProvider::Register(_) => None,
@@ -424,15 +424,15 @@ impl IrProvider {
 /// # Note
 ///
 /// References of this type are not deduplicated.
-/// The actual registers of the [`RegisterSlice`] are
-/// stored in a  [`RegisterSliceArena`].
-/// Use [`RegisterSliceArena::resolve`] to access the
-/// registers of the [`RegisterSlice`].
+/// The actual elements of the [`IrProviderSlice`] are
+/// stored in a  [`ProviderSliceArena`].
+/// Use [`ProviderSliceArena::resolve`] to access the
+/// underlying providers of the [`IrProviderSlice`].
 #[derive(Debug, Copy, Clone)]
 pub struct IrProviderSlice {
-    /// The index to the first [`Register`] of the slice.
+    /// The index to the first [`IrProvider`] of the slice.
     first: u32,
-    /// The number of registers in the slice.
+    /// The number of providers in the slice.
     len: u32,
 }
 
@@ -447,7 +447,7 @@ pub struct ProviderSliceArena {
 }
 
 impl ProviderSliceArena {
-    /// Allocates a new [`RegisterSlice`] consisting of the given registers.
+    /// Allocates a new [`IrProviderSlice`] consisting of the given registers.
     pub fn alloc<T>(&mut self, registers: T) -> IrProviderSlice
     where
         T: IntoIterator<Item = IrProvider>,
@@ -464,7 +464,7 @@ impl ProviderSliceArena {
         IrProviderSlice { first, len }
     }
 
-    /// Resolves a [`RegisterSlice`] to its underlying registers or immediates.
+    /// Resolves an [`IrProviderSlice`] to its underlying registers or immediates.
     pub fn resolve(&self, slice: IrProviderSlice) -> &[IrProvider] {
         let first = slice.first as usize;
         let len = slice.len as usize;

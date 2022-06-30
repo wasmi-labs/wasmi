@@ -197,7 +197,7 @@ impl Stack {
     /// # Note
     ///
     /// Returns `None` in case there is only the root [`StackFrame`] left
-    /// on the [`Stack`] indicating that the [`pop_init`] method should be used
+    /// on the [`Stack`] indicating that the [`Stack::init`] method should be used
     /// instead.
     pub(super) fn pop_frame(
         &mut self,

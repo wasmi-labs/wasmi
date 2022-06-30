@@ -140,7 +140,7 @@ where
         ///
         /// # Note
         ///
-        /// We can use the more efficient [`ContiguousRegisterSlice`]
+        /// We can use the more efficient [`ExecRegisterSlice`]
         /// here since we can guarantee that result register indices are
         /// always contigous.
         /// Since we are supporting the `multi-value` Wasm proposal
@@ -157,7 +157,7 @@ where
         ///
         /// # Note
         ///
-        /// We can use the more efficient [`ContiguousRegisterSlice`]
+        /// We can use the more efficient [`ExecRegisterSlice`]
         /// here since we can guarantee that result register indices are
         /// always contigous.
         /// Since we are supporting the `multi-value` Wasm proposal

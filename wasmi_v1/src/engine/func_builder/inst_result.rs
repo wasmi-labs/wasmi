@@ -1,18 +1,18 @@
 use super::{IrInstruction, IrRegister};
 
 impl IrRegister {
-    /// Returns `true` if the [`Register`] is in the local register space.
+    /// Returns `true` if the [`IrRegister`] is in the local register space.
     pub fn is_local(&self) -> bool {
         matches!(self, Self::Local(_))
     }
 }
 
 impl IrInstruction {
-    /// Returns the single result [`Register`] of the instruction if any.
+    /// Returns the single result [`IrRegister`] of the instruction if any.
     ///
     /// # Note
     ///
-    /// For instructions with potentially multiple result [`Register`] they only
+    /// For instructions with potentially multiple result [`IrRegister`] they only
     /// return `Some` if they actually have a single result and `None` otherwise.
     pub fn result_mut(&mut self) -> Option<&mut IrRegister> {
         match self {

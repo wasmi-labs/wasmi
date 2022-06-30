@@ -60,7 +60,8 @@ impl FuncBody {
     }
 }
 
-/// A reference to the first [`Instruction`] of a [`FuncBody`] stored within a [`CodeMap`].
+/// A handle to the first [`ExecInstruction`] of a
+/// [`FuncBody`] stored within a [`CodeMap`].
 #[derive(Debug, Copy, Clone)]
 pub struct FirstInstr(u32);
 
@@ -136,12 +137,6 @@ impl CodeMap {
 ///
 /// Allows to immutably access the `wasmi` instructions of a Wasm
 /// function stored in the [`CodeMap`].
-///
-/// # Dev. Note
-///
-/// This does not include the [`Instruction::FuncBodyStart`] and
-/// [`Instruction::FuncBodyEnd`] instructions surrounding the instructions
-/// of a function body in the [`CodeMap`].
 #[derive(Debug, Copy, Clone)]
 pub struct ResolvedFuncBody<'a> {
     insts: &'a [ExecInstruction],

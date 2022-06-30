@@ -12,19 +12,17 @@ use crate::arena::Index;
 use alloc::vec::Vec;
 use core::mem;
 
-/// A reference to a partially constructed [`Instance`].
+/// A reference to a partially constructed instruction.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Instr(u32);
 
 impl Instr {
-    /// An invalid [`Instr`].
+    /// An invalid instruction.
     ///
     /// # Note
     ///
-    /// This can be used to represent temporarily invalid [`InstructionIdx`]
-    /// without major performance implications for the bytecode itself, e.g.
-    /// when representing invalid [`InstructionIdx`] by wrapping them in an
-    /// `Option`.
+    /// This can be used to represent invalid instructions without introducing
+    /// overhead for example by wrapping an instruction inside an [`Option`].
     pub const INVALID: Self = Self(u32::MAX);
 
     /// Returns the inner `u32` value.
@@ -204,7 +202,7 @@ impl InstructionsBuilder {
 
     /// Pushes the internal instruction bytecode to the [`InstructionsBuilder`].
     ///
-    /// Returns an [`InstructionIdx`] to refer to the pushed instruction.
+    /// Returns an [`Instr`] to refer to the pushed instruction.
     pub fn push_inst(&mut self, inst: IrInstruction) -> Instr {
         let idx = self.current_pc();
         self.insts.push(inst);

@@ -56,13 +56,13 @@ impl ExecRegister {
         Self(index)
     }
 
-    /// Returns the internal representation of the [`Register`].
+    /// Returns the internal representation of the [`ExecRegister`].
     pub(crate) fn into_inner(self) -> u16 {
         self.0
     }
 }
 
-/// Used to more efficiently represent [`RegisterSlice`].
+/// A slice of contigous [`ExecRegister`] elements.
 ///
 /// # Note
 ///

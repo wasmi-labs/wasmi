@@ -6,6 +6,8 @@ use core::sync::atomic::{AtomicUsize, Ordering};
 /// # Note
 ///
 /// Used to protect against invalid entity indices.
+///
+/// [`Engine`]: [`crate::Engine`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct EngineIdent(usize);
 
@@ -30,4 +32,6 @@ impl EngineIdent {
 }
 
 /// An entity owned by the [`Engine`].
+///
+/// [`Engine`]: [`crate::Engine`]
 pub type Guarded<Idx> = GuardedEntity<EngineIdent, Idx>;

@@ -38,7 +38,7 @@ impl DedupProviderSliceArena {
         }
     }
 
-    /// Resolves a [`RegisterSlice`] to its underlying registers or immediates.
+    /// Resolves a [`ExecProviderSlice`] to its underlying registers or immediates.
     pub fn resolve(&self, slice: ExecProviderSlice) -> &[ExecProvider] {
         let first = slice.first as usize;
         let len = slice.len as usize;
@@ -66,7 +66,7 @@ impl ExecProviderSlice {
     }
 }
 
-/// Either a [`Register`] or an [`Immediate`] input value.
+/// Either an [`ExecRegister`] or a [`ConstRef`] input value.
 ///
 /// # Developer Note
 ///

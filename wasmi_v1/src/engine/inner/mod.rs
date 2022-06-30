@@ -20,10 +20,14 @@ use wasmi_core::UntypedValue;
 #[cfg(test)]
 use super::{ExecInstruction, ExecProvider, ExecProviderSlice, FuncBody};
 
-/// The internal state of the `wasmi` engine.
+/// The internal state of the `wasmi` [`Engine`].
+///
+/// [`Engine`]: [`crate::Engine`]
 #[derive(Debug)]
 pub struct EngineInner {
     /// The configuration with which the [`Engine`] has been created.
+    ///
+    /// [`Engine`]: [`crate::Engine`]
     config: Config,
     /// Stores all Wasm function bodies that the interpreter is aware of.
     code_map: CodeMap,
@@ -92,6 +96,8 @@ impl EngineInner {
     }
 
     /// Returns a shared reference to the [`Config`] of the [`Engine`].
+    ///
+    /// [`Engine`]: [`crate::Engine`]
     pub fn config(&self) -> &Config {
         &self.config
     }
