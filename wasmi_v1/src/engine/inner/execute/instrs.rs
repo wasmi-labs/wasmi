@@ -1,5 +1,3 @@
-use core::cmp;
-
 use super::{stack::StackFrameView, CallOutcome};
 use crate::{
     engine::{
@@ -21,6 +19,7 @@ use crate::{
     StoreContextMut,
     Table,
 };
+use core::cmp;
 use wasmi_core::{
     memory_units::Pages,
     ExtendInto,
