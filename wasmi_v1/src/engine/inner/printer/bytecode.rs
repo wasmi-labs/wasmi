@@ -8,6 +8,7 @@ use crate::{
         ConstRef,
         EngineInner,
         ExecProvider,
+        ExecProviderSlice,
         ExecRegisterSlice,
         Target,
     },
@@ -154,6 +155,37 @@ impl Display for DisplayExecRegisterSlice {
             f,
             "{}",
             DisplaySequence::from(self.slice.iter().map(DisplayExecRegister::from))
+        )
+    }
+}
+
+/// Display wrapper for `wasmi` bytecode [`ExecProviderSlice`].
+pub struct DisplayExecProviderSlice<'engine> {
+    engine: &'engine EngineInner,
+    slice: ExecProviderSlice,
+}
+
+impl<'engine> DisplayExecProviderSlice<'engine> {
+    /// Creates a new display wrapper for [`ExecProviderSlice`].
+    pub fn new(engine: &'engine EngineInner, slice: ExecProviderSlice) -> Self {
+        Self { engine, slice }
+    }
+}
+
+impl Display for DisplayExecProviderSlice<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            DisplaySequence::from(
+                self.engine
+                    .res
+                    .provider_slices
+                    .resolve(self.slice)
+                    .iter()
+                    .copied()
+                    .map(|result| DisplayExecProvider::new(self.engine, result)),
+            )
         )
     }
 }

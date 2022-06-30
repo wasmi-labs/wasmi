@@ -2,11 +2,11 @@
 
 use super::{
     DisplayExecProvider,
+    DisplayExecProviderSlice,
     DisplayExecRegister,
     DisplayExecRegisterSlice,
     DisplayFuncType,
     DisplayGlobal,
-    DisplaySequence,
     DisplayTarget,
     EngineInner,
 };
@@ -15,7 +15,6 @@ use crate::{
         bytecode::{ExecRegister, Offset},
         ExecInstruction,
         ExecProvider,
-        ExecProviderSlice,
         Instruction,
     },
     instance::InstanceEntity,
@@ -116,19 +115,6 @@ impl<'engine, 'inst> DisplayExecInstruction<'engine, 'inst> {
             DisplayExecProvider::new(self.engine, value),
         )
     }
-
-    /// Returns a human readable display wrapper for the given [`ExecProviderSlice`].
-    fn wrap_provider_slice(&self, providers: ExecProviderSlice) -> impl Display + '_ {
-        DisplaySequence::from(
-            self.engine
-                .res
-                .provider_slices
-                .resolve(providers)
-                .iter()
-                .copied()
-                .map(|result| DisplayExecProvider::new(self.engine, result)),
-        )
-    }
 }
 
 impl Display for DisplayExecInstruction<'_, '_> {
@@ -153,8 +139,12 @@ impl Display for DisplayExecInstruction<'_, '_> {
                 )
             }
             Instr::ReturnNez { results, condition } => {
-                let results = self.wrap_provider_slice(results);
-                writeln!(f, "return_nez {} {results}", DisplayExecRegister::from(condition))
+                writeln!(
+                    f,
+                    "return_nez {} {}",
+                    DisplayExecRegister::from(condition),
+                    DisplayExecProviderSlice::new(engine, results),
+                )
             }
             Instr::BrTable { case: _, len_targets: _ } => todo!(),
             Instr::Trap { trap_code } => {
@@ -172,8 +162,11 @@ impl Display for DisplayExecInstruction<'_, '_> {
                 writeln!(f, "trap -> {:?}", trap_name)
             }
             Instr::Return { results } => {
-                let results = self.wrap_provider_slice(results);
-                writeln!(f, "return {results}")
+                writeln!(
+                    f,
+                    "return {}",
+                    DisplayExecProviderSlice::new(engine, results)
+                )
             }
             Instr::Call {
                 func_idx,
@@ -183,7 +176,7 @@ impl Display for DisplayExecInstruction<'_, '_> {
                 writeln!(f, "{} <- call func({}) {}",
                     DisplayExecRegisterSlice::from(results),
                     func_idx.into_u32(),
-                    self.wrap_provider_slice(params),
+                    DisplayExecProviderSlice::new(engine, params),
                 )
             }
             Instr::CallIndirect {
@@ -206,7 +199,7 @@ impl Display for DisplayExecInstruction<'_, '_> {
                     "{} <- call_indirect table[{}] {}: {}",
                     DisplayExecRegisterSlice::from(results),
                     DisplayExecProvider::new(engine, index),
-                    self.wrap_provider_slice(params),
+                    DisplayExecProviderSlice::new(engine, params),
                     DisplayFuncType::from(func_type),
                 )
             }

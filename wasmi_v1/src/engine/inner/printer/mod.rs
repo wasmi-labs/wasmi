@@ -11,6 +11,7 @@ mod utils;
 use self::{
     bytecode::{
         DisplayExecProvider,
+        DisplayExecProviderSlice,
         DisplayExecRegister,
         DisplayExecRegisterSlice,
         DisplayGlobal,
