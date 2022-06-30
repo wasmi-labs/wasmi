@@ -3,6 +3,7 @@
 use super::ExecInstruction;
 use crate::arena::Index;
 use alloc::vec::Vec;
+use core::slice;
 
 /// A reference to a Wasm function body stored in the [`CodeMap`].
 #[derive(Debug, Copy, Clone)]
@@ -147,6 +148,11 @@ pub struct ResolvedFuncBody<'a> {
 }
 
 impl ResolvedFuncBody<'_> {
+    /// Returns an iterator over the instructions of the resolved function body.
+    pub fn iter(&self) -> ResolvedFuncBodyIter {
+        self.into_iter()
+    }
+
     /// Returns the instruction at the given index.
     ///
     /// # Panics
@@ -184,5 +190,30 @@ impl ResolvedFuncBody<'_> {
         // Note that eliminating this bounds check is extremely valuable since this
         // part of the `wasmi` interpreter is part of the interpreter's hot path.
         self.insts.get_unchecked(index)
+    }
+}
+
+impl<'a> IntoIterator for ResolvedFuncBody<'a> {
+    type Item = &'a ExecInstruction;
+    type IntoIter = ResolvedFuncBodyIter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        ResolvedFuncBodyIter {
+            iter: self.insts.iter(),
+        }
+    }
+}
+
+/// An iterator over the instruction of a resolved function body.
+#[derive(Debug)]
+pub struct ResolvedFuncBodyIter<'a> {
+    iter: slice::Iter<'a, ExecInstruction>,
+}
+
+impl<'a> Iterator for ResolvedFuncBodyIter<'a> {
+    type Item = &'a ExecInstruction;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
     }
 }
