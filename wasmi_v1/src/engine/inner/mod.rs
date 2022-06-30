@@ -1,6 +1,9 @@
 mod compile;
 mod execute;
 
+#[cfg(test)]
+mod printer;
+
 use super::{
     CodeMap,
     ConstPool,

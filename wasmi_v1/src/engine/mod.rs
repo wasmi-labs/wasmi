@@ -39,6 +39,8 @@ pub use self::{
     func_builder::RelativeDepth,
     func_types::DedupFuncType,
 };
+#[cfg(test)]
+use crate::AsContext;
 use crate::{AsContextMut, Func, FuncType};
 use alloc::sync::Arc;
 use spin::mutex::Mutex;
@@ -187,5 +189,15 @@ impl Engine {
         Results: CallResults,
     {
         self.inner.lock().execute_func(ctx, func, params, results)
+    }
+
+    /// Prints the given `func` in a human readable fashion.
+    ///
+    /// # Note
+    ///
+    /// This functionality is intended for debugging purposes.
+    #[cfg(test)]
+    pub fn print_func(&self, ctx: impl AsContext, func: Func) {
+        self.inner.lock().print_func(ctx, func)
     }
 }
