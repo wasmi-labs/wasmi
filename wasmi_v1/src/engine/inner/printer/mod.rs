@@ -17,7 +17,7 @@ use self::{
         DisplayGlobal,
         DisplayTarget,
     },
-    func::{DisplayFunc, DisplayFuncType},
+    func::{DisplayFunc, DisplayFuncType, DisplayFuncIdx},
     instr::DisplayExecInstruction,
     utils::{DisplaySequence, DisplaySlice},
 };

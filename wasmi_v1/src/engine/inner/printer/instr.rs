@@ -5,6 +5,7 @@ use super::{
     DisplayExecProviderSlice,
     DisplayExecRegister,
     DisplayExecRegisterSlice,
+    DisplayFuncIdx,
     DisplayFuncType,
     DisplayGlobal,
     DisplayTarget,
@@ -173,9 +174,9 @@ impl Display for DisplayExecInstruction<'_, '_> {
                 results,
                 params,
             } => {
-                writeln!(f, "{} <- call func({}) {}",
+                writeln!(f, "{} <- call {} {}",
                     DisplayExecRegisterSlice::from(results),
-                    func_idx.into_u32(),
+                    DisplayFuncIdx::from(func_idx),
                     DisplayExecProviderSlice::new(engine, params),
                 )
             }

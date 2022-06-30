@@ -9,7 +9,9 @@ use super::{
 };
 use crate::{
     engine::bytecode::ExecRegister,
+    func,
     func::FuncEntityInternal,
+    module,
     Func,
     FuncType,
     Index as _,
@@ -50,10 +52,11 @@ impl<'ctx, 'engine, T> Display for DisplayFunc<'ctx, 'engine, T> {
         let len_regs = func_body.len_regs();
         let len_locals = len_regs as usize - len_params;
         let func_body = self.engine.code_map.resolve(func_body);
+        let func_idx = self.ctx.store.resolve_func_idx(self.func);
         writeln!(
             f,
-            "func({}): {} -> {}",
-            self.ctx.store.resolve_func_idx(self.func).into_usize(),
+            "{}: {} -> {}",
+            DisplayFuncIdx::from(func_idx),
             DisplayParams::new(func_type.params()),
             DisplaySlice::from(func_type.results()),
         )?;
@@ -182,5 +185,32 @@ impl Display for DisplayLocals {
             writeln!(f)?;
         }
         Ok(())
+    }
+}
+
+/// Display wrapper for `wasmi` [`FuncIdx`] function references.
+pub struct DisplayFuncIdx {
+    func_idx: usize,
+}
+
+impl From<func::FuncIdx> for DisplayFuncIdx {
+    fn from(func_idx: func::FuncIdx) -> Self {
+        Self {
+            func_idx: func_idx.into_usize(),
+        }
+    }
+}
+
+impl From<module::FuncIdx> for DisplayFuncIdx {
+    fn from(func_idx: module::FuncIdx) -> Self {
+        Self {
+            func_idx: func_idx.into_usize(),
+        }
+    }
+}
+
+impl Display for DisplayFuncIdx {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "func({})", self.func_idx.into_usize())
     }
 }
