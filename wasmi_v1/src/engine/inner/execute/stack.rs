@@ -15,6 +15,8 @@ use crate::{
     Memory,
     Table,
 };
+#[cfg(test)]
+use core::fmt::{self, Display};
 use wasmi_core::{UntypedValue, ValueType};
 
 /// The execution stack.
@@ -421,6 +423,7 @@ pub struct StackFrameRegisters<'a> {
     regs: &'a mut [UntypedValue],
 }
 
+#[cfg(test)]
 impl<'a> Display for StackFrameRegisters<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "[")?;
