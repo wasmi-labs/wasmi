@@ -178,3 +178,27 @@ fn test_memory_sum() {
     test_for(sum, &mut store, mem, &[1; 10]);
     test_for(sum, &mut store, mem, &[u8::MAX; 100]);
 }
+
+#[test]
+fn test_memory_fill() {
+    fn test_for(fill: Func, store: &mut Store<()>, mem: Memory, ptr: i32, len: i32, value: i32) {
+        let params = [Value::I32(ptr), Value::I32(len), Value::I32(value)];
+        fill.call(store.as_context_mut(), &params, &mut []).unwrap();
+        let mut buffer = vec![0x00; len as usize];
+        mem.read(store.as_context(), ptr as usize, &mut buffer)
+            .unwrap();
+        assert!(buffer.iter().all(|byte| (*byte as i32) == value));
+    }
+
+    let (mut store, instance) = load_test_instance!("wat/memory-fill.wat");
+    let sum = load_func(&store, &instance, "fill_bytes");
+    let mem = instance
+        .get_export(&store, "mem")
+        .and_then(Extern::into_memory)
+        .unwrap();
+
+    test_for(sum, &mut store, mem, 0, 0, 0);
+    test_for(sum, &mut store, mem, 0, 1, 0x11);
+    test_for(sum, &mut store, mem, 0, 10_000, 0x22);
+    test_for(sum, &mut store, mem, 123, 456, 0x33);
+}
