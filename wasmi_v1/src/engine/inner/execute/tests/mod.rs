@@ -191,14 +191,14 @@ fn test_memory_fill() {
     }
 
     let (mut store, instance) = load_test_instance!("wat/memory-fill.wat");
-    let sum = load_func(&store, &instance, "fill_bytes");
+    let fill = load_func(&store, &instance, "fill_bytes");
     let mem = instance
         .get_export(&store, "mem")
         .and_then(Extern::into_memory)
         .unwrap();
 
-    test_for(sum, &mut store, mem, 0, 0, 0);
-    test_for(sum, &mut store, mem, 0, 1, 0x11);
-    test_for(sum, &mut store, mem, 0, 10_000, 0x22);
-    test_for(sum, &mut store, mem, 123, 456, 0x33);
+    test_for(fill, &mut store, mem, 0, 0, 0);
+    test_for(fill, &mut store, mem, 0, 1, 0x11);
+    test_for(fill, &mut store, mem, 0, 10_000, 0x22);
+    test_for(fill, &mut store, mem, 123, 456, 0x33);
 }
