@@ -3,10 +3,10 @@
 (module
   (func $count_until (export "count_until") (param $limit i32) (result i32)
     (local $counter i32)
-	(block
-        (loop
-            (br_if
-                1
+    (block $exit
+        (loop $loop
+            (br_if ;; exit loop if $counter == $limit
+                $exit
                 (i32.eq
                     (local.tee $counter
                         (i32.add
@@ -17,7 +17,7 @@
                     (local.get $limit)
                 )
             )
-            (br 0)
+            (br $loop) ;; continue loop
         )
     )
     (return (local.get $counter))
