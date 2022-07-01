@@ -240,7 +240,8 @@ impl Stack {
                     returns.decode_using(|register| popped_view.get(register), &resolve_const);
                 previous_view.set(result, return_value);
             });
-        self.entries.shrink_to(frame.region.start);
+        self.entries
+            .resize_with(frame.region.start, Default::default);
         Some(StackFrameRef(self.frames.len() - 1))
     }
 
