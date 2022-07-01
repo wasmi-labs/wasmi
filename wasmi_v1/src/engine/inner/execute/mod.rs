@@ -104,8 +104,8 @@ impl EngineInner {
                     // continue executing it OR finish execution if the call
                     // stack is empty.
                     match self.stack.pop_frame(returned, &self.res) {
-                        Some(last_frame) => {
-                            frame = last_frame;
+                        Some(next_frame) => {
+                            frame = next_frame;
                             continue 'outer;
                         }
                         None => {
