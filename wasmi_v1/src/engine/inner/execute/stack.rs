@@ -152,14 +152,10 @@ impl Stack {
             .frames
             .last_mut()
             .expect("encountered unexpected empty frame stack");
-        // Update the results of the last frame before we push another.
-        // These `results` are used when the newly pushed frame is popped again
-        // to write back the results.
-        last.results = results;
         let last_region = last.region;
         let frame_idx = self.frames.len();
         self.frames.push(StackFrame {
-            results: ExecRegisterSlice::empty(),
+            results,
             region: FrameRegion { start, len },
             func_body: func.func_body(),
             instance: func.instance(),
@@ -222,7 +218,7 @@ impl Stack {
             .frames
             .last()
             .expect("expected previous frame but stack is empty");
-        let results = previous.results;
+        let results = frame.results;
         assert_eq!(
             results.len(),
             returned_values.len(),
