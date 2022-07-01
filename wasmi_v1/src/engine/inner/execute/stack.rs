@@ -129,8 +129,6 @@ impl Stack {
     }
 
     /// Pushes a new [`StackFrame`] to the [`Stack`].
-    ///
-    /// Calls `make_frame` in order to create the new [`StackFrame`] in place.
     pub(super) fn push_frame(
         &mut self,
         func: &WasmFuncEntity,
