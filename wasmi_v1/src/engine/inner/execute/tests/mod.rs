@@ -108,3 +108,47 @@ fn test_count_until() {
         test_for(count_until, &mut store, test_input);
     }
 }
+
+/// Returns an iterator over the first few fibonacci numbers.
+fn fibonacci_numbers() -> impl Iterator<Item = i32> {
+    [
+        0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987,
+    ]
+    .into_iter()
+}
+
+#[test]
+fn test_fibonacci_iterative() {
+    fn test_for(fibonacci: Func, store: &mut Store<()>, nth: i32, expected: i32) {
+        let mut result = [Value::I32(0)];
+        fibonacci
+            .call(store, &[Value::I32(nth)], &mut result)
+            .unwrap();
+        assert_eq!(result, [Value::I32(expected)]);
+    }
+
+    let (mut store, instance) = load_test_instance!("wat/fibonacci-iterative.wat");
+    let fibonacci = load_func(&store, &instance, "fibonacci_iterative");
+
+    for (nth, expected) in fibonacci_numbers().enumerate() {
+        test_for(fibonacci, &mut store, nth as i32, expected);
+    }
+}
+
+#[test]
+fn test_fibonacci_recursive() {
+    fn test_for(fibonacci: Func, store: &mut Store<()>, nth: i32, expected: i32) {
+        let mut result = [Value::I32(0)];
+        fibonacci
+            .call(store, &[Value::I32(nth)], &mut result)
+            .unwrap();
+        assert_eq!(result, [Value::I32(expected)]);
+    }
+
+    let (mut store, instance) = load_test_instance!("wat/fibonacci-recursive.wat");
+    let fibonacci = load_func(&store, &instance, "fibonacci_recursive");
+
+    for (nth, expected) in fibonacci_numbers().enumerate() {
+        test_for(fibonacci, &mut store, nth as i32, expected);
+    }
+}
