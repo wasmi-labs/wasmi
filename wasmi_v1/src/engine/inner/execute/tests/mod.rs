@@ -9,7 +9,7 @@ use self::utils::{
     load_wasm_from_file,
     wat2wasm,
 };
-use crate::{AsContext, Extern, Func, Instance, Store};
+use crate::{AsContext, AsContextMut, Extern, Func, Instance, Memory, Store};
 use assert_matches::assert_matches;
 use wasmi_core::Value;
 
@@ -151,4 +151,30 @@ fn test_fibonacci_recursive() {
     for (nth, expected) in fibonacci_numbers().enumerate() {
         test_for(fibonacci, &mut store, nth as i32, expected);
     }
+}
+
+#[test]
+fn test_memory_sum() {
+    fn test_for(sum: Func, store: &mut Store<()>, mem: Memory, data: &[u8]) {
+        mem.write(store.as_context_mut(), 0, &data).unwrap();
+        let limit = data.len() as i32;
+        let expected = data.iter().copied().map(|byte| byte as i8 as i64).sum();
+        let mut result = [Value::I32(0)];
+        sum.call(store.as_context_mut(), &[Value::I32(limit)], &mut result)
+            .unwrap();
+        assert_eq!(result, [Value::I64(expected)]);
+    }
+
+    let (mut store, instance) = load_test_instance!("wat/memory-sum.wat");
+    let sum = load_func(&store, &instance, "sum_bytes");
+    let mem = instance
+        .get_export(&store, "mem")
+        .and_then(Extern::into_memory)
+        .unwrap();
+
+    test_for(sum, &mut store, mem, &[]);
+    test_for(sum, &mut store, mem, &[0; 10]);
+    test_for(sum, &mut store, mem, &[1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    test_for(sum, &mut store, mem, &[1; 10]);
+    test_for(sum, &mut store, mem, &[u8::MAX; 100]);
 }
