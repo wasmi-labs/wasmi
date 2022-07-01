@@ -90,3 +90,21 @@ fn test_factorial_recursive() {
     test_for(factorial, &mut store, 5, 120);
     test_for(factorial, &mut store, 6, 720);
 }
+
+#[test]
+fn test_count_until() {
+    fn test_for(factorial: Func, store: &mut Store<()>, test_input: i32) {
+        let mut result = [Value::I32(0)];
+        factorial
+            .call(store, &[Value::I32(test_input)], &mut result)
+            .unwrap();
+        assert_eq!(result, [Value::I32(test_input)]);
+    }
+
+    let (mut store, instance) = load_test_instance!("wat/count-until.wat");
+    let count_until = load_func(&store, &instance, "count_until");
+
+    for test_input in [1, 2, 5, 10, 100, 1000] {
+        test_for(count_until, &mut store, test_input);
+    }
+}
