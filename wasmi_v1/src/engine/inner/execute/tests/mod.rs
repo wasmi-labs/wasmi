@@ -27,11 +27,19 @@ fn load_func(store: &Store<()>, instance: &Instance, func_name: &str) -> Func {
         .unwrap()
 }
 
+/// Pretty-prints the function `func` for debugging purposes.
+fn print_func(store: &Store<()>, func: Func) {
+    store.engine().print_func(store.as_context(), func);
+}
+
 #[test]
 fn test_add() {
     let (mut store, instance) = load_test_instance!("wat/add.wat");
     let add = load_func(&store, &instance, "add");
     let mut result = [Value::I32(0)];
+
+    print_func(&store, add);
+
     add.call(&mut store, &[Value::I32(1), Value::I32(2)], &mut result)
         .unwrap();
     assert_matches!(result, [Value::I32(3)]);
@@ -42,6 +50,9 @@ fn test_swap() {
     let (mut store, instance) = load_test_instance!("wat/swap.wat");
     let swap = load_func(&store, &instance, "swap");
     let mut result = [Value::I32(0), Value::I32(0)];
+
+    print_func(&store, swap);
+
     swap.call(&mut store, &[Value::I32(1), Value::I32(2)], &mut result)
         .unwrap();
     assert_matches!(result, [Value::I32(2), Value::I32(1)]);
@@ -68,6 +79,8 @@ fn test_factorial_loop() {
     let (mut store, instance) = load_test_instance!("wat/factorial-iterative.wat");
     let factorial = load_func(&store, &instance, "factorial_iter");
 
+    print_func(&store, factorial);
+
     for (nth, expected) in factorial_numbers().enumerate() {
         test_for(factorial, &mut store, nth as i64, expected);
     }
@@ -86,6 +99,8 @@ fn test_factorial_recursive() {
     let (mut store, instance) = load_test_instance!("wat/factorial-recursive.wat");
     let factorial = load_func(&store, &instance, "factorial_rec");
 
+    print_func(&store, factorial);
+
     for (nth, expected) in factorial_numbers().enumerate() {
         test_for(factorial, &mut store, nth as i64, expected);
     }
@@ -103,6 +118,8 @@ fn test_count_until() {
 
     let (mut store, instance) = load_test_instance!("wat/count-until.wat");
     let count_until = load_func(&store, &instance, "count_until");
+
+    print_func(&store, count_until);
 
     for test_input in [1, 2, 5, 10, 100, 1000] {
         test_for(count_until, &mut store, test_input);
@@ -130,6 +147,8 @@ fn test_fibonacci_iterative() {
     let (mut store, instance) = load_test_instance!("wat/fibonacci-iterative.wat");
     let fibonacci = load_func(&store, &instance, "fibonacci_iterative");
 
+    print_func(&store, fibonacci);
+
     for (nth, expected) in fibonacci_numbers().enumerate() {
         test_for(fibonacci, &mut store, nth as i32, expected);
     }
@@ -147,6 +166,8 @@ fn test_fibonacci_recursive() {
 
     let (mut store, instance) = load_test_instance!("wat/fibonacci-recursive.wat");
     let fibonacci = load_func(&store, &instance, "fibonacci_recursive");
+
+    print_func(&store, fibonacci);
 
     for (nth, expected) in fibonacci_numbers().enumerate() {
         test_for(fibonacci, &mut store, nth as i32, expected);
@@ -172,6 +193,8 @@ fn test_memory_sum() {
         .and_then(Extern::into_memory)
         .unwrap();
 
+    print_func(&store, sum);
+
     test_for(sum, &mut store, mem, &[]);
     test_for(sum, &mut store, mem, &[0; 10]);
     test_for(sum, &mut store, mem, &[1, 2, 3, 4, 5, 6, 7, 8, 9]);
@@ -196,6 +219,8 @@ fn test_memory_fill() {
         .get_export(&store, "mem")
         .and_then(Extern::into_memory)
         .unwrap();
+
+    print_func(&store, fill);
 
     test_for(fill, &mut store, mem, 0, 0, 0);
     test_for(fill, &mut store, mem, 0, 1, 0x11);
