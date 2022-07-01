@@ -22,7 +22,7 @@ use self::{
 };
 pub use self::{func::DisplayFunc, instr::DisplayExecInstruction};
 use super::{EngineInner, EngineResources};
-use crate::{engine::ExecInstruction, Func, Instance, StoreContext, AsContext};
+use crate::{engine::ExecInstruction, AsContext, Func, Instance, StoreContext};
 
 impl EngineInner {
     /// Returns a [`Display`] wrapper to pretty print the given function.
@@ -30,11 +30,7 @@ impl EngineInner {
     /// # Note
     ///
     /// This functionality is primarily for debugging purposes.
-    pub fn print_func(
-        &self,
-        ctx: impl AsContext,
-        func: Func,
-    ) {
+    pub fn print_func(&self, ctx: impl AsContext, func: Func) {
         println!("{}", DisplayFunc::new(ctx.as_context(), self, func))
     }
 }
