@@ -4,8 +4,6 @@ mod stack;
 #[cfg(test)]
 mod tests;
 
-use core::cmp;
-
 pub use self::stack::Stack;
 use self::{instrs::execute_frame, stack::StackFrameRef};
 use super::{super::ExecRegisterSlice, EngineInner};
@@ -16,6 +14,7 @@ use crate::{
     AsContextMut,
     Func,
 };
+use core::cmp;
 use wasmi_core::Trap;
 
 /// The possible outcomes of a function execution.
