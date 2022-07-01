@@ -109,7 +109,7 @@ pub(super) fn execute_frame(
                 });
             }
             ExecOutcome::Return { results } => {
-                return Ok(CallOutcome::Return { results });
+                return Ok(CallOutcome::Return { returned: results });
             }
         }
     }

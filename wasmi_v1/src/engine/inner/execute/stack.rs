@@ -6,6 +6,7 @@ use crate::{
         CallResults,
         ConstRef,
         ExecProvider,
+        ExecProviderSlice,
         ExecRegisterSlice,
         FuncBody,
     },
@@ -134,7 +135,7 @@ impl Stack {
         &mut self,
         func: &WasmFuncEntity,
         results: ExecRegisterSlice,
-        params: &[ExecProvider],
+        params: ExecProviderSlice,
         res: &EngineResources,
     ) -> StackFrameRef {
         debug_assert!(
@@ -143,6 +144,7 @@ impl Stack {
         );
         let len = func.func_body().len_regs() as usize;
         debug_assert!(!self.frames.is_empty());
+        let params = res.provider_slices.resolve(params);
         assert!(
             params.len() <= len,
             "encountered more parameters than register in function frame: #params {}, #registers {}",
@@ -197,7 +199,7 @@ impl Stack {
     /// instead.
     pub(super) fn pop_frame(
         &mut self,
-        returned_values: &[ExecProvider],
+        returned: ExecProviderSlice,
         res: &EngineResources,
     ) -> Option<StackFrameRef> {
         debug_assert!(
@@ -210,6 +212,7 @@ impl Stack {
             // should be used instead.
             return None;
         }
+        let returned = res.provider_slices.resolve(returned);
         let frame = self
             .frames
             .pop()
@@ -221,10 +224,10 @@ impl Stack {
         let results = frame.results;
         assert_eq!(
             results.len(),
-            returned_values.len(),
+            returned.len(),
             "encountered mismatch in returned values: expected {}, got {}",
             results.len(),
-            returned_values.len()
+            returned.len()
         );
         let (mut previous_view, popped_view) = {
             let (previous_entries, popped_entries) =
@@ -234,13 +237,10 @@ impl Stack {
                 StackFrameRegisters::from(&mut popped_entries[..frame.region.len]),
             )
         };
-        results
-            .iter()
-            .zip(returned_values)
-            .for_each(|(result, returns)| {
-                let return_value = popped_view.load_provider(res, *returns);
-                previous_view.set(result, return_value);
-            });
+        results.iter().zip(returned).for_each(|(result, returns)| {
+            let return_value = popped_view.load_provider(res, *returns);
+            previous_view.set(result, return_value);
+        });
         self.entries
             .resize_with(frame.region.start, Default::default);
         Some(StackFrameRef(self.frames.len() - 1))

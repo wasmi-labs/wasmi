@@ -23,7 +23,7 @@ enum CallOutcome {
     /// Returns the result of the function execution.
     Return {
         /// The returned result values.
-        results: ExecProviderSlice,
+        returned: ExecProviderSlice,
     },
     /// Persons a nested function call.
     Call {
@@ -99,12 +99,11 @@ impl EngineInner {
         'outer: loop {
             let mut view = self.stack.frame_at(frame);
             match execute_frame(&mut ctx, &self.code_map, &self.res, &mut view)? {
-                CallOutcome::Return { results } => {
+                CallOutcome::Return { returned } => {
                     // Pop the last frame from the function frame stack and
                     // continue executing it OR finish execution if the call
                     // stack is empty.
-                    let returned_values = self.res.provider_slices.resolve(results);
-                    match self.stack.pop_frame(returned_values, &self.res) {
+                    match self.stack.pop_frame(returned, &self.res) {
                         Some(last_frame) => {
                             frame = last_frame;
                             continue 'outer;
@@ -113,7 +112,7 @@ impl EngineInner {
                             // We just tried to pop the root stack frame.
                             // Therefore we need to return since the execution
                             // is over at this point.
-                            return Ok(results);
+                            return Ok(returned);
                         }
                     }
                 }
@@ -124,7 +123,6 @@ impl EngineInner {
                 } => {
                     match callee.as_internal(&ctx) {
                         FuncEntityInternal::Wasm(wasm_func) => {
-                            let params = self.res.provider_slices.resolve(params);
                             frame = self.stack.push_frame(wasm_func, results, params, &self.res);
                         }
                         FuncEntityInternal::Host(host_func) => {
