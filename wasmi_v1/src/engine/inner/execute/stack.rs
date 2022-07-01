@@ -9,17 +9,20 @@ use crate::{
         ExecProviderSlice,
         ExecRegisterSlice,
         FuncBody,
+        FuncParams,
     },
-    func::WasmFuncEntity,
+    func::{HostFuncEntity, WasmFuncEntity},
     module::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
     AsContext,
+    AsContextMut,
     Instance,
     Memory,
     Table,
 };
+use core::cmp;
 #[cfg(test)]
 use core::fmt::{self, Display};
-use wasmi_core::{UntypedValue, ValueType};
+use wasmi_core::{Trap, UntypedValue, ValueType};
 
 /// The execution stack.
 #[derive(Debug, Default)]
@@ -242,6 +245,75 @@ impl Stack {
         self.entries
             .resize_with(frame.region.start, Default::default);
         Some(StackFrameRef(self.frames.len() - 1))
+    }
+
+    /// Executes a host function with the last frame as its caller.
+    ///
+    /// # Errors
+    ///
+    /// If the host function returns a host side error or trap.
+    pub(super) fn call_host<Ctx>(
+        &mut self,
+        ctx: Ctx,
+        host_func: &HostFuncEntity<<Ctx as AsContext>::UserState>,
+        results: ExecRegisterSlice,
+        args: ExecProviderSlice,
+        res: &EngineResources,
+    ) -> Result<(), Trap>
+    where
+        Ctx: AsContextMut,
+    {
+        debug_assert!(
+            !self.frames.is_empty(),
+            "the init stack frame must always be on the call stack"
+        );
+        // The host function signature is required for properly
+        // adjusting, inspecting and manipulating the value stack.
+        let (input_types, output_types) = res
+            .func_types
+            .resolve_func_type(host_func.signature())
+            .params_results();
+        // In case the host function returns more values than it takes
+        // we are required to extend the value stack.
+        let len_inputs = input_types.len();
+        let len_outputs = output_types.len();
+        let max_inout = cmp::max(len_inputs, len_outputs);
+        // Push registers for the host function parameters
+        // and return values on the value stack.
+        let start = self.entries.len();
+        self.entries
+            .resize_with(start + max_inout, Default::default);
+        let caller = self
+            .frames
+            .last()
+            .expect("encountered unexpected empty frame stack");
+        let (mut caller_regs, mut callee_regs) = {
+            let (caller_values, callee_values) =
+                self.entries[caller.region.start..].split_at_mut(caller.region.len);
+            (
+                StackFrameRegisters::from(caller_values),
+                StackFrameRegisters::from(&mut callee_values[..max_inout]),
+            )
+        };
+        // Initialize registers that act as host function parameters.
+        let args = res.provider_slices.resolve(args);
+        let params = ExecRegisterSlice::params(len_inputs as u16);
+        args.iter().zip(params).for_each(|(param, host_param)| {
+            let param_value = caller_regs.load_provider(res, *param);
+            callee_regs.set(host_param, param_value);
+        });
+        // Set up for actually calling the host function.
+        let params_results = FuncParams::new(callee_regs.regs, len_inputs, len_outputs);
+        host_func.call(ctx, Some(caller.instance), params_results)?;
+        // Write results of the host function call back to the caller.
+        let returned = ExecRegisterSlice::params(len_outputs as u16);
+        results.iter().zip(returned).for_each(|(result, returned)| {
+            caller_regs.set(result, callee_regs.get(returned));
+        });
+        // Clean up host registers on the value stack.
+        self.entries
+            .resize_with(caller.region.start, Default::default);
+        Ok(())
     }
 
     /// Returns the [`StackFrameView`] at the given frame index.

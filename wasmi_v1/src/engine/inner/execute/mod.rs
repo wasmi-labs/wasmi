@@ -9,12 +9,10 @@ use self::{instrs::execute_frame, stack::StackFrameRef};
 use super::{super::ExecRegisterSlice, EngineInner};
 use crate::{
     engine::{CallParams, CallResults, DedupFuncType, ExecProviderSlice},
-    func::{FuncEntityInternal, HostFuncEntity, WasmFuncEntity},
-    AsContext,
+    func::{FuncEntityInternal, WasmFuncEntity},
     AsContextMut,
     Func,
 };
-use core::cmp;
 use wasmi_core::Trap;
 
 /// The possible outcomes of a function execution.
@@ -127,68 +125,13 @@ impl EngineInner {
                         }
                         FuncEntityInternal::Host(host_func) => {
                             let host_func = host_func.clone();
-                            self.execute_host_func(&mut ctx, frame, results, host_func, params)?;
+                            self.stack
+                                .call_host(&mut ctx, &host_func, results, params, &self.res)?;
                         }
                     };
                 }
             }
         }
-    }
-
-    /// Executes the given host function.
-    ///
-    /// # Errors
-    ///
-    /// - If the host function returns a host side error or trap.
-    #[inline(never)]
-    fn execute_host_func<C>(
-        &mut self,
-        _ctx: C,
-        _caller: StackFrameRef,
-        _results: ExecRegisterSlice,
-        host_func: HostFuncEntity<<C as AsContext>::UserState>,
-        _params: ExecProviderSlice,
-    ) -> Result<(), Trap>
-    where
-        C: AsContextMut,
-    {
-        // The host function signature is required for properly
-        // adjusting, inspecting and manipulating the value stack.
-        let (input_types, output_types) = self
-            .res
-            .func_types
-            .resolve_func_type(host_func.signature())
-            .params_results();
-        // In case the host function returns more values than it takes
-        // we are required to extend the value stack.
-        let len_inputs = input_types.len();
-        let len_outputs = output_types.len();
-        let _max_inout = cmp::max(len_inputs, len_outputs);
-        // self.value_stack.reserve(max_inout)?;
-        // if len_outputs > len_inputs {
-        //     let delta = len_outputs - len_inputs;
-        //     self.value_stack.extend_zeros(delta)?;
-        // }
-        // let params_results = FuncParams::new(
-        //     self.value_stack.peek_as_slice_mut(max_inout),
-        //     len_inputs,
-        //     len_outputs,
-        // );
-        // // Now we are ready to perform the host function call.
-        // // Note: We need to clone the host function due to some borrowing issues.
-        // //       This should not be a big deal since host functions usually are cheap to clone.
-        // host_func.call(ctx.as_context_mut(), instance, params_results)?;
-        // // If the host functions returns fewer results than it receives parameters
-        // // the value stack needs to be shrinked for the delta.
-        // if len_outputs < len_inputs {
-        //     let delta = len_inputs - len_outputs;
-        //     self.value_stack.drop(delta);
-        // }
-        // // At this point the host function has been called and has directly
-        // // written its results into the value stack so that the last entries
-        // // in the value stack are the result values of the host function call.
-        // Ok(())
-        todo!()
     }
 
     /// Writes the results of the function execution back into the `results` buffer.
