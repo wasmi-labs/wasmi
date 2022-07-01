@@ -163,8 +163,6 @@ impl Stack {
             default_table: None,
             pc: 0,
         });
-        self.entries
-            .resize_with(self.entries.len() + len, UntypedValue::default);
         let (last_view, mut pushed_view) = {
             let (previous_entries, popped_entries) =
                 self.entries[last_region.start..].split_at_mut(last_region.len);
