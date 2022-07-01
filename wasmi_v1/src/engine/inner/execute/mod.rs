@@ -105,11 +105,7 @@ impl EngineInner {
                     // continue executing it OR finish execution if the call
                     // stack is empty.
                     let returned_values = self.res.provider_slices.resolve(results);
-                    match self.stack.pop_frame(returned_values, |cref| {
-                        self.res.const_pool.resolve(cref).unwrap_or_else(|| {
-                            panic!("failed to resolve constant reference: {:?}", cref)
-                        })
-                    }) {
+                    match self.stack.pop_frame(returned_values, &self.res) {
                         Some(last_frame) => {
                             frame = last_frame;
                             continue 'outer;
@@ -130,11 +126,7 @@ impl EngineInner {
                     match callee.as_internal(&ctx) {
                         FuncEntityInternal::Wasm(wasm_func) => {
                             let params = self.res.provider_slices.resolve(params);
-                            frame = self.stack.push_frame(wasm_func, results, params, |cref| {
-                                self.res.const_pool.resolve(cref).unwrap_or_else(|| {
-                                    panic!("failed to resolve constant reference: {:?}", cref)
-                                })
-                            });
+                            frame = self.stack.push_frame(wasm_func, results, params, &self.res);
                         }
                         FuncEntityInternal::Host(host_func) => {
                             let host_func = host_func.clone();

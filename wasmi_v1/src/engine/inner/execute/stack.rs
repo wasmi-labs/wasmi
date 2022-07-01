@@ -1,3 +1,4 @@
+use super::super::EngineResources;
 use crate::{
     engine::{
         bytecode::ExecRegister,
@@ -134,7 +135,7 @@ impl Stack {
         func: &WasmFuncEntity,
         results: ExecRegisterSlice,
         params: &[ExecProvider],
-        resolve_const: impl Fn(ConstRef) -> UntypedValue,
+        res: &EngineResources,
     ) -> StackFrameRef {
         debug_assert!(
             !self.frames.is_empty(),
@@ -175,8 +176,7 @@ impl Stack {
         };
         let param_slots = ExecRegisterSlice::params(params.len() as u16);
         params.iter().zip(param_slots).for_each(|(param, slot)| {
-            let param_value =
-                param.decode_using(|register| last_view.get(register), &resolve_const);
+            let param_value = last_view.load_provider(res, *param);
             pushed_view.set(slot, param_value);
         });
         StackFrameRef(frame_idx)
@@ -198,7 +198,7 @@ impl Stack {
     pub(super) fn pop_frame(
         &mut self,
         returned_values: &[ExecProvider],
-        resolve_const: impl Fn(ConstRef) -> UntypedValue,
+        res: &EngineResources,
     ) -> Option<StackFrameRef> {
         debug_assert!(
             !self.frames.is_empty(),
@@ -238,8 +238,7 @@ impl Stack {
             .iter()
             .zip(returned_values)
             .for_each(|(result, returns)| {
-                let return_value =
-                    returns.decode_using(|register| popped_view.get(register), &resolve_const);
+                let return_value = popped_view.load_provider(res, *returns);
                 previous_view.set(result, return_value);
             });
         self.entries
@@ -445,11 +444,26 @@ impl<'a> From<&'a mut [UntypedValue]> for StackFrameRegisters<'a> {
 }
 
 impl<'a> StackFrameRegisters<'a> {
+    /// Returns the value of the given `provider`.
+    ///
+    /// # Panics
+    ///
+    /// If the `provider` refers to a missing constant value.
+    /// If the `provider` refers to an invalid register for the [`StackFrameRegisters`].
+    fn load_provider(&self, res: &EngineResources, provider: ExecProvider) -> UntypedValue {
+        let resolve_const = |cref| {
+            res.const_pool
+                .resolve(cref)
+                .unwrap_or_else(|| panic!("failed to resolve constant reference: {:?}", cref))
+        };
+        provider.decode_using(|register| self.get(register), &resolve_const)
+    }
+
     /// Returns the value of the `register`.
     ///
     /// # Panics
     ///
-    /// If the `register` is invalid for this [`StackFrameView`].
+    /// If the `register` is invalid for the [`StackFrameRegisters`].
     pub fn get(&self, register: ExecRegister) -> UntypedValue {
         self.regs[register.into_inner() as usize]
     }
@@ -458,7 +472,7 @@ impl<'a> StackFrameRegisters<'a> {
     ///
     /// # Panics
     ///
-    /// If the `register` is invalid for this [`StackFrameView`].
+    /// If the `register` is invalid for the [`StackFrameRegisters`].
     pub fn set(&mut self, register: ExecRegister, new_value: UntypedValue) {
         self.regs[register.into_inner() as usize] = new_value;
     }
