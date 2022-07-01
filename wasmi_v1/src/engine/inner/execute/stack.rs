@@ -164,11 +164,11 @@ impl Stack {
             pc: 0,
         });
         let (last_view, mut pushed_view) = {
-            let (previous_entries, popped_entries) =
+            let (previous_entries, pushed_entries) =
                 self.entries[last_region.start..].split_at_mut(last_region.len);
             (
                 StackFrameRegisters::from(previous_entries),
-                StackFrameRegisters::from(popped_entries),
+                StackFrameRegisters::from(&mut pushed_entries[..len]),
             )
         };
         let param_slots = ExecRegisterSlice::params(params.len() as u16);
