@@ -150,7 +150,7 @@ impl Stack {
         self.entries.resize_with(start + len, Default::default);
         let last = self
             .frames
-            .last_mut()
+            .last()
             .expect("encountered unexpected empty frame stack");
         let last_region = last.region;
         let frame_idx = self.frames.len();
