@@ -47,6 +47,14 @@ fn test_swap() {
     assert_matches!(result, [Value::I32(2), Value::I32(1)]);
 }
 
+/// Returns an iterator over the first few factorial numbers.
+fn factorial_numbers() -> impl Iterator<Item = i64> {
+    [
+        1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3_628_800, 39_916_800,
+    ]
+    .into_iter()
+}
+
 #[test]
 fn test_factorial_loop() {
     fn test_for(factorial: Func, store: &mut Store<()>, input: i64, expected: i64) {
@@ -60,13 +68,9 @@ fn test_factorial_loop() {
     let (mut store, instance) = load_test_instance!("wat/factorial-iterative.wat");
     let factorial = load_func(&store, &instance, "factorial_iter");
 
-    test_for(factorial, &mut store, 0, 1);
-    test_for(factorial, &mut store, 1, 1);
-    test_for(factorial, &mut store, 2, 2);
-    test_for(factorial, &mut store, 3, 6);
-    test_for(factorial, &mut store, 4, 24);
-    test_for(factorial, &mut store, 5, 120);
-    test_for(factorial, &mut store, 6, 720);
+    for (nth, expected) in factorial_numbers().enumerate() {
+        test_for(factorial, &mut store, nth as i64, expected);
+    }
 }
 
 #[test]
@@ -82,13 +86,9 @@ fn test_factorial_recursive() {
     let (mut store, instance) = load_test_instance!("wat/factorial-recursive.wat");
     let factorial = load_func(&store, &instance, "factorial_rec");
 
-    test_for(factorial, &mut store, 0, 1);
-    test_for(factorial, &mut store, 1, 1);
-    test_for(factorial, &mut store, 2, 2);
-    test_for(factorial, &mut store, 3, 6);
-    test_for(factorial, &mut store, 4, 24);
-    test_for(factorial, &mut store, 5, 120);
-    test_for(factorial, &mut store, 6, 720);
+    for (nth, expected) in factorial_numbers().enumerate() {
+        test_for(factorial, &mut store, nth as i64, expected);
+    }
 }
 
 #[test]
