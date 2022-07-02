@@ -340,3 +340,52 @@ fn test_host_call_multi_return() {
     test_for(wasm, &mut store, HostData::new(false, 2, 3));
     test_for(wasm, &mut store, HostData::new(false, 2, 3));
 }
+
+#[test]
+fn test_host_call_single_param() {
+    #[derive(Debug, Copy, Clone)]
+    pub struct HostData {
+        value: i32,
+    }
+
+    let wasm = wat2wasm(include_bytes!("wat/host-call-single-param.wat"));
+    let engine = Engine::default();
+    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let mut linker = <Linker<()>>::default();
+    let mut store = Store::new(&engine, HostData { value: 42 });
+    let host = Func::wrap(&mut store, |ctx: Caller<HostData>, input: i32| -> i32 {
+        input.wrapping_add(ctx.host_data().value)
+    });
+    linker.define("test", "host", host).unwrap();
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let wasm = instance
+        .get_export(&store, "wasm")
+        .and_then(Extern::into_func)
+        .unwrap();
+
+    print_func(&store, wasm);
+
+    fn test_for(wasm: Func, store: &mut Store<HostData>, wasm_value: i32, host_value: i32) {
+        store.state_mut().value = host_value;
+        let mut result = [Value::I32(0)];
+        wasm.call(
+            store.as_context_mut(),
+            &[Value::I32(wasm_value)],
+            &mut result,
+        )
+        .unwrap();
+        let expected = wasm_value.wrapping_add(host_value);
+        assert_eq!(result, [Value::I32(expected)]);
+    }
+
+    let test_values = [0, 1, -1, 42, 1000, i32::MAX];
+    for host_value in test_values {
+        for wasm_value in test_values {
+            test_for(wasm, &mut store, wasm_value, host_value);
+        }
+    }
+}
