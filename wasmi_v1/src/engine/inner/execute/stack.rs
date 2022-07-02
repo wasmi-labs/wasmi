@@ -121,7 +121,7 @@ impl Stack {
             results.len_results(),
             returned.len(),
         );
-        assert_eq!(results.len_results(), result_types.len());
+        debug_assert_eq!(results.len_results(), result_types.len());
         let root = self
             .frames
             .pop()
