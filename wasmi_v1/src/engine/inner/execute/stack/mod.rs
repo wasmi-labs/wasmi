@@ -1,3 +1,8 @@
+pub use self::frames::StackFrameRef;
+use self::{
+    frames::{FrameRegion, FrameStack, StackFrame},
+    values::ValueStack,
+};
 use super::super::EngineResources;
 use crate::{
     engine::{
@@ -24,6 +29,9 @@ use core::fmt::{self, Display};
 use core::{cmp, slice};
 use wasmi_core::{Trap, UntypedValue};
 
+mod frames;
+mod values;
+
 /// The execution stack.
 #[derive(Debug, Default)]
 pub struct Stack {
@@ -32,162 +40,6 @@ pub struct Stack {
     /// Allocated frames on the stack.
     frames: FrameStack,
 }
-
-/// The call frame stack.
-#[derive(Debug, Default)]
-pub struct FrameStack {
-    frames: Vec<StackFrame>,
-}
-
-impl FrameStack {
-    /// Returns the length of the call frame stack.
-    pub fn len(&self) -> usize {
-        self.frames.len()
-    }
-
-    /// Returns `true` if the call frame stack is empty.
-    pub fn is_empty(&self) -> bool {
-        self.frames.is_empty()
-    }
-
-    /// Clears the call frame stack, removing all frames.
-    pub fn clear(&mut self) {
-        self.frames.clear()
-    }
-
-    /// Pushes a new Wasm [`StackFrame`] onto the call frame stack.
-    ///
-    /// Returns a [`StackFrameRef`] refering to the pushed [`StackFrame`].
-    ///
-    /// # Note
-    ///
-    /// The `results` refer to the result registers of the previous
-    /// [`StackFrame`] on the call frame stack which acts as the caller
-    /// of the pushed [`StackFrame`].
-    pub(super) fn push_frame(
-        &mut self,
-        region: FrameRegion,
-        results: ExecRegisterSlice,
-        wasm_func: &WasmFuncEntity,
-    ) -> StackFrameRef {
-        let start = self.len();
-        self.frames.push(StackFrame {
-            region,
-            results,
-            func_body: wasm_func.func_body(),
-            instance: wasm_func.instance(),
-            default_memory: None,
-            default_table: None,
-            pc: 0,
-        });
-        StackFrameRef(start)
-    }
-
-    /// Pops the last [`StackFrame`] from the call frame stack.
-    ///
-    /// # Panics
-    ///
-    /// If the [`FrameStack`] is empty.
-    pub fn pop_frame(&mut self) -> StackFrame {
-        self.frames
-            .pop()
-            .expect("unexpected missing frame on the call frame stack")
-    }
-
-    /// Returns a shared reference to the last [`StackFrame`] on the call frame stack.
-    ///
-    /// # Panics
-    ///
-    /// If the [`FrameStack`] is empty.
-    pub fn last_frame(&self) -> &StackFrame {
-        self.frames
-            .last()
-            .expect("unexpected missing frame on the call frame stack")
-    }
-
-    /// Returns a [`StackFrameRef`] pointing to the last [`StackFrame`].
-    ///
-    /// # Panics
-    ///
-    /// If the [`FrameStack`] is empty.
-    pub fn last_frame_ref(&self) -> StackFrameRef {
-        assert!(!self.is_empty());
-        StackFrameRef(self.len() - 1)
-    }
-
-    /// Returns a shared reference to the [`StackFrame`] referenced by `frame_ref`.
-    ///
-    /// # Panics
-    ///
-    /// If `frame_ref` refers to an invalid [`StackFrame`].
-    pub fn get_frame_mut(&mut self, frame_ref: StackFrameRef) -> &mut StackFrame {
-        &mut self.frames[frame_ref.0]
-    }
-}
-
-/// The value stack.
-#[derive(Debug, Default)]
-pub struct ValueStack {
-    values: Vec<UntypedValue>,
-}
-
-impl ValueStack {
-    /// Returns the length of the value stack.
-    pub fn len(&self) -> usize {
-        self.values.len()
-    }
-
-    //// Clears the value stack, removing all values.
-    pub fn clear(&mut self) {
-        self.values.clear()
-    }
-
-    /// Extends the value stack by `delta` new values.
-    ///
-    /// Returns a [`FrameRegion`] pointing to the new stack values.
-    ///
-    /// # Note
-    ///
-    /// New values are initialized to zero.
-    pub fn extend_by(&mut self, delta: usize) -> FrameRegion {
-        let start = self.len();
-        self.values.resize_with(start + delta, Default::default);
-        FrameRegion { start, len: delta }
-    }
-
-    /// Shrinks the value stack by `delta` values.
-    pub fn shrink_by(&mut self, delta: usize) {
-        self.values
-            .resize_with(self.len() - delta, Default::default);
-    }
-
-    /// Returns the [`StackFrameRegisters`] of the given [`FrameRegion`].
-    pub fn frame_regs(&mut self, region: FrameRegion) -> StackFrameRegisters {
-        StackFrameRegisters::from(&mut self.values[region.start..(region.start + region.len)])
-    }
-
-    /// Returns the [`StackFrameRegisters`] of a pair of neighbouring [`FrameRegion`]s.
-    ///
-    /// # Panics (Debug)
-    ///
-    /// If the given pair of [`FrameRegion`]s are not neighbouring each other.
-    pub fn paired_frame_regs(
-        &mut self,
-        fst: FrameRegion,
-        snd: FrameRegion,
-    ) -> (StackFrameRegisters, StackFrameRegisters) {
-        debug_assert!(fst.followed_by(&snd));
-        let (fst_regs, snd_regs) = self.values[fst.start..].split_at_mut(fst.len);
-        (
-            StackFrameRegisters::from(fst_regs),
-            StackFrameRegisters::from(&mut snd_regs[..snd.len]),
-        )
-    }
-}
-
-/// A reference to a [`StackFrame`] on the [`Stack`].
-#[derive(Debug, Copy, Clone)]
-pub struct StackFrameRef(usize);
 
 impl Stack {
     /// Resets the [`Stack`] data entirely.
@@ -432,73 +284,7 @@ impl Stack {
     pub(super) fn frame_at(&mut self, frame_ref: StackFrameRef) -> StackFrameView {
         let frame = self.frames.get_frame_mut(frame_ref);
         let regs = self.entries.frame_regs(frame.region);
-        StackFrameView::new(
-            regs,
-            frame.func_body,
-            &mut frame.pc,
-            frame.instance,
-            &mut frame.default_memory,
-            &mut frame.default_table,
-        )
-    }
-}
-
-/// An allocated frame on the [`Stack`].
-#[derive(Debug)]
-pub struct StackFrame {
-    /// The region in which the [`StackFrame`] lives on the [`Stack`].
-    region: FrameRegion,
-    /// The results slice of the [`StackFrame`].
-    results: ExecRegisterSlice,
-    /// The instruction of the function.
-    func_body: FuncBody,
-    /// The instance in which the function has been defined.
-    ///
-    /// # Note
-    ///
-    /// The instance is used to inspect and manipulate with data that is
-    /// non-local to the function such as linear memories, global variables
-    /// and tables.
-    instance: Instance,
-    /// The default linear memory (index 0) of the `instance`.
-    ///
-    /// # Note
-    ///
-    /// This is just an optimization for the common case of manipulating
-    /// the default linear memory and avoids one indirection to look-up
-    /// the linear memory in the `Instance`.
-    default_memory: Option<Memory>,
-    /// The default table (index 0) of the `instance`.
-    ///
-    /// # Note
-    ///
-    /// This is just an optimization for the common case of indirectly
-    /// calling functions using the default table and avoids one indirection
-    /// to look-up the table in the `Instance`.
-    default_table: Option<Table>,
-    /// The current program counter.
-    ///
-    /// # Note
-    ///
-    /// At instruction dispatch the program counter refers to the dispatched
-    /// instructions. After instruction execution the program counter will
-    /// refer to the next instruction.
-    pub pc: usize,
-}
-
-/// The region of a [`StackFrame`] within the [`Stack`].
-#[derive(Debug, Copy, Clone)]
-pub struct FrameRegion {
-    /// The index to the first register on the global [`Stack`].
-    start: usize,
-    /// The amount of registers of the [`StackFrame`] belonging to this [`FrameRegion`].
-    len: usize,
-}
-
-impl FrameRegion {
-    /// Returns `true` if `other` [`FrameRegion`] directly follows `self`.
-    pub fn followed_by(&self, other: &Self) -> bool {
-        (self.start + self.len) == other.start
+        StackFrameView::new(frame, regs)
     }
 }
 
@@ -521,21 +307,14 @@ pub struct StackFrameView<'a> {
 
 impl<'a> StackFrameView<'a> {
     /// Creates a new [`StackFrameView`].
-    pub fn new(
-        regs: StackFrameRegisters<'a>,
-        func_body: FuncBody,
-        pc: &'a mut usize,
-        instance: Instance,
-        default_memory: &'a mut Option<Memory>,
-        default_table: &'a mut Option<Table>,
-    ) -> Self {
+    pub fn new(frame: &'a mut StackFrame, regs: StackFrameRegisters<'a>) -> Self {
         Self {
+            func_body: frame.func_body,
+            pc: &mut frame.pc,
+            instance: frame.instance,
+            default_memory: &mut frame.default_memory,
+            default_table: &mut frame.default_table,
             regs,
-            func_body,
-            pc,
-            instance,
-            default_memory,
-            default_table,
         }
     }
 
