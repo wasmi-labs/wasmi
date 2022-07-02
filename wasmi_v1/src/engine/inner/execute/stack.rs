@@ -19,18 +19,83 @@ use crate::{
     Memory,
     Table,
 };
-use core::cmp;
 #[cfg(test)]
 use core::fmt::{self, Display};
+use core::{cmp, slice};
 use wasmi_core::{Trap, UntypedValue};
 
 /// The execution stack.
 #[derive(Debug, Default)]
 pub struct Stack {
-    /// The entries on the stack.
-    entries: Vec<UntypedValue>,
+    /// The value stack.
+    entries: ValueStack,
     /// Allocated frames on the stack.
     frames: Vec<StackFrame>,
+}
+
+/// The value stack.
+#[derive(Debug, Default)]
+pub struct ValueStack {
+    values: Vec<UntypedValue>,
+}
+
+impl ValueStack {
+    /// Returns the length of the value stack.
+    pub fn len(&self) -> usize {
+        self.values.len()
+    }
+
+    //// Clears the value stack, removing all values.
+    pub fn clear(&mut self) {
+        self.values.clear()
+    }
+
+    /// Extends the value stack to the new length.
+    ///
+    /// # Note
+    ///
+    /// New values are initialized to zero.
+    ///
+    /// # Panics (Debug)
+    ///
+    /// If the `new_len` is smaller than the current length of the value stack.
+    pub fn extend_to(&mut self, new_len: usize) {
+        debug_assert!(self.len() <= new_len);
+        self.values.resize_with(new_len, Default::default);
+    }
+
+    /// Shrinks the value stack to the new length.
+    ///
+    /// # Panics (Debug)
+    ///
+    /// If the `new_len` is bigger than the current length of the value stack.
+    pub fn shrink_to(&mut self, new_len: usize) {
+        debug_assert!(new_len <= self.len());
+        self.values.resize_with(new_len, Default::default);
+    }
+
+    /// Returns the [`StackFrameRegisters`] of the given [`FrameRegion`].
+    pub fn frame_regs(&mut self, region: FrameRegion) -> StackFrameRegisters {
+        StackFrameRegisters::from(&mut self.values[region.start..(region.start + region.len)])
+    }
+
+    /// Returns the [`StackFrameRegisters`] of a pair of neighbouring [`FrameRegion`]s.
+    ///
+    /// # Panics (Debug)
+    ///
+    /// If the given pair of [`FrameRegion`]s are not neighbouring each other.
+    pub fn paired_frame_regs(
+        &mut self,
+        fst: FrameRegion,
+        snd: FrameRegion,
+    ) -> (StackFrameRegisters, StackFrameRegisters) {
+        debug_assert!(fst.followed_by(&snd));
+        let (fst_regs, snd_regs) = self.values[fst.start..].split_at_mut(fst.len);
+        (
+            StackFrameRegisters::from(fst_regs),
+            StackFrameRegisters::from(&mut snd_regs[..snd.len]),
+        )
+    }
 }
 
 /// A reference to a [`StackFrame`] on the [`Stack`].
@@ -67,19 +132,14 @@ impl Stack {
             #params: {len_params}, #registers: {len_regs}",
         );
         let params = initial_params.feed_params();
-        self.entries.resize_with(len_regs, UntypedValue::default);
-        self.entries[..len_params]
-            .iter_mut()
-            .zip(params)
-            .for_each(|(slot, param)| {
-                *slot = param.into();
-            });
-        let frame_idx = self.frames.len();
+        self.entries.extend_to(len_regs);
+        let root_region = FrameRegion {
+            start: 0,
+            len: len_regs,
+        };
+        let root_idx = self.frames.len();
         self.frames.push(StackFrame {
-            region: FrameRegion {
-                start: 0,
-                len: len_regs,
-            },
+            region: root_region,
             results: ExecRegisterSlice::empty(),
             func_body: func.func_body(),
             instance: func.instance(),
@@ -87,7 +147,14 @@ impl Stack {
             default_table: None,
             pc: 0,
         });
-        StackFrameRef(frame_idx)
+        self.entries
+            .frame_regs(root_region)
+            .into_iter()
+            .zip(params)
+            .for_each(|(param, arg)| {
+                *param = arg.into();
+            });
+        StackFrameRef(root_idx)
     }
 
     /// Finalizes the execution of the root [`StackFrame`].
@@ -126,9 +193,7 @@ impl Stack {
             .frames
             .pop()
             .expect("root stack frame must be on the call stack");
-        let root_regs = StackFrameRegisters::from(
-            &mut self.entries[root.region.start..(root.region.start + root.region.len)],
-        );
+        let root_regs = self.entries.frame_regs(root.region);
         let returned = returned
             .iter()
             .zip(result_types)
@@ -162,34 +227,29 @@ impl Stack {
             len
         );
         let start = self.entries.len();
-        self.entries.resize_with(start + len, Default::default);
+        self.entries.extend_to(start + len);
         let last = self
             .frames
             .last()
             .expect("encountered unexpected empty frame stack");
         let last_region = last.region;
+        let pushed_region = FrameRegion { start, len };
         let frame_idx = self.frames.len();
         self.frames.push(StackFrame {
             results,
-            region: FrameRegion { start, len },
+            region: pushed_region,
             func_body: func.func_body(),
             instance: func.instance(),
             default_memory: None,
             default_table: None,
             pc: 0,
         });
-        let (last_view, mut pushed_view) = {
-            let (previous_entries, pushed_entries) =
-                self.entries[last_region.start..].split_at_mut(last_region.len);
-            (
-                StackFrameRegisters::from(previous_entries),
-                StackFrameRegisters::from(&mut pushed_entries[..len]),
-            )
-        };
+        let (last_regs, mut pushed_regs) =
+            self.entries.paired_frame_regs(last_region, pushed_region);
         let param_slots = ExecRegisterSlice::params(params.len() as u16);
         params.iter().zip(param_slots).for_each(|(param, slot)| {
-            let param_value = last_view.load_provider(res, *param);
-            pushed_view.set(slot, param_value);
+            let param_value = last_regs.load_provider(res, *param);
+            pushed_regs.set(slot, param_value);
         });
         StackFrameRef(frame_idx)
     }
@@ -239,20 +299,14 @@ impl Stack {
             results.len(),
             returned.len()
         );
-        let (mut previous_view, popped_view) = {
-            let (previous_entries, popped_entries) =
-                self.entries[previous.region.start..].split_at_mut(previous.region.len);
-            (
-                StackFrameRegisters::from(previous_entries),
-                StackFrameRegisters::from(&mut popped_entries[..frame.region.len]),
-            )
-        };
+        let (mut previous_regs, popped_regs) = self
+            .entries
+            .paired_frame_regs(previous.region, frame.region);
         results.iter().zip(returned).for_each(|(result, returns)| {
-            let return_value = popped_view.load_provider(res, *returns);
-            previous_view.set(result, return_value);
+            let return_value = popped_regs.load_provider(res, *returns);
+            previous_regs.set(result, return_value);
         });
-        self.entries
-            .resize_with(frame.region.start, Default::default);
+        self.entries.shrink_to(frame.region.start);
         Some(StackFrameRef(self.frames.len() - 1))
     }
 
@@ -291,20 +345,17 @@ impl Stack {
         // and return values on the value stack.
         let start = self.entries.len();
         let original_len_regs = self.entries.len();
-        self.entries
-            .resize_with(start + max_inout, Default::default);
+        self.entries.extend_to(start + max_inout);
         let caller = self
             .frames
             .last()
             .expect("encountered unexpected empty frame stack");
-        let (mut caller_regs, mut callee_regs) = {
-            let (caller_values, callee_values) =
-                self.entries[caller.region.start..].split_at_mut(caller.region.len);
-            (
-                StackFrameRegisters::from(caller_values),
-                StackFrameRegisters::from(&mut callee_values[..max_inout]),
-            )
+        let callee_region = FrameRegion {
+            start: caller.region.start + caller.region.len,
+            len: max_inout,
         };
+        let (mut caller_regs, mut callee_regs) =
+            self.entries.paired_frame_regs(caller.region, callee_region);
         // Initialize registers that act as host function parameters.
         let args = res.provider_slices.resolve(args);
         let params = ExecRegisterSlice::params(len_inputs as u16);
@@ -321,8 +372,7 @@ impl Stack {
             caller_regs.set(result, callee_regs.get(returned));
         });
         // Clean up host registers on the value stack.
-        self.entries
-            .resize_with(original_len_regs, Default::default);
+        self.entries.shrink_to(original_len_regs);
         Ok(())
     }
 
@@ -333,8 +383,7 @@ impl Stack {
     /// If the [`FrameRegion`] is invalid.
     pub(super) fn frame_at(&mut self, frame_ref: StackFrameRef) -> StackFrameView {
         let frame = &mut self.frames[frame_ref.0];
-        let region = frame.region;
-        let regs = &mut self.entries[region.start..(region.start + region.len)];
+        let regs = self.entries.frame_regs(frame.region);
         StackFrameView::new(
             regs,
             frame.func_body,
@@ -398,6 +447,13 @@ pub struct FrameRegion {
     len: usize,
 }
 
+impl FrameRegion {
+    /// Returns `true` if `other` [`FrameRegion`] directly follows `self`.
+    pub fn followed_by(&self, other: &Self) -> bool {
+        (self.start + self.len) == other.start
+    }
+}
+
 /// An exclusive [`StackFrame`] within the [`Stack`].
 ///
 /// Allow to efficiently operate on the stack frame.
@@ -418,7 +474,7 @@ pub struct StackFrameView<'a> {
 impl<'a> StackFrameView<'a> {
     /// Creates a new [`StackFrameView`].
     pub fn new(
-        regs: &'a mut [UntypedValue],
+        regs: StackFrameRegisters<'a>,
         func_body: FuncBody,
         pc: &'a mut usize,
         instance: Instance,
@@ -426,7 +482,7 @@ impl<'a> StackFrameView<'a> {
         default_table: &'a mut Option<Table>,
     ) -> Self {
         Self {
-            regs: StackFrameRegisters::from(regs),
+            regs,
             func_body,
             pc,
             instance,
@@ -520,6 +576,15 @@ impl<'a> Display for StackFrameRegisters<'a> {
 impl<'a> From<&'a mut [UntypedValue]> for StackFrameRegisters<'a> {
     fn from(regs: &'a mut [UntypedValue]) -> Self {
         Self { regs }
+    }
+}
+
+impl<'a> IntoIterator for StackFrameRegisters<'a> {
+    type Item = &'a mut UntypedValue;
+    type IntoIter = slice::IterMut<'a, UntypedValue>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.regs.iter_mut()
     }
 }
 
