@@ -301,7 +301,6 @@ impl Stack {
             "the root stack frame must be on the call stack"
         );
         let len = func.func_body().len_regs() as usize;
-        debug_assert!(!self.frames.is_empty());
         let args = res.provider_slices.resolve(args);
         assert!(
             args.len() <= len,
