@@ -281,6 +281,7 @@ impl Stack {
         // Push registers for the host function parameters
         // and return values on the value stack.
         let start = self.entries.len();
+        let original_len_regs = self.entries.len();
         self.entries
             .resize_with(start + max_inout, Default::default);
         let caller = self
@@ -312,7 +313,7 @@ impl Stack {
         });
         // Clean up host registers on the value stack.
         self.entries
-            .resize_with(caller.region.start, Default::default);
+            .resize_with(original_len_regs, Default::default);
         Ok(())
     }
 
