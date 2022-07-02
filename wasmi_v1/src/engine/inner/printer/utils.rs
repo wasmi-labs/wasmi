@@ -60,13 +60,13 @@ where
     V: Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut iter = self.items.clone().into_iter();
+        let mut iter = self.items.clone();
         match (iter.next(), iter.next()) {
             (None, _) => write!(f, "[]"),
             (Some(single), None) => write!(f, "{single}"),
             (Some(fst), Some(snd)) => {
                 write!(f, "[{fst}, {snd}")?;
-                while let Some(next) = iter.next() {
+                for next in iter {
                     write!(f, ", {next}")?;
                 }
                 write!(f, "]")?;

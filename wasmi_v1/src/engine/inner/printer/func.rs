@@ -184,7 +184,7 @@ impl Display for DisplayLocals {
         if let Some(fst) = locals.next() {
             write!(f, "         local {}", DisplayExecRegister::from_index(fst))?;
         }
-        while let Some(next) = locals.next() {
+        for next in locals {
             write!(f, ", {}", DisplayExecRegister::from_index(next))?;
         }
         if self.len_locals > 0 {
