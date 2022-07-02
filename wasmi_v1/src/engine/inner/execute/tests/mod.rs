@@ -9,7 +9,19 @@ use self::utils::{
     load_wasm_from_file,
     wat2wasm,
 };
-use crate::{AsContext, AsContextMut, Extern, Func, Instance, Memory, Store};
+use crate::{
+    AsContext,
+    AsContextMut,
+    Caller,
+    Engine,
+    Extern,
+    Func,
+    Instance,
+    Linker,
+    Memory,
+    Module,
+    Store,
+};
 use assert_matches::assert_matches;
 use wasmi_core::Value;
 
@@ -28,7 +40,7 @@ fn load_func(store: &Store<()>, instance: &Instance, func_name: &str) -> Func {
 }
 
 /// Pretty-prints the function `func` for debugging purposes.
-fn print_func(store: &Store<()>, func: Func) {
+fn print_func<T>(store: &Store<T>, func: Func) {
     store.engine().print_func(store.as_context(), func);
 }
 
@@ -226,4 +238,34 @@ fn test_memory_fill() {
     test_for(fill, &mut store, mem, 0, 1, 0x11);
     test_for(fill, &mut store, mem, 0, 10_000, 0x22);
     test_for(fill, &mut store, mem, 123, 456, 0x33);
+}
+
+#[test]
+fn test_host_call_return() {
+    #[derive(Debug, Default, Copy, Clone)]
+    pub struct HostData {
+        value: i32,
+    }
+
+    let wasm = wat2wasm(include_bytes!("wat/host-call.wat"));
+    let engine = Engine::default();
+    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let mut linker = <Linker<()>>::default();
+    let mut store = Store::new(&engine, HostData::default());
+    let host = Func::wrap(&mut store, |ctx: Caller<HostData>| ctx.host_data().value);
+    linker.define("test", "host", host).unwrap();
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let wasm = instance
+        .get_export(&store, "wasm")
+        .and_then(Extern::into_func)
+        .unwrap();
+    print_func(&store, wasm);
+    let mut result = [Value::I32(0)];
+    wasm.call(&mut store, &[], &mut result).unwrap();
+    let expected = store.state().value;
+    assert_eq!(result, [Value::I32(expected)]);
 }
