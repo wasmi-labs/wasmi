@@ -100,7 +100,7 @@ impl EngineInner {
                     // Pop the last frame from the function frame stack and
                     // continue executing it OR finish execution if the call
                     // stack is empty.
-                    match self.stack.pop_frame(returned, &self.res) {
+                    match self.stack.return_wasm(returned, &self.res) {
                         Some(next_frame) => {
                             frame = next_frame;
                             continue 'outer;
@@ -120,7 +120,7 @@ impl EngineInner {
                 } => {
                     match callee.as_internal(&ctx) {
                         FuncEntityInternal::Wasm(wasm_func) => {
-                            frame = self.stack.push_frame(wasm_func, results, params, &self.res);
+                            frame = self.stack.call_wasm(wasm_func, results, params, &self.res);
                         }
                         FuncEntityInternal::Host(host_func) => {
                             let host_func = host_func.clone();

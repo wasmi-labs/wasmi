@@ -94,6 +94,19 @@ impl ValueStack {
 #[derive(Debug, Copy, Clone)]
 pub struct StackFrameRef(usize);
 
+impl StackFrameRef {
+    /// Returns the [`StackFrameRef`] refering to the root [`StackFrame`].
+    pub fn root() -> Self {
+        Self(0)
+    }
+
+    /// Returns `true` if the [`StackFrameRef`] refers to the root stack frame.
+    #[allow(dead_code)] // TODO: unsilence warning
+    pub fn is_root(&self) -> bool {
+        self.0 == 0
+    }
+}
+
 impl Stack {
     /// Resets the [`Stack`] data entirely.
     fn reset(&mut self) {
@@ -103,8 +116,8 @@ impl Stack {
 
     /// Initializes the [`Stack`] with the root function call frame.
     ///
-    /// Returns the [`StackFrameRef`] to the root [`StackFrame`].
     /// Resets the state of the [`Stack`] to start the new computation.
+    /// Returns the [`StackFrameRef`] to the root [`StackFrame`].
     ///
     /// # Note
     ///
@@ -129,7 +142,6 @@ impl Stack {
             start: 0,
             len: len_regs,
         };
-        let root_idx = self.frames.len();
         self.frames.push(StackFrame {
             region: root_region,
             results: ExecRegisterSlice::empty(),
@@ -146,7 +158,7 @@ impl Stack {
             .for_each(|(param, arg)| {
                 *param = arg.into();
             });
-        StackFrameRef(root_idx)
+        StackFrameRef::root()
     }
 
     /// Finalizes the execution of the root [`StackFrame`].
@@ -197,12 +209,19 @@ impl Stack {
         results.feed_results(returned)
     }
 
-    /// Pushes a new [`StackFrame`] to the [`Stack`].
-    pub(super) fn push_frame(
+    /// Calls the given Wasm function with the top [`StackFrame`] as its caller.
+    ///
+    /// Returns the [`StackFrameRef`] of the callee.
+    ///
+    /// # Note
+    ///
+    /// This handles argument passing from caller to callee and setup of
+    /// new [`StackFrame`] for the callee.
+    pub(super) fn call_wasm(
         &mut self,
         func: &WasmFuncEntity,
         results: ExecRegisterSlice,
-        params: ExecProviderSlice,
+        args: ExecProviderSlice,
         res: &EngineResources,
     ) -> StackFrameRef {
         debug_assert!(
@@ -211,55 +230,55 @@ impl Stack {
         );
         let len = func.func_body().len_regs() as usize;
         debug_assert!(!self.frames.is_empty());
-        let params = res.provider_slices.resolve(params);
+        let args = res.provider_slices.resolve(args);
         assert!(
-            params.len() <= len,
-            "encountered more parameters than register in function frame: #params {}, #registers {}",
-            params.len(),
+            args.len() <= len,
+            "encountered more call arguments than register in function frame: #params {}, #registers {}",
+            args.len(),
             len
         );
         let start = self.entries.len();
         self.entries.extend_by(len);
-        let last = self
+        let caller = self
             .frames
             .last()
             .expect("encountered unexpected empty frame stack");
-        let last_region = last.region;
-        let pushed_region = FrameRegion { start, len };
+        let caller_region = caller.region;
+        let callee_region = FrameRegion { start, len };
         let frame_idx = self.frames.len();
         self.frames.push(StackFrame {
             results,
-            region: pushed_region,
+            region: callee_region,
             func_body: func.func_body(),
             instance: func.instance(),
             default_memory: None,
             default_table: None,
             pc: 0,
         });
-        let (last_regs, mut pushed_regs) =
-            self.entries.paired_frame_regs(last_region, pushed_region);
-        let param_slots = ExecRegisterSlice::params(params.len() as u16);
-        params.iter().zip(param_slots).for_each(|(param, slot)| {
-            let param_value = last_regs.load_provider(res, *param);
-            pushed_regs.set(slot, param_value);
+        let (caller_regs, mut callee_regs) =
+            self.entries.paired_frame_regs(caller_region, callee_region);
+        let params = ExecRegisterSlice::params(args.len() as u16);
+        args.iter().zip(params).for_each(|(arg, param)| {
+            callee_regs.set(param, caller_regs.load_provider(res, *arg));
         });
         StackFrameRef(frame_idx)
     }
 
-    /// Pops the most recently pushed [`StackFrame`] from the [`Stack`] if any.
+    /// Returns the last Wasm [`StackFrame`] to its caller.
     ///
-    /// Returns the providers in `returns` to the `results` of the previous
-    /// [`StackFrame`] on the [`Stack`].
+    /// # Note
     ///
-    /// Returns the [`StackFrameRef`] to the last [`StackFrame`] on the [`Stack`]
-    /// after this operation has finished.
+    /// The caller is always the previous [`StackFrame`] on the [`Stack`].
+    ///
+    /// This handles the returning of returned values from the returned
+    /// Wasm function into the predetermined results of its caller.
     ///
     /// # Note
     ///
     /// Returns `None` in case there is only the root [`StackFrame`] left
-    /// on the [`Stack`] indicating that the [`Stack::init`] method should be used
-    /// instead.
-    pub(super) fn pop_frame(
+    /// on the [`Stack`] indicating that the [`Stack::finalize`] method can
+    /// be used next to properly finish the Wasm execution.
+    pub(super) fn return_wasm(
         &mut self,
         returned: ExecProviderSlice,
         res: &EngineResources,
@@ -269,21 +288,17 @@ impl Stack {
             "the root stack frame must be on the call stack"
         );
         if self.frames.len() == 1 {
-            // Early return `None` to flag that only the root call
-            // frames remain on the stack which means that [`pop_init`]
-            // should be used instead.
+            // Early return `None` to signal that [`Stack::finalize`]
+            // can be used now to properly finish the Wasm execution.
             return None;
         }
         let returned = res.provider_slices.resolve(returned);
-        let frame = self
+        let callee = self
             .frames
             .pop()
-            .expect("tried to pop from empty frame stack");
-        let previous = self
-            .frames
-            .last()
-            .expect("expected previous frame but stack is empty");
-        let results = frame.results;
+            .expect("at least two frames on the frame stack");
+        let caller = self.frames.last().expect("the caller frame");
+        let results = callee.results;
         assert_eq!(
             results.len(),
             returned.len(),
@@ -291,14 +306,13 @@ impl Stack {
             results.len(),
             returned.len()
         );
-        let (mut previous_regs, popped_regs) = self
-            .entries
-            .paired_frame_regs(previous.region, frame.region);
+        let (mut caller_regs, callee_regs) =
+            self.entries.paired_frame_regs(caller.region, callee.region);
         results.iter().zip(returned).for_each(|(result, returns)| {
-            let return_value = popped_regs.load_provider(res, *returns);
-            previous_regs.set(result, return_value);
+            let return_value = callee_regs.load_provider(res, *returns);
+            caller_regs.set(result, return_value);
         });
-        self.entries.shrink_by(frame.region.len);
+        self.entries.shrink_by(callee.region.len);
         Some(StackFrameRef(self.frames.len() - 1))
     }
 
