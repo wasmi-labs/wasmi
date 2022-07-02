@@ -10,7 +10,7 @@
             (i32.eq (local.get $n) (i32.const 0))
             (then
                 ;; return 0 if $n == 0
-                (return (i32.const 0))
+                (i32.const 0)
             )
             (else
                 ;; return $n + (call $func($n - 1)) otherwise
