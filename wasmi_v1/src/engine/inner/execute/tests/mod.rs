@@ -241,7 +241,7 @@ fn test_memory_fill() {
 
 #[test]
 fn test_host_call_single_return() {
-    #[derive(Debug, Copy, Clone)]
+    #[derive(Debug, Default, Copy, Clone)]
     pub struct HostData {
         value: i32,
     }
@@ -250,7 +250,7 @@ fn test_host_call_single_return() {
     let engine = Engine::default();
     let module = Module::new(&engine, &wasm[..]).unwrap();
     let mut linker = <Linker<()>>::default();
-    let mut store = Store::new(&engine, HostData { value: 42 });
+    let mut store = Store::new(&engine, HostData::default());
     let host = Func::wrap(&mut store, |ctx: Caller<HostData>| ctx.host_data().value);
     linker.define("test", "host", host).unwrap();
     let instance = linker
@@ -281,7 +281,7 @@ fn test_host_call_single_return() {
 
 #[test]
 fn test_host_call_multi_return() {
-    #[derive(Debug, Copy, Clone)]
+    #[derive(Debug, Default, Copy, Clone)]
     pub struct HostData {
         condition: bool,
         a: i64,
@@ -298,14 +298,7 @@ fn test_host_call_multi_return() {
     let engine = Engine::default();
     let module = Module::new(&engine, &wasm[..]).unwrap();
     let mut linker = <Linker<()>>::default();
-    let mut store = Store::new(
-        &engine,
-        HostData {
-            condition: false,
-            a: 1,
-            b: 2,
-        },
-    );
+    let mut store = Store::new(&engine, HostData::default());
     let host = Func::wrap(&mut store, |ctx: Caller<HostData>| -> (i64, i64, i32) {
         let data = ctx.host_data();
         (data.a, data.b, data.condition as i32)
@@ -343,7 +336,7 @@ fn test_host_call_multi_return() {
 
 #[test]
 fn test_host_call_single_param() {
-    #[derive(Debug, Copy, Clone)]
+    #[derive(Debug, Default, Copy, Clone)]
     pub struct HostData {
         value: i32,
     }
@@ -352,7 +345,7 @@ fn test_host_call_single_param() {
     let engine = Engine::default();
     let module = Module::new(&engine, &wasm[..]).unwrap();
     let mut linker = <Linker<()>>::default();
-    let mut store = Store::new(&engine, HostData { value: 42 });
+    let mut store = Store::new(&engine, HostData::default());
     let host = Func::wrap(&mut store, |ctx: Caller<HostData>, input: i32| -> i32 {
         input.wrapping_add(ctx.host_data().value)
     });
