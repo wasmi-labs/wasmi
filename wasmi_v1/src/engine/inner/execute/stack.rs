@@ -30,7 +30,89 @@ pub struct Stack {
     /// The value stack.
     entries: ValueStack,
     /// Allocated frames on the stack.
+    frames: FrameStack,
+}
+
+/// The call frame stack.
+#[derive(Debug, Default)]
+pub struct FrameStack {
     frames: Vec<StackFrame>,
+}
+
+impl FrameStack {
+    /// Returns the length of the call frame stack.
+    pub fn len(&self) -> usize {
+        self.frames.len()
+    }
+
+    /// Returns `true` if the call frame stack is empty.
+    pub fn is_empty(&self) -> bool {
+        self.frames.is_empty()
+    }
+
+    /// Clears the call frame stack, removing all frames.
+    pub fn clear(&mut self) {
+        self.frames.clear()
+    }
+
+    /// Pushes a new Wasm [`StackFrame`] onto the call frame stack.
+    ///
+    /// Returns a [`StackFrameRef`] refering to the pushed [`StackFrame`].
+    ///
+    /// # Note
+    ///
+    /// The `results` refer to the result registers of the previous
+    /// [`StackFrame`] on the call frame stack which acts as the caller
+    /// of the pushed [`StackFrame`].
+    pub(super) fn push_frame(
+        &mut self,
+        region: FrameRegion,
+        results: ExecRegisterSlice,
+        wasm_func: &WasmFuncEntity,
+    ) -> StackFrameRef {
+        let start = self.len();
+        self.frames.push(StackFrame {
+            region,
+            results,
+            func_body: wasm_func.func_body(),
+            instance: wasm_func.instance(),
+            default_memory: None,
+            default_table: None,
+            pc: 0,
+        });
+        StackFrameRef(start)
+    }
+
+    /// Pops the last [`StackFrame`] from the call frame stack.
+    ///
+    /// # Panics
+    ///
+    /// If the [`FrameStack`] is empty.
+    pub fn pop_frame(&mut self) -> StackFrame {
+        self.frames
+            .pop()
+            .expect("unexpected missing frame on the call frame stack")
+    }
+
+    /// Returns a shared reference to the last [`StackFrame`] on the call frame stack.
+    ///
+    /// # Panics
+    ///
+    /// If the [`FrameStack`] is empty.
+    pub fn last_frame(&self) -> &StackFrame {
+        self.frames
+            .last()
+            .expect("unexpected missing frame on the call frame stack")
+    }
+
+    /// Returns a shared reference to the [`StackFrame`] referenced by `frame_ref`.
+    ///
+    /// # Panics
+    ///
+    /// If `frame_ref` refers to an invalid [`StackFrame`].
+    pub fn get_frame_mut(&mut self, frame_ref: StackFrameRef) -> &mut StackFrame {
+        &mut self.frames[frame_ref.0]
+    }
 }
 
 /// The value stack.
@@ -142,15 +224,8 @@ impl Stack {
             start: 0,
             len: len_regs,
         };
-        self.frames.push(StackFrame {
-            region: root_region,
-            results: ExecRegisterSlice::empty(),
-            func_body: func.func_body(),
-            instance: func.instance(),
-            default_memory: None,
-            default_table: None,
-            pc: 0,
-        });
+        self.frames
+            .push_frame(root_region, ExecRegisterSlice::empty(), func);
         self.entries
             .frame_regs(root_region)
             .into_iter()
@@ -193,10 +268,7 @@ impl Stack {
             returned.len(),
         );
         debug_assert_eq!(results.len_results(), result_types.len());
-        let root = self
-            .frames
-            .pop()
-            .expect("root stack frame must be on the call stack");
+        let root = self.frames.pop_frame();
         let root_regs = self.entries.frame_regs(root.region);
         let returned = returned
             .iter()
@@ -239,22 +311,11 @@ impl Stack {
         );
         let start = self.entries.len();
         self.entries.extend_by(len);
-        let caller = self
-            .frames
-            .last()
-            .expect("encountered unexpected empty frame stack");
+        let caller = self.frames.last_frame();
         let caller_region = caller.region;
         let callee_region = FrameRegion { start, len };
         let frame_idx = self.frames.len();
-        self.frames.push(StackFrame {
-            results,
-            region: callee_region,
-            func_body: func.func_body(),
-            instance: func.instance(),
-            default_memory: None,
-            default_table: None,
-            pc: 0,
-        });
+        self.frames.push_frame(callee_region, results, func);
         let (caller_regs, mut callee_regs) =
             self.entries.paired_frame_regs(caller_region, callee_region);
         let params = ExecRegisterSlice::params(args.len() as u16);
@@ -293,11 +354,8 @@ impl Stack {
             return None;
         }
         let returned = res.provider_slices.resolve(returned);
-        let callee = self
-            .frames
-            .pop()
-            .expect("at least two frames on the frame stack");
-        let caller = self.frames.last().expect("the caller frame");
+        let callee = self.frames.pop_frame();
+        let caller = self.frames.last_frame();
         let results = callee.results;
         assert_eq!(
             results.len(),
@@ -350,10 +408,7 @@ impl Stack {
         // Push registers for the host function parameters
         // and return values on the value stack.
         self.entries.extend_by(max_inout);
-        let caller = self
-            .frames
-            .last()
-            .expect("encountered unexpected empty frame stack");
+        let caller = self.frames.last_frame();
         let callee_region = FrameRegion {
             start: caller.region.start + caller.region.len,
             len: max_inout,
@@ -386,7 +441,7 @@ impl Stack {
     ///
     /// If the [`FrameRegion`] is invalid.
     pub(super) fn frame_at(&mut self, frame_ref: StackFrameRef) -> StackFrameView {
-        let frame = &mut self.frames[frame_ref.0];
+        let frame = self.frames.get_frame_mut(frame_ref);
         let regs = self.entries.frame_regs(frame.region);
         StackFrameView::new(
             regs,
