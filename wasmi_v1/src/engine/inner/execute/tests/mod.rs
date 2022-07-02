@@ -22,7 +22,6 @@ use crate::{
     Module,
     Store,
 };
-use assert_matches::assert_matches;
 use wasmi_core::Value;
 
 macro_rules! load_test_instance {
@@ -54,7 +53,7 @@ fn test_add() {
 
     add.call(&mut store, &[Value::I32(1), Value::I32(2)], &mut result)
         .unwrap();
-    assert_matches!(result, [Value::I32(3)]);
+    assert_eq!(result, [Value::I32(3)]);
 }
 
 #[test]
@@ -67,7 +66,7 @@ fn test_swap() {
 
     swap.call(&mut store, &[Value::I32(1), Value::I32(2)], &mut result)
         .unwrap();
-    assert_matches!(result, [Value::I32(2), Value::I32(1)]);
+    assert_eq!(result, [Value::I32(2), Value::I32(1)]);
 }
 
 /// Returns an iterator over the first few factorial numbers.
