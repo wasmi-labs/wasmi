@@ -57,9 +57,8 @@ impl EngineInner {
             FuncEntityInternal::Wasm(wasm_func) => {
                 let signature = wasm_func.signature();
                 let frame = self.initialize_args(wasm_func, params);
-                let returned_values = self.execute_frame(&mut ctx, frame)?;
-                let results = self.return_result(signature, returned_values, results);
-                Ok(results)
+                let returned = self.execute_frame(&mut ctx, frame)?;
+                Ok(self.return_results(signature, returned, results))
             }
             FuncEntityInternal::Host(_host_func) => {
                 todo!()
@@ -139,32 +138,15 @@ impl EngineInner {
     /// # Panics
     ///
     /// - If the `results` buffer length does not match the remaining amount of stack values.
-    fn return_result<Results>(
+    fn return_results<Results>(
         &mut self,
-        func_type: DedupFuncType,
-        returned_values: ExecProviderSlice,
+        signature: DedupFuncType,
+        returned: ExecProviderSlice,
         results: Results,
     ) -> <Results as CallResults>::Results
     where
         Results: CallResults,
     {
-        let result_types = self.res.func_types.resolve_func_type(func_type).results();
-        let returned_values = self.res.provider_slices.resolve(returned_values);
-        assert_eq!(
-            returned_values.len(),
-            results.len_results(),
-            "expected {} values on the stack after function execution but found {}",
-            results.len_results(),
-            returned_values.len(),
-        );
-        assert_eq!(results.len_results(), result_types.len());
-        let resolve_cref = |cref| {
-            self.res
-                .const_pool
-                .resolve(cref)
-                .unwrap_or_else(|| panic!("failed to resolve constant reference: {:?}", cref))
-        };
-        self.stack
-            .finalize(result_types, resolve_cref, returned_values, results)
+        self.stack.finalize(signature, returned, &self.res, results)
     }
 }

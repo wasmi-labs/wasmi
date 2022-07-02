@@ -4,7 +4,7 @@ use crate::{
         bytecode::ExecRegister,
         CallParams,
         CallResults,
-        ConstRef,
+        DedupFuncType,
         ExecProvider,
         ExecProviderSlice,
         ExecRegisterSlice,
@@ -22,7 +22,7 @@ use crate::{
 use core::cmp;
 #[cfg(test)]
 use core::fmt::{self, Display};
-use wasmi_core::{Trap, UntypedValue, ValueType};
+use wasmi_core::{Trap, UntypedValue};
 
 /// The execution stack.
 #[derive(Debug, Default)]
@@ -100,35 +100,44 @@ impl Stack {
     /// on the [`Stack`].
     pub(super) fn finalize<Results>(
         &mut self,
-        result_types: &[ValueType],
-        resolve_const: impl Fn(ConstRef) -> UntypedValue,
-        returned_values: &[ExecProvider],
+        signature: DedupFuncType,
+        returned: ExecProviderSlice,
+        res: &EngineResources,
         results: Results,
     ) -> <Results as CallResults>::Results
     where
         Results: CallResults,
     {
-        let init_frame = self
+        debug_assert!(
+            self.frames.len() == 1,
+            "only root stack frame must be on the call stack"
+        );
+        let result_types = res.func_types.resolve_func_type(signature).results();
+        let returned = res.provider_slices.resolve(returned);
+        debug_assert_eq!(
+            returned.len(),
+            results.len_results(),
+            "mismatch between final results and expected results. expected {} but found {}",
+            results.len_results(),
+            returned.len(),
+        );
+        assert_eq!(results.len_results(), result_types.len());
+        let root = self
             .frames
             .pop()
-            .expect("encountered unexpected empty frame stack");
-        assert!(
-            self.frames.is_empty(),
-            "unexpected frames left on the frame stack after execution"
+            .expect("root stack frame must be on the call stack");
+        let root_regs = StackFrameRegisters::from(
+            &mut self.entries[root.region.start..(root.region.start + root.region.len)],
         );
-        let len_results = results.len_results();
-        assert_eq!(len_results, result_types.len());
-        let region = init_frame.region;
-        let init_view =
-            StackFrameRegisters::from(&mut self.entries[region.start..(region.start + region.len)]);
-        let returned_values = returned_values
+        let returned = returned
             .iter()
-            .map(|returned_value| {
-                returned_value.decode_using(|register| init_view.get(register), &resolve_const)
-            })
             .zip(result_types)
-            .map(|(returned_value, expected_type)| returned_value.with_type(*expected_type));
-        results.feed_results(returned_values)
+            .map(|(returned, value_type)| {
+                root_regs
+                    .load_provider(res, *returned)
+                    .with_type(*value_type)
+            });
+        results.feed_results(returned)
     }
 
     /// Pushes a new [`StackFrame`] to the [`Stack`].
