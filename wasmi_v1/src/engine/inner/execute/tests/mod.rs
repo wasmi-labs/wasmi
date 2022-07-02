@@ -278,3 +278,65 @@ fn test_host_call_single_return() {
     test_for(wasm, &mut store, 42);
     test_for(wasm, &mut store, i32::MAX);
 }
+
+#[test]
+fn test_host_call_multi_return() {
+    #[derive(Debug, Copy, Clone)]
+    pub struct HostData {
+        condition: bool,
+        a: i64,
+        b: i64,
+    }
+
+    impl HostData {
+        fn new(condition: bool, a: i64, b: i64) -> Self {
+            Self { condition, a, b }
+        }
+    }
+
+    let wasm = wat2wasm(include_bytes!("wat/host-call-multi-return.wat"));
+    let engine = Engine::default();
+    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let mut linker = <Linker<()>>::default();
+    let mut store = Store::new(
+        &engine,
+        HostData {
+            condition: false,
+            a: 1,
+            b: 2,
+        },
+    );
+    let host = Func::wrap(&mut store, |ctx: Caller<HostData>| -> (i64, i64, i32) {
+        let data = ctx.host_data();
+        (data.a, data.b, data.condition as i32)
+    });
+    linker.define("test", "host", host).unwrap();
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let wasm = instance
+        .get_export(&store, "wasm")
+        .and_then(Extern::into_func)
+        .unwrap();
+
+    print_func(&store, wasm);
+
+    fn test_for(wasm: Func, store: &mut Store<HostData>, new_data: HostData) {
+        *store.state_mut() = new_data;
+        let mut result = [Value::I64(0)];
+        wasm.call(store.as_context_mut(), &[], &mut result).unwrap();
+        let expected = if store.state().condition {
+            store.state().a
+        } else {
+            store.state().b
+        };
+        assert_eq!(result, [Value::I64(expected)]);
+    }
+
+    test_for(wasm, &mut store, HostData::new(true, 2, 3));
+    test_for(wasm, &mut store, HostData::new(true, 2, 3));
+    test_for(wasm, &mut store, HostData::new(false, 2, 3));
+    test_for(wasm, &mut store, HostData::new(false, 2, 3));
+}
