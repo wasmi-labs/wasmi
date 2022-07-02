@@ -428,7 +428,7 @@ impl<'a> StackFrameRegisters<'a> {
                 .resolve(cref)
                 .unwrap_or_else(|| panic!("failed to resolve constant reference: {:?}", cref))
         };
-        provider.decode_using(|register| self.get(register), &resolve_const)
+        provider.decode_using(|register| self.get(register), resolve_const)
     }
 
     /// Returns the value of the `register`.
