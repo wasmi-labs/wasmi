@@ -32,6 +32,8 @@ impl EngineInner {
     /// # Note
     ///
     /// This functionality is primarily for debugging purposes.
+    ///
+    /// [`Display`]: [`core::fmt::Display`]
     #[cfg(test)]
     pub fn display_func<'ctx, 'engine, T>(
         &'engine self,
@@ -48,6 +50,8 @@ impl ExecInstruction {
     /// # Note
     ///
     /// This functionality is primarily for debugging purposes.
+    ///
+    /// [`Display`]: [`core::fmt::Display`]
     pub fn display_instr<'ctx, 'engine, T>(
         &self,
         ctx: StoreContext<'ctx, T>,

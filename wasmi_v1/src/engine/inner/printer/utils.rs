@@ -43,7 +43,7 @@ where
 ///
 /// # Note
 ///
-/// Read [`DebugSlice`] documentation to see how iterators are visualized.
+/// Read [`DisplaySlice`] documentation to see how iterators are visualized.
 pub struct DisplaySequence<T> {
     items: T,
 }

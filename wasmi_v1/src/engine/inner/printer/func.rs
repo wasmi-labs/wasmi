@@ -194,7 +194,7 @@ impl Display for DisplayLocals {
     }
 }
 
-/// Display wrapper for `wasmi` [`FuncIdx`] function references.
+/// Display wrapper for `wasmi` function identifiers.
 pub struct DisplayFuncIdx {
     func_idx: usize,
 }
