@@ -241,7 +241,7 @@ fn test_memory_fill() {
 
 #[test]
 fn test_host_call_return() {
-    #[derive(Debug, Default, Copy, Clone)]
+    #[derive(Debug, Copy, Clone)]
     pub struct HostData {
         value: i32,
     }
@@ -250,7 +250,7 @@ fn test_host_call_return() {
     let engine = Engine::default();
     let module = Module::new(&engine, &wasm[..]).unwrap();
     let mut linker = <Linker<()>>::default();
-    let mut store = Store::new(&engine, HostData::default());
+    let mut store = Store::new(&engine, HostData { value: 42 });
     let host = Func::wrap(&mut store, |ctx: Caller<HostData>| ctx.host_data().value);
     linker.define("test", "host", host).unwrap();
     let instance = linker
@@ -262,9 +262,19 @@ fn test_host_call_return() {
         .get_export(&store, "wasm")
         .and_then(Extern::into_func)
         .unwrap();
+
     print_func(&store, wasm);
-    let mut result = [Value::I32(0)];
-    wasm.call(&mut store, &[], &mut result).unwrap();
-    let expected = store.state().value;
-    assert_eq!(result, [Value::I32(expected)]);
+
+    fn test_for(wasm: Func, store: &mut Store<HostData>, new_value: i32) {
+        store.state_mut().value = new_value;
+        let mut result = [Value::I32(0)];
+        wasm.call(store.as_context_mut(), &[], &mut result).unwrap();
+        let expected = store.state().value;
+        assert_eq!(result, [Value::I32(expected)]);
+    }
+
+    test_for(wasm, &mut store, 0);
+    test_for(wasm, &mut store, -1);
+    test_for(wasm, &mut store, 42);
+    test_for(wasm, &mut store, i32::MAX);
 }
