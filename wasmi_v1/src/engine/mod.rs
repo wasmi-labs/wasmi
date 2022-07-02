@@ -198,6 +198,6 @@ impl Engine {
     /// This functionality is intended for debugging purposes.
     #[cfg(test)]
     pub fn print_func(&self, ctx: impl AsContext, func: Func) {
-        self.inner.lock().print_func(ctx, func)
+        print!("{}", self.inner.lock().display_func(ctx.as_context(), func))
     }
 }

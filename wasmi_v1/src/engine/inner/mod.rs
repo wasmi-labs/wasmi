@@ -1,7 +1,5 @@
 mod compile;
 mod execute;
-
-#[cfg(test)]
 pub(crate) mod printer;
 
 use super::{

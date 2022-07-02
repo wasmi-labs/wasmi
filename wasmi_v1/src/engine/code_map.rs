@@ -148,7 +148,6 @@ impl ResolvedFuncBody<'_> {
     /// # Note
     ///
     /// This API is currently in use mainly for debugging purposes.
-    #[cfg(test)]
     pub fn iter(&self) -> ResolvedFuncBodyIter {
         self.into_iter()
     }

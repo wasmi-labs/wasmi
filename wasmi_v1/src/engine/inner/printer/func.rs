@@ -30,6 +30,7 @@ pub struct DisplayFunc<'ctx, 'engine, T> {
 
 impl<'ctx, 'engine, T> DisplayFunc<'ctx, 'engine, T> {
     /// Creates a new display wrapper for a `wasmi` function.
+    #[cfg(test)]
     pub fn new(ctx: StoreContext<'ctx, T>, engine: &'engine EngineInner, func: Func) -> Self {
         Self { ctx, engine, func }
     }
@@ -216,6 +217,6 @@ impl From<module::FuncIdx> for DisplayFuncIdx {
 
 impl Display for DisplayFuncIdx {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "func({})", self.func_idx.into_usize())
+        write!(f, "func({})", self.func_idx)
     }
 }
