@@ -28,6 +28,8 @@ use wasmi_core::{
     TrapCode,
     UntypedValue,
     WrapInto,
+    F32,
+    F64,
 };
 
 /// The possible outcomes of an instruction execution.
@@ -697,7 +699,7 @@ impl<'engine, 'func1, 'func2, 'ctx, T> VisitInstruction<ExecuteTypes>
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
     ) -> Self::Outcome {
-        self.exec_load::<f32>(result, ptr, offset)
+        self.exec_load::<F32>(result, ptr, offset)
     }
 
     fn visit_f64_load(
@@ -706,7 +708,7 @@ impl<'engine, 'func1, 'func2, 'ctx, T> VisitInstruction<ExecuteTypes>
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
     ) -> Self::Outcome {
-        self.exec_load::<f64>(result, ptr, offset)
+        self.exec_load::<F64>(result, ptr, offset)
     }
 
     fn visit_i32_load_8_s(
@@ -823,7 +825,7 @@ impl<'engine, 'func1, 'func2, 'ctx, T> VisitInstruction<ExecuteTypes>
         offset: bytecode::Offset,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
-        self.exec_store::<f32>(ptr, offset, value)
+        self.exec_store::<F32>(ptr, offset, value)
     }
 
     fn visit_f64_store(
@@ -832,7 +834,7 @@ impl<'engine, 'func1, 'func2, 'ctx, T> VisitInstruction<ExecuteTypes>
         offset: bytecode::Offset,
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Self::Outcome {
-        self.exec_store::<f64>(ptr, offset, value)
+        self.exec_store::<F64>(ptr, offset, value)
     }
 
     fn visit_i32_store_8(
