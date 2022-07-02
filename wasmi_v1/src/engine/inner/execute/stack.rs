@@ -150,7 +150,7 @@ impl Stack {
     ) -> StackFrameRef {
         debug_assert!(
             !self.frames.is_empty(),
-            "the init stack frame must always be on the call stack"
+            "the root stack frame must be on the call stack"
         );
         let len = func.func_body().len_regs() as usize;
         debug_assert!(!self.frames.is_empty());
@@ -214,7 +214,7 @@ impl Stack {
     ) -> Option<StackFrameRef> {
         debug_assert!(
             !self.frames.is_empty(),
-            "the init stack frame must always be on the call stack"
+            "the root stack frame must be on the call stack"
         );
         if self.frames.len() == 1 {
             // Early return `None` to flag that only the root call
@@ -274,7 +274,7 @@ impl Stack {
     {
         debug_assert!(
             !self.frames.is_empty(),
-            "the init stack frame must always be on the call stack"
+            "the root stack frame must be on the call stack"
         );
         // The host function signature is required for properly
         // adjusting, inspecting and manipulating the value stack.
