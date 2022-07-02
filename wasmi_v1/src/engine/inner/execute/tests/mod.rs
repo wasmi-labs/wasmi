@@ -240,13 +240,13 @@ fn test_memory_fill() {
 }
 
 #[test]
-fn test_host_call_return() {
+fn test_host_call_single_return() {
     #[derive(Debug, Copy, Clone)]
     pub struct HostData {
         value: i32,
     }
 
-    let wasm = wat2wasm(include_bytes!("wat/host-call.wat"));
+    let wasm = wat2wasm(include_bytes!("wat/host-call-single-return.wat"));
     let engine = Engine::default();
     let module = Module::new(&engine, &wasm[..]).unwrap();
     let mut linker = <Linker<()>>::default();
