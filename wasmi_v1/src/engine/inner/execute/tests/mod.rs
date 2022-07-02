@@ -186,6 +186,25 @@ fn test_fibonacci_recursive() {
 }
 
 #[test]
+fn test_deep_recursion() {
+    fn test_for(func: Func, store: &mut Store<()>, n: i32) {
+        let mut result = [Value::I32(0)];
+        func.call(store, &[Value::I32(n)], &mut result).unwrap();
+        let expected = ((n * n) + n) / 2;
+        assert_eq!(result, [Value::I32(expected)]);
+    }
+
+    let (mut store, instance) = load_test_instance!("wat/deep-recursion.wat");
+    let func = load_func(&store, &instance, "func");
+
+    print_func(&store, func);
+
+    for n in 0..10 {
+        test_for(func, &mut store, n as i32);
+    }
+}
+
+#[test]
 fn test_memory_sum() {
     fn test_for(sum: Func, store: &mut Store<()>, mem: Memory, data: &[u8]) {
         mem.write(store.as_context_mut(), 0, &data).unwrap();
