@@ -62,7 +62,7 @@ impl Stack {
         let len_regs = func.func_body().len_regs() as usize;
         let len_params = initial_params.len_params();
         assert!(
-            len_params < len_regs,
+            len_params <= len_regs,
             "encountered more parameters in init frame than frame can handle. \
             #params: {len_params}, #registers: {len_regs}",
         );
