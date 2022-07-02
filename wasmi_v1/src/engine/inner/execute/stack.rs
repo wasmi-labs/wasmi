@@ -502,7 +502,7 @@ impl FrameRegion {
     }
 }
 
-/// An exclusive [`StackFrame`] within the [`Stack`].
+/// An exclusive reference to a [`StackFrame`] within the [`Stack`].
 ///
 /// Allow to efficiently operate on the stack frame.
 #[derive(Debug)]
