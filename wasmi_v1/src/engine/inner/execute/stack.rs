@@ -179,19 +179,6 @@ impl ValueStack {
 #[derive(Debug, Copy, Clone)]
 pub struct StackFrameRef(usize);
 
-impl StackFrameRef {
-    /// Returns the [`StackFrameRef`] refering to the root [`StackFrame`].
-    pub fn root() -> Self {
-        Self(0)
-    }
-
-    /// Returns `true` if the [`StackFrameRef`] refers to the root stack frame.
-    #[allow(dead_code)] // TODO: unsilence warning
-    pub fn is_root(&self) -> bool {
-        self.0 == 0
-    }
-}
-
 impl Stack {
     /// Resets the [`Stack`] data entirely.
     fn reset(&mut self) {
@@ -223,7 +210,8 @@ impl Stack {
         );
         let params = initial_params.feed_params();
         let root_region = self.entries.extend_by(len_regs);
-        self.frames
+        let root_frame = self
+            .frames
             .push_frame(root_region, ExecRegisterSlice::empty(), func);
         self.entries
             .frame_regs(root_region)
@@ -232,7 +220,7 @@ impl Stack {
             .for_each(|(param, arg)| {
                 *param = arg.into();
             });
-        StackFrameRef::root()
+        root_frame
     }
 
     /// Finalizes the execution of the root [`StackFrame`].
@@ -310,15 +298,14 @@ impl Stack {
         let callee_region = self.entries.extend_by(len);
         let caller = self.frames.last_frame();
         let caller_region = caller.region;
-        let frame_idx = self.frames.len();
-        self.frames.push_frame(callee_region, results, func);
+        let frame_ref = self.frames.push_frame(callee_region, results, func);
         let (caller_regs, mut callee_regs) =
             self.entries.paired_frame_regs(caller_region, callee_region);
         let params = ExecRegisterSlice::params(args.len() as u16);
         args.iter().zip(params).for_each(|(arg, param)| {
             callee_regs.set(param, caller_regs.load_provider(res, *arg));
         });
-        StackFrameRef(frame_idx)
+        frame_ref
     }
 
     /// Returns the last Wasm [`StackFrame`] to its caller.
