@@ -105,6 +105,16 @@ impl FrameStack {
             .expect("unexpected missing frame on the call frame stack")
     }
 
+    /// Returns a [`StackFrameRef`] pointing to the last [`StackFrame`].
+    ///
+    /// # Panics
+    ///
+    /// If the [`FrameStack`] is empty.
+    pub fn last_frame_ref(&self) -> StackFrameRef {
+        assert!(!self.is_empty());
+        StackFrameRef(self.len() - 1)
+    }
+
     /// Returns a shared reference to the [`StackFrame`] referenced by `frame_ref`.
     ///
     /// # Panics
@@ -354,7 +364,7 @@ impl Stack {
             caller_regs.set(result, return_value);
         });
         self.entries.shrink_by(callee.region.len);
-        Some(StackFrameRef(self.frames.len() - 1))
+        Some(self.frames.last_frame_ref())
     }
 
     /// Executes a host function with the last frame as its caller.
