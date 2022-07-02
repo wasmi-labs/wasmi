@@ -382,3 +382,64 @@ fn test_host_call_single_param() {
         }
     }
 }
+
+#[test]
+fn test_host_call_multi_param() {
+    #[derive(Debug, Default, Copy, Clone)]
+    pub struct HostData {
+        value: i32,
+    }
+
+    let wasm = wat2wasm(include_bytes!("wat/host-call-multi-param.wat"));
+    let engine = Engine::default();
+    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let mut linker = <Linker<()>>::default();
+    let mut store = Store::new(&engine, HostData::default());
+    let host = Func::wrap(&mut store, |ctx: Caller<HostData>, a: i32, b: i32| -> i32 {
+        // computes: (a+v)*(b+v)
+        let value = ctx.host_data().value;
+        let offset_a = a.wrapping_add(value);
+        let offset_b = b.wrapping_add(value);
+        offset_a.wrapping_mul(offset_b)
+    });
+    linker.define("test", "host", host).unwrap();
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let wasm = instance
+        .get_export(&store, "wasm")
+        .and_then(Extern::into_func)
+        .unwrap();
+
+    print_func(&store, wasm);
+
+    fn test_for(wasm: Func, store: &mut Store<HostData>, host_value: i32, a: i32, b: i32) {
+        store.state_mut().value = host_value;
+        let mut result = [Value::I32(0)];
+        wasm.call(
+            store.as_context_mut(),
+            &[Value::I32(a), Value::I32(b)],
+            &mut result,
+        )
+        .unwrap();
+        let expected = {
+            // computes: (a+v)*(b+v)
+            let value = store.state_mut().value;
+            let offset_a = a.wrapping_add(value);
+            let offset_b = b.wrapping_add(value);
+            offset_a.wrapping_mul(offset_b)
+        };
+        assert_eq!(result, [Value::I32(expected)]);
+    }
+
+    let test_values = [0, 1, -1, 2, 42, -77, 1000, i32::MAX];
+    for host_value in test_values {
+        for a in test_values {
+            for b in test_values {
+                test_for(wasm, &mut store, host_value, a, b);
+            }
+        }
+    }
+}
