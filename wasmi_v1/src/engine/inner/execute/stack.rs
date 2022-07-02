@@ -134,12 +134,15 @@ impl ValueStack {
 
     /// Extends the value stack by `delta` new values.
     ///
+    /// Returns a [`FrameRegion`] pointing to the new stack values.
+    ///
     /// # Note
     ///
     /// New values are initialized to zero.
-    pub fn extend_by(&mut self, delta: usize) {
-        self.values
-            .resize_with(self.len() + delta, Default::default);
+    pub fn extend_by(&mut self, delta: usize) -> FrameRegion {
+        let start = self.len();
+        self.values.resize_with(start + delta, Default::default);
+        FrameRegion { start, len: delta }
     }
 
     /// Shrinks the value stack by `delta` values.
@@ -219,11 +222,7 @@ impl Stack {
             #params: {len_params}, #registers: {len_regs}",
         );
         let params = initial_params.feed_params();
-        self.entries.extend_by(len_regs);
-        let root_region = FrameRegion {
-            start: 0,
-            len: len_regs,
-        };
+        let root_region = self.entries.extend_by(len_regs);
         self.frames
             .push_frame(root_region, ExecRegisterSlice::empty(), func);
         self.entries
@@ -308,11 +307,9 @@ impl Stack {
             args.len(),
             len
         );
-        let start = self.entries.len();
-        self.entries.extend_by(len);
+        let callee_region = self.entries.extend_by(len);
         let caller = self.frames.last_frame();
         let caller_region = caller.region;
-        let callee_region = FrameRegion { start, len };
         let frame_idx = self.frames.len();
         self.frames.push_frame(callee_region, results, func);
         let (caller_regs, mut callee_regs) =
@@ -406,12 +403,8 @@ impl Stack {
         let max_inout = cmp::max(len_inputs, len_outputs);
         // Push registers for the host function parameters
         // and return values on the value stack.
-        self.entries.extend_by(max_inout);
+        let callee_region = self.entries.extend_by(max_inout);
         let caller = self.frames.last_frame();
-        let callee_region = FrameRegion {
-            start: caller.region.start + caller.region.len,
-            len: max_inout,
-        };
         let (mut caller_regs, mut callee_regs) =
             self.entries.paired_frame_regs(caller.region, callee_region);
         // Initialize registers that act as host function parameters.
