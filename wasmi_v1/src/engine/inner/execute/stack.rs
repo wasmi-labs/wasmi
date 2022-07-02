@@ -50,28 +50,20 @@ impl ValueStack {
         self.values.clear()
     }
 
-    /// Extends the value stack to the new length.
+    /// Extends the value stack by `delta` new values.
     ///
     /// # Note
     ///
     /// New values are initialized to zero.
-    ///
-    /// # Panics (Debug)
-    ///
-    /// If the `new_len` is smaller than the current length of the value stack.
-    pub fn extend_to(&mut self, new_len: usize) {
-        debug_assert!(self.len() <= new_len);
-        self.values.resize_with(new_len, Default::default);
+    pub fn extend_by(&mut self, delta: usize) {
+        self.values
+            .resize_with(self.len() + delta, Default::default);
     }
 
-    /// Shrinks the value stack to the new length.
-    ///
-    /// # Panics (Debug)
-    ///
-    /// If the `new_len` is bigger than the current length of the value stack.
-    pub fn shrink_to(&mut self, new_len: usize) {
-        debug_assert!(new_len <= self.len());
-        self.values.resize_with(new_len, Default::default);
+    /// Shrinks the value stack by `delta` values.
+    pub fn shrink_by(&mut self, delta: usize) {
+        self.values
+            .resize_with(self.len() - delta, Default::default);
     }
 
     /// Returns the [`StackFrameRegisters`] of the given [`FrameRegion`].
@@ -132,7 +124,7 @@ impl Stack {
             #params: {len_params}, #registers: {len_regs}",
         );
         let params = initial_params.feed_params();
-        self.entries.extend_to(len_regs);
+        self.entries.extend_by(len_regs);
         let root_region = FrameRegion {
             start: 0,
             len: len_regs,
@@ -227,7 +219,7 @@ impl Stack {
             len
         );
         let start = self.entries.len();
-        self.entries.extend_to(start + len);
+        self.entries.extend_by(len);
         let last = self
             .frames
             .last()
@@ -306,7 +298,7 @@ impl Stack {
             let return_value = popped_regs.load_provider(res, *returns);
             previous_regs.set(result, return_value);
         });
-        self.entries.shrink_to(frame.region.start);
+        self.entries.shrink_by(frame.region.len);
         Some(StackFrameRef(self.frames.len() - 1))
     }
 
@@ -343,9 +335,7 @@ impl Stack {
         let max_inout = cmp::max(len_inputs, len_outputs);
         // Push registers for the host function parameters
         // and return values on the value stack.
-        let start = self.entries.len();
-        let original_len_regs = self.entries.len();
-        self.entries.extend_to(start + max_inout);
+        self.entries.extend_by(max_inout);
         let caller = self
             .frames
             .last()
@@ -372,7 +362,7 @@ impl Stack {
             caller_regs.set(result, callee_regs.get(returned));
         });
         // Clean up host registers on the value stack.
-        self.entries.shrink_to(original_len_regs);
+        self.entries.shrink_by(max_inout);
         Ok(())
     }
 
