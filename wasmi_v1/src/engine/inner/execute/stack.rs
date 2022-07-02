@@ -289,7 +289,7 @@ impl Stack {
         );
         let len = func.func_body().len_regs() as usize;
         let args = res.provider_slices.resolve(args);
-        assert!(
+        debug_assert!(
             args.len() <= len,
             "encountered more call arguments than register in function frame: #params {}, #registers {}",
             args.len(),
