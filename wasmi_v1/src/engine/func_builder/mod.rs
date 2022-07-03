@@ -164,7 +164,13 @@ impl<'parser> FunctionBuilder<'parser> {
         let mut control_frames = ControlFlowStack::default();
         let mut providers = Providers::default();
         let reg_slices = ProviderSliceArena::default();
-        Self::register_func_body_block(func, res, &mut inst_builder, &mut control_frames);
+        Self::register_func_body_block(
+            func,
+            res,
+            &mut inst_builder,
+            &mut control_frames,
+            &mut providers,
+        );
         Self::register_func_params(func, res, &mut providers);
         Self {
             engine: engine.clone(),
@@ -184,11 +190,13 @@ impl<'parser> FunctionBuilder<'parser> {
         res: ModuleResources<'parser>,
         inst_builder: &mut InstructionsBuilder,
         control_frames: &mut ControlFlowStack,
+        providers: &mut Providers,
     ) {
         let func_type = res.get_type_of_func(func);
         let block_type = BlockType::func_type(func_type);
         let end_label = inst_builder.new_label();
-        let block_frame = BlockControlFrame::new(block_type, end_label, 0);
+        let results = providers.peek_dynamic_many(block_type.len_results(res.engine()) as usize);
+        let block_frame = BlockControlFrame::new(results, block_type, end_label, 0);
         control_frames.push_frame(block_frame);
     }
 
@@ -372,7 +380,11 @@ impl<'parser> FunctionBuilder<'parser> {
         let stack_height = self.frame_stack_height(block_type);
         if self.is_reachable() {
             let end_label = self.inst_builder.new_label();
+            let results = self
+                .providers
+                .peek_dynamic_many(block_type.len_results(&self.engine) as usize);
             self.control_frames.push_frame(BlockControlFrame::new(
+                results,
                 block_type,
                 end_label,
                 stack_height,
@@ -393,8 +405,15 @@ impl<'parser> FunctionBuilder<'parser> {
         if self.is_reachable() {
             let header = self.inst_builder.new_label();
             self.inst_builder.resolve_label(header);
-            self.control_frames
-                .push_frame(LoopControlFrame::new(block_type, header, stack_height));
+            let results = self
+                .providers
+                .peek_dynamic_many(block_type.len_results(&self.engine) as usize);
+            self.control_frames.push_frame(LoopControlFrame::new(
+                results,
+                block_type,
+                header,
+                stack_height,
+            ));
         } else {
             self.control_frames.push_frame(UnreachableControlFrame::new(
                 ControlFrameKind::Loop,
@@ -410,6 +429,9 @@ impl<'parser> FunctionBuilder<'parser> {
         if self.is_reachable() {
             let condition = self.providers.pop();
             let stack_height = self.frame_stack_height(block_type);
+            let results = self
+                .providers
+                .peek_dynamic_many(block_type.len_results(&self.engine) as usize);
             match condition {
                 IrProvider::Register(condition) => {
                     // We duplicate the `if` parameters on the provider stack
@@ -427,6 +449,7 @@ impl<'parser> FunctionBuilder<'parser> {
                     let else_label = self.inst_builder.new_label();
                     let end_label = self.inst_builder.new_label();
                     self.control_frames.push_frame(IfControlFrame::new(
+                        results,
                         block_type,
                         end_label,
                         Some(else_label),
@@ -471,6 +494,7 @@ impl<'parser> FunctionBuilder<'parser> {
                     // instruction that would usually target it.
                     let else_label = None;
                     self.control_frames.push_frame(IfControlFrame::new(
+                        results,
                         block_type,
                         end_label,
                         else_label,

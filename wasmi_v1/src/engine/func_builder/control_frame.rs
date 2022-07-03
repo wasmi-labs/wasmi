@@ -1,9 +1,11 @@
-use super::LabelIdx;
+use super::{IrRegisterSlice, LabelIdx};
 use crate::module::BlockType;
 
 /// A Wasm `block` control flow frame.
 #[derive(Debug, Copy, Clone)]
 pub struct BlockControlFrame {
+    /// The registers holding the results of the [`BlockControlFrame`].
+    results: IrRegisterSlice,
     /// Label representing the end of the [`BlockControlFrame`].
     end_label: LabelIdx,
     /// The type of the [`BlockControlFrame`].
@@ -14,12 +16,23 @@ pub struct BlockControlFrame {
 
 impl BlockControlFrame {
     /// Creates a new [`BlockControlFrame`].
-    pub fn new(block_type: BlockType, end_label: LabelIdx, stack_height: u32) -> Self {
+    pub fn new(
+        results: IrRegisterSlice,
+        block_type: BlockType,
+        end_label: LabelIdx,
+        stack_height: u32,
+    ) -> Self {
         Self {
+            results,
             block_type,
             end_label,
             stack_height,
         }
+    }
+
+    /// Returns the [`IrRegisterSlice`] to put the results of the [`BlockControlFrame`].
+    pub fn results(&self) -> IrRegisterSlice {
+        self.results
     }
 
     /// Returns the label for the branch destination of the [`BlockControlFrame`].
@@ -50,6 +63,8 @@ impl BlockControlFrame {
 /// A Wasm `loop` control flow frame.
 #[derive(Debug, Copy, Clone)]
 pub struct LoopControlFrame {
+    /// The registers holding the results of the [`LoopControlFrame`].
+    results: IrRegisterSlice,
     /// Label representing the head of the [`LoopControlFrame`].
     head_label: LabelIdx,
     /// The type of the [`LoopControlFrame`].
@@ -60,12 +75,23 @@ pub struct LoopControlFrame {
 
 impl LoopControlFrame {
     /// Creates a new [`LoopControlFrame`].
-    pub fn new(block_type: BlockType, head_label: LabelIdx, stack_height: u32) -> Self {
+    pub fn new(
+        results: IrRegisterSlice,
+        block_type: BlockType,
+        head_label: LabelIdx,
+        stack_height: u32,
+    ) -> Self {
         Self {
+            results,
             block_type,
             head_label,
             stack_height,
         }
+    }
+
+    /// Returns the [`IrRegisterSlice`] to put the results of the [`LoopControlFrame`].
+    pub fn results(&self) -> IrRegisterSlice {
+        self.results
     }
 
     /// Returns the label for the branch destination of the [`LoopControlFrame`].
@@ -91,6 +117,8 @@ impl LoopControlFrame {
 /// A Wasm `if` and `else` control flow frames.
 #[derive(Debug, Copy, Clone)]
 pub struct IfControlFrame {
+    /// The registers holding the results of the [`IfControlFrame`].
+    results: IrRegisterSlice,
     /// Label representing the end of the [`IfControlFrame`].
     end_label: LabelIdx,
     /// Label representing the optional `else` branch of the [`IfControlFrame`].
@@ -157,6 +185,7 @@ pub enum IfReachability {
 impl IfControlFrame {
     /// Creates a new [`IfControlFrame`].
     pub fn new(
+        results: IrRegisterSlice,
         block_type: BlockType,
         end_label: LabelIdx,
         else_label: Option<LabelIdx>,
@@ -170,6 +199,7 @@ impl IfControlFrame {
             "end and else labels must be different"
         );
         Self {
+            results,
             block_type,
             end_label,
             else_label,
@@ -178,6 +208,11 @@ impl IfControlFrame {
             end_of_then_is_reachable: None,
             reachability,
         }
+    }
+
+    /// Returns the [`IrRegisterSlice`] to put the results of the [`IfControlFrame`].
+    pub fn results(&self) -> IrRegisterSlice {
+        self.results
     }
 
     /// Returns the label for the branch destination of the [`IfControlFrame`].
@@ -409,5 +444,19 @@ impl ControlFrame {
     /// Returns `true` if the control flow frame is reachable.
     pub fn is_reachable(&self) -> bool {
         !matches!(self, ControlFrame::Unreachable(_))
+    }
+
+    /// Returns the [`IrRegisterSlice`] for where to put
+    /// the results of the control flow frame.
+    pub fn results(&self) -> IrRegisterSlice {
+        match self {
+            ControlFrame::Block(frame) => frame.results(),
+            ControlFrame::Loop(frame) => frame.results(),
+            ControlFrame::If(frame) => frame.results(),
+            ControlFrame::Unreachable(frame) => panic!(
+                "tried to get `results` for an unreachable control frame: {:?}",
+                frame
+            ),
+        }
     }
 }
