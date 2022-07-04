@@ -544,6 +544,12 @@ impl<'parser> FunctionBuilder<'parser> {
         // We need to check if the `else` block is known to be reachable.
         let then_reachable = if_frame.is_then_reachable();
         let else_reachable = if_frame.is_else_reachable();
+        // Return providers on the stack to where the `if` block expects
+        // its results in case the `if` block has return values.
+        let results = if_frame.results();
+        let returned = self
+            .reg_slices
+            .alloc(self.providers.pop_n(results.len() as usize));
         // Create the jump from the end of the `then` block to the `if`
         // block's end label in case the end of `then` is reachable.
         if then_reachable && else_reachable {
@@ -552,8 +558,8 @@ impl<'parser> FunctionBuilder<'parser> {
             let target = Target::from(dst_pc);
             self.inst_builder.push_inst(Instruction::Br {
                 target,
-                results: IrRegisterSlice::empty(), // TODO: proper inputs
-                returned: IrProviderSlice::empty(), // TODO: proper inputs
+                results,
+                returned,
             });
         }
         // Now resolve labels for the instructions of the `else` block
