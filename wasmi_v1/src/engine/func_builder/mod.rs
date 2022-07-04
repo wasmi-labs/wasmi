@@ -654,6 +654,7 @@ impl<'parser> FunctionBuilder<'parser> {
             self.reachable = frame_reachable;
         }
         let frame = self.control_frames.pop_frame();
+        let len_results = frame.block_type().len_results(&self.engine) as usize;
         self.providers.shrink_to(frame_stack_height);
         self.providers.push_dynamic_many(len_results);
         Ok(())
