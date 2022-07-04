@@ -1,6 +1,7 @@
 //! Definitions for visualization of `wasmi` function.
 
 use super::{
+    utils::{Enclosure, EnclosureStyle},
     DisplayExecInstruction,
     DisplayExecRegister,
     DisplaySequence,
@@ -56,10 +57,9 @@ impl<'ctx, 'engine, T> Display for DisplayFunc<'ctx, 'engine, T> {
         let func_idx = self.ctx.store.resolve_func_idx(self.func);
         writeln!(
             f,
-            "{}: {} -> {}",
+            "{}: {}",
             DisplayFuncIdx::from(func_idx),
-            DisplayParams::new(func_type.params()),
-            DisplaySlice::from(func_type.results()),
+            DisplayFuncSignature::from(&func_type),
         )?;
         write!(f, "{}", DisplayLocals::new(len_params, len_locals))?;
         for (n, instr) in func_body.iter().enumerate() {
@@ -79,6 +79,33 @@ impl<'ctx, 'engine, T> Display for DisplayFunc<'ctx, 'engine, T> {
     }
 }
 
+/// Displays a [`FuncType`] signature in a human readable fasion.
+pub struct DisplayFuncSignature<'a> {
+    func_type: &'a FuncType,
+}
+
+impl<'a> From<&'a FuncType> for DisplayFuncSignature<'a> {
+    fn from(func_type: &'a FuncType) -> Self {
+        Self { func_type }
+    }
+}
+
+impl Display for DisplayFuncSignature<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let params = DisplayParams::new(self.func_type.params());
+        let results = self.func_type.results();
+        if results.is_empty() {
+            write!(f, "{params}")
+        } else {
+            write!(
+                f,
+                "{params} -> {}",
+                DisplaySlice::new(Enclosure::no_single(EnclosureStyle::Paren), results),
+            )
+        }
+    }
+}
+
 /// Displays a [`FuncType`] in a human readable fashion.
 pub struct DisplayFuncType<'a> {
     func_type: &'a FuncType,
@@ -92,12 +119,20 @@ impl<'a> From<&'a FuncType> for DisplayFuncType<'a> {
 
 impl Display for DisplayFuncType<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{} -> {}",
-            DisplaySlice::from(self.func_type.params()),
-            DisplaySlice::from(self.func_type.results()),
-        )
+        let params = DisplaySlice::new(
+            Enclosure::always(EnclosureStyle::Paren),
+            self.func_type.params(),
+        );
+        let results = self.func_type.results();
+        if results.is_empty() {
+            write!(f, "fn{params}",)
+        } else {
+            write!(
+                f,
+                "fn{params} -> {}",
+                DisplaySlice::new(Enclosure::no_single(EnclosureStyle::Paren), results),
+            )
+        }
     }
 }
 
@@ -116,8 +151,9 @@ impl<'a> Display for DisplayParams<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{}",
-            DisplaySequence::from(
+            "fn{}",
+            DisplaySequence::new(
+                Enclosure::always(EnclosureStyle::Paren),
                 self.params
                     .iter()
                     .copied()

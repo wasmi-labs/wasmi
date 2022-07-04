@@ -2,6 +2,74 @@
 
 use core::{fmt, fmt::Display};
 
+/// The enclosure style for a [`DisplaySlice`] and [`DisplaySequence`].
+#[derive(Debug, Copy, Clone)]
+pub enum EnclosureStyle {
+    /// `(` and `)`
+    Paren,
+    /// `[` and `]`
+    Bracket,
+    /// `{` and `}`
+    #[allow(dead_code)] // TODO: unsilence warning
+    Brace,
+}
+
+impl EnclosureStyle {
+    /// Returns the opening enclosure.
+    pub fn open(self) -> &'static str {
+        match self {
+            Self::Paren => "(",
+            Self::Bracket => "[",
+            Self::Brace => "{",
+        }
+    }
+
+    /// Returns the closing enclosure.
+    pub fn close(self) -> &'static str {
+        match self {
+            Self::Paren => ")",
+            Self::Bracket => "]",
+            Self::Brace => "}",
+        }
+    }
+}
+
+/// The enclosure strategy for a [`DisplaySlice`] and [`DisplaySequence`].
+#[derive(Debug, Copy, Clone)]
+pub enum Enclosure {
+    Always(EnclosureStyle),
+    NoSingle(EnclosureStyle),
+    #[allow(dead_code)] // TODO: unsilence warning
+    Never,
+}
+
+impl Enclosure {
+    /// Create [`Enclosure`] that always displays.
+    pub fn always(style: EnclosureStyle) -> Self {
+        Self::Always(style)
+    }
+
+    /// Create [`Enclosure`] that never displays.
+    #[allow(dead_code)] // TODO: unsilence warning
+    pub fn never() -> Self {
+        Self::Never
+    }
+
+    /// Create [`Enclosure`] that does not display for single items.
+    pub fn no_single(style: EnclosureStyle) -> Self {
+        Self::NoSingle(style)
+    }
+
+    /// Returns the [`EnclosureStyle`] of the [`Enclosure`].
+    pub fn style(self) -> Option<EnclosureStyle> {
+        match self {
+            Enclosure::Always(style) => Some(style),
+            Enclosure::NoSingle(style) => Some(style),
+            Enclosure::Never => None,
+        }
+    }
+}
+
 /// Displays the slice in a human readable form.
 ///
 /// # Note
@@ -9,11 +77,17 @@ use core::{fmt, fmt::Display};
 /// Single element slices just displayed their single elemment as usual.
 /// Empty slices are written as `[]`.
 /// Normal slices print as `Debug` but with their elements as `Display`.
-pub struct DisplaySlice<'a, T>(&'a [T]);
+pub struct DisplaySlice<'a, T> {
+    /// The enclosure style.
+    enclosure: Enclosure,
+    /// The displayed slice.
+    slice: &'a [T],
+}
 
-impl<'a, T> From<&'a [T]> for DisplaySlice<'a, T> {
-    fn from(slice: &'a [T]) -> Self {
-        Self(slice)
+impl<'a, T> DisplaySlice<'a, T> {
+    /// Creates a new [`DisplaySlice`] for the given `slice` with `enclosure` style.
+    pub fn new(enclosure: Enclosure, slice: &'a [T]) -> Self {
+        Self { enclosure, slice }
     }
 }
 
@@ -22,19 +96,21 @@ where
     T: Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let is_list = self.0.len() != 1;
-        if is_list {
-            write!(f, "[")?;
-        }
-        if let Some((first, rest)) = self.0.split_first() {
+        let style = match self.enclosure {
+            Enclosure::Always(style) => Some(style),
+            Enclosure::NoSingle(style) => Some(style).filter(|_| self.slice.len() != 1),
+            Enclosure::Never => None,
+        };
+        let open = style.map(EnclosureStyle::open).unwrap_or("");
+        let close = style.map(EnclosureStyle::close).unwrap_or("");
+        write!(f, "{open}")?;
+        if let Some((first, rest)) = self.slice.split_first() {
             write!(f, "{}", first)?;
             for elem in rest {
                 write!(f, ", {}", elem)?;
             }
         }
-        if is_list {
-            write!(f, "]")?;
-        }
+        write!(f, "{close}")?;
         Ok(())
     }
 }
@@ -45,12 +121,16 @@ where
 ///
 /// Read [`DisplaySlice`] documentation to see how iterators are visualized.
 pub struct DisplaySequence<T> {
+    /// The enclosure style.
+    enclosure: Enclosure,
+    /// The displayed items.
     items: T,
 }
 
-impl<T> From<T> for DisplaySequence<T> {
-    fn from(items: T) -> Self {
-        Self { items }
+impl<T> DisplaySequence<T> {
+    /// Creates a new [`DisplaySlice`] for the given `slice` with `enclosure` style.
+    pub fn new(enclosure: Enclosure, items: T) -> Self {
+        Self { enclosure, items }
     }
 }
 
@@ -61,16 +141,26 @@ where
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut iter = self.items.clone();
+        let style = self.enclosure.style();
+        let open = style.map(EnclosureStyle::open).unwrap_or("");
+        let close = style.map(EnclosureStyle::close).unwrap_or("");
         match (iter.next(), iter.next()) {
-            (None, _) => write!(f, "[]"),
-            (Some(single), None) => write!(f, "{single}"),
+            (None, _) => {
+                write!(f, "{open}{close}")
+            }
+            (Some(single), None) => {
+                if matches!(self.enclosure, Enclosure::Always(_)) {
+                    write!(f, "{open}{single}{close}")
+                } else {
+                    write!(f, "{single}")
+                }
+            }
             (Some(fst), Some(snd)) => {
-                write!(f, "[{fst}, {snd}")?;
+                write!(f, "{open}{fst}, {snd}")?;
                 for next in iter {
                     write!(f, ", {next}")?;
                 }
-                write!(f, "]")?;
-                Ok(())
+                write!(f, "{close}")
             }
         }
     }

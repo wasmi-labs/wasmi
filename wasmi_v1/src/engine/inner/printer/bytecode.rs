@@ -1,6 +1,9 @@
 //! Definitions for visualization of `wasmi` bytecode components.
 
-use super::DisplaySequence;
+use super::{
+    utils::{Enclosure, EnclosureStyle},
+    DisplaySequence,
+};
 use crate::{
     engine::{
         bytecode::{ExecRegister, Global},
@@ -156,7 +159,10 @@ impl Display for DisplayExecRegisterSlice {
         write!(
             f,
             "{}",
-            DisplaySequence::from(self.slice.iter().map(DisplayExecRegister::from))
+            DisplaySequence::new(
+                Enclosure::no_single(EnclosureStyle::Bracket),
+                self.slice.iter().map(DisplayExecRegister::from)
+            )
         )
     }
 }
@@ -186,7 +192,8 @@ impl Display for DisplayExecProviderSlice<'_> {
         write!(
             f,
             "{}",
-            DisplaySequence::from(
+            DisplaySequence::new(
+                Enclosure::no_single(EnclosureStyle::Bracket),
                 self.res
                     .provider_slices
                     .resolve(self.slice)

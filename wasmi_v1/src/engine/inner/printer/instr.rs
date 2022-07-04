@@ -1,6 +1,7 @@
 //! Definitions for visualization of `wasmi` bytecode instruction.
 
 use super::{
+    utils::{DisplaySequence, Enclosure, EnclosureStyle},
     DisplayExecProvider,
     DisplayExecProviderSlice,
     DisplayExecRegister,
@@ -64,6 +65,38 @@ impl Display for DisplayCopyMany<'_> {
             return Ok(());
         }
         write!(f, "{} <- {}", self.dst, self.src)
+    }
+}
+
+/// Wrapper to display assignment of [`ExecRegisterSlice`].
+///
+/// # Note
+///
+/// Displays nothing if [`ExecRegisterSlice`] is empty.
+pub struct DisplayAssignMany {
+    dst: ExecRegisterSlice,
+}
+
+impl From<ExecRegisterSlice> for DisplayAssignMany {
+    fn from(dst: ExecRegisterSlice) -> Self {
+        Self { dst }
+    }
+}
+
+impl Display for DisplayAssignMany {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.dst.is_empty() {
+            // Do not display anything at all.
+            return Ok(());
+        }
+        write!(
+            f,
+            "{} <- ",
+            DisplaySequence::new(
+                Enclosure::no_single(EnclosureStyle::Paren),
+                self.dst.into_iter().map(DisplayExecRegister::from),
+            )
+        )
     }
 }
 
@@ -235,8 +268,8 @@ impl<T> Display for DisplayExecInstruction<'_, '_, T> {
                 results,
                 params,
             } => {
-                writeln!(f, "{} <- call {} {}",
-                    DisplayExecRegisterSlice::from(results),
+                writeln!(f, "{}call {} {}",
+                    DisplayAssignMany::from(results),
                     DisplayFuncIdx::from(func_idx),
                     DisplayExecProviderSlice::new(res, params),
                 )
@@ -258,8 +291,8 @@ impl<T> Display for DisplayExecInstruction<'_, '_, T> {
                 let func_type = res.func_types.resolve_func_type(func_type);
                 writeln!(
                     f,
-                    "{} <- call_indirect table[{}] {}: {}",
-                    DisplayExecRegisterSlice::from(results),
+                    "{}call_indirect table[{}] {}: {}",
+                    DisplayAssignMany::from(results),
                     DisplayExecProvider::new(res, index),
                     DisplayExecProviderSlice::new(res, params),
                     DisplayFuncType::from(func_type),
