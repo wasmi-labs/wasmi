@@ -617,13 +617,11 @@ impl<'parser> FunctionBuilder<'parser> {
                 .for_each(|(result, &input)| {
                     if let IrProvider::Register(input) = input {
                         if result == input {
-                            return
+                            return;
                         }
                     }
-                    self.inst_builder.push_inst(Instruction::Copy {
-                        result,
-                        input,
-                    });
+                    self.inst_builder
+                        .push_inst(Instruction::Copy { result, input });
                 })
         }
         if let ControlFrame::If(if_frame) = &frame {
