@@ -182,14 +182,50 @@ impl EngineInner {
     ) -> ExecInstruction {
         match inst {
             Instruction::Trap { trap_code } => ExecInstruction::Trap { trap_code },
-            Instruction::Br { target } => ExecInstruction::Br { target },
-            Instruction::BrEqz { target, condition } => {
-                let condition = Self::compile_register(context, condition);
-                Instruction::BrEqz { target, condition }
+            Instruction::Br {
+                target,
+                results,
+                returned,
+            } => {
+                let results = Self::compile_register_slice(context, results);
+                let returned = Self::compile_provider_slice(res, context, returned);
+                ExecInstruction::Br {
+                    target,
+                    results,
+                    returned,
+                }
             }
-            Instruction::BrNez { target, condition } => {
+            Instruction::BrEqz {
+                target,
+                condition,
+                results,
+                returned,
+            } => {
                 let condition = Self::compile_register(context, condition);
-                Instruction::BrNez { target, condition }
+                let results = Self::compile_register_slice(context, results);
+                let returned = Self::compile_provider_slice(res, context, returned);
+                Instruction::BrEqz {
+                    target,
+                    condition,
+                    results,
+                    returned,
+                }
+            }
+            Instruction::BrNez {
+                target,
+                condition,
+                results,
+                returned,
+            } => {
+                let condition = Self::compile_register(context, condition);
+                let results = Self::compile_register_slice(context, results);
+                let returned = Self::compile_provider_slice(res, context, returned);
+                Instruction::BrNez {
+                    target,
+                    condition,
+                    results,
+                    returned,
+                }
             }
             Instruction::Return { results } => {
                 let results = Self::compile_provider_slice(res, context, results);

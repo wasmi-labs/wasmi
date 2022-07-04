@@ -213,7 +213,7 @@ impl InstructionsBuilder {
     pub fn patch_relocation(&mut self, reloc: Reloc, dst_pc: Instr) {
         match reloc {
             Reloc::Br { inst_idx } => match &mut self.insts[inst_idx.into_usize()] {
-                IrInstruction::Br { target }
+                IrInstruction::Br { target, .. }
                 | IrInstruction::BrEqz { target, .. }
                 | IrInstruction::BrNez { target, .. } => {
                     target.update_destination(dst_pc);
@@ -227,7 +227,7 @@ impl InstructionsBuilder {
                 inst_idx,
                 target_idx,
             } => match &mut self.insts[inst_idx.into_usize() + target_idx + 1] {
-                IrInstruction::Br { target } => {
+                IrInstruction::Br { target, .. } => {
                     target.update_destination(dst_pc);
                 }
                 _ => panic!(

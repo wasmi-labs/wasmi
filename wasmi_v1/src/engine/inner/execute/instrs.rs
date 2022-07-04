@@ -153,6 +153,20 @@ impl<'engine, 'func1, 'func2, 'ctx, T> ExecContext<'engine, 'func1, 'func2, 'ctx
         })
     }
 
+    /// Copys values from `src` to `dst`.
+    ///
+    /// # Panics (Debug)
+    ///
+    /// If both slices do not have the same length.
+    fn copy_many(&mut self, dst: ExecRegisterSlice, src: ExecProviderSlice) {
+        debug_assert_eq!(dst.len(), src.len());
+        let src = self.res.provider_slices.resolve(src);
+        for (dst, src) in dst.into_iter().zip(src) {
+            let src = self.load_provider(*src);
+            self.frame.regs.set(dst, src);
+        }
+    }
+
     /// Returns the default linear memory.
     ///
     /// # Panics
@@ -481,10 +495,13 @@ impl<'engine, 'func1, 'func2, 'ctx, T> ExecContext<'engine, 'func1, 'func2, 'ctx
         &mut self,
         target: Target,
         condition: ExecRegister,
+        results: ExecRegisterSlice,
+        returned: ExecProviderSlice,
         op: fn(UntypedValue) -> bool,
     ) -> Result<ExecOutcome, Trap> {
         let condition = self.frame.regs.get(condition);
         if op(condition) {
+            self.copy_many(results, returned);
             return self.branch_to_target(target);
         }
         self.next_instr()
@@ -496,7 +513,13 @@ impl<'engine, 'func1, 'func2, 'ctx, T> VisitInstruction<ExecuteTypes>
 {
     type Outcome = Result<ExecOutcome, Trap>;
 
-    fn visit_br(&mut self, target: Target) -> Self::Outcome {
+    fn visit_br(
+        &mut self,
+        target: Target,
+        results: <ExecuteTypes as InstructionTypes>::RegisterSlice,
+        returned: <ExecuteTypes as InstructionTypes>::ProviderSlice,
+    ) -> Self::Outcome {
+        self.copy_many(results, returned);
         self.branch_to_target(target)
     }
 
@@ -504,8 +527,10 @@ impl<'engine, 'func1, 'func2, 'ctx, T> VisitInstruction<ExecuteTypes>
         &mut self,
         target: Target,
         condition: <ExecuteTypes as InstructionTypes>::Register,
+        results: <ExecuteTypes as InstructionTypes>::RegisterSlice,
+        returned: <ExecuteTypes as InstructionTypes>::ProviderSlice,
     ) -> Self::Outcome {
-        self.exec_branch_conditionally(target, condition, |condition| {
+        self.exec_branch_conditionally(target, condition, results, returned, |condition| {
             condition == UntypedValue::from(0_i32)
         })
     }
@@ -514,8 +539,10 @@ impl<'engine, 'func1, 'func2, 'ctx, T> VisitInstruction<ExecuteTypes>
         &mut self,
         target: Target,
         condition: <ExecuteTypes as InstructionTypes>::Register,
+        results: <ExecuteTypes as InstructionTypes>::RegisterSlice,
+        returned: <ExecuteTypes as InstructionTypes>::ProviderSlice,
     ) -> Self::Outcome {
-        self.exec_branch_conditionally(target, condition, |condition| {
+        self.exec_branch_conditionally(target, condition, results, returned, |condition| {
             condition != UntypedValue::from(0_i32)
         })
     }

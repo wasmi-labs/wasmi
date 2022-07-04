@@ -113,6 +113,11 @@ impl ExecRegisterSlice {
         self.len as usize
     }
 
+    /// Returns `true` if the [`ExecRegisterSlice`] is empty.
+    pub fn is_empty(self) -> bool {
+        self.len == 0
+    }
+
     /// Returns an iterator over the registers of the [`ExecRegisterSlice`].
     pub fn iter(self) -> ExecRegisterSliceIter {
         self.into_iter()

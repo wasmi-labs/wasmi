@@ -463,6 +463,8 @@ impl<'parser> FunctionBuilder<'parser> {
                     self.inst_builder.push_inst(Instruction::BrEqz {
                         target: branch_target,
                         condition,
+                        results: IrRegisterSlice::empty(), // TODO: proper inputs
+                        returned: IrProviderSlice::empty(), // TODO: proper inputs
                     });
                 }
                 IrProvider::Immediate(condition) => {
@@ -548,7 +550,11 @@ impl<'parser> FunctionBuilder<'parser> {
             let dst_pc =
                 self.try_resolve_label(if_frame.end_label(), |pc| Reloc::Br { inst_idx: pc });
             let target = Target::from(dst_pc);
-            self.inst_builder.push_inst(Instruction::Br { target });
+            self.inst_builder.push_inst(Instruction::Br {
+                target,
+                results: IrRegisterSlice::empty(), // TODO: proper inputs
+                returned: IrProviderSlice::empty(), // TODO: proper inputs
+            });
         }
         // Now resolve labels for the instructions of the `else` block
         if let Some(else_label) = if_frame.else_label() {
@@ -614,6 +620,8 @@ impl<'parser> FunctionBuilder<'parser> {
                     let dst_pc = builder.try_resolve_label(label, |pc| Reloc::Br { inst_idx: pc });
                     builder.inst_builder.push_inst(Instruction::Br {
                         target: Target::from(dst_pc),
+                        results: IrRegisterSlice::empty(), // TODO: proper inputs
+                        returned: IrProviderSlice::empty(), // TODO: proper inputs
                     });
                 }
                 AquiredTarget::Return => {
@@ -638,6 +646,8 @@ impl<'parser> FunctionBuilder<'parser> {
                         builder.inst_builder.push_inst(Instruction::BrNez {
                             target: Target::from(dst_pc),
                             condition,
+                            results: IrRegisterSlice::empty(), // TODO: proper inputs
+                            returned: IrProviderSlice::empty(), // TODO: proper inputs
                         });
                     }
                     AquiredTarget::Return => {
@@ -687,6 +697,8 @@ impl<'parser> FunctionBuilder<'parser> {
                         let destination = builder.try_resolve_label(label, make_reloc);
                         Instruction::Br {
                             target: Target::from(destination),
+                            results: IrRegisterSlice::empty(), // TODO: proper inputs
+                            returned: IrProviderSlice::empty(), // TODO: proper inputs
                         }
                     }
                     AquiredTarget::Return => {

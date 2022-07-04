@@ -16,9 +16,23 @@ where
 {
     use Instruction as Instr;
     match instr {
-        Instr::Br { target } => visitor.visit_br(target),
-        Instr::BrEqz { target, condition } => visitor.visit_br_eqz(target, condition),
-        Instr::BrNez { target, condition } => visitor.visit_br_nez(target, condition),
+        Instr::Br {
+            results,
+            returned,
+            target,
+        } => visitor.visit_br(target, results, returned),
+        Instr::BrEqz {
+            results,
+            returned,
+            target,
+            condition,
+        } => visitor.visit_br_eqz(target, condition, results, returned),
+        Instr::BrNez {
+            results,
+            returned,
+            target,
+            condition,
+        } => visitor.visit_br_nez(target, condition, results, returned),
         Instr::ReturnNez { results, condition } => visitor.visit_return_nez(results, condition),
         Instr::BrTable { case, len_targets } => visitor.visit_br_table(case, len_targets),
         Instr::Trap { trap_code } => visitor.visit_trap(trap_code),
@@ -284,13 +298,20 @@ where
     type Outcome;
 
     /// Visits the `wasmi` `br` instruction.
-    fn visit_br(&mut self, target: Target) -> Self::Outcome;
+    fn visit_br(
+        &mut self,
+        target: Target,
+        results: <T as InstructionTypes>::RegisterSlice,
+        returned: <T as InstructionTypes>::ProviderSlice,
+    ) -> Self::Outcome;
 
     /// Visits the `wasmi` `br_eqz` instruction.
     fn visit_br_eqz(
         &mut self,
         target: Target,
         condition: <T as InstructionTypes>::Register,
+        results: <T as InstructionTypes>::RegisterSlice,
+        returned: <T as InstructionTypes>::ProviderSlice,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `br_nez` instruction.
@@ -298,6 +319,8 @@ where
         &mut self,
         target: Target,
         condition: <T as InstructionTypes>::Register,
+        results: <T as InstructionTypes>::RegisterSlice,
+        returned: <T as InstructionTypes>::ProviderSlice,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `return_nez` instruction.

@@ -68,6 +68,10 @@ where
     Br {
         /// The target instruction to unconditionally branch to.
         target: Target,
+        /// The registers used as return values of the branched-to control block.
+        results: T::RegisterSlice,
+        /// The actual returned values for the branched-to control block.
+        returned: T::ProviderSlice,
     },
     /// Branch iff `condition` evaluates to zero.
     ///
@@ -79,6 +83,10 @@ where
         target: Target,
         /// The branching condition.
         condition: T::Register,
+        /// The registers used as return values of the branched-to control block.
+        results: T::RegisterSlice,
+        /// The actual returned values for the branched-to control block.
+        returned: T::ProviderSlice,
     },
     /// Used to represent the Wasm `br_if` instruction.
     ///
@@ -91,6 +99,10 @@ where
         target: Target,
         /// The branching condition.
         condition: T::Register,
+        /// The registers used as return values of the branched-to control block.
+        results: T::RegisterSlice,
+        /// The actual returned values for the branched-to control block.
+        returned: T::ProviderSlice,
     },
     /// Used to represent the Wasm `br_if` instruction.
     ///

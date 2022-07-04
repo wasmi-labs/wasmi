@@ -28,6 +28,20 @@ impl Stacks {
         self.max_preserved
     }
 
+    /// Bumps the maximum dynamic register space by the amount of new registers.
+    ///
+    /// Returns the first register in the continuous slice of registers.
+    ///
+    /// # Note
+    ///
+    /// This does not actually allocate registers on the stack but instead
+    /// reserves them for later purposes.
+    fn bump_max_dynamic(&mut self, amount: usize) -> IrRegister {
+        let register = IrRegister::Dynamic(self.len_dynamic);
+        self.max_dynamic = max(self.max_dynamic, self.len_dynamic + amount);
+        register
+    }
+
     /// Bumps the dynamic register space by the amount of new registers.
     ///
     /// Returns the first register in the continuous slice of registers.
@@ -109,6 +123,14 @@ impl Providers {
         let register = self.stacks.bump_dynamic(1);
         self.providers.push(register.into());
         register
+    }
+
+    pub fn peek_dynamic_many(&mut self, amount: usize) -> IrRegisterSlice {
+        let len = u16::try_from(amount).unwrap_or_else(|error| {
+            panic!("tried to push too many dynamic registers ({amount}): {error}")
+        });
+        let first = self.stacks.bump_max_dynamic(amount);
+        IrRegisterSlice::new(first, len)
     }
 
     pub fn push_dynamic_many(&mut self, amount: usize) -> IrRegisterSlice {
@@ -303,6 +325,14 @@ pub struct IrRegisterSlice {
 }
 
 impl IrRegisterSlice {
+    /// TODO: remove again
+    pub fn empty() -> Self {
+        Self {
+            start: IrRegister::Local(0),
+            len: 0,
+        }
+    }
+
     /// Creates a new register slice.
     pub fn new(start: IrRegister, len: u16) -> Self {
         Self { start, len }
@@ -434,6 +464,13 @@ pub struct IrProviderSlice {
     first: u32,
     /// The number of providers in the slice.
     len: u32,
+}
+
+impl IrProviderSlice {
+    /// TODO: remove again
+    pub fn empty() -> Self {
+        Self { first: 0, len: 0 }
+    }
 }
 
 /// An arena to efficiently allocate provider slices.

@@ -64,6 +64,11 @@ impl ExecProviderSlice {
     pub fn empty() -> Self {
         Self::new(0, 0)
     }
+
+    /// Returns the number of [`ExecProvider`]s in the [`ExecProviderSlice`].
+    pub fn len(&self) -> usize {
+        self.len as usize
+    }
 }
 
 /// Either an [`ExecRegister`] or a [`ConstRef`] input value.

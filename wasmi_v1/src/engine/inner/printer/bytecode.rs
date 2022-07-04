@@ -138,6 +138,13 @@ pub struct DisplayExecRegisterSlice {
     slice: ExecRegisterSlice,
 }
 
+impl DisplayExecRegisterSlice {
+    /// Returns a shared reference to the wrapped [`ExecRegisterSlice`].
+    pub fn slice(&self) -> &ExecRegisterSlice {
+        &self.slice
+    }
+}
+
 impl From<ExecRegisterSlice> for DisplayExecRegisterSlice {
     fn from(slice: ExecRegisterSlice) -> Self {
         Self { slice }
@@ -158,6 +165,13 @@ impl Display for DisplayExecRegisterSlice {
 pub struct DisplayExecProviderSlice<'engine> {
     res: &'engine EngineResources,
     slice: ExecProviderSlice,
+}
+
+impl DisplayExecProviderSlice<'_> {
+    /// Returns a shared reference to the wrapped [`ExecProviderSlice`].
+    pub fn slice(&self) -> &ExecProviderSlice {
+        &self.slice
+    }
 }
 
 impl<'engine> DisplayExecProviderSlice<'engine> {

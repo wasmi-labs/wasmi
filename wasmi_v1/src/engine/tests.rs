@@ -265,6 +265,8 @@ fn br_simple() {
     let expected = [
         ExecInstruction::Br {
             target: Target::from_inner(1),
+            results: ExecRegisterSlice::empty(),
+            returned: ExecProviderSlice::empty(),
         },
         ExecInstruction::Return { results },
     ];
@@ -348,6 +350,8 @@ fn br_to_loop_header() {
     let expected = [
         ExecInstruction::Br {
             target: loop_header,
+            results: ExecRegisterSlice::empty(),
+            returned: ExecProviderSlice::empty(),
         },
         ExecInstruction::Return { results },
     ];
@@ -379,6 +383,8 @@ fn br_if_simple() {
         ExecInstruction::BrNez {
             target: Target::from_inner(1),
             condition,
+            results: ExecRegisterSlice::empty(),
+            returned: ExecProviderSlice::empty(),
         },
         ExecInstruction::Return { results },
     ];
@@ -476,8 +482,14 @@ fn br_if_to_loop_header() {
         ExecInstruction::BrNez {
             target: loop_header,
             condition,
+            results: ExecRegisterSlice::empty(),
+            returned: ExecProviderSlice::empty(),
         },
-        ExecInstruction::Br { target: loop_end },
+        ExecInstruction::Br {
+            target: loop_end,
+            results: ExecRegisterSlice::empty(),
+            returned: ExecProviderSlice::empty(),
+        },
         ExecInstruction::Return { results },
     ];
     assert_func_bodies_for_module(&module, [expected]);
@@ -535,7 +547,11 @@ fn br_if_const_true_return() {
     let results = engine.alloc_provider_slice([result.into()]);
     let block_end = Target::from_inner(1);
     let expected = [
-        ExecInstruction::Br { target: block_end },
+        ExecInstruction::Br {
+            target: block_end,
+            results: ExecRegisterSlice::empty(),
+            returned: ExecProviderSlice::empty(),
+        },
         ExecInstruction::Return { results },
     ];
     assert_func_bodies_for_module(&module, [expected]);
@@ -648,10 +664,22 @@ fn br_table_simple() {
             case: reg0,
             len_targets: 4, // note: amount is including the default target
         },
-        /* 1 */ ExecInstruction::Br { target: Target::from_inner(5) },  // case 0
-        /* 2 */ ExecInstruction::Br { target: Target::from_inner(7) },  // case 1
-        /* 3 */ ExecInstruction::Br { target: Target::from_inner(9) },  // case 2
-        /* 4 */ ExecInstruction::Return { results },                    // default case
+        /* 1 case 0       */ ExecInstruction::Br {
+            target: Target::from_inner(5),
+            results: ExecRegisterSlice::empty(),
+            returned: ExecProviderSlice::empty(),
+        },
+        /* 2 case 1       */ ExecInstruction::Br {
+            target: Target::from_inner(7),
+            results: ExecRegisterSlice::empty(),
+            returned: ExecProviderSlice::empty(),
+        },
+        /* 3 case 2       */ ExecInstruction::Br {
+            target: Target::from_inner(9),
+            results: ExecRegisterSlice::empty(),
+            returned: ExecProviderSlice::empty(),
+        },
+        /* 4 case default */ ExecInstruction::Return { results },
         // branch for case 0
         /* 5 */ ExecInstruction::GlobalSet {
             global,
@@ -724,10 +752,26 @@ fn br_table_return() {
             case: reg0,
             len_targets: 4, // note: amount is including the default target
         },
-        /* 1 */ ExecInstruction::Br { target: Target::from_inner(5) }, // case 0
-        /* 2 */ ExecInstruction::Br { target: Target::from_inner(7) }, // case 1
-        /* 3 */ ExecInstruction::Br { target: Target::from_inner(9) }, // case 2
-        /* 4 */ ExecInstruction::Br { target: Target::from_inner(11) }, // default case
+        /* 1 case 0       */ ExecInstruction::Br {
+            target: Target::from_inner(5),
+            results: ExecRegisterSlice::empty(),
+            returned: ExecProviderSlice::empty(),
+        },
+        /* 2 case 1       */ ExecInstruction::Br {
+            target: Target::from_inner(7),
+            results: ExecRegisterSlice::empty(),
+            returned: ExecProviderSlice::empty(),
+        },
+        /* 3 case 2       */ ExecInstruction::Br {
+            target: Target::from_inner(9),
+            results: ExecRegisterSlice::empty(),
+            returned: ExecProviderSlice::empty(),
+        },
+        /* 4 default case */ ExecInstruction::Br {
+            target: Target::from_inner(11),
+            results: ExecRegisterSlice::empty(),
+            returned: ExecProviderSlice::empty(),
+        },
         // branch for case 0
         /* 5 */ ExecInstruction::I32Add {
             result: reg1,
@@ -820,12 +864,18 @@ fn br_table_const_case() {
 
     test(0, |_engine| ExecInstruction::Br {
         target: Target::from_inner(1),
+        results: ExecRegisterSlice::empty(),
+        returned: ExecProviderSlice::empty(),
     });
     test(1, |_engine| ExecInstruction::Br {
         target: Target::from_inner(3),
+        results: ExecRegisterSlice::empty(),
+        returned: ExecProviderSlice::empty(),
     });
     test(2, |_engine| ExecInstruction::Br {
         target: Target::from_inner(5),
+        results: ExecRegisterSlice::empty(),
+        returned: ExecProviderSlice::empty(),
     });
     test(3, |engine| {
         let results = engine.alloc_provider_slice([]);
@@ -3778,6 +3828,8 @@ fn if_simple() {
         ExecInstruction::BrEqz {
             target: else_label,
             condition: reg0,
+            results: ExecRegisterSlice::empty(),
+            returned: ExecProviderSlice::empty(),
         },
         /* 1 */
         ExecInstruction::I32Add {
@@ -3785,7 +3837,12 @@ fn if_simple() {
             lhs: reg1,
             rhs: reg2.into(),
         },
-        /* 2 */ ExecInstruction::Br { target: end_label },
+        /* 2 */
+        ExecInstruction::Br {
+            target: end_label,
+            results: ExecRegisterSlice::empty(),
+            returned: ExecProviderSlice::empty(),
+        },
         /* 3 */
         ExecInstruction::I32Mul {
             result: reg3,
