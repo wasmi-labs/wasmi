@@ -196,6 +196,8 @@ impl Engine {
     /// # Note
     ///
     /// This functionality is intended for debugging purposes.
+    ///
+    /// [`Display`]: [`core::fmt::Display`]
     #[cfg(test)]
     pub fn print_func(&self, ctx: impl AsContext, func: Func) {
         print!("{}", self.inner.lock().display_func(ctx.as_context(), func))
