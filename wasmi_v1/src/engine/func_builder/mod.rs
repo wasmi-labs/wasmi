@@ -430,7 +430,7 @@ impl<'parser> FunctionBuilder<'parser> {
             self.inst_builder.resolve_label(header);
             let results = self
                 .providers
-                .peek_dynamic_many(block_type.len_results(&self.engine) as usize);
+                .peek_dynamic_many(block_type.len_params(&self.engine) as usize);
             self.control_frames.push_frame(LoopControlFrame::new(
                 results,
                 block_type,
