@@ -301,22 +301,36 @@ impl<'parser> FunctionBuilder<'parser> {
             .resolve_func_type(dedup_func_type, Clone::clone)
     }
 
-    /// Returns the target at the given `depth`.
+    /// Returns the branching target at the given `depth`.
     ///
     /// # Panics
     ///
     /// - If the `depth` is greater than the current height of the control frame stack.
     /// - If the value stack underflowed.
-    fn acquire_target(&self, relative_depth: u32) -> AquiredTarget {
+    fn acquire_target<F>(&mut self, relative_depth: u32, reloc_provider: F) -> AquiredTarget
+    where
+        F: FnOnce(Instr) -> Reloc,
+    {
         debug_assert!(self.is_reachable());
         if self.control_frames.is_root(relative_depth) {
             AquiredTarget::Return
         } else {
-            let label = self
-                .control_frames
-                .nth_back(relative_depth)
-                .branch_destination();
-            AquiredTarget::Branch(label)
+            let frame = self.control_frames.nth_back(relative_depth);
+            let br_dst = frame.branch_destination();
+            let results = frame.results();
+            let instr = self.try_resolve_label(br_dst, reloc_provider);
+            let target = Target::from(instr);
+            let returned = self.reg_slices.alloc(
+                self.providers
+                    .peek_n(results.len() as usize)
+                    .iter()
+                    .copied(),
+            );
+            AquiredTarget::Branch {
+                target,
+                results,
+                returned,
+            }
         }
     }
 }
@@ -324,13 +338,22 @@ impl<'parser> FunctionBuilder<'parser> {
 /// An aquired target for a branch instruction.
 #[derive(Debug, Copy, Clone)]
 pub enum AquiredTarget {
-    /// The branching targets a branching destination (label).
+    /// The branching targets the entry to a control flow frame.
     ///
     /// # Note
     ///
     /// This is the usual case.
-    Branch(LabelIdx),
-    /// The branching target is ending the called function.
+    Branch {
+        /// The first instruction of the targeted control flow frame.
+        target: Target,
+        /// The registers where the targeted control flow frame expects
+        /// its results.
+        results: IrRegisterSlice,
+        /// The providers copied over to the results of the targeted control
+        /// flow frame upon taking the branch.
+        returned: IrProviderSlice,
+    },
+    /// The branch is ending the called function.
     ///
     /// # Note
     ///
@@ -621,13 +644,16 @@ impl<'parser> FunctionBuilder<'parser> {
     /// Translates a Wasm `br` control flow operator.
     pub fn translate_br(&mut self, relative_depth: u32) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
-            match builder.acquire_target(relative_depth) {
-                AquiredTarget::Branch(label) => {
-                    let dst_pc = builder.try_resolve_label(label, |pc| Reloc::Br { inst_idx: pc });
+            match builder.acquire_target(relative_depth, |pc| Reloc::Br { inst_idx: pc }) {
+                AquiredTarget::Branch {
+                    target,
+                    results,
+                    returned,
+                } => {
                     builder.inst_builder.push_inst(Instruction::Br {
-                        target: Target::from(dst_pc),
-                        results: IrRegisterSlice::empty(), // TODO: proper inputs
-                        returned: IrProviderSlice::empty(), // TODO: proper inputs
+                        target,
+                        results,
+                        returned,
                     });
                 }
                 AquiredTarget::Return => {
@@ -645,24 +671,28 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let condition = builder.providers.pop();
             match condition {
-                IrProvider::Register(condition) => match builder.acquire_target(relative_depth) {
-                    AquiredTarget::Branch(label) => {
-                        let dst_pc =
-                            builder.try_resolve_label(label, |pc| Reloc::Br { inst_idx: pc });
-                        builder.inst_builder.push_inst(Instruction::BrNez {
-                            target: Target::from(dst_pc),
-                            condition,
-                            results: IrRegisterSlice::empty(), // TODO: proper inputs
-                            returned: IrProviderSlice::empty(), // TODO: proper inputs
-                        });
+                IrProvider::Register(condition) => {
+                    match builder.acquire_target(relative_depth, |pc| Reloc::Br { inst_idx: pc }) {
+                        AquiredTarget::Branch {
+                            target,
+                            results,
+                            returned,
+                        } => {
+                            builder.inst_builder.push_inst(Instruction::BrNez {
+                                target,
+                                condition,
+                                results,
+                                returned,
+                            });
+                        }
+                        AquiredTarget::Return => {
+                            let results = builder.return_provider_slice();
+                            builder
+                                .inst_builder
+                                .push_inst(Instruction::ReturnNez { results, condition });
+                        }
                     }
-                    AquiredTarget::Return => {
-                        let results = builder.return_provider_slice();
-                        builder
-                            .inst_builder
-                            .push_inst(Instruction::ReturnNez { results, condition });
-                    }
-                },
+                }
                 IrProvider::Immediate(condition) => {
                     if bool::from(condition) {
                         // In this case the branch always takes place and
@@ -698,15 +728,16 @@ impl<'parser> FunctionBuilder<'parser> {
             where
                 F: FnOnce(Instr) -> Reloc,
             {
-                match builder.acquire_target(depth.into_u32()) {
-                    AquiredTarget::Branch(label) => {
-                        let destination = builder.try_resolve_label(label, make_reloc);
-                        Instruction::Br {
-                            target: Target::from(destination),
-                            results: IrRegisterSlice::empty(), // TODO: proper inputs
-                            returned: IrProviderSlice::empty(), // TODO: proper inputs
-                        }
-                    }
+                match builder.acquire_target(depth.into_u32(), make_reloc) {
+                    AquiredTarget::Branch {
+                        target,
+                        results,
+                        returned,
+                    } => Instruction::Br {
+                        target,
+                        results,
+                        returned,
+                    },
                     AquiredTarget::Return => {
                         let results = builder.return_provider_slice();
                         Instruction::Return { results }
