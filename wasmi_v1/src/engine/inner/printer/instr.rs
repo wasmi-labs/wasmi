@@ -201,7 +201,14 @@ impl<T> Display for DisplayExecInstruction<'_, '_, T> {
                     DisplayExecProviderSlice::new(res, results),
                 )
             }
-            Instr::BrTable { case: _, len_targets: _ } => todo!(),
+            Instr::BrTable { case, len_targets } => {
+                write!(
+                    f,
+                    "br_table {} #cases: {}",
+                    DisplayExecRegister::from(case),
+                    len_targets,
+                )
+            }
             Instr::Trap { trap_code } => {
                 let trap_name = match trap_code {
                     TrapCode::Unreachable => "unreachable",
