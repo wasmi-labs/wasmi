@@ -174,20 +174,20 @@ impl<T> Display for DisplayExecInstruction<'_, '_, T> {
             Instr::Br { target, results, returned } => {
                 writeln!(
                     f,
-                    "br {}: {}",
+                    "br {} {}",
                     DisplayTarget::from(target),
                     DisplayCopyMany::new(res, results, returned),
                 )
             }
             Instr::BrEqz { target, condition, results, returned } => {
-                writeln!(f, "br_eqz {} {}: {}",
+                writeln!(f, "br_eqz {} {} {}",
                     DisplayExecRegister::from(condition),
                     DisplayTarget::from(target),
                     DisplayCopyMany::new(res, results, returned),
                 )
             }
             Instr::BrNez { target, condition, results, returned } => {
-                writeln!(f, "br_nez {} {}: {}",
+                writeln!(f, "br_nez {} {} {}",
                     DisplayExecRegister::from(condition),
                     DisplayTarget::from(target),
                     DisplayCopyMany::new(res, results, returned),
