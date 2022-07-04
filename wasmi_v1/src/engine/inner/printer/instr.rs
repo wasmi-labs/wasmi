@@ -256,7 +256,7 @@ impl<T> Display for DisplayExecInstruction<'_, '_, T> {
                         )
                     });
                 let func_type = res.func_types.resolve_func_type(func_type);
-                write!(
+                writeln!(
                     f,
                     "{} <- call_indirect table[{}] {}: {}",
                     DisplayExecRegisterSlice::from(results),
