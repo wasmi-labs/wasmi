@@ -625,7 +625,7 @@ impl<'parser> FunctionBuilder<'parser> {
         let frame_stack_height = frame.stack_height();
         if self.control_frames.len() == 1 {
             // If the control flow frames stack is empty after this point
-            // we know that we are endeding the function body `block`
+            // we know that we are ending the function body `block`
             // frame and therefore we have to return from the function.
             self.translate_return()?;
         } else {
