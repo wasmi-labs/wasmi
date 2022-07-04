@@ -606,6 +606,26 @@ impl<'parser> FunctionBuilder<'parser> {
     /// Translates a Wasm `end` control flow operator.
     pub fn translate_end(&mut self) -> Result<(), ModuleError> {
         let frame = self.control_frames.last();
+        if self.is_reachable() && self.control_frames.len() != 1 {
+            // Write back results to where the parent control flow frame
+            // is expecting them.
+            let results = frame.results();
+            let returned = self.providers.peek_n(results.len() as usize);
+            results
+                .into_iter()
+                .zip(returned)
+                .for_each(|(result, &input)| {
+                    if let IrProvider::Register(input) = input {
+                        if result == input {
+                            return
+                        }
+                    }
+                    self.inst_builder.push_inst(Instruction::Copy {
+                        result,
+                        input,
+                    });
+                })
+        }
         if let ControlFrame::If(if_frame) = &frame {
             // At this point we can resolve the `Else` label.
             //
