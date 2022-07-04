@@ -567,35 +567,45 @@ impl<'parser> FunctionBuilder<'parser> {
         // We need to check if the `else` block is known to be reachable.
         let then_reachable = if_frame.is_then_reachable();
         let else_reachable = if_frame.is_else_reachable();
-        // Return providers on the stack to where the `if` block expects
-        // its results in case the `if` block has return values.
-        let results = if_frame.results();
-        let returned = self
-            .reg_slices
-            .alloc(self.providers.pop_n(results.len() as usize));
         // Create the jump from the end of the `then` block to the `if`
         // block's end label in case the end of `then` is reachable.
-        if then_reachable && else_reachable {
-            let dst_pc =
-                self.try_resolve_label(if_frame.end_label(), |pc| Reloc::Br { inst_idx: pc });
-            let target = Target::from(dst_pc);
-            self.inst_builder.push_inst(Instruction::Br {
-                target,
-                results,
-                returned,
-            });
+        if then_reachable {
+            // Return providers on the stack to where the `if` block expects
+            // its results in case the `if` block has return values.
+            let results = if_frame.results();
+            let returned = self.providers.pop_n(results.len() as usize);
+            if else_reachable {
+                // Case: both `then` and `else` are reachable
+                let returned = self.reg_slices.alloc(returned);
+                let dst_pc =
+                    self.try_resolve_label(if_frame.end_label(), |pc| Reloc::Br { inst_idx: pc });
+                let target = Target::from(dst_pc);
+                self.inst_builder.push_inst(Instruction::Br {
+                    target,
+                    results,
+                    returned,
+                });
+                // Now resolve labels for the instructions of the `else` block
+                if let Some(else_label) = if_frame.else_label() {
+                    self.inst_builder.resolve_label(else_label);
+                }
+            } else {
+                // Case: only `then` is reachable
+                for (result, input) in results.into_iter().zip(returned) {
+                    self.inst_builder
+                        .push_inst(Instruction::Copy { result, input });
+                }
+            }
         }
-        // Now resolve labels for the instructions of the `else` block
-        if let Some(else_label) = if_frame.else_label() {
-            self.inst_builder.resolve_label(else_label);
-        }
-        // We need to reset the value stack to exactly how it has been
-        // when entering the `if` in the first place so that the `else`
-        // block has the same parameters on top of the stack.
-        if let Some(else_height) = if_frame.else_height() {
-            self.providers.shrink_to(else_height);
-            let len_params = if_frame.block_type().len_params(&self.engine);
-            self.providers.push_dynamic_many(len_params as usize);
+        if else_reachable {
+            // We need to reset the value stack to exactly how it has been
+            // when entering the `if` in the first place so that the `else`
+            // block has the same parameters on top of the stack.
+            if let Some(else_height) = if_frame.else_height() {
+                self.providers.shrink_to(else_height);
+                let len_params = if_frame.block_type().len_params(&self.engine);
+                self.providers.push_dynamic_many(len_params as usize);
+            }
         }
         self.control_frames.push_frame(if_frame);
         // We can reset reachability now since the parent `if` block was reachable.
