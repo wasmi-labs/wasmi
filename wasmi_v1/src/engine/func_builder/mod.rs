@@ -633,11 +633,9 @@ impl<'parser> FunctionBuilder<'parser> {
             // frame was reachable upon entering to begin with.
             self.reachable = frame_reachable;
         }
-        self.providers.shrink_to(frame_stack_height);
         let frame = self.control_frames.pop_frame();
-        frame.block_type().foreach_result(&self.engine, |_result| {
-            self.providers.push_dynamic();
-        });
+        self.providers.shrink_to(frame_stack_height);
+        self.providers.push_dynamic_many(len_results);
         Ok(())
     }
 
