@@ -26,6 +26,47 @@ use crate::{
 use core::{fmt, fmt::Display};
 use wasmi_core::TrapCode;
 
+/// Wrapper to display copying from [`ExecProviderSlice`]
+/// into [`ExecRegisterSlice`] in a human readable way.
+///
+/// # Note
+///
+/// Displays nothing in case both slices are empty.
+///
+/// # Panics (Debug)
+///
+/// If both slices do not have the same length.
+pub struct DisplayCopyMany<'engine> {
+    dst: DisplayExecRegisterSlice,
+    src: DisplayExecProviderSlice<'engine>,
+}
+
+impl<'engine> DisplayCopyMany<'engine> {
+    /// Creates a new dispay wrapper for copying many values.
+    pub fn new(
+        res: &'engine EngineResources,
+        dst: ExecRegisterSlice,
+        src: ExecProviderSlice,
+    ) -> Self {
+        Self {
+            dst: DisplayExecRegisterSlice::from(dst),
+            src: DisplayExecProviderSlice::new(res, src),
+        }
+    }
+}
+
+impl Display for DisplayCopyMany<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        debug_assert_eq!(self.dst.slice().len(), self.src.slice().len());
+        if self.dst.slice().is_empty() {
+            // Both slices are empty and therefore no copying takes place.
+            // In this case we write nothing to the output buffer.
+            return Ok(());
+        }
+        write!(f, "{} <- {}", self.dst, self.src)
+    }
+}
+
 /// Wrapper to display an [`ExecInstruction`] in a human readable way.
 #[derive(Debug)]
 pub struct DisplayExecInstruction<'ctx, 'engine, T> {
@@ -121,47 +162,6 @@ impl<'ctx, 'engine, T> DisplayExecInstruction<'ctx, 'engine, T> {
             offset.into_inner(),
             DisplayExecProvider::new(self.res, value),
         )
-    }
-}
-
-/// Wrapper to display copying from [`ExecProviderSlice`]
-/// into [`ExecRegisterSlice`] in a human readable way.
-///
-/// # Note
-///
-/// Displays nothing in case both slices are empty.
-///
-/// # Panics (Debug)
-///
-/// If both slices do not have the same length.
-pub struct DisplayCopyMany<'engine> {
-    dst: DisplayExecRegisterSlice,
-    src: DisplayExecProviderSlice<'engine>,
-}
-
-impl<'engine> DisplayCopyMany<'engine> {
-    /// Creates a new dispay wrapper for copying many values.
-    pub fn new(
-        res: &'engine EngineResources,
-        dst: ExecRegisterSlice,
-        src: ExecProviderSlice,
-    ) -> Self {
-        Self {
-            dst: DisplayExecRegisterSlice::from(dst),
-            src: DisplayExecProviderSlice::new(res, src),
-        }
-    }
-}
-
-impl Display for DisplayCopyMany<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        debug_assert_eq!(self.dst.slice().len(), self.src.slice().len());
-        if self.dst.slice().is_empty() {
-            // Both slices are empty and therefore no copying takes place.
-            // In this case we write nothing to the output buffer.
-            return Ok(());
-        }
-        write!(f, "{} <- {}", self.dst, self.src)
     }
 }
 
