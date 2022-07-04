@@ -874,6 +874,27 @@ impl<'parser> FunctionBuilder<'parser> {
         })
     }
 
+    /// Translate a `wasmi` `copy` instruction.
+    ///
+    /// # Note
+    ///
+    /// This filters out nop-copies which are copies where
+    /// `result` and `input` registers are the same.
+    fn translate_copy(&mut self, result: IrRegister, input: IrProvider) -> Result<(), ModuleError> {
+        self.translate_if_reachable(|builder| {
+            if let IrProvider::Register(input) = input {
+                if input == result {
+                    // Bail out to avoid nop copies.
+                    return Ok(());
+                }
+            }
+            builder
+                .inst_builder
+                .push_inst(Instruction::Copy { result, input });
+            Ok(())
+        })
+    }
+
     /// Translates a Wasm `select` instruction.
     pub fn translate_select(&mut self) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
@@ -893,9 +914,7 @@ impl<'parser> FunctionBuilder<'parser> {
                     //       `select` instruction with one of its arms.
                     let condition = bool::from(condition);
                     let input = if condition { v0 } else { v1 };
-                    builder
-                        .inst_builder
-                        .push_inst(Instruction::Copy { result, input });
+                    builder.translate_copy(result, input)?;
                 }
             }
             Ok(())
@@ -947,9 +966,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 builder.inst_builder.push_inst(copy_preserve);
             }
             // Note: we simply emit a `copy` instruction as a fall back.
-            builder
-                .inst_builder
-                .push_inst(Instruction::Copy { result, input });
+            builder.translate_copy(result, input)?;
             Ok(())
         })
     }
@@ -1018,10 +1035,7 @@ impl<'parser> FunctionBuilder<'parser> {
                         .push_inst(make_inst(result, ptr, offset));
                 }
                 IrProvider::Immediate(ptr) => {
-                    builder.inst_builder.push_inst(Instruction::Copy {
-                        result,
-                        input: ptr.into(),
-                    });
+                    builder.translate_copy(result, ptr.into())?;
                     builder
                         .inst_builder
                         .push_inst(make_inst(result, result, offset));
@@ -1192,10 +1206,7 @@ impl<'parser> FunctionBuilder<'parser> {
                     //       After the store instruction we immediate have to
                     //       pop the temporarily used register again.
                     let temp = builder.providers.push_dynamic();
-                    builder.inst_builder.push_inst(Instruction::Copy {
-                        result: temp,
-                        input: ptr.into(),
-                    });
+                    builder.translate_copy(temp, ptr.into())?;
                     builder
                         .inst_builder
                         .push_inst(make_inst(temp, offset, value));
@@ -1692,9 +1703,7 @@ impl<'parser> FunctionBuilder<'parser> {
                     // operand for the instruction we need to `copy` it into a register
                     // first.
                     let result = builder.providers.push_dynamic();
-                    builder
-                        .inst_builder
-                        .push_inst(Instruction::Copy { result, input: lhs });
+                    builder.translate_copy(result, lhs)?;
                     builder
                         .inst_builder
                         .push_inst(make_op(result, result, rhs.into()));
@@ -1731,9 +1740,7 @@ impl<'parser> FunctionBuilder<'parser> {
                     // operand for the instruction we need to `copy` it into a register
                     // first.
                     let result = builder.providers.push_dynamic();
-                    builder
-                        .inst_builder
-                        .push_inst(Instruction::Copy { result, input: lhs });
+                    builder.translate_copy(result, lhs)?;
                     builder
                         .inst_builder
                         .push_inst(make_op(result, result, rhs.into()));
