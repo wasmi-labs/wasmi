@@ -265,6 +265,25 @@ fn test_regression_loop_1() {
 }
 
 #[test]
+fn test_regression_func_1() {
+    fn test_for(func: Func, store: &mut Store<()>, input: i32) {
+        let mut result = [Value::I32(0)];
+        func.call(store, &[Value::I32(input)], &mut result).unwrap();
+        let expected = if input != 0 { 50 } else { 51 };
+        assert_eq!(result, [Value::I32(expected)]);
+    }
+
+    let (mut store, instance) = load_test_instance!("wat/regression-func-1.wat");
+    let func = load_func(&store, &instance, "func");
+
+    print_func(&store, func);
+
+    for input in 0..10 {
+        test_for(func, &mut store, input);
+    }
+}
+
+#[test]
 fn test_regression_if_1() {
     fn test_for(func: Func, store: &mut Store<()>, input: i32) {
         let mut result = [Value::I32(0)];
