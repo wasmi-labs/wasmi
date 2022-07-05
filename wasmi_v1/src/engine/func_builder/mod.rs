@@ -281,7 +281,7 @@ impl<'parser> FunctionBuilder<'parser> {
         let len_results = self
             .engine
             .resolve_func_type(func_type, |func_type| func_type.results().len());
-        let providers = self.providers.pop_n(len_results);
+        let providers = self.providers.peek_n(len_results).iter().copied();
         self.reg_slices.alloc(providers)
     }
 
