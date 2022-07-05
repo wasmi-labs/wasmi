@@ -572,7 +572,7 @@ impl<'engine, 'func1, 'func2, 'ctx, T> VisitInstruction<ExecuteTypes>
         let normalized_index = cmp::min(index, max_index);
         // Simply branch to the selected instruction which is going to be either
         // a `br` or a `return` instruction as demanded by the `wasmi` bytecode.
-        let next_pc = *self.frame.pc + normalized_index;
+        let next_pc = *self.frame.pc + normalized_index + 1;
         Ok(ExecOutcome::Branch { next_pc })
     }
 
