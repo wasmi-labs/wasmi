@@ -235,7 +235,7 @@ impl<T> Display for DisplayExecInstruction<'_, '_, T> {
                 )
             }
             Instr::BrTable { case, len_targets } => {
-                write!(
+                writeln!(
                     f,
                     "br_table {} #cases: {}",
                     DisplayExecRegister::from(case),
