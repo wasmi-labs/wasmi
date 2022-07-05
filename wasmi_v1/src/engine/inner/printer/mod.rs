@@ -22,9 +22,7 @@ use self::{
 };
 pub use self::{func::DisplayFunc, instr::DisplayExecInstruction};
 use super::{EngineInner, EngineResources};
-#[cfg(test)]
-use crate::Func;
-use crate::{engine::ExecInstruction, Instance, StoreContext};
+use crate::{engine::ExecInstruction, Func, Instance, StoreContext};
 
 impl EngineInner {
     /// Returns a [`Display`] wrapper to pretty print the given function.
@@ -34,7 +32,6 @@ impl EngineInner {
     /// This functionality is primarily for debugging purposes.
     ///
     /// [`Display`]: [`core::fmt::Display`]
-    #[cfg(test)]
     pub fn display_func<'ctx, 'engine, T>(
         &'engine self,
         ctx: StoreContext<'ctx, T>,

@@ -31,7 +31,6 @@ pub struct DisplayFunc<'ctx, 'engine, T> {
 
 impl<'ctx, 'engine, T> DisplayFunc<'ctx, 'engine, T> {
     /// Creates a new display wrapper for a `wasmi` function.
-    #[cfg(test)]
     pub fn new(ctx: StoreContext<'ctx, T>, engine: &'engine EngineInner, func: Func) -> Self {
         Self { ctx, engine, func }
     }

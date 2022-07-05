@@ -39,9 +39,7 @@ pub use self::{
     func_builder::RelativeDepth,
     func_types::DedupFuncType,
 };
-#[cfg(test)]
-use crate::AsContext;
-use crate::{AsContextMut, Func, FuncType};
+use crate::{AsContext, AsContextMut, Func, FuncType};
 use alloc::sync::Arc;
 use spin::mutex::Mutex;
 use wasmi_core::{Trap, UntypedValue};
@@ -198,7 +196,6 @@ impl Engine {
     /// This functionality is intended for debugging purposes.
     ///
     /// [`Display`]: [`core::fmt::Display`]
-    #[cfg(test)]
     pub fn print_func(&self, ctx: impl AsContext, func: Func) {
         print!("{}", self.inner.lock().display_func(ctx.as_context(), func))
     }
