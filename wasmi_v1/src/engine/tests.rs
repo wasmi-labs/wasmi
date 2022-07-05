@@ -3962,3 +3962,47 @@ fn if_const_nested() {
         rhs: ExecRegister::from_inner(1).into(),
     });
 }
+
+#[test]
+fn regression_const_lhs() {
+    let wasm = wat2wasm(
+        r#"
+            ;; Regression test to verify correct binary expression with a constant `lhs`
+            ;; in a case where an incorrect `copy` instruction was emitted.
+            ;;
+            ;; Spec Test Suite: float_exprs.wast | f32.no_approximate_reciprocal_sqrt
+            (module
+                (func (export "func") (param $input f32) (result f32)
+                    (f32.div
+                        (f32.const 1.0)
+                        (f32.sqrt (local.get $input))
+                    )
+                )
+            )
+        "#,
+    );
+    let module = create_module(&wasm[..]);
+    let engine = module.engine();
+    let const_one = ExecProvider::from_immediate(engine.alloc_const(1.0_f32));
+    let v0 = ExecRegister::from_inner(0);
+    let v1 = ExecRegister::from_inner(1);
+    let v2 = ExecRegister::from_inner(2);
+    let results = engine.alloc_provider_slice([v1.into()]);
+    let expected = [
+        ExecInstruction::F32Sqrt {
+            result: v1,
+            input: v0,
+        },
+        ExecInstruction::Copy {
+            result: v2,
+            input: const_one,
+        },
+        ExecInstruction::F32Div {
+            result: v1,
+            lhs: v2,
+            rhs: ExecProvider::from_register(v1),
+        },
+        ExecInstruction::Return { results },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
