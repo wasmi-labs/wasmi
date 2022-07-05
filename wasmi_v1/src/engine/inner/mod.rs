@@ -10,8 +10,10 @@ use super::{
     DedupProviderSliceArena,
     EngineIdent,
     FuncTypeRegistry,
+    DEFAULT_VALUE_STACK_LIMIT,
 };
 use crate::{Config, FuncType};
+use core::mem;
 use execute::Stack;
 use wasmi_core::UntypedValue;
 
@@ -85,10 +87,13 @@ impl EngineInner {
     /// Creates a new [`EngineInner`] with the given [`Config`].
     pub fn new(config: &Config) -> Self {
         let engine_ident = EngineIdent::new();
+        let register_len = mem::size_of::<UntypedValue>();
+        let initial_len = DEFAULT_VALUE_STACK_LIMIT / register_len;
+        let maximum_len = 1024 * initial_len;
         Self {
             config: *config,
             code_map: CodeMap::default(),
-            stack: Stack::default(),
+            stack: Stack::new(initial_len, maximum_len),
             res: EngineResources::new(engine_ident),
         }
     }

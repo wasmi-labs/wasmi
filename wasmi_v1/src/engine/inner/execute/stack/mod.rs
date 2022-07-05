@@ -33,7 +33,7 @@ mod frames;
 mod values;
 
 /// The execution stack.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Stack {
     /// The value stack.
     entries: ValueStack,
@@ -42,6 +42,19 @@ pub struct Stack {
 }
 
 impl Stack {
+    /// Creates a new [`ValueStack`] with the given initial and maximum lengths.
+    ///
+    /// # Note
+    ///
+    /// The [`ValueStack`] will return a Wasm `StackOverflow` upon trying
+    /// to operate on more elements than the given maximum length.
+    pub fn new(initial_len: usize, maximum_len: usize) -> Self {
+        Self {
+            entries: ValueStack::new(initial_len, maximum_len),
+            frames: FrameStack::default(),
+        }
+    }
+
     /// Resets the [`Stack`] data entirely.
     fn reset(&mut self) {
         self.entries.clear();
@@ -60,7 +73,7 @@ impl Stack {
         &mut self,
         func: &WasmFuncEntity,
         initial_params: impl CallParams,
-    ) -> StackFrameRef {
+    ) -> Result<StackFrameRef, Trap> {
         self.reset();
 
         let len_regs = func.func_body().len_regs() as usize;
@@ -71,7 +84,7 @@ impl Stack {
             #params: {len_params}, #registers: {len_regs}",
         );
         let params = initial_params.feed_params();
-        let root_region = self.entries.extend_by(len_regs);
+        let root_region = self.entries.extend_by(len_regs)?;
         let root_frame = self
             .frames
             .push_frame(root_region, ExecRegisterSlice::empty(), func);
@@ -82,7 +95,7 @@ impl Stack {
             .for_each(|(param, arg)| {
                 *param = arg.into();
             });
-        root_frame
+        Ok(root_frame)
     }
 
     /// Finalizes the execution of the root [`StackFrame`].
@@ -144,7 +157,7 @@ impl Stack {
         results: ExecRegisterSlice,
         args: ExecProviderSlice,
         res: &EngineResources,
-    ) -> StackFrameRef {
+    ) -> Result<StackFrameRef, Trap> {
         debug_assert!(
             !self.frames.is_empty(),
             "the root stack frame must be on the call stack"
@@ -157,7 +170,7 @@ impl Stack {
             args.len(),
             len
         );
-        let callee_region = self.entries.extend_by(len);
+        let callee_region = self.entries.extend_by(len)?;
         let caller = self.frames.last_frame();
         let caller_region = caller.region;
         let frame_ref = self.frames.push_frame(callee_region, results, func);
@@ -167,7 +180,7 @@ impl Stack {
         args.iter().zip(params).for_each(|(arg, param)| {
             callee_regs.set(param, caller_regs.load_provider(res, *arg));
         });
-        frame_ref
+        Ok(frame_ref)
     }
 
     /// Returns the last Wasm [`StackFrame`] to its caller.
@@ -252,7 +265,7 @@ impl Stack {
         let max_inout = cmp::max(len_inputs, len_outputs);
         // Push registers for the host function parameters
         // and return values on the value stack.
-        let callee_region = self.entries.extend_by(max_inout);
+        let callee_region = self.entries.extend_by(max_inout)?;
         let caller = self.frames.last_frame();
         let (mut caller_regs, mut callee_regs) =
             self.entries.paired_frame_regs(caller.region, callee_region);

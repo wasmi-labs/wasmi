@@ -56,7 +56,7 @@ impl EngineInner {
         match func.as_internal(&ctx) {
             FuncEntityInternal::Wasm(wasm_func) => {
                 let signature = wasm_func.signature();
-                let frame = self.initialize_args(wasm_func, params);
+                let frame = self.initialize_args(wasm_func, params)?;
                 let returned = self.execute_frame(&mut ctx, frame)?;
                 Ok(self.return_results(signature, returned, results))
             }
@@ -73,7 +73,11 @@ impl EngineInner {
     /// This initializes the registers holding the parameters of the called
     /// root function.
     /// Registers for the local variables are initialized to zero.
-    fn initialize_args(&mut self, func: &WasmFuncEntity, params: impl CallParams) -> StackFrameRef {
+    fn initialize_args(
+        &mut self,
+        func: &WasmFuncEntity,
+        params: impl CallParams,
+    ) -> Result<StackFrameRef, Trap> {
         self.stack.init(func, params)
     }
 
@@ -120,7 +124,9 @@ impl EngineInner {
                 } => {
                     match callee.as_internal(&ctx) {
                         FuncEntityInternal::Wasm(wasm_func) => {
-                            frame = self.stack.call_wasm(wasm_func, results, params, &self.res);
+                            frame = self
+                                .stack
+                                .call_wasm(wasm_func, results, params, &self.res)?;
                         }
                         FuncEntityInternal::Host(host_func) => {
                             let host_func = host_func.clone();
