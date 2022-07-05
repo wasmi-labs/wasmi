@@ -245,7 +245,7 @@ impl Providers {
         let current_height = self.len();
         assert!(
             new_height <= current_height,
-            "tried to shrink the value stack of height {} to height {}",
+            "tried to invalidly shrink the value stack of height {} to height {}",
             current_height,
             new_height
         );
@@ -255,9 +255,9 @@ impl Providers {
                 error
             )
         });
-        for popped in self.providers.drain(new_height..) {
-            self.stacks.pop(&popped);
-        }
+        self.providers
+            .drain(new_height..)
+            .for_each(|popped| self.stacks.pop(&popped));
     }
 
     /// Returns the required number of registers for the constructed function.
