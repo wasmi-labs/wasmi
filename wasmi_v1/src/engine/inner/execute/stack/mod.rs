@@ -15,6 +15,8 @@ use crate::{
         ExecRegisterSlice,
         FuncBody,
         FuncParams,
+        DEFAULT_CALL_STACK_LIMIT,
+        DEFAULT_VALUE_STACK_LIMIT,
     },
     func::{HostFuncEntity, WasmFuncEntity},
     module::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
@@ -32,6 +34,29 @@ use wasmi_core::{Trap, UntypedValue};
 mod frames;
 mod values;
 
+/// The configured limits of the [`Stack`].
+#[derive(Debug, Copy, Clone)]
+pub struct StackLimits {
+    /// The initial number of stack registers that the [`Stack`] prepares.
+    pub initial_len: usize,
+    /// The maximum number of stack registers in use that the [`Stack`] allows.
+    pub maximum_len: usize,
+    /// The maximum number of nested calls that the [`Stack`] allows.
+    pub maximum_recursion_depth: usize,
+}
+
+impl Default for StackLimits {
+    fn default() -> Self {
+        let register_len = mem::size_of::<UntypedValue>();
+        let initial_len = DEFAULT_VALUE_STACK_LIMIT / register_len;
+        Self {
+            initial_len,
+            maximum_len: 1024 * initial_len,
+            maximum_recursion_depth: DEFAULT_CALL_STACK_LIMIT,
+        }
+    }
+}
+
 /// The execution stack.
 #[derive(Debug)]
 pub struct Stack {
@@ -41,6 +66,12 @@ pub struct Stack {
     frames: FrameStack,
 }
 
+impl Default for Stack {
+    fn default() -> Self {
+        Self::new(StackLimits::default())
+    }
+}
+
 impl Stack {
     /// Creates a new [`ValueStack`] with the given initial and maximum lengths.
     ///
@@ -48,10 +79,10 @@ impl Stack {
     ///
     /// The [`ValueStack`] will return a Wasm `StackOverflow` upon trying
     /// to operate on more elements than the given maximum length.
-    pub fn new(initial_len: usize, maximum_len: usize) -> Self {
+    pub fn new(limits: StackLimits) -> Self {
         Self {
-            entries: ValueStack::new(initial_len, maximum_len),
-            frames: FrameStack::default(),
+            entries: ValueStack::new(limits.initial_len, limits.maximum_len),
+            frames: FrameStack::new(limits.maximum_recursion_depth),
         }
     }
 
@@ -87,7 +118,7 @@ impl Stack {
         let root_region = self.entries.extend_by(len_regs)?;
         let root_frame = self
             .frames
-            .push_frame(root_region, ExecRegisterSlice::empty(), func);
+            .push_frame(root_region, ExecRegisterSlice::empty(), func)?;
         self.entries
             .frame_regs(root_region)
             .into_iter()
@@ -173,7 +204,7 @@ impl Stack {
         let callee_region = self.entries.extend_by(len)?;
         let caller = self.frames.last_frame();
         let caller_region = caller.region;
-        let frame_ref = self.frames.push_frame(callee_region, results, func);
+        let frame_ref = self.frames.push_frame(callee_region, results, func)?;
         let (caller_regs, mut callee_regs) =
             self.entries.paired_frame_regs(caller_region, callee_region);
         let params = ExecRegisterSlice::params(args.len() as u16);

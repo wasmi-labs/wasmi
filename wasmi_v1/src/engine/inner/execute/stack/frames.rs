@@ -5,11 +5,30 @@ use crate::{
     Memory,
     Table,
 };
+use wasmi_core::TrapCode;
 
 /// The call frame stack.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct FrameStack {
+    /// The stack of call frames.
     frames: Vec<StackFrame>,
+    /// The maximum depth of recursive or nested function calls.
+    ///
+    /// # Note
+    ///
+    /// Trying to push more frames onto the [`FrameStack`] results in
+    /// a [`TrapCode::StackOverflow`] trap at runtime.
+    maximum_recursion_depth: usize,
+}
+
+impl FrameStack {
+    /// Creates a new [`FrameStack`] with the given maximum recursion depth.
+    pub fn new(maximum_recursion_depth: usize) -> Self {
+        Self {
+            frames: Vec::default(),
+            maximum_recursion_depth,
+        }
+    }
 }
 
 /// A reference to a [`StackFrame`] on the [`Stack`].
@@ -115,8 +134,12 @@ impl FrameStack {
         region: FrameRegion,
         results: ExecRegisterSlice,
         wasm_func: &WasmFuncEntity,
-    ) -> StackFrameRef {
-        let start = self.len();
+    ) -> Result<StackFrameRef, TrapCode> {
+        let len = self.len();
+        if len == self.maximum_recursion_depth {
+            // println!("CALL STACKOVERFLOW");
+            return Err(TrapCode::StackOverflow);
+        }
         self.frames.push(StackFrame {
             region,
             results,
@@ -126,7 +149,7 @@ impl FrameStack {
             default_table: None,
             pc: 0,
         });
-        StackFrameRef(start)
+        Ok(StackFrameRef(len))
     }
 
     /// Pops the last [`StackFrame`] from the call frame stack.

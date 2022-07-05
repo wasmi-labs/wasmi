@@ -4,7 +4,7 @@ mod stack;
 #[cfg(test)]
 mod tests;
 
-pub use self::stack::Stack;
+pub use self::stack::{Stack, StackLimits};
 use self::{instrs::execute_frame, stack::StackFrameRef};
 use super::{super::ExecRegisterSlice, EngineInner};
 use crate::{
