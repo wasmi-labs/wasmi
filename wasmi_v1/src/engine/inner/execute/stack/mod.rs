@@ -28,7 +28,7 @@ use crate::{
 };
 #[cfg(test)]
 use core::fmt::{self, Display};
-use core::{cmp, slice};
+use core::{cmp, mem, slice};
 use wasmi_core::{Trap, UntypedValue};
 
 mod frames;
