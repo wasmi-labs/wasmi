@@ -110,7 +110,7 @@ impl EngineInner {
             .iter()
             .copied()
             .map(|provider| Self::compile_provider_impl(&mut res.const_pool, context, provider));
-        res.provider_slices.alloc(providers)
+        res.provider_pool.alloc(providers)
     }
 
     fn compile_inst_rr(

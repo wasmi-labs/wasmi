@@ -51,7 +51,7 @@ use crate::{
 use wasmi_core::{TrapCode, UntypedValue, ValueType, F32, F64};
 
 pub struct CompileContext<'a> {
-    reg_slices: &'a ProviderSliceArena,
+    provider_slices: &'a ProviderSliceArena,
     providers: &'a Providers,
 }
 
@@ -61,7 +61,7 @@ impl CompileContext<'_> {
     }
 
     pub fn resolve_provider_slice(&self, slice: IrProviderSlice) -> &[IrProvider] {
-        self.reg_slices.resolve(slice)
+        self.provider_slices.resolve(slice)
     }
 
     pub fn compile_register(&self, register: IrRegister) -> ExecRegister {

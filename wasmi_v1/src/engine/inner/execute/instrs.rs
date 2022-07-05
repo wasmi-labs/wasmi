@@ -160,7 +160,7 @@ impl<'engine, 'func1, 'func2, 'ctx, T> ExecContext<'engine, 'func1, 'func2, 'ctx
     /// If both slices do not have the same length.
     fn copy_many(&mut self, dst: ExecRegisterSlice, src: ExecProviderSlice) {
         debug_assert_eq!(dst.len(), src.len());
-        let src = self.res.provider_slices.resolve(src);
+        let src = self.res.provider_pool.resolve(src);
         dst.into_iter().zip(src).for_each(|(dst, src)| {
             let src = self.load_provider(*src);
             self.frame.regs.set(dst, src);

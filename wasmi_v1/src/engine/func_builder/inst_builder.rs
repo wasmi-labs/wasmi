@@ -259,7 +259,7 @@ impl InstructionsBuilder {
         providers: &Providers,
     ) -> FuncBody {
         let context = CompileContext {
-            reg_slices,
+            provider_slices: reg_slices,
             providers,
         };
         engine.compile(&context, self.insts.drain(..))

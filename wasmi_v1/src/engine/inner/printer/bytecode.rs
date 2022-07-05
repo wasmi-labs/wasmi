@@ -195,7 +195,7 @@ impl Display for DisplayExecProviderSlice<'_> {
             DisplaySequence::new(
                 Enclosure::no_single(EnclosureStyle::Bracket),
                 self.res
-                    .provider_slices
+                    .provider_pool
                     .resolve(self.slice)
                     .iter()
                     .copied()

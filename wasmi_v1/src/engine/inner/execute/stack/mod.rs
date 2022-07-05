@@ -152,7 +152,7 @@ impl Stack {
             "only root stack frame must be on the call stack"
         );
         let result_types = res.func_types.resolve_func_type(signature).results();
-        let returned = res.provider_slices.resolve(returned);
+        let returned = res.provider_pool.resolve(returned);
         debug_assert_eq!(
             returned.len(),
             results.len_results(),
@@ -194,7 +194,7 @@ impl Stack {
             "the root stack frame must be on the call stack"
         );
         let len = func.func_body().len_regs() as usize;
-        let args = res.provider_slices.resolve(args);
+        let args = res.provider_pool.resolve(args);
         debug_assert!(
             args.len() <= len,
             "encountered more call arguments than register in function frame: #params {}, #registers {}",
@@ -242,7 +242,7 @@ impl Stack {
             // can be used now to properly finish the Wasm execution.
             return None;
         }
-        let returned = res.provider_slices.resolve(returned);
+        let returned = res.provider_pool.resolve(returned);
         let callee = self.frames.pop_frame();
         let caller = self.frames.last_frame();
         let results = callee.results;
@@ -301,7 +301,7 @@ impl Stack {
         let (mut caller_regs, mut callee_regs) =
             self.entries.paired_frame_regs(caller.region, callee_region);
         // Initialize registers that act as host function parameters.
-        let args = res.provider_slices.resolve(args);
+        let args = res.provider_pool.resolve(args);
         let params = ExecRegisterSlice::params(len_inputs as u16);
         args.iter().zip(params).for_each(|(param, host_param)| {
             let param_value = caller_regs.load_provider(res, *param);

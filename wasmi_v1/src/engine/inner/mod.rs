@@ -45,7 +45,7 @@ pub struct EngineResources {
     /// The engine deduplicates function types to make the equality
     /// comparison very fast. This helps to speed up indirect calls.
     func_types: FuncTypeRegistry,
-    provider_slices: DedupProviderSliceArena,
+    provider_pool: DedupProviderSliceArena,
     const_pool: ConstPool,
 }
 
@@ -53,7 +53,7 @@ impl EngineResources {
     fn new(engine_ident: EngineIdent) -> Self {
         Self {
             func_types: FuncTypeRegistry::new(engine_ident),
-            provider_slices: DedupProviderSliceArena::default(),
+            provider_pool: DedupProviderSliceArena::default(),
             const_pool: ConstPool::default(),
         }
     }
@@ -147,7 +147,7 @@ impl EngineInner {
         I: IntoIterator<Item = ExecProvider>,
         I::IntoIter: ExactSizeIterator,
     {
-        self.res.provider_slices.alloc(providers)
+        self.res.provider_pool.alloc(providers)
     }
 
     pub fn alloc_const<T>(&mut self, value: T) -> ConstRef
