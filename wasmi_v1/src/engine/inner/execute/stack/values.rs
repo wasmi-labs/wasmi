@@ -50,7 +50,6 @@ impl ValueStack {
             .checked_add(delta)
             .filter(|&new_len| new_len <= self.maximum_len)
             .ok_or(TrapCode::StackOverflow)?;
-        // println!("extend_by({delta}): {len} -> {new_len}");
         self.values.resize_with(new_len, Default::default);
         Ok(FrameRegion {
             start: len,
