@@ -317,7 +317,7 @@ impl<'parser> FunctionBuilder<'parser> {
         } else {
             let frame = self.control_frames.nth_back(relative_depth);
             let br_dst = frame.branch_destination();
-            let results = frame.results();
+            let results = frame.branch_results();
             let instr = self.try_resolve_label(br_dst, reloc_provider);
             let target = Target::from(instr);
             let returned = self.reg_slices.alloc(
@@ -428,11 +428,15 @@ impl<'parser> FunctionBuilder<'parser> {
         if self.is_reachable() {
             let header = self.inst_builder.new_label();
             self.inst_builder.resolve_label(header);
-            let results = self
+            let branch_results = self
                 .providers
                 .peek_dynamic_many(block_type.len_params(&self.engine) as usize);
+            let end_results = self
+                .providers
+                .peek_dynamic_many(block_type.len_results(&self.engine) as usize);
             self.control_frames.push_frame(LoopControlFrame::new(
-                results,
+                branch_results,
+                end_results,
                 block_type,
                 header,
                 stack_height,
@@ -572,7 +576,7 @@ impl<'parser> FunctionBuilder<'parser> {
         if then_reachable {
             // Return providers on the stack to where the `if` block expects
             // its results in case the `if` block has return values.
-            let results = if_frame.results();
+            let results = if_frame.branch_results();
             let returned = self.providers.pop_n(results.len() as usize);
             if else_reachable {
                 // Case: both `then` and `else` are reachable
@@ -619,7 +623,7 @@ impl<'parser> FunctionBuilder<'parser> {
         if self.is_reachable() && self.control_frames.len() != 1 {
             // Write back results to where the parent control flow frame
             // is expecting them.
-            let results = frame.results();
+            let results = frame.end_results();
             let returned = self.providers.peek_n(results.len() as usize);
             results
                 .into_iter()
