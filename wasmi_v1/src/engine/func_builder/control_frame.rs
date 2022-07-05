@@ -31,7 +31,20 @@ impl BlockControlFrame {
     }
 
     /// Returns the [`IrRegisterSlice`] to put the results of the [`BlockControlFrame`].
-    pub fn results(&self) -> IrRegisterSlice {
+    ///
+    /// # Note
+    ///
+    /// This is used when branching to this [`BlockControlFrame`].
+    pub fn branch_results(&self) -> IrRegisterSlice {
+        self.results
+    }
+
+    /// Returns the [`IrRegisterSlice`] to put the results of the [`BlockControlFrame`].
+    ///
+    /// # Note
+    ///
+    /// This is used when ending this [`BlockControlFrame`].
+    pub fn end_results(&self) -> IrRegisterSlice {
         self.results
     }
 
@@ -64,7 +77,9 @@ impl BlockControlFrame {
 #[derive(Debug, Copy, Clone)]
 pub struct LoopControlFrame {
     /// The registers holding the results of the [`LoopControlFrame`].
-    results: IrRegisterSlice,
+    branch_results: IrRegisterSlice,
+    /// The registers holding the results of the [`LoopControlFrame`].
+    end_results: IrRegisterSlice,
     /// Label representing the head of the [`LoopControlFrame`].
     head_label: LabelIdx,
     /// The type of the [`LoopControlFrame`].
@@ -76,13 +91,15 @@ pub struct LoopControlFrame {
 impl LoopControlFrame {
     /// Creates a new [`LoopControlFrame`].
     pub fn new(
-        results: IrRegisterSlice,
+        branch_results: IrRegisterSlice,
+        end_results: IrRegisterSlice,
         block_type: BlockType,
         head_label: LabelIdx,
         stack_height: u32,
     ) -> Self {
         Self {
-            results,
+            branch_results,
+            end_results,
             block_type,
             head_label,
             stack_height,
@@ -90,8 +107,21 @@ impl LoopControlFrame {
     }
 
     /// Returns the [`IrRegisterSlice`] to put the results of the [`LoopControlFrame`].
-    pub fn results(&self) -> IrRegisterSlice {
-        self.results
+    ///
+    /// # Note
+    ///
+    /// This is used when branching to this [`LoopControlFrame`].
+    pub fn branch_results(&self) -> IrRegisterSlice {
+        self.branch_results
+    }
+
+    /// Returns the [`IrRegisterSlice`] to put the results of the [`LoopControlFrame`].
+    ///
+    /// # Note
+    ///
+    /// This is used when ending this [`LoopControlFrame`].
+    pub fn end_results(&self) -> IrRegisterSlice {
+        self.end_results
     }
 
     /// Returns the label for the branch destination of the [`LoopControlFrame`].
@@ -211,7 +241,20 @@ impl IfControlFrame {
     }
 
     /// Returns the [`IrRegisterSlice`] to put the results of the [`IfControlFrame`].
-    pub fn results(&self) -> IrRegisterSlice {
+    ///
+    /// # Note
+    ///
+    /// This is used when branching to this [`IfControlFrame`].
+    pub fn branch_results(&self) -> IrRegisterSlice {
+        self.results
+    }
+
+    /// Returns the [`IrRegisterSlice`] to put the results of the [`IfControlFrame`].
+    ///
+    /// # Note
+    ///
+    /// This is used when ending this [`IfControlFrame`].
+    pub fn end_results(&self) -> IrRegisterSlice {
         self.results
     }
 
@@ -447,14 +490,28 @@ impl ControlFrame {
     }
 
     /// Returns the [`IrRegisterSlice`] for where to put
-    /// the results of the control flow frame.
-    pub fn results(&self) -> IrRegisterSlice {
+    /// the results of the control flow frame after a `branch` to it.
+    pub fn branch_results(&self) -> IrRegisterSlice {
         match self {
-            ControlFrame::Block(frame) => frame.results(),
-            ControlFrame::Loop(frame) => frame.results(),
-            ControlFrame::If(frame) => frame.results(),
+            ControlFrame::Block(frame) => frame.branch_results(),
+            ControlFrame::Loop(frame) => frame.branch_results(),
+            ControlFrame::If(frame) => frame.branch_results(),
             ControlFrame::Unreachable(frame) => panic!(
-                "tried to get `results` for an unreachable control frame: {:?}",
+                "tried to get `branch_results` for an unreachable control frame: {:?}",
+                frame
+            ),
+        }
+    }
+
+    /// Returns the [`IrRegisterSlice`] for where to put
+    /// the results of the control flow frame at the `end`.
+    pub fn end_results(&self) -> IrRegisterSlice {
+        match self {
+            ControlFrame::Block(frame) => frame.end_results(),
+            ControlFrame::Loop(frame) => frame.end_results(),
+            ControlFrame::If(frame) => frame.end_results(),
+            ControlFrame::Unreachable(frame) => panic!(
+                "tried to get `end_results` for an unreachable control frame: {:?}",
                 frame
             ),
         }
