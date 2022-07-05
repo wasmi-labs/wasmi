@@ -1719,6 +1719,12 @@ impl<'parser> FunctionBuilder<'parser> {
         exec_op: fn(UntypedValue, UntypedValue) -> UntypedValue,
     ) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
+            let copy_result = match builder.providers.peek2() {
+                (IrProvider::Immediate(_), IrProvider::Register(_)) => {
+                    Some(builder.providers.peek_dynamic())
+                }
+                _ => None,
+            };
             let (lhs, rhs) = builder.providers.pop2();
             match (lhs, rhs) {
                 (IrProvider::Register(lhs), rhs) => {
@@ -1731,11 +1737,12 @@ impl<'parser> FunctionBuilder<'parser> {
                     // In order to be able to represent the constant left-hand side
                     // operand for the instruction we need to `copy` it into a register
                     // first.
+                    let copy_result = copy_result.expect("register for intermediate copy");
                     let result = builder.providers.push_dynamic();
-                    builder.translate_copy(result, lhs)?;
+                    builder.translate_copy(copy_result, lhs)?;
                     builder
                         .inst_builder
-                        .push_inst(make_op(result, result, rhs.into()));
+                        .push_inst(make_op(result, copy_result, rhs.into()));
                 }
                 (IrProvider::Immediate(lhs), IrProvider::Immediate(rhs)) => {
                     // Note: both operands are constant so we can evaluate the result.
@@ -1756,6 +1763,12 @@ impl<'parser> FunctionBuilder<'parser> {
         exec_op: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
+            let copy_result = match builder.providers.peek2() {
+                (IrProvider::Immediate(_), IrProvider::Register(_)) => {
+                    Some(builder.providers.peek_dynamic())
+                }
+                _ => None,
+            };
             let (lhs, rhs) = builder.providers.pop2();
             match (lhs, rhs) {
                 (IrProvider::Register(lhs), rhs) => {
@@ -1768,11 +1781,12 @@ impl<'parser> FunctionBuilder<'parser> {
                     // In order to be able to represent the constant left-hand side
                     // operand for the instruction we need to `copy` it into a register
                     // first.
+                    let copy_result = copy_result.expect("register for intermediate copy");
                     let result = builder.providers.push_dynamic();
-                    builder.translate_copy(result, lhs)?;
+                    builder.translate_copy(copy_result, lhs)?;
                     builder
                         .inst_builder
-                        .push_inst(make_op(result, result, rhs.into()));
+                        .push_inst(make_op(result, copy_result, rhs.into()));
                 }
                 (IrProvider::Immediate(lhs), IrProvider::Immediate(rhs)) => {
                     // Note: both operands are constant so we can evaluate the result.

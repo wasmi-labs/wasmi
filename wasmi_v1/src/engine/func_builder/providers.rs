@@ -125,6 +125,10 @@ impl Providers {
         register
     }
 
+    pub fn peek_dynamic(&mut self) -> IrRegister {
+        self.stacks.bump_max_dynamic(1)
+    }
+
     pub fn peek_dynamic_many(&mut self, amount: usize) -> IrRegisterSlice {
         let len = u16::try_from(amount).unwrap_or_else(|error| {
             panic!("tried to push too many dynamic registers ({amount}): {error}")
@@ -186,6 +190,14 @@ impl Providers {
             self.stacks.pop(provider);
         }
         self.providers.drain(min_index..)
+    }
+
+    pub fn peek2(&self) -> (IrProvider, IrProvider) {
+        let len = self.len() as usize;
+        assert!(len >= 2);
+        let lhs = self.providers[len - 2];
+        let rhs = self.providers[len - 1];
+        (lhs, rhs)
     }
 
     /// Returns a shared slice of the last `depth` providers on the stack.
