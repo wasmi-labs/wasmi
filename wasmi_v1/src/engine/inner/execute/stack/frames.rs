@@ -137,7 +137,6 @@ impl FrameStack {
     ) -> Result<StackFrameRef, TrapCode> {
         let len = self.len();
         if len == self.maximum_recursion_depth {
-            // println!("CALL STACKOVERFLOW");
             return Err(TrapCode::StackOverflow);
         }
         self.frames.push(StackFrame {
