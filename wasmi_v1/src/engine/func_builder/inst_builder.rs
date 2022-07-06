@@ -6,6 +6,8 @@ use super::{
     Engine,
     FuncBody,
     IrInstruction,
+    IrProvider,
+    IrRegister,
     ProviderSliceArena,
 };
 use crate::arena::Index;
@@ -207,6 +209,26 @@ impl InstructionsBuilder {
         let idx = self.current_pc();
         self.insts.push(inst);
         idx
+    }
+
+    /// Pushes a `copy` instruction to the [`InstructionsBuilder`].
+    ///
+    /// Does not push a `copy` instruction if the `result` and `input`
+    /// registers are equal and thereby the `copy` would be a no-op. In
+    /// this case this function returns `None`.
+    ///
+    /// Otherwise this function returns a reference to the created `copy`
+    /// instruction.
+    pub fn push_copy_instr(&mut self, result: IrRegister, input: IrProvider) -> Option<Instr> {
+        if let IrProvider::Register(input) = input {
+            if result == input {
+                // Both `result` and `input` registers are the same
+                // so the `copy` instruction would be a no-op.
+                // Therefore we can avoid serializing it.
+                return None;
+            }
+        }
+        Some(self.push_inst(IrInstruction::Copy { result, input }))
     }
 
     /// Allows to patch the branch target of branch instructions.

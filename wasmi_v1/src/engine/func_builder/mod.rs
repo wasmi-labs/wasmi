@@ -444,10 +444,7 @@ impl<'parser> FunctionBuilder<'parser> {
                     // TODO: in case of multiple params we should replace
                     //       multiple copies of single values with a single
                     //       copy of multiple values.
-                    self.inst_builder.push_inst(IrInstruction::Copy {
-                        result: param,
-                        input: arg,
-                    });
+                    self.inst_builder.push_copy_instr(param, arg);
                 });
             self.providers.push_dynamic_many(len_params);
             // After putting all required copy intsructions we can now
@@ -616,8 +613,7 @@ impl<'parser> FunctionBuilder<'parser> {
             } else {
                 // Case: only `then` is reachable
                 for (result, input) in results.into_iter().zip(returned) {
-                    self.inst_builder
-                        .push_inst(Instruction::Copy { result, input });
+                    self.inst_builder.push_copy_instr(result, input);
                 }
             }
         }
@@ -649,13 +645,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 .into_iter()
                 .zip(returned)
                 .for_each(|(result, &input)| {
-                    if let IrProvider::Register(input) = input {
-                        if result == input {
-                            return;
-                        }
-                    }
-                    self.inst_builder
-                        .push_inst(Instruction::Copy { result, input });
+                    self.inst_builder.push_copy_instr(result, input);
                 })
         }
         if let ControlFrame::If(if_frame) = &frame {
