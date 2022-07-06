@@ -26,9 +26,12 @@ use crate::{
     Memory,
     Table,
 };
-#[cfg(test)]
-use core::fmt::{self, Display};
-use core::{cmp, mem, slice};
+use core::{
+    cmp,
+    fmt::{self, Display},
+    mem,
+    slice,
+};
 use wasmi_core::{Trap, UntypedValue};
 
 mod frames;
@@ -429,7 +432,6 @@ pub struct StackFrameRegisters<'a> {
     regs: &'a mut [UntypedValue],
 }
 
-#[cfg(test)]
 impl<'a> Display for StackFrameRegisters<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "[")?;
