@@ -426,14 +426,34 @@ impl<'parser> FunctionBuilder<'parser> {
     pub fn translate_loop(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
         let stack_height = self.frame_stack_height(block_type);
         if self.is_reachable() {
-            let header = self.inst_builder.new_label();
-            self.inst_builder.resolve_label(header);
             let branch_results = self
                 .providers
                 .peek_dynamic_many(block_type.len_params(&self.engine) as usize);
             let end_results = self
                 .providers
                 .peek_dynamic_many(block_type.len_results(&self.engine) as usize);
+            // Copy over the initial loop arguments from the provider stack.
+            // Unlike with other blocks we do have to do this since loop headers
+            // can be jumped to again for which they always need their inputs
+            // in their expected registers.
+            let len_params = branch_results.len() as usize;
+            self.providers
+                .pop_n(len_params)
+                .zip(branch_results)
+                .for_each(|(arg, param)| {
+                    // TODO: in case of multiple params we should replace
+                    //       multiple copies of single values with a single
+                    //       copy of multiple values.
+                    self.inst_builder.push_inst(IrInstruction::Copy {
+                        result: param,
+                        input: arg,
+                    });
+                });
+            self.providers.push_dynamic_many(len_params);
+            // After putting all required copy intsructions we can now
+            // resolve the loop header.
+            let header = self.inst_builder.new_label();
+            self.inst_builder.resolve_label(header);
             self.control_frames.push_frame(LoopControlFrame::new(
                 branch_results,
                 end_results,
