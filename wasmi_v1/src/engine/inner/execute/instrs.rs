@@ -19,7 +19,6 @@ use crate::{
     StoreContextMut,
     Table,
 };
-use bytecode::ExecInstruction;
 use core::cmp;
 use wasmi_core::{
     memory_units::Pages,
@@ -578,15 +577,7 @@ impl<'engine, 'func1, 'func2, 'ctx, T> VisitInstruction<ExecuteTypes>
         // a `br` or a `return` instruction as demanded by the `wasmi` bytecode.
         let target_pc = *self.frame.pc + normalized_index + 1;
         let target = unsafe { self.func_body.get_release_unchecked(target_pc) };
-        match target {
-            ExecInstruction::Br {
-                target,
-                results,
-                returned,
-            } => self.visit_br(*target, *results, *returned),
-            ExecInstruction::Return { results } => self.visit_return(*results),
-            _ => unreachable!("invalid br_table target"),
-        }
+        visit_instr(self, *target)
     }
 
     fn visit_trap(&mut self, trap_code: TrapCode) -> Self::Outcome {
