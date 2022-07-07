@@ -2,7 +2,7 @@ use super::{stack::StackFrameView, CallOutcome};
 use crate::{
     engine::{
         bytecode::{self, visit_instr, ExecRegister, ExecuteTypes, VisitInstruction},
-        code_map::{CodeMap, ResolvedFuncBody},
+        code_map::CodeMap,
         inner::EngineResources,
         ExecProvider,
         ExecProviderSlice,
@@ -19,7 +19,6 @@ use crate::{
     StoreContextMut,
     Table,
 };
-use bytecode::ExecInstruction;
 use core::cmp;
 use wasmi_core::{
     memory_units::Pages,
@@ -71,10 +70,10 @@ pub enum ExecOutcome {
 ///
 /// If resources are missing unexpectedly.
 /// For example, a linear memory instance, global variable, etc.
-pub(super) fn execute_frame<'engine>(
+pub(super) fn execute_frame(
     mut ctx: impl AsContextMut,
-    code_map: &'engine CodeMap,
-    res: &'engine EngineResources,
+    code_map: &CodeMap,
+    res: &EngineResources,
     frame: &mut StackFrameView,
 ) -> Result<CallOutcome, Trap> {
     let func_body = code_map.resolve(frame.func_body);
@@ -82,7 +81,6 @@ pub(super) fn execute_frame<'engine>(
         frame,
         res,
         ctx: ctx.as_context_mut(),
-        func_body,
     };
     loop {
         // # Safety
@@ -128,8 +126,6 @@ pub struct ExecContext<'engine, 'func1, 'func2, 'ctx, T> {
     res: &'engine EngineResources,
     /// The associated store context.
     ctx: StoreContextMut<'ctx, T>,
-    /// The instructions of the executed function.
-    func_body: ResolvedFuncBody<'engine>,
 }
 
 impl<'engine, 'func1, 'func2, 'ctx, T> ExecContext<'engine, 'func1, 'func2, 'ctx, T> {
@@ -576,17 +572,8 @@ impl<'engine, 'func1, 'func2, 'ctx, T> VisitInstruction<ExecuteTypes>
         let normalized_index = cmp::min(index, max_index);
         // Simply branch to the selected instruction which is going to be either
         // a `br` or a `return` instruction as demanded by the `wasmi` bytecode.
-        let target_pc = *self.frame.pc + normalized_index + 1;
-        let target = unsafe { self.func_body.get_release_unchecked(target_pc) };
-        match target {
-            ExecInstruction::Br {
-                target,
-                results,
-                returned,
-            } => self.visit_br(*target, *results, *returned),
-            ExecInstruction::Return { results } => self.visit_return(*results),
-            _ => unreachable!("invalid br_table target"),
-        }
+        let next_pc = *self.frame.pc + normalized_index + 1;
+        Ok(ExecOutcome::Branch { next_pc })
     }
 
     fn visit_trap(&mut self, trap_code: TrapCode) -> Self::Outcome {
