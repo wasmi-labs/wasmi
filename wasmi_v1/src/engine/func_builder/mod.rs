@@ -437,15 +437,11 @@ impl<'parser> FunctionBuilder<'parser> {
             // can be jumped to again for which they always need their inputs
             // in their expected registers.
             let len_params = branch_results.len() as usize;
-            self.providers
-                .pop_n(len_params)
-                .zip(branch_results)
-                .for_each(|(arg, param)| {
-                    // TODO: in case of multiple params we should replace
-                    //       multiple copies of single values with a single
-                    //       copy of multiple values.
-                    self.inst_builder.push_copy_instr(param, arg);
-                });
+            self.inst_builder.push_copy_many_instr(
+                &mut self.reg_slices,
+                branch_results,
+                self.providers.pop_n(len_params).as_slice(),
+            );
             self.providers.push_dynamic_many(len_params);
             // After putting all required copy intsructions we can now
             // resolve the loop header.
@@ -612,9 +608,11 @@ impl<'parser> FunctionBuilder<'parser> {
                 }
             } else {
                 // Case: only `then` is reachable
-                for (result, input) in results.into_iter().zip(returned) {
-                    self.inst_builder.push_copy_instr(result, input);
-                }
+                self.inst_builder.push_copy_many_instr(
+                    &mut self.reg_slices,
+                    results,
+                    returned.as_slice(),
+                );
             }
         }
         if else_reachable {
@@ -641,12 +639,8 @@ impl<'parser> FunctionBuilder<'parser> {
             // is expecting them.
             let results = frame.end_results();
             let returned = self.providers.peek_n(results.len() as usize);
-            results
-                .into_iter()
-                .zip(returned)
-                .for_each(|(result, &input)| {
-                    self.inst_builder.push_copy_instr(result, input);
-                })
+            self.inst_builder
+                .push_copy_many_instr(&mut self.reg_slices, results, returned);
         }
         if let ControlFrame::If(if_frame) = &frame {
             // At this point we can resolve the `Else` label.

@@ -184,7 +184,7 @@ where
         /// The parameters of the indirect function call.
         params: T::ProviderSlice,
     },
-    /// Copies the `value` into the `result`.
+    /// Copies the `input` into the `result`.
     ///
     /// # Note
     ///
@@ -198,6 +198,26 @@ where
         result: T::Register,
         /// The input register or immediate value to copy.
         input: T::Provider,
+    },
+    /// Copies many values from `inputs` into `results`.
+    ///
+    /// # Note
+    ///
+    /// This instruction is a more efficient version of the `Copy` instruction
+    /// in cases where many values need to be copied around. This can for
+    /// example happen with the Wasm `multi-value` proposal in certain
+    /// scenarios.
+    ///
+    /// This instruction does not correspond to any Wasm instruction directly.
+    /// However, due to the way we translate Wasm bytecode into `wasmi` bytecode
+    /// we sometimes are required to insert a few copy instructions.
+    /// For example with those copy instructions we can manipulate the
+    /// emulation stack in cases where the stack becomes polymorphic.
+    CopyMany {
+        /// The registers where the copies will be stored.
+        results: T::RegisterSlice,
+        /// The input registers or immediate values to copy.
+        inputs: T::ProviderSlice,
     },
     /// Equivalent to the Wasm `select` instruction.
     Select {

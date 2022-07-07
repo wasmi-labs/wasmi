@@ -24,9 +24,9 @@ impl IrInstruction {
             | Self::Trap { .. }
             | Self::Return { .. } => None,
             Self::Call { results, .. } | Self::CallIndirect { results, .. } => results.single_mut(),
-            Self::Copy { result, .. }
-            | Self::Select { result, .. }
-            | Self::GlobalGet { result, .. } => Some(result),
+            Self::Copy { result, .. } => Some(result),
+            Self::CopyMany { results, .. } => results.single_mut(),
+            Self::Select { result, .. } | Self::GlobalGet { result, .. } => Some(result),
             Self::GlobalSet { .. } => None,
             Self::I32Load { result, .. }
             | Self::I64Load { result, .. }

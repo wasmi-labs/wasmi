@@ -304,6 +304,12 @@ impl<T> Display for DisplayExecInstruction<'_, '_, T> {
                     DisplayExecProvider::new(res, input),
                 )
             }
+            Instr::CopyMany { results, inputs } => {
+                writeln!(f, "{} <- {}",
+                    DisplayExecRegisterSlice::from(results),
+                    DisplayExecProviderSlice::new(res, inputs),
+                )
+            }
             Instr::Select {
                 result,
                 condition,

@@ -654,6 +654,15 @@ impl<'engine, 'func1, 'func2, 'ctx, T> VisitInstruction<ExecuteTypes>
         self.next_instr()
     }
 
+    fn visit_copy_many(
+        &mut self,
+        results: <ExecuteTypes as InstructionTypes>::RegisterSlice,
+        inputs: <ExecuteTypes as InstructionTypes>::ProviderSlice,
+    ) -> Self::Outcome {
+        self.copy_many(results, inputs);
+        self.next_instr()
+    }
+
     fn visit_select(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,

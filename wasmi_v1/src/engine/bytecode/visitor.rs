@@ -49,6 +49,7 @@ where
             params,
         } => visitor.visit_call_indirect(func_type_idx, results, index, params),
         Instr::Copy { result, input } => visitor.visit_copy(result, input),
+        Instr::CopyMany { results, inputs } => visitor.visit_copy_many(results, inputs),
         Instr::Select {
             result,
             condition,
@@ -365,6 +366,13 @@ where
         &mut self,
         result: <T as InstructionTypes>::Register,
         input: <T as InstructionTypes>::Provider,
+    ) -> Self::Outcome;
+
+    /// Visits the `wasmi` `copy_many` instruction.
+    fn visit_copy_many(
+        &mut self,
+        results: <T as InstructionTypes>::RegisterSlice,
+        inputs: <T as InstructionTypes>::ProviderSlice,
     ) -> Self::Outcome;
 
     /// Visits the `wasmi` `select` instruction.

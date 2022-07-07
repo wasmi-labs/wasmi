@@ -1,6 +1,6 @@
 use super::LocalsRegistry;
 use alloc::vec::Drain;
-use core::cmp::max;
+use core::{cmp::max, ops::Range};
 use wasmi_core::{UntypedValue, ValueType};
 
 /// A stack of provided inputs for constructed instructions.
@@ -336,6 +336,21 @@ pub struct IrRegisterSlice {
     len: u16,
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_subslice() {
+        assert_eq!(
+            IrRegisterSlice::new(IrRegister::Dynamic(0), 2)
+                .sub_slice(0..1)
+                .unwrap(),
+            IrRegisterSlice::new(IrRegister::Dynamic(0), 1),
+        );
+    }
+}
+
 impl IrRegisterSlice {
     /// TODO: remove again
     pub fn empty() -> Self {
@@ -343,6 +358,32 @@ impl IrRegisterSlice {
             start: IrRegister::Local(0),
             len: 0,
         }
+    }
+
+    /// Creates an [`IrRegisterSlice`] that is a sub slice of `self`.
+    ///
+    /// Returns `None` if the range is out of bounds.
+    pub fn sub_slice(self, range: Range<usize>) -> Option<Self> {
+        let start = self.first().unwrap_or(IrRegister::Dynamic(0));
+        let len = self.len() as usize;
+        println!("IrRegisterSlice::sub_slice len = {len}");
+        println!("IrRegisterSlice::sub_slice range.end = {}", range.end);
+        if len < range.end {
+            // The subslice is out of bounds of the original slice.
+            println!("IrRegisterSlice::sub_slice out of bounds");
+            return None;
+        }
+        let new_start = start.offset(range.start);
+        let new_len = range.len();
+        if len < new_len {
+            // Subslices must have a length less-than or equal to the original.
+            println!("IrRegisterSlice::sub_slice invalid length");
+            return None;
+        }
+        Some(Self {
+            start: new_start,
+            len: new_len as u16,
+        })
     }
 
     /// Creates a new register slice.
@@ -423,7 +464,7 @@ impl Iterator for IrRegisterSliceIter {
 }
 
 /// A provided input for instruction construction.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum IrProvider {
     /// The input is stored in a register.
     Register(IrRegister),

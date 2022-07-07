@@ -274,6 +274,12 @@ impl EngineInner {
             Instruction::Copy { result, input } => {
                 Self::compile_inst_rp(res, context, result, input, unary_op!(Copy))
             }
+            Instruction::CopyMany { results, inputs } => {
+                let results = Self::compile_register_slice(context, results);
+                let inputs = Self::compile_provider_slice(res, context, inputs);
+                ExecInstruction::CopyMany { results, inputs }
+            }
+
             Instruction::Select {
                 result,
                 condition,
