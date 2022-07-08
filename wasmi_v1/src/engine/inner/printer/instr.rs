@@ -172,7 +172,7 @@ impl<'ctx, 'engine, T> DisplayExecInstruction<'ctx, 'engine, T> {
     ) -> fmt::Result {
         writeln!(
             f,
-            "{name} {} <- mem[{}+{}]",
+            "{} <- {name} mem[{}+{}]",
             DisplayExecRegister::from(result),
             DisplayExecRegister::from(ptr),
             offset.into_inner(),
