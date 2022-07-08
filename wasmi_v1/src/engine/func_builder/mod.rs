@@ -48,6 +48,7 @@ use crate::{
     FuncType,
     ModuleError,
 };
+use core::mem;
 use wasmi_core::{TrapCode, UntypedValue, ValueType, F32, F64};
 
 pub struct CompileContext<'a> {
@@ -155,6 +156,13 @@ pub struct FunctionBuilder<'parser> {
     /// Visiting the Wasm `Else` or `End` control flow operator resets
     /// reachability to `true` again.
     reachable: bool,
+    /// Allows `local.set` to override the `result` register of the last
+    /// `wasmi` instruction.
+    /// This optimization may only be applied if the `local.set` immediately
+    /// follow the instruction of which the `result` register shall be replaced
+    /// and must not be applied if for example a `i32.const` or similar was
+    /// in between.
+    allow_set_local_override: bool,
 }
 
 impl<'parser> FunctionBuilder<'parser> {
@@ -181,7 +189,13 @@ impl<'parser> FunctionBuilder<'parser> {
             reachable: true,
             providers,
             reg_slices,
+            allow_set_local_override: false,
         }
+    }
+
+    /// Updates `allow_set_local_override` to `allow` and returns its old value.
+    fn update_allow_set_local_override(&mut self, allow: bool) -> bool {
+        mem::replace(&mut self.allow_set_local_override, allow)
     }
 
     /// Registers the `block` control frame surrounding the entire function body.
@@ -364,8 +378,9 @@ pub enum AquiredTarget {
 impl<'parser> FunctionBuilder<'parser> {
     /// Translates a Wasm `unreachable` instruction.
     pub fn translate_unreachable(&mut self) -> Result<(), ModuleError> {
+        self.update_allow_set_local_override(false);
         self.translate_if_reachable(|builder| {
-            builder.inst_builder.push_inst(Instruction::Trap {
+            builder.push_instr(Instruction::Trap {
                 trap_code: TrapCode::Unreachable,
             });
             builder.reachable = false;
@@ -400,6 +415,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translates a Wasm `block` control flow operator.
     pub fn translate_block(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
+        self.update_allow_set_local_override(false);
         let stack_height = self.frame_stack_height(block_type);
         if self.is_reachable() {
             let end_label = self.inst_builder.new_label();
@@ -424,6 +440,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translates a Wasm `loop` control flow operator.
     pub fn translate_loop(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
+        self.update_allow_set_local_override(false);
         let stack_height = self.frame_stack_height(block_type);
         if self.is_reachable() {
             let branch_results = self
@@ -466,6 +483,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translates a Wasm `if` control flow operator.
     pub fn translate_if(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
+        self.update_allow_set_local_override(false);
         if self.is_reachable() {
             let condition = self.providers.pop();
             let stack_height = self.frame_stack_height(block_type);
@@ -500,7 +518,7 @@ impl<'parser> FunctionBuilder<'parser> {
                     let dst_pc =
                         self.try_resolve_label(else_label, |pc| Reloc::Br { inst_idx: pc });
                     let branch_target = Target::from(dst_pc);
-                    self.inst_builder.push_inst(Instruction::BrEqz {
+                    self.push_instr(Instruction::BrEqz {
                         target: branch_target,
                         condition,
                         results: IrRegisterSlice::empty(), // TODO: proper inputs
@@ -559,6 +577,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translates a Wasm `else` control flow operator.
     pub fn translate_else(&mut self) -> Result<(), ModuleError> {
+        self.update_allow_set_local_override(false);
         let mut if_frame = match self.control_frames.pop_frame() {
             ControlFrame::If(if_frame) => if_frame,
             ControlFrame::Unreachable(frame) if matches!(frame.kind(), ControlFrameKind::If) => {
@@ -597,7 +616,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 let dst_pc =
                     self.try_resolve_label(if_frame.end_label(), |pc| Reloc::Br { inst_idx: pc });
                 let target = Target::from(dst_pc);
-                self.inst_builder.push_inst(Instruction::Br {
+                self.push_instr(Instruction::Br {
                     target,
                     results,
                     returned,
@@ -631,6 +650,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translates a Wasm `end` control flow operator.
     pub fn translate_end(&mut self) -> Result<(), ModuleError> {
+        self.update_allow_set_local_override(false);
         let frame = self.control_frames.last();
 
         match frame {
@@ -698,6 +718,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translates a Wasm `br` control flow operator.
     pub fn translate_br(&mut self, relative_depth: u32) -> Result<(), ModuleError> {
+        self.update_allow_set_local_override(false);
         self.translate_if_reachable(|builder| {
             match builder.acquire_target(relative_depth, |pc| Reloc::Br { inst_idx: pc }) {
                 AquiredTarget::Branch {
@@ -705,7 +726,7 @@ impl<'parser> FunctionBuilder<'parser> {
                     results,
                     returned,
                 } => {
-                    builder.inst_builder.push_inst(Instruction::Br {
+                    builder.push_instr(Instruction::Br {
                         target,
                         results,
                         returned,
@@ -723,6 +744,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translates a Wasm `br_if` control flow operator.
     pub fn translate_br_if(&mut self, relative_depth: u32) -> Result<(), ModuleError> {
+        self.update_allow_set_local_override(false);
         self.translate_if_reachable(|builder| {
             let condition = builder.providers.pop();
             match condition {
@@ -733,7 +755,7 @@ impl<'parser> FunctionBuilder<'parser> {
                             results,
                             returned,
                         } => {
-                            builder.inst_builder.push_inst(Instruction::BrNez {
+                            builder.push_instr(Instruction::BrNez {
                                 target,
                                 condition,
                                 results,
@@ -742,9 +764,7 @@ impl<'parser> FunctionBuilder<'parser> {
                         }
                         AquiredTarget::Return => {
                             let results = builder.return_provider_slice();
-                            builder
-                                .inst_builder
-                                .push_inst(Instruction::ReturnNez { results, condition });
+                            builder.push_instr(Instruction::ReturnNez { results, condition });
                         }
                     }
                 }
@@ -774,6 +794,7 @@ impl<'parser> FunctionBuilder<'parser> {
     where
         T: IntoIterator<Item = RelativeDepth>,
     {
+        self.update_allow_set_local_override(false);
         self.translate_if_reachable(|builder| {
             fn make_branch_instr<F>(
                 builder: &mut FunctionBuilder,
@@ -831,13 +852,11 @@ impl<'parser> FunctionBuilder<'parser> {
                     let default_branch = make_branch(builder, len_non_default_targets, default);
                     // Note: We include the default branch in this amount.
                     let len_targets = len_non_default_targets + 1;
-                    builder
-                        .inst_builder
-                        .push_inst(Instruction::BrTable { case, len_targets });
+                    builder.push_instr(Instruction::BrTable { case, len_targets });
                     for branch in branches {
-                        builder.inst_builder.push_inst(branch);
+                        builder.push_instr(branch);
                     }
-                    builder.inst_builder.push_inst(default_branch);
+                    builder.push_instr(default_branch);
                     builder.reachable = false;
                 }
                 IrProvider::Immediate(case) => {
@@ -851,7 +870,7 @@ impl<'parser> FunctionBuilder<'parser> {
                         .cloned()
                         .map(|depth| make_const_branch(builder, depth))
                         .unwrap_or_else(|| make_const_branch(builder, default));
-                    builder.inst_builder.push_inst(case);
+                    builder.push_instr(case);
                     builder.reachable = false;
                 }
             }
@@ -861,11 +880,10 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translates a Wasm `return` control flow operator.
     pub fn translate_return(&mut self) -> Result<(), ModuleError> {
+        self.update_allow_set_local_override(false);
         self.translate_if_reachable(|builder| {
             let results = builder.return_provider_slice();
-            builder
-                .inst_builder
-                .push_inst(Instruction::Return { results });
+            builder.push_instr(Instruction::Return { results });
             builder.reachable = false;
             Ok(())
         })
@@ -885,10 +903,11 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translates a Wasm `call` instruction.
     pub fn translate_call(&mut self, func_idx: FuncIdx) -> Result<(), ModuleError> {
+        self.update_allow_set_local_override(false);
         self.translate_if_reachable(|builder| {
             let func_type = builder.func_type_of(func_idx);
             let (params, results) = builder.adjust_provider_stack_for_call(&func_type);
-            builder.inst_builder.push_inst(Instruction::Call {
+            builder.push_instr(Instruction::Call {
                 func_idx,
                 results,
                 params,
@@ -903,6 +922,7 @@ impl<'parser> FunctionBuilder<'parser> {
         func_type_idx: FuncTypeIdx,
         table_idx: TableIdx,
     ) -> Result<(), ModuleError> {
+        self.update_allow_set_local_override(false);
         self.translate_if_reachable(|builder| {
             /// The default Wasm MVP table index.
             const DEFAULT_TABLE_INDEX: u32 = 0;
@@ -910,7 +930,7 @@ impl<'parser> FunctionBuilder<'parser> {
             let index = builder.providers.pop();
             let func_type = builder.func_type_at(func_type_idx);
             let (params, results) = builder.adjust_provider_stack_for_call(&func_type);
-            builder.inst_builder.push_inst(Instruction::CallIndirect {
+            builder.push_instr(Instruction::CallIndirect {
                 func_type_idx,
                 results,
                 index,
@@ -922,6 +942,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translates a Wasm `drop` instruction.
     pub fn translate_drop(&mut self) -> Result<(), ModuleError> {
+        self.update_allow_set_local_override(false);
         self.translate_if_reachable(|builder| {
             // Note: there is no need to synthesize a `drop` instruction for
             //       the register machine based `wasmi` bytecode. It is enough
@@ -952,6 +973,17 @@ impl<'parser> FunctionBuilder<'parser> {
         })
     }
 
+    /// Pushes the [`IrInstruction`] to the instruction builder.
+    ///
+    /// # Note
+    ///
+    /// This also automatically updates the `allow_set_local_override` flag.
+    fn push_instr(&mut self, mut instr: IrInstruction) -> Instr {
+        let has_result = instr.result_mut().is_some();
+        self.update_allow_set_local_override(has_result);
+        self.inst_builder.push_inst(instr)
+    }
+
     /// Translates a Wasm `select` instruction.
     pub fn translate_select(&mut self) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
@@ -959,7 +991,7 @@ impl<'parser> FunctionBuilder<'parser> {
             let result = builder.providers.push_dynamic();
             match selector {
                 IrProvider::Register(condition) => {
-                    builder.inst_builder.push_inst(Instruction::Select {
+                    builder.push_instr(Instruction::Select {
                         result,
                         condition,
                         if_true: v0,
@@ -980,6 +1012,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `local.get` instruction.
     pub fn translate_local_get(&mut self, local_idx: u32) -> Result<(), ModuleError> {
+        self.update_allow_set_local_override(false);
         self.translate_if_reachable(|builder| {
             builder.providers.push_local(local_idx);
             Ok(())
@@ -988,6 +1021,7 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `local.set` instruction.
     pub fn translate_local_set(&mut self, local_idx: u32) -> Result<(), ModuleError> {
+        let allow_override = self.update_allow_set_local_override(false);
         self.translate_if_reachable(|builder| {
             let input = builder.providers.pop();
             let result = IrRegister::Local(local_idx as usize);
@@ -996,6 +1030,7 @@ impl<'parser> FunctionBuilder<'parser> {
                     // Note: insert a `copy` instruction to preserve previous
                     //       values of all `local.get` calls to the same index.
                     let replace = IrRegister::Local(local_idx as usize);
+                    debug_assert!(matches!(preserved, IrRegister::Preserved(_)));
                     Some(Instruction::Copy {
                         result: preserved,
                         input: replace.into(),
@@ -1006,21 +1041,21 @@ impl<'parser> FunctionBuilder<'parser> {
             let last_inst = builder.inst_builder.peek_mut();
             if let Some(last_inst) = last_inst {
                 if let Some(last_result) = last_inst.result_mut() {
-                    if !last_result.is_local() {
+                    if !last_result.is_local() && allow_override {
                         // Note: - the last instruction emits a single result
                         //         value that we can simply alter.
                         //       - we prevent from re-overriding via the
                         //         `is_local` check above.
                         *last_result = result;
                         if let Some(copy_preserve) = copy_preserve {
-                            builder.inst_builder.push_inst(copy_preserve);
+                            builder.push_instr(copy_preserve);
                         }
                         return Ok(());
                     }
                 }
             }
             if let Some(copy_preserve) = copy_preserve {
-                builder.inst_builder.push_inst(copy_preserve);
+                builder.push_instr(copy_preserve);
             }
             // Note: we simply emit a `copy` instruction as a fall back.
             builder.translate_copy(result, input)?;
@@ -1042,9 +1077,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let result = builder.providers.push_dynamic();
             let global = Global::from(global_idx.into_u32());
-            builder
-                .inst_builder
-                .push_inst(Instruction::GlobalGet { result, global });
+            builder.push_instr(Instruction::GlobalGet { result, global });
             Ok(())
         })
     }
@@ -1054,9 +1087,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let global = Global::from(global_idx.into_u32());
             let value = builder.providers.pop();
-            builder
-                .inst_builder
-                .push_inst(Instruction::GlobalSet { global, value });
+            builder.push_instr(Instruction::GlobalSet { global, value });
             Ok(())
         })
     }
@@ -1087,15 +1118,11 @@ impl<'parser> FunctionBuilder<'parser> {
             let offset = Offset::from(offset);
             match ptr {
                 IrProvider::Register(ptr) => {
-                    builder
-                        .inst_builder
-                        .push_inst(make_inst(result, ptr, offset));
+                    builder.push_instr(make_inst(result, ptr, offset));
                 }
                 IrProvider::Immediate(ptr) => {
                     builder.translate_copy(result, ptr.into())?;
-                    builder
-                        .inst_builder
-                        .push_inst(make_inst(result, result, offset));
+                    builder.push_instr(make_inst(result, result, offset));
                 }
             }
             Ok(())
@@ -1254,9 +1281,7 @@ impl<'parser> FunctionBuilder<'parser> {
             let (ptr, value) = builder.providers.pop2();
             match ptr {
                 IrProvider::Register(ptr) => {
-                    builder
-                        .inst_builder
-                        .push_inst(make_inst(ptr, offset, value));
+                    builder.push_instr(make_inst(ptr, offset, value));
                 }
                 IrProvider::Immediate(ptr) => {
                     // Note: store the constant pointer value into a temporary
@@ -1268,9 +1293,7 @@ impl<'parser> FunctionBuilder<'parser> {
                     //       pop the temporarily used register again.
                     let copy_result = copy_result.expect("register for intermediate copy");
                     builder.translate_copy(copy_result, ptr.into())?;
-                    builder
-                        .inst_builder
-                        .push_inst(make_inst(copy_result, offset, value));
+                    builder.push_instr(make_inst(copy_result, offset, value));
                 }
             };
             Ok(())
@@ -1363,9 +1386,7 @@ impl<'parser> FunctionBuilder<'parser> {
         debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
         self.translate_if_reachable(|builder| {
             let result = builder.providers.push_dynamic();
-            builder
-                .inst_builder
-                .push_inst(Instruction::MemorySize { result });
+            builder.push_instr(Instruction::MemorySize { result });
             Ok(())
         })
     }
@@ -1376,9 +1397,7 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let amount = builder.providers.pop();
             let result = builder.providers.push_dynamic();
-            builder
-                .inst_builder
-                .push_inst(Instruction::MemoryGrow { result, amount });
+            builder.push_instr(Instruction::MemoryGrow { result, amount });
             Ok(())
         })
     }
@@ -1397,6 +1416,7 @@ impl<'parser> FunctionBuilder<'parser> {
     where
         T: Into<UntypedValue>,
     {
+        self.update_allow_set_local_override(false);
         self.translate_if_reachable(|builder| {
             builder.providers.push_const(value);
             Ok(())
@@ -1451,12 +1471,12 @@ impl<'parser> FunctionBuilder<'parser> {
             match (lhs, rhs) {
                 (IrProvider::Register(lhs), rhs) => {
                     let result = builder.providers.push_dynamic();
-                    builder.inst_builder.push_inst(make_op(result, lhs, rhs));
+                    builder.push_instr(make_op(result, lhs, rhs));
                 }
                 (lhs @ IrProvider::Immediate(_), IrProvider::Register(rhs)) => {
                     // Note: we can swap the operands to avoid having to copy `rhs`.
                     let result = builder.providers.push_dynamic();
-                    builder.inst_builder.push_inst(make_op(result, rhs, lhs));
+                    builder.push_instr(make_op(result, rhs, lhs));
                 }
                 (IrProvider::Immediate(lhs), IrProvider::Immediate(rhs)) => {
                     // Note: precompute result and push onto provider stack
@@ -1498,12 +1518,12 @@ impl<'parser> FunctionBuilder<'parser> {
             match (lhs, rhs) {
                 (IrProvider::Register(lhs), rhs) => {
                     let result = builder.providers.push_dynamic();
-                    builder.inst_builder.push_inst(make_op(result, lhs, rhs));
+                    builder.push_instr(make_op(result, lhs, rhs));
                 }
                 (lhs @ IrProvider::Immediate(_), IrProvider::Register(rhs)) => {
                     // Note: we can swap the operands to avoid having to copy `rhs`.
                     let result = builder.providers.push_dynamic();
-                    builder.inst_builder.push_inst(swap_op(result, rhs, lhs));
+                    builder.push_instr(swap_op(result, rhs, lhs));
                 }
                 (IrProvider::Immediate(lhs), IrProvider::Immediate(rhs)) => {
                     // Note: precompute result and push onto provider stack
@@ -1702,7 +1722,7 @@ impl<'parser> FunctionBuilder<'parser> {
             match input {
                 IrProvider::Register(input) => {
                     let result = builder.providers.push_dynamic();
-                    builder.inst_builder.push_inst(make_op(result, input));
+                    builder.push_instr(make_op(result, input));
                 }
                 IrProvider::Immediate(input) => {
                     builder.providers.push_const(exec_op(input));
@@ -1760,7 +1780,7 @@ impl<'parser> FunctionBuilder<'parser> {
             match (lhs, rhs) {
                 (IrProvider::Register(lhs), rhs) => {
                     let result = builder.providers.push_dynamic();
-                    builder.inst_builder.push_inst(make_op(result, lhs, rhs));
+                    builder.push_instr(make_op(result, lhs, rhs));
                 }
                 (lhs @ IrProvider::Immediate(_), IrProvider::Register(rhs)) => {
                     // Note: this case is a bit tricky for non-commutative operations.
@@ -1771,12 +1791,11 @@ impl<'parser> FunctionBuilder<'parser> {
                     let copy_result = copy_result.expect("register for intermediate copy");
                     let result = builder.providers.push_dynamic();
                     builder.translate_copy(copy_result, lhs)?;
-                    builder
-                        .inst_builder
-                        .push_inst(make_op(result, copy_result, rhs.into()));
+                    builder.push_instr(make_op(result, copy_result, rhs.into()));
                 }
                 (IrProvider::Immediate(lhs), IrProvider::Immediate(rhs)) => {
                     // Note: both operands are constant so we can evaluate the result.
+                    builder.update_allow_set_local_override(false);
                     builder.providers.push_const(exec_op(lhs, rhs));
                 }
             }
@@ -1804,7 +1823,7 @@ impl<'parser> FunctionBuilder<'parser> {
             match (lhs, rhs) {
                 (IrProvider::Register(lhs), rhs) => {
                     let result = builder.providers.push_dynamic();
-                    builder.inst_builder.push_inst(make_op(result, lhs, rhs));
+                    builder.push_instr(make_op(result, lhs, rhs));
                 }
                 (lhs @ IrProvider::Immediate(_), IrProvider::Register(rhs)) => {
                     // Note: this case is a bit tricky for non-commutative operations.
@@ -1815,20 +1834,17 @@ impl<'parser> FunctionBuilder<'parser> {
                     let copy_result = copy_result.expect("register for intermediate copy");
                     let result = builder.providers.push_dynamic();
                     builder.translate_copy(copy_result, lhs)?;
-                    builder
-                        .inst_builder
-                        .push_inst(make_op(result, copy_result, rhs.into()));
+                    builder.push_instr(make_op(result, copy_result, rhs.into()));
                 }
                 (IrProvider::Immediate(lhs), IrProvider::Immediate(rhs)) => {
                     // Note: both operands are constant so we can evaluate the result.
                     match exec_op(lhs, rhs) {
                         Ok(result) => {
+                            builder.update_allow_set_local_override(false);
                             builder.providers.push_const(result);
                         }
                         Err(trap_code) => {
-                            builder
-                                .inst_builder
-                                .push_inst(Instruction::Trap { trap_code });
+                            builder.push_instr(Instruction::Trap { trap_code });
                             builder.reachable = false;
                         }
                     }
@@ -1865,12 +1881,12 @@ impl<'parser> FunctionBuilder<'parser> {
             match (lhs, rhs) {
                 (IrProvider::Register(lhs), rhs) => {
                     let result = builder.providers.push_dynamic();
-                    builder.inst_builder.push_inst(make_op(result, lhs, rhs));
+                    builder.push_instr(make_op(result, lhs, rhs));
                 }
                 (lhs @ IrProvider::Immediate(_), IrProvider::Register(rhs)) => {
                     // Note: due to commutativity of the operation we can swap the parameters.
                     let result = builder.providers.push_dynamic();
-                    builder.inst_builder.push_inst(make_op(result, rhs, lhs));
+                    builder.push_instr(make_op(result, rhs, lhs));
                 }
                 (IrProvider::Immediate(lhs), IrProvider::Immediate(rhs)) => {
                     builder.providers.push_const(exec_op(lhs, rhs));
@@ -2274,16 +2290,14 @@ impl<'parser> FunctionBuilder<'parser> {
             match input {
                 IrProvider::Register(input) => {
                     let result = builder.providers.push_dynamic();
-                    builder.inst_builder.push_inst(make_op(result, input));
+                    builder.push_instr(make_op(result, input));
                 }
                 IrProvider::Immediate(input) => match exec_op(input) {
                     Ok(result) => {
                         builder.providers.push_const(result);
                     }
                     Err(trap_code) => {
-                        builder
-                            .inst_builder
-                            .push_inst(Instruction::Trap { trap_code });
+                        builder.push_instr(Instruction::Trap { trap_code });
                         builder.reachable = false;
                     }
                 },
