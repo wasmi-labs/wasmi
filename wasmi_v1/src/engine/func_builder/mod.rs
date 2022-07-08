@@ -593,19 +593,19 @@ impl<'parser> FunctionBuilder<'parser> {
                 unexpected,
             ),
         };
-        let reachable = self.is_reachable();
+        let end_of_then_is_reachable = self.is_reachable();
         // At this point we know if the end of the `then` block of the paren
         // `if` block is reachable so we update the parent `if` frame.
         //
         // Note: This information is important to decide whether code is
         //       reachable after the `if` block (including `else`) ends.
-        if_frame.update_end_of_then_reachability(reachable);
+        if_frame.update_end_of_then_reachability(end_of_then_is_reachable);
         // We need to check if the `else` block is known to be reachable.
         let then_reachable = if_frame.is_then_reachable();
         let else_reachable = if_frame.is_else_reachable();
         // Create the jump from the end of the `then` block to the `if`
         // block's end label in case the end of `then` is reachable.
-        if then_reachable {
+        if end_of_then_is_reachable {
             // Return providers on the stack to where the `if` block expects
             // its results in case the `if` block has return values.
             let results = if_frame.branch_results();
