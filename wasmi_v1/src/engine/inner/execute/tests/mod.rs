@@ -303,6 +303,23 @@ fn test_regression_if_1() {
 }
 
 #[test]
+fn test_regression_if_2() {
+    fn test_for(func: Func, store: &mut Store<()>, input: i32, expected: i32) {
+        let mut result = [Value::I32(0)];
+        func.call(store, &[Value::I32(input)], &mut result).unwrap();
+        assert_eq!(result, [Value::I32(expected)]);
+    }
+
+    let (mut store, instance) = load_test_instance!("wat/multi-value/if.wat");
+    let func = load_func(&store, &instance, "func");
+
+    print_func(&store, func);
+
+    test_for(func, &mut store, 0, -1);
+    test_for(func, &mut store, 1, 3);
+}
+
+#[test]
 fn test_memory_sum() {
     fn test_for(sum: Func, store: &mut Store<()>, mem: Memory, data: &[u8]) {
         mem.write(store.as_context_mut(), 0, &data).unwrap();
