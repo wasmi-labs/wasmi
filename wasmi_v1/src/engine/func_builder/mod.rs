@@ -139,7 +139,7 @@ pub struct FunctionBuilder<'parser> {
     /// The emulated value stack.
     providers: Providers,
     /// Arena for register slices.
-    reg_slices: ProviderSliceArena,
+    provider_slices: ProviderSliceArena,
     /// The instruction builder.
     ///
     /// # Note
@@ -188,7 +188,7 @@ impl<'parser> FunctionBuilder<'parser> {
             inst_builder,
             reachable: true,
             providers,
-            reg_slices,
+            provider_slices: reg_slices,
             allow_set_local_override: false,
         }
     }
@@ -256,7 +256,7 @@ impl<'parser> FunctionBuilder<'parser> {
     /// Finishes constructing the function and returns its [`FuncBody`].
     pub fn finish(mut self) -> FuncBody {
         self.inst_builder
-            .finish(&self.engine, &self.reg_slices, &self.providers)
+            .finish(&self.engine, &self.provider_slices, &self.providers)
     }
 
     /// Returns `true` if the code at the current translation position is reachable.
@@ -296,7 +296,7 @@ impl<'parser> FunctionBuilder<'parser> {
             .engine
             .resolve_func_type(func_type, |func_type| func_type.results().len());
         let providers = self.providers.peek_n(len_results).iter().copied();
-        self.reg_slices.alloc(providers)
+        self.provider_slices.alloc(providers)
     }
 
     /// Resolves the [`FuncType`] of the given [`FuncTypeIdx`].
@@ -334,7 +334,7 @@ impl<'parser> FunctionBuilder<'parser> {
             let results = frame.branch_results();
             let instr = self.try_resolve_label(br_dst, reloc_provider);
             let target = Target::from(instr);
-            let returned = self.reg_slices.alloc(
+            let returned = self.provider_slices.alloc(
                 self.providers
                     .peek_n(results.len() as usize)
                     .iter()
@@ -455,7 +455,7 @@ impl<'parser> FunctionBuilder<'parser> {
             // in their expected registers.
             let len_params = branch_results.len() as usize;
             self.inst_builder.push_copy_many_instr(
-                &mut self.reg_slices,
+                &mut self.provider_slices,
                 branch_results,
                 self.providers.pop_n(len_params).as_slice(),
             );
@@ -612,7 +612,7 @@ impl<'parser> FunctionBuilder<'parser> {
             let returned = self.providers.pop_n(results.len() as usize);
             if else_reachable {
                 // Case: both `then` and `else` are reachable
-                let returned = self.reg_slices.alloc(returned);
+                let returned = self.provider_slices.alloc(returned);
                 let dst_pc =
                     self.try_resolve_label(if_frame.end_label(), |pc| Reloc::Br { inst_idx: pc });
                 let target = Target::from(dst_pc);
@@ -628,7 +628,7 @@ impl<'parser> FunctionBuilder<'parser> {
             } else {
                 // Case: only `then` is reachable
                 self.inst_builder.push_copy_many_instr(
-                    &mut self.reg_slices,
+                    &mut self.provider_slices,
                     results,
                     returned.as_slice(),
                 );
@@ -660,8 +660,11 @@ impl<'parser> FunctionBuilder<'parser> {
                     // is expecting them.
                     let results = frame.end_results();
                     let returned = self.providers.peek_n(results.len() as usize);
-                    self.inst_builder
-                        .push_copy_many_instr(&mut self.reg_slices, results, returned);
+                    self.inst_builder.push_copy_many_instr(
+                        &mut self.provider_slices,
+                        results,
+                        returned,
+                    );
                 }
             }
             ControlFrame::If(frame) => {
@@ -673,8 +676,11 @@ impl<'parser> FunctionBuilder<'parser> {
                 let results = frame.end_results();
                 if req_copy && visited_else {
                     let returned = self.providers.peek_n(results.len() as usize);
-                    self.inst_builder
-                        .push_copy_many_instr(&mut self.reg_slices, results, returned);
+                    self.inst_builder.push_copy_many_instr(
+                        &mut self.provider_slices,
+                        results,
+                        returned,
+                    );
                 }
                 // At this point we can resolve the `Else` label.
                 //
@@ -685,8 +691,11 @@ impl<'parser> FunctionBuilder<'parser> {
                 }
                 if req_copy && !visited_else {
                     let returned = self.providers.peek_n(results.len() as usize);
-                    self.inst_builder
-                        .push_copy_many_instr(&mut self.reg_slices, results, returned);
+                    self.inst_builder.push_copy_many_instr(
+                        &mut self.provider_slices,
+                        results,
+                        returned,
+                    );
                 }
             }
             ControlFrame::Unreachable(_) => (),
@@ -896,7 +905,7 @@ impl<'parser> FunctionBuilder<'parser> {
     ) -> (IrProviderSlice, IrRegisterSlice) {
         let (params, results) = func_type.params_results();
         let params_providers = self.providers.pop_n(params.len());
-        let params_slice = self.reg_slices.alloc(params_providers);
+        let params_slice = self.provider_slices.alloc(params_providers);
         let results_slice = self.providers.push_dynamic_many(results.len());
         (params_slice, results_slice)
     }
