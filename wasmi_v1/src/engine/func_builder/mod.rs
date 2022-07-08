@@ -1247,6 +1247,10 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
             let offset = Offset::from(offset);
+            let copy_result = match builder.providers.peek2() {
+                (IrProvider::Immediate(_), _) => Some(builder.providers.peek_dynamic()),
+                _ => None,
+            };
             let (ptr, value) = builder.providers.pop2();
             match ptr {
                 IrProvider::Register(ptr) => {
@@ -1262,12 +1266,11 @@ impl<'parser> FunctionBuilder<'parser> {
                     //       a register.
                     //       After the store instruction we immediate have to
                     //       pop the temporarily used register again.
-                    let temp = builder.providers.push_dynamic();
-                    builder.translate_copy(temp, ptr.into())?;
+                    let copy_result = copy_result.expect("register for intermediate copy");
+                    builder.translate_copy(copy_result, ptr.into())?;
                     builder
                         .inst_builder
-                        .push_inst(make_inst(temp, offset, value));
-                    builder.providers.pop();
+                        .push_inst(make_inst(copy_result, offset, value));
                 }
             };
             Ok(())
