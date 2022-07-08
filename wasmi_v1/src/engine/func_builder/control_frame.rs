@@ -318,6 +318,11 @@ impl IfControlFrame {
         self.end_of_then_is_reachable = Some(reachable);
     }
 
+    /// Returns `true` if the `else` block has been visited.
+    pub fn visited_else(&self) -> bool {
+        self.end_of_then_is_reachable.is_some()
+    }
+
     /// Returns `true` if the `then` block is known to be reachable.
     pub fn is_then_reachable(&self) -> bool {
         matches!(

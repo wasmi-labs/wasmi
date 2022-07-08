@@ -632,22 +632,42 @@ impl<'parser> FunctionBuilder<'parser> {
     /// Translates a Wasm `end` control flow operator.
     pub fn translate_end(&mut self) -> Result<(), ModuleError> {
         let frame = self.control_frames.last();
-        if self.is_reachable() && self.control_frames.len() != 1 {
-            // Write back results to where the parent control flow frame
-            // is expecting them.
-            let results = frame.end_results();
-            let returned = self.providers.peek_n(results.len() as usize);
-            self.inst_builder
-                .push_copy_many_instr(&mut self.reg_slices, results, returned);
-        }
-        if let ControlFrame::If(if_frame) = &frame {
-            // At this point we can resolve the `Else` label.
-            //
-            // Note: The `Else` label might have already been resolved
-            //       in case there was an `Else` block.
-            if let Some(else_label) = if_frame.else_label() {
-                self.inst_builder.resolve_label_if_unresolved(else_label)
+
+        match frame {
+            ControlFrame::Block(_) | ControlFrame::Loop(_) => {
+                if self.is_reachable() && self.control_frames.len() != 1 {
+                    // Write back results to where the parent control flow frame
+                    // is expecting them.
+                    let results = frame.end_results();
+                    let returned = self.providers.peek_n(results.len() as usize);
+                    self.inst_builder
+                        .push_copy_many_instr(&mut self.reg_slices, results, returned);
+                }
             }
+            ControlFrame::If(frame) => {
+                let visited_else = frame.visited_else();
+                let req_copy = self.is_reachable() && self.control_frames.len() != 1;
+                if req_copy && visited_else {
+                    let results = frame.end_results();
+                    let returned = self.providers.peek_n(results.len() as usize);
+                    self.inst_builder
+                        .push_copy_many_instr(&mut self.reg_slices, results, returned);
+                }
+                // At this point we can resolve the `Else` label.
+                //
+                // Note: The `Else` label might have already been resolved
+                //       in case there was an `Else` block.
+                if let Some(else_label) = frame.else_label() {
+                    self.inst_builder.resolve_label_if_unresolved(else_label)
+                }
+                if req_copy && !visited_else {
+                    let results = frame.end_results();
+                    let returned = self.providers.peek_n(results.len() as usize);
+                    self.inst_builder
+                        .push_copy_many_instr(&mut self.reg_slices, results, returned);
+                }
+            }
+            ControlFrame::Unreachable(_) => (),
         }
         if frame.is_reachable() && !matches!(frame.kind(), ControlFrameKind::Loop) {
             // At this point we can resolve the `End` labels.
