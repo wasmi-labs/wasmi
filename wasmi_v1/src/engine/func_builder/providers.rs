@@ -311,6 +311,11 @@ pub enum IrRegister {
 }
 
 impl IrRegister {
+    /// Returns `true` if the [`IrRegister`] is in the local register space.
+    pub fn is_local(&self) -> bool {
+        matches!(self, Self::Local(_))
+    }
+
     /// Returns a new [`IrRegister`] with its index offset by the given amount.
     pub fn offset(self, amount: usize) -> Self {
         match self {

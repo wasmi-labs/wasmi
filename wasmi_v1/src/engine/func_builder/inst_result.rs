@@ -1,12 +1,5 @@
 use super::{IrInstruction, IrRegister};
 
-impl IrRegister {
-    /// Returns `true` if the [`IrRegister`] is in the local register space.
-    pub fn is_local(&self) -> bool {
-        matches!(self, Self::Local(_))
-    }
-}
-
 impl IrInstruction {
     /// Returns the single result [`IrRegister`] of the instruction if any.
     ///
