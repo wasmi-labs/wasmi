@@ -1,5 +1,5 @@
-;; Regression test for `if` writing back block results even
-;; if both then and else blocks are empty.
+;; Regression test for `if` writing back block results for
+;; empty `then` block and non-existing `else` block.
 ;;
 ;; From Wasm Spec Test Suite: 'multi-value/if.wat/params-id'
 (module
