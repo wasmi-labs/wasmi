@@ -650,8 +650,8 @@ impl<'parser> FunctionBuilder<'parser> {
                     true => self.is_reachable() && self.control_frames.len() != 1,
                     false => self.control_frames.len() != 1,
                 };
+                let results = frame.end_results();
                 if req_copy && visited_else {
-                    let results = frame.end_results();
                     let returned = self.providers.peek_n(results.len() as usize);
                     self.inst_builder
                         .push_copy_many_instr(&mut self.reg_slices, results, returned);
@@ -664,7 +664,6 @@ impl<'parser> FunctionBuilder<'parser> {
                     self.inst_builder.resolve_label_if_unresolved(else_label)
                 }
                 if req_copy && !visited_else {
-                    let results = frame.end_results();
                     let returned = self.providers.peek_n(results.len() as usize);
                     self.inst_builder
                         .push_copy_many_instr(&mut self.reg_slices, results, returned);
