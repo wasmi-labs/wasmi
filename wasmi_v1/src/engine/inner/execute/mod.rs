@@ -61,7 +61,7 @@ impl EngineInner {
                 Ok(self.return_results(signature, returned, results))
             }
             FuncEntityInternal::Host(_host_func) => {
-                todo!()
+                todo!() // Wasm spec test suite requires this to work, too.
             }
         }
     }
