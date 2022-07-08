@@ -22,7 +22,7 @@ use crate::{
     Module,
     Store,
 };
-use wasmi_core::Value;
+use wasmi_core::{Value, F32, F64};
 
 macro_rules! load_test_instance {
     ( $path:literal ) => {{
@@ -353,6 +353,38 @@ fn test_regression_if_4() {
     for input in 0..10 {
         test_for(func, &mut store, input);
     }
+}
+
+#[test]
+fn test_regression_local_tee() {
+    fn test_for(
+        func: Func,
+        store: &mut Store<()>,
+        input: (i64, f32, f64, i32, i32),
+        expected: f64,
+    ) {
+        let mut result = [Value::I32(0)];
+        func.call(
+            store,
+            &[
+                input.0.into(),
+                F32::from(input.1).into(),
+                F64::from(input.2).into(),
+                input.3.into(),
+                input.4.into(),
+            ],
+            &mut result,
+        )
+        .unwrap();
+        assert_eq!(result, [Value::F64(F64::from(expected))]);
+    }
+
+    let (mut store, instance) = load_test_instance!("wat/local-tee.wat");
+    let func = load_func(&store, &instance, "func");
+
+    print_func(&store, func);
+
+    test_for(func, &mut store, (-1, -2.0, -3.3, -4, -5), 34.8);
 }
 
 #[test]
