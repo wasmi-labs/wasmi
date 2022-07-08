@@ -407,8 +407,6 @@ impl TrueCopies {
                     let (last_index, _) = copies.last().expect("non-empty true copies");
                     (first_index, last_index + 1)
                 };
-                dbg!(first_index);
-                dbg!(last_index);
                 let len = last_index - first_index;
                 let inputs = inputs.iter().copied().skip(first_index).take(len);
                 let results = results

@@ -366,18 +366,14 @@ impl IrRegisterSlice {
     pub fn sub_slice(self, range: Range<usize>) -> Option<Self> {
         let start = self.first().unwrap_or(IrRegister::Dynamic(0));
         let len = self.len() as usize;
-        println!("IrRegisterSlice::sub_slice len = {len}");
-        println!("IrRegisterSlice::sub_slice range.end = {}", range.end);
         if len < range.end {
             // The subslice is out of bounds of the original slice.
-            println!("IrRegisterSlice::sub_slice out of bounds");
             return None;
         }
         let new_start = start.offset(range.start);
         let new_len = range.len();
         if len < new_len {
             // Subslices must have a length less-than or equal to the original.
-            println!("IrRegisterSlice::sub_slice invalid length");
             return None;
         }
         Some(Self {
