@@ -621,8 +621,6 @@ impl<'parser> FunctionBuilder<'parser> {
             // block has the same parameters on top of the stack.
             if let Some(else_height) = if_frame.else_height() {
                 self.providers.shrink_to(else_height);
-                let len_params = if_frame.block_type().len_params(&self.engine);
-                self.providers.push_dynamic_many(len_params as usize);
             }
         }
         self.control_frames.push_frame(if_frame);
