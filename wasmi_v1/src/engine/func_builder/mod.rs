@@ -646,7 +646,10 @@ impl<'parser> FunctionBuilder<'parser> {
             }
             ControlFrame::If(frame) => {
                 let visited_else = frame.visited_else();
-                let req_copy = self.is_reachable() && self.control_frames.len() != 1;
+                let req_copy = match visited_else {
+                    true => self.is_reachable() && self.control_frames.len() != 1,
+                    false => self.control_frames.len() != 1,
+                };
                 if req_copy && visited_else {
                     let results = frame.end_results();
                     let returned = self.providers.peek_n(results.len() as usize);
