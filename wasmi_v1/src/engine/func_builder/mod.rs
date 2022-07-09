@@ -647,78 +647,113 @@ impl<'parser> FunctionBuilder<'parser> {
     /// Translates a Wasm `end` control flow operator.
     pub fn translate_end(&mut self) -> Result<(), ModuleError> {
         self.update_allow_set_local_override(false);
-        let frame = self.control_frames.last();
-
-        let reachable = self.is_reachable();
-        match frame {
-            ControlFrame::Block(_) | ControlFrame::Loop(_) => {
-                if reachable && self.control_frames.len() != 1 {
-                    // Write back results to where the parent control flow frame
-                    // is expecting them.
-                    let results = frame.end_results();
-                    let returned = self.providers.peek_n(results.len() as usize);
-                    self.inst_builder.push_copy_many_instr(
-                        &mut self.provider_slices,
-                        results,
-                        returned,
-                    );
-                }
-            }
-            ControlFrame::If(frame) => {
-                let visited_else = frame.visited_else();
-                let req_copy = match visited_else {
-                    true => reachable && self.control_frames.len() != 1,
-                    false => self.control_frames.len() != 1,
-                };
-                let results = frame.end_results();
-                if req_copy && visited_else {
-                    let returned = self.providers.peek_n(results.len() as usize);
-                    self.inst_builder.push_copy_many_instr(
-                        &mut self.provider_slices,
-                        results,
-                        returned,
-                    );
-                }
-                // At this point we can resolve the `Else` label.
-                //
-                // Note: The `Else` label might have already been resolved
-                //       in case there was an `Else` block.
-                if let Some(else_label) = frame.else_label() {
-                    self.inst_builder.resolve_label_if_unresolved(else_label)
-                }
-                if req_copy && !visited_else {
-                    let returned = self.providers.peek_n(results.len() as usize);
-                    self.inst_builder.push_copy_many_instr(
-                        &mut self.provider_slices,
-                        results,
-                        returned,
-                    );
-                }
-            }
-            ControlFrame::Unreachable(_) => (),
+        match self.control_frames.pop_frame() {
+            ControlFrame::Block(frame) => self.translate_end_block(frame),
+            ControlFrame::Loop(frame) => self.translate_end_loop(frame),
+            ControlFrame::If(frame) => self.translate_end_if(frame),
+            ControlFrame::Unreachable(frame) => self.translate_end_unreachable(frame),
         }
-        if frame.is_reachable() && !matches!(frame.kind(), ControlFrameKind::Loop) {
-            // At this point we can resolve the `End` labels.
-            // Note that `loop` control frames do not have an `End` label.
-            self.inst_builder.resolve_label(frame.end_label());
+    }
+
+    /// Updates the value stack, removing all intermediate values used
+    /// to execute the block and put its results on the stack.
+    fn finalize_frame(&mut self, frame: ControlFrame) -> Result<(), ModuleError> {
+        let frame_stack_height = frame.stack_height();
+        let len_results = frame.block_type().len_results(&self.engine) as usize;
+        self.providers.shrink_to(frame_stack_height);
+        self.providers.push_dynamic_many(len_results);
+        Ok(())
+    }
+
+    /// Inserts a `copy` or `copy_many` instruction to write back results to
+    /// parent control flow block upon ending one of its children.
+    fn copy_frame_results(&mut self, results: IrRegisterSlice) -> Result<(), ModuleError> {
+        let returned = self.providers.peek_n(results.len() as usize);
+        self.inst_builder
+            .push_copy_many_instr(&mut self.provider_slices, results, returned);
+        Ok(())
+    }
+
+    /// Translates a Wasm `end` control flow operator for a `block`.
+    fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), ModuleError> {
+        if self.is_reachable() && !self.control_frames.is_empty() {
+            // Write back results to where the parent control flow frame
+            // is expecting them.
+            self.copy_frame_results(frame.end_results())?;
+        }
+        // At this point we can resolve the `End` labels.
+        // Note that `loop` control frames do not have an `End` label.
+        self.inst_builder.resolve_label(frame.end_label());
+        // These bindings are required because of borrowing issues.
+        if self.control_frames.is_empty() {
+            // We are closing the function body block therefore we
+            // are required to return the function execution results.
+            self.translate_return()?;
+        }
+        // Code after a `block` ends is generally reachable again.
+        self.reachable = true;
+        self.finalize_frame(frame.into())
+    }
+
+    /// Translates a Wasm `end` control flow operator for a `loop`.
+    fn translate_end_loop(&mut self, frame: LoopControlFrame) -> Result<(), ModuleError> {
+        if self.is_reachable() && !self.control_frames.is_empty() {
+            // Write back results to where the parent control flow frame
+            // is expecting them.
+            self.copy_frame_results(frame.end_results())?;
         }
         // These bindings are required because of borrowing issues.
-        let frame_reachable = frame.is_reachable();
-        let frame_stack_height = frame.stack_height();
-        if self.control_frames.len() == 1 {
+        if self.control_frames.is_empty() {
+            // We are closing the function body block therefore we
+            // are required to return the function execution results.
+            self.translate_return()?;
+        }
+        // Code after a `loop` ends is generally reachable again.
+        self.reachable = true;
+        self.finalize_frame(frame.into())
+    }
+
+    /// Translates a Wasm `end` control flow operator for an `if`.
+    fn translate_end_if(&mut self, frame: IfControlFrame) -> Result<(), ModuleError> {
+        let visited_else = frame.visited_else();
+        let req_copy = match visited_else {
+            true => self.is_reachable() && !self.control_frames.is_empty(),
+            false => !self.control_frames.is_empty(),
+        };
+        let frame_results = frame.end_results();
+        if req_copy && visited_else {
+            self.copy_frame_results(frame_results)?;
+        }
+        // At this point we can resolve the `Else` label.
+        //
+        // Note: The `Else` label might have already been resolved
+        //       in case there was an `Else` block.
+        if let Some(else_label) = frame.else_label() {
+            self.inst_builder.resolve_label_if_unresolved(else_label)
+        }
+        if req_copy && !visited_else {
+            self.copy_frame_results(frame_results)?;
+        }
+        // At this point we can resolve the `End` labels.
+        // Note that `loop` control frames do not have an `End` label.
+        self.inst_builder.resolve_label(frame.end_label());
+        if self.control_frames.is_empty() {
             // If the control flow frames stack is empty after this point
             // we know that we are ending the function body `block`
             // frame and therefore we have to return from the function.
             self.translate_return()?;
-        } else {
-            // The following code is only reachable if the ended control flow
-            // frame was reachable upon entering to begin with.
-            self.reachable = frame_reachable;
         }
-        let frame = self.control_frames.pop_frame();
-        let len_results = frame.block_type().len_results(&self.engine) as usize;
-        self.providers.shrink_to(frame_stack_height);
-        self.providers.push_dynamic_many(len_results);
+        // Code after a `if` ends is generally reachable again.
+        self.reachable = true;
+        self.finalize_frame(frame.into())
+    }
+
+    /// Translates a Wasm `end` control flow operator for an unreachable frame.
+    fn translate_end_unreachable(
+        &mut self,
+        _frame: UnreachableControlFrame,
+    ) -> Result<(), ModuleError> {
+        self.reachable = false;
         Ok(())
     }
 
