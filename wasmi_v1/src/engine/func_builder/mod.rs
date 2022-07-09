@@ -517,8 +517,8 @@ impl<'parser> FunctionBuilder<'parser> {
                     self.push_instr(Instruction::BrEqz {
                         target: branch_target,
                         condition,
-                        results: IrRegisterSlice::empty(), // TODO: proper inputs
-                        returned: IrProviderSlice::empty(), // TODO: proper inputs
+                        results: IrRegisterSlice::empty(),
+                        returned: IrProviderSlice::empty(),
                     });
                 }
                 IrProvider::Immediate(condition) => {
