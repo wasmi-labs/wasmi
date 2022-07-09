@@ -709,15 +709,14 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translates a Wasm `end` control flow operator for an `if`.
     fn translate_end_if(&mut self, frame: IfControlFrame) -> Result<(), ModuleError> {
-        let visited_else = frame.visited_else();
-        let req_copy = match visited_else {
-            true => self.is_reachable() && !self.control_frames.is_empty(),
-            false => !self.control_frames.is_empty(),
-        };
-        let frame_results = frame.end_results();
-        if req_copy && visited_else {
-            self.copy_frame_results(frame_results)?;
+        match frame.visited_else() {
+            true => self.translate_end_if_then_else(frame),
+            false => self.translate_end_if_then(frame),
         }
+    }
+
+    /// Translates a Wasm `end` control flow operator for an `if` without an `else` block.
+    fn translate_end_if_then(&mut self, frame: IfControlFrame) -> Result<(), ModuleError> {
         // At this point we can resolve the `Else` label.
         //
         // Note: The `Else` label might have already been resolved
@@ -725,18 +724,23 @@ impl<'parser> FunctionBuilder<'parser> {
         if let Some(else_label) = frame.else_label() {
             self.inst_builder.resolve_label_if_unresolved(else_label)
         }
-        if req_copy && !visited_else {
-            self.copy_frame_results(frame_results)?;
+        self.copy_frame_results(frame.end_results())?;
+        // At this point we can resolve the `End` labels.
+        // Note that `loop` control frames do not have an `End` label.
+        self.inst_builder.resolve_label(frame.end_label());
+        // Code after a `if` ends is generally reachable again.
+        self.reachable = true;
+        self.finalize_frame(frame.into())
+    }
+
+    /// Translates a Wasm `end` control flow operator for an `if` with an `else` block.
+    fn translate_end_if_then_else(&mut self, frame: IfControlFrame) -> Result<(), ModuleError> {
+        if self.is_reachable() {
+            self.copy_frame_results(frame.end_results())?;
         }
         // At this point we can resolve the `End` labels.
         // Note that `loop` control frames do not have an `End` label.
         self.inst_builder.resolve_label(frame.end_label());
-        if self.control_frames.is_empty() {
-            // If the control flow frames stack is empty after this point
-            // we know that we are ending the function body `block`
-            // frame and therefore we have to return from the function.
-            self.translate_return()?;
-        }
         // Code after a `if` ends is generally reachable again.
         self.reachable = true;
         self.finalize_frame(frame.into())
