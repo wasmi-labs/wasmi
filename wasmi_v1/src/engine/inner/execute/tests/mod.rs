@@ -373,6 +373,21 @@ fn test_regression_if_5() {
 }
 
 #[test]
+fn test_regression_invalid_if() {
+    fn test_for(func: Func, store: &mut Store<()>, input: i32) {
+        let mut result = [Value::I32(0)];
+        func.call(store, &[Value::I32(input)], &mut result).unwrap();
+        assert_eq!(result, [Value::I32(3)]);
+    }
+
+    let wat_bytes = include_bytes!("wat/invalid-if.wat");
+    let wasm = wat2wasm(wat_bytes);
+    let engine = Engine::default();
+    let module = Module::new(&engine, &wasm[..]);
+    assert!(module.is_err());
+}
+
+#[test]
 fn test_regression_local_tee() {
     fn test_for(
         func: Func,
