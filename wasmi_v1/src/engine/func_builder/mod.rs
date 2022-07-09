@@ -480,93 +480,94 @@ impl<'parser> FunctionBuilder<'parser> {
     /// Translates a Wasm `if` control flow operator.
     pub fn translate_if(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
         self.update_allow_set_local_override(false);
-        if self.is_reachable() {
-            let condition = self.providers.pop();
-            let stack_height = self.frame_stack_height(block_type);
-            let results = self
-                .providers
-                .peek_dynamic_many(block_type.len_results(&self.engine) as usize);
-            match condition {
-                IrProvider::Register(condition) => {
-                    // We duplicate the `if` parameters on the provider stack
-                    // so that we do not have to store the `if` parameters for
-                    // the optional `else` block somewhere else.
-                    // We do this despite the fact that we do not know at this
-                    // point if the `if` block actually has an `else` block.
-                    // The `else_height` stores the height to which we have to
-                    // prune the provider stack upon visiting the `else` block.
-                    // The `stack_height` is still denoting the height of the
-                    // provider stack upon entering the outer `if` block.
-                    let len_params = block_type.len_params(&self.engine);
-                    self.providers.duplicate_n(len_params as usize);
-                    let else_height = self.frame_stack_height(block_type);
-                    let else_label = self.inst_builder.new_label();
-                    let end_label = self.inst_builder.new_label();
-                    self.control_frames.push_frame(IfControlFrame::new(
-                        results,
-                        block_type,
-                        end_label,
-                        Some(else_label),
-                        stack_height,
-                        Some(else_height),
-                        IfReachability::Both,
-                    ));
-                    let dst_pc =
-                        self.try_resolve_label(else_label, |pc| Reloc::Br { inst_idx: pc });
-                    let branch_target = Target::from(dst_pc);
-                    self.push_instr(Instruction::BrEqz {
-                        target: branch_target,
-                        condition,
-                        results: IrRegisterSlice::empty(),
-                        returned: IrProviderSlice::empty(),
-                    });
-                }
-                IrProvider::Immediate(condition) => {
-                    // TODO: ideally we flatten the entire if-block
-                    //       to its `then` block if the condition is true OR
-                    //       to its `else` block if the condition is false.
-                    //
-                    // We have not yet implemented this `if` flattening since
-                    // it is potentially a ton of complicated work.
-                    let reachability = if bool::from(condition) {
-                        IfReachability::OnlyThen
-                    } else {
-                        // Note in this case we know all code is unreachable
-                        // until we enter the `else` block of this `if`.
-                        self.reachable = false;
-                        IfReachability::OnlyElse
-                    };
-                    // We are still in need of the `end_label` since jumps
-                    // from within the `else` or `then` blocks might occur to
-                    // the end of this `if`.
-                    let end_label = self.inst_builder.new_label();
-                    // Since in this case we know that only one of `then` or
-                    // `else` are reachable we do not require to duplicate the
-                    // `if` parameters on the provider stack as in the general
-                    // case.
-                    let else_height = None;
-                    // We are not in need of an `else` label if either `then`
-                    // or `else` are unreachable since there won't be a `br_nez`
-                    // instruction that would usually target it.
-                    let else_label = None;
-                    self.control_frames.push_frame(IfControlFrame::new(
-                        results,
-                        block_type,
-                        end_label,
-                        else_label,
-                        stack_height,
-                        else_height,
-                        reachability,
-                    ));
-                }
-            }
-        } else {
+        if !self.is_reachable() {
+            // Simply emit an unreachable `if` block in case the current
+            // code is already unreachable and bail out early.
             let stack_height = self.frame_stack_height(block_type);
             self.control_frames.push_frame(UnreachableControlFrame::new(
                 ControlFrameKind::If,
                 block_type,
                 stack_height,
             ));
+            return Ok(());
+        }
+        let condition = self.providers.pop();
+        let stack_height = self.frame_stack_height(block_type);
+        let results = self
+            .providers
+            .peek_dynamic_many(block_type.len_results(&self.engine) as usize);
+        match condition {
+            IrProvider::Register(condition) => {
+                // We duplicate the `if` parameters on the provider stack
+                // so that we do not have to store the `if` parameters for
+                // the optional `else` block somewhere else.
+                // We do this despite the fact that we do not know at this
+                // point if the `if` block actually has an `else` block.
+                // The `else_height` stores the height to which we have to
+                // prune the provider stack upon visiting the `else` block.
+                // The `stack_height` is still denoting the height of the
+                // provider stack upon entering the outer `if` block.
+                let len_params = block_type.len_params(&self.engine);
+                self.providers.duplicate_n(len_params as usize);
+                let else_height = self.frame_stack_height(block_type);
+                let else_label = self.inst_builder.new_label();
+                let end_label = self.inst_builder.new_label();
+                self.control_frames.push_frame(IfControlFrame::new(
+                    results,
+                    block_type,
+                    end_label,
+                    Some(else_label),
+                    stack_height,
+                    Some(else_height),
+                    IfReachability::Both,
+                ));
+                let dst_pc = self.try_resolve_label(else_label, |pc| Reloc::Br { inst_idx: pc });
+                let branch_target = Target::from(dst_pc);
+                self.push_instr(Instruction::BrEqz {
+                    target: branch_target,
+                    condition,
+                    results: IrRegisterSlice::empty(),
+                    returned: IrProviderSlice::empty(),
+                });
+            }
+            IrProvider::Immediate(condition) => {
+                // TODO: ideally we flatten the entire if-block
+                //       to its `then` block if the condition is true OR
+                //       to its `else` block if the condition is false.
+                //
+                // We have not yet implemented this `if` flattening since
+                // it is potentially a ton of complicated work.
+                let reachability = if bool::from(condition) {
+                    IfReachability::OnlyThen
+                } else {
+                    // Note in this case we know all code is unreachable
+                    // until we enter the `else` block of this `if`.
+                    self.reachable = false;
+                    IfReachability::OnlyElse
+                };
+                // We are still in need of the `end_label` since jumps
+                // from within the `else` or `then` blocks might occur to
+                // the end of this `if`.
+                let end_label = self.inst_builder.new_label();
+                // Since in this case we know that only one of `then` or
+                // `else` are reachable we do not require to duplicate the
+                // `if` parameters on the provider stack as in the general
+                // case.
+                let else_height = None;
+                // We are not in need of an `else` label if either `then`
+                // or `else` are unreachable since there won't be a `br_nez`
+                // instruction that would usually target it.
+                let else_label = None;
+                self.control_frames.push_frame(IfControlFrame::new(
+                    results,
+                    block_type,
+                    end_label,
+                    else_label,
+                    stack_height,
+                    else_height,
+                    reachability,
+                ));
+            }
         }
         Ok(())
     }
