@@ -136,10 +136,7 @@ impl InstructionsBuilder {
 
     /// Returns `true` if `label` has been resolved.
     fn is_resolved(&self, label: LabelIdx) -> bool {
-        if let Label::Resolved(_) = &self.labels[label.0] {
-            return true;
-        }
-        false
+        matches!(&self.labels[label.0], Label::Resolved(_))
     }
 
     /// Resolve the label at the current instruction position.
