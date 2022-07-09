@@ -356,6 +356,23 @@ fn test_regression_if_4() {
 }
 
 #[test]
+fn test_regression_if_5() {
+    fn test_for(func: Func, store: &mut Store<()>, input: i32, expected: i32) {
+        let mut result = [Value::I32(0)];
+        func.call(store, &[Value::I32(input)], &mut result).unwrap();
+        assert_eq!(result, [Value::I32(expected)]);
+    }
+
+    let (mut store, instance) = load_test_instance!("wat/regression-if-2.wat");
+    let func = load_func(&store, &instance, "func");
+
+    print_func(&store, func);
+
+    test_for(func, &mut store, 0, 21);
+    test_for(func, &mut store, 1, 18);
+}
+
+#[test]
 fn test_regression_local_tee() {
     fn test_for(
         func: Func,
