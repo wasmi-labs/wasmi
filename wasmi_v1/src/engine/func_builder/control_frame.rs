@@ -426,16 +426,6 @@ impl From<UnreachableControlFrame> for ControlFrame {
 }
 
 impl ControlFrame {
-    /// Returns the [`ControlFrameKind`] of the [`ControlFrame`].
-    pub fn kind(&self) -> ControlFrameKind {
-        match self {
-            ControlFrame::Block(_) => ControlFrameKind::Block,
-            ControlFrame::Loop(_) => ControlFrameKind::Loop,
-            ControlFrame::If(_) => ControlFrameKind::If,
-            ControlFrame::Unreachable(frame) => frame.kind(),
-        }
-    }
-
     /// Returns the label for the branch destination of the [`ControlFrame`].
     pub fn branch_destination(&self) -> LabelIdx {
         match self {
@@ -445,26 +435,6 @@ impl ControlFrame {
             Self::Unreachable(frame) => panic!(
                 "tried to get `branch_destination` for an unreachable control frame: {:?}",
                 frame,
-            ),
-        }
-    }
-
-    /// Returns a label which should be resolved at the `End` Wasm opcode.
-    ///
-    /// All [`ControlFrame`] kinds have it except [`ControlFrame::Loop`].
-    /// In order to a [`ControlFrame::Loop`] to branch outside it is required
-    /// to be wrapped in another control frame such as [`ControlFrame::Block`].
-    pub fn end_label(&self) -> LabelIdx {
-        match self {
-            Self::Block(frame) => frame.end_label(),
-            Self::If(frame) => frame.end_label(),
-            Self::Loop(frame) => panic!(
-                "tried to get `end_label` for a loop control frame: {:?}",
-                frame
-            ),
-            Self::Unreachable(frame) => panic!(
-                "tried to get `end_label` for an unreachable control frame: {:?}",
-                frame
             ),
         }
     }
@@ -489,11 +459,6 @@ impl ControlFrame {
         }
     }
 
-    /// Returns `true` if the control flow frame is reachable.
-    pub fn is_reachable(&self) -> bool {
-        !matches!(self, ControlFrame::Unreachable(_))
-    }
-
     /// Returns the [`IrRegisterSlice`] for where to put
     /// the results of the control flow frame after a `branch` to it.
     pub fn branch_results(&self) -> IrRegisterSlice {
@@ -503,20 +468,6 @@ impl ControlFrame {
             ControlFrame::If(frame) => frame.branch_results(),
             ControlFrame::Unreachable(frame) => panic!(
                 "tried to get `branch_results` for an unreachable control frame: {:?}",
-                frame
-            ),
-        }
-    }
-
-    /// Returns the [`IrRegisterSlice`] for where to put
-    /// the results of the control flow frame at the `end`.
-    pub fn end_results(&self) -> IrRegisterSlice {
-        match self {
-            ControlFrame::Block(frame) => frame.end_results(),
-            ControlFrame::Loop(frame) => frame.end_results(),
-            ControlFrame::If(frame) => frame.end_results(),
-            ControlFrame::Unreachable(frame) => panic!(
-                "tried to get `end_results` for an unreachable control frame: {:?}",
                 frame
             ),
         }

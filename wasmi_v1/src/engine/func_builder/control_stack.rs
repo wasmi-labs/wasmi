@@ -42,14 +42,6 @@ impl ControlFlowStack {
             .expect("tried to pop control flow frame from empty control flow stack")
     }
 
-    /// Returns the last control flow frame on the control stack.
-    pub fn last(&self) -> &ControlFrame {
-        self.frames.last().expect(
-            "tried to exclusively peek the last control flow \
-            frame from an empty control flow stack",
-        )
-    }
-
     /// Returns a shared reference to the control flow frame at the given `depth`.
     ///
     /// A `depth` of 0 is equal to calling [`ControlFlowStack::last`].
