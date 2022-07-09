@@ -301,7 +301,7 @@ where
     /// Visits the `wasmi` `br` instruction.
     fn visit_br(
         &mut self,
-        target: Target,
+        target: <T as InstructionTypes>::Target,
         results: <T as InstructionTypes>::RegisterSlice,
         returned: <T as InstructionTypes>::ProviderSlice,
     ) -> Self::Outcome;
@@ -309,7 +309,7 @@ where
     /// Visits the `wasmi` `br_eqz` instruction.
     fn visit_br_eqz(
         &mut self,
-        target: Target,
+        target: <T as InstructionTypes>::Target,
         condition: <T as InstructionTypes>::Register,
         results: <T as InstructionTypes>::RegisterSlice,
         returned: <T as InstructionTypes>::ProviderSlice,
@@ -318,7 +318,7 @@ where
     /// Visits the `wasmi` `br_nez` instruction.
     fn visit_br_nez(
         &mut self,
-        target: Target,
+        target: <T as InstructionTypes>::Target,
         condition: <T as InstructionTypes>::Register,
         results: <T as InstructionTypes>::RegisterSlice,
         returned: <T as InstructionTypes>::ProviderSlice,

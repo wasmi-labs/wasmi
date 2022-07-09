@@ -1,4 +1,4 @@
-use super::{IrRegisterSlice, LabelIdx};
+use super::{IrRegisterSlice, LabelRef};
 use crate::module::BlockType;
 
 /// A Wasm `block` control flow frame.
@@ -7,7 +7,7 @@ pub struct BlockControlFrame {
     /// The registers holding the results of the [`BlockControlFrame`].
     results: IrRegisterSlice,
     /// Label representing the end of the [`BlockControlFrame`].
-    end_label: LabelIdx,
+    end_label: LabelRef,
     /// The type of the [`BlockControlFrame`].
     block_type: BlockType,
     /// The value stack height upon entering the [`BlockControlFrame`].
@@ -19,7 +19,7 @@ impl BlockControlFrame {
     pub fn new(
         results: IrRegisterSlice,
         block_type: BlockType,
-        end_label: LabelIdx,
+        end_label: LabelRef,
         stack_height: u32,
     ) -> Self {
         Self {
@@ -53,12 +53,12 @@ impl BlockControlFrame {
     /// # Note
     ///
     /// Branches to [`BlockControlFrame`] jump to the end of the frame.
-    pub fn branch_destination(&self) -> LabelIdx {
+    pub fn branch_destination(&self) -> LabelRef {
         self.end_label
     }
 
     /// Returns the label to the end of the [`BlockControlFrame`].
-    pub fn end_label(&self) -> LabelIdx {
+    pub fn end_label(&self) -> LabelRef {
         self.end_label
     }
 
@@ -81,7 +81,7 @@ pub struct LoopControlFrame {
     /// The registers holding the results of the [`LoopControlFrame`].
     end_results: IrRegisterSlice,
     /// Label representing the head of the [`LoopControlFrame`].
-    head_label: LabelIdx,
+    head_label: LabelRef,
     /// The type of the [`LoopControlFrame`].
     block_type: BlockType,
     /// The value stack height upon entering the [`LoopControlFrame`].
@@ -94,7 +94,7 @@ impl LoopControlFrame {
         branch_results: IrRegisterSlice,
         end_results: IrRegisterSlice,
         block_type: BlockType,
-        head_label: LabelIdx,
+        head_label: LabelRef,
         stack_height: u32,
     ) -> Self {
         Self {
@@ -129,7 +129,7 @@ impl LoopControlFrame {
     /// # Note
     ///
     /// Branches to [`LoopControlFrame`] jump to the head of the loop.
-    pub fn branch_destination(&self) -> LabelIdx {
+    pub fn branch_destination(&self) -> LabelRef {
         self.head_label
     }
 
@@ -150,14 +150,14 @@ pub struct IfControlFrame {
     /// The registers holding the results of the [`IfControlFrame`].
     results: IrRegisterSlice,
     /// Label representing the end of the [`IfControlFrame`].
-    end_label: LabelIdx,
+    end_label: LabelRef,
     /// Label representing the optional `else` branch of the [`IfControlFrame`].
     ///
     /// # Note
     ///
     /// This might be `None` in case it is known at compile time that the
     /// `else` block is unreachable while the `then` block is reachable.
-    else_label: Option<LabelIdx>,
+    else_label: Option<LabelRef>,
     /// The type of the [`IfControlFrame`].
     block_type: BlockType,
     /// The provider stack height upon entering the [`IfControlFrame`].
@@ -217,8 +217,8 @@ impl IfControlFrame {
     pub fn new(
         results: IrRegisterSlice,
         block_type: BlockType,
-        end_label: LabelIdx,
-        else_label: Option<LabelIdx>,
+        end_label: LabelRef,
+        else_label: Option<LabelRef>,
         stack_height: u32,
         else_height: Option<u32>,
         reachability: IfReachability,
@@ -263,12 +263,12 @@ impl IfControlFrame {
     /// # Note
     ///
     /// Branches to [`IfControlFrame`] jump to the end of the if and else frame.
-    pub fn branch_destination(&self) -> LabelIdx {
+    pub fn branch_destination(&self) -> LabelRef {
         self.end_label
     }
 
     /// Returns the label to the end of the [`IfControlFrame`].
-    pub fn end_label(&self) -> LabelIdx {
+    pub fn end_label(&self) -> LabelRef {
         self.end_label
     }
 
@@ -278,7 +278,7 @@ impl IfControlFrame {
     ///
     /// This might be `None` in case it is known at compile time that the
     /// `else` block is unreachable while the `then` block is reachable.
-    pub fn else_label(&self) -> Option<LabelIdx> {
+    pub fn else_label(&self) -> Option<LabelRef> {
         self.else_label
     }
 
@@ -427,7 +427,7 @@ impl From<UnreachableControlFrame> for ControlFrame {
 
 impl ControlFrame {
     /// Returns the label for the branch destination of the [`ControlFrame`].
-    pub fn branch_destination(&self) -> LabelIdx {
+    pub fn branch_destination(&self) -> LabelRef {
         match self {
             Self::Block(frame) => frame.branch_destination(),
             Self::Loop(frame) => frame.branch_destination(),

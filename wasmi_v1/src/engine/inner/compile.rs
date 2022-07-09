@@ -187,6 +187,7 @@ impl EngineInner {
                 results,
                 returned,
             } => {
+                let target = context.compile_label(target);
                 let results = Self::compile_register_slice(context, results);
                 let returned = Self::compile_provider_slice(res, context, returned);
                 ExecInstruction::Br {
@@ -201,6 +202,7 @@ impl EngineInner {
                 results,
                 returned,
             } => {
+                let target = context.compile_label(target);
                 let condition = Self::compile_register(context, condition);
                 let results = Self::compile_register_slice(context, results);
                 let returned = Self::compile_provider_slice(res, context, returned);
@@ -217,6 +219,7 @@ impl EngineInner {
                 results,
                 returned,
             } => {
+                let target = context.compile_label(target);
                 let condition = Self::compile_register(context, condition);
                 let results = Self::compile_register_slice(context, results);
                 let returned = Self::compile_provider_slice(res, context, returned);

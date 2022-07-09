@@ -1,6 +1,7 @@
 //! Abstractions to build up instructions forming Wasm function bodies.
 
 use super::{
+    labels::{LabelRef, LabelRegistry},
     providers::Providers,
     CompileContext,
     Engine,
@@ -14,7 +15,6 @@ use super::{
 };
 use crate::arena::Index;
 use alloc::vec::Vec;
-use core::mem;
 
 /// A reference to a partially constructed instruction.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -57,41 +57,6 @@ impl Index for Instr {
     }
 }
 
-/// A resolved or unresolved label.
-#[derive(Debug, PartialEq, Eq)]
-enum Label {
-    /// An unresolved label.
-    Unresolved {
-        /// The uses of the unresolved label.
-        uses: Vec<Reloc>,
-    },
-    /// A fully resolved label.
-    ///
-    /// # Note
-    ///
-    /// A fully resolved label no longer required knowledge about its uses.
-    Resolved(Instr),
-}
-
-impl Default for Label {
-    fn default() -> Self {
-        Self::Unresolved { uses: Vec::new() }
-    }
-}
-
-/// A unique label identifier.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct LabelIdx(pub(crate) usize);
-
-/// A relocation entry that specifies.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Reloc {
-    /// Patch the target of the `br`, `br_eqz` or `br_nez` instruction.
-    Br { inst_idx: Instr },
-    /// Patch the specified target index inside of a Wasm `br_table` instruction.
-    BrTable { inst_idx: Instr, target_idx: usize },
-}
-
 /// The relative depth of a Wasm branching target.
 #[derive(Debug, Copy, Clone)]
 pub struct RelativeDepth(u32);
@@ -118,7 +83,7 @@ pub struct InstructionsBuilder {
     /// The instructions of the partially constructed function body.
     insts: Vec<IrInstruction>,
     /// All labels and their uses.
-    labels: Vec<Label>,
+    labels: LabelRegistry,
 }
 
 impl InstructionsBuilder {
@@ -128,77 +93,26 @@ impl InstructionsBuilder {
     }
 
     /// Creates a new unresolved label and returns an index to it.
-    pub fn new_label(&mut self) -> LabelIdx {
-        let idx = LabelIdx(self.labels.len());
-        self.labels.push(Label::default());
-        idx
+    pub fn new_label(&mut self) -> LabelRef {
+        self.labels.new_label()
     }
 
-    /// Returns `true` if `label` has been resolved.
-    fn is_resolved(&self, label: LabelIdx) -> bool {
-        matches!(&self.labels[label.0], Label::Resolved(_))
-    }
-
-    /// Resolve the label at the current instruction position.
-    ///
-    /// Does nothing if the label has already been resolved.
-    ///
-    /// # Note
-    ///
-    /// This is used at a position of the Wasm bytecode where it is clear that
-    /// the given label can be resolved properly.
-    /// This usually takes place when encountering the Wasm `End` operand for example.
-    pub fn resolve_label_if_unresolved(&mut self, label: LabelIdx) {
-        if self.is_resolved(label) {
-            // Nothing to do in this case.
-            return;
-        }
-        self.resolve_label(label);
-    }
-
-    /// Resolve the label at the current instruction position.
-    ///
-    /// # Note
-    ///
-    /// This is used at a position of the Wasm bytecode where it is clear that
-    /// the given label can be resolved properly.
-    /// This usually takes place when encountering the Wasm `End` operand for example.
+    /// Pins the `label` to the next pushed instruction.
     ///
     /// # Panics
     ///
-    /// If the label has already been resolved.
-    pub fn resolve_label(&mut self, label: LabelIdx) {
-        let dst_pc = self.current_pc();
-        let old_label = mem::replace(&mut self.labels[label.0], Label::Resolved(dst_pc));
-        match old_label {
-            Label::Resolved(idx) => panic!(
-                "tried to resolve already resolved label {:?} -> {:?} to {:?}",
-                label, idx, dst_pc
-            ),
-            Label::Unresolved { uses } => {
-                // Patch all relocations that have been recorded as uses of the resolved label.
-                for reloc in uses {
-                    self.patch_relocation(reloc, dst_pc);
-                }
-            }
-        }
+    /// If the `label` has already been pinned.
+    pub fn pin_label(&mut self, label: LabelRef) {
+        let instr = self.current_pc();
+        self.labels
+            .pin_label(label, instr)
+            .unwrap_or_else(|error| panic!("failed to pin label: {error}"));
     }
 
-    /// Tries to resolve the label into the [`Instr`].
-    ///
-    /// If resolution fails puts a placeholder into the respective label
-    /// and push the new user for later resolution to take place.
-    pub fn try_resolve_label<F>(&mut self, label: LabelIdx, reloc_provider: F) -> Instr
-    where
-        F: FnOnce() -> Reloc,
-    {
-        match &mut self.labels[label.0] {
-            Label::Resolved(dst_pc) => *dst_pc,
-            Label::Unresolved { uses } => {
-                uses.push(reloc_provider());
-                Instr::INVALID
-            }
-        }
+    /// Pins a `label` to the next pushed instruction if unpinned.
+    pub fn try_pin_label(&mut self, label: LabelRef) {
+        let instr = self.current_pc();
+        self.labels.try_pin_label(label, instr)
     }
 
     /// Pushes the internal instruction bytecode to the [`InstructionsBuilder`].
@@ -248,35 +162,6 @@ impl InstructionsBuilder {
         }
     }
 
-    /// Allows to patch the branch target of branch instructions.
-    pub fn patch_relocation(&mut self, reloc: Reloc, dst_pc: Instr) {
-        match reloc {
-            Reloc::Br { inst_idx } => match &mut self.insts[inst_idx.into_usize()] {
-                IrInstruction::Br { target, .. }
-                | IrInstruction::BrEqz { target, .. }
-                | IrInstruction::BrNez { target, .. } => {
-                    target.update_destination(dst_pc);
-                }
-                _ => panic!(
-                    "branch relocation points to a non-branch instruction: {:?}",
-                    reloc
-                ),
-            },
-            Reloc::BrTable {
-                inst_idx,
-                target_idx,
-            } => match &mut self.insts[inst_idx.into_usize() + target_idx + 1] {
-                IrInstruction::Br { target, .. } => {
-                    target.update_destination(dst_pc);
-                }
-                _ => panic!(
-                    "`br_table` relocation points to a non-`br_table` instruction: {:?}",
-                    reloc
-                ),
-            },
-        }
-    }
-
     /// Peeks the last instruction pushed to the instruction builder if any.
     pub fn peek_mut(&mut self) -> Option<&mut IrInstruction> {
         self.insts.last_mut()
@@ -300,6 +185,7 @@ impl InstructionsBuilder {
         let context = CompileContext {
             provider_slices: reg_slices,
             providers,
+            labels: &self.labels,
         };
         engine.compile(&context, self.insts.drain(..))
     }

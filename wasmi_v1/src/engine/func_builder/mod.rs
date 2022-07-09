@@ -2,6 +2,7 @@ mod control_frame;
 mod control_stack;
 mod inst_builder;
 mod inst_result;
+mod labels;
 mod locals_registry;
 mod providers;
 
@@ -21,7 +22,8 @@ use self::{
     providers::{ProviderSliceArena, Providers},
 };
 pub use self::{
-    inst_builder::{Instr, LabelIdx, RelativeDepth, Reloc},
+    inst_builder::{Instr, RelativeDepth},
+    labels::{LabelRef, LabelRegistry},
     providers::{IrProvider, IrProviderSlice, IrRegister, IrRegisterSlice},
 };
 use super::{
@@ -54,6 +56,7 @@ use wasmi_core::{TrapCode, UntypedValue, ValueType, F32, F64};
 pub struct CompileContext<'a> {
     provider_slices: &'a ProviderSliceArena,
     providers: &'a Providers,
+    labels: &'a LabelRegistry,
 }
 
 impl CompileContext<'_> {
@@ -63,6 +66,13 @@ impl CompileContext<'_> {
 
     pub fn resolve_provider_slice(&self, slice: IrProviderSlice) -> &[IrProvider] {
         self.provider_slices.resolve(slice)
+    }
+
+    pub fn compile_label(&self, label: LabelRef) -> Target {
+        self.labels
+            .resolve_label(label)
+            .unwrap_or_else(|error| panic!("failed to resolve label: {error}"))
+            .into()
     }
 
     pub fn compile_register(&self, register: IrRegister) -> ExecRegister {
@@ -93,6 +103,7 @@ impl InstructionTypes for IrTypes {
     type Provider = IrProvider;
     type ProviderSlice = IrProviderSlice;
     type RegisterSlice = IrRegisterSlice;
+    type Target = LabelRef;
 }
 
 pub type IrInstruction = Instruction<IrTypes>;
@@ -231,18 +242,6 @@ impl<'parser> FunctionBuilder<'parser> {
         params.len()
     }
 
-    /// Try to resolve the given label.
-    ///
-    /// In case the label cannot yet be resolved register the [`Reloc`] as its user.
-    fn try_resolve_label<F>(&mut self, label: LabelIdx, reloc_provider: F) -> Instr
-    where
-        F: FnOnce(Instr) -> Reloc,
-    {
-        let pc = self.inst_builder.current_pc();
-        self.inst_builder
-            .try_resolve_label(label, || reloc_provider(pc))
-    }
-
     /// Translates the given local variables for the translated function.
     pub fn translate_locals(
         &mut self,
@@ -317,10 +316,7 @@ impl<'parser> FunctionBuilder<'parser> {
     ///
     /// - If the `depth` is greater than the current height of the control frame stack.
     /// - If the value stack underflowed.
-    fn acquire_target<F>(&mut self, relative_depth: u32, reloc_provider: F) -> AquiredTarget
-    where
-        F: FnOnce(Instr) -> Reloc,
-    {
+    fn acquire_target(&mut self, relative_depth: u32) -> AquiredTarget {
         debug_assert!(self.is_reachable());
         if self.control_frames.is_root(relative_depth) {
             AquiredTarget::Return
@@ -328,8 +324,6 @@ impl<'parser> FunctionBuilder<'parser> {
             let frame = self.control_frames.nth_back(relative_depth);
             let br_dst = frame.branch_destination();
             let results = frame.branch_results();
-            let instr = self.try_resolve_label(br_dst, reloc_provider);
-            let target = Target::from(instr);
             let returned = self.provider_slices.alloc(
                 self.providers
                     .peek_n(results.len() as usize)
@@ -337,7 +331,7 @@ impl<'parser> FunctionBuilder<'parser> {
                     .copied(),
             );
             AquiredTarget::Branch {
-                target,
+                target: br_dst,
                 results,
                 returned,
             }
@@ -355,7 +349,7 @@ pub enum AquiredTarget {
     /// This is the usual case.
     Branch {
         /// The first instruction of the targeted control flow frame.
-        target: Target,
+        target: LabelRef,
         /// The registers where the targeted control flow frame expects
         /// its results.
         results: IrRegisterSlice,
@@ -459,7 +453,7 @@ impl<'parser> FunctionBuilder<'parser> {
             // After putting all required copy intsructions we can now
             // resolve the loop header.
             let header = self.inst_builder.new_label();
-            self.inst_builder.resolve_label(header);
+            self.inst_builder.pin_label(header);
             self.control_frames.push_frame(LoopControlFrame::new(
                 branch_results,
                 end_results,
@@ -521,10 +515,8 @@ impl<'parser> FunctionBuilder<'parser> {
                     Some(else_height),
                     IfReachability::Both,
                 ));
-                let dst_pc = self.try_resolve_label(else_label, |pc| Reloc::Br { inst_idx: pc });
-                let branch_target = Target::from(dst_pc);
                 self.push_instr(Instruction::BrEqz {
-                    target: branch_target,
+                    target: else_label,
                     condition,
                     results: IrRegisterSlice::empty(),
                     returned: IrProviderSlice::empty(),
@@ -606,17 +598,14 @@ impl<'parser> FunctionBuilder<'parser> {
             if else_reachable {
                 // Case: both `then` and `else` are reachable
                 let returned = self.provider_slices.alloc(returned);
-                let dst_pc =
-                    self.try_resolve_label(if_frame.end_label(), |pc| Reloc::Br { inst_idx: pc });
-                let target = Target::from(dst_pc);
                 self.push_instr(Instruction::Br {
-                    target,
+                    target: if_frame.end_label(),
                     results,
                     returned,
                 });
                 // Now resolve labels for the instructions of the `else` block
                 if let Some(else_label) = if_frame.else_label() {
-                    self.inst_builder.resolve_label(else_label);
+                    self.inst_builder.pin_label(else_label);
                 }
             } else {
                 // Case: only `then` is reachable
@@ -680,7 +669,7 @@ impl<'parser> FunctionBuilder<'parser> {
         }
         // At this point we can resolve the `End` labels.
         // Note that `loop` control frames do not have an `End` label.
-        self.inst_builder.resolve_label(frame.end_label());
+        self.inst_builder.pin_label(frame.end_label());
         // These bindings are required because of borrowing issues.
         if self.control_frames.is_empty() {
             // We are closing the function body block therefore we
@@ -719,12 +708,12 @@ impl<'parser> FunctionBuilder<'parser> {
         // Note: The `Else` label might have already been resolved
         //       in case there was an `Else` block.
         if let Some(else_label) = frame.else_label() {
-            self.inst_builder.resolve_label_if_unresolved(else_label)
+            self.inst_builder.try_pin_label(else_label)
         }
         self.copy_frame_results(frame.end_results())?;
         // At this point we can resolve the `End` labels.
         // Note that `loop` control frames do not have an `End` label.
-        self.inst_builder.resolve_label(frame.end_label());
+        self.inst_builder.pin_label(frame.end_label());
         // Code after a `if` ends is generally reachable again.
         self.reachable = true;
         self.finalize_frame(frame.into())
@@ -737,7 +726,7 @@ impl<'parser> FunctionBuilder<'parser> {
         }
         // At this point we can resolve the `End` labels.
         // Note that `loop` control frames do not have an `End` label.
-        self.inst_builder.resolve_label(frame.end_label());
+        self.inst_builder.pin_label(frame.end_label());
         // Code after a `if` ends is generally reachable again.
         self.reachable = true;
         self.finalize_frame(frame.into())
@@ -756,7 +745,7 @@ impl<'parser> FunctionBuilder<'parser> {
     pub fn translate_br(&mut self, relative_depth: u32) -> Result<(), ModuleError> {
         self.update_allow_set_local_override(false);
         self.translate_if_reachable(|builder| {
-            match builder.acquire_target(relative_depth, |pc| Reloc::Br { inst_idx: pc }) {
+            match builder.acquire_target(relative_depth) {
                 AquiredTarget::Branch {
                     target,
                     results,
@@ -784,26 +773,24 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let condition = builder.providers.pop();
             match condition {
-                IrProvider::Register(condition) => {
-                    match builder.acquire_target(relative_depth, |pc| Reloc::Br { inst_idx: pc }) {
-                        AquiredTarget::Branch {
+                IrProvider::Register(condition) => match builder.acquire_target(relative_depth) {
+                    AquiredTarget::Branch {
+                        target,
+                        results,
+                        returned,
+                    } => {
+                        builder.push_instr(Instruction::BrNez {
                             target,
+                            condition,
                             results,
                             returned,
-                        } => {
-                            builder.push_instr(Instruction::BrNez {
-                                target,
-                                condition,
-                                results,
-                                returned,
-                            });
-                        }
-                        AquiredTarget::Return => {
-                            let results = builder.return_provider_slice();
-                            builder.push_instr(Instruction::ReturnNez { results, condition });
-                        }
+                        });
                     }
-                }
+                    AquiredTarget::Return => {
+                        let results = builder.return_provider_slice();
+                        builder.push_instr(Instruction::ReturnNez { results, condition });
+                    }
+                },
                 IrProvider::Immediate(condition) => {
                     if bool::from(condition) {
                         // In this case the branch always takes place and
@@ -832,15 +819,8 @@ impl<'parser> FunctionBuilder<'parser> {
     {
         self.update_allow_set_local_override(false);
         self.translate_if_reachable(|builder| {
-            fn make_branch_instr<F>(
-                builder: &mut FunctionBuilder,
-                depth: RelativeDepth,
-                make_reloc: F,
-            ) -> IrInstruction
-            where
-                F: FnOnce(Instr) -> Reloc,
-            {
-                match builder.acquire_target(depth.into_u32(), make_reloc) {
+            fn make_branch(builder: &mut FunctionBuilder, depth: RelativeDepth) -> IrInstruction {
+                match builder.acquire_target(depth.into_u32()) {
                     AquiredTarget::Branch {
                         target,
                         results,
@@ -857,35 +837,16 @@ impl<'parser> FunctionBuilder<'parser> {
                 }
             }
 
-            fn make_branch(
-                builder: &mut FunctionBuilder,
-                n: usize,
-                depth: RelativeDepth,
-            ) -> IrInstruction {
-                make_branch_instr(builder, depth, |pc| Reloc::BrTable {
-                    inst_idx: pc,
-                    target_idx: n,
-                })
-            }
-
-            fn make_const_branch(
-                builder: &mut FunctionBuilder,
-                depth: RelativeDepth,
-            ) -> IrInstruction {
-                make_branch_instr(builder, depth, |pc| Reloc::Br { inst_idx: pc })
-            }
-
             let case = builder.providers.pop();
             match case {
                 IrProvider::Register(case) => {
                     let branches = targets
                         .into_iter()
-                        .enumerate()
-                        .map(|(n, depth)| make_branch(builder, n, depth))
+                        .map(|depth| make_branch(builder, depth))
                         .collect::<Vec<_>>();
                     // We do not include the default target in `len_branches`.
                     let len_non_default_targets = branches.len();
-                    let default_branch = make_branch(builder, len_non_default_targets, default);
+                    let default_branch = make_branch(builder, default);
                     // Note: We include the default branch in this amount.
                     let len_targets = len_non_default_targets + 1;
                     builder.push_instr(Instruction::BrTable { case, len_targets });
@@ -904,8 +865,8 @@ impl<'parser> FunctionBuilder<'parser> {
                     let case = branches
                         .get(index)
                         .cloned()
-                        .map(|depth| make_const_branch(builder, depth))
-                        .unwrap_or_else(|| make_const_branch(builder, default));
+                        .map(|depth| make_branch(builder, depth))
+                        .unwrap_or_else(|| make_branch(builder, default));
                     builder.push_instr(case);
                     builder.reachable = false;
                 }

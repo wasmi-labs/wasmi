@@ -22,6 +22,7 @@ impl InstructionTypes for ExecuteTypes {
     type Provider = ExecProvider;
     type ProviderSlice = ExecProviderSlice;
     type RegisterSlice = ExecRegisterSlice;
+    type Target = Target;
 }
 
 pub type ExecInstruction = Instruction<ExecuteTypes>;
@@ -45,6 +46,8 @@ pub trait InstructionTypes {
     type ProviderSlice;
     /// A slice of contiguous registers.
     type RegisterSlice;
+    /// A branching target.
+    type Target;
 }
 
 /// A `wasmi` instruction.
@@ -67,7 +70,7 @@ where
     /// Equivalent to the Wasm `br` instruction.
     Br {
         /// The target instruction to unconditionally branch to.
-        target: Target,
+        target: T::Target,
         /// The registers used as return values of the branched-to control block.
         results: T::RegisterSlice,
         /// The actual returned values for the branched-to control block.
@@ -80,7 +83,7 @@ where
     /// This instruction does not correspond to any Wasm instruction directly.
     BrEqz {
         /// The target instruction to conditionally branch to.
-        target: Target,
+        target: T::Target,
         /// The branching condition.
         condition: T::Register,
         /// The registers used as return values of the branched-to control block.
@@ -96,7 +99,7 @@ where
     /// target the function body `block` and therefore does not return.
     BrNez {
         /// The target instruction to conditionally branch to.
-        target: Target,
+        target: T::Target,
         /// The branching condition.
         condition: T::Register,
         /// The registers used as return values of the branched-to control block.
