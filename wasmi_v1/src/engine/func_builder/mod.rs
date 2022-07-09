@@ -496,6 +496,7 @@ impl<'parser> FunctionBuilder<'parser> {
         let results = self
             .providers
             .peek_dynamic_many(block_type.len_results(&self.engine) as usize);
+        let end_label = self.inst_builder.new_label();
         match condition {
             IrProvider::Register(condition) => {
                 // We duplicate the `if` parameters on the provider stack
@@ -511,7 +512,6 @@ impl<'parser> FunctionBuilder<'parser> {
                 self.providers.duplicate_n(len_params as usize);
                 let else_height = self.frame_stack_height(block_type);
                 let else_label = self.inst_builder.new_label();
-                let end_label = self.inst_builder.new_label();
                 self.control_frames.push_frame(IfControlFrame::new(
                     results,
                     block_type,
@@ -545,10 +545,6 @@ impl<'parser> FunctionBuilder<'parser> {
                     self.reachable = false;
                     IfReachability::OnlyElse
                 };
-                // We are still in need of the `end_label` since jumps
-                // from within the `else` or `then` blocks might occur to
-                // the end of this `if`.
-                let end_label = self.inst_builder.new_label();
                 // Since in this case we know that only one of `then` or
                 // `else` are reachable we do not require to duplicate the
                 // `if` parameters on the provider stack as in the general
