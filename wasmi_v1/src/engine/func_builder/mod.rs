@@ -653,9 +653,10 @@ impl<'parser> FunctionBuilder<'parser> {
         self.update_allow_set_local_override(false);
         let frame = self.control_frames.last();
 
+        let reachable = self.is_reachable();
         match frame {
             ControlFrame::Block(_) | ControlFrame::Loop(_) => {
-                if self.is_reachable() && self.control_frames.len() != 1 {
+                if reachable && self.control_frames.len() != 1 {
                     // Write back results to where the parent control flow frame
                     // is expecting them.
                     let results = frame.end_results();
@@ -670,7 +671,7 @@ impl<'parser> FunctionBuilder<'parser> {
             ControlFrame::If(frame) => {
                 let visited_else = frame.visited_else();
                 let req_copy = match visited_else {
-                    true => self.is_reachable() && self.control_frames.len() != 1,
+                    true => reachable && self.control_frames.len() != 1,
                     false => self.control_frames.len() != 1,
                 };
                 let results = frame.end_results();
