@@ -697,16 +697,10 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translates a Wasm `end` control flow operator for a `loop`.
     fn translate_end_loop(&mut self, frame: LoopControlFrame) -> Result<(), ModuleError> {
-        if self.is_reachable() && !self.control_frames.is_empty() {
+        if self.is_reachable() {
             // Write back results to where the parent control flow frame
             // is expecting them.
             self.copy_frame_results(frame.end_results())?;
-        }
-        // These bindings are required because of borrowing issues.
-        if self.control_frames.is_empty() {
-            // We are closing the function body block therefore we
-            // are required to return the function execution results.
-            self.translate_return()?;
         }
         // Code after a `loop` ends is generally reachable again.
         self.reachable = true;
