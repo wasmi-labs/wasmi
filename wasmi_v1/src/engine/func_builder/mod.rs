@@ -287,10 +287,6 @@ impl<'parser> FunctionBuilder<'parser> {
     /// - If the value stack is underflown.
     fn return_provider_slice(&mut self) -> IrProviderSlice {
         debug_assert!(self.is_reachable());
-        assert!(
-            !self.control_frames.is_empty(),
-            "cannot create return provider slice with an empty stack of frames"
-        );
         let func_type = self.res.get_type_of_func(self.func);
         let len_results = self
             .engine
