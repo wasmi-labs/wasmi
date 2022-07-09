@@ -605,7 +605,7 @@ impl<'parser> FunctionBuilder<'parser> {
         let else_reachable = if_frame.is_else_reachable();
         // Create the jump from the end of the `then` block to the `if`
         // block's end label in case the end of `then` is reachable.
-        if end_of_then_is_reachable {
+        if then_reachable {
             // Return providers on the stack to where the `if` block expects
             // its results in case the `if` block has return values.
             let results = if_frame.branch_results();
