@@ -44,7 +44,7 @@ impl ControlFlowStack {
 
     /// Returns a shared reference to the control flow frame at the given `depth`.
     ///
-    /// A `depth` of 0 is equal to calling [`ControlFlowStack::last`].
+    /// A `depth` of 0 returns a shared reference to the last control flow frame.
     ///
     /// # Panics
     ///
