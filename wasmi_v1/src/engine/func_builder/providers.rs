@@ -353,6 +353,18 @@ mod tests {
                 .unwrap(),
             IrRegisterSlice::new(IrRegister::Dynamic(0), 1),
         );
+        assert_eq!(
+            IrRegisterSlice::new(IrRegister::Dynamic(0), 2)
+                .sub_slice(1..2)
+                .unwrap(),
+            IrRegisterSlice::new(IrRegister::Dynamic(1), 1),
+        );
+        assert_eq!(
+            IrRegisterSlice::new(IrRegister::Dynamic(0), 2)
+                .sub_slice(0..2)
+                .unwrap(),
+            IrRegisterSlice::new(IrRegister::Dynamic(0), 2),
+        );
     }
 }
 
