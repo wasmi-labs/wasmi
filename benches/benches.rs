@@ -471,8 +471,8 @@ fn bench_execute_recursive_ok_v0(c: &mut Criterion) {
                 "call",
                 &[Value::I32(RECURSIVE_DEPTH)],
                 &mut v0::NopExternals,
-            );
-            assert_matches!(value, Ok(Some(Value::I32(0))));
+            ).unwrap();
+            assert_eq!(value, Some(Value::I32(0)));
         })
     });
 }
@@ -489,7 +489,7 @@ fn bench_execute_recursive_ok_v1(c: &mut Criterion) {
             bench_call
                 .call(&mut store, &[Value::I32(RECURSIVE_DEPTH)], &mut result)
                 .unwrap();
-            assert_matches!(result, [Value::I32(0)]);
+            assert_eq!(result, [Value::I32(0)]);
         })
     });
 }
