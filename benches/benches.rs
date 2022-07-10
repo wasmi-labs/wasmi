@@ -48,6 +48,8 @@ criterion_group!(
     bench_execute_fac_opt_v1,
     bench_execute_recursive_ok_v0,
     bench_execute_recursive_ok_v1,
+    bench_execute_recursive_scan_v0,
+    bench_execute_recursive_scan_v1,
     bench_execute_recursive_trap_v0,
     bench_execute_recursive_trap_v1,
     bench_execute_host_calls_v0,
@@ -490,6 +492,43 @@ fn bench_execute_recursive_ok_v1(c: &mut Criterion) {
                 .call(&mut store, &[Value::I32(RECURSIVE_DEPTH)], &mut result)
                 .unwrap();
             assert_eq!(result, [Value::I32(0)]);
+        })
+    });
+}
+
+const RECURSIVE_SCAN_DEPTH: i32 = 8000;
+const RECURSIVE_SCAN_EXPECTED: i32 =
+    ((RECURSIVE_SCAN_DEPTH * RECURSIVE_SCAN_DEPTH) + RECURSIVE_SCAN_DEPTH) / 2;
+
+fn bench_execute_recursive_scan_v0(c: &mut Criterion) {
+    let instance = load_instance_from_wat_v0(include_bytes!("wat/recursive_scan.wat"));
+    c.bench_function("execute/recursive_scan/v0", |b| {
+        b.iter(|| {
+            let value = instance
+                .invoke_export(
+                    "func",
+                    &[Value::I32(RECURSIVE_DEPTH)],
+                    &mut v0::NopExternals,
+                )
+                .unwrap();
+            assert_eq!(value, Some(Value::I32(RECURSIVE_SCAN_EXPECTED)));
+        })
+    });
+}
+
+fn bench_execute_recursive_scan_v1(c: &mut Criterion) {
+    let (mut store, instance) = load_instance_from_wat_v1(include_bytes!("wat/recursive_scan.wat"));
+    let bench_call = instance
+        .get_export(&store, "func")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    let mut result = [Value::I32(0)];
+    c.bench_function("execute/recursive_scan/v1", |b| {
+        b.iter(|| {
+            bench_call
+                .call(&mut store, &[Value::I32(RECURSIVE_DEPTH)], &mut result)
+                .unwrap();
+            assert_eq!(result, [Value::I32(RECURSIVE_SCAN_EXPECTED)]);
         })
     });
 }
