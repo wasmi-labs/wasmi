@@ -1,4 +1,4 @@
-use super::{IrRegisterSlice, LabelRef};
+use super::{providers::StackCheckpoint, IrRegisterSlice, LabelRef};
 use crate::module::BlockType;
 
 /// A Wasm `block` control flow frame.
@@ -162,17 +162,6 @@ pub struct IfControlFrame {
     block_type: BlockType,
     /// The provider stack height upon entering the [`IfControlFrame`].
     stack_height: u32,
-    /// The provider stack height for the otional `else` block.
-    ///
-    /// # Note
-    ///
-    /// Upon entering an `if` block we duplicate the parameters for the `if`
-    /// block so that we can reuse the provider stack for both, the parameters
-    /// of the `if` block as well as for the parameters of the optional `else`
-    /// block.
-    /// This way we do not have to store the block parameters out of space,
-    /// for example in this structure which would not be as efficient.
-    else_height: Option<u32>,
     /// End of `then` branch is reachable.
     ///
     /// # Note
@@ -187,6 +176,13 @@ pub struct IfControlFrame {
     end_of_then_is_reachable: Option<bool>,
     /// The reachability of the `if` and its `then` and `else` blocks.
     reachability: IfReachability,
+    /// The `if` checkpoint in the provider stack.
+    ///
+    /// # Note
+    ///
+    /// This is required in order to restore the stack when duplicating
+    /// `if` block parameters to cover the `else` case efficiently.
+    checkpoint: StackCheckpoint,
 }
 
 /// The reachability of the `if` control flow frame.
@@ -220,8 +216,8 @@ impl IfControlFrame {
         end_label: LabelRef,
         else_label: Option<LabelRef>,
         stack_height: u32,
-        else_height: Option<u32>,
         reachability: IfReachability,
+        checkpoint: StackCheckpoint,
     ) -> Self {
         assert_ne!(
             Some(end_label),
@@ -234,10 +230,20 @@ impl IfControlFrame {
             end_label,
             else_label,
             stack_height,
-            else_height,
             end_of_then_is_reachable: None,
             reachability,
+            checkpoint,
         }
+    }
+
+    /// Returns the `if` checkpoint in the provider stack.
+    ///
+    /// # Note
+    ///
+    /// This is required in order to restore the stack when duplicating
+    /// `if` block parameters to cover the `else` case efficiently.
+    pub fn checkpoint(&self) -> StackCheckpoint {
+        self.checkpoint
     }
 
     /// Returns the [`IrRegisterSlice`] to put the results of the [`IfControlFrame`].
@@ -285,16 +291,6 @@ impl IfControlFrame {
     /// Returns the value stack height upon entering the [`IfControlFrame`].
     pub fn stack_height(&self) -> u32 {
         self.stack_height
-    }
-
-    /// Returns the value stack height prepared for the `else` of the [`IfControlFrame`].
-    ///
-    /// # Note
-    ///
-    /// This might be `None` in case it is known at compile time that the
-    /// `else` block is unreachable while the `then` block is reachable.
-    pub fn else_height(&self) -> Option<u32> {
-        self.else_height
     }
 
     /// Returns the [`BlockType`] of the [`IfControlFrame`].

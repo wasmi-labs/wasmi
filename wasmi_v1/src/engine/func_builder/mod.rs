@@ -503,8 +503,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 // The `stack_height` is still denoting the height of the
                 // provider stack upon entering the outer `if` block.
                 let len_params = block_type.len_params(&self.engine);
-                self.providers.duplicate_n(len_params as usize);
-                let else_height = self.frame_stack_height(block_type);
+                let checkpoint = self.providers.duplicate_n(len_params as usize);
                 let else_label = self.inst_builder.new_label();
                 self.control_frames.push_frame(IfControlFrame::new(
                     results,
@@ -512,8 +511,8 @@ impl<'parser> FunctionBuilder<'parser> {
                     end_label,
                     Some(else_label),
                     stack_height,
-                    Some(else_height),
                     IfReachability::Both,
+                    checkpoint,
                 ));
                 self.push_instr(Instruction::BrEqz {
                     target: else_label,
@@ -537,23 +536,19 @@ impl<'parser> FunctionBuilder<'parser> {
                     self.reachable = false;
                     IfReachability::OnlyElse
                 };
-                // Since in this case we know that only one of `then` or
-                // `else` are reachable we do not require to duplicate the
-                // `if` parameters on the provider stack as in the general
-                // case.
-                let else_height = None;
                 // We are not in need of an `else` label if either `then`
                 // or `else` are unreachable since there won't be a `br_nez`
                 // instruction that would usually target it.
                 let else_label = None;
+                let checkpoint = self.providers.duplicate_n(0);
                 self.control_frames.push_frame(IfControlFrame::new(
                     results,
                     block_type,
                     end_label,
                     else_label,
                     stack_height,
-                    else_height,
                     reachability,
+                    checkpoint,
                 ));
             }
         }
@@ -623,9 +618,7 @@ impl<'parser> FunctionBuilder<'parser> {
             // We need to reset the value stack to exactly how it has been
             // when entering the `if` in the first place so that the `else`
             // block has the same parameters on top of the stack.
-            if let Some(else_height) = if_frame.else_height() {
-                self.providers.shrink_to(else_height);
-            }
+            self.providers.reset_to_checkpoint(if_frame.checkpoint());
         }
         self.control_frames.push_frame(if_frame);
         // We can reset reachability now since the parent `if` block was reachable.
@@ -706,17 +699,29 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translates a Wasm `end` control flow operator for an `if` without an `else` block.
     fn translate_end_if_then(&mut self, frame: IfControlFrame) -> Result<(), ModuleError> {
-        // At this point we can resolve the `Else` label.
-        //
-        // Note: The `Else` label might have already been resolved
-        //       in case there was an `Else` block.
+        let end_of_then_reachable = self.is_reachable();
+
+        // Finalize the `then` block if its end is reachable.
+        if end_of_then_reachable {
+            self.copy_frame_results(frame.end_results())?;
+            self.push_instr(IrInstruction::Br {
+                target: frame.end_label(),
+                results: IrRegisterSlice::empty(),
+                returned: IrProviderSlice::empty(),
+            });
+        }
+        // Finalize the missing `else` block.
+        // This treatment is especially important in `multi-value` return values.
         if let Some(else_label) = frame.else_label() {
             self.inst_builder.try_pin_label(else_label)
         }
+        self.providers.reset_to_checkpoint(frame.checkpoint());
         self.copy_frame_results(frame.end_results())?;
+
         // At this point we can resolve the `End` labels.
         // Note that `loop` control frames do not have an `End` label.
         self.inst_builder.pin_label(frame.end_label());
+
         // Code after a `if` ends is generally reachable again.
         self.reachable = true;
         self.finalize_frame(frame.into())

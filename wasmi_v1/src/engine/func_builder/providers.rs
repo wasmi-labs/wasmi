@@ -19,6 +19,14 @@ pub struct Stacks {
     max_preserved: usize,
 }
 
+/// A checkpoint for [`Providers::duplicate_n`] to restore the state.
+#[derive(Debug, Copy, Clone)]
+pub struct StackCheckpoint {
+    len_dynamic: usize,
+    len_preserved: usize,
+    height: usize,
+}
+
 impl Stacks {
     pub fn max_dynamic(&self) -> usize {
         self.max_dynamic
@@ -226,7 +234,8 @@ impl Providers {
     /// Duplicates the last `depth` providers on the stack.
     ///
     /// Returns a shared slice over the duplicated providers.
-    pub fn duplicate_n(&mut self, depth: usize) -> &[IrProvider] {
+    pub fn duplicate_n(&mut self, depth: usize) -> StackCheckpoint {
+        let checkpoint = self.store_checkpoint();
         let max_index = self.len() as usize;
         debug_assert!(depth <= max_index);
         let min_index = max_index - depth;
@@ -235,7 +244,37 @@ impl Providers {
             self.providers.push(self.providers[min_index + n]);
             n += 1;
         }
-        self.peek_n(depth)
+        checkpoint
+    }
+
+    /// Stores a checkpoint at the current position.
+    fn store_checkpoint(&mut self) -> StackCheckpoint {
+        let height = self.providers.len();
+        let len_dynamic = self.stacks.len_dynamic;
+        let len_preserved = self.stacks.len_preserved;
+        StackCheckpoint {
+            len_dynamic,
+            len_preserved,
+            height,
+        }
+    }
+
+    /// Resets the provider stack to the given `checkpoint`.
+    ///
+    /// # Note
+    ///
+    /// This is required in order to restore the stack correctly
+    /// after duplicating some `if` block stack parameters in order
+    /// to efficiently cover the optional `else` block. Otherwise
+    /// we would need to intermediately store the parameters on
+    /// the frame stack.
+    pub fn reset_to_checkpoint(&mut self, checkpoint: StackCheckpoint) {
+        debug_assert!(self.stacks.len_dynamic <= checkpoint.len_dynamic);
+        debug_assert!(self.stacks.len_preserved <= checkpoint.len_preserved);
+        self.stacks.len_dynamic = checkpoint.len_dynamic;
+        self.stacks.len_preserved = checkpoint.len_preserved;
+        self.providers
+            .resize(checkpoint.height, IrProvider::Immediate(0.into()));
     }
 
     /// Returns the current length of the emulated [`Providers`].
