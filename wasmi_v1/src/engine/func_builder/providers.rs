@@ -147,7 +147,7 @@ impl Providers {
             .iter()
             .filter(|provider| matches!(provider, IrProvider::Register(IrRegister::Dynamic(_))))
             .count();
-        let delta_dynamic = len_results.checked_sub(len_popped_dynamic).unwrap_or(0);
+        let delta_dynamic = len_results.saturating_sub(len_popped_dynamic);
         let first = self.stacks.bump_max_dynamic(delta_dynamic) - len_popped_dynamic;
         IrRegisterSlice::new(IrRegister::Dynamic(first), len)
     }
