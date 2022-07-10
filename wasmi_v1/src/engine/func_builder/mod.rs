@@ -591,24 +591,27 @@ impl<'parser> FunctionBuilder<'parser> {
         // Create the jump from the end of the `then` block to the `if`
         // block's end label in case the end of `then` is reachable.
         if then_reachable {
+            let reachable = self.is_reachable();
             // Return providers on the stack to where the `if` block expects
             // its results in case the `if` block has return values.
             let results = if_frame.branch_results();
-            let returned = self.providers.pop_n(results.len() as usize);
-            if else_reachable {
+            if reachable && else_reachable {
                 // Case: both `then` and `else` are reachable
+                let returned = self.providers.pop_n(results.len() as usize);
                 let returned = self.provider_slices.alloc(returned);
                 self.push_instr(Instruction::Br {
                     target: if_frame.end_label(),
                     results,
                     returned,
                 });
-                // Now resolve labels for the instructions of the `else` block
-                if let Some(else_label) = if_frame.else_label() {
-                    self.inst_builder.pin_label(else_label);
-                }
-            } else {
+            }
+            // Now resolve labels for the instructions of the `else` block
+            if let Some(else_label) = if_frame.else_label() {
+                self.inst_builder.pin_label(else_label);
+            }
+            if reachable && !else_reachable {
                 // Case: only `then` is reachable
+                let returned = self.providers.pop_n(results.len() as usize);
                 self.inst_builder.push_copy_many_instr(
                     &mut self.provider_slices,
                     results,
