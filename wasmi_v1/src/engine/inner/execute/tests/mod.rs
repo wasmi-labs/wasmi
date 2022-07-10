@@ -356,6 +356,34 @@ fn test_regression_if_4() {
 }
 
 #[test]
+fn test_regression_if_6() {
+    fn test_for(func: Func, store: &mut Store<()>, a: i64, b: i64, expected: i64) {
+        let mut result = [Value::I64(0)];
+        func.call(store, &[Value::I64(a), Value::I64(b)], &mut result)
+            .unwrap();
+        assert_eq!(result, [Value::I64(expected)]);
+    }
+
+    let (mut store, instance) = load_test_instance!("wat/multi-value/if-4.wat");
+    let func = load_func(&store, &instance, "add64_u_saturated");
+
+    print_func(&store, func);
+
+    test_for(func, &mut store, 0, 0, 0);
+    test_for(func, &mut store, 1230, 23, 1253);
+    test_for(func, &mut store, -1, 0, -1);
+    test_for(func, &mut store, -1, 1, -1);
+    test_for(func, &mut store, -1, -1, -1);
+    test_for(
+        func,
+        &mut store,
+        0x8000_0000_0000_0000_u64 as i64,
+        0x8000_0000_0000_0000_u64 as i64,
+        -1,
+    );
+}
+
+#[test]
 fn test_regression_if_5() {
     fn test_for(func: Func, store: &mut Store<()>, input: i32, expected: i32) {
         let mut result = [Value::I32(0)];
