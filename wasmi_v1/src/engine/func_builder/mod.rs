@@ -409,9 +409,7 @@ impl<'parser> FunctionBuilder<'parser> {
         let stack_height = self.frame_stack_height(block_type);
         if self.is_reachable() {
             let end_label = self.inst_builder.new_label();
-            let results = self
-                .providers
-                .peek_dynamic_many(block_type.len_results(&self.engine) as usize);
+            let results = self.block_results(block_type);
             self.control_frames.push_frame(BlockControlFrame::new(
                 results,
                 block_type,
@@ -433,12 +431,9 @@ impl<'parser> FunctionBuilder<'parser> {
         self.update_allow_set_local_override(false);
         let stack_height = self.frame_stack_height(block_type);
         if self.is_reachable() {
-            let branch_results = self
-                .providers
-                .peek_dynamic_many(block_type.len_params(&self.engine) as usize);
-            let end_results = self
-                .providers
-                .peek_dynamic_many(block_type.len_results(&self.engine) as usize);
+            let len_params = block_type.len_params(&self.engine) as usize;
+            let branch_results = self.providers.block_results(len_params, len_params);
+            let end_results = self.block_results(block_type);
             // Copy over the initial loop arguments from the provider stack.
             // Unlike with other blocks we do have to do this since loop headers
             // can be jumped to again for which they always need their inputs
@@ -471,6 +466,13 @@ impl<'parser> FunctionBuilder<'parser> {
         Ok(())
     }
 
+    /// Computes the [`IrRegisterSlice`] for a control flow frame.
+    fn block_results(&mut self, block_type: BlockType) -> IrRegisterSlice {
+        let len_params = block_type.len_params(&self.engine) as usize;
+        let len_results = block_type.len_results(&self.engine) as usize;
+        self.providers.block_results(len_results, len_params)
+    }
+
     /// Translates a Wasm `if` control flow operator.
     pub fn translate_if(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
         self.update_allow_set_local_override(false);
@@ -487,9 +489,7 @@ impl<'parser> FunctionBuilder<'parser> {
         }
         let condition = self.providers.pop();
         let stack_height = self.frame_stack_height(block_type);
-        let results = self
-            .providers
-            .peek_dynamic_many(block_type.len_results(&self.engine) as usize);
+        let results = self.block_results(block_type);
         let end_label = self.inst_builder.new_label();
         match condition {
             IrProvider::Register(condition) => {

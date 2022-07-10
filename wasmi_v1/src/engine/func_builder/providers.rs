@@ -30,14 +30,15 @@ impl Stacks {
 
     /// Bumps the maximum dynamic register space by the amount of new registers.
     ///
-    /// Returns the first register in the continuous slice of registers.
+    /// Returns the index of the first dynamic register
+    /// in the continuous slice of registers.
     ///
     /// # Note
     ///
     /// This does not actually allocate registers on the stack but instead
     /// reserves them for later purposes.
-    fn bump_max_dynamic(&mut self, amount: usize) -> IrRegister {
-        let register = IrRegister::Dynamic(self.len_dynamic);
+    fn bump_max_dynamic(&mut self, amount: usize) -> usize {
+        let register = self.len_dynamic;
         self.max_dynamic = max(self.max_dynamic, self.len_dynamic + amount);
         register
     }
@@ -126,15 +127,29 @@ impl Providers {
     }
 
     pub fn peek_dynamic(&mut self) -> IrRegister {
-        self.stacks.bump_max_dynamic(1)
+        IrRegister::Dynamic(self.stacks.bump_max_dynamic(1))
     }
 
     pub fn peek_dynamic_many(&mut self, amount: usize) -> IrRegisterSlice {
         let len = u16::try_from(amount).unwrap_or_else(|error| {
             panic!("tried to push too many dynamic registers ({amount}): {error}")
         });
-        let first = self.stacks.bump_max_dynamic(amount);
+        let first = IrRegister::Dynamic(self.stacks.bump_max_dynamic(amount));
         IrRegisterSlice::new(first, len)
+    }
+
+    pub fn block_results(&mut self, len_results: usize, len_params: usize) -> IrRegisterSlice {
+        let len = u16::try_from(len_results).unwrap_or_else(|error| {
+            panic!("tried to push too many dynamic registers ({len_results}): {error}")
+        });
+        let len_popped_dynamic = self
+            .peek_n(len_params)
+            .iter()
+            .filter(|provider| matches!(provider, IrProvider::Register(IrRegister::Dynamic(_))))
+            .count();
+        let delta_dynamic = len_results.checked_sub(len_popped_dynamic).unwrap_or(0);
+        let first = self.stacks.bump_max_dynamic(delta_dynamic) - len_popped_dynamic;
+        IrRegisterSlice::new(IrRegister::Dynamic(first), len)
     }
 
     pub fn push_dynamic_many(&mut self, amount: usize) -> IrRegisterSlice {
