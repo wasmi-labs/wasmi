@@ -469,11 +469,13 @@ fn bench_execute_recursive_ok_v0(c: &mut Criterion) {
     let instance = load_instance_from_wat_v0(include_bytes!("wat/recursive_ok.wat"));
     c.bench_function("execute/recursive_ok/v0", |b| {
         b.iter(|| {
-            let value = instance.invoke_export(
-                "call",
-                &[Value::I32(RECURSIVE_DEPTH)],
-                &mut v0::NopExternals,
-            ).unwrap();
+            let value = instance
+                .invoke_export(
+                    "call",
+                    &[Value::I32(RECURSIVE_DEPTH)],
+                    &mut v0::NopExternals,
+                )
+                .unwrap();
             assert_eq!(value, Some(Value::I32(0)));
         })
     });
