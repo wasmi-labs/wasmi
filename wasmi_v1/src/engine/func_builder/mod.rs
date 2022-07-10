@@ -503,16 +503,14 @@ impl<'parser> FunctionBuilder<'parser> {
                 // The `stack_height` is still denoting the height of the
                 // provider stack upon entering the outer `if` block.
                 let len_params = block_type.len_params(&self.engine);
-                let checkpoint = self.providers.duplicate_n(len_params as usize);
+                let else_checkpoint = self.providers.duplicate_n(len_params as usize);
                 let else_label = self.inst_builder.new_label();
                 self.control_frames.push_frame(IfControlFrame::new(
                     results,
                     block_type,
                     end_label,
-                    Some(else_label),
                     stack_height,
-                    IfReachability::Both,
-                    checkpoint,
+                    IfReachability::both(else_label, else_checkpoint),
                 ));
                 self.push_instr(Instruction::BrEqz {
                     target: else_label,
@@ -536,19 +534,12 @@ impl<'parser> FunctionBuilder<'parser> {
                     self.reachable = false;
                     IfReachability::OnlyElse
                 };
-                // We are not in need of an `else` label if either `then`
-                // or `else` are unreachable since there won't be a `br_nez`
-                // instruction that would usually target it.
-                let else_label = None;
-                let checkpoint = self.providers.duplicate_n(0);
                 self.control_frames.push_frame(IfControlFrame::new(
                     results,
                     block_type,
                     end_label,
-                    else_label,
                     stack_height,
                     reachability,
-                    checkpoint,
                 ));
             }
         }
@@ -618,7 +609,9 @@ impl<'parser> FunctionBuilder<'parser> {
             // We need to reset the value stack to exactly how it has been
             // when entering the `if` in the first place so that the `else`
             // block has the same parameters on top of the stack.
-            self.providers.reset_to_checkpoint(if_frame.checkpoint());
+            if let IfReachability::Both(info) = &if_frame.reachability {
+                self.providers.reset_to_checkpoint(info.else_checkpoint());
+            }
         }
         self.control_frames.push_frame(if_frame);
         // We can reset reachability now since the parent `if` block was reachable.
@@ -712,10 +705,10 @@ impl<'parser> FunctionBuilder<'parser> {
         }
         // Finalize the missing `else` block.
         // This treatment is especially important in `multi-value` return values.
-        if let Some(else_label) = frame.else_label() {
-            self.inst_builder.try_pin_label(else_label)
+        if let IfReachability::Both(info) = frame.reachability {
+            self.inst_builder.try_pin_label(info.else_label());
+            self.providers.reset_to_checkpoint(info.else_checkpoint());
         }
-        self.providers.reset_to_checkpoint(frame.checkpoint());
         self.copy_frame_results(frame.end_results())?;
 
         // At this point we can resolve the `End` labels.

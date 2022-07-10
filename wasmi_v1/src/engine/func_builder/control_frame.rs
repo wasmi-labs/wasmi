@@ -151,17 +151,19 @@ pub struct IfControlFrame {
     results: IrRegisterSlice,
     /// Label representing the end of the [`IfControlFrame`].
     end_label: LabelRef,
-    /// Label representing the optional `else` branch of the [`IfControlFrame`].
-    ///
-    /// # Note
-    ///
-    /// This might be `None` in case it is known at compile time that the
-    /// `else` block is unreachable while the `then` block is reachable.
-    else_label: Option<LabelRef>,
     /// The type of the [`IfControlFrame`].
     block_type: BlockType,
     /// The provider stack height upon entering the [`IfControlFrame`].
     stack_height: u32,
+    /// The reachability of the `if` and its `then` and `else` blocks.
+    pub reachability: IfReachability,
+}
+
+/// The reachability of the `if` control flow frame when both arms can be reached.
+#[derive(Debug, Copy, Clone)]
+pub struct IfReachabilityBoth {
+    /// Label representing the optional `else` branch of the [`IfControlFrame`].
+    else_label: LabelRef,
     /// End of `then` branch is reachable.
     ///
     /// # Note
@@ -174,38 +176,86 @@ pub struct IfControlFrame {
     /// - An `end_of_else_is_reachable` field is not needed since it will
     ///   be easily computed once the translation reaches the end of the `if`.
     end_of_then_is_reachable: Option<bool>,
-    /// The reachability of the `if` and its `then` and `else` blocks.
-    reachability: IfReachability,
     /// The `if` checkpoint in the provider stack.
     ///
     /// # Note
     ///
     /// This is required in order to restore the stack when duplicating
     /// `if` block parameters to cover the `else` case efficiently.
-    checkpoint: StackCheckpoint,
+    else_checkpoint: StackCheckpoint,
+}
+
+impl IfReachabilityBoth {
+    /// Returns the `else` checkpoint in the provider stack.
+    ///
+    /// # Note
+    ///
+    /// This is required in order to restore the stack when duplicating
+    /// `if` block parameters to cover the `else` case efficiently.
+    pub fn else_checkpoint(&self) -> StackCheckpoint {
+        self.else_checkpoint
+    }
+
+    /// Returns the label to the optional `else` of the [`IfControlFrame`].
+    pub fn else_label(&self) -> LabelRef {
+        self.else_label
+    }
+
+    /// Updates the reachability of the end of the `then` branch.
+    ///
+    /// # Note
+    ///
+    /// This is guaranteed to be called when visiting the `else` block
+    /// of an `if` block. So after visiting the `else` block the
+    /// `end_of_then_is_reachable` is always `Some(_)`.
+    ///
+    /// # Panics
+    ///
+    /// If this information has already been provided prior.
+    pub fn update_end_of_then_reachability(&mut self, reachable: bool) {
+        assert!(self.end_of_then_is_reachable.is_none());
+        self.end_of_then_is_reachable = Some(reachable);
+    }
+
+    /// Returns `true` if the `else` block has been visited.
+    pub fn visited_else(&self) -> bool {
+        self.end_of_then_is_reachable.is_some()
+    }
 }
 
 /// The reachability of the `if` control flow frame.
 #[derive(Debug, Copy, Clone)]
 pub enum IfReachability {
     /// Both, `then` and `else` blocks of the `if` are reachable.
-    Both,
+    ///
+    /// # Note
+    ///
+    /// This variant does not mean that necessarily both `then` and `else`
+    /// blocks do exist and are non-empty. The `then` block might still be
+    /// empty and the `then` block might still be missing.
+    Both(IfReachabilityBoth),
     /// Only the `then` block of the `if` is reachable.
     ///
     /// # Note
     ///
-    /// This might be `false` if the condition of the `if` is a constant `false`
-    /// value. In this case the `wasmi` translator flattens the `if` block to
-    /// the `else` case.
+    /// This case happens only in case the `if` has a `true` constant condition.
     OnlyThen,
     /// Only the `else` block of the `if` is reachable.
     ///
     /// # Note
     ///
-    /// This might be `false` if the condition of the `if` is a constant `true`
-    /// value. In this case the `wasmi` translator flattens the `if` block to
-    /// the `then` case.
+    /// This case happens only in case the `if` has a `false` constant condition.
     OnlyElse,
+}
+
+impl IfReachability {
+    pub fn both(else_label: LabelRef, else_checkpoint: StackCheckpoint) -> Self {
+        Self::Both(IfReachabilityBoth {
+            else_label,
+            end_of_then_is_reachable: None,
+            else_checkpoint,
+        })
+    }
 }
 
 impl IfControlFrame {
@@ -214,36 +264,22 @@ impl IfControlFrame {
         results: IrRegisterSlice,
         block_type: BlockType,
         end_label: LabelRef,
-        else_label: Option<LabelRef>,
         stack_height: u32,
         reachability: IfReachability,
-        checkpoint: StackCheckpoint,
     ) -> Self {
-        assert_ne!(
-            Some(end_label),
-            else_label,
-            "end and else labels must be different"
-        );
+        if let IfReachability::Both(info) = reachability {
+            assert_ne!(
+                end_label, info.else_label,
+                "end and else labels must be different"
+            );
+        }
         Self {
             results,
             block_type,
             end_label,
-            else_label,
             stack_height,
-            end_of_then_is_reachable: None,
             reachability,
-            checkpoint,
         }
-    }
-
-    /// Returns the `if` checkpoint in the provider stack.
-    ///
-    /// # Note
-    ///
-    /// This is required in order to restore the stack when duplicating
-    /// `if` block parameters to cover the `else` case efficiently.
-    pub fn checkpoint(&self) -> StackCheckpoint {
-        self.checkpoint
     }
 
     /// Returns the [`IrRegisterSlice`] to put the results of the [`IfControlFrame`].
@@ -278,14 +314,12 @@ impl IfControlFrame {
         self.end_label
     }
 
-    /// Returns the label to the optional `else` of the [`IfControlFrame`].
-    ///
-    /// # Note
-    ///
-    /// This might be `None` in case it is known at compile time that the
-    /// `else` block is unreachable while the `then` block is reachable.
+    /// Returns the label to the optional `else` block of the [`IfControlFrame`].
     pub fn else_label(&self) -> Option<LabelRef> {
-        self.else_label
+        if let IfReachability::Both(info) = self.reachability {
+            return Some(info.else_label);
+        }
+        None
     }
 
     /// Returns the value stack height upon entering the [`IfControlFrame`].
@@ -310,20 +344,24 @@ impl IfControlFrame {
     ///
     /// If this information has already been provided prior.
     pub fn update_end_of_then_reachability(&mut self, reachable: bool) {
-        assert!(self.end_of_then_is_reachable.is_none());
-        self.end_of_then_is_reachable = Some(reachable);
+        if let IfReachability::Both(info) = &mut self.reachability {
+            info.update_end_of_then_reachability(reachable)
+        }
     }
 
     /// Returns `true` if the `else` block has been visited.
     pub fn visited_else(&self) -> bool {
-        self.end_of_then_is_reachable.is_some()
+        match self.reachability {
+            IfReachability::Both(info) => info.visited_else(),
+            IfReachability::OnlyThen | IfReachability::OnlyElse => true,
+        }
     }
 
     /// Returns `true` if the `then` block is known to be reachable.
     pub fn is_then_reachable(&self) -> bool {
         matches!(
             self.reachability,
-            IfReachability::Both | IfReachability::OnlyThen
+            IfReachability::Both(_) | IfReachability::OnlyThen
         )
     }
 
@@ -331,7 +369,7 @@ impl IfControlFrame {
     pub fn is_else_reachable(&self) -> bool {
         matches!(
             self.reachability,
-            IfReachability::Both | IfReachability::OnlyElse
+            IfReachability::Both(_) | IfReachability::OnlyElse
         )
     }
 }
