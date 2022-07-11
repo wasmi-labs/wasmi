@@ -288,17 +288,15 @@ impl Stack {
             self.frames.is_empty(),
             "the call stack must be empty to call a function as root",
         );
-        // The host function signature is required for properly
-        // adjusting, inspecting and manipulating the value stack.
-        let (input_types, output_types) = res
+        // We extend the value stack by the maximum amount between parameter
+        // and results values for the called host function.
+        let (param_types, result_types) = res
             .func_types
             .resolve_func_type(host_func.signature())
             .params_results();
-        // In case the host function returns more values than it takes
-        // we are required to extend the value stack.
-        let len_inputs = input_types.len();
-        let len_outputs = output_types.len();
-        let max_inout = cmp::max(len_inputs, len_outputs);
+        let len_params = param_types.len();
+        let len_results = result_types.len();
+        let max_inout = cmp::max(len_params, len_results);
         // Push registers for the host function parameters and feed parameters.
         let callee_region = self.entries.extend_by(max_inout)?;
         let mut callee_regs = self.entries.frame_regs(callee_region);
@@ -310,13 +308,9 @@ impl Stack {
             });
         // Set up for actually calling the host function.
         let callee_regs = self.entries.frame_regs(callee_region); // TODO: why do we need this?? (mutable borrow issue)
-        let params_results = FuncParams::new(callee_regs.regs, len_inputs, len_outputs);
+        let params_results = FuncParams::new(callee_regs.regs, len_params, len_results);
         host_func.call(ctx, None, params_results)?;
         // Write back results of the execution.
-        let result_types = res
-            .func_types
-            .resolve_func_type(host_func.signature())
-            .results();
         let result_values = callee_regs
             .into_iter()
             .zip(result_types)
@@ -344,17 +338,15 @@ impl Stack {
             !self.frames.is_empty(),
             "the root stack frame must be on the call stack"
         );
-        // The host function signature is required for properly
-        // adjusting, inspecting and manipulating the value stack.
-        let (input_types, output_types) = res
+        // We extend the value stack by the maximum amount between parameter
+        // and results values for the called host function.
+        let (param_types, result_types) = res
             .func_types
             .resolve_func_type(host_func.signature())
             .params_results();
-        // In case the host function returns more values than it takes
-        // we are required to extend the value stack.
-        let len_inputs = input_types.len();
-        let len_outputs = output_types.len();
-        let max_inout = cmp::max(len_inputs, len_outputs);
+        let len_params = param_types.len();
+        let len_results = result_types.len();
+        let max_inout = cmp::max(len_params, len_results);
         // Push registers for the host function parameters
         // and return values on the value stack.
         let callee_region = self.entries.extend_by(max_inout)?;
@@ -363,16 +355,16 @@ impl Stack {
             self.entries.paired_frame_regs(caller.region, callee_region);
         // Initialize registers that act as host function parameters.
         let args = res.provider_pool.resolve(args);
-        let params = ExecRegisterSlice::params(len_inputs as u16);
+        let params = ExecRegisterSlice::params(len_params as u16);
         args.iter().zip(params).for_each(|(param, host_param)| {
             let param_value = caller_regs.load_provider(res, *param);
             callee_regs.set(host_param, param_value);
         });
         // Set up for actually calling the host function.
-        let params_results = FuncParams::new(callee_regs.regs, len_inputs, len_outputs);
+        let params_results = FuncParams::new(callee_regs.regs, len_params, len_results);
         host_func.call(ctx, Some(caller.instance), params_results)?;
         // Write results of the host function call back to the caller.
-        let returned = ExecRegisterSlice::params(len_outputs as u16);
+        let returned = ExecRegisterSlice::params(len_results as u16);
         results.iter().zip(returned).for_each(|(result, returned)| {
             caller_regs.set(result, callee_regs.get(returned));
         });
