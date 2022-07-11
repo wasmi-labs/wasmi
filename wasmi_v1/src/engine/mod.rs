@@ -11,19 +11,19 @@ mod traits;
 pub mod value_stack;
 
 pub(crate) use self::func_args::{FuncParams, FuncResults};
+use self::{
+    bytecode::Instruction,
+    call_stack::{CallStack, FunctionFrame},
+    code_map::{CodeMap, ResolvedFuncBody},
+    exec_context::FunctionExecutor,
+    func_types::FuncTypeRegistry,
+    value_stack::ValueStack,
+};
 pub use self::{
     bytecode::{DropKeep, Target},
     code_map::FuncBody,
     func_builder::{FunctionBuilder, InstructionIdx, LabelIdx, RelativeDepth, Reloc},
     traits::{CallParams, CallResults},
-};
-use self::{
-    bytecode::{Instruction, VisitInstruction},
-    call_stack::{CallStack, FunctionFrame},
-    code_map::{CodeMap, ResolvedFuncBody},
-    exec_context::ExecutionContext,
-    func_types::FuncTypeRegistry,
-    value_stack::ValueStack,
 };
 use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func};
 use crate::{
@@ -562,7 +562,7 @@ impl EngineInner {
         mut ctx: impl AsContextMut,
         frame: &mut FunctionFrame,
     ) -> Result<CallOutcome, Trap> {
-        ExecutionContext::new(self, frame)?.execute_frame(&mut ctx)
+        FunctionExecutor::new(self, frame)?.execute_frame(&mut ctx)
     }
 
     /// Executes the given host function.
