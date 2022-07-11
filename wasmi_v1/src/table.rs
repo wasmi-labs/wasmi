@@ -1,5 +1,3 @@
-#![allow(clippy::len_without_is_empty)]
-
 use super::{AsContext, AsContextMut, Func, Index, Stored};
 use alloc::vec::Vec;
 use core::{fmt, fmt::Display};

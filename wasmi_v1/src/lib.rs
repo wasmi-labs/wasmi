@@ -4,6 +4,8 @@
 //! The overall structure is heavily inspired by the `wasmtime` virtual
 //! machine architecture.
 
+#![allow(clippy::len_without_is_empty)]
+
 #[cfg(not(feature = "std"))]
 #[macro_use]
 extern crate alloc;

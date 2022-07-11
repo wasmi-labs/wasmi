@@ -1,6 +1,5 @@
 use super::super::{utils::value_type_from_wasmparser, FuncTypeIdx, ModuleResources};
 use crate::{core::ValueType, engine::DedupFuncType, Engine, ModuleError};
-use core::slice;
 
 /// The type of a Wasm control flow block.
 #[derive(Debug, Copy, Clone)]
@@ -80,43 +79,6 @@ impl BlockType {
             BlockTypeInner::Returns(_) => 1,
             BlockTypeInner::FuncType(func_type) => {
                 engine.resolve_func_type(*func_type, |func_type| func_type.results().len() as u32)
-            }
-        }
-    }
-
-    /// Calls `f` for each block parameter type.
-    pub fn foreach_param<F>(&self, engine: &Engine, mut f: F)
-    where
-        F: FnMut(ValueType),
-    {
-        match &self.inner {
-            BlockTypeInner::Empty | BlockTypeInner::Returns(_) => (),
-            BlockTypeInner::FuncType(func_type) => {
-                engine.resolve_func_type(*func_type, |func_type| {
-                    for param in func_type.params() {
-                        f(*param);
-                    }
-                })
-            }
-        }
-    }
-
-    /// Calls `f` for each block result type.
-    pub fn foreach_result<F>(&self, engine: &Engine, mut f: F)
-    where
-        F: FnMut(ValueType),
-    {
-        match &self.inner {
-            BlockTypeInner::Empty => (),
-            BlockTypeInner::Returns(result) => {
-                f(*result);
-            }
-            BlockTypeInner::FuncType(func_type) => {
-                engine.resolve_func_type(*func_type, |func_type| {
-                    for result in func_type.results() {
-                        f(*result);
-                    }
-                })
             }
         }
     }

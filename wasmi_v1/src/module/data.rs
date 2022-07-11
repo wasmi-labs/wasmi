@@ -5,7 +5,7 @@ use super::{InitExpr, MemoryIdx, ModuleError};
 /// [`Module`]: [`super::Module`]
 #[derive(Debug)]
 pub struct DataSegment {
-    memory_index: MemoryIdx,
+    _memory_index: MemoryIdx,
     offset: InitExpr,
     data: Box<[u8]>,
 }
@@ -31,7 +31,7 @@ impl TryFrom<wasmparser::Data<'_>> for DataSegment {
         };
         let data = data.data.into();
         Ok(DataSegment {
-            memory_index,
+            _memory_index: memory_index,
             offset,
             data,
         })
@@ -39,13 +39,6 @@ impl TryFrom<wasmparser::Data<'_>> for DataSegment {
 }
 
 impl DataSegment {
-    /// Returns the index of the [`Memory`] manipulated by the [`DataSegment`].
-    ///
-    /// [`Memory`]: [`crate::Memory`]
-    pub fn memory_index(&self) -> MemoryIdx {
-        self.memory_index
-    }
-
     /// Returns the offset expression of the [`DataSegment`].
     pub fn offset(&self) -> &InitExpr {
         &self.offset

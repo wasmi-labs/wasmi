@@ -1,7 +1,4 @@
-use super::{
-    super::{DedupProviderSliceArena, ExecProvider, ExecProviderSlice},
-    ExecInstruction,
-};
+use super::{super::ExecProvider, ExecInstruction};
 
 #[test]
 fn size_of_instruction() {
