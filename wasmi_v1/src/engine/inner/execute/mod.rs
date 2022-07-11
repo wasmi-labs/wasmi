@@ -60,8 +60,10 @@ impl EngineInner {
                 let returned = self.execute_frame(&mut ctx, frame)?;
                 Ok(self.return_results(signature, returned, results))
             }
-            FuncEntityInternal::Host(_host_func) => {
-                todo!() // Wasm spec test suite requires this to work, too.
+            FuncEntityInternal::Host(host_func) => {
+                let host_func = host_func.clone();
+                self.stack
+                    .call_host_as_root(ctx, &self.res, &host_func, params, results)
             }
         }
     }

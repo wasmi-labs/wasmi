@@ -266,6 +266,64 @@ impl Stack {
         Some(self.frames.last_frame_ref())
     }
 
+    /// Executes a host function as the root of the execution.
+    ///
+    /// # Errors
+    ///
+    /// If the host function returns a host side error or trap.
+    pub(super) fn call_host_as_root<Ctx, Params, Results>(
+        &mut self,
+        ctx: Ctx,
+        res: &EngineResources,
+        host_func: &HostFuncEntity<<Ctx as AsContext>::UserState>,
+        params: Params,
+        results: Results,
+    ) -> Result<<Results as CallResults>::Results, Trap>
+    where
+        Ctx: AsContextMut,
+        Params: CallParams,
+        Results: CallResults,
+    {
+        debug_assert!(
+            self.frames.is_empty(),
+            "the call stack must be empty to call a function as root",
+        );
+        // The host function signature is required for properly
+        // adjusting, inspecting and manipulating the value stack.
+        let (input_types, output_types) = res
+            .func_types
+            .resolve_func_type(host_func.signature())
+            .params_results();
+        // In case the host function returns more values than it takes
+        // we are required to extend the value stack.
+        let len_inputs = input_types.len();
+        let len_outputs = output_types.len();
+        let max_inout = cmp::max(len_inputs, len_outputs);
+        // Push registers for the host function parameters and feed parameters.
+        let callee_region = self.entries.extend_by(max_inout)?;
+        let mut callee_regs = self.entries.frame_regs(callee_region);
+        params
+            .feed_params()
+            .zip(&mut callee_regs)
+            .for_each(|(param, arg)| {
+                *arg = param.into();
+            });
+        // Set up for actually calling the host function.
+        let callee_regs = self.entries.frame_regs(callee_region); // TODO: why do we need this?? (mutable borrow issue)
+        let params_results = FuncParams::new(callee_regs.regs, len_inputs, len_outputs);
+        host_func.call(ctx, None, params_results)?;
+        // Write back results of the execution.
+        let result_types = res
+            .func_types
+            .resolve_func_type(host_func.signature())
+            .results();
+        let result_values = callee_regs
+            .into_iter()
+            .zip(result_types)
+            .map(|(returned_value, returned_type)| returned_value.with_type(*returned_type));
+        Ok(results.feed_results(result_values))
+    }
+
     /// Executes a host function with the last frame as its caller.
     ///
     /// # Errors
@@ -449,6 +507,15 @@ impl<'a> Display for StackFrameRegisters<'a> {
 impl<'a> From<&'a mut [UntypedValue]> for StackFrameRegisters<'a> {
     fn from(regs: &'a mut [UntypedValue]) -> Self {
         Self { regs }
+    }
+}
+
+impl<'a> IntoIterator for &'a mut StackFrameRegisters<'a> {
+    type Item = &'a mut UntypedValue;
+    type IntoIter = slice::IterMut<'a, UntypedValue>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.regs.iter_mut()
     }
 }
 
