@@ -52,14 +52,15 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
     #[inline(always)]
     #[rustfmt::skip]
     pub fn execute_frame(self, mut ctx: impl AsContextMut) -> Result<CallOutcome, Trap> {
+        use Instruction as Instr;
         let mut exec_ctx = ExecutionContext::new(self.value_stack, self.frame, &mut ctx);
         loop {
-            let pc = exec_ctx.frame.pc;
             // # Safety
             //
             // Properly constructed `wasmi` bytecode can never produce invalid `pc`.
-            let instr = unsafe { self.func_body.get_release_unchecked(pc) };
-            use Instruction as Instr;
+            let instr = unsafe {
+                self.func_body.get_release_unchecked(exec_ctx.frame.pc)
+            };
             match instr {
                 Instr::GetLocal { local_depth } => { exec_ctx.visit_get_local(*local_depth)?; }
                 Instr::SetLocal { local_depth } => { exec_ctx.visit_set_local(*local_depth)?; }
@@ -253,7 +254,8 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 Instr::I64Extend16S => { exec_ctx.visit_i64_sign_extend16()?; }
                 Instr::I64Extend32S => { exec_ctx.visit_i64_sign_extend32()?; }
                 Instr::FuncBodyStart { .. } | Instruction::FuncBodyEnd => unreachable!(
-                    "expected start of a new instruction at index {pc} but found: {instr:?}",
+                    "expected start of a new instruction at index {} but found: {instr:?}",
+                    exec_ctx.frame.pc
                 ),
             }
         }

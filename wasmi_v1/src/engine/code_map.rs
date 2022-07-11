@@ -181,6 +181,7 @@ impl<'a> ResolvedFuncBody<'a> {
     /// # Panics (Debug)
     ///
     /// Panics in debug mode if the `pc` is invalid for the [`ResolvedFuncBody`].
+    #[inline(always)]
     pub unsafe fn get_release_unchecked(&self, pc: usize) -> &Instruction {
         debug_assert!(
             self.insts.get(pc).is_some(),
