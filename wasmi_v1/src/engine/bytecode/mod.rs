@@ -5,9 +5,7 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
-pub use self::{
-    utils::{ExecRegister, ExecRegisterSlice, Global, Offset, Target},
-};
+pub use self::utils::{ExecRegister, ExecRegisterSlice, Global, Offset, Target};
 use super::{ExecProvider, ExecProviderSlice};
 use crate::module::{FuncIdx, FuncTypeIdx};
 use wasmi_core::TrapCode;
