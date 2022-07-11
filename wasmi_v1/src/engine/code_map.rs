@@ -180,6 +180,28 @@ impl ResolvedFuncBody<'_> {
 }
 
 impl<'a> ResolvedFuncBody<'a> {
+    /// Returns a shared reference to the instruction at the given `pc`.
+    ///
+    /// # Panics (Debug)
+    ///
+    /// Panics in debug mode if the `pc` is invalid for the [`ResolvedFuncBody`].
+    pub unsafe fn get_release_unchecked(&self, pc: usize) -> &Instruction {
+        debug_assert!(
+            self.insts.get(pc).is_some(),
+            "unexpectedly missing instruction at index {pc}",
+        );
+        // # Safety
+        //
+        // This access is safe since all possible accesses have already been
+        // checked during Wasm validation. Functions and their instructions including
+        // jump addresses are immutable after Wasm function compilation and validation
+        // and therefore this bounds check can be safely eliminated.
+        //
+        // Note that eliminating this bounds check is extremely valuable since this
+        // part of the `wasmi` interpreter is part of the interpreter's hot path.
+        self.insts.get_unchecked(pc)
+    }
+
     /// Visits the corresponding [`Instruction`] method from the given visitor.
     ///
     /// Returns the visitor's outcome value.
