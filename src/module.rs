@@ -758,6 +758,26 @@ impl<'a> NotStartedModuleRef<'a> {
     /// # Errors
     ///
     /// Returns `Err` if start function traps.
+    pub fn run_start_tracer<E: Externals>(
+        self,
+        state: &mut E,
+        tracer: Rc<RefCell<Tracer>>,
+    ) -> Result<ModuleRef, Trap> {
+        if let Some(start_fn_idx) = self.loaded_module.module().start_section() {
+            let start_func = self
+                .instance
+                .func_by_index(start_fn_idx)
+                .expect("Due to validation start function should exists");
+            FuncInstance::invoke_trace(&start_func, &[], state, tracer)?;
+        }
+        Ok(self.instance)
+    }
+
+    /// Executes `start` function (if any) and returns fully instantiated module.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if start function traps.
     pub fn run_start_with_stack<E: Externals>(
         self,
         state: &mut E,

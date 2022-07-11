@@ -1,6 +1,6 @@
 use core::fmt::Debug;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct IEntry {
     pub module_instance_index: u16,
     pub func_index: u16,
