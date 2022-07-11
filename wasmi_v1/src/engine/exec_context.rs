@@ -70,10 +70,9 @@ impl<'engine, 'func> ExecutionContext<'engine, 'func> {
     #[inline(always)]
     pub fn execute_frame(self, mut ctx: impl AsContextMut) -> Result<CallOutcome, Trap> {
         'outer: loop {
-            let pc = self.frame.pc;
-            let inst_context =
-                InstructionExecutionContext::new(self.value_stack, self.frame, &mut ctx);
-            match self.func_body.visit(pc, inst_context)? {
+            let exec_ctx = InstructionExecutionContext::new(self.value_stack, self.frame, &mut ctx);
+            let pc = exec_ctx.frame.pc;
+            match self.func_body.visit(pc, exec_ctx)? {
                 ExecutionOutcome::Continue => {
                     // Advance instruction pointer.
                     self.frame.pc += 1;
