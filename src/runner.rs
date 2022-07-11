@@ -494,34 +494,40 @@ impl Interpreter {
                  return or an implicit block `end`.",
             );
 
-            let pre_status = self.run_instruction_pre(&instruction);
+            let pre_status = if self.tracer.is_some() {
+                self.run_instruction_pre(&instruction)
+            } else {
+                None
+            };
 
             macro_rules! trace_post {
                 () => {
-                    let post_status = self.run_instruction_post(pre_status, &instruction);
-                    if let Some(tracer) = self.tracer.as_mut() {
-                        // let ref_tracer = tracer.borrow();
-                        let module_instance = {
-                            (*tracer)
-                                .borrow()
-                                .lookup_module_instance(&function_context.module)
-                        };
+                    if self.tracer.is_some() {
+                        let post_status = self.run_instruction_post(pre_status, &instruction);
+                        if let Some(tracer) = self.tracer.as_mut() {
+                            // let ref_tracer = tracer.borrow();
+                            let module_instance = {
+                                (*tracer)
+                                    .borrow()
+                                    .lookup_module_instance(&function_context.module)
+                            };
 
-                        let function = {
-                            (*tracer)
-                                .borrow()
-                                .lookup_function(&function_context.function)
-                        };
+                            let function = {
+                                (*tracer)
+                                    .borrow()
+                                    .lookup_function(&function_context.function)
+                            };
 
-                        {
-                            (*tracer).borrow_mut().etable.push(
-                                module_instance,
-                                function,
-                                sp as u64,
-                                pc,
-                                instruction.into(),
-                                post_status,
-                            );
+                            {
+                                (*tracer).borrow_mut().etable.push(
+                                    module_instance,
+                                    function,
+                                    sp as u64,
+                                    pc,
+                                    instruction.into(),
+                                    post_status,
+                                );
+                            }
                         }
                     }
                 };
