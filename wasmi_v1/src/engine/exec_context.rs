@@ -2,9 +2,9 @@ use super::{
     super::{Global, Memory, Table},
     bytecode::{BrTable, FuncIdx, GlobalIdx, Instruction, LocalIdx, Offset, SignatureIdx},
     AsContextMut,
+    CallOutcome,
     DropKeep,
     EngineInner,
-    FunctionExecutionOutcome,
     FunctionFrame,
     ResolvedFuncBody,
     Target,
@@ -68,10 +68,7 @@ impl<'engine, 'func> ExecutionContext<'engine, 'func> {
     /// This executes instructions sequentially until either the function
     /// calls into another function or the function returns to its caller.
     #[inline(always)]
-    pub fn execute_frame(
-        self,
-        mut ctx: impl AsContextMut,
-    ) -> Result<FunctionExecutionOutcome, Trap> {
+    pub fn execute_frame(self, mut ctx: impl AsContextMut) -> Result<CallOutcome, Trap> {
         'outer: loop {
             let pc = self.frame.pc;
             let inst_context =
@@ -89,7 +86,7 @@ impl<'engine, 'func> ExecutionContext<'engine, 'func> {
                 ExecutionOutcome::ExecuteCall(func) => {
                     // Advance instruction pointer.
                     self.frame.pc += 1;
-                    return Ok(FunctionExecutionOutcome::NestedCall(func));
+                    return Ok(CallOutcome::NestedCall(func));
                 }
                 ExecutionOutcome::Return(drop_keep) => {
                     self.value_stack.drop_keep(drop_keep);
@@ -97,7 +94,7 @@ impl<'engine, 'func> ExecutionContext<'engine, 'func> {
                 }
             }
         }
-        Ok(FunctionExecutionOutcome::Return)
+        Ok(CallOutcome::Return)
     }
 }
 

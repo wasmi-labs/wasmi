@@ -49,7 +49,7 @@ pub const DEFAULT_CALL_STACK_LIMIT: usize = 64 * 1024;
 
 /// The outcome of a `wasmi` function execution.
 #[derive(Debug, Copy, Clone)]
-pub enum FunctionExecutionOutcome {
+pub enum CallOutcome {
     /// The function has returned.
     Return,
     /// The function called another function.
@@ -528,14 +528,14 @@ impl EngineInner {
         let mut function_frame = FunctionFrame::new(&ctx, func);
         'outer: loop {
             match self.execute_frame(&mut ctx, &mut function_frame)? {
-                FunctionExecutionOutcome::Return => match self.call_stack.pop() {
+                CallOutcome::Return => match self.call_stack.pop() {
                     Some(frame) => {
                         function_frame = frame;
                         continue 'outer;
                     }
                     None => return Ok(()),
                 },
-                FunctionExecutionOutcome::NestedCall(func) => match func.as_internal(&ctx) {
+                CallOutcome::NestedCall(func) => match func.as_internal(&ctx) {
                     FuncEntityInternal::Wasm(wasm_func) => {
                         let nested_frame = FunctionFrame::new_wasm(func, wasm_func);
                         self.call_stack.push(function_frame)?;
@@ -561,7 +561,7 @@ impl EngineInner {
         &mut self,
         mut ctx: impl AsContextMut,
         frame: &mut FunctionFrame,
-    ) -> Result<FunctionExecutionOutcome, Trap> {
+    ) -> Result<CallOutcome, Trap> {
         ExecutionContext::new(self, frame)?.execute_frame(&mut ctx)
     }
 
