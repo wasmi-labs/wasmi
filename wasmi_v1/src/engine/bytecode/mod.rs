@@ -1,14 +1,12 @@
 #![allow(dead_code, unused_imports)]
 
 mod utils;
-mod visitor;
 
 #[cfg(test)]
 mod tests;
 
 pub use self::{
     utils::{ExecRegister, ExecRegisterSlice, Global, Offset, Target},
-    visitor::{visit_instr, VisitInstruction},
 };
 use super::{ExecProvider, ExecProviderSlice};
 use crate::module::{FuncIdx, FuncTypeIdx};
