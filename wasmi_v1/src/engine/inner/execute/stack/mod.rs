@@ -542,7 +542,18 @@ impl<'a> StackFrameRegisters<'a> {
     ///
     /// If the `register` is invalid for the [`StackFrameRegisters`].
     pub fn get(&self, register: ExecRegister) -> UntypedValue {
-        self.regs[register.into_inner() as usize]
+        let index = register.into_inner() as usize;
+        debug_assert!(
+            self.regs.get(index).is_some(),
+            "tried to read register {} out of bounds",
+            index
+        );
+        // # Safety
+        //
+        // This access is safe assuming that the `wasmi` bytecode has
+        // been generated from validated Wasm bytecode. Therefore all
+        // register reads are always valid.
+        unsafe { *self.regs.get_unchecked(index) }
     }
 
     /// Sets the value of the `register` to `new_value`.
@@ -551,6 +562,17 @@ impl<'a> StackFrameRegisters<'a> {
     ///
     /// If the `register` is invalid for the [`StackFrameRegisters`].
     pub fn set(&mut self, register: ExecRegister, new_value: UntypedValue) {
-        self.regs[register.into_inner() as usize] = new_value;
+        let index = register.into_inner() as usize;
+        debug_assert!(
+            self.regs.get(index).is_some(),
+            "tried to write register {} out of bounds",
+            index
+        );
+        // # Safety
+        //
+        // This access is safe assuming that the `wasmi` bytecode has
+        // been generated from validated Wasm bytecode. Therefore all
+        // register writes are always valid.
+        *unsafe { self.regs.get_unchecked_mut(index) } = new_value;
     }
 }
