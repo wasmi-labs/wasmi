@@ -64,13 +64,13 @@ pub struct FunctionFrame {
     /// calling functions using the default table and avoids one indirection
     /// to look-up the table in the `Instance`.
     default_table: Option<Table>,
-    /// The current value of the instruction pointer.
+    /// The current value of the program counter.
     ///
     /// # Note
     ///
-    /// The instruction pointer always points to the instruction
+    /// The program counter always points to the instruction
     /// that is going to executed next.
-    pub inst_ptr: usize,
+    pub pc: usize,
 }
 
 impl FunctionFrame {
@@ -100,7 +100,7 @@ impl FunctionFrame {
             instance,
             default_memory: None,
             default_table: None,
-            inst_ptr: 0,
+            pc: 0,
         }
     }
 
