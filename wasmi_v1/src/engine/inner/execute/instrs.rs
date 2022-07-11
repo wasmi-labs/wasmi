@@ -35,13 +35,8 @@ use wasmi_core::{
 /// The possible outcomes of an instruction execution.
 #[derive(Debug, Copy, Clone)]
 pub enum ExecOutcome {
-    /// Continues execution at the next instruction.
-    Continue,
     /// Branch to the target instruction.
-    Branch {
-        /// The program counter to the branched to instruction.
-        next_pc: usize,
-    },
+    Branch,
     /// Returns the result of the function execution.
     Return {
         /// The returned result values.
@@ -89,21 +84,12 @@ pub(super) fn execute_frame(
         // indices passed at this point can be assumed to be valid always.
         let instr = unsafe { func_body.get_release_unchecked(*exec_ctx.frame.pc) };
         match visit_instr(&mut exec_ctx, *instr)? {
-            ExecOutcome::Continue => {
-                // Advance program counter.
-                *exec_ctx.frame.pc += 1;
-            }
-            ExecOutcome::Branch { next_pc } => {
-                // Set program counter to the branch target.
-                *exec_ctx.frame.pc = next_pc;
-            }
+            ExecOutcome::Branch => (),
             ExecOutcome::Call {
                 results,
                 callee,
                 params,
             } => {
-                // Advance program counter before calling.
-                *exec_ctx.frame.pc += 1;
                 return Ok(CallOutcome::Call {
                     results,
                     callee,
@@ -136,8 +122,9 @@ impl<'engine, 'func1, 'func2, 'ctx, T> ExecContext<'engine, 'func1, 'func2, 'ctx
     /// This is a convenience function with the purpose to simplify
     /// the process to change the behavior of the dispatch once required
     /// for optimization purposes.
-    fn next_instr(&self) -> Result<ExecOutcome, Trap> {
-        Ok(ExecOutcome::Continue)
+    fn next_instr(&mut self) -> Result<ExecOutcome, Trap> {
+        *self.frame.pc += 1;
+        Ok(ExecOutcome::Branch)
     }
 
     /// Returns the [`ExecOutcome`] to branch to the given `target`.
@@ -147,9 +134,29 @@ impl<'engine, 'func1, 'func2, 'ctx, T> ExecContext<'engine, 'func1, 'func2, 'ctx
     /// This is a convenience function with the purpose to simplify
     /// the process to change the behavior of the dispatch once required
     /// for optimization purposes.
-    fn branch_to_target(&self, target: Target) -> Result<ExecOutcome, Trap> {
-        Ok(ExecOutcome::Branch {
-            next_pc: target.destination().into_inner() as usize,
+    fn branch_to_target(&mut self, target: Target) -> Result<ExecOutcome, Trap> {
+        *self.frame.pc = target.destination().into_inner() as usize;
+        Ok(ExecOutcome::Branch)
+    }
+
+    /// Returns the [`ExecOutcome`] to call to the given function.
+    ///
+    /// # Note
+    ///
+    /// This is a convenience function with the purpose to simplify
+    /// the process to change the behavior of the dispatch once required
+    /// for optimization purposes.
+    fn call_func(
+        &mut self,
+        callee: Func,
+        results: ExecRegisterSlice,
+        params: ExecProviderSlice,
+    ) -> Result<ExecOutcome, Trap> {
+        *self.frame.pc += 1;
+        Ok(ExecOutcome::Call {
+            callee,
+            results,
+            params,
         })
     }
 
@@ -572,8 +579,8 @@ impl<'engine, 'func1, 'func2, 'ctx, T> VisitInstruction<ExecuteTypes>
         let normalized_index = cmp::min(index, max_index);
         // Simply branch to the selected instruction which is going to be either
         // a `br` or a `return` instruction as demanded by the `wasmi` bytecode.
-        let next_pc = *self.frame.pc + normalized_index + 1;
-        Ok(ExecOutcome::Branch { next_pc })
+        *self.frame.pc += normalized_index + 1;
+        Ok(ExecOutcome::Branch)
     }
 
     fn visit_trap(&mut self, trap_code: TrapCode) -> Self::Outcome {
@@ -603,11 +610,7 @@ impl<'engine, 'func1, 'func2, 'ctx, T> VisitInstruction<ExecuteTypes>
                     func, self.frame.instance
                 )
             });
-        Ok(ExecOutcome::Call {
-            results,
-            callee,
-            params,
-        })
+        self.call_func(callee, results, params)
     }
 
     fn visit_call_indirect(
@@ -637,11 +640,7 @@ impl<'engine, 'func1, 'func2, 'ctx, T> VisitInstruction<ExecuteTypes>
         if actual_signature != expected_signature {
             return Err(Trap::from(TrapCode::UnexpectedSignature));
         }
-        Ok(ExecOutcome::Call {
-            results,
-            callee,
-            params,
-        })
+        self.call_func(callee, results, params)
     }
 
     fn visit_copy(
