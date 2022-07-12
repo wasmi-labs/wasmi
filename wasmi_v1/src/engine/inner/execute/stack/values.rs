@@ -1,4 +1,5 @@
 use super::{FrameRegion, StackFrameRegisters};
+use core::iter;
 use wasmi_core::{TrapCode, UntypedValue};
 
 /// The value stack.
@@ -46,11 +47,11 @@ impl ValueStack {
     /// New values are initialized to zero.
     pub fn extend_by(&mut self, delta: usize) -> Result<FrameRegion, TrapCode> {
         let len = self.len();
-        let new_len = len
-            .checked_add(delta)
+        len.checked_add(delta)
             .filter(|&new_len| new_len <= self.maximum_len)
             .ok_or(TrapCode::StackOverflow)?;
-        self.values.resize_with(new_len, Default::default);
+        self.values
+            .extend(iter::repeat_with(UntypedValue::default).take(delta));
         Ok(FrameRegion {
             start: len,
             len: delta,
@@ -59,8 +60,7 @@ impl ValueStack {
 
     /// Shrinks the value stack by `delta` values.
     pub fn shrink_by(&mut self, delta: usize) {
-        self.values
-            .resize_with(self.len() - delta, Default::default);
+        self.values.truncate(self.len() - delta)
     }
 
     /// Returns the [`StackFrameRegisters`] of the given [`FrameRegion`].
