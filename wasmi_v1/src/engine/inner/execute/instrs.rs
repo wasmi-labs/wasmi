@@ -35,8 +35,10 @@ use wasmi_core::{
 /// The result of a conditional return.
 #[derive(Debug, Copy, Clone)]
 pub enum ConditionalReturn {
-    Return { results: ExecProviderSlice },
+    /// Continue with the next instruction.
     Continue,
+    /// Return control back to the caller of the function.
+    Return { results: ExecProviderSlice },
 }
 
 /// Executes the given [`StackFrameView`].
