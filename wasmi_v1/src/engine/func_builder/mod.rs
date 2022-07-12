@@ -512,11 +512,9 @@ impl<'parser> FunctionBuilder<'parser> {
                     stack_height,
                     IfReachability::both(else_label, else_checkpoint),
                 ));
-                self.push_instr(Instruction::BrEqzMulti {
+                self.push_instr(Instruction::BrEqz {
                     target: else_label,
                     condition,
-                    results: IrRegisterSlice::empty(),
-                    returned: IrProviderSlice::empty(),
                 });
             }
             IrProvider::Immediate(condition) => {
@@ -585,11 +583,12 @@ impl<'parser> FunctionBuilder<'parser> {
                 // Case: both `then` and `else` are reachable
                 let returned = self.providers.pop_n(results.len() as usize);
                 let returned = self.provider_slices.alloc(returned);
-                self.push_instr(Instruction::BrMulti {
-                    target: if_frame.end_label(),
+                self.inst_builder.push_br(
+                    &mut self.provider_slices,
+                    if_frame.end_label(),
                     results,
                     returned,
-                });
+                );
             }
             // Now resolve labels for the instructions of the `else` block
             if let Some(else_label) = if_frame.else_label() {
@@ -697,10 +696,8 @@ impl<'parser> FunctionBuilder<'parser> {
         // Finalize the `then` block if its end is reachable.
         if end_of_then_reachable {
             self.copy_frame_results(frame.end_results())?;
-            self.push_instr(IrInstruction::BrMulti {
+            self.push_instr(IrInstruction::Br {
                 target: frame.end_label(),
-                results: IrRegisterSlice::empty(),
-                returned: IrProviderSlice::empty(),
             });
         }
         // Finalize the missing `else` block.
@@ -752,11 +749,12 @@ impl<'parser> FunctionBuilder<'parser> {
                     results,
                     returned,
                 } => {
-                    builder.push_instr(Instruction::BrMulti {
+                    builder.inst_builder.push_br(
+                        &mut builder.provider_slices,
                         target,
                         results,
                         returned,
-                    });
+                    );
                 }
                 AquiredTarget::Return => {
                     // In this case the `br` can be directly translated as `return`.
@@ -780,12 +778,13 @@ impl<'parser> FunctionBuilder<'parser> {
                         results,
                         returned,
                     } => {
-                        builder.push_instr(Instruction::BrNezMulti {
+                        builder.inst_builder.push_br_nez(
+                            &mut builder.provider_slices,
                             target,
                             condition,
                             results,
                             returned,
-                        });
+                        );
                     }
                     AquiredTarget::Return => {
                         let results = builder.return_provider_slice();

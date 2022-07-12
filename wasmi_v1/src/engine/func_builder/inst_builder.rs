@@ -162,6 +162,68 @@ impl InstructionsBuilder {
         }
     }
 
+    /// Pushes a `br` instruction to the [`InstructionsBuilder`].
+    ///
+    /// Depending on the actual amount of true copies this pushes one of the
+    /// following sequences of instructions to the [`InstructionsBuilder`].
+    ///
+    /// 1. **No true copies:** `br` instruction.
+    /// 2. **Single true copy:** `copy` + `br` instruction
+    /// 3. **Many true copies:** `br_multi` instruction
+    pub fn push_br(
+        &mut self,
+        arena: &mut ProviderSliceArena,
+        target: LabelRef,
+        results: IrRegisterSlice,
+        inputs: IrProviderSlice,
+    ) -> Instr {
+        match TrueCopies::analyze_slice(arena, results, inputs) {
+            TrueCopies::None => self.push_inst(IrInstruction::Br { target }),
+            TrueCopies::Single { result, input } => {
+                self.push_copy_instr(result, input);
+                self.push_inst(IrInstruction::Br { target })
+            }
+            TrueCopies::Many { results, inputs } => self.push_inst(IrInstruction::BrMulti {
+                target,
+                results,
+                returned: inputs,
+            }),
+        }
+    }
+
+    /// Pushes a `br_eqz` instruction to the [`InstructionsBuilder`].
+    ///
+    /// Depending on the actual amount of true copies this pushes one of the
+    /// following sequences of instructions to the [`InstructionsBuilder`].
+    ///
+    /// 1. **No true copies:** `br_nez` instruction.
+    /// 2. **Single true copy:** `copy` + `br_nez` instruction
+    /// 3. **Many true copies:** `br_nez_multi` instruction
+    pub fn push_br_nez(
+        &mut self,
+        arena: &mut ProviderSliceArena,
+        target: LabelRef,
+        condition: IrRegister,
+        results: IrRegisterSlice,
+        inputs: IrProviderSlice,
+    ) -> Instr {
+        match TrueCopies::analyze_slice(arena, results, inputs) {
+            TrueCopies::None => self.push_inst(IrInstruction::BrNez { target, condition }),
+            TrueCopies::Single { result, input } => self.push_inst(IrInstruction::BrNezSingle {
+                target,
+                condition,
+                result,
+                returned: input,
+            }),
+            TrueCopies::Many { results, inputs } => self.push_inst(IrInstruction::BrNezMulti {
+                target,
+                condition,
+                results,
+                returned: inputs,
+            }),
+        }
+    }
+
     /// Peeks the last instruction pushed to the instruction builder if any.
     pub fn peek_mut(&mut self) -> Option<&mut IrInstruction> {
         self.insts.last_mut()
@@ -217,6 +279,31 @@ pub enum TrueCopies {
 }
 
 impl TrueCopies {
+    fn true_copies_iter(
+        results: IrRegisterSlice,
+        inputs: &[IrProvider],
+    ) -> impl Iterator<Item = (usize, (IrRegister, IrProvider))> + '_ {
+        // Instead of taking the raw number of inputs and results
+        // we take the number of actual true copies filtering out
+        // any no-op copies.
+        // E.g. `(x0, x1) <- (x1, x1)` has only one true copy `x0 <- x1`
+        // and the copy `x1 <- x1` is superflous.
+        results
+            .iter()
+            .zip(inputs.iter().copied())
+            .enumerate()
+            .filter(|(_nth, (result, input))| {
+                if let IrProvider::Register(input) = input {
+                    return result != input;
+                }
+                true
+            })
+    }
+
+    fn count_true_copies(results: IrRegisterSlice, inputs: &[IrProvider]) -> usize {
+        Self::true_copies_iter(results, inputs).count()
+    }
+
     /// Analyzes the given `results` and `inputs` with respect to true copies.
     ///
     /// True copies are when result and input registers are not the same.
@@ -228,33 +315,16 @@ impl TrueCopies {
     /// # Note
     ///
     /// This function exists to improve testability of the procedure.
-    pub fn analyze<'a>(
+    pub fn analyze_slice(
         arena: &mut ProviderSliceArena,
         results: IrRegisterSlice,
-        inputs: &'a [IrProvider],
+        inputs: IrProviderSlice,
     ) -> Self {
+        let slice = arena.resolve(inputs);
         let len_results = results.len() as usize;
-        let len_inputs = inputs.len();
+        let len_inputs = slice.len();
         debug_assert_eq!(len_results, len_inputs);
-        // Instead of taking the raw number of inputs and results
-        // we take the number of actual true copies filtering out
-        // any no-op copies.
-        // E.g. `(x0, x1) <- (x1, x1)` has only one true copy `x0 <- x1`
-        // and the copy `x1 <- x1` is superflous.
-        let true_copies = |results: IrRegisterSlice, inputs: &'a [IrProvider]| {
-            results
-                .iter()
-                .zip(inputs.iter().copied())
-                .enumerate()
-                .filter(|(_nth, (result, input))| {
-                    if let IrProvider::Register(input) = input {
-                        return result != input;
-                    }
-                    true
-                })
-        };
-        let len_true_copies = true_copies(results, inputs).count();
-        match len_true_copies {
+        match Self::count_true_copies(results, slice) {
             0 => {
                 // Case: copy of no elements
                 //
@@ -265,7 +335,77 @@ impl TrueCopies {
                 // Case: copy of one one element
                 //
                 // We can use the more efficient `Copy` instruction instead.
-                let (_, (result, input)) = true_copies(results, inputs)
+                let (_, (result, input)) = Self::true_copies_iter(results, slice)
+                    .next()
+                    .expect("non-empty true copies");
+                Self::Single { result, input }
+            }
+            n if n == len_results => {
+                // Case: copy as many elements as have been given
+                Self::Many { results, inputs }
+            }
+            _ => {
+                // Case: copy of many elements
+                //
+                // We actually have to serialize the `CopyMany` instruction.
+                //
+                // TODO: we could further filter out no-op copies in this case
+                //       if we detect that all true copies are neighbouring
+                //       each other. For example `(x0, x1, x2, x3) <- (x0, x2, x3, x3)`
+                //       has two true copies `x1 <- x2` and `x2 <- x3` and they
+                //       are neighbouring each other, so we can filter out the
+                //       other no-op copies.
+                //       However, for (`x0, x1, x2, x3) <- (x1, x1, x2, x2)` we
+                //       cannot do this since the two true copies `x0 <- x1`
+                //       and `x3 <- x2` are not neighbouring each other.
+                let (first_index, last_index) = {
+                    let mut copies = Self::true_copies_iter(results, slice);
+                    let (first_index, _) = copies.next().expect("non-empty true copies");
+                    let (last_index, _) = copies.last().expect("non-empty true copies");
+                    (first_index, last_index + 1)
+                };
+                let len = last_index - first_index;
+                let inputs = inputs.skip(first_index as u32).take(len as u32);
+                let _ = slice;
+                let results = results
+                    .sub_slice(first_index..last_index)
+                    .expect("indices in bounds");
+                Self::Many { results, inputs }
+            }
+        }
+    }
+
+    /// Analyzes the given `results` and `inputs` with respect to true copies.
+    ///
+    /// True copies are when result and input registers are not the same.
+    /// This filters out any non-true copies at the start and end of the
+    /// register slices.
+    /// The [`TrueCopies::Many`] case might include non-true copies due to the
+    /// way [`IrRegisterSlice`] can only represent contiguous registers.
+    ///
+    /// # Note
+    ///
+    /// This function exists to improve testability of the procedure.
+    pub fn analyze(
+        arena: &mut ProviderSliceArena,
+        results: IrRegisterSlice,
+        inputs: &[IrProvider],
+    ) -> Self {
+        let len_results = results.len() as usize;
+        let len_inputs = inputs.len();
+        debug_assert_eq!(len_results, len_inputs);
+        match Self::count_true_copies(results, inputs) {
+            0 => {
+                // Case: copy of no elements
+                //
+                // We can simply bail out and push no instruction in this case.
+                Self::None
+            }
+            1 => {
+                // Case: copy of one one element
+                //
+                // We can use the more efficient `Copy` instruction instead.
+                let (_, (result, input)) = Self::true_copies_iter(results, inputs)
                     .next()
                     .expect("non-empty true copies");
                 Self::Single { result, input }
@@ -285,7 +425,7 @@ impl TrueCopies {
                 //       cannot do this since the two true copies `x0 <- x1`
                 //       and `x3 <- x2` are not neighbouring each other.
                 let (first_index, last_index) = {
-                    let mut copies = true_copies(results, inputs);
+                    let mut copies = Self::true_copies_iter(results, inputs);
                     let (first_index, _) = copies.next().expect("non-empty true copies");
                     let (last_index, _) = copies.last().expect("non-empty true copies");
                     (first_index, last_index + 1)

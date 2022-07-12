@@ -591,6 +591,32 @@ impl IrProviderSlice {
     pub fn empty() -> Self {
         Self { first: 0, len: 0 }
     }
+
+    /// Returns an [`IrProviderSlice`] that skips the first `amount` providers of `self`.
+    ///
+    /// # Panics
+    ///
+    /// - If `amount` is greater than the length of the [`IrProviderSlice`].
+    pub fn skip(self, amount: u32) -> Self {
+        assert!(amount <= self.len);
+        Self {
+            first: self.first + amount,
+            len: self.len - amount,
+        }
+    }
+
+    /// Returns an [`IrProviderSlice`] that consists of the first `amount` providers of `self`.
+    ///
+    /// # Panics
+    ///
+    /// - If `amount` is greater than the length of the [`IrProviderSlice`].
+    pub fn take(self, amount: u32) -> Self {
+        assert!(amount <= self.len);
+        Self {
+            first: self.first,
+            len: amount,
+        }
+    }
 }
 
 /// An arena to efficiently allocate provider slices.

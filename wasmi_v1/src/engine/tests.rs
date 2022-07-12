@@ -263,10 +263,8 @@ fn br_simple() {
     let engine = module.engine();
     let results = engine.alloc_provider_slice([]);
     let expected = [
-        ExecInstruction::BrMulti {
+        ExecInstruction::Br {
             target: Target::from_inner(1),
-            results: ExecRegisterSlice::empty(),
-            returned: ExecProviderSlice::empty(),
         },
         ExecInstruction::Return { results },
     ];
@@ -348,10 +346,8 @@ fn br_to_loop_header() {
     let results = engine.alloc_provider_slice([]);
     let loop_header = Target::from_inner(0);
     let expected = [
-        ExecInstruction::BrMulti {
+        ExecInstruction::Br {
             target: loop_header,
-            results: ExecRegisterSlice::empty(),
-            returned: ExecProviderSlice::empty(),
         },
         ExecInstruction::Return { results },
     ];
@@ -380,11 +376,9 @@ fn br_if_simple() {
     let condition = ExecRegister::from_inner(0);
     let results = engine.alloc_provider_slice([]);
     let expected = [
-        ExecInstruction::BrNezMulti {
+        ExecInstruction::BrNez {
             target: Target::from_inner(1),
             condition,
-            results: ExecRegisterSlice::empty(),
-            returned: ExecProviderSlice::empty(),
         },
         ExecInstruction::Return { results },
     ];
@@ -479,17 +473,11 @@ fn br_if_to_loop_header() {
     let loop_header = Target::from_inner(0);
     let loop_end = Target::from_inner(2);
     let expected = [
-        ExecInstruction::BrNezMulti {
+        ExecInstruction::BrNez {
             target: loop_header,
             condition,
-            results: ExecRegisterSlice::empty(),
-            returned: ExecProviderSlice::empty(),
         },
-        ExecInstruction::BrMulti {
-            target: loop_end,
-            results: ExecRegisterSlice::empty(),
-            returned: ExecProviderSlice::empty(),
-        },
+        ExecInstruction::Br { target: loop_end },
         ExecInstruction::Return { results },
     ];
     assert_func_bodies_for_module(&module, [expected]);
@@ -547,11 +535,7 @@ fn br_if_const_true_return() {
     let results = engine.alloc_provider_slice([result.into()]);
     let block_end = Target::from_inner(1);
     let expected = [
-        ExecInstruction::BrMulti {
-            target: block_end,
-            results: ExecRegisterSlice::empty(),
-            returned: ExecProviderSlice::empty(),
-        },
+        ExecInstruction::Br { target: block_end },
         ExecInstruction::Return { results },
     ];
     assert_func_bodies_for_module(&module, [expected]);
@@ -3825,11 +3809,9 @@ fn if_simple() {
     let reg3 = ExecRegister::from_inner(3);
     let expected = [
         /* 0 */
-        ExecInstruction::BrEqzMulti {
+        ExecInstruction::BrEqz {
             target: else_label,
             condition: reg0,
-            results: ExecRegisterSlice::empty(),
-            returned: ExecProviderSlice::empty(),
         },
         /* 1 */
         ExecInstruction::I32Add {
@@ -3838,11 +3820,7 @@ fn if_simple() {
             rhs: reg2.into(),
         },
         /* 2 */
-        ExecInstruction::BrMulti {
-            target: end_label,
-            results: ExecRegisterSlice::empty(),
-            returned: ExecProviderSlice::empty(),
-        },
+        ExecInstruction::Br { target: end_label },
         /* 3 */
         ExecInstruction::I32Mul {
             result: reg3,

@@ -86,30 +86,16 @@ where
     /// # Note
     ///
     /// This instruction does not correspond to any Wasm instruction directly.
+    ///
+    /// Unlike with `BrNez` there are no `BrEqzSingle` and `BrEqzMulti`
+    /// variants for copying single or multiple values while taking the
+    /// conditional branch. This is simply because there is no need for them
+    /// when compiling from WebAssembly.
     BrEqz {
         /// The target instruction to conditionally branch to.
         target: T::Target,
         /// The branching condition.
         condition: T::Register,
-    },
-    /// Branch iff `condition` evaluates to zero.
-    ///
-    /// # Note
-    ///
-    /// This instruction does not correspond to any Wasm instruction directly.
-    ///
-    /// This `br_eqz` instruction also copies multiple values that its
-    /// destination expects. This is important to efficiently support
-    /// the Wasm `multi-value` proposal.
-    BrEqzMulti {
-        /// The target instruction to conditionally branch to.
-        target: T::Target,
-        /// The branching condition.
-        condition: T::Register,
-        /// The registers used as return values of the branched-to control block.
-        results: T::RegisterSlice,
-        /// The actual returned values for the branched-to control block.
-        returned: T::ProviderSlice,
     },
     /// Used to represent the Wasm `br_if` instruction.
     ///
@@ -122,6 +108,27 @@ where
         target: T::Target,
         /// The branching condition.
         condition: T::Register,
+    },
+    /// Used to represent the Wasm `br_if` instruction.
+    ///
+    /// # Note
+    ///
+    /// This instruction represents `br_if` only if the branch does not
+    /// target the function body `block` and therefore does not return.
+    ///
+    /// This `br_nez` instruction also copies a single values that its
+    /// destination expects. This is important to efficiently support
+    /// Wasm blocks that return a result or Wasm `multi-value` loops that
+    /// take a single parameter.
+    BrNezSingle {
+        /// The target instruction to conditionally branch to.
+        target: T::Target,
+        /// The branching condition.
+        condition: T::Register,
+        /// The register used as return value of the branched-to control block.
+        result: T::Register,
+        /// The actual returned value for the branched-to control block.
+        returned: T::Provider,
     },
     /// Used to represent the Wasm `br_if` instruction.
     ///

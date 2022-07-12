@@ -84,16 +84,16 @@ pub(super) fn execute_frame(
             Instr::BrEqz { target, condition } => {
                 exec_ctx.exec_br_eqz(target, condition)?;
             }
-            Instr::BrEqzMulti {
-                results,
+            Instr::BrNez { target, condition } => {
+                exec_ctx.exec_br_nez(target, condition)?;
+            }
+            Instr::BrNezSingle {
+                result,
                 returned,
                 target,
                 condition,
             } => {
-                exec_ctx.exec_br_eqz_multi(target, condition, results, returned)?;
-            }
-            Instr::BrNez { target, condition } => {
-                exec_ctx.exec_br_nez(target, condition)?;
+                exec_ctx.exec_br_nez_single(target, condition, result, returned)?;
             }
             Instr::BrNezMulti {
                 results,
@@ -1081,7 +1081,30 @@ impl<'engine, 'func1, 'func2, 'ctx, T> ExecContext<'engine, 'func1, 'func2, 'ctx
         self.next_instr()
     }
 
-    /// Executes a conditional branch and copy.
+    /// Executes a conditional branch and copy a single value.
+    ///
+    /// Only branches when `op(condition)` evaluates to `true`.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Result::Ok` for convenience.
+    fn exec_branch_conditionally_single(
+        &mut self,
+        target: Target,
+        condition: ExecRegister,
+        result: ExecRegister,
+        returned: ExecProvider,
+        op: fn(UntypedValue) -> bool,
+    ) -> Result<(), Trap> {
+        let condition = self.frame.regs.get(condition);
+        if op(condition) {
+            self.exec_copy(result, returned)?;
+            return self.branch_to_target(target);
+        }
+        self.next_instr()
+    }
+
+    /// Executes a conditional branch and copy multiple values.
     ///
     /// Only branches when `op(condition)` evaluates to `true`.
     ///
@@ -1130,24 +1153,24 @@ impl<'engine, 'func1, 'func2, 'ctx, T> ExecContext<'engine, 'func1, 'func2, 'ctx
         })
     }
 
-    fn exec_br_eqz_multi(
-        &mut self,
-        target: Target,
-        condition: <ExecuteTypes as InstructionTypes>::Register,
-        results: <ExecuteTypes as InstructionTypes>::RegisterSlice,
-        returned: <ExecuteTypes as InstructionTypes>::ProviderSlice,
-    ) -> Result<(), Trap> {
-        self.exec_branch_conditionally_multi(target, condition, results, returned, |condition| {
-            condition == UntypedValue::from(0_i32)
-        })
-    }
-
     fn exec_br_nez(
         &mut self,
         target: Target,
         condition: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
         self.exec_branch_conditionally(target, condition, |condition| {
+            condition != UntypedValue::from(0_i32)
+        })
+    }
+
+    fn exec_br_nez_single(
+        &mut self,
+        target: Target,
+        condition: <ExecuteTypes as InstructionTypes>::Register,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        returned: <ExecuteTypes as InstructionTypes>::Provider,
+    ) -> Result<(), Trap> {
+        self.exec_branch_conditionally_single(target, condition, result, returned, |condition| {
             condition != UntypedValue::from(0_i32)
         })
     }

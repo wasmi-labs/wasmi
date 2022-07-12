@@ -12,8 +12,8 @@ impl IrInstruction {
             Self::Br { .. }
             | Self::BrMulti { .. }
             | Self::BrEqz { .. }
-            | Self::BrEqzMulti { .. }
             | Self::BrNez { .. }
+            | Self::BrNezSingle { .. }
             | Self::BrNezMulti { .. }
             | Self::ReturnNez { .. }
             | Self::BrTable { .. }
