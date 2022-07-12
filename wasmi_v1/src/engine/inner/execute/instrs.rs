@@ -53,6 +53,7 @@ pub enum ConditionalReturn {
 ///
 /// If resources are missing unexpectedly.
 /// For example, a linear memory instance, global variable, etc.
+#[inline(always)]
 pub(super) fn execute_frame(
     mut ctx: impl AsContextMut,
     code_map: &CodeMap,
