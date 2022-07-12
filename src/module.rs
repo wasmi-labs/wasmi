@@ -364,7 +364,7 @@ impl ModuleInstance {
             .map(|gs| gs.entries())
             .unwrap_or(&[])
         {
-            let init_val = eval_init_expr(global_entry.init_expr(), &*instance);
+            let init_val = eval_init_expr(global_entry.init_expr(), &instance);
             let global = GlobalInstance::alloc(init_val, global_entry.global_type().is_mutable());
             instance.push_global(global);
         }

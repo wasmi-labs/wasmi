@@ -136,7 +136,7 @@ impl<'a> BrTargets<'a> {
 
 /// The main interpreted instruction type. This is what is returned by `InstructionIter`, but
 /// it is not what is stored internally. For that, see `InstructionInternal`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[allow(clippy::upper_case_acronyms)]
 pub enum Instruction<'a> {
     /// Push a local variable or an argument from the specified depth.

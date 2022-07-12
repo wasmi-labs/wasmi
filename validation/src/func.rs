@@ -275,7 +275,7 @@ impl<'a> FunctionValidationContext<'a> {
                 self.validate_br_if(depth)?;
             }
             BrTable(ref br_table_data) => {
-                self.validate_br_table(&*br_table_data.table, br_table_data.default)?;
+                self.validate_br_table(&br_table_data.table, br_table_data.default)?;
                 make_top_frame_polymorphic(&mut self.value_stack, &mut self.frame_stack);
             }
             Return => {
