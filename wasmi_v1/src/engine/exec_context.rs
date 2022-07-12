@@ -53,13 +53,13 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
     #[rustfmt::skip]
     pub fn execute_frame(self, mut ctx: impl AsContextMut) -> Result<CallOutcome, Trap> {
         use Instruction as Instr;
-        let mut exec_ctx = ExecutionContext::new(self.value_stack, self.frame, &mut ctx);
+        let mut exec_ctx = ExecutionContext::new(self.value_stack, self.frame, &mut ctx, self.frame.pc());
         loop {
             // # Safety
             //
             // Properly constructed `wasmi` bytecode can never produce invalid `pc`.
             let instr = unsafe {
-                self.func_body.get_release_unchecked(exec_ctx.frame.pc)
+                self.func_body.get_release_unchecked(exec_ctx.pc)
             };
             match instr {
                 Instr::GetLocal { local_depth } => { exec_ctx.visit_get_local(*local_depth)?; }
@@ -258,7 +258,7 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                         unreachable!(
                             "expected start of a new instruction \
                             at index {} but found: {instr:?}",
-                            exec_ctx.frame.pc
+                            exec_ctx.pc
                         )
                     } else {
                         // # Safety (--release)
@@ -281,6 +281,8 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
 /// An execution context for executing a single `wasmi` bytecode instruction.
 #[derive(Debug)]
 struct ExecutionContext<'engine, 'func, Ctx> {
+    /// The program counter.
+    pc: usize,
     /// Stores the value stack of live values on the Wasm stack.
     value_stack: &'engine mut ValueStack,
     /// The function frame that is being executed.
@@ -300,11 +302,13 @@ where
         value_stack: &'engine mut ValueStack,
         frame: &'func mut FunctionFrame,
         ctx: Ctx,
+        pc: usize,
     ) -> Self {
         Self {
             value_stack,
             frame,
             ctx,
+            pc,
         }
     }
 
@@ -519,18 +523,19 @@ where
     }
 
     fn next_instr(&mut self) -> Result<(), Trap> {
-        self.frame.pc += 1;
+        self.pc += 1;
         Ok(())
     }
 
     fn branch_to(&mut self, target: Target) -> Result<(), Trap> {
         self.value_stack.drop_keep(target.drop_keep());
-        self.frame.pc = target.destination_pc().into_usize();
+        self.pc = target.destination_pc().into_usize();
         Ok(())
     }
 
     fn call_func(&mut self, func: Func) -> Result<CallOutcome, Trap> {
-        self.frame.pc += 1;
+        self.pc += 1;
+        self.frame.update_pc(self.pc);
         Ok(CallOutcome::NestedCall(func))
     }
 
@@ -582,7 +587,7 @@ where
             self.ret(drop_keep)?;
             Ok(MaybeReturn::Return)
         } else {
-            self.frame.pc += 1;
+            self.pc += 1;
             Ok(MaybeReturn::Continue)
         }
     }
@@ -594,7 +599,7 @@ where
         // A normalized index will always yield a target without panicking.
         let normalized_index = cmp::min(index as usize, max_index);
         // Update `pc`:
-        self.frame.pc += normalized_index + 1;
+        self.pc += normalized_index + 1;
         Ok(())
     }
 

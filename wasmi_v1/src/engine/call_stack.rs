@@ -70,7 +70,7 @@ pub struct FunctionFrame {
     ///
     /// The program counter always points to the instruction
     /// that is going to executed next.
-    pub pc: usize,
+    pc: usize,
 }
 
 impl FunctionFrame {
@@ -87,6 +87,16 @@ impl FunctionFrame {
                 host_func
             ),
         }
+    }
+
+    /// Returns the program counter.
+    pub(super) fn pc(&self) -> usize {
+        self.pc
+    }
+
+    /// Updates the program counter.
+    pub(super) fn update_pc(&mut self, new_pc: usize) {
+        self.pc = new_pc;
     }
 
     /// Creates a new [`FunctionFrame`] from the given Wasm function entity.
