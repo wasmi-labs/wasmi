@@ -56,7 +56,7 @@ pub trait InstructionTypes {
 /// significantly faster than comparable stack machine based bytecode.
 /// This is mostly due to the fact that fewer instructions are required
 /// to represent the same behavior.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Instruction<T>
 where
     T: InstructionTypes,
