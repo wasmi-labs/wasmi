@@ -253,10 +253,26 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 Instr::I64Extend8S => { exec_ctx.visit_i64_sign_extend8()?; }
                 Instr::I64Extend16S => { exec_ctx.visit_i64_sign_extend16()?; }
                 Instr::I64Extend32S => { exec_ctx.visit_i64_sign_extend32()?; }
-                Instr::FuncBodyStart { .. } | Instruction::FuncBodyEnd => unreachable!(
-                    "expected start of a new instruction at index {} but found: {instr:?}",
-                    exec_ctx.frame.pc
-                ),
+                Instr::FuncBodyStart { .. } | Instruction::FuncBodyEnd => {
+                    if cfg!(debug) {
+                        unreachable!(
+                            "expected start of a new instruction \
+                            at index {} but found: {instr:?}",
+                            exec_ctx.frame.pc
+                        )
+                    } else {
+                        // # Safety (--release)
+                        //
+                        // It is guaranteed by construction of the `wasmi` bytecode
+                        // that these variants are never visited during execution.
+                        // We do not use the `unreachable!()` macro since that
+                        // results in significant slowdown in the range of 5-15%
+                        // for most execution benchmarks.
+                        unsafe {
+                            core::hint::unreachable_unchecked()
+                        }
+                    }
+                }
             }
         }
     }
