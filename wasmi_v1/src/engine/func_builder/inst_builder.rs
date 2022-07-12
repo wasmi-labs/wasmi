@@ -149,11 +149,11 @@ impl InstructionsBuilder {
     /// This filters out any non-true copies at the `results` start or end.
     pub fn push_copy_many_instr<'a>(
         &mut self,
-        provider_slices: &mut ProviderSliceArena,
+        arena: &mut ProviderSliceArena,
         results: IrRegisterSlice,
         inputs: &'a [IrProvider],
     ) -> Option<Instr> {
-        match TrueCopies::analyze(provider_slices, results, inputs) {
+        match TrueCopies::analyze(arena, results, inputs) {
             TrueCopies::None => None,
             TrueCopies::Single { result, input } => self.push_copy_instr(result, input),
             TrueCopies::Many { results, inputs } => {
@@ -229,7 +229,7 @@ impl TrueCopies {
     ///
     /// This function exists to improve testability of the procedure.
     pub fn analyze<'a>(
-        provider_slices: &mut ProviderSliceArena,
+        arena: &mut ProviderSliceArena,
         results: IrRegisterSlice,
         inputs: &'a [IrProvider],
     ) -> Self {
@@ -295,7 +295,7 @@ impl TrueCopies {
                 let results = results
                     .sub_slice(first_index..last_index)
                     .expect("indices in bounds");
-                let inputs = provider_slices.alloc(inputs);
+                let inputs = arena.alloc(inputs);
                 Self::Many { results, inputs }
             }
         }
