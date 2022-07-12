@@ -64,7 +64,7 @@ impl Default for StackLimits {
 #[derive(Debug)]
 pub struct Stack {
     /// The value stack.
-    entries: ValueStack,
+    values: ValueStack,
     /// Allocated frames on the stack.
     frames: FrameStack,
 }
@@ -84,14 +84,14 @@ impl Stack {
     /// to operate on more elements than the given maximum length.
     pub fn new(limits: StackLimits) -> Self {
         Self {
-            entries: ValueStack::new(limits.initial_len, limits.maximum_len),
+            values: ValueStack::new(limits.initial_len, limits.maximum_len),
             frames: FrameStack::new(limits.maximum_recursion_depth),
         }
     }
 
     /// Resets the [`Stack`] data entirely.
     fn reset(&mut self) {
-        self.entries.clear();
+        self.values.clear();
         self.frames.clear();
     }
 
@@ -118,11 +118,11 @@ impl Stack {
             #params: {len_params}, #registers: {len_regs}",
         );
         let params = initial_params.feed_params();
-        let root_region = self.entries.extend_by(len_regs)?;
+        let root_region = self.values.extend_by(len_regs)?;
         let root_frame = self
             .frames
             .push_frame(root_region, ExecRegisterSlice::empty(), func)?;
-        self.entries
+        self.values
             .frame_regs(root_region)
             .into_iter()
             .zip(params)
@@ -165,7 +165,7 @@ impl Stack {
         );
         debug_assert_eq!(results.len_results(), result_types.len());
         let root = self.frames.pop_frame();
-        let root_regs = self.entries.frame_regs(root.region);
+        let root_regs = self.values.frame_regs(root.region);
         let returned = returned
             .iter()
             .zip(result_types)
@@ -204,12 +204,12 @@ impl Stack {
             args.len(),
             len
         );
-        let callee_region = self.entries.extend_by(len)?;
+        let callee_region = self.values.extend_by(len)?;
         let caller = self.frames.last_frame();
         let caller_region = caller.region;
         let frame_ref = self.frames.push_frame(callee_region, results, func)?;
         let (caller_regs, mut callee_regs) =
-            self.entries.paired_frame_regs(caller_region, callee_region);
+            self.values.paired_frame_regs(caller_region, callee_region);
         let params = ExecRegisterSlice::params(args.len() as u16);
         args.iter().zip(params).for_each(|(arg, param)| {
             callee_regs.set(param, caller_regs.load_provider(res, *arg));
@@ -257,12 +257,12 @@ impl Stack {
             returned.len()
         );
         let (mut caller_regs, callee_regs) =
-            self.entries.paired_frame_regs(caller.region, callee.region);
+            self.values.paired_frame_regs(caller.region, callee.region);
         results.iter().zip(returned).for_each(|(result, returns)| {
             let return_value = callee_regs.load_provider(res, *returns);
             caller_regs.set(result, return_value);
         });
-        self.entries.shrink_by(callee.region.len);
+        self.values.shrink_by(callee.region.len);
         Some(self.frames.last_frame_ref())
     }
 
@@ -298,8 +298,8 @@ impl Stack {
         let len_results = result_types.len();
         let max_inout = cmp::max(len_params, len_results);
         // Push registers for the host function parameters and feed parameters.
-        let callee_region = self.entries.extend_by(max_inout)?;
-        let mut callee_regs = self.entries.frame_regs(callee_region);
+        let callee_region = self.values.extend_by(max_inout)?;
+        let mut callee_regs = self.values.frame_regs(callee_region);
         params
             .feed_params()
             .zip(&mut callee_regs)
@@ -307,7 +307,7 @@ impl Stack {
                 *arg = param.into();
             });
         // Set up for actually calling the host function.
-        let callee_regs = self.entries.frame_regs(callee_region); // TODO: why do we need this?? (mutable borrow issue)
+        let callee_regs = self.values.frame_regs(callee_region); // TODO: why do we need this?? (mutable borrow issue)
         let params_results = FuncParams::new(callee_regs.regs, len_params, len_results);
         host_func.call(ctx, None, params_results)?;
         // Write back results of the execution.
@@ -349,10 +349,10 @@ impl Stack {
         let max_inout = cmp::max(len_params, len_results);
         // Push registers for the host function parameters
         // and return values on the value stack.
-        let callee_region = self.entries.extend_by(max_inout)?;
+        let callee_region = self.values.extend_by(max_inout)?;
         let caller = self.frames.last_frame();
         let (mut caller_regs, mut callee_regs) =
-            self.entries.paired_frame_regs(caller.region, callee_region);
+            self.values.paired_frame_regs(caller.region, callee_region);
         // Initialize registers that act as host function parameters.
         let args = res.provider_pool.resolve(args);
         let params = ExecRegisterSlice::params(len_params as u16);
@@ -369,7 +369,7 @@ impl Stack {
             caller_regs.set(result, callee_regs.get(returned));
         });
         // Clean up host registers on the value stack.
-        self.entries.shrink_by(max_inout);
+        self.values.shrink_by(max_inout);
         Ok(())
     }
 
@@ -380,7 +380,7 @@ impl Stack {
     /// If the [`FrameRegion`] is invalid.
     pub(super) fn frame_at(&mut self, frame_ref: StackFrameRef) -> StackFrameView {
         let frame = self.frames.get_frame_mut(frame_ref);
-        let regs = self.entries.frame_regs(frame.region);
+        let regs = self.values.frame_regs(frame.region);
         StackFrameView::new(frame, regs)
     }
 }
