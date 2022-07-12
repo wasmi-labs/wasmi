@@ -62,6 +62,11 @@ where
     T: InstructionTypes,
 {
     /// Equivalent to the Wasm `br` instruction.
+    Br {
+        /// The target instruction to unconditionally branch to.
+        target: T::Target,
+    },
+    /// Equivalent to the Wasm `br` instruction.
     ///
     /// # Note
     ///
@@ -81,6 +86,17 @@ where
     /// # Note
     ///
     /// This instruction does not correspond to any Wasm instruction directly.
+    BrEqz {
+        /// The target instruction to conditionally branch to.
+        target: T::Target,
+        /// The branching condition.
+        condition: T::Register,
+    },
+    /// Branch iff `condition` evaluates to zero.
+    ///
+    /// # Note
+    ///
+    /// This instruction does not correspond to any Wasm instruction directly.
     ///
     /// This `br_eqz` instruction also copies multiple values that its
     /// destination expects. This is important to efficiently support
@@ -94,6 +110,18 @@ where
         results: T::RegisterSlice,
         /// The actual returned values for the branched-to control block.
         returned: T::ProviderSlice,
+    },
+    /// Used to represent the Wasm `br_if` instruction.
+    ///
+    /// # Note
+    ///
+    /// This instruction represents `br_if` only if the branch does not
+    /// target the function body `block` and therefore does not return.
+    BrNez {
+        /// The target instruction to conditionally branch to.
+        target: T::Target,
+        /// The branching condition.
+        condition: T::Register,
     },
     /// Used to represent the Wasm `br_if` instruction.
     ///

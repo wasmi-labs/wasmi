@@ -182,6 +182,10 @@ impl EngineInner {
     ) -> ExecInstruction {
         match inst {
             Instruction::Trap { trap_code } => ExecInstruction::Trap { trap_code },
+            Instruction::Br { target } => {
+                let target = context.compile_label(target);
+                ExecInstruction::Br { target }
+            }
             Instruction::BrMulti {
                 target,
                 results,
@@ -195,6 +199,11 @@ impl EngineInner {
                     results,
                     returned,
                 }
+            }
+            Instruction::BrEqz { target, condition } => {
+                let target = context.compile_label(target);
+                let condition = Self::compile_register(context, condition);
+                Instruction::BrEqz { target, condition }
             }
             Instruction::BrEqzMulti {
                 target,
@@ -212,6 +221,11 @@ impl EngineInner {
                     results,
                     returned,
                 }
+            }
+            Instruction::BrNez { target, condition } => {
+                let target = context.compile_label(target);
+                let condition = Self::compile_register(context, condition);
+                Instruction::BrNez { target, condition }
             }
             Instruction::BrNezMulti {
                 target,
