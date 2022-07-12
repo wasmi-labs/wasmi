@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::{DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT};
 
 /// Configuration for an [`Engine`][`super::Engine`].
@@ -125,5 +123,39 @@ impl Config {
     /// Returns `true` if the `multi-value` Wasm proposal is enabled.
     pub const fn multi_value(&self) -> bool {
         self.multi_value
+    }
+
+    /// Sets the maximum stack size for executions.
+    pub const fn set_max_stack_size(mut self, limit: usize) -> Self {
+        self.value_stack_limit = limit;
+        self
+    }
+
+    /// Returns the maximum stack size allowed for executions.
+    ///
+    /// # Note
+    ///
+    /// Executions requiring more stack space trigger a `StackOverflow` trap.
+    pub const fn max_stack_size(&self) -> usize {
+        self.value_stack_limit
+    }
+
+    /// Sets the maximum stack limit for executions.
+    ///
+    /// # Note
+    ///
+    /// Executions requiring deeper nested calls trigger a `StackOverflow` trap.
+    pub const fn set_max_recursion_depth(mut self, limit: usize) -> Self {
+        self.call_stack_limit = limit;
+        self
+    }
+
+    /// Returns the maximum stack size limit allowed for executions.
+    ///
+    /// # Note
+    ///
+    /// Executions requiring deeper nested calls trigger a `StackOverflow` trap.
+    pub const fn max_recursion_depth(&self) -> usize {
+        self.call_stack_limit
     }
 }

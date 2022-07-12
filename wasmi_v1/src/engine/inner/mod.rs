@@ -2,6 +2,7 @@ mod compile;
 mod execute;
 pub(crate) mod printer;
 
+use self::execute::StackLimits;
 use super::{
     CodeMap,
     ConstPool,
@@ -85,10 +86,15 @@ impl EngineInner {
     /// Creates a new [`EngineInner`] with the given [`Config`].
     pub fn new(config: &Config) -> Self {
         let engine_ident = EngineIdent::new();
+        let stack_limits = StackLimits {
+            initial_len: 1,
+            maximum_len: config.max_stack_size(),
+            maximum_recursion_depth: config.max_recursion_depth(),
+        };
         Self {
             config: *config,
             code_map: CodeMap::default(),
-            stack: Stack::default(),
+            stack: Stack::new(stack_limits),
             res: EngineResources::new(engine_ident),
         }
     }
