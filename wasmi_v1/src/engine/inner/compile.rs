@@ -182,7 +182,7 @@ impl EngineInner {
     ) -> ExecInstruction {
         match inst {
             Instruction::Trap { trap_code } => ExecInstruction::Trap { trap_code },
-            Instruction::Br {
+            Instruction::BrMulti {
                 target,
                 results,
                 returned,
@@ -190,13 +190,13 @@ impl EngineInner {
                 let target = context.compile_label(target);
                 let results = Self::compile_register_slice(context, results);
                 let returned = Self::compile_provider_slice(res, context, returned);
-                ExecInstruction::Br {
+                ExecInstruction::BrMulti {
                     target,
                     results,
                     returned,
                 }
             }
-            Instruction::BrEqz {
+            Instruction::BrEqzMulti {
                 target,
                 condition,
                 results,
@@ -206,14 +206,14 @@ impl EngineInner {
                 let condition = Self::compile_register(context, condition);
                 let results = Self::compile_register_slice(context, results);
                 let returned = Self::compile_provider_slice(res, context, returned);
-                Instruction::BrEqz {
+                Instruction::BrEqzMulti {
                     target,
                     condition,
                     results,
                     returned,
                 }
             }
-            Instruction::BrNez {
+            Instruction::BrNezMulti {
                 target,
                 condition,
                 results,
@@ -223,7 +223,7 @@ impl EngineInner {
                 let condition = Self::compile_register(context, condition);
                 let results = Self::compile_register_slice(context, results);
                 let returned = Self::compile_provider_slice(res, context, returned);
-                Instruction::BrNez {
+                Instruction::BrNezMulti {
                     target,
                     condition,
                     results,

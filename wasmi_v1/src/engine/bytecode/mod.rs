@@ -62,7 +62,13 @@ where
     T: InstructionTypes,
 {
     /// Equivalent to the Wasm `br` instruction.
-    Br {
+    ///
+    /// # Note
+    ///
+    /// This `br` instruction also copies multiple values that its
+    /// destination expects. This is important to efficiently support
+    /// the Wasm `multi-value` proposal.
+    BrMulti {
         /// The target instruction to unconditionally branch to.
         target: T::Target,
         /// The registers used as return values of the branched-to control block.
@@ -75,7 +81,11 @@ where
     /// # Note
     ///
     /// This instruction does not correspond to any Wasm instruction directly.
-    BrEqz {
+    ///
+    /// This `br_eqz` instruction also copies multiple values that its
+    /// destination expects. This is important to efficiently support
+    /// the Wasm `multi-value` proposal.
+    BrEqzMulti {
         /// The target instruction to conditionally branch to.
         target: T::Target,
         /// The branching condition.
@@ -91,7 +101,11 @@ where
     ///
     /// This instruction represents `br_if` only if the branch does not
     /// target the function body `block` and therefore does not return.
-    BrNez {
+    ///
+    /// This `br` instruction also copies multiple values that its
+    /// destination expects. This is important to efficiently support
+    /// the Wasm `multi-value` proposal.
+    BrNezMulti {
         /// The target instruction to conditionally branch to.
         target: T::Target,
         /// The branching condition.

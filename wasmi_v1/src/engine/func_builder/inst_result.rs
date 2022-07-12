@@ -9,9 +9,9 @@ impl IrInstruction {
     /// return `Some` if they actually have a single result and `None` otherwise.
     pub fn result_mut(&mut self) -> Option<&mut IrRegister> {
         match self {
-            Self::Br { .. }
-            | Self::BrEqz { .. }
-            | Self::BrNez { .. }
+            Self::BrMulti { .. }
+            | Self::BrEqzMulti { .. }
+            | Self::BrNezMulti { .. }
             | Self::ReturnNez { .. }
             | Self::BrTable { .. }
             | Self::Trap { .. }

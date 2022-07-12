@@ -512,7 +512,7 @@ impl<'parser> FunctionBuilder<'parser> {
                     stack_height,
                     IfReachability::both(else_label, else_checkpoint),
                 ));
-                self.push_instr(Instruction::BrEqz {
+                self.push_instr(Instruction::BrEqzMulti {
                     target: else_label,
                     condition,
                     results: IrRegisterSlice::empty(),
@@ -585,7 +585,7 @@ impl<'parser> FunctionBuilder<'parser> {
                 // Case: both `then` and `else` are reachable
                 let returned = self.providers.pop_n(results.len() as usize);
                 let returned = self.provider_slices.alloc(returned);
-                self.push_instr(Instruction::Br {
+                self.push_instr(Instruction::BrMulti {
                     target: if_frame.end_label(),
                     results,
                     returned,
@@ -697,7 +697,7 @@ impl<'parser> FunctionBuilder<'parser> {
         // Finalize the `then` block if its end is reachable.
         if end_of_then_reachable {
             self.copy_frame_results(frame.end_results())?;
-            self.push_instr(IrInstruction::Br {
+            self.push_instr(IrInstruction::BrMulti {
                 target: frame.end_label(),
                 results: IrRegisterSlice::empty(),
                 returned: IrProviderSlice::empty(),
@@ -752,7 +752,7 @@ impl<'parser> FunctionBuilder<'parser> {
                     results,
                     returned,
                 } => {
-                    builder.push_instr(Instruction::Br {
+                    builder.push_instr(Instruction::BrMulti {
                         target,
                         results,
                         returned,
@@ -780,7 +780,7 @@ impl<'parser> FunctionBuilder<'parser> {
                         results,
                         returned,
                     } => {
-                        builder.push_instr(Instruction::BrNez {
+                        builder.push_instr(Instruction::BrNezMulti {
                             target,
                             condition,
                             results,
@@ -826,7 +826,7 @@ impl<'parser> FunctionBuilder<'parser> {
                         target,
                         results,
                         returned,
-                    } => Instruction::Br {
+                    } => Instruction::BrMulti {
                         target,
                         results,
                         returned,

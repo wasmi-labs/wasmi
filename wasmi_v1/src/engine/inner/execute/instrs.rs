@@ -71,14 +71,14 @@ pub(super) fn execute_frame(
         let instr = unsafe { func_body.get_release_unchecked(*exec_ctx.frame.pc) };
         use bytecode::Instruction as Instr;
         match *instr {
-            Instr::Br {
+            Instr::BrMulti {
                 results,
                 returned,
                 target,
             } => {
                 exec_ctx.exec_br(target, results, returned)?;
             }
-            Instr::BrEqz {
+            Instr::BrEqzMulti {
                 results,
                 returned,
                 target,
@@ -86,7 +86,7 @@ pub(super) fn execute_frame(
             } => {
                 exec_ctx.exec_br_eqz(target, condition, results, returned)?;
             }
-            Instr::BrNez {
+            Instr::BrNezMulti {
                 results,
                 returned,
                 target,

@@ -204,7 +204,7 @@ impl<T> Display for DisplayExecInstruction<'_, '_, T> {
         let res = self.res;
         use Instruction as Instr;
         match self.instr {
-            Instr::Br { target, results, returned } => {
+            Instr::BrMulti { target, results, returned } => {
                 writeln!(
                     f,
                     "br {} {}",
@@ -212,14 +212,14 @@ impl<T> Display for DisplayExecInstruction<'_, '_, T> {
                     DisplayCopyMany::new(res, results, returned),
                 )
             }
-            Instr::BrEqz { target, condition, results, returned } => {
+            Instr::BrEqzMulti { target, condition, results, returned } => {
                 writeln!(f, "br_eqz {} {} {}",
                     DisplayExecRegister::from(condition),
                     DisplayTarget::from(target),
                     DisplayCopyMany::new(res, results, returned),
                 )
             }
-            Instr::BrNez { target, condition, results, returned } => {
+            Instr::BrNezMulti { target, condition, results, returned } => {
                 writeln!(f, "br_nez {} {} {}",
                     DisplayExecRegister::from(condition),
                     DisplayTarget::from(target),
