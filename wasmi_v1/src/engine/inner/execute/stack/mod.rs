@@ -392,27 +392,42 @@ impl Stack {
 pub struct StackFrameView<'a> {
     /// The registers of the [`StackFrameView`].
     pub regs: StackFrameRegisters<'a>,
-    /// The instruction of the [`StackFrameView`].
-    pub func_body: FuncBody,
-    /// The current program counter.
-    pub pc: &'a mut usize,
-    /// The instances of the [`StackFrameView`].
-    pub instance: Instance,
-    default_memory: &'a mut Option<Memory>,
-    default_table: &'a mut Option<Table>,
+    /// The exclusive reference to the [`StackFrame`].
+    frame: &'a mut StackFrame,
+}
+
+#[test]
+fn stack_frame_view_size() {
+    assert_eq!(core::mem::size_of::<StackFrameView<'_>>(), 24);
 }
 
 impl<'a> StackFrameView<'a> {
     /// Creates a new [`StackFrameView`].
     pub fn new(frame: &'a mut StackFrame, regs: StackFrameRegisters<'a>) -> Self {
         Self {
-            func_body: frame.func_body,
-            pc: &mut frame.pc,
-            instance: frame.instance,
-            default_memory: &mut frame.default_memory,
-            default_table: &mut frame.default_table,
+            frame,
             regs,
         }
+    }
+
+    /// Returns the program counter of the [`StackFrameView`].
+    pub fn pc(&self) -> usize {
+        self.frame.pc
+    }
+
+    /// Updates the program counter of the [`StackFrameView`].
+    pub fn update_pc(&mut self, new_pc: usize) {
+        self.frame.pc = new_pc;
+    }
+
+    /// Returns the [`Instance`] of the [`StackFrameView`].
+    pub fn instance(&self) -> Instance {
+        self.frame.instance
+    }
+
+    /// Returns the [`FuncBody`] of the [`StackFrameView`].
+    pub fn func_body(&self) -> FuncBody {
+        self.frame.func_body
     }
 
     /// Returns the default linear memory of the [`StackFrameView`] if any.
@@ -425,20 +440,21 @@ impl<'a> StackFrameView<'a> {
     ///
     /// If there is no default linear memory.
     pub fn default_memory(&mut self, ctx: impl AsContext) -> Memory {
-        match self.default_memory {
-            Some(default_memory) => *default_memory,
+        match self.frame.default_memory {
+            Some(default_memory) => default_memory,
             None => {
                 // Try to lazily load the default memory.
                 let default_memory = self
+                    .frame
                     .instance
                     .get_memory(ctx.as_context(), DEFAULT_MEMORY_INDEX)
                     .unwrap_or_else(|| {
                         panic!(
                             "could not resolve default memory for instance: {:?}",
-                            self.instance
+                            self.frame.instance
                         )
                     });
-                *self.default_memory = Some(default_memory);
+                self.frame.default_memory = Some(default_memory);
                 default_memory
             }
         }
@@ -454,20 +470,21 @@ impl<'a> StackFrameView<'a> {
     ///
     /// If there is no default table.
     pub fn default_table(&mut self, ctx: impl AsContext) -> Table {
-        match self.default_table {
-            Some(default_table) => *default_table,
+        match self.frame.default_table {
+            Some(default_table) => default_table,
             None => {
                 // Try to lazily load the default table.
                 let default_table = self
+                    .frame
                     .instance
                     .get_table(ctx.as_context(), DEFAULT_TABLE_INDEX)
                     .unwrap_or_else(|| {
                         panic!(
                             "could not resolve default table for instance: {:?}",
-                            self.instance
+                            self.frame.instance
                         )
                     });
-                *self.default_table = Some(default_table);
+                self.frame.default_table = Some(default_table);
                 default_table
             }
         }

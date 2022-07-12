@@ -100,8 +100,8 @@ impl EngineInner {
         mut frame: StackFrameRef,
     ) -> Result<ExecProviderSlice, Trap> {
         'outer: loop {
-            let mut view = self.stack.frame_at(frame);
-            match execute_frame(&mut ctx, &self.code_map, &self.res, &mut view)? {
+            let view = self.stack.frame_at(frame);
+            match execute_frame(&mut ctx, &self.code_map, &self.res, view)? {
                 CallOutcome::Return { returned } => {
                     // Pop the last frame from the function frame stack and
                     // continue executing it OR finish execution if the call

@@ -55,10 +55,11 @@ pub(super) fn execute_frame(
     mut ctx: impl AsContextMut,
     code_map: &CodeMap,
     res: &EngineResources,
-    frame: &mut StackFrameView,
+    frame: StackFrameView,
 ) -> Result<CallOutcome, Trap> {
-    let func_body = code_map.resolve(frame.func_body);
+    let func_body = code_map.resolve(frame.func_body());
     let mut exec_ctx = ExecContext {
+        pc: frame.pc(),
         frame,
         res,
         ctx: ctx.as_context_mut(),
@@ -68,7 +69,7 @@ pub(super) fn execute_frame(
         //
         // Since the Wasm and `wasmi` bytecode has already been validated the
         // indices passed at this point can be assumed to be valid always.
-        let instr = unsafe { func_body.get_release_unchecked(*exec_ctx.frame.pc) };
+        let instr = unsafe { func_body.get_release_unchecked(exec_ctx.pc) };
         use bytecode::Instruction as Instr;
         match *instr {
             Instr::Br { target } => {
@@ -675,16 +676,24 @@ pub(super) fn execute_frame(
 
 /// State that is used during Wasm function execution.
 #[derive(Debug)]
-pub struct ExecContext<'engine, 'func1, 'func2, 'ctx, T> {
+pub struct ExecContext<'engine, 'func2, 'ctx, T> {
+    /// The program counter.
+    ///
+    /// # Note
+    ///
+    /// We carved the `pc` out of `frame` to make it more cache friendly.
+    /// Upon returning to the caller we will update the frame's `pc` to
+    /// keep it in sync.
+    pc: usize,
     /// The function frame that is being executed.
-    frame: &'func1 mut StackFrameView<'func2>,
+    frame: StackFrameView<'func2>,
     /// The read-only engine resources.
     res: &'engine EngineResources,
     /// The associated store context.
     ctx: StoreContextMut<'ctx, T>,
 }
 
-impl<'engine, 'func1, 'func2, 'ctx, T> ExecContext<'engine, 'func1, 'func2, 'ctx, T> {
+impl<'engine, 'func2, 'ctx, T> ExecContext<'engine, 'func2, 'ctx, T> {
     /// Modifies the `pc` to continue to the next instruction.
     ///
     /// # Note
@@ -693,7 +702,7 @@ impl<'engine, 'func1, 'func2, 'ctx, T> ExecContext<'engine, 'func1, 'func2, 'ctx
     /// the process to change the behavior of the dispatch once required
     /// for optimization purposes.
     fn next_instr(&mut self) -> Result<(), Trap> {
-        *self.frame.pc += 1;
+        self.pc += 1;
         Ok(())
     }
 
@@ -705,7 +714,7 @@ impl<'engine, 'func1, 'func2, 'ctx, T> ExecContext<'engine, 'func1, 'func2, 'ctx
     /// the process to change the behavior of the dispatch once required
     /// for optimization purposes.
     fn branch_to_target(&mut self, target: Target) -> Result<(), Trap> {
-        *self.frame.pc = target.destination().into_inner() as usize;
+        self.pc = target.destination().into_inner() as usize;
         Ok(())
     }
 
@@ -722,7 +731,8 @@ impl<'engine, 'func1, 'func2, 'ctx, T> ExecContext<'engine, 'func1, 'func2, 'ctx
         results: ExecRegisterSlice,
         params: ExecProviderSlice,
     ) -> Result<CallOutcome, Trap> {
-        *self.frame.pc += 1;
+        self.pc += 1;
+        self.frame.update_pc(self.pc);
         Ok(CallOutcome::Call {
             callee,
             results,
@@ -769,12 +779,13 @@ impl<'engine, 'func1, 'func2, 'ctx, T> ExecContext<'engine, 'func1, 'func2, 'ctx
     /// If there is no global variable at the given index.
     fn resolve_global(&self, global_index: bytecode::Global) -> Global {
         self.frame
-            .instance
+            .instance()
             .get_global(self.ctx.as_context(), global_index.into_inner())
             .unwrap_or_else(|| {
                 panic!(
                     "missing global at index {:?} for instance {:?}",
-                    global_index, self.frame.instance
+                    global_index,
+                    self.frame.instance()
                 )
             })
     }
@@ -1128,7 +1139,7 @@ impl<'engine, 'func1, 'func2, 'ctx, T> ExecContext<'engine, 'func1, 'func2, 'ctx
     }
 }
 
-impl<'engine, 'func1, 'func2, 'ctx, T> ExecContext<'engine, 'func1, 'func2, 'ctx, T> {
+impl<'engine, 'func2, 'ctx, T> ExecContext<'engine, 'func2, 'ctx, T> {
     fn exec_br(&mut self, target: Target) -> Result<(), Trap> {
         self.branch_to_target(target)
     }
@@ -1194,10 +1205,10 @@ impl<'engine, 'func1, 'func2, 'ctx, T> ExecContext<'engine, 'func1, 'func2, 'ctx
     ) -> Result<ConditionalReturn, Trap> {
         let condition = self.frame.regs.get(condition);
         let zero = UntypedValue::from(0_i32);
+        self.pc += 1;
         if condition != zero {
             return Ok(ConditionalReturn::Return { results });
         }
-        *self.frame.pc += 1;
         Ok(ConditionalReturn::Continue)
     }
 
@@ -1213,7 +1224,7 @@ impl<'engine, 'func1, 'func2, 'ctx, T> ExecContext<'engine, 'func1, 'func2, 'ctx
         let normalized_index = cmp::min(index, max_index);
         // Simply branch to the selected instruction which is going to be either
         // a `br` or a `return` instruction as demanded by the `wasmi` bytecode.
-        *self.frame.pc += normalized_index + 1;
+        self.pc += normalized_index + 1;
         Ok(())
     }
 
@@ -1236,12 +1247,13 @@ impl<'engine, 'func1, 'func2, 'ctx, T> ExecContext<'engine, 'func1, 'func2, 'ctx
     ) -> Result<CallOutcome, Trap> {
         let callee = self
             .frame
-            .instance
+            .instance()
             .get_func(&mut self.ctx, func.into_u32())
             .unwrap_or_else(|| {
                 panic!(
                     "unexpected missing function at index {:?} for instance {:?}",
-                    func, self.frame.instance
+                    func,
+                    self.frame.instance()
                 )
             });
         self.call_func(callee, results, params)
@@ -1263,12 +1275,13 @@ impl<'engine, 'func1, 'func2, 'ctx, T> ExecContext<'engine, 'func1, 'func2, 'ctx
         let actual_signature = callee.signature(&self.ctx);
         let expected_signature = self
             .frame
-            .instance
+            .instance()
             .get_signature(&self.ctx, func_type.into_u32())
             .unwrap_or_else(|| {
                 panic!(
                     "missing signature for `call_indirect` at index {:?} for instance {:?}",
-                    func_type, self.frame.instance
+                    func_type,
+                    self.frame.instance()
                 )
             });
         if actual_signature != expected_signature {
