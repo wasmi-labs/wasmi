@@ -1,11 +1,26 @@
 use core::fmt::Debug;
 
+use specs::itable::{InstructionTableEntry, Opcode};
+
 #[derive(Debug, Clone)]
 pub struct IEntry {
     pub module_instance_index: u16,
     pub func_index: u16,
     pub pc: u16,
-    pub opcode: u64,
+    pub opcode: Opcode,
+}
+
+impl Into<InstructionTableEntry> for IEntry {
+    fn into(self) -> InstructionTableEntry {
+        InstructionTableEntry {
+            moid: self.module_instance_index,
+            mmid: self.module_instance_index,
+            fid: self.func_index,
+            bid: 0,
+            iid: self.pc,
+            opcode: self.opcode,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -23,13 +38,13 @@ impl ITable {
         module_instance_index: u32,
         func_index: u32,
         pc: u32,
-        opcode: u32,
+        opcode: Opcode,
     ) {
         self.0.push(IEntry {
             module_instance_index: module_instance_index as u16,
             func_index: func_index as u16,
             pc: pc as u16,
-            opcode: opcode as u64,
+            opcode,
         })
     }
 }

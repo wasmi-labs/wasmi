@@ -8,10 +8,7 @@ use crate::{
     memory_units::Pages,
     module::ModuleRef,
     nan_preserving_float::{F32, F64},
-    tracer::{
-        etable::{RunInstructionTracePre, RunInstructionTraceStep},
-        Tracer,
-    },
+    tracer::{etable::RunInstructionTracePre, Tracer},
     value::{
         ArithmeticOps,
         ExtendInto,
@@ -31,6 +28,7 @@ use crate::{
 use alloc::{boxed::Box, vec::Vec};
 use core::{cell::RefCell, fmt, ops, u32, usize};
 use parity_wasm::elements::Local;
+use specs::{step::StepInfo, types::Value};
 use std::rc::Rc;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 
@@ -61,6 +59,17 @@ impl ValueInternal {
             ValueType::I64 => RuntimeValue::I64(<_>::from_value_internal(self)),
             ValueType::F32 => RuntimeValue::F32(<_>::from_value_internal(self)),
             ValueType::F64 => RuntimeValue::F64(<_>::from_value_internal(self)),
+        }
+    }
+}
+
+impl ValueInternal {
+    pub fn value_with_type(self, ty: specs::types::ValueType) -> Value {
+        match ty {
+            specs::types::ValueType::I32 => Value::I32(<_>::from_value_internal(self)),
+            specs::types::ValueType::I64 => Value::I64(<_>::from_value_internal(self)),
+            specs::types::ValueType::U32 => Value::U32(<_>::from_value_internal(self)),
+            specs::types::ValueType::U64 => Value::U64(<_>::from_value_internal(self)),
         }
     }
 }
@@ -404,11 +413,11 @@ impl Interpreter {
         &mut self,
         pre_status: Option<RunInstructionTracePre>,
         instructions: &isa::Instruction,
-    ) -> RunInstructionTraceStep {
+    ) -> StepInfo {
         match *instructions {
             isa::Instruction::BrIfNez(target) => {
                 if let RunInstructionTracePre::BrIfNez { value } = pre_status.unwrap() {
-                    RunInstructionTraceStep::BrIfNez {
+                    StepInfo::BrIfNez {
                         value,
                         dst_pc: target.dst_pc,
                     }
@@ -424,35 +433,38 @@ impl Interpreter {
                     drop_values.push(*self.value_stack.pick(i as usize));
                 }
 
-                RunInstructionTraceStep::Return {
+                StepInfo::Return {
                     drop,
                     keep: if keep == Keep::Single { 1 } else { 0 },
-                    drop_values,
+                    drop_values: drop_values.iter().map(|v| v.0).collect::<Vec<_>>(),
                     keep_values: if keep == isa::Keep::Single {
-                        vec![*self.value_stack.top()]
+                        vec![(*self.value_stack.top()).0]
                     } else {
                         vec![]
                     },
                 }
             }
 
-            isa::Instruction::Call(index) => RunInstructionTraceStep::Call { index },
+            isa::Instruction::Call(index) => StepInfo::Call { index },
 
             isa::Instruction::GetLocal(_) => {
                 if let RunInstructionTracePre::GetLocal { depth, value } = pre_status.unwrap() {
-                    RunInstructionTraceStep::GetLocal { depth, value }
+                    StepInfo::GetLocal {
+                        depth,
+                        value: <_>::from_value_internal(value),
+                    }
                 } else {
                     unreachable!()
                 }
             }
 
-            isa::Instruction::I32Const(_) => RunInstructionTraceStep::I32Const {
+            isa::Instruction::I32Const(_) => StepInfo::I32Const {
                 value: <_>::from_value_internal(*self.value_stack.pick(0)),
             },
 
             isa::Instruction::I32Ne => {
                 if let RunInstructionTracePre::I32Comp { left, right } = pre_status.unwrap() {
-                    RunInstructionTraceStep::I32Comp {
+                    StepInfo::I32Comp {
                         left,
                         right,
                         value: <_>::from_value_internal(*self.value_stack.pick(0)),
@@ -464,7 +476,7 @@ impl Interpreter {
 
             isa::Instruction::I32Add | isa::Instruction::I32Or => {
                 if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
-                    RunInstructionTraceStep::I32BinOp {
+                    StepInfo::I32BinOp {
                         left,
                         right,
                         value: <_>::from_value_internal(*self.value_stack.pick(0)),
