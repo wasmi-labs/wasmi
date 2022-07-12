@@ -404,10 +404,7 @@ fn stack_frame_view_size() {
 impl<'a> StackFrameView<'a> {
     /// Creates a new [`StackFrameView`].
     pub fn new(frame: &'a mut StackFrame, regs: StackFrameRegisters<'a>) -> Self {
-        Self {
-            frame,
-            regs,
-        }
+        Self { frame, regs }
     }
 
     /// Returns the program counter of the [`StackFrameView`].
