@@ -295,7 +295,7 @@ impl<'engine, 'func, Ctx> ExecutionContext<'engine, 'func, Ctx>
 where
     Ctx: AsContextMut,
 {
-    /// Creates a new [`InstructionExecutionContext`] for executing a single `wasmi` bytecode instruction.
+    /// Creates a new [`ExecutionContext`] for executing a single `wasmi` bytecode instruction.
     pub fn new(
         value_stack: &'engine mut ValueStack,
         frame: &'func mut FunctionFrame,
