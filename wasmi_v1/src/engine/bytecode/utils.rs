@@ -1,5 +1,4 @@
-use super::{super::super::engine::InstructionIdx, Instruction};
-use core::cmp;
+use super::super::super::engine::InstructionIdx;
 
 /// Defines how many stack values are going to be dropped and kept after branching.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -189,52 +188,5 @@ impl Offset {
     /// Returns the inner `u32` index.
     pub fn into_inner(self) -> u32 {
         self.0
-    }
-}
-
-/// A reference to a `wasmi` bytecode `br_table`.
-#[derive(Debug)]
-pub struct BrTable<'a> {
-    /// The branches of the `wasmi` bytecode `br_table` including the default target.
-    ///
-    /// # Note
-    ///
-    /// All elements of this slice are of variant [`Instruction::Br`] or [`Instruction::Return`].
-    branches: &'a [Instruction],
-}
-
-impl<'a> BrTable<'a> {
-    /// Creates a new reference to a `wasmi` bytecode `br_table`.
-    ///
-    /// # Note
-    ///
-    /// The `targets` slice must contain the default target at its end.
-    ///
-    /// # Panics (Debug Mode)
-    ///
-    /// If the `targets` slice does not represent a `wasmi` bytecode `br_table`.
-    pub fn new(branches: &'a [Instruction]) -> Self {
-        assert!(
-            !branches.is_empty(),
-            "the targets slice must not be empty since the \
-            default target must be included at least",
-        );
-        debug_assert!(
-            branches
-                .iter()
-                .all(|inst| matches!(inst, Instruction::Br(_) | Instruction::Return(_))),
-            "the branches slice contains non `br` or `return` instructions: {:?}",
-            branches,
-        );
-        Self { branches }
-    }
-
-    /// Returns the branch at the given `index` if any or the default target.
-    pub fn branch_or_default(&self, index: usize) -> &Instruction {
-        // The index of the default target which is the last target of the slice.
-        let max_index = self.branches.len() - 1;
-        // A normalized index will always yield a target without panicking.
-        let normalized_index = cmp::min(index, max_index);
-        &self.branches[normalized_index]
     }
 }
