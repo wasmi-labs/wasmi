@@ -12,6 +12,8 @@ pub enum RunInstructionTracePre {
     I32BinOp { left: i32, right: i32 },
 
     I32Comp { left: i32, right: i32 },
+
+    Drop { value: u64 },
 }
 
 #[derive(Debug, Clone)]

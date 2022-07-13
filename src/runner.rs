@@ -379,6 +379,9 @@ impl Interpreter {
             }),
             isa::Instruction::Return(_) => None,
 
+            isa::Instruction::Drop => Some(RunInstructionTracePre::Drop {
+                value: <_>::from_value_internal(*self.value_stack.pick(0)),
+            }),
             isa::Instruction::Call(_) => None,
 
             isa::Instruction::GetLocal(depth) => {
@@ -445,6 +448,13 @@ impl Interpreter {
                 }
             }
 
+            isa::Instruction::Drop => {
+                if let RunInstructionTracePre::Drop { value } = pre_status.unwrap() {
+                    StepInfo::Drop { value: value }
+                } else {
+                    unreachable!()
+                }
+            }
             isa::Instruction::Call(index) => StepInfo::Call { index },
 
             isa::Instruction::GetLocal(_) => {
