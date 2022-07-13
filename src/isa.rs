@@ -357,7 +357,10 @@ impl<'a> Into<Opcode> for Instruction<'a> {
             Instruction::BrIfNez(_) => todo!(),
             Instruction::BrTable(_) => todo!(),
             Instruction::Unreachable => todo!(),
-            Instruction::Return(_) => Opcode::Return,
+            Instruction::Return(drop_keep) => Opcode::Return {
+                drop: drop_keep.drop,
+                keep: if drop_keep.keep == Keep::Single { 1 } else { 0 },
+            },
             Instruction::Call(_) => todo!(),
             Instruction::CallIndirect(_) => todo!(),
             Instruction::Drop => Opcode::Drop,
