@@ -1,3 +1,4 @@
+use parity_wasm::elements::ValueType;
 use specs::{etable::EventTableEntry, itable::Opcode, step::StepInfo};
 
 use crate::runner::ValueInternal;
@@ -7,7 +8,7 @@ use super::itable::IEntry;
 pub enum RunInstructionTracePre {
     BrIfNez { value: i32 },
 
-    GetLocal { depth: u32, value: ValueInternal },
+    GetLocal { depth: u32, value: ValueInternal, vtype: ValueType },
 
     I32BinOp { left: i32, right: i32 },
 

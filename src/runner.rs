@@ -384,11 +384,12 @@ impl Interpreter {
             }),
             isa::Instruction::Call(_) => None,
 
-            isa::Instruction::GetLocal(depth) => {
+            isa::Instruction::GetLocal(depth, vtype) => {
                 let value = self.value_stack.pick(depth as usize);
                 Some(RunInstructionTracePre::GetLocal {
                     depth,
                     value: value.clone(),
+                    vtype,
                 })
             }
             isa::Instruction::I32Const(_) => None,
@@ -457,11 +458,17 @@ impl Interpreter {
             }
             isa::Instruction::Call(index) => StepInfo::Call { index },
 
-            isa::Instruction::GetLocal(_) => {
-                if let RunInstructionTracePre::GetLocal { depth, value } = pre_status.unwrap() {
+            isa::Instruction::GetLocal(..) => {
+                if let RunInstructionTracePre::GetLocal {
+                    depth,
+                    value,
+                    vtype,
+                } = pre_status.unwrap()
+                {
                     StepInfo::GetLocal {
                         depth,
                         value: <_>::from_value_internal(value),
+                        vtype: vtype.into(),
                     }
                 } else {
                     unreachable!()
@@ -602,9 +609,9 @@ impl Interpreter {
             isa::Instruction::Drop => self.run_drop(),
             isa::Instruction::Select => self.run_select(),
 
-            isa::Instruction::GetLocal(depth) => self.run_get_local(*depth),
-            isa::Instruction::SetLocal(depth) => self.run_set_local(*depth),
-            isa::Instruction::TeeLocal(depth) => self.run_tee_local(*depth),
+            isa::Instruction::GetLocal(depth, ..) => self.run_get_local(*depth),
+            isa::Instruction::SetLocal(depth, ..) => self.run_set_local(*depth),
+            isa::Instruction::TeeLocal(depth, ..) => self.run_tee_local(*depth),
             isa::Instruction::GetGlobal(index) => self.run_get_global(context, *index),
             isa::Instruction::SetGlobal(index) => self.run_set_global(context, *index),
 

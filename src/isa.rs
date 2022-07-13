@@ -68,6 +68,7 @@
 //!
 
 use alloc::vec::Vec;
+use parity_wasm::elements::ValueType;
 use specs::{itable::Opcode, mtable::VarType};
 
 /// Should we keep a value before "discarding" a stack frame?
@@ -141,13 +142,13 @@ impl<'a> BrTargets<'a> {
 #[allow(clippy::upper_case_acronyms)]
 pub enum Instruction<'a> {
     /// Push a local variable or an argument from the specified depth.
-    GetLocal(u32),
+    GetLocal(u32, ValueType),
 
     /// Pop a value and put it in at the specified depth.
-    SetLocal(u32),
+    SetLocal(u32, ValueType),
 
     /// Copy a value to the specified depth.
-    TeeLocal(u32),
+    TeeLocal(u32, ValueType),
 
     /// Similar to the Wasm ones, but instead of a label depth
     /// they specify direct PC.
@@ -345,11 +346,12 @@ pub enum Instruction<'a> {
 impl<'a> Into<Opcode> for Instruction<'a> {
     fn into(self) -> Opcode {
         match self {
-            Instruction::GetLocal(offset) => Opcode::LocalGet {
+            Instruction::GetLocal(offset, typ) => Opcode::LocalGet {
                 offset: offset as u64,
+                vtype: typ.into(),
             },
-            Instruction::SetLocal(_) => todo!(),
-            Instruction::TeeLocal(_) => todo!(),
+            Instruction::SetLocal(..) => todo!(),
+            Instruction::TeeLocal(..) => todo!(),
             Instruction::Br(_) => todo!(),
             Instruction::BrIfEqz(_) => todo!(),
             Instruction::BrIfNez(_) => todo!(),
@@ -527,9 +529,9 @@ impl<'a> Into<Opcode> for Instruction<'a> {
 impl<'a> Into<u32> for Instruction<'a> {
     fn into(self) -> u32 {
         match self {
-            Instruction::GetLocal(_) => 0,
-            Instruction::SetLocal(_) => 1,
-            Instruction::TeeLocal(_) => 2,
+            Instruction::GetLocal(..) => 0,
+            Instruction::SetLocal(..) => 1,
+            Instruction::TeeLocal(..) => 2,
             Instruction::Br(_) => 3,
             Instruction::BrIfEqz(_) => 4,
             Instruction::BrIfNez(_) => 5,
@@ -710,9 +712,9 @@ impl<'a> Into<u32> for Instruction<'a> {
 #[derive(Copy, Debug, Clone, PartialEq, Eq)]
 #[allow(clippy::upper_case_acronyms)]
 pub(crate) enum InstructionInternal {
-    GetLocal(u32),
-    SetLocal(u32),
-    TeeLocal(u32),
+    GetLocal(u32, ValueType),
+    SetLocal(u32, ValueType),
+    TeeLocal(u32, ValueType),
     Br(Target),
     BrIfEqz(Target),
     BrIfNez(Target),
@@ -958,9 +960,9 @@ impl<'a> Iterator for InstructionIter<'a> {
         let internal = self.instructions.get(self.position as usize)?;
 
         let out = match *internal {
-            InstructionInternal::GetLocal(x) => Instruction::GetLocal(x),
-            InstructionInternal::SetLocal(x) => Instruction::SetLocal(x),
-            InstructionInternal::TeeLocal(x) => Instruction::TeeLocal(x),
+            InstructionInternal::GetLocal(x, typ) => Instruction::GetLocal(x, typ),
+            InstructionInternal::SetLocal(x, typ) => Instruction::SetLocal(x, typ),
+            InstructionInternal::TeeLocal(x, typ) => Instruction::TeeLocal(x, typ),
             InstructionInternal::Br(x) => Instruction::Br(x),
             InstructionInternal::BrIfEqz(x) => Instruction::BrIfEqz(x),
             InstructionInternal::BrIfNez(x) => Instruction::BrIfNez(x),

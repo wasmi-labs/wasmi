@@ -1,6 +1,6 @@
 use alloc::{string::String, vec::Vec};
 
-use parity_wasm::elements::{BlockType, FuncBody, Instruction};
+use parity_wasm::elements::{BlockType, FuncBody, Instruction, ValueType};
 
 use crate::isa;
 use validation::{
@@ -332,19 +332,25 @@ impl Compiler {
             GetLocal(index) => {
                 // We need to calculate relative depth before validation since
                 // it will change the value stack size.
-                let depth = relative_local_depth(index, &context.locals, &context.value_stack)?;
+                let (depth, typ) =
+                    relative_local_depth_type(index, &context.locals, &context.value_stack)?;
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::GetLocal(depth));
+                self.sink
+                    .emit(isa::InstructionInternal::GetLocal(depth, typ));
             }
             SetLocal(index) => {
                 context.step(instruction)?;
-                let depth = relative_local_depth(index, &context.locals, &context.value_stack)?;
-                self.sink.emit(isa::InstructionInternal::SetLocal(depth));
+                let (depth, typ) =
+                    relative_local_depth_type(index, &context.locals, &context.value_stack)?;
+                self.sink
+                    .emit(isa::InstructionInternal::SetLocal(depth, typ));
             }
             TeeLocal(index) => {
                 context.step(instruction)?;
-                let depth = relative_local_depth(index, &context.locals, &context.value_stack)?;
-                self.sink.emit(isa::InstructionInternal::TeeLocal(depth));
+                let (depth, typ) =
+                    relative_local_depth_type(index, &context.locals, &context.value_stack)?;
+                self.sink
+                    .emit(isa::InstructionInternal::TeeLocal(depth, typ));
             }
             GetGlobal(index) => {
                 context.step(instruction)?;
@@ -1125,6 +1131,25 @@ fn relative_local_depth(
         .and_then(|x| x.checked_sub(idx))
         .ok_or_else(|| Error(String::from("Locals range not in 32-bit range")))?;
     Ok(depth)
+}
+
+/// Returns a relative depth on the stack of a local variable specified
+/// by `idx`.
+///
+/// See stack layout definition in mod isa.
+fn relative_local_depth_type(
+    idx: u32,
+    locals: &Locals,
+    value_stack: &StackWithLimit<StackValueType>,
+) -> Result<(u32, ValueType), Error> {
+    let value_stack_height = value_stack.len() as u32;
+    let locals_and_params_count = locals.count();
+
+    let depth = value_stack_height
+        .checked_add(locals_and_params_count)
+        .and_then(|x| x.checked_sub(idx))
+        .ok_or_else(|| Error(String::from("Locals range not in 32-bit range")))?;
+    Ok((depth, locals.type_of_local(idx).unwrap()))
 }
 
 /// The target of a branch instruction.
