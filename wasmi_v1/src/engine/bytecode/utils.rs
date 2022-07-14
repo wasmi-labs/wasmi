@@ -119,9 +119,10 @@ impl IntoIterator for ExecRegisterSlice {
     type IntoIter = ExecRegisterSliceIter;
 
     fn into_iter(self) -> Self::IntoIter {
+        let cur = self.start.into_inner();
         ExecRegisterSliceIter {
-            slice: self,
-            current: 0,
+            cur,
+            max: cur + self.len,
         }
     }
 }
@@ -129,22 +130,20 @@ impl IntoIterator for ExecRegisterSlice {
 /// An iterator over the registes of an [`ExecRegisterSlice`].
 #[derive(Debug, Copy, Clone)]
 pub struct ExecRegisterSliceIter {
-    slice: ExecRegisterSlice,
-    current: u16,
+    cur: u16,
+    max: u16,
 }
 
 impl Iterator for ExecRegisterSliceIter {
     type Item = ExecRegister;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let current = self.current;
-        if current == self.slice.len {
+        if self.cur == self.max {
             return None;
         }
-        self.current += 1;
-        Some(ExecRegister::from_inner(
-            self.slice.start.into_inner() + current,
-        ))
+        let reg = ExecRegister::from_inner(self.cur);
+        self.cur += 1;
+        Some(reg)
     }
 }
 
