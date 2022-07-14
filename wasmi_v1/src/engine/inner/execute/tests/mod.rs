@@ -22,7 +22,6 @@ use crate::{
     Module,
     Store,
 };
-use core::iter;
 use wasmi_core::{Value, F32, F64};
 
 macro_rules! load_test_instance {
