@@ -22,7 +22,7 @@ impl DedupProviderSliceArena {
             Entry::Occupied(entry) => *entry.get(),
             Entry::Vacant(entry) => {
                 let new_providers: &[ExecProvider] = entry.key();
-                let first: u16 = self.providers.len().try_into().unwrap_or_else(|error| {
+                let start: u16 = self.providers.len().try_into().unwrap_or_else(|error| {
                     panic!(
                         "out of bounds index of {} for provider slice: {error}",
                         self.providers.len()
@@ -34,8 +34,11 @@ impl DedupProviderSliceArena {
                         new_providers.len()
                     )
                 });
+                let end: u16 = start.checked_add(len).unwrap_or_else(|| {
+                    panic!("encountered overflow in provider slice at {start} with len {len}")
+                });
                 self.providers.extend_from_slice(new_providers);
-                let dedup = ExecProviderSlice { first, len };
+                let dedup = ExecProviderSlice { start, end };
                 entry.insert(dedup);
                 dedup
             }
@@ -44,23 +47,30 @@ impl DedupProviderSliceArena {
 
     /// Resolves a [`ExecProviderSlice`] to its underlying registers or immediates.
     pub fn resolve(&self, slice: ExecProviderSlice) -> &[ExecProvider] {
-        let first = slice.first as usize;
-        let len = slice.len as usize;
-        &self.providers[first..first + len]
+        let start = slice.start as usize;
+        let end = slice.end as usize;
+        &self.providers[start..end]
     }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ExecProviderSlice {
-    first: u16,
-    len: u16,
+    start: u16,
+    end: u16,
 }
 
 impl ExecProviderSlice {
     /// Creates a new [`ExecProviderSlice`] with the given properties.
+    ///
+    /// # Panics
+    ///
+    /// If `start + len` does not fit into a `u16`.
     #[cfg(test)]
-    pub fn new(first: u16, len: u16) -> Self {
-        Self { first, len }
+    pub fn new(start: u16, len: u16) -> Self {
+        let end: u16 = start.checked_add(len).unwrap_or_else(|| {
+            panic!("encountered overflow in provider slice at {start} with len {len}")
+        });
+        Self { start, end }
     }
 
     /// Creates a new empty [`ExecProviderSlice`].
@@ -71,7 +81,7 @@ impl ExecProviderSlice {
 
     /// Returns the number of [`ExecProvider`]s in the [`ExecProviderSlice`].
     pub fn len(&self) -> usize {
-        self.len as usize
+        (self.end - self.start) as usize
     }
 }
 
