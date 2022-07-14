@@ -1,3 +1,4 @@
+mod cache;
 mod instrs;
 mod stack;
 
@@ -5,7 +6,7 @@ mod stack;
 mod tests;
 
 pub use self::stack::{Stack, StackLimits};
-use self::{instrs::execute_frame, stack::StackFrameRef};
+use self::{cache::InstanceCache, instrs::execute_frame, stack::StackFrameRef};
 use super::{super::ExecRegisterSlice, EngineInner};
 use crate::{
     engine::{CallParams, CallResults, DedupFuncType, ExecProviderSlice},
@@ -56,8 +57,10 @@ impl EngineInner {
         match func.as_internal(&ctx) {
             FuncEntityInternal::Wasm(wasm_func) => {
                 let signature = wasm_func.signature();
+                let instance = wasm_func.instance();
+                let cache = InstanceCache::from(instance);
                 let frame = self.initialize_args(wasm_func, params)?;
-                let returned = self.execute_frame(&mut ctx, frame)?;
+                let returned = self.execute_frame(&mut ctx, frame, cache)?;
                 Ok(self.return_results(signature, returned, results))
             }
             FuncEntityInternal::Host(host_func) => {
@@ -98,10 +101,11 @@ impl EngineInner {
         &mut self,
         mut ctx: impl AsContextMut,
         mut frame: StackFrameRef,
+        mut cache: InstanceCache,
     ) -> Result<ExecProviderSlice, Trap> {
         'outer: loop {
             let view = self.stack.frame_at(frame);
-            match execute_frame(&mut ctx, &self.code_map, &self.res, view)? {
+            match execute_frame(&mut ctx, &self.code_map, &self.res, view, &mut cache)? {
                 CallOutcome::Return { returned } => {
                     // Pop the last frame from the function frame stack and
                     // continue executing it OR finish execution if the call

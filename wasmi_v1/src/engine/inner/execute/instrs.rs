@@ -1,4 +1,4 @@
-use super::{stack::StackFrameView, CallOutcome};
+use super::{cache::InstanceCache, stack::StackFrameView, CallOutcome};
 use crate::{
     engine::{
         bytecode::{self, ExecRegister, ExecuteTypes},
@@ -59,6 +59,7 @@ pub(super) fn execute_frame(
     code_map: &CodeMap,
     res: &EngineResources,
     frame: StackFrameView,
+    cache: &mut InstanceCache,
 ) -> Result<CallOutcome, Trap> {
     let func_body = code_map.resolve(frame.func_body());
     let mut exec_ctx = ExecContext {
@@ -66,6 +67,7 @@ pub(super) fn execute_frame(
         frame,
         res,
         ctx: ctx.as_context_mut(),
+        cache,
     };
     loop {
         // # Safety
@@ -679,7 +681,7 @@ pub(super) fn execute_frame(
 
 /// State that is used during Wasm function execution.
 #[derive(Debug)]
-pub struct ExecContext<'engine, 'func2, 'ctx, T> {
+pub struct ExecContext<'engine, 'func2, 'ctx, 'cache, T> {
     /// The program counter.
     ///
     /// # Note
@@ -694,9 +696,16 @@ pub struct ExecContext<'engine, 'func2, 'ctx, T> {
     res: &'engine EngineResources,
     /// The associated store context.
     ctx: StoreContextMut<'ctx, T>,
+    /// Cache for frequently used instance related entities.
+    ///
+    /// # Note
+    ///
+    /// This is mainly used as a cache for fast default
+    /// linear memory and default table accesses.
+    cache: &'cache mut InstanceCache,
 }
 
-impl<'engine, 'func2, 'ctx, T> ExecContext<'engine, 'func2, 'ctx, T> {
+impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache, T> {
     /// Modifies the `pc` to continue to the next instruction.
     ///
     /// # Note
@@ -763,7 +772,7 @@ impl<'engine, 'func2, 'ctx, T> ExecContext<'engine, 'func2, 'ctx, T> {
     ///
     /// If there exists is no linear memory for the instance.
     fn default_memory(&mut self) -> Memory {
-        self.frame.default_memory(&self.ctx)
+        self.cache.default_memory(&self.ctx, self.frame.instance())
     }
 
     /// Returns the default table.
@@ -772,7 +781,7 @@ impl<'engine, 'func2, 'ctx, T> ExecContext<'engine, 'func2, 'ctx, T> {
     ///
     /// If there exists is no table for the instance.
     fn default_table(&mut self) -> Table {
-        self.frame.default_table(&self.ctx)
+        self.cache.default_table(&self.ctx, self.frame.instance())
     }
 
     /// Returns the global variable at the given global variable index.
@@ -1142,7 +1151,7 @@ impl<'engine, 'func2, 'ctx, T> ExecContext<'engine, 'func2, 'ctx, T> {
     }
 }
 
-impl<'engine, 'func2, 'ctx, T> ExecContext<'engine, 'func2, 'ctx, T> {
+impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache, T> {
     fn exec_br(&mut self, target: Target) -> Result<(), Trap> {
         self.branch_to_target(target)
     }

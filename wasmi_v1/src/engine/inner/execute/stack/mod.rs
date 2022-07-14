@@ -19,12 +19,9 @@ use crate::{
         DEFAULT_VALUE_STACK_LIMIT,
     },
     func::{HostFuncEntity, WasmFuncEntity},
-    module::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
     AsContext,
     AsContextMut,
     Instance,
-    Memory,
-    Table,
 };
 use core::{
     cmp,
@@ -425,66 +422,6 @@ impl<'a> StackFrameView<'a> {
     /// Returns the [`FuncBody`] of the [`StackFrameView`].
     pub fn func_body(&self) -> FuncBody {
         self.frame.func_body
-    }
-
-    /// Returns the default linear memory of the [`StackFrameView`] if any.
-    ///
-    /// # Note
-    ///
-    /// This API allows to lazily and efficiently load the default linear memory if available.
-    ///
-    /// # Panics
-    ///
-    /// If there is no default linear memory.
-    pub fn default_memory(&mut self, ctx: impl AsContext) -> Memory {
-        match self.frame.default_memory {
-            Some(default_memory) => default_memory,
-            None => {
-                // Try to lazily load the default memory.
-                let default_memory = self
-                    .frame
-                    .instance
-                    .get_memory(ctx.as_context(), DEFAULT_MEMORY_INDEX)
-                    .unwrap_or_else(|| {
-                        panic!(
-                            "could not resolve default memory for instance: {:?}",
-                            self.frame.instance
-                        )
-                    });
-                self.frame.default_memory = Some(default_memory);
-                default_memory
-            }
-        }
-    }
-
-    /// Returns the default table of the [`StackFrameView`] if any.
-    ///
-    /// # Note
-    ///
-    /// This API allows to lazily and efficiently load the default table if available.
-    ///
-    /// # Panics
-    ///
-    /// If there is no default table.
-    pub fn default_table(&mut self, ctx: impl AsContext) -> Table {
-        match self.frame.default_table {
-            Some(default_table) => default_table,
-            None => {
-                // Try to lazily load the default table.
-                let default_table = self
-                    .frame
-                    .instance
-                    .get_table(ctx.as_context(), DEFAULT_TABLE_INDEX)
-                    .unwrap_or_else(|| {
-                        panic!(
-                            "could not resolve default table for instance: {:?}",
-                            self.frame.instance
-                        )
-                    });
-                self.frame.default_table = Some(default_table);
-                default_table
-            }
-        }
     }
 }
 

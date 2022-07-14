@@ -2,8 +2,6 @@ use crate::{
     engine::{ExecRegisterSlice, FuncBody},
     func::WasmFuncEntity,
     Instance,
-    Memory,
-    Table,
 };
 use wasmi_core::TrapCode;
 
@@ -58,22 +56,6 @@ pub struct StackFrame {
     /// non-local to the function such as linear memories, global variables
     /// and tables.
     pub instance: Instance,
-    /// The default linear memory (index 0) of the `instance`.
-    ///
-    /// # Note
-    ///
-    /// This is just an optimization for the common case of manipulating
-    /// the default linear memory and avoids one indirection to look-up
-    /// the linear memory in the `Instance`.
-    pub default_memory: Option<Memory>,
-    /// The default table (index 0) of the `instance`.
-    ///
-    /// # Note
-    ///
-    /// This is just an optimization for the common case of indirectly
-    /// calling functions using the default table and avoids one indirection
-    /// to look-up the table in the `Instance`.
-    pub default_table: Option<Table>,
     /// The current program counter.
     ///
     /// # Note
@@ -144,8 +126,6 @@ impl FrameStack {
             results,
             func_body: wasm_func.func_body(),
             instance: wasm_func.instance(),
-            default_memory: None,
-            default_table: None,
             pc: 0,
         });
         Ok(StackFrameRef(len))
