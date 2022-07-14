@@ -93,7 +93,7 @@ impl FrameRegion {
 
     /// Returns the end of the [`FrameRegion`].
     pub fn end(self) -> usize {
-        self.start + self.len
+        self.start() + self.len()
     }
 
     /// Returns the length of the [`FrameRegion`].
