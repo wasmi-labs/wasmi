@@ -6,15 +6,29 @@ use crate::runner::ValueInternal;
 use super::itable::IEntry;
 
 pub enum RunInstructionTracePre {
-    BrIfNez { value: i32 },
+    BrIfNez {
+        value: i32,
+    },
 
-    GetLocal { depth: u32, value: ValueInternal, vtype: ValueType },
+    GetLocal {
+        depth: u32,
+        value: ValueInternal,
+        vtype: ValueType,
+    },
 
-    I32BinOp { left: i32, right: i32 },
+    I32BinOp {
+        left: i32,
+        right: i32,
+    },
 
-    I32Comp { left: i32, right: i32 },
+    I32Comp {
+        left: i32,
+        right: i32,
+    },
 
-    Drop { value: u64 },
+    Drop {
+        value: u64,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -56,8 +70,8 @@ impl ETable {
         pc: u32,
         opcode: Opcode,
         step: StepInfo,
-    ) {
-        self.0.push(EEntry {
+    ) -> EEntry {
+        let eentry = EEntry {
             id: self.0.len() as u64,
             sp,
             inst: IEntry {
@@ -67,6 +81,10 @@ impl ETable {
                 opcode,
             },
             step,
-        })
+        };
+
+        self.0.push(eentry.clone());
+
+        eentry
     }
 }

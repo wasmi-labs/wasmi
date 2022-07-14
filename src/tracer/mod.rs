@@ -1,14 +1,16 @@
 use crate::{FuncRef, ModuleRef};
 
-use self::{etable::ETable, itable::ITable};
+use self::{etable::ETable, itable::ITable, jtable::JTable};
 
 pub mod etable;
 pub mod itable;
+pub mod jtable;
 
 #[derive(Debug)]
 pub struct Tracer {
     pub itable: ITable,
     pub etable: ETable,
+    pub jtable: Option<JTable>,
     pub(crate) module_instance_lookup: Vec<ModuleRef>,
     pub(crate) function_lookup: Vec<(FuncRef, u32)>,
 }
@@ -19,6 +21,7 @@ impl Tracer {
         Tracer {
             itable: ITable::default(),
             etable: ETable::default(),
+            jtable: None,
             module_instance_lookup: vec![],
             function_lookup: vec![],
         }
@@ -37,12 +40,16 @@ impl Tracer {
                 loop {
                     let pc = iter.position();
                     if let Some(instruction) = iter.next() {
-                        self.itable.push(
+                        let ientry = self.itable.push(
                             self.module_instance_lookup.len() as u32,
                             func_index,
                             pc,
                             instruction.into(),
-                        )
+                        );
+
+                        if self.jtable.is_none() {
+                            self.jtable = Some(JTable::new(&ientry))
+                        }
                     } else {
                         break;
                     }

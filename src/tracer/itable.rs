@@ -39,12 +39,16 @@ impl ITable {
         func_index: u32,
         pc: u32,
         opcode: Opcode,
-    ) {
-        self.0.push(IEntry {
+    ) -> IEntry {
+        let ientry = IEntry {
             module_instance_index: module_instance_index as u16,
             func_index: func_index as u16,
             pc: pc as u16,
             opcode,
-        })
+        };
+
+        self.0.push(ientry.clone());
+
+        ientry
     }
 }

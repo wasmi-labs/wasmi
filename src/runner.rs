@@ -550,17 +550,19 @@ impl Interpreter {
                                     .lookup_function(&function_context.function)
                             };
 
-                            {
-                                (*tracer).borrow_mut().etable.push(
-                                    module_instance,
-                                    function,
-                                    sp as u64,
-                                    pc,
-                                    instruction.into(),
-                                    post_status,
-                                );
-                            }
+                            Some((*tracer).borrow_mut().etable.push(
+                                module_instance,
+                                function,
+                                sp as u64,
+                                pc,
+                                instruction.into(),
+                                post_status,
+                            ))
+                        } else {
+                            None
                         }
+                    } else {
+                        None
                     }
                 };
             }
@@ -576,7 +578,8 @@ impl Interpreter {
                 }
                 InstructionOutcome::ExecuteCall(func_ref) => {
                     // We don't record updated pc, the value should be recorded in the next trace log.
-                    trace_post!();
+                    let eentry = trace_post!();
+
                     function_context.position = iter.position();
                     return Ok(RunResult::NestedCall(func_ref));
                 }
