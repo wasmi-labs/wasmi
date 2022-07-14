@@ -6,11 +6,20 @@ use self::{
 use super::super::EngineResources;
 use crate::{
     engine::{
-        bytecode::ExecRegister, CallParams, CallResults, DedupFuncType, ExecProvider,
-        ExecProviderSlice, ExecRegisterSlice, FuncBody, FuncParams,
+        bytecode::ExecRegister,
+        CallParams,
+        CallResults,
+        DedupFuncType,
+        ExecProvider,
+        ExecProviderSlice,
+        ExecRegisterSlice,
+        FuncBody,
+        FuncParams,
     },
     func::{HostFuncEntity, WasmFuncEntity},
-    AsContext, AsContextMut, Instance,
+    AsContext,
+    AsContextMut,
+    Instance,
 };
 use core::{
     cmp,

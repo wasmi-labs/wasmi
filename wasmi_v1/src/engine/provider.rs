@@ -4,35 +4,39 @@ use alloc::collections::{btree_map::Entry, BTreeMap};
 use core::ops::Neg;
 use wasmi_core::UntypedValue;
 
+/// A deduplicating [`ExecProviderSlice`] arena.
 #[derive(Debug, Default)]
 pub struct DedupProviderSliceArena {
-    scratch: Vec<ExecProvider>,
     dedup: BTreeMap<Box<[ExecProvider]>, ExecProviderSlice>,
     providers: Vec<ExecProvider>,
 }
 
 impl DedupProviderSliceArena {
-    // /// Allocates a new [`RegisterSlice`] consisting of the given registers.
-    pub fn alloc<T>(&mut self, registers: T) -> ExecProviderSlice
+    /// Allocates a new [`ExecProviderSlice`] consisting of the given registers.
+    pub fn alloc<T>(&mut self, providers: T) -> ExecProviderSlice
     where
         T: IntoIterator<Item = ExecProvider>,
     {
-        self.scratch.clear();
-        self.scratch.extend(registers);
-        match self.dedup.entry(self.scratch.clone().into_boxed_slice()) {
-            Entry::Occupied(occupied) => *occupied.get(),
-            Entry::Vacant(vacant) => {
-                let first = self.providers.len();
-                self.providers.extend_from_slice(&self.scratch[..]);
-                let len = self.providers.len() - first;
-                let first = first.try_into().unwrap_or_else(|error| {
-                    panic!("out of bounds index of {first} for register slice: {error}")
+        let providers: Box<[ExecProvider]> = providers.into_iter().collect();
+        match self.dedup.entry(providers) {
+            Entry::Occupied(entry) => *entry.get(),
+            Entry::Vacant(entry) => {
+                let new_providers: &[ExecProvider] = entry.key();
+                let first: u16 = self.providers.len().try_into().unwrap_or_else(|error| {
+                    panic!(
+                        "out of bounds index of {} for provider slice: {error}",
+                        self.providers.len()
+                    )
                 });
-                let len = len.try_into().unwrap_or_else(|error| {
-                    panic!("register slice of length {len} too long: {error}")
+                let len: u16 = new_providers.len().try_into().unwrap_or_else(|error| {
+                    panic!(
+                        "register slice of length {} too long: {error}",
+                        new_providers.len()
+                    )
                 });
+                self.providers.extend_from_slice(new_providers);
                 let dedup = ExecProviderSlice { first, len };
-                vacant.insert(dedup);
+                entry.insert(dedup);
                 dedup
             }
         }
