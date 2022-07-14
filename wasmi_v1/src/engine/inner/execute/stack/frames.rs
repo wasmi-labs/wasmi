@@ -106,12 +106,10 @@ impl FrameRegion {
     pub fn range(self) -> Range<usize> {
         self.start()..self.end()
     }
-}
 
-impl FrameRegion {
     /// Returns `true` if `other` [`FrameRegion`] directly follows `self`.
     pub fn followed_by(&self, other: &Self) -> bool {
-        (self.start + self.len) == other.start
+        self.end() == other.start()
     }
 }
 
