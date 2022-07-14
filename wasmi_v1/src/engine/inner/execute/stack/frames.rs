@@ -1,10 +1,9 @@
-use core::ops::Range;
-
 use crate::{
     engine::{ExecRegisterSlice, FuncBody},
     func::WasmFuncEntity,
     Instance,
 };
+use core::ops::Range;
 use wasmi_core::TrapCode;
 
 /// The call frame stack.
