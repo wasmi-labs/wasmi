@@ -377,7 +377,7 @@ impl Interpreter {
             isa::Instruction::BrIfNez(_) => Some(RunInstructionTracePre::BrIfNez {
                 value: <_>::from_value_internal(*self.value_stack.pick(0)),
             }),
-            isa::Instruction::Return(_) => None,
+            isa::Instruction::Return(..) => None,
 
             isa::Instruction::Drop => Some(RunInstructionTracePre::Drop {
                 value: <_>::from_value_internal(*self.value_stack.pick(0)),
@@ -439,12 +439,15 @@ impl Interpreter {
 
                 StepInfo::Return {
                     drop,
-                    keep: if keep == Keep::Single { 1 } else { 0 },
-                    drop_values: drop_values.iter().map(|v| v.0).collect::<Vec<_>>(),
-                    keep_values: if keep == isa::Keep::Single {
-                        vec![(*self.value_stack.top()).0]
+                    keep: if let Keep::Single(t) = keep {
+                        vec![t.into()]
                     } else {
                         vec![]
+                    },
+                    drop_values: drop_values.iter().map(|v| v.0).collect::<Vec<_>>(),
+                    keep_values: match keep {
+                        Keep::None => vec![(*self.value_stack.top()).0],
+                        Keep::Single(_) => vec![],
                     },
                 }
             }
@@ -601,7 +604,7 @@ impl Interpreter {
             isa::Instruction::BrIfEqz(target) => self.run_br_eqz(*target),
             isa::Instruction::BrIfNez(target) => self.run_br_nez(*target),
             isa::Instruction::BrTable(targets) => self.run_br_table(*targets),
-            isa::Instruction::Return(drop_keep) => self.run_return(*drop_keep),
+            isa::Instruction::Return(drop_keep, ..) => self.run_return(*drop_keep),
 
             isa::Instruction::Call(index) => self.run_call(context, *index),
             isa::Instruction::CallIndirect(index) => self.run_call_indirect(context, *index),
@@ -1589,7 +1592,7 @@ impl core::fmt::Debug for ValueStack {
 impl ValueStack {
     #[inline]
     fn drop_keep(&mut self, drop_keep: isa::DropKeep) {
-        if drop_keep.keep == isa::Keep::Single {
+        if let isa::Keep::Single(_) = drop_keep.keep {
             let top = *self.top();
             *self.pick_mut(drop_keep.drop as usize + 1) = top;
         }

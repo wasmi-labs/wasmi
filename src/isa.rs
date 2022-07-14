@@ -80,7 +80,7 @@ pub enum Keep {
     None,
     /// Pop one value from the yet-to-be-discarded stack frame to the
     /// current stack frame.
-    Single,
+    Single(ValueType),
 }
 
 impl Keep {
@@ -88,7 +88,7 @@ impl Keep {
     pub fn count(&self) -> u32 {
         match *self {
             Keep::None => 0,
-            Keep::Single => 1,
+            Keep::Single(..) => 1,
         }
     }
 }
@@ -359,7 +359,11 @@ impl<'a> Into<Opcode> for Instruction<'a> {
             Instruction::Unreachable => todo!(),
             Instruction::Return(drop_keep) => Opcode::Return {
                 drop: drop_keep.drop,
-                keep: if drop_keep.keep == Keep::Single { 1 } else { 0 },
+                keep: if let Keep::Single(t) = drop_keep.keep {
+                    vec![t.into()]
+                } else {
+                    vec![]
+                },
             },
             Instruction::Call(_) => todo!(),
             Instruction::CallIndirect(_) => todo!(),
@@ -540,7 +544,7 @@ impl<'a> Into<u32> for Instruction<'a> {
             Instruction::BrIfNez(_) => 5,
             Instruction::BrTable(_) => 6,
             Instruction::Unreachable => 7,
-            Instruction::Return(_) => 8,
+            Instruction::Return(..) => 8,
             Instruction::Call(_) => 9,
             Instruction::CallIndirect(_) => 10,
             Instruction::Drop => 11,
