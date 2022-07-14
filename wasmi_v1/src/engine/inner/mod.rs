@@ -2,7 +2,7 @@ mod compile;
 mod execute;
 pub(crate) mod printer;
 
-use self::execute::StackLimits;
+pub use self::execute::StackLimits;
 use super::{
     CodeMap,
     ConstPool,

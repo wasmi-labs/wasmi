@@ -6,33 +6,31 @@ use self::{
 use super::super::EngineResources;
 use crate::{
     engine::{
-        bytecode::ExecRegister,
-        CallParams,
-        CallResults,
-        DedupFuncType,
-        ExecProvider,
-        ExecProviderSlice,
-        ExecRegisterSlice,
-        FuncBody,
-        FuncParams,
-        DEFAULT_CALL_STACK_LIMIT,
-        DEFAULT_VALUE_STACK_LIMIT,
+        bytecode::ExecRegister, CallParams, CallResults, DedupFuncType, ExecProvider,
+        ExecProviderSlice, ExecRegisterSlice, FuncBody, FuncParams,
     },
     func::{HostFuncEntity, WasmFuncEntity},
-    AsContext,
-    AsContextMut,
-    Instance,
+    AsContext, AsContextMut, Instance,
 };
 use core::{
     cmp,
     fmt::{self, Display},
-    mem,
     slice,
 };
+use std::mem::size_of;
 use wasmi_core::{Trap, UntypedValue};
 
 mod frames;
 mod values;
+
+/// Maximum number of bytes on the value stack.
+pub const DEFAULT_VALUE_STACK_INIT: usize = 1024;
+
+/// Maximum number of bytes on the value stack.
+pub const DEFAULT_VALUE_STACK_LIMIT: usize = 1024 * DEFAULT_VALUE_STACK_INIT;
+
+/// Maximum number of levels on the call stack.
+pub const DEFAULT_CALL_STACK_LIMIT: usize = 64 * 1024;
 
 /// The configured limits of the [`Stack`].
 #[derive(Debug, Copy, Clone)]
@@ -47,13 +45,55 @@ pub struct StackLimits {
 
 impl Default for StackLimits {
     fn default() -> Self {
-        let register_len = mem::size_of::<UntypedValue>();
-        let initial_len = DEFAULT_VALUE_STACK_LIMIT / register_len;
+        let register_len = size_of::<UntypedValue>();
+        let initial_len = DEFAULT_VALUE_STACK_INIT / register_len;
+        let maximum_len = DEFAULT_VALUE_STACK_LIMIT / register_len;
         Self {
             initial_len,
-            maximum_len: 1024 * initial_len,
+            maximum_len,
             maximum_recursion_depth: DEFAULT_CALL_STACK_LIMIT,
         }
+    }
+}
+
+impl StackLimits {
+    /// Sets a new maximum value stack size.
+    ///
+    /// Returns `&mut Self` to allow for method chaining.
+    ///
+    /// # Note
+    ///
+    /// Also sets the initial stack size if the new maximum size
+    /// would be less than the current initial stack size.
+    pub fn set_max_stack_size(&mut self, new_size: usize) -> &mut Self {
+        if new_size < self.initial_len {
+            self.initial_len = new_size;
+        }
+        self.maximum_len = new_size;
+        self
+    }
+
+    /// Returns the current maximum value stack size.
+    pub fn max_stack_size(&self) -> usize {
+        self.maximum_len
+    }
+
+    /// Sets a new maximum recursion depth.
+    ///
+    /// Returns `&mut Self` to allow for method chaining.
+    ///
+    /// # Note
+    ///
+    /// Also sets the initial stack size if the new maximum size
+    /// would be less than the current initial stack size.
+    pub fn set_max_recursion_depth(&mut self, new_depth: usize) -> &mut Self {
+        self.maximum_recursion_depth = new_depth;
+        self
+    }
+
+    /// Returns the current maximum recursion call depth.
+    pub fn max_recursion_depth(&self) -> usize {
+        self.maximum_len
     }
 }
 

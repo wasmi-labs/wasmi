@@ -1,22 +1,10 @@
-use super::{DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT};
+use super::inner::StackLimits;
 
 /// Configuration for an [`Engine`][`super::Engine`].
 #[derive(Debug, Copy, Clone)]
 pub struct Config {
-    /// The internal value stack limit.
-    ///
-    /// # Note
-    ///
-    /// Reaching this limit during execution of a Wasm function will
-    /// cause a stack overflow trap.
-    value_stack_limit: usize,
-    /// The internal call stack limit.
-    ///
-    /// # Note
-    ///
-    /// Reaching this limit during execution of a Wasm function will
-    /// cause a stack overflow trap.
-    call_stack_limit: usize,
+    /// The value and call stack limits.
+    stack_limits: StackLimits,
     /// Is `true` if the [`mutable-global`] Wasm proposal is enabled.
     ///
     /// # Note
@@ -54,8 +42,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            value_stack_limit: DEFAULT_VALUE_STACK_LIMIT,
-            call_stack_limit: DEFAULT_CALL_STACK_LIMIT,
+            stack_limits: StackLimits::default(),
             mutable_global: true,
             sign_extension: true,
             saturating_float_to_int: true,
@@ -70,10 +57,9 @@ impl Config {
     /// # Note
     ///
     /// The Wasm MVP has no Wasm proposals enabled by default.
-    pub const fn mvp() -> Self {
+    pub fn mvp() -> Self {
         Self {
-            value_stack_limit: DEFAULT_VALUE_STACK_LIMIT,
-            call_stack_limit: DEFAULT_CALL_STACK_LIMIT,
+            stack_limits: StackLimits::default(),
             mutable_global: false,
             sign_extension: false,
             saturating_float_to_int: false,
@@ -126,8 +112,8 @@ impl Config {
     }
 
     /// Sets the maximum stack size for executions.
-    pub const fn set_max_stack_size(mut self, limit: usize) -> Self {
-        self.value_stack_limit = limit;
+    pub fn set_max_stack_size(mut self, limit: usize) -> Self {
+        self.stack_limits.set_max_stack_size(limit);
         self
     }
 
@@ -136,8 +122,8 @@ impl Config {
     /// # Note
     ///
     /// Executions requiring more stack space trigger a `StackOverflow` trap.
-    pub const fn max_stack_size(&self) -> usize {
-        self.value_stack_limit
+    pub fn max_stack_size(&self) -> usize {
+        self.stack_limits.max_stack_size()
     }
 
     /// Sets the maximum stack limit for executions.
@@ -145,8 +131,8 @@ impl Config {
     /// # Note
     ///
     /// Executions requiring deeper nested calls trigger a `StackOverflow` trap.
-    pub const fn set_max_recursion_depth(mut self, limit: usize) -> Self {
-        self.call_stack_limit = limit;
+    pub fn set_max_recursion_depth(mut self, limit: usize) -> Self {
+        self.stack_limits.set_max_recursion_depth(limit);
         self
     }
 
@@ -155,7 +141,7 @@ impl Config {
     /// # Note
     ///
     /// Executions requiring deeper nested calls trigger a `StackOverflow` trap.
-    pub const fn max_recursion_depth(&self) -> usize {
-        self.call_stack_limit
+    pub fn max_recursion_depth(&self) -> usize {
+        self.stack_limits.max_recursion_depth()
     }
 }
