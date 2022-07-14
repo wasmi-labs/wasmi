@@ -26,7 +26,7 @@ use crate::{
     ValueType,
 };
 use alloc::{boxed::Box, vec::Vec};
-use core::{cell::RefCell, fmt, ops, u32, usize};
+use core::{borrow::Borrow, cell::RefCell, fmt, ops, u32, usize};
 use parity_wasm::elements::Local;
 use specs::{step::StepInfo, types::Value};
 use std::rc::Rc;
@@ -322,6 +322,23 @@ impl Interpreter {
                     match *nested_func.as_internal() {
                         FuncInstanceInternal::Internal { .. } => {
                             let nested_context = FunctionContext::new(nested_func.clone());
+
+                            if let Some(trace) = self.tracer.as_mut() {
+                                let eid = trace.borrow_mut().eid();
+                                let last_jump_eid = trace.borrow_mut().last_jump_eid();
+                                let inst = trace
+                                    .borrow_mut()
+                                    .lookup_first_inst(&nested_context.function);
+
+                                let mut trace = trace.borrow_mut();
+                                let jtable = trace.jtable.as_mut();
+                                if let Some(jtable) = jtable {
+                                    jtable.push(eid, last_jump_eid, &inst);
+                                }
+
+                                trace.push_frame();
+                            }
+
                             self.call_stack.push(function_context);
                             self.call_stack.push(nested_context);
                         }
@@ -537,24 +554,20 @@ impl Interpreter {
                     if self.tracer.is_some() {
                         let post_status = self.run_instruction_post(pre_status, &instruction);
                         if let Some(tracer) = self.tracer.as_mut() {
-                            // let ref_tracer = tracer.borrow();
-                            let module_instance = {
-                                (*tracer)
-                                    .borrow()
-                                    .lookup_module_instance(&function_context.module)
-                            };
+                            let mut tracer = tracer.borrow_mut();
+                            let module_instance =
+                                tracer.lookup_module_instance(&function_context.module);
 
-                            let function = {
-                                (*tracer)
-                                    .borrow()
-                                    .lookup_function(&function_context.function)
-                            };
+                            let function = tracer.lookup_function(&function_context.function);
 
-                            Some((*tracer).borrow_mut().etable.push(
+                            let last_jump_eid = tracer.last_jump_eid();
+
+                            Some(tracer.etable.push(
                                 module_instance,
                                 function,
                                 sp as u64,
                                 pc,
+                                last_jump_eid,
                                 instruction.into(),
                                 post_status,
                             ))
@@ -565,7 +578,7 @@ impl Interpreter {
                         None
                     }
                 };
-            }
+            };
 
             match self.run_instruction(function_context, &instruction)? {
                 InstructionOutcome::RunNextInstruction => {
@@ -585,6 +598,10 @@ impl Interpreter {
                 }
                 InstructionOutcome::Return(drop_keep) => {
                     trace_post!();
+                    if let Some(trace) = self.tracer.as_mut() {
+                        trace.borrow_mut().pop_frame();
+                    }
+
                     self.value_stack.drop_keep(drop_keep);
                     break;
                 }

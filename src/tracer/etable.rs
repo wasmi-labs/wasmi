@@ -35,6 +35,7 @@ pub enum RunInstructionTracePre {
 pub struct EEntry {
     pub id: u64,
     pub sp: u64,
+    pub last_jump_eid: u64,
     pub inst: IEntry,
     pub step: StepInfo,
 }
@@ -44,8 +45,7 @@ impl Into<EventTableEntry> for EEntry {
         EventTableEntry {
             eid: self.id,
             sp: self.sp,
-            // FIXME: fill with correct value
-            last_jump_eid: 0,
+            last_jump_eid: self.last_jump_eid,
             inst: self.inst.into(),
             step_info: self.step.clone(),
         }
@@ -68,12 +68,14 @@ impl ETable {
         func_index: u32,
         sp: u64,
         pc: u32,
+        last_jump_eid: u64,
         opcode: Opcode,
         step: StepInfo,
     ) -> EEntry {
         let eentry = EEntry {
             id: self.0.len() as u64,
             sp,
+            last_jump_eid,
             inst: IEntry {
                 module_instance_index: module_instance_index as u16,
                 func_index: func_index as u16,

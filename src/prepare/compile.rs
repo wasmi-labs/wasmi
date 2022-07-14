@@ -2,7 +2,7 @@ use alloc::{string::String, vec::Vec};
 
 use parity_wasm::elements::{BlockType, FuncBody, Instruction, ValueType};
 
-use crate::isa::{self, Keep};
+use crate::isa::{self};
 use validation::{
     func::{
         require_label,
