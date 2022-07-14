@@ -446,8 +446,8 @@ impl Interpreter {
                     },
                     drop_values: drop_values.iter().map(|v| v.0).collect::<Vec<_>>(),
                     keep_values: match keep {
-                        Keep::None => vec![(*self.value_stack.top()).0],
-                        Keep::Single(_) => vec![],
+                        Keep::Single(_) => vec![(*self.value_stack.top()).0],
+                        Keep::None => vec![],
                     },
                 }
             }
