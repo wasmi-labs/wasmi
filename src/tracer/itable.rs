@@ -16,7 +16,6 @@ impl Into<InstructionTableEntry> for IEntry {
             moid: self.module_instance_index,
             mmid: self.module_instance_index,
             fid: self.func_index,
-            bid: 0,
             iid: self.pc,
             opcode: self.opcode,
         }
