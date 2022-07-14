@@ -186,7 +186,7 @@ impl FrameStack {
     ///
     /// If the [`FrameStack`] is empty.
     pub fn last_frame_ref(&self) -> StackFrameRef {
-        assert!(!self.is_empty());
+        debug_assert!(!self.is_empty());
         StackFrameRef(self.len() - 1)
     }
 
