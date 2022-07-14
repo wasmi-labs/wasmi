@@ -1,5 +1,4 @@
 use super::{bytecode::ExecRegister, ConstRef};
-use crate::arena::Index;
 use alloc::collections::{btree_map::Entry, BTreeMap};
 use core::ops::Neg;
 use wasmi_core::UntypedValue;
@@ -127,22 +126,30 @@ impl ExecProvider {
 }
 
 impl ExecProvider {
-    pub fn decode(self) -> RegisterOrImmediate {
-        if self.0.is_negative() {
-            return ConstRef::from_usize(self.0.abs().wrapping_sub(1) as usize).into();
+    /// Applies `with_const` or `with_reg` depending on the [`ExecProvider`] variant.
+    fn apply<C, R, T>(self, with_reg: R, with_const: C) -> T
+    where
+        R: FnOnce(ExecRegister) -> T,
+        C: FnOnce(ConstRef) -> T,
+    {
+        match self.0.is_negative() {
+            true => with_const(ConstRef::from_inner(self.0.abs().wrapping_sub(1) as u32)),
+            false => with_reg(ExecRegister::from_inner(self.0 as u16)),
         }
-        ExecRegister::from_inner(self.0 as u16).into()
     }
 
+    /// Returns a [`RegisterOrImmediate`] representing this [`ExecProvider`].
+    pub fn decode(self) -> RegisterOrImmediate {
+        self.apply(RegisterOrImmediate::from, RegisterOrImmediate::from)
+    }
+
+    /// Decodes the [`ExecProvider`] into its underlying [`UntypedValue`].
     pub fn decode_using(
         self,
         resolve_register: impl FnOnce(ExecRegister) -> UntypedValue,
         resolve_const: impl FnOnce(ConstRef) -> UntypedValue,
     ) -> UntypedValue {
-        match self.decode() {
-            RegisterOrImmediate::Register(register) => resolve_register(register),
-            RegisterOrImmediate::Immediate(cref) => resolve_const(cref),
-        }
+        self.apply(resolve_register, resolve_const)
     }
 }
 

@@ -10,6 +10,19 @@ impl ConstRef {
     pub fn into_inner(self) -> u32 {
         self.0
     }
+
+    pub fn from_inner(value: u32) -> Self {
+        // We require the value to be strictly smaller than i32::MAX
+        // since we have to shift the value spectrum avoiding the zero
+        // value for conversion between [`RegisterOrImmediate`] where
+        // the zero value already refers to a [`Register`].
+        assert!(
+            value < i32::MAX as u32,
+            "encountered out of bounds constant reference: {}",
+            value
+        );
+        Self(value)
+    }
 }
 
 impl Index for ConstRef {
