@@ -52,10 +52,7 @@ impl ValueStack {
             .ok_or(TrapCode::StackOverflow)?;
         self.values
             .extend(iter::repeat_with(UntypedValue::default).take(delta));
-        Ok(FrameRegion {
-            start: len,
-            len: delta,
-        })
+        Ok(FrameRegion::new(len, delta))
     }
 
     /// Shrinks the value stack by `delta` values.
@@ -65,7 +62,7 @@ impl ValueStack {
 
     /// Returns the [`StackFrameRegisters`] of the given [`FrameRegion`].
     pub fn frame_regs(&mut self, region: FrameRegion) -> StackFrameRegisters {
-        StackFrameRegisters::from(&mut self.values[region.start..(region.start + region.len)])
+        StackFrameRegisters::from(&mut self.values[region.range()])
     }
 
     /// Returns the [`StackFrameRegisters`] of a pair of neighbouring [`FrameRegion`]s.
@@ -79,10 +76,10 @@ impl ValueStack {
         snd: FrameRegion,
     ) -> (StackFrameRegisters, StackFrameRegisters) {
         debug_assert!(fst.followed_by(&snd));
-        let (fst_regs, snd_regs) = self.values[fst.start..].split_at_mut(fst.len);
+        let (fst_regs, snd_regs) = self.values[fst.start()..snd.end()].split_at_mut(fst.len());
         (
             StackFrameRegisters::from(fst_regs),
-            StackFrameRegisters::from(&mut snd_regs[..snd.len]),
+            StackFrameRegisters::from(snd_regs),
         )
     }
 }

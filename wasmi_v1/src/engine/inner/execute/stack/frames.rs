@@ -1,3 +1,5 @@
+use core::ops::Range;
+
 use crate::{
     engine::{ExecRegisterSlice, FuncBody},
     func::WasmFuncEntity,
@@ -74,9 +76,36 @@ pub struct FrameRegion {
     /// The index to the first register on the global [`Stack`].
     ///
     /// [`Stack`]: [`super::Stack`]
-    pub start: usize,
+    start: usize,
     /// The amount of registers of the [`StackFrame`] belonging to this [`FrameRegion`].
-    pub len: usize,
+    len: usize,
+}
+
+impl FrameRegion {
+    /// Creates a new [`FrameRegion`].
+    pub fn new(start: usize, len: usize) -> Self {
+        Self { start, len }
+    }
+
+    /// Returns the start of the [`FrameRegion`].
+    pub fn start(self) -> usize {
+        self.start
+    }
+
+    /// Returns the end of the [`FrameRegion`].
+    pub fn end(self) -> usize {
+        self.start + self.len
+    }
+
+    /// Returns the length of the [`FrameRegion`].
+    pub fn len(self) -> usize {
+        self.len
+    }
+
+    /// Returns the index range of the [`FrameRegion`].
+    pub fn range(self) -> Range<usize> {
+        self.start()..self.end()
+    }
 }
 
 impl FrameRegion {

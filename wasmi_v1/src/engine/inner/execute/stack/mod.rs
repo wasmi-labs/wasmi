@@ -308,7 +308,7 @@ impl Stack {
             let return_value = callee_regs.load_provider(res, *returns);
             caller_regs.set(result, return_value);
         });
-        self.values.shrink_by(callee.region.len);
+        self.values.shrink_by(callee.region.len());
         Some(self.frames.last_frame_ref())
     }
 
