@@ -205,11 +205,11 @@ impl Stack {
         let caller = self.frames.last_frame();
         let caller_region = caller.region;
         let frame_ref = self.frames.push_frame(callee_region, results, func)?;
-        let (caller_regs, mut callee_regs) =
+        let (caller_regs, callee_regs) =
             self.values.paired_frame_regs(caller_region, callee_region);
-        let params = ExecRegisterSlice::params(args.len() as u16);
-        args.iter().zip(params).for_each(|(arg, param)| {
-            callee_regs.set(param, caller_regs.load_provider(res, *arg));
+        let params = callee_regs.into_iter().take(args.len());
+        params.zip(args).for_each(|(param, arg)| {
+            *param = caller_regs.load_provider(res, *arg);
         });
         Ok(frame_ref)
     }
@@ -299,12 +299,11 @@ impl Stack {
         let mut callee_regs = self.values.frame_regs(callee_region);
         params
             .feed_params()
-            .zip(&mut callee_regs)
+            .zip(callee_regs.as_slice_mut())
             .for_each(|(param, arg)| {
                 *arg = param.into();
             });
         // Set up for actually calling the host function.
-        let callee_regs = self.values.frame_regs(callee_region); // TODO: why do we need this?? (mutable borrow issue)
         let params_results = FuncParams::new(callee_regs.regs, len_params, len_results);
         host_func.call(ctx, None, params_results)?;
         // Write back results of the execution.
@@ -352,18 +351,17 @@ impl Stack {
             self.values.paired_frame_regs(caller.region, callee_region);
         // Initialize registers that act as host function parameters.
         let args = res.provider_pool.resolve(args);
-        let params = ExecRegisterSlice::params(len_params as u16);
-        args.iter().zip(params).for_each(|(param, host_param)| {
-            let param_value = caller_regs.load_provider(res, *param);
-            callee_regs.set(host_param, param_value);
+        let params = callee_regs.as_slice_mut().iter_mut().take(len_params);
+        params.zip(args).for_each(|(param, arg)| {
+            *param = caller_regs.load_provider(res, *arg);
         });
         // Set up for actually calling the host function.
         let params_results = FuncParams::new(callee_regs.regs, len_params, len_results);
         host_func.call(ctx, Some(caller.instance), params_results)?;
         // Write results of the host function call back to the caller.
-        let returned = ExecRegisterSlice::params(len_results as u16);
+        let returned = callee_regs.into_iter().take(len_results);
         results.iter().zip(returned).for_each(|(result, returned)| {
-            caller_regs.set(result, callee_regs.get(returned));
+            caller_regs.set(result, *returned);
         });
         // Clean up host registers on the value stack.
         self.values.shrink_by(max_inout);
@@ -472,6 +470,16 @@ impl<'a> IntoIterator for StackFrameRegisters<'a> {
 }
 
 impl<'a> StackFrameRegisters<'a> {
+    /// Returns a shared slice to the underlying [`UntypedValue`] entries.
+    pub fn as_slice(&self) -> &[UntypedValue] {
+        &*self.regs
+    }
+
+    /// Returns an exclusive slice to the underlying [`UntypedValue`] entries.
+    pub fn as_slice_mut(&mut self) -> &mut [UntypedValue] {
+        &mut *self.regs
+    }
+
     /// Returns the value of the given `provider`.
     ///
     /// # Panics

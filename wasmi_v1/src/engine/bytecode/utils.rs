@@ -93,14 +93,6 @@ impl ExecRegisterSlice {
         }
     }
 
-    /// Creates an [`ExecRegisterSlice`] for the parameters of a function.
-    pub fn params(len_params: u16) -> Self {
-        Self {
-            start: ExecRegister::from_inner(0),
-            len: len_params,
-        }
-    }
-
     /// Creates an [`ExecRegisterSlice`] with a `start` [`ExecRegister`] of `len`.
     pub fn new(start: ExecRegister, len: u16) -> Self {
         Self { start, len }
