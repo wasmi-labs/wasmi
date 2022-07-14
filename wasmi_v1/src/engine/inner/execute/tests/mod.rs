@@ -22,6 +22,7 @@ use crate::{
     Module,
     Store,
 };
+use core::iter;
 use wasmi_core::{Value, F32, F64};
 
 macro_rules! load_test_instance {
@@ -493,6 +494,98 @@ fn test_memory_fill() {
     test_for(fill, &mut store, mem, 0, 1, 0x11);
     test_for(fill, &mut store, mem, 0, 10_000, 0x22);
     test_for(fill, &mut store, mem, 123, 456, 0x33);
+}
+
+#[test]
+fn test_vec_add() {
+    fn test_for<A, B>(
+        vec_add: Func,
+        mut store: &mut Store<()>,
+        mem: Memory,
+        len: usize,
+        vec_a: A,
+        vec_b: B,
+    ) where
+        A: IntoIterator<Item = i32>,
+        B: IntoIterator<Item = i32>,
+    {
+        use core::mem::size_of;
+
+        let ptr_result = 10;
+        let len_result = len * size_of::<i64>();
+        let ptr_a = ptr_result + len_result;
+        let len_a = len * size_of::<i32>();
+        let ptr_b = ptr_a + len_a;
+
+        // Reset `result` buffer to zeros:
+        mem.data_mut(&mut store)[ptr_result..ptr_result + (len * size_of::<i32>())].fill(0);
+        // Initialize `a` buffer:
+        for (n, a) in vec_a.into_iter().take(len).enumerate() {
+            mem.write(&mut store, ptr_a + (n * size_of::<i32>()), &a.to_le_bytes())
+                .unwrap();
+        }
+        // Initialize `b` buffer:
+        for (n, b) in vec_b.into_iter().take(len).enumerate() {
+            mem.write(&mut store, ptr_b + (n * size_of::<i32>()), &b.to_le_bytes())
+                .unwrap();
+        }
+
+        // Prepare parameters and all Wasm `vec_add`:
+        let params = [
+            Value::I32(ptr_result as i32),
+            Value::I32(ptr_a as i32),
+            Value::I32(ptr_b as i32),
+            Value::I32(len as i32),
+        ];
+        vec_add.call(&mut store, &params, &mut []).unwrap();
+
+        // Validate the result buffer:
+        for n in 0..len {
+            let mut buffer4 = [0x00; 4];
+            let mut buffer8 = [0x00; 8];
+            let a = {
+                mem.read(&store, ptr_a + (n * size_of::<i32>()), &mut buffer4)
+                    .unwrap();
+                i32::from_le_bytes(buffer4)
+            };
+            let b = {
+                mem.read(&store, ptr_b + (n * size_of::<i32>()), &mut buffer4)
+                    .unwrap();
+                i32::from_le_bytes(buffer4)
+            };
+            let actual_result = {
+                mem.read(&store, ptr_result + (n * size_of::<i64>()), &mut buffer8)
+                    .unwrap();
+                i64::from_le_bytes(buffer8)
+            };
+            let expected_result = (a as i64) + (b as i64);
+            assert_eq!(
+                expected_result, actual_result,
+                "given a = {a} and b = {b}, results diverge at index {n}"
+            );
+        }
+    }
+
+    let (mut store, instance) = load_test_instance!("wat/memory-vec-add.wat");
+    let vec_add = load_func(&store, &instance, "vec_add");
+    let mem = instance
+        .get_export(&store, "mem")
+        .and_then(Extern::into_memory)
+        .unwrap();
+
+    print_func(&store, vec_add);
+
+    test_for(vec_add, &mut store, mem, 0, [], []);
+    test_for(vec_add, &mut store, mem, 5, [1; 5], [2; 5]);
+    test_for(vec_add, &mut store, mem, 10, 0.., (0..).map(|i| i % 5));
+    test_for(
+        vec_add,
+        &mut store,
+        mem,
+        100,
+        (0..).map(|i| i * i),
+        (0..).map(|i| i * 10),
+    )
 }
 
 #[test]
