@@ -13,14 +13,17 @@ use wasmi_core::memory_units::{Bytes, Pages};
 
 /// A raw index to a linear memory entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct MemoryIdx(usize);
+pub struct MemoryIdx(u32);
 
 impl Index for MemoryIdx {
     fn into_usize(self) -> usize {
-        self.0
+        self.0 as usize
     }
 
     fn from_usize(value: usize) -> Self {
+        let value = value.try_into().unwrap_or_else(|error| {
+            panic!("index {value} is out of bounds as memory index: {error}")
+        });
         Self(value)
     }
 }
