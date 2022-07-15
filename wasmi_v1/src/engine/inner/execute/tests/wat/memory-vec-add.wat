@@ -18,7 +18,7 @@
                         (local.get $len)
                     )
                 )
-                (i64.store 0 ;; ptr_result[n] = ptr_a[n] + ptr_b[n]
+                (i64.store offset=0 ;; ptr_result[n] = ptr_a[n] + ptr_b[n]
                     (i32.add
                         (local.get $ptr_result)
                         (i32.mul
@@ -27,7 +27,7 @@
                         )
                     )
                     (i64.add
-                        (i64.load32_s 0 ;; load ptr_a[n]
+                        (i64.load32_s offset=0 ;; load ptr_a[n]
                             (i32.add
                                 (local.get $ptr_a)
                                 (i32.mul
@@ -36,7 +36,7 @@
                                 )
                             )
                         )
-                        (i64.load32_s 0 ;; load ptr_b[n]
+                        (i64.load32_s offset=0 ;; load ptr_b[n]
                             (i32.add
                                 (local.get $ptr_b)
                                 (i32.mul

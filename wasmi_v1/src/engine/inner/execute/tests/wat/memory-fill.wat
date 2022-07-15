@@ -18,7 +18,7 @@
                         (local.get $len)
                     )
                 )
-                (i32.store8 0 ;; store $value at mem[ptr+n]
+                (i32.store8 offset=0 ;; store $value at mem[ptr+n]
                     (i32.add
                         (local.get $ptr)
                         (local.get $n)

@@ -17,7 +17,7 @@
                 (local.set $sum ;; load n-th value from memory and add to sum
                     (i64.add
                         (local.get $sum)
-                        (i64.load8_s 0 (local.get $n))
+                        (i64.load8_s offset=0 (local.get $n))
                     )
                 )
                 (local.set $n ;; increment n
