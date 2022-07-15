@@ -26,6 +26,7 @@ criterion_group!(
     name = bench_compile_and_validate;
     config = Criterion::default()
         .sample_size(10)
+        .measurement_time(Duration::from_millis(2000))
         .warm_up_time(Duration::from_millis(1000));
     targets =
         bench_compile_and_validate_v0,
@@ -35,6 +36,7 @@ criterion_group!(
     name = bench_instantiate;
     config = Criterion::default()
         .sample_size(10)
+        .measurement_time(Duration::from_millis(2000))
         .warm_up_time(Duration::from_millis(1000));
     targets =
         bench_instantiate_v0,
@@ -44,6 +46,7 @@ criterion_group! {
     name = bench_execute;
     config = Criterion::default()
         .sample_size(10)
+        .measurement_time(Duration::from_millis(2000))
         .warm_up_time(Duration::from_millis(1000));
     targets =
         bench_execute_tiny_keccak_v0,
