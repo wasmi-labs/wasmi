@@ -81,8 +81,8 @@ impl Tracer {
                     }
                 }
 
+                self.function_lookup.push((func.clone(), func_index + 1));
                 func_index = func_index + 1;
-                self.function_lookup.push((func.clone(), func_index + 1))
             } else {
                 break;
             }
