@@ -1143,7 +1143,6 @@ fn relative_local_depth_type(
     locals: &Locals,
     value_stack: &StackWithLimit<StackValueType>,
 ) -> Result<(u32, ValueType), Error> {
-    println!("idx: {} , locals {:?}", idx, locals.count());
     let value_stack_height = value_stack.len() as u32;
     let locals_and_params_count = locals.count();
 

@@ -642,7 +642,6 @@ impl ModuleInstance {
         externals: &mut E,
     ) -> Result<Option<RuntimeValue>, Error> {
         let func_instance = self.func_by_name(func_name)?;
-        println!("{:?}", func_instance.body());
         FuncInstance::invoke(&func_instance, args, externals).map_err(Error::Trap)
     }
 
