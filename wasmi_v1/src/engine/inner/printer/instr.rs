@@ -344,7 +344,7 @@ impl<T> Display for DisplayExecInstruction<'_, '_, T> {
                 )
             }
             Instr::GlobalGet { result, global } => {
-                write!(
+                writeln!(
                     f,
                     "{} <- {}",
                     DisplayExecRegister::from(result),
@@ -352,7 +352,7 @@ impl<T> Display for DisplayExecInstruction<'_, '_, T> {
                 )
             }
             Instr::GlobalSet { global, value } => {
-                write!(
+                writeln!(
                     f,
                     "{} <- {}",
                     DisplayGlobal::from(global),
@@ -383,10 +383,10 @@ impl<T> Display for DisplayExecInstruction<'_, '_, T> {
             Instr::I64Store16 { ptr, offset, value } => self.write_store(f, "i64.store16", ptr, offset, value),
             Instr::I64Store32 { ptr, offset, value } => self.write_store(f, "i64.store32", ptr, offset, value),
             Instr::MemorySize { result } => {
-                write!(f, "{} <- memory.size", DisplayExecRegister::from(result))
+                writeln!(f, "{} <- memory.size", DisplayExecRegister::from(result))
             }
             Instr::MemoryGrow { result, amount } => {
-                write!(
+                writeln!(
                     f,
                     "{} <- memory.grow {}",
                     DisplayExecRegister::from(result),
