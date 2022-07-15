@@ -1268,16 +1268,8 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         params: <ExecuteTypes as InstructionTypes>::ProviderSlice,
     ) -> Result<CallOutcome, Trap> {
         let callee = self
-            .frame
-            .instance()
-            .get_func(&mut self.ctx, func.into_u32())
-            .unwrap_or_else(|| {
-                panic!(
-                    "unexpected missing function at index {:?} for instance {:?}",
-                    func,
-                    self.frame.instance()
-                )
-            });
+            .cache
+            .get_func(&mut self.ctx, self.frame.instance(), func.into_u32());
         self.call_func(callee, results, params)
     }
 

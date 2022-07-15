@@ -1,6 +1,7 @@
 use crate::{
     module::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
     AsContext,
+    Func,
     Instance,
     Memory,
     Table,
@@ -15,6 +16,8 @@ pub struct InstanceCache {
     default_memory: Option<Memory>,
     /// The default table of the currently used [`Instance`].
     default_table: Option<Table>,
+    /// The last accessed function of the currently used [`Instance`].
+    last_func: Option<(u32, Func)>,
 }
 
 impl From<Instance> for InstanceCache {
@@ -23,6 +26,7 @@ impl From<Instance> for InstanceCache {
             instance,
             default_memory: None,
             default_table: None,
+            last_func: None,
         }
     }
 }
@@ -46,6 +50,7 @@ impl InstanceCache {
         self.set_instance(instance);
         self.default_memory = None;
         self.default_table = None;
+        self.last_func = None;
     }
 
     /// Loads the default [`Memory`] of the currently used [`Instance`].
@@ -104,6 +109,38 @@ impl InstanceCache {
         match self.default_table {
             Some(default_table) => default_table,
             None => self.load_default_table(ctx),
+        }
+    }
+
+    /// Loads the [`Func`] at `index` of the currently used [`Instance`].
+    ///
+    /// # Panics
+    ///
+    /// If the currently used [`Instance`] does not have a default table.
+    fn load_func_at(&mut self, ctx: impl AsContext, index: u32) -> Func {
+        let func = self
+            .instance()
+            .get_func(ctx.as_context(), index)
+            .unwrap_or_else(|| {
+                panic!(
+                    "missing func at index {index} for instance: {:?}",
+                    self.instance
+                )
+            });
+        self.last_func = Some((index, func));
+        func
+    }
+
+    /// Loads the [`Func`] at `index` of the currently used [`Instance`].
+    ///
+    /// # Panics
+    ///
+    /// If the currently used [`Instance`] does not have a [`Func`] at the index.
+    pub fn get_func(&mut self, ctx: impl AsContext, instance: Instance, func_idx: u32) -> Func {
+        self.update_instance(instance);
+        match self.last_func {
+            Some((index, func)) if index == func_idx => func,
+            _ => self.load_func_at(ctx, func_idx),
         }
     }
 }
