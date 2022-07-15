@@ -12,7 +12,7 @@ use self::bench::{
 };
 use assert_matches::assert_matches;
 use criterion::{criterion_group, criterion_main, Criterion};
-use std::slice;
+use std::{slice, time::Duration};
 use wasmi as v0;
 use wasmi::{RuntimeValue as Value, Trap};
 use wasmi_v1 as v1;
@@ -23,40 +23,54 @@ const REVCOMP_INPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-input.
 const REVCOMP_OUTPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-output.txt");
 
 criterion_group!(
-    bench_compile_and_validate,
-    bench_compile_and_validate_v0,
-    bench_compile_and_validate_v1,
+    name = bench_compile_and_validate;
+    config = Criterion::default()
+        .sample_size(10)
+        .warm_up_time(Duration::from_millis(1000));
+    targets =
+        bench_compile_and_validate_v0,
+        bench_compile_and_validate_v1,
 );
 criterion_group!(
-    bench_instantiate,
-    bench_instantiate_v0,
-    bench_instantiate_v1,
+    name = bench_instantiate;
+    config = Criterion::default()
+        .sample_size(10)
+        .warm_up_time(Duration::from_millis(1000));
+    targets =
+        bench_instantiate_v0,
+        bench_instantiate_v1,
 );
-criterion_group!(
-    bench_execute,
-    bench_execute_tiny_keccak_v0,
-    bench_execute_tiny_keccak_v1,
-    bench_execute_rev_comp_v0,
-    bench_execute_rev_comp_v1,
-    bench_execute_regex_redux_v0,
-    bench_execute_regex_redux_v1,
-    bench_execute_count_until_v0,
-    bench_execute_count_until_v1,
-    bench_execute_fac_recursive_v0,
-    bench_execute_fac_recursive_v1,
-    bench_execute_fac_opt_v0,
-    bench_execute_fac_opt_v1,
-    bench_execute_recursive_ok_v0,
-    bench_execute_recursive_ok_v1,
-    bench_execute_recursive_scan_v0,
-    bench_execute_recursive_scan_v1,
-    bench_execute_recursive_trap_v0,
-    bench_execute_recursive_trap_v1,
-    bench_execute_host_calls_v0,
-    bench_execute_host_calls_v1,
-    bench_execute_fibonacci_recursive_v0,
-    bench_execute_fibonacci_recursive_v1,
-);
+criterion_group! {
+    name = bench_execute;
+    config = Criterion::default()
+        .sample_size(10)
+        .warm_up_time(Duration::from_millis(1000));
+    targets =
+        bench_execute_tiny_keccak_v0,
+        bench_execute_tiny_keccak_v1,
+        bench_execute_rev_comp_v0,
+        bench_execute_rev_comp_v1,
+        bench_execute_regex_redux_v0,
+        bench_execute_regex_redux_v1,
+        bench_execute_count_until_v0,
+        bench_execute_count_until_v1,
+        bench_execute_fac_recursive_v0,
+        bench_execute_fac_recursive_v1,
+        bench_execute_fac_opt_v0,
+        bench_execute_fac_opt_v1,
+        bench_execute_recursive_ok_v0,
+        bench_execute_recursive_ok_v1,
+        bench_execute_recursive_scan_v0,
+        bench_execute_recursive_scan_v1,
+        bench_execute_recursive_trap_v0,
+        bench_execute_recursive_trap_v1,
+        bench_execute_host_calls_v0,
+        bench_execute_host_calls_v1,
+        bench_execute_fibonacci_recursive_v0,
+        bench_execute_fibonacci_recursive_v1,
+        bench_execute_fibonacci_iterative_v0,
+        bench_execute_fibonacci_iterative_v1,
+}
 
 criterion_main!(bench_compile_and_validate, bench_instantiate, bench_execute);
 
@@ -694,13 +708,39 @@ fn bench_execute_host_calls_v1(c: &mut Criterion) {
     });
 }
 
+const fn fib(n: i64) -> i64 {
+    if n <= 1 {
+        return n;
+    }
+    let mut n1: i64 = 1;
+    let mut n2: i64 = 1;
+    let mut i = 2;
+    while i < n {
+        let tmp = n1 + n2;
+        n1 = n2;
+        n2 = tmp;
+        i += 1;
+    }
+    n2
+}
+
+const FIBONACCI_REC_N: i64 = 25;
+const FIBONACCI_REC_RESULT: i64 = fib(FIBONACCI_REC_N);
+const FIBONACCI_INC_N: i64 = 100_000;
+const FIBONACCI_INC_RESULT: i64 = fib(FIBONACCI_INC_N);
+
 fn bench_execute_fibonacci_recursive_v0(c: &mut Criterion) {
     let instance = load_instance_from_wat_v0(include_bytes!("wat/fibonacci.wat"));
     c.bench_function("execute/fib_recursive/v0", |b| {
         b.iter(|| {
-            let result =
-                instance.invoke_export("fib_recursive", &[Value::I32(25)], &mut v0::NopExternals);
-            assert_matches!(result, Ok(Some(Value::I32(75025))));
+            let result = instance
+                .invoke_export(
+                    "fib_recursive",
+                    &[Value::I64(FIBONACCI_REC_N)],
+                    &mut v0::NopExternals,
+                )
+                .unwrap();
+            assert_eq!(result, Some(Value::I64(FIBONACCI_REC_RESULT)));
         })
     });
 }
@@ -714,9 +754,41 @@ fn bench_execute_fibonacci_recursive_v1(c: &mut Criterion) {
     let mut result = [Value::I32(0)];
     c.bench_function("execute/fib_recursive/v1", |b| {
         b.iter(|| {
-            let result = bench_call.call(&mut store, &[Value::I32(25)], &mut result);
+            let result = bench_call.call(&mut store, &[Value::I64(FIBONACCI_REC_N)], &mut result);
             assert_matches!(result, Ok(_));
         });
-        assert_eq!(result, [Value::I32(75025)]);
+        assert_eq!(result, [Value::I64(FIBONACCI_REC_RESULT)]);
+    });
+}
+
+fn bench_execute_fibonacci_iterative_v0(c: &mut Criterion) {
+    let instance = load_instance_from_wat_v0(include_bytes!("wat/fibonacci.wat"));
+    c.bench_function("execute/fib_iterative/v0", |b| {
+        b.iter(|| {
+            let result = instance
+                .invoke_export(
+                    "fib_iterative",
+                    &[Value::I64(FIBONACCI_INC_N)],
+                    &mut v0::NopExternals,
+                )
+                .unwrap();
+            assert_eq!(result, Some(Value::I64(FIBONACCI_INC_RESULT)));
+        })
+    });
+}
+
+fn bench_execute_fibonacci_iterative_v1(c: &mut Criterion) {
+    let (mut store, instance) = load_instance_from_wat_v1(include_bytes!("wat/fibonacci.wat"));
+    let bench_call = instance
+        .get_export(&store, "fib_iterative")
+        .and_then(v1::Extern::into_func)
+        .unwrap();
+    let mut result = [Value::I32(0)];
+    c.bench_function("execute/fib_iterative/v1", |b| {
+        b.iter(|| {
+            let result = bench_call.call(&mut store, &[Value::I64(FIBONACCI_INC_N)], &mut result);
+            assert_matches!(result, Ok(_));
+        });
+        assert_eq!(result, [Value::I64(FIBONACCI_INC_RESULT)]);
     });
 }
