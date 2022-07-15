@@ -76,6 +76,17 @@ pub enum Value {
     F64(F64),
 }
 
+impl Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::I32(value) => write!(f, "{value}"),
+            Self::I64(value) => write!(f, "{value}"),
+            Self::F32(value) => write!(f, "{}", f32::from(*value)),
+            Self::F64(value) => write!(f, "{}", f64::from(*value)),
+        }
+    }
+}
+
 /// Trait for creating value from a [`Value`].
 ///
 /// Typically each implementation can create a value from the specific type.

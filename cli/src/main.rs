@@ -103,7 +103,16 @@ fn main() -> Result<(), String> {
         .copied()
         .map(Value::default)
         .collect::<Vec<_>>();
-    println!("executing {wasm_file}::{func_name} ...");
+
+    print!("executing {wasm_file}::{func_name}(");
+    if let Some((first_arg, rest_args)) = func_args.split_first() {
+        print!("{first_arg}");
+        for arg in rest_args {
+            print!(", {arg}");
+        }
+    }
+    println!(") ...");
+
     func.call(&mut store, &func_args, &mut results)
         .map_err(|error| format!("failed during exeuction of {func_name}: {error}"))?;
 
