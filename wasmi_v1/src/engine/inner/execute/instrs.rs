@@ -762,7 +762,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         let src = self.res.provider_pool.resolve(src);
         dst.into_iter().zip(src).for_each(|(dst, src)| {
             let src = self.load_provider(*src);
-            self.frame.regs.set(dst, src);
+            self.set_register(dst, src);
         });
     }
 
@@ -816,6 +816,16 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
             .map_err(Into::into)
     }
 
+    /// Returns the value of the `register`.
+    fn get_register(&self, register: ExecRegister) -> UntypedValue {
+        self.frame.regs.get(register)
+    }
+
+    /// Sets the value of the `register` to `new_value`.
+    fn set_register(&mut self, register: ExecRegister, new_value: UntypedValue) {
+        self.frame.regs.set(register, new_value)
+    }
+
     /// Loads bytes from the default memory into the given `buffer`.
     ///
     /// # Errors
@@ -832,7 +842,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         buffer: &mut [u8],
     ) -> Result<(), Trap> {
         let memory = self.default_memory();
-        let ptr = self.frame.regs.get(ptr);
+        let ptr = self.get_register(ptr);
         let address = Self::effective_address(offset, ptr)?;
         memory
             .read(&self.ctx, address, buffer.as_mut())
@@ -856,7 +866,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         bytes: &[u8],
     ) -> Result<(), Trap> {
         let memory = self.default_memory();
-        let ptr = self.frame.regs.get(ptr);
+        let ptr = self.get_register(ptr);
         let address = Self::effective_address(offset, ptr)?;
         memory
             .write(&mut self.ctx, address, bytes)
@@ -886,7 +896,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         let mut buffer = <<V as LittleEndianConvert>::Bytes as Default>::default();
         self.load_bytes(ptr, offset, buffer.as_mut())?;
         let value = <V as LittleEndianConvert>::from_le_bytes(buffer);
-        self.frame.regs.set(result, value.into());
+        self.set_register(result, value.into());
         self.next_instr()
     }
 
@@ -919,7 +929,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         let mut buffer = <<V as LittleEndianConvert>::Bytes as Default>::default();
         self.load_bytes(ptr, offset, buffer.as_mut())?;
         let extended = <V as LittleEndianConvert>::from_le_bytes(buffer).extend_into();
-        self.frame.regs.set(result, extended.into());
+        self.set_register(result, extended.into());
         self.next_instr()
     }
 
@@ -992,8 +1002,8 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         input: ExecRegister,
         op: fn(UntypedValue) -> UntypedValue,
     ) -> Result<(), Trap> {
-        let input = self.frame.regs.get(input);
-        self.frame.regs.set(result, op(input));
+        let input = self.get_register(input);
+        self.set_register(result, op(input));
         self.next_instr()
     }
 
@@ -1014,8 +1024,8 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         input: ExecRegister,
         op: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), Trap> {
-        let input = self.frame.regs.get(input);
-        self.frame.regs.set(result, op(input)?);
+        let input = self.get_register(input);
+        self.set_register(result, op(input)?);
         self.next_instr()
     }
 
@@ -1027,7 +1037,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     /// Note that reaching this case reflects a bug in the interpreter.
     fn load_provider(&self, provider: ExecProvider) -> UntypedValue {
         provider.decode_using(
-            |rhs| self.frame.regs.get(rhs),
+            |rhs| self.get_register(rhs),
             |imm| {
                 self.res.const_pool.resolve(imm).unwrap_or_else(|| {
                     panic!("unexpectedly failed to resolve immediate at {:?}", imm)
@@ -1054,9 +1064,9 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         rhs: ExecProvider,
         op: fn(UntypedValue, UntypedValue) -> UntypedValue,
     ) -> Result<(), Trap> {
-        let lhs = self.frame.regs.get(lhs);
+        let lhs = self.get_register(lhs);
         let rhs = self.load_provider(rhs);
-        self.frame.regs.set(result, op(lhs, rhs));
+        self.set_register(result, op(lhs, rhs));
         self.next_instr()
     }
 
@@ -1078,9 +1088,9 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         rhs: ExecProvider,
         op: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), Trap> {
-        let lhs = self.frame.regs.get(lhs);
+        let lhs = self.get_register(lhs);
         let rhs = self.load_provider(rhs);
-        self.frame.regs.set(result, op(lhs, rhs)?);
+        self.set_register(result, op(lhs, rhs)?);
         self.next_instr()
     }
 
@@ -1097,7 +1107,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         condition: ExecRegister,
         op: fn(UntypedValue) -> bool,
     ) -> Result<(), Trap> {
-        let condition = self.frame.regs.get(condition);
+        let condition = self.get_register(condition);
         if op(condition) {
             return self.branch_to_target(target);
         }
@@ -1119,7 +1129,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         returned: ExecProvider,
         op: fn(UntypedValue) -> bool,
     ) -> Result<(), Trap> {
-        let condition = self.frame.regs.get(condition);
+        let condition = self.get_register(condition);
         if op(condition) {
             self.exec_copy(result, returned)?;
             return self.branch_to_target(target);
@@ -1142,7 +1152,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         returned: ExecProviderSlice,
         op: fn(UntypedValue) -> bool,
     ) -> Result<(), Trap> {
-        let condition = self.frame.regs.get(condition);
+        let condition = self.get_register(condition);
         if op(condition) {
             self.copy_many(results, returned);
             return self.branch_to_target(target);
@@ -1215,7 +1225,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         results: <ExecuteTypes as InstructionTypes>::ProviderSlice,
         condition: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<ConditionalReturn, Trap> {
-        let condition = self.frame.regs.get(condition);
+        let condition = self.get_register(condition);
         let zero = UntypedValue::from(0_i32);
         self.pc += 1;
         if condition != zero {
@@ -1229,7 +1239,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         case: <ExecuteTypes as InstructionTypes>::Register,
         len_targets: usize,
     ) -> Result<(), Trap> {
-        let index = u32::from(self.frame.regs.get(case)) as usize;
+        let index = u32::from(self.get_register(case)) as usize;
         // The index of the default target is the last target of the `br_table`.
         let max_index = len_targets - 1;
         // A normalized index will always yield a target without panicking.
@@ -1308,7 +1318,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         input: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Result<(), Trap> {
         let input = self.load_provider(input);
-        self.frame.regs.set(result, input);
+        self.set_register(result, input);
         self.next_instr()
     }
 
@@ -1328,14 +1338,14 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         if_true: <ExecuteTypes as InstructionTypes>::Provider,
         if_false: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Result<(), Trap> {
-        let condition = self.frame.regs.get(condition);
+        let condition = self.get_register(condition);
         let zero = UntypedValue::from(0_i32);
         let case = if condition != zero {
             self.load_provider(if_true)
         } else {
             self.load_provider(if_false)
         };
-        self.frame.regs.set(result, case);
+        self.set_register(result, case);
         self.next_instr()
     }
 
@@ -1345,7 +1355,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         global: bytecode::Global,
     ) -> Result<(), Trap> {
         let value = self.resolve_global(global).get(&self.ctx);
-        self.frame.regs.set(result, value.into());
+        self.set_register(result, value.into());
         self.next_instr()
     }
 
@@ -1582,7 +1592,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     ) -> Result<(), Trap> {
         let memory = self.default_memory();
         let size = memory.current_pages(&self.ctx).0 as u32;
-        self.frame.regs.set(result, size.into());
+        self.set_register(result, size.into());
         self.next_instr()
     }
 
@@ -1601,7 +1611,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
                 u32::MAX
             }
         };
-        self.frame.regs.set(result, old_size.into());
+        self.set_register(result, old_size.into());
         self.next_instr()
     }
 
