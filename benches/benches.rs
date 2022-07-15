@@ -716,7 +716,7 @@ const fn fib(n: i64) -> i64 {
     let mut n2: i64 = 1;
     let mut i = 2;
     while i < n {
-        let tmp = n1 + n2;
+        let tmp = n1.wrapping_add(n2);
         n1 = n2;
         n2 = tmp;
         i += 1;
