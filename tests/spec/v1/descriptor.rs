@@ -2,6 +2,7 @@ use std::{
     fmt::{self, Display},
     fs,
 };
+use wast::token::Span;
 
 /// The desciptor of a Wasm spec test suite run.
 #[derive(Debug)]
@@ -37,7 +38,7 @@ impl TestDescriptor {
     }
 
     /// Creates a [`TestSpan`] which can be used to print the location within the `.wast` test file.
-    pub fn spanned(&self, span: wast::Span) -> TestSpan {
+    pub fn spanned(&self, span: Span) -> TestSpan {
         TestSpan {
             path: self.path(),
             contents: self.file(),
@@ -54,7 +55,7 @@ pub struct TestSpan<'a> {
     /// The file contents of the `.wast` test.
     contents: &'a str,
     /// The line and column within the `.wast` test file.
-    span: wast::Span,
+    span: Span,
 }
 
 impl Display for TestSpan<'_> {
