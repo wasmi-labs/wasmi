@@ -6,7 +6,10 @@ use std::println;
 
 use super::{compile_module, CompiledModule};
 use crate::isa;
-use parity_wasm::{deserialize_buffer, elements::Module};
+use parity_wasm::{
+    deserialize_buffer,
+    elements::{Module, ValueType},
+};
 
 fn validate(wat: &str) -> CompiledModule {
     let wasm = wat::parse_str(wat).unwrap();
@@ -81,7 +84,7 @@ fn implicit_return_with_value() {
             isa::Instruction::I32Const(0),
             isa::Instruction::Return(isa::DropKeep {
                 drop: 0,
-                keep: isa::Keep::Single,
+                keep: isa::Keep::Single(ValueType::I32),
             }),
         ]
     )
@@ -122,10 +125,10 @@ fn get_local() {
     assert_eq!(
         code,
         vec![
-            isa::Instruction::GetLocal(1),
+            isa::Instruction::GetLocal(1, ValueType::I32),
             isa::Instruction::Return(isa::DropKeep {
                 drop: 1,
-                keep: isa::Keep::Single,
+                keep: isa::Keep::Single(ValueType::I32),
             }),
         ]
     )
@@ -148,12 +151,12 @@ fn get_local_2() {
     assert_eq!(
         code,
         vec![
-            isa::Instruction::GetLocal(2),
-            isa::Instruction::GetLocal(2),
+            isa::Instruction::GetLocal(2, ValueType::I32),
+            isa::Instruction::GetLocal(2, ValueType::I32),
             isa::Instruction::Drop,
             isa::Instruction::Return(isa::DropKeep {
                 drop: 2,
-                keep: isa::Keep::Single,
+                keep: isa::Keep::Single(ValueType::I32),
             }),
         ]
     )
@@ -175,14 +178,14 @@ fn explicit_return() {
     assert_eq!(
         code,
         vec![
-            isa::Instruction::GetLocal(1),
+            isa::Instruction::GetLocal(1, ValueType::I32),
             isa::Instruction::Return(isa::DropKeep {
                 drop: 1,
-                keep: isa::Keep::Single,
+                keep: isa::Keep::Single(ValueType::I32),
             }),
             isa::Instruction::Return(isa::DropKeep {
                 drop: 1,
-                keep: isa::Keep::Single,
+                keep: isa::Keep::Single(ValueType::I32),
             }),
         ]
     )
@@ -210,12 +213,12 @@ fn add_params() {
             // takes the value below the previous one (i.e the second argument) and then, it increments
             // the stack pointer. And then the same thing hapens with the value below the previous one
             // (which happens to be the value loaded by the first get_local).
-            isa::Instruction::GetLocal(2),
-            isa::Instruction::GetLocal(2),
+            isa::Instruction::GetLocal(2, ValueType::I32),
+            isa::Instruction::GetLocal(2, ValueType::I32),
             isa::Instruction::I32Add,
             isa::Instruction::Return(isa::DropKeep {
                 drop: 2,
-                keep: isa::Keep::Single,
+                keep: isa::Keep::Single(ValueType::I32),
             }),
         ]
     )
@@ -238,8 +241,8 @@ fn drop_locals() {
     assert_eq!(
         code,
         vec![
-            isa::Instruction::GetLocal(2),
-            isa::Instruction::SetLocal(1),
+            isa::Instruction::GetLocal(2, ValueType::I32),
+            isa::Instruction::SetLocal(1, ValueType::I32),
             isa::Instruction::Return(isa::DropKeep {
                 drop: 2,
                 keep: isa::Keep::None,
@@ -279,12 +282,12 @@ fn if_without_else() {
             isa::Instruction::I32Const(2),
             isa::Instruction::Return(isa::DropKeep {
                 drop: 1,                 // 1 param
-                keep: isa::Keep::Single, // 1 result
+                keep: isa::Keep::Single(ValueType::I32), // 1 result
             }),
             isa::Instruction::I32Const(3),
             isa::Instruction::Return(isa::DropKeep {
                 drop: 1,
-                keep: isa::Keep::Single,
+                keep: isa::Keep::Single(ValueType::I32),
             }),
         ]
     )
@@ -322,7 +325,7 @@ fn if_else() {
                 },
             }),
             isa::Instruction::I32Const(2),
-            isa::Instruction::SetLocal(1),
+            isa::Instruction::SetLocal(1, ValueType::I32),
             isa::Instruction::Br(isa::Target {
                 dst_pc: pcs[7],
                 drop_keep: isa::DropKeep {
@@ -331,7 +334,7 @@ fn if_else() {
                 },
             }),
             isa::Instruction::I32Const(3),
-            isa::Instruction::SetLocal(1),
+            isa::Instruction::SetLocal(1, ValueType::I32),
             isa::Instruction::Return(isa::DropKeep {
                 drop: 1,
                 keep: isa::Keep::None,
@@ -426,7 +429,7 @@ fn if_else_branch_from_true_branch() {
                 dst_pc: pcs[9],
                 drop_keep: isa::DropKeep {
                     drop: 0,
-                    keep: isa::Keep::Single,
+                    keep: isa::Keep::Single(ValueType::I32),
                 },
             }),
             isa::Instruction::Drop,
@@ -495,7 +498,7 @@ fn if_else_branch_from_false_branch() {
                 dst_pc: pcs[9],
                 drop_keep: isa::DropKeep {
                     drop: 0,
-                    keep: isa::Keep::Single,
+                    keep: isa::Keep::Single(ValueType::I32),
                 },
             }),
             isa::Instruction::Drop,
@@ -603,14 +606,14 @@ fn spec_as_br_if_value_cond() {
                     dst_pc: 9,
                     drop_keep: isa::DropKeep {
                         drop: 1,
-                        keep: isa::Keep::Single
+                        keep: isa::Keep::Single(ValueType::I32)
                     }
                 },
                 isa::Target {
                     dst_pc: 9,
                     drop_keep: isa::DropKeep {
                         drop: 1,
-                        keep: isa::Keep::Single
+                        keep: isa::Keep::Single(ValueType::I32)
                     }
                 }
             ]),
@@ -618,14 +621,14 @@ fn spec_as_br_if_value_cond() {
                 dst_pc: 9,
                 drop_keep: isa::DropKeep {
                     drop: 0,
-                    keep: isa::Keep::Single
+                    keep: isa::Keep::Single(ValueType::I32)
                 }
             }),
             Drop,
             I32Const(7),
             Return(isa::DropKeep {
                 drop: 0,
-                keep: isa::Keep::Single
+                keep: isa::Keep::Single(ValueType::I32)
             })
         ]
     );
@@ -707,13 +710,13 @@ fn brtable_returns_result() {
                     dst_pc: pcs[3],
                     drop_keep: isa::DropKeep {
                         drop: 0,
-                        keep: isa::Keep::Single,
+                        keep: isa::Keep::Single(ValueType::I32),
                     },
                 },
                 isa::Target {
                     dst_pc: pcs[4],
                     drop_keep: isa::DropKeep {
-                        keep: isa::Keep::Single,
+                        keep: isa::Keep::Single(ValueType::I32),
                         drop: 0,
                     },
                 }
@@ -750,7 +753,7 @@ fn wabt_example() {
     assert_eq!(
         code,
         vec![
-            isa::Instruction::GetLocal(1),
+            isa::Instruction::GetLocal(1, ValueType::I32),
             isa::Instruction::BrIfNez(isa::Target {
                 dst_pc: pcs[4],
                 drop_keep: isa::DropKeep {
@@ -761,16 +764,16 @@ fn wabt_example() {
             isa::Instruction::I32Const(1),
             isa::Instruction::Return(isa::DropKeep {
                 drop: 1, // 1 parameter
-                keep: isa::Keep::Single,
+                keep: isa::Keep::Single(ValueType::I32),
             }),
             isa::Instruction::I32Const(2),
             isa::Instruction::Return(isa::DropKeep {
                 drop: 1,
-                keep: isa::Keep::Single,
+                keep: isa::Keep::Single(ValueType::I32),
             }),
             isa::Instruction::Return(isa::DropKeep {
                 drop: 1,
-                keep: isa::Keep::Single,
+                keep: isa::Keep::Single(ValueType::I32),
             }),
         ]
     )

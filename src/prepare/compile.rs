@@ -227,7 +227,7 @@ impl Compiler {
             Br(depth) => {
                 let target = require_target(
                     depth,
-                    &context.value_stack,
+                    context.value_stack.len(),
                     &context.frame_stack,
                     &self.label_stack,
                 );
@@ -247,7 +247,7 @@ impl Compiler {
 
                 let target = require_target(
                     depth,
-                    &context.value_stack,
+                    context.value_stack.len(),
                     &context.frame_stack,
                     &self.label_stack,
                 )
@@ -263,43 +263,38 @@ impl Compiler {
                 // At this point, the condition value is at the top of the stack.
                 // But at the point of actual jump the condition will already be
                 // popped off.
+                let value_stack_height = context.value_stack.len().saturating_sub(1);
 
-                // TODO: pass context.value_stack to require? but how to handle -1
-                todo!();
-                /*
-                                let value_stack_height = context.value_stack.len().saturating_sub(1);
+                let targets = br_table_data
+                    .table
+                    .iter()
+                    .map(|depth| {
+                        require_target(
+                            *depth,
+                            value_stack_height,
+                            &context.frame_stack,
+                            &self.label_stack,
+                        )
+                    })
+                    .collect::<Result<Vec<_>, _>>();
+                let default_target = require_target(
+                    br_table_data.default,
+                    value_stack_height,
+                    &context.frame_stack,
+                    &self.label_stack,
+                );
 
-                                let targets = br_table_data
-                                    .table
-                                    .iter()
-                                    .map(|depth| {
-                                        require_target(
-                                            *depth,
-                                            value_stack_height,
-                                            &context.frame_stack,
-                                            &self.label_stack,
-                                        )
-                                    })
-                                    .collect::<Result<Vec<_>, _>>();
-                                let default_target = require_target(
-                                    br_table_data.default,
-                                    value_stack_height,
-                                    &context.frame_stack,
-                                    &self.label_stack,
-                                );
+                context.step(instruction)?;
 
-                                context.step(instruction)?;
-
-                                // These two unwraps are guaranteed to succeed by validation.
-                                const REQUIRE_TARGET_PROOF: &str =
-                                    "validation step ensures that the value stack underflows;
+                // These two unwraps are guaranteed to succeed by validation.
+                const REQUIRE_TARGET_PROOF: &str =
+                    "validation step ensures that the value stack underflows;
                                     validation also ensures that the depth is correct;
                                     qed";
-                                let targets = targets.expect(REQUIRE_TARGET_PROOF);
-                                let default_target = default_target.expect(REQUIRE_TARGET_PROOF);
+                let targets = targets.expect(REQUIRE_TARGET_PROOF);
+                let default_target = default_target.expect(REQUIRE_TARGET_PROOF);
 
-                                self.sink.emit_br_table(&targets, default_target);
-                */
+                self.sink.emit_br_table(&targets, default_target);
             }
             Return => {
                 let drop_keep =
@@ -1006,21 +1001,16 @@ fn compute_drop_keep(
     in_stack_polymorphic_state: bool,
     started_with: StartedWith,
     block_type: BlockType,
-    actual_value_stack: &StackWithLimit<StackValueType>,
+    actual_value_stack_height: usize,
     start_value_stack_height: usize,
 ) -> Result<isa::DropKeep, Error> {
-    let actual_value_stack_height = actual_value_stack.len();
-
     // Find out how many values we need to keep (copy to the new stack location after the drop).
     let keep: isa::Keep = match (started_with, block_type) {
         // A loop doesn't take a value upon a branch. It can return value
         // only via reaching it's closing `End` operator.
         (StartedWith::Loop, _) => isa::Keep::None,
 
-        (_, BlockType::Value(_)) => isa::Keep::Single(match actual_value_stack.top().unwrap() {
-            StackValueType::Any => todo!(),
-            StackValueType::Specific(t) => *t,
-        }),
+        (_, BlockType::Value(v)) => isa::Keep::Single(v),
         (_, BlockType::NoResult) => isa::Keep::None,
     };
 
@@ -1057,7 +1047,7 @@ fn compute_drop_keep(
 /// - if underflow of the value stack detected.
 fn require_target(
     depth: u32,
-    value_stack: &StackWithLimit<StackValueType>,
+    value_stack_height: usize,
     frame_stack: &StackWithLimit<BlockFrame>,
     label_stack: &[BlockFrameType],
 ) -> Result<Target, Error> {
@@ -1079,7 +1069,7 @@ fn require_target(
         is_stack_polymorphic,
         frame.started_with,
         frame.block_type,
-        value_stack,
+        value_stack_height,
         frame.value_stack_len,
     )?;
 
@@ -1115,7 +1105,7 @@ fn drop_keep_return(
         is_stack_polymorphic,
         frame.started_with,
         frame.block_type,
-        value_stack,
+        value_stack.len(),
         frame.value_stack_len,
     )?;
 
@@ -1153,6 +1143,7 @@ fn relative_local_depth_type(
     locals: &Locals,
     value_stack: &StackWithLimit<StackValueType>,
 ) -> Result<(u32, ValueType), Error> {
+    println!("idx: {} , locals {:?}", idx, locals.count());
     let value_stack_height = value_stack.len() as u32;
     let locals_and_params_count = locals.count();
 
@@ -1160,7 +1151,8 @@ fn relative_local_depth_type(
         .checked_add(locals_and_params_count)
         .and_then(|x| x.checked_sub(idx))
         .ok_or_else(|| Error(String::from("Locals range not in 32-bit range")))?;
-    Ok((depth, locals.type_of_local(idx).unwrap()))
+    let typ = locals.type_of_local(idx)?;
+    Ok((depth, typ))
 }
 
 /// The target of a branch instruction.
