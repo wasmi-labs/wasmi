@@ -33,7 +33,8 @@ use std::rc::Rc;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 
 /// Maximum number of bytes on the value stack.
-pub const DEFAULT_VALUE_STACK_LIMIT: usize = 1024 * 1024;
+/// wasmi's default value is 1024 * 1024, we set 4096 to adapt zkWasm
+pub const DEFAULT_VALUE_STACK_LIMIT: usize = 4096;
 
 /// Maximum number of levels on the call stack.
 pub const DEFAULT_CALL_STACK_LIMIT: usize = 64 * 1024;

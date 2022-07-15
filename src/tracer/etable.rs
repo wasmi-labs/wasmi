@@ -1,7 +1,7 @@
 use parity_wasm::elements::ValueType;
 use specs::{etable::EventTableEntry, itable::Opcode, step::StepInfo};
 
-use crate::runner::ValueInternal;
+use crate::{runner::ValueInternal, DEFAULT_VALUE_STACK_LIMIT};
 
 use super::itable::IEntry;
 
@@ -44,7 +44,11 @@ impl Into<EventTableEntry> for EEntry {
     fn into(self) -> EventTableEntry {
         EventTableEntry {
             eid: self.id,
-            sp: self.sp,
+            sp: (DEFAULT_VALUE_STACK_LIMIT as u64)
+                .checked_sub(self.sp)
+                .unwrap()
+                .checked_sub(1)
+                .unwrap(),
             last_jump_eid: self.last_jump_eid,
             inst: self.inst.into(),
             step_info: self.step.clone(),
@@ -53,18 +57,38 @@ impl Into<EventTableEntry> for EEntry {
 }
 
 #[derive(Debug)]
-pub struct ETable(pub Vec<EEntry>);
+pub struct ETable {
+    eid: u64,
+    entries: Vec<EEntry>,
+}
 
 impl Default for ETable {
     fn default() -> Self {
-        Self(Default::default())
+        Self {
+            eid: 1,
+            entries: vec![],
+        }
     }
 }
 
 impl ETable {
+    pub fn get_latest_eid(&self) -> u64 {
+        self.entries.last().unwrap().id
+    }
+
+    pub fn get_entries(&self) -> &Vec<EEntry> {
+        &self.entries
+    }
+
+    fn allocate_eid(&mut self) -> u64 {
+        let r = self.eid;
+        self.eid = r + 1;
+        return r;
+    }
+
     pub fn push(
         &mut self,
-        module_instance_index: u32,
+        module_instance_index: u16,
         func_index: u32,
         sp: u64,
         pc: u32,
@@ -73,7 +97,7 @@ impl ETable {
         step: StepInfo,
     ) -> EEntry {
         let eentry = EEntry {
-            id: self.0.len() as u64,
+            id: self.allocate_eid(),
             sp,
             last_jump_eid,
             inst: IEntry {
@@ -85,7 +109,7 @@ impl ETable {
             step,
         };
 
-        self.0.push(eentry.clone());
+        self.entries.push(eentry.clone());
 
         eentry
     }

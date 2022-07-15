@@ -15,8 +15,8 @@ pub struct Tracer {
     pub itable: ITable,
     pub etable: ETable,
     pub jtable: Option<JTable>,
-    pub(crate) module_instance_lookup: Vec<ModuleRef>,
-    pub(crate) function_lookup: Vec<(FuncRef, u32)>,
+    module_instance_lookup: Vec<(ModuleRef, u16)>,
+    function_lookup: Vec<(FuncRef, u32)>,
     last_jump_eid: Vec<u64>,
 }
 
@@ -34,11 +34,15 @@ impl Tracer {
     }
 
     pub fn push_frame(&mut self) {
-        self.last_jump_eid.push(self.etable.0.last().unwrap().id);
+        self.last_jump_eid.push(self.etable.get_latest_eid());
     }
 
     pub fn pop_frame(&mut self) {
         self.last_jump_eid.pop().unwrap();
+    }
+
+    pub fn next_module_id(&self) -> u16 {
+        (self.module_instance_lookup.len() as u16) + 1
     }
 
     pub fn last_jump_eid(&self) -> u64 {
@@ -46,7 +50,7 @@ impl Tracer {
     }
 
     pub fn eid(&self) -> u64 {
-        self.etable.0.last().unwrap().id
+        self.etable.get_latest_eid()
     }
 }
 
@@ -63,7 +67,7 @@ impl Tracer {
                     let pc = iter.position();
                     if let Some(instruction) = iter.next() {
                         let ientry = self.itable.push(
-                            self.module_instance_lookup.len() as u32,
+                            self.next_module_id() as u32,
                             func_index,
                             pc,
                             instruction.into(),
@@ -84,14 +88,18 @@ impl Tracer {
             }
         }
 
-        self.module_instance_lookup.push(module_instance.clone());
+        self.module_instance_lookup
+            .push((module_instance.clone(), self.next_module_id()));
     }
 
-    pub fn lookup_module_instance(&self, module_instance: &ModuleRef) -> u32 {
-        self.module_instance_lookup
-            .iter()
-            .position(|m| m == module_instance)
-            .unwrap() as u32
+    pub fn lookup_module_instance(&self, module_instance: &ModuleRef) -> u16 {
+        for m in &self.module_instance_lookup {
+            if &m.0 == module_instance {
+                return m.1;
+            }
+        }
+
+        unreachable!()
     }
 
     pub fn lookup_function(&self, function: &FuncRef) -> u32 {
