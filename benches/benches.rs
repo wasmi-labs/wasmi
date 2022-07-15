@@ -10,7 +10,6 @@ use self::bench::{
     load_wasm_from_file,
     wat2wasm,
 };
-use assert_matches::assert_matches;
 use criterion::{criterion_group, criterion_main, Criterion};
 use std::{slice, time::Duration};
 use wasmi as v0;
@@ -121,10 +120,10 @@ fn bench_instantiate_v1(c: &mut Criterion) {
 fn bench_execute_tiny_keccak_v0(c: &mut Criterion) {
     c.bench_function("execute/tiny_keccak/v0", |b| {
         let instance = load_instance_from_file_v0(WASM_KERNEL);
-        let test_data_ptr = assert_matches!(
-            instance.invoke_export("prepare_tiny_keccak", &[], &mut v0::NopExternals),
-            Ok(Some(v @ Value::I32(_))) => v
-        );
+        let test_data_ptr = instance
+            .invoke_export("prepare_tiny_keccak", &[], &mut v0::NopExternals)
+            .unwrap()
+            .unwrap();
         b.iter(|| {
             instance
                 .invoke_export("bench_tiny_keccak", &[test_data_ptr], &mut v0::NopExternals)
@@ -148,7 +147,6 @@ fn bench_execute_tiny_keccak_v1(c: &mut Criterion) {
         prepare
             .call(&mut store, &[], slice::from_mut(&mut test_data_ptr))
             .unwrap();
-        assert_matches!(test_data_ptr, Value::I32(_));
         b.iter(|| {
             keccak
                 .call(&mut store, slice::from_ref(&test_data_ptr), &mut [])
@@ -162,21 +160,27 @@ fn bench_execute_rev_comp_v0(c: &mut Criterion) {
         let instance = load_instance_from_file_v0(WASM_KERNEL);
 
         // Allocate buffers for the input and output.
-        let test_data_ptr: Value = {
-            let input_size = Value::I32(REVCOMP_INPUT.len() as i32);
-            assert_matches!(
-                instance.invoke_export("prepare_rev_complement", &[input_size], &mut v0::NopExternals),
-                Ok(Some(v @ Value::I32(_))) => v,
-                "",
+        let input_size = Value::I32(REVCOMP_INPUT.len() as i32);
+        let test_data_ptr = instance
+            .invoke_export(
+                "prepare_rev_complement",
+                &[input_size],
+                &mut v0::NopExternals,
             )
-        };
+            .unwrap()
+            .unwrap();
 
         // Get the pointer to the input buffer.
-        let input_data_mem_offset = assert_matches!(
-            instance.invoke_export("rev_complement_input_ptr", &[test_data_ptr], &mut v0::NopExternals),
-            Ok(Some(Value::I32(v))) => v as u32,
-            "",
-        );
+        let input_data_mem_offset: u32 = instance
+            .invoke_export(
+                "rev_complement_input_ptr",
+                &[test_data_ptr],
+                &mut v0::NopExternals,
+            )
+            .unwrap()
+            .unwrap()
+            .try_into()
+            .unwrap();
 
         // Copy test data inside the wasm memory.
         let memory = instance
@@ -200,11 +204,16 @@ fn bench_execute_rev_comp_v0(c: &mut Criterion) {
         });
 
         // Verify the result.
-        let output_data_mem_offset = assert_matches!(
-            instance.invoke_export("rev_complement_output_ptr", &[test_data_ptr], &mut v0::NopExternals),
-            Ok(Some(Value::I32(v))) => v as u32,
-            "",
-        );
+        let output_data_mem_offset: u32 = instance
+            .invoke_export(
+                "rev_complement_output_ptr",
+                &[test_data_ptr],
+                &mut v0::NopExternals,
+            )
+            .unwrap()
+            .unwrap()
+            .try_into()
+            .unwrap();
         let mut result = vec![0x00_u8; REVCOMP_OUTPUT.len()];
         memory
             .get_into(output_data_mem_offset, &mut result)
@@ -291,21 +300,23 @@ fn bench_execute_regex_redux_v0(c: &mut Criterion) {
         let instance = load_instance_from_file_v0(WASM_KERNEL);
 
         // Allocate buffers for the input and output.
-        let test_data_ptr: Value = {
-            let input_size = Value::I32(REVCOMP_INPUT.len() as i32);
-            assert_matches!(
-                instance.invoke_export("prepare_regex_redux", &[input_size], &mut v0::NopExternals),
-                Ok(Some(v @ Value::I32(_))) => v,
-                "",
-            )
-        };
+        let input_size = Value::I32(REVCOMP_INPUT.len() as i32);
+        let test_data_ptr = instance
+            .invoke_export("prepare_regex_redux", &[input_size], &mut v0::NopExternals)
+            .unwrap()
+            .unwrap();
 
         // Get the pointer to the input buffer.
-        let input_data_mem_offset = assert_matches!(
-            instance.invoke_export("regex_redux_input_ptr", &[test_data_ptr], &mut v0::NopExternals),
-            Ok(Some(Value::I32(v))) => v as u32,
-            "",
-        );
+        let input_data_mem_offset: u32 = instance
+            .invoke_export(
+                "regex_redux_input_ptr",
+                &[test_data_ptr],
+                &mut v0::NopExternals,
+            )
+            .unwrap()
+            .unwrap()
+            .try_into()
+            .unwrap();
 
         // Copy test data inside the wasm memory.
         let memory = instance
@@ -317,7 +328,6 @@ fn bench_execute_regex_redux_v0(c: &mut Criterion) {
         memory
             .set(input_data_mem_offset, REVCOMP_INPUT)
             .expect("can't load test data into a wasm memory");
-
 
         b.iter(|| {
             instance
@@ -387,12 +397,14 @@ fn bench_execute_count_until_v0(c: &mut Criterion) {
     c.bench_function("execute/count_until/v0", |b| {
         let instance = load_instance_from_wat_v0(include_bytes!("wat/count_until.wat"));
         b.iter(|| {
-            let value = instance.invoke_export(
-                "count_until",
-                &[Value::I32(COUNT_UNTIL)],
-                &mut v0::NopExternals,
-            );
-            assert_matches!(value, Ok(Some(Value::I32(COUNT_UNTIL))));
+            let value = instance
+                .invoke_export(
+                    "count_until",
+                    &[Value::I32(COUNT_UNTIL)],
+                    &mut v0::NopExternals,
+                )
+                .unwrap();
+            assert_eq!(value, Some(Value::I32(COUNT_UNTIL)));
         })
     });
 }
@@ -411,7 +423,7 @@ fn bench_execute_count_until_v1(c: &mut Criterion) {
             count_until
                 .call(&mut store, &[Value::I32(COUNT_UNTIL)], &mut result)
                 .unwrap();
-            assert_matches!(result, [Value::I32(COUNT_UNTIL)]);
+            assert_eq!(result, [Value::I32(COUNT_UNTIL)]);
         })
     });
 }
@@ -420,8 +432,10 @@ fn bench_execute_fac_recursive_v0(c: &mut Criterion) {
     c.bench_function("execute/factorial_recursive/v0", |b| {
         let instance = load_instance_from_wat_v0(include_bytes!("wat/recursive_factorial.wat"));
         b.iter(|| {
-            let value = instance.invoke_export("fac-rec", &[Value::I64(25)], &mut v0::NopExternals);
-            assert_matches!(value, Ok(Some(Value::I64(7034535277573963776))));
+            let value = instance
+                .invoke_export("fac-rec", &[Value::I64(25)], &mut v0::NopExternals)
+                .unwrap();
+            assert_eq!(value, Some(Value::I64(7034535277573963776)));
         })
     });
 }
@@ -439,7 +453,7 @@ fn bench_execute_fac_recursive_v1(c: &mut Criterion) {
         b.iter(|| {
             fac.call(&mut store, &[Value::I64(25)], &mut result)
                 .unwrap();
-            assert_matches!(result, [Value::I64(7034535277573963776)]);
+            assert_eq!(result, [Value::I64(7034535277573963776)]);
         })
     });
 }
@@ -448,8 +462,10 @@ fn bench_execute_fac_opt_v0(c: &mut Criterion) {
     c.bench_function("execute/factorial_optimized/v0", |b| {
         let instance = load_instance_from_wat_v0(include_bytes!("wat/optimized_factorial.wat"));
         b.iter(|| {
-            let value = instance.invoke_export("fac-opt", &[Value::I64(25)], &mut v0::NopExternals);
-            assert_matches!(value, Ok(Some(Value::I64(7034535277573963776))));
+            let value = instance
+                .invoke_export("fac-opt", &[Value::I64(25)], &mut v0::NopExternals)
+                .unwrap();
+            assert_eq!(value, Some(Value::I64(7034535277573963776)));
         })
     });
 }
@@ -467,7 +483,7 @@ fn bench_execute_fac_opt_v1(c: &mut Criterion) {
         b.iter(|| {
             fac.call(&mut store, &[Value::I64(25)], &mut result)
                 .unwrap();
-            assert_matches!(result, [Value::I64(7034535277573963776)]);
+            assert_eq!(result, [Value::I64(7034535277573963776)]);
         })
     });
 }
@@ -552,8 +568,13 @@ fn bench_execute_recursive_trap_v0(c: &mut Criterion) {
     c.bench_function("execute/recursive_trap/v0", |b| {
         let instance = load_instance_from_wat_v0(include_bytes!("wat/recursive_trap.wat"));
         b.iter(|| {
-            let value = instance.invoke_export("call", &[Value::I32(1000)], &mut v0::NopExternals);
-            assert_matches!(value, Err(_));
+            let error = instance
+                .invoke_export("call", &[Value::I32(1000)], &mut v0::NopExternals)
+                .unwrap_err();
+            assert!(matches!(
+                error,
+                v0::Error::Trap(Trap::Code(v0::TrapCode::Unreachable))
+            ));
         })
     });
 }
@@ -569,8 +590,13 @@ fn bench_execute_recursive_trap_v1(c: &mut Criterion) {
         let mut result = [Value::I32(0)];
 
         b.iter(|| {
-            let result = bench_call.call(&mut store, &[Value::I32(1000)], &mut result);
-            assert_matches!(result, Err(_));
+            let error = bench_call
+                .call(&mut store, &[Value::I32(1000)], &mut result)
+                .unwrap_err();
+            assert!(matches!(
+                error,
+                v1::Error::Trap(Trap::Code(v1::core::TrapCode::Unreachable))
+            ));
         })
     });
 }
@@ -707,7 +733,7 @@ fn bench_execute_host_calls_v1(c: &mut Criterion) {
                 &mut result,
             )
             .unwrap();
-            assert_matches!(result, [Value::I64(0)]);
+            assert_eq!(result, [Value::I64(0)]);
         })
     });
 }
@@ -759,8 +785,9 @@ fn bench_execute_fibonacci_recursive_v1(c: &mut Criterion) {
         let mut result = [Value::I32(0)];
 
         b.iter(|| {
-            let result = bench_call.call(&mut store, &[Value::I64(FIBONACCI_REC_N)], &mut result);
-            assert_matches!(result, Ok(_));
+            bench_call
+                .call(&mut store, &[Value::I64(FIBONACCI_REC_N)], &mut result)
+                .unwrap();
         });
         assert_eq!(result, [Value::I64(FIBONACCI_REC_RESULT)]);
     });
@@ -792,8 +819,9 @@ fn bench_execute_fibonacci_iterative_v1(c: &mut Criterion) {
         let mut result = [Value::I32(0)];
 
         b.iter(|| {
-            let result = bench_call.call(&mut store, &[Value::I64(FIBONACCI_INC_N)], &mut result);
-            assert_matches!(result, Ok(_));
+            bench_call
+                .call(&mut store, &[Value::I64(FIBONACCI_INC_N)], &mut result)
+                .unwrap();
         });
         assert_eq!(result, [Value::I64(FIBONACCI_INC_RESULT)]);
     });
