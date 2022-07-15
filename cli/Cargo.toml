@@ -1,0 +1,16 @@
+[package]
+name = "wasmi_cli"
+version = "0.11.0"
+edition = "2021"
+authors = ["Parity Technologies <admin@parity.io>", "Robin Freyler <robin.freyler@gmail.com>"]
+license = "MIT/Apache-2.0"
+readme = "../README.md"
+repository = "https://github.com/paritytech/wasmi"
+documentation = "https://paritytech.github.io/wasmi/"
+description = "WebAssembly interpreter"
+keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
+
+[dependencies]
+clap = { version = "3.2", features = ["derive"] }
+wasmi_v1 = { path = "../wasmi_v1" }
+wat = "1"
