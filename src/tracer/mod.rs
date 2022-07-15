@@ -68,7 +68,7 @@ impl Tracer {
                     if let Some(instruction) = iter.next() {
                         let ientry = self.itable.push(
                             self.next_module_id() as u32,
-                            func_index,
+                            func_index + 1,
                             pc,
                             instruction.into(),
                         );
@@ -82,7 +82,7 @@ impl Tracer {
                 }
 
                 func_index = func_index + 1;
-                self.function_lookup.push((func.clone(), func_index))
+                self.function_lookup.push((func.clone(), func_index + 1))
             } else {
                 break;
             }
