@@ -13,11 +13,11 @@ struct Args {
 
     /// The exported name of the Wasm function to call.
     #[clap(value_parser)]
-    wasm_func: String,
+    func_name: String,
 
     /// The arguments provided to the called function.
     #[clap(value_parser)]
-    wasm_args: Vec<String>,
+    func_args: Vec<String>,
 }
 
 /// Converts the given `.wat` into `.wasm`.
@@ -29,8 +29,8 @@ fn main() -> Result<(), String> {
     let args = Args::parse();
 
     let wasm_file = args.wasm_file;
-    let func_name = args.wasm_func;
-    let func_args = args.wasm_args;
+    let func_name = args.func_name;
+    let func_args = args.func_args;
 
     let mut file_contents =
         fs::read(&wasm_file).map_err(|_| format!("failed to read Wasm file {wasm_file}"))?;
