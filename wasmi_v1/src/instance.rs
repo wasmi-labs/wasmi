@@ -19,14 +19,17 @@ use core::{iter::FusedIterator, ops::Deref};
 
 /// A raw index to a module instance entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct InstanceIdx(usize);
+pub struct InstanceIdx(u32);
 
 impl Index for InstanceIdx {
     fn into_usize(self) -> usize {
-        self.0
+        self.0 as usize
     }
 
     fn from_usize(value: usize) -> Self {
+        let value = value.try_into().unwrap_or_else(|error| {
+            panic!("index {value} is out of bounds as instance index: {error}")
+        });
         Self(value)
     }
 }

@@ -20,7 +20,7 @@ use super::{
     TableIdx,
 };
 use crate::{GuardedEntity, Index};
-use core::sync::atomic::{AtomicUsize, Ordering};
+use core::sync::atomic::{AtomicU32, Ordering};
 
 /// A unique store index.
 ///
@@ -28,14 +28,17 @@ use core::sync::atomic::{AtomicUsize, Ordering};
 ///
 /// Used to protect against invalid entity indices.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct StoreIdx(usize);
+pub struct StoreIdx(u32);
 
 impl Index for StoreIdx {
     fn into_usize(self) -> usize {
-        self.0
+        self.0 as usize
     }
 
     fn from_usize(value: usize) -> Self {
+        let value = value.try_into().unwrap_or_else(|error| {
+            panic!("index {value} is out of bounds as store index: {error}")
+        });
         Self(value)
     }
 }
@@ -44,7 +47,7 @@ impl StoreIdx {
     /// Returns a new unique [`StoreIdx`].
     fn new() -> Self {
         /// A static store index counter.
-        static CURRENT_STORE_IDX: AtomicUsize = AtomicUsize::new(0);
+        static CURRENT_STORE_IDX: AtomicU32 = AtomicU32::new(0);
         let next_idx = CURRENT_STORE_IDX.fetch_add(1, Ordering::AcqRel);
         Self(next_idx)
     }
