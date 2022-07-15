@@ -20,7 +20,7 @@ parity-wasm = { version = "0.42.0", default-features = false }
 assert_matches = "1.5"
 wabt = "0.9"
 wat = "1"
-wast = "41.0"
+wast = "44.0"
 anyhow = "1.0"
 criterion = "0.3.5"
 
