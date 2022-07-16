@@ -26,7 +26,7 @@ use crate::{
     ValueType,
 };
 use alloc::{boxed::Box, vec::Vec};
-use core::{borrow::Borrow, cell::RefCell, fmt, ops, u32, usize};
+use core::{cell::RefCell, fmt, ops, u32, usize};
 use parity_wasm::elements::Local;
 use specs::{step::StepInfo, types::Value};
 use std::rc::Rc;
@@ -579,7 +579,7 @@ impl Interpreter {
                         None
                     }
                 };
-            };
+            }
 
             match self.run_instruction(function_context, &instruction)? {
                 InstructionOutcome::RunNextInstruction => {
@@ -592,7 +592,7 @@ impl Interpreter {
                 }
                 InstructionOutcome::ExecuteCall(func_ref) => {
                     // We don't record updated pc, the value should be recorded in the next trace log.
-                    let eentry = trace_post!();
+                    trace_post!();
 
                     function_context.position = iter.position();
                     return Ok(RunResult::NestedCall(func_ref));

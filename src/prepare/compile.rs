@@ -1119,7 +1119,7 @@ fn drop_keep_return(
 /// by `idx`.
 ///
 /// See stack layout definition in mod isa.
-fn relative_local_depth(
+fn _relative_local_depth(
     idx: u32,
     locals: &Locals,
     value_stack: &StackWithLimit<StackValueType>,
