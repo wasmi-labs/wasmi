@@ -4,14 +4,17 @@ use core::{fmt, fmt::Display};
 
 /// A raw index to a global variable entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct GlobalIdx(usize);
+pub struct GlobalIdx(u32);
 
 impl Index for GlobalIdx {
     fn into_usize(self) -> usize {
-        self.0
+        self.0 as usize
     }
 
     fn from_usize(value: usize) -> Self {
+        let value = value.try_into().unwrap_or_else(|error| {
+            panic!("index {value} is out of bounds as global index: {error}")
+        });
         Self(value)
     }
 }
