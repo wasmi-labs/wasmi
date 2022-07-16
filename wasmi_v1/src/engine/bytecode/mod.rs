@@ -1,15 +1,11 @@
 //! The instruction architecture of the `wasmi` interpreter.
 
 mod utils;
-mod visitor;
 
 #[cfg(test)]
 mod tests;
 
-pub use self::{
-    utils::{BrTable, DropKeep, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, Target},
-    visitor::VisitInstruction,
-};
+pub use self::utils::{DropKeep, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, Target};
 use wasmi_core::UntypedValue;
 
 /// The internal `wasmi` bytecode that is stored for Wasm functions.
@@ -20,7 +16,7 @@ use wasmi_core::UntypedValue;
 ///
 /// For example the `BrTable` instruciton is unrolled into separate instructions
 /// each representing either the `BrTable` head or one of its branching targets.
-#[derive(Copy, Debug, Clone, PartialEq)]
+#[derive(Copy, Debug, Clone, PartialEq, Eq)]
 pub enum Instruction {
     GetLocal {
         local_depth: LocalIdx,

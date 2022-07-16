@@ -11,19 +11,19 @@ mod traits;
 pub mod value_stack;
 
 pub(crate) use self::func_args::{FuncParams, FuncResults};
+use self::{
+    bytecode::Instruction,
+    call_stack::{CallStack, FunctionFrame},
+    code_map::{CodeMap, ResolvedFuncBody},
+    exec_context::FunctionExecutor,
+    func_types::FuncTypeRegistry,
+    value_stack::ValueStack,
+};
 pub use self::{
     bytecode::{DropKeep, Target},
     code_map::FuncBody,
     func_builder::{FunctionBuilder, InstructionIdx, LabelIdx, RelativeDepth, Reloc},
     traits::{CallParams, CallResults},
-};
-use self::{
-    bytecode::{Instruction, VisitInstruction},
-    call_stack::{CallStack, FunctionFrame},
-    code_map::{CodeMap, ResolvedFuncBody},
-    exec_context::ExecutionContext,
-    func_types::FuncTypeRegistry,
-    value_stack::ValueStack,
 };
 use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func};
 use crate::{
@@ -49,7 +49,7 @@ pub const DEFAULT_CALL_STACK_LIMIT: usize = 64 * 1024;
 
 /// The outcome of a `wasmi` function execution.
 #[derive(Debug, Copy, Clone)]
-pub enum FunctionExecutionOutcome {
+pub enum CallOutcome {
     /// The function has returned.
     Return,
     /// The function called another function.
@@ -376,44 +376,6 @@ impl EngineInner {
         &self.config
     }
 
-    // /// Unpacks the entity and checks if it is owned by the engine.
-    // ///
-    // /// # Panics
-    // ///
-    // /// If the guarded entity is not owned by the engine.
-    // fn unwrap_index<Idx>(&self, stored: Guarded<Idx>) -> Idx
-    // where
-    //     Idx: Index,
-    // {
-    //     stored.entity_index(self.engine_idx).unwrap_or_else(|| {
-    //         panic!(
-    //             "encountered foreign entity in engine: {}",
-    //             self.engine_idx.into_usize()
-    //         )
-    //     })
-    // }
-
-    // /// Allocates a new function type to the engine.
-    // pub(super) fn alloc_func_type(&mut self, func_type: FuncType) -> Signature {
-    //     Signature::from_inner(Guarded::new(
-    //         self.engine_idx,
-    //         self.func_types.alloc(func_type),
-    //     ))
-    // }
-
-    // /// Resolves a deduplicated function type into a [`FuncType`] entity.
-    // ///
-    // /// # Panics
-    // ///
-    // /// - If the deduplicated function type is not owned by the engine.
-    // /// - If the deduplicated function type cannot be resolved to its entity.
-    // pub(super) fn resolve_func_type(&self, func_type: Signature) -> &FuncType {
-    //     let entity_index = self.unwrap_index(func_type.into_inner());
-    //     self.func_types
-    //         .get(entity_index)
-    //         .unwrap_or_else(|| panic!("failed to resolve stored function type: {:?}", entity_index))
-    // }
-
     /// Allocates the instructions of a Wasm function body to the [`Engine`].
     ///
     /// Returns a [`FuncBody`] reference to the allocated function body.
@@ -528,14 +490,14 @@ impl EngineInner {
         let mut function_frame = FunctionFrame::new(&ctx, func);
         'outer: loop {
             match self.execute_frame(&mut ctx, &mut function_frame)? {
-                FunctionExecutionOutcome::Return => match self.call_stack.pop() {
+                CallOutcome::Return => match self.call_stack.pop() {
                     Some(frame) => {
                         function_frame = frame;
                         continue 'outer;
                     }
                     None => return Ok(()),
                 },
-                FunctionExecutionOutcome::NestedCall(func) => match func.as_internal(&ctx) {
+                CallOutcome::NestedCall(func) => match func.as_internal(&ctx) {
                     FuncEntityInternal::Wasm(wasm_func) => {
                         let nested_frame = FunctionFrame::new_wasm(func, wasm_func);
                         self.call_stack.push(function_frame)?;
@@ -561,8 +523,8 @@ impl EngineInner {
         &mut self,
         mut ctx: impl AsContextMut,
         frame: &mut FunctionFrame,
-    ) -> Result<FunctionExecutionOutcome, Trap> {
-        ExecutionContext::new(self, frame)?.execute_frame(&mut ctx)
+    ) -> Result<CallOutcome, Trap> {
+        FunctionExecutor::new(self, frame)?.execute_frame(&mut ctx)
     }
 
     /// Executes the given host function.

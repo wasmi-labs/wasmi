@@ -64,13 +64,13 @@ pub struct FunctionFrame {
     /// calling functions using the default table and avoids one indirection
     /// to look-up the table in the `Instance`.
     default_table: Option<Table>,
-    /// The current value of the instruction pointer.
+    /// The current value of the program counter.
     ///
     /// # Note
     ///
-    /// The instruction pointer always points to the instruction
+    /// The program counter always points to the instruction
     /// that is going to executed next.
-    pub inst_ptr: usize,
+    pc: usize,
 }
 
 impl FunctionFrame {
@@ -89,6 +89,16 @@ impl FunctionFrame {
         }
     }
 
+    /// Returns the program counter.
+    pub(super) fn pc(&self) -> usize {
+        self.pc
+    }
+
+    /// Updates the program counter.
+    pub(super) fn update_pc(&mut self, new_pc: usize) {
+        self.pc = new_pc;
+    }
+
     /// Creates a new [`FunctionFrame`] from the given Wasm function entity.
     pub(super) fn new_wasm(func: Func, wasm_func: &WasmFuncEntity) -> Self {
         let instance = wasm_func.instance();
@@ -100,7 +110,7 @@ impl FunctionFrame {
             instance,
             default_memory: None,
             default_table: None,
-            inst_ptr: 0,
+            pc: 0,
         }
     }
 

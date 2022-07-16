@@ -83,7 +83,7 @@ impl Display for TableError {
 }
 
 /// A descriptor for a [`Table`] instance.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct TableType {
     /// The initial size of the [`Table`].
     initial: usize,
