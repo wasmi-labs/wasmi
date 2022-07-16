@@ -430,10 +430,14 @@ fn bench_execute_count_until_v1(c: &mut Criterion) {
 
 fn bench_execute_fac_recursive_v0(c: &mut Criterion) {
     c.bench_function("execute/factorial_recursive/v0", |b| {
-        let instance = load_instance_from_wat_v0(include_bytes!("wat/recursive_factorial.wat"));
+        let instance = load_instance_from_wat_v0(include_bytes!("wat/factorial.wat"));
         b.iter(|| {
             let value = instance
-                .invoke_export("fac-rec", &[Value::I64(25)], &mut v0::NopExternals)
+                .invoke_export(
+                    "recursive_factorial",
+                    &[Value::I64(25)],
+                    &mut v0::NopExternals,
+                )
                 .unwrap();
             assert_eq!(value, Some(Value::I64(7034535277573963776)));
         })
@@ -442,10 +446,9 @@ fn bench_execute_fac_recursive_v0(c: &mut Criterion) {
 
 fn bench_execute_fac_recursive_v1(c: &mut Criterion) {
     c.bench_function("execute/factorial_recursive/v1", |b| {
-        let (mut store, instance) =
-            load_instance_from_wat_v1(include_bytes!("wat/recursive_factorial.wat"));
+        let (mut store, instance) = load_instance_from_wat_v1(include_bytes!("wat/factorial.wat"));
         let fac = instance
-            .get_export(&store, "fac-rec")
+            .get_export(&store, "recursive_factorial")
             .and_then(v1::Extern::into_func)
             .unwrap();
         let mut result = [Value::I64(0)];
@@ -459,11 +462,15 @@ fn bench_execute_fac_recursive_v1(c: &mut Criterion) {
 }
 
 fn bench_execute_fac_opt_v0(c: &mut Criterion) {
-    c.bench_function("execute/factorial_optimized/v0", |b| {
-        let instance = load_instance_from_wat_v0(include_bytes!("wat/optimized_factorial.wat"));
+    c.bench_function("execute/factorial_iterative/v0", |b| {
+        let instance = load_instance_from_wat_v0(include_bytes!("wat/factorial.wat"));
         b.iter(|| {
             let value = instance
-                .invoke_export("fac-opt", &[Value::I64(25)], &mut v0::NopExternals)
+                .invoke_export(
+                    "iterative_factorial",
+                    &[Value::I64(25)],
+                    &mut v0::NopExternals,
+                )
                 .unwrap();
             assert_eq!(value, Some(Value::I64(7034535277573963776)));
         })
@@ -471,11 +478,10 @@ fn bench_execute_fac_opt_v0(c: &mut Criterion) {
 }
 
 fn bench_execute_fac_opt_v1(c: &mut Criterion) {
-    c.bench_function("execute/factorial_optimized/v1", |b| {
-        let (mut store, instance) =
-            load_instance_from_wat_v1(include_bytes!("wat/optimized_factorial.wat"));
+    c.bench_function("execute/factorial_iterative/v1", |b| {
+        let (mut store, instance) = load_instance_from_wat_v1(include_bytes!("wat/factorial.wat"));
         let fac = instance
-            .get_export(&store, "fac-opt")
+            .get_export(&store, "iterative_factorial")
             .and_then(v1::Extern::into_func)
             .unwrap();
         let mut result = [Value::I64(0)];
