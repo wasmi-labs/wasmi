@@ -19,7 +19,7 @@ use wasmi_v1::{
     Table,
     TableType,
 };
-use wast::Id;
+use wast::token::{Id, Span};
 
 /// The context of a single Wasm test spec suite run.
 #[derive(Debug)]
@@ -111,7 +111,7 @@ impl TestContext<'_> {
     }
 
     /// Returns the [`TestDescriptor`] of the test context.
-    pub fn spanned(&self, span: wast::Span) -> TestSpan {
+    pub fn spanned(&self, span: Span) -> TestSpan {
         self.descriptor.spanned(span)
     }
 
@@ -132,7 +132,7 @@ impl TestContext<'_> {
     /// If creating the [`Module`] fails.
     pub fn compile_and_instantiate(
         &mut self,
-        mut module: wast::Module,
+        mut module: wast::core::Module,
     ) -> Result<Instance, TestError> {
         let module_name = module.id.map(|id| id.name());
         let wasm = module.encode().unwrap_or_else(|error| {
