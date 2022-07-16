@@ -546,7 +546,7 @@ impl<'a> StackFrameRegisters<'a> {
 
     /// Returns the value of the `register`.
     ///
-    /// # Panics
+    /// # Panics (Debug)
     ///
     /// If the `register` is invalid for the [`StackFrameRegisters`].
     pub fn get(&self, register: ExecRegister) -> UntypedValue {
@@ -566,7 +566,7 @@ impl<'a> StackFrameRegisters<'a> {
 
     /// Sets the value of the `register` to `new_value`.
     ///
-    /// # Panics
+    /// # Panics (Debug)
     ///
     /// If the `register` is invalid for the [`StackFrameRegisters`].
     pub fn set(&mut self, register: ExecRegister, new_value: UntypedValue) {
