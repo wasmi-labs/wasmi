@@ -89,7 +89,7 @@ impl From<Value> for UntypedValue {
     }
 }
 
-macro_rules! impl_from_prim {
+macro_rules! impl_from_unsigned_prim {
     ( $( $prim:ty ),* $(,)? ) => {
         $(
             impl From<$prim> for UntypedValue {
@@ -101,10 +101,27 @@ macro_rules! impl_from_prim {
     };
 }
 #[rustfmt::skip]
-impl_from_prim!(
-    bool,
-    i8, i16, i32, i64,
-    u8, u16, u32, u64,
+impl_from_unsigned_prim!(
+    bool, u8, u16, u32, u64,
+);
+
+macro_rules! impl_from_signed_prim {
+    ( $( $prim:ty as $base:ty ),* $(,)? ) => {
+        $(
+            impl From<$prim> for UntypedValue {
+                fn from(value: $prim) -> Self {
+                    Self { bits: value as $base as _ }
+                }
+            }
+        )*
+    };
+}
+#[rustfmt::skip]
+impl_from_signed_prim!(
+    i8 as u8,
+    i16 as u16,
+    i32 as u32,
+    i64 as u64,
 );
 
 macro_rules! impl_from_float {

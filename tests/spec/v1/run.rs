@@ -5,14 +5,15 @@ use wasmi_v1::{Config, Error as WasmiError};
 use wast::{
     lexer::Lexer,
     parser::ParseBuffer,
+    token::Span,
     AssertExpression,
     NanPattern,
-    QuoteModule,
-    Span,
+    QuoteWat,
     Wast,
     WastDirective,
     WastExecute,
     WastInvoke,
+    Wat,
 };
 
 /// Runs the Wasm test spec identified by the given name.
@@ -54,27 +55,28 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
     'outer: for directive in wast.directives {
         test_context.profile().bump_directives();
         match directive {
-            WastDirective::Module(module) => {
+            WastDirective::Wat(QuoteWat::Wat(Wat::Module(module))) => {
                 test_context.compile_and_instantiate(module)?;
                 test_context.profile().bump_module();
             }
-            WastDirective::QuoteModule { span: _, source: _ } => {
+            WastDirective::Wat(_) => {
                 test_context.profile().bump_quote_module();
-                // We are currently not interested in parsing `.wat` files,
-                // therefore we silently ignore this case for now.
+                // For the purpose of testing `wasmi` we are not
+                // interested in parsing `.wat` files, therefore
+                // we silently ignore this case for now.
+                // This might change once wasmi supports `.wat` files.
                 continue 'outer;
             }
             WastDirective::AssertMalformed {
                 span,
-                module,
+                module: QuoteWat::Wat(Wat::Module(module)),
                 message,
             } => {
                 test_context.profile().bump_assert_malformed();
-                let module = match extract_module(module) {
-                    Some(module) => module,
-                    None => continue 'outer,
-                };
                 module_compilation_fails(test_context, span, module, message);
+            }
+            WastDirective::AssertMalformed { .. } => {
+                test_context.profile().bump_assert_malformed();
             }
             WastDirective::AssertInvalid {
                 span,
@@ -165,11 +167,14 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
             }
             WastDirective::AssertUnlinkable {
                 span,
-                module,
+                module: Wat::Module(module),
                 message,
             } => {
                 test_context.profile().bump_assert_unlinkable();
                 module_compilation_fails(test_context, span, module, message);
+            }
+            WastDirective::AssertUnlinkable { .. } => {
+                test_context.profile().bump_assert_unlinkable();
             }
             WastDirective::AssertException { span, exec } => {
                 test_context.profile().bump_assert_exception();
@@ -215,7 +220,7 @@ fn assert_trap(test_context: &TestContext, span: Span, error: TestError, message
 /// Asserts that `results` match the `expected` values.
 fn assert_results(
     context: &TestContext,
-    span: wast::Span,
+    span: Span,
     results: &[Value],
     expected: &[AssertExpression],
 ) {
@@ -274,10 +279,12 @@ fn assert_results(
     }
 }
 
-fn extract_module(quoted_module: QuoteModule) -> Option<wast::Module> {
-    match quoted_module {
-        QuoteModule::Module(module) => Some(module),
-        QuoteModule::Quote(_wat_lines) => {
+fn extract_module(quote_wat: QuoteWat) -> Option<wast::core::Module> {
+    match quote_wat {
+        QuoteWat::Wat(Wat::Module(module)) => Some(module),
+        QuoteWat::Wat(Wat::Component(_))
+        | QuoteWat::QuoteModule(_, _)
+        | QuoteWat::QuoteComponent(_, _) => {
             // We currently do not allow parsing `.wat` Wasm modules in `v1`
             // therefore checks based on malformed `.wat` modules are uninteresting
             // to us at the moment.
@@ -290,8 +297,8 @@ fn extract_module(quoted_module: QuoteModule) -> Option<wast::Module> {
 
 fn module_compilation_fails(
     context: &mut TestContext,
-    span: wast::Span,
-    module: wast::Module,
+    span: Span,
+    module: wast::core::Module,
     expected_message: &str,
 ) {
     let result = context.compile_and_instantiate(module);
@@ -305,14 +312,20 @@ fn module_compilation_fails(
 
 fn execute_wast_execute(
     context: &mut TestContext,
-    span: wast::Span,
+    span: Span,
     execute: WastExecute,
 ) -> Result<Vec<Value>, TestError> {
     match execute {
         WastExecute::Invoke(invoke) => {
             execute_wast_invoke(context, span, invoke).map_err(Into::into)
         }
-        WastExecute::Module(module) => context.compile_and_instantiate(module).map(|_| Vec::new()),
+        WastExecute::Wat(Wat::Module(module)) => {
+            context.compile_and_instantiate(module).map(|_| Vec::new())
+        }
+        WastExecute::Wat(Wat::Component(_)) => {
+            // Wasmi currently does not support the Wasm component model.
+            Ok(vec![])
+        }
         WastExecute::Get { module, global } => context
             .get_global(module, global)
             .map(|result| vec![result]),
@@ -321,7 +334,7 @@ fn execute_wast_execute(
 
 fn execute_wast_invoke(
     context: &mut TestContext,
-    span: wast::Span,
+    span: Span,
     invoke: WastInvoke,
 ) -> Result<Vec<Value>, TestError> {
     let module_name = invoke.module.map(|id| id.name());
@@ -336,10 +349,10 @@ fn execute_wast_invoke(
             arg.instrs
         );
         let arg = match &arg.instrs[0] {
-            wast::Instruction::I32Const(value) => Value::I32(*value),
-            wast::Instruction::I64Const(value) => Value::I64(*value),
-            wast::Instruction::F32Const(value) => Value::F32(F32::from_bits(value.bits)),
-            wast::Instruction::F64Const(value) => Value::F64(F64::from_bits(value.bits)),
+            wast::core::Instruction::I32Const(value) => Value::I32(*value),
+            wast::core::Instruction::I64Const(value) => Value::I64(*value),
+            wast::core::Instruction::F32Const(value) => Value::F32(F32::from_bits(value.bits)),
+            wast::core::Instruction::F64Const(value) => Value::F64(F64::from_bits(value.bits)),
             unsupported => panic!(
                 "{}: encountered unsupported invoke instruction: {:?}",
                 context.spanned(span),
