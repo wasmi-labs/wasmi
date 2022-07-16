@@ -3,7 +3,7 @@
 (module
   (func $count_until (export "count_until") (param $limit i32) (result i32)
     (local $counter i32)
-	(block
+    (block
         (loop
             (br_if
                 1

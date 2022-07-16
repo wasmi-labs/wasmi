@@ -627,7 +627,12 @@ fn bench_execute_host_calls_v0(c: &mut Criterion) {
                 match index {
                     HOST_CALL_INDEX => {
                         let arg = args.nth_value_checked(0)?;
-                        Ok(Some(arg))
+                        let result = match arg {
+                            Value::I32(value) => Value::I32(value.wrapping_sub(1)),
+                            Value::I64(value) => Value::I64(value.wrapping_sub(1)),
+                            otherwise => otherwise,
+                        };
+                        Ok(Some(result))
                     }
                     _ => panic!("BenchExternals do not provide function at index {}", index),
                 }
@@ -713,7 +718,7 @@ fn bench_execute_host_calls_v1(c: &mut Criterion) {
         let module = v1::Module::new(&engine, &wasm[..]).unwrap();
         let mut linker = <v1::Linker<()>>::default();
         let mut store = v1::Store::new(&engine, ());
-        let host_call = v1::Func::wrap(&mut store, |value: i64| value);
+        let host_call = v1::Func::wrap(&mut store, |value: i64| value.wrapping_sub(1));
         linker.define("benchmark", "host_call", host_call).unwrap();
         let instance = linker
             .instantiate(&mut store, &module)
