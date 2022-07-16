@@ -48,15 +48,6 @@ impl DedupFuncType {
     pub(super) fn into_inner(self) -> GuardedEntity<EngineIdent, DedupFuncTypeIdx> {
         self.0
     }
-
-    // /// Creates a new function signature to the store.
-    // pub fn new<T, I, O>(ctx: &mut Store<T>, inputs: I, outputs: O) -> Self
-    // where
-    //     I: IntoIterator<Item = ValueType>,
-    //     O: IntoIterator<Item = ValueType>,
-    // {
-    //     ctx.alloc_func_type(FuncType::new(inputs, outputs))
-    // }
 }
 
 /// A [`FuncType`] registry that efficiently deduplicate stored function types.
