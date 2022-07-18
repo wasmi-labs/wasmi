@@ -10,7 +10,7 @@ use self::bench::{
     load_wasm_from_file,
     wat2wasm,
 };
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Bencher, Criterion};
 use std::{slice, time::Duration};
 use wasmi as v0;
 use wasmi::{RuntimeValue as Value, Trap};
@@ -72,6 +72,9 @@ criterion_group! {
         bench_execute_fibonacci_recursive_v1,
         bench_execute_fibonacci_iterative_v0,
         bench_execute_fibonacci_iterative_v1,
+        bench_execute_memory_sum_v1,
+        bench_execute_memory_fill_v1,
+        bench_execute_vec_add_v1,
 }
 
 criterion_main!(bench_compile_and_validate, bench_instantiate, bench_execute);
@@ -835,5 +838,164 @@ fn bench_execute_fibonacci_iterative_v1(c: &mut Criterion) {
                 .unwrap();
         });
         assert_eq!(result, [Value::I64(FIBONACCI_INC_RESULT)]);
+    });
+}
+
+fn bench_execute_memory_sum_v1(c: &mut Criterion) {
+    c.bench_function("execute/memory_sum/v1", |b| {
+        let (mut store, instance) = load_instance_from_wat_v1(include_bytes!("wat/memory-sum.wat"));
+        let sum = instance
+            .get_export(&store, "sum_bytes")
+            .and_then(v1::Extern::into_func)
+            .unwrap();
+        let mem = instance
+            .get_export(&store, "mem")
+            .and_then(v1::Extern::into_memory)
+            .unwrap();
+        mem.grow(&mut store, v1::core::memory_units::Pages(1))
+            .unwrap();
+        let len = 100_000;
+        let mut expected_sum: i64 = 0;
+        for (n, byte) in &mut mem.data_mut(&mut store)[..len].iter_mut().enumerate() {
+            let new_byte = (n % 256) as u8;
+            *byte = new_byte;
+            expected_sum += new_byte as u64 as i64;
+        }
+        let mut result = [Value::I32(0)];
+        b.iter(|| {
+            sum.call(&mut store, &[Value::I32(len as i32)], &mut result)
+                .unwrap();
+        });
+        assert_eq!(result, [Value::I64(expected_sum)]);
+    });
+}
+
+fn bench_execute_memory_fill_v1(c: &mut Criterion) {
+    c.bench_function("execute/memory_fill/v1", |b| {
+        let (mut store, instance) =
+            load_instance_from_wat_v1(include_bytes!("wat/memory-fill.wat"));
+        let fill = instance
+            .get_export(&store, "fill_bytes")
+            .and_then(v1::Extern::into_func)
+            .unwrap();
+        let mem = instance
+            .get_export(&store, "mem")
+            .and_then(v1::Extern::into_memory)
+            .unwrap();
+        mem.grow(&mut store, v1::core::memory_units::Pages(1))
+            .unwrap();
+        let ptr = 0x100;
+        let len = 100_000;
+        let value = 0x42_u8;
+        mem.data_mut(&mut store)[ptr..(ptr + len)].fill(0x00);
+        let params = [
+            Value::I32(ptr as i32),
+            Value::I32(len as i32),
+            Value::I32(value as i32),
+        ];
+        b.iter(|| {
+            fill.call(&mut store, &params, &mut []).unwrap();
+        });
+        assert!(mem.data(&store)[ptr..(ptr + len)]
+            .iter()
+            .all(|byte| (*byte as u8) == value));
+    });
+}
+
+fn bench_execute_vec_add_v1(c: &mut Criterion) {
+    fn test_for<A, B>(
+        b: &mut Bencher,
+        vec_add: v1::Func,
+        mut store: &mut v1::Store<()>,
+        mem: v1::Memory,
+        len: usize,
+        vec_a: A,
+        vec_b: B,
+    ) where
+        A: IntoIterator<Item = i32>,
+        B: IntoIterator<Item = i32>,
+    {
+        use core::mem::size_of;
+
+        let ptr_result = 10;
+        let len_result = len * size_of::<i64>();
+        let ptr_a = ptr_result + len_result;
+        let len_a = len * size_of::<i32>();
+        let ptr_b = ptr_a + len_a;
+
+        // Reset `result` buffer to zeros:
+        mem.data_mut(&mut store)[ptr_result..ptr_result + (len * size_of::<i32>())].fill(0);
+        // Initialize `a` buffer:
+        for (n, a) in vec_a.into_iter().take(len).enumerate() {
+            mem.write(&mut store, ptr_a + (n * size_of::<i32>()), &a.to_le_bytes())
+                .unwrap();
+        }
+        // Initialize `b` buffer:
+        for (n, b) in vec_b.into_iter().take(len).enumerate() {
+            mem.write(&mut store, ptr_b + (n * size_of::<i32>()), &b.to_le_bytes())
+                .unwrap();
+        }
+
+        // Prepare parameters and all Wasm `vec_add`:
+        let params = [
+            Value::I32(ptr_result as i32),
+            Value::I32(ptr_a as i32),
+            Value::I32(ptr_b as i32),
+            Value::I32(len as i32),
+        ];
+        b.iter(|| {
+            vec_add.call(&mut store, &params, &mut []).unwrap();
+        });
+
+        // Validate the result buffer:
+        for n in 0..len {
+            let mut buffer4 = [0x00; 4];
+            let mut buffer8 = [0x00; 8];
+            let a = {
+                mem.read(&store, ptr_a + (n * size_of::<i32>()), &mut buffer4)
+                    .unwrap();
+                i32::from_le_bytes(buffer4)
+            };
+            let b = {
+                mem.read(&store, ptr_b + (n * size_of::<i32>()), &mut buffer4)
+                    .unwrap();
+                i32::from_le_bytes(buffer4)
+            };
+            let actual_result = {
+                mem.read(&store, ptr_result + (n * size_of::<i64>()), &mut buffer8)
+                    .unwrap();
+                i64::from_le_bytes(buffer8)
+            };
+            let expected_result = (a as i64) + (b as i64);
+            assert_eq!(
+                expected_result, actual_result,
+                "given a = {a} and b = {b}, results diverge at index {n}"
+            );
+        }
+    }
+
+    c.bench_function("execute/memory_vec_add/v1", |b| {
+        let (mut store, instance) =
+            load_instance_from_wat_v1(include_bytes!("wat/memory-vec-add.wat"));
+        let vec_add = instance
+            .get_export(&store, "vec_add")
+            .and_then(v1::Extern::into_func)
+            .unwrap();
+        let mem = instance
+            .get_export(&store, "mem")
+            .and_then(v1::Extern::into_memory)
+            .unwrap();
+        mem.grow(&mut store, v1::core::memory_units::Pages(25))
+            .unwrap();
+        let len = 100_000;
+        test_for(
+            b,
+            vec_add,
+            &mut store,
+            mem,
+            len,
+            (0..len).map(|i| (i * i) as i32),
+            (0..len).map(|i| (i * 10) as i32),
+        )
     });
 }
