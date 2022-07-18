@@ -25,6 +25,17 @@ struct Args {
     func_args: Vec<String>,
 }
 
+#[derive(Debug)]
+enum AppError {
+    Interpreter(wasmi_v1::Error),
+}
+
+impl From<wasmi_v1::Error> for AppError {
+    fn from(e: wasmi_v1::Error) -> Self {
+        Self::Interpreter(e)
+    }
+}
+
 fn main() -> Result<(), String> {
     let args = Args::parse();
 
@@ -41,7 +52,7 @@ fn main() -> Result<(), String> {
     print_execution_start(&wasm_file, &func_name, &func_args);
 
     func.call(&mut store, &func_args, &mut results)
-        .map_err(|error| format!("failed during exeuction of {func_name}: {error}"))?;
+        .map_err(|error| format!("failed during exeuction of {func_name}: {error:#?}"))?;
 
     print_pretty_results(&results);
 
@@ -83,17 +94,18 @@ fn load_wasm_func(
     wasm_file: &str,
     wasm_bytes: &[u8],
     func_name: &str,
-) -> Result<(Func, Store<()>), String> {
+) -> Result<(Func, Store<(), AppError>), String> {
     let engine = wasmi::Engine::default();
-    let mut store = wasmi::Store::new(&engine, ());
+    let mut store = wasmi::Store::<_, AppError>::new(&engine, ());
     let module = wasmi::Module::new(&engine, &mut &wasm_bytes[..]).map_err(|error| {
         format!("failed to parse and validate Wasm module {wasm_file}: {error}")
     })?;
     let mut linker = <wasmi::Linker<()>>::new();
     let instance = linker
         .instantiate(&mut store, &module)
+        .map_err(Into::into)
         .and_then(|pre| pre.start(&mut store))
-        .map_err(|error| format!("failed to instantiate and start the Wasm module: {error}"))?;
+        .map_err(|error| format!("failed to instantiate and start the Wasm module: {error:#?}"))?;
     let func = instance
         .get_export(&store, func_name)
         .and_then(|ext| ext.into_func())

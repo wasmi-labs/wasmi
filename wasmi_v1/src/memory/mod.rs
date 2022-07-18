@@ -327,7 +327,7 @@ impl Memory {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Memory`].
-    pub fn data<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a [u8] {
+    pub fn data<'a, T: 'a, E: 'a>(&self, ctx: impl Into<StoreContext<'a, T, E>>) -> &'a [u8] {
         ctx.into().store.resolve_memory(*self).data()
     }
 
@@ -336,7 +336,10 @@ impl Memory {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Memory`].
-    pub fn data_mut<'a, T: 'a>(&self, ctx: impl Into<StoreContextMut<'a, T>>) -> &'a mut [u8] {
+    pub fn data_mut<'a, T: 'a, E: 'a>(
+        &self,
+        ctx: impl Into<StoreContextMut<'a, T, E>>,
+    ) -> &'a mut [u8] {
         ctx.into().store.resolve_memory_mut(*self).data_mut()
     }
 

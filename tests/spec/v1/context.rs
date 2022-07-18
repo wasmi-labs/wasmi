@@ -29,7 +29,7 @@ pub struct TestContext<'a> {
     /// The linker for linking together Wasm test modules.
     linker: Linker<()>,
     /// The store to hold all runtime data during the test.
-    store: Store<()>,
+    store: Store<(), TestError>,
     /// The list of all encountered Wasm modules belonging to the test.
     modules: Vec<Module>,
     /// The list of all instantiated modules.

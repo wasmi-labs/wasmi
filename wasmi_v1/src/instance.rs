@@ -331,7 +331,10 @@ impl Instance {
     /// # Panics
     ///
     /// Panics if `store` does not own this [`Instance`].
-    pub fn exports<'a, T: 'a>(&self, store: impl Into<StoreContext<'a, T>>) -> ExportsIter<'a> {
+    pub fn exports<'a, T: 'a, E: 'a>(
+        &self,
+        store: impl Into<StoreContext<'a, T, E>>,
+    ) -> ExportsIter<'a> {
         store.into().store.resolve_instance(*self).exports()
     }
 }

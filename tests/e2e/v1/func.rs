@@ -4,7 +4,18 @@ use assert_matches::assert_matches;
 use wasmi_core::{Value, F32, F64};
 use wasmi_v1::{errors::FuncError, Engine, Error, Func, Store};
 
-fn test_setup() -> Store<()> {
+#[derive(Debug)]
+enum AppError {
+    Interpreter(wasmi_v1::Error),
+}
+
+impl From<wasmi_v1::Error> for AppError {
+    fn from(e: wasmi_v1::Error) -> Self {
+        Self::Interpreter(e)
+    }
+}
+
+fn test_setup() -> Store<(), AppError> {
     let engine = Engine::default();
     Store::new(&engine, ())
 }
@@ -22,7 +33,7 @@ macro_rules! assert_eq_tuple {
     }
 }
 
-fn setup_add2() -> (Store<()>, Func) {
+fn setup_add2() -> (Store<(), AppError>, Func) {
     let mut store = test_setup();
     // This host function represents a simple binary addition.
     let add2 = Func::wrap(&mut store, |lhs: i32, rhs: i32| lhs + rhs);
@@ -49,7 +60,7 @@ fn static_add2_works() {
     assert_eq!(result, 3);
 }
 
-fn setup_add3() -> (Store<()>, Func) {
+fn setup_add3() -> (Store<(), AppError>, Func) {
     let mut store = test_setup();
     // This host function performance a three-way addition.
     let add3 = Func::wrap(&mut store, |v0: i32, v1: i32, v2: i32| v0 + v1 + v2);
@@ -80,7 +91,7 @@ fn static_add3_works() {
     assert_eq!(result, 6);
 }
 
-fn setup_duplicate() -> (Store<()>, Func) {
+fn setup_duplicate() -> (Store<(), AppError>, Func) {
     let mut store = test_setup();
     // This host function takes one `i32` argument and returns it twice.
     let duplicate = Func::wrap(&mut store, |value: i32| (value, value));
@@ -108,7 +119,7 @@ fn static_duplicate_works() {
     assert_eq!(result, (10, 10));
 }
 
-fn setup_many_params() -> (Store<()>, Func) {
+fn setup_many_params() -> (Store<(), AppError>, Func) {
     let mut store = test_setup();
     // Function taking 16 arguments (maximum) and doing nothing.
     let func = Func::wrap(
@@ -196,7 +207,7 @@ fn static_many_params_works() {
     assert_matches!(result, Ok(()));
 }
 
-fn setup_many_results() -> (Store<()>, Func) {
+fn setup_many_results() -> (Store<(), AppError>, Func) {
     let mut store = test_setup();
     // Function taking 16 arguments (maximum) and doing nothing.
     let func = Func::wrap(&mut store, || ascending_tuple());
@@ -226,7 +237,7 @@ fn static_many_results_works() {
     assert_eq_tuple!(result, expected; 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
 }
 
-fn setup_many_params_many_results() -> (Store<()>, Func) {
+fn setup_many_params_many_results() -> (Store<(), AppError>, Func) {
     let mut store = test_setup();
     // Function taking 16 arguments (maximum) and doing nothing.
     let func = Func::wrap(
@@ -335,7 +346,9 @@ fn dynamic_type_check_works() {
     // Case: Too few inputs given to function.
     assert_matches!(
         identity.call(&mut store, &[], core::slice::from_mut(&mut result)),
-        Err(Error::Func(FuncError::MismatchingParameters { .. }))
+        Err(AppError::Interpreter(Error::Func(
+            FuncError::MismatchingParameters { .. }
+        )))
     );
     // Case: Too many inputs given to function.
     assert_matches!(
@@ -344,12 +357,16 @@ fn dynamic_type_check_works() {
             &[Value::I32(0), Value::I32(1)],
             core::slice::from_mut(&mut result)
         ),
-        Err(Error::Func(FuncError::MismatchingParameters { .. }))
+        Err(AppError::Interpreter(Error::Func(
+            FuncError::MismatchingParameters { .. }
+        )))
     );
     // Case: Too few outputs given to function.
     assert_matches!(
         identity.call(&mut store, &[Value::I32(0)], &mut [],),
-        Err(Error::Func(FuncError::MismatchingResults { .. }))
+        Err(AppError::Interpreter(Error::Func(
+            FuncError::MismatchingResults { .. }
+        )))
     );
     // Case: Too many outputs given to function.
     assert_matches!(
@@ -358,7 +375,9 @@ fn dynamic_type_check_works() {
             &[Value::I32(0)],
             &mut [Value::I32(0), Value::I32(1)],
         ),
-        Err(Error::Func(FuncError::MismatchingResults { .. }))
+        Err(AppError::Interpreter(Error::Func(
+            FuncError::MismatchingResults { .. }
+        )))
     );
     // Case: Mismatching type given as input to function.
     for input in &[
@@ -372,7 +391,9 @@ fn dynamic_type_check_works() {
                 core::slice::from_ref(input),
                 core::slice::from_mut(&mut result)
             ),
-            Err(Error::Func(FuncError::MismatchingParameters { .. }))
+            Err(AppError::Interpreter(Error::Func(
+                FuncError::MismatchingParameters { .. }
+            )))
         );
     }
     // Case: Allow for incorrect result type.

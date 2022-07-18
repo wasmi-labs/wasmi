@@ -1,5 +1,7 @@
+use wasmi_core::TrapCode;
+
 use super::{InstantiationError, Module};
-use crate::{AsContextMut, Error, Instance, InstanceEntityBuilder};
+use crate::{func::FuncError, AsContextMut, Error, Instance, InstanceEntityBuilder};
 
 /// A partially instantiated [`Instance`] where the `start` function has not yet been executed.
 ///
@@ -49,7 +51,11 @@ impl<'a> InstancePre<'a> {
     /// # Panics
     ///
     /// If the `start` function is invalid albeit successful validation.
-    pub fn start(self, mut context: impl AsContextMut) -> Result<Instance, Error> {
+    pub fn start<C>(self, mut context: C) -> Result<Instance, C::Error>
+    where
+        C: AsContextMut,
+        C::Error: From<Error>,
+    {
         let opt_start_index = self.start_fn();
         context
             .as_context_mut()

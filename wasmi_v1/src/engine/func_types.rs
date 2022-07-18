@@ -53,7 +53,7 @@ impl DedupFuncType {
     }
 
     /// Creates a new function signature to the store.
-    pub fn new<T, I, O>(ctx: &mut Store<T>, inputs: I, outputs: O) -> Self
+    pub fn new<T, E, I, O>(ctx: &mut Store<T, E>, inputs: I, outputs: O) -> Self
     where
         I: IntoIterator<Item = ValueType>,
         O: IntoIterator<Item = ValueType>,

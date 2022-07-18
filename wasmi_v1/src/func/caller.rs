@@ -4,8 +4,8 @@ use crate::{Engine, Extern, Instance};
 /// Represents the caller’s context when creating a host function via [`Func::wrap`].
 ///
 /// [`Func::wrap`]: struct.Func.html#method.wrap
-pub struct Caller<'a, T> {
-    pub(crate) store: StoreContextMut<'a, T>,
+pub struct Caller<'a, T, E> {
+    pub(crate) store: StoreContextMut<'a, T, E>,
     /// The module instance associated to the call.
     /// This is `Some` if the host function was called from a Wasm function
     /// since all Wasm function are associated to a module instance.
@@ -13,11 +13,11 @@ pub struct Caller<'a, T> {
     instance: Option<Instance>,
 }
 
-impl<'a, T> Caller<'a, T> {
+impl<'a, T, E> Caller<'a, T, E> {
     /// Creates a new [`Caller`] from the given store context and [`Instance`] handle.
     pub fn new<C>(ctx: &'a mut C, instance: Option<Instance>) -> Self
     where
-        C: AsContextMut<UserState = T>,
+        C: AsContextMut<UserState = T, Error = E>,
     {
         Self {
             store: ctx.as_context_mut(),
@@ -50,21 +50,22 @@ impl<'a, T> Caller<'a, T> {
     }
 }
 
-impl<T> AsContext for Caller<'_, T> {
+impl<T, E> AsContext for Caller<'_, T, E> {
     type UserState = T;
+    type Error = E;
 
-    fn as_context(&self) -> StoreContext<'_, Self::UserState> {
+    fn as_context(&self) -> StoreContext<'_, Self::UserState, Self::Error> {
         self.store.as_context()
     }
 }
 
-impl<T> AsContextMut for Caller<'_, T> {
-    fn as_context_mut(&mut self) -> StoreContextMut<'_, Self::UserState> {
+impl<T, E> AsContextMut for Caller<'_, T, E> {
+    fn as_context_mut(&mut self) -> StoreContextMut<'_, Self::UserState, Self::Error> {
         self.store.as_context_mut()
     }
 }
 
-impl<'a, T: AsContextMut> From<&'a mut T> for Caller<'a, T::UserState> {
+impl<'a, T: AsContextMut> From<&'a mut T> for Caller<'a, T::UserState, T::Error> {
     fn from(ctx: &'a mut T) -> Self {
         Self {
             store: ctx.as_context_mut(),

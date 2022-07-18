@@ -6,13 +6,14 @@ use crate::{
     core::{FromValue, Value, ValueType, F32, F64},
     foreach_tuple::for_each_tuple,
     Caller,
+    Error,
     FuncType,
 };
 use core::{array, iter::FusedIterator};
 use wasmi_core::{DecodeUntypedSlice, EncodeUntypedSlice, TrapCode, UntypedValue};
 
 /// Closures and functions that can be used as host functions.
-pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {
+pub trait IntoFunc<T, E, Params, Results>: Send + Sync + 'static {
     /// The parameters of the host function.
     #[doc(hidden)]
     type Params: WasmTypeList;
@@ -22,13 +23,14 @@ pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {
 
     /// Converts the function into its `wasmi` signature and its trampoline.
     #[doc(hidden)]
-    fn into_func(self) -> (FuncType, HostFuncTrampoline<T>);
+    fn into_func(self) -> (FuncType, HostFuncTrampoline<T, E>);
 }
 
 macro_rules! impl_into_func {
     ( $n:literal $( $tuple:ident )* ) => {
-        impl<T, F, $($tuple,)* R> IntoFunc<T, ($($tuple,)*), R> for F
+        impl<T, E, F, $($tuple,)* R> IntoFunc<T, E, ($($tuple,)*), R> for F
         where
+            E: From<Error>,
             F: Fn($($tuple),*) -> R,
             F: Send + Sync + 'static,
             $(
@@ -40,10 +42,10 @@ macro_rules! impl_into_func {
             type Results = <R as WasmResults>::Ok;
 
             #[allow(non_snake_case)]
-            fn into_func(self) -> (FuncType, HostFuncTrampoline<T>) {
+            fn into_func(self) -> (FuncType, HostFuncTrampoline<T, E>) {
                 IntoFunc::into_func(
                     move |
-                        _: Caller<'_, T>,
+                        _: Caller<'_, T, E>,
                         $(
                             $tuple: $tuple,
                         )*
@@ -54,9 +56,10 @@ macro_rules! impl_into_func {
             }
         }
 
-        impl<T, F, $($tuple,)* R> IntoFunc<T, (Caller<'_, T>, $($tuple),*), R> for F
+        impl<T, E, F, $($tuple,)* R> IntoFunc<T, E, (Caller<'_, T, E>, $($tuple),*), R> for F
         where
-            F: Fn(Caller<T>, $($tuple),*) -> R,
+            E: From<Error>,
+            F: Fn(Caller<T, E>, $($tuple),*) -> R,
             F: Send + Sync + 'static,
             $(
                 $tuple: WasmType,
@@ -67,16 +70,16 @@ macro_rules! impl_into_func {
             type Results = <R as WasmResults>::Ok;
 
             #[allow(non_snake_case)]
-            fn into_func(self) -> (FuncType, HostFuncTrampoline<T>) {
+            fn into_func(self) -> (FuncType, HostFuncTrampoline<T, E>) {
                 let signature = FuncType::new(
                     <Self::Params as WasmTypeList>::value_types(),
                     <Self::Results as WasmTypeList>::value_types(),
                 );
                 let trampoline = HostFuncTrampoline::new(
-                    move |caller: Caller<T>, params_results: FuncParams| -> Result<FuncResults, TrapCode> {
+                    move |caller: Caller<T, E>, params_results: FuncParams| -> Result<FuncResults, E> {
                         let ($($tuple,)*): Self::Params = params_results.read_params();
                         let results: Self::Results =
-                            (self)(caller, $($tuple),*).into_fallible()?;
+                            (self)(caller, $($tuple),*).into_fallible().map_err(Into::into)?;
                         Ok(params_results.write_results(results))
                     },
                 );

@@ -1,5 +1,3 @@
-use wasmi_core::TrapCode;
-
 use super::{into_func::WasmTypeList, Func, FuncError};
 use crate::{
     core::Value,
@@ -87,7 +85,7 @@ where
 
     /// Invokes this Wasm or host function with the specified parameters.
     ///
-    /// Returns either the results of the call, or a [`TrapCode`] if one happened.
+    /// Returns either the results of the call, or a high level `C::Error` if one happened.
     ///
     /// For more information, see the [`Func::typed`] and [`Func::call`]
     /// documentation.
@@ -95,7 +93,11 @@ where
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`TypedFunc`].
-    pub fn call(&self, mut ctx: impl AsContextMut, params: Params) -> Result<Results, TrapCode> {
+    pub fn call<C>(&self, mut ctx: C, params: Params) -> Result<Results, C::Error>
+    where
+        C: AsContextMut,
+        C::Error: From<Error>,
+    {
         // Note: Cloning an [`Engine`] is intentionally a cheap operation.
         ctx.as_context().store.engine().clone().execute_func(
             ctx.as_context_mut(),

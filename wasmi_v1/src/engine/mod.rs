@@ -29,6 +29,7 @@ use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func};
 use crate::{
     arena::{GuardedEntity, Index},
     func::HostFuncEntity,
+    Error,
     FuncType,
     Instance,
 };
@@ -323,14 +324,16 @@ impl Engine {
     /// - When encountering a Wasm trap during the execution of `func`.
     ///
     /// [`TypedFunc`]: [`crate::TypedFunc`]
-    pub(crate) fn execute_func<Params, Results>(
+    pub(crate) fn execute_func<C, Params, Results>(
         &mut self,
-        ctx: impl AsContextMut,
+        ctx: C,
         func: Func,
         params: Params,
         results: Results,
-    ) -> Result<<Results as CallResults>::Results, TrapCode>
+    ) -> Result<<Results as CallResults>::Results, C::Error>
     where
+        C: AsContextMut,
+        C::Error: From<Error>,
         Params: CallParams,
         Results: CallResults,
     {
@@ -399,14 +402,16 @@ impl EngineInner {
     /// - If the given arguments `args` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm trap during the execution of `func`.
-    pub fn execute_func<Params, Results>(
+    pub fn execute_func<C, Params, Results>(
         &mut self,
-        mut ctx: impl AsContextMut,
+        mut ctx: C,
         func: Func,
         params: Params,
         results: Results,
-    ) -> Result<<Results as CallResults>::Results, TrapCode>
+    ) -> Result<<Results as CallResults>::Results, C::Error>
     where
+        C: AsContextMut,
+        C::Error: From<Error>,
         Params: CallParams,
         Results: CallResults,
     {
@@ -486,14 +491,17 @@ impl EngineInner {
     /// - If the given arguments `args` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm trap during the execution of `func`.
-    fn execute_wasm_func(
-        &mut self,
-        mut ctx: impl AsContextMut,
-        func: Func,
-    ) -> Result<(), TrapCode> {
+    fn execute_wasm_func<C>(&mut self, mut ctx: C, func: Func) -> Result<(), C::Error>
+    where
+        C: AsContextMut,
+        C::Error: From<Error>,
+    {
         let mut function_frame = FunctionFrame::new(&ctx, func);
         'outer: loop {
-            match self.execute_frame(&mut ctx, &mut function_frame)? {
+            match self
+                .execute_frame(&mut ctx, &mut function_frame)
+                .map_err(Into::into)?
+            {
                 CallOutcome::Return => match self.call_stack.pop() {
                     Some(frame) => {
                         function_frame = frame;
@@ -504,7 +512,7 @@ impl EngineInner {
                 CallOutcome::NestedCall(func) => match func.as_internal(&ctx) {
                     FuncEntityInternal::Wasm(wasm_func) => {
                         let nested_frame = FunctionFrame::new_wasm(func, wasm_func);
-                        self.call_stack.push(function_frame)?;
+                        self.call_stack.push(function_frame).map_err(Into::into)?;
                         function_frame = nested_frame;
                     }
                     FuncEntityInternal::Host(host_func) => {
@@ -541,11 +549,12 @@ impl EngineInner {
     fn execute_host_func<C>(
         &mut self,
         mut ctx: C,
-        host_func: HostFuncEntity<<C as AsContext>::UserState>,
+        host_func: HostFuncEntity<<C as AsContext>::UserState, <C as AsContext>::Error>,
         instance: Option<Instance>,
-    ) -> Result<(), TrapCode>
+    ) -> Result<(), C::Error>
     where
         C: AsContextMut,
+        C::Error: From<Error>,
     {
         // The host function signature is required for properly
         // adjusting, inspecting and manipulating the value stack.
@@ -558,10 +567,10 @@ impl EngineInner {
         let len_inputs = input_types.len();
         let len_outputs = output_types.len();
         let max_inout = cmp::max(len_inputs, len_outputs);
-        self.value_stack.reserve(max_inout)?;
+        self.value_stack.reserve(max_inout).map_err(Into::into)?;
         if len_outputs > len_inputs {
             let delta = len_outputs - len_inputs;
-            self.value_stack.extend_zeros(delta)?;
+            self.value_stack.extend_zeros(delta).map_err(Into::into)?;
         }
         let params_results = FuncParams::new(
             self.value_stack.peek_as_slice_mut(max_inout),

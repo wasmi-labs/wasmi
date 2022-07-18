@@ -21,7 +21,6 @@ use super::{
 use crate::{core::Value, Error, FuncType};
 use alloc::sync::Arc;
 use core::{fmt, fmt::Debug};
-use wasmi_core::TrapCode;
 
 /// A raw index to a function entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -42,14 +41,14 @@ impl Index for FuncIdx {
 
 /// A function instance.
 #[derive(Debug)]
-pub struct FuncEntity<T> {
+pub struct FuncEntity<T, E> {
     /// We wrap this enum in a struct so that we can make its
     /// variants private. This is advantageous since they are
     /// implementation details and not important to the user.
-    internal: FuncEntityInternal<T>,
+    internal: FuncEntityInternal<T, E>,
 }
 
-impl<T> Clone for FuncEntity<T> {
+impl<T, E> Clone for FuncEntity<T, E> {
     fn clone(&self) -> Self {
         Self {
             internal: self.internal.clone(),
@@ -57,7 +56,7 @@ impl<T> Clone for FuncEntity<T> {
     }
 }
 
-impl<T> FuncEntity<T> {
+impl<T, E> FuncEntity<T, E> {
     /// Creates a new Wasm function from the given raw parts.
     pub(crate) fn new_wasm(signature: DedupFuncType, body: FuncBody, instance: Instance) -> Self {
         Self {
@@ -68,7 +67,7 @@ impl<T> FuncEntity<T> {
     /// Creates a new host function from the given closure.
     pub fn wrap<Params, Results>(
         ctx: impl AsContextMut<UserState = T>,
-        func: impl IntoFunc<T, Params, Results>,
+        func: impl IntoFunc<T, E, Params, Results>,
     ) -> Self {
         Self {
             internal: FuncEntityInternal::Host(HostFuncEntity::wrap(ctx, func)),
@@ -81,7 +80,7 @@ impl<T> FuncEntity<T> {
     ///
     /// This can be used to efficiently match against host or Wasm
     /// function entities and efficiently extract their properties.
-    pub(crate) fn as_internal(&self) -> &FuncEntityInternal<T> {
+    pub(crate) fn as_internal(&self) -> &FuncEntityInternal<T, E> {
         &self.internal
     }
 
@@ -98,14 +97,14 @@ impl<T> FuncEntity<T> {
 ///
 /// This can either be a host function or a Wasm function.
 #[derive(Debug)]
-pub(crate) enum FuncEntityInternal<T> {
+pub(crate) enum FuncEntityInternal<T, E> {
     /// A Wasm function instance.
     Wasm(WasmFuncEntity),
     /// A host function instance.
-    Host(HostFuncEntity<T>),
+    Host(HostFuncEntity<T, E>),
 }
 
-impl<T> Clone for FuncEntityInternal<T> {
+impl<T, E> Clone for FuncEntityInternal<T, E> {
     fn clone(&self) -> Self {
         match self {
             Self::Wasm(func) => Self::Wasm(func.clone()),
@@ -149,12 +148,12 @@ impl WasmFuncEntity {
 }
 
 /// A host function instance.
-pub(crate) struct HostFuncEntity<T> {
+pub(crate) struct HostFuncEntity<T, E> {
     signature: DedupFuncType,
-    trampoline: HostFuncTrampoline<T>,
+    trampoline: HostFuncTrampoline<T, E>,
 }
 
-impl<T> Clone for HostFuncEntity<T> {
+impl<T, E> Clone for HostFuncEntity<T, E> {
     fn clone(&self) -> Self {
         Self {
             signature: self.signature,
@@ -163,18 +162,18 @@ impl<T> Clone for HostFuncEntity<T> {
     }
 }
 
-type HostFuncTrampolineFn<T> =
-    dyn Fn(Caller<T>, FuncParams) -> Result<FuncResults, TrapCode> + Send + Sync + 'static;
+type HostFuncTrampolineFn<T, E> =
+    dyn Fn(Caller<T, E>, FuncParams) -> Result<FuncResults, E> + Send + Sync + 'static;
 
-pub struct HostFuncTrampoline<T> {
-    closure: Arc<HostFuncTrampolineFn<T>>,
+pub struct HostFuncTrampoline<T, E> {
+    closure: Arc<HostFuncTrampolineFn<T, E>>,
 }
 
-impl<T> HostFuncTrampoline<T> {
+impl<T, E> HostFuncTrampoline<T, E> {
     /// Creates a new [`HostFuncTrampoline`] from the given trampoline function.
     pub fn new<F>(trampoline: F) -> Self
     where
-        F: Fn(Caller<T>, FuncParams) -> Result<FuncResults, TrapCode>,
+        F: Fn(Caller<T, E>, FuncParams) -> Result<FuncResults, E>,
         F: Send + Sync + 'static,
     {
         Self {
@@ -183,7 +182,7 @@ impl<T> HostFuncTrampoline<T> {
     }
 }
 
-impl<T> Clone for HostFuncTrampoline<T> {
+impl<T, E> Clone for HostFuncTrampoline<T, E> {
     fn clone(&self) -> Self {
         Self {
             closure: self.closure.clone(),
@@ -191,17 +190,17 @@ impl<T> Clone for HostFuncTrampoline<T> {
     }
 }
 
-impl<T> Debug for HostFuncEntity<T> {
+impl<T, E> Debug for HostFuncEntity<T, E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         Debug::fmt(&self.signature, f)
     }
 }
 
-impl<T> HostFuncEntity<T> {
+impl<T, E> HostFuncEntity<T, E> {
     /// Creates a new host function from the given closure.
     pub fn wrap<Params, Results>(
         mut ctx: impl AsContextMut,
-        func: impl IntoFunc<T, Params, Results>,
+        func: impl IntoFunc<T, E, Params, Results>,
     ) -> Self {
         let (signature, trampoline) = func.into_func();
         let signature = ctx.as_context_mut().store.alloc_func_type(signature);
@@ -221,11 +220,11 @@ impl<T> HostFuncEntity<T> {
     /// The result is written back into the `outputs` buffer.
     pub fn call(
         &self,
-        mut ctx: impl AsContextMut<UserState = T>,
+        mut ctx: impl AsContextMut<UserState = T, Error = E>,
         instance: Option<Instance>,
         params: FuncParams,
-    ) -> Result<FuncResults, TrapCode> {
-        let caller = <Caller<T>>::new(&mut ctx, instance);
+    ) -> Result<FuncResults, E> {
+        let caller = <Caller<T, E>>::new(&mut ctx, instance);
         (self.trampoline.closure)(caller, params)
     }
 }
@@ -247,10 +246,13 @@ impl Func {
     }
 
     /// Creates a new host function from the given closure.
-    pub fn wrap<T, Params, Results>(
-        mut ctx: impl AsContextMut<UserState = T>,
-        func: impl IntoFunc<T, Params, Results>,
-    ) -> Self {
+    pub fn wrap<C, Params, Results>(
+        mut ctx: C,
+        func: impl IntoFunc<C::UserState, C::Error, Params, Results>,
+    ) -> Self
+    where
+        C: AsContextMut,
+    {
         let func = FuncEntity::wrap(ctx.as_context_mut(), func);
         ctx.as_context_mut().store.alloc_func(func)
     }
@@ -273,19 +275,23 @@ impl Func {
     ///
     /// # Errors
     ///
-    /// - If the function returned a [`TrapCode`].
+    /// - If the function returned an error.
     /// - If the types of the `inputs` do not match the expected types for the
     ///   function signature of `self`.
     /// - If the number of input values does not match the expected number of
     ///   inputs required by the function signature of `self`.
     /// - If the number of output values does not match the expected number of
     ///   outputs required by the function signature of `self`.
-    pub fn call<T>(
+    pub fn call<C>(
         &self,
-        mut ctx: impl AsContextMut<UserState = T>,
+        mut ctx: C,
         inputs: &[Value],
         outputs: &mut [Value],
-    ) -> Result<(), Error> {
+    ) -> Result<(), C::Error>
+    where
+        C: AsContextMut,
+        C::Error: From<Error>,
+    {
         // Since [`Func`] is a dynamically typed function instance there is
         // a need to verify that the given input parameters match the required
         // types and that the given output slice matches the expected length.
@@ -295,10 +301,10 @@ impl Func {
         let (expected_inputs, expected_outputs) = func_type.params_results();
         let actual_inputs = inputs.iter().map(|value| value.value_type());
         if expected_inputs.iter().copied().ne(actual_inputs) {
-            return Err(FuncError::MismatchingParameters { func: *self }).map_err(Into::into);
+            return Err(Error::Func(FuncError::MismatchingParameters { func: *self }).into());
         }
         if expected_outputs.len() != outputs.len() {
-            return Err(FuncError::MismatchingResults { func: *self }).map_err(Into::into);
+            return Err(Error::Func(FuncError::MismatchingResults { func: *self }).into());
         }
         // Note: Cloning an [`Engine`] is intentionally a cheap operation.
         ctx.as_context().store.engine().clone().execute_func(
@@ -332,10 +338,10 @@ impl Func {
     ///
     /// This is intentionally a private API and mainly provided for efficient
     /// execution of the `wasmi` interpreter upon function dispatch.
-    pub(crate) fn as_internal<'a, T: 'a>(
+    pub(crate) fn as_internal<'a, T: 'a, E>(
         &self,
-        ctx: impl Into<StoreContext<'a, T>>,
-    ) -> &'a FuncEntityInternal<T> {
+        ctx: impl Into<StoreContext<'a, T, E>>,
+    ) -> &'a FuncEntityInternal<T, E> {
         ctx.into().store.resolve_func(*self).as_internal()
     }
 }
