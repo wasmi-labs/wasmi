@@ -15,11 +15,7 @@ impl<T> CanResume for NonResumable<T> {
     }
 }
 
-/// Error type which can be thrown by wasm code or by host environment.
-///
-/// See [`Trap`] for details.
-///
-/// [`Trap`]: struct.Trap.html
+/// Low level error type which can be thrown by wasm code.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum TrapCode {
     /// Wasm code executed `unreachable` opcode.

@@ -87,7 +87,7 @@ where
 
     /// Invokes this Wasm or host function with the specified parameters.
     ///
-    /// Returns either the results of the call, or a [`Trap`] if one happened.
+    /// Returns either the results of the call, or a [`TrapCode`] if one happened.
     ///
     /// For more information, see the [`Func::typed`] and [`Func::call`]
     /// documentation.

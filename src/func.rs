@@ -134,10 +134,10 @@ impl FuncInstance {
     /// # Errors
     ///
     /// Returns `Err` if `args` types is not match function [`signature`] or
-    /// if [`Trap`] at execution time occured.
+    /// if [`TrapCode`] at execution time occured.
     ///
     /// [`signature`]: #method.signature
-    /// [`Trap`]: #enum.Trap.html
+    /// [`TrapCode`]: #enum.TrapCode.html
     pub fn invoke<E: Externals>(
         func: &FuncRef,
         args: &[RuntimeValue],
@@ -196,7 +196,7 @@ impl FuncInstance {
     /// Returns `Err` if `args` types is not match function [`signature`].
     ///
     /// [`signature`]: #method.signature
-    /// [`Trap`]: #enum.Trap.html
+    /// [`TrapCode`]: #enum.TrapCode.html
     /// [`start_execution`]: struct.FuncInvocation.html#method.start_execution
     /// [`resume_execution`]: struct.FuncInvocation.html#method.resume_execution
     pub fn invoke_resumable<'args, T: From<Error>, U: Into<Cow<'args, [RuntimeValue]>>>(

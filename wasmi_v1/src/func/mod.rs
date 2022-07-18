@@ -273,7 +273,7 @@ impl Func {
     ///
     /// # Errors
     ///
-    /// - If the function returned a [`Trap`].
+    /// - If the function returned a [`TrapCode`].
     /// - If the types of the `inputs` do not match the expected types for the
     ///   function signature of `self`.
     /// - If the number of input values does not match the expected number of
