@@ -5,8 +5,17 @@ extern crate wasmi;
 
 use std::{env, fmt, fs::File};
 use wasmi::{
-    Error as InterpreterError, Externals, FuncInstance, FuncRef, ImportsBuilder,
-    ModuleImportResolver, ModuleInstance, ModuleRef, RuntimeArgs, RuntimeValue, Signature,
+    Error as InterpreterError,
+    Externals,
+    FuncInstance,
+    FuncRef,
+    ImportsBuilder,
+    ModuleImportResolver,
+    ModuleInstance,
+    ModuleRef,
+    RuntimeArgs,
+    RuntimeValue,
+    Signature,
     ValueType,
 };
 use wasmi_core::CanResume;

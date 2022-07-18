@@ -4,10 +4,29 @@ use std::{collections::HashMap, fs::File};
 
 use wabt::script::{self, Action, Command, CommandKind, ScriptParser, Value as WabtValue};
 use wasmi::{
-    memory_units::Pages, Error as InterpreterError, Externals, FuncInstance, FuncRef,
-    GlobalDescriptor, GlobalInstance, GlobalRef, ImportResolver, ImportsBuilder, MemoryDescriptor,
-    MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance, ModuleRef,
-    RuntimeArgs, RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef,
+    memory_units::Pages,
+    Error as InterpreterError,
+    Externals,
+    FuncInstance,
+    FuncRef,
+    GlobalDescriptor,
+    GlobalInstance,
+    GlobalRef,
+    ImportResolver,
+    ImportsBuilder,
+    MemoryDescriptor,
+    MemoryInstance,
+    MemoryRef,
+    Module,
+    ModuleImportResolver,
+    ModuleInstance,
+    ModuleRef,
+    RuntimeArgs,
+    RuntimeValue,
+    Signature,
+    TableDescriptor,
+    TableInstance,
+    TableRef,
 };
 use wasmi_core::CanResume;
 
@@ -278,8 +297,7 @@ fn try_load_module(wasm: &[u8]) -> Result<Module, Error> {
 fn try_load(wasm: &[u8], spec_driver: &mut SpecDriver) -> Result<(), Error> {
     let module = try_load_module(wasm)?;
     let instance = ModuleInstance::new(&module, &ImportsBuilder::default())?;
-    instance
-        .run_start(spec_driver.spec_module())?;
+    instance.run_start(spec_driver.spec_module())?;
     Ok(())
 }
 

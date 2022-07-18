@@ -5,9 +5,25 @@ extern crate wasmi;
 
 use std::{env::args, fs::File, marker::PhantomData};
 use wasmi::{
-    memory_units::*, Error, FuncInstance, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef,
-    ImportsBuilder, MemoryDescriptor, MemoryInstance, MemoryRef, Module, ModuleImportResolver,
-    ModuleInstance, NopExternals, RuntimeValue, Signature, TableDescriptor, TableInstance,
+    memory_units::*,
+    Error,
+    FuncInstance,
+    FuncRef,
+    GlobalDescriptor,
+    GlobalInstance,
+    GlobalRef,
+    ImportsBuilder,
+    MemoryDescriptor,
+    MemoryInstance,
+    MemoryRef,
+    Module,
+    ModuleImportResolver,
+    ModuleInstance,
+    NopExternals,
+    RuntimeValue,
+    Signature,
+    TableDescriptor,
+    TableInstance,
     TableRef,
 };
 

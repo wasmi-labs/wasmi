@@ -33,13 +33,13 @@ use crate::{
     Instance,
 };
 use alloc::sync::Arc;
-use wasmi_core::TrapCode;
 use core::{
     cmp,
     sync::atomic::{AtomicUsize, Ordering},
 };
 pub use func_types::DedupFuncType;
 use spin::mutex::Mutex;
+use wasmi_core::TrapCode;
 
 /// Maximum number of bytes on the value stack.
 pub const DEFAULT_VALUE_STACK_LIMIT: usize = 1024 * 1024;
@@ -486,7 +486,11 @@ impl EngineInner {
     /// - If the given arguments `args` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm trap during the execution of `func`.
-    fn execute_wasm_func(&mut self, mut ctx: impl AsContextMut, func: Func) -> Result<(), TrapCode> {
+    fn execute_wasm_func(
+        &mut self,
+        mut ctx: impl AsContextMut,
+        func: Func,
+    ) -> Result<(), TrapCode> {
         let mut function_frame = FunctionFrame::new(&ctx, func);
         'outer: loop {
             match self.execute_frame(&mut ctx, &mut function_frame)? {

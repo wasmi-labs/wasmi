@@ -9,7 +9,12 @@ use crate::{
     runner::StackRecycler,
     table::TableRef,
     types::{GlobalDescriptor, MemoryDescriptor, TableDescriptor},
-    Error, MemoryInstance, Module, RuntimeValue, Signature, TableInstance,
+    Error,
+    MemoryInstance,
+    Module,
+    RuntimeValue,
+    Signature,
+    TableInstance,
 };
 use alloc::{
     borrow::ToOwned,

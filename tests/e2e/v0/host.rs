@@ -4,9 +4,25 @@ extern crate std;
 use super::parse_wat;
 use std::println;
 use wasmi::{
-    memory_units::Pages, Error, Externals, FuncInstance, FuncRef, ImportsBuilder, MemoryDescriptor,
-    MemoryInstance, MemoryRef, ModuleImportResolver, ModuleInstance, ModuleRef, RuntimeArgs,
-    RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef, ValueType,
+    memory_units::Pages,
+    Error,
+    Externals,
+    FuncInstance,
+    FuncRef,
+    ImportsBuilder,
+    MemoryDescriptor,
+    MemoryInstance,
+    MemoryRef,
+    ModuleImportResolver,
+    ModuleInstance,
+    ModuleRef,
+    RuntimeArgs,
+    RuntimeValue,
+    Signature,
+    TableDescriptor,
+    TableInstance,
+    TableRef,
+    ValueType,
 };
 use wasmi_core::{CanResume, TrapCode};
 
@@ -21,7 +37,7 @@ impl CanResume for HostError {
     fn can_resume(&self) -> bool {
         match self {
             HostError::HostCode { .. } => true,
-            _ => false
+            _ => false,
         }
     }
 }

@@ -9,7 +9,7 @@ use crate::{
     FuncType,
 };
 use core::{array, iter::FusedIterator};
-use wasmi_core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedValue, TrapCode};
+use wasmi_core::{DecodeUntypedSlice, EncodeUntypedSlice, TrapCode, UntypedValue};
 
 /// Closures and functions that can be used as host functions.
 pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {

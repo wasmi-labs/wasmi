@@ -18,14 +18,10 @@ use super::{
     StoreContext,
     Stored,
 };
-use crate::{
-    core::Value,
-    Error,
-    FuncType,
-};
+use crate::{core::Value, Error, FuncType};
 use alloc::sync::Arc;
-use wasmi_core::TrapCode;
 use core::{fmt, fmt::Debug};
+use wasmi_core::TrapCode;
 
 /// A raw index to a function entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

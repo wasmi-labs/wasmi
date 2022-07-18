@@ -1,4 +1,4 @@
-use crate::{value::FromValue, RuntimeValue, Error};
+use crate::{value::FromValue, Error, RuntimeValue};
 use core::marker::PhantomData;
 use wasmi_core::{CanResume, TrapCode};
 

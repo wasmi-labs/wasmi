@@ -3,9 +3,24 @@ extern crate std;
 
 use std::{fs::File, marker::PhantomData, vec::Vec};
 use wasmi::{
-    memory_units::Pages, Error, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef,
-    ImportsBuilder, MemoryDescriptor, MemoryInstance, MemoryRef, Module, ModuleImportResolver,
-    ModuleInstance, NopExternals, RuntimeValue, Signature, TableDescriptor, TableInstance,
+    memory_units::Pages,
+    Error,
+    FuncRef,
+    GlobalDescriptor,
+    GlobalInstance,
+    GlobalRef,
+    ImportsBuilder,
+    MemoryDescriptor,
+    MemoryInstance,
+    MemoryRef,
+    Module,
+    ModuleImportResolver,
+    ModuleInstance,
+    NopExternals,
+    RuntimeValue,
+    Signature,
+    TableDescriptor,
+    TableInstance,
     TableRef,
 };
 

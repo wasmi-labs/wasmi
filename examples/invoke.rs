@@ -1,8 +1,8 @@
 extern crate parity_wasm;
 extern crate wasmi;
 
-use std::{env::args, marker::PhantomData};
 use parity_wasm::elements::{External, FunctionType, Internal, Module, Type, ValueType};
+use std::{env::args, marker::PhantomData};
 use wasmi::{ImportsBuilder, ModuleInstance, NopExternals, RuntimeValue};
 
 fn main() {
