@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{FuncRef, Module, ModuleRef};
 
 use self::{
@@ -16,9 +18,10 @@ pub struct Tracer {
     pub etable: ETable,
     pub jtable: Option<JTable>,
     module_instance_lookup: Vec<(ModuleRef, u16)>,
-    function_lookup: Vec<(FuncRef, u32)>,
+    function_lookup: Vec<(FuncRef, u16)>,
     last_jump_eid: Vec<u64>,
     function_index_allocator: u32,
+    pub function_index_translation: HashMap<u32, u16>,
 }
 
 impl Tracer {
@@ -32,6 +35,7 @@ impl Tracer {
             module_instance_lookup: vec![],
             function_lookup: vec![],
             function_index_allocator: 1,
+            function_index_translation: Default::default(),
         }
     }
 
@@ -64,43 +68,62 @@ impl Tracer {
 
 impl Tracer {
     pub fn register_module_instance(&mut self, module: &Module, module_instance: &ModuleRef) {
-        let mut func_index = 0;
-
         let start_fn_idx = module.module().start_section();
 
-        loop {
-            if let Some(func) = module_instance.func_by_index(func_index) {
-                let func_index_in_itable = if Some(func_index) == start_fn_idx {
-                    0
-                } else {
-                    self.allocate_func_index()
-                };
-                let body = func.body().expect("Host function is not allowed");
-                let code = &body.code;
-                let mut iter = code.iterate_from(0);
-                loop {
-                    let pc = iter.position();
-                    if let Some(instruction) = iter.next() {
-                        let ientry = self.itable.push(
-                            self.next_module_id() as u32,
-                            func_index_in_itable,
-                            pc,
-                            instruction.into(),
-                        );
+        {
+            let mut func_index = 0;
 
-                        if self.jtable.is_none() {
-                            self.jtable = Some(JTable::new(&ientry))
-                        }
+            loop {
+                if let Some(func) = module_instance.func_by_index(func_index) {
+                    let func_index_in_itable = if Some(func_index) == start_fn_idx {
+                        0
                     } else {
-                        break;
-                    }
-                }
+                        self.allocate_func_index()
+                    };
 
-                self.function_lookup
-                    .push((func.clone(), func_index_in_itable));
-                func_index = func_index + 1;
-            } else {
-                break;
+                    self.function_lookup
+                        .push((func.clone(), func_index_in_itable as u16));
+                    self.function_index_translation
+                        .insert(func_index, func_index_in_itable as u16);
+                    func_index = func_index + 1;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        {
+            let mut func_index = 0;
+
+            loop {
+                if let Some(func) = module_instance.func_by_index(func_index) {
+                    let func_index_in_itable =
+                        self.function_index_translation.get(&func_index).unwrap();
+                    let body = func.body().expect("Host function is not allowed");
+                    let code = &body.code;
+                    let mut iter = code.iterate_from(0);
+                    loop {
+                        let pc = iter.position();
+                        if let Some(instruction) = iter.next() {
+                            let ientry = self.itable.push(
+                                self.next_module_id() as u32,
+                                *func_index_in_itable,
+                                pc,
+                                instruction.into(&self.function_index_translation),
+                            );
+
+                            if self.jtable.is_none() {
+                                self.jtable = Some(JTable::new(&ientry))
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+
+                    func_index = func_index + 1;
+                } else {
+                    break;
+                }
             }
         }
 
@@ -118,7 +141,7 @@ impl Tracer {
         unreachable!()
     }
 
-    pub fn lookup_function(&self, function: &FuncRef) -> u32 {
+    pub fn lookup_function(&self, function: &FuncRef) -> u16 {
         let pos = self
             .function_lookup
             .iter()
@@ -131,7 +154,7 @@ impl Tracer {
         let function_idx = self.lookup_function(function);
 
         for ientry in &self.itable.0 {
-            if ientry.func_index as u32 == function_idx {
+            if ientry.func_index as u16 == function_idx {
                 return ientry.clone();
             }
         }

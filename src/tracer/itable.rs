@@ -35,13 +35,13 @@ impl ITable {
     pub(crate) fn push(
         &mut self,
         module_instance_index: u32,
-        func_index: u32,
+        func_index: u16,
         pc: u32,
         opcode: Opcode,
     ) -> IEntry {
         let ientry = IEntry {
             module_instance_index: module_instance_index as u16,
-            func_index: func_index as u16,
+            func_index,
             pc: pc as u16,
             opcode,
         };

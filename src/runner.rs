@@ -477,7 +477,25 @@ impl Interpreter {
                     unreachable!()
                 }
             }
-            isa::Instruction::Call(index) => StepInfo::Call { index },
+            isa::Instruction::Call(index) => {
+                let function_context = self.call_stack.pop().expect(
+                    "on loop entry - not empty; on loop continue - checking for emptiness; qed",
+                );
+
+                let func = function_context
+                    .module()
+                    .func_by_index(index)
+                    .expect("Due to validation func should exists");
+
+                self.call_stack.push(function_context);
+
+                if let Some(tracer) = self.tracer.as_deref() {
+                    let index = tracer.borrow().lookup_function(&func);
+                    StepInfo::Call { index }
+                } else {
+                    unreachable!()
+                }
+            }
 
             isa::Instruction::GetLocal(..) => {
                 if let RunInstructionTracePre::GetLocal {
@@ -555,6 +573,11 @@ impl Interpreter {
                     if self.tracer.is_some() {
                         let post_status = self.run_instruction_post(pre_status, &instruction);
                         if let Some(tracer) = self.tracer.as_mut() {
+                            let instruction = {
+                                let tracer = tracer.borrow();
+                                instruction.into(&tracer.function_index_translation)
+                            };
+
                             let mut tracer = tracer.borrow_mut();
                             let module_instance =
                                 tracer.lookup_module_instance(&function_context.module);
@@ -569,7 +592,7 @@ impl Interpreter {
                                 sp as u64,
                                 pc,
                                 last_jump_eid,
-                                instruction.into(),
+                                instruction,
                                 post_status,
                             ))
                         } else {

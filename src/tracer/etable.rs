@@ -89,7 +89,7 @@ impl ETable {
     pub fn push(
         &mut self,
         module_instance_index: u16,
-        func_index: u32,
+        func_index: u16,
         sp: u64,
         pc: u32,
         last_jump_eid: u64,
@@ -102,7 +102,7 @@ impl ETable {
             last_jump_eid,
             inst: IEntry {
                 module_instance_index: module_instance_index as u16,
-                func_index: func_index as u16,
+                func_index,
                 pc: pc as u16,
                 opcode,
             },

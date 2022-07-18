@@ -67,6 +67,8 @@
 //! - Reserved immediates are ignored for `call_indirect`, `current_memory`, `grow_memory`.
 //!
 
+use std::collections::HashMap;
+
 use alloc::vec::Vec;
 use parity_wasm::elements::ValueType;
 use specs::{
@@ -346,8 +348,8 @@ pub enum Instruction<'a> {
     F64ReinterpretI64,
 }
 
-impl<'a> Into<Opcode> for Instruction<'a> {
-    fn into(self) -> Opcode {
+impl<'a> Instruction<'a> {
+    pub fn into(self, function_mapping: &HashMap<u32, u16>) -> Opcode {
         match self {
             Instruction::GetLocal(offset, typ) => Opcode::LocalGet {
                 offset: offset as u64,
@@ -357,7 +359,15 @@ impl<'a> Into<Opcode> for Instruction<'a> {
             Instruction::TeeLocal(..) => todo!(),
             Instruction::Br(_) => todo!(),
             Instruction::BrIfEqz(_) => todo!(),
-            Instruction::BrIfNez(_) => todo!(),
+            Instruction::BrIfNez(Target { dst_pc, drop_keep }) => Opcode::BrIf {
+                drop: drop_keep.drop,
+                keep: if let Keep::Single(t) = drop_keep.keep {
+                    vec![t.into()]
+                } else {
+                    vec![]
+                },
+                dst_pc,
+            },
             Instruction::BrTable(_) => todo!(),
             Instruction::Unreachable => todo!(),
             Instruction::Return(drop_keep) => Opcode::Return {
@@ -368,7 +378,9 @@ impl<'a> Into<Opcode> for Instruction<'a> {
                     vec![]
                 },
             },
-            Instruction::Call(_) => todo!(),
+            Instruction::Call(func_index) => Opcode::Call {
+                index: *function_mapping.get(&func_index).unwrap(),
+            },
             Instruction::CallIndirect(_) => todo!(),
             Instruction::Drop => Opcode::Drop,
             Instruction::Select => todo!(),
