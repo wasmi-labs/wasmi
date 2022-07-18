@@ -69,7 +69,10 @@
 
 use alloc::vec::Vec;
 use parity_wasm::elements::ValueType;
-use specs::{itable::{Opcode, BinOp}, mtable::VarType};
+use specs::{
+    itable::{BinOp, Opcode, RelOp},
+    mtable::VarType,
+};
 
 /// Should we keep a value before "discarding" a stack frame?
 ///
@@ -408,7 +411,10 @@ impl<'a> Into<Opcode> for Instruction<'a> {
             Instruction::F64Const(_) => todo!(),
             Instruction::I32Eqz => todo!(),
             Instruction::I32Eq => todo!(),
-            Instruction::I32Ne => todo!(),
+            Instruction::I32Ne => Opcode::Rel {
+                class: RelOp::Ne,
+                vtype: VarType::I32,
+            },
             Instruction::I32LtS => todo!(),
             Instruction::I32LtU => todo!(),
             Instruction::I32GtS => todo!(),
@@ -454,7 +460,10 @@ impl<'a> Into<Opcode> for Instruction<'a> {
             Instruction::I32RemS => todo!(),
             Instruction::I32RemU => todo!(),
             Instruction::I32And => todo!(),
-            Instruction::I32Or => todo!(),
+            Instruction::I32Or => Opcode::Bin {
+                class: BinOp::Or,
+                vtype: VarType::I32,
+            },
             Instruction::I32Xor => todo!(),
             Instruction::I32Shl => todo!(),
             Instruction::I32ShrS => todo!(),
