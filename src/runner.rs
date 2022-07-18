@@ -393,13 +393,11 @@ impl Interpreter {
     ) -> Option<RunInstructionTracePre> {
         match *instructions {
             isa::Instruction::BrIfNez(_) => Some(RunInstructionTracePre::BrIfNez {
-                value: <_>::from_value_internal(*self.value_stack.pick(0)),
+                value: <_>::from_value_internal(*self.value_stack.top()),
             }),
             isa::Instruction::Return(..) => None,
 
-            isa::Instruction::Drop => Some(RunInstructionTracePre::Drop {
-                value: <_>::from_value_internal(*self.value_stack.pick(0)),
-            }),
+            isa::Instruction::Drop => Some(RunInstructionTracePre::Drop),
             isa::Instruction::Call(_) => None,
 
             isa::Instruction::GetLocal(depth, vtype) => {
@@ -413,14 +411,14 @@ impl Interpreter {
             isa::Instruction::I32Const(_) => None,
 
             isa::Instruction::I32Ne => Some(RunInstructionTracePre::I32Comp {
-                left: <_>::from_value_internal(*self.value_stack.pick(1)),
-                right: <_>::from_value_internal(*self.value_stack.pick(0)),
+                left: <_>::from_value_internal(*self.value_stack.pick(2)),
+                right: <_>::from_value_internal(*self.value_stack.pick(1)),
             }),
 
             isa::Instruction::I32Add | isa::Instruction::I32Or => {
                 Some(RunInstructionTracePre::I32BinOp {
-                    left: <_>::from_value_internal(*self.value_stack.pick(1)),
-                    right: <_>::from_value_internal(*self.value_stack.pick(0)),
+                    left: <_>::from_value_internal(*self.value_stack.pick(2)),
+                    right: <_>::from_value_internal(*self.value_stack.pick(1)),
                 })
             }
 
@@ -451,7 +449,7 @@ impl Interpreter {
             isa::Instruction::Return(DropKeep { drop, keep }) => {
                 let mut drop_values = vec![];
 
-                for i in 0..drop {
+                for i in 1..=drop {
                     drop_values.push(*self.value_stack.pick(i as usize));
                 }
 
@@ -471,8 +469,8 @@ impl Interpreter {
             }
 
             isa::Instruction::Drop => {
-                if let RunInstructionTracePre::Drop { value } = pre_status.unwrap() {
-                    StepInfo::Drop { value: value }
+                if let RunInstructionTracePre::Drop = pre_status.unwrap() {
+                    StepInfo::Drop
                 } else {
                     unreachable!()
                 }
@@ -508,16 +506,14 @@ impl Interpreter {
                 }
             }
 
-            isa::Instruction::I32Const(_) => StepInfo::I32Const {
-                value: <_>::from_value_internal(*self.value_stack.pick(0)),
-            },
+            isa::Instruction::I32Const(value) => StepInfo::I32Const { value },
 
             isa::Instruction::I32Ne => {
                 if let RunInstructionTracePre::I32Comp { left, right } = pre_status.unwrap() {
                     StepInfo::I32Comp {
                         left,
                         right,
-                        value: <_>::from_value_internal(*self.value_stack.pick(0)),
+                        value: <_>::from_value_internal(*self.value_stack.top()),
                     }
                 } else {
                     unreachable!()
@@ -529,7 +525,7 @@ impl Interpreter {
                     StepInfo::I32BinOp {
                         left,
                         right,
-                        value: <_>::from_value_internal(*self.value_stack.pick(0)),
+                        value: <_>::from_value_internal(*self.value_stack.top()),
                     }
                 } else {
                     unreachable!()

@@ -26,9 +26,7 @@ pub enum RunInstructionTracePre {
         right: i32,
     },
 
-    Drop {
-        value: u64,
-    },
+    Drop,
 }
 
 #[derive(Debug, Clone)]
