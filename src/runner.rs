@@ -478,20 +478,14 @@ impl Interpreter {
                 }
             }
             isa::Instruction::Call(index) => {
-                let function_context = self.call_stack.pop().expect(
-                    "on loop entry - not empty; on loop continue - checking for emptiness; qed",
-                );
-
-                let func = function_context
-                    .module()
-                    .func_by_index(index)
-                    .expect("Due to validation func should exists");
-
-                self.call_stack.push(function_context);
-
                 if let Some(tracer) = self.tracer.as_deref() {
-                    let index = tracer.borrow().lookup_function(&func);
-                    StepInfo::Call { index }
+                    StepInfo::Call {
+                        index: *tracer
+                            .borrow()
+                            .function_index_translation
+                            .get(&index)
+                            .unwrap(),
+                    }
                 } else {
                     unreachable!()
                 }
