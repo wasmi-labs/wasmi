@@ -45,7 +45,7 @@ impl<'a> RuntimeArgs<'a> {
     /// [`Value`]: enum.Value.html
     pub fn nth_value_checked(&self, idx: usize) -> Result<RuntimeValue, TrapCode> {
         if self.0.len() <= idx {
-            return Err(TrapCode::UnexpectedSignature.into());
+            return Err(TrapCode::UnexpectedSignature);
         }
         Ok(self.0[idx])
     }
