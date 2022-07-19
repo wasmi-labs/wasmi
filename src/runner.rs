@@ -28,7 +28,7 @@ use crate::{
 use alloc::{boxed::Box, vec::Vec};
 use core::{cell::RefCell, fmt, ops, u32, usize};
 use parity_wasm::elements::Local;
-use specs::{step::StepInfo, types::Value};
+use specs::{itable::BinOp, step::StepInfo, types::Value};
 use std::rc::Rc;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 
@@ -415,12 +415,16 @@ impl Interpreter {
                 right: <_>::from_value_internal(*self.value_stack.pick(1)),
             }),
 
-            isa::Instruction::I32Add | isa::Instruction::I32Or => {
-                Some(RunInstructionTracePre::I32BinOp {
-                    left: <_>::from_value_internal(*self.value_stack.pick(2)),
-                    right: <_>::from_value_internal(*self.value_stack.pick(1)),
-                })
-            }
+            isa::Instruction::I32Add => Some(RunInstructionTracePre::I32BinOp {
+                class: BinOp::Add,
+                left: <_>::from_value_internal(*self.value_stack.pick(2)),
+                right: <_>::from_value_internal(*self.value_stack.pick(1)),
+            }),
+            isa::Instruction::I32Or => Some(RunInstructionTracePre::I32BinOp {
+                class: BinOp::Or,
+                left: <_>::from_value_internal(*self.value_stack.pick(2)),
+                right: <_>::from_value_internal(*self.value_stack.pick(1)),
+            }),
 
             _ => {
                 println!("{:?}", *instructions);
@@ -521,8 +525,10 @@ impl Interpreter {
             }
 
             isa::Instruction::I32Add | isa::Instruction::I32Or => {
-                if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
+                if let RunInstructionTracePre::I32BinOp { class, left, right } = pre_status.unwrap()
+                {
                     StepInfo::I32BinOp {
+                        class,
                         left,
                         right,
                         value: <_>::from_value_internal(*self.value_stack.top()),
