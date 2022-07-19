@@ -161,6 +161,8 @@ impl Module {
     }
 
     /// Returns a slice over the [`FuncType`] of the [`Module`].
+    ///
+    /// [`FuncType`]: struct.FuncType.html
     fn func_types(&self) -> &[DedupFuncType] {
         &self.func_types[..]
     }

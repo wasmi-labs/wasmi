@@ -71,6 +71,7 @@ impl Module {
     /// [`Instance`] under construction.
     ///
     /// [`Store`]: struct.Store.html
+    /// [`FuncType`]: struct.FuncType.html
     fn extract_func_types(
         &self,
         _context: &mut impl AsContextMut,
