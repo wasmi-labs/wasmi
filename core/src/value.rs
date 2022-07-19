@@ -218,7 +218,7 @@ impl_little_endian_convert_float!(
 );
 
 /// Arithmetic operations.
-pub trait ArithmeticOps<T> {
+pub trait ArithmeticOps<T>: Copy {
     /// Add two values.
     fn add(self, other: T) -> T;
     /// Subtract two values.
@@ -262,10 +262,8 @@ pub trait Float<T>: ArithmeticOps<T> {
     /// Takes the square root of a number.
     fn sqrt(self) -> T;
     /// Returns `true` if the sign of the number is positive.
-    #[allow(clippy::wrong_self_convention)]
     fn is_sign_positive(self) -> bool;
     /// Returns `true` if the sign of the number is negative.
-    #[allow(clippy::wrong_self_convention)]
     fn is_sign_negative(self) -> bool;
     /// Returns the minimum of the two numbers.
     fn min(self, other: T) -> T;
@@ -911,7 +909,6 @@ mod fmath {
 macro_rules! impl_float {
     ($type:ident, $fXX:ident, $iXX:ident) => {
         // In this particular instance we want to directly compare floating point numbers.
-        #[allow(clippy::float_cmp)]
         impl Float<$type> for $type {
             #[inline]
             fn abs(self) -> $type {

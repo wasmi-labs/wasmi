@@ -1,5 +1,3 @@
-#![allow(clippy::unnecessary_wraps)]
-
 use crate::{
     func::{FuncInstance, FuncInstanceInternal, FuncRef},
     host::Externals,

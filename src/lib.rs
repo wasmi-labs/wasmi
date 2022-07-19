@@ -97,7 +97,6 @@
 #![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::len_without_is_empty)]
-#![allow(clippy::new_ret_no_self)]
 
 #[cfg(not(feature = "std"))]
 #[macro_use]
@@ -196,19 +195,18 @@ impl Error {
     }
 }
 
-#[allow(clippy::from_over_into)]
-impl Into<String> for Error {
-    fn into(self) -> String {
-        match self {
-            Error::Validation(s) => s,
-            Error::Instantiation(s) => s,
-            Error::Function(s) => s,
-            Error::Table(s) => s,
-            Error::Memory(s) => s,
-            Error::Global(s) => s,
-            Error::Value(s) => s,
-            Error::Trap(s) => format!("trap: {:?}", s),
-            Error::Host(e) => format!("user: {}", e),
+impl From<Error> for String {
+    fn from(error: Error) -> Self {
+        match error {
+            Error::Validation(message) => message,
+            Error::Instantiation(message) => message,
+            Error::Function(message) => message,
+            Error::Table(message) => message,
+            Error::Memory(message) => message,
+            Error::Global(message) => message,
+            Error::Value(message) => message,
+            Error::Trap(trap) => format!("trap: {trap:?}"),
+            Error::Host(error) => format!("user: {error}"),
         }
     }
 }

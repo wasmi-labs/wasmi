@@ -1,6 +1,5 @@
 use super::super::{utils::value_type_from_wasmparser, FuncTypeIdx, ModuleResources};
 use crate::{core::ValueType, engine::DedupFuncType, Engine, ModuleError};
-use core::slice;
 
 /// The type of a Wasm control flow block.
 #[derive(Debug, Copy, Clone)]

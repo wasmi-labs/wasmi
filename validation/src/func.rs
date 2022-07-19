@@ -244,7 +244,6 @@ impl<'a> FunctionValidationContext<'a> {
                 };
 
                 // Ignore clippy as pop(..) != pop(..) + push_value(..) under some conditions
-                #[allow(clippy::branches_sharing_code)]
                 if self.frame_stack.len() == 1 {
                     // We are about to close the last frame.
 

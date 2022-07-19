@@ -10,19 +10,14 @@ use crate::{
     Error,
     Extern,
     FuncEntity,
-    FuncType,
     Global,
-    GlobalType,
     Instance,
     InstanceEntity,
     InstanceEntityBuilder,
     Memory,
-    MemoryType,
-    Mutability,
     Table,
-    TableType,
 };
-use wasmi_core::{Value, ValueType, F32, F64};
+use wasmi_core::Value;
 
 impl Module {
     /// Instantiates a new [`Instance`] from the given compiled [`Module`].

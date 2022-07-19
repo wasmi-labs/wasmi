@@ -540,6 +540,7 @@ impl ModuleInstance {
     /// [`NotStartedModuleRef`]: struct.NotStartedModuleRef.html
     /// [`ImportResolver`]: trait.ImportResolver.html
     /// [`assert_no_start`]: struct.NotStartedModuleRef.html#method.assert_no_start
+    #[allow(clippy::new_ret_no_self)]
     pub fn new<'m, I: ImportResolver>(
         loaded_module: &'m Module,
         imports: &I,

@@ -1,5 +1,3 @@
-#![allow(clippy::wrong_self_convention)]
-
 extern crate parity_wasm;
 extern crate wasmi;
 
@@ -114,11 +112,8 @@ mod tictactoe {
             ];
 
             // Returns Some(player) if all cells contain same Player.
-            #[allow(clippy::question_mark)]
             let all_same = |i1: usize, i2: usize, i3: usize| -> Option<Player> {
-                if self.board[i1].is_none() {
-                    return None;
-                }
+                self.board[i1]?;
                 if self.board[i1] == self.board[i2] && self.board[i2] == self.board[i3] {
                     return self.board[i1];
                 }
@@ -175,7 +170,7 @@ impl<'a> Externals for Runtime<'a> {
 
 struct RuntimeModuleImportResolver;
 
-impl<'a> ModuleImportResolver for RuntimeModuleImportResolver {
+impl ModuleImportResolver for RuntimeModuleImportResolver {
     fn resolve_func(
         &self,
         field_name: &str,
