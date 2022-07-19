@@ -1,5 +1,3 @@
-#![allow(dead_code, unused_variables)] // TODO: remove annotation once done
-
 mod control_frame;
 mod control_stack;
 mod inst_builder;
@@ -79,9 +77,9 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         let mut inst_builder = InstructionsBuilder::default();
         let mut control_frames = ControlFlowStack::default();
         Self::register_func_body_block(func, res, &mut inst_builder, &mut control_frames);
-        let mut value_stack = ValueStack::default();
+        let value_stack = ValueStack::default();
         let mut locals = LocalsRegistry::default();
-        Self::register_func_params(func, res, &mut value_stack, &mut locals);
+        Self::register_func_params(func, res, &mut locals);
         Self {
             engine,
             func,
@@ -134,7 +132,6 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     fn register_func_params(
         func: FuncIdx,
         res: ModuleResources<'parser>,
-        value_stack: &mut ValueStack,
         locals: &mut LocalsRegistry,
     ) -> usize {
         let dedup_func_type = res.get_type_of_func(func);
@@ -519,7 +516,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
                         .inst_builder
                         .push_inst(Instruction::Br(Target::new(dst_pc, drop_keep)));
                 }
-                AquiredTarget::Return(drop_keep) => {
+                AquiredTarget::Return(_) => {
                     // In this case the `br` can be directly translated as `return`.
                     builder.translate_return()?;
                 }

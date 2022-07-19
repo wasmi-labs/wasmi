@@ -137,7 +137,6 @@ impl<'a> BrTargets<'a> {
 /// The main interpreted instruction type. This is what is returned by `InstructionIter`, but
 /// it is not what is stored internally. For that, see `InstructionInternal`.
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[allow(clippy::upper_case_acronyms)]
 pub enum Instruction<'a> {
     /// Push a local variable or an argument from the specified depth.
     GetLocal(u32),
@@ -350,7 +349,6 @@ pub enum Instruction<'a> {
 /// When returning instructions we convert to `Instruction`, whose `BrTable` variant internally
 /// borrows the list of instructions and returns targets by reading it.
 #[derive(Copy, Debug, Clone, PartialEq, Eq)]
-#[allow(clippy::upper_case_acronyms)]
 pub(crate) enum InstructionInternal {
     GetLocal(u32),
     SetLocal(u32),

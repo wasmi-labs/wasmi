@@ -1,5 +1,3 @@
-#![allow(dead_code, unused_imports)] // TODO: remove annotation once done
-
 mod builder;
 mod compile;
 mod data;
@@ -24,7 +22,7 @@ use self::{
     export::Export,
     global::Global,
     import::{Import, ImportKind},
-    init_expr::{InitExpr, InitExprOperand},
+    init_expr::InitExpr,
     parser::parse,
     read::ReadError,
 };
@@ -42,7 +40,6 @@ use crate::{
     engine::{DedupFuncType, FuncBody},
     Engine,
     Error,
-    FuncType,
     GlobalType,
     MemoryType,
     TableType,
@@ -164,6 +161,8 @@ impl Module {
     }
 
     /// Returns a slice over the [`FuncType`] of the [`Module`].
+    ///
+    /// [`FuncType`]: struct.FuncType.html
     fn func_types(&self) -> &[DedupFuncType] {
         &self.func_types[..]
     }

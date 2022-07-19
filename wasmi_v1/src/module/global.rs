@@ -49,16 +49,6 @@ impl TryFrom<wasmparser::Global<'_>> for Global {
 }
 
 impl Global {
-    /// Returns the [`GlobalType`] of the global variable.
-    pub fn global_type(&self) -> &GlobalType {
-        &self.global_type
-    }
-
-    /// Returns the [`InitExpr`] of the global variable.
-    pub fn init_expr(&self) -> &InitExpr {
-        &self.init_expr
-    }
-
     /// Splits the [`Global`] into its global type and its global initializer.
     pub fn into_type_and_init(self) -> (GlobalType, InitExpr) {
         (self.global_type, self.init_expr)

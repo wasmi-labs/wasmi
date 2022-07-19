@@ -96,16 +96,6 @@ impl Import {
         }
     }
 
-    /// Returns the name of the imported item.
-    pub fn name(&self) -> &ImportName {
-        &self.name
-    }
-
-    /// Returns the kind of the imported item and its associated data.
-    pub fn kind(&self) -> &ImportKind {
-        &self.kind
-    }
-
     /// Splits the [`Import`] into its raw parts.
     ///
     /// # Note
