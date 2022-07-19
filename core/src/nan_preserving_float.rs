@@ -1,5 +1,3 @@
-#![allow(missing_docs)]
-
 use core::{
     cmp::{Ordering, PartialEq, PartialOrd},
     ops::{Add, Div, Mul, Neg, Rem, Sub},
@@ -116,7 +114,6 @@ macro_rules! float {
         }
 
         // clippy suggestion would fail some tests
-        #[allow(clippy::cmp_owned)]
         impl<T: Into<$for> + Copy> PartialEq<T> for $for {
             #[inline]
             fn eq(&self, other: &T) -> bool {
