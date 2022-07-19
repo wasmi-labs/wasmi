@@ -1,3 +1,5 @@
+#![no_std]
+
 mod host_error;
 mod nan_preserving_float;
 mod trap;
