@@ -72,7 +72,7 @@ use std::collections::HashMap;
 use alloc::vec::Vec;
 use parity_wasm::elements::ValueType;
 use specs::{
-    itable::{BinOp, Opcode, RelOp},
+    itable::{BinOp, BitOp, Opcode, RelOp},
     mtable::VarType,
 };
 
@@ -472,8 +472,8 @@ impl<'a> Instruction<'a> {
             Instruction::I32RemS => todo!(),
             Instruction::I32RemU => todo!(),
             Instruction::I32And => todo!(),
-            Instruction::I32Or => Opcode::Bin {
-                class: BinOp::Or,
+            Instruction::I32Or => Opcode::BinBit {
+                class: BitOp::Or,
                 vtype: VarType::I32,
             },
             Instruction::I32Xor => todo!(),
