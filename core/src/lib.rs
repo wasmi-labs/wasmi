@@ -1,3 +1,5 @@
+#![no_std]
+
 mod nan_preserving_float;
 mod trap;
 mod untyped;
