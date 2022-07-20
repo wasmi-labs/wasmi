@@ -422,7 +422,10 @@ impl<'a> Instruction<'a> {
             Instruction::F32Const(_) => todo!(),
             Instruction::F64Const(_) => todo!(),
             Instruction::I32Eqz => todo!(),
-            Instruction::I32Eq => todo!(),
+            Instruction::I32Eq => Opcode::Rel {
+                class: RelOp::Eq,
+                vtype: VarType::I32,
+            },
             Instruction::I32Ne => Opcode::Rel {
                 class: RelOp::Ne,
                 vtype: VarType::I32,

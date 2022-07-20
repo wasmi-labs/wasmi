@@ -29,7 +29,7 @@ use alloc::{boxed::Box, vec::Vec};
 use core::{cell::RefCell, fmt, ops, u32, usize};
 use parity_wasm::elements::Local;
 use specs::{
-    itable::{BinOp, BitOp},
+    itable::{BinOp, BitOp, RelOp},
     step::StepInfo,
     types::Value,
 };
@@ -414,6 +414,10 @@ impl Interpreter {
             }
             isa::Instruction::I32Const(_) => None,
 
+            isa::Instruction::I32Eq => Some(RunInstructionTracePre::I32Comp {
+                left: <_>::from_value_internal(*self.value_stack.pick(2)),
+                right: <_>::from_value_internal(*self.value_stack.pick(1)),
+            }),
             isa::Instruction::I32Ne => Some(RunInstructionTracePre::I32Comp {
                 left: <_>::from_value_internal(*self.value_stack.pick(2)),
                 right: <_>::from_value_internal(*self.value_stack.pick(1)),
@@ -516,9 +520,22 @@ impl Interpreter {
 
             isa::Instruction::I32Const(value) => StepInfo::I32Const { value },
 
+            isa::Instruction::I32Eq => {
+                if let RunInstructionTracePre::I32Comp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32Comp {
+                        class: RelOp::Eq,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
             isa::Instruction::I32Ne => {
                 if let RunInstructionTracePre::I32Comp { left, right } = pre_status.unwrap() {
                     StepInfo::I32Comp {
+                        class: RelOp::Ne,
                         left,
                         right,
                         value: <_>::from_value_internal(*self.value_stack.top()),
