@@ -4,7 +4,7 @@ mod utils;
 mod tests;
 
 pub use self::utils::{ExecRegister, ExecRegisterSlice, Global, Offset, Target};
-use super::{ExecProvider, ExecProviderSlice, ConstRef};
+use super::{ConstRef, ExecProvider, ExecProviderSlice};
 use crate::module::{FuncIdx, FuncTypeIdx};
 use wasmi_core::TrapCode;
 
@@ -245,8 +245,23 @@ where
     Copy {
         /// The register where the copy will be stored.
         result: T::Register,
-        /// The input register or immediate value to copy.
-        input: T::Provider,
+        /// The input register to copy.
+        input: T::Register,
+    },
+    /// Copies the `input` into the `result`.
+    ///
+    /// # Note
+    ///
+    /// This instruction does not correspond to any Wasm instruction directly.
+    /// However, due to the way we translate Wasm bytecode into `wasmi` bytecode
+    /// we sometimes are required to insert a few copy instructions.
+    /// For example with those copy instructions we can manipulate the
+    /// emulation stack in cases where the stack becomes polymorphic.
+    CopyImm {
+        /// The register where the copy will be stored.
+        result: T::Register,
+        /// The input immediate value to copy.
+        input: T::Immediate,
     },
     /// Copies many values from `inputs` into `results`.
     ///

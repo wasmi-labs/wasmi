@@ -138,6 +138,9 @@ pub(super) fn execute_frame(
             Instr::Copy { result, input } => {
                 exec_ctx.exec_copy(result, input)?;
             }
+            Instr::CopyImm { result, input } => {
+                exec_ctx.exec_copy_imm(result, input)?;
+            }
             Instr::CopyMany { results, inputs } => {
                 exec_ctx.exec_copy_many(results, inputs)?;
             }
@@ -1138,7 +1141,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     ) -> Result<(), Trap> {
         let condition = self.get_register(condition);
         if op(condition) {
-            self.exec_copy(result, returned)?;
+            self.exec_copy_any(result, returned)?;
             return self.branch_to_target(target);
         }
         self.next_instr()
@@ -1312,6 +1315,26 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     }
 
     fn exec_copy(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        input: <ExecuteTypes as InstructionTypes>::Register,
+    ) -> Result<(), Trap> {
+        let input = self.get_register(input);
+        self.set_register(result, input);
+        self.next_instr()
+    }
+
+    fn exec_copy_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        input: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        let input = self.resolve_cref(input);
+        self.set_register(result, input);
+        self.next_instr()
+    }
+
+    fn exec_copy_any(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         input: <ExecuteTypes as InstructionTypes>::Provider,

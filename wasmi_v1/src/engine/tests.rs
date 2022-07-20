@@ -1136,12 +1136,12 @@ fn binary_const_register() {
         ));
         let module = create_module(&wasm[..]);
         let engine = module.engine();
-        let input = ExecProvider::from_immediate(engine.alloc_const(T::one()));
+        let input = engine.alloc_const(T::one());
         let rhs = ExecRegister::from_inner(0);
         let result = ExecRegister::from_inner(1);
         let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
-            ExecInstruction::Copy { result, input },
+            ExecInstruction::CopyImm { result, input },
             make_op(result, result, rhs.into()),
             ExecInstruction::Return { results },
         ];
@@ -2322,9 +2322,9 @@ fn load_from_const() {
         let result = ExecRegister::from_inner(0);
         let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
-            ExecInstruction::Copy {
+            ExecInstruction::CopyImm {
                 result,
-                input: const_ptr.into(),
+                input: const_ptr,
             },
             make_op(result, result, offset.into()),
             ExecInstruction::Return { results },
@@ -2421,9 +2421,9 @@ fn store_to_const() {
         let temp = ExecRegister::from_inner(1);
         let results = engine.alloc_provider_slice([]);
         let expected = [
-            ExecInstruction::Copy {
+            ExecInstruction::CopyImm {
                 result: temp,
-                input: const_ptr.into(),
+                input: const_ptr,
             },
             make_op(temp, offset.into(), value.into()),
             ExecInstruction::Return { results },
@@ -2894,7 +2894,7 @@ fn local_set_preserve_multiple() {
     let engine = module.engine();
     let local_0 = ExecRegister::from_inner(0);
     let local_1 = ExecRegister::from_inner(1);
-    let zero = ExecProvider::from(engine.alloc_const(0_i32));
+    let zero = engine.alloc_const(0_i32);
     let result = ExecRegister::from_inner(2);
     let preserve_0 = ExecRegister::from_inner(3);
     let preserve_1 = ExecRegister::from_inner(4);
@@ -2904,7 +2904,7 @@ fn local_set_preserve_multiple() {
             result: preserve_0,
             input: local_0.into(),
         },
-        ExecInstruction::Copy {
+        ExecInstruction::CopyImm {
             result: local_0,
             input: zero,
         },
@@ -2912,7 +2912,7 @@ fn local_set_preserve_multiple() {
             result: preserve_1,
             input: local_1.into(),
         },
-        ExecInstruction::Copy {
+        ExecInstruction::CopyImm {
             result: local_1,
             input: zero,
         },
@@ -2951,7 +2951,7 @@ fn local_set_preserve_multi_phase() {
     let engine = module.engine();
     let local_0 = ExecRegister::from_inner(0);
     let local_1 = ExecRegister::from_inner(1);
-    let zero = ExecProvider::from(engine.alloc_const(0_i32));
+    let zero = engine.alloc_const(0_i32);
     let result = ExecRegister::from_inner(2);
     let preserve_0 = ExecRegister::from_inner(3);
     let preserve_1 = ExecRegister::from_inner(4);
@@ -2969,7 +2969,7 @@ fn local_set_preserve_multi_phase() {
             result: preserve_1,
             input: local_0.into(),
         },
-        ExecInstruction::Copy {
+        ExecInstruction::CopyImm {
             result: local_0,
             input: zero,
         },
@@ -3231,7 +3231,7 @@ fn local_tee_preserve_multiple() {
     let engine = module.engine();
     let local_0 = ExecRegister::from_inner(0);
     let local_1 = ExecRegister::from_inner(1);
-    let zero = ExecProvider::from(engine.alloc_const(0_i32));
+    let zero = engine.alloc_const(0_i32);
     let result = ExecRegister::from_inner(2);
     let preserve_0 = ExecRegister::from_inner(3);
     let preserve_1 = ExecRegister::from_inner(4);
@@ -3241,7 +3241,7 @@ fn local_tee_preserve_multiple() {
             result: preserve_0,
             input: local_0.into(),
         },
-        ExecInstruction::Copy {
+        ExecInstruction::CopyImm {
             result: local_0,
             input: zero,
         },
@@ -3288,7 +3288,7 @@ fn local_tee_preserve_multi_phase() {
     let engine = module.engine();
     let local_0 = ExecRegister::from_inner(0);
     let local_1 = ExecRegister::from_inner(1);
-    let zero = ExecProvider::from(engine.alloc_const(0_i32));
+    let zero = engine.alloc_const(0_i32);
     let result = ExecRegister::from_inner(2);
     let preserve_0 = ExecRegister::from_inner(3);
     let preserve_1 = ExecRegister::from_inner(4);
@@ -3306,7 +3306,7 @@ fn local_tee_preserve_multi_phase() {
             result: preserve_1,
             input: local_0.into(),
         },
-        ExecInstruction::Copy {
+        ExecInstruction::CopyImm {
             result: local_0,
             input: zero,
         },
@@ -3961,7 +3961,7 @@ fn regression_const_lhs() {
     );
     let module = create_module(&wasm[..]);
     let engine = module.engine();
-    let const_one = ExecProvider::from_immediate(engine.alloc_const(1.0_f32));
+    let const_one = engine.alloc_const(1.0_f32);
     let v0 = ExecRegister::from_inner(0);
     let v1 = ExecRegister::from_inner(1);
     let v2 = ExecRegister::from_inner(2);
@@ -3971,7 +3971,7 @@ fn regression_const_lhs() {
             result: v1,
             input: v0,
         },
-        ExecInstruction::Copy {
+        ExecInstruction::CopyImm {
             result: v2,
             input: const_one,
         },

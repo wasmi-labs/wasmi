@@ -14,7 +14,7 @@ use super::{
 use crate::{
     engine::{
         bytecode::{ExecRegister, Offset},
-        inner::EngineResources,
+        inner::{printer::bytecode::DisplayConstRef, EngineResources},
         ExecInstruction,
         ExecProvider,
         ExecProviderSlice,
@@ -321,7 +321,13 @@ impl<T> Display for DisplayExecInstruction<'_, '_, T> {
             Instr::Copy { result, input } => {
                 writeln!(f, "{} <- {}",
                     DisplayExecRegister::from(result),
-                    DisplayExecProvider::new(res, input),
+                    DisplayExecRegister::from(input),
+                )
+            }
+            Instr::CopyImm { result, input } => {
+                writeln!(f, "{} <- {}",
+                    DisplayExecRegister::from(result),
+                    DisplayConstRef::new(res, input),
                 )
             }
             Instr::CopyMany { results, inputs } => {

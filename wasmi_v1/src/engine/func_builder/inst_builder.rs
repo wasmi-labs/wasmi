@@ -141,7 +141,13 @@ impl InstructionsBuilder {
                 return None;
             }
         }
-        Some(self.push_inst(IrInstruction::Copy { result, input }))
+        let instr = match input {
+            IrProvider::Register(input) => self.push_inst(IrInstruction::Copy { result, input }),
+            IrProvider::Immediate(input) => {
+                self.push_inst(IrInstruction::CopyImm { result, input })
+            }
+        };
+        Some(instr)
     }
 
     /// Pushes a `copy_many` instruction to the [`InstructionsBuilder`].

@@ -958,15 +958,7 @@ impl<'parser> FunctionBuilder<'parser> {
     /// `result` and `input` registers are the same.
     fn translate_copy(&mut self, result: IrRegister, input: IrProvider) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
-            if let IrProvider::Register(input) = input {
-                if input == result {
-                    // Bail out to avoid nop copies.
-                    return Ok(());
-                }
-            }
-            builder
-                .inst_builder
-                .push_inst(Instruction::Copy { result, input });
+            builder.inst_builder.push_copy_instr(result, input);
             Ok(())
         })
     }
@@ -1031,7 +1023,7 @@ impl<'parser> FunctionBuilder<'parser> {
                     debug_assert!(matches!(preserved, IrRegister::Preserved(_)));
                     Some(Instruction::Copy {
                         result: preserved,
-                        input: replace.into(),
+                        input: replace,
                     })
                 } else {
                     None

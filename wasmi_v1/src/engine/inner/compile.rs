@@ -6,6 +6,7 @@ use super::{
 use crate::engine::{
     func_builder::{CompileContext, IrInstruction, IrProviderSlice, IrRegisterSlice},
     ConstPool,
+    ConstRef,
     ExecInstruction,
     ExecProvider,
     ExecProviderSlice,
@@ -14,6 +15,7 @@ use crate::engine::{
     Instruction,
     Offset,
 };
+use wasmi_core::UntypedValue;
 
 /// Creates a closure constructing a `wasmi` unary instruction.
 macro_rules! unary_op {
@@ -100,6 +102,10 @@ impl EngineInner {
         Self::compile_provider_impl(&mut res.const_pool, context, provider)
     }
 
+    fn compile_immediate(res: &mut EngineResources, immediate: UntypedValue) -> ConstRef {
+        res.const_pool.alloc_const(immediate)
+    }
+
     fn compile_provider_slice(
         res: &mut EngineResources,
         context: &CompileContext,
@@ -124,15 +130,15 @@ impl EngineInner {
         make_op(result, input)
     }
 
-    fn compile_inst_rp(
+    fn compile_inst_ri(
         res: &mut EngineResources,
         context: &CompileContext,
         result: IrRegister,
-        input: IrProvider,
-        make_op: fn(ExecRegister, ExecProvider) -> ExecInstruction,
+        input: UntypedValue,
+        make_op: fn(ExecRegister, ConstRef) -> ExecInstruction,
     ) -> ExecInstruction {
         let result = Self::compile_register(context, result);
-        let input = Self::compile_provider(res, context, input);
+        let input = Self::compile_immediate(res, input);
         make_op(result, input)
     }
 
@@ -289,7 +295,10 @@ impl EngineInner {
             }
 
             Instruction::Copy { result, input } => {
-                Self::compile_inst_rp(res, context, result, input, unary_op!(Copy))
+                Self::compile_inst_rr(context, result, input, unary_op!(Copy))
+            }
+            Instruction::CopyImm { result, input } => {
+                Self::compile_inst_ri(res, context, result, input, unary_op!(CopyImm))
             }
             Instruction::CopyMany { results, inputs } => {
                 let results = Self::compile_register_slice(context, results);

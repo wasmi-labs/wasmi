@@ -21,6 +21,7 @@ impl IrInstruction {
             | Self::Return { .. } => None,
             Self::Call { results, .. } | Self::CallIndirect { results, .. } => results.single_mut(),
             Self::Copy { result, .. } => Some(result),
+            Self::CopyImm { result, .. } => Some(result),
             Self::CopyMany { results, .. } => results.single_mut(),
             Self::Select { result, .. } | Self::GlobalGet { result, .. } => Some(result),
             Self::GlobalSet { .. } => None,
