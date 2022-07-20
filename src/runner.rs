@@ -449,9 +449,26 @@ impl Interpreter {
         match *instructions {
             isa::Instruction::BrIfNez(target) => {
                 if let RunInstructionTracePre::BrIfNez { value } = pre_status.unwrap() {
+                    let mut drop_values = vec![];
+
+                    for i in 1..=target.drop_keep.drop {
+                        drop_values.push(*self.value_stack.pick(i as usize));
+                    }
+
                     StepInfo::BrIfNez {
-                        value,
+                        condition: value,
                         dst_pc: target.dst_pc,
+                        drop: target.drop_keep.drop,
+                        keep: if let Keep::Single(t) = target.drop_keep.keep {
+                            vec![t.into()]
+                        } else {
+                            vec![]
+                        },
+                        drop_values: drop_values.iter().map(|v| v.0).collect::<Vec<_>>(),
+                        keep_values: match target.drop_keep.keep {
+                            Keep::Single(_) => vec![(*self.value_stack.top()).0],
+                            Keep::None => vec![],
+                        },
                     }
                 } else {
                     unreachable!()
