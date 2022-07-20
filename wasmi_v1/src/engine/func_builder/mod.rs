@@ -101,6 +101,7 @@ pub enum IrTypes {}
 impl InstructionTypes for IrTypes {
     type Register = IrRegister;
     type Provider = IrProvider;
+    type Immediate = UntypedValue;
     type ProviderSlice = IrProviderSlice;
     type RegisterSlice = IrRegisterSlice;
     type Target = LabelRef;

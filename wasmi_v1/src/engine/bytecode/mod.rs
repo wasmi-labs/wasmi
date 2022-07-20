@@ -4,7 +4,7 @@ mod utils;
 mod tests;
 
 pub use self::utils::{ExecRegister, ExecRegisterSlice, Global, Offset, Target};
-use super::{ExecProvider, ExecProviderSlice};
+use super::{ExecProvider, ExecProviderSlice, ConstRef};
 use crate::module::{FuncIdx, FuncTypeIdx};
 use wasmi_core::TrapCode;
 
@@ -14,6 +14,7 @@ pub enum ExecuteTypes {}
 impl InstructionTypes for ExecuteTypes {
     type Register = ExecRegister;
     type Provider = ExecProvider;
+    type Immediate = ConstRef;
     type ProviderSlice = ExecProviderSlice;
     type RegisterSlice = ExecRegisterSlice;
     type Target = Target;
@@ -36,6 +37,8 @@ pub trait InstructionTypes {
     type Register;
     /// A register or immediate value.
     type Provider;
+    /// An immediate value.
+    type Immediate;
     /// A slice of providers.
     type ProviderSlice;
     /// A slice of contiguous registers.
