@@ -169,15 +169,27 @@ impl EngineInner {
     }
 
     fn compile_store(
+        context: &CompileContext,
+        ptr: IrRegister,
+        offset: Offset,
+        value: IrRegister,
+        make_op: fn(ExecRegister, Offset, ExecRegister) -> ExecInstruction,
+    ) -> ExecInstruction {
+        let ptr = Self::compile_register(context, ptr);
+        let value = Self::compile_register(context, value);
+        make_op(ptr, offset, value)
+    }
+
+    fn compile_store_imm(
         res: &mut EngineResources,
         context: &CompileContext,
         ptr: IrRegister,
         offset: Offset,
-        value: IrProvider,
-        make_op: fn(ExecRegister, Offset, ExecProvider) -> ExecInstruction,
+        value: UntypedValue,
+        make_op: fn(ExecRegister, Offset, ConstRef) -> ExecInstruction,
     ) -> ExecInstruction {
         let ptr = Self::compile_register(context, ptr);
-        let value = Self::compile_provider(res, context, value);
+        let value = Self::compile_immediate(res, value);
         make_op(ptr, offset, value)
     }
 
@@ -415,31 +427,58 @@ impl EngineInner {
             } => Self::compile_load(context, result, ptr, offset, load_op!(I64Load32U)),
 
             Instruction::I32Store { ptr, offset, value } => {
-                Self::compile_store(res, context, ptr, offset, value, store_op!(I32Store))
+                Self::compile_store(context, ptr, offset, value, store_op!(I32Store))
+            }
+            Instruction::I32StoreImm { ptr, offset, value } => {
+                Self::compile_store_imm(res, context, ptr, offset, value, store_op!(I32StoreImm))
             }
             Instruction::I64Store { ptr, offset, value } => {
-                Self::compile_store(res, context, ptr, offset, value, store_op!(I64Store))
+                Self::compile_store(context, ptr, offset, value, store_op!(I64Store))
+            }
+            Instruction::I64StoreImm { ptr, offset, value } => {
+                Self::compile_store_imm(res, context, ptr, offset, value, store_op!(I64StoreImm))
             }
             Instruction::F32Store { ptr, offset, value } => {
-                Self::compile_store(res, context, ptr, offset, value, store_op!(F32Store))
+                Self::compile_store(context, ptr, offset, value, store_op!(F32Store))
+            }
+            Instruction::F32StoreImm { ptr, offset, value } => {
+                Self::compile_store_imm(res, context, ptr, offset, value, store_op!(F32StoreImm))
             }
             Instruction::F64Store { ptr, offset, value } => {
-                Self::compile_store(res, context, ptr, offset, value, store_op!(F64Store))
+                Self::compile_store(context, ptr, offset, value, store_op!(F64Store))
+            }
+            Instruction::F64StoreImm { ptr, offset, value } => {
+                Self::compile_store_imm(res, context, ptr, offset, value, store_op!(F64StoreImm))
             }
             Instruction::I32Store8 { ptr, offset, value } => {
-                Self::compile_store(res, context, ptr, offset, value, store_op!(I32Store8))
+                Self::compile_store(context, ptr, offset, value, store_op!(I32Store8))
+            }
+            Instruction::I32Store8Imm { ptr, offset, value } => {
+                Self::compile_store_imm(res, context, ptr, offset, value, store_op!(I32Store8Imm))
             }
             Instruction::I32Store16 { ptr, offset, value } => {
-                Self::compile_store(res, context, ptr, offset, value, store_op!(I32Store16))
+                Self::compile_store(context, ptr, offset, value, store_op!(I32Store16))
+            }
+            Instruction::I32Store16Imm { ptr, offset, value } => {
+                Self::compile_store_imm(res, context, ptr, offset, value, store_op!(I32Store16Imm))
             }
             Instruction::I64Store8 { ptr, offset, value } => {
-                Self::compile_store(res, context, ptr, offset, value, store_op!(I64Store8))
+                Self::compile_store(context, ptr, offset, value, store_op!(I64Store8))
+            }
+            Instruction::I64Store8Imm { ptr, offset, value } => {
+                Self::compile_store_imm(res, context, ptr, offset, value, store_op!(I64Store8Imm))
             }
             Instruction::I64Store16 { ptr, offset, value } => {
-                Self::compile_store(res, context, ptr, offset, value, store_op!(I64Store16))
+                Self::compile_store(context, ptr, offset, value, store_op!(I64Store16))
+            }
+            Instruction::I64Store16Imm { ptr, offset, value } => {
+                Self::compile_store_imm(res, context, ptr, offset, value, store_op!(I64Store16Imm))
             }
             Instruction::I64Store32 { ptr, offset, value } => {
-                Self::compile_store(res, context, ptr, offset, value, store_op!(I64Store32))
+                Self::compile_store(context, ptr, offset, value, store_op!(I64Store32))
+            }
+            Instruction::I64Store32Imm { ptr, offset, value } => {
+                Self::compile_store_imm(res, context, ptr, offset, value, store_op!(I64Store32Imm))
             }
 
             Instruction::I32Clz { result, input } => {

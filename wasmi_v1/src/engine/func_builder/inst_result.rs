@@ -40,14 +40,23 @@ impl IrInstruction {
             | Self::I64Load32S { result, .. }
             | Self::I64Load32U { result, .. } => Some(result),
             Self::I32Store { .. }
+            | Self::I32StoreImm { .. }
             | Self::I64Store { .. }
+            | Self::I64StoreImm { .. }
             | Self::F32Store { .. }
+            | Self::F32StoreImm { .. }
             | Self::F64Store { .. }
+            | Self::F64StoreImm { .. }
             | Self::I32Store8 { .. }
+            | Self::I32Store8Imm { .. }
             | Self::I32Store16 { .. }
+            | Self::I32Store16Imm { .. }
             | Self::I64Store8 { .. }
+            | Self::I64Store8Imm { .. }
             | Self::I64Store16 { .. }
-            | Self::I64Store32 { .. } => None,
+            | Self::I64Store16Imm { .. }
+            | Self::I64Store32 { .. }
+            | Self::I64Store32Imm { .. } => None,
             Self::MemorySize { result, .. }
             | Self::MemoryGrow { result, .. }
             | Self::I32Eq { result, .. }

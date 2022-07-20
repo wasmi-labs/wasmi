@@ -2355,7 +2355,7 @@ fn store_to_register() {
     fn test<T, F>(store_op: &str, offset: u32, make_op: F)
     where
         T: Display + WasmTypeName + Into<UntypedValue>,
-        F: FnOnce(ExecRegister, Offset, ExecProvider) -> ExecInstruction,
+        F: FnOnce(ExecRegister, Offset, ExecRegister) -> ExecInstruction,
     {
         let store_type = <T as WasmTypeName>::NAME;
         let wasm = wat2wasm(&format!(
@@ -2376,7 +2376,7 @@ fn store_to_register() {
         let value = ExecRegister::from_inner(1);
         let results = engine.alloc_provider_slice([]);
         let expected = [
-            make_op(ptr, offset.into(), value.into()),
+            make_op(ptr, offset.into(), value),
             ExecInstruction::Return { results },
         ];
         assert_func_bodies_for_module(&module, [expected]);
@@ -2399,7 +2399,7 @@ fn store_to_const() {
     fn test<T, F>(store_op: &str, offset: u32, make_op: F)
     where
         T: Display + WasmTypeName + Into<UntypedValue>,
-        F: FnOnce(ExecRegister, Offset, ExecProvider) -> ExecInstruction,
+        F: FnOnce(ExecRegister, Offset, ExecRegister) -> ExecInstruction,
     {
         let store_type = <T as WasmTypeName>::NAME;
         let wasm = wat2wasm(&format!(
@@ -2425,7 +2425,7 @@ fn store_to_const() {
                 result: temp,
                 input: const_ptr,
             },
-            make_op(temp, offset.into(), value.into()),
+            make_op(temp, offset.into(), value),
             ExecInstruction::Return { results },
         ];
         assert_func_bodies_for_module(&module, [expected]);

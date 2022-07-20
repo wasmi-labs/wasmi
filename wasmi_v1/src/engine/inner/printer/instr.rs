@@ -180,20 +180,23 @@ impl<'ctx, 'engine, T> DisplayExecInstruction<'ctx, 'engine, T> {
     }
 
     /// Writes human readable output for a `wasmi` memory store instruction.
-    fn write_store(
+    fn write_store<P>(
         &self,
         f: &mut fmt::Formatter,
         name: &str,
         ptr: ExecRegister,
         offset: Offset,
-        value: ExecProvider,
-    ) -> fmt::Result {
+        value: P,
+    ) -> fmt::Result
+    where
+        P: Into<ExecProvider>,
+    {
         writeln!(
             f,
             "{name} mem[{}+{}] <- {}",
             DisplayExecRegister::from(ptr),
             offset.into_inner(),
-            DisplayExecProvider::new(self.res, value),
+            DisplayExecProvider::new(self.res, value.into()),
         )
     }
 }
@@ -380,14 +383,23 @@ impl<T> Display for DisplayExecInstruction<'_, '_, T> {
             Instr::I64Load32S { result, ptr, offset } => self.write_load(f, "i64.load32_s", result, ptr, offset),
             Instr::I64Load32U { result, ptr, offset } => self.write_load(f, "i64.load32_u", result, ptr, offset),
             Instr::I32Store { ptr, offset, value } => self.write_store(f, "i32.store", ptr, offset, value),
+            Instr::I32StoreImm { ptr, offset, value } => self.write_store(f, "i32.store", ptr, offset, value),
             Instr::I64Store { ptr, offset, value } => self.write_store(f, "i64.store", ptr, offset, value),
+            Instr::I64StoreImm { ptr, offset, value } => self.write_store(f, "i64.store", ptr, offset, value),
             Instr::F32Store { ptr, offset, value } => self.write_store(f, "f32.store", ptr, offset, value),
+            Instr::F32StoreImm { ptr, offset, value } => self.write_store(f, "f32.store", ptr, offset, value),
             Instr::F64Store { ptr, offset, value } => self.write_store(f, "f64.store", ptr, offset, value),
+            Instr::F64StoreImm { ptr, offset, value } => self.write_store(f, "f64.store", ptr, offset, value),
             Instr::I32Store8 { ptr, offset, value } => self.write_store(f, "i32.store8", ptr, offset, value),
+            Instr::I32Store8Imm { ptr, offset, value } => self.write_store(f, "i32.store8", ptr, offset, value),
             Instr::I32Store16 { ptr, offset, value } => self.write_store(f, "i32.store16", ptr, offset, value),
+            Instr::I32Store16Imm { ptr, offset, value } => self.write_store(f, "i32.store16", ptr, offset, value),
             Instr::I64Store8 { ptr, offset, value } => self.write_store(f, "i64.store8", ptr, offset, value),
+            Instr::I64Store8Imm { ptr, offset, value } => self.write_store(f, "i64.store8", ptr, offset, value),
             Instr::I64Store16 { ptr, offset, value } => self.write_store(f, "i64.store16", ptr, offset, value),
+            Instr::I64Store16Imm { ptr, offset, value } => self.write_store(f, "i64.store16", ptr, offset, value),
             Instr::I64Store32 { ptr, offset, value } => self.write_store(f, "i64.store32", ptr, offset, value),
+            Instr::I64Store32Imm { ptr, offset, value } => self.write_store(f, "i64.store32", ptr, offset, value),
             Instr::MemorySize { result } => {
                 writeln!(f, "{} <- memory.size", DisplayExecRegister::from(result))
             }

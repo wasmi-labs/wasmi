@@ -1259,7 +1259,8 @@ impl<'parser> FunctionBuilder<'parser> {
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
-        make_inst: fn(IrRegister, Offset, IrProvider) -> IrInstruction,
+        make_inst: fn(IrRegister, Offset, IrRegister) -> IrInstruction,
+        make_imm_inst: fn(IrRegister, Offset, UntypedValue) -> IrInstruction,
     ) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
@@ -1269,12 +1270,9 @@ impl<'parser> FunctionBuilder<'parser> {
                 _ => None,
             };
             let (ptr, value) = builder.providers.pop2();
-            match ptr {
-                IrProvider::Register(ptr) => {
-                    builder.push_instr(make_inst(ptr, offset, value));
-                }
+            let ptr = match ptr {
+                IrProvider::Register(ptr) => ptr,
                 IrProvider::Immediate(ptr) => {
-                    // Note: store the constant pointer value into a temporary
                     //       `temp` register and use the register instead since
                     //       otherwise we cannot construct the `wasmi` bytecode
                     //       that expects the pointer value to be provided in
@@ -1283,9 +1281,17 @@ impl<'parser> FunctionBuilder<'parser> {
                     //       pop the temporarily used register again.
                     let copy_result = copy_result.expect("register for intermediate copy");
                     builder.translate_copy(copy_result, ptr.into())?;
-                    builder.push_instr(make_inst(copy_result, offset, value));
+                    copy_result
                 }
             };
+            match value {
+                IrProvider::Register(value) => {
+                    builder.push_instr(make_inst(ptr, offset, value));
+                }
+                IrProvider::Immediate(value) => {
+                    builder.push_instr(make_imm_inst(ptr, offset, value));
+                }
+            }
             Ok(())
         })
     }
@@ -1296,7 +1302,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(memory_idx, offset, store_op!(I32Store))
+        self.translate_store(memory_idx, offset, store_op!(I32Store), store_op!(I32StoreImm))
     }
 
     /// Translate a Wasm `i64.store` instruction.
@@ -1305,7 +1311,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(memory_idx, offset, store_op!(I64Store))
+        self.translate_store(memory_idx, offset, store_op!(I64Store), store_op!(I64StoreImm))
     }
 
     /// Translate a Wasm `f32.store` instruction.
@@ -1314,7 +1320,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(memory_idx, offset, store_op!(F32Store))
+        self.translate_store(memory_idx, offset, store_op!(F32Store), store_op!(F32StoreImm))
     }
 
     /// Translate a Wasm `f64.store` instruction.
@@ -1323,7 +1329,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(memory_idx, offset, store_op!(F64Store))
+        self.translate_store(memory_idx, offset, store_op!(F64Store), store_op!(F64StoreImm))
     }
 
     /// Translate a Wasm `i32.store_i8` instruction.
@@ -1332,7 +1338,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(memory_idx, offset, store_op!(I32Store8))
+        self.translate_store(memory_idx, offset, store_op!(I32Store8), store_op!(I32Store8Imm))
     }
 
     /// Translate a Wasm `i32.store_i16` instruction.
@@ -1341,7 +1347,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(memory_idx, offset, store_op!(I32Store16))
+        self.translate_store(memory_idx, offset, store_op!(I32Store16), store_op!(I32Store16Imm))
     }
 
     /// Translate a Wasm `i64.store_i8` instruction.
@@ -1350,7 +1356,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(memory_idx, offset, store_op!(I64Store8))
+        self.translate_store(memory_idx, offset, store_op!(I64Store8), store_op!(I64Store8Imm))
     }
 
     /// Translate a Wasm `i64.store_i16` instruction.
@@ -1359,7 +1365,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(memory_idx, offset, store_op!(I64Store16))
+        self.translate_store(memory_idx, offset, store_op!(I64Store16), store_op!(I64Store16Imm))
     }
 
     /// Translate a Wasm `i64.store_i32` instruction.
@@ -1368,7 +1374,7 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(memory_idx, offset, store_op!(I64Store32))
+        self.translate_store(memory_idx, offset, store_op!(I64Store32), store_op!(I64Store32Imm))
     }
 
     /// Translate a Wasm `memory.size` instruction.

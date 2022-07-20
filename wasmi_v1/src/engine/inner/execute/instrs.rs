@@ -259,29 +259,56 @@ pub(super) fn execute_frame(
             Instr::I32Store { ptr, offset, value } => {
                 exec_ctx.exec_i32_store(ptr, offset, value)?;
             }
+            Instr::I32StoreImm { ptr, offset, value } => {
+                exec_ctx.exec_i32_store_imm(ptr, offset, value)?;
+            }
             Instr::I64Store { ptr, offset, value } => {
                 exec_ctx.exec_i64_store(ptr, offset, value)?;
+            }
+            Instr::I64StoreImm { ptr, offset, value } => {
+                exec_ctx.exec_i64_store_imm(ptr, offset, value)?;
             }
             Instr::F32Store { ptr, offset, value } => {
                 exec_ctx.exec_f32_store(ptr, offset, value)?;
             }
+            Instr::F32StoreImm { ptr, offset, value } => {
+                exec_ctx.exec_f32_store_imm(ptr, offset, value)?;
+            }
             Instr::F64Store { ptr, offset, value } => {
                 exec_ctx.exec_f64_store(ptr, offset, value)?;
+            }
+            Instr::F64StoreImm { ptr, offset, value } => {
+                exec_ctx.exec_f64_store_imm(ptr, offset, value)?;
             }
             Instr::I32Store8 { ptr, offset, value } => {
                 exec_ctx.exec_i32_store_8(ptr, offset, value)?;
             }
+            Instr::I32Store8Imm { ptr, offset, value } => {
+                exec_ctx.exec_i32_store_8_imm(ptr, offset, value)?;
+            }
             Instr::I32Store16 { ptr, offset, value } => {
                 exec_ctx.exec_i32_store_16(ptr, offset, value)?;
+            }
+            Instr::I32Store16Imm { ptr, offset, value } => {
+                exec_ctx.exec_i32_store_16_imm(ptr, offset, value)?;
             }
             Instr::I64Store8 { ptr, offset, value } => {
                 exec_ctx.exec_i64_store_8(ptr, offset, value)?;
             }
+            Instr::I64Store8Imm { ptr, offset, value } => {
+                exec_ctx.exec_i64_store_8_imm(ptr, offset, value)?;
+            }
             Instr::I64Store16 { ptr, offset, value } => {
                 exec_ctx.exec_i64_store_16(ptr, offset, value)?;
             }
+            Instr::I64Store16Imm { ptr, offset, value } => {
+                exec_ctx.exec_i64_store_16_imm(ptr, offset, value)?;
+            }
             Instr::I64Store32 { ptr, offset, value } => {
                 exec_ctx.exec_i64_store_32(ptr, offset, value)?;
+            }
+            Instr::I64Store32Imm { ptr, offset, value } => {
+                exec_ctx.exec_i64_store_32_imm(ptr, offset, value)?;
             }
             Instr::MemorySize { result } => {
                 exec_ctx.exec_memory_size(result)?;
@@ -964,12 +991,37 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         &mut self,
         ptr: ExecRegister,
         offset: bytecode::Offset,
-        new_value: ExecProvider,
+        new_value: ExecRegister,
     ) -> Result<(), Trap>
     where
         V: LittleEndianConvert + From<UntypedValue>,
     {
-        let new_value = V::from(self.load_provider(new_value));
+        let new_value = V::from(self.get_register(new_value));
+        let bytes = <V as LittleEndianConvert>::into_le_bytes(new_value);
+        self.store_bytes(ptr, offset, bytes.as_ref())?;
+        self.next_instr()
+    }
+
+    /// Stores a value of type `T` into the default memory at the given address offset.
+    ///
+    /// # Note
+    ///
+    /// This can be used to emulate the following Wasm operands:
+    ///
+    /// - `i32.store`
+    /// - `i64.store`
+    /// - `f32.store`
+    /// - `f64.store`
+    fn exec_store_imm<V>(
+        &mut self,
+        ptr: ExecRegister,
+        offset: bytecode::Offset,
+        new_value: ConstRef,
+    ) -> Result<(), Trap>
+    where
+        V: LittleEndianConvert + From<UntypedValue>,
+    {
+        let new_value = V::from(self.resolve_cref(new_value));
         let bytes = <V as LittleEndianConvert>::into_le_bytes(new_value);
         self.store_bytes(ptr, offset, bytes.as_ref())?;
         self.next_instr()
@@ -990,13 +1042,40 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         &mut self,
         ptr: ExecRegister,
         offset: bytecode::Offset,
-        new_value: ExecProvider,
+        new_value: ExecRegister,
     ) -> Result<(), Trap>
     where
         V: From<UntypedValue> + WrapInto<U>,
         U: LittleEndianConvert,
     {
-        let new_value = V::from(self.load_provider(new_value)).wrap_into();
+        let new_value = V::from(self.get_register(new_value)).wrap_into();
+        let bytes = <U as LittleEndianConvert>::into_le_bytes(new_value);
+        self.store_bytes(ptr, offset, bytes.as_ref())?;
+        self.next_instr()
+    }
+
+    /// Stores a value of type `T` wrapped to type `U` into the default memory at the given address offset.
+    ///
+    /// # Note
+    ///
+    /// This can be used to emulate the following Wasm operands:
+    ///
+    /// - `i32.store8`
+    /// - `i32.store16`
+    /// - `i64.store8`
+    /// - `i64.store16`
+    /// - `i64.store32`
+    fn exec_store_wrap_imm<V, U>(
+        &mut self,
+        ptr: ExecRegister,
+        offset: bytecode::Offset,
+        new_value: ConstRef,
+    ) -> Result<(), Trap>
+    where
+        V: From<UntypedValue> + WrapInto<U>,
+        U: LittleEndianConvert,
+    {
+        let new_value = V::from(self.resolve_cref(new_value)).wrap_into();
         let bytes = <U as LittleEndianConvert>::into_le_bytes(new_value);
         self.store_bytes(ptr, offset, bytes.as_ref())?;
         self.next_instr()
@@ -1531,81 +1610,162 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         &mut self,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
-        value: <ExecuteTypes as InstructionTypes>::Provider,
+        value: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
         self.exec_store::<i32>(ptr, offset, value)
+    }
+
+    fn exec_i32_store_imm(
+        &mut self,
+        ptr: <ExecuteTypes as InstructionTypes>::Register,
+        offset: bytecode::Offset,
+        value: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_store_imm::<i32>(ptr, offset, value)
     }
 
     fn exec_i64_store(
         &mut self,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
-        value: <ExecuteTypes as InstructionTypes>::Provider,
+        value: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
         self.exec_store::<i64>(ptr, offset, value)
+    }
+
+    fn exec_i64_store_imm(
+        &mut self,
+        ptr: <ExecuteTypes as InstructionTypes>::Register,
+        offset: bytecode::Offset,
+        value: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_store_imm::<i64>(ptr, offset, value)
     }
 
     fn exec_f32_store(
         &mut self,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
-        value: <ExecuteTypes as InstructionTypes>::Provider,
+        value: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
         self.exec_store::<F32>(ptr, offset, value)
+    }
+
+    fn exec_f32_store_imm(
+        &mut self,
+        ptr: <ExecuteTypes as InstructionTypes>::Register,
+        offset: bytecode::Offset,
+        value: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_store_imm::<F32>(ptr, offset, value)
     }
 
     fn exec_f64_store(
         &mut self,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
-        value: <ExecuteTypes as InstructionTypes>::Provider,
+        value: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
         self.exec_store::<F64>(ptr, offset, value)
+    }
+
+    fn exec_f64_store_imm(
+        &mut self,
+        ptr: <ExecuteTypes as InstructionTypes>::Register,
+        offset: bytecode::Offset,
+        value: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_store_imm::<F64>(ptr, offset, value)
     }
 
     fn exec_i32_store_8(
         &mut self,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
-        value: <ExecuteTypes as InstructionTypes>::Provider,
+        value: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
         self.exec_store_wrap::<i32, i8>(ptr, offset, value)
+    }
+
+    fn exec_i32_store_8_imm(
+        &mut self,
+        ptr: <ExecuteTypes as InstructionTypes>::Register,
+        offset: bytecode::Offset,
+        value: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_store_wrap_imm::<i32, i8>(ptr, offset, value)
     }
 
     fn exec_i32_store_16(
         &mut self,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
-        value: <ExecuteTypes as InstructionTypes>::Provider,
+        value: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
         self.exec_store_wrap::<i32, i16>(ptr, offset, value)
+    }
+
+    fn exec_i32_store_16_imm(
+        &mut self,
+        ptr: <ExecuteTypes as InstructionTypes>::Register,
+        offset: bytecode::Offset,
+        value: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_store_wrap_imm::<i32, i16>(ptr, offset, value)
     }
 
     fn exec_i64_store_8(
         &mut self,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
-        value: <ExecuteTypes as InstructionTypes>::Provider,
+        value: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
         self.exec_store_wrap::<i64, i8>(ptr, offset, value)
+    }
+
+    fn exec_i64_store_8_imm(
+        &mut self,
+        ptr: <ExecuteTypes as InstructionTypes>::Register,
+        offset: bytecode::Offset,
+        value: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_store_wrap_imm::<i64, i8>(ptr, offset, value)
     }
 
     fn exec_i64_store_16(
         &mut self,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
-        value: <ExecuteTypes as InstructionTypes>::Provider,
+        value: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
         self.exec_store_wrap::<i64, i16>(ptr, offset, value)
+    }
+
+    fn exec_i64_store_16_imm(
+        &mut self,
+        ptr: <ExecuteTypes as InstructionTypes>::Register,
+        offset: bytecode::Offset,
+        value: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_store_wrap_imm::<i64, i16>(ptr, offset, value)
     }
 
     fn exec_i64_store_32(
         &mut self,
         ptr: <ExecuteTypes as InstructionTypes>::Register,
         offset: bytecode::Offset,
-        value: <ExecuteTypes as InstructionTypes>::Provider,
+        value: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
         self.exec_store_wrap::<i64, i32>(ptr, offset, value)
+    }
+
+    fn exec_i64_store_32_imm(
+        &mut self,
+        ptr: <ExecuteTypes as InstructionTypes>::Register,
+        offset: bytecode::Offset,
+        value: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_store_wrap_imm::<i64, i32>(ptr, offset, value)
     }
 
     fn exec_memory_size(
