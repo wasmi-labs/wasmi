@@ -104,11 +104,6 @@ where
     pub unsafe fn get_unchecked(&self, index: Idx) -> &T {
         self.entities.get_unchecked(index)
     }
-
-    /// Returns an exclusive reference to the entity at the given index if any.
-    pub fn get_mut(&mut self, index: Idx) -> Option<&mut T> {
-        self.entities.get_mut(index)
-    }
 }
 
 impl<Idx, T> FromIterator<T> for DedupArena<Idx, T>
