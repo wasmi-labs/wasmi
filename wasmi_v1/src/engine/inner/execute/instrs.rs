@@ -4,6 +4,7 @@ use crate::{
         bytecode::{self, ExecRegister, ExecuteTypes},
         code_map::CodeMap,
         inner::EngineResources,
+        ConstRef,
         ExecProvider,
         ExecProviderSlice,
         ExecRegisterSlice,
@@ -784,6 +785,19 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         self.cache.default_table(&self.ctx, self.frame.instance())
     }
 
+    /// Loads the value of the given [`ConstRef`].
+    ///
+    /// # Panics (Debug)
+    ///
+    /// If the constant pool does not inhabit the given [`ConstRef`].
+    fn resolve_cref(&self, cref: ConstRef) -> UntypedValue {
+        // Safety: We can safely assume that all const references at this
+        //         point are valid since we have validated them during
+        //         Wasm compilation and validation phase as well as during
+        //         wasmi bytecode construction.
+        unsafe { self.res.const_pool.resolve_unchecked(cref) }
+    }
+
     /// Returns the global variable at the given global variable index.
     ///
     /// # Panics
@@ -1036,14 +1050,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     /// If the provider refers to an non-existing immediate value.
     /// Note that reaching this case reflects a bug in the interpreter.
     fn load_provider(&self, provider: ExecProvider) -> UntypedValue {
-        provider.decode_using(
-            |rhs| self.get_register(rhs),
-            |imm| {
-                self.res.const_pool.resolve(imm).unwrap_or_else(|| {
-                    panic!("unexpectedly failed to resolve immediate at {:?}", imm)
-                })
-            },
-        )
+        provider.decode_using(|rhs| self.get_register(rhs), |imm| self.resolve_cref(imm))
     }
 
     /// Executes the given binary `wasmi` operation.

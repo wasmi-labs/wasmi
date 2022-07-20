@@ -536,11 +536,7 @@ impl<'a> StackFrameRegisters<'a> {
     /// If the `provider` refers to a missing constant value.
     /// If the `provider` refers to an invalid register for the [`StackFrameRegisters`].
     fn load_provider(&self, res: &EngineResources, provider: ExecProvider) -> UntypedValue {
-        let resolve_const = |cref| {
-            res.const_pool
-                .resolve(cref)
-                .unwrap_or_else(|| panic!("failed to resolve constant reference: {:?}", cref))
-        };
+        let resolve_const = |cref| unsafe { res.const_pool.resolve_unchecked(cref) };
         provider.decode_using(|register| self.get(register), resolve_const)
     }
 

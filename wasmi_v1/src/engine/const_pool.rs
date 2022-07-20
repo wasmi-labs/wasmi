@@ -67,7 +67,16 @@ impl ConstPool {
     }
 
     /// Resolves the index to a stored constant if any.
-    pub fn resolve(&self, index: ConstRef) -> Option<UntypedValue> {
-        self.values.get(index).copied()
+    pub fn resolve(&self, cref: ConstRef) -> Option<UntypedValue> {
+        self.values.get(cref).copied()
+    }
+
+    /// Resolves the index to a stored constant if any.
+    ///
+    /// # Safety
+    ///
+    /// The caller is responsible for providing a valid `cref`.
+    pub unsafe fn resolve_unchecked(&self, cref: ConstRef) -> UntypedValue {
+        *self.values.get_unchecked(cref)
     }
 }

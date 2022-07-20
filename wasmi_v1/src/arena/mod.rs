@@ -117,6 +117,20 @@ where
         self.entities.get(index.into_usize())
     }
 
+    /// Returns a shared reference to the entity at the given index if any.
+    ///
+    /// # Safety
+    ///
+    /// The caller is responsible for providing a valid `index`.
+    ///
+    /// # Panics (Debug)
+    ///
+    /// Panics if the given `index` is invalid.
+    pub unsafe fn get_unchecked(&self, index: Idx) -> &T {
+        debug_assert!(self.entities.get(index.into_usize()).is_some());
+        self.entities.get_unchecked(index.into_usize())
+    }
+
     /// Returns an exclusive reference to the entity at the given index if any.
     pub fn get_mut(&mut self, index: Idx) -> Option<&mut T> {
         self.entities.get_mut(index.into_usize())

@@ -96,6 +96,15 @@ where
         self.entities.get(index)
     }
 
+    /// Returns a shared reference to the entity at the given index if any.
+    ///
+    /// # Safety
+    ///
+    /// The caller is responsible for providing a valid `index`.
+    pub unsafe fn get_unchecked(&self, index: Idx) -> &T {
+        self.entities.get_unchecked(index)
+    }
+
     /// Returns an exclusive reference to the entity at the given index if any.
     pub fn get_mut(&mut self, index: Idx) -> Option<&mut T> {
         self.entities.get_mut(index)
