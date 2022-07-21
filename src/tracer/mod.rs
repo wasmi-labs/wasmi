@@ -105,7 +105,7 @@ impl Tracer {
                     loop {
                         let pc = iter.position();
                         if let Some(instruction) = iter.next() {
-                            let ientry = self.itable.push(
+                            let _ = self.itable.push(
                                 self.next_module_id() as u32,
                                 *func_index_in_itable,
                                 pc,
@@ -113,7 +113,7 @@ impl Tracer {
                             );
 
                             if self.jtable.is_none() {
-                                self.jtable = Some(JTable::new(&ientry))
+                                self.jtable = Some(JTable::new())
                             }
                         } else {
                             break;
@@ -148,6 +148,18 @@ impl Tracer {
             .position(|m| m.0 == *function)
             .unwrap();
         self.function_lookup.get(pos).unwrap().1
+    }
+
+    pub fn lookup_ientry(&self, function: &FuncRef, pos: u32) -> IEntry {
+        let function_idx = self.lookup_function(function);
+
+        for ientry in &self.itable.0 {
+            if ientry.func_index as u16 == function_idx && ientry.pc as u32 == pos {
+                return ientry.clone();
+            }
+        }
+
+        unreachable!()
     }
 
     pub fn lookup_first_inst(&self, function: &FuncRef) -> IEntry {

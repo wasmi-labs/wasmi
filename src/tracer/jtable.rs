@@ -13,12 +13,8 @@ pub struct JEntry {
 pub struct JTable(pub Vec<JEntry>);
 
 impl JTable {
-    pub fn new(first_inst: &IEntry) -> Self {
-        JTable(vec![JEntry {
-            eid: 0,
-            last_jump_eid: 0,
-            inst: first_inst.clone(),
-        }])
+    pub fn new() -> Self {
+        JTable(vec![])
     }
 
     pub fn push(&mut self, eid: u64, last_jump_eid: u64, inst: &IEntry) {

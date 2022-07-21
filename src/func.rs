@@ -1,6 +1,6 @@
 use crate::{
     host::Externals,
-    isa,
+    isa::{self},
     module::ModuleInstance,
     runner::{check_function_args, Interpreter, InterpreterState, StackRecycler},
     tracer::Tracer,
@@ -14,7 +14,7 @@ use alloc::{
     rc::{Rc, Weak},
     vec::Vec,
 };
-use core::{fmt, cell::RefCell};
+use core::{cell::RefCell, fmt};
 use parity_wasm::elements::Local;
 
 /// Reference to a function (See [`FuncInstance`] for details).

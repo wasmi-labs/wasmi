@@ -331,9 +331,11 @@ impl Interpreter {
                             if let Some(trace) = self.tracer.as_mut() {
                                 let eid = trace.borrow_mut().eid();
                                 let last_jump_eid = trace.borrow_mut().last_jump_eid();
-                                let inst = trace
-                                    .borrow_mut()
-                                    .lookup_first_inst(&nested_context.function);
+
+                                let inst = trace.borrow_mut().lookup_ientry(
+                                    &function_context.function,
+                                    function_context.position,
+                                );
 
                                 let mut trace = trace.borrow_mut();
                                 let jtable = trace.jtable.as_mut();
