@@ -16,8 +16,12 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
-          target: wasm32-unknown-unknown, thumbv7em-none-eabi
+          target: wasm32-unknown-unknown
           override: true
+      - name: Add extra targets
+        # Workaround for https://github.com/actions-rs/toolchain/issues/165
+        run: |
+          rustup target add thumbv7em-none-eabi
       - name: Build (default features)
         uses: actions-rs/cargo@v1
         with:
