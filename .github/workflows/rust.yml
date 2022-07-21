@@ -32,7 +32,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --lib --no-default-features --target thumbv7em-none-eabi
+          args: --workspace --lib --no-default-features --target thumbv7em-none-eabi --exclude wasmi_cli
       - name: Build (wasm32)
         uses: actions-rs/cargo@v1
         with:
