@@ -16,7 +16,7 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
-          target: wasm32-unknown-unknown
+          target: wasm32-unknown-unknown, thumbv7em-none-eabi
           override: true
       - name: Build (default features)
         uses: actions-rs/cargo@v1
