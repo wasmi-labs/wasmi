@@ -254,12 +254,14 @@ impl Stack {
         let caller = self.frames.last_frame();
         let caller_region = caller.region;
         let frame_ref = self.frames.push_frame(callee_region, results, func)?;
-        let (caller_regs, callee_regs) =
-            self.values.paired_frame_regs(caller_region, callee_region);
-        let params = callee_regs.into_iter().take(args.len());
-        params.zip(args).for_each(|(param, arg)| {
-            *param = caller_regs.load_provider(res, *arg);
-        });
+        if !args.is_empty() {
+            let (caller_regs, callee_regs) =
+                self.values.paired_frame_regs(caller_region, callee_region);
+            let params = callee_regs.into_iter().take(args.len());
+            params.zip(args).for_each(|(param, arg)| {
+                *param = caller_regs.load_provider(res, *arg);
+            });
+        }
         Ok(frame_ref)
     }
 
