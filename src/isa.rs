@@ -413,7 +413,7 @@ impl<'a> Instruction<'a> {
             Instruction::GrowMemory => todo!(),
             Instruction::I32Const(v) => Opcode::Const {
                 vtype: VarType::I32,
-                value: v as u64,
+                value: v as u32 as u64,
             },
             Instruction::I64Const(v) => Opcode::Const {
                 vtype: VarType::I64,
