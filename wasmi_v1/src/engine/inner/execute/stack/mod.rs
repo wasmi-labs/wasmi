@@ -291,23 +291,25 @@ impl Stack {
             // can be used now to properly finish the Wasm execution.
             return None;
         }
-        let returned = res.provider_pool.resolve(returned);
         let callee = self.frames.pop_frame();
         let caller = self.frames.last_frame();
         let results = callee.results;
-        assert_eq!(
-            results.len(),
-            returned.len(),
-            "encountered mismatch in returned values: expected {}, got {}",
-            results.len(),
-            returned.len()
-        );
-        let (mut caller_regs, callee_regs) =
-            self.values.paired_frame_regs(caller.region, callee.region);
-        results.iter().zip(returned).for_each(|(result, returns)| {
-            let return_value = callee_regs.load_provider(res, *returns);
-            caller_regs.set(result, return_value);
-        });
+        if !results.is_empty() {
+            let returned = res.provider_pool.resolve(returned);
+            assert_eq!(
+                results.len(),
+                returned.len(),
+                "encountered mismatch in returned values: expected {}, got {}",
+                results.len(),
+                returned.len()
+            );
+            let (mut caller_regs, callee_regs) =
+                self.values.paired_frame_regs(caller.region, callee.region);
+            results.iter().zip(returned).for_each(|(result, returns)| {
+                let return_value = callee_regs.load_provider(res, *returns);
+                caller_regs.set(result, return_value);
+            });
+        }
         self.values.shrink_by(callee.region.len());
         Some(self.frames.last_frame_ref())
     }
