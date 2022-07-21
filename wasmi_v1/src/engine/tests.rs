@@ -1023,19 +1023,87 @@ fn binary_simple() {
         test_register_const::<T, F, T>(wasm_op, make_op);
     }
 
-    fn run_test_cmp<T, F>(wasm_op: &str, make_op: F)
+    fn test_cmp_register_register<T, F, R>(wasm_op: &str, make_op: F)
+    // TODO: merge funcs again
     where
-        T: Display + WasmTypeName + Into<UntypedValue> + One,
-        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction + Copy,
+        T: Display + WasmTypeName + Into<UntypedValue>,
+        F: FnOnce(ExecRegister, ExecRegister, ExecRegister) -> ExecInstruction,
+        R: WasmTypeName,
     {
-        test_register_register::<T, F, bool>(wasm_op, make_op);
-        test_register_const::<T, F, bool>(wasm_op, make_op);
+        let input_type = <T as WasmTypeName>::NAME;
+        let output_type = <R as WasmTypeName>::NAME;
+        let wasm = wat2wasm(&format!(
+            r#"
+            (module
+                (func (export "call") (param {input_type}) (param {input_type}) (result {output_type})
+                    local.get 0
+                    local.get 1
+                    {input_type}.{wasm_op}
+                )
+            )
+        "#,
+        ));
+        let module = create_module(&wasm[..]);
+        let engine = module.engine();
+        let lhs = ExecRegister::from_inner(0);
+        let rhs = ExecRegister::from_inner(1);
+        let result = ExecRegister::from_inner(2);
+        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
+        let expected = [
+            make_op(result, lhs, rhs.into()),
+            ExecInstruction::Return { results },
+        ];
+        assert_func_bodies_for_module(&module, [expected]);
     }
 
-    run_test_cmp::<i32, _>("eq", make_op!(I32Eq));
-    run_test_cmp::<i64, _>("eq", make_op!(I64Eq));
-    run_test_cmp::<i32, _>("ne", make_op!(I32Ne));
-    run_test_cmp::<i64, _>("ne", make_op!(I64Ne));
+    fn test_cmp_register_const<T, F, R>(wasm_op: &str, make_op: F)
+    // TODO: merge funcs again
+    where
+        T: Display + WasmTypeName + Into<UntypedValue> + One,
+        F: FnOnce(ExecRegister, ExecRegister, ConstRef) -> ExecInstruction,
+        R: WasmTypeName,
+    {
+        let input_type = <T as WasmTypeName>::NAME;
+        let output_type = <R as WasmTypeName>::NAME;
+        let one = T::one();
+        let wasm = wat2wasm(&format!(
+            r#"
+            (module
+                (func (export "call") (param {input_type}) (result {output_type})
+                    local.get 0
+                    {input_type}.const {one}
+                    {input_type}.{wasm_op}
+                )
+            )
+        "#,
+        ));
+        let module = create_module(&wasm[..]);
+        let engine = module.engine();
+        let lhs = ExecRegister::from_inner(0);
+        let rhs = engine.alloc_const(one);
+        let result = ExecRegister::from_inner(1);
+        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
+        let expected = [
+            make_op(result, lhs, rhs),
+            ExecInstruction::Return { results },
+        ];
+        assert_func_bodies_for_module(&module, [expected]);
+    }
+
+    fn run_test_cmp<T, F1, F2>(wasm_op: &str, make_op: F1, make_imm_op: F2)
+    where
+        T: Display + WasmTypeName + Into<UntypedValue> + One,
+        F1: FnOnce(ExecRegister, ExecRegister, ExecRegister) -> ExecInstruction,
+        F2: FnOnce(ExecRegister, ExecRegister, ConstRef) -> ExecInstruction,
+    {
+        test_cmp_register_register::<T, F1, bool>(wasm_op, make_op);
+        test_cmp_register_const::<T, F2, bool>(wasm_op, make_imm_op);
+    }
+
+    run_test_cmp::<i32, _, _>("eq", make_op!(I32Eq), make_op!(I32EqImm));
+    run_test_cmp::<i64, _, _>("eq", make_op!(I64Eq), make_op!(I64EqImm));
+    run_test_cmp::<i32, _, _>("ne", make_op!(I32Ne), make_op!(I32NeImm));
+    run_test_cmp::<i64, _, _>("ne", make_op!(I64Ne), make_op!(I64NeImm));
 
     run_test_bin::<i32, _>("add", make_op!(I32Add));
     run_test_bin::<i64, _>("add", make_op!(I64Add));
@@ -1066,10 +1134,10 @@ fn binary_simple() {
     run_test_bin::<i32, _>("xor", make_op!(I32Xor));
     run_test_bin::<i64, _>("xor", make_op!(I64Xor));
 
-    run_test_cmp::<f32, _>("eq", make_op!(F32Eq));
-    run_test_cmp::<f64, _>("eq", make_op!(F64Eq));
-    run_test_cmp::<f32, _>("ne", make_op!(F32Ne));
-    run_test_cmp::<f64, _>("ne", make_op!(F64Ne));
+    run_test_cmp::<f32, _, _>("eq", make_op!(F32Eq), make_op!(F32EqImm));
+    run_test_cmp::<f64, _, _>("eq", make_op!(F64Eq), make_op!(F64EqImm));
+    run_test_cmp::<f32, _, _>("ne", make_op!(F32Ne), make_op!(F32NeImm));
+    run_test_cmp::<f64, _, _>("ne", make_op!(F64Ne), make_op!(F64NeImm));
 
     run_test_bin::<f32, _>("add", make_op!(F32Add));
     run_test_bin::<f64, _>("add", make_op!(F64Add));
@@ -1236,23 +1304,59 @@ fn binary_const_register_commutative() {
     fn run_test_bin<T, F>(wasm_op: &str, make_op: F)
     where
         T: Display + Into<UntypedValue> + WasmTypeName + One,
-        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction + Copy,
+        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
     {
         test_const_register::<T, F, T>(wasm_op, make_op);
+    }
+
+    fn test_cmp_const_register<T, F, R>(wasm_op: &str, make_op: F)
+    // TODO: merge funcs again
+    where
+        T: Display + WasmTypeName + One + Into<UntypedValue>,
+        F: FnOnce(ExecRegister, ExecRegister, ConstRef) -> ExecInstruction,
+        R: WasmTypeName,
+    {
+        let input_type = <T as WasmTypeName>::NAME;
+        let output_type = <R as WasmTypeName>::NAME;
+        let wasm = wat2wasm(&format!(
+            r#"
+            (module
+                (func (export "call") (param {input_type}) (result {output_type})
+                    {input_type}.const 1
+                    local.get 0
+                    {input_type}.{wasm_op}
+                )
+            )
+        "#,
+        ));
+        let module = create_module(&wasm[..]);
+        let engine = module.engine();
+        let rhs = engine.alloc_const(T::one());
+        let result = ExecRegister::from_inner(1);
+        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
+        let expected = [
+            make_op(
+                ExecRegister::from_inner(1),
+                ExecRegister::from_inner(0),
+                rhs.into(),
+            ),
+            ExecInstruction::Return { results },
+        ];
+        assert_func_bodies_for_module(&module, [expected]);
     }
 
     fn run_test_cmp<T, F>(wasm_op: &str, make_op: F)
     where
         T: Display + Into<UntypedValue> + WasmTypeName + One,
-        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction + Copy,
+        F: FnOnce(ExecRegister, ExecRegister, ConstRef) -> ExecInstruction,
     {
-        test_const_register::<T, F, bool>(wasm_op, make_op);
+        test_cmp_const_register::<T, F, bool>(wasm_op, make_op);
     }
 
-    run_test_cmp::<i32, _>("eq", make_op!(I32Eq));
-    run_test_cmp::<i64, _>("eq", make_op!(I64Eq));
-    run_test_cmp::<i32, _>("ne", make_op!(I32Ne));
-    run_test_cmp::<i64, _>("ne", make_op!(I64Ne));
+    run_test_cmp::<i32, _>("eq", make_op!(I32EqImm));
+    run_test_cmp::<i64, _>("eq", make_op!(I64EqImm));
+    run_test_cmp::<i32, _>("ne", make_op!(I32NeImm));
+    run_test_cmp::<i64, _>("ne", make_op!(I64NeImm));
 
     run_test_bin::<i32, _>("add", make_op!(I32Add));
     run_test_bin::<i64, _>("add", make_op!(I64Add));
@@ -1265,10 +1369,10 @@ fn binary_const_register_commutative() {
     run_test_bin::<i32, _>("xor", make_op!(I32Xor));
     run_test_bin::<i64, _>("xor", make_op!(I64Xor));
 
-    run_test_cmp::<f32, _>("eq", make_op!(F32Eq));
-    run_test_cmp::<f64, _>("eq", make_op!(F64Eq));
-    run_test_cmp::<f32, _>("ne", make_op!(F32Ne));
-    run_test_cmp::<f64, _>("ne", make_op!(F64Ne));
+    run_test_cmp::<f32, _>("eq", make_op!(F32EqImm));
+    run_test_cmp::<f64, _>("eq", make_op!(F64EqImm));
+    run_test_cmp::<f32, _>("ne", make_op!(F32NeImm));
+    run_test_cmp::<f64, _>("ne", make_op!(F64NeImm));
 
     run_test_bin::<f32, _>("add", make_op!(F32Add));
     run_test_bin::<f64, _>("add", make_op!(F64Add));
@@ -1517,7 +1621,7 @@ fn cmp_zero_register() {
     fn run_test<T, F>(ty: &str, make_op: F)
     where
         T: Default + Into<UntypedValue>,
-        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
+        F: FnOnce(ExecRegister, ExecRegister, ConstRef) -> ExecInstruction,
     {
         let wasm = wat2wasm(&format!(
             r#"
@@ -1535,14 +1639,14 @@ fn cmp_zero_register() {
         let result = ExecRegister::from_inner(1);
         let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
-            make_op(result, ExecRegister::from_inner(0), rhs.into()),
+            make_op(result, ExecRegister::from_inner(0), rhs),
             ExecInstruction::Return { results },
         ];
         assert_func_bodies(&wasm, [expected]);
     }
 
-    run_test::<i32, _>("i32", make_op!(I32Eq));
-    run_test::<i64, _>("i64", make_op!(I64Eq));
+    run_test::<i32, _>("i32", make_op!(I32EqImm));
+    run_test::<i64, _>("i64", make_op!(I64EqImm));
 }
 
 /// Tests translation of Wasm `{i32,i64}.eqz` functions.
@@ -1589,7 +1693,7 @@ fn cmp_zero_const() {
 fn cmp_registers() {
     fn run_test<F>(ty: &str, wasm_op: &str, make_op: F)
     where
-        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
+        F: FnOnce(ExecRegister, ExecRegister, ExecRegister) -> ExecInstruction,
     {
         let wasm = wat2wasm(&format!(
             r#"
@@ -1610,12 +1714,13 @@ fn cmp_registers() {
             make_op(
                 result,
                 ExecRegister::from_inner(0),
-                ExecRegister::from_inner(1).into(),
+                ExecRegister::from_inner(1),
             ),
             ExecInstruction::Return { results },
         ];
         assert_func_bodies(&wasm, [expected]);
     }
+
     run_test("i32", "lt_s", make_op!(I32LtS));
     run_test("i32", "lt_u", make_op!(I32LtU));
     run_test("i32", "gt_s", make_op!(I32GtS));
@@ -1649,7 +1754,7 @@ fn cmp_register_and_const() {
     fn run_test<T, F>(ty: &str, wasm_op: &str, value: T, make_op: F)
     where
         T: Display + Into<UntypedValue>,
-        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
+        F: FnOnce(ExecRegister, ExecRegister, ConstRef) -> ExecInstruction,
     {
         let wasm = wat2wasm(&format!(
             r#"
@@ -1673,24 +1778,25 @@ fn cmp_register_and_const() {
         ];
         assert_func_bodies(&wasm, [expected]);
     }
-    run_test("i32", "lt_s", 1_i32, make_op!(I32LtS));
-    run_test("i32", "lt_u", 1_i32, make_op!(I32LtU));
-    run_test("i32", "gt_s", 1_i32, make_op!(I32GtS));
-    run_test("i32", "gt_u", 1_i32, make_op!(I32GtU));
-    run_test("i64", "lt_s", 1_i32, make_op!(I64LtS));
-    run_test("i64", "lt_u", 1_i32, make_op!(I64LtU));
-    run_test("i64", "gt_s", 1_i32, make_op!(I64GtS));
-    run_test("i64", "gt_u", 1_i32, make_op!(I64GtU));
 
-    run_test("f32", "lt", 1.0_f32, make_op!(F32Lt));
-    run_test("f32", "le", 1.0_f32, make_op!(F32Le));
-    run_test("f32", "gt", 1.0_f32, make_op!(F32Gt));
-    run_test("f32", "ge", 1.0_f32, make_op!(F32Ge));
+    run_test("i32", "lt_s", 1_i32, make_op!(I32LtSImm));
+    run_test("i32", "lt_u", 1_i32, make_op!(I32LtUImm));
+    run_test("i32", "gt_s", 1_i32, make_op!(I32GtSImm));
+    run_test("i32", "gt_u", 1_i32, make_op!(I32GtUImm));
+    run_test("i64", "lt_s", 1_i32, make_op!(I64LtSImm));
+    run_test("i64", "lt_u", 1_i32, make_op!(I64LtUImm));
+    run_test("i64", "gt_s", 1_i32, make_op!(I64GtSImm));
+    run_test("i64", "gt_u", 1_i32, make_op!(I64GtUImm));
 
-    run_test("f64", "lt", 1.0_f64, make_op!(F64Lt));
-    run_test("f64", "le", 1.0_f64, make_op!(F64Le));
-    run_test("f64", "gt", 1.0_f64, make_op!(F64Gt));
-    run_test("f64", "ge", 1.0_f64, make_op!(F64Ge));
+    run_test("f32", "lt", 1.0_f32, make_op!(F32LtImm));
+    run_test("f32", "le", 1.0_f32, make_op!(F32LeImm));
+    run_test("f32", "gt", 1.0_f32, make_op!(F32GtImm));
+    run_test("f32", "ge", 1.0_f32, make_op!(F32GeImm));
+
+    run_test("f64", "lt", 1.0_f64, make_op!(F64LtImm));
+    run_test("f64", "le", 1.0_f64, make_op!(F64LeImm));
+    run_test("f64", "gt", 1.0_f64, make_op!(F64GtImm));
+    run_test("f64", "ge", 1.0_f64, make_op!(F64GeImm));
 }
 
 /// Tests translation of all Wasm comparison functions.
@@ -1708,7 +1814,7 @@ fn cmp_const_and_register() {
     fn run_test<T, F>(ty: &str, wasm_op: &str, value: T, make_op: F)
     where
         T: Display + Into<UntypedValue>,
-        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
+        F: FnOnce(ExecRegister, ExecRegister, ConstRef) -> ExecInstruction,
     {
         let wasm = wat2wasm(&format!(
             r#"
@@ -1727,29 +1833,29 @@ fn cmp_const_and_register() {
         let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let rhs = engine.alloc_const(value);
         let expected = [
-            make_op(result, ExecRegister::from_inner(0), rhs.into()),
+            make_op(result, ExecRegister::from_inner(0), rhs),
             ExecInstruction::Return { results },
         ];
         assert_func_bodies(&wasm, [expected]);
     }
-    run_test("i32", "lt_s", 1_i32, make_op!(I32GtS));
-    run_test("i32", "lt_u", 1_i32, make_op!(I32GtU));
-    run_test("i32", "gt_s", 1_i32, make_op!(I32LtS));
-    run_test("i32", "gt_u", 1_i32, make_op!(I32LtU));
-    run_test("i64", "lt_s", 1_i32, make_op!(I64GtS));
-    run_test("i64", "lt_u", 1_i32, make_op!(I64GtU));
-    run_test("i64", "gt_s", 1_i32, make_op!(I64LtS));
-    run_test("i64", "gt_u", 1_i32, make_op!(I64LtU));
+    run_test("i32", "lt_s", 1_i32, make_op!(I32GtSImm));
+    run_test("i32", "lt_u", 1_i32, make_op!(I32GtUImm));
+    run_test("i32", "gt_s", 1_i32, make_op!(I32LtSImm));
+    run_test("i32", "gt_u", 1_i32, make_op!(I32LtUImm));
+    run_test("i64", "lt_s", 1_i32, make_op!(I64GtSImm));
+    run_test("i64", "lt_u", 1_i32, make_op!(I64GtUImm));
+    run_test("i64", "gt_s", 1_i32, make_op!(I64LtSImm));
+    run_test("i64", "gt_u", 1_i32, make_op!(I64LtUImm));
 
-    run_test("f32", "lt", 1.0_f32, make_op!(F32Gt));
-    run_test("f32", "le", 1.0_f32, make_op!(F32Ge));
-    run_test("f32", "gt", 1.0_f32, make_op!(F32Lt));
-    run_test("f32", "ge", 1.0_f32, make_op!(F32Le));
+    run_test("f32", "lt", 1.0_f32, make_op!(F32GtImm));
+    run_test("f32", "le", 1.0_f32, make_op!(F32GeImm));
+    run_test("f32", "gt", 1.0_f32, make_op!(F32LtImm));
+    run_test("f32", "ge", 1.0_f32, make_op!(F32LeImm));
 
-    run_test("f64", "lt", 1.0_f64, make_op!(F64Gt));
-    run_test("f64", "le", 1.0_f64, make_op!(F64Ge));
-    run_test("f64", "gt", 1.0_f64, make_op!(F64Lt));
-    run_test("f64", "ge", 1.0_f64, make_op!(F64Le));
+    run_test("f64", "lt", 1.0_f64, make_op!(F64GtImm));
+    run_test("f64", "le", 1.0_f64, make_op!(F64GeImm));
+    run_test("f64", "gt", 1.0_f64, make_op!(F64LtImm));
+    run_test("f64", "ge", 1.0_f64, make_op!(F64LeImm));
 }
 
 /// Tests translation of all Wasm comparison functions.

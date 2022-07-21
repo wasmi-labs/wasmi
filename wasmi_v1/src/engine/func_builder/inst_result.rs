@@ -60,37 +60,69 @@ impl IrInstruction {
             Self::MemorySize { result, .. }
             | Self::MemoryGrow { result, .. }
             | Self::I32Eq { result, .. }
+            | Self::I32EqImm { result, .. }
             | Self::I32Ne { result, .. }
+            | Self::I32NeImm { result, .. }
             | Self::I32LtS { result, .. }
+            | Self::I32LtSImm { result, .. }
             | Self::I32LtU { result, .. }
+            | Self::I32LtUImm { result, .. }
             | Self::I32GtS { result, .. }
+            | Self::I32GtSImm { result, .. }
             | Self::I32GtU { result, .. }
+            | Self::I32GtUImm { result, .. }
             | Self::I32LeS { result, .. }
+            | Self::I32LeSImm { result, .. }
             | Self::I32LeU { result, .. }
+            | Self::I32LeUImm { result, .. }
             | Self::I32GeS { result, .. }
+            | Self::I32GeSImm { result, .. }
             | Self::I32GeU { result, .. }
+            | Self::I32GeUImm { result, .. }
             | Self::I64Eq { result, .. }
+            | Self::I64EqImm { result, .. }
             | Self::I64Ne { result, .. }
+            | Self::I64NeImm { result, .. }
             | Self::I64LtS { result, .. }
+            | Self::I64LtSImm { result, .. }
             | Self::I64LtU { result, .. }
+            | Self::I64LtUImm { result, .. }
             | Self::I64GtS { result, .. }
+            | Self::I64GtSImm { result, .. }
             | Self::I64GtU { result, .. }
+            | Self::I64GtUImm { result, .. }
             | Self::I64LeS { result, .. }
+            | Self::I64LeSImm { result, .. }
             | Self::I64LeU { result, .. }
+            | Self::I64LeUImm { result, .. }
             | Self::I64GeS { result, .. }
+            | Self::I64GeSImm { result, .. }
             | Self::I64GeU { result, .. }
+            | Self::I64GeUImm { result, .. }
             | Self::F32Eq { result, .. }
+            | Self::F32EqImm { result, .. }
             | Self::F32Ne { result, .. }
+            | Self::F32NeImm { result, .. }
             | Self::F32Lt { result, .. }
+            | Self::F32LtImm { result, .. }
             | Self::F32Gt { result, .. }
+            | Self::F32GtImm { result, .. }
             | Self::F32Le { result, .. }
+            | Self::F32LeImm { result, .. }
             | Self::F32Ge { result, .. }
+            | Self::F32GeImm { result, .. }
             | Self::F64Eq { result, .. }
+            | Self::F64EqImm { result, .. }
             | Self::F64Ne { result, .. }
+            | Self::F64NeImm { result, .. }
             | Self::F64Lt { result, .. }
+            | Self::F64LtImm { result, .. }
             | Self::F64Gt { result, .. }
+            | Self::F64GtImm { result, .. }
             | Self::F64Le { result, .. }
+            | Self::F64LeImm { result, .. }
             | Self::F64Ge { result, .. }
+            | Self::F64GeImm { result, .. }
             | Self::I32Clz { result, .. }
             | Self::I32Ctz { result, .. }
             | Self::I32Popcnt { result, .. }

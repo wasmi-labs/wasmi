@@ -1302,7 +1302,12 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(memory_idx, offset, store_op!(I32Store), store_op!(I32StoreImm))
+        self.translate_store(
+            memory_idx,
+            offset,
+            store_op!(I32Store),
+            store_op!(I32StoreImm),
+        )
     }
 
     /// Translate a Wasm `i64.store` instruction.
@@ -1311,7 +1316,12 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(memory_idx, offset, store_op!(I64Store), store_op!(I64StoreImm))
+        self.translate_store(
+            memory_idx,
+            offset,
+            store_op!(I64Store),
+            store_op!(I64StoreImm),
+        )
     }
 
     /// Translate a Wasm `f32.store` instruction.
@@ -1320,7 +1330,12 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(memory_idx, offset, store_op!(F32Store), store_op!(F32StoreImm))
+        self.translate_store(
+            memory_idx,
+            offset,
+            store_op!(F32Store),
+            store_op!(F32StoreImm),
+        )
     }
 
     /// Translate a Wasm `f64.store` instruction.
@@ -1329,7 +1344,12 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(memory_idx, offset, store_op!(F64Store), store_op!(F64StoreImm))
+        self.translate_store(
+            memory_idx,
+            offset,
+            store_op!(F64Store),
+            store_op!(F64StoreImm),
+        )
     }
 
     /// Translate a Wasm `i32.store_i8` instruction.
@@ -1338,7 +1358,12 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(memory_idx, offset, store_op!(I32Store8), store_op!(I32Store8Imm))
+        self.translate_store(
+            memory_idx,
+            offset,
+            store_op!(I32Store8),
+            store_op!(I32Store8Imm),
+        )
     }
 
     /// Translate a Wasm `i32.store_i16` instruction.
@@ -1347,7 +1372,12 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(memory_idx, offset, store_op!(I32Store16), store_op!(I32Store16Imm))
+        self.translate_store(
+            memory_idx,
+            offset,
+            store_op!(I32Store16),
+            store_op!(I32Store16Imm),
+        )
     }
 
     /// Translate a Wasm `i64.store_i8` instruction.
@@ -1356,7 +1386,12 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(memory_idx, offset, store_op!(I64Store8), store_op!(I64Store8Imm))
+        self.translate_store(
+            memory_idx,
+            offset,
+            store_op!(I64Store8),
+            store_op!(I64Store8Imm),
+        )
     }
 
     /// Translate a Wasm `i64.store_i16` instruction.
@@ -1365,7 +1400,12 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(memory_idx, offset, store_op!(I64Store16), store_op!(I64Store16Imm))
+        self.translate_store(
+            memory_idx,
+            offset,
+            store_op!(I64Store16),
+            store_op!(I64Store16Imm),
+        )
     }
 
     /// Translate a Wasm `i64.store_i32` instruction.
@@ -1374,7 +1414,12 @@ impl<'parser> FunctionBuilder<'parser> {
         memory_idx: MemoryIdx,
         offset: u32,
     ) -> Result<(), ModuleError> {
-        self.translate_store(memory_idx, offset, store_op!(I64Store32), store_op!(I64Store32Imm))
+        self.translate_store(
+            memory_idx,
+            offset,
+            store_op!(I64Store32),
+            store_op!(I64Store32Imm),
+        )
     }
 
     /// Translate a Wasm `memory.size` instruction.
@@ -1459,20 +1504,25 @@ impl<'parser> FunctionBuilder<'parser> {
     /// - `{i32, i64, f32, f64}.ne`
     fn translate_binary_cmp(
         &mut self,
-        make_op: fn(IrRegister, IrRegister, IrProvider) -> IrInstruction,
+        make_op: fn(IrRegister, IrRegister, IrRegister) -> IrInstruction,
+        make_imm_op: fn(IrRegister, IrRegister, UntypedValue) -> IrInstruction,
         exec_op: fn(UntypedValue, UntypedValue) -> UntypedValue,
     ) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
             let (lhs, rhs) = builder.providers.pop2();
             match (lhs, rhs) {
-                (IrProvider::Register(lhs), rhs) => {
+                (IrProvider::Register(lhs), IrProvider::Register(rhs)) => {
                     let result = builder.providers.push_dynamic();
                     builder.push_instr(make_op(result, lhs, rhs));
                 }
-                (lhs @ IrProvider::Immediate(_), IrProvider::Register(rhs)) => {
+                (IrProvider::Register(lhs), IrProvider::Immediate(rhs)) => {
+                    let result = builder.providers.push_dynamic();
+                    builder.push_instr(make_imm_op(result, lhs, rhs));
+                }
+                (IrProvider::Immediate(lhs), IrProvider::Register(rhs)) => {
                     // Note: we can swap the operands to avoid having to copy `rhs`.
                     let result = builder.providers.push_dynamic();
-                    builder.push_instr(make_op(result, rhs, lhs));
+                    builder.push_instr(make_imm_op(result, rhs, lhs));
                 }
                 (IrProvider::Immediate(lhs), IrProvider::Immediate(rhs)) => {
                     // Note: precompute result and push onto provider stack
@@ -1485,12 +1535,12 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `i32.eq` instruction.
     pub fn translate_i32_eq(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_cmp(make_op!(I32Eq), UntypedValue::i32_eq)
+        self.translate_binary_cmp(make_op!(I32Eq), make_op!(I32EqImm), UntypedValue::i32_eq)
     }
 
     /// Translate a Wasm `i32.ne` instruction.
     pub fn translate_i32_ne(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_cmp(make_op!(I32Ne), UntypedValue::i32_ne)
+        self.translate_binary_cmp(make_op!(I32Ne), make_op!(I32NeImm), UntypedValue::i32_ne)
     }
 
     /// Translate a Wasm binary ordering instruction.
@@ -1505,18 +1555,23 @@ impl<'parser> FunctionBuilder<'parser> {
     /// - `{i32, u32, i64, u64, f32, f64}.ge`
     fn translate_ord(
         &mut self,
-        make_op: fn(IrRegister, IrRegister, IrProvider) -> IrInstruction,
-        swap_op: fn(IrRegister, IrRegister, IrProvider) -> IrInstruction,
+        make_op: fn(IrRegister, IrRegister, IrRegister) -> IrInstruction,
+        make_imm_op: fn(IrRegister, IrRegister, UntypedValue) -> IrInstruction,
+        swap_op: fn(IrRegister, IrRegister, UntypedValue) -> IrInstruction,
         exec_op: fn(UntypedValue, UntypedValue) -> UntypedValue,
     ) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
             let (lhs, rhs) = builder.providers.pop2();
             match (lhs, rhs) {
-                (IrProvider::Register(lhs), rhs) => {
+                (IrProvider::Register(lhs), IrProvider::Register(rhs)) => {
                     let result = builder.providers.push_dynamic();
                     builder.push_instr(make_op(result, lhs, rhs));
                 }
-                (lhs @ IrProvider::Immediate(_), IrProvider::Register(rhs)) => {
+                (IrProvider::Register(lhs), IrProvider::Immediate(rhs)) => {
+                    let result = builder.providers.push_dynamic();
+                    builder.push_instr(make_imm_op(result, lhs, rhs));
+                }
+                (IrProvider::Immediate(lhs), IrProvider::Register(rhs)) => {
                     // Note: we can swap the operands to avoid having to copy `rhs`.
                     let result = builder.providers.push_dynamic();
                     builder.push_instr(swap_op(result, rhs, lhs));
@@ -1532,42 +1587,82 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `i32.lt` instruction.
     pub fn translate_i32_lt(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(I32LtS), make_op!(I32GtS), UntypedValue::i32_lt_s)
+        self.translate_ord(
+            make_op!(I32LtS),
+            make_op!(I32LtSImm),
+            make_op!(I32GtSImm),
+            UntypedValue::i32_lt_s,
+        )
     }
 
     /// Translate a Wasm `u32.lt` instruction.
     pub fn translate_u32_lt(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(I32LtU), make_op!(I32GtU), UntypedValue::i32_lt_u)
+        self.translate_ord(
+            make_op!(I32LtU),
+            make_op!(I32LtUImm),
+            make_op!(I32GtUImm),
+            UntypedValue::i32_lt_u,
+        )
     }
 
     /// Translate a Wasm `i32.gt` instruction.
     pub fn translate_i32_gt(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(I32GtS), make_op!(I32LtS), UntypedValue::i32_gt_s)
+        self.translate_ord(
+            make_op!(I32GtS),
+            make_op!(I32GtSImm),
+            make_op!(I32LtSImm),
+            UntypedValue::i32_gt_s,
+        )
     }
 
     /// Translate a Wasm `u32.gt` instruction.
     pub fn translate_u32_gt(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(I32GtU), make_op!(I32LtU), UntypedValue::i32_gt_u)
+        self.translate_ord(
+            make_op!(I32GtU),
+            make_op!(I32GtUImm),
+            make_op!(I32LtUImm),
+            UntypedValue::i32_gt_u,
+        )
     }
 
     /// Translate a Wasm `i32.le` instruction.
     pub fn translate_i32_le(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(I32LeS), make_op!(I32GeS), UntypedValue::i32_le_s)
+        self.translate_ord(
+            make_op!(I32LeS),
+            make_op!(I32LeSImm),
+            make_op!(I32GeSImm),
+            UntypedValue::i32_le_s,
+        )
     }
 
     /// Translate a Wasm `u32.le` instruction.
     pub fn translate_u32_le(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(I32LeU), make_op!(I32GeU), UntypedValue::i32_le_u)
+        self.translate_ord(
+            make_op!(I32LeU),
+            make_op!(I32LeUImm),
+            make_op!(I32GeUImm),
+            UntypedValue::i32_le_u,
+        )
     }
 
     /// Translate a Wasm `i32.ge` instruction.
     pub fn translate_i32_ge(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(I32GeS), make_op!(I32LeS), UntypedValue::i32_ge_s)
+        self.translate_ord(
+            make_op!(I32GeS),
+            make_op!(I32GeSImm),
+            make_op!(I32LeSImm),
+            UntypedValue::i32_ge_s,
+        )
     }
 
     /// Translate a Wasm `u32.ge` instruction.
     pub fn translate_u32_ge(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(I32GeU), make_op!(I32LeU), UntypedValue::i32_ge_u)
+        self.translate_ord(
+            make_op!(I32GeU),
+            make_op!(I32GeUImm),
+            make_op!(I32LeUImm),
+            UntypedValue::i32_ge_u,
+        )
     }
 
     /// Translate a Wasm `i64.eqz` instruction.
@@ -1581,112 +1676,192 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translate a Wasm `i64.eq` instruction.
     pub fn translate_i64_eq(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_cmp(make_op!(I64Eq), UntypedValue::i64_eq)
+        self.translate_binary_cmp(make_op!(I64Eq), make_op!(I64EqImm), UntypedValue::i64_eq)
     }
 
     /// Translate a Wasm `i64.ne` instruction.
     pub fn translate_i64_ne(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_cmp(make_op!(I64Ne), UntypedValue::i64_ne)
+        self.translate_binary_cmp(make_op!(I64Ne), make_op!(I64NeImm), UntypedValue::i64_ne)
     }
 
     /// Translate a Wasm `i64.lt` instruction.
     pub fn translate_i64_lt(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(I64LtS), make_op!(I64GtS), UntypedValue::i64_lt_s)
+        self.translate_ord(
+            make_op!(I64LtS),
+            make_op!(I64LtSImm),
+            make_op!(I64GtSImm),
+            UntypedValue::i64_lt_s,
+        )
     }
 
     /// Translate a Wasm `u64.lt` instruction.
     pub fn translate_u64_lt(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(I64LtU), make_op!(I64GtU), UntypedValue::i64_lt_u)
+        self.translate_ord(
+            make_op!(I64LtU),
+            make_op!(I64LtUImm),
+            make_op!(I64GtUImm),
+            UntypedValue::i64_lt_u,
+        )
     }
 
     /// Translate a Wasm `i64.gt` instruction.
     pub fn translate_i64_gt(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(I64GtS), make_op!(I64LtS), UntypedValue::i64_gt_s)
+        self.translate_ord(
+            make_op!(I64GtS),
+            make_op!(I64GtSImm),
+            make_op!(I64LtSImm),
+            UntypedValue::i64_gt_s,
+        )
     }
 
     /// Translate a Wasm `u64.gt` instruction.
     pub fn translate_u64_gt(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(I64GtU), make_op!(I64LtU), UntypedValue::i64_gt_u)
+        self.translate_ord(
+            make_op!(I64GtU),
+            make_op!(I64GtUImm),
+            make_op!(I64LtUImm),
+            UntypedValue::i64_gt_u,
+        )
     }
 
     /// Translate a Wasm `i64.le` instruction.
     pub fn translate_i64_le(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(I64LeS), make_op!(I64GeS), UntypedValue::i64_le_s)
+        self.translate_ord(
+            make_op!(I64LeS),
+            make_op!(I64LeSImm),
+            make_op!(I64GeSImm),
+            UntypedValue::i64_le_s,
+        )
     }
 
     /// Translate a Wasm `u64.le` instruction.
     pub fn translate_u64_le(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(I64LeU), make_op!(I64GeU), UntypedValue::i64_le_u)
+        self.translate_ord(
+            make_op!(I64LeU),
+            make_op!(I64LeUImm),
+            make_op!(I64GeUImm),
+            UntypedValue::i64_le_u,
+        )
     }
 
     /// Translate a Wasm `i64.ge` instruction.
     pub fn translate_i64_ge(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(I64GeS), make_op!(I64LeS), UntypedValue::i64_ge_s)
+        self.translate_ord(
+            make_op!(I64GeS),
+            make_op!(I64GeSImm),
+            make_op!(I64LeSImm),
+            UntypedValue::i64_ge_s,
+        )
     }
 
     /// Translate a Wasm `u64.ge` instruction.
     pub fn translate_u64_ge(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(I64GeU), make_op!(I64LeU), UntypedValue::i64_ge_u)
+        self.translate_ord(
+            make_op!(I64GeU),
+            make_op!(I64GeUImm),
+            make_op!(I64LeUImm),
+            UntypedValue::i64_ge_u,
+        )
     }
 
     /// Translate a Wasm `f32.eq` instruction.
     pub fn translate_f32_eq(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_cmp(make_op!(F32Eq), UntypedValue::f32_eq)
+        self.translate_binary_cmp(make_op!(F32Eq), make_op!(F32EqImm), UntypedValue::f32_eq)
     }
 
     /// Translate a Wasm `f32.ne` instruction.
     pub fn translate_f32_ne(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_cmp(make_op!(F32Ne), UntypedValue::f32_ne)
+        self.translate_binary_cmp(make_op!(F32Ne), make_op!(F32NeImm), UntypedValue::f32_ne)
     }
 
     /// Translate a Wasm `f32.lt` instruction.
     pub fn translate_f32_lt(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(F32Lt), make_op!(F32Gt), UntypedValue::f32_lt)
+        self.translate_ord(
+            make_op!(F32Lt),
+            make_op!(F32LtImm),
+            make_op!(F32GtImm),
+            UntypedValue::f32_lt,
+        )
     }
 
     /// Translate a Wasm `f32.gt` instruction.
     pub fn translate_f32_gt(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(F32Gt), make_op!(F32Lt), UntypedValue::f32_gt)
+        self.translate_ord(
+            make_op!(F32Gt),
+            make_op!(F32GtImm),
+            make_op!(F32LtImm),
+            UntypedValue::f32_gt,
+        )
     }
 
     /// Translate a Wasm `f32.le` instruction.
     pub fn translate_f32_le(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(F32Le), make_op!(F32Ge), UntypedValue::f32_le)
+        self.translate_ord(
+            make_op!(F32Le),
+            make_op!(F32LeImm),
+            make_op!(F32GeImm),
+            UntypedValue::f32_le,
+        )
     }
 
     /// Translate a Wasm `f32.ge` instruction.
     pub fn translate_f32_ge(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(F32Ge), make_op!(F32Le), UntypedValue::f32_ge)
+        self.translate_ord(
+            make_op!(F32Ge),
+            make_op!(F32GeImm),
+            make_op!(F32LeImm),
+            UntypedValue::f32_ge,
+        )
     }
 
     /// Translate a Wasm `f64.eq` instruction.
     pub fn translate_f64_eq(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_cmp(make_op!(F64Eq), UntypedValue::f64_eq)
+        self.translate_binary_cmp(make_op!(F64Eq), make_op!(F64EqImm), UntypedValue::f64_eq)
     }
 
     /// Translate a Wasm `f64.ne` instruction.
     pub fn translate_f64_ne(&mut self) -> Result<(), ModuleError> {
-        self.translate_binary_cmp(make_op!(F64Ne), UntypedValue::f64_ne)
+        self.translate_binary_cmp(make_op!(F64Ne), make_op!(F64NeImm), UntypedValue::f64_ne)
     }
 
     /// Translate a Wasm `f64.lt` instruction.
     pub fn translate_f64_lt(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(F64Lt), make_op!(F64Gt), UntypedValue::f64_lt)
+        self.translate_ord(
+            make_op!(F64Lt),
+            make_op!(F64LtImm),
+            make_op!(F64GtImm),
+            UntypedValue::f64_lt,
+        )
     }
 
     /// Translate a Wasm `f64.gt` instruction.
     pub fn translate_f64_gt(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(F64Gt), make_op!(F64Lt), UntypedValue::f64_gt)
+        self.translate_ord(
+            make_op!(F64Gt),
+            make_op!(F64GtImm),
+            make_op!(F64LtImm),
+            UntypedValue::f64_gt,
+        )
     }
 
     /// Translate a Wasm `f64.le` instruction.
     pub fn translate_f64_le(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(F64Le), make_op!(F64Ge), UntypedValue::f64_le)
+        self.translate_ord(
+            make_op!(F64Le),
+            make_op!(F64LeImm),
+            make_op!(F64GeImm),
+            UntypedValue::f64_le,
+        )
     }
 
     /// Translate a Wasm `f64.ge` instruction.
     pub fn translate_f64_ge(&mut self) -> Result<(), ModuleError> {
-        self.translate_ord(make_op!(F64Ge), make_op!(F64Le), UntypedValue::f64_ge)
+        self.translate_ord(
+            make_op!(F64Ge),
+            make_op!(F64GeImm),
+            make_op!(F64LeImm),
+            UntypedValue::f64_ge,
+        )
     }
 
     /// Translate a unary Wasm instruction.

@@ -156,6 +156,33 @@ impl EngineInner {
         make_op(result, lhs, rhs)
     }
 
+    fn compile_inst_rrr(
+        context: &CompileContext,
+        result: IrRegister,
+        lhs: IrRegister,
+        rhs: IrRegister,
+        make_op: fn(ExecRegister, ExecRegister, ExecRegister) -> ExecInstruction,
+    ) -> ExecInstruction {
+        let result = Self::compile_register(context, result);
+        let lhs = Self::compile_register(context, lhs);
+        let rhs = Self::compile_register(context, rhs);
+        make_op(result, lhs, rhs)
+    }
+
+    fn compile_inst_rri(
+        res: &mut EngineResources,
+        context: &CompileContext,
+        result: IrRegister,
+        lhs: IrRegister,
+        rhs: UntypedValue,
+        make_op: fn(ExecRegister, ExecRegister, ConstRef) -> ExecInstruction,
+    ) -> ExecInstruction {
+        let result = Self::compile_register(context, result);
+        let lhs = Self::compile_register(context, lhs);
+        let rhs = Self::compile_immediate(res, rhs);
+        make_op(result, lhs, rhs)
+    }
+
     fn compile_load(
         context: &CompileContext,
         result: IrRegister,
@@ -638,103 +665,199 @@ impl EngineInner {
             }
 
             Instruction::I32Eq { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(I32Eq))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(I32Eq))
+            }
+            Instruction::I32EqImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(I32EqImm))
             }
             Instruction::I32Ne { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(I32Ne))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(I32Ne))
+            }
+            Instruction::I32NeImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(I32NeImm))
             }
             Instruction::I32LtS { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(I32LtS))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(I32LtS))
+            }
+            Instruction::I32LtSImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(I32LtSImm))
             }
             Instruction::I32LtU { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(I32LtU))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(I32LtU))
+            }
+            Instruction::I32LtUImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(I32LtUImm))
             }
             Instruction::I32LeS { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(I32LeS))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(I32LeS))
+            }
+            Instruction::I32LeSImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(I32LeSImm))
             }
             Instruction::I32LeU { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(I32LeU))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(I32LeU))
+            }
+            Instruction::I32LeUImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(I32LeUImm))
             }
             Instruction::I32GtS { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(I32GtS))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(I32GtS))
+            }
+            Instruction::I32GtSImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(I32GtSImm))
             }
             Instruction::I32GtU { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(I32GtU))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(I32GtU))
+            }
+            Instruction::I32GtUImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(I32GtUImm))
             }
             Instruction::I32GeS { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(I32GeS))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(I32GeS))
+            }
+            Instruction::I32GeSImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(I32GeSImm))
             }
             Instruction::I32GeU { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(I32GeU))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(I32GeU))
+            }
+            Instruction::I32GeUImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(I32GeUImm))
             }
 
             Instruction::I64Eq { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(I64Eq))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(I64Eq))
+            }
+            Instruction::I64EqImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(I64EqImm))
             }
             Instruction::I64Ne { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(I64Ne))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(I64Ne))
+            }
+            Instruction::I64NeImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(I64NeImm))
             }
             Instruction::I64LtS { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(I64LtS))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(I64LtS))
+            }
+            Instruction::I64LtSImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(I64LtSImm))
             }
             Instruction::I64LtU { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(I64LtU))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(I64LtU))
+            }
+            Instruction::I64LtUImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(I64LtUImm))
             }
             Instruction::I64LeS { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(I64LeS))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(I64LeS))
+            }
+            Instruction::I64LeSImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(I64LeSImm))
             }
             Instruction::I64LeU { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(I64LeU))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(I64LeU))
+            }
+            Instruction::I64LeUImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(I64LeUImm))
             }
             Instruction::I64GtS { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(I64GtS))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(I64GtS))
+            }
+            Instruction::I64GtSImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(I64GtSImm))
             }
             Instruction::I64GtU { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(I64GtU))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(I64GtU))
+            }
+            Instruction::I64GtUImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(I64GtUImm))
             }
             Instruction::I64GeS { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(I64GeS))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(I64GeS))
+            }
+            Instruction::I64GeSImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(I64GeSImm))
             }
             Instruction::I64GeU { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(I64GeU))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(I64GeU))
+            }
+            Instruction::I64GeUImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(I64GeUImm))
             }
 
             Instruction::F32Eq { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(F32Eq))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(F32Eq))
+            }
+            Instruction::F32EqImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(F32EqImm))
             }
             Instruction::F32Ne { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(F32Ne))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(F32Ne))
+            }
+            Instruction::F32NeImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(F32NeImm))
             }
             Instruction::F32Lt { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(F32Lt))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(F32Lt))
+            }
+            Instruction::F32LtImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(F32LtImm))
             }
             Instruction::F32Le { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(F32Le))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(F32Le))
+            }
+            Instruction::F32LeImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(F32LeImm))
             }
             Instruction::F32Gt { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(F32Gt))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(F32Gt))
+            }
+            Instruction::F32GtImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(F32GtImm))
             }
             Instruction::F32Ge { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(F32Ge))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(F32Ge))
+            }
+            Instruction::F32GeImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(F32GeImm))
             }
 
             Instruction::F64Eq { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(F64Eq))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(F64Eq))
+            }
+            Instruction::F64EqImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(F64EqImm))
             }
             Instruction::F64Ne { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(F64Ne))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(F64Ne))
+            }
+            Instruction::F64NeImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(F64NeImm))
             }
             Instruction::F64Lt { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(F64Lt))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(F64Lt))
+            }
+            Instruction::F64LtImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(F64LtImm))
             }
             Instruction::F64Le { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(F64Le))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(F64Le))
+            }
+            Instruction::F64LeImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(F64LeImm))
             }
             Instruction::F64Gt { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(F64Gt))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(F64Gt))
+            }
+            Instruction::F64GtImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(F64GtImm))
             }
             Instruction::F64Ge { result, lhs, rhs } => {
-                Self::compile_inst_rrp(res, context, result, lhs, rhs, binary_op!(F64Ge))
+                Self::compile_inst_rrr(context, result, lhs, rhs, binary_op!(F64Ge))
+            }
+            Instruction::F64GeImm { result, lhs, rhs } => {
+                Self::compile_inst_rri(res, context, result, lhs, rhs, binary_op!(F64GeImm))
             }
 
             Instruction::F32Abs { result, input } => {
