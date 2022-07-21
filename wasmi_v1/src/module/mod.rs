@@ -1,5 +1,4 @@
-use alloc::boxed::Box;
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 
 mod builder;
 mod compile;
