@@ -1212,7 +1212,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i32.add` instruction.
+    I32AddImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i32.sub` instruction.
     I32Sub {
@@ -1221,7 +1230,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i32.sub` instruction.
+    I32SubImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i32.mul` instruction.
     I32Mul {
@@ -1230,7 +1248,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i32.mul` instruction.
+    I32MulImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i32.div_s` instruction.
     I32DivS {
@@ -1239,7 +1266,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i32.div_s` instruction.
+    I32DivSImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i32.div_u` instruction.
     I32DivU {
@@ -1248,7 +1284,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i32.div_u` instruction.
+    I32DivUImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i32.rem_s` instruction.
     I32RemS {
@@ -1257,7 +1302,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i32.rem_s` instruction.
+    I32RemSImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i32.rem_u` instruction.
     I32RemU {
@@ -1266,7 +1320,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i32.rem_u` instruction.
+    I32RemUImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i32.and` instruction.
     I32And {
@@ -1275,7 +1338,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i32.and` instruction.
+    I32AndImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i32.or` instruction.
     I32Or {
@@ -1284,7 +1356,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i32.or` instruction.
+    I32OrImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i32.xor` instruction.
     I32Xor {
@@ -1293,7 +1374,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i32.xor` instruction.
+    I32XorImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i32.shl` instruction.
     I32Shl {
@@ -1302,7 +1392,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i32.shl` instruction.
+    I32ShlImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i32.shr_s` instruction.
     I32ShrS {
@@ -1311,7 +1410,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i32.shr_s` instruction.
+    I32ShrSImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i32.shr_u` instruction.
     I32ShrU {
@@ -1320,7 +1428,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i32.shr_u` instruction.
+    I32ShrUImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i32.rotl` instruction.
     I32Rotl {
@@ -1329,7 +1446,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i32.rotl` instruction.
+    I32RotlImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i32.rotr` instruction.
     I32Rotr {
@@ -1338,7 +1464,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i32.rotr` instruction.
+    I32RotrImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i64.clz` instruction.
     I64Clz {
@@ -1368,7 +1503,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i64.add` instruction.
+    I64AddImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i64.sub` instruction.
     I64Sub {
@@ -1377,7 +1521,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i64.sub` instruction.
+    I64SubImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i64.mul` instruction.
     I64Mul {
@@ -1386,7 +1539,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i64.mul` instruction.
+    I64MulImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i64.div_s` instruction.
     I64DivS {
@@ -1395,7 +1557,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i64.div_s` instruction.
+    I64DivSImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i64.div_u` instruction.
     I64DivU {
@@ -1404,7 +1575,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i64.div_u` instruction.
+    I64DivUImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i64.rem_s` instruction.
     I64RemS {
@@ -1413,7 +1593,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i64.rem_s` instruction.
+    I64RemSImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i64.rem_u` instruction.
     I64RemU {
@@ -1422,7 +1611,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i64.rem_u` instruction.
+    I64RemUImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i64.and` instruction.
     I64And {
@@ -1431,7 +1629,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i64.and` instruction.
+    I64AndImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i64.or` instruction.
     I64Or {
@@ -1440,7 +1647,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i64.or` instruction.
+    I64OrImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i64.xor` instruction.
     I64Xor {
@@ -1449,7 +1665,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i64.xor` instruction.
+    I64XorImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i64.shl` instruction.
     I64Shl {
@@ -1458,7 +1683,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i64.shl` instruction.
+    I64ShlImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i64.shr_s` instruction.
     I64ShrS {
@@ -1467,7 +1701,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i64.shr_s` instruction.
+    I64ShrSImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i64.shr_u` instruction.
     I64ShrU {
@@ -1476,7 +1719,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i64.shr_u` instruction.
+    I64ShrUImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i64.rotl` instruction.
     I64Rotl {
@@ -1485,7 +1737,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i64.rotl` instruction.
+    I64RotlImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i64.rotr` instruction.
     I64Rotr {
@@ -1494,7 +1755,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `i64.rotr` instruction.
+    I64RotrImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `f32.abs` instruction.
     F32Abs {
@@ -1552,7 +1822,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `f32.add` instruction.
+    F32AddImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `f32.sub` instruction.
     F32Sub {
@@ -1561,7 +1840,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `f32.sub` instruction.
+    F32SubImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `f32.mul` instruction.
     F32Mul {
@@ -1570,7 +1858,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `f32.mul` instruction.
+    F32MulImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `f32.div` instruction.
     F32Div {
@@ -1579,7 +1876,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `f32.div` instruction.
+    F32DivImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `f32.min` instruction.
     F32Min {
@@ -1588,7 +1894,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `f32.min` instruction.
+    F32MinImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `f32.max` instruction.
     F32Max {
@@ -1597,7 +1912,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `f32.max` instruction.
+    F32MaxImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `f32.copysign` instruction.
     F32Copysign {
@@ -1606,7 +1930,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `f32.copysign` instruction.
+    F32CopysignImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `f64.abs` instruction.
     F64Abs {
@@ -1664,7 +1997,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `f64.add` instruction.
+    F64AddImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `f64.sub` instruction.
     F64Sub {
@@ -1673,7 +2015,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `f64.sub` instruction.
+    F64SubImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `f64.mul` instruction.
     F64Mul {
@@ -1682,7 +2033,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `f64.mul` instruction.
+    F64MulImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `f64.div` instruction.
     F64Div {
@@ -1691,7 +2051,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `f64.div` instruction.
+    F64DivImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `f64.min` instruction.
     F64Min {
@@ -1700,7 +2069,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `f64.min` instruction.
+    F64MinImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `f64.max` instruction.
     F64Max {
@@ -1709,7 +2087,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `f64.max` instruction.
+    F64MaxImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `f64.copysign` instruction.
     F64Copysign {
@@ -1718,7 +2105,16 @@ where
         /// The left-hand side argument of the instruction.
         lhs: T::Register,
         /// The right-hand side argument of the instruction.
-        rhs: T::Provider,
+        rhs: T::Register,
+    },
+    /// Equivalent to the Wasm `f64.copysign` instruction.
+    F64CopysignImm {
+        /// Stores the result of the instruction evaluation.
+        result: T::Register,
+        /// The left-hand side argument of the instruction.
+        lhs: T::Register,
+        /// The right-hand side argument of the instruction.
+        rhs: T::Immediate,
     },
     /// Equivalent to the Wasm `i32.wrap_i64` instruction.
     I32WrapI64 {

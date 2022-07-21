@@ -520,47 +520,92 @@ pub(super) fn execute_frame(
             Instr::I32Add { result, lhs, rhs } => {
                 exec_ctx.exec_i32_add(result, lhs, rhs)?;
             }
+            Instr::I32AddImm { result, lhs, rhs } => {
+                exec_ctx.exec_i32_add_imm(result, lhs, rhs)?;
+            }
             Instr::I32Sub { result, lhs, rhs } => {
                 exec_ctx.exec_i32_sub(result, lhs, rhs)?;
+            }
+            Instr::I32SubImm { result, lhs, rhs } => {
+                exec_ctx.exec_i32_sub_imm(result, lhs, rhs)?;
             }
             Instr::I32Mul { result, lhs, rhs } => {
                 exec_ctx.exec_i32_mul(result, lhs, rhs)?;
             }
+            Instr::I32MulImm { result, lhs, rhs } => {
+                exec_ctx.exec_i32_mul_imm(result, lhs, rhs)?;
+            }
             Instr::I32DivS { result, lhs, rhs } => {
                 exec_ctx.exec_i32_div_s(result, lhs, rhs)?;
+            }
+            Instr::I32DivSImm { result, lhs, rhs } => {
+                exec_ctx.exec_i32_div_s_imm(result, lhs, rhs)?;
             }
             Instr::I32DivU { result, lhs, rhs } => {
                 exec_ctx.exec_i32_div_u(result, lhs, rhs)?;
             }
+            Instr::I32DivUImm { result, lhs, rhs } => {
+                exec_ctx.exec_i32_div_u_imm(result, lhs, rhs)?;
+            }
             Instr::I32RemS { result, lhs, rhs } => {
                 exec_ctx.exec_i32_rem_s(result, lhs, rhs)?;
+            }
+            Instr::I32RemSImm { result, lhs, rhs } => {
+                exec_ctx.exec_i32_rem_s_imm(result, lhs, rhs)?;
             }
             Instr::I32RemU { result, lhs, rhs } => {
                 exec_ctx.exec_i32_rem_u(result, lhs, rhs)?;
             }
+            Instr::I32RemUImm { result, lhs, rhs } => {
+                exec_ctx.exec_i32_rem_u_imm(result, lhs, rhs)?;
+            }
             Instr::I32And { result, lhs, rhs } => {
                 exec_ctx.exec_i32_and(result, lhs, rhs)?;
+            }
+            Instr::I32AndImm { result, lhs, rhs } => {
+                exec_ctx.exec_i32_and_imm(result, lhs, rhs)?;
             }
             Instr::I32Or { result, lhs, rhs } => {
                 exec_ctx.exec_i32_or(result, lhs, rhs)?;
             }
+            Instr::I32OrImm { result, lhs, rhs } => {
+                exec_ctx.exec_i32_or_imm(result, lhs, rhs)?;
+            }
             Instr::I32Xor { result, lhs, rhs } => {
                 exec_ctx.exec_i32_xor(result, lhs, rhs)?;
+            }
+            Instr::I32XorImm { result, lhs, rhs } => {
+                exec_ctx.exec_i32_xor_imm(result, lhs, rhs)?;
             }
             Instr::I32Shl { result, lhs, rhs } => {
                 exec_ctx.exec_i32_shl(result, lhs, rhs)?;
             }
+            Instr::I32ShlImm { result, lhs, rhs } => {
+                exec_ctx.exec_i32_shl_imm(result, lhs, rhs)?;
+            }
             Instr::I32ShrS { result, lhs, rhs } => {
                 exec_ctx.exec_i32_shr_s(result, lhs, rhs)?;
+            }
+            Instr::I32ShrSImm { result, lhs, rhs } => {
+                exec_ctx.exec_i32_shr_s_imm(result, lhs, rhs)?;
             }
             Instr::I32ShrU { result, lhs, rhs } => {
                 exec_ctx.exec_i32_shr_u(result, lhs, rhs)?;
             }
+            Instr::I32ShrUImm { result, lhs, rhs } => {
+                exec_ctx.exec_i32_shr_u_imm(result, lhs, rhs)?;
+            }
             Instr::I32Rotl { result, lhs, rhs } => {
                 exec_ctx.exec_i32_rotl(result, lhs, rhs)?;
             }
+            Instr::I32RotlImm { result, lhs, rhs } => {
+                exec_ctx.exec_i32_rotl_imm(result, lhs, rhs)?;
+            }
             Instr::I32Rotr { result, lhs, rhs } => {
                 exec_ctx.exec_i32_rotr(result, lhs, rhs)?;
+            }
+            Instr::I32RotrImm { result, lhs, rhs } => {
+                exec_ctx.exec_i32_rotr_imm(result, lhs, rhs)?;
             }
             Instr::I64Clz { result, input } => {
                 exec_ctx.exec_i64_clz(result, input)?;
@@ -574,47 +619,92 @@ pub(super) fn execute_frame(
             Instr::I64Add { result, lhs, rhs } => {
                 exec_ctx.exec_i64_add(result, lhs, rhs)?;
             }
+            Instr::I64AddImm { result, lhs, rhs } => {
+                exec_ctx.exec_i64_add_imm(result, lhs, rhs)?;
+            }
             Instr::I64Sub { result, lhs, rhs } => {
                 exec_ctx.exec_i64_sub(result, lhs, rhs)?;
+            }
+            Instr::I64SubImm { result, lhs, rhs } => {
+                exec_ctx.exec_i64_sub_imm(result, lhs, rhs)?;
             }
             Instr::I64Mul { result, lhs, rhs } => {
                 exec_ctx.exec_i64_mul(result, lhs, rhs)?;
             }
+            Instr::I64MulImm { result, lhs, rhs } => {
+                exec_ctx.exec_i64_mul_imm(result, lhs, rhs)?;
+            }
             Instr::I64DivS { result, lhs, rhs } => {
                 exec_ctx.exec_i64_div_s(result, lhs, rhs)?;
+            }
+            Instr::I64DivSImm { result, lhs, rhs } => {
+                exec_ctx.exec_i64_div_s_imm(result, lhs, rhs)?;
             }
             Instr::I64DivU { result, lhs, rhs } => {
                 exec_ctx.exec_i64_div_u(result, lhs, rhs)?;
             }
+            Instr::I64DivUImm { result, lhs, rhs } => {
+                exec_ctx.exec_i64_div_u_imm(result, lhs, rhs)?;
+            }
             Instr::I64RemS { result, lhs, rhs } => {
                 exec_ctx.exec_i64_rem_s(result, lhs, rhs)?;
+            }
+            Instr::I64RemSImm { result, lhs, rhs } => {
+                exec_ctx.exec_i64_rem_s_imm(result, lhs, rhs)?;
             }
             Instr::I64RemU { result, lhs, rhs } => {
                 exec_ctx.exec_i64_rem_u(result, lhs, rhs)?;
             }
+            Instr::I64RemUImm { result, lhs, rhs } => {
+                exec_ctx.exec_i64_rem_u_imm(result, lhs, rhs)?;
+            }
             Instr::I64And { result, lhs, rhs } => {
                 exec_ctx.exec_i64_and(result, lhs, rhs)?;
+            }
+            Instr::I64AndImm { result, lhs, rhs } => {
+                exec_ctx.exec_i64_and_imm(result, lhs, rhs)?;
             }
             Instr::I64Or { result, lhs, rhs } => {
                 exec_ctx.exec_i64_or(result, lhs, rhs)?;
             }
+            Instr::I64OrImm { result, lhs, rhs } => {
+                exec_ctx.exec_i64_or_imm(result, lhs, rhs)?;
+            }
             Instr::I64Xor { result, lhs, rhs } => {
                 exec_ctx.exec_i64_xor(result, lhs, rhs)?;
+            }
+            Instr::I64XorImm { result, lhs, rhs } => {
+                exec_ctx.exec_i64_xor_imm(result, lhs, rhs)?;
             }
             Instr::I64Shl { result, lhs, rhs } => {
                 exec_ctx.exec_i64_shl(result, lhs, rhs)?;
             }
+            Instr::I64ShlImm { result, lhs, rhs } => {
+                exec_ctx.exec_i64_shl_imm(result, lhs, rhs)?;
+            }
             Instr::I64ShrS { result, lhs, rhs } => {
                 exec_ctx.exec_i64_shr_s(result, lhs, rhs)?;
+            }
+            Instr::I64ShrSImm { result, lhs, rhs } => {
+                exec_ctx.exec_i64_shr_s_imm(result, lhs, rhs)?;
             }
             Instr::I64ShrU { result, lhs, rhs } => {
                 exec_ctx.exec_i64_shr_u(result, lhs, rhs)?;
             }
+            Instr::I64ShrUImm { result, lhs, rhs } => {
+                exec_ctx.exec_i64_shr_u_imm(result, lhs, rhs)?;
+            }
             Instr::I64Rotl { result, lhs, rhs } => {
                 exec_ctx.exec_i64_rotl(result, lhs, rhs)?;
             }
+            Instr::I64RotlImm { result, lhs, rhs } => {
+                exec_ctx.exec_i64_rotl_imm(result, lhs, rhs)?;
+            }
             Instr::I64Rotr { result, lhs, rhs } => {
                 exec_ctx.exec_i64_rotr(result, lhs, rhs)?;
+            }
+            Instr::I64RotrImm { result, lhs, rhs } => {
+                exec_ctx.exec_i64_rotr_imm(result, lhs, rhs)?;
             }
             Instr::F32Abs { result, input } => {
                 exec_ctx.exec_f32_abs(result, input)?;
@@ -640,23 +730,44 @@ pub(super) fn execute_frame(
             Instr::F32Add { result, lhs, rhs } => {
                 exec_ctx.exec_f32_add(result, lhs, rhs)?;
             }
+            Instr::F32AddImm { result, lhs, rhs } => {
+                exec_ctx.exec_f32_add_imm(result, lhs, rhs)?;
+            }
             Instr::F32Sub { result, lhs, rhs } => {
                 exec_ctx.exec_f32_sub(result, lhs, rhs)?;
+            }
+            Instr::F32SubImm { result, lhs, rhs } => {
+                exec_ctx.exec_f32_sub_imm(result, lhs, rhs)?;
             }
             Instr::F32Mul { result, lhs, rhs } => {
                 exec_ctx.exec_f32_mul(result, lhs, rhs)?;
             }
+            Instr::F32MulImm { result, lhs, rhs } => {
+                exec_ctx.exec_f32_mul_imm(result, lhs, rhs)?;
+            }
             Instr::F32Div { result, lhs, rhs } => {
                 exec_ctx.exec_f32_div(result, lhs, rhs)?;
+            }
+            Instr::F32DivImm { result, lhs, rhs } => {
+                exec_ctx.exec_f32_div_imm(result, lhs, rhs)?;
             }
             Instr::F32Min { result, lhs, rhs } => {
                 exec_ctx.exec_f32_min(result, lhs, rhs)?;
             }
+            Instr::F32MinImm { result, lhs, rhs } => {
+                exec_ctx.exec_f32_min_imm(result, lhs, rhs)?;
+            }
             Instr::F32Max { result, lhs, rhs } => {
                 exec_ctx.exec_f32_max(result, lhs, rhs)?;
             }
+            Instr::F32MaxImm { result, lhs, rhs } => {
+                exec_ctx.exec_f32_max_imm(result, lhs, rhs)?;
+            }
             Instr::F32Copysign { result, lhs, rhs } => {
                 exec_ctx.exec_f32_copysign(result, lhs, rhs)?;
+            }
+            Instr::F32CopysignImm { result, lhs, rhs } => {
+                exec_ctx.exec_f32_copysign_imm(result, lhs, rhs)?;
             }
             Instr::F64Abs { result, input } => {
                 exec_ctx.exec_f64_abs(result, input)?;
@@ -682,23 +793,44 @@ pub(super) fn execute_frame(
             Instr::F64Add { result, lhs, rhs } => {
                 exec_ctx.exec_f64_add(result, lhs, rhs)?;
             }
+            Instr::F64AddImm { result, lhs, rhs } => {
+                exec_ctx.exec_f64_add_imm(result, lhs, rhs)?;
+            }
             Instr::F64Sub { result, lhs, rhs } => {
                 exec_ctx.exec_f64_sub(result, lhs, rhs)?;
+            }
+            Instr::F64SubImm { result, lhs, rhs } => {
+                exec_ctx.exec_f64_sub_imm(result, lhs, rhs)?;
             }
             Instr::F64Mul { result, lhs, rhs } => {
                 exec_ctx.exec_f64_mul(result, lhs, rhs)?;
             }
+            Instr::F64MulImm { result, lhs, rhs } => {
+                exec_ctx.exec_f64_mul_imm(result, lhs, rhs)?;
+            }
             Instr::F64Div { result, lhs, rhs } => {
                 exec_ctx.exec_f64_div(result, lhs, rhs)?;
+            }
+            Instr::F64DivImm { result, lhs, rhs } => {
+                exec_ctx.exec_f64_div_imm(result, lhs, rhs)?;
             }
             Instr::F64Min { result, lhs, rhs } => {
                 exec_ctx.exec_f64_min(result, lhs, rhs)?;
             }
+            Instr::F64MinImm { result, lhs, rhs } => {
+                exec_ctx.exec_f64_min_imm(result, lhs, rhs)?;
+            }
             Instr::F64Max { result, lhs, rhs } => {
                 exec_ctx.exec_f64_max(result, lhs, rhs)?;
             }
+            Instr::F64MaxImm { result, lhs, rhs } => {
+                exec_ctx.exec_f64_max_imm(result, lhs, rhs)?;
+            }
             Instr::F64Copysign { result, lhs, rhs } => {
                 exec_ctx.exec_f64_copysign(result, lhs, rhs)?;
+            }
+            Instr::F64CopysignImm { result, lhs, rhs } => {
+                exec_ctx.exec_f64_copysign_imm(result, lhs, rhs)?;
             }
             Instr::I32WrapI64 { result, input } => {
                 exec_ctx.exec_i32_wrap_i64(result, input)?;
@@ -1242,30 +1374,6 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     /// # Errors
     ///
     /// Returns `Result::Ok` for convenience.
-    fn exec_binary_op(
-        &mut self,
-        result: ExecRegister,
-        lhs: ExecRegister,
-        rhs: ExecProvider,
-        op: fn(UntypedValue, UntypedValue) -> UntypedValue,
-    ) -> Result<(), Trap> {
-        let lhs = self.get_register(lhs);
-        let rhs = self.load_provider(rhs);
-        self.set_register(result, op(lhs, rhs));
-        self.next_instr()
-    }
-
-    /// Executes the given binary `wasmi` operation.
-    ///
-    /// # Note
-    ///
-    /// Loads from the given `lhs` and `rhs` registers,
-    /// performs the given operation `op` and stores the
-    /// result back into the `result` register.
-    ///
-    /// # Errors
-    ///
-    /// Returns `Result::Ok` for convenience.
     fn exec_binary_reg_op(
         &mut self,
         result: ExecRegister,
@@ -1314,15 +1422,39 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     /// # Errors
     ///
     /// Returns an error if the given operation `op` fails.
-    fn exec_fallible_binary_op(
+    fn exec_fallible_binary_reg_op(
         &mut self,
         result: ExecRegister,
         lhs: ExecRegister,
-        rhs: ExecProvider,
+        rhs: ExecRegister,
         op: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), Trap> {
         let lhs = self.get_register(lhs);
-        let rhs = self.load_provider(rhs);
+        let rhs = self.get_register(rhs);
+        self.set_register(result, op(lhs, rhs)?);
+        self.next_instr()
+    }
+
+    /// Executes the given fallible binary `wasmi` operation.
+    ///
+    /// # Note
+    ///
+    /// Loads from the given `lhs` and `rhs` registers,
+    /// performs the given operation `op` and stores the
+    /// result back into the `result` register.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the given operation `op` fails.
+    fn exec_fallible_binary_imm_op(
+        &mut self,
+        result: ExecRegister,
+        lhs: ExecRegister,
+        rhs: ConstRef,
+        op: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
+    ) -> Result<(), Trap> {
+        let lhs = self.get_register(lhs);
+        let rhs = self.resolve_cref(rhs);
         self.set_register(result, op(lhs, rhs)?);
         self.next_instr()
     }
@@ -2545,135 +2677,270 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i32_add)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i32_add)
+    }
+
+    fn exec_i32_add_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i32_add)
     }
 
     fn exec_i32_sub(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i32_sub)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i32_sub)
+    }
+
+    fn exec_i32_sub_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i32_sub)
     }
 
     fn exec_i32_mul(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i32_mul)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i32_mul)
+    }
+
+    fn exec_i32_mul_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i32_mul)
     }
 
     fn exec_i32_div_s(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_fallible_binary_op(result, lhs, rhs, UntypedValue::i32_div_s)
+        self.exec_fallible_binary_reg_op(result, lhs, rhs, UntypedValue::i32_div_s)
+    }
+
+    fn exec_i32_div_s_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_fallible_binary_imm_op(result, lhs, rhs, UntypedValue::i32_div_s)
     }
 
     fn exec_i32_div_u(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_fallible_binary_op(result, lhs, rhs, UntypedValue::i32_div_u)
+        self.exec_fallible_binary_reg_op(result, lhs, rhs, UntypedValue::i32_div_u)
+    }
+
+    fn exec_i32_div_u_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_fallible_binary_imm_op(result, lhs, rhs, UntypedValue::i32_div_u)
     }
 
     fn exec_i32_rem_s(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_fallible_binary_op(result, lhs, rhs, UntypedValue::i32_rem_s)
+        self.exec_fallible_binary_reg_op(result, lhs, rhs, UntypedValue::i32_rem_s)
+    }
+
+    fn exec_i32_rem_s_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_fallible_binary_imm_op(result, lhs, rhs, UntypedValue::i32_rem_s)
     }
 
     fn exec_i32_rem_u(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_fallible_binary_op(result, lhs, rhs, UntypedValue::i32_rem_u)
+        self.exec_fallible_binary_reg_op(result, lhs, rhs, UntypedValue::i32_rem_u)
+    }
+
+    fn exec_i32_rem_u_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_fallible_binary_imm_op(result, lhs, rhs, UntypedValue::i32_rem_u)
     }
 
     fn exec_i32_and(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i32_and)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i32_and)
+    }
+
+    fn exec_i32_and_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i32_and)
     }
 
     fn exec_i32_or(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i32_or)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i32_or)
+    }
+
+    fn exec_i32_or_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i32_or)
     }
 
     fn exec_i32_xor(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i32_xor)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i32_xor)
+    }
+
+    fn exec_i32_xor_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i32_xor)
     }
 
     fn exec_i32_shl(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i32_shl)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i32_shl)
+    }
+
+    fn exec_i32_shl_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i32_shl)
     }
 
     fn exec_i32_shr_s(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i32_shr_s)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i32_shr_s)
+    }
+
+    fn exec_i32_shr_s_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i32_shr_s)
     }
 
     fn exec_i32_shr_u(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i32_shr_u)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i32_shr_u)
+    }
+
+    fn exec_i32_shr_u_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i32_shr_u)
     }
 
     fn exec_i32_rotl(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i32_rotl)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i32_rotl)
+    }
+
+    fn exec_i32_rotl_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i32_rotl)
     }
 
     fn exec_i32_rotr(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i32_rotr)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i32_rotr)
+    }
+
+    fn exec_i32_rotr_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i32_rotr)
     }
 
     fn exec_i64_clz(
@@ -2704,135 +2971,270 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i64_add)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i64_add)
+    }
+
+    fn exec_i64_add_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i64_add)
     }
 
     fn exec_i64_sub(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i64_sub)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i64_sub)
+    }
+
+    fn exec_i64_sub_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i64_sub)
     }
 
     fn exec_i64_mul(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i64_mul)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i64_mul)
+    }
+
+    fn exec_i64_mul_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i64_mul)
     }
 
     fn exec_i64_div_s(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_fallible_binary_op(result, lhs, rhs, UntypedValue::i64_div_s)
+        self.exec_fallible_binary_reg_op(result, lhs, rhs, UntypedValue::i64_div_s)
+    }
+
+    fn exec_i64_div_s_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_fallible_binary_imm_op(result, lhs, rhs, UntypedValue::i64_div_s)
     }
 
     fn exec_i64_div_u(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_fallible_binary_op(result, lhs, rhs, UntypedValue::i64_div_u)
+        self.exec_fallible_binary_reg_op(result, lhs, rhs, UntypedValue::i64_div_u)
+    }
+
+    fn exec_i64_div_u_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_fallible_binary_imm_op(result, lhs, rhs, UntypedValue::i64_div_u)
     }
 
     fn exec_i64_rem_s(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_fallible_binary_op(result, lhs, rhs, UntypedValue::i64_rem_s)
+        self.exec_fallible_binary_reg_op(result, lhs, rhs, UntypedValue::i64_rem_s)
+    }
+
+    fn exec_i64_rem_s_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_fallible_binary_imm_op(result, lhs, rhs, UntypedValue::i64_rem_s)
     }
 
     fn exec_i64_rem_u(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_fallible_binary_op(result, lhs, rhs, UntypedValue::i64_rem_u)
+        self.exec_fallible_binary_reg_op(result, lhs, rhs, UntypedValue::i64_rem_u)
+    }
+
+    fn exec_i64_rem_u_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_fallible_binary_imm_op(result, lhs, rhs, UntypedValue::i64_rem_u)
     }
 
     fn exec_i64_and(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i64_and)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i64_and)
+    }
+
+    fn exec_i64_and_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i64_and)
     }
 
     fn exec_i64_or(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i64_or)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i64_or)
+    }
+
+    fn exec_i64_or_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i64_or)
     }
 
     fn exec_i64_xor(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i64_xor)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i64_xor)
+    }
+
+    fn exec_i64_xor_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i64_xor)
     }
 
     fn exec_i64_shl(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i64_shl)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i64_shl)
+    }
+
+    fn exec_i64_shl_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i64_shl)
     }
 
     fn exec_i64_shr_s(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i64_shr_s)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i64_shr_s)
+    }
+
+    fn exec_i64_shr_s_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i64_shr_s)
     }
 
     fn exec_i64_shr_u(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i64_shr_u)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i64_shr_u)
+    }
+
+    fn exec_i64_shr_u_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i64_shr_u)
     }
 
     fn exec_i64_rotl(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i64_rotl)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i64_rotl)
+    }
+
+    fn exec_i64_rotl_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i64_rotl)
     }
 
     fn exec_i64_rotr(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::i64_rotr)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::i64_rotr)
+    }
+
+    fn exec_i64_rotr_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::i64_rotr)
     }
 
     fn exec_f32_abs(
@@ -2895,63 +3297,126 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::f32_add)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::f32_add)
+    }
+
+    fn exec_f32_add_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::f32_add)
     }
 
     fn exec_f32_sub(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::f32_sub)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::f32_sub)
+    }
+
+    fn exec_f32_sub_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::f32_sub)
     }
 
     fn exec_f32_mul(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::f32_mul)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::f32_mul)
+    }
+
+    fn exec_f32_mul_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::f32_mul)
     }
 
     fn exec_f32_div(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_fallible_binary_op(result, lhs, rhs, UntypedValue::f32_div)
+        self.exec_fallible_binary_reg_op(result, lhs, rhs, UntypedValue::f32_div)
+    }
+
+    fn exec_f32_div_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_fallible_binary_imm_op(result, lhs, rhs, UntypedValue::f32_div)
     }
 
     fn exec_f32_min(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::f32_min)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::f32_min)
+    }
+
+    fn exec_f32_min_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::f32_min)
     }
 
     fn exec_f32_max(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::f32_max)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::f32_max)
+    }
+
+    fn exec_f32_max_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::f32_max)
     }
 
     fn exec_f32_copysign(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::f32_copysign)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::f32_copysign)
+    }
+
+    fn exec_f32_copysign_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::f32_copysign)
     }
 
     fn exec_f64_abs(
@@ -3014,63 +3479,126 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::f64_add)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::f64_add)
+    }
+
+    fn exec_f64_add_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::f64_add)
     }
 
     fn exec_f64_sub(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::f64_sub)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::f64_sub)
+    }
+
+    fn exec_f64_sub_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::f64_sub)
     }
 
     fn exec_f64_mul(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::f64_mul)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::f64_mul)
+    }
+
+    fn exec_f64_mul_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::f64_mul)
     }
 
     fn exec_f64_div(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_fallible_binary_op(result, lhs, rhs, UntypedValue::f64_div)
+        self.exec_fallible_binary_reg_op(result, lhs, rhs, UntypedValue::f64_div)
+    }
+
+    fn exec_f64_div_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_fallible_binary_imm_op(result, lhs, rhs, UntypedValue::f64_div)
     }
 
     fn exec_f64_min(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::f64_min)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::f64_min)
+    }
+
+    fn exec_f64_min_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::f64_min)
     }
 
     fn exec_f64_max(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::f64_max)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::f64_max)
+    }
+
+    fn exec_f64_max_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::f64_max)
     }
 
     fn exec_f64_copysign(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
-        rhs: <ExecuteTypes as InstructionTypes>::Provider,
+        rhs: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_binary_op(result, lhs, rhs, UntypedValue::f64_copysign)
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::f64_copysign)
+    }
+
+    fn exec_f64_copysign_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        lhs: <ExecuteTypes as InstructionTypes>::Register,
+        rhs: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::f64_copysign)
     }
 
     fn exec_i32_wrap_i64(

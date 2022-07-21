@@ -127,38 +127,68 @@ impl IrInstruction {
             | Self::I32Ctz { result, .. }
             | Self::I32Popcnt { result, .. }
             | Self::I32Add { result, .. }
+            | Self::I32AddImm { result, .. }
             | Self::I32Sub { result, .. }
+            | Self::I32SubImm { result, .. }
             | Self::I32Mul { result, .. }
+            | Self::I32MulImm { result, .. }
             | Self::I32DivS { result, .. }
+            | Self::I32DivSImm { result, .. }
             | Self::I32DivU { result, .. }
+            | Self::I32DivUImm { result, .. }
             | Self::I32RemS { result, .. }
+            | Self::I32RemSImm { result, .. }
             | Self::I32RemU { result, .. }
+            | Self::I32RemUImm { result, .. }
             | Self::I32And { result, .. }
+            | Self::I32AndImm { result, .. }
             | Self::I32Or { result, .. }
+            | Self::I32OrImm { result, .. }
             | Self::I32Xor { result, .. }
+            | Self::I32XorImm { result, .. }
             | Self::I32Shl { result, .. }
+            | Self::I32ShlImm { result, .. }
             | Self::I32ShrS { result, .. }
+            | Self::I32ShrSImm { result, .. }
             | Self::I32ShrU { result, .. }
+            | Self::I32ShrUImm { result, .. }
             | Self::I32Rotl { result, .. }
+            | Self::I32RotlImm { result, .. }
             | Self::I32Rotr { result, .. }
+            | Self::I32RotrImm { result, .. }
             | Self::I64Clz { result, .. }
             | Self::I64Ctz { result, .. }
             | Self::I64Popcnt { result, .. }
             | Self::I64Add { result, .. }
+            | Self::I64AddImm { result, .. }
             | Self::I64Sub { result, .. }
+            | Self::I64SubImm { result, .. }
             | Self::I64Mul { result, .. }
+            | Self::I64MulImm { result, .. }
             | Self::I64DivS { result, .. }
+            | Self::I64DivSImm { result, .. }
             | Self::I64DivU { result, .. }
+            | Self::I64DivUImm { result, .. }
             | Self::I64RemS { result, .. }
+            | Self::I64RemSImm { result, .. }
             | Self::I64RemU { result, .. }
+            | Self::I64RemUImm { result, .. }
             | Self::I64And { result, .. }
+            | Self::I64AndImm { result, .. }
             | Self::I64Or { result, .. }
+            | Self::I64OrImm { result, .. }
             | Self::I64Xor { result, .. }
+            | Self::I64XorImm { result, .. }
             | Self::I64Shl { result, .. }
+            | Self::I64ShlImm { result, .. }
             | Self::I64ShrS { result, .. }
+            | Self::I64ShrSImm { result, .. }
             | Self::I64ShrU { result, .. }
+            | Self::I64ShrUImm { result, .. }
             | Self::I64Rotl { result, .. }
+            | Self::I64RotlImm { result, .. }
             | Self::I64Rotr { result, .. }
+            | Self::I64RotrImm { result, .. }
             | Self::F32Abs { result, .. }
             | Self::F32Neg { result, .. }
             | Self::F32Ceil { result, .. }
@@ -167,12 +197,19 @@ impl IrInstruction {
             | Self::F32Nearest { result, .. }
             | Self::F32Sqrt { result, .. }
             | Self::F32Add { result, .. }
+            | Self::F32AddImm { result, .. }
             | Self::F32Sub { result, .. }
+            | Self::F32SubImm { result, .. }
             | Self::F32Mul { result, .. }
+            | Self::F32MulImm { result, .. }
             | Self::F32Div { result, .. }
+            | Self::F32DivImm { result, .. }
             | Self::F32Min { result, .. }
+            | Self::F32MinImm { result, .. }
             | Self::F32Max { result, .. }
+            | Self::F32MaxImm { result, .. }
             | Self::F32Copysign { result, .. }
+            | Self::F32CopysignImm { result, .. }
             | Self::F64Abs { result, .. }
             | Self::F64Neg { result, .. }
             | Self::F64Ceil { result, .. }
@@ -181,12 +218,19 @@ impl IrInstruction {
             | Self::F64Nearest { result, .. }
             | Self::F64Sqrt { result, .. }
             | Self::F64Add { result, .. }
+            | Self::F64AddImm { result, .. }
             | Self::F64Sub { result, .. }
+            | Self::F64SubImm { result, .. }
             | Self::F64Mul { result, .. }
+            | Self::F64MulImm { result, .. }
             | Self::F64Div { result, .. }
+            | Self::F64DivImm { result, .. }
             | Self::F64Min { result, .. }
+            | Self::F64MinImm { result, .. }
             | Self::F64Max { result, .. }
+            | Self::F64MaxImm { result, .. }
             | Self::F64Copysign { result, .. }
+            | Self::F64CopysignImm { result, .. }
             | Self::I32WrapI64 { result, .. }
             | Self::I32TruncSF32 { result, .. }
             | Self::I32TruncUF32 { result, .. }

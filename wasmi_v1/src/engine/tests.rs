@@ -723,9 +723,9 @@ fn br_table_return() {
     );
     let module = create_module(&wasm[..]);
     let engine = module.engine();
-    let c10 = ExecProvider::from_immediate(engine.alloc_const(10_i32));
-    let c20 = ExecProvider::from_immediate(engine.alloc_const(20_i32));
-    let c30 = ExecProvider::from_immediate(engine.alloc_const(30_i32));
+    let c10 = engine.alloc_const(10_i32);
+    let c20 = engine.alloc_const(20_i32);
+    let c30 = engine.alloc_const(30_i32);
     let reg0 = ExecRegister::from_inner(0);
     let reg1 = ExecRegister::from_inner(1);
     let results_reg1 = engine.alloc_provider_slice([reg1.into()]);
@@ -757,21 +757,21 @@ fn br_table_return() {
             returned: ExecProviderSlice::empty(),
         },
         // branch for case 0
-        /* 5 */ ExecInstruction::I32Add {
+        /* 5 */ ExecInstruction::I32AddImm {
             result: reg1,
             lhs: reg0,
             rhs: c10,
         },
         /* 6 */ ExecInstruction::Return { results: results_reg1 },
         // branch for case 1
-        /* 7 */ ExecInstruction::I32Add {
+        /* 7 */ ExecInstruction::I32AddImm {
             result: reg1,
             lhs: reg0,
             rhs: c20,
         },
         /* 8 */ ExecInstruction::Return { results: results_reg1 },
         // branch for case 2
-        /* 9 */ ExecInstruction::I32Add {
+        /* 9 */ ExecInstruction::I32AddImm {
             result: reg1,
             lhs: reg0,
             rhs: c30,
@@ -883,11 +883,11 @@ fn add_10_assign() {
     );
     let module = create_module(&wasm[..]);
     let engine = module.engine();
-    let c10 = engine.alloc_const(10_i32).into();
+    let c10 = engine.alloc_const(10_i32);
     let local_0 = ExecRegister::from_inner(0);
     let results = engine.alloc_provider_slice([local_0.into()]);
     let expected = [
-        ExecInstruction::I32Add {
+        ExecInstruction::I32AddImm {
             result: local_0,
             lhs: local_0,
             rhs: c10,
@@ -952,81 +952,6 @@ fn binary_simple() {
     fn test_register_register<T, F, R>(wasm_op: &str, make_op: F)
     where
         T: Display + WasmTypeName + Into<UntypedValue>,
-        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
-        R: WasmTypeName,
-    {
-        let input_type = <T as WasmTypeName>::NAME;
-        let output_type = <R as WasmTypeName>::NAME;
-        let wasm = wat2wasm(&format!(
-            r#"
-            (module
-                (func (export "call") (param {input_type}) (param {input_type}) (result {output_type})
-                    local.get 0
-                    local.get 1
-                    {input_type}.{wasm_op}
-                )
-            )
-        "#,
-        ));
-        let module = create_module(&wasm[..]);
-        let engine = module.engine();
-        let lhs = ExecRegister::from_inner(0);
-        let rhs = ExecRegister::from_inner(1);
-        let result = ExecRegister::from_inner(2);
-        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
-        let expected = [
-            make_op(result, lhs, rhs.into()),
-            ExecInstruction::Return { results },
-        ];
-        assert_func_bodies_for_module(&module, [expected]);
-    }
-
-    fn test_register_const<T, F, R>(wasm_op: &str, make_op: F)
-    where
-        T: Display + WasmTypeName + Into<UntypedValue> + One,
-        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
-        R: WasmTypeName,
-    {
-        let input_type = <T as WasmTypeName>::NAME;
-        let output_type = <R as WasmTypeName>::NAME;
-        let one = T::one();
-        let wasm = wat2wasm(&format!(
-            r#"
-            (module
-                (func (export "call") (param {input_type}) (result {output_type})
-                    local.get 0
-                    {input_type}.const {one}
-                    {input_type}.{wasm_op}
-                )
-            )
-        "#,
-        ));
-        let module = create_module(&wasm[..]);
-        let engine = module.engine();
-        let lhs = ExecRegister::from_inner(0);
-        let rhs = ExecProvider::from_immediate(engine.alloc_const(one));
-        let result = ExecRegister::from_inner(1);
-        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
-        let expected = [
-            make_op(result, lhs, rhs),
-            ExecInstruction::Return { results },
-        ];
-        assert_func_bodies_for_module(&module, [expected]);
-    }
-
-    fn run_test_bin<T, F>(wasm_op: &str, make_op: F)
-    where
-        T: Display + WasmTypeName + Into<UntypedValue> + One,
-        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction + Copy,
-    {
-        test_register_register::<T, F, T>(wasm_op, make_op);
-        test_register_const::<T, F, T>(wasm_op, make_op);
-    }
-
-    fn test_cmp_register_register<T, F, R>(wasm_op: &str, make_op: F)
-    // TODO: merge funcs again
-    where
-        T: Display + WasmTypeName + Into<UntypedValue>,
         F: FnOnce(ExecRegister, ExecRegister, ExecRegister) -> ExecInstruction,
         R: WasmTypeName,
     {
@@ -1050,14 +975,13 @@ fn binary_simple() {
         let result = ExecRegister::from_inner(2);
         let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
-            make_op(result, lhs, rhs.into()),
+            make_op(result, lhs, rhs),
             ExecInstruction::Return { results },
         ];
         assert_func_bodies_for_module(&module, [expected]);
     }
 
-    fn test_cmp_register_const<T, F, R>(wasm_op: &str, make_op: F)
-    // TODO: merge funcs again
+    fn test_register_const<T, F, R>(wasm_op: &str, make_op: F)
     where
         T: Display + WasmTypeName + Into<UntypedValue> + One,
         F: FnOnce(ExecRegister, ExecRegister, ConstRef) -> ExecInstruction,
@@ -1090,14 +1014,24 @@ fn binary_simple() {
         assert_func_bodies_for_module(&module, [expected]);
     }
 
+    fn run_test_bin<T, F1, F2>(wasm_op: &str, make_op: F1, make_imm_op: F2)
+    where
+        T: Display + WasmTypeName + Into<UntypedValue> + One,
+        F1: FnOnce(ExecRegister, ExecRegister, ExecRegister) -> ExecInstruction,
+        F2: FnOnce(ExecRegister, ExecRegister, ConstRef) -> ExecInstruction,
+    {
+        test_register_register::<T, F1, T>(wasm_op, make_op);
+        test_register_const::<T, F2, T>(wasm_op, make_imm_op);
+    }
+
     fn run_test_cmp<T, F1, F2>(wasm_op: &str, make_op: F1, make_imm_op: F2)
     where
         T: Display + WasmTypeName + Into<UntypedValue> + One,
         F1: FnOnce(ExecRegister, ExecRegister, ExecRegister) -> ExecInstruction,
         F2: FnOnce(ExecRegister, ExecRegister, ConstRef) -> ExecInstruction,
     {
-        test_cmp_register_register::<T, F1, bool>(wasm_op, make_op);
-        test_cmp_register_const::<T, F2, bool>(wasm_op, make_imm_op);
+        test_register_register::<T, F1, bool>(wasm_op, make_op);
+        test_register_const::<T, F2, bool>(wasm_op, make_imm_op);
     }
 
     run_test_cmp::<i32, _, _>("eq", make_op!(I32Eq), make_op!(I32EqImm));
@@ -1105,54 +1039,54 @@ fn binary_simple() {
     run_test_cmp::<i32, _, _>("ne", make_op!(I32Ne), make_op!(I32NeImm));
     run_test_cmp::<i64, _, _>("ne", make_op!(I64Ne), make_op!(I64NeImm));
 
-    run_test_bin::<i32, _>("add", make_op!(I32Add));
-    run_test_bin::<i64, _>("add", make_op!(I64Add));
-    run_test_bin::<i32, _>("sub", make_op!(I32Sub));
-    run_test_bin::<i64, _>("sub", make_op!(I64Sub));
-    run_test_bin::<i32, _>("mul", make_op!(I32Mul));
-    run_test_bin::<i64, _>("mul", make_op!(I64Mul));
-    run_test_bin::<i32, _>("div_s", make_op!(I32DivS));
-    run_test_bin::<i64, _>("div_s", make_op!(I64DivS));
-    run_test_bin::<i32, _>("div_u", make_op!(I32DivU));
-    run_test_bin::<i64, _>("div_u", make_op!(I64DivU));
-    run_test_bin::<i32, _>("rem_s", make_op!(I32RemS));
-    run_test_bin::<i64, _>("rem_s", make_op!(I64RemS));
-    run_test_bin::<i32, _>("rem_u", make_op!(I32RemU));
-    run_test_bin::<i64, _>("rem_u", make_op!(I64RemU));
-    run_test_bin::<i32, _>("shl", make_op!(I32Shl));
-    run_test_bin::<i64, _>("shl", make_op!(I64Shl));
-    run_test_bin::<i32, _>("shr_s", make_op!(I32ShrS));
-    run_test_bin::<i64, _>("shr_s", make_op!(I64ShrS));
-    run_test_bin::<i32, _>("shr_u", make_op!(I32ShrU));
-    run_test_bin::<i64, _>("shr_u", make_op!(I64ShrU));
-    run_test_bin::<i32, _>("rotl", make_op!(I32Rotl));
-    run_test_bin::<i64, _>("rotr", make_op!(I64Rotr));
-    run_test_bin::<i32, _>("and", make_op!(I32And));
-    run_test_bin::<i64, _>("and", make_op!(I64And));
-    run_test_bin::<i32, _>("or", make_op!(I32Or));
-    run_test_bin::<i64, _>("or", make_op!(I64Or));
-    run_test_bin::<i32, _>("xor", make_op!(I32Xor));
-    run_test_bin::<i64, _>("xor", make_op!(I64Xor));
+    run_test_bin::<i32, _, _>("add", make_op!(I32Add), make_op!(I32AddImm));
+    run_test_bin::<i64, _, _>("add", make_op!(I64Add), make_op!(I64AddImm));
+    run_test_bin::<i32, _, _>("sub", make_op!(I32Sub), make_op!(I32SubImm));
+    run_test_bin::<i64, _, _>("sub", make_op!(I64Sub), make_op!(I64SubImm));
+    run_test_bin::<i32, _, _>("mul", make_op!(I32Mul), make_op!(I32MulImm));
+    run_test_bin::<i64, _, _>("mul", make_op!(I64Mul), make_op!(I64MulImm));
+    run_test_bin::<i32, _, _>("div_s", make_op!(I32DivS), make_op!(I32DivSImm));
+    run_test_bin::<i64, _, _>("div_s", make_op!(I64DivS), make_op!(I64DivSImm));
+    run_test_bin::<i32, _, _>("div_u", make_op!(I32DivU), make_op!(I32DivUImm));
+    run_test_bin::<i64, _, _>("div_u", make_op!(I64DivU), make_op!(I64DivUImm));
+    run_test_bin::<i32, _, _>("rem_s", make_op!(I32RemS), make_op!(I32RemSImm));
+    run_test_bin::<i64, _, _>("rem_s", make_op!(I64RemS), make_op!(I64RemSImm));
+    run_test_bin::<i32, _, _>("rem_u", make_op!(I32RemU), make_op!(I32RemUImm));
+    run_test_bin::<i64, _, _>("rem_u", make_op!(I64RemU), make_op!(I64RemUImm));
+    run_test_bin::<i32, _, _>("shl", make_op!(I32Shl), make_op!(I32ShlImm));
+    run_test_bin::<i64, _, _>("shl", make_op!(I64Shl), make_op!(I64ShlImm));
+    run_test_bin::<i32, _, _>("shr_s", make_op!(I32ShrS), make_op!(I32ShrSImm));
+    run_test_bin::<i64, _, _>("shr_s", make_op!(I64ShrS), make_op!(I64ShrSImm));
+    run_test_bin::<i32, _, _>("shr_u", make_op!(I32ShrU), make_op!(I32ShrUImm));
+    run_test_bin::<i64, _, _>("shr_u", make_op!(I64ShrU), make_op!(I64ShrUImm));
+    run_test_bin::<i32, _, _>("rotl", make_op!(I32Rotl), make_op!(I32RotlImm));
+    run_test_bin::<i64, _, _>("rotr", make_op!(I64Rotr), make_op!(I64RotrImm));
+    run_test_bin::<i32, _, _>("and", make_op!(I32And), make_op!(I32AndImm));
+    run_test_bin::<i64, _, _>("and", make_op!(I64And), make_op!(I64AndImm));
+    run_test_bin::<i32, _, _>("or", make_op!(I32Or), make_op!(I32OrImm));
+    run_test_bin::<i64, _, _>("or", make_op!(I64Or), make_op!(I64OrImm));
+    run_test_bin::<i32, _, _>("xor", make_op!(I32Xor), make_op!(I32XorImm));
+    run_test_bin::<i64, _, _>("xor", make_op!(I64Xor), make_op!(I64XorImm));
 
     run_test_cmp::<f32, _, _>("eq", make_op!(F32Eq), make_op!(F32EqImm));
     run_test_cmp::<f64, _, _>("eq", make_op!(F64Eq), make_op!(F64EqImm));
     run_test_cmp::<f32, _, _>("ne", make_op!(F32Ne), make_op!(F32NeImm));
     run_test_cmp::<f64, _, _>("ne", make_op!(F64Ne), make_op!(F64NeImm));
 
-    run_test_bin::<f32, _>("add", make_op!(F32Add));
-    run_test_bin::<f64, _>("add", make_op!(F64Add));
-    run_test_bin::<f32, _>("sub", make_op!(F32Sub));
-    run_test_bin::<f64, _>("sub", make_op!(F64Sub));
-    run_test_bin::<f32, _>("mul", make_op!(F32Mul));
-    run_test_bin::<f64, _>("mul", make_op!(F64Mul));
-    run_test_bin::<f32, _>("div", make_op!(F32Div));
-    run_test_bin::<f64, _>("div", make_op!(F64Div));
-    run_test_bin::<f32, _>("min", make_op!(F32Min));
-    run_test_bin::<f64, _>("min", make_op!(F64Min));
-    run_test_bin::<f32, _>("max", make_op!(F32Max));
-    run_test_bin::<f64, _>("max", make_op!(F64Max));
-    run_test_bin::<f32, _>("copysign", make_op!(F32Copysign));
-    run_test_bin::<f64, _>("copysign", make_op!(F64Copysign));
+    run_test_bin::<f32, _, _>("add", make_op!(F32Add), make_op!(F32AddImm));
+    run_test_bin::<f64, _, _>("add", make_op!(F64Add), make_op!(F64AddImm));
+    run_test_bin::<f32, _, _>("sub", make_op!(F32Sub), make_op!(F32SubImm));
+    run_test_bin::<f64, _, _>("sub", make_op!(F64Sub), make_op!(F64SubImm));
+    run_test_bin::<f32, _, _>("mul", make_op!(F32Mul), make_op!(F32MulImm));
+    run_test_bin::<f64, _, _>("mul", make_op!(F64Mul), make_op!(F64MulImm));
+    run_test_bin::<f32, _, _>("div", make_op!(F32Div), make_op!(F32DivImm));
+    run_test_bin::<f64, _, _>("div", make_op!(F64Div), make_op!(F64DivImm));
+    run_test_bin::<f32, _, _>("min", make_op!(F32Min), make_op!(F32MinImm));
+    run_test_bin::<f64, _, _>("min", make_op!(F64Min), make_op!(F64MinImm));
+    run_test_bin::<f32, _, _>("max", make_op!(F32Max), make_op!(F32MaxImm));
+    run_test_bin::<f64, _, _>("max", make_op!(F64Max), make_op!(F64MaxImm));
+    run_test_bin::<f32, _, _>("copysign", make_op!(F32Copysign), make_op!(F32CopysignImm));
+    run_test_bin::<f64, _, _>("copysign", make_op!(F64Copysign), make_op!(F64CopysignImm));
 }
 
 /// Tests compilation of all commutative binary Wasm instructions.
@@ -1187,7 +1121,7 @@ fn binary_const_register() {
     fn test_const_register<T, F>(wasm_op: &str, make_op: F)
     where
         T: Display + WasmTypeName + One + Into<UntypedValue>,
-        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
+        F: FnOnce(ExecRegister, ExecRegister, ExecRegister) -> ExecInstruction,
     {
         let input_type = <T as WasmTypeName>::NAME;
         let output_type = <T as WasmTypeName>::NAME;
@@ -1269,7 +1203,7 @@ fn binary_const_register_commutative() {
     fn test_const_register<T, F, R>(wasm_op: &str, make_op: F)
     where
         T: Display + WasmTypeName + One + Into<UntypedValue>,
-        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
+        F: FnOnce(ExecRegister, ExecRegister, ConstRef) -> ExecInstruction,
         R: WasmTypeName,
     {
         let input_type = <T as WasmTypeName>::NAME;
@@ -1294,7 +1228,7 @@ fn binary_const_register_commutative() {
             make_op(
                 ExecRegister::from_inner(1),
                 ExecRegister::from_inner(0),
-                rhs.into(),
+                rhs,
             ),
             ExecInstruction::Return { results },
         ];
@@ -1304,45 +1238,9 @@ fn binary_const_register_commutative() {
     fn run_test_bin<T, F>(wasm_op: &str, make_op: F)
     where
         T: Display + Into<UntypedValue> + WasmTypeName + One,
-        F: FnOnce(ExecRegister, ExecRegister, ExecProvider) -> ExecInstruction,
+        F: FnOnce(ExecRegister, ExecRegister, ConstRef) -> ExecInstruction,
     {
         test_const_register::<T, F, T>(wasm_op, make_op);
-    }
-
-    fn test_cmp_const_register<T, F, R>(wasm_op: &str, make_op: F)
-    // TODO: merge funcs again
-    where
-        T: Display + WasmTypeName + One + Into<UntypedValue>,
-        F: FnOnce(ExecRegister, ExecRegister, ConstRef) -> ExecInstruction,
-        R: WasmTypeName,
-    {
-        let input_type = <T as WasmTypeName>::NAME;
-        let output_type = <R as WasmTypeName>::NAME;
-        let wasm = wat2wasm(&format!(
-            r#"
-            (module
-                (func (export "call") (param {input_type}) (result {output_type})
-                    {input_type}.const 1
-                    local.get 0
-                    {input_type}.{wasm_op}
-                )
-            )
-        "#,
-        ));
-        let module = create_module(&wasm[..]);
-        let engine = module.engine();
-        let rhs = engine.alloc_const(T::one());
-        let result = ExecRegister::from_inner(1);
-        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
-        let expected = [
-            make_op(
-                ExecRegister::from_inner(1),
-                ExecRegister::from_inner(0),
-                rhs.into(),
-            ),
-            ExecInstruction::Return { results },
-        ];
-        assert_func_bodies_for_module(&module, [expected]);
     }
 
     fn run_test_cmp<T, F>(wasm_op: &str, make_op: F)
@@ -1350,7 +1248,7 @@ fn binary_const_register_commutative() {
         T: Display + Into<UntypedValue> + WasmTypeName + One,
         F: FnOnce(ExecRegister, ExecRegister, ConstRef) -> ExecInstruction,
     {
-        test_cmp_const_register::<T, F, bool>(wasm_op, make_op);
+        test_const_register::<T, F, bool>(wasm_op, make_op);
     }
 
     run_test_cmp::<i32, _>("eq", make_op!(I32EqImm));
@@ -1358,30 +1256,30 @@ fn binary_const_register_commutative() {
     run_test_cmp::<i32, _>("ne", make_op!(I32NeImm));
     run_test_cmp::<i64, _>("ne", make_op!(I64NeImm));
 
-    run_test_bin::<i32, _>("add", make_op!(I32Add));
-    run_test_bin::<i64, _>("add", make_op!(I64Add));
-    run_test_bin::<i32, _>("mul", make_op!(I32Mul));
-    run_test_bin::<i64, _>("mul", make_op!(I64Mul));
-    run_test_bin::<i32, _>("and", make_op!(I32And));
-    run_test_bin::<i64, _>("and", make_op!(I64And));
-    run_test_bin::<i32, _>("or", make_op!(I32Or));
-    run_test_bin::<i64, _>("or", make_op!(I64Or));
-    run_test_bin::<i32, _>("xor", make_op!(I32Xor));
-    run_test_bin::<i64, _>("xor", make_op!(I64Xor));
+    run_test_bin::<i32, _>("add", make_op!(I32AddImm));
+    run_test_bin::<i64, _>("add", make_op!(I64AddImm));
+    run_test_bin::<i32, _>("mul", make_op!(I32MulImm));
+    run_test_bin::<i64, _>("mul", make_op!(I64MulImm));
+    run_test_bin::<i32, _>("and", make_op!(I32AndImm));
+    run_test_bin::<i64, _>("and", make_op!(I64AndImm));
+    run_test_bin::<i32, _>("or", make_op!(I32OrImm));
+    run_test_bin::<i64, _>("or", make_op!(I64OrImm));
+    run_test_bin::<i32, _>("xor", make_op!(I32XorImm));
+    run_test_bin::<i64, _>("xor", make_op!(I64XorImm));
 
     run_test_cmp::<f32, _>("eq", make_op!(F32EqImm));
     run_test_cmp::<f64, _>("eq", make_op!(F64EqImm));
     run_test_cmp::<f32, _>("ne", make_op!(F32NeImm));
     run_test_cmp::<f64, _>("ne", make_op!(F64NeImm));
 
-    run_test_bin::<f32, _>("add", make_op!(F32Add));
-    run_test_bin::<f64, _>("add", make_op!(F64Add));
-    run_test_bin::<f32, _>("mul", make_op!(F32Mul));
-    run_test_bin::<f64, _>("mul", make_op!(F64Mul));
-    run_test_bin::<f32, _>("min", make_op!(F32Min));
-    run_test_bin::<f32, _>("min", make_op!(F32Min));
-    run_test_bin::<f64, _>("max", make_op!(F64Max));
-    run_test_bin::<f64, _>("max", make_op!(F64Max));
+    run_test_bin::<f32, _>("add", make_op!(F32AddImm));
+    run_test_bin::<f64, _>("add", make_op!(F64AddImm));
+    run_test_bin::<f32, _>("mul", make_op!(F32MulImm));
+    run_test_bin::<f64, _>("mul", make_op!(F64MulImm));
+    run_test_bin::<f32, _>("min", make_op!(F32MinImm));
+    run_test_bin::<f32, _>("min", make_op!(F32MinImm));
+    run_test_bin::<f64, _>("max", make_op!(F64MaxImm));
+    run_test_bin::<f64, _>("max", make_op!(F64MaxImm));
 }
 
 /// The expected outcome of a fallible constant evaluation.
@@ -2887,8 +2785,8 @@ fn local_set_override() {
     let expected = [
         ExecInstruction::I32Add {
             result: local_0,
-            lhs: local_0.into(),
-            rhs: local_1.into(),
+            lhs: local_0,
+            rhs: local_1,
         },
         ExecInstruction::Return { results },
     ];
@@ -2920,8 +2818,8 @@ fn local_set_override_and_copy() {
     let expected = [
         ExecInstruction::I32Add {
             result: local_0,
-            lhs: local_0.into(),
-            rhs: local_1.into(),
+            lhs: local_0,
+            rhs: local_1,
         },
         ExecInstruction::Copy {
             result: local_1,
@@ -2961,8 +2859,8 @@ fn local_set_preserve_single() {
     let expected = [
         ExecInstruction::I32Add {
             result: local_0,
-            lhs: local_0.into(),
-            rhs: local_1.into(),
+            lhs: local_0,
+            rhs: local_1,
         },
         ExecInstruction::Copy {
             result: preserve,
@@ -3024,8 +2922,8 @@ fn local_set_preserve_multiple() {
         },
         ExecInstruction::I32Add {
             result,
-            lhs: preserve_0.into(),
-            rhs: preserve_1.into(),
+            lhs: preserve_0,
+            rhs: preserve_1,
         },
         ExecInstruction::Return { results },
     ];
@@ -3081,8 +2979,8 @@ fn local_set_preserve_multi_phase() {
         },
         ExecInstruction::I32Add {
             result,
-            lhs: preserve_0.into(),
-            rhs: preserve_1.into(),
+            lhs: preserve_0,
+            rhs: preserve_1,
         },
         ExecInstruction::Return { results },
     ];
@@ -3225,8 +3123,8 @@ fn local_tee_override() {
     let expected = [
         ExecInstruction::I32Add {
             result: local_0,
-            lhs: local_0.into(),
-            rhs: local_1.into(),
+            lhs: local_0,
+            rhs: local_1,
         },
         ExecInstruction::Return { results },
     ];
@@ -3256,8 +3154,8 @@ fn local_tee_override_and_copy() {
     let expected = [
         ExecInstruction::I32Add {
             result: local_0,
-            lhs: local_0.into(),
-            rhs: local_1.into(),
+            lhs: local_0,
+            rhs: local_1,
         },
         ExecInstruction::Copy {
             result: local_1,
@@ -3298,8 +3196,8 @@ fn local_tee_preserve_single() {
     let expected = [
         ExecInstruction::I32Add {
             result: local_0,
-            lhs: local_0.into(),
-            rhs: local_1.into(),
+            lhs: local_0,
+            rhs: local_1,
         },
         ExecInstruction::Copy {
             result: preserve,
@@ -3361,8 +3259,8 @@ fn local_tee_preserve_multiple() {
         },
         ExecInstruction::I32Add {
             result,
-            lhs: preserve_0.into(),
-            rhs: preserve_1.into(),
+            lhs: preserve_0,
+            rhs: preserve_1,
         },
         ExecInstruction::Return { results },
     ];
@@ -3418,8 +3316,8 @@ fn local_tee_preserve_multi_phase() {
         },
         ExecInstruction::I32Add {
             result,
-            lhs: preserve_0.into(),
-            rhs: preserve_1.into(),
+            lhs: preserve_0,
+            rhs: preserve_1,
         },
         ExecInstruction::Return { results },
     ];
@@ -3923,7 +3821,7 @@ fn if_simple() {
         ExecInstruction::I32Add {
             result: reg3,
             lhs: reg1,
-            rhs: reg2.into(),
+            rhs: reg2,
         },
         /* 2 */
         ExecInstruction::Br { target: end_label },
@@ -3980,12 +3878,12 @@ fn if_const_simple() {
     test(true, || ExecInstruction::I32Add {
         result: ExecRegister::from_inner(2),
         lhs: ExecRegister::from_inner(0),
-        rhs: ExecRegister::from_inner(1).into(),
+        rhs: ExecRegister::from_inner(1),
     });
     test(false, || ExecInstruction::I32Mul {
         result: ExecRegister::from_inner(2),
         lhs: ExecRegister::from_inner(0),
-        rhs: ExecRegister::from_inner(1).into(),
+        rhs: ExecRegister::from_inner(1),
     });
 }
 
@@ -4038,12 +3936,12 @@ fn if_const_nested() {
     test(true, || ExecInstruction::I32Add {
         result: ExecRegister::from_inner(2),
         lhs: ExecRegister::from_inner(0),
-        rhs: ExecRegister::from_inner(1).into(),
+        rhs: ExecRegister::from_inner(1),
     });
     test(false, || ExecInstruction::I32Mul {
         result: ExecRegister::from_inner(2),
         lhs: ExecRegister::from_inner(0),
-        rhs: ExecRegister::from_inner(1).into(),
+        rhs: ExecRegister::from_inner(1),
     });
 }
 
@@ -4084,7 +3982,7 @@ fn regression_const_lhs() {
         ExecInstruction::F32Div {
             result: v1,
             lhs: v2,
-            rhs: ExecProvider::from_register(v1),
+            rhs: v1,
         },
         ExecInstruction::Return { results },
     ];
