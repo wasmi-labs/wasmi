@@ -1,5 +1,7 @@
 //! Definitions for visualization of `wasmi` bytecode components.
 
+use wasmi_core::UntypedValue;
+
 use super::{
     utils::{Enclosure, EnclosureStyle},
     DisplaySequence,
@@ -99,6 +101,27 @@ impl<'engine> Display for DisplayConstRef<'engine> {
         //       since `wasmi` bytecode does not store enough type
         //       information.
         write!(f, "0x{:X}", u64::from(value))
+    }
+}
+
+/// Wrapper to display an [`UntypedValue`] in a human readable way.
+#[derive(Debug)]
+pub struct DisplayUntypedValue {
+    value: UntypedValue,
+}
+
+impl From<UntypedValue> for DisplayUntypedValue {
+    fn from(value: UntypedValue) -> Self {
+        Self { value }
+    }
+}
+
+impl Display for DisplayUntypedValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Note: We currently print all immediate values as bytes
+        //       since `wasmi` bytecode does not store enough type
+        //       information.
+        write!(f, "0x{:X}", u64::from(self.value))
     }
 }
 

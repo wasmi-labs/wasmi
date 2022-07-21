@@ -1244,12 +1244,12 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         &mut self,
         ptr: ExecRegister,
         offset: bytecode::Offset,
-        new_value: ConstRef,
+        new_value: UntypedValue,
     ) -> Result<(), Trap>
     where
         V: LittleEndianConvert + From<UntypedValue>,
     {
-        let new_value = V::from(self.resolve_cref(new_value));
+        let new_value = V::from(new_value);
         let bytes = <V as LittleEndianConvert>::into_le_bytes(new_value);
         self.store_bytes(ptr, offset, bytes.as_ref())?;
         self.next_instr()
@@ -1297,13 +1297,13 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         &mut self,
         ptr: ExecRegister,
         offset: bytecode::Offset,
-        new_value: ConstRef,
+        new_value: UntypedValue,
     ) -> Result<(), Trap>
     where
         V: From<UntypedValue> + WrapInto<U>,
         U: LittleEndianConvert,
     {
-        let new_value = V::from(self.resolve_cref(new_value)).wrap_into();
+        let new_value = V::from(new_value).wrap_into();
         let bytes = <U as LittleEndianConvert>::into_le_bytes(new_value);
         self.store_bytes(ptr, offset, bytes.as_ref())?;
         self.next_instr()
@@ -1402,11 +1402,10 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         &mut self,
         result: ExecRegister,
         lhs: ExecRegister,
-        rhs: ConstRef,
+        rhs: UntypedValue,
         op: fn(UntypedValue, UntypedValue) -> UntypedValue,
     ) -> Result<(), Trap> {
         let lhs = self.get_register(lhs);
-        let rhs = self.resolve_cref(rhs);
         self.set_register(result, op(lhs, rhs));
         self.next_instr()
     }
@@ -1450,11 +1449,10 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         &mut self,
         result: ExecRegister,
         lhs: ExecRegister,
-        rhs: ConstRef,
+        rhs: UntypedValue,
         op: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), Trap> {
         let lhs = self.get_register(lhs);
-        let rhs = self.resolve_cref(rhs);
         self.set_register(result, op(lhs, rhs)?);
         self.next_instr()
     }
@@ -1684,7 +1682,6 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         result: <ExecuteTypes as InstructionTypes>::Register,
         input: <ExecuteTypes as InstructionTypes>::Immediate,
     ) -> Result<(), Trap> {
-        let input = self.resolve_cref(input);
         self.set_register(result, input);
         self.next_instr()
     }
