@@ -28,11 +28,11 @@ jobs:
         with:
           command: build
           args: --workspace --all-features
-      - name: Build (no_std)
+      - name: Build wasmi itself as no_std
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --workspace --no-default-features
+          args: --lib --no-default-features --target thumbv7em-none-eabi
       - name: Build (wasm32)
         uses: actions-rs/cargo@v1
         with:
