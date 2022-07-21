@@ -1,3 +1,6 @@
+use alloc::boxed::Box;
+use alloc::vec::Vec;
+
 use crate::ModuleError;
 
 use super::{FuncIdx, InitExpr, TableIdx};

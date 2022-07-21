@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 use super::{
     import::FuncTypeIdx,
     DataSegment,

@@ -1,3 +1,4 @@
+use alloc::boxed::Box;
 use super::{InitExpr, MemoryIdx, ModuleError};
 
 /// A linear memory data segment within a [`Module`].

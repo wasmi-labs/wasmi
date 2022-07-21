@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 use super::ControlFrame;
 
 /// The stack of control flow frames.
