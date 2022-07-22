@@ -111,6 +111,8 @@ fn load_wasm_func(
 }
 
 /// Returns a [`Vec`] of `(&str, FuncType)` describing the exported functions of the [`Module`].
+///
+/// [`Module`]: [`wasmi::Module`]
 fn exported_funcs(module: &wasmi::Module) -> Vec<(&str, FuncType)> {
     module
         .exports()
@@ -125,6 +127,8 @@ fn exported_funcs(module: &wasmi::Module) -> Vec<(&str, FuncType)> {
 }
 
 /// Returns a [`String`] displaying a list of exported functions from the [`Module`].
+///
+/// [`Module`]: [`wasmi::Module`]
 fn display_exported_funcs(module: &wasmi::Module) -> String {
     use core::fmt::Write;
     let exported_funcs = exported_funcs(module);
