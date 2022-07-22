@@ -33,12 +33,25 @@ use wasmi_core::{
     F64,
 };
 
-/// The result of a conditional return.
+/// The result of a conditional return with a single return value.
 #[derive(Debug, Copy, Clone)]
 pub enum ConditionalReturn {
     /// Continue with the next instruction.
     Continue,
     /// Return control back to the caller of the function.
+    ///
+    /// Returning a single result value.
+    Return { result: UntypedValue },
+}
+
+/// The result of a conditional return with any number of return values.
+#[derive(Debug, Copy, Clone)]
+pub enum ConditionalReturnMulti {
+    /// Continue with the next instruction.
+    Continue,
+    /// Return control back to the caller of the function.
+    ///
+    /// Returning any number of result values.
     Return { results: ExecProviderSlice },
 }
 
@@ -110,11 +123,25 @@ pub(super) fn execute_frame(
             } => {
                 exec_ctx.exec_br_nez_multi(target, condition, results, returned)?;
             }
-            Instr::ReturnNez { results, condition } => {
-                if let ConditionalReturn::Return { results } =
-                    exec_ctx.exec_return_nez(results, condition)?
+            Instr::ReturnNez { result, condition } => {
+                if let ConditionalReturn::Return { result } =
+                    exec_ctx.exec_return_nez(result, condition)?
                 {
-                    return Ok(CallOutcome::Return { returned: results });
+                    return Ok(CallOutcome::ReturnSingle { returned: result });
+                }
+            }
+            Instr::ReturnNezImm { result, condition } => {
+                if let ConditionalReturn::Return { result } =
+                    exec_ctx.exec_return_nez_imm(result, condition)?
+                {
+                    return Ok(CallOutcome::ReturnSingle { returned: result });
+                }
+            }
+            Instr::ReturnNezMulti { results, condition } => {
+                if let ConditionalReturnMulti::Return { results } =
+                    exec_ctx.exec_return_nez_multi(results, condition)?
+                {
+                    return Ok(CallOutcome::ReturnMulti { returned: results });
                 }
             }
             Instr::BrTable { case, len_targets } => {
@@ -123,7 +150,9 @@ pub(super) fn execute_frame(
             Instr::Trap { trap_code } => {
                 exec_ctx.exec_trap(trap_code)?;
             }
-            Instr::Return { results } => return exec_ctx.exec_return(results),
+            Instr::Return { result } => return exec_ctx.exec_return(result),
+            Instr::ReturnImm { result } => return exec_ctx.exec_return_imm(result),
+            Instr::ReturnMulti { results } => return exec_ctx.exec_return_multi(results),
             Instr::Call {
                 func_idx,
                 results,
@@ -1583,18 +1612,54 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         })
     }
 
-    fn exec_return_nez(
+    fn exec_return_nez_impl<F>(
         &mut self,
-        results: <ExecuteTypes as InstructionTypes>::ProviderSlice,
         condition: <ExecuteTypes as InstructionTypes>::Register,
-    ) -> Result<ConditionalReturn, Trap> {
+        exec_branch: F,
+    ) -> Result<ConditionalReturn, Trap>
+    where
+        F: FnOnce(&mut Self) -> Result<ConditionalReturn, Trap>,
+    {
         let condition = self.get_register(condition);
         let zero = UntypedValue::from(0_i32);
         self.pc += 1;
         if condition != zero {
-            return Ok(ConditionalReturn::Return { results });
+            return exec_branch(self);
         }
         Ok(ConditionalReturn::Continue)
+    }
+
+    fn exec_return_nez(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        condition: <ExecuteTypes as InstructionTypes>::Register,
+    ) -> Result<ConditionalReturn, Trap> {
+        self.exec_return_nez_impl(condition, |this| {
+            let result = this.get_register(result);
+            Ok(ConditionalReturn::Return { result })
+        })
+    }
+
+    fn exec_return_nez_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Immediate,
+        condition: <ExecuteTypes as InstructionTypes>::Register,
+    ) -> Result<ConditionalReturn, Trap> {
+        self.exec_return_nez_impl(condition, |_| Ok(ConditionalReturn::Return { result }))
+    }
+
+    fn exec_return_nez_multi(
+        &mut self,
+        results: <ExecuteTypes as InstructionTypes>::ProviderSlice,
+        condition: <ExecuteTypes as InstructionTypes>::Register,
+    ) -> Result<ConditionalReturnMulti, Trap> {
+        let condition = self.get_register(condition);
+        let zero = UntypedValue::from(0_i32);
+        self.pc += 1;
+        if condition != zero {
+            return Ok(ConditionalReturnMulti::Return { results });
+        }
+        Ok(ConditionalReturnMulti::Continue)
     }
 
     fn exec_br_table(
@@ -1619,9 +1684,24 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
 
     fn exec_return(
         &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+    ) -> Result<CallOutcome, Trap> {
+        let result = self.get_register(result);
+        Ok(CallOutcome::ReturnSingle { returned: result })
+    }
+
+    fn exec_return_imm(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<CallOutcome, Trap> {
+        Ok(CallOutcome::ReturnSingle { returned: result })
+    }
+
+    fn exec_return_multi(
+        &mut self,
         results: <ExecuteTypes as InstructionTypes>::ProviderSlice,
     ) -> Result<CallOutcome, Trap> {
-        Ok(CallOutcome::Return { returned: results })
+        Ok(CallOutcome::ReturnMulti { returned: results })
     }
 
     fn exec_call(

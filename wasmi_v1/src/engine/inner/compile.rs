@@ -271,14 +271,32 @@ impl EngineInner {
                     returned,
                 }
             }
-            Instruction::Return { results } => {
-                let results = Self::compile_provider_slice(res, context, results);
-                ExecInstruction::Return { results }
+            Instruction::Return { result } => {
+                let result = Self::compile_register(context, result);
+                ExecInstruction::Return { result }
             }
-            Instruction::ReturnNez { results, condition } => {
+            Instruction::ReturnImm { result } => {
+                let result = Self::compile_immediate(result);
+                ExecInstruction::ReturnImm { result }
+            }
+            Instruction::ReturnMulti { results } => {
+                let results = Self::compile_provider_slice(res, context, results);
+                ExecInstruction::ReturnMulti { results }
+            }
+            Instruction::ReturnNez { result, condition } => {
+                let result = Self::compile_register(context, result);
+                let condition = Self::compile_register(context, condition);
+                ExecInstruction::ReturnNez { result, condition }
+            }
+            Instruction::ReturnNezImm { result, condition } => {
+                let result = Self::compile_immediate(result);
+                let condition = Self::compile_register(context, condition);
+                ExecInstruction::ReturnNezImm { result, condition }
+            }
+            Instruction::ReturnNezMulti { results, condition } => {
                 let results = Self::compile_provider_slice(res, context, results);
                 let condition = Self::compile_register(context, condition);
-                ExecInstruction::ReturnNez { results, condition }
+                ExecInstruction::ReturnNezMulti { results, condition }
             }
             Instruction::BrTable { case, len_targets } => {
                 let case = Self::compile_register(context, case);

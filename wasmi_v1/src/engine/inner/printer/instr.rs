@@ -282,7 +282,23 @@ impl<T> Display for DisplayExecInstruction<'_, '_, T> {
                     DisplayCopyMany::new(res, results, returned),
                 )
             }
-            Instr::ReturnNez { results, condition } => {
+            Instr::ReturnNez { result, condition } => {
+                writeln!(
+                    f,
+                    "return_nez {} {}",
+                    DisplayExecRegister::from(condition),
+                    DisplayExecRegister::from(result),
+                )
+            }
+            Instr::ReturnNezImm { result, condition } => {
+                writeln!(
+                    f,
+                    "return_nez {} {}",
+                    DisplayExecRegister::from(condition),
+                    DisplayUntypedValue::from(result),
+                )
+            }
+            Instr::ReturnNezMulti { results, condition } => {
                 writeln!(
                     f,
                     "return_nez {} {}",
@@ -312,7 +328,21 @@ impl<T> Display for DisplayExecInstruction<'_, '_, T> {
                 };
                 writeln!(f, "trap -> {:?}", trap_name)
             }
-            Instr::Return { results } => {
+            Instr::Return { result } => {
+                writeln!(
+                    f,
+                    "return {}",
+                    DisplayExecRegister::from(result)
+                )
+            }
+            Instr::ReturnImm { result } => {
+                writeln!(
+                    f,
+                    "return {}",
+                    DisplayUntypedValue::from(result)
+                )
+            }
+            Instr::ReturnMulti { results } => {
                 writeln!(
                     f,
                     "return {}",

@@ -93,6 +93,16 @@ impl ExecRegisterSlice {
         }
     }
 
+    /// Returns the first [`ExecRegister`] of the [`ExecRegisterSlice`] if any.
+    ///
+    /// # Panics (Debug)
+    ///
+    /// If the [`ExecRegisterSlice`] is empty.
+    pub fn first(self) -> ExecRegister {
+        debug_assert!(!self.is_empty());
+        self.start
+    }
+
     /// Creates an [`ExecRegisterSlice`] with a `start` [`ExecRegister`] of `len`.
     pub fn new(start: ExecRegister, len: u16) -> Self {
         Self { start, len }

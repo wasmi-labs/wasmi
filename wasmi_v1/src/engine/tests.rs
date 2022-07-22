@@ -266,7 +266,7 @@ fn br_simple() {
         ExecInstruction::Br {
             target: Target::from_inner(1),
         },
-        ExecInstruction::Return { results },
+        ExecInstruction::ReturnMulti { results },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -288,7 +288,7 @@ fn br_as_return_unnested() {
     let module = create_module(&wasm[..]);
     let engine = module.engine();
     let results = engine.alloc_provider_slice([]);
-    let expected = [ExecInstruction::Return { results }];
+    let expected = [ExecInstruction::ReturnMulti { results }];
     assert_func_bodies_for_module(&module, [expected]);
 }
 
@@ -314,8 +314,8 @@ fn br_as_return_nested() {
     let engine = module.engine();
     let results = engine.alloc_provider_slice([]);
     let expected = [
-        ExecInstruction::Return { results },
-        ExecInstruction::Return { results },
+        ExecInstruction::ReturnMulti { results },
+        ExecInstruction::ReturnMulti { results },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -349,7 +349,7 @@ fn br_to_loop_header() {
         ExecInstruction::Br {
             target: loop_header,
         },
-        ExecInstruction::Return { results },
+        ExecInstruction::ReturnMulti { results },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -380,7 +380,7 @@ fn br_if_simple() {
             target: Target::from_inner(1),
             condition,
         },
-        ExecInstruction::Return { results },
+        ExecInstruction::ReturnMulti { results },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -406,8 +406,8 @@ fn br_if_as_return_unnested() {
     let condition = ExecRegister::from_inner(0);
     let results = engine.alloc_provider_slice([]);
     let expected = [
-        ExecInstruction::ReturnNez { results, condition },
-        ExecInstruction::Return { results },
+        ExecInstruction::ReturnNezMulti { results, condition },
+        ExecInstruction::ReturnMulti { results },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -438,9 +438,9 @@ fn br_if_as_return_nested() {
     let condition = ExecRegister::from_inner(0);
     let results = engine.alloc_provider_slice([]);
     let expected = [
-        ExecInstruction::ReturnNez { results, condition },
-        ExecInstruction::Return { results },
-        ExecInstruction::Return { results },
+        ExecInstruction::ReturnNezMulti { results, condition },
+        ExecInstruction::ReturnMulti { results },
+        ExecInstruction::ReturnMulti { results },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -478,7 +478,7 @@ fn br_if_to_loop_header() {
             condition,
         },
         ExecInstruction::Br { target: loop_end },
-        ExecInstruction::Return { results },
+        ExecInstruction::ReturnMulti { results },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -503,7 +503,7 @@ fn br_if_const_true() {
     let module = create_module(&wasm[..]);
     let engine = module.engine();
     let results = engine.alloc_provider_slice([]);
-    let expected = [ExecInstruction::Return { results }];
+    let expected = [ExecInstruction::ReturnMulti { results }];
     assert_func_bodies_for_module(&module, [expected]);
 }
 
@@ -530,13 +530,11 @@ fn br_if_const_true_return() {
     "#,
     );
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
-    let result = engine.alloc_const(10_i32);
-    let results = engine.alloc_provider_slice([result.into()]);
+    let result = 10_i32.into();
     let block_end = Target::from_inner(1);
     let expected = [
         ExecInstruction::Br { target: block_end },
-        ExecInstruction::Return { results },
+        ExecInstruction::ReturnImm { result },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -560,7 +558,7 @@ fn br_if_const_false() {
     let module = create_module(&wasm[..]);
     let engine = module.engine();
     let results = engine.alloc_provider_slice([]);
-    let expected = [ExecInstruction::Return { results }];
+    let expected = [ExecInstruction::ReturnMulti { results }];
     assert_func_bodies_for_module(&module, [expected]);
 }
 
@@ -587,18 +585,11 @@ fn br_if_const_false_return() {
     "#,
     );
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
-    let const_10 = engine.alloc_const(10_i32);
-    let const_20 = engine.alloc_const(20_i32);
-    let results_10 = engine.alloc_provider_slice([const_10.into()]);
-    let results_20 = engine.alloc_provider_slice([const_20.into()]);
+    let const_10 = 10_i32.into();
+    let const_20 = 20_i32.into();
     let expected = [
-        ExecInstruction::Return {
-            results: results_20,
-        },
-        ExecInstruction::Return {
-            results: results_10,
-        },
+        ExecInstruction::ReturnImm { result: const_20 },
+        ExecInstruction::ReturnImm { result: const_10 },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -663,25 +654,25 @@ fn br_table_simple() {
             results: ExecRegisterSlice::empty(),
             returned: ExecProviderSlice::empty(),
         },
-        /* 4 case default */ ExecInstruction::Return { results },
+        /* 4 case default */ ExecInstruction::ReturnMulti { results },
         // branch for case 0
         /* 5 */ ExecInstruction::GlobalSet {
             global,
             value: c10,
         },
-        /* 6 */ ExecInstruction::Return { results },
+        /* 6 */ ExecInstruction::ReturnMulti { results },
         // branch for case 1
         /* 7 */ ExecInstruction::GlobalSet {
             global,
             value: c20,
         },
-        /* 8 */ ExecInstruction::Return { results },
+        /* 8 */ ExecInstruction::ReturnMulti { results },
         // branch for case 2
         /* 9 */ ExecInstruction::GlobalSet {
             global,
             value: c30,
         },
-        /* 10 */ ExecInstruction::Return { results },
+        /* 10 */ ExecInstruction::ReturnMulti { results },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -722,14 +713,11 @@ fn br_table_return() {
     "#,
     );
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
     let c10 = 10_i32.into();
     let c20 = 20_i32.into();
     let c30 = 30_i32.into();
     let reg0 = ExecRegister::from_inner(0);
     let reg1 = ExecRegister::from_inner(1);
-    let results_reg1 = engine.alloc_provider_slice([reg1.into()]);
-    let results_reg0 = engine.alloc_provider_slice([reg0.into()]);
     #[rustfmt::skip]
     let expected = [
         /* 0 */ ExecInstruction::BrTable {
@@ -762,23 +750,23 @@ fn br_table_return() {
             lhs: reg0,
             rhs: c10,
         },
-        /* 6 */ ExecInstruction::Return { results: results_reg1 },
+        /* 6 */ ExecInstruction::Return { result: reg1 },
         // branch for case 1
         /* 7 */ ExecInstruction::I32AddImm {
             result: reg1,
             lhs: reg0,
             rhs: c20,
         },
-        /* 8 */ ExecInstruction::Return { results: results_reg1 },
+        /* 8 */ ExecInstruction::Return { result: reg1 },
         // branch for case 2
         /* 9 */ ExecInstruction::I32AddImm {
             result: reg1,
             lhs: reg0,
             rhs: c30,
         },
-        /* 10 */ ExecInstruction::Return { results: results_reg1 },
+        /* 10 */ ExecInstruction::Return { result: reg1 },
         // end of function implicit return
-        /* 11 */ ExecInstruction::Return { results: results_reg0 },
+        /* 11 */ ExecInstruction::Return { result: reg0 },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -829,19 +817,19 @@ fn br_table_const_case() {
                 global,
                 value: c10,
             },
-            /* 2 */ ExecInstruction::Return { results },
+            /* 2 */ ExecInstruction::ReturnMulti { results },
             // branch for case 1
             /* 3 */ ExecInstruction::GlobalSet {
                 global,
                 value: c20,
             },
-            /* 4 */ ExecInstruction::Return { results },
+            /* 4 */ ExecInstruction::ReturnMulti { results },
             // branch for case 2
             /* 5 */ ExecInstruction::GlobalSet {
                 global,
                 value: c30,
             },
-            /* 6 */ ExecInstruction::Return { results },
+            /* 6 */ ExecInstruction::ReturnMulti { results },
         ];
         assert_func_bodies_for_module(&module, [expected]);
     }
@@ -863,7 +851,7 @@ fn br_table_const_case() {
     });
     test(3, |engine| {
         let results = engine.alloc_provider_slice([]);
-        ExecInstruction::Return { results }
+        ExecInstruction::ReturnMulti { results }
     });
 }
 
@@ -882,17 +870,15 @@ fn add_10_assign() {
     "#,
     );
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
     let c10 = 10_i32.into();
     let local_0 = ExecRegister::from_inner(0);
-    let results = engine.alloc_provider_slice([local_0.into()]);
     let expected = [
         ExecInstruction::I32AddImm {
             result: local_0,
             lhs: local_0,
             rhs: c10,
         },
-        ExecInstruction::Return { results },
+        ExecInstruction::Return { result: local_0 },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -908,7 +894,7 @@ fn implicit_return_no_value() {
         )
     "#,
     );
-    let expected = [ExecInstruction::Return {
+    let expected = [ExecInstruction::ReturnMulti {
         results: ExecProviderSlice::empty(),
     }];
     assert_func_bodies(&wasm, [expected]);
@@ -969,14 +955,12 @@ fn binary_simple() {
         "#,
         ));
         let module = create_module(&wasm[..]);
-        let engine = module.engine();
         let lhs = ExecRegister::from_inner(0);
         let rhs = ExecRegister::from_inner(1);
         let result = ExecRegister::from_inner(2);
-        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
             make_op(result, lhs, rhs),
-            ExecInstruction::Return { results },
+            ExecInstruction::Return { result },
         ];
         assert_func_bodies_for_module(&module, [expected]);
     }
@@ -1002,14 +986,12 @@ fn binary_simple() {
         "#,
         ));
         let module = create_module(&wasm[..]);
-        let engine = module.engine();
         let lhs = ExecRegister::from_inner(0);
         let rhs = one.into();
         let result = ExecRegister::from_inner(1);
-        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
             make_op(result, lhs, rhs),
-            ExecInstruction::Return { results },
+            ExecInstruction::Return { result },
         ];
         assert_func_bodies_for_module(&module, [expected]);
     }
@@ -1137,15 +1119,13 @@ fn binary_const_register() {
         "#,
         ));
         let module = create_module(&wasm[..]);
-        let engine = module.engine();
         let input = T::one().into();
         let rhs = ExecRegister::from_inner(0);
         let result = ExecRegister::from_inner(1);
-        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
             ExecInstruction::CopyImm { result, input },
             make_op(result, result, rhs.into()),
-            ExecInstruction::Return { results },
+            ExecInstruction::Return { result },
         ];
         assert_func_bodies_for_module(&module, [expected]);
     }
@@ -1220,17 +1200,15 @@ fn binary_const_register_commutative() {
         "#,
         ));
         let module = create_module(&wasm[..]);
-        let engine = module.engine();
         let rhs = T::one().into();
         let result = ExecRegister::from_inner(1);
-        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
             make_op(
                 ExecRegister::from_inner(1),
                 ExecRegister::from_inner(0),
                 rhs,
             ),
-            ExecInstruction::Return { results },
+            ExecInstruction::Return { result },
         ];
         assert_func_bodies_for_module(&module, [expected]);
     }
@@ -1324,14 +1302,14 @@ fn binary_const_const_fallible() {
             )
         "#,
         ));
-        let module = create_module(&wasm[..]);
-        let engine = module.engine();
         let expected = match exec_op(lhs, rhs) {
             Ok(result) => {
                 assert!(matches!(outcome, Outcome::Eval));
-                let result = engine.alloc_const(result.into());
-                let results = engine.alloc_provider_slice([ExecProvider::from(result)]);
-                [ExecInstruction::Return { results }]
+                // let result = engine.alloc_const(result.into());
+                // let results = engine.alloc_provider_slice([ExecProvider::from(result)]);
+                [ExecInstruction::ReturnImm {
+                    result: result.into(),
+                }]
             }
             Err(trap_code) => {
                 assert!(matches!(outcome, Outcome::Trap));
@@ -1408,11 +1386,8 @@ fn binary_const_const_infallible() {
             )
         "#,
         ));
-        let module = create_module(&wasm[..]);
-        let engine = module.engine();
-        let result = engine.alloc_const(exec_op(lhs, rhs).into());
-        let results = engine.alloc_provider_slice([ExecProvider::from(result)]);
-        let expected = [ExecInstruction::Return { results }];
+        let result = exec_op(lhs, rhs).into();
+        let expected = [ExecInstruction::ReturnImm { result }];
         assert_func_bodies(&wasm, [expected]);
     }
 
@@ -1531,14 +1506,11 @@ fn cmp_zero_register() {
             )
         "#,
         ));
-        let module = create_module(&wasm[..]);
-        let engine = module.engine();
         let rhs = T::default().into();
         let result = ExecRegister::from_inner(1);
-        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
             make_op(result, ExecRegister::from_inner(0), rhs),
-            ExecInstruction::Return { results },
+            ExecInstruction::Return { result },
         ];
         assert_func_bodies(&wasm, [expected]);
     }
@@ -1569,11 +1541,8 @@ fn cmp_zero_const() {
             )
         "#,
         ));
-        let module = create_module(&wasm[..]);
-        let engine = module.engine();
-        let result = engine.alloc_const(exec_op(value));
-        let results = engine.alloc_provider_slice([ExecProvider::from(result)]);
-        let expected = [ExecInstruction::Return { results }];
+        let result = exec_op(value).into();
+        let expected = [ExecInstruction::ReturnImm { result }];
         assert_func_bodies(&wasm, [expected]);
     }
 
@@ -1604,17 +1573,14 @@ fn cmp_registers() {
             )
         "#
         ));
-        let module = create_module(&wasm[..]);
-        let engine = module.engine();
         let result = ExecRegister::from_inner(2);
-        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
             make_op(
                 result,
                 ExecRegister::from_inner(0),
                 ExecRegister::from_inner(1),
             ),
-            ExecInstruction::Return { results },
+            ExecInstruction::Return { result },
         ];
         assert_func_bodies(&wasm, [expected]);
     }
@@ -1665,14 +1631,11 @@ fn cmp_register_and_const() {
             )
         "#
         ));
-        let module = create_module(&wasm[..]);
-        let engine = module.engine();
         let result = ExecRegister::from_inner(1);
-        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let rhs = value.into();
         let expected = [
             make_op(result, ExecRegister::from_inner(0), rhs),
-            ExecInstruction::Return { results },
+            ExecInstruction::Return { result },
         ];
         assert_func_bodies(&wasm, [expected]);
     }
@@ -1725,17 +1688,15 @@ fn cmp_const_and_register() {
             )
         "#
         ));
-        let module = create_module(&wasm[..]);
-        let engine = module.engine();
         let result = ExecRegister::from_inner(1);
-        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let rhs = value.into();
         let expected = [
             make_op(result, ExecRegister::from_inner(0), rhs),
-            ExecInstruction::Return { results },
+            ExecInstruction::Return { result },
         ];
         assert_func_bodies(&wasm, [expected]);
     }
+
     run_test("i32", "lt_s", 1_i32, make_op!(I32GtSImm));
     run_test("i32", "lt_u", 1_i32, make_op!(I32GtUImm));
     run_test("i32", "gt_s", 1_i32, make_op!(I32LtSImm));
@@ -1782,13 +1743,13 @@ fn cmp_const_and_const() {
             )
         "#
         ));
-        let module = create_module(&wasm[..]);
-        let engine = module.engine();
-        let result = engine.alloc_const(exec_op(lhs, rhs) as i32);
-        let results = engine.alloc_provider_slice([ExecProvider::from(result)]);
-        let expected = [ExecInstruction::Return { results }];
+        let result = exec_op(lhs, rhs) as i32;
+        let expected = [ExecInstruction::ReturnImm {
+            result: result.into(),
+        }];
         assert_func_bodies(&wasm, [expected]);
     }
+
     run_test("i32", "lt_s", 1_i32, 2_i32, |l, r| l < r);
     run_test("i32", "lt_u", 1_i32, 2_i32, |l, r| l < r);
     run_test("i32", "gt_s", 1_i32, 2_i32, |l, r| l > r);
@@ -1850,12 +1811,9 @@ fn unary_register() {
             )
         "#
         ));
-        let module = create_module(&wasm[..]);
-        let engine = module.engine();
         let result = ExecRegister::from_inner(1);
-        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let input = ExecRegister::from_inner(0);
-        let expected = [make_op(result, input), ExecInstruction::Return { results }];
+        let expected = [make_op(result, input), ExecInstruction::Return { result }];
         assert_func_bodies(&wasm, [expected]);
     }
 
@@ -1981,11 +1939,8 @@ fn unary_const_infallible() {
             )
         "#
         ));
-        let module = create_module(&wasm[..]);
-        let engine = module.engine();
-        let result = engine.alloc_const(exec_op(input));
-        let results = engine.alloc_provider_slice([ExecProvider::from_immediate(result)]);
-        let expected = [ExecInstruction::Return { results }];
+        let result = exec_op(input).into();
+        let expected = [ExecInstruction::ReturnImm { result }];
         assert_func_bodies(&wasm, [expected]);
     }
 
@@ -2120,14 +2075,12 @@ fn unary_const_fallible() {
             )
         "#
         ));
-        let module = create_module(&wasm[..]);
-        let engine = module.engine();
         let expected = match exec_op(input) {
             Ok(result) => {
                 assert!(matches!(outcome, Outcome::Eval));
-                let result = engine.alloc_const(result);
-                let results = engine.alloc_provider_slice([ExecProvider::from_immediate(result)]);
-                [ExecInstruction::Return { results }]
+                [ExecInstruction::ReturnImm {
+                    result: result.into(),
+                }]
             }
             Err(trap_code) => {
                 assert!(matches!(outcome, Outcome::Trap));
@@ -2272,13 +2225,11 @@ fn load_from_register() {
         "#
         ));
         let module = create_module(&wasm[..]);
-        let engine = module.engine();
         let ptr = ExecRegister::from_inner(0);
         let result = ExecRegister::from_inner(1);
-        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
             make_op(result, ptr, offset.into()),
-            ExecInstruction::Return { results },
+            ExecInstruction::Return { result },
         ];
         assert_func_bodies_for_module(&module, [expected]);
     }
@@ -2321,17 +2272,15 @@ fn load_from_const() {
         "#
         ));
         let module = create_module(&wasm[..]);
-        let engine = module.engine();
         let const_ptr = 100.into();
         let result = ExecRegister::from_inner(0);
-        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
             ExecInstruction::CopyImm {
                 result,
                 input: const_ptr,
             },
             make_op(result, result, offset.into()),
-            ExecInstruction::Return { results },
+            ExecInstruction::Return { result },
         ];
         assert_func_bodies_for_module(&module, [expected]);
     }
@@ -2381,7 +2330,7 @@ fn store_to_register() {
         let results = engine.alloc_provider_slice([]);
         let expected = [
             make_op(ptr, offset.into(), value),
-            ExecInstruction::Return { results },
+            ExecInstruction::ReturnMulti { results },
         ];
         assert_func_bodies_for_module(&module, [expected]);
     }
@@ -2430,7 +2379,7 @@ fn store_to_const() {
                 input: const_ptr,
             },
             make_op(temp, offset.into(), value),
-            ExecInstruction::Return { results },
+            ExecInstruction::ReturnMulti { results },
         ];
         assert_func_bodies_for_module(&module, [expected]);
     }
@@ -2467,15 +2416,13 @@ fn global_get() {
             "#
         ));
         let module = create_module(&wasm[..]);
-        let engine = module.engine();
         let result = ExecRegister::from_inner(0);
-        let results = engine.alloc_provider_slice([ExecProvider::from_register(result)]);
         let expected = [
             ExecInstruction::GlobalGet {
                 result,
                 global: GlobalIndex::from(global_index),
             },
-            ExecInstruction::Return { results },
+            ExecInstruction::Return { result },
         ];
         assert_func_bodies_for_module(&module, [expected]);
     }
@@ -2515,7 +2462,7 @@ fn global_set_register() {
                 global: GlobalIndex::from(global_index),
                 value: value.into(),
             },
-            ExecInstruction::Return { results },
+            ExecInstruction::ReturnMulti { results },
         ];
         assert_func_bodies_for_module(&module, [expected]);
     }
@@ -2555,7 +2502,7 @@ fn global_set_const() {
                 global: GlobalIndex::from(global_index),
                 value: value.into(),
             },
-            ExecInstruction::Return { results },
+            ExecInstruction::ReturnMulti { results },
         ];
         assert_func_bodies_for_module(&module, [expected]);
     }
@@ -2579,12 +2526,10 @@ fn memory_size() {
         "#,
     );
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
     let result = ExecRegister::from_inner(0);
-    let results = engine.alloc_provider_slice([result.into()]);
     let expected = [
         ExecInstruction::MemorySize { result },
-        ExecInstruction::Return { results },
+        ExecInstruction::Return { result },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -2603,13 +2548,11 @@ fn memory_grow_register() {
         "#,
     );
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
     let amount = ExecRegister::from_inner(0).into();
     let result = ExecRegister::from_inner(1);
-    let results = engine.alloc_provider_slice([result.into()]);
     let expected = [
         ExecInstruction::MemoryGrow { result, amount },
-        ExecInstruction::Return { results },
+        ExecInstruction::Return { result },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -2632,10 +2575,9 @@ fn memory_grow_const() {
     let engine = module.engine();
     let amount = engine.alloc_const(amount).into();
     let result = ExecRegister::from_inner(0);
-    let results = engine.alloc_provider_slice([result.into()]);
     let expected = [
         ExecInstruction::MemoryGrow { result, amount },
-        ExecInstruction::Return { results },
+        ExecInstruction::Return { result },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -2661,7 +2603,7 @@ fn drop() {
     let module = create_module(&wasm[..]);
     let engine = module.engine();
     let results = engine.alloc_provider_slice([]);
-    let expected = [ExecInstruction::Return { results }];
+    let expected = [ExecInstruction::ReturnMulti { results }];
     assert_func_bodies_for_module(&module, [expected]);
 }
 
@@ -2681,12 +2623,10 @@ fn select_register() {
         "#
     ));
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
     let condition = ExecRegister::from_inner(0);
     let if_true = ExecRegister::from_inner(1).into();
     let if_false = ExecRegister::from_inner(2).into();
     let result = ExecRegister::from_inner(3);
-    let results = engine.alloc_provider_slice([result.into()]);
     let expected = [
         ExecInstruction::Select {
             result,
@@ -2694,7 +2634,7 @@ fn select_register() {
             if_true,
             if_false,
         },
-        ExecInstruction::Return { results },
+        ExecInstruction::Return { result },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -2717,15 +2657,13 @@ fn select_const() {
             "#
         ));
         let module = create_module(&wasm[..]);
-        let engine = module.engine();
         let if_true = ExecRegister::from_inner(0).into();
         let if_false = ExecRegister::from_inner(1).into();
         let input = if condition { if_true } else { if_false };
         let result = ExecRegister::from_inner(2);
-        let results = engine.alloc_provider_slice([result.into()]);
         let expected = [
             ExecInstruction::Copy { result, input },
-            ExecInstruction::Return { results },
+            ExecInstruction::Return { result },
         ];
         assert_func_bodies_for_module(&module, [expected]);
     }
@@ -2748,16 +2686,14 @@ fn local_set_copy() {
         "#,
     );
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
     let local_0 = ExecRegister::from_inner(0);
     let local_1 = ExecRegister::from_inner(1);
-    let results = engine.alloc_provider_slice([local_1.into()]);
     let expected = [
         ExecInstruction::Copy {
             result: local_1,
             input: local_0.into(),
         },
-        ExecInstruction::Return { results },
+        ExecInstruction::Return { result: local_1 },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -2778,17 +2714,15 @@ fn local_set_override() {
         "#,
     );
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
     let local_0 = ExecRegister::from_inner(0);
     let local_1 = ExecRegister::from_inner(1);
-    let results = engine.alloc_provider_slice([local_0.into()]);
     let expected = [
         ExecInstruction::I32Add {
             result: local_0,
             lhs: local_0,
             rhs: local_1,
         },
-        ExecInstruction::Return { results },
+        ExecInstruction::Return { result: local_0 },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -2811,10 +2745,8 @@ fn local_set_override_and_copy() {
         "#,
     );
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
     let local_0 = ExecRegister::from_inner(0);
     let local_1 = ExecRegister::from_inner(1);
-    let results = engine.alloc_provider_slice([local_1.into()]);
     let expected = [
         ExecInstruction::I32Add {
             result: local_0,
@@ -2825,7 +2757,7 @@ fn local_set_override_and_copy() {
             result: local_1,
             input: local_0.into(),
         },
-        ExecInstruction::Return { results },
+        ExecInstruction::Return { result: local_1 },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -2846,7 +2778,6 @@ fn local_set_preserve_single() {
         "#,
     );
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
     let local_0 = ExecRegister::from_inner(0);
     let local_1 = ExecRegister::from_inner(1);
     // Note: we skip Register(2) since we do not currently
@@ -2855,7 +2786,6 @@ fn local_set_preserve_single() {
     //       compilation for `i32.add` before changing its
     //       result register via `local.set 0`.
     let preserve = ExecRegister::from_inner(3);
-    let results = engine.alloc_provider_slice([preserve.into()]);
     let expected = [
         ExecInstruction::I32Add {
             result: local_0,
@@ -2866,7 +2796,7 @@ fn local_set_preserve_single() {
             result: preserve,
             input: local_0.into(),
         },
-        ExecInstruction::Return { results },
+        ExecInstruction::Return { result: preserve },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -2895,14 +2825,12 @@ fn local_set_preserve_multiple() {
         "#,
     );
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
     let local_0 = ExecRegister::from_inner(0);
     let local_1 = ExecRegister::from_inner(1);
     let zero = 0_i32.into();
     let result = ExecRegister::from_inner(2);
     let preserve_0 = ExecRegister::from_inner(3);
     let preserve_1 = ExecRegister::from_inner(4);
-    let results = engine.alloc_provider_slice([result.into()]);
     let expected = [
         ExecInstruction::Copy {
             result: preserve_0,
@@ -2925,7 +2853,7 @@ fn local_set_preserve_multiple() {
             lhs: preserve_0,
             rhs: preserve_1,
         },
-        ExecInstruction::Return { results },
+        ExecInstruction::Return { result },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -2952,14 +2880,12 @@ fn local_set_preserve_multi_phase() {
         "#,
     );
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
     let local_0 = ExecRegister::from_inner(0);
     let local_1 = ExecRegister::from_inner(1);
     let zero = 0_i32.into();
     let result = ExecRegister::from_inner(2);
     let preserve_0 = ExecRegister::from_inner(3);
     let preserve_1 = ExecRegister::from_inner(4);
-    let results = engine.alloc_provider_slice([result.into()]);
     let expected = [
         ExecInstruction::Copy {
             result: preserve_0,
@@ -2982,7 +2908,7 @@ fn local_set_preserve_multi_phase() {
             lhs: preserve_0,
             rhs: preserve_1,
         },
-        ExecInstruction::Return { results },
+        ExecInstruction::Return { result },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -3015,7 +2941,6 @@ fn local_set_after_call() {
     let param = ExecRegister::from_inner(0);
     let params = engine.alloc_provider_slice([param.into()]);
     let return_result = call_result;
-    let return_results = engine.alloc_provider_slice([return_result.into()]);
     let expected = [
         ExecInstruction::Call {
             func_idx: FuncIdx::from_u32(0),
@@ -3023,7 +2948,7 @@ fn local_set_after_call() {
             params,
         },
         ExecInstruction::Return {
-            results: return_results,
+            result: return_result,
         },
     ];
     assert_func_bodies_for_module(&module, [expected]);
@@ -3059,7 +2984,6 @@ fn local_set_after_call_indirect() {
     let param = ExecRegister::from_inner(0);
     let params = engine.alloc_provider_slice([param.into()]);
     let return_result = call_result;
-    let return_results = engine.alloc_provider_slice([return_result.into()]);
     let expected = [
         ExecInstruction::CallIndirect {
             func_type_idx: FuncTypeIdx::from_u32(0),
@@ -3068,7 +2992,7 @@ fn local_set_after_call_indirect() {
             params,
         },
         ExecInstruction::Return {
-            results: return_results,
+            result: return_result,
         },
     ];
     assert_func_bodies_for_module(&module, [expected]);
@@ -3087,16 +3011,14 @@ fn local_tee_copy() {
         "#,
     );
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
     let local_0 = ExecRegister::from_inner(0);
     let local_1 = ExecRegister::from_inner(1);
-    let results = engine.alloc_provider_slice([local_1.into()]);
     let expected = [
         ExecInstruction::Copy {
             result: local_1,
             input: local_0.into(),
         },
-        ExecInstruction::Return { results },
+        ExecInstruction::Return { result: local_1 },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -3116,17 +3038,15 @@ fn local_tee_override() {
         "#,
     );
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
     let local_0 = ExecRegister::from_inner(0);
     let local_1 = ExecRegister::from_inner(1);
-    let results = engine.alloc_provider_slice([local_0.into()]);
     let expected = [
         ExecInstruction::I32Add {
             result: local_0,
             lhs: local_0,
             rhs: local_1,
         },
-        ExecInstruction::Return { results },
+        ExecInstruction::Return { result: local_0 },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -3147,10 +3067,8 @@ fn local_tee_override_and_copy() {
         "#,
     );
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
     let local_0 = ExecRegister::from_inner(0);
     let local_1 = ExecRegister::from_inner(1);
-    let results = engine.alloc_provider_slice([local_1.into()]);
     let expected = [
         ExecInstruction::I32Add {
             result: local_0,
@@ -3161,7 +3079,7 @@ fn local_tee_override_and_copy() {
             result: local_1,
             input: local_0.into(),
         },
-        ExecInstruction::Return { results },
+        ExecInstruction::Return { result: local_1 },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -3183,7 +3101,6 @@ fn local_tee_preserve_single() {
         "#,
     );
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
     let local_0 = ExecRegister::from_inner(0);
     let local_1 = ExecRegister::from_inner(1);
     // Note: we skip Register(2) since we do not currently
@@ -3192,7 +3109,6 @@ fn local_tee_preserve_single() {
     //       compilation for `i32.add` before changing its
     //       result register via `local.set 0`.
     let preserve = ExecRegister::from_inner(3);
-    let results = engine.alloc_provider_slice([preserve.into()]);
     let expected = [
         ExecInstruction::I32Add {
             result: local_0,
@@ -3203,7 +3119,7 @@ fn local_tee_preserve_single() {
             result: preserve,
             input: local_0.into(),
         },
-        ExecInstruction::Return { results },
+        ExecInstruction::Return { result: preserve },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -3232,14 +3148,12 @@ fn local_tee_preserve_multiple() {
         "#,
     );
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
     let local_0 = ExecRegister::from_inner(0);
     let local_1 = ExecRegister::from_inner(1);
     let zero = 0_i32.into();
     let result = ExecRegister::from_inner(2);
     let preserve_0 = ExecRegister::from_inner(3);
     let preserve_1 = ExecRegister::from_inner(4);
-    let results = engine.alloc_provider_slice([result.into()]);
     let expected = [
         ExecInstruction::Copy {
             result: preserve_0,
@@ -3262,7 +3176,7 @@ fn local_tee_preserve_multiple() {
             lhs: preserve_0,
             rhs: preserve_1,
         },
-        ExecInstruction::Return { results },
+        ExecInstruction::Return { result },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -3289,14 +3203,12 @@ fn local_tee_preserve_multi_phase() {
         "#,
     );
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
     let local_0 = ExecRegister::from_inner(0);
     let local_1 = ExecRegister::from_inner(1);
     let zero = 0_i32.into();
     let result = ExecRegister::from_inner(2);
     let preserve_0 = ExecRegister::from_inner(3);
     let preserve_1 = ExecRegister::from_inner(4);
-    let results = engine.alloc_provider_slice([result.into()]);
     let expected = [
         ExecInstruction::Copy {
             result: preserve_0,
@@ -3319,7 +3231,7 @@ fn local_tee_preserve_multi_phase() {
             lhs: preserve_0,
             rhs: preserve_1,
         },
-        ExecInstruction::Return { results },
+        ExecInstruction::Return { result },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -3350,8 +3262,6 @@ fn local_tee_after_call() {
     let call_results = ExecRegisterSlice::new(call_result, 1);
     let param = ExecRegister::from_inner(0);
     let params = engine.alloc_provider_slice([param.into()]);
-    let return_result = call_result;
-    let return_results = engine.alloc_provider_slice([return_result.into()]);
     let expected = [
         ExecInstruction::Call {
             func_idx: FuncIdx::from_u32(0),
@@ -3359,7 +3269,7 @@ fn local_tee_after_call() {
             params,
         },
         ExecInstruction::Return {
-            results: return_results,
+            result: call_result,
         },
     ];
     assert_func_bodies_for_module(&module, [expected]);
@@ -3393,8 +3303,6 @@ fn local_tee_after_call_indirect() {
     let call_results = ExecRegisterSlice::new(call_result, 1);
     let param = ExecRegister::from_inner(0);
     let params = engine.alloc_provider_slice([param.into()]);
-    let return_result = call_result;
-    let return_results = engine.alloc_provider_slice([return_result.into()]);
     let expected = [
         ExecInstruction::CallIndirect {
             func_type_idx: FuncTypeIdx::from_u32(0),
@@ -3403,7 +3311,7 @@ fn local_tee_after_call_indirect() {
             params,
         },
         ExecInstruction::Return {
-            results: return_results,
+            result: call_result,
         },
     ];
     assert_func_bodies_for_module(&module, [expected]);
@@ -3432,7 +3340,7 @@ fn call_0_params_0_results() {
             results: call_results,
             params,
         },
-        ExecInstruction::Return {
+        ExecInstruction::ReturnMulti {
             results: return_results,
         },
     ];
@@ -3458,8 +3366,6 @@ fn call_1_params_1_results() {
     let call_results = ExecRegisterSlice::new(call_result, 1);
     let param = ExecRegister::from_inner(0);
     let params = engine.alloc_provider_slice([param.into()]);
-    let return_result = call_result;
-    let return_results = engine.alloc_provider_slice([return_result.into()]);
     let expected = [
         ExecInstruction::Call {
             func_idx: FuncIdx::from_u32(0),
@@ -3467,7 +3373,7 @@ fn call_1_params_1_results() {
             params,
         },
         ExecInstruction::Return {
-            results: return_results,
+            result: call_result,
         },
     ];
     assert_func_bodies_for_module(&module, [expected]);
@@ -3494,8 +3400,6 @@ fn call_2_params_1_results() {
     let param_0 = ExecRegister::from_inner(0);
     let param_1 = ExecRegister::from_inner(1);
     let params = engine.alloc_provider_slice([param_0.into(), param_1.into()]);
-    let return_result = call_result;
-    let return_results = engine.alloc_provider_slice([return_result.into()]);
     let expected = [
         ExecInstruction::Call {
             func_idx: FuncIdx::from_u32(0),
@@ -3503,7 +3407,7 @@ fn call_2_params_1_results() {
             params,
         },
         ExecInstruction::Return {
-            results: return_results,
+            result: call_result,
         },
     ];
     assert_func_bodies_for_module(&module, [expected]);
@@ -3538,7 +3442,7 @@ fn call_1_params_2_results() {
             results: call_results,
             params,
         },
-        ExecInstruction::Return {
+        ExecInstruction::ReturnMulti {
             results: return_results,
         },
     ];
@@ -3576,7 +3480,7 @@ fn call_2_params_2_results() {
             results: call_results,
             params,
         },
-        ExecInstruction::Return {
+        ExecInstruction::ReturnMulti {
             results: return_results,
         },
     ];
@@ -3609,7 +3513,7 @@ fn call_indirect_0_params_0_results() {
             results: call_results,
             params,
         },
-        ExecInstruction::Return {
+        ExecInstruction::ReturnMulti {
             results: return_results,
         },
     ];
@@ -3637,8 +3541,6 @@ fn call_indirect_1_params_1_results() {
     let call_results = ExecRegisterSlice::new(call_result, 1);
     let param = ExecRegister::from_inner(0);
     let params = engine.alloc_provider_slice([param.into()]);
-    let return_result = call_result;
-    let return_results = engine.alloc_provider_slice([return_result.into()]);
     let expected = [
         ExecInstruction::CallIndirect {
             func_type_idx: FuncTypeIdx::from_u32(0),
@@ -3647,7 +3549,7 @@ fn call_indirect_1_params_1_results() {
             params,
         },
         ExecInstruction::Return {
-            results: return_results,
+            result: call_result,
         },
     ];
     assert_func_bodies_for_module(&module, [expected]);
@@ -3676,8 +3578,6 @@ fn call_indirect_2_params_1_results() {
     let param_0 = ExecRegister::from_inner(0);
     let param_1 = ExecRegister::from_inner(1);
     let params = engine.alloc_provider_slice([param_0.into(), param_1.into()]);
-    let return_result = call_result;
-    let return_results = engine.alloc_provider_slice([return_result.into()]);
     let expected = [
         ExecInstruction::CallIndirect {
             func_type_idx: FuncTypeIdx::from_u32(0),
@@ -3686,7 +3586,7 @@ fn call_indirect_2_params_1_results() {
             params,
         },
         ExecInstruction::Return {
-            results: return_results,
+            result: call_result,
         },
     ];
     assert_func_bodies_for_module(&module, [expected]);
@@ -3724,7 +3624,7 @@ fn call_indirect_1_params_2_results() {
             results: call_results,
             params,
         },
-        ExecInstruction::Return {
+        ExecInstruction::ReturnMulti {
             results: return_results,
         },
     ];
@@ -3765,7 +3665,7 @@ fn call_indirect_2_params_2_results() {
             results: call_results,
             params,
         },
-        ExecInstruction::Return {
+        ExecInstruction::ReturnMulti {
             results: return_results,
         },
     ];
@@ -3802,9 +3702,7 @@ fn if_simple() {
         "#
     ));
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
     let result = ExecRegister::from_inner(3);
-    let results = engine.alloc_provider_slice([result.into()]);
     let else_label = Target::from_inner(3);
     let end_label = Target::from_inner(4);
     let reg0 = ExecRegister::from_inner(0);
@@ -3831,7 +3729,7 @@ fn if_simple() {
             lhs: reg1,
             rhs: reg2.into(),
         },
-        /* 4 */ ExecInstruction::Return { results },
+        /* 4 */ ExecInstruction::Return { result },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
@@ -3868,10 +3766,8 @@ fn if_const_simple() {
         "#
         ));
         let module = create_module(&wasm[..]);
-        let engine = module.engine();
         let result = ExecRegister::from_inner(2);
-        let results = engine.alloc_provider_slice([result.into()]);
-        let expected = [expected_op(), ExecInstruction::Return { results }];
+        let expected = [expected_op(), ExecInstruction::Return { result }];
         assert_func_bodies_for_module(&module, [expected]);
     }
 
@@ -3926,10 +3822,8 @@ fn if_const_nested() {
         "#
         ));
         let module = create_module(&wasm[..]);
-        let engine = module.engine();
         let result = ExecRegister::from_inner(2);
-        let results = engine.alloc_provider_slice([result.into()]);
-        let expected = [expected_op(), ExecInstruction::Return { results }];
+        let expected = [expected_op(), ExecInstruction::Return { result }];
         assert_func_bodies_for_module(&module, [expected]);
     }
 
@@ -3964,12 +3858,10 @@ fn regression_const_lhs() {
         "#,
     );
     let module = create_module(&wasm[..]);
-    let engine = module.engine();
     let const_one = 1.0_f32.into();
     let v0 = ExecRegister::from_inner(0);
     let v1 = ExecRegister::from_inner(1);
     let v2 = ExecRegister::from_inner(2);
-    let results = engine.alloc_provider_slice([v1.into()]);
     let expected = [
         ExecInstruction::F32Sqrt {
             result: v1,
@@ -3984,7 +3876,7 @@ fn regression_const_lhs() {
             lhs: v2,
             rhs: v1,
         },
-        ExecInstruction::Return { results },
+        ExecInstruction::Return { result: v1 },
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }

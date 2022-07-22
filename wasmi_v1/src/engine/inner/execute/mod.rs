@@ -14,13 +14,27 @@ use crate::{
     AsContextMut,
     Func,
 };
-use wasmi_core::Trap;
+use wasmi_core::{Trap, UntypedValue};
+
+/// The possible outcomes of a whole root function execution.
+#[derive(Debug, Copy, Clone)]
+enum ExecutionOutcome {
+    /// The root function returns a single value.
+    Single(UntypedValue),
+    /// The root function returns any amount of values.
+    Many(ExecProviderSlice),
+}
 
 /// The possible outcomes of a function execution.
 #[derive(Debug, Copy, Clone)]
 enum CallOutcome {
     /// Returns the result of the function execution.
-    Return {
+    ReturnSingle {
+        /// The single returned result value.
+        returned: UntypedValue,
+    },
+    /// Returns the result of the function execution.
+    ReturnMulti {
         /// The returned result values.
         returned: ExecProviderSlice,
     },
@@ -102,15 +116,15 @@ impl EngineInner {
         mut ctx: impl AsContextMut,
         mut frame: StackFrameRef,
         mut cache: InstanceCache,
-    ) -> Result<ExecProviderSlice, Trap> {
+    ) -> Result<ExecutionOutcome, Trap> {
         'outer: loop {
             let view = self.stack.frame_at(frame);
             match execute_frame(&mut ctx, &self.code_map, &self.res, view, &mut cache)? {
-                CallOutcome::Return { returned } => {
+                CallOutcome::ReturnSingle { returned } => {
                     // Pop the last frame from the function frame stack and
                     // continue executing it OR finish execution if the call
                     // stack is empty.
-                    match self.stack.return_wasm(returned, &self.res) {
+                    match self.stack.return_wasm_single(returned) {
                         Some(next_frame) => {
                             frame = next_frame;
                             continue 'outer;
@@ -119,7 +133,24 @@ impl EngineInner {
                             // We just tried to pop the root stack frame.
                             // Therefore we need to return since the execution
                             // is over at this point.
-                            return Ok(returned);
+                            return Ok(ExecutionOutcome::Single(returned));
+                        }
+                    }
+                }
+                CallOutcome::ReturnMulti { returned } => {
+                    // Pop the last frame from the function frame stack and
+                    // continue executing it OR finish execution if the call
+                    // stack is empty.
+                    match self.stack.return_wasm_multi(returned, &self.res) {
+                        Some(next_frame) => {
+                            frame = next_frame;
+                            continue 'outer;
+                        }
+                        None => {
+                            // We just tried to pop the root stack frame.
+                            // Therefore we need to return since the execution
+                            // is over at this point.
+                            return Ok(ExecutionOutcome::Many(returned));
                         }
                     }
                 }
@@ -153,12 +184,19 @@ impl EngineInner {
     fn return_results<Results>(
         &mut self,
         signature: DedupFuncType,
-        returned: ExecProviderSlice,
+        returned: ExecutionOutcome,
         results: Results,
     ) -> <Results as CallResults>::Results
     where
         Results: CallResults,
     {
-        self.stack.finalize(signature, returned, &self.res, results)
+        match returned {
+            ExecutionOutcome::Single(returned) => self
+                .stack
+                .finalize_single(signature, returned, &self.res, results),
+            ExecutionOutcome::Many(returned) => self
+                .stack
+                .finalize_many(signature, returned, &self.res, results),
+        }
     }
 }

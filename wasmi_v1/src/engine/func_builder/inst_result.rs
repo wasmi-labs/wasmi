@@ -16,9 +16,13 @@ impl IrInstruction {
             | Self::BrNezSingle { .. }
             | Self::BrNezMulti { .. }
             | Self::ReturnNez { .. }
+            | Self::ReturnNezImm { .. }
+            | Self::ReturnNezMulti { .. }
             | Self::BrTable { .. }
             | Self::Trap { .. }
-            | Self::Return { .. } => None,
+            | Self::Return { .. }
+            | Self::ReturnImm { .. }
+            | Self::ReturnMulti { .. } => None,
             Self::Call { results, .. } | Self::CallIndirect { results, .. } => results.single_mut(),
             Self::Copy { result, .. } => Some(result),
             Self::CopyImm { result, .. } => Some(result),

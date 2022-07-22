@@ -157,9 +157,37 @@ where
     ///
     /// # Note
     ///
+    /// Optimized common case for returning a single register value.
+    ///
     /// This instruction represents `br_if` only if the branch targets
     /// the function body `block` and therefore returns to the caller.
     ReturnNez {
+        /// The registers used as return values of the function.
+        result: T::Register,
+        /// The branching condition.
+        condition: T::Register,
+    },
+    /// Used to represent the Wasm `br_if` instruction.
+    ///
+    /// # Note
+    ///
+    /// Optimized common case for returning a single immediate value.
+    ///
+    /// This instruction represents `br_if` only if the branch targets
+    /// the function body `block` and therefore returns to the caller.
+    ReturnNezImm {
+        /// The registers used as return values of the function.
+        result: T::Immediate,
+        /// The branching condition.
+        condition: T::Register,
+    },
+    /// Used to represent the Wasm `br_if` instruction.
+    ///
+    /// # Note
+    ///
+    /// This instruction represents `br_if` only if the branch targets
+    /// the function body `block` and therefore returns to the caller.
+    ReturnNezMulti {
         /// The registers used as return values of the function.
         results: T::ProviderSlice,
         /// The branching condition.
@@ -189,7 +217,25 @@ where
     /// emits the proper trap instead of the `i32.div` instruction.
     Trap { trap_code: TrapCode },
     /// Equivalent to the Wasm `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// Optimized common case for returning a single register value.
     Return {
+        /// The registers used as return values of the function.
+        result: T::Register,
+    },
+    /// Equivalent to the Wasm `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// Optimized common case for returning a single immediate value.
+    ReturnImm {
+        /// The registers used as return values of the function.
+        result: T::Immediate,
+    },
+    /// Equivalent to the Wasm `return` instruction.
+    ReturnMulti {
         /// The registers used as return values of the function.
         results: T::ProviderSlice,
     },

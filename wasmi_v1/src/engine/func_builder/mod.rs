@@ -789,7 +789,18 @@ impl<'parser> FunctionBuilder<'parser> {
                     }
                     AquiredTarget::Return => {
                         let results = builder.return_provider_slice();
-                        builder.push_instr(Instruction::ReturnNez { results, condition });
+                        let instr = match builder.provider_slices.resolve(results).split_first() {
+                            Some((first, rest)) if rest.is_empty() => match *first {
+                                IrProvider::Register(result) => {
+                                    Instruction::ReturnNez { result, condition }
+                                }
+                                IrProvider::Immediate(result) => {
+                                    Instruction::ReturnNezImm { result, condition }
+                                }
+                            },
+                            _ => Instruction::ReturnNezMulti { results, condition },
+                        };
+                        builder.push_instr(instr);
                     }
                 },
                 IrProvider::Immediate(condition) => {
@@ -833,7 +844,7 @@ impl<'parser> FunctionBuilder<'parser> {
                     },
                     AquiredTarget::Return => {
                         let results = builder.return_provider_slice();
-                        Instruction::Return { results }
+                        Instruction::ReturnMulti { results }
                     }
                 }
             }
@@ -881,7 +892,14 @@ impl<'parser> FunctionBuilder<'parser> {
         self.update_allow_set_local_override(false);
         self.translate_if_reachable(|builder| {
             let results = builder.return_provider_slice();
-            builder.push_instr(Instruction::Return { results });
+            let instr = match builder.provider_slices.resolve(results).split_first() {
+                Some((first, rest)) if rest.is_empty() => match *first {
+                    IrProvider::Register(result) => Instruction::Return { result },
+                    IrProvider::Immediate(result) => Instruction::ReturnImm { result },
+                },
+                _ => Instruction::ReturnMulti { results },
+            };
+            builder.push_instr(instr);
             builder.reachable = false;
             Ok(())
         })

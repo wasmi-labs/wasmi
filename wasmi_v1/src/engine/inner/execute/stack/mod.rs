@@ -186,7 +186,42 @@ impl Stack {
     ///
     /// If this is not called when only the root [`StackFrame`] is remaining
     /// on the [`Stack`].
-    pub(super) fn finalize<Results>(
+    pub(super) fn finalize_single<Results>(
+        &mut self,
+        signature: DedupFuncType,
+        returned: UntypedValue,
+        res: &EngineResources,
+        results: Results,
+    ) -> <Results as CallResults>::Results
+    where
+        Results: CallResults,
+    {
+        debug_assert!(
+            self.frames.len() == 1,
+            "only root stack frame must be on the call stack"
+        );
+        let result_types = res.func_types.resolve_func_type(signature).results();
+        debug_assert_eq!(
+            results.len_results(),
+            1,
+            "mismatch between final results and expected results. expected {} but found {}",
+            results.len_results(),
+            1,
+        );
+        debug_assert_eq!(results.len_results(), result_types.len());
+        let returned = core::iter::once(returned.with_type(result_types[0]));
+        results.feed_results(returned)
+    }
+
+    /// Finalizes the execution of the root [`StackFrame`].
+    ///
+    /// This reads back the result of the computation into `results`.
+    ///
+    /// # Panics
+    ///
+    /// If this is not called when only the root [`StackFrame`] is remaining
+    /// on the [`Stack`].
+    pub(super) fn finalize_many<Results>(
         &mut self,
         signature: DedupFuncType,
         returned: ExecProviderSlice,
@@ -277,9 +312,51 @@ impl Stack {
     /// # Note
     ///
     /// Returns `None` in case there is only the root [`StackFrame`] left
-    /// on the [`Stack`] indicating that the [`Stack::finalize`] method can
-    /// be used next to properly finish the Wasm execution.
-    pub(super) fn return_wasm(
+    /// on the [`Stack`] indicating that the [`Stack::finalize_single`] or
+    /// [`Stack::finalize_many`] methods can be used next to properly
+    /// finish the Wasm execution.
+    pub(super) fn return_wasm_single(&mut self, returned: UntypedValue) -> Option<StackFrameRef> {
+        debug_assert!(
+            !self.frames.is_empty(),
+            "the root stack frame must be on the call stack"
+        );
+        if self.frames.len() == 1 {
+            // Early return `None` to signal that [`Stack::finalize`]
+            // can be used now to properly finish the Wasm execution.
+            return None;
+        }
+        let callee = self.frames.pop_frame();
+        let caller = self.frames.last_frame_mut();
+        let results = callee.results;
+        debug_assert_eq!(
+            results.len(),
+            1,
+            "encountered mismatch in returned values: expected {}, got {}",
+            results.len(),
+            1,
+        );
+        let mut caller_regs = self.values.frame_regs(caller.region);
+        caller_regs.set(results.first(), returned);
+        self.values.shrink_by(callee.region.len());
+        Some(self.frames.last_frame_ref())
+    }
+
+    /// Returns the last Wasm [`StackFrame`] to its caller.
+    ///
+    /// # Note
+    ///
+    /// The caller is always the previous [`StackFrame`] on the [`Stack`].
+    ///
+    /// This handles the returning of returned values from the returned
+    /// Wasm function into the predetermined results of its caller.
+    ///
+    /// # Note
+    ///
+    /// Returns `None` in case there is only the root [`StackFrame`] left
+    /// on the [`Stack`] indicating that the [`Stack::finalize_single`] or
+    /// [`Stack::finalize_many`] methods can be used next to properly
+    /// finish the Wasm execution.
+    pub(super) fn return_wasm_multi(
         &mut self,
         returned: ExecProviderSlice,
         res: &EngineResources,
@@ -298,7 +375,7 @@ impl Stack {
         let results = callee.results;
         if !results.is_empty() {
             let returned = res.provider_pool.resolve(returned);
-            assert_eq!(
+            debug_assert_eq!(
                 results.len(),
                 returned.len(),
                 "encountered mismatch in returned values: expected {}, got {}",

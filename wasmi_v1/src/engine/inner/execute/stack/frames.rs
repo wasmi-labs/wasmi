@@ -179,6 +179,17 @@ impl FrameStack {
             .expect("unexpected missing frame on the call frame stack")
     }
 
+    /// Returns a shared reference to the last [`StackFrame`] on the call frame stack.
+    ///
+    /// # Panics
+    ///
+    /// If the [`FrameStack`] is empty.
+    pub fn last_frame_mut(&mut self) -> &mut StackFrame {
+        self.frames
+            .last_mut()
+            .expect("unexpected missing frame on the call frame stack")
+    }
+
     /// Returns a [`StackFrameRef`] pointing to the last [`StackFrame`].
     ///
     /// # Panics
