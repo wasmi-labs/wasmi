@@ -121,21 +121,29 @@ pub(super) fn execute_frame(
             Instr::BrNez { target, condition } => {
                 exec_ctx.exec_br_nez(target, condition)?;
             }
-            Instr::BrNezSingle {
+            Instr::BrNezCopy {
                 result,
                 returned,
                 target,
                 condition,
             } => {
-                exec_ctx.exec_br_nez_single(target, condition, result, returned)?;
+                exec_ctx.exec_br_nez_copy(target, condition, result, returned)?;
             }
-            Instr::BrNezMulti {
+            Instr::BrNezCopyImm {
+                result,
+                returned,
+                target,
+                condition,
+            } => {
+                exec_ctx.exec_br_nez_copy_imm(target, condition, result, returned)?;
+            }
+            Instr::BrNezCopyMulti {
                 results,
                 returned,
                 target,
                 condition,
             } => {
-                exec_ctx.exec_br_nez_multi(target, condition, results, returned)?;
+                exec_ctx.exec_br_nez_copy_multi(target, condition, results, returned)?;
             }
             Instr::ReturnNez { result, condition } => {
                 if let ConditionalReturn::Return { result } =
@@ -1527,17 +1535,21 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     /// # Errors
     ///
     /// Returns `Result::Ok` for convenience.
-    fn exec_branch_conditionally_single(
+    fn exec_branch_conditionally_single<F>(
         &mut self,
         target: Target,
         condition: ExecRegister,
         result: ExecRegister,
-        returned: ExecProvider,
+        returned: F,
         op: fn(UntypedValue) -> bool,
-    ) -> Result<(), Trap> {
+    ) -> Result<(), Trap>
+    where
+        F: FnOnce(&Self) -> UntypedValue,
+    {
         let condition = self.get_register(condition);
         if op(condition) {
-            self.exec_copy_any(result, returned)?;
+            let returned = returned(self);
+            self.set_register(result, returned);
             return self.branch_to_target(target);
         }
         self.next_instr()
@@ -1623,19 +1635,39 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         })
     }
 
-    fn exec_br_nez_single(
+    fn exec_br_nez_copy(
         &mut self,
         target: Target,
         condition: <ExecuteTypes as InstructionTypes>::Register,
         result: <ExecuteTypes as InstructionTypes>::Register,
-        returned: <ExecuteTypes as InstructionTypes>::Provider,
+        returned: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        self.exec_branch_conditionally_single(target, condition, result, returned, |condition| {
-            condition != UntypedValue::from(0_i32)
-        })
+        self.exec_branch_conditionally_single(
+            target,
+            condition,
+            result,
+            |this| this.get_register(returned),
+            |condition| condition != UntypedValue::from(0_i32),
+        )
     }
 
-    fn exec_br_nez_multi(
+    fn exec_br_nez_copy_imm(
+        &mut self,
+        target: Target,
+        condition: <ExecuteTypes as InstructionTypes>::Register,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        returned: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.exec_branch_conditionally_single(
+            target,
+            condition,
+            result,
+            |_| returned,
+            |condition| condition != UntypedValue::from(0_i32),
+        )
+    }
+
+    fn exec_br_nez_copy_multi(
         &mut self,
         target: Target,
         condition: <ExecuteTypes as InstructionTypes>::Register,
@@ -1797,16 +1829,6 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         result: <ExecuteTypes as InstructionTypes>::Register,
         input: <ExecuteTypes as InstructionTypes>::Immediate,
     ) -> Result<(), Trap> {
-        self.set_register(result, input);
-        self.next_instr()
-    }
-
-    fn exec_copy_any(
-        &mut self,
-        result: <ExecuteTypes as InstructionTypes>::Register,
-        input: <ExecuteTypes as InstructionTypes>::Provider,
-    ) -> Result<(), Trap> {
-        let input = self.load_provider(input);
         self.set_register(result, input);
         self.next_instr()
     }

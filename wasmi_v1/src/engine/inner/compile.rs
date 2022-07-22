@@ -265,7 +265,7 @@ impl EngineInner {
                 let condition = Self::compile_register(context, condition);
                 Instruction::BrNez { target, condition }
             }
-            Instruction::BrNezSingle {
+            Instruction::BrNezCopy {
                 target,
                 condition,
                 result,
@@ -274,15 +274,32 @@ impl EngineInner {
                 let target = context.compile_label(target);
                 let condition = Self::compile_register(context, condition);
                 let result = Self::compile_register(context, result);
-                let returned = Self::compile_provider(res, context, returned);
-                Instruction::BrNezSingle {
+                let returned = Self::compile_register(context, returned);
+                Instruction::BrNezCopy {
                     target,
                     condition,
                     result,
                     returned,
                 }
             }
-            Instruction::BrNezMulti {
+            Instruction::BrNezCopyImm {
+                target,
+                condition,
+                result,
+                returned,
+            } => {
+                let target = context.compile_label(target);
+                let condition = Self::compile_register(context, condition);
+                let result = Self::compile_register(context, result);
+                let returned = Self::compile_immediate(returned);
+                Instruction::BrNezCopyImm {
+                    target,
+                    condition,
+                    result,
+                    returned,
+                }
+            }
+            Instruction::BrNezCopyMulti {
                 target,
                 condition,
                 results,
@@ -292,7 +309,7 @@ impl EngineInner {
                 let condition = Self::compile_register(context, condition);
                 let results = Self::compile_register_slice(context, results);
                 let returned = Self::compile_provider_slice(res, context, returned);
-                Instruction::BrNezMulti {
+                Instruction::BrNezCopyMulti {
                     target,
                     condition,
                     results,

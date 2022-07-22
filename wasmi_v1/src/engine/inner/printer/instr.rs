@@ -285,16 +285,24 @@ impl<T> Display for DisplayExecInstruction<'_, '_, T> {
                     DisplayTarget::from(target),
                 )
             }
-            Instr::BrNezSingle { target, condition, result, returned } => {
-                writeln!(f, "br_nez {} {} {} <- {}",
+            Instr::BrNezCopy { target, condition, result, returned } => {
+                writeln!(f, "br_nez {} {} copy {} <- {}",
                     DisplayExecRegister::from(condition),
                     DisplayTarget::from(target),
                     DisplayExecRegister::from(result),
-                    DisplayExecProvider::new(res, returned),
+                    DisplayExecRegister::from(returned),
                 )
             }
-            Instr::BrNezMulti { target, condition, results, returned } => {
-                writeln!(f, "br_nez {} {} {}",
+            Instr::BrNezCopyImm { target, condition, result, returned } => {
+                writeln!(f, "br_nez {} {} copy {} <- {}",
+                    DisplayExecRegister::from(condition),
+                    DisplayTarget::from(target),
+                    DisplayExecRegister::from(result),
+                    DisplayUntypedValue::from(returned),
+                )
+            }
+            Instr::BrNezCopyMulti { target, condition, results, returned } => {
+                writeln!(f, "br_nez {} {} copy {}",
                     DisplayExecRegister::from(condition),
                     DisplayTarget::from(target),
                     DisplayCopyMany::new(res, results, returned),

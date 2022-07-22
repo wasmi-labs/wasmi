@@ -153,7 +153,7 @@ where
     /// destination expects. This is important to efficiently support
     /// Wasm blocks that return a result or Wasm `multi-value` loops that
     /// take a single parameter.
-    BrNezSingle {
+    BrNezCopy {
         /// The target instruction to conditionally branch to.
         target: T::Target,
         /// The branching condition.
@@ -161,7 +161,28 @@ where
         /// The register used as return value of the branched-to control block.
         result: T::Register,
         /// The actual returned value for the branched-to control block.
-        returned: T::Provider,
+        returned: T::Register,
+    },
+    /// Used to represent the Wasm `br_if` instruction.
+    ///
+    /// # Note
+    ///
+    /// This instruction represents `br_if` only if the branch does not
+    /// target the function body `block` and therefore does not return.
+    ///
+    /// This `br_nez` instruction also copies a single values that its
+    /// destination expects. This is important to efficiently support
+    /// Wasm blocks that return a result or Wasm `multi-value` loops that
+    /// take a single parameter.
+    BrNezCopyImm {
+        /// The target instruction to conditionally branch to.
+        target: T::Target,
+        /// The branching condition.
+        condition: T::Register,
+        /// The register used as return value of the branched-to control block.
+        result: T::Register,
+        /// The actual returned value for the branched-to control block.
+        returned: T::Immediate,
     },
     /// Used to represent the Wasm `br_if` instruction.
     ///
@@ -173,7 +194,7 @@ where
     /// This `br` instruction also copies multiple values that its
     /// destination expects. This is important to efficiently support
     /// the Wasm `multi-value` proposal.
-    BrNezMulti {
+    BrNezCopyMulti {
         /// The target instruction to conditionally branch to.
         target: T::Target,
         /// The branching condition.

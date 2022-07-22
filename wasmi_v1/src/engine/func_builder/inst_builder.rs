@@ -223,13 +223,21 @@ impl InstructionsBuilder {
     ) -> Instr {
         match TrueCopies::analyze_slice(arena, results, inputs) {
             TrueCopies::None => self.push_inst(IrInstruction::BrNez { target, condition }),
-            TrueCopies::Single { result, input } => self.push_inst(IrInstruction::BrNezSingle {
-                target,
-                condition,
-                result,
-                returned: input,
-            }),
-            TrueCopies::Many { results, inputs } => self.push_inst(IrInstruction::BrNezMulti {
+            TrueCopies::Single { result, input } => match input {
+                IrProvider::Register(returned) => self.push_inst(IrInstruction::BrNezCopy {
+                    target,
+                    condition,
+                    result,
+                    returned,
+                }),
+                IrProvider::Immediate(returned) => self.push_inst(IrInstruction::BrNezCopyImm {
+                    target,
+                    condition,
+                    result,
+                    returned,
+                }),
+            },
+            TrueCopies::Many { results, inputs } => self.push_inst(IrInstruction::BrNezCopyMulti {
                 target,
                 condition,
                 results,

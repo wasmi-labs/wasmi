@@ -15,8 +15,9 @@ impl IrInstruction {
             | Self::BrCopyMulti { .. }
             | Self::BrEqz { .. }
             | Self::BrNez { .. }
-            | Self::BrNezSingle { .. }
-            | Self::BrNezMulti { .. }
+            | Self::BrNezCopy { .. }
+            | Self::BrNezCopyImm { .. }
+            | Self::BrNezCopyMulti { .. }
             | Self::ReturnNez { .. }
             | Self::ReturnNezImm { .. }
             | Self::ReturnNezMulti { .. }
