@@ -17,6 +17,9 @@ impl DedupProviderSliceArena {
         T: IntoIterator<Item = ExecProvider>,
     {
         let providers: Box<[ExecProvider]> = providers.into_iter().collect();
+        if providers.is_empty() {
+            return ExecProviderSlice::empty();
+        }
         match self.dedup.entry(providers) {
             Entry::Occupied(entry) => *entry.get(),
             Entry::Vacant(entry) => {
@@ -64,8 +67,7 @@ impl ExecProviderSlice {
     /// # Panics
     ///
     /// If `start + len` does not fit into a `u16`.
-    #[cfg(test)]
-    pub fn new(start: u16, len: u16) -> Self {
+    pub(crate) fn new(start: u16, len: u16) -> Self {
         let end: u16 = start.checked_add(len).unwrap_or_else(|| {
             panic!("encountered overflow in provider slice at {start} with len {len}")
         });
@@ -73,8 +75,7 @@ impl ExecProviderSlice {
     }
 
     /// Creates a new empty [`ExecProviderSlice`].
-    #[cfg(test)]
-    pub fn empty() -> Self {
+    pub(crate) fn empty() -> Self {
         Self::new(0, 0)
     }
 

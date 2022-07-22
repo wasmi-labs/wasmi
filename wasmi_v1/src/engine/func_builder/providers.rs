@@ -638,6 +638,9 @@ impl ProviderSliceArena {
         let first = self.providers.len();
         self.providers.extend(registers);
         let len = self.providers.len() - first;
+        if len == 0 {
+            return IrProviderSlice::empty();
+        }
         let first = first.try_into().unwrap_or_else(|error| {
             panic!("out of bounds index for register slice {first}: {error}")
         });
