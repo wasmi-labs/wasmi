@@ -1,3 +1,5 @@
+use alloc::{boxed::Box, vec::Vec};
+
 mod builder;
 mod compile;
 mod data;

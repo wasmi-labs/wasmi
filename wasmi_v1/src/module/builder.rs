@@ -20,6 +20,7 @@ use crate::{
     ModuleError,
     TableType,
 };
+use alloc::vec::Vec;
 
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug)]
