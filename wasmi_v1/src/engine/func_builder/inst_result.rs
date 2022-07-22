@@ -10,6 +10,8 @@ impl IrInstruction {
     pub fn result_mut(&mut self) -> Option<&mut IrRegister> {
         match self {
             Self::Br { .. }
+            | Self::BrCopy { .. }
+            | Self::BrCopyImm { .. }
             | Self::BrCopyMulti { .. }
             | Self::BrEqz { .. }
             | Self::BrNez { .. }

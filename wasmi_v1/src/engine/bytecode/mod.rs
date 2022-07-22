@@ -73,6 +73,36 @@ where
     ///
     /// # Note
     ///
+    /// This `br` instruction also copies a single register value that
+    /// its destination expects. This is important to efficiently support
+    /// the Wasm `multi-value` proposal.
+    BrCopy {
+        /// The target instruction to unconditionally branch to.
+        target: T::Target,
+        /// The result where the copy should be stored.
+        result: T::Register,
+        /// The register to copy to the result register for branching.
+        returned: T::Register,
+    },
+    /// Equivalent to the Wasm `br` instruction.
+    ///
+    /// # Note
+    ///
+    /// This `br` instruction also copies a single immediate value that
+    /// its destination expects. This is important to efficiently support
+    /// the Wasm `multi-value` proposal.
+    BrCopyImm {
+        /// The target instruction to unconditionally branch to.
+        target: T::Target,
+        /// The result where the copy should be stored.
+        result: T::Register,
+        /// The immediate value to copy to the result register for branching.
+        returned: T::Immediate,
+    },
+    /// Equivalent to the Wasm `br` instruction.
+    ///
+    /// # Note
+    ///
     /// This `br` instruction also copies multiple values that its
     /// destination expects. This is important to efficiently support
     /// the Wasm `multi-value` proposal.

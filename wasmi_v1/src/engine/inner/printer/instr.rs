@@ -247,10 +247,28 @@ impl<T> Display for DisplayExecInstruction<'_, '_, T> {
                     DisplayTarget::from(target),
                 )
             }
+            Instr::BrCopy { target, result, returned } => {
+                writeln!(
+                    f,
+                    "br {} copy {} <- {}",
+                    DisplayTarget::from(target),
+                    DisplayExecRegister::from(result),
+                    DisplayExecRegister::from(returned),
+                )
+            }
+            Instr::BrCopyImm { target, result, returned } => {
+                writeln!(
+                    f,
+                    "br {} copy {} <- {}",
+                    DisplayTarget::from(target),
+                    DisplayExecRegister::from(result),
+                    DisplayUntypedValue::from(returned),
+                )
+            }
             Instr::BrCopyMulti { target, results, returned } => {
                 writeln!(
                     f,
-                    "br {} {}",
+                    "br {} copy {}",
                     DisplayTarget::from(target),
                     DisplayCopyMany::new(res, results, returned),
                 )

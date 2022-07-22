@@ -94,12 +94,26 @@ pub(super) fn execute_frame(
             Instr::Br { target } => {
                 exec_ctx.exec_br(target)?;
             }
+            Instr::BrCopy {
+                target,
+                result,
+                returned,
+            } => {
+                exec_ctx.exec_br_copy(target, result, returned)?;
+            }
+            Instr::BrCopyImm {
+                target,
+                result,
+                returned,
+            } => {
+                exec_ctx.exec_br_copy_imm(target, result, returned)?;
+            }
             Instr::BrCopyMulti {
                 results,
                 returned,
                 target,
             } => {
-                exec_ctx.exec_br_multi(target, results, returned)?;
+                exec_ctx.exec_br_copy_multi(target, results, returned)?;
             }
             Instr::BrEqz { target, condition } => {
                 exec_ctx.exec_br_eqz(target, condition)?;
@@ -1558,7 +1572,28 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         self.branch_to_target(target)
     }
 
-    fn exec_br_multi(
+    fn exec_br_copy(
+        &mut self,
+        target: Target,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        returned: <ExecuteTypes as InstructionTypes>::Register,
+    ) -> Result<(), Trap> {
+        let returned = self.get_register(returned);
+        self.set_register(result, returned);
+        self.branch_to_target(target)
+    }
+
+    fn exec_br_copy_imm(
+        &mut self,
+        target: Target,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+        returned: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        self.set_register(result, returned);
+        self.branch_to_target(target)
+    }
+
+    fn exec_br_copy_multi(
         &mut self,
         target: Target,
         results: <ExecuteTypes as InstructionTypes>::RegisterSlice,

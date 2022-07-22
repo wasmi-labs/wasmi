@@ -213,6 +213,34 @@ impl EngineInner {
                 let target = context.compile_label(target);
                 ExecInstruction::Br { target }
             }
+            Instruction::BrCopy {
+                target,
+                result,
+                returned,
+            } => {
+                let target = context.compile_label(target);
+                let result = Self::compile_register(context, result);
+                let returned = Self::compile_register(context, returned);
+                ExecInstruction::BrCopy {
+                    target,
+                    result,
+                    returned,
+                }
+            }
+            Instruction::BrCopyImm {
+                target,
+                result,
+                returned,
+            } => {
+                let target = context.compile_label(target);
+                let result = Self::compile_register(context, result);
+                let returned = Self::compile_immediate(returned);
+                ExecInstruction::BrCopyImm {
+                    target,
+                    result,
+                    returned,
+                }
+            }
             Instruction::BrCopyMulti {
                 target,
                 results,

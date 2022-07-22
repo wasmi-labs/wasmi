@@ -185,10 +185,18 @@ impl InstructionsBuilder {
     ) -> Instr {
         match TrueCopies::analyze_slice(arena, results, inputs) {
             TrueCopies::None => self.push_inst(IrInstruction::Br { target }),
-            TrueCopies::Single { result, input } => {
-                self.push_copy_instr(result, input);
-                self.push_inst(IrInstruction::Br { target })
-            }
+            TrueCopies::Single { result, input } => match input {
+                IrProvider::Register(returned) => self.push_inst(IrInstruction::BrCopy {
+                    target,
+                    result,
+                    returned,
+                }),
+                IrProvider::Immediate(returned) => self.push_inst(IrInstruction::BrCopyImm {
+                    target,
+                    result,
+                    returned,
+                }),
+            },
             TrueCopies::Many { results, inputs } => self.push_inst(IrInstruction::BrCopyMulti {
                 target,
                 results,
