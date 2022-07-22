@@ -64,7 +64,15 @@ pub use self::{
     instance::{ExportsIter, Instance},
     linker::Linker,
     memory::{Memory, MemoryType},
-    module::{InstancePre, Module, ModuleError, Read},
+    module::{
+        ExportItem,
+        ExportItemKind,
+        InstancePre,
+        Module,
+        ModuleError,
+        ModuleExportsIter,
+        Read,
+    },
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
 };

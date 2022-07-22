@@ -29,7 +29,7 @@ pub use self::{
     builder::ModuleResources,
     compile::BlockType,
     error::ModuleError,
-    export::{FuncIdx, MemoryIdx, TableIdx},
+    export::{ExportItem, ExportItemKind, FuncIdx, MemoryIdx, ModuleExportsIter, TableIdx},
     global::GlobalIdx,
     import::{FuncTypeIdx, ImportName},
     instantiate::{InstancePre, InstantiationError},
@@ -206,6 +206,11 @@ impl Module {
         InternalGlobalsIter {
             iter: globals.zip(global_inits),
         }
+    }
+
+    /// Returns an iterator over the exports of the [`Module`].
+    pub fn exports(&self) -> ModuleExportsIter {
+        ModuleExportsIter::new(self)
     }
 }
 
