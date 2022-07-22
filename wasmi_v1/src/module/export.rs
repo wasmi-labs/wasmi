@@ -1,6 +1,16 @@
 use super::GlobalIdx;
-use crate::ModuleError;
+use crate::{
+    engine::DedupFuncType,
+    Engine,
+    FuncType,
+    GlobalType,
+    MemoryType,
+    Module,
+    ModuleError,
+    TableType,
+};
 use alloc::boxed::Box;
+use core::slice::Iter as SliceIter;
 
 /// The index of a function declaration within a [`Module`].
 ///
@@ -116,5 +126,94 @@ impl TryFrom<(wasmparser::ExternalKind, u32)> for External {
             | wasmparser::ExternalKind::Module
             | wasmparser::ExternalKind::Instance => Err(ModuleError::unsupported(kind)),
         }
+    }
+}
+
+/// An iterator over the exports of a [`Module`].
+///
+/// [`Module`]: [`super::Module`]
+#[derive(Debug)]
+pub struct ModuleExportsIter<'module> {
+    exports: SliceIter<'module, Export>,
+    engine: &'module Engine,
+    funcs: &'module [DedupFuncType],
+    tables: &'module [TableType],
+    memories: &'module [MemoryType],
+    globals: &'module [GlobalType],
+}
+
+/// An item exported from a [`Module`].
+#[derive(Debug)]
+pub struct ExportItem<'module> {
+    name: &'module str,
+    kind: ExportItemKind,
+}
+
+impl<'module> ExportItem<'module> {
+    /// Returns the name of the exported item.
+    pub fn name(&self) -> &'module str {
+        self.name
+    }
+
+    /// Returns the kind of the exported item.
+    pub fn kind(&self) -> &ExportItemKind {
+        &self.kind
+    }
+}
+
+/// The kind of an item exported from a [`Module`].
+#[derive(Debug, Clone)]
+pub enum ExportItemKind {
+    /// An exported function of a [`Module`].
+    Func(FuncType),
+    /// An exported table of a [`Module`].
+    Table(TableType),
+    /// An exported linear memory of a [`Module`].
+    Memory(MemoryType),
+    /// An exported global variable of a [`Module`].
+    Global(GlobalType),
+}
+
+impl<'module> ModuleExportsIter<'module> {
+    /// Creates a new [`ModuleExportsIter`] from the given [`Module`].
+    pub(super) fn new(module: &'module Module) -> Self {
+        Self {
+            exports: module.exports.iter(),
+            engine: &module.engine,
+            funcs: &module.funcs,
+            tables: &module.tables,
+            memories: &module.memories,
+            globals: &module.globals,
+        }
+    }
+}
+
+impl<'module> Iterator for ModuleExportsIter<'module> {
+    type Item = ExportItem<'module>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.exports.next().map(|export| {
+            let name = export.field();
+            let kind = match export.external() {
+                External::Func(index) => {
+                    let dedup = self.funcs[index.into_usize()];
+                    let func_type = self.engine.resolve_func_type(dedup, Clone::clone);
+                    ExportItemKind::Func(func_type)
+                }
+                External::Table(index) => {
+                    let table_type = self.tables[index.into_u32() as usize];
+                    ExportItemKind::Table(table_type)
+                }
+                External::Memory(index) => {
+                    let memory_type = self.memories[index.into_u32() as usize];
+                    ExportItemKind::Memory(memory_type)
+                }
+                External::Global(index) => {
+                    let global_type = self.globals[index.into_usize()];
+                    ExportItemKind::Global(global_type)
+                }
+            };
+            ExportItem { name, kind }
+        })
     }
 }

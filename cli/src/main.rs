@@ -1,7 +1,10 @@
+use anyhow::{anyhow, bail, Result};
 use clap::Parser;
+use core::fmt::Write;
 use std::fs;
 use wasmi::{
     core::{Value, ValueType, F32, F64},
+    ExportItemKind,
     Func,
     FuncType,
     Store,
@@ -25,7 +28,7 @@ struct Args {
     func_args: Vec<String>,
 }
 
-fn main() -> Result<(), String> {
+fn main() -> Result<()> {
     let args = Args::parse();
 
     let wasm_file = args.wasm_file;
@@ -41,7 +44,7 @@ fn main() -> Result<(), String> {
     print_execution_start(&wasm_file, &func_name, &func_args);
 
     func.call(&mut store, &func_args, &mut results)
-        .map_err(|error| format!("failed during exeuction of {func_name}: {error}"))?;
+        .map_err(|error| anyhow!("failed during exeuction of {func_name}: {error}"))?;
 
     print_pretty_results(&results);
 
@@ -58,14 +61,14 @@ fn wat2wasm(wat: &str) -> Result<Vec<u8>, wat::Error> {
 /// # Errors
 ///
 /// If `wasm_file` is not a valid `.wasm` or `.wat` file.
-fn read_wasm_or_wat(wasm_file: &str) -> Result<Vec<u8>, String> {
+fn read_wasm_or_wat(wasm_file: &str) -> Result<Vec<u8>> {
     let mut file_contents =
-        fs::read(&wasm_file).map_err(|_| format!("failed to read Wasm file {wasm_file}"))?;
+        fs::read(&wasm_file).map_err(|_| anyhow!("failed to read Wasm file {wasm_file}"))?;
     if wasm_file.ends_with(".wat") {
         let wat = String::from_utf8(file_contents)
-            .map_err(|error| format!("failed to read UTF-8 file {wasm_file}: {error}"))?;
+            .map_err(|error| anyhow!("failed to read UTF-8 file {wasm_file}: {error}"))?;
         file_contents = wat2wasm(&wat)
-            .map_err(|error| format!("failed to parse .wat file {wasm_file}: {error}"))?;
+            .map_err(|error| anyhow!("failed to parse .wat file {wasm_file}: {error}"))?;
     }
     Ok(file_contents)
 }
@@ -83,22 +86,87 @@ fn load_wasm_func(
     wasm_file: &str,
     wasm_bytes: &[u8],
     func_name: &str,
-) -> Result<(Func, Store<()>), String> {
+) -> Result<(Func, Store<()>)> {
     let engine = wasmi::Engine::default();
     let mut store = wasmi::Store::new(&engine, ());
     let module = wasmi::Module::new(&engine, &mut &wasm_bytes[..]).map_err(|error| {
-        format!("failed to parse and validate Wasm module {wasm_file}: {error}")
+        anyhow!("failed to parse and validate Wasm module {wasm_file}: {error}")
     })?;
     let mut linker = <wasmi::Linker<()>>::new();
     let instance = linker
         .instantiate(&mut store, &module)
         .and_then(|pre| pre.start(&mut store))
-        .map_err(|error| format!("failed to instantiate and start the Wasm module: {error}"))?;
+        .map_err(|error| anyhow!("failed to instantiate and start the Wasm module: {error}"))?;
     let func = instance
         .get_export(&store, func_name)
         .and_then(|ext| ext.into_func())
-        .ok_or_else(|| format!("could not find function {func_name} in {wasm_file}"))?;
+        .ok_or_else(|| {
+            let exported_funcs = display_exported_funcs(&module);
+            anyhow!(
+                "could not find function \"{func_name}\" in {wasm_file}\n\n\
+                    The Wasm module exports the following functions:\n\n\
+                    {exported_funcs}"
+            )
+        })?;
     Ok((func, store))
+}
+
+/// Returns a [`Vec`] of `(&str, FuncType)` describing the exported functions of the [`Module`].
+///
+/// [`Module`]: [`wasmi::Module`]
+fn exported_funcs(module: &wasmi::Module) -> Vec<(&str, FuncType)> {
+    module
+        .exports()
+        .filter_map(|export| {
+            let name = export.name();
+            match export.kind().clone() {
+                ExportItemKind::Func(func_type) => Some((name, func_type)),
+                _ => None,
+            }
+        })
+        .collect::<Vec<_>>()
+}
+
+/// Returns a [`String`] displaying a list of exported functions from the [`Module`].
+///
+/// [`Module`]: [`wasmi::Module`]
+fn display_exported_funcs(module: &wasmi::Module) -> String {
+    let exported_funcs = exported_funcs(module)
+        .into_iter()
+        .map(|(name, func_type)| display_exported_func(name, &func_type));
+    let mut buffer = String::new();
+    let f = &mut buffer;
+    for func in exported_funcs {
+        writeln!(f, " - {func}").unwrap();
+    }
+    buffer
+}
+
+/// Returns a [`String`] displaying the named exported function.
+fn display_exported_func(name: &str, func_type: &FuncType) -> String {
+    let mut buffer = String::new();
+    let f = &mut buffer;
+    write!(f, "fn {name}(").unwrap();
+    if let Some((first, rest)) = func_type.params().split_first() {
+        write!(f, "{first}").unwrap();
+        for param in rest {
+            write!(f, ", {param}").unwrap();
+        }
+    }
+    write!(f, ")").unwrap();
+    if let Some((first, rest)) = func_type.results().split_first() {
+        write!(f, " -> ").unwrap();
+        if rest.is_empty() {
+            write!(f, "{first}").unwrap();
+        } else {
+            write!(f, "({first}").unwrap();
+            for result in rest {
+                write!(f, ", {result}").unwrap();
+            }
+            write!(f, ")").unwrap();
+        }
+    }
+    buffer
 }
 
 /// Type checks the given function arguments and returns them decoded into [`Value`]s.
@@ -111,14 +179,14 @@ fn type_check_arguments(
     func_name: &str,
     func_type: &FuncType,
     func_args: &[String],
-) -> Result<Vec<Value>, String> {
+) -> Result<Vec<Value>> {
     if func_type.params().len() != func_args.len() {
-        return Err(format!(
+        bail!(
             "invalid number of arguments given for {func_name} of type {func_type}. \
             expected {} argument but got {}",
             func_type.params().len(),
             func_args.len()
-        ));
+        );
     }
     let func_args = func_type
         .params()
@@ -127,24 +195,24 @@ fn type_check_arguments(
         .enumerate()
         .map(|(n, (param_type, arg))| match param_type {
             ValueType::I32 => arg.parse::<i32>().map(Value::from).map_err(|error| {
-                format!("failed to parse argument {arg} at index {n} as {param_type}: {error}")
+                anyhow!("failed to parse argument {arg} at index {n} as {param_type}: {error}")
             }),
             ValueType::I64 => arg.parse::<i64>().map(Value::from).map_err(|error| {
-                format!("failed to parse argument {arg} at index {n} as {param_type}: {error}")
+                anyhow!("failed to parse argument {arg} at index {n} as {param_type}: {error}")
             }),
             ValueType::F32 => arg
                 .parse::<f32>()
                 .map(F32::from)
                 .map(Value::from)
                 .map_err(|error| {
-                    format!("failed to parse argument {arg} at index {n} as {param_type}: {error}")
+                    anyhow!("failed to parse argument {arg} at index {n} as {param_type}: {error}")
                 }),
             ValueType::F64 => arg
                 .parse::<f64>()
                 .map(F64::from)
                 .map(Value::from)
                 .map_err(|error| {
-                    format!("failed to parse argument {arg} at index {n} as {param_type}: {error}")
+                    anyhow!("failed to parse argument {arg} at index {n} as {param_type}: {error}")
                 }),
         })
         .collect::<Result<Vec<_>, _>>()?;
