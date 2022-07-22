@@ -3,6 +3,7 @@ use clap::Parser;
 use std::fs;
 use wasmi::{
     core::{Value, ValueType, F32, F64},
+    ExportItemKind,
     Func,
     FuncType,
     Store,
@@ -98,8 +99,61 @@ fn load_wasm_func(
     let func = instance
         .get_export(&store, func_name)
         .and_then(|ext| ext.into_func())
-        .ok_or_else(|| format!("could not find function {func_name} in {wasm_file}"))?;
+        .ok_or_else(|| {
+            let exported_funcs = display_exported_funcs(&module);
+            anyhow!(
+                "could not find function \"{func_name}\" in {wasm_file}\n\n\
+                    The Wasm module exports the following functions:\n\n\
+                    {exported_funcs}"
+            )
+        })?;
     Ok((func, store))
+}
+
+/// Returns a [`Vec`] of `(&str, FuncType)` describing the exported functions of the [`Module`].
+fn exported_funcs(module: &wasmi::Module) -> Vec<(&str, FuncType)> {
+    module
+        .exports()
+        .filter_map(|export| {
+            let name = export.name();
+            match export.kind().clone() {
+                ExportItemKind::Func(func_type) => Some((name, func_type)),
+                _ => None,
+            }
+        })
+        .collect::<Vec<_>>()
+}
+
+/// Returns a [`String`] displaying a list of exported functions from the [`Module`].
+fn display_exported_funcs(module: &wasmi::Module) -> String {
+    use core::fmt::Write;
+    let exported_funcs = exported_funcs(module);
+    let mut buffer = String::new();
+    let f = &mut buffer;
+    for (name, func_type) in exported_funcs {
+        write!(f, " - fn {name}(").unwrap();
+        if let Some((first, rest)) = func_type.params().split_first() {
+            write!(f, "{first}").unwrap();
+            for param in rest {
+                write!(f, ", {param}").unwrap();
+            }
+        }
+        write!(f, ")").unwrap();
+        if let Some((first, rest)) = func_type.results().split_first() {
+            write!(f, " -> ").unwrap();
+            if rest.is_empty() {
+                write!(f, "{first}").unwrap();
+            } else {
+                write!(f, "({first}").unwrap();
+                for result in rest {
+                    write!(f, ", {result}").unwrap();
+                }
+                write!(f, ")").unwrap();
+            }
+        }
+        writeln!(f).unwrap();
+    }
+    buffer
 }
 
 /// Type checks the given function arguments and returns them decoded into [`Value`]s.
