@@ -215,7 +215,7 @@ impl<'module> Iterator for ModuleExportsIter<'module> {
                     ExportItemKind::Memory(memory_type)
                 }
                 External::Global(index) => {
-                    let global_type = self.globals[index.into_usize()];
+                    let global_type = self.globals[index.into_u32() as usize];
                     ExportItemKind::Global(global_type)
                 }
             };

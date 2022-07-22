@@ -1,4 +1,5 @@
 use super::{FrameRegion, StackFrameRegisters};
+use alloc::vec::Vec;
 use core::iter;
 use wasmi_core::{TrapCode, UntypedValue};
 

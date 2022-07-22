@@ -1,5 +1,5 @@
 use super::LocalsRegistry;
-use alloc::vec::Drain;
+use alloc::vec::{Drain, Vec};
 use core::{cmp::max, ops::Range};
 use wasmi_core::{UntypedValue, ValueType};
 

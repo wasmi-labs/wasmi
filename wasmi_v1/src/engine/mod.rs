@@ -41,6 +41,7 @@ pub use self::{
 };
 use crate::{AsContext, AsContextMut, Func, FuncType};
 use alloc::sync::Arc;
+use core::fmt;
 use spin::mutex::Mutex;
 use wasmi_core::{Trap, UntypedValue};
 
@@ -190,6 +191,27 @@ impl Engine {
     /// This functionality is intended for debugging purposes.
     ///
     /// [`Display`]: [`core::fmt::Display`]
+    pub fn write_func(
+        &self,
+        f: &mut dyn fmt::Write,
+        ctx: impl AsContext,
+        func: Func,
+    ) -> Result<(), fmt::Error> {
+        write!(
+            f,
+            "{}",
+            self.inner.lock().display_func(ctx.as_context(), func)
+        )
+    }
+
+    /// Returns a [`Display`] wrapper to pretty print the given function.
+    ///
+    /// # Note
+    ///
+    /// This functionality is intended for debugging purposes.
+    ///
+    /// [`Display`]: [`core::fmt::Display`]
+    #[cfg(feature = "std")]
     pub fn print_func(&self, ctx: impl AsContext, func: Func) {
         print!("{}", self.inner.lock().display_func(ctx.as_context(), func))
     }

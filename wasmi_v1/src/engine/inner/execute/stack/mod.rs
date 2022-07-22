@@ -24,9 +24,9 @@ use crate::{
 use core::{
     cmp,
     fmt::{self, Display},
+    mem::size_of,
     slice,
 };
-use std::mem::size_of;
 use wasmi_core::{Trap, UntypedValue};
 
 mod frames;

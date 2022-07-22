@@ -1,4 +1,5 @@
 use super::Instr;
+use alloc::vec::Vec;
 use core::fmt::{self, Display};
 
 /// A label during the `wasmi` compilation process.

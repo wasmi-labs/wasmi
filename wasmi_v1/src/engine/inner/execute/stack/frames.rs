@@ -3,6 +3,7 @@ use crate::{
     func::WasmFuncEntity,
     Instance,
 };
+use alloc::vec::Vec;
 use core::ops::Range;
 use wasmi_core::TrapCode;
 

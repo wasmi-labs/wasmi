@@ -1,5 +1,9 @@
 use super::{bytecode::ExecRegister, ConstRef};
-use alloc::collections::{btree_map::Entry, BTreeMap};
+use alloc::{
+    boxed::Box,
+    collections::{btree_map::Entry, BTreeMap},
+    vec::Vec,
+};
 use core::ops::Neg;
 use wasmi_core::UntypedValue;
 
