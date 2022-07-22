@@ -1,5 +1,6 @@
 use anyhow::{anyhow, bail, Result};
 use clap::Parser;
+use core::fmt::Write;
 use std::fs;
 use wasmi::{
     core::{Value, ValueType, F32, F64},
@@ -130,32 +131,40 @@ fn exported_funcs(module: &wasmi::Module) -> Vec<(&str, FuncType)> {
 ///
 /// [`Module`]: [`wasmi::Module`]
 fn display_exported_funcs(module: &wasmi::Module) -> String {
-    use core::fmt::Write;
-    let exported_funcs = exported_funcs(module);
+    let exported_funcs = exported_funcs(module)
+        .into_iter()
+        .map(|(name, func_type)| display_exported_func(name, &func_type));
     let mut buffer = String::new();
     let f = &mut buffer;
-    for (name, func_type) in exported_funcs {
-        write!(f, " - fn {name}(").unwrap();
-        if let Some((first, rest)) = func_type.params().split_first() {
+    for func in exported_funcs {
+        writeln!(f, " - {func}").unwrap();
+    }
+    buffer
+}
+
+/// Returns a [`String`] displaying the named exported function.
+fn display_exported_func(name: &str, func_type: &FuncType) -> String {
+    let mut buffer = String::new();
+    let f = &mut buffer;
+    write!(f, "fn {name}(").unwrap();
+    if let Some((first, rest)) = func_type.params().split_first() {
+        write!(f, "{first}").unwrap();
+        for param in rest {
+            write!(f, ", {param}").unwrap();
+        }
+    }
+    write!(f, ")").unwrap();
+    if let Some((first, rest)) = func_type.results().split_first() {
+        write!(f, " -> ").unwrap();
+        if rest.is_empty() {
             write!(f, "{first}").unwrap();
-            for param in rest {
-                write!(f, ", {param}").unwrap();
+        } else {
+            write!(f, "({first}").unwrap();
+            for result in rest {
+                write!(f, ", {result}").unwrap();
             }
+            write!(f, ")").unwrap();
         }
-        write!(f, ")").unwrap();
-        if let Some((first, rest)) = func_type.results().split_first() {
-            write!(f, " -> ").unwrap();
-            if rest.is_empty() {
-                write!(f, "{first}").unwrap();
-            } else {
-                write!(f, "({first}").unwrap();
-                for result in rest {
-                    write!(f, ", {result}").unwrap();
-                }
-                write!(f, ")").unwrap();
-            }
-        }
-        writeln!(f).unwrap();
     }
     buffer
 }
