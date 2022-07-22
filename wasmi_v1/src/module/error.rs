@@ -1,5 +1,5 @@
-use alloc::string::String;
 use super::ReadError;
+use alloc::string::String;
 use core::{
     fmt,
     fmt::{Debug, Display},

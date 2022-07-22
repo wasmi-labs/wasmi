@@ -1,4 +1,3 @@
-use alloc::vec::Vec;
 use super::{
     import::FuncTypeIdx,
     DataSegment,
@@ -22,6 +21,7 @@ use crate::{
     ModuleError,
     TableType,
 };
+use alloc::vec::Vec;
 
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug)]

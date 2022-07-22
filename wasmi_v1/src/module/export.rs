@@ -1,6 +1,6 @@
-use alloc::boxed::Box;
 use super::GlobalIdx;
 use crate::ModuleError;
+use alloc::boxed::Box;
 
 /// The index of a function declaration within a [`Module`].
 ///

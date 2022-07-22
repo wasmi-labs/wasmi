@@ -1,5 +1,5 @@
-use alloc::{boxed::Box, vec::Vec};
 use crate::ModuleError;
+use alloc::{boxed::Box, vec::Vec};
 
 use super::{FuncIdx, InitExpr, TableIdx};
 

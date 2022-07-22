@@ -1,4 +1,3 @@
-use alloc::vec::Vec;
 use super::{
     compile::translate,
     import::FuncTypeIdx,
@@ -10,6 +9,7 @@ use super::{
     Read,
 };
 use crate::Engine;
+use alloc::vec::Vec;
 use wasmparser::{
     Chunk,
     DataSectionReader,

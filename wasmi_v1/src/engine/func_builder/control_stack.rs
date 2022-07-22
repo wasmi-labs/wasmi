@@ -1,5 +1,5 @@
-use alloc::vec::Vec;
 use super::ControlFrame;
+use alloc::vec::Vec;
 
 /// The stack of control flow frames.
 #[derive(Debug, Default)]
