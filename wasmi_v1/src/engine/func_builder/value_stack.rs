@@ -1,6 +1,5 @@
 use alloc::vec::Vec;
 use core::cmp;
-
 use wasmi_core::ValueType;
 
 /// The value stack that is emulated during Wasm to `wasmi` bytecode translation.
