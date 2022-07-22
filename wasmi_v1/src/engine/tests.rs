@@ -639,17 +639,17 @@ fn br_table_simple() {
             case: reg0,
             len_targets: 4, // note: amount is including the default target
         },
-        /* 1 case 0       */ ExecInstruction::BrMulti {
+        /* 1 case 0       */ ExecInstruction::BrCopyMulti {
             target: Target::from_inner(5),
             results: ExecRegisterSlice::empty(),
             returned: ExecProviderSlice::empty(),
         },
-        /* 2 case 1       */ ExecInstruction::BrMulti {
+        /* 2 case 1       */ ExecInstruction::BrCopyMulti {
             target: Target::from_inner(7),
             results: ExecRegisterSlice::empty(),
             returned: ExecProviderSlice::empty(),
         },
-        /* 3 case 2       */ ExecInstruction::BrMulti {
+        /* 3 case 2       */ ExecInstruction::BrCopyMulti {
             target: Target::from_inner(9),
             results: ExecRegisterSlice::empty(),
             returned: ExecProviderSlice::empty(),
@@ -724,22 +724,22 @@ fn br_table_return() {
             case: reg0,
             len_targets: 4, // note: amount is including the default target
         },
-        /* 1 case 0       */ ExecInstruction::BrMulti {
+        /* 1 case 0       */ ExecInstruction::BrCopyMulti {
             target: Target::from_inner(5),
             results: ExecRegisterSlice::empty(),
             returned: ExecProviderSlice::empty(),
         },
-        /* 2 case 1       */ ExecInstruction::BrMulti {
+        /* 2 case 1       */ ExecInstruction::BrCopyMulti {
             target: Target::from_inner(7),
             results: ExecRegisterSlice::empty(),
             returned: ExecProviderSlice::empty(),
         },
-        /* 3 case 2       */ ExecInstruction::BrMulti {
+        /* 3 case 2       */ ExecInstruction::BrCopyMulti {
             target: Target::from_inner(9),
             results: ExecRegisterSlice::empty(),
             returned: ExecProviderSlice::empty(),
         },
-        /* 4 default case */ ExecInstruction::BrMulti {
+        /* 4 default case */ ExecInstruction::BrCopyMulti {
             target: Target::from_inner(11),
             results: ExecRegisterSlice::empty(),
             returned: ExecProviderSlice::empty(),
@@ -834,17 +834,17 @@ fn br_table_const_case() {
         assert_func_bodies_for_module(&module, [expected]);
     }
 
-    test(0, |_engine| ExecInstruction::BrMulti {
+    test(0, |_engine| ExecInstruction::BrCopyMulti {
         target: Target::from_inner(1),
         results: ExecRegisterSlice::empty(),
         returned: ExecProviderSlice::empty(),
     });
-    test(1, |_engine| ExecInstruction::BrMulti {
+    test(1, |_engine| ExecInstruction::BrCopyMulti {
         target: Target::from_inner(3),
         results: ExecRegisterSlice::empty(),
         returned: ExecProviderSlice::empty(),
     });
-    test(2, |_engine| ExecInstruction::BrMulti {
+    test(2, |_engine| ExecInstruction::BrCopyMulti {
         target: Target::from_inner(5),
         results: ExecRegisterSlice::empty(),
         returned: ExecProviderSlice::empty(),

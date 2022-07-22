@@ -189,7 +189,7 @@ impl InstructionsBuilder {
                 self.push_copy_instr(result, input);
                 self.push_inst(IrInstruction::Br { target })
             }
-            TrueCopies::Many { results, inputs } => self.push_inst(IrInstruction::BrMulti {
+            TrueCopies::Many { results, inputs } => self.push_inst(IrInstruction::BrCopyMulti {
                 target,
                 results,
                 returned: inputs,

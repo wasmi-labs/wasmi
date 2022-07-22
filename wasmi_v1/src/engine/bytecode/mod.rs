@@ -76,7 +76,7 @@ where
     /// This `br` instruction also copies multiple values that its
     /// destination expects. This is important to efficiently support
     /// the Wasm `multi-value` proposal.
-    BrMulti {
+    BrCopyMulti {
         /// The target instruction to unconditionally branch to.
         target: T::Target,
         /// The registers used as return values of the branched-to control block.

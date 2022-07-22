@@ -247,7 +247,7 @@ impl<T> Display for DisplayExecInstruction<'_, '_, T> {
                     DisplayTarget::from(target),
                 )
             }
-            Instr::BrMulti { target, results, returned } => {
+            Instr::BrCopyMulti { target, results, returned } => {
                 writeln!(
                     f,
                     "br {} {}",

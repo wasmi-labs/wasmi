@@ -94,7 +94,7 @@ pub(super) fn execute_frame(
             Instr::Br { target } => {
                 exec_ctx.exec_br(target)?;
             }
-            Instr::BrMulti {
+            Instr::BrCopyMulti {
                 results,
                 returned,
                 target,

@@ -837,7 +837,7 @@ impl<'parser> FunctionBuilder<'parser> {
                         target,
                         results,
                         returned,
-                    } => Instruction::BrMulti {
+                    } => Instruction::BrCopyMulti {
                         target,
                         results,
                         returned,

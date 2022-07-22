@@ -213,7 +213,7 @@ impl EngineInner {
                 let target = context.compile_label(target);
                 ExecInstruction::Br { target }
             }
-            Instruction::BrMulti {
+            Instruction::BrCopyMulti {
                 target,
                 results,
                 returned,
@@ -221,7 +221,7 @@ impl EngineInner {
                 let target = context.compile_label(target);
                 let results = Self::compile_register_slice(context, results);
                 let returned = Self::compile_provider_slice(res, context, returned);
-                ExecInstruction::BrMulti {
+                ExecInstruction::BrCopyMulti {
                     target,
                     results,
                     returned,
