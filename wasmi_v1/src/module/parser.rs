@@ -9,6 +9,7 @@ use super::{
     Read,
 };
 use crate::Engine;
+use alloc::vec::Vec;
 use wasmparser::{
     Chunk,
     DataSectionReader,

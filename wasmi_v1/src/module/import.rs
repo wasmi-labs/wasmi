@@ -1,6 +1,6 @@
-use core::fmt::{self, Display};
-
 use crate::{GlobalType, MemoryType, ModuleError, TableType};
+use alloc::boxed::Box;
+use core::fmt::{self, Display};
 use wasmparser::ImportSectionEntryType;
 
 /// A [`Module`] import item.

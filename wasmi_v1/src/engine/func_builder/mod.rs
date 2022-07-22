@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 mod control_frame;
 mod control_stack;
 mod inst_builder;

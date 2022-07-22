@@ -3,6 +3,7 @@
 //! These closely mirror the WebAssembly specification definitions.
 //! The overall structure is heavily inspired by the `wasmtime` virtual
 //! machine architecture.
+#![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(not(feature = "std"))]
 #[macro_use]
