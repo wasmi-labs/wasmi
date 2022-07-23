@@ -180,17 +180,6 @@ pub struct FunctionBuilder<'parser> {
     allow_set_local_override: bool,
 }
 
-/// The providers of a return statement.
-#[derive(Debug)]
-pub enum ReturnProviders {
-    /// The return statement has no providers.
-    None,
-    /// The return statement has one provider.
-    One(IrProvider),
-    /// The return statement has many providers.
-    Many(IrProviderSlice),
-}
-
 impl<'parser> FunctionBuilder<'parser> {
     /// Creates a new [`FunctionBuilder`].
     pub fn new(engine: &Engine, func: FuncIdx, res: ModuleResources<'parser>) -> Self {
@@ -338,53 +327,158 @@ impl<'parser> FunctionBuilder<'parser> {
     ///
     /// - If the `depth` is greater than the current height of the control frame stack.
     /// - If the value stack underflowed.
-    fn acquire_target(&mut self, relative_depth: u32) -> AquiredTarget {
+    fn branching_target(&mut self, relative_depth: u32) -> BranchingTarget {
         debug_assert!(self.is_reachable());
         if self.control_frames.is_root(relative_depth) {
-            AquiredTarget::Return
+            BranchingTarget::Return(self.return_providers())
         } else {
             let frame = self.control_frames.nth_back(relative_depth);
-            let br_dst = frame.branch_destination();
+            let target = frame.branch_destination();
             let results = frame.branch_results();
-            let returned = self.provider_slices.alloc(
-                self.providers
-                    .peek_n(results.len() as usize)
-                    .iter()
-                    .copied(),
-            );
-            AquiredTarget::Branch {
-                target: br_dst,
-                results,
-                returned,
+            let returned = self.providers.peek_n(results.len() as usize);
+            let true_copies = TrueCopies::analyze(&mut self.provider_slices, results, returned);
+            BranchingTarget::Branch {
+                target,
+                true_copies,
             }
         }
     }
 }
 
-/// An aquired target for a branch instruction.
-#[derive(Debug, Copy, Clone)]
-pub enum AquiredTarget {
-    /// The branching targets the entry to a control flow frame.
+/// The branching target for a branch instruction.
+#[derive(Debug)]
+enum BranchingTarget {
+    /// The branching targets a control flow frame.
+    ///
+    /// This is a branch to a `block`, `if` or `loop`.
+    ///
+    /// The [`TrueCopies`] indicates which registers are required
+    /// to be copied in order for the branch destination to receive
+    /// expected state. This is important for Wasm `multi-value`
+    /// proposal to work properly.
     ///
     /// # Note
     ///
-    /// This is the usual case.
+    /// This is the usual or common case.
     Branch {
-        /// The first instruction of the targeted control flow frame.
         target: LabelRef,
-        /// The registers where the targeted control flow frame expects
-        /// its results.
-        results: IrRegisterSlice,
-        /// The providers copied over to the results of the targeted control
-        /// flow frame upon taking the branch.
-        returned: IrProviderSlice,
+        true_copies: TrueCopies,
     },
     /// The branch is ending the called function.
     ///
     /// # Note
     ///
-    /// This happens for example when branching to the function enclosing block.
-    Return,
+    /// This happens when branching to the function enclosing block.
+    Return(ReturnProviders),
+}
+
+impl BranchingTarget {
+    /// Creates an unconditional `branch` instruction for this [`BranchingTarget`].
+    pub fn unconditional_instr(self) -> IrInstruction {
+        match self {
+            BranchingTarget::Branch {
+                target,
+                true_copies,
+            } => match true_copies {
+                TrueCopies::None => Instruction::Br { target },
+                TrueCopies::Single { result, input } => match input {
+                    IrProvider::Register(returned) => Instruction::BrCopy {
+                        target,
+                        result,
+                        returned,
+                    },
+                    IrProvider::Immediate(returned) => Instruction::BrCopyImm {
+                        target,
+                        result,
+                        returned,
+                    },
+                },
+                TrueCopies::Many { results, inputs } => Instruction::BrCopyMulti {
+                    target,
+                    results,
+                    returned: inputs,
+                },
+            },
+            BranchingTarget::Return(return_providers) => return_providers.unconditional_instr(),
+        }
+    }
+
+    /// Creates an conditional `branch` instruction for this [`BranchingTarget`].
+    pub fn conditional_instr(self, condition: IrRegister) -> IrInstruction {
+        match self {
+            BranchingTarget::Branch {
+                target,
+                true_copies,
+            } => match true_copies {
+                TrueCopies::None => Instruction::BrNez { target, condition },
+                TrueCopies::Single { result, input } => match input {
+                    IrProvider::Register(returned) => Instruction::BrNezCopy {
+                        target,
+                        condition,
+                        result,
+                        returned,
+                    },
+                    IrProvider::Immediate(returned) => Instruction::BrNezCopyImm {
+                        target,
+                        condition,
+                        result,
+                        returned,
+                    },
+                },
+                TrueCopies::Many { results, inputs } => Instruction::BrNezCopyMulti {
+                    target,
+                    condition,
+                    results,
+                    returned: inputs,
+                },
+            },
+            BranchingTarget::Return(return_providers) => {
+                return_providers.conditional_instr(condition)
+            }
+        }
+    }
+}
+
+/// The providers of a return statement.
+#[derive(Debug)]
+pub enum ReturnProviders {
+    /// The return statement has no providers.
+    None,
+    /// The return statement has one provider.
+    One(IrProvider),
+    /// The return statement has many providers.
+    Many(IrProviderSlice),
+}
+
+impl ReturnProviders {
+    /// Returns an unconditional `return` instruction covering the [`ReturnProviders`].
+    pub fn unconditional_instr(self) -> IrInstruction {
+        match self {
+            ReturnProviders::None => Instruction::ReturnMulti {
+                results: IrProviderSlice::empty(),
+            },
+            ReturnProviders::One(result) => match result {
+                IrProvider::Register(result) => Instruction::Return { result },
+                IrProvider::Immediate(result) => Instruction::ReturnImm { result },
+            },
+            ReturnProviders::Many(results) => Instruction::ReturnMulti { results },
+        }
+    }
+
+    /// Returns a conditional `return` instruction covering the [`ReturnProviders`].
+    pub fn conditional_instr(self, condition: IrRegister) -> IrInstruction {
+        match self {
+            ReturnProviders::None => Instruction::ReturnNezMulti {
+                results: IrProviderSlice::empty(),
+                condition,
+            },
+            ReturnProviders::One(result) => match result {
+                IrProvider::Register(result) => Instruction::ReturnNez { result, condition },
+                IrProvider::Immediate(result) => Instruction::ReturnNezImm { result, condition },
+            },
+            ReturnProviders::Many(results) => Instruction::ReturnNezMulti { results, condition },
+        }
+    }
 }
 
 impl<'parser> FunctionBuilder<'parser> {
@@ -603,8 +697,10 @@ impl<'parser> FunctionBuilder<'parser> {
             let results = if_frame.branch_results();
             if reachable && else_reachable {
                 // Case: both `then` and `else` are reachable
-                let returned = self.providers.pop_n(results.len() as usize);
-                let returned = self.provider_slices.alloc(returned);
+                //
+                // This requires us to serialize a `br` from the ending of the
+                // `then` block to the end of the `if` block.
+                let returned = self.providers.peek_n(results.len() as usize);
                 self.inst_builder.push_br(
                     &mut self.provider_slices,
                     if_frame.end_label(),
@@ -765,24 +861,10 @@ impl<'parser> FunctionBuilder<'parser> {
     pub fn translate_br(&mut self, relative_depth: u32) -> Result<(), ModuleError> {
         self.update_allow_set_local_override(false);
         self.translate_if_reachable(|builder| {
-            match builder.acquire_target(relative_depth) {
-                AquiredTarget::Branch {
-                    target,
-                    results,
-                    returned,
-                } => {
-                    builder.inst_builder.push_br(
-                        &mut builder.provider_slices,
-                        target,
-                        results,
-                        returned,
-                    );
-                }
-                AquiredTarget::Return => {
-                    // In this case the `br` can be directly translated as `return`.
-                    builder.translate_return()?;
-                }
-            }
+            let instr = builder
+                .branching_target(relative_depth)
+                .unconditional_instr();
+            builder.push_instr(instr);
             builder.reachable = false;
             Ok(())
         })
@@ -794,41 +876,12 @@ impl<'parser> FunctionBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let condition = builder.providers.pop();
             match condition {
-                IrProvider::Register(condition) => match builder.acquire_target(relative_depth) {
-                    AquiredTarget::Branch {
-                        target,
-                        results,
-                        returned,
-                    } => {
-                        builder.inst_builder.push_br_nez(
-                            &mut builder.provider_slices,
-                            target,
-                            condition,
-                            results,
-                            returned,
-                        );
-                    }
-                    AquiredTarget::Return => {
-                        let instr = match builder.return_providers() {
-                            ReturnProviders::None => Instruction::ReturnNezMulti {
-                                results: IrProviderSlice::empty(),
-                                condition,
-                            },
-                            ReturnProviders::One(result) => match result {
-                                IrProvider::Register(result) => {
-                                    Instruction::ReturnNez { result, condition }
-                                }
-                                IrProvider::Immediate(result) => {
-                                    Instruction::ReturnNezImm { result, condition }
-                                }
-                            },
-                            ReturnProviders::Many(results) => {
-                                Instruction::ReturnNezMulti { results, condition }
-                            }
-                        };
-                        builder.push_instr(instr);
-                    }
-                },
+                IrProvider::Register(condition) => {
+                    let instr = builder
+                        .branching_target(relative_depth)
+                        .conditional_instr(condition);
+                    builder.push_instr(instr);
+                }
                 IrProvider::Immediate(condition) => {
                     if bool::from(condition) {
                         // In this case the branch always takes place and
@@ -858,27 +911,9 @@ impl<'parser> FunctionBuilder<'parser> {
         self.update_allow_set_local_override(false);
         self.translate_if_reachable(|builder| {
             fn make_branch(builder: &mut FunctionBuilder, depth: RelativeDepth) -> IrInstruction {
-                match builder.acquire_target(depth.into_u32()) {
-                    AquiredTarget::Branch {
-                        target,
-                        results,
-                        returned,
-                    } => Instruction::BrCopyMulti {
-                        target,
-                        results,
-                        returned,
-                    },
-                    AquiredTarget::Return => match builder.return_providers() {
-                        ReturnProviders::None => Instruction::ReturnMulti {
-                            results: IrProviderSlice::empty(),
-                        },
-                        ReturnProviders::One(result) => match result {
-                            IrProvider::Register(result) => Instruction::Return { result },
-                            IrProvider::Immediate(result) => Instruction::ReturnImm { result },
-                        },
-                        ReturnProviders::Many(results) => Instruction::ReturnMulti { results },
-                    },
-                }
+                builder
+                    .branching_target(depth.into_u32())
+                    .unconditional_instr()
             }
 
             let case = builder.providers.pop();

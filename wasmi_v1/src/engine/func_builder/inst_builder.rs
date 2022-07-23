@@ -8,7 +8,6 @@ use super::{
     FuncBody,
     IrInstruction,
     IrProvider,
-    IrProviderSlice,
     IrRegister,
     IrRegisterSlice,
     ProviderSliceArena,
@@ -182,69 +181,29 @@ impl InstructionsBuilder {
         arena: &mut ProviderSliceArena,
         target: LabelRef,
         results: IrRegisterSlice,
-        inputs: IrProviderSlice,
+        returned: &[IrProvider],
     ) -> Instr {
-        match TrueCopies::analyze_slice(arena, results, inputs) {
-            TrueCopies::None => self.push_inst(IrInstruction::Br { target }),
+        let instr = match TrueCopies::analyze(arena, results, returned) {
+            TrueCopies::None => IrInstruction::Br { target },
             TrueCopies::Single { result, input } => match input {
-                IrProvider::Register(returned) => self.push_inst(IrInstruction::BrCopy {
+                IrProvider::Register(returned) => IrInstruction::BrCopy {
                     target,
                     result,
                     returned,
-                }),
-                IrProvider::Immediate(returned) => self.push_inst(IrInstruction::BrCopyImm {
+                },
+                IrProvider::Immediate(returned) => IrInstruction::BrCopyImm {
                     target,
                     result,
                     returned,
-                }),
+                },
             },
-            TrueCopies::Many { results, inputs } => self.push_inst(IrInstruction::BrCopyMulti {
+            TrueCopies::Many { results, inputs } => IrInstruction::BrCopyMulti {
                 target,
                 results,
                 returned: inputs,
-            }),
-        }
-    }
-
-    /// Pushes a `br_eqz` instruction to the [`InstructionsBuilder`].
-    ///
-    /// Depending on the actual amount of true copies this pushes one of the
-    /// following sequences of instructions to the [`InstructionsBuilder`].
-    ///
-    /// 1. **No true copies:** `br_nez` instruction.
-    /// 2. **Single true copy:** `copy` + `br_nez` instruction
-    /// 3. **Many true copies:** `br_nez_multi` instruction
-    pub fn push_br_nez(
-        &mut self,
-        arena: &mut ProviderSliceArena,
-        target: LabelRef,
-        condition: IrRegister,
-        results: IrRegisterSlice,
-        inputs: IrProviderSlice,
-    ) -> Instr {
-        match TrueCopies::analyze_slice(arena, results, inputs) {
-            TrueCopies::None => self.push_inst(IrInstruction::BrNez { target, condition }),
-            TrueCopies::Single { result, input } => match input {
-                IrProvider::Register(returned) => self.push_inst(IrInstruction::BrNezCopy {
-                    target,
-                    condition,
-                    result,
-                    returned,
-                }),
-                IrProvider::Immediate(returned) => self.push_inst(IrInstruction::BrNezCopyImm {
-                    target,
-                    condition,
-                    result,
-                    returned,
-                }),
             },
-            TrueCopies::Many { results, inputs } => self.push_inst(IrInstruction::BrNezCopyMulti {
-                target,
-                condition,
-                results,
-                returned: inputs,
-            }),
-        }
+        };
+        self.push_inst(instr)
     }
 
     /// Peeks the last instruction pushed to the instruction builder if any.
