@@ -72,6 +72,7 @@ criterion_group! {
         bench_execute_fibonacci_recursive_v1,
         bench_execute_fibonacci_iterative_v0,
         bench_execute_fibonacci_iterative_v1,
+        bench_execute_recursive_is_even_v1,
         bench_execute_memory_sum_v1,
         bench_execute_memory_fill_v1,
         bench_execute_vec_add_v1,
@@ -607,6 +608,26 @@ fn bench_execute_recursive_trap_v1(c: &mut Criterion) {
                 v1::Error::Trap(Trap::Code(v1::core::TrapCode::Unreachable))
             ));
         })
+    });
+}
+
+fn bench_execute_recursive_is_even_v1(c: &mut Criterion) {
+    c.bench_function("execute/recursive_is_even/v1", |b| {
+        let (mut store, instance) =
+            load_instance_from_wat_v1(include_bytes!("wat/is_even.wat"));
+        let bench_call = instance
+            .get_export(&store, "is_even")
+            .and_then(v1::Extern::into_func)
+            .unwrap();
+        let mut result = [Value::I32(0)];
+
+        b.iter(|| {
+            bench_call
+                .call(&mut store, &[Value::I32(50_000)], &mut result)
+                .unwrap();
+        });
+
+        assert_eq!(result, [Value::I32(1)]);
     });
 }
 
