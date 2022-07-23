@@ -5,6 +5,7 @@ mod inst_result;
 mod labels;
 mod locals_registry;
 mod providers;
+mod true_copies;
 
 use self::{
     control_frame::{
@@ -20,6 +21,7 @@ use self::{
     inst_builder::InstructionsBuilder,
     locals_registry::LocalsRegistry,
     providers::{ProviderSliceArena, Providers},
+    true_copies::TrueCopies,
 };
 pub use self::{
     inst_builder::{Instr, RelativeDepth},
