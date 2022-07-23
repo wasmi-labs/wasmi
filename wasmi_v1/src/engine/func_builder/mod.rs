@@ -1,5 +1,3 @@
-use alloc::vec::Vec;
-
 mod control_frame;
 mod control_stack;
 mod inst_builder;
@@ -52,6 +50,7 @@ use crate::{
     FuncType,
     ModuleError,
 };
+use alloc::vec::Vec;
 use core::mem;
 use wasmi_core::{TrapCode, UntypedValue, ValueType, F32, F64};
 

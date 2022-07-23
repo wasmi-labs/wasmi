@@ -1,5 +1,3 @@
-use alloc::{boxed::Box, vec::Vec};
-
 mod builder;
 mod compile;
 mod data;
@@ -43,6 +41,7 @@ use crate::{
     MemoryType,
     TableType,
 };
+use alloc::{boxed::Box, vec::Vec};
 use core::{iter, slice::Iter as SliceIter};
 
 /// A parsed and validated WebAssembly module.
