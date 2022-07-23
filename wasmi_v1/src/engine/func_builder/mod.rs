@@ -867,23 +867,21 @@ impl<'parser> FunctionBuilder<'parser> {
                         builder.push_instr(branch);
                     }
                     builder.push_instr(default_branch);
-                    builder.reachable = false;
                 }
                 IrProvider::Immediate(case) => {
                     // In this case the case is a constant value and therefore
                     // it is possible to pre-compute the label which is going to
                     // be used for branching always.
                     let index = u32::from(case) as usize;
-                    let branches = targets.into_iter().collect::<Vec<_>>();
-                    let case = branches
-                        .get(index)
-                        .cloned()
+                    let case = targets
+                        .into_iter()
+                        .nth(index)
                         .map(|depth| make_branch(builder, depth))
                         .unwrap_or_else(|| make_branch(builder, default));
                     builder.push_instr(case);
-                    builder.reachable = false;
                 }
             }
+            builder.reachable = false;
             Ok(())
         })
     }
