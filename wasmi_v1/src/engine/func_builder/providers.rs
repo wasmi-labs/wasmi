@@ -275,8 +275,6 @@ impl Providers {
     /// we would need to intermediately store the parameters on
     /// the frame stack.
     pub fn reset_to_checkpoint(&mut self, checkpoint: StackCheckpoint) {
-        debug_assert!(self.stacks.len_dynamic <= checkpoint.len_dynamic);
-        debug_assert!(self.stacks.len_preserved <= checkpoint.len_preserved);
         self.stacks.len_dynamic = checkpoint.len_dynamic;
         self.stacks.len_preserved = checkpoint.len_preserved;
         self.providers
