@@ -215,6 +215,12 @@ impl Providers {
         self.providers.drain(min_index..)
     }
 
+    pub fn peek(&self) -> IrProvider {
+        assert!(!self.is_empty());
+        let len = self.len() as usize;
+        self.providers[len - 1]
+    }
+
     pub fn peek2(&self) -> (IrProvider, IrProvider) {
         let len = self.len() as usize;
         assert!(len >= 2);
@@ -587,7 +593,7 @@ pub struct IrProviderSlice {
 }
 
 impl IrProviderSlice {
-    /// TODO: remove again
+    /// Creates an empty [`IrProviderSlice`].
     pub fn empty() -> Self {
         Self { first: 0, len: 0 }
     }

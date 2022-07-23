@@ -178,6 +178,17 @@ pub struct FunctionBuilder<'parser> {
     allow_set_local_override: bool,
 }
 
+/// The providers of a return statement.
+#[derive(Debug)]
+pub enum ReturnProviders {
+    /// The return statement has no providers.
+    None,
+    /// The return statement has one provider.
+    One(IrProvider),
+    /// The return statement has many providers.
+    Many(IrProviderSlice),
+}
+
 impl<'parser> FunctionBuilder<'parser> {
     /// Creates a new [`FunctionBuilder`].
     pub fn new(engine: &Engine, func: FuncIdx, res: ModuleResources<'parser>) -> Self {
@@ -294,6 +305,29 @@ impl<'parser> FunctionBuilder<'parser> {
             .resolve_func_type(func_type, |func_type| func_type.results().len());
         let providers = self.providers.peek_n(len_results).iter().copied();
         self.provider_slices.alloc(providers)
+    }
+
+    /// Compute the providers for a return statement.
+    ///
+    /// # Panics
+    ///
+    /// - If the control flow frame stack is empty.
+    /// - If the value stack is underflown.
+    fn return_providers(&mut self) -> ReturnProviders {
+        debug_assert!(self.is_reachable());
+        let func_type = self.res.get_type_of_func(self.func);
+        let len_results = self
+            .engine
+            .resolve_func_type(func_type, |func_type| func_type.results().len());
+        match len_results {
+            0 => ReturnProviders::None,
+            1 => ReturnProviders::One(self.providers.peek()),
+            n => {
+                let providers = self.providers.peek_n(n).iter().copied();
+                let slice = self.provider_slices.alloc(providers);
+                ReturnProviders::Many(slice)
+            }
+        }
     }
 
     /// Resolves the [`FuncType`] of the given [`FuncTypeIdx`].
@@ -843,10 +877,16 @@ impl<'parser> FunctionBuilder<'parser> {
                         results,
                         returned,
                     },
-                    AquiredTarget::Return => {
-                        let results = builder.return_provider_slice();
-                        Instruction::ReturnMulti { results }
-                    }
+                    AquiredTarget::Return => match builder.return_providers() {
+                        ReturnProviders::None => Instruction::ReturnMulti {
+                            results: IrProviderSlice::empty(),
+                        },
+                        ReturnProviders::One(result) => match result {
+                            IrProvider::Register(result) => Instruction::Return { result },
+                            IrProvider::Immediate(result) => Instruction::ReturnImm { result },
+                        },
+                        ReturnProviders::Many(results) => Instruction::ReturnMulti { results },
+                    },
                 }
             }
 
