@@ -613,8 +613,7 @@ fn bench_execute_recursive_trap_v1(c: &mut Criterion) {
 
 fn bench_execute_recursive_is_even_v1(c: &mut Criterion) {
     c.bench_function("execute/recursive_is_even/v1", |b| {
-        let (mut store, instance) =
-            load_instance_from_wat_v1(include_bytes!("wat/is_even.wat"));
+        let (mut store, instance) = load_instance_from_wat_v1(include_bytes!("wat/is_even.wat"));
         let bench_call = instance
             .get_export(&store, "is_even")
             .and_then(v1::Extern::into_func)
