@@ -291,22 +291,6 @@ impl<'parser> FunctionBuilder<'parser> {
         Ok(())
     }
 
-    /// Compute the provider slice for the return statement.
-    ///
-    /// # Panics
-    ///
-    /// - If the control flow frame stack is empty.
-    /// - If the value stack is underflown.
-    fn return_provider_slice(&mut self) -> IrProviderSlice {
-        debug_assert!(self.is_reachable());
-        let func_type = self.res.get_type_of_func(self.func);
-        let len_results = self
-            .engine
-            .resolve_func_type(func_type, |func_type| func_type.results().len());
-        let providers = self.providers.peek_n(len_results).iter().copied();
-        self.provider_slices.alloc(providers)
-    }
-
     /// Compute the providers for a return statement.
     ///
     /// # Panics
@@ -823,9 +807,12 @@ impl<'parser> FunctionBuilder<'parser> {
                         );
                     }
                     AquiredTarget::Return => {
-                        let results = builder.return_provider_slice();
-                        let instr = match builder.provider_slices.resolve(results).split_first() {
-                            Some((first, rest)) if rest.is_empty() => match *first {
+                        let instr = match builder.return_providers() {
+                            ReturnProviders::None => Instruction::ReturnNezMulti {
+                                results: IrProviderSlice::empty(),
+                                condition,
+                            },
+                            ReturnProviders::One(result) => match result {
                                 IrProvider::Register(result) => {
                                     Instruction::ReturnNez { result, condition }
                                 }
@@ -833,7 +820,9 @@ impl<'parser> FunctionBuilder<'parser> {
                                     Instruction::ReturnNezImm { result, condition }
                                 }
                             },
-                            _ => Instruction::ReturnNezMulti { results, condition },
+                            ReturnProviders::Many(results) => {
+                                Instruction::ReturnNezMulti { results, condition }
+                            }
                         };
                         builder.push_instr(instr);
                     }
@@ -930,13 +919,15 @@ impl<'parser> FunctionBuilder<'parser> {
     pub fn translate_return(&mut self) -> Result<(), ModuleError> {
         self.update_allow_set_local_override(false);
         self.translate_if_reachable(|builder| {
-            let results = builder.return_provider_slice();
-            let instr = match builder.provider_slices.resolve(results).split_first() {
-                Some((first, rest)) if rest.is_empty() => match *first {
+            let instr = match builder.return_providers() {
+                ReturnProviders::None => Instruction::ReturnMulti {
+                    results: IrProviderSlice::empty(),
+                },
+                ReturnProviders::One(result) => match result {
                     IrProvider::Register(result) => Instruction::Return { result },
                     IrProvider::Immediate(result) => Instruction::ReturnImm { result },
                 },
-                _ => Instruction::ReturnMulti { results },
+                ReturnProviders::Many(results) => Instruction::ReturnMulti { results },
             };
             builder.push_instr(instr);
             builder.reachable = false;
