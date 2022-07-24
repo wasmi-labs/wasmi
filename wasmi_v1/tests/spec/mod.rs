@@ -10,7 +10,7 @@ use self::{
     error::TestError,
     profile::TestProfile,
 };
-use wasmi_v1::Config;
+use wasmi::Config;
 
 /// Run Wasm spec test suite using MVP `wasmi` configuration.
 ///

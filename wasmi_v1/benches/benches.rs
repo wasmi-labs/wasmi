@@ -9,8 +9,8 @@ use self::bench::{
 };
 use criterion::{criterion_group, criterion_main, Bencher, Criterion};
 use std::{slice, time::Duration};
-use wasmi_v1 as v1;
-use wasmi_v1::core::{Trap, Value};
+use wasmi as v1;
+use wasmi::core::{Trap, Value};
 
 const WASM_KERNEL: &str =
     "benches/wasm/wasm_kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";

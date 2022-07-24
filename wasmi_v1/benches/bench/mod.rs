@@ -1,5 +1,4 @@
 use std::{fs::File, io::Read as _};
-use wasmi_v1 as v1;
 
 /// Returns the Wasm binary at the given `file_name` as `Vec<u8>`.
 ///
@@ -29,10 +28,10 @@ pub fn load_wasm_from_file(file_name: &str) -> Vec<u8> {
 /// # Panics
 ///
 /// If the benchmark Wasm file could not be opened, read or parsed.
-pub fn load_module_from_file_v1(file_name: &str) -> v1::Module {
+pub fn load_module_from_file_v1(file_name: &str) -> wasmi::Module {
     let wasm = load_wasm_from_file(file_name);
-    let engine = v1::Engine::default();
-    v1::Module::new(&engine, &wasm[..]).unwrap_or_else(|error| {
+    let engine = wasmi::Engine::default();
+    wasmi::Module::new(&engine, &wasm[..]).unwrap_or_else(|error| {
         panic!(
             "could not parse Wasm module from file {}: {}",
             file_name, error
@@ -49,10 +48,10 @@ pub fn load_module_from_file_v1(file_name: &str) -> v1::Module {
 /// # Panics
 ///
 /// If the benchmark Wasm file could not be opened, read or parsed.
-pub fn load_instance_from_file_v1(file_name: &str) -> (v1::Store<()>, v1::Instance) {
+pub fn load_instance_from_file_v1(file_name: &str) -> (wasmi::Store<()>, wasmi::Instance) {
     let module = load_module_from_file_v1(file_name);
-    let mut linker = <v1::Linker<()>>::default();
-    let mut store = v1::Store::new(module.engine(), ());
+    let mut linker = <wasmi::Linker<()>>::default();
+    let mut store = wasmi::Store::new(module.engine(), ());
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()
@@ -75,12 +74,12 @@ pub fn wat2wasm(bytes: &[u8]) -> Vec<u8> {
 /// # Panics
 ///
 /// If the benchmark Wasm file could not be opened, read or parsed.
-pub fn load_instance_from_wat_v1(wat_bytes: &[u8]) -> (v1::Store<()>, v1::Instance) {
+pub fn load_instance_from_wat_v1(wat_bytes: &[u8]) -> (wasmi::Store<()>, wasmi::Instance) {
     let wasm = wat2wasm(wat_bytes);
-    let engine = v1::Engine::default();
-    let module = v1::Module::new(&engine, &wasm[..]).unwrap();
-    let mut linker = <v1::Linker<()>>::default();
-    let mut store = v1::Store::new(&engine, ());
+    let engine = wasmi::Engine::default();
+    let module = wasmi::Module::new(&engine, &wasm[..]).unwrap();
+    let mut linker = <wasmi::Linker<()>>::default();
+    let mut store = wasmi::Store::new(&engine, ());
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()

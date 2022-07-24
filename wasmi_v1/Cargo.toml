@@ -1,5 +1,5 @@
 [package]
-name = "wasmi_v1"
+name = "wasmi"
 version = "0.11.0"
 edition = "2021"
 authors = ["Parity Technologies <admin@parity.io>", "Robin Freyler <robin.freyler@gmail.com>"]
