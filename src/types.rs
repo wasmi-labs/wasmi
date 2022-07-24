@@ -1,4 +1,4 @@
-use crate::ValueType;
+use crate::{pwasm::PwasmCompat, ValueType};
 use alloc::borrow::Cow;
 use parity_wasm::elements::{FunctionType, GlobalType, MemoryType, TableType};
 

@@ -22,6 +22,7 @@ wat = "1"
 default = ["std"]
 # Use `no-default-features` for a `no_std` build.
 std = [
+    "wasmi_core/std",
     "wasmparser/std",
     "spin/std",
 ]
