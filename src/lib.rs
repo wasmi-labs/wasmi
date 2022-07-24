@@ -264,6 +264,7 @@ mod isa;
 mod memory;
 mod module;
 mod prepare;
+mod pwasm;
 mod runner;
 mod table;
 mod types;

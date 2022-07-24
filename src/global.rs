@@ -1,4 +1,4 @@
-use crate::{Error, RuntimeValue, ValueType};
+use crate::{pwasm::PwasmCompat, Error, RuntimeValue, ValueType};
 use alloc::rc::Rc;
 use core::cell::Cell;
 use parity_wasm::elements::ValueType as EValueType;
