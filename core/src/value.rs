@@ -3,7 +3,6 @@ use crate::{
     TrapCode,
 };
 use core::{f32, fmt, fmt::Display, i32, i64, u32, u64};
-use parity_wasm::elements as pwasm;
 
 /// Type of a value.
 ///
@@ -29,30 +28,6 @@ impl Display for ValueType {
             Self::I64 => write!(f, "i64"),
             Self::F32 => write!(f, "f32"),
             Self::F64 => write!(f, "f64"),
-        }
-    }
-}
-
-impl ValueType {
-    /// Converts into [`ValueType`] from [`pwasm::ValueType`].
-    #[inline]
-    pub fn from_elements(value_type: pwasm::ValueType) -> Self {
-        match value_type {
-            pwasm::ValueType::I32 => Self::I32,
-            pwasm::ValueType::I64 => Self::I64,
-            pwasm::ValueType::F32 => Self::F32,
-            pwasm::ValueType::F64 => Self::F64,
-        }
-    }
-
-    /// Converts from [`ValueType`] into [`pwasm::ValueType`].
-    #[inline]
-    pub fn into_elements(self) -> pwasm::ValueType {
-        match self {
-            Self::I32 => pwasm::ValueType::I32,
-            Self::I64 => pwasm::ValueType::I64,
-            Self::F32 => pwasm::ValueType::F32,
-            Self::F64 => pwasm::ValueType::F64,
         }
     }
 }

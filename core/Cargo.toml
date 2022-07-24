@@ -11,7 +11,6 @@ description = "WebAssembly interpreter"
 keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
 
 [dependencies]
-parity-wasm = { version = "0.42.0", default-features = false }
 memory_units = "0.4.0"
 libm = "0.2.1"
 num-rational = { version = "0.4", default-features = false, features = ["num-bigint"] }
@@ -26,7 +25,6 @@ rand = "0.8.2"
 default = ["std"]
 # Use `no-default-features` for a `no_std` build.
 std = [
-    "parity-wasm/std",
     "num-rational/std",
     "num-rational/num-bigint-std",
     "num-traits/std",
