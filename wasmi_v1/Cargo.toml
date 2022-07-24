@@ -9,7 +9,7 @@ repository = "https://github.com/paritytech/wasmi"
 documentation = "https://paritytech.github.io/wasmi/"
 description = "WebAssembly interpreter"
 keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
-exclude = [ "/tests/*", "/benches/*" ]
+exclude = [ "tests/*", "benches/*" ]
 
 [dependencies]
 wasmparser = { version = "0.83", package = "wasmparser-nostd", default-features = false }
