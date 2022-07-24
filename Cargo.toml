@@ -1,6 +1,7 @@
 [workspace]
 members = ["core", "wasmi_v1", "cli"]
 exclude = []
+resolver = "2"
 
 [profile.bench]
 lto = "fat"
