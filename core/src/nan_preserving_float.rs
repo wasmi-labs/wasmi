@@ -5,14 +5,14 @@ use core::{
 use num_traits::float::FloatCore;
 
 macro_rules! impl_binop {
-    ($for:ident, $is:ident, $op:ident, $func_name:ident) => {
+    ($for:ty, $is:ty, $op:ident, $func_name:ident) => {
         impl<T: Into<$for>> $op<T> for $for {
             type Output = Self;
 
             #[inline]
             fn $func_name(self, other: T) -> Self {
-                $for(
-                    $op::$func_name($is::from_bits(self.0), $is::from_bits(other.into().0))
+                Self(
+                    $op::$func_name(<$is>::from_bits(self.0), <$is>::from_bits(other.into().0))
                         .to_bits(),
                 )
             }
@@ -21,15 +21,20 @@ macro_rules! impl_binop {
 }
 
 macro_rules! float {
-    ($for:ident, $rep:ident, $is:ident) => {
+    (
+        $( #[$docs:meta] )*
+        struct $for:ident($rep:ty as $is:ty);
+    ) => {
         float!(
-            $for,
-            $rep,
-            $is,
-            1 << (::core::mem::size_of::<$is>() * 8 - 1)
+            $(#[$docs])*
+            struct $for($rep as $is, #bits = 1 << (::core::mem::size_of::<$is>() * 8 - 1));
         );
     };
-    ($for:ident, $rep:ident, $is:ident, $sign_bit:expr) => {
+    (
+        $( #[$docs:meta] )*
+        struct $for:ident($rep:ty as $is:ty, #bits = $sign_bit:expr);
+    ) => {
+        $(#[$docs])*
         #[derive(Copy, Clone)]
         pub struct $for($rep);
 
@@ -117,27 +122,34 @@ macro_rules! float {
         impl<T: Into<$for> + Copy> PartialEq<T> for $for {
             #[inline]
             fn eq(&self, other: &T) -> bool {
-                $is::from(*self) == $is::from((*other).into())
+                <$is>::from(*self) == <$is>::from((*other).into())
             }
         }
 
         impl<T: Into<$for> + Copy> PartialOrd<T> for $for {
             #[inline]
             fn partial_cmp(&self, other: &T) -> Option<Ordering> {
-                $is::from(*self).partial_cmp(&$is::from((*other).into()))
+                <$is>::from(*self).partial_cmp(&<$is>::from((*other).into()))
             }
         }
 
         impl ::core::fmt::Debug for $for {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                $is::from(*self).fmt(f)
+                <$is>::from(*self).fmt(f)
             }
         }
     };
 }
 
-float!(F32, u32, f32);
-float!(F64, u64, f64);
+float! {
+    /// A NaN preserving `f32` type.
+    struct F32(u32 as f32);
+}
+
+float! {
+    /// A NaN preserving `f64` type.
+    struct F64(u64 as f64);
+}
 
 impl From<u32> for F32 {
     #[inline]
