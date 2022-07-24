@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Additionally we have an `Internal` section for changes that are of interest to developers.
 
+## [0.12.0] - 2022-07-24
+
+**Note:** This is going to be the last release with the legacy `wasmi` engine.
+          Future releases are going to use the new Wasm execution engines
+          that are currently in development.
+          We may consider to publish the legacy `wasmi` engine as `wasmi-legacy`
+          crate.
+
+### Changed
+
+- `wasmi` now depends on the [`wasmi_core`](https://crates.io/crates/wasmi_core) crate.
+- Deprecated `RuntimeValue::decode_{f32,f64}` methods.
+    - **Reason**: These methods expose details about the `F32` and `F64` types.
+                  The `RuntimeValue` type provides `from_bits` methods for similar purposes.
+    - **Replacement:** Replace those deprecated methods with `F{32,64}::from_bits().into()` respectively.
+- Refactor traps in `wasmi`: [PR](https://github.com/paritytech/wasmi/commit/cd59462bc946a52a7e3e4db491ac6675e3a2f53f)
+    - This change also renames `TrapKind` to `TrapCode`.
+    - The `wasmi` crate now properly reuses the `TrapCode` definitions from the `wasmi_core` crate.
+- Updated dependency:
+    - `parity-wasm v0.42 -> v0.45`
+    - `memory_units v0.3.0 -> v0.4.0`
+
+### Internal
+
+- Rename `RuntimeValue` to `Value` internally.
+- Now uses `wat` crate dependency instead of `wabt` for reading `.wat` files in tests.
+- Updated dev-dependencies:
+    - `assert_matches: v1.1 -> v1.5`
+    - `rand 0.4.2 -> 0.8.2`
+- Fix some `clippy` warnings.
+
 ## [0.11.0] - 2022-01-06
 
 ### Fixed
