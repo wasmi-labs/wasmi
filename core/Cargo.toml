@@ -1,13 +1,13 @@
 [package]
 name = "wasmi_core"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Parity Technologies <admin@parity.io>"]
 license = "MIT/Apache-2.0"
 readme = "../README.md"
 repository = "https://github.com/paritytech/wasmi"
-documentation = "https://paritytech.github.io/wasmi/"
-description = "WebAssembly interpreter"
+documentation = "https://docs.rs/wasmi_core"
+description = "Core abstractions and primitives for the wasmi WebAssembly interpreter"
 keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
 
 [dependencies]
