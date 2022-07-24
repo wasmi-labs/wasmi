@@ -9,6 +9,7 @@ repository = "https://github.com/paritytech/wasmi"
 documentation = "https://paritytech.github.io/wasmi/"
 description = "WebAssembly interpreter"
 keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
+exclude = [ "/tests/*", "/benches/*" ]
 
 [dependencies]
 wasmparser = { version = "0.83", package = "wasmparser-nostd", default-features = false }
@@ -17,6 +18,11 @@ spin = { version = "0.9", default-features = false, features = ["mutex", "spin_m
 
 [dev-dependencies]
 wat = "1"
+assert_matches = "1.5"
+wabt = "0.9"
+wast = "44.0"
+anyhow = "1.0"
+criterion = "0.3.5"
 
 [features]
 default = ["std"]
@@ -36,3 +42,7 @@ std = [
 # - The default is to fall back is an inefficient vector based implementation.
 # - By nature this feature requires `region` and the Rust standard library.
 virtual_memory = ["wasmi_core/virtual_memory", "std"]
+
+[[bench]]
+name = "benches"
+harness = false

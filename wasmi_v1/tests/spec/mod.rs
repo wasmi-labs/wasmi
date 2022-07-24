@@ -55,7 +55,7 @@ macro_rules! define_spec_tests {
             #[test]
             $( #[$attr] )*
             fn $test_name() {
-                run_wasm_spec_test(&format!("testsuite-v1/{}", $file_name))
+                run_wasm_spec_test(&format!("testsuite/{}", $file_name))
             }
         )*
     };
