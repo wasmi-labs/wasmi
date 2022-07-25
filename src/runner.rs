@@ -398,14 +398,6 @@ impl Interpreter {
         instructions: &isa::Instruction,
     ) -> Option<RunInstructionTracePre> {
         match *instructions {
-            isa::Instruction::BrIfNez(_) => Some(RunInstructionTracePre::BrIfNez {
-                value: <_>::from_value_internal(*self.value_stack.top()),
-            }),
-            isa::Instruction::Return(..) => None,
-
-            isa::Instruction::Drop => Some(RunInstructionTracePre::Drop),
-            isa::Instruction::Call(_) => None,
-
             isa::Instruction::GetLocal(depth, vtype) => {
                 let value = self.value_stack.pick(depth as usize);
                 Some(RunInstructionTracePre::GetLocal {
@@ -414,6 +406,41 @@ impl Interpreter {
                     vtype,
                 })
             }
+            isa::Instruction::TeeLocal(..) => None,
+
+            isa::Instruction::BrIfNez(_) => Some(RunInstructionTracePre::BrIfNez {
+                value: <_>::from_value_internal(*self.value_stack.top()),
+            }),
+            isa::Instruction::Return(..) => None,
+
+            isa::Instruction::Call(_) => None,
+            isa::Instruction::Drop => Some(RunInstructionTracePre::Drop),
+
+            isa::Instruction::I32Load(offset) => {
+                let raw_address = <_>::from_value_internal(*self.value_stack.top());
+                let address =
+                    effective_address(offset, raw_address).map_or(None, |addr| Some(addr));
+
+                Some(RunInstructionTracePre::Load {
+                    offset,
+                    address,
+                    vtype: parity_wasm::elements::ValueType::I32,
+                })
+            }
+            isa::Instruction::I32Store(offset) => {
+                let value = <_>::from_value_internal(*self.value_stack.pick(1));
+                let raw_address = <_>::from_value_internal(*self.value_stack.pick(2));
+                let address =
+                    effective_address(offset, raw_address).map_or(None, |addr| Some(addr));
+
+                Some(RunInstructionTracePre::Store {
+                    offset,
+                    address,
+                    value,
+                    vtype: parity_wasm::elements::ValueType::I32,
+                })
+            }
+
             isa::Instruction::I32Const(_) => None,
 
             isa::Instruction::I32Eq => Some(RunInstructionTracePre::I32Comp {
@@ -449,6 +476,28 @@ impl Interpreter {
         instructions: &isa::Instruction,
     ) -> StepInfo {
         match *instructions {
+            isa::Instruction::GetLocal(..) => {
+                if let RunInstructionTracePre::GetLocal {
+                    depth,
+                    value,
+                    vtype,
+                } = pre_status.unwrap()
+                {
+                    StepInfo::GetLocal {
+                        depth,
+                        value: <_>::from_value_internal(value),
+                        vtype: vtype.into(),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::TeeLocal(depth, vtype) => StepInfo::TeeLocal {
+                depth,
+                value: <_>::from_value_internal(*self.value_stack.top()),
+                vtype: vtype.into(),
+            },
+
             isa::Instruction::BrIfNez(target) => {
                 if let RunInstructionTracePre::BrIfNez { value } = pre_status.unwrap() {
                     let mut drop_values = vec![];
@@ -520,17 +569,36 @@ impl Interpreter {
                 }
             }
 
-            isa::Instruction::GetLocal(..) => {
-                if let RunInstructionTracePre::GetLocal {
-                    depth,
+            isa::Instruction::I32Load(..) => {
+                if let RunInstructionTracePre::Load {
+                    offset,
+                    address,
+                    vtype,
+                } = pre_status.unwrap()
+                {
+                    StepInfo::Load {
+                        vtype: vtype.into(),
+                        offset,
+                        address: address.unwrap(),
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I32Store(..) => {
+                if let RunInstructionTracePre::Store {
+                    offset,
+                    address,
                     value,
                     vtype,
                 } = pre_status.unwrap()
                 {
-                    StepInfo::GetLocal {
-                        depth,
-                        value: <_>::from_value_internal(value),
+                    StepInfo::Store {
                         vtype: vtype.into(),
+                        offset,
+                        address: address.unwrap(),
+                        value: value as u32 as u64,
                     }
                 } else {
                     unreachable!()

@@ -356,7 +356,10 @@ impl<'a> Instruction<'a> {
                 vtype: typ.into(),
             },
             Instruction::SetLocal(..) => todo!(),
-            Instruction::TeeLocal(..) => todo!(),
+            Instruction::TeeLocal(offset, typ) => Opcode::LocalTee {
+                offset: offset as u64,
+                vtype: typ.into(),
+            },
             Instruction::Br(_) => todo!(),
             Instruction::BrIfEqz(_) => todo!(),
             Instruction::BrIfNez(Target { dst_pc, drop_keep }) => Opcode::BrIf {
@@ -386,7 +389,10 @@ impl<'a> Instruction<'a> {
             Instruction::Select => todo!(),
             Instruction::GetGlobal(_) => todo!(),
             Instruction::SetGlobal(_) => todo!(),
-            Instruction::I32Load(_) => todo!(),
+            Instruction::I32Load(offset) => Opcode::Load {
+                offset,
+                vtype: VarType::I32,
+            },
             Instruction::I64Load(_) => todo!(),
             Instruction::F32Load(_) => todo!(),
             Instruction::F64Load(_) => todo!(),
@@ -400,7 +406,10 @@ impl<'a> Instruction<'a> {
             Instruction::I64Load16U(_) => todo!(),
             Instruction::I64Load32S(_) => todo!(),
             Instruction::I64Load32U(_) => todo!(),
-            Instruction::I32Store(_) => todo!(),
+            Instruction::I32Store(offset) => Opcode::Store {
+                offset,
+                vtype: VarType::I32,
+            },
             Instruction::I64Store(_) => todo!(),
             Instruction::F32Store(_) => todo!(),
             Instruction::F64Store(_) => todo!(),

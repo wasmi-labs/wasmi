@@ -20,6 +20,18 @@ pub enum RunInstructionTracePre {
         vtype: ValueType,
     },
 
+    Load {
+        offset: u32,
+        address: Option<u32>, // use option in case of memory out of bound
+        vtype: ValueType,
+    },
+    Store {
+        offset: u32,
+        address: Option<u32>,
+        value: i32,
+        vtype: ValueType,
+    },
+
     I32BinOp {
         class: BinOp,
         left: i32,
