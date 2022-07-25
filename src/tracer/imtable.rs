@@ -4,7 +4,7 @@ use specs::imtable::InitMemoryTableEntry;
 pub struct IMEntry {
     pub module_instance_index: u16,
     pub offset: u32,
-    pub value: u8,
+    pub value: u64,
 }
 
 impl Into<InitMemoryTableEntry> for IMEntry {
@@ -21,13 +21,11 @@ impl Into<InitMemoryTableEntry> for IMEntry {
 pub struct IMTable(pub Vec<IMEntry>);
 
 impl IMTable {
-    pub(crate) fn push(&mut self, module_instance_index: u16, offset: usize, value: &[u8]) {
-        for idx in 0..value.len() {
-            self.0.push(IMEntry {
-                module_instance_index,
-                offset: (offset + idx) as u32,
-                value: value[idx],
-            })
-        }
+    pub(crate) fn push(&mut self, module_instance_index: u16, offset: u32, value: u64) {
+        self.0.push(IMEntry {
+            module_instance_index,
+            offset,
+            value,
+        })
     }
 }

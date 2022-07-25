@@ -475,16 +475,21 @@ impl ModuleInstance {
                 .memory_by_index(DEFAULT_MEMORY_INDEX)
                 .expect("Due to validation default memory should exists");
             memory_inst.set(offset_val, data_segment.value())?;
+        }
 
-            match &tracer {
-                Some(tracer) => {
-                    let t = tracer.clone();
-                    let module_id = { (*t).borrow().next_module_id() };
-                    let mut t = (*t).borrow_mut();
-                    t.push_init_memory(module_id, offset_val, data_segment.value());
-                }
-                None => (),
+        match &tracer {
+            Some(tracer) => {
+                let t = tracer.clone();
+                let module_id = { (*t).borrow().next_module_id() };
+                let mut t = (*t).borrow_mut();
+                t.push_init_memory(
+                    module_id,
+                    module_ref
+                        .memory_by_index(DEFAULT_MEMORY_INDEX)
+                        .expect("Due to validation default memory should exists"),
+                );
             }
+            None => (),
         }
 
         Ok(NotStartedModuleRef {

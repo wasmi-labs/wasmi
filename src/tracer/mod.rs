@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{FuncRef, Module, ModuleRef};
+use crate::{FuncRef, MemoryRef, Module, ModuleRef};
 
 use self::{
     etable::ETable,
@@ -71,9 +71,14 @@ impl Tracer {
 }
 
 impl Tracer {
-    pub(crate) fn push_init_memory(&mut self, module_instance_id: u16, offset: u32, value: &[u8]) {
-        self.imtable
-            .push(module_instance_id, offset as usize, value)
+    pub(crate) fn push_init_memory(&mut self, module_instance_id: u16, memref: MemoryRef) {
+        let pages = (*memref).limits().initial();
+        for i in 0..(pages * 1024) {
+            let mut buf = [0u8; 8];
+            (*memref).get_into(i * 8, &mut buf).unwrap();
+            self.imtable
+                .push(module_instance_id, i, u64::from_le_bytes(buf));
+        }
     }
 
     pub(crate) fn register_module_instance(
