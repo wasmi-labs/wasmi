@@ -4,17 +4,20 @@ use crate::{FuncRef, Module, ModuleRef};
 
 use self::{
     etable::ETable,
+    imtable::IMTable,
     itable::{IEntry, ITable},
     jtable::JTable,
 };
 
 pub mod etable;
+pub mod imtable;
 pub mod itable;
 pub mod jtable;
 
 #[derive(Debug)]
 pub struct Tracer {
     pub itable: ITable,
+    pub imtable: IMTable,
     pub etable: ETable,
     pub jtable: Option<JTable>,
     module_instance_lookup: Vec<(ModuleRef, u16)>,
@@ -29,6 +32,7 @@ impl Tracer {
     pub fn default() -> Self {
         Tracer {
             itable: ITable::default(),
+            imtable: IMTable::default(),
             etable: ETable::default(),
             last_jump_eid: vec![0],
             jtable: None,
@@ -67,7 +71,16 @@ impl Tracer {
 }
 
 impl Tracer {
-    pub fn register_module_instance(&mut self, module: &Module, module_instance: &ModuleRef) {
+    pub(crate) fn push_init_memory(&mut self, module_instance_id: u16, offset: u32, value: &[u8]) {
+        self.imtable
+            .push(module_instance_id, offset as usize, value)
+    }
+
+    pub(crate) fn register_module_instance(
+        &mut self,
+        module: &Module,
+        module_instance: &ModuleRef,
+    ) {
         let start_fn_idx = module.module().start_section();
 
         {
