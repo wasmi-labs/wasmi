@@ -479,15 +479,12 @@ impl ModuleInstance {
 
         match &tracer {
             Some(tracer) => {
-                let t = tracer.clone();
-                let module_id = { (*t).borrow().next_module_id() };
-                let mut t = (*t).borrow_mut();
-                t.push_init_memory(
-                    module_id,
-                    module_ref
-                        .memory_by_index(DEFAULT_MEMORY_INDEX)
-                        .expect("Due to validation default memory should exists"),
-                );
+                if let Some(memory_ref) = module_ref.memory_by_index(DEFAULT_MEMORY_INDEX) {
+                    let t = tracer.clone();
+                    let module_id = { (*t).borrow().next_module_id() };
+                    let mut t = (*t).borrow_mut();
+                    t.push_init_memory(module_id, memory_ref)
+                }
             }
             None => (),
         }
