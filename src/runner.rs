@@ -495,6 +495,7 @@ impl Interpreter {
     fn run_instruction_post(
         &mut self,
         pre_status: Option<RunInstructionTracePre>,
+        context: &FunctionContext,
         instructions: &isa::Instruction,
     ) -> StepInfo {
         match *instructions {
@@ -600,12 +601,22 @@ impl Interpreter {
                     mmid,
                 } = pre_status.unwrap()
                 {
+                    let mut buf = [0u8; 8];
+                    context
+                        .memory
+                        .clone()
+                        .unwrap()
+                        .get_into(offset, &mut buf)
+                        .unwrap();
+                    let block_value = u64::from_le_bytes(buf);
+
                     StepInfo::Load {
                         vtype: vtype.into(),
                         offset,
                         raw_address,
                         effective_address: effective_address.unwrap(),
                         value: <_>::from_value_internal(*self.value_stack.top()),
+                        block_value,
                         mmid,
                     }
                 } else {
@@ -719,7 +730,8 @@ impl Interpreter {
             macro_rules! trace_post {
                 () => {
                     if self.tracer.is_some() {
-                        let post_status = self.run_instruction_post(pre_status, &instruction);
+                        let post_status =
+                            self.run_instruction_post(pre_status, function_context, &instruction);
                         if let Some(tracer) = self.tracer.as_mut() {
                             let instruction = {
                                 let tracer = tracer.borrow_mut();
