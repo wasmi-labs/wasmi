@@ -9,7 +9,6 @@ use wasmi::{
     FuncType,
     Store,
 };
-use wasmi_v1 as wasmi;
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
