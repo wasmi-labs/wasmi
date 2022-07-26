@@ -2,17 +2,72 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Additionally we have an `Internal` section for changes that are of interest to developers.
 
-## [0.12.0] - 2022-07-24
+## [0.14.0] - 2022-07-26
 
-**Note:** This is going to be the last release with the legacy `wasmi` engine.
-          Future releases are going to use the new Wasm execution engines
+### Added
+
+- Added support for the following Wasm proposals:
+
+    - [Import and export of mutable globals](https://github.com/WebAssembly/mutable-global)
+    - [Non-trapping float-to-int conversions](https://github.com/WebAssembly/nontrapping-float-to-int-conversions)
+    - [Sign-extension operators](https://github.com/WebAssembly/sign-extension-ops)
+    - [Multi-value](https://github.com/WebAssembly/multi-value)
+
+  We plan to support more Wasm proposals in the future.
+
+### Changed
+
+- Wasmi has been entirely redesigned and reimplemented.
+  This work resulted in an entirely new API that is heavily inspired by
+  the [Wasmtime API](https://docs.rs/wasmtime/0.39.1/wasmtime/),
+  a brand new Wasm execution engine that performs roughly 30-40%
+  better than the previous engine according to our benchmarks,
+  the support of many Wasm proposals and Wasm parsing and validation
+  using the battle tested [`wasmparser`](https://crates.io/crates/wasmparser)
+  crate by the BytecodeAlliance.
+
+  The new `wasmi` design allows to reuse the Wasm execution engine
+  resources instead of spinning up a new Wasm execution engine for every
+  function call.
+
+  **Note:** If you plan to use `wasmi` it is of critical importance
+  to compile `wasmi` using the following Cargo `profile` settings:
+
+  ```toml
+  [profile.release]
+  lto = "fat"
+  codegen-units = 1
+  ```
+
+  If you do not use these profile settings you might risk regressing
+  performance of `wasmi` by up to 400%. You can read more about this
+  issue [here](https://github.com/paritytech/wasmi/issues/339).
+
+### Removed
+
+- Removed support for resuming function execution.
+  We may consider to add this feature back into the new engine.
+  If you are a user of `wasmi` and want this feature please feel
+  free to [open an issue](https://github.com/paritytech/wasmi/issues)
+  and provide us with your use case.
+
+## [0.13.0] - 2022-07-25
+
+**Note:** This is the last release using the legacy `wasmi` engine.
+          Future releases are using the new Wasm execution engines
           that are currently in development.
-          We may consider to publish the legacy `wasmi` engine as `wasmi-legacy`
-          crate.
+          We may consider to publish new versions of this Wasm engine
+          as `wasmi-legacy` crate.
+
+### Changed
+
+- Update dependency: `wasmi-validation v0.4.2 -> v0.5.0`
+
+## [0.12.0] - 2022-07-24
 
 ### Changed
 

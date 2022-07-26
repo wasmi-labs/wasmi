@@ -1,61 +1,7 @@
-[package]
-name = "wasmi"
-version = "0.12.0"
-edition = "2021"
-authors = ["Parity Technologies <admin@parity.io>", "Nikolay Volf <nikvolf@gmail.com>", "Svyatoslav Nikolsky <svyatonik@yandex.ru>", "Sergey Pepyakin <s.pepyakin@gmail.com>"]
-license = "MIT/Apache-2.0"
-readme = "README.md"
-repository = "https://github.com/paritytech/wasmi"
-documentation = "https://paritytech.github.io/wasmi/"
-description = "WebAssembly interpreter"
-keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
-exclude = [ "/res/*", "/tests/*", "/fuzz/*", "/benches/*" ]
-
-[dependencies]
-wasmi_core = { version = "0.2", path = "core", default-features = false }
-validation = { package = "wasmi-validation", version = "0.4.2", path = "validation", default-features = false }
-parity-wasm = { version = "0.45.0", default-features = false }
-
-[dev-dependencies]
-assert_matches = "1.5"
-wabt = "0.9"
-wat = "1"
-wast = "44.0"
-anyhow = "1.0"
-criterion = "0.3.5"
-
-# Required as dev-dependency because otherwise benchmarks
-# have trouble using it without `cargo bench --all-features`.
-wasmi_v1 = { version = "0.11", path = "wasmi_v1" }
-
-[features]
-default = ["std"]
-# Use `no-default-features` for a `no_std` build.
-std = [
-    "wasmi_core/std",
-    "parity-wasm/std",
-    "validation/std",
-]
-# Enables OS supported virtual memory.
-#
-# Note
-#
-# - This feature is only supported on 64-bit platforms.
-#   For 32-bit platforms the linear memory will fallback to using the Vec
-#   based implementation.
-# - The default is to fall back is an inefficient vector based implementation.
-# - By nature this feature requires `region` and the Rust standard library.
-virtual_memory = ["wasmi_core/virtual_memory", "std"]
-
-reduced-stack-buffer = [ "parity-wasm/reduced-stack-buffer" ]
-
 [workspace]
-members = ["validation", "core", "wasmi_v1", "cli"]
+members = ["core", "wasmi_v1", "cli"]
 exclude = []
-
-[[bench]]
-name = "benches"
-harness = false
+resolver = "2"
 
 [profile.bench]
 lto = "fat"

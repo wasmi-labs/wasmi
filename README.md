@@ -30,7 +30,8 @@ The following list states some of the distinct features of `wasmi`.
     - WebAssembly specification compliance.
 - Can itself be compiled to WebAssembly.
 - Low-overhead and cross-platform WebAssembly runtime.
-- New experimental `v1` engine allows to be used as a drop-in solution for Wasmtime.
+- Loosely mirrors the [Wasmtime API](https://docs.rs/wasmtime/0.39.1/wasmtime/)
+  to act as a drop-in solution.
 
 # Wasm Proposals
 
@@ -85,23 +86,8 @@ git clone https://github.com/paritytech/wasmi.git ---recursive
 After Git submodules have been initialized and updated you can test using:
 
 ```
-cargo test
+cargo test --workspace
 ```
-
-### Workspace
-
-If you want to test the entire `wasmi` workspace using all features we recommend
-
-```
-cargo test --all-features --workspace
-```
-
-This tests both `wasmi` engines using all features available to them.
-
-### Note
-
-It is recommended to test using `--release` since compiling and testing without optimizations
-usually is a lot slower compared to compiling and testing with optimizations.
 
 ## Platforms
 
@@ -124,30 +110,16 @@ For this build `wasmi` using:
 cargo build --features virtual_memory
 ```
 
-### New Engine
+#### Performance Note
 
-We are currently building an experimental new `wasmi` engine that mirrors the Wasmtime APIs
-and has an improved performance and decreased overhead compared to the old `wasmi` engine.
+In order to reap the most performance out of `wasmi` we highly recommended
+to compile the `wasmi` crate using the following Cargo `profile`:
 
-You can enable and start using it today by using the `wasmi_v1` workspace package:
-
+```toml
+[profile.release]
+lto = "fat"
+codegen-units = 1
 ```
-cargo build --package wasmi_v1
-```
-
-#### Note
-
-- The new `v1` implementation is experimental and therefore not
-  recommended for production usage, yet.
-- Be sure to use the following Cargo profile to gain the maximum
-  performance using the `v1` engine:
-
-  ```toml
-  [profile.release]
-  lto = "fat"
-  codegen-units = 1
-  ```
-
 
 ## Benchmarks
 

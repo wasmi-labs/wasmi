@@ -1,19 +1,16 @@
-use core::{
-    cmp::{Ordering, PartialEq, PartialOrd},
-    ops::{Add, Div, Mul, Neg, Rem, Sub},
-};
-use num_traits::float::FloatCore;
-
 macro_rules! impl_binop {
     ($for:ty, $is:ty, $op:ident, $func_name:ident) => {
-        impl<T: Into<$for>> $op<T> for $for {
+        impl<T: Into<$for>> ::core::ops::$op<T> for $for {
             type Output = Self;
 
             #[inline]
             fn $func_name(self, other: T) -> Self {
                 Self(
-                    $op::$func_name(<$is>::from_bits(self.0), <$is>::from_bits(other.into().0))
-                        .to_bits(),
+                    ::core::ops::$op::$func_name(
+                        <$is>::from_bits(self.0),
+                        <$is>::from_bits(other.into().0),
+                    )
+                    .to_bits(),
                 )
             }
         }
@@ -45,49 +42,60 @@ macro_rules! float {
         impl_binop!($for, $is, Rem, rem);
 
         impl $for {
+            /// Creates a float from its underlying bits.
             #[inline]
             pub fn from_bits(other: $rep) -> Self {
-                $for(other)
+                Self(other)
             }
 
+            /// Returns the underlying bits of the float.
             #[inline]
             pub fn to_bits(self) -> $rep {
                 self.0
             }
 
+            /// Creates a float from the respective primitive float type.
             #[inline]
-            pub fn from_float(fl: $is) -> Self {
-                fl.into()
+            pub fn from_float(float: $is) -> Self {
+                Self(float.to_bits())
             }
 
+            /// Returns the respective primitive float type.
             #[inline]
             pub fn to_float(self) -> $is {
-                self.into()
+                <$is>::from_bits(self.0)
             }
 
+            /// Returns `true` if the float is not a number (NaN).
             #[inline]
-            pub fn is_nan(self) -> bool {
+            pub fn is_nan(self) -> ::core::primitive::bool {
                 self.to_float().is_nan()
             }
 
+            /// Returns the absolute value of the float.
             #[must_use]
             #[inline]
             pub fn abs(self) -> Self {
-                $for(self.0 & !$sign_bit)
+                Self(self.0 & !$sign_bit)
             }
 
+            /// Returns the fractional part of the float.
             #[must_use]
             #[inline]
             pub fn fract(self) -> Self {
-                FloatCore::fract(self.to_float()).into()
+                Self::from_float(
+                    ::num_traits::float::FloatCore::fract(self.to_float())
+                )
             }
 
+            /// Returns the minimum float between `self` and `other`.
             #[must_use]
             #[inline]
             pub fn min(self, other: Self) -> Self {
                 Self::from(self.to_float().min(other.to_float()))
             }
 
+            /// Returns the maximum float between `self` and `other`.
             #[must_use]
             #[inline]
             pub fn max(self, other: Self) -> Self {
@@ -95,47 +103,60 @@ macro_rules! float {
             }
         }
 
-        impl From<$is> for $for {
+        impl ::core::convert::From<$is> for $for {
             #[inline]
-            fn from(other: $is) -> $for {
-                $for(other.to_bits())
+            fn from(float: $is) -> $for {
+                Self::from_float(float)
             }
         }
 
-        impl From<$for> for $is {
+        impl ::core::convert::From<$for> for $is {
             #[inline]
-            fn from(other: $for) -> $is {
-                <$is>::from_bits(other.0)
+            fn from(float: $for) -> $is {
+                float.to_float()
             }
         }
 
-        impl Neg for $for {
+        impl ::core::ops::Neg for $for {
             type Output = Self;
 
             #[inline]
             fn neg(self) -> Self {
-                $for(self.0 ^ $sign_bit)
+                Self(self.0 ^ $sign_bit)
             }
         }
 
-        // clippy suggestion would fail some tests
-        impl<T: Into<$for> + Copy> PartialEq<T> for $for {
+        impl<T: ::core::convert::Into<$for> + ::core::marker::Copy> ::core::cmp::PartialEq<T> for $for {
             #[inline]
-            fn eq(&self, other: &T) -> bool {
-                <$is>::from(*self) == <$is>::from((*other).into())
+            fn eq(&self, other: &T) -> ::core::primitive::bool {
+                <$is as ::core::convert::From<Self>>::from(*self)
+                    .eq(&<$is as ::core::convert::From<Self>>::from((*other).into()))
             }
         }
 
-        impl<T: Into<$for> + Copy> PartialOrd<T> for $for {
+        impl<T: ::core::convert::Into<$for> + ::core::marker::Copy> ::core::cmp::PartialOrd<T> for $for {
             #[inline]
-            fn partial_cmp(&self, other: &T) -> Option<Ordering> {
-                <$is>::from(*self).partial_cmp(&<$is>::from((*other).into()))
+            fn partial_cmp(&self, other: &T) -> ::core::option::Option<::core::cmp::Ordering> {
+                <$is as ::core::convert::From<Self>>::from(*self)
+                    .partial_cmp(&<$is as ::core::convert::From<Self>>::from((*other).into()))
             }
         }
 
         impl ::core::fmt::Debug for $for {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                <$is>::from(*self).fmt(f)
+                <$is as ::core::fmt::Debug>::fmt(
+                    &<$is as ::core::convert::From<Self>>::from(*self),
+                    f,
+                )
+            }
+        }
+
+        impl ::core::fmt::Display for $for {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                <$is as ::core::fmt::Display>::fmt(
+                    &<$is as ::core::convert::From<Self>>::from(*self),
+                    f,
+                )
             }
         }
     };
