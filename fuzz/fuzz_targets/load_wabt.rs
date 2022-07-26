@@ -1,8 +1,6 @@
 #![no_main]
-#[macro_use]
-extern crate libfuzzer_sys;
-extern crate wabt;
-extern crate wasmi;
+
+use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|data: &[u8]| {
 	let wasmi_result = wasmi::Module::from_buffer(data);

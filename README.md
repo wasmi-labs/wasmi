@@ -103,6 +103,14 @@ This tests both `wasmi` engines using all features available to them.
 It is recommended to test using `--release` since compiling and testing without optimizations
 usually is a lot slower compared to compiling and testing with optimizations.
 
+## Fuzzing
+
+Install `cargo-fuzz`: `$ cargo install cargo-fuzz`.
+
+List all the existing fuzz targets: `$ cargo +nightly fuzz list`.
+
+Run a fuzz target: `$ cargo +nightly run <target>`.
+
 ## Platforms
 
 Supported platforms are primarily Linux, MacOS, Windows and WebAssembly.
