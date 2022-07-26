@@ -10,4 +10,4 @@ cargo doc --workspace --all-features --no-deps --document-private-items;
 echo "    Testing Spec ..."
 cargo test --release --quiet spec::v1;
 echo "    Testing Package ..."
-cargo test --package wasmi_v1 --quiet;
+cargo test --package wasmi --quiet;
