@@ -34,7 +34,7 @@ Additionally we have an `Internal` section for changes that are of interest to d
   resources instead of spinning up a new Wasm execution engine for every
   function call.
 
-  **Note:** If you plan to use `wasmi` it is of critically importance
+  **Note:** If you plan to use `wasmi` it is of critical importance
   to compile `wasmi` using the following Cargo `profile` settings:
 
   ```toml

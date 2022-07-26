@@ -30,7 +30,8 @@ The following list states some of the distinct features of `wasmi`.
     - WebAssembly specification compliance.
 - Can itself be compiled to WebAssembly.
 - Low-overhead and cross-platform WebAssembly runtime.
-- New experimental `v1` engine allows to be used as a drop-in solution for Wasmtime.
+- Loosely mirrors the [Wasmtime API](https://docs.rs/wasmtime/0.39.1/wasmtime/)
+  to act as a drop-in solution.
 
 # Wasm Proposals
 
