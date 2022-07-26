@@ -22,14 +22,18 @@ pub enum RunInstructionTracePre {
 
     Load {
         offset: u32,
-        address: Option<u32>, // use option in case of memory out of bound
+        raw_address: u32,
+        effective_address: Option<u32>, // use option in case of memory out of bound
         vtype: ValueType,
+        mmid: u64,
     },
     Store {
         offset: u32,
-        address: Option<u32>,
+        raw_address: u32,
+        effective_address: Option<u32>,
         value: i32,
         vtype: ValueType,
+        mmid: u64,
     },
 
     I32BinOp {

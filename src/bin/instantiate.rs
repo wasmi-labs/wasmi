@@ -91,6 +91,7 @@ fn main() {
             .with_resolver("global.Math", &ResolveAll)
             .with_resolver("asm2wasm", &ResolveAll)
             .with_resolver("spectest", &ResolveAll),
+        None,
     )
     .expect("Failed to instantiate module")
     .run_start(&mut NopExternals)

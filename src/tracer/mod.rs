@@ -21,6 +21,7 @@ pub struct Tracer {
     pub etable: ETable,
     pub jtable: Option<JTable>,
     module_instance_lookup: Vec<(ModuleRef, u16)>,
+    memory_instance_lookup: Vec<(MemoryRef, u16)>,
     function_lookup: Vec<(FuncRef, u16)>,
     last_jump_eid: Vec<u64>,
     function_index_allocator: u32,
@@ -37,6 +38,7 @@ impl Tracer {
             last_jump_eid: vec![0],
             jtable: None,
             module_instance_lookup: vec![],
+            memory_instance_lookup: vec![],
             function_lookup: vec![],
             function_index_allocator: 1,
             function_index_translation: Default::default(),
@@ -55,6 +57,10 @@ impl Tracer {
         (self.module_instance_lookup.len() as u16) + 1
     }
 
+    pub fn next_memory_id(&self) -> u16 {
+        (self.memory_instance_lookup.len() as u16) + 1
+    }
+
     pub fn last_jump_eid(&self) -> u64 {
         *self.last_jump_eid.last().unwrap()
     }
@@ -71,14 +77,17 @@ impl Tracer {
 }
 
 impl Tracer {
-    pub(crate) fn push_init_memory(&mut self, module_instance_id: u16, memref: MemoryRef) {
+    pub(crate) fn push_init_memory(&mut self, memref: MemoryRef) {
         let pages = (*memref).limits().initial();
         for i in 0..(pages * 1024) {
             let mut buf = [0u8; 8];
             (*memref).get_into(i * 8, &mut buf).unwrap();
             self.imtable
-                .push(module_instance_id, i, u64::from_le_bytes(buf));
+                .push(self.next_memory_id(), i, u64::from_le_bytes(buf));
         }
+
+        self.memory_instance_lookup
+            .push((memref, self.next_memory_id()));
     }
 
     pub(crate) fn register_module_instance(
@@ -151,6 +160,16 @@ impl Tracer {
 
     pub fn lookup_module_instance(&self, module_instance: &ModuleRef) -> u16 {
         for m in &self.module_instance_lookup {
+            if &m.0 == module_instance {
+                return m.1;
+            }
+        }
+
+        unreachable!()
+    }
+
+    pub fn lookup_memory_instance(&self, module_instance: &MemoryRef) -> u16 {
+        for m in &self.memory_instance_lookup {
             if &m.0 == module_instance {
                 return m.1;
             }

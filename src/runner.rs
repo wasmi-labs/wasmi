@@ -395,6 +395,7 @@ impl Interpreter {
 
     fn run_instruction_pre(
         &mut self,
+        function_context: &FunctionContext,
         instructions: &isa::Instruction,
     ) -> Option<RunInstructionTracePre> {
         match *instructions {
@@ -420,11 +421,24 @@ impl Interpreter {
                 let raw_address = <_>::from_value_internal(*self.value_stack.top());
                 let address =
                     effective_address(offset, raw_address).map_or(None, |addr| Some(addr));
+                let mmid = self
+                    .tracer
+                    .clone()
+                    .unwrap()
+                    .borrow_mut()
+                    .lookup_memory_instance(
+                        &function_context
+                            .memory
+                            .clone()
+                            .expect("Due to validation memory should exists"),
+                    );
 
                 Some(RunInstructionTracePre::Load {
                     offset,
-                    address,
+                    raw_address,
+                    effective_address: address,
                     vtype: parity_wasm::elements::ValueType::I32,
+                    mmid: mmid as u64,
                 })
             }
             isa::Instruction::I32Store(offset) => {
@@ -432,12 +446,20 @@ impl Interpreter {
                 let raw_address = <_>::from_value_internal(*self.value_stack.pick(2));
                 let address =
                     effective_address(offset, raw_address).map_or(None, |addr| Some(addr));
+                let mmid = self
+                    .tracer
+                    .clone()
+                    .unwrap()
+                    .borrow_mut()
+                    .lookup_memory_instance(&function_context.memory.clone().unwrap());
 
                 Some(RunInstructionTracePre::Store {
                     offset,
-                    address,
+                    raw_address,
+                    effective_address: address,
                     value,
                     vtype: parity_wasm::elements::ValueType::I32,
+                    mmid: mmid as u64,
                 })
             }
 
@@ -572,15 +594,19 @@ impl Interpreter {
             isa::Instruction::I32Load(..) => {
                 if let RunInstructionTracePre::Load {
                     offset,
-                    address,
+                    raw_address,
+                    effective_address,
                     vtype,
+                    mmid,
                 } = pre_status.unwrap()
                 {
                     StepInfo::Load {
                         vtype: vtype.into(),
                         offset,
-                        address: address.unwrap(),
+                        raw_address,
+                        effective_address: effective_address.unwrap(),
                         value: <_>::from_value_internal(*self.value_stack.top()),
+                        mmid,
                     }
                 } else {
                     unreachable!()
@@ -589,16 +615,20 @@ impl Interpreter {
             isa::Instruction::I32Store(..) => {
                 if let RunInstructionTracePre::Store {
                     offset,
-                    address,
+                    raw_address,
+                    effective_address,
                     value,
                     vtype,
+                    mmid,
                 } = pre_status.unwrap()
                 {
                     StepInfo::Store {
                         vtype: vtype.into(),
                         offset,
-                        address: address.unwrap(),
+                        raw_address,
+                        effective_address: effective_address.unwrap(),
                         value: value as u32 as u64,
+                        mmid,
                     }
                 } else {
                     unreachable!()
@@ -681,7 +711,7 @@ impl Interpreter {
             );
 
             let pre_status = if self.tracer.is_some() {
-                self.run_instruction_pre(&instruction)
+                self.run_instruction_pre(function_context, &instruction)
             } else {
                 None
             };
@@ -692,7 +722,7 @@ impl Interpreter {
                         let post_status = self.run_instruction_post(pre_status, &instruction);
                         if let Some(tracer) = self.tracer.as_mut() {
                             let instruction = {
-                                let tracer = tracer.borrow();
+                                let tracer = tracer.borrow_mut();
                                 instruction.into(&tracer.function_index_translation)
                             };
 

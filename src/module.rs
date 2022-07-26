@@ -481,9 +481,8 @@ impl ModuleInstance {
             Some(tracer) => {
                 if let Some(memory_ref) = module_ref.memory_by_index(DEFAULT_MEMORY_INDEX) {
                     let t = tracer.clone();
-                    let module_id = { (*t).borrow().next_module_id() };
                     let mut t = (*t).borrow_mut();
-                    t.push_init_memory(module_id, memory_ref)
+                    t.push_init_memory(memory_ref)
                 }
             }
             None => (),
