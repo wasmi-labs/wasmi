@@ -299,14 +299,14 @@ impl Value {
 impl From<i8> for Value {
     #[inline]
     fn from(val: i8) -> Self {
-        Value::I32(val as i32)
+        Value::I32(val.into())
     }
 }
 
 impl From<i16> for Value {
     #[inline]
     fn from(val: i16) -> Self {
-        Value::I32(val as i32)
+        Value::I32(val.into())
     }
 }
 
@@ -327,14 +327,14 @@ impl From<i64> for Value {
 impl From<u8> for Value {
     #[inline]
     fn from(val: u8) -> Self {
-        Value::I32(val as i32)
+        Value::I32(val.into())
     }
 }
 
 impl From<u16> for Value {
     #[inline]
     fn from(val: u16) -> Self {
-        Value::I32(val as i32)
+        Value::I32(val.into())
     }
 }
 
@@ -400,8 +400,8 @@ impl FromValue for bool {
 impl FromValue for i8 {
     #[inline]
     fn from_value(val: Value) -> Option<Self> {
-        let min = i8::min_value() as i32;
-        let max = i8::max_value() as i32;
+        let min = i32::from(i8::min_value());
+        let max = i32::from(i8::max_value());
         match val {
             Value::I32(val) if min <= val && val <= max => Some(val as i8),
             _ => None,
@@ -415,8 +415,8 @@ impl FromValue for i8 {
 impl FromValue for i16 {
     #[inline]
     fn from_value(val: Value) -> Option<Self> {
-        let min = i16::min_value() as i32;
-        let max = i16::max_value() as i32;
+        let min = i32::from(i16::min_value());
+        let max = i32::from(i16::max_value());
         match val {
             Value::I32(val) if min <= val && val <= max => Some(val as i16),
             _ => None,
@@ -430,8 +430,8 @@ impl FromValue for i16 {
 impl FromValue for u8 {
     #[inline]
     fn from_value(val: Value) -> Option<Self> {
-        let min = u8::min_value() as i32;
-        let max = u8::max_value() as i32;
+        let min = i32::from(u8::min_value());
+        let max = i32::from(u8::max_value());
         match val {
             Value::I32(val) if min <= val && val <= max => Some(val as u8),
             _ => None,
@@ -445,8 +445,8 @@ impl FromValue for u8 {
 impl FromValue for u16 {
     #[inline]
     fn from_value(val: Value) -> Option<Self> {
-        let min = u16::min_value() as i32;
-        let max = u16::max_value() as i32;
+        let min = i32::from(u16::min_value());
+        let max = i32::from(u16::max_value());
         match val {
             Value::I32(val) if min <= val && val <= max => Some(val as u16),
             _ => None,
@@ -614,7 +614,7 @@ impl_extend_into!(f32, f64, F64);
 impl ExtendInto<F64> for F32 {
     #[inline]
     fn extend_into(self) -> F64 {
-        (f32::from(self) as f64).into()
+        F64::from(f64::from(f32::from(self)))
     }
 }
 

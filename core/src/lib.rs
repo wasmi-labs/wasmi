@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![warn(clippy::cast_lossless)]
 
 mod host_error;
 mod nan_preserving_float;
