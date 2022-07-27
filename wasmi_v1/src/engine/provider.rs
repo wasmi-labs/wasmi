@@ -115,7 +115,7 @@ impl From<ConstRef> for ExecProvider {
 
 impl ExecProvider {
     pub fn from_register(register: ExecRegister) -> Self {
-        let inner = register.into_inner() as u32 as i32;
+        let inner = i32::from(register.into_inner());
         Self(inner)
     }
 

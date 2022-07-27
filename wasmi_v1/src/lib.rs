@@ -71,6 +71,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::len_without_is_empty)]
+#![warn(clippy::cast_lossless)]
 
 #[cfg(not(feature = "std"))]
 #[macro_use]
