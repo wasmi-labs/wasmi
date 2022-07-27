@@ -113,9 +113,13 @@ fn interpreter_inc_i32() {
 
     let env = Env::new();
 
-    let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
-        .expect("Failed to instantiate module")
-        .assert_no_start();
+    let instance = ModuleInstance::new(
+        &module,
+        &ImportsBuilder::new().with_resolver("env", &env),
+        None,
+    )
+    .expect("Failed to instantiate module")
+    .assert_no_start();
 
     let i32_val = 42;
     // the functions expects a single i32 parameter
@@ -141,9 +145,13 @@ fn interpreter_accumulate_u8() {
     let module = load_from_file(WASM_FILE);
 
     let env = Env::new();
-    let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
-        .expect("Failed to instantiate module")
-        .assert_no_start();
+    let instance = ModuleInstance::new(
+        &module,
+        &ImportsBuilder::new().with_resolver("env", &env),
+        None,
+    )
+    .expect("Failed to instantiate module")
+    .assert_no_start();
 
     let env_memory = env.memory;
 

@@ -213,7 +213,7 @@ fn instantiate(path: &str) -> Result<ModuleRef, Error> {
     let mut imports = ImportsBuilder::new();
     imports.push_resolver("env", &RuntimeModuleImportResolver);
 
-    let instance = ModuleInstance::new(&module, &imports)?.assert_no_start();
+    let instance = ModuleInstance::new(&module, &imports, None)?.assert_no_start();
 
     Ok(instance)
 }

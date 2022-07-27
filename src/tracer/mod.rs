@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use crate::{FuncRef, MemoryRef, Module, ModuleRef};
+use specs::types::FunctionType;
+
+use crate::{FuncRef, MemoryRef, Module, ModuleRef, Signature};
 
 use self::{
     etable::ETable,
@@ -15,17 +17,24 @@ pub mod itable;
 pub mod jtable;
 
 #[derive(Debug)]
+pub(crate) struct FuncDesc {
+    pub(crate) index_within_jtable: u16,
+    pub(crate) ftype: FunctionType,
+    pub(crate) signature: Signature,
+}
+
+#[derive(Debug)]
 pub struct Tracer {
     pub itable: ITable,
     pub imtable: IMTable,
     pub etable: ETable,
-    pub jtable: Option<JTable>,
+    pub jtable: JTable,
     module_instance_lookup: Vec<(ModuleRef, u16)>,
     memory_instance_lookup: Vec<(MemoryRef, u16)>,
     function_lookup: Vec<(FuncRef, u16)>,
     last_jump_eid: Vec<u64>,
     function_index_allocator: u32,
-    pub function_index_translation: HashMap<u32, u16>,
+    pub(crate) function_index_translation: HashMap<u32, FuncDesc>,
 }
 
 impl Tracer {
@@ -36,7 +45,7 @@ impl Tracer {
             imtable: IMTable::default(),
             etable: ETable::default(),
             last_jump_eid: vec![0],
-            jtable: None,
+            jtable: JTable::default(),
             module_instance_lookup: vec![],
             memory_instance_lookup: vec![],
             function_lookup: vec![],
@@ -108,10 +117,25 @@ impl Tracer {
                         self.allocate_func_index()
                     };
 
+                    let ftype = match *func.as_internal() {
+                        crate::func::FuncInstanceInternal::Internal { .. } => {
+                            FunctionType::WasmFunction
+                        }
+                        crate::func::FuncInstanceInternal::Host {
+                            host_func_index, ..
+                        } => FunctionType::HostFunction(host_func_index),
+                    };
+
                     self.function_lookup
                         .push((func.clone(), func_index_in_itable as u16));
-                    self.function_index_translation
-                        .insert(func_index, func_index_in_itable as u16);
+                    self.function_index_translation.insert(
+                        func_index,
+                        FuncDesc {
+                            index_within_jtable: func_index_in_itable as u16,
+                            ftype,
+                            signature: func.signature().clone(),
+                        },
+                    );
                     func_index = func_index + 1;
                 } else {
                     break;
@@ -124,26 +148,23 @@ impl Tracer {
 
             loop {
                 if let Some(func) = module_instance.func_by_index(func_index) {
-                    let func_index_in_itable =
-                        self.function_index_translation.get(&func_index).unwrap();
-                    let body = func.body().expect("Host function is not allowed");
-                    let code = &body.code;
-                    let mut iter = code.iterate_from(0);
-                    loop {
-                        let pc = iter.position();
-                        if let Some(instruction) = iter.next() {
-                            let _ = self.itable.push(
-                                self.next_module_id() as u32,
-                                *func_index_in_itable,
-                                pc,
-                                instruction.into(&self.function_index_translation),
-                            );
+                    let funcdesc = self.function_index_translation.get(&func_index).unwrap();
 
-                            if self.jtable.is_none() {
-                                self.jtable = Some(JTable::new())
+                    if let Some(body) = func.body() {
+                        let code = &body.code;
+                        let mut iter = code.iterate_from(0);
+                        loop {
+                            let pc = iter.position();
+                            if let Some(instruction) = iter.next() {
+                                let _ = self.itable.push(
+                                    self.next_module_id() as u32,
+                                    funcdesc.index_within_jtable,
+                                    pc,
+                                    instruction.into(&self.function_index_translation),
+                                );
+                            } else {
+                                break;
                             }
-                        } else {
-                            break;
                         }
                     }
 

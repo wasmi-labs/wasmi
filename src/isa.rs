@@ -76,6 +76,8 @@ use specs::{
     mtable::VarType,
 };
 
+use crate::tracer::FuncDesc;
+
 /// Should we keep a value before "discarding" a stack frame?
 ///
 /// Note that this is a `enum` since Wasm doesn't support multiple return
@@ -349,7 +351,7 @@ pub enum Instruction<'a> {
 }
 
 impl<'a> Instruction<'a> {
-    pub fn into(self, function_mapping: &HashMap<u32, u16>) -> Opcode {
+    pub(crate) fn into(self, function_mapping: &HashMap<u32, FuncDesc>) -> Opcode {
         match self {
             Instruction::GetLocal(offset, typ) => Opcode::LocalGet {
                 offset: offset as u64,
@@ -382,7 +384,10 @@ impl<'a> Instruction<'a> {
                 },
             },
             Instruction::Call(func_index) => Opcode::Call {
-                index: *function_mapping.get(&func_index).unwrap(),
+                index: function_mapping
+                    .get(&func_index)
+                    .unwrap()
+                    .index_within_jtable,
             },
             Instruction::CallIndirect(_) => todo!(),
             Instruction::Drop => Opcode::Drop,

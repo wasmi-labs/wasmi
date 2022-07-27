@@ -328,22 +328,19 @@ impl Interpreter {
                         FuncInstanceInternal::Internal { .. } => {
                             let nested_context = FunctionContext::new(nested_func.clone());
 
-                            if let Some(trace) = self.tracer.as_mut() {
-                                let eid = trace.borrow_mut().eid();
-                                let last_jump_eid = trace.borrow_mut().last_jump_eid();
+                            if let Some(tracer) = self.tracer.clone() {
+                                let mut tracer = (*tracer).borrow_mut();
+                                let eid = tracer.eid();
+                                let last_jump_eid = tracer.last_jump_eid();
 
-                                let inst = trace.borrow_mut().lookup_ientry(
+                                let inst = tracer.lookup_ientry(
                                     &function_context.function,
                                     function_context.position,
                                 );
 
-                                let mut trace = trace.borrow_mut();
-                                let jtable = trace.jtable.as_mut();
-                                if let Some(jtable) = jtable {
-                                    jtable.push(eid, last_jump_eid, &inst);
-                                }
+                                tracer.jtable.push(eid, last_jump_eid, &inst);
 
-                                trace.push_frame();
+                                tracer.push_frame();
                             }
 
                             self.call_stack.push(function_context);
@@ -386,6 +383,15 @@ impl Interpreter {
                                     .push(return_val.into())
                                     .map_err(Trap::from)?;
                             }
+
+                            if let Some(return_val) = return_val {
+                                if let Some(tracer) = self.tracer.clone() {
+                                    let mut tracer = (*tracer).borrow_mut();
+                                    tracer.etable.resolve_host_call(<_>::from_value_internal(
+                                        return_val.into(),
+                                    ))
+                                }
+                            }
                         }
                     }
                 }
@@ -395,9 +401,12 @@ impl Interpreter {
 
     fn run_instruction_pre(
         &mut self,
+        tracer: Rc<RefCell<Tracer>>,
         function_context: &FunctionContext,
         instructions: &isa::Instruction,
     ) -> Option<RunInstructionTracePre> {
+        let tracer = tracer.borrow();
+
         match *instructions {
             isa::Instruction::GetLocal(depth, vtype) => {
                 let value = self.value_stack.pick(depth as usize);
@@ -414,24 +423,33 @@ impl Interpreter {
             }),
             isa::Instruction::Return(..) => None,
 
-            isa::Instruction::Call(_) => None,
+            isa::Instruction::Call(func_idx) => {
+                let func = function_context
+                    .module()
+                    .func_by_index(func_idx)
+                    .expect("Due to validation func should exists");
+
+                let mut args = vec![];
+                let len = func.signature().params().len();
+
+                for i in 1..=len {
+                    args.push(*self.value_stack.pick(i));
+                }
+
+                Some(RunInstructionTracePre::Call { args })
+            }
             isa::Instruction::Drop => Some(RunInstructionTracePre::Drop),
 
             isa::Instruction::I32Load(offset) => {
                 let raw_address = <_>::from_value_internal(*self.value_stack.top());
                 let address =
                     effective_address(offset, raw_address).map_or(None, |addr| Some(addr));
-                let mmid = self
-                    .tracer
-                    .clone()
-                    .unwrap()
-                    .borrow_mut()
-                    .lookup_memory_instance(
-                        &function_context
-                            .memory
-                            .clone()
-                            .expect("Due to validation memory should exists"),
-                    );
+                let mmid = tracer.lookup_memory_instance(
+                    &function_context
+                        .memory
+                        .clone()
+                        .expect("Due to validation memory should exists"),
+                );
 
                 Some(RunInstructionTracePre::Load {
                     offset,
@@ -446,12 +464,7 @@ impl Interpreter {
                 let raw_address = <_>::from_value_internal(*self.value_stack.pick(2));
                 let address =
                     effective_address(offset, raw_address).map_or(None, |addr| Some(addr));
-                let mmid = self
-                    .tracer
-                    .clone()
-                    .unwrap()
-                    .borrow_mut()
-                    .lookup_memory_instance(&function_context.memory.clone().unwrap());
+                let mmid = tracer.lookup_memory_instance(&function_context.memory.clone().unwrap());
 
                 Some(RunInstructionTracePre::Store {
                     offset,
@@ -579,13 +592,21 @@ impl Interpreter {
                 }
             }
             isa::Instruction::Call(index) => {
-                if let Some(tracer) = self.tracer.as_deref() {
+                if let RunInstructionTracePre::Call { args } = pre_status.unwrap() {
+                    let tracer = self.tracer.clone().unwrap();
+                    let tracer = tracer.borrow();
+
+                    let desc = tracer.function_index_translation.get(&index).unwrap();
+
                     StepInfo::Call {
-                        index: *tracer
-                            .borrow()
-                            .function_index_translation
-                            .get(&index)
-                            .unwrap(),
+                        index: desc.index_within_jtable,
+                        ftype: desc.ftype.clone(),
+                        signature: desc.signature.clone().into(),
+                        args: args
+                            .iter()
+                            .map(|arg| <_>::from_value_internal(*arg))
+                            .collect(),
+                        ret: None,
                     }
                 } else {
                     unreachable!()
@@ -722,44 +743,41 @@ impl Interpreter {
             );
 
             let pre_status = if self.tracer.is_some() {
-                self.run_instruction_pre(function_context, &instruction)
+                self.run_instruction_pre(
+                    self.tracer.clone().unwrap(),
+                    function_context,
+                    &instruction,
+                )
             } else {
                 None
             };
 
             macro_rules! trace_post {
                 () => {
-                    if self.tracer.is_some() {
+                    if let Some(tracer) = self.tracer.clone() {
                         let post_status =
                             self.run_instruction_post(pre_status, function_context, &instruction);
-                        if let Some(tracer) = self.tracer.as_mut() {
-                            let instruction = {
-                                let tracer = tracer.borrow_mut();
-                                instruction.into(&tracer.function_index_translation)
-                            };
 
-                            let mut tracer = tracer.borrow_mut();
-                            let module_instance =
-                                tracer.lookup_module_instance(&function_context.module);
+                        let mut tracer = (*tracer).borrow_mut();
 
-                            let function = tracer.lookup_function(&function_context.function);
+                        let instruction = { instruction.into(&tracer.function_index_translation) };
 
-                            let last_jump_eid = tracer.last_jump_eid();
+                        let module_instance =
+                            tracer.lookup_module_instance(&function_context.module);
 
-                            Some(tracer.etable.push(
-                                module_instance,
-                                function,
-                                sp as u64,
-                                pc,
-                                last_jump_eid,
-                                instruction,
-                                post_status,
-                            ))
-                        } else {
-                            None
-                        }
-                    } else {
-                        None
+                        let function = tracer.lookup_function(&function_context.function);
+
+                        let last_jump_eid = tracer.last_jump_eid();
+
+                        tracer.etable.push(
+                            module_instance,
+                            function,
+                            sp as u64,
+                            pc,
+                            last_jump_eid,
+                            instruction,
+                            post_status,
+                        );
                     }
                 };
             }
@@ -782,8 +800,8 @@ impl Interpreter {
                 }
                 InstructionOutcome::Return(drop_keep) => {
                     trace_post!();
-                    if let Some(trace) = self.tracer.as_mut() {
-                        trace.borrow_mut().pop_frame();
+                    if let Some(tracer) = self.tracer.clone() {
+                        (*tracer).borrow_mut().pop_frame();
                     }
 
                     self.value_stack.drop_keep(drop_keep);

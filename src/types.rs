@@ -71,6 +71,19 @@ impl Signature {
     }
 }
 
+impl Into<specs::types::Signature> for Signature {
+    fn into(self) -> specs::types::Signature {
+        specs::types::Signature {
+            params: self
+                .params()
+                .iter()
+                .map(|param| param.into_elements().into())
+                .collect(),
+            return_type: self.return_type().map(|ret| ret.into_elements().into()),
+        }
+    }
+}
+
 /// Description of a global variable.
 ///
 /// Primarly used to describe imports of global variables.

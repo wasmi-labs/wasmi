@@ -9,14 +9,10 @@ pub struct JEntry {
     inst: IEntry,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct JTable(pub Vec<JEntry>);
 
 impl JTable {
-    pub fn new() -> Self {
-        JTable(vec![])
-    }
-
     pub fn push(&mut self, eid: u64, last_jump_eid: u64, inst: &IEntry) {
         self.0.push(JEntry {
             eid,

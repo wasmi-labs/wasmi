@@ -267,9 +267,13 @@ fn call_host_func() {
 
     let mut env = TestHost::new();
 
-    let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
-        .expect("Failed to instantiate module")
-        .assert_no_start();
+    let instance = ModuleInstance::new(
+        &module,
+        &ImportsBuilder::new().with_resolver("env", &env),
+        None,
+    )
+    .expect("Failed to instantiate module")
+    .assert_no_start();
 
     assert_eq!(
         instance
@@ -298,9 +302,13 @@ fn resume_call_host_func() {
 
     let mut env = TestHost::new();
 
-    let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
-        .expect("Failed to instantiate module")
-        .assert_no_start();
+    let instance = ModuleInstance::new(
+        &module,
+        &ImportsBuilder::new().with_resolver("env", &env),
+        None,
+    )
+    .expect("Failed to instantiate module")
+    .assert_no_start();
 
     let export = instance.export_by_name("test").unwrap();
     let func_instance = export.as_func().unwrap();
@@ -342,10 +350,13 @@ fn resume_call_host_func_type_mismatch() {
 
         let mut env = TestHost::new();
 
-        let instance =
-            ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
-                .expect("Failed to instantiate module")
-                .assert_no_start();
+        let instance = ModuleInstance::new(
+            &module,
+            &ImportsBuilder::new().with_resolver("env", &env),
+            None,
+        )
+        .expect("Failed to instantiate module")
+        .assert_no_start();
 
         let export = instance.export_by_name("test").unwrap();
         let func_instance = export.as_func().unwrap();
@@ -395,9 +406,13 @@ fn host_err() {
 
     let mut env = TestHost::new();
 
-    let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
-        .expect("Failed to instantiate module")
-        .assert_no_start();
+    let instance = ModuleInstance::new(
+        &module,
+        &ImportsBuilder::new().with_resolver("env", &env),
+        None,
+    )
+    .expect("Failed to instantiate module")
+    .assert_no_start();
 
     let error = instance
         .invoke_export("test", &[], &mut env)
@@ -433,9 +448,13 @@ fn modify_mem_with_host_funcs() {
 
     let mut env = TestHost::new();
 
-    let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
-        .expect("Failed to instantiate module")
-        .assert_no_start();
+    let instance = ModuleInstance::new(
+        &module,
+        &ImportsBuilder::new().with_resolver("env", &env),
+        None,
+    )
+    .expect("Failed to instantiate module")
+    .assert_no_start();
 
     instance
         .invoke_export("modify_mem", &[], &mut env)
@@ -477,9 +496,13 @@ fn pull_internal_mem_from_module() {
         trap_sub_result: None,
     };
 
-    let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
-        .expect("Failed to instantiate module")
-        .assert_no_start();
+    let instance = ModuleInstance::new(
+        &module,
+        &ImportsBuilder::new().with_resolver("env", &env),
+        None,
+    )
+    .expect("Failed to instantiate module")
+    .assert_no_start();
 
     // Get memory instance exported by name 'mem' from the module instance.
     let internal_mem = instance
@@ -528,9 +551,13 @@ fn recursion() {
 
     let mut env = TestHost::new();
 
-    let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
-        .expect("Failed to instantiate module")
-        .assert_no_start();
+    let instance = ModuleInstance::new(
+        &module,
+        &ImportsBuilder::new().with_resolver("env", &env),
+        None,
+    )
+    .expect("Failed to instantiate module")
+    .assert_no_start();
 
     // Put instance into the env, because $recurse function expects
     // attached module instance.
@@ -638,6 +665,7 @@ fn defer_providing_externals() {
     let instance = ModuleInstance::new(
         &module,
         &ImportsBuilder::new().with_resolver("host", &host_import_resolver),
+        None,
     )
     .expect("Failed to instantiate module")
     .assert_no_start();
@@ -752,6 +780,7 @@ fn two_envs_one_externals() {
     let trusted_instance = ModuleInstance::new(
         &trusted_module,
         &ImportsBuilder::new().with_resolver("env", &PrivilegedResolver),
+        None,
     )
     .expect("Failed to instantiate module")
     .assert_no_start();
@@ -761,6 +790,7 @@ fn two_envs_one_externals() {
         &ImportsBuilder::new()
             .with_resolver("env", &OrdinaryResolver)
             .with_resolver("trusted", &trusted_instance),
+        None,
     )
     .expect("Failed to instantiate module")
     .assert_no_start();
@@ -868,6 +898,7 @@ fn dynamically_add_host_func() {
     let instance = ModuleInstance::new(
         &module,
         &ImportsBuilder::new().with_resolver("env", &host_externals),
+        None,
     )
     .expect("Failed to instantiate module")
     .assert_no_start();

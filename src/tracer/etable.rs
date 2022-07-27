@@ -14,6 +14,10 @@ pub enum RunInstructionTracePre {
         value: i32,
     },
 
+    Call {
+        args: Vec<ValueInternal>,
+    },
+
     GetLocal {
         depth: u32,
         value: ValueInternal,
@@ -136,5 +140,28 @@ impl ETable {
         self.entries.push(eentry.clone());
 
         eentry
+    }
+
+    pub fn resolve_host_call(&mut self, ret: u64) {
+        let entry = self.entries.last_mut().unwrap();
+
+        if let StepInfo::Call {
+            index,
+            ftype,
+            signature,
+            args,
+            ret: _,
+        } = &entry.step
+        {
+            entry.step = StepInfo::Call {
+                index: *index,
+                ftype: ftype.clone(),
+                signature: signature.clone(),
+                args: args.clone(),
+                ret: Some(ret),
+            };
+        } else {
+            unreachable!()
+        }
     }
 }
