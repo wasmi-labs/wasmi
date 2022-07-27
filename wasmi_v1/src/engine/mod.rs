@@ -36,7 +36,7 @@ use crate::{
 use alloc::sync::Arc;
 use core::{
     cmp,
-    sync::atomic::{AtomicUsize, Ordering},
+    sync::atomic::{AtomicU32, Ordering},
 };
 pub use func_types::DedupFuncType;
 use spin::mutex::Mutex;
@@ -62,14 +62,17 @@ pub enum CallOutcome {
 ///
 /// Used to protect against invalid entity indices.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct EngineIdx(usize);
+pub struct EngineIdx(u32);
 
 impl Index for EngineIdx {
     fn into_usize(self) -> usize {
-        self.0
+        self.0 as _
     }
 
     fn from_usize(value: usize) -> Self {
+        let value = value.try_into().unwrap_or_else(|error| {
+            panic!("index {value} is out of bounds as engine index: {error}")
+        });
         Self(value)
     }
 }
@@ -78,7 +81,7 @@ impl EngineIdx {
     /// Returns a new unique [`EngineIdx`].
     fn new() -> Self {
         /// A static store index counter.
-        static CURRENT_STORE_IDX: AtomicUsize = AtomicUsize::new(0);
+        static CURRENT_STORE_IDX: AtomicU32 = AtomicU32::new(0);
         let next_idx = CURRENT_STORE_IDX.fetch_add(1, Ordering::AcqRel);
         Self(next_idx)
     }
