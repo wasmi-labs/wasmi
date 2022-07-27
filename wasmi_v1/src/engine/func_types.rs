@@ -7,14 +7,17 @@ use crate::{
 
 /// A raw index to a function signature entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct DedupFuncTypeIdx(usize);
+pub struct DedupFuncTypeIdx(u32);
 
 impl Index for DedupFuncTypeIdx {
     fn into_usize(self) -> usize {
-        self.0
+        self.0 as _
     }
 
     fn from_usize(value: usize) -> Self {
+        let value = value.try_into().unwrap_or_else(|error| {
+            panic!("index {value} is out of bounds as dedup func type index: {error}")
+        });
         Self(value)
     }
 }
