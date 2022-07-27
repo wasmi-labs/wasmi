@@ -17,10 +17,10 @@ pub mod itable;
 pub mod jtable;
 
 #[derive(Debug)]
-pub(crate) struct FuncDesc {
-    pub(crate) index_within_jtable: u16,
-    pub(crate) ftype: FunctionType,
-    pub(crate) signature: Signature,
+pub struct FuncDesc {
+    pub index_within_jtable: u16,
+    pub ftype: FunctionType,
+    pub signature: Signature,
 }
 
 #[derive(Debug)]

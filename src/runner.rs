@@ -29,6 +29,7 @@ use alloc::{boxed::Box, vec::Vec};
 use core::{cell::RefCell, fmt, ops, u32, usize};
 use parity_wasm::elements::Local;
 use specs::{
+    host_function::TIME_FUNC_INDEX,
     itable::{BinOp, BitOp, RelOp},
     step::StepInfo,
     types::Value,
@@ -592,21 +593,22 @@ impl Interpreter {
                 }
             }
             isa::Instruction::Call(index) => {
-                if let RunInstructionTracePre::Call { args } = pre_status.unwrap() {
+                if let RunInstructionTracePre::Call { args: _ } = pre_status.unwrap() {
                     let tracer = self.tracer.clone().unwrap();
                     let tracer = tracer.borrow();
 
                     let desc = tracer.function_index_translation.get(&index).unwrap();
 
-                    StepInfo::Call {
-                        index: desc.index_within_jtable,
-                        ftype: desc.ftype.clone(),
-                        signature: desc.signature.clone().into(),
-                        args: args
-                            .iter()
-                            .map(|arg| <_>::from_value_internal(*arg))
-                            .collect(),
-                        ret: None,
+                    match desc.ftype {
+                        specs::types::FunctionType::WasmFunction => StepInfo::Call {
+                            index: desc.index_within_jtable,
+                        },
+                        specs::types::FunctionType::HostFunction(host_function_idx) => {
+                            match host_function_idx {
+                                TIME_FUNC_INDEX => StepInfo::CallHostTime { ret_val: None },
+                                _ => unreachable!(),
+                            }
+                        }
                     }
                 } else {
                     unreachable!()

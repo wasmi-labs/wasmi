@@ -72,6 +72,7 @@ use std::collections::HashMap;
 use alloc::vec::Vec;
 use parity_wasm::elements::ValueType;
 use specs::{
+    host_function::TIME_FUNC_INDEX,
     itable::{BinOp, BitOp, Opcode, RelOp},
     mtable::VarType,
 };
@@ -383,12 +384,24 @@ impl<'a> Instruction<'a> {
                     vec![]
                 },
             },
-            Instruction::Call(func_index) => Opcode::Call {
-                index: function_mapping
-                    .get(&func_index)
-                    .unwrap()
-                    .index_within_jtable,
-            },
+            Instruction::Call(func_index) => {
+                let func_desc = function_mapping.get(&func_index).unwrap();
+
+                match func_desc.ftype {
+                    specs::types::FunctionType::WasmFunction => Opcode::Call {
+                        index: function_mapping
+                            .get(&func_index)
+                            .unwrap()
+                            .index_within_jtable,
+                    },
+                    specs::types::FunctionType::HostFunction(host_function_idx) => {
+                        match host_function_idx {
+                            TIME_FUNC_INDEX => Opcode::CallHostTime,
+                            _ => unreachable!(),
+                        }
+                    }
+                }
+            }
             Instruction::CallIndirect(_) => todo!(),
             Instruction::Drop => Opcode::Drop,
             Instruction::Select => todo!(),

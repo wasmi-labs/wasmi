@@ -71,9 +71,9 @@ impl Signature {
     }
 }
 
-impl Into<specs::types::Signature> for Signature {
-    fn into(self) -> specs::types::Signature {
-        specs::types::Signature {
+impl Into<specs::host_function::Signature> for Signature {
+    fn into(self) -> specs::host_function::Signature {
+        specs::host_function::Signature {
             params: self
                 .params()
                 .iter()
