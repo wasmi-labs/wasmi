@@ -70,6 +70,7 @@
 //! ```
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![warn(clippy::cast_lossless)]
 
 #[cfg(not(feature = "std"))]
 #[macro_use]
