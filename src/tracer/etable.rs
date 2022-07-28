@@ -142,13 +142,15 @@ impl ETable {
         eentry
     }
 
-    pub fn resolve_host_call(&mut self, ret: u64) {
+    pub fn resolve_host_call(&mut self, ret: i64) {
         let entry = self.entries.last_mut().unwrap();
 
         match entry.step {
             StepInfo::CallHostTime { ret_val } => {
                 assert!(ret_val.is_none());
-                entry.step = StepInfo::CallHostTime { ret_val: Some(ret) }
+                entry.step = StepInfo::CallHostTime {
+                    ret_val: Some(ret as u64),
+                }
             }
             _ => unreachable!(),
         }
