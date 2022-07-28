@@ -87,7 +87,7 @@ impl Into<EventTableEntry> for EEntry {
 #[derive(Debug)]
 pub struct ETable {
     eid: u64,
-    entries: Vec<EEntry>,
+    pub(crate) entries: Vec<EEntry>,
 }
 
 impl Default for ETable {
@@ -140,19 +140,5 @@ impl ETable {
         self.entries.push(eentry.clone());
 
         eentry
-    }
-
-    pub fn resolve_host_call(&mut self, ret: i64) {
-        let entry = self.entries.last_mut().unwrap();
-
-        match entry.step {
-            StepInfo::CallHostTime { ret_val } => {
-                assert!(ret_val.is_none());
-                entry.step = StepInfo::CallHostTime {
-                    ret_val: Some(ret as u64),
-                }
-            }
-            _ => unreachable!(),
-        }
     }
 }

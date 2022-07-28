@@ -388,9 +388,20 @@ impl Interpreter {
                             if let Some(return_val) = return_val {
                                 if let Some(tracer) = self.tracer.clone() {
                                     let mut tracer = (*tracer).borrow_mut();
-                                    tracer.etable.resolve_host_call(<_>::from_value_internal(
-                                        return_val.into(),
-                                    ))
+
+                                    let entry = tracer.etable.entries.last_mut().unwrap();
+
+                                    match entry.step {
+                                        StepInfo::CallHostTime { ret_val } => {
+                                            assert!(ret_val.is_none());
+                                            entry.step = StepInfo::CallHostTime {
+                                                ret_val: Some(<_>::from_value_internal(
+                                                    return_val.into(),
+                                                )),
+                                            }
+                                        }
+                                        _ => unreachable!(),
+                                    }
                                 }
                             }
                         }
