@@ -478,6 +478,17 @@ impl Interpreter {
                     effective_address(offset, raw_address).map_or(None, |addr| Some(addr));
                 let mmid = tracer.lookup_memory_instance(&function_context.memory.clone().unwrap());
 
+                let pre_block_value = address.map(|address| {
+                    let mut buf = [0u8; 8];
+                    function_context
+                        .memory
+                        .clone()
+                        .unwrap()
+                        .get_into(address / 8 * 8, &mut buf)
+                        .unwrap();
+                    u64::from_le_bytes(buf)
+                });
+
                 Some(RunInstructionTracePre::Store {
                     offset,
                     raw_address,
@@ -485,6 +496,7 @@ impl Interpreter {
                     value,
                     vtype: parity_wasm::elements::ValueType::I32,
                     mmid: mmid as u64,
+                    pre_block_value,
                 })
             }
 
@@ -635,14 +647,16 @@ impl Interpreter {
                     mmid,
                 } = pre_status.unwrap()
                 {
-                    let mut buf = [0u8; 8];
-                    context
-                        .memory
-                        .clone()
-                        .unwrap()
-                        .get_into(offset, &mut buf)
-                        .unwrap();
-                    let block_value = u64::from_le_bytes(buf);
+                    let block_value = {
+                        let mut buf = [0u8; 8];
+                        context
+                            .memory
+                            .clone()
+                            .unwrap()
+                            .get_into(effective_address.unwrap() / 8 * 8, &mut buf)
+                            .unwrap();
+                        u64::from_le_bytes(buf)
+                    };
 
                     StepInfo::Load {
                         vtype: vtype.into(),
@@ -665,8 +679,20 @@ impl Interpreter {
                     value,
                     vtype,
                     mmid,
+                    pre_block_value,
                 } = pre_status.unwrap()
                 {
+                    let updated_block_value = {
+                        let mut buf = [0u8; 8];
+                        context
+                            .memory
+                            .clone()
+                            .unwrap()
+                            .get_into(effective_address.unwrap() / 8 * 8, &mut buf)
+                            .unwrap();
+                        u64::from_le_bytes(buf)
+                    };
+
                     StepInfo::Store {
                         vtype: vtype.into(),
                         offset,
@@ -674,6 +700,8 @@ impl Interpreter {
                         effective_address: effective_address.unwrap(),
                         value: value as u32 as u64,
                         mmid,
+                        pre_block_value: pre_block_value.unwrap(),
+                        updated_block_value,
                     }
                 } else {
                     unreachable!()
