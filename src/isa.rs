@@ -73,7 +73,7 @@ use alloc::vec::Vec;
 use parity_wasm::elements::ValueType;
 use specs::{
     host_function::TIME_FUNC_INDEX,
-    itable::{BinOp, BitOp, Opcode, RelOp},
+    itable::{BinOp, BitOp, Opcode, RelOp, ShiftOp},
     mtable::VarType,
 };
 
@@ -519,9 +519,15 @@ impl<'a> Instruction<'a> {
                 vtype: VarType::I32,
             },
             Instruction::I32Xor => todo!(),
-            Instruction::I32Shl => todo!(),
+            Instruction::I32Shl => Opcode::BinShift {
+                class: ShiftOp::Shl,
+                vtype: VarType::I32,
+            },
             Instruction::I32ShrS => todo!(),
-            Instruction::I32ShrU => todo!(),
+            Instruction::I32ShrU => Opcode::BinShift {
+                class: ShiftOp::UnsignedShr,
+                vtype: VarType::I32,
+            },
             Instruction::I32Rotl => todo!(),
             Instruction::I32Rotr => todo!(),
             Instruction::I64Clz => todo!(),

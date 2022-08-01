@@ -1,9 +1,5 @@
 use parity_wasm::elements::ValueType;
-use specs::{
-    etable::EventTableEntry,
-    itable::{BinOp, BitOp, Opcode},
-    step::StepInfo,
-};
+use specs::{etable::EventTableEntry, itable::Opcode, step::StepInfo};
 
 use crate::{runner::ValueInternal, DEFAULT_VALUE_STACK_LIMIT};
 
@@ -42,14 +38,12 @@ pub enum RunInstructionTracePre {
     },
 
     I32BinOp {
-        class: BinOp,
         left: i32,
         right: i32,
     },
-    I32BinBitOp {
-        class: BitOp,
-        left: i32,
-        right: i32,
+    I32BinShiftOp {
+        left: u64,
+        right: u64,
     },
 
     I32Comp {

@@ -30,7 +30,7 @@ use core::{cell::RefCell, fmt, ops, u32, usize};
 use parity_wasm::elements::Local;
 use specs::{
     host_function::TIME_FUNC_INDEX,
-    itable::{BinOp, BitOp, RelOp},
+    itable::{BinOp, BitOp, RelOp, ShiftOp},
     step::StepInfo,
     types::Value,
 };
@@ -512,13 +512,10 @@ impl Interpreter {
                 right: <_>::from_value_internal(*self.value_stack.pick(1)),
             }),
 
-            isa::Instruction::I32Add => Some(RunInstructionTracePre::I32BinOp {
-                class: BinOp::Add,
-                left: <_>::from_value_internal(*self.value_stack.pick(2)),
-                right: <_>::from_value_internal(*self.value_stack.pick(1)),
-            }),
-            isa::Instruction::I32Or => Some(RunInstructionTracePre::I32BinBitOp {
-                class: BitOp::Or,
+            isa::Instruction::I32Add
+            | isa::Instruction::I32Shl
+            | isa::Instruction::I32ShrU
+            | isa::Instruction::I32Or => Some(RunInstructionTracePre::I32BinOp {
                 left: <_>::from_value_internal(*self.value_stack.pick(2)),
                 right: <_>::from_value_internal(*self.value_stack.pick(1)),
             }),
@@ -785,10 +782,9 @@ impl Interpreter {
             }
 
             isa::Instruction::I32Add => {
-                if let RunInstructionTracePre::I32BinOp { class, left, right } = pre_status.unwrap()
-                {
+                if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
                     StepInfo::I32BinOp {
-                        class,
+                        class: BinOp::Add,
                         left,
                         right,
                         value: <_>::from_value_internal(*self.value_stack.top()),
@@ -798,11 +794,33 @@ impl Interpreter {
                 }
             }
             isa::Instruction::I32Or => {
-                if let RunInstructionTracePre::I32BinBitOp { class, left, right } =
-                    pre_status.unwrap()
-                {
+                if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
                     StepInfo::I32BinBitOp {
-                        class,
+                        class: BitOp::Or,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I32Shl => {
+                if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32BinShiftOp {
+                        class: ShiftOp::Shl,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I32ShrU => {
+                if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32BinShiftOp {
+                        class: ShiftOp::UnsignedShr,
                         left,
                         right,
                         value: <_>::from_value_internal(*self.value_stack.top()),
