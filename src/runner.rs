@@ -502,11 +502,12 @@ impl Interpreter {
 
             isa::Instruction::I32Const(_) => None,
 
-            isa::Instruction::I32Eq => Some(RunInstructionTracePre::I32Comp {
-                left: <_>::from_value_internal(*self.value_stack.pick(2)),
-                right: <_>::from_value_internal(*self.value_stack.pick(1)),
-            }),
-            isa::Instruction::I32Ne => Some(RunInstructionTracePre::I32Comp {
+            isa::Instruction::I32Eq
+            | isa::Instruction::I32Ne
+            | isa::Instruction::I32GtS
+            | isa::Instruction::I32GtU
+            | isa::Instruction::I32GeS
+            | isa::Instruction::I32GeU => Some(RunInstructionTracePre::I32Comp {
                 left: <_>::from_value_internal(*self.value_stack.pick(2)),
                 right: <_>::from_value_internal(*self.value_stack.pick(1)),
             }),
@@ -726,6 +727,54 @@ impl Interpreter {
                 if let RunInstructionTracePre::I32Comp { left, right } = pre_status.unwrap() {
                     StepInfo::I32Comp {
                         class: RelOp::Ne,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I32GtS => {
+                if let RunInstructionTracePre::I32Comp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32Comp {
+                        class: RelOp::SignedGt,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I32GtU => {
+                if let RunInstructionTracePre::I32Comp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32Comp {
+                        class: RelOp::UnsignedGt,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I32GeS => {
+                if let RunInstructionTracePre::I32Comp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32Comp {
+                        class: RelOp::SignedGe,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I32GeU => {
+                if let RunInstructionTracePre::I32Comp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32Comp {
+                        class: RelOp::UnsignedGe,
                         left,
                         right,
                         value: <_>::from_value_internal(*self.value_stack.top()),

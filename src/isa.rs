@@ -459,12 +459,24 @@ impl<'a> Instruction<'a> {
             },
             Instruction::I32LtS => todo!(),
             Instruction::I32LtU => todo!(),
-            Instruction::I32GtS => todo!(),
-            Instruction::I32GtU => todo!(),
+            Instruction::I32GtS => Opcode::Rel {
+                class: RelOp::SignedGt,
+                vtype: VarType::I32,
+            },
+            Instruction::I32GtU => Opcode::Rel {
+                class: RelOp::UnsignedGt,
+                vtype: VarType::I32,
+            },
             Instruction::I32LeS => todo!(),
             Instruction::I32LeU => todo!(),
-            Instruction::I32GeS => todo!(),
-            Instruction::I32GeU => todo!(),
+            Instruction::I32GeS => Opcode::Rel {
+                class: RelOp::SignedGe,
+                vtype: VarType::I32,
+            },
+            Instruction::I32GeU => Opcode::Rel {
+                class: RelOp::UnsignedGe,
+                vtype: VarType::I32,
+            },
             Instruction::I64Eqz => todo!(),
             Instruction::I64Eq => todo!(),
             Instruction::I64Ne => todo!(),
