@@ -420,9 +420,10 @@ impl Interpreter {
         let tracer = tracer.borrow();
 
         match *instructions {
-            isa::Instruction::GetLocal(depth, vtype) => {
-                let value = self.value_stack.pick(depth as usize);
-                Some(RunInstructionTracePre::GetLocal {
+            isa::Instruction::GetLocal(..) => None,
+            isa::Instruction::SetLocal(depth, vtype) => {
+                let value = self.value_stack.top();
+                Some(RunInstructionTracePre::SetLocal {
                     depth,
                     value: value.clone(),
                     vtype,
@@ -430,6 +431,7 @@ impl Interpreter {
             }
             isa::Instruction::TeeLocal(..) => None,
 
+            isa::Instruction::Br(_) => None,
             isa::Instruction::BrIfNez(_) => Some(RunInstructionTracePre::BrIfNez {
                 value: <_>::from_value_internal(*self.value_stack.top()),
             }),
@@ -534,14 +536,19 @@ impl Interpreter {
         instructions: &isa::Instruction,
     ) -> StepInfo {
         match *instructions {
-            isa::Instruction::GetLocal(..) => {
-                if let RunInstructionTracePre::GetLocal {
+            isa::Instruction::GetLocal(depth, vtype) => StepInfo::GetLocal {
+                depth,
+                value: <_>::from_value_internal(*self.value_stack.top()),
+                vtype: vtype.into(),
+            },
+            isa::Instruction::SetLocal(..) => {
+                if let RunInstructionTracePre::SetLocal {
                     depth,
                     value,
                     vtype,
                 } = pre_status.unwrap()
                 {
-                    StepInfo::GetLocal {
+                    StepInfo::SetLocal {
                         depth,
                         value: <_>::from_value_internal(value),
                         vtype: vtype.into(),
@@ -556,14 +563,21 @@ impl Interpreter {
                 vtype: vtype.into(),
             },
 
+            isa::Instruction::Br(target) => StepInfo::Br {
+                dst_pc: target.dst_pc,
+                drop: target.drop_keep.drop,
+                keep: if let Keep::Single(t) = target.drop_keep.keep {
+                    vec![t.into()]
+                } else {
+                    vec![]
+                },
+                keep_values: match target.drop_keep.keep {
+                    Keep::Single(_) => vec![(*self.value_stack.top()).0],
+                    Keep::None => vec![],
+                },
+            },
             isa::Instruction::BrIfNez(target) => {
                 if let RunInstructionTracePre::BrIfNez { value } = pre_status.unwrap() {
-                    let mut drop_values = vec![];
-
-                    for i in 1..=target.drop_keep.drop {
-                        drop_values.push(*self.value_stack.pick(i as usize));
-                    }
-
                     StepInfo::BrIfNez {
                         condition: value,
                         dst_pc: target.dst_pc,
@@ -573,7 +587,6 @@ impl Interpreter {
                         } else {
                             vec![]
                         },
-                        drop_values: drop_values.iter().map(|v| v.0).collect::<Vec<_>>(),
                         keep_values: match target.drop_keep.keep {
                             Keep::Single(_) => vec![(*self.value_stack.top()).0],
                             Keep::None => vec![],

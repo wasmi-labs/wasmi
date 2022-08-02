@@ -358,12 +358,23 @@ impl<'a> Instruction<'a> {
                 offset: offset as u64,
                 vtype: typ.into(),
             },
-            Instruction::SetLocal(..) => todo!(),
+            Instruction::SetLocal(offset, typ) => Opcode::LocalSet {
+                offset: offset as u64,
+                vtype: typ.into(),
+            },
             Instruction::TeeLocal(offset, typ) => Opcode::LocalTee {
                 offset: offset as u64,
                 vtype: typ.into(),
             },
-            Instruction::Br(_) => todo!(),
+            Instruction::Br(Target { dst_pc, drop_keep }) => Opcode::Br {
+                drop: drop_keep.drop,
+                keep: if let Keep::Single(t) = drop_keep.keep {
+                    vec![t.into()]
+                } else {
+                    vec![]
+                },
+                dst_pc,
+            },
             Instruction::BrIfEqz(_) => todo!(),
             Instruction::BrIfNez(Target { dst_pc, drop_keep }) => Opcode::BrIf {
                 drop: drop_keep.drop,

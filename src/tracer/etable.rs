@@ -14,7 +14,7 @@ pub enum RunInstructionTracePre {
         args: Vec<ValueInternal>,
     },
 
-    GetLocal {
+    SetLocal {
         depth: u32,
         value: ValueInternal,
         vtype: ValueType,
