@@ -88,7 +88,8 @@ impl Tracer {
 impl Tracer {
     pub(crate) fn push_init_memory(&mut self, memref: MemoryRef) {
         let pages = (*memref).limits().initial();
-        for i in 0..(pages * 1024) {
+        // one page contains 64KB*1024/8=8192 u64 entries
+        for i in 0..(pages * 8192) {
             let mut buf = [0u8; 8];
             (*memref).get_into(i * 8, &mut buf).unwrap();
             self.imtable

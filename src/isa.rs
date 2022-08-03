@@ -469,7 +469,10 @@ impl<'a> Instruction<'a> {
                 vtype: VarType::I32,
             },
             Instruction::I32LtS => todo!(),
-            Instruction::I32LtU => todo!(),
+            Instruction::I32LtU => Opcode::Rel {
+                class: RelOp::UnsignedLt,
+                vtype: VarType::I32,
+            },
             Instruction::I32GtS => Opcode::Rel {
                 class: RelOp::SignedGt,
                 vtype: VarType::I32,
@@ -479,7 +482,10 @@ impl<'a> Instruction<'a> {
                 vtype: VarType::I32,
             },
             Instruction::I32LeS => todo!(),
-            Instruction::I32LeU => todo!(),
+            Instruction::I32LeU => Opcode::Rel {
+                class: RelOp::UnsignedLe,
+                vtype: VarType::I32,
+            },
             Instruction::I32GeS => Opcode::Rel {
                 class: RelOp::SignedGe,
                 vtype: VarType::I32,

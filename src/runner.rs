@@ -509,7 +509,9 @@ impl Interpreter {
             | isa::Instruction::I32GtS
             | isa::Instruction::I32GtU
             | isa::Instruction::I32GeS
-            | isa::Instruction::I32GeU => Some(RunInstructionTracePre::I32Comp {
+            | isa::Instruction::I32GeU
+            | isa::Instruction::I32LtU
+            | isa::Instruction::I32LeU => Some(RunInstructionTracePre::I32Comp {
                 left: <_>::from_value_internal(*self.value_stack.pick(2)),
                 right: <_>::from_value_internal(*self.value_stack.pick(1)),
             }),
@@ -785,6 +787,30 @@ impl Interpreter {
                 if let RunInstructionTracePre::I32Comp { left, right } = pre_status.unwrap() {
                     StepInfo::I32Comp {
                         class: RelOp::UnsignedGe,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I32LtU => {
+                if let RunInstructionTracePre::I32Comp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32Comp {
+                        class: RelOp::UnsignedLt,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I32LeU => {
+                if let RunInstructionTracePre::I32Comp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32Comp {
+                        class: RelOp::UnsignedLe,
                         left,
                         right,
                         value: <_>::from_value_internal(*self.value_stack.top()),
