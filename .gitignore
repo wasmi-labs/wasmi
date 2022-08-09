@@ -3,4 +3,3 @@
 **/*.rs.bk
 Cargo.lock
 spec/target
-.idea
