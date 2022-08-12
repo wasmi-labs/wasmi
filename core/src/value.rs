@@ -780,7 +780,7 @@ macro_rules! impl_integer_arithmetic_ops {
             #[inline]
             fn div(self, other: $type) -> Result<$type, TrapCode> {
                 if other == 0 {
-                    return Err(TrapCode::DivisionByZero)
+                    return Err(TrapCode::DivisionByZero);
                 }
                 match self.overflowing_div(other) {
                     (result, false) => Ok(result),
@@ -850,7 +850,7 @@ macro_rules! impl_integer {
             #[inline]
             fn rem(self, other: $type) -> Result<$type, TrapCode> {
                 if other == 0 {
-                    return Err(TrapCode::DivisionByZero)
+                    return Err(TrapCode::DivisionByZero);
                 }
                 Ok(self.wrapping_rem(other))
             }
