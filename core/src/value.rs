@@ -850,7 +850,7 @@ macro_rules! impl_integer {
             #[inline]
             fn rem(self, other: $type) -> Result<$type, TrapCode> {
                 if other == 0 {
-                    return Err(TrapCode::division_by_zero())
+                    return Err(TrapCode::DivisionByZero)
                 }
                 Ok(self.wrapping_rem(other))
             }
