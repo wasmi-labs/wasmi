@@ -10,7 +10,7 @@ use self::bench::{
 use criterion::{criterion_group, criterion_main, Bencher, Criterion};
 use std::{slice, time::Duration};
 use wasmi as v1;
-use wasmi::core::{Trap, Value};
+use wasmi::core::Value;
 
 const WASM_KERNEL: &str =
     "benches/wasm/wasm_kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
@@ -341,15 +341,18 @@ fn bench_execute_recursive_trap_v1(c: &mut Criterion) {
             .and_then(v1::Extern::into_func)
             .unwrap();
         let mut result = [Value::I32(0)];
-
         b.iter(|| {
             let error = bench_call
                 .call(&mut store, &[Value::I32(1000)], &mut result)
                 .unwrap_err();
-            assert!(matches!(
-                error,
-                v1::Error::Trap(Trap::Code(v1::core::TrapCode::Unreachable))
-            ));
+            match error {
+                v1::Error::Trap(trap) => assert_matches::assert_matches!(
+                    trap.code(),
+                    Some(v1::core::TrapCode::Unreachable),
+                    "expected unreachable trap",
+                ),
+                _ => panic!("expected unreachable trap"),
+            }
         })
     });
 }

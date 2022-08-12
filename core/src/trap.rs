@@ -10,27 +10,39 @@ use std::error::Error as StdError;
 /// Under some conditions, wasm execution may produce a `Trap`, which immediately aborts execution.
 /// Traps can't be handled by WebAssembly code, but are reported to the embedder.
 #[derive(Debug)]
-pub enum Trap {
+pub struct Trap {
+    /// The internal data structure of a [`Trap`].
+    inner: Box<TrapInner>,
+}
+
+#[test]
+fn trap_size() {
+    assert_eq!(
+        core::mem::size_of::<Trap>(),
+        core::mem::size_of::<*const ()>()
+    );
+}
+
+/// The internal of a [`Trap`].
+#[derive(Debug)]
+enum TrapInner {
     /// Traps during Wasm execution.
     Code(TrapCode),
     /// Traps and errors during host execution.
     Host(Box<dyn HostError>),
 }
 
-impl Trap {
-    /// Wraps the host error in a [`Trap`].
-    #[inline]
-    pub fn host<U>(host_error: U) -> Self
-    where
-        U: HostError + Sized,
-    {
-        Self::Host(Box::new(host_error))
-    }
-
+impl TrapInner {
     /// Returns `true` if `self` trap originating from host code.
     #[inline]
     pub fn is_host(&self) -> bool {
-        matches!(self, Self::Host(_))
+        matches!(self, TrapInner::Host(_))
+    }
+
+    /// Returns `true` if `self` trap originating from Wasm code.
+    #[inline]
+    pub fn is_code(&self) -> bool {
+        matches!(self, TrapInner::Code(_))
     }
 
     /// Returns the [`TrapCode`] traps originating from Wasm execution.
@@ -43,10 +55,46 @@ impl Trap {
     }
 }
 
-impl From<TrapCode> for Trap {
+impl Trap {
+    /// Create a new [`Trap`] from the [`TrapInner`].
+    fn new(inner: TrapInner) -> Self {
+        Self {
+            inner: Box::new(inner),
+        }
+    }
+
+    /// Wraps the host error in a [`Trap`].
+    #[cold]
+    pub fn host<U>(host_error: U) -> Self
+    where
+        U: HostError + Sized,
+    {
+        Self::new(TrapInner::Host(Box::new(host_error)))
+    }
+
+    /// Returns `true` if `self` trap originating from host code.
     #[inline]
+    pub fn is_host(&self) -> bool {
+        self.inner.is_host()
+    }
+
+    /// Returns `true` if `self` trap originating from Wasm code.
+    #[inline]
+    pub fn is_code(&self) -> bool {
+        self.inner.is_code()
+    }
+
+    /// Returns the [`TrapCode`] traps originating from Wasm execution.
+    #[inline]
+    pub fn code(&self) -> Option<TrapCode> {
+        self.inner.code()
+    }
+}
+
+impl From<TrapCode> for Trap {
+    #[cold]
     fn from(error: TrapCode) -> Self {
-        Self::Code(error)
+        Self::new(TrapInner::Code(error))
     }
 }
 
@@ -56,16 +104,22 @@ where
 {
     #[inline]
     fn from(e: U) -> Self {
-        Trap::host(e)
+        Self::host(e)
+    }
+}
+
+impl Display for TrapInner {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Code(trap_code) => Display::fmt(trap_code, f),
+            Self::Host(host_error) => Display::fmt(host_error, f),
+        }
     }
 }
 
 impl Display for Trap {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Trap::Code(trap_code) => Display::fmt(trap_code, f),
-            Trap::Host(host_error) => Display::fmt(host_error, f),
-        }
+        <TrapInner as Display>::fmt(&self.inner, f)
     }
 }
 
