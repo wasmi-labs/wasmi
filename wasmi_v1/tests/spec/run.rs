@@ -201,7 +201,7 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
 fn assert_trap(test_context: &TestContext, span: Span, error: TestError, message: &str) {
     match error {
         TestError::Wasmi(WasmiError::Trap(trap)) if trap.is_code() => {
-            let code = trap.code().unwrap();
+            let code = trap.as_code().unwrap();
             assert_eq!(
                 code.trap_message(),
                 message,

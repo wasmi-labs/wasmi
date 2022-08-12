@@ -347,7 +347,7 @@ fn bench_execute_recursive_trap_v1(c: &mut Criterion) {
                 .unwrap_err();
             match error {
                 v1::Error::Trap(trap) => assert_matches::assert_matches!(
-                    trap.code(),
+                    trap.as_code(),
                     Some(v1::core::TrapCode::Unreachable),
                     "expected unreachable trap",
                 ),

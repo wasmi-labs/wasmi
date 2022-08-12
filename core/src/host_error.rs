@@ -37,7 +37,8 @@ use downcast_rs::{impl_downcast, DowncastSync};
 ///
 /// // Get a reference to the concrete error
 /// match failable_fn() {
-///     Err(Trap::Host(host_error)) => {
+///     Err(trap) if trap.is_host() => {
+///         let host_error = trap.as_host().unwrap();
 ///         let my_error: &MyError = host_error.downcast_ref::<MyError>().unwrap();
 ///         assert_eq!(my_error.code, 1312);
 ///     }
@@ -48,7 +49,7 @@ use downcast_rs::{impl_downcast, DowncastSync};
 /// match failable_fn() {
 ///     Err(err) => {
 ///         let my_error = match err {
-///             Trap::Host(host_error) => host_error.downcast::<MyError>().unwrap(),
+///             trap if trap.is_host() => trap.into_host().unwrap().downcast::<MyError>().unwrap(),
 ///             unexpected => panic!("expected host error but found: {}", unexpected),
 ///         };
 ///         assert_eq!(my_error.code, 1312);

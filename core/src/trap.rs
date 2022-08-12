@@ -45,9 +45,36 @@ impl TrapInner {
         matches!(self, TrapInner::Code(_))
     }
 
+    /// Returns a shared reference to the [`HostError`] if any.
+    #[inline]
+    pub fn as_host(&self) -> Option<&dyn HostError> {
+        if let Self::Host(host_error) = self {
+            return Some(&**host_error);
+        }
+        None
+    }
+
+    /// Returns an exclusive reference to the [`HostError`] if any.
+    #[inline]
+    pub fn as_host_mut(&mut self) -> Option<&mut dyn HostError> {
+        if let Self::Host(host_error) = self {
+            return Some(&mut **host_error);
+        }
+        None
+    }
+
+    /// Converts into the [`HostError`] if any.
+    #[inline]
+    pub fn into_host(self) -> Option<Box<dyn HostError>> {
+        if let Self::Host(host_error) = self {
+            return Some(host_error);
+        }
+        None
+    }
+
     /// Returns the [`TrapCode`] traps originating from Wasm execution.
     #[inline]
-    pub fn code(&self) -> Option<TrapCode> {
+    pub fn as_code(&self) -> Option<TrapCode> {
         if let Self::Code(trap_code) = self {
             return Some(*trap_code);
         }
@@ -84,10 +111,28 @@ impl Trap {
         self.inner.is_code()
     }
 
+    /// Returns a shared reference to the [`HostError`] if any.
+    #[inline]
+    pub fn as_host(&self) -> Option<&dyn HostError> {
+        self.inner.as_host()
+    }
+
+    /// Returns an exclusive reference to the [`HostError`] if any.
+    #[inline]
+    pub fn as_host_mut(&mut self) -> Option<&mut dyn HostError> {
+        self.inner.as_host_mut()
+    }
+
+    /// Converts into the [`HostError`] if any.
+    #[inline]
+    pub fn into_host(self) -> Option<Box<dyn HostError>> {
+        self.inner.into_host()
+    }
+
     /// Returns the [`TrapCode`] traps originating from Wasm execution.
     #[inline]
-    pub fn code(&self) -> Option<TrapCode> {
-        self.inner.code()
+    pub fn as_code(&self) -> Option<TrapCode> {
+        self.inner.as_code()
     }
 }
 
@@ -126,7 +171,7 @@ impl Display for Trap {
 #[cfg(feature = "std")]
 impl StdError for Trap {
     fn description(&self) -> &str {
-        self.code().map(|code| code.trap_message()).unwrap_or("")
+        self.as_code().map(|code| code.trap_message()).unwrap_or("")
     }
 }
 
