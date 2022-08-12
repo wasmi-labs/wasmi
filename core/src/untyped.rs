@@ -882,6 +882,14 @@ pub enum UntypedError {
     },
 }
 
+impl UntypedError {
+    /// Creates a new `InvalidLen` [`UntypedError`].
+    #[cold]
+    pub fn invalid_len(expected: usize, found: usize) -> Self {
+        Self::InvalidLen { expected, found }
+    }
+}
+
 impl Display for UntypedError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -953,10 +961,7 @@ where
 {
     fn decode_untyped_slice(results: &[UntypedValue]) -> Result<Self, UntypedError> {
         if results.len() != 1 {
-            return Err(UntypedError::InvalidLen {
-                expected: 1,
-                found: results.len(),
-            });
+            return Err(UntypedError::invalid_len(1, results.len()));
         }
         Ok(<T1 as From<UntypedValue>>::from(results[0]))
     }
@@ -979,10 +984,7 @@ macro_rules! impl_decode_untyped_slice {
                         )*
                     )),
                     _unexpected => {
-                        Err(UntypedError::InvalidLen {
-                            expected: $n,
-                            found: results.len(),
-                        })
+                        Err(UntypedError::invalid_len($n, results.len()))
                     }
                 }
             }
@@ -1012,10 +1014,7 @@ where
 {
     fn encode_untyped_slice(self, results: &mut [UntypedValue]) -> Result<(), UntypedError> {
         if results.len() != 1 {
-            return Err(UntypedError::InvalidLen {
-                expected: 1,
-                found: results.len(),
-            });
+            return Err(UntypedError::invalid_len(1, results.len()));
         }
         results[0] = self.into();
         Ok(())
@@ -1033,10 +1032,7 @@ macro_rules! impl_encode_untyped_slice {
             #[allow(non_snake_case)]
             fn encode_untyped_slice(self, results: &mut [UntypedValue]) -> Result<(), UntypedError> {
                 if results.len() != $n {
-                    return Err(UntypedError::InvalidLen {
-                        expected: $n,
-                        found: results.len(),
-                    })
+                    return Err(UntypedError::invalid_len($n, results.len()))
                 }
                 let ($($tuple,)*) = self;
                 let converted: [UntypedValue; $n] = [
