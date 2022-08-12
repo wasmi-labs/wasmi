@@ -1,0 +1,26 @@
+[package]
+name = "wasmi-fuzz"
+version = "0.0.0"
+authors = ["Parity Technologies <admin@parity.io>", "Robin Freyler <robin.freyler@gmail.com>"]
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+wasm-smith = "0.11"
+
+[dependencies.wasmi]
+path = ".."
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "translate"
+path = "fuzz_targets/translate.rs"
+test = false
+doc = false
