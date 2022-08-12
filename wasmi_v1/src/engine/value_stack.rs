@@ -211,18 +211,22 @@ impl ValueStack {
     ///
     /// # Note
     ///
-    /// Given a `depth` of 0 has the same effect as [`ValueStack::last`].
+    /// Given a `depth` of 1 has the same effect as [`ValueStack::last`].
+    ///
+    /// A `depth` of 0 is invalid and undefined.
     pub fn peek(&self, depth: usize) -> UntypedValue {
-        self.get_release_unchecked(self.stack_ptr - depth - 1)
+        self.get_release_unchecked(self.stack_ptr - depth)
     }
 
     /// Peeks the `&mut` entry at the given depth from the last entry.
     ///
     /// # Note
     ///
-    /// Given a `depth` of 0 has the same effect as [`ValueStack::last_mut`].
+    /// Given a `depth` of 1 has the same effect as [`ValueStack::last_mut`].
+    ///
+    /// A `depth` of 0 is invalid and undefined.
     pub fn peek_mut(&mut self, depth: usize) -> &mut UntypedValue {
-        self.get_release_unchecked_mut(self.stack_ptr - depth - 1)
+        self.get_release_unchecked_mut(self.stack_ptr - depth)
     }
 
     /// Pops the last [`UntypedValue`] from the [`ValueStack`].
