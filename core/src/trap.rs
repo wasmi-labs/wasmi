@@ -159,15 +159,15 @@ impl TrapCode {
     /// other uses since it avoid heap memory allocation in certain cases.
     pub fn trap_message(&self) -> &'static str {
         match self {
-            TrapCode::Unreachable => "unreachable",
-            TrapCode::MemoryAccessOutOfBounds => "out of bounds memory access",
-            TrapCode::TableAccessOutOfBounds => "undefined element",
-            TrapCode::ElemUninitialized => "uninitialized element",
-            TrapCode::DivisionByZero => "integer divide by zero",
-            TrapCode::IntegerOverflow => "integer overflow",
-            TrapCode::InvalidConversionToInt => "invalid conversion to integer",
-            TrapCode::StackOverflow => "call stack exhausted",
-            TrapCode::UnexpectedSignature => "indirect call type mismatch",
+            Self::Unreachable => "unreachable",
+            Self::MemoryAccessOutOfBounds => "out of bounds memory access",
+            Self::TableAccessOutOfBounds => "undefined element",
+            Self::ElemUninitialized => "uninitialized element",
+            Self::DivisionByZero => "integer divide by zero",
+            Self::IntegerOverflow => "integer overflow",
+            Self::InvalidConversionToInt => "invalid conversion to integer",
+            Self::StackOverflow => "call stack exhausted",
+            Self::UnexpectedSignature => "indirect call type mismatch",
         }
     }
 }

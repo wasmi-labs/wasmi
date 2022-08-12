@@ -95,6 +95,54 @@ impl ValueStack {
         }
     }
 
+    /// Returns the [`UntypedValue`] at the given `index`.
+    ///
+    /// # Note
+    ///
+    /// This is an optimized convenience method that only asserts
+    /// that the index is within bounds in `debug` mode.
+    ///
+    /// # Safety
+    ///
+    /// This is safe since all wasmi bytecode has been validated
+    /// during translation and therefore cannot result in out of
+    /// bounds accesses.
+    ///
+    /// # Panics (Debug)
+    ///
+    /// If the `index` is out of bounds.
+    fn get_release_unchecked(&self, index: usize) -> UntypedValue {
+        debug_assert!(index < self.entries.len());
+        // Safety: This is safe since all wasmi bytecode has been validated
+        //         during translation and therefore cannot result in out of
+        //         bounds accesses.
+        unsafe { *self.entries.get_unchecked(index) }
+    }
+
+    /// Returns the [`UntypedValue`] at the given `index`.
+    ///
+    /// # Note
+    ///
+    /// This is an optimized convenience method that only asserts
+    /// that the index is within bounds in `debug` mode.
+    ///
+    /// # Safety
+    ///
+    /// This is safe since all wasmi bytecode has been validated
+    /// during translation and therefore cannot result in out of
+    /// bounds accesses.
+    ///
+    /// # Panics (Debug)
+    ///
+    /// If the `index` is out of bounds.
+    fn get_release_unchecked_mut(&mut self, index: usize) -> &mut UntypedValue {
+        debug_assert!(index < self.entries.len());
+        // Safety: This is safe since all wasmi bytecode has been validated
+        //         during translation and therefore cannot result in out of
+        //         bounds accesses.
+        unsafe { self.entries.get_unchecked_mut(index) }
+    }
+
     /// Extends the value stack by the `additional` amount of zeros.
     ///
     /// # Errors
@@ -136,7 +184,7 @@ impl ValueStack {
         let src = self.stack_ptr - keep;
         let dst = self.stack_ptr - keep - drop;
         for i in 0..keep {
-            self.entries[dst + i] = self.entries[src + i];
+            *self.get_release_unchecked_mut(dst + i) = self.get_release_unchecked(src + i);
         }
         self.stack_ptr -= drop;
     }
@@ -147,7 +195,7 @@ impl ValueStack {
     ///
     /// This has the same effect as [`ValueStack::peek`]`(0)`.
     pub fn last(&self) -> UntypedValue {
-        self.entries[self.stack_ptr - 1]
+        self.get_release_unchecked(self.stack_ptr - 1)
     }
 
     /// Returns the last stack entry of the [`ValueStack`].
@@ -156,25 +204,29 @@ impl ValueStack {
     ///
     /// This has the same effect as [`ValueStack::peek`]`(0)`.
     pub fn last_mut(&mut self) -> &mut UntypedValue {
-        &mut self.entries[self.stack_ptr - 1]
+        self.get_release_unchecked_mut(self.stack_ptr - 1)
     }
 
     /// Peeks the entry at the given depth from the last entry.
     ///
     /// # Note
     ///
-    /// Given a `depth` of 0 has the same effect as [`ValueStack::last`].
+    /// Given a `depth` of 1 has the same effect as [`ValueStack::last`].
+    ///
+    /// A `depth` of 0 is invalid and undefined.
     pub fn peek(&self, depth: usize) -> UntypedValue {
-        self.entries[self.stack_ptr - depth - 1]
+        self.get_release_unchecked(self.stack_ptr - depth)
     }
 
     /// Peeks the `&mut` entry at the given depth from the last entry.
     ///
     /// # Note
     ///
-    /// Given a `depth` of 0 has the same effect as [`ValueStack::last_mut`].
+    /// Given a `depth` of 1 has the same effect as [`ValueStack::last_mut`].
+    ///
+    /// A `depth` of 0 is invalid and undefined.
     pub fn peek_mut(&mut self, depth: usize) -> &mut UntypedValue {
-        &mut self.entries[self.stack_ptr - depth - 1]
+        self.get_release_unchecked_mut(self.stack_ptr - depth)
     }
 
     /// Pops the last [`UntypedValue`] from the [`ValueStack`].
@@ -185,9 +237,10 @@ impl ValueStack {
     /// the executed WebAssembly bytecode for correctness.
     pub fn pop(&mut self) -> UntypedValue {
         self.stack_ptr -= 1;
-        self.entries[self.stack_ptr]
+        self.get_release_unchecked(self.stack_ptr)
     }
 
+    /// Drops the last value on the [`ValueStack`].
     pub fn drop(&mut self, depth: usize) {
         self.stack_ptr -= depth;
     }
@@ -211,8 +264,8 @@ impl ValueStack {
     pub fn pop2(&mut self) -> (UntypedValue, UntypedValue) {
         self.stack_ptr -= 2;
         (
-            self.entries[self.stack_ptr],
-            self.entries[self.stack_ptr + 1],
+            self.get_release_unchecked(self.stack_ptr),
+            self.get_release_unchecked(self.stack_ptr + 1),
         )
     }
 
@@ -246,7 +299,7 @@ impl ValueStack {
     where
         T: Into<UntypedValue>,
     {
-        self.entries[self.stack_ptr] = entry.into();
+        *self.get_release_unchecked_mut(self.stack_ptr) = entry.into();
         self.stack_ptr += 1;
     }
 

@@ -344,8 +344,7 @@ where
 
     /// Returns the local depth as `usize`.
     fn convert_local_depth(local_depth: LocalIdx) -> usize {
-        // TODO: calculate the -1 offset at module compilation time.
-        (local_depth.into_inner() - 1) as usize
+        local_depth.into_inner() as usize
     }
 
     /// Calculates the effective address of a linear memory access.
