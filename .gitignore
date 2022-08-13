@@ -3,4 +3,7 @@
 **/*.rs.bk
 Cargo.lock
 spec/target
-.idea
+
+**/fuzz/corpus/
+**/fuzz/target/
+**/fuzz/artifacts/

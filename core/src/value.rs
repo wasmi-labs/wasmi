@@ -780,14 +780,11 @@ macro_rules! impl_integer_arithmetic_ops {
             #[inline]
             fn div(self, other: $type) -> Result<$type, TrapCode> {
                 if other == 0 {
-                    Err(TrapCode::DivisionByZero)
-                } else {
-                    let (result, overflow) = self.overflowing_div(other);
-                    if overflow {
-                        Err(TrapCode::IntegerOverflow)
-                    } else {
-                        Ok(result)
-                    }
+                    return Err(TrapCode::DivisionByZero);
+                }
+                match self.overflowing_div(other) {
+                    (result, false) => Ok(result),
+                    (_, true) => Err(TrapCode::IntegerOverflow),
                 }
             }
         }
@@ -853,10 +850,9 @@ macro_rules! impl_integer {
             #[inline]
             fn rem(self, other: $type) -> Result<$type, TrapCode> {
                 if other == 0 {
-                    Err(TrapCode::DivisionByZero)
-                } else {
-                    Ok(self.wrapping_rem(other))
+                    return Err(TrapCode::DivisionByZero);
                 }
+                Ok(self.wrapping_rem(other))
             }
         }
     };
