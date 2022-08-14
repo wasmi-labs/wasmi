@@ -1,12 +1,6 @@
-#[cfg(all(feature = "virtual_memory", target_pointer_width = "64"))]
-#[path = "buffer_vmem.rs"]
 mod byte_buffer;
 
-#[cfg(not(all(feature = "virtual_memory", target_pointer_width = "64")))]
-#[path = "buffer_vec.rs"]
-mod byte_buffer;
-
-use self::byte_buffer::{ByteBuffer, VirtualMemoryError};
+use self::byte_buffer::ByteBuffer;
 use super::{AsContext, AsContextMut, Index, StoreContext, StoreContextMut, Stored};
 use core::{fmt, fmt::Display};
 use wasmi_core::memory_units::{Bytes, Pages};
@@ -38,8 +32,6 @@ pub enum MemoryError {
     OutOfBoundsGrowth,
     /// Tried to access linear memory out of bounds.
     OutOfBoundsAccess,
-    /// A generic virtual memory error.
-    Vmem(byte_buffer::VirtualMemoryError),
     /// Occurs when a memory type does not satisfy the constraints of another.
     UnsatisfyingMemoryType {
         /// The unsatisfying [`MemoryType`].
@@ -52,16 +44,15 @@ pub enum MemoryError {
 impl Display for MemoryError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            MemoryError::OutOfBoundsAllocation => {
+            Self::OutOfBoundsAllocation => {
                 write!(f, "tried to allocate too much virtual memory")
             }
-            MemoryError::OutOfBoundsGrowth => {
+            Self::OutOfBoundsGrowth => {
                 write!(f, "tried to grow virtual memory out of bounds")
             }
-            MemoryError::OutOfBoundsAccess => {
+            Self::OutOfBoundsAccess => {
                 write!(f, "tried to access virtual memory out of bounds")
             }
-            MemoryError::Vmem(error) => Display::fmt(error, f),
             Self::UnsatisfyingMemoryType {
                 unsatisfying,
                 required,
@@ -73,12 +64,6 @@ impl Display for MemoryError {
                 )
             }
         }
-    }
-}
-
-impl From<VirtualMemoryError> for MemoryError {
-    fn from(error: VirtualMemoryError) -> Self {
-        Self::Vmem(error)
     }
 }
 

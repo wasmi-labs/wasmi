@@ -7,17 +7,11 @@ mod trap;
 mod untyped;
 mod value;
 
-#[cfg(feature = "virtual_memory")]
-mod vmem;
-
 #[cfg(not(feature = "std"))]
 extern crate alloc;
 
 #[cfg(feature = "std")]
 extern crate std as alloc;
-
-#[cfg(feature = "virtual_memory")]
-pub use self::vmem::{VirtualMemory, VirtualMemoryError};
 
 /// WebAssembly-specific sizes and units.
 pub mod memory_units {

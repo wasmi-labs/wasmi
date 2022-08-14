@@ -1,16 +1,5 @@
 use super::{max_memory_len, MemoryError};
 use alloc::{vec, vec::Vec};
-use core::{fmt, fmt::Display};
-
-/// Dummy error for fallible `Vec`-based virtual memory operations.
-#[derive(Debug)]
-pub struct VirtualMemoryError {}
-
-impl Display for VirtualMemoryError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "encountered failure while operating with virtual memory")
-    }
-}
 
 /// A `Vec`-based byte buffer implementation.
 ///
