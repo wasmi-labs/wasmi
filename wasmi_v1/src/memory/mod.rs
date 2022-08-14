@@ -1,6 +1,6 @@
-mod buffer_vec;
+mod byte_buffer;
 
-use self::buffer_vec::ByteBuffer;
+use self::byte_buffer::ByteBuffer;
 use super::{AsContext, AsContextMut, Index, StoreContext, StoreContextMut, Stored};
 use core::{fmt, fmt::Display};
 use wasmi_core::memory_units::{Bytes, Pages};
