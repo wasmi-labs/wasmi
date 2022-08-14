@@ -49,7 +49,7 @@ jobs:
       matrix:
         # windows-latest was pinned to windows-2019
         # because of https://github.com/paritytech/wasmi/runs/5021520759
-        os: [ubuntu-latest, windows-2019, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
