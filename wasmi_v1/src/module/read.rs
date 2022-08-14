@@ -1,8 +1,5 @@
 use core::{fmt, fmt::Display};
 
-#[cfg(not(feature = "std"))]
-use core::cmp;
-
 #[cfg(feature = "std")]
 use std::io;
 
@@ -59,8 +56,8 @@ where
 #[cfg(not(feature = "std"))]
 impl<'a> Read for &'a [u8] {
     fn read(&mut self, buffer: &mut [u8]) -> Result<usize, ReadError> {
-        let len_copy = cmp::min(self.len(), buffer.len());
-        buffer.copy_from_slice(&self[..len_copy]);
+        let len_copy = self.len().min(buffer.len());
+        buffer[..len_copy].copy_from_slice(&self[..len_copy]);
         *self = &self[len_copy..];
         Ok(len_copy)
     }
