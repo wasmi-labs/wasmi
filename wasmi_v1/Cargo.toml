@@ -31,16 +31,6 @@ std = [
     "wasmparser/std",
     "spin/std",
 ]
-# Enables OS supported virtual memory.
-#
-# Note
-#
-# - This feature is only supported on 64-bit platforms.
-#   For 32-bit platforms the linear memory will fallback to using the Vec
-#   based implementation.
-# - The default is to fall back is an inefficient vector based implementation.
-# - By nature this feature requires `region` and the Rust standard library.
-virtual_memory = ["wasmi_core/virtual_memory", "std"]
 
 [[bench]]
 name = "benches"
