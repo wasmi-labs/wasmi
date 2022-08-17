@@ -1,5 +1,3 @@
-use alloc::vec::Vec;
-
 mod control_frame;
 mod control_stack;
 mod inst_builder;
@@ -38,6 +36,7 @@ use crate::{
     ModuleError,
     Mutability,
 };
+use alloc::vec::Vec;
 use wasmi_core::{Value, ValueType, F32, F64};
 
 /// The interface to translate a `wasmi` bytecode function using Wasm bytecode.
@@ -223,7 +222,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         };
         // Find out how many values we need to drop.
         let current_height = self.value_stack.len();
-        let origin_height = frame.stack_height();
+        let origin_height = frame.stack_height().expect("frame is reachable");
         assert!(
             origin_height <= current_height,
             "encountered value stack underflow: current height {}, original height {}",
@@ -358,8 +357,8 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translates a Wasm `block` control flow operator.
     pub fn translate_block(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
-        let stack_height = self.frame_stack_height(block_type);
         if self.is_reachable() {
+            let stack_height = self.frame_stack_height(block_type);
             let end_label = self.inst_builder.new_label();
             self.control_frames.push_frame(BlockControlFrame::new(
                 block_type,
@@ -370,7 +369,6 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             self.control_frames.push_frame(UnreachableControlFrame::new(
                 ControlFrameKind::Block,
                 block_type,
-                stack_height,
             ));
         }
         Ok(())
@@ -378,8 +376,8 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translates a Wasm `loop` control flow operator.
     pub fn translate_loop(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
-        let stack_height = self.frame_stack_height(block_type);
         if self.is_reachable() {
+            let stack_height = self.frame_stack_height(block_type);
             let header = self.inst_builder.new_label();
             self.inst_builder.resolve_label(header);
             self.control_frames
@@ -388,7 +386,6 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             self.control_frames.push_frame(UnreachableControlFrame::new(
                 ControlFrameKind::Loop,
                 block_type,
-                stack_height,
             ));
         }
         Ok(())
@@ -413,11 +410,9 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             self.inst_builder
                 .push_inst(Instruction::BrIfEqz(branch_target));
         } else {
-            let stack_height = self.frame_stack_height(block_type);
             self.control_frames.push_frame(UnreachableControlFrame::new(
                 ControlFrameKind::If,
                 block_type,
-                stack_height,
             ));
         }
         Ok(())
@@ -499,7 +494,9 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
             // frame was reachable upon entering to begin with.
             self.reachable = frame_reachable;
         }
-        self.value_stack.shrink_to(frame_stack_height);
+        if let Some(frame_stack_height) = frame_stack_height {
+            self.value_stack.shrink_to(frame_stack_height);
+        }
         let frame = self.control_frames.pop_frame();
         frame
             .block_type()
@@ -1926,7 +1923,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translate a Wasm `u64.truncate_sat_f32` instruction.
     pub fn translate_u64_truncate_saturate_f32(&mut self) -> Result<(), ModuleError> {
-        self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I64TruncSatF32U)
+        self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncSatF32U)
     }
 
     /// Translate a Wasm `i64.truncate_sat_f64` instruction.
@@ -1936,6 +1933,6 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translate a Wasm `u64.truncate_sat_f64` instruction.
     pub fn translate_u64_truncate_saturate_f64(&mut self) -> Result<(), ModuleError> {
-        self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I64TruncSatF64U)
+        self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncSatF64U)
     }
 }
