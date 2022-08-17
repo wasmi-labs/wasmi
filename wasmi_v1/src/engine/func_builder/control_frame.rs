@@ -196,10 +196,7 @@ pub enum ControlFrameKind {
 impl UnreachableControlFrame {
     /// Creates a new [`UnreachableControlFrame`] with the given type and kind.
     pub fn new(kind: ControlFrameKind, block_type: BlockType) -> Self {
-        Self {
-            kind,
-            block_type,
-        }
+        Self { kind, block_type }
     }
 
     /// Returns the [`ControlFrameKind`] of the [`UnreachableControlFrame`].
