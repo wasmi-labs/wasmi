@@ -1925,7 +1925,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translate a Wasm `u64.truncate_sat_f32` instruction.
     pub fn translate_u64_truncate_saturate_f32(&mut self) -> Result<(), ModuleError> {
-        self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I64TruncSatF32U)
+        self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncSatF32U)
     }
 
     /// Translate a Wasm `i64.truncate_sat_f64` instruction.
@@ -1935,6 +1935,6 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
 
     /// Translate a Wasm `u64.truncate_sat_f64` instruction.
     pub fn translate_u64_truncate_saturate_f64(&mut self) -> Result<(), ModuleError> {
-        self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I64TruncSatF64U)
+        self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncSatF64U)
     }
 }
