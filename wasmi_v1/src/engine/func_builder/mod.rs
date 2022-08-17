@@ -1,5 +1,3 @@
-use alloc::vec::Vec;
-
 mod control_frame;
 mod control_stack;
 mod inst_builder;
@@ -38,6 +36,7 @@ use crate::{
     ModuleError,
     Mutability,
 };
+use alloc::vec::Vec;
 use wasmi_core::{Value, ValueType, F32, F64};
 
 /// The interface to translate a `wasmi` bytecode function using Wasm bytecode.
