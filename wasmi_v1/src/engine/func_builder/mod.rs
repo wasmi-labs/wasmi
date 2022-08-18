@@ -41,9 +41,9 @@ use wasmi_core::{Value, ValueType, F32, F64};
 
 /// The interface to translate a `wasmi` bytecode function using Wasm bytecode.
 #[derive(Debug)]
-pub struct FunctionBuilder<'engine, 'parser> {
+pub struct FunctionBuilder<'parser> {
     /// The [`Engine`] for which the function is translated.
-    engine: &'engine Engine,
+    engine: Engine,
     /// The function under construction.
     func: FuncIdx,
     /// The immutable `wasmi` module resources.
@@ -72,9 +72,9 @@ pub struct FunctionBuilder<'engine, 'parser> {
     reachable: bool,
 }
 
-impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
+impl<'parser> FunctionBuilder<'parser> {
     /// Creates a new [`FunctionBuilder`].
-    pub fn new(engine: &'engine Engine, func: FuncIdx, res: ModuleResources<'parser>) -> Self {
+    pub fn new(engine: &Engine, func: FuncIdx, res: ModuleResources<'parser>) -> Self {
         let mut inst_builder = InstructionsBuilder::default();
         let mut control_frames = ControlFlowStack::default();
         Self::register_func_body_block(func, res, &mut inst_builder, &mut control_frames);
@@ -82,7 +82,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         let mut locals = LocalsRegistry::default();
         Self::register_func_params(func, res, &mut locals);
         Self {
-            engine,
+            engine: engine.clone(),
             func,
             res,
             control_frames,
@@ -179,7 +179,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// Finishes constructing the function and returns its [`FuncBody`].
     pub fn finish(mut self) -> FuncBody {
         self.inst_builder.finish(
-            self.engine,
+            &self.engine,
             self.len_locals(),
             self.value_stack.max_stack_height() as usize,
         )
@@ -216,9 +216,9 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         // Find out how many values we need to keep (copy to the new stack location after the drop).
         let keep = match frame.kind() {
             ControlFrameKind::Block | ControlFrameKind::If => {
-                frame.block_type().len_results(self.engine)
+                frame.block_type().len_results(&self.engine)
             }
-            ControlFrameKind::Loop => frame.block_type().len_params(self.engine),
+            ControlFrameKind::Loop => frame.block_type().len_params(&self.engine),
         };
         // Find out how many values we need to drop.
         let current_height = self.value_stack.len();
@@ -320,7 +320,7 @@ pub enum AquiredTarget {
     Return(DropKeep),
 }
 
-impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
+impl<'parser> FunctionBuilder<'parser> {
     /// Translates a Wasm `unreachable` instruction.
     pub fn translate_unreachable(&mut self) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
@@ -344,7 +344,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
     /// When the emulated value stack underflows. This should not happen
     /// since we have already validated the input Wasm prior.
     fn frame_stack_height(&self, block_type: BlockType) -> u32 {
-        let len_params = block_type.len_params(self.engine);
+        let len_params = block_type.len_params(&self.engine);
         let stack_height = self.value_stack.len();
         stack_height.checked_sub(len_params).unwrap_or_else(|| {
             panic!(
@@ -456,7 +456,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         // when entering the `if` in the first place so that the `else`
         // block has the same parameters on top of the stack.
         self.value_stack.shrink_to(if_frame.stack_height());
-        if_frame.block_type().foreach_param(self.engine, |param| {
+        if_frame.block_type().foreach_param(&self.engine, |param| {
             self.value_stack.push(param);
         });
         self.control_frames.push_frame(if_frame);
@@ -500,7 +500,7 @@ impl<'engine, 'parser> FunctionBuilder<'engine, 'parser> {
         let frame = self.control_frames.pop_frame();
         frame
             .block_type()
-            .foreach_result(self.engine, |result| self.value_stack.push(result));
+            .foreach_result(&self.engine, |result| self.value_stack.push(result));
         Ok(())
     }
 
