@@ -30,8 +30,8 @@ pub struct ValueStack {
 impl Debug for ValueStack {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ValueStack")
-            .field("entries", &&self.entries[..self.stack_ptr])
             .field("stack_ptr", &self.stack_ptr)
+            .field("entries", &&self.entries[..self.stack_ptr])
             .finish()
     }
 }
