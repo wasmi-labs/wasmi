@@ -8,7 +8,7 @@ mod func_args;
 mod func_builder;
 mod func_types;
 mod traits;
-pub mod value_stack;
+pub mod stack;
 
 pub(crate) use self::func_args::{FuncParams, FuncResults};
 use self::{
@@ -17,7 +17,7 @@ use self::{
     code_map::{CodeMap, ResolvedFuncBody},
     exec_context::FunctionExecutor,
     func_types::FuncTypeRegistry,
-    value_stack::ValueStack,
+    stack::ValueStack,
 };
 pub use self::{
     bytecode::{DropKeep, Target},
