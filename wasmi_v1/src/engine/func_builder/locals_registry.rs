@@ -68,6 +68,12 @@ impl LocalGroup {
 }
 
 impl LocalsRegistry {
+    /// Resets the [`LocalsRegistry`] to allow for reuse.
+    pub fn reset(&mut self) {
+        self.groups.clear();
+        self.max_index = 0;
+    }
+
     /// Returns the number of registered local variables.
     ///
     /// # Note

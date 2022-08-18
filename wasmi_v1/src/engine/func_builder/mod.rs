@@ -49,8 +49,6 @@ pub struct FunctionBuilder<'alloc, 'parser> {
     func: FuncIdx,
     /// The immutable `wasmi` module resources.
     res: ModuleResources<'parser>,
-    /// Stores and resolves local variable types.
-    locals: LocalsRegistry,
     /// This represents the reachability of the currently translated code.
     ///
     /// - `true`: The currently translated code is reachable.
@@ -78,6 +76,8 @@ pub struct FunctionBuilderAllocations {
     ///
     /// Allows to incrementally construct the instruction of a function.
     inst_builder: InstructionsBuilder,
+    /// Stores and resolves local variable types.
+    locals: LocalsRegistry,
 }
 
 impl<'alloc, 'parser> Deref for FunctionBuilder<'alloc, 'parser> {
@@ -107,6 +107,7 @@ impl FunctionBuilderAllocations {
         self.control_frames.reset();
         self.value_stack.reset();
         self.inst_builder.reset();
+        self.locals.reset();
     }
 }
 
@@ -119,13 +120,11 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
         allocations: &'alloc mut FunctionBuilderAllocations,
     ) -> Self {
         Self::register_func_body_block(func, res, allocations);
-        let mut locals = LocalsRegistry::default();
-        Self::register_func_params(func, res, &mut locals);
+        Self::register_func_params(func, res, allocations);
         Self {
             engine: engine.clone(),
             func,
             res,
-            locals,
             reachable: true,
             allocations,
         }
@@ -171,7 +170,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     fn register_func_params(
         func: FuncIdx,
         res: ModuleResources<'parser>,
-        locals: &mut LocalsRegistry,
+        allocations: &mut FunctionBuilderAllocations,
     ) -> usize {
         let dedup_func_type = res.get_type_of_func(func);
         let func_type = res
@@ -179,7 +178,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
             .resolve_func_type(dedup_func_type, Clone::clone);
         let params = func_type.params();
         for param_type in params {
-            locals.register_locals(*param_type, 1);
+            allocations.locals.register_locals(*param_type, 1);
         }
         params.len()
     }
