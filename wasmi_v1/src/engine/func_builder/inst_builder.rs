@@ -113,6 +113,12 @@ pub struct InstructionsBuilder {
 }
 
 impl InstructionsBuilder {
+    /// Resets the [`InstructionsBuilder`] to allow for reuse.
+    pub fn reset(&mut self) {
+        self.insts.clear();
+        self.labels.clear();
+    }
+
     /// Returns the current instruction pointer as index.
     pub fn current_pc(&self) -> InstructionIdx {
         InstructionIdx::from_usize(self.insts.len())

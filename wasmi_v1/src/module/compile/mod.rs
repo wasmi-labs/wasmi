@@ -1,7 +1,7 @@
 pub use self::block_type::BlockType;
 use super::{utils::value_type_from_wasmparser, FuncIdx, ModuleResources};
 use crate::{
-    engine::{FuncBody, FunctionBuilder},
+    engine::{FuncBody, FunctionBuilder, FunctionBuilderAllocations},
     Engine,
     ModuleError,
 };
@@ -29,16 +29,17 @@ pub fn translate<'parser>(
     func_body: FunctionBody<'parser>,
     validator: FuncValidator<ValidatorResources>,
     res: ModuleResources<'parser>,
+    allocations: &mut FunctionBuilderAllocations,
 ) -> Result<FuncBody, ModuleError> {
-    FunctionTranslator::new(engine, func, func_body, validator, res).translate()
+    FunctionTranslator::new(engine, func, func_body, validator, res, allocations).translate()
 }
 
 /// Translates Wasm bytecode into `wasmi` bytecode for a single Wasm function.
-struct FunctionTranslator<'parser> {
+struct FunctionTranslator<'alloc, 'parser> {
     /// The function body that shall be translated.
     func_body: FunctionBody<'parser>,
     /// The interface to incrementally build up the `wasmi` bytecode function.
-    func_builder: FunctionBuilder<'parser>,
+    func_builder: FunctionBuilder<'alloc, 'parser>,
     /// The Wasm validator.
     validator: FuncValidator<ValidatorResources>,
     /// The `wasmi` module resources.
@@ -48,7 +49,7 @@ struct FunctionTranslator<'parser> {
     res: ModuleResources<'parser>,
 }
 
-impl<'parser> FunctionTranslator<'parser> {
+impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
     /// Creates a new Wasm to `wasmi` bytecode function translator.
     fn new(
         engine: &Engine,
@@ -56,8 +57,9 @@ impl<'parser> FunctionTranslator<'parser> {
         func_body: FunctionBody<'parser>,
         validator: FuncValidator<ValidatorResources>,
         res: ModuleResources<'parser>,
+        allocations: &'alloc mut FunctionBuilderAllocations,
     ) -> Self {
-        let func_builder = FunctionBuilder::new(engine, func, res);
+        let func_builder = FunctionBuilder::new(engine, func, res, allocations);
         Self {
             func_body,
             func_builder,

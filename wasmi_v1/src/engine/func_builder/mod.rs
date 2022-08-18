@@ -37,27 +37,18 @@ use crate::{
     Mutability,
 };
 use alloc::vec::Vec;
+use core::ops::{Deref, DerefMut};
 use wasmi_core::{Value, ValueType, F32, F64};
 
 /// The interface to translate a `wasmi` bytecode function using Wasm bytecode.
 #[derive(Debug)]
-pub struct FunctionBuilder<'parser> {
+pub struct FunctionBuilder<'alloc, 'parser> {
     /// The [`Engine`] for which the function is translated.
     engine: Engine,
     /// The function under construction.
     func: FuncIdx,
     /// The immutable `wasmi` module resources.
     res: ModuleResources<'parser>,
-    /// The control flow frame stack that represents the Wasm control flow.
-    control_frames: ControlFlowStack,
-    /// The emulated value stack.
-    value_stack: ValueStack,
-    /// The instruction builder.
-    ///
-    /// # Note
-    ///
-    /// Allows to incrementally construct the instruction of a function.
-    inst_builder: InstructionsBuilder,
     /// Stores and resolves local variable types.
     locals: LocalsRegistry,
     /// This represents the reachability of the currently translated code.
@@ -70,26 +61,73 @@ pub struct FunctionBuilder<'parser> {
     /// Visiting the Wasm `Else` or `End` control flow operator resets
     /// reachability to `true` again.
     reachable: bool,
+    /// The reusable data structures of the [`FunctionBuilder`].
+    allocations: &'alloc mut FunctionBuilderAllocations,
 }
 
-impl<'parser> FunctionBuilder<'parser> {
+/// Reusable allocations of a [`FunctionBuilder`].
+#[derive(Debug, Default)]
+pub struct FunctionBuilderAllocations {
+    /// The control flow frame stack that represents the Wasm control flow.
+    control_frames: ControlFlowStack,
+    /// The emulated value stack.
+    value_stack: ValueStack,
+    /// The instruction builder.
+    ///
+    /// # Note
+    ///
+    /// Allows to incrementally construct the instruction of a function.
+    inst_builder: InstructionsBuilder,
+}
+
+impl<'alloc, 'parser> Deref for FunctionBuilder<'alloc, 'parser> {
+    type Target = FunctionBuilderAllocations;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        self.allocations
+    }
+}
+
+impl<'alloc, 'parser> DerefMut for FunctionBuilder<'alloc, 'parser> {
+    #[inline]
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.allocations
+    }
+}
+
+impl FunctionBuilderAllocations {
+    /// Resets the data structures of the [`FunctionBuilderAllocations`].
+    ///
+    /// # Note
+    ///
+    /// This must be called before reusing this [`FunctionBuilderAllocations`]
+    /// by another [`FunctionBuilder`].
+    fn reset(&mut self) {
+        self.control_frames.reset();
+        self.value_stack.reset();
+        self.inst_builder.reset();
+    }
+}
+
+impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     /// Creates a new [`FunctionBuilder`].
-    pub fn new(engine: &Engine, func: FuncIdx, res: ModuleResources<'parser>) -> Self {
-        let mut inst_builder = InstructionsBuilder::default();
-        let mut control_frames = ControlFlowStack::default();
-        Self::register_func_body_block(func, res, &mut inst_builder, &mut control_frames);
-        let value_stack = ValueStack::default();
+    pub fn new(
+        engine: &Engine,
+        func: FuncIdx,
+        res: ModuleResources<'parser>,
+        allocations: &'alloc mut FunctionBuilderAllocations,
+    ) -> Self {
+        Self::register_func_body_block(func, res, allocations);
         let mut locals = LocalsRegistry::default();
         Self::register_func_params(func, res, &mut locals);
         Self {
             engine: engine.clone(),
             func,
             res,
-            control_frames,
-            value_stack,
-            inst_builder,
             locals,
             reachable: true,
+            allocations,
         }
     }
 
@@ -119,14 +157,14 @@ impl<'parser> FunctionBuilder<'parser> {
     fn register_func_body_block(
         func: FuncIdx,
         res: ModuleResources<'parser>,
-        inst_builder: &mut InstructionsBuilder,
-        control_frames: &mut ControlFlowStack,
+        allocations: &mut FunctionBuilderAllocations,
     ) {
+        allocations.reset();
         let func_type = res.get_type_of_func(func);
         let block_type = BlockType::func_type(func_type);
-        let end_label = inst_builder.new_label();
+        let end_label = allocations.inst_builder.new_label();
         let block_frame = BlockControlFrame::new(block_type, end_label, 0);
-        control_frames.push_frame(block_frame);
+        allocations.control_frames.push_frame(block_frame);
     }
 
     /// Registers the function parameters in the emulated value stack.
@@ -177,8 +215,8 @@ impl<'parser> FunctionBuilder<'parser> {
     }
 
     /// Finishes constructing the function and returns its [`FuncBody`].
-    pub fn finish(mut self) -> FuncBody {
-        self.inst_builder.finish(
+    pub fn finish(self) -> FuncBody {
+        self.allocations.inst_builder.finish(
             &self.engine,
             self.len_locals(),
             self.value_stack.max_stack_height() as usize,
@@ -320,7 +358,7 @@ pub enum AquiredTarget {
     Return(DropKeep),
 }
 
-impl<'parser> FunctionBuilder<'parser> {
+impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     /// Translates a Wasm `unreachable` instruction.
     pub fn translate_unreachable(&mut self) -> Result<(), ModuleError> {
         self.translate_if_reachable(|builder| {
@@ -457,7 +495,7 @@ impl<'parser> FunctionBuilder<'parser> {
         // block has the same parameters on top of the stack.
         self.value_stack.shrink_to(if_frame.stack_height());
         if_frame.block_type().foreach_param(&self.engine, |param| {
-            self.value_stack.push(param);
+            self.allocations.value_stack.push(param);
         });
         self.control_frames.push_frame(if_frame);
         // We can reset reachability now since the parent `if` block was reachable.
@@ -467,19 +505,22 @@ impl<'parser> FunctionBuilder<'parser> {
 
     /// Translates a Wasm `end` control flow operator.
     pub fn translate_end(&mut self) -> Result<(), ModuleError> {
-        let frame = self.control_frames.last();
+        let frame = self.allocations.control_frames.last();
         if let ControlFrame::If(if_frame) = &frame {
             // At this point we can resolve the `Else` label.
             //
             // Note: The `Else` label might have already been resolved
             //       in case there was an `Else` block.
-            self.inst_builder
+            self.allocations
+                .inst_builder
                 .resolve_label_if_unresolved(if_frame.else_label());
         }
         if frame.is_reachable() && !matches!(frame.kind(), ControlFrameKind::Loop) {
             // At this point we can resolve the `End` labels.
             // Note that `loop` control frames do not have an `End` label.
-            self.inst_builder.resolve_label(frame.end_label());
+            self.allocations
+                .inst_builder
+                .resolve_label(frame.end_label());
         }
         // These bindings are required because of borrowing issues.
         let frame_reachable = frame.is_reachable();
@@ -498,9 +539,9 @@ impl<'parser> FunctionBuilder<'parser> {
             self.value_stack.shrink_to(frame_stack_height);
         }
         let frame = self.control_frames.pop_frame();
-        frame
-            .block_type()
-            .foreach_result(&self.engine, |result| self.value_stack.push(result));
+        frame.block_type().foreach_result(&self.engine, |result| {
+            self.allocations.value_stack.push(result)
+        });
         Ok(())
     }
 

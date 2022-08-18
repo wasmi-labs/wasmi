@@ -8,7 +8,7 @@ use super::{
     ModuleResources,
     Read,
 };
-use crate::Engine;
+use crate::{engine::FunctionBuilderAllocations, Engine};
 use alloc::vec::Vec;
 use wasmparser::{
     Chunk,
@@ -51,6 +51,8 @@ pub struct ModuleParser<'engine> {
     parser: WasmParser,
     /// Currently processed function.
     func: FuncIdx,
+    /// Reusable allocations for building functions.
+    allocations: FunctionBuilderAllocations,
 }
 
 impl<'engine> ModuleParser<'engine> {
@@ -65,6 +67,7 @@ impl<'engine> ModuleParser<'engine> {
             validator,
             parser,
             func: FuncIdx(0),
+            allocations: FunctionBuilderAllocations::default(),
         }
     }
 
@@ -461,7 +464,14 @@ impl<'engine> ModuleParser<'engine> {
         let engine = self.builder.engine();
         let validator = self.validator.code_section_entry()?;
         let module_resources = ModuleResources::new(&self.builder);
-        let func_body = translate(engine, func, func_body, validator, module_resources)?;
+        let func_body = translate(
+            engine,
+            func,
+            func_body,
+            validator,
+            module_resources,
+            &mut self.allocations,
+        )?;
         self.builder.func_bodies.push(func_body);
         Ok(())
     }

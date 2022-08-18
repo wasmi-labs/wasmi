@@ -8,6 +8,11 @@ pub struct ControlFlowStack {
 }
 
 impl ControlFlowStack {
+    /// Resets the [`ControlFlowStack`] to allow for reuse.
+    pub fn reset(&mut self) {
+        self.frames.clear()
+    }
+
     /// Returns `true` if `relative_depth` points to the first control flow frame.
     pub fn is_root(&self, relative_depth: u32) -> bool {
         debug_assert!(!self.is_empty());
