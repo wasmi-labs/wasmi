@@ -6,7 +6,7 @@ use crate::{
 };
 use wasmparser::{Ieee32, Ieee64, TypeOrFuncType};
 
-impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
+impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
     /// Translate a Wasm `nop` (no operation) instruction.
     pub fn translate_nop(&mut self) -> Result<(), ModuleError> {
         // We can simply ignore Wasm `nop` instructions.
@@ -448,7 +448,7 @@ macro_rules! define_translate_fn {
     };
 }
 
-impl<'engine, 'parser> FunctionTranslator<'engine, 'parser> {
+impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
     define_translate_fn! {
         /// Translate a Wasm `unreachable` instruction.
         fn translate_unreachable();

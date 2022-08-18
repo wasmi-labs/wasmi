@@ -22,7 +22,14 @@ use self::{
 pub use self::{
     bytecode::{DropKeep, Target},
     code_map::FuncBody,
-    func_builder::{FunctionBuilder, InstructionIdx, LabelIdx, RelativeDepth, Reloc},
+    func_builder::{
+        FunctionBuilder,
+        FunctionBuilderAllocations,
+        InstructionIdx,
+        LabelIdx,
+        RelativeDepth,
+        Reloc,
+    },
     traits::{CallParams, CallResults},
 };
 use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func};

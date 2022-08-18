@@ -16,6 +16,12 @@ pub struct ValueStack {
 }
 
 impl ValueStack {
+    /// Resets the [`ValueStack`] to allow for reuse.
+    pub fn reset(&mut self) {
+        self.values.clear();
+        self.max_stack_height = 0;
+    }
+
     /// Returns the maximum value stack height.
     pub fn max_stack_height(&self) -> u32 {
         self.max_stack_height
