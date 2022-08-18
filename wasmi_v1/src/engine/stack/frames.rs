@@ -1,23 +1,17 @@
 //! Data structures to represent the Wasm call stack during execution.
 
-use super::{
-    super::{
-        func::WasmFuncEntity,
-        AsContext,
-        Func,
-        FuncBody,
-        FuncEntityInternal,
-        Instance,
-        Memory,
-        Table,
-    },
-    ResolvedFuncBody,
-    ValueStack,
-    DEFAULT_CALL_STACK_LIMIT,
-};
 use crate::{
     core::TrapCode,
+    engine::{ResolvedFuncBody, ValueStack, DEFAULT_CALL_STACK_LIMIT},
+    func::WasmFuncEntity,
     module::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
+    AsContext,
+    Func,
+    FuncBody,
+    FuncEntityInternal,
+    Instance,
+    Memory,
+    Table,
 };
 use alloc::vec::Vec;
 
@@ -90,17 +84,17 @@ impl FunctionFrame {
     }
 
     /// Returns the program counter.
-    pub(super) fn pc(&self) -> usize {
+    pub(crate) fn pc(&self) -> usize {
         self.pc
     }
 
     /// Updates the program counter.
-    pub(super) fn update_pc(&mut self, new_pc: usize) {
+    pub(crate) fn update_pc(&mut self, new_pc: usize) {
         self.pc = new_pc;
     }
 
     /// Creates a new [`FunctionFrame`] from the given Wasm function entity.
-    pub(super) fn new_wasm(func: Func, wasm_func: &WasmFuncEntity) -> Self {
+    pub(crate) fn new_wasm(func: Func, wasm_func: &WasmFuncEntity) -> Self {
         let instance = wasm_func.instance();
         let func_body = wasm_func.func_body();
         Self {

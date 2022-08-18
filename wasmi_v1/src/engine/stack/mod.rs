@@ -1,3 +1,7 @@
+mod frames;
 mod values;
 
-pub use self::values::ValueStack;
+pub use self::{
+    frames::{CallStack, FunctionFrame},
+    values::ValueStack,
+};

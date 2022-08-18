@@ -1,7 +1,9 @@
 //! Data structures to represent the Wasm value stack during execution.
 
-use crate::core::TrapCode;
-use crate::engine::{DropKeep, DEFAULT_VALUE_STACK_LIMIT};
+use crate::{
+    core::TrapCode,
+    engine::{DropKeep, DEFAULT_VALUE_STACK_LIMIT},
+};
 use alloc::vec::Vec;
 use core::{fmt, fmt::Debug, iter, mem};
 use wasmi_core::UntypedValue;

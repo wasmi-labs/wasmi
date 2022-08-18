@@ -1,23 +1,21 @@
 //! The `wasmi` interpreter.
 
 pub mod bytecode;
-pub mod call_stack;
 pub mod code_map;
 pub mod exec_context;
 mod func_args;
 mod func_builder;
 mod func_types;
-mod traits;
 pub mod stack;
+mod traits;
 
 pub(crate) use self::func_args::{FuncParams, FuncResults};
 use self::{
     bytecode::Instruction,
-    call_stack::{CallStack, FunctionFrame},
     code_map::{CodeMap, ResolvedFuncBody},
     exec_context::FunctionExecutor,
     func_types::FuncTypeRegistry,
-    stack::ValueStack,
+    stack::{CallStack, FunctionFrame, ValueStack},
 };
 pub use self::{
     bytecode::{DropKeep, Target},
