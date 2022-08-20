@@ -16,7 +16,7 @@ use crate::{
 };
 use alloc::vec::Vec;
 
-/// A function frame of a function in the call stack.
+/// A function frame of a function on the call stack.
 #[derive(Debug, Copy, Clone)]
 pub struct FuncFrame {
     /// Is `true` if the function frame has already been instantiated.
