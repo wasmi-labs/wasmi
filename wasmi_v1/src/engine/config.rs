@@ -7,13 +7,13 @@ pub struct Config {
     /// The limits set on the value stack and call stack.
     stack_limits: StackLimits,
     /// Is `true` if the `mutable-global` Wasm proposal is enabled.
-    pub(super) mutable_global: bool,
+    mutable_global: bool,
     /// Is `true` if the `sign-extension` Wasm proposal is enabled.
-    pub(super) sign_extension: bool,
+    sign_extension: bool,
     /// Is `true` if the `saturating-float-to-int` Wasm proposal is enabled.
-    pub(super) saturating_float_to_int: bool,
+    saturating_float_to_int: bool,
     /// Is `true` if the [`multi-value`] Wasm proposal is enabled.
-    pub(super) multi_value: bool,
+    multi_value: bool,
 }
 
 impl Default for Config {
