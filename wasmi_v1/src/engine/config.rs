@@ -30,9 +30,14 @@ impl Default for Config {
 
 impl Config {
     /// Sets the [`StackLimits`] for the [`Config`].
-    pub fn stack_limits(&mut self, stack_limits: StackLimits) -> &mut Self {
+    pub fn set_stack_limits(&mut self, stack_limits: StackLimits) -> &mut Self {
         self.stack_limits = stack_limits;
         self
+    }
+
+    /// Returns the [`StackLimits`] of the [`Config`].
+    pub(super) fn stack_limits(&self) -> StackLimits {
+        self.stack_limits
     }
 
     /// Enable or disable the [`mutable-global`] Wasm proposal for the [`Config`].

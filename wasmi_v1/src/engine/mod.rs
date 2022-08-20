@@ -17,7 +17,7 @@ use self::{
     code_map::{CodeMap, ResolvedFuncBody},
     exec_context::FunctionExecutor,
     func_types::FuncTypeRegistry,
-    stack::{FunctionFrame, ValueStack, Stack, StackLimits},
+    stack::{FunctionFrame, ValueStack, Stack},
 };
 pub use self::{
     bytecode::{DropKeep, Target},
@@ -234,7 +234,7 @@ impl EngineInner {
         let engine_idx = EngineIdx::new();
         Self {
             config: *config,
-            stack: Stack::new(StackLimits::default()), // TODO
+            stack: Stack::new(config.stack_limits()),
             code_map: CodeMap::default(),
             func_types: FuncTypeRegistry::new(engine_idx),
         }
