@@ -18,7 +18,7 @@ const DEFAULT_MIN_VALUE_STACK_HEIGHT: usize = 1024;
 const DEFAULT_MAX_VALUE_STACK_HEIGHT: usize = 1024 * DEFAULT_MIN_VALUE_STACK_HEIGHT;
 
 /// Default value for maximum recursion depth.
-const DEFAULT_MAX_RECURSION_DEPTH: usize = 64 * 1024;
+const DEFAULT_MAX_RECURSION_DEPTH: usize = 1024;
 
 /// The configured limits of the [`Stack`].
 #[derive(Debug, Copy, Clone)]

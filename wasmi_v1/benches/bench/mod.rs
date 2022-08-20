@@ -1,5 +1,7 @@
 use std::{fs::File, io::Read as _};
 
+use wasmi::{Config, StackLimits};
+
 /// Returns the Wasm binary at the given `file_name` as `Vec<u8>`.
 ///
 /// # Note
@@ -19,6 +21,13 @@ pub fn load_wasm_from_file(file_name: &str) -> Vec<u8> {
     buffer
 }
 
+/// Returns a [`Config`] useful for benchmarking.
+fn bench_config() -> Config {
+    let mut config = Config::default();
+    config.set_stack_limits(StackLimits::new(1024, 1024 * 1024, 64 * 1024).unwrap());
+    config
+}
+
 /// Parses the Wasm binary at the given `file_name` into a `wasmi` module.
 ///
 /// # Note
@@ -30,7 +39,7 @@ pub fn load_wasm_from_file(file_name: &str) -> Vec<u8> {
 /// If the benchmark Wasm file could not be opened, read or parsed.
 pub fn load_module_from_file_v1(file_name: &str) -> wasmi::Module {
     let wasm = load_wasm_from_file(file_name);
-    let engine = wasmi::Engine::default();
+    let engine = wasmi::Engine::new(&bench_config());
     wasmi::Module::new(&engine, &wasm[..]).unwrap_or_else(|error| {
         panic!(
             "could not parse Wasm module from file {}: {}",
@@ -76,7 +85,7 @@ pub fn wat2wasm(bytes: &[u8]) -> Vec<u8> {
 /// If the benchmark Wasm file could not be opened, read or parsed.
 pub fn load_instance_from_wat_v1(wat_bytes: &[u8]) -> (wasmi::Store<()>, wasmi::Instance) {
     let wasm = wat2wasm(wat_bytes);
-    let engine = wasmi::Engine::default();
+    let engine = wasmi::Engine::new(&bench_config());
     let module = wasmi::Module::new(&engine, &wasm[..]).unwrap();
     let mut linker = <wasmi::Linker<()>>::default();
     let mut store = wasmi::Store::new(&engine, ());

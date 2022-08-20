@@ -19,6 +19,7 @@ use self::{
     func_types::FuncTypeRegistry,
     stack::{FunctionFrame, ValueStack, Stack},
 };
+pub use self::stack::StackLimits;
 pub use self::{
     bytecode::{DropKeep, Target},
     code_map::FuncBody,
