@@ -15,18 +15,13 @@ use self::{
     code_map::{CodeMap, ResolvedFuncBody},
     exec_context::FunctionExecutor,
     func_types::FuncTypeRegistry,
-    stack::{CallStack, FunctionFrame, ValueStack},
+    stack::{FunctionFrame, ValueStack, Stack, StackLimits},
 };
 pub use self::{
     bytecode::{DropKeep, Target},
     code_map::FuncBody,
     func_builder::{
-        FunctionBuilder,
-        FunctionBuilderAllocations,
-        InstructionIdx,
-        LabelIdx,
-        RelativeDepth,
-        Reloc,
+        FunctionBuilder, FunctionBuilderAllocations, InstructionIdx, LabelIdx, RelativeDepth, Reloc,
     },
     traits::{CallParams, CallResults},
 };
@@ -35,8 +30,7 @@ use crate::{
     arena::{GuardedEntity, Index},
     core::Trap,
     func::HostFuncEntity,
-    FuncType,
-    Instance,
+    FuncType, Instance,
 };
 use alloc::sync::Arc;
 use core::{
@@ -110,20 +104,6 @@ pub struct Engine {
 /// Configuration for an [`Engine`].
 #[derive(Debug, Copy, Clone)]
 pub struct Config {
-    /// The internal value stack limit.
-    ///
-    /// # Note
-    ///
-    /// Reaching this limit during execution of a Wasm function will
-    /// cause a stack overflow trap.
-    value_stack_limit: usize,
-    /// The internal call stack limit.
-    ///
-    /// # Note
-    ///
-    /// Reaching this limit during execution of a Wasm function will
-    /// cause a stack overflow trap.
-    call_stack_limit: usize,
     /// Is `true` if the [`mutable-global`] Wasm proposal is enabled.
     ///
     /// # Note
@@ -161,8 +141,6 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            value_stack_limit: DEFAULT_VALUE_STACK_LIMIT,
-            call_stack_limit: DEFAULT_CALL_STACK_LIMIT,
             mutable_global: true,
             sign_extension: true,
             saturating_float_to_int: true,
@@ -179,8 +157,6 @@ impl Config {
     /// The Wasm MVP has no Wasm proposals enabled by default.
     pub const fn mvp() -> Self {
         Self {
-            value_stack_limit: DEFAULT_VALUE_STACK_LIMIT,
-            call_stack_limit: DEFAULT_CALL_STACK_LIMIT,
             mutable_global: false,
             sign_extension: false,
             saturating_float_to_int: false,
@@ -351,10 +327,8 @@ impl Engine {
 pub struct EngineInner {
     /// The configuration with which the [`Engine`] has been created.
     config: Config,
-    /// Stores the value stack of live values on the Wasm stack.
-    value_stack: ValueStack,
-    /// Stores the call stack of live function invocations.
-    call_stack: CallStack,
+    /// The value and call stacks.
+    stack: Stack,
     /// Stores all Wasm function bodies that the interpreter is aware of.
     code_map: CodeMap,
     /// Deduplicated function types.
@@ -372,8 +346,7 @@ impl EngineInner {
         let engine_idx = EngineIdx::new();
         Self {
             config: *config,
-            value_stack: ValueStack::new(64, config.value_stack_limit),
-            call_stack: CallStack::new(config.call_stack_limit),
+            stack: Stack::new(StackLimits::default()), // TODO
             code_map: CodeMap::default(),
             func_types: FuncTypeRegistry::new(engine_idx),
         }
@@ -441,10 +414,9 @@ impl EngineInner {
     where
         Params: CallParams,
     {
-        self.value_stack.clear();
-        self.call_stack.clear();
+        self.stack.clear();
         for param in params.feed_params() {
-            self.value_stack.push(param);
+            self.stack.values.push(param);
         }
     }
 
@@ -467,15 +439,15 @@ impl EngineInner {
     {
         let result_types = self.func_types.resolve_func_type(func_type).results();
         assert_eq!(
-            self.value_stack.len(),
+            self.stack.values.len(),
             results.len_results(),
             "expected {} values on the stack after function execution but found {}",
             results.len_results(),
-            self.value_stack.len(),
+            self.stack.values.len(),
         );
         assert_eq!(results.len_results(), result_types.len());
         results.feed_results(
-            self.value_stack
+            self.stack.values
                 .drain()
                 .iter()
                 .zip(result_types)
@@ -498,7 +470,7 @@ impl EngineInner {
         let mut function_frame = FunctionFrame::new(&ctx, func);
         'outer: loop {
             match self.execute_frame(&mut ctx, &mut function_frame)? {
-                CallOutcome::Return => match self.call_stack.pop() {
+                CallOutcome::Return => match self.stack.frames.pop() {
                     Some(frame) => {
                         function_frame = frame;
                         continue 'outer;
@@ -508,7 +480,7 @@ impl EngineInner {
                 CallOutcome::NestedCall(func) => match func.as_internal(&ctx) {
                     FuncEntityInternal::Wasm(wasm_func) => {
                         let nested_frame = FunctionFrame::new_wasm(func, wasm_func);
-                        self.call_stack.push(function_frame)?;
+                        self.stack.frames.push(function_frame)?;
                         function_frame = nested_frame;
                     }
                     FuncEntityInternal::Host(host_func) => {
@@ -562,13 +534,13 @@ impl EngineInner {
         let len_inputs = input_types.len();
         let len_outputs = output_types.len();
         let max_inout = cmp::max(len_inputs, len_outputs);
-        self.value_stack.reserve(max_inout)?;
+        self.stack.values.reserve(max_inout)?;
         if len_outputs > len_inputs {
             let delta = len_outputs - len_inputs;
-            self.value_stack.extend_zeros(delta)?;
+            self.stack.values.extend_zeros(delta)?;
         }
         let params_results = FuncParams::new(
-            self.value_stack.peek_as_slice_mut(max_inout),
+            self.stack.values.peek_as_slice_mut(max_inout),
             len_inputs,
             len_outputs,
         );
@@ -580,7 +552,7 @@ impl EngineInner {
         // the value stack needs to be shrinked for the delta.
         if len_outputs < len_inputs {
             let delta = len_inputs - len_outputs;
-            self.value_stack.drop(delta);
+            self.stack.values.drop(delta);
         }
         // At this point the host function has been called and has directly
         // written its results into the value stack so that the last entries

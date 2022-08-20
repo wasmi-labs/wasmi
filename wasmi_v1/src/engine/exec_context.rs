@@ -35,9 +35,9 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
         frame: &'func mut FunctionFrame,
     ) -> Result<Self, Trap> {
         let resolved = engine.code_map.resolve(frame.func_body);
-        frame.initialize(resolved, &mut engine.value_stack)?;
+        frame.initialize(resolved, &mut engine.stack.values)?;
         Ok(Self {
-            value_stack: &mut engine.value_stack,
+            value_stack: &mut engine.stack.values,
             frame,
             func_body: resolved,
         })
