@@ -5,7 +5,7 @@ use super::{
     CallOutcome,
     DropKeep,
     EngineInner,
-    FunctionFrame,
+    FuncFrame,
     ResolvedFuncBody,
     Target,
     ValueStack,
@@ -23,7 +23,7 @@ pub struct FunctionExecutor<'engine, 'func> {
     /// Stores the value stack of live values on the Wasm stack.
     value_stack: &'engine mut ValueStack,
     /// The function frame that is being executed.
-    frame: &'func mut FunctionFrame,
+    frame: &'func mut FuncFrame,
     /// The resolved function body of the executed function frame.
     func_body: ResolvedFuncBody<'engine>,
 }
@@ -32,7 +32,7 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
     /// Creates an execution context for the given [`FunctionFrame`].
     pub fn new(
         engine: &'engine mut EngineInner,
-        frame: &'func mut FunctionFrame,
+        frame: &'func mut FuncFrame,
     ) -> Result<Self, Trap> {
         let resolved = engine.code_map.resolve(frame.func_body);
         frame.initialize(resolved, &mut engine.stack.values)?;
@@ -286,7 +286,7 @@ struct ExecutionContext<'engine, 'func, Ctx> {
     /// Stores the value stack of live values on the Wasm stack.
     value_stack: &'engine mut ValueStack,
     /// The function frame that is being executed.
-    frame: &'func mut FunctionFrame,
+    frame: &'func mut FuncFrame,
     /// A mutable [`Store`] context.
     ///
     /// [`Store`]: [`crate::v1::Store`]
@@ -300,7 +300,7 @@ where
     /// Creates a new [`ExecutionContext`] for executing a single `wasmi` bytecode instruction.
     pub fn new(
         value_stack: &'engine mut ValueStack,
-        frame: &'func mut FunctionFrame,
+        frame: &'func mut FuncFrame,
         ctx: Ctx,
         pc: usize,
     ) -> Self {

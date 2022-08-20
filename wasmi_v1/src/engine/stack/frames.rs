@@ -18,7 +18,7 @@ use alloc::vec::Vec;
 
 /// A function frame of a function in the call stack.
 #[derive(Debug, Copy, Clone)]
-pub struct FunctionFrame {
+pub struct FuncFrame {
     /// Is `true` if the function frame has already been instantiated.
     ///
     /// # Note
@@ -68,8 +68,8 @@ pub struct FunctionFrame {
     pc: usize,
 }
 
-impl FunctionFrame {
-    /// Creates a new [`FunctionFrame`] from the given `func`.
+impl FuncFrame {
+    /// Creates a new [`FuncFrame`] from the given `func`.
     ///
     /// # Panics
     ///
@@ -94,7 +94,7 @@ impl FunctionFrame {
         self.pc = new_pc;
     }
 
-    /// Creates a new [`FunctionFrame`] from the given Wasm function entity.
+    /// Creates a new [`FuncFrame`] from the given Wasm function entity.
     pub(crate) fn new_wasm(func: Func, wasm_func: &WasmFuncEntity) -> Self {
         let instance = wasm_func.instance();
         let func_body = wasm_func.func_body();
@@ -185,7 +185,7 @@ impl FunctionFrame {
         Ok(())
     }
 
-    /// Returns the instance of the [`FunctionFrame`].
+    /// Returns the instance of the [`FuncFrame`].
     pub fn instance(&self) -> Instance {
         self.instance
     }
@@ -195,7 +195,7 @@ impl FunctionFrame {
 #[derive(Debug)]
 pub struct CallStack {
     /// The call stack featuring the function frames in order.
-    frames: Vec<FunctionFrame>,
+    frames: Vec<FuncFrame>,
     /// The maximum allowed depth of the `frames` stack.
     recursion_limit: usize,
 }
@@ -215,12 +215,12 @@ impl CallStack {
         }
     }
 
-    /// Pushes another [`FunctionFrame`] to the [`CallStack`].
+    /// Pushes another [`FuncFrame`] to the [`CallStack`].
     ///
     /// # Errors
     ///
-    /// If the [`FunctionFrame`] is at the set recursion limit.
-    pub fn push(&mut self, frame: FunctionFrame) -> Result<(), TrapCode> {
+    /// If the [`FuncFrame`] is at the set recursion limit.
+    pub fn push(&mut self, frame: FuncFrame) -> Result<(), TrapCode> {
         if self.len() == self.recursion_limit {
             return Err(TrapCode::StackOverflow);
         }
@@ -228,8 +228,8 @@ impl CallStack {
         Ok(())
     }
 
-    /// Pops the last [`FunctionFrame`] from the [`CallStack`] if any.
-    pub fn pop(&mut self) -> Option<FunctionFrame> {
+    /// Pops the last [`FuncFrame`] from the [`CallStack`] if any.
+    pub fn pop(&mut self) -> Option<FuncFrame> {
         self.frames.pop()
     }
 

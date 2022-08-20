@@ -17,7 +17,7 @@ use self::{
     code_map::{CodeMap, ResolvedFuncBody},
     exec_context::FunctionExecutor,
     func_types::FuncTypeRegistry,
-    stack::{FunctionFrame, ValueStack, Stack},
+    stack::{FuncFrame, ValueStack, Stack},
 };
 pub use self::stack::StackLimits;
 pub use self::{
@@ -356,7 +356,7 @@ impl EngineInner {
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm trap during the execution of `func`.
     fn execute_wasm_func(&mut self, mut ctx: impl AsContextMut, func: Func) -> Result<(), Trap> {
-        let mut function_frame = FunctionFrame::new(&ctx, func);
+        let mut function_frame = FuncFrame::new(&ctx, func);
         'outer: loop {
             match self.execute_frame(&mut ctx, &mut function_frame)? {
                 CallOutcome::Return => match self.stack.frames.pop() {
@@ -368,7 +368,7 @@ impl EngineInner {
                 },
                 CallOutcome::NestedCall(func) => match func.as_internal(&ctx) {
                     FuncEntityInternal::Wasm(wasm_func) => {
-                        let nested_frame = FunctionFrame::new_wasm(func, wasm_func);
+                        let nested_frame = FuncFrame::new_wasm(func, wasm_func);
                         self.stack.frames.push(function_frame)?;
                         function_frame = nested_frame;
                     }
@@ -391,7 +391,7 @@ impl EngineInner {
     fn execute_frame(
         &mut self,
         mut ctx: impl AsContextMut,
-        frame: &mut FunctionFrame,
+        frame: &mut FuncFrame,
     ) -> Result<CallOutcome, Trap> {
         FunctionExecutor::new(self, frame)?.execute_frame(&mut ctx)
     }

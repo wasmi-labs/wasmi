@@ -2,7 +2,7 @@ mod frames;
 mod values;
 
 pub use self::{
-    frames::{CallStack, FunctionFrame},
+    frames::{CallStack, FuncFrame},
     values::ValueStack,
 };
 use crate::core::UntypedValue;
