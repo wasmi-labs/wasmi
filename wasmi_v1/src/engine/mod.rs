@@ -2,6 +2,7 @@
 
 pub mod bytecode;
 pub mod code_map;
+mod config;
 pub mod exec_context;
 mod func_args;
 mod func_builder;
@@ -9,6 +10,7 @@ mod func_types;
 pub mod stack;
 mod traits;
 
+pub use self::config::Config;
 pub(crate) use self::func_args::{FuncParams, FuncResults};
 use self::{
     bytecode::Instruction,
@@ -99,114 +101,6 @@ type Guarded<Idx> = GuardedEntity<EngineIdx, Idx>;
 #[derive(Debug, Clone)]
 pub struct Engine {
     inner: Arc<Mutex<EngineInner>>,
-}
-
-/// Configuration for an [`Engine`].
-#[derive(Debug, Copy, Clone)]
-pub struct Config {
-    /// Is `true` if the [`mutable-global`] Wasm proposal is enabled.
-    ///
-    /// # Note
-    ///
-    /// Enabled by default.
-    ///
-    /// [`mutable-global`]: https://github.com/WebAssembly/mutable-global
-    mutable_global: bool,
-    /// Is `true` if the [`sign-extension`] Wasm proposal is enabled.
-    ///
-    /// # Note
-    ///
-    /// Enabled by default.
-    ///
-    /// [`sign-extension`]: https://github.com/WebAssembly/sign-extension-ops
-    sign_extension: bool,
-    /// Is `true` if the [`saturating-float-to-int`] Wasm proposal is enabled.
-    ///
-    /// # Note
-    ///
-    /// Enabled by default.
-    ///
-    /// [`saturating-float-to-int`]: https://github.com/WebAssembly/nontrapping-float-to-int-conversions
-    saturating_float_to_int: bool,
-    /// Is `true` if the [`multi-value`] Wasm proposal is enabled.
-    ///
-    /// # Note
-    ///
-    /// Enabled by default.
-    ///
-    /// [`multi-value`]: https://github.com/WebAssembly/multi-value
-    multi_value: bool,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            mutable_global: true,
-            sign_extension: true,
-            saturating_float_to_int: true,
-            multi_value: true,
-        }
-    }
-}
-
-impl Config {
-    /// Creates the [`Config`] for the Wasm MVP (minimum viable product).
-    ///
-    /// # Note
-    ///
-    /// The Wasm MVP has no Wasm proposals enabled by default.
-    pub const fn mvp() -> Self {
-        Self {
-            mutable_global: false,
-            sign_extension: false,
-            saturating_float_to_int: false,
-            multi_value: false,
-        }
-    }
-
-    /// Enables the `mutable-global` Wasm proposal.
-    pub const fn enable_mutable_global(mut self, enable: bool) -> Self {
-        self.mutable_global = enable;
-        self
-    }
-
-    /// Returns `true` if the `mutable-global` Wasm proposal is enabled.
-    pub const fn mutable_global(&self) -> bool {
-        self.mutable_global
-    }
-
-    /// Enables the `sign-extension` Wasm proposal.
-    pub const fn enable_sign_extension(mut self, enable: bool) -> Self {
-        self.sign_extension = enable;
-        self
-    }
-
-    /// Returns `true` if the `sign-extension` Wasm proposal is enabled.
-    pub const fn sign_extension(&self) -> bool {
-        self.sign_extension
-    }
-
-    /// Enables the `saturating-float-to-int` Wasm proposal.
-    pub const fn enable_saturating_float_to_int(mut self, enable: bool) -> Self {
-        self.saturating_float_to_int = enable;
-        self
-    }
-
-    /// Returns `true` if the `saturating-float-to-int` Wasm proposal is enabled.
-    pub const fn saturating_float_to_int(&self) -> bool {
-        self.saturating_float_to_int
-    }
-
-    /// Enables the `multi-value` Wasm proposal.
-    pub const fn enable_multi_value(mut self, enable: bool) -> Self {
-        self.multi_value = enable;
-        self
-    }
-
-    /// Returns `true` if the `multi-value` Wasm proposal is enabled.
-    pub const fn multi_value(&self) -> bool {
-        self.multi_value
-    }
 }
 
 impl Default for Engine {
