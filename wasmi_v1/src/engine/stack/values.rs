@@ -85,11 +85,16 @@ impl ValueStack {
     ///
     /// # Panics
     ///
-    /// If the `initial_len` is zero.
+    /// - If the `initial_len` is zero.
+    /// - If the `initial_len` is greater than `maximum_len`.
     pub fn new(initial_len: usize, maximum_len: usize) -> Self {
         assert!(
             initial_len > 0,
-            "cannot initialize the value stack with zero length"
+            "cannot initialize the value stack with zero length",
+        );
+        assert!(
+            initial_len <= maximum_len,
+            "initial value stack length is greater than maximum value stack length",
         );
         let entries = vec![UntypedValue::default(); initial_len];
         Self {
