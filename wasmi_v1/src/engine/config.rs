@@ -1,4 +1,5 @@
 use super::stack::StackLimits;
+use wasmparser::WasmFeatures;
 
 /// Configuration for an [`Engine`].
 #[derive(Debug, Copy, Clone)]
@@ -6,13 +7,13 @@ pub struct Config {
     /// The limits set on the value stack and call stack.
     stack_limits: StackLimits,
     /// Is `true` if the `mutable-global` Wasm proposal is enabled.
-    mutable_global: bool,
+    pub(super) mutable_global: bool,
     /// Is `true` if the `sign-extension` Wasm proposal is enabled.
-    sign_extension: bool,
+    pub(super) sign_extension: bool,
     /// Is `true` if the `saturating-float-to-int` Wasm proposal is enabled.
-    saturating_float_to_int: bool,
+    pub(super) saturating_float_to_int: bool,
     /// Is `true` if the [`multi-value`] Wasm proposal is enabled.
-    multi_value: bool,
+    pub(super) multi_value: bool,
 }
 
 impl Default for Config {
@@ -83,23 +84,25 @@ impl Config {
         self
     }
 
-    /// Returns `true` if the `mutable-global` Wasm proposal is enabled.
-    pub(crate) fn get_mutable_global(&self) -> bool {
-        self.mutable_global
-    }
-
-    /// Returns `true` if the `sign-extension` Wasm proposal is enabled.
-    pub(crate) fn get_sign_extension(&self) -> bool {
-        self.sign_extension
-    }
-
-    /// Returns `true` if the `saturating-float-to-int` Wasm proposal is enabled.
-    pub(crate) fn get_saturating_float_to_int(&self) -> bool {
-        self.saturating_float_to_int
-    }
-
-    /// Returns `true` if the `multi-value` Wasm proposal is enabled.
-    pub(crate) fn get_multi_value(&self) -> bool {
-        self.multi_value
+    /// Returns the [`WasmFeatures`] represented by the [`Config`].
+    pub fn wasm_features(&self) -> WasmFeatures {
+        WasmFeatures {
+            multi_value: self.multi_value,
+            mutable_global: self.mutable_global,
+            saturating_float_to_int: self.saturating_float_to_int,
+            sign_extension: self.sign_extension,
+            reference_types: false,
+            bulk_memory: false,
+            module_linking: false,
+            simd: false,
+            relaxed_simd: false,
+            threads: false,
+            tail_call: false,
+            deterministic_only: true,
+            multi_memory: false,
+            exceptions: false,
+            memory64: false,
+            extended_const: false,
+        }
     }
 }

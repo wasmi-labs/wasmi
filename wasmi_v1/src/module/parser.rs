@@ -73,24 +73,7 @@ impl<'engine> ModuleParser<'engine> {
 
     /// Returns the Wasm features supported by `wasmi`.
     fn features(engine: &Engine) -> WasmFeatures {
-        WasmFeatures {
-            reference_types: false,
-            multi_value: engine.config().get_multi_value(),
-            bulk_memory: false,
-            module_linking: false,
-            simd: false,
-            relaxed_simd: false,
-            threads: false,
-            tail_call: false,
-            deterministic_only: true,
-            multi_memory: false,
-            exceptions: false,
-            memory64: false,
-            extended_const: false,
-            mutable_global: engine.config().get_mutable_global(),
-            saturating_float_to_int: engine.config().get_saturating_float_to_int(),
-            sign_extension: engine.config().get_sign_extension(),
-        }
+        engine.config().wasm_features()
     }
 
     /// Starts parsing and validating the Wasm bytecode stream.
