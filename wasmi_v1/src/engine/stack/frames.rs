@@ -1,8 +1,9 @@
 //! Data structures to represent the Wasm call stack during execution.
 
+use super::DEFAULT_MAX_RECURSION_DEPTH;
 use crate::{
     core::TrapCode,
-    engine::{ResolvedFuncBody, ValueStack, DEFAULT_CALL_STACK_LIMIT},
+    engine::{ResolvedFuncBody, ValueStack},
     func::WasmFuncEntity,
     module::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
     AsContext,
@@ -201,7 +202,7 @@ pub struct CallStack {
 
 impl Default for CallStack {
     fn default() -> Self {
-        Self::new(DEFAULT_CALL_STACK_LIMIT)
+        Self::new(DEFAULT_MAX_RECURSION_DEPTH)
     }
 }
 

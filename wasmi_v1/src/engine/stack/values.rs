@@ -1,11 +1,12 @@
 //! Data structures to represent the Wasm value stack during execution.
 
+use super::{DEFAULT_MIN_VALUE_STACK_HEIGHT, DEFAULT_MAX_VALUE_STACK_HEIGHT};
 use crate::{
     core::TrapCode,
-    engine::{DropKeep, DEFAULT_VALUE_STACK_LIMIT},
+    engine::{DropKeep},
 };
 use alloc::vec::Vec;
-use core::{fmt, fmt::Debug, iter, mem};
+use core::{fmt, fmt::Debug, iter, mem::size_of};
 use wasmi_core::UntypedValue;
 
 /// The value stack that is used to execute Wasm bytecode.
@@ -49,9 +50,10 @@ impl Eq for ValueStack {}
 
 impl Default for ValueStack {
     fn default() -> Self {
+        let register_len = size_of::<UntypedValue>();
         Self::new(
-            DEFAULT_VALUE_STACK_LIMIT / mem::size_of::<UntypedValue>(),
-            1024 * DEFAULT_VALUE_STACK_LIMIT / mem::size_of::<UntypedValue>(),
+            DEFAULT_MIN_VALUE_STACK_HEIGHT / register_len,
+            DEFAULT_MAX_VALUE_STACK_HEIGHT / register_len,
         )
     }
 }
