@@ -353,7 +353,6 @@ impl EngineInner {
         mut fref: FuncFrameRef,
     ) -> Result<(), Trap> {
         'outer: loop {
-            // println!("EngineInner::execute_wasm_func2 fref = {fref:?}");
             match self
                 .stack
                 .executor(fref, &self.code_map)
