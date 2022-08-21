@@ -177,7 +177,7 @@ impl Stack {
     /// Signals the [`Stack`] to return the last Wasm function call.
     ///
     /// Returns the next function on the call stack if any.
-    pub fn return_wasm<'engine>(&mut self) -> Option<FuncFrame> {
+    pub fn return_wasm(&mut self) -> Option<FuncFrame> {
         self.frames.pop()
     }
 

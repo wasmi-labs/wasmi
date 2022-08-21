@@ -380,7 +380,7 @@ impl EngineInner {
                     FuncEntityInternal::Host(host_func) => {
                         let host_func = host_func.clone();
                         self.stack
-                            .call_host(&mut ctx, &frame, host_func, &self.func_types)?;
+                            .call_host(&mut ctx, frame, host_func, &self.func_types)?;
                     }
                 },
             }
