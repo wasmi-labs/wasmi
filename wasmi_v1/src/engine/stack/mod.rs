@@ -172,14 +172,14 @@ impl Stack {
         wasm_func: &WasmFuncEntity,
         code_map: &'engine CodeMap,
     ) -> Result<InstructionsRef, TrapCode> {
-        let func_body = code_map.resolve(wasm_func.func_body());
-        let max_stack_height = func_body.max_stack_height();
+        let header = code_map.header(wasm_func.func_body());
+        let max_stack_height = header.max_stack_height();
         self.values.reserve(max_stack_height)?;
-        let len_locals = func_body.len_locals();
+        let len_locals = header.len_locals();
         self.values
             .extend_zeros(len_locals)
             .expect("stack overflow is unexpected due to previous stack reserve");
-        let iref = func_body.iref();
+        let iref = header.iref();
         Ok(iref)
     }
 

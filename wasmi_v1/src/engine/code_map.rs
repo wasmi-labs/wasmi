@@ -2,7 +2,6 @@
 
 use super::{super::Index, Instruction};
 use alloc::vec::Vec;
-use core::iter;
 
 /// A reference to a Wasm function body stored in the [`CodeMap`].
 #[derive(Debug, Copy, Clone)]
@@ -27,147 +26,18 @@ pub struct InstructionsRef {
     end: usize,
 }
 
-/// Datastructure to efficiently store Wasm function bodies.
-#[derive(Debug, Default)]
-pub struct CodeMap {
-    /// The instructions of all allocated function bodies.
-    ///
-    /// By storing all `wasmi` bytecode instructions in a single
-    /// allocation we avoid an indirection when calling a function
-    /// compared to a solution that stores instructions of different
-    /// function bodies in different allocations.
-    ///
-    /// Also this improves efficiency of deallocating the [`CodeMap`]
-    /// and generally improves data locality.
-    insts: Vec<Instruction>,
-}
-
-impl CodeMap {
-    /// Returns the next [`FuncBody`] index.
-    fn next_index(&self) -> FuncBody {
-        FuncBody(self.insts.len())
-    }
-
-    /// Allocates a new function body to the [`CodeMap`].
-    ///
-    /// Returns a reference to the allocated function body that can
-    /// be used with [`CodeMap::resolve`] in order to resolve its
-    /// instructions.
-    pub fn alloc<I>(&mut self, len_locals: usize, max_stack_height: usize, insts: I) -> FuncBody
-    where
-        I: IntoIterator<Item = Instruction>,
-        I::IntoIter: ExactSizeIterator,
-    {
-        let idx = self.next_index();
-        // We are inserting an artificial `unreachable` Wasm instruction
-        // in between instructions of different function bodies as a small
-        // safety precaution.
-        let insts = insts.into_iter();
-        let len_instructions = insts.len().try_into().unwrap_or_else(|error| {
-            panic!(
-                "encountered too many instructions (= {}) for function: {}",
-                insts.len(),
-                error
-            )
-        });
-        let max_stack_height = (max_stack_height + len_locals)
-            .try_into()
-            .unwrap_or_else(|error| {
-                panic!(
-                "encountered function that requires too many stack values (= {}) for function: {}",
-                max_stack_height, error
-            )
-            });
-        let len_locals = len_locals.try_into().unwrap_or_else(|error| {
-            panic!(
-                "encountered too many local variables (= {}) for function: {}",
-                len_locals, error
-            )
-        });
-        let start = iter::once(Instruction::FuncBodyStart {
-            len_instructions,
-            len_locals,
-            max_stack_height,
-        });
-        let end = iter::once(Instruction::FuncBodyEnd);
-        self.insts.extend(start.chain(insts).chain(end));
-        idx
-    }
-
-    /// Resolves the instructions given an [`InstructionsRef`].
-    pub fn insts(&self, iref: InstructionsRef) -> Instructions {
-        Instructions {
-            insts: &self.insts[iref.start..iref.end],
-        }
-    }
-
-    /// Resolves the instruction of the function body.
-    ///
-    /// # Panics
-    ///
-    /// If the given `func_body` is invalid for this [`CodeMap`].
-    pub fn resolve(&self, func_body: FuncBody) -> ResolvedFuncBody {
-        let offset = func_body.into_usize();
-        let (len_instructions, len_locals, max_stack_height) = match &self.insts[offset] {
-            Instruction::FuncBodyStart {
-                len_instructions,
-                len_locals,
-                max_stack_height,
-            } => (*len_instructions, *len_locals, *max_stack_height),
-            unexpected => panic!(
-                "expected function start instruction but found: {:?}",
-                unexpected
-            ),
-        };
-        let len_instructions = len_instructions as usize;
-        let len_locals = len_locals as usize;
-        let max_stack_height = max_stack_height as usize;
-        // The index of the first instruction in the function body.
-        let first_inst = offset + 1;
-        {
-            // Assert that the end of the function instructions is
-            // properly guarded with the `FuncBodyEnd` sentinel.
-            //
-            // This check is not needed to validate the integrity of
-            // the resolution procedure and therefore the below assertion
-            // is only performed in debug mode.
-            let end = &self.insts[first_inst + len_instructions];
-            debug_assert!(
-                matches!(end, Instruction::FuncBodyEnd),
-                "expected function end instruction but found: {:?}",
-                end,
-            );
-        }
-        let iref = InstructionsRef {
-            start: first_inst,
-            end: first_inst + len_instructions,
-        };
-        ResolvedFuncBody {
-            iref,
-            len_locals,
-            max_stack_height,
-        }
-    }
-}
-
-/// A resolved Wasm function body that is stored in a [`CodeMap`].
-///
-/// Allows to immutably access the `wasmi` instructions of a Wasm
-/// function stored in the [`CodeMap`].
-///
-/// # Dev. Note
-///
-/// This does not include the [`Instruction::FuncBodyStart`] and
-/// [`Instruction::FuncBodyEnd`] instructions surrounding the instructions
-/// of a function body in the [`CodeMap`].
+/// Meta information about a compiled function.
 #[derive(Debug, Copy, Clone)]
-pub struct ResolvedFuncBody {
+pub struct FuncHeader {
+    /// A reference to the instructions of the function.
     iref: InstructionsRef,
+    /// The number of local variables of the function.
     len_locals: usize,
+    /// The maximum stack heihgt usage of the function during execution.
     max_stack_height: usize,
 }
 
-impl ResolvedFuncBody {
+impl FuncHeader {
     /// Returns a reference to the instructions of the [`ResolvedFuncBody`].
     pub fn iref(&self) -> InstructionsRef {
         self.iref
@@ -186,6 +56,63 @@ impl ResolvedFuncBody {
     /// _not_ include the amount of input parameters to the function.
     pub fn max_stack_height(&self) -> usize {
         self.max_stack_height
+    }
+}
+
+/// Datastructure to efficiently store Wasm function bodies.
+#[derive(Debug, Default)]
+pub struct CodeMap {
+    /// The headers of all compiled functions.
+    headers: Vec<FuncHeader>,
+    /// The instructions of all allocated function bodies.
+    ///
+    /// By storing all `wasmi` bytecode instructions in a single
+    /// allocation we avoid an indirection when calling a function
+    /// compared to a solution that stores instructions of different
+    /// function bodies in different allocations.
+    ///
+    /// Also this improves efficiency of deallocating the [`CodeMap`]
+    /// and generally improves data locality.
+    insts: Vec<Instruction>,
+}
+
+impl CodeMap {
+    /// Allocates a new function body to the [`CodeMap`].
+    ///
+    /// Returns a reference to the allocated function body that can
+    /// be used with [`CodeMap::resolve`] in order to resolve its
+    /// instructions.
+    pub fn alloc<I>(&mut self, len_locals: usize, max_stack_height: usize, insts: I) -> FuncBody
+    where
+        I: IntoIterator<Item = Instruction>,
+        I::IntoIter: ExactSizeIterator,
+    {
+        let start = self.insts.len();
+        self.insts.extend(insts);
+        let end = self.insts.len();
+        let iref = InstructionsRef { start, end };
+        let header = FuncHeader {
+            iref,
+            len_locals,
+            max_stack_height: len_locals + max_stack_height,
+        };
+        let header_index = self.headers.len();
+        self.headers.push(header);
+        FuncBody(header_index)
+    }
+
+    /// Resolves the instructions given an [`InstructionsRef`].
+    pub fn insts(&self, iref: InstructionsRef) -> Instructions {
+        Instructions {
+            // insts: &self.insts[iref.start..iref.end],
+            insts: unsafe { self.insts.get_unchecked(iref.start..iref.end) },
+        }
+    }
+
+    /// Returns the [`FuncHeader`] of the [`FuncBody`].
+    pub fn header(&self, func_body: FuncBody) -> &FuncHeader {
+        unsafe { self.headers.get_unchecked(func_body.0) }
+        // self.headers[func_body.0]
     }
 }
 

@@ -18,22 +18,14 @@ use wasmi_core::UntypedValue;
 /// each representing either the `BrTable` head or one of its branching targets.
 #[derive(Copy, Debug, Clone, PartialEq, Eq)]
 pub enum Instruction {
-    GetLocal {
-        local_depth: LocalIdx,
-    },
-    SetLocal {
-        local_depth: LocalIdx,
-    },
-    TeeLocal {
-        local_depth: LocalIdx,
-    },
+    GetLocal { local_depth: LocalIdx },
+    SetLocal { local_depth: LocalIdx },
+    TeeLocal { local_depth: LocalIdx },
     Br(Target),
     BrIfEqz(Target),
     BrIfNez(Target),
     ReturnIfNez(DropKeep),
-    BrTable {
-        len_targets: usize,
-    },
+    BrTable { len_targets: usize },
     Unreachable,
     Return(DropKeep),
     Call(FuncIdx),
@@ -204,43 +196,6 @@ pub enum Instruction {
     I64TruncSatF32U,
     I64TruncSatF64S,
     I64TruncSatF64U,
-
-    /// The start of a Wasm function body.
-    ///
-    /// - This stores the `wasmi` bytecode length of the function body as well
-    ///   as the amount of local variables.
-    /// - Note that the length of the `wasmi` bytecode might differ from the length
-    ///   of the original WebAssembly bytecode.
-    /// - The types of the local variables do not matter since all stack values
-    ///   are equally sized with 64-bits per value. Storing the amount of local
-    ///   variables eliminates one indirection when calling a Wasm function.
-    ///
-    /// # Note
-    ///
-    /// This is a non-WebAssembly instruction that is specific to how the `wasmi`
-    /// interpreter organizes its internal bytecode.
-    FuncBodyStart {
-        /// This field represents the amount of instruction of the function body.
-        ///
-        /// Note: This does not include any meta instructions such as
-        /// [`Instruction::FuncBodyStart`] or [`Instruction::FuncBodyEnd`].
-        len_instructions: u32,
-        /// Represents the number of local variables of the function body.
-        ///
-        /// Note: The types of the locals do not matter since all stack values
-        ///       use 64-bit encoding in the `wasmi` bytecode interpreter.
-        /// Note: Storing the amount of locals inline with the rest of the
-        ///       function body eliminates one indirection when calling a function.
-        len_locals: u32,
-        max_stack_height: u32,
-    },
-    /// The end of a Wasm function body.
-    ///
-    /// # Note
-    ///
-    /// This is a non-WebAssembly instruction that is specific to how the `wasmi`
-    /// interpreter organizes its internal bytecode.
-    FuncBodyEnd,
 }
 
 impl Instruction {

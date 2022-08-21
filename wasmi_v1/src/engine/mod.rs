@@ -172,7 +172,7 @@ impl Engine {
     #[cfg(test)]
     pub(crate) fn resolve_inst(&self, func_body: FuncBody, index: usize) -> Option<Instruction> {
         let this = self.inner.lock();
-        let iref = this.code_map.resolve(func_body).iref();
+        let iref = this.code_map.header(func_body).iref();
         this.code_map.insts(iref).get(index).copied()
     }
 
