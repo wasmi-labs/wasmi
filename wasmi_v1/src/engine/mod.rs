@@ -347,6 +347,12 @@ impl EngineInner {
         )
     }
 
+    /// Executes the top most Wasm function on the [`Stack`] until the [`Stack`] is empty.
+    ///
+    /// # Errors
+    ///
+    /// - When encountering a Wasm trap during the execution of `func`.
+    /// - When a called host function trapped.
     fn execute_wasm_func(
         &mut self,
         mut ctx: impl AsContextMut,
