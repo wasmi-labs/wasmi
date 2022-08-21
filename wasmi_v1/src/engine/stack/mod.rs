@@ -16,7 +16,6 @@ use crate::{
     func::{HostFuncEntity, WasmFuncEntity},
     AsContext,
     AsContextMut,
-    Func,
     Instance,
 };
 use core::{
@@ -136,26 +135,24 @@ impl Stack {
     /// Initializes the [`Stack`] for the given Wasm root function call.
     pub(crate) fn call_wasm_root(
         &mut self,
-        func: Func,
         wasm_func: &WasmFuncEntity,
         code_map: &CodeMap,
     ) -> Result<FuncFrame, TrapCode> {
         let iref = self.call_wasm_impl(wasm_func, code_map)?;
         let instance = wasm_func.instance();
-        Ok(self.frames.init(func, iref, instance))
+        Ok(self.frames.init(iref, instance))
     }
 
     /// Prepares the [`Stack`] for the given Wasm function call.
     pub(crate) fn call_wasm<'engine>(
         &mut self,
         caller: &mut FuncFrame,
-        func: Func,
         wasm_func: &WasmFuncEntity,
         code_map: &'engine CodeMap,
     ) -> Result<FuncFrame, TrapCode> {
         let iref = self.call_wasm_impl(wasm_func, code_map)?;
         let instance = wasm_func.instance();
-        let frame = self.frames.push(caller, func, iref, instance)?;
+        let frame = self.frames.push(caller, iref, instance)?;
         Ok(frame)
     }
 

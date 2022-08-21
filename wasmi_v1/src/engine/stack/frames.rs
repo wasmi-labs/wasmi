@@ -6,7 +6,6 @@ use crate::{
     engine::code_map::InstructionsRef,
     module::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
     AsContext,
-    Func,
     Instance,
     Memory,
     Table,
@@ -17,8 +16,6 @@ use core::mem::replace;
 /// A function frame of a function on the call stack.
 #[derive(Debug, Copy, Clone)]
 pub struct FuncFrame {
-    /// The function that is being executed.
-    func: Func,
     /// The reference to the instructions of the function frame.
     iref: InstructionsRef,
     /// The instance in which the function has been defined.
@@ -66,9 +63,8 @@ impl FuncFrame {
     }
 
     /// Creates a new [`FuncFrame`].
-    pub fn new(func: Func, iref: InstructionsRef, instance: Instance) -> Self {
+    pub fn new(iref: InstructionsRef, instance: Instance) -> Self {
         Self {
-            func,
             iref,
             instance,
             default_memory: None,
@@ -94,9 +90,7 @@ impl FuncFrame {
                 let default_memory = self
                     .instance
                     .get_memory(ctx.as_context(), DEFAULT_MEMORY_INDEX)
-                    .unwrap_or_else(|| {
-                        panic!("func does not have default linear memory: {:?}", self.func)
-                    });
+                    .expect("accessing non-existent default linear memory");
                 self.default_memory = Some(default_memory);
                 default_memory
             }
@@ -120,7 +114,7 @@ impl FuncFrame {
                 let default_table = self
                     .instance
                     .get_table(ctx.as_context(), DEFAULT_TABLE_INDEX)
-                    .unwrap_or_else(|| panic!("func does not have default table: {:?}", self.func));
+                    .expect("accessing non-existent default table");
                 self.default_table = Some(default_table);
                 default_table
             }
@@ -163,28 +157,22 @@ impl CallStack {
     }
 
     /// Initializes the [`CallStack`] given the Wasm function.
-    pub(crate) fn init(
-        &mut self,
-        func: Func,
-        iref: InstructionsRef,
-        instance: Instance,
-    ) -> FuncFrame {
+    pub(crate) fn init(&mut self, iref: InstructionsRef, instance: Instance) -> FuncFrame {
         self.clear();
-        FuncFrame::new(func, iref, instance)
+        FuncFrame::new(iref, instance)
     }
 
     /// Pushes a Wasm function onto the [`CallStack`].
     pub(crate) fn push(
         &mut self,
         caller: &mut FuncFrame,
-        func: Func,
         iref: InstructionsRef,
         instance: Instance,
     ) -> Result<FuncFrame, TrapCode> {
         if self.len() == self.recursion_limit {
             return Err(err_stack_overflow());
         }
-        let frame = FuncFrame::new(func, iref, instance);
+        let frame = FuncFrame::new(iref, instance);
         let caller = replace(caller, frame);
         self.frames.push(caller);
         Ok(frame)

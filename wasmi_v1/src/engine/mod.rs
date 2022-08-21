@@ -281,7 +281,7 @@ impl EngineInner {
         let signature = match func.as_internal(&ctx) {
             FuncEntityInternal::Wasm(wasm_func) => {
                 let signature = wasm_func.signature();
-                let mut frame = self.stack.call_wasm_root(func, wasm_func, &self.code_map)?;
+                let mut frame = self.stack.call_wasm_root(wasm_func, &self.code_map)?;
                 self.execute_wasm_func(&mut ctx, &mut frame)?;
                 signature
             }
@@ -370,8 +370,7 @@ impl EngineInner {
                 },
                 CallOutcome::NestedCall(called_func) => match called_func.as_internal(&ctx) {
                     FuncEntityInternal::Wasm(wasm_func) => {
-                        self.stack
-                            .call_wasm(frame, called_func, wasm_func, &self.code_map)?;
+                        self.stack.call_wasm(frame, wasm_func, &self.code_map)?;
                     }
                     FuncEntityInternal::Host(host_func) => {
                         let host_func = host_func.clone();
