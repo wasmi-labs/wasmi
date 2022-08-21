@@ -123,6 +123,7 @@ impl Stack {
     }
 
     /// Returns a [`FunctionExecutor`] for the referenced [`FuncFrame`].
+    #[inline(always)]
     pub fn executor<'engine>(
         &'engine mut self,
         frame: &'engine mut FuncFrame,

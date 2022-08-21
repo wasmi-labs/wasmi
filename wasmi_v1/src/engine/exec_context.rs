@@ -29,6 +29,7 @@ pub struct FunctionExecutor<'engine, 'func> {
 
 impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
     /// Creates an execution context for the given [`FunctionFrame`].
+    #[inline(always)]
     pub fn new(
         frame: &'func mut FuncFrame,
         insts: Instructions<'engine>,
@@ -47,6 +48,7 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
     ///
     /// This executes instructions sequentially until either the function
     /// calls into another function or the function returns to its caller.
+    #[inline(always)]
     #[rustfmt::skip]
     pub fn execute_frame(self, mut ctx: impl AsContextMut) -> Result<CallOutcome, Trap> {
         use Instruction as Instr;
