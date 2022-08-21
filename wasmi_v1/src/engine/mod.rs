@@ -355,7 +355,6 @@ impl EngineInner {
         mut ctx: impl AsContextMut,
         mut frame: FuncFrame,
     ) -> Result<(), Trap> {
-        // let mut func = self.stack.resolve(frame, &self.code_map);
         'outer: loop {
             match self
                 .stack
