@@ -196,7 +196,7 @@ impl CallStack {
     }
 
     /// Returns the amount of function frames on the [`CallStack`].
-    pub fn len(&self) -> usize {
+    fn len(&self) -> usize {
         self.frames.len()
     }
 
