@@ -104,15 +104,13 @@ impl CodeMap {
     /// Resolves the instructions given an [`InstructionsRef`].
     pub fn insts(&self, iref: InstructionsRef) -> Instructions {
         Instructions {
-            // insts: &self.insts[iref.start..iref.end],
-            insts: unsafe { self.insts.get_unchecked(iref.start..iref.end) },
+            insts: &self.insts[iref.start..iref.end],
         }
     }
 
     /// Returns the [`FuncHeader`] of the [`FuncBody`].
     pub fn header(&self, func_body: FuncBody) -> &FuncHeader {
-        unsafe { self.headers.get_unchecked(func_body.0) }
-        // self.headers[func_body.0]
+        &self.headers[func_body.0]
     }
 }
 
