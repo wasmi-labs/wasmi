@@ -113,8 +113,7 @@ pub mod errors {
 
 use self::{
     arena::{GuardedEntity, Index},
-    engine::FuncBody,
-    func::{FuncEntity, FuncEntityInternal, FuncIdx},
+    func::{FuncEntity, FuncIdx},
     global::{GlobalEntity, GlobalIdx},
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
     memory::{MemoryEntity, MemoryIdx},
@@ -122,7 +121,7 @@ use self::{
     table::{TableEntity, TableIdx},
 };
 pub use self::{
-    engine::{Config, Engine},
+    engine::{Config, Engine, StackLimits},
     error::Error,
     external::Extern,
     func::{Caller, Func, TypedFunc, WasmParams, WasmResults},

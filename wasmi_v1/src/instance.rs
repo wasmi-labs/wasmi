@@ -225,7 +225,7 @@ impl Deref for InstanceEntityBuilder {
 }
 
 /// A Wasm module instance reference.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct Instance(Stored<InstanceIdx>);
 

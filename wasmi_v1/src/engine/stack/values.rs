@@ -1,9 +1,9 @@
 //! Data structures to represent the Wasm value stack during execution.
 
-use super::{DropKeep, DEFAULT_VALUE_STACK_LIMIT};
-use crate::core::TrapCode;
+use super::{err_stack_overflow, DEFAULT_MAX_VALUE_STACK_HEIGHT, DEFAULT_MIN_VALUE_STACK_HEIGHT};
+use crate::{core::TrapCode, engine::DropKeep};
 use alloc::vec::Vec;
-use core::{fmt, fmt::Debug, iter, mem};
+use core::{fmt, fmt::Debug, iter, mem::size_of};
 use wasmi_core::UntypedValue;
 
 /// The value stack that is used to execute Wasm bytecode.
@@ -30,8 +30,8 @@ pub struct ValueStack {
 impl Debug for ValueStack {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ValueStack")
-            .field("entries", &&self.entries[..self.stack_ptr])
             .field("stack_ptr", &self.stack_ptr)
+            .field("entries", &&self.entries[..self.stack_ptr])
             .finish()
     }
 }
@@ -47,9 +47,10 @@ impl Eq for ValueStack {}
 
 impl Default for ValueStack {
     fn default() -> Self {
+        let register_len = size_of::<UntypedValue>();
         Self::new(
-            DEFAULT_VALUE_STACK_LIMIT / mem::size_of::<UntypedValue>(),
-            1024 * DEFAULT_VALUE_STACK_LIMIT / mem::size_of::<UntypedValue>(),
+            DEFAULT_MIN_VALUE_STACK_HEIGHT / register_len,
+            DEFAULT_MAX_VALUE_STACK_HEIGHT / register_len,
         )
     }
 }
@@ -81,11 +82,16 @@ impl ValueStack {
     ///
     /// # Panics
     ///
-    /// If the `initial_len` is zero.
+    /// - If the `initial_len` is zero.
+    /// - If the `initial_len` is greater than `maximum_len`.
     pub fn new(initial_len: usize, maximum_len: usize) -> Self {
         assert!(
             initial_len > 0,
-            "cannot initialize the value stack with zero length"
+            "cannot initialize the value stack with zero length",
+        );
+        assert!(
+            initial_len <= maximum_len,
+            "initial value stack length is greater than maximum value stack length",
         );
         let entries = vec![UntypedValue::default(); initial_len];
         Self {
@@ -112,7 +118,7 @@ impl ValueStack {
     ///
     /// If the `index` is out of bounds.
     fn get_release_unchecked(&self, index: usize) -> UntypedValue {
-        debug_assert!(index < self.entries.len());
+        debug_assert!(index < self.capacity());
         // Safety: This is safe since all wasmi bytecode has been validated
         //         during translation and therefore cannot result in out of
         //         bounds accesses.
@@ -136,7 +142,7 @@ impl ValueStack {
     ///
     /// If the `index` is out of bounds.
     fn get_release_unchecked_mut(&mut self, index: usize) -> &mut UntypedValue {
-        debug_assert!(index < self.entries.len());
+        debug_assert!(index < self.capacity());
         // Safety: This is safe since all wasmi bytecode has been validated
         //         during translation and therefore cannot result in out of
         //         bounds accesses.
@@ -327,16 +333,17 @@ impl ValueStack {
     /// compilation so that we are aware of all stack-depths for every
     /// functions.
     pub fn reserve(&mut self, additional: usize) -> Result<(), TrapCode> {
-        if self.len() + additional > self.maximum_len {
-            return Err(TrapCode::StackOverflow);
-        }
-        let required_len = self.len() + additional;
-        if required_len > self.capacity() {
-            // By extending with the required new length we effectively double
+        let new_len = self
+            .len()
+            .checked_add(additional)
+            .filter(|&new_len| new_len <= self.maximum_len)
+            .ok_or_else(err_stack_overflow)?;
+        if new_len > self.capacity() {
+            // Note: By extending with the new length we effectively double
             // the current value stack length and add the additional flat amount
             // on top. This avoids too many frequent reallocations.
             self.entries
-                .extend(iter::repeat(UntypedValue::default()).take(required_len));
+                .extend(iter::repeat(UntypedValue::default()).take(new_len));
         }
         Ok(())
     }

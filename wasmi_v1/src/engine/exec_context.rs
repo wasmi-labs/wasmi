@@ -1,12 +1,12 @@
 use super::{
     super::{Global, Memory, Table},
     bytecode::{FuncIdx, GlobalIdx, Instruction, LocalIdx, Offset, SignatureIdx},
+    cache::InstanceCache,
+    code_map::Instructions,
     AsContextMut,
     CallOutcome,
     DropKeep,
-    EngineInner,
-    FunctionFrame,
-    ResolvedFuncBody,
+    FuncFrame,
     Target,
     ValueStack,
 };
@@ -23,24 +23,24 @@ pub struct FunctionExecutor<'engine, 'func> {
     /// Stores the value stack of live values on the Wasm stack.
     value_stack: &'engine mut ValueStack,
     /// The function frame that is being executed.
-    frame: &'func mut FunctionFrame,
+    frame: &'func mut FuncFrame,
     /// The resolved function body of the executed function frame.
-    func_body: ResolvedFuncBody<'engine>,
+    insts: Instructions<'engine>,
 }
 
 impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
-    /// Creates an execution context for the given [`FunctionFrame`].
+    /// Creates an execution context for the given [`FuncFrame`].
+    #[inline(always)]
     pub fn new(
-        engine: &'engine mut EngineInner,
-        frame: &'func mut FunctionFrame,
-    ) -> Result<Self, Trap> {
-        let resolved = engine.code_map.resolve(frame.func_body);
-        frame.initialize(resolved, &mut engine.value_stack)?;
-        Ok(Self {
-            value_stack: &mut engine.value_stack,
+        frame: &'func mut FuncFrame,
+        insts: Instructions<'engine>,
+        value_stack: &'engine mut ValueStack,
+    ) -> Self {
+        Self {
             frame,
-            func_body: resolved,
-        })
+            insts,
+            value_stack,
+        }
     }
 
     /// Executes the current function frame.
@@ -51,15 +51,16 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
     /// calls into another function or the function returns to its caller.
     #[inline(always)]
     #[rustfmt::skip]
-    pub fn execute_frame(self, mut ctx: impl AsContextMut) -> Result<CallOutcome, Trap> {
+    pub fn execute_frame(self, mut ctx: impl AsContextMut, cache: &mut InstanceCache) -> Result<CallOutcome, Trap> {
         use Instruction as Instr;
-        let mut exec_ctx = ExecutionContext::new(self.value_stack, self.frame, &mut ctx, self.frame.pc());
+        cache.update_instance(self.frame.instance());
+        let mut exec_ctx = ExecutionContext::new(self.value_stack, self.frame, cache, &mut ctx, self.frame.pc());
         loop {
             // # Safety
             //
             // Properly constructed `wasmi` bytecode can never produce invalid `pc`.
             let instr = unsafe {
-                self.func_body.get_release_unchecked(exec_ctx.pc)
+                self.insts.get_release_unchecked(exec_ctx.pc)
             };
             match instr {
                 Instr::GetLocal { local_depth } => { exec_ctx.visit_get_local(*local_depth)?; }
@@ -253,26 +254,6 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 Instr::I64Extend8S => { exec_ctx.visit_i64_sign_extend8()?; }
                 Instr::I64Extend16S => { exec_ctx.visit_i64_sign_extend16()?; }
                 Instr::I64Extend32S => { exec_ctx.visit_i64_sign_extend32()?; }
-                Instr::FuncBodyStart { .. } | Instruction::FuncBodyEnd => {
-                    if cfg!(debug) {
-                        unreachable!(
-                            "expected start of a new instruction \
-                            at index {} but found: {instr:?}",
-                            exec_ctx.pc
-                        )
-                    } else {
-                        // # Safety (--release)
-                        //
-                        // It is guaranteed by construction of the `wasmi` bytecode
-                        // that these variants are never visited during execution.
-                        // We do not use the `unreachable!()` macro since that
-                        // results in significant slowdown in the range of 5-15%
-                        // for most execution benchmarks.
-                        unsafe {
-                            core::hint::unreachable_unchecked()
-                        }
-                    }
-                }
             }
         }
     }
@@ -286,7 +267,9 @@ struct ExecutionContext<'engine, 'func, Ctx> {
     /// Stores the value stack of live values on the Wasm stack.
     value_stack: &'engine mut ValueStack,
     /// The function frame that is being executed.
-    frame: &'func mut FunctionFrame,
+    frame: &'func mut FuncFrame,
+    /// Stores frequently used instance related data.
+    cache: &'engine mut InstanceCache,
     /// A mutable [`Store`] context.
     ///
     /// [`Store`]: [`crate::v1::Store`]
@@ -300,13 +283,15 @@ where
     /// Creates a new [`ExecutionContext`] for executing a single `wasmi` bytecode instruction.
     pub fn new(
         value_stack: &'engine mut ValueStack,
-        frame: &'func mut FunctionFrame,
+        frame: &'func mut FuncFrame,
+        cache: &'engine mut InstanceCache,
         ctx: Ctx,
         pc: usize,
     ) -> Self {
         Self {
             value_stack,
             frame,
+            cache,
             ctx,
             pc,
         }
@@ -316,18 +301,18 @@ where
     ///
     /// # Panics
     ///
-    /// If there is no default linear memory.
+    /// If there exists is no linear memory for the instance.
     fn default_memory(&mut self) -> Memory {
-        self.frame.default_memory(self.ctx.as_context())
+        self.cache.default_memory(&self.ctx, self.frame.instance())
     }
 
-    /// Returns the default linear memory.
+    /// Returns the default table.
     ///
     /// # Panics
     ///
-    /// If there is no default linear memory.
+    /// If there exists is no table for the instance.
     fn default_table(&mut self) -> Table {
-        self.frame.default_table(self.ctx.as_context())
+        self.cache.default_table(&self.ctx, self.frame.instance())
     }
 
     /// Returns the global variable at the given index.
@@ -337,7 +322,7 @@ where
     /// If there is no global variable at the given index.
     fn global(&self, global_index: GlobalIdx) -> Global {
         self.frame
-            .instance
+            .instance()
             .get_global(self.ctx.as_context(), global_index.into_inner())
             .unwrap_or_else(|| panic!("missing global at index {:?}", global_index))
     }
@@ -646,12 +631,12 @@ where
     }
 
     fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, Trap> {
-        let func = self
-            .frame
-            .instance
-            .get_func(self.ctx.as_context_mut(), func_index.into_inner())
-            .unwrap_or_else(|| panic!("missing function at index {:?}", func_index));
-        self.call_func(func)
+        let callee = self.cache.get_func(
+            &mut self.ctx,
+            self.frame.instance(),
+            func_index.into_inner(),
+        );
+        self.call_func(callee)
     }
 
     fn visit_call_indirect(&mut self, signature_index: SignatureIdx) -> Result<CallOutcome, Trap> {
@@ -664,7 +649,7 @@ where
         let actual_signature = func.signature(self.ctx.as_context());
         let expected_signature = self
             .frame
-            .instance
+            .instance()
             .get_signature(self.ctx.as_context(), signature_index.into_inner())
             .unwrap_or_else(|| {
                 panic!(
