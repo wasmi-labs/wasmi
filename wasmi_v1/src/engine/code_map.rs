@@ -85,7 +85,6 @@ impl CodeMap {
     pub fn alloc<I>(&mut self, len_locals: usize, max_stack_height: usize, insts: I) -> FuncBody
     where
         I: IntoIterator<Item = Instruction>,
-        I::IntoIter: ExactSizeIterator,
     {
         let start = self.insts.len();
         self.insts.extend(insts);
