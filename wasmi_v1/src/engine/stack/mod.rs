@@ -6,7 +6,7 @@ pub use self::{
     values::ValueStack,
 };
 use super::{
-    code_map::{CodeMap, Instructions, InstructionsRef},
+    code_map::{CodeMap, InstructionsRef},
     exec_context::FunctionExecutor,
     func_types::FuncTypeRegistry,
     FuncParams,
@@ -110,13 +110,6 @@ pub struct Stack {
     pub(crate) values: ValueStack,
     /// The frame stack.
     frames: CallStack,
-}
-
-/// A resolved [`FuncFrame`] for execution.
-#[derive(Debug)]
-pub struct ResolvedFuncFrame<'engine> {
-    pub frame: FuncFrame,
-    pub insts: Instructions<'engine>,
 }
 
 impl Stack {
