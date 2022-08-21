@@ -1,5 +1,6 @@
 //! Data structures to represent the Wasm value stack during execution.
 
+use super::err_stack_overflow;
 use super::{DEFAULT_MAX_VALUE_STACK_HEIGHT, DEFAULT_MIN_VALUE_STACK_HEIGHT};
 use crate::{core::TrapCode, engine::DropKeep};
 use alloc::vec::Vec;
@@ -333,16 +334,17 @@ impl ValueStack {
     /// compilation so that we are aware of all stack-depths for every
     /// functions.
     pub fn reserve(&mut self, additional: usize) -> Result<(), TrapCode> {
-        if self.len() + additional > self.maximum_len {
-            return Err(TrapCode::StackOverflow);
-        }
-        let required_len = self.len() + additional;
-        if required_len > self.capacity() {
-            // By extending with the required new length we effectively double
+        let new_len = self
+            .len()
+            .checked_add(additional)
+            .filter(|&new_len| new_len <= self.maximum_len)
+            .ok_or_else(err_stack_overflow)?;
+        if new_len > self.capacity() {
+            // Note: By extending with the new length we effectively double
             // the current value stack length and add the additional flat amount
             // on top. This avoids too many frequent reallocations.
             self.entries
-                .extend(iter::repeat(UntypedValue::default()).take(required_len));
+                .extend(iter::repeat(UntypedValue::default()).take(new_len));
         }
         Ok(())
     }
