@@ -3,11 +3,10 @@
 use super::{err_stack_overflow, DEFAULT_MAX_RECURSION_DEPTH};
 use crate::{
     core::TrapCode,
-    func::WasmFuncEntity,
+    engine::code_map::InstructionsRef,
     module::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
     AsContext,
     Func,
-    FuncBody,
     Instance,
     Memory,
     Table,
@@ -18,14 +17,9 @@ use alloc::vec::Vec;
 #[derive(Debug, Copy, Clone)]
 pub struct FuncFrame {
     /// The function that is being executed.
-    pub func: Func,
-    /// The function body of the function that is being executed.
-    ///
-    /// # Note
-    ///
-    /// This is just an optimization since function body is always required
-    /// to be loaded and for nested calls it is loaded multiple times.
-    pub func_body: FuncBody,
+    func: Func,
+    /// The reference to the instructions of the function frame.
+    iref: InstructionsRef,
     /// The instance in which the function has been defined.
     ///
     /// # Note
@@ -33,7 +27,7 @@ pub struct FuncFrame {
     /// The instance is used to inspect and manipulate with data that is
     /// non-local to the function such as linear memories, global variables
     /// and tables.
-    pub instance: Instance,
+    instance: Instance,
     /// The default linear memory (index 0) of the `instance`.
     ///
     /// # Note
@@ -71,10 +65,10 @@ impl FuncFrame {
     }
 
     /// Creates a new [`FuncFrame`].
-    pub fn new(func: Func, func_body: FuncBody, instance: Instance) -> Self {
+    pub fn new(func: Func, iref: InstructionsRef, instance: Instance) -> Self {
         Self {
             func,
-            func_body,
+            iref,
             instance,
             default_memory: None,
             default_table: None,
@@ -137,9 +131,8 @@ impl FuncFrame {
         self.instance
     }
 
-    /// Returns the [`FuncBody`] of the [`FuncFrame`].
-    pub(super) fn func_body(&self) -> FuncBody {
-        self.func_body
+    pub(super) fn iref(&self) -> InstructionsRef {
+        self.iref
     }
 }
 
@@ -168,9 +161,14 @@ impl CallStack {
     }
 
     /// Initializes the [`CallStack`] given the Wasm function.
-    pub(crate) fn init(&mut self, func: Func, wasm_func: &WasmFuncEntity) -> FuncFrame {
+    pub(crate) fn init(
+        &mut self,
+        func: Func,
+        iref: InstructionsRef,
+        instance: Instance,
+    ) -> FuncFrame {
         self.clear();
-        FuncFrame::new(func, wasm_func.func_body(), wasm_func.instance())
+        FuncFrame::new(func, iref, instance)
     }
 
     /// Pushes a Wasm function onto the [`CallStack`].
@@ -178,12 +176,13 @@ impl CallStack {
         &mut self,
         caller: FuncFrame,
         func: Func,
-        wasm_func: &WasmFuncEntity,
+        iref: InstructionsRef,
+        instance: Instance,
     ) -> Result<FuncFrame, TrapCode> {
         if self.len() == self.recursion_limit {
             return Err(err_stack_overflow());
         }
-        let frame = FuncFrame::new(func, wasm_func.func_body(), wasm_func.instance());
+        let frame = FuncFrame::new(func, iref, instance);
         self.frames.push(caller);
         Ok(frame)
     }

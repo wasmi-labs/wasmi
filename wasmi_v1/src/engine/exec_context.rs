@@ -334,7 +334,7 @@ where
     /// If there is no global variable at the given index.
     fn global(&self, global_index: GlobalIdx) -> Global {
         self.frame
-            .instance
+            .instance()
             .get_global(self.ctx.as_context(), global_index.into_inner())
             .unwrap_or_else(|| panic!("missing global at index {:?}", global_index))
     }
@@ -645,7 +645,7 @@ where
     fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, Trap> {
         let func = self
             .frame
-            .instance
+            .instance()
             .get_func(self.ctx.as_context_mut(), func_index.into_inner())
             .unwrap_or_else(|| panic!("missing function at index {:?}", func_index));
         self.call_func(func)
@@ -661,7 +661,7 @@ where
         let actual_signature = func.signature(self.ctx.as_context());
         let expected_signature = self
             .frame
-            .instance
+            .instance()
             .get_signature(self.ctx.as_context(), signature_index.into_inner())
             .unwrap_or_else(|| {
                 panic!(

@@ -18,6 +18,15 @@ impl Index for FuncBody {
     }
 }
 
+/// A reference to the [`Instructions`] of a [`FuncBody`].
+#[derive(Debug, Copy, Clone)]
+pub struct InstructionsRef {
+    /// The start index in the instructions array.
+    start: usize,
+    /// The end index in the instructions array.
+    end: usize,
+}
+
 /// Datastructure to efficiently store Wasm function bodies.
 #[derive(Debug, Default)]
 pub struct CodeMap {
@@ -85,6 +94,13 @@ impl CodeMap {
         idx
     }
 
+    /// Resolves the instructions given an [`InstructionsRef`].
+    pub fn insts(&self, iref: InstructionsRef) -> Instructions {
+        Instructions {
+            insts: &self.insts[iref.start..iref.end],
+        }
+    }
+
     /// Resolves the instruction of the function body.
     ///
     /// # Panics
@@ -122,9 +138,12 @@ impl CodeMap {
                 end,
             );
         }
-        let insts = &self.insts[first_inst..(first_inst + len_instructions)];
+        let iref = InstructionsRef {
+            start: first_inst,
+            end: first_inst + len_instructions,
+        };
         ResolvedFuncBody {
-            insts,
+            iref,
             len_locals,
             max_stack_height,
         }
@@ -142,26 +161,16 @@ impl CodeMap {
 /// [`Instruction::FuncBodyEnd`] instructions surrounding the instructions
 /// of a function body in the [`CodeMap`].
 #[derive(Debug, Copy, Clone)]
-pub struct ResolvedFuncBody<'a> {
-    insts: &'a [Instruction],
+pub struct ResolvedFuncBody {
+    iref: InstructionsRef,
     len_locals: usize,
     max_stack_height: usize,
 }
 
-impl<'a> ResolvedFuncBody<'a> {
-    /// Returns the instructions of the [`ResolvedFuncBody`].
-    pub fn insts(&self) -> Instructions<'a> {
-        Instructions { insts: &self.insts }
-    }
-
-    /// Returns the instruction at the given index.
-    ///
-    /// # Panics
-    ///
-    /// If there is no instruction at the given index.
-    #[cfg(test)]
-    pub fn get(&self, index: usize) -> Option<&Instruction> {
-        self.insts.get(index)
+impl ResolvedFuncBody {
+    /// Returns a reference to the instructions of the [`ResolvedFuncBody`].
+    pub fn iref(&self) -> InstructionsRef {
+        self.iref
     }
 
     /// Returns the amount of local variable of the function.
@@ -187,6 +196,16 @@ pub struct Instructions<'a> {
 }
 
 impl<'a> Instructions<'a> {
+    /// Returns the instruction at the given index.
+    ///
+    /// # Panics
+    ///
+    /// If there is no instruction at the given index.
+    #[cfg(test)]
+    pub fn get(&self, index: usize) -> Option<&Instruction> {
+        self.insts.get(index)
+    }
+
     /// Returns a shared reference to the instruction at the given `pc`.
     ///
     /// # Panics (Debug)

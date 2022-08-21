@@ -113,7 +113,6 @@ pub mod errors {
 
 use self::{
     arena::{GuardedEntity, Index},
-    engine::FuncBody,
     func::{FuncEntity, FuncIdx},
     global::{GlobalEntity, GlobalIdx},
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
