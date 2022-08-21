@@ -1,7 +1,6 @@
 //! Data structures to represent the Wasm value stack during execution.
 
-use super::err_stack_overflow;
-use super::{DEFAULT_MAX_VALUE_STACK_HEIGHT, DEFAULT_MIN_VALUE_STACK_HEIGHT};
+use super::{err_stack_overflow, DEFAULT_MAX_VALUE_STACK_HEIGHT, DEFAULT_MIN_VALUE_STACK_HEIGHT};
 use crate::{core::TrapCode, engine::DropKeep};
 use alloc::vec::Vec;
 use core::{fmt, fmt::Debug, iter, mem::size_of};
