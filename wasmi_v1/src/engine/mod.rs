@@ -285,7 +285,7 @@ impl EngineInner {
             FuncEntityInternal::Wasm(wasm_func) => {
                 let signature = wasm_func.signature();
                 let fref = self.stack.call_wasm(func, wasm_func, &self.code_map)?;
-                self.execute_wasm_func2(&mut ctx, fref)?;
+                self.execute_wasm_func(&mut ctx, fref)?;
                 signature
             }
             FuncEntityInternal::Host(host_func) => {
@@ -347,7 +347,7 @@ impl EngineInner {
         )
     }
 
-    fn execute_wasm_func2(
+    fn execute_wasm_func(
         &mut self,
         mut ctx: impl AsContextMut,
         mut fref: FuncFrameRef,
