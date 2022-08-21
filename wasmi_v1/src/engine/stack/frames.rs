@@ -65,12 +65,12 @@ pub struct FuncFrame {
 
 impl FuncFrame {
     /// Returns the program counter.
-    pub(crate) fn pc(&self) -> usize {
+    pub fn pc(&self) -> usize {
         self.pc
     }
 
     /// Updates the program counter.
-    pub(crate) fn update_pc(&mut self, new_pc: usize) {
+    pub fn update_pc(&mut self, new_pc: usize) {
         self.pc = new_pc;
     }
 
