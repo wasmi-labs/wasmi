@@ -75,7 +75,7 @@ impl FuncFrame {
     }
 
     /// Creates a new [`FuncFrame`].
-    pub fn new2(func: Func, func_body: FuncBody, instance: Instance) -> Self {
+    pub fn new(func: Func, func_body: FuncBody, instance: Instance) -> Self {
         Self {
             func,
             func_body,
@@ -191,7 +191,7 @@ impl CallStack {
             return Err(err_stack_overflow());
         }
         let next_ref = self.next_frame_ref();
-        let frame = FuncFrame::new2(func, wasm_func.func_body(), wasm_func.instance());
+        let frame = FuncFrame::new(func, wasm_func.func_body(), wasm_func.instance());
         self.frames.push(frame);
         Ok(next_ref)
     }
