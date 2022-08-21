@@ -119,7 +119,7 @@ impl ValueStack {
     ///
     /// If the `index` is out of bounds.
     fn get_release_unchecked(&self, index: usize) -> UntypedValue {
-        debug_assert!(index < self.entries.len());
+        debug_assert!(index < self.capacity());
         // Safety: This is safe since all wasmi bytecode has been validated
         //         during translation and therefore cannot result in out of
         //         bounds accesses.
@@ -143,7 +143,7 @@ impl ValueStack {
     ///
     /// If the `index` is out of bounds.
     fn get_release_unchecked_mut(&mut self, index: usize) -> &mut UntypedValue {
-        debug_assert!(index < self.entries.len());
+        debug_assert!(index < self.capacity());
         // Safety: This is safe since all wasmi bytecode has been validated
         //         during translation and therefore cannot result in out of
         //         bounds accesses.
