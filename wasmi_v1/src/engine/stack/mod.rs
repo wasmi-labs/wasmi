@@ -180,7 +180,6 @@ impl Stack {
     }
 
     /// Executes the given host function called by a Wasm function.
-    #[inline(never)]
     pub(crate) fn call_host<C>(
         &mut self,
         ctx: C,
