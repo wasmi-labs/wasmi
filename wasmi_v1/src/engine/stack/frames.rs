@@ -12,6 +12,7 @@ use crate::{
     Table,
 };
 use alloc::vec::Vec;
+use core::mem::replace;
 
 /// A function frame of a function on the call stack.
 #[derive(Debug, Copy, Clone)]
@@ -174,7 +175,7 @@ impl CallStack {
     /// Pushes a Wasm function onto the [`CallStack`].
     pub(crate) fn push(
         &mut self,
-        caller: FuncFrame,
+        caller: &mut FuncFrame,
         func: Func,
         iref: InstructionsRef,
         instance: Instance,
@@ -183,6 +184,7 @@ impl CallStack {
             return Err(err_stack_overflow());
         }
         let frame = FuncFrame::new(func, iref, instance);
+        let caller = replace(caller, frame);
         self.frames.push(caller);
         Ok(frame)
     }

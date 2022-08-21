@@ -281,8 +281,8 @@ impl EngineInner {
         let signature = match func.as_internal(&ctx) {
             FuncEntityInternal::Wasm(wasm_func) => {
                 let signature = wasm_func.signature();
-                let frame = self.stack.call_wasm_root(func, wasm_func, &self.code_map)?;
-                self.execute_wasm_func(&mut ctx, frame)?;
+                let mut frame = self.stack.call_wasm_root(func, wasm_func, &self.code_map)?;
+                self.execute_wasm_func(&mut ctx, &mut frame)?;
                 signature
             }
             FuncEntityInternal::Host(host_func) => {
@@ -353,26 +353,25 @@ impl EngineInner {
     fn execute_wasm_func(
         &mut self,
         mut ctx: impl AsContextMut,
-        mut frame: FuncFrame,
+        frame: &mut FuncFrame,
     ) -> Result<(), Trap> {
         'outer: loop {
             match self
                 .stack
-                .executor(&mut frame, &self.code_map)
+                .executor(frame, &self.code_map)
                 .execute_frame(&mut ctx)?
             {
                 CallOutcome::Return => match self.stack.return_wasm() {
                     Some(caller) => {
-                        frame = caller;
+                        *frame = caller;
                         continue 'outer;
                     }
                     None => return Ok(()),
                 },
                 CallOutcome::NestedCall(called_func) => match called_func.as_internal(&ctx) {
                     FuncEntityInternal::Wasm(wasm_func) => {
-                        frame =
-                            self.stack
-                                .call_wasm(frame, called_func, wasm_func, &self.code_map)?;
+                        self.stack
+                            .call_wasm(frame, called_func, wasm_func, &self.code_map)?;
                     }
                     FuncEntityInternal::Host(host_func) => {
                         let host_func = host_func.clone();
