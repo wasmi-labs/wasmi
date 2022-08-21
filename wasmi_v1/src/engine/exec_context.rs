@@ -47,7 +47,6 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
     ///
     /// This executes instructions sequentially until either the function
     /// calls into another function or the function returns to its caller.
-    #[inline(always)]
     #[rustfmt::skip]
     pub fn execute_frame(self, mut ctx: impl AsContextMut) -> Result<CallOutcome, Trap> {
         use Instruction as Instr;
