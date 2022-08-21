@@ -10,6 +10,7 @@ use core::{
     fmt::{self, Display},
     mem::size_of,
 };
+use wasmi_core::TrapCode;
 
 /// Default value for initial value stack heihgt in bytes.
 const DEFAULT_MIN_VALUE_STACK_HEIGHT: usize = 1024;
@@ -19,6 +20,12 @@ const DEFAULT_MAX_VALUE_STACK_HEIGHT: usize = 1024 * DEFAULT_MIN_VALUE_STACK_HEI
 
 /// Default value for maximum recursion depth.
 const DEFAULT_MAX_RECURSION_DEPTH: usize = 1024;
+
+/// Returns a [`TrapCode`] signalling a stack overflow.
+#[cold]
+fn err_stack_overflow() -> TrapCode {
+    TrapCode::StackOverflow
+}
 
 /// The configured limits of the [`Stack`].
 #[derive(Debug, Copy, Clone)]

@@ -15,6 +15,7 @@ use crate::{
     Table,
 };
 use alloc::vec::Vec;
+use super::err_stack_overflow;
 
 /// A function frame of a function on the call stack.
 #[derive(Debug, Copy, Clone)]
@@ -215,12 +216,6 @@ impl CallStack {
         }
     }
 
-    /// Returns a [`TrapCode`] signalling a stack overflow.
-    #[cold]
-    fn err_stack_overflow() -> TrapCode {
-        TrapCode::StackOverflow
-    }
-
     /// Pushes another [`FuncFrame`] to the [`CallStack`].
     ///
     /// # Errors
@@ -228,7 +223,7 @@ impl CallStack {
     /// If the [`FuncFrame`] is at the set recursion limit.
     pub fn push(&mut self, frame: FuncFrame) -> Result<(), TrapCode> {
         if self.len() == self.recursion_limit {
-            return Err(Self::err_stack_overflow());
+            return Err(err_stack_overflow());
         }
         self.frames.push(frame);
         Ok(())
