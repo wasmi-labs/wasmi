@@ -4,7 +4,6 @@ use super::{
     AsContextMut,
     CallOutcome,
     DropKeep,
-    EngineInner,
     FuncFrame,
     ResolvedFuncBody,
     Target,
@@ -31,16 +30,15 @@ pub struct FunctionExecutor<'engine, 'func> {
 impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
     /// Creates an execution context for the given [`FunctionFrame`].
     pub fn new(
-        engine: &'engine mut EngineInner,
         frame: &'func mut FuncFrame,
-    ) -> Result<Self, Trap> {
-        let resolved = engine.code_map.resolve(frame.func_body);
-        frame.initialize(resolved, &mut engine.stack.values)?;
-        Ok(Self {
-            value_stack: &mut engine.stack.values,
+        func_body: ResolvedFuncBody<'engine>,
+        value_stack: &'engine mut ValueStack,
+    ) -> Self {
+        Self {
             frame,
-            func_body: resolved,
-        })
+            func_body,
+            value_stack,
+        }
     }
 
     /// Executes the current function frame.

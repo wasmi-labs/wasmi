@@ -1,32 +1,26 @@
 //! Data structures to represent the Wasm call stack during execution.
 
-use super::DEFAULT_MAX_RECURSION_DEPTH;
+use super::{err_stack_overflow, DEFAULT_MAX_RECURSION_DEPTH};
 use crate::{
     core::TrapCode,
-    engine::{ResolvedFuncBody, ValueStack},
     func::WasmFuncEntity,
     module::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
     AsContext,
     Func,
     FuncBody,
-    FuncEntityInternal,
     Instance,
     Memory,
     Table,
 };
 use alloc::vec::Vec;
-use super::err_stack_overflow;
+
+/// A reference to a [`FuncFrame`].
+#[derive(Debug, Copy, Clone)]
+pub struct FuncFrameRef(usize);
 
 /// A function frame of a function on the call stack.
 #[derive(Debug, Copy, Clone)]
 pub struct FuncFrame {
-    /// Is `true` if the function frame has already been instantiated.
-    ///
-    /// # Note
-    ///
-    /// Function frame instantiation puts function inputs and locals on
-    /// the function stack and prepares for its immediate execution.
-    pub instantiated: bool,
     /// The function that is being executed.
     pub func: Func,
     /// The function body of the function that is being executed.
@@ -70,21 +64,6 @@ pub struct FuncFrame {
 }
 
 impl FuncFrame {
-    /// Creates a new [`FuncFrame`] from the given `func`.
-    ///
-    /// # Panics
-    ///
-    /// If the `func` has no instance handle, i.e. is not a Wasm function.
-    pub fn new(ctx: impl AsContext, func: Func) -> Self {
-        match func.as_internal(ctx.as_context()) {
-            FuncEntityInternal::Wasm(wasm_func) => Self::new_wasm(func, wasm_func),
-            FuncEntityInternal::Host(host_func) => panic!(
-                "cannot execute host functions using Wasm interpreter: {:?}",
-                host_func
-            ),
-        }
-    }
-
     /// Returns the program counter.
     pub(crate) fn pc(&self) -> usize {
         self.pc
@@ -95,12 +74,9 @@ impl FuncFrame {
         self.pc = new_pc;
     }
 
-    /// Creates a new [`FuncFrame`] from the given Wasm function entity.
-    pub(crate) fn new_wasm(func: Func, wasm_func: &WasmFuncEntity) -> Self {
-        let instance = wasm_func.instance();
-        let func_body = wasm_func.func_body();
+    /// Creates a new [`FuncFrame`].
+    pub fn new2(func: Func, func_body: FuncBody, instance: Instance) -> Self {
         Self {
-            instantiated: false,
             func,
             func_body,
             instance,
@@ -160,32 +136,6 @@ impl FuncFrame {
         }
     }
 
-    /// Initializes the function frame.
-    ///
-    /// # Note
-    ///
-    /// Does nothing if the function frame has already been initialized.
-    pub fn initialize(
-        &mut self,
-        resolved_func_body: ResolvedFuncBody,
-        value_stack: &mut ValueStack,
-    ) -> Result<(), TrapCode> {
-        if self.instantiated {
-            // Nothing to do if the function frame has already been initialized.
-            return Ok(());
-        }
-        let max_stack_height = resolved_func_body.max_stack_height();
-        value_stack.reserve(max_stack_height)?;
-        let len_locals = resolved_func_body.len_locals();
-        value_stack
-            .extend_zeros(len_locals)
-            .unwrap_or_else(|error| {
-                panic!("encountered stack overflow while pushing locals: {}", error)
-            });
-        self.instantiated = true;
-        Ok(())
-    }
-
     /// Returns the instance of the [`FuncFrame`].
     pub fn instance(&self) -> Instance {
         self.instance
@@ -216,22 +166,40 @@ impl CallStack {
         }
     }
 
-    /// Pushes another [`FuncFrame`] to the [`CallStack`].
-    ///
-    /// # Errors
-    ///
-    /// If the [`FuncFrame`] is at the set recursion limit.
-    pub fn push(&mut self, frame: FuncFrame) -> Result<(), TrapCode> {
+    /// Returns the next [`FuncFrameRef`].
+    fn next_frame_ref(&self) -> FuncFrameRef {
+        FuncFrameRef(self.frames.len())
+    }
+
+    /// Returns a shared reference to the referenced [`FuncFrame`].
+    pub fn frame_at(&self, fref: FuncFrameRef) -> &FuncFrame {
+        &self.frames[fref.0]
+    }
+
+    /// Returns an exclusive reference to the referenced [`FuncFrame`].
+    pub fn frame_at_mut(&mut self, fref: FuncFrameRef) -> &mut FuncFrame {
+        &mut self.frames[fref.0]
+    }
+
+    /// Pushes a Wasm function onto the [`CallStack`].
+    pub(crate) fn push_wasm(
+        &mut self,
+        func: Func,
+        wasm_func: &WasmFuncEntity,
+    ) -> Result<FuncFrameRef, TrapCode> {
         if self.len() == self.recursion_limit {
             return Err(err_stack_overflow());
         }
+        let next_ref = self.next_frame_ref();
+        let frame = FuncFrame::new2(func, wasm_func.func_body(), wasm_func.instance());
         self.frames.push(frame);
-        Ok(())
+        Ok(next_ref)
     }
 
     /// Pops the last [`FuncFrame`] from the [`CallStack`] if any.
-    pub fn pop(&mut self) -> Option<FuncFrame> {
-        self.frames.pop()
+    pub fn pop_ref(&mut self) -> Option<FuncFrameRef> {
+        self.frames.pop();
+        self.frames.len().checked_sub(1).map(FuncFrameRef)
     }
 
     /// Returns the amount of function frames on the [`CallStack`].

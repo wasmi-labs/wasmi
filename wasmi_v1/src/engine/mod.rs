@@ -10,36 +10,36 @@ mod func_types;
 pub mod stack;
 mod traits;
 
-pub use self::config::Config;
 pub(crate) use self::func_args::{FuncParams, FuncResults};
 use self::{
     bytecode::Instruction,
     code_map::{CodeMap, ResolvedFuncBody},
-    exec_context::FunctionExecutor,
     func_types::FuncTypeRegistry,
-    stack::{FuncFrame, ValueStack, Stack},
+    stack::{FuncFrame, FuncFrameRef, Stack, ValueStack},
 };
-pub use self::stack::StackLimits;
 pub use self::{
     bytecode::{DropKeep, Target},
     code_map::FuncBody,
+    config::Config,
     func_builder::{
-        FunctionBuilder, FunctionBuilderAllocations, InstructionIdx, LabelIdx, RelativeDepth, Reloc,
+        FunctionBuilder,
+        FunctionBuilderAllocations,
+        InstructionIdx,
+        LabelIdx,
+        RelativeDepth,
+        Reloc,
     },
+    stack::StackLimits,
     traits::{CallParams, CallResults},
 };
-use super::{func::FuncEntityInternal, AsContext, AsContextMut, Func};
+use super::{func::FuncEntityInternal, AsContextMut, Func};
 use crate::{
     arena::{GuardedEntity, Index},
     core::Trap,
-    func::HostFuncEntity,
-    FuncType, Instance,
+    FuncType,
 };
 use alloc::sync::Arc;
-use core::{
-    cmp,
-    sync::atomic::{AtomicU32, Ordering},
-};
+use core::sync::atomic::{AtomicU32, Ordering};
 pub use func_types::DedupFuncType;
 use spin::mutex::Mutex;
 
@@ -284,13 +284,15 @@ impl EngineInner {
         let signature = match func.as_internal(&ctx) {
             FuncEntityInternal::Wasm(wasm_func) => {
                 let signature = wasm_func.signature();
-                self.execute_wasm_func(&mut ctx, func)?;
+                let fref = self.stack.call_wasm(func, wasm_func, &self.code_map)?;
+                self.execute_wasm_func2(&mut ctx, fref)?;
                 signature
             }
             FuncEntityInternal::Host(host_func) => {
                 let signature = host_func.signature();
                 let host_func = host_func.clone();
-                self.execute_host_func(&mut ctx, host_func, None)?;
+                self.stack
+                    .call_host_root(&mut ctx, host_func, &self.func_types)?;
                 signature
             }
         };
@@ -336,7 +338,8 @@ impl EngineInner {
         );
         assert_eq!(results.len_results(), result_types.len());
         results.feed_results(
-            self.stack.values
+            self.stack
+                .values
                 .drain()
                 .iter()
                 .zip(result_types)
@@ -344,108 +347,38 @@ impl EngineInner {
         )
     }
 
-    /// Executes the given Wasm [`Func`] using the given arguments `args` and stores the result into `results`.
-    ///
-    /// # Note
-    ///
-    /// The caller is required to ensure that the given `func` actually is a Wasm function.
-    ///
-    /// # Errors
-    ///
-    /// - If the given arguments `args` do not match the expected parameters of `func`.
-    /// - If the given `results` do not match the the length of the expected results of `func`.
-    /// - When encountering a Wasm trap during the execution of `func`.
-    fn execute_wasm_func(&mut self, mut ctx: impl AsContextMut, func: Func) -> Result<(), Trap> {
-        let mut function_frame = FuncFrame::new(&ctx, func);
+    fn execute_wasm_func2(
+        &mut self,
+        mut ctx: impl AsContextMut,
+        mut fref: FuncFrameRef,
+    ) -> Result<(), Trap> {
         'outer: loop {
-            match self.execute_frame(&mut ctx, &mut function_frame)? {
-                CallOutcome::Return => match self.stack.frames.pop() {
-                    Some(frame) => {
-                        function_frame = frame;
+            // println!("EngineInner::execute_wasm_func2 fref = {fref:?}");
+            match self
+                .stack
+                .executor(fref, &self.code_map)
+                .execute_frame(&mut ctx)?
+            {
+                CallOutcome::Return => match self.stack.return_wasm() {
+                    Some(caller) => {
+                        fref = caller;
                         continue 'outer;
                     }
                     None => return Ok(()),
                 },
-                CallOutcome::NestedCall(func) => match func.as_internal(&ctx) {
+                CallOutcome::NestedCall(called_func) => match called_func.as_internal(&ctx) {
                     FuncEntityInternal::Wasm(wasm_func) => {
-                        let nested_frame = FuncFrame::new_wasm(func, wasm_func);
-                        self.stack.frames.push(function_frame)?;
-                        function_frame = nested_frame;
+                        fref = self
+                            .stack
+                            .call_wasm(called_func, wasm_func, &self.code_map)?;
                     }
                     FuncEntityInternal::Host(host_func) => {
-                        let instance = function_frame.instance();
                         let host_func = host_func.clone();
-                        self.execute_host_func(&mut ctx, host_func, Some(instance))?;
+                        self.stack
+                            .call_host(&mut ctx, fref, host_func, &self.func_types)?;
                     }
                 },
             }
         }
-    }
-
-    /// Executes the given function frame and returns the outcome.
-    ///
-    /// # Errors
-    ///
-    /// If the function frame execution trapped.
-    #[inline(always)]
-    fn execute_frame(
-        &mut self,
-        mut ctx: impl AsContextMut,
-        frame: &mut FuncFrame,
-    ) -> Result<CallOutcome, Trap> {
-        FunctionExecutor::new(self, frame)?.execute_frame(&mut ctx)
-    }
-
-    /// Executes the given host function.
-    ///
-    /// # Errors
-    ///
-    /// - If the host function returns a host side error or trap.
-    /// - If the value stack overflowed upon pushing parameters or results.
-    #[inline(never)]
-    fn execute_host_func<C>(
-        &mut self,
-        mut ctx: C,
-        host_func: HostFuncEntity<<C as AsContext>::UserState>,
-        instance: Option<Instance>,
-    ) -> Result<(), Trap>
-    where
-        C: AsContextMut,
-    {
-        // The host function signature is required for properly
-        // adjusting, inspecting and manipulating the value stack.
-        let (input_types, output_types) = self
-            .func_types
-            .resolve_func_type(host_func.signature())
-            .params_results();
-        // In case the host function returns more values than it takes
-        // we are required to extend the value stack.
-        let len_inputs = input_types.len();
-        let len_outputs = output_types.len();
-        let max_inout = cmp::max(len_inputs, len_outputs);
-        self.stack.values.reserve(max_inout)?;
-        if len_outputs > len_inputs {
-            let delta = len_outputs - len_inputs;
-            self.stack.values.extend_zeros(delta)?;
-        }
-        let params_results = FuncParams::new(
-            self.stack.values.peek_as_slice_mut(max_inout),
-            len_inputs,
-            len_outputs,
-        );
-        // Now we are ready to perform the host function call.
-        // Note: We need to clone the host function due to some borrowing issues.
-        //       This should not be a big deal since host functions usually are cheap to clone.
-        host_func.call(ctx.as_context_mut(), instance, params_results)?;
-        // If the host functions returns fewer results than it receives parameters
-        // the value stack needs to be shrinked for the delta.
-        if len_outputs < len_inputs {
-            let delta = len_inputs - len_outputs;
-            self.stack.values.drop(delta);
-        }
-        // At this point the host function has been called and has directly
-        // written its results into the value stack so that the last entries
-        // in the value stack are the result values of the host function call.
-        Ok(())
     }
 }
