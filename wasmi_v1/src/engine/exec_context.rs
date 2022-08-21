@@ -1,6 +1,7 @@
 use super::{
     super::{Global, Memory, Table},
     bytecode::{FuncIdx, GlobalIdx, Instruction, LocalIdx, Offset, SignatureIdx},
+    cache::InstanceCache,
     code_map::Instructions,
     AsContextMut,
     CallOutcome,
@@ -50,9 +51,10 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
     /// calls into another function or the function returns to its caller.
     #[inline(always)]
     #[rustfmt::skip]
-    pub fn execute_frame(self, mut ctx: impl AsContextMut) -> Result<CallOutcome, Trap> {
+    pub fn execute_frame(self, mut ctx: impl AsContextMut, cache: &mut InstanceCache) -> Result<CallOutcome, Trap> {
         use Instruction as Instr;
-        let mut exec_ctx = ExecutionContext::new(self.value_stack, self.frame, &mut ctx, self.frame.pc());
+        cache.update_instance(self.frame.instance());
+        let mut exec_ctx = ExecutionContext::new(self.value_stack, self.frame, cache, &mut ctx, self.frame.pc());
         loop {
             // # Safety
             //
@@ -266,6 +268,8 @@ struct ExecutionContext<'engine, 'func, Ctx> {
     value_stack: &'engine mut ValueStack,
     /// The function frame that is being executed.
     frame: &'func mut FuncFrame,
+    /// Stores frequently used instance related data.
+    cache: &'engine mut InstanceCache,
     /// A mutable [`Store`] context.
     ///
     /// [`Store`]: [`crate::v1::Store`]
@@ -280,12 +284,14 @@ where
     pub fn new(
         value_stack: &'engine mut ValueStack,
         frame: &'func mut FuncFrame,
+        cache: &'engine mut InstanceCache,
         ctx: Ctx,
         pc: usize,
     ) -> Self {
         Self {
             value_stack,
             frame,
+            cache,
             ctx,
             pc,
         }
@@ -295,18 +301,18 @@ where
     ///
     /// # Panics
     ///
-    /// If there is no default linear memory.
+    /// If there exists is no linear memory for the instance.
     fn default_memory(&mut self) -> Memory {
-        self.frame.default_memory(self.ctx.as_context())
+        self.cache.default_memory(&self.ctx, self.frame.instance())
     }
 
-    /// Returns the default linear memory.
+    /// Returns the default table.
     ///
     /// # Panics
     ///
-    /// If there is no default linear memory.
+    /// If there exists is no table for the instance.
     fn default_table(&mut self) -> Table {
-        self.frame.default_table(self.ctx.as_context())
+        self.cache.default_table(&self.ctx, self.frame.instance())
     }
 
     /// Returns the global variable at the given index.
@@ -625,12 +631,12 @@ where
     }
 
     fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, Trap> {
-        let func = self
-            .frame
-            .instance()
-            .get_func(self.ctx.as_context_mut(), func_index.into_inner())
-            .unwrap_or_else(|| panic!("missing function at index {:?}", func_index));
-        self.call_func(func)
+        let callee = self.cache.get_func(
+            &mut self.ctx,
+            self.frame.instance(),
+            func_index.into_inner(),
+        );
+        self.call_func(callee)
     }
 
     fn visit_call_indirect(&mut self, signature_index: SignatureIdx) -> Result<CallOutcome, Trap> {

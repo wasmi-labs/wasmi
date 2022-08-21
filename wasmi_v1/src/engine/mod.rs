@@ -1,6 +1,7 @@
 //! The `wasmi` interpreter.
 
 pub mod bytecode;
+mod cache;
 pub mod code_map;
 mod config;
 pub mod exec_context;
@@ -13,6 +14,7 @@ mod traits;
 pub(crate) use self::func_args::{FuncParams, FuncResults};
 use self::{
     bytecode::Instruction,
+    cache::InstanceCache,
     code_map::CodeMap,
     func_types::FuncTypeRegistry,
     stack::{FuncFrame, Stack, ValueStack},
@@ -282,7 +284,9 @@ impl EngineInner {
             FuncEntityInternal::Wasm(wasm_func) => {
                 let signature = wasm_func.signature();
                 let mut frame = self.stack.call_wasm_root(wasm_func, &self.code_map)?;
-                self.execute_wasm_func(&mut ctx, &mut frame)?;
+                let instance = wasm_func.instance();
+                let mut cache = InstanceCache::from(instance);
+                self.execute_wasm_func(&mut ctx, &mut frame, &mut cache)?;
                 signature
             }
             FuncEntityInternal::Host(host_func) => {
@@ -354,12 +358,13 @@ impl EngineInner {
         &mut self,
         mut ctx: impl AsContextMut,
         frame: &mut FuncFrame,
+        cache: &mut InstanceCache,
     ) -> Result<(), Trap> {
         'outer: loop {
             match self
                 .stack
                 .executor(frame, &self.code_map)
-                .execute_frame(&mut ctx)?
+                .execute_frame(&mut ctx, cache)?
             {
                 CallOutcome::Return => match self.stack.return_wasm() {
                     Some(caller) => {

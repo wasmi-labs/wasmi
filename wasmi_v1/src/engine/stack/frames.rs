@@ -1,15 +1,7 @@
 //! Data structures to represent the Wasm call stack during execution.
 
 use super::{err_stack_overflow, DEFAULT_MAX_RECURSION_DEPTH};
-use crate::{
-    core::TrapCode,
-    engine::code_map::InstructionsRef,
-    module::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
-    AsContext,
-    Instance,
-    Memory,
-    Table,
-};
+use crate::{core::TrapCode, engine::code_map::InstructionsRef, Instance};
 use alloc::vec::Vec;
 use core::mem::replace;
 
@@ -26,22 +18,6 @@ pub struct FuncFrame {
     /// non-local to the function such as linear memories, global variables
     /// and tables.
     instance: Instance,
-    /// The default linear memory (index 0) of the `instance`.
-    ///
-    /// # Note
-    ///
-    /// This is just an optimization for the common case of manipulating
-    /// the default linear memory and avoids one indirection to look-up
-    /// the linear memory in the `Instance`.
-    default_memory: Option<Memory>,
-    /// The default table (index 0) of the `instance`.
-    ///
-    /// # Note
-    ///
-    /// This is just an optimization for the common case of indirectly
-    /// calling functions using the default table and avoids one indirection
-    /// to look-up the table in the `Instance`.
-    default_table: Option<Table>,
     /// The current value of the program counter.
     ///
     /// # Note
@@ -67,57 +43,7 @@ impl FuncFrame {
         Self {
             iref,
             instance,
-            default_memory: None,
-            default_table: None,
             pc: 0,
-        }
-    }
-
-    /// Returns the default linear memory of the function frame if any.
-    ///
-    /// # Note
-    ///
-    /// This API allows to lazily and efficiently load the default linear memory if available.
-    ///
-    /// # Panics
-    ///
-    /// If there is no default linear memory.
-    pub fn default_memory(&mut self, ctx: impl AsContext) -> Memory {
-        match self.default_memory {
-            Some(default_memory) => default_memory,
-            None => {
-                // Try to lazily load the default memory.
-                let default_memory = self
-                    .instance
-                    .get_memory(ctx.as_context(), DEFAULT_MEMORY_INDEX)
-                    .expect("accessing non-existent default linear memory");
-                self.default_memory = Some(default_memory);
-                default_memory
-            }
-        }
-    }
-
-    /// Returns the default table of the function frame if any.
-    ///
-    /// # Note
-    ///
-    /// This API allows to lazily and efficiently load the default table if available.
-    ///
-    /// # Panics
-    ///
-    /// If there is no default table.
-    pub fn default_table(&mut self, ctx: impl AsContext) -> Table {
-        match self.default_table {
-            Some(default_table) => default_table,
-            None => {
-                // Try to lazily load the default memory.
-                let default_table = self
-                    .instance
-                    .get_table(ctx.as_context(), DEFAULT_TABLE_INDEX)
-                    .expect("accessing non-existent default table");
-                self.default_table = Some(default_table);
-                default_table
-            }
         }
     }
 
