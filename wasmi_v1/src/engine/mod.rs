@@ -15,7 +15,7 @@ use self::{
     bytecode::Instruction,
     code_map::{CodeMap, ResolvedFuncBody},
     func_types::FuncTypeRegistry,
-    stack::{FuncFrame, FuncFrameRef, Stack, ValueStack},
+    stack::{FuncFrame, Stack, ValueStack},
 };
 pub use self::{
     bytecode::{DropKeep, Target},
@@ -284,8 +284,8 @@ impl EngineInner {
         let signature = match func.as_internal(&ctx) {
             FuncEntityInternal::Wasm(wasm_func) => {
                 let signature = wasm_func.signature();
-                let fref = self.stack.call_wasm(func, wasm_func, &self.code_map)?;
-                self.execute_wasm_func(&mut ctx, fref)?;
+                let frame = self.stack.call_wasm_root(func, wasm_func, &self.code_map)?;
+                self.execute_wasm_func(&mut ctx, frame)?;
                 signature
             }
             FuncEntityInternal::Host(host_func) => {
@@ -356,31 +356,31 @@ impl EngineInner {
     fn execute_wasm_func(
         &mut self,
         mut ctx: impl AsContextMut,
-        mut fref: FuncFrameRef,
+        mut frame: FuncFrame,
     ) -> Result<(), Trap> {
         'outer: loop {
             match self
                 .stack
-                .executor(fref, &self.code_map)
+                .executor(&mut frame, &self.code_map)
                 .execute_frame(&mut ctx)?
             {
                 CallOutcome::Return => match self.stack.return_wasm() {
                     Some(caller) => {
-                        fref = caller;
+                        frame = caller;
                         continue 'outer;
                     }
                     None => return Ok(()),
                 },
                 CallOutcome::NestedCall(called_func) => match called_func.as_internal(&ctx) {
                     FuncEntityInternal::Wasm(wasm_func) => {
-                        fref = self
-                            .stack
-                            .call_wasm(called_func, wasm_func, &self.code_map)?;
+                        frame =
+                            self.stack
+                                .call_wasm(frame, called_func, wasm_func, &self.code_map)?;
                     }
                     FuncEntityInternal::Host(host_func) => {
                         let host_func = host_func.clone();
                         self.stack
-                            .call_host(&mut ctx, fref, host_func, &self.func_types)?;
+                            .call_host(&mut ctx, &frame, host_func, &self.func_types)?;
                     }
                 },
             }

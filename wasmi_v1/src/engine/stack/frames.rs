@@ -14,10 +14,6 @@ use crate::{
 };
 use alloc::vec::Vec;
 
-/// A reference to a [`FuncFrame`].
-#[derive(Debug, Copy, Clone)]
-pub struct FuncFrameRef(usize);
-
 /// A function frame of a function on the call stack.
 #[derive(Debug, Copy, Clone)]
 pub struct FuncFrame {
@@ -140,6 +136,11 @@ impl FuncFrame {
     pub fn instance(&self) -> Instance {
         self.instance
     }
+
+    /// Returns the [`FuncBody`] of the [`FuncFrame`].
+    pub(super) fn func_body(&self) -> FuncBody {
+        self.func_body
+    }
 }
 
 /// The live function call stack storing the live function activation frames.
@@ -166,40 +167,30 @@ impl CallStack {
         }
     }
 
-    /// Returns the next [`FuncFrameRef`].
-    fn next_frame_ref(&self) -> FuncFrameRef {
-        FuncFrameRef(self.frames.len())
-    }
-
-    /// Returns a shared reference to the referenced [`FuncFrame`].
-    pub fn frame_at(&self, fref: FuncFrameRef) -> &FuncFrame {
-        &self.frames[fref.0]
-    }
-
-    /// Returns an exclusive reference to the referenced [`FuncFrame`].
-    pub fn frame_at_mut(&mut self, fref: FuncFrameRef) -> &mut FuncFrame {
-        &mut self.frames[fref.0]
+    /// Initializes the [`CallStack`] given the Wasm function.
+    pub(crate) fn init(&mut self, func: Func, wasm_func: &WasmFuncEntity) -> FuncFrame {
+        self.clear();
+        FuncFrame::new(func, wasm_func.func_body(), wasm_func.instance())
     }
 
     /// Pushes a Wasm function onto the [`CallStack`].
-    pub(crate) fn push_wasm(
+    pub(crate) fn push(
         &mut self,
+        caller: FuncFrame,
         func: Func,
         wasm_func: &WasmFuncEntity,
-    ) -> Result<FuncFrameRef, TrapCode> {
+    ) -> Result<FuncFrame, TrapCode> {
         if self.len() == self.recursion_limit {
             return Err(err_stack_overflow());
         }
-        let next_ref = self.next_frame_ref();
         let frame = FuncFrame::new(func, wasm_func.func_body(), wasm_func.instance());
-        self.frames.push(frame);
-        Ok(next_ref)
+        self.frames.push(caller);
+        Ok(frame)
     }
 
     /// Pops the last [`FuncFrame`] from the [`CallStack`] if any.
-    pub fn pop_ref(&mut self) -> Option<FuncFrameRef> {
-        self.frames.pop();
-        self.frames.len().checked_sub(1).map(FuncFrameRef)
+    pub fn pop(&mut self) -> Option<FuncFrame> {
+        self.frames.pop()
     }
 
     /// Returns the amount of function frames on the [`CallStack`].

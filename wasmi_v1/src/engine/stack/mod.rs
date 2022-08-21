@@ -2,7 +2,7 @@ mod frames;
 mod values;
 
 pub use self::{
-    frames::{CallStack, FuncFrame, FuncFrameRef},
+    frames::{CallStack, FuncFrame},
     values::ValueStack,
 };
 use super::{
@@ -126,44 +126,63 @@ impl Stack {
     /// Returns a [`FunctionExecutor`] for the referenced [`FuncFrame`].
     pub fn executor<'engine>(
         &'engine mut self,
-        fref: FuncFrameRef,
+        frame: &'engine mut FuncFrame,
         codemap: &'engine CodeMap,
     ) -> FunctionExecutor {
-        let frame = self.frames.frame_at_mut(fref);
         let func_body = codemap.resolve(frame.func_body);
         FunctionExecutor::new(frame, func_body, &mut self.values)
     }
 
+    /// Initializes the [`Stack`] for the given Wasm root function call.
+    pub(crate) fn call_wasm_root(
+        &mut self,
+        func: Func,
+        wasm_func: &WasmFuncEntity,
+        code_map: &CodeMap,
+    ) -> Result<FuncFrame, TrapCode> {
+        let frame = self.frames.init(func, wasm_func);
+        self.call_wasm_impl(frame, code_map)
+    }
+
     /// Prepares the [`Stack`] for the given Wasm function call.
+    pub(crate) fn call_wasm(
+        &mut self,
+        caller: FuncFrame,
+        func: Func,
+        wasm_func: &WasmFuncEntity,
+        code_map: &CodeMap,
+    ) -> Result<FuncFrame, TrapCode> {
+        let frame = self.frames.push(caller, func, wasm_func)?;
+        self.call_wasm_impl(frame, code_map)
+    }
+
+    /// Prepares the [`Stack`] for execution of the given Wasm [`FuncFrame`].
     ///
     /// # Note
     ///
     /// This does not actually execute any instructions but prepares
     /// the call and value stacks for the instruction execution.
-    pub(crate) fn call_wasm(
+    #[inline(always)]
+    fn call_wasm_impl(
         &mut self,
-        func: Func,
-        wasm_func: &WasmFuncEntity,
+        frame: FuncFrame,
         code_map: &CodeMap,
-    ) -> Result<FuncFrameRef, TrapCode> {
-        let fref = self.frames.push_wasm(func, wasm_func)?;
-        let func_body = code_map.resolve(wasm_func.func_body());
+    ) -> Result<FuncFrame, TrapCode> {
+        let func_body = code_map.resolve(frame.func_body());
         let max_stack_height = func_body.max_stack_height();
         self.values.reserve(max_stack_height)?;
         let len_locals = func_body.len_locals();
         self.values
             .extend_zeros(len_locals)
-            .unwrap_or_else(|error| {
-                panic!("encountered stack overflow while pushing locals: {}", error)
-            });
-        Ok(fref)
+            .expect("stack overflow is unexpected due to previous stack reserve");
+        Ok(frame)
     }
 
     /// Signals the [`Stack`] to return the last Wasm function call.
     ///
     /// Returns the next function on the call stack if any.
-    pub fn return_wasm(&mut self) -> Option<FuncFrameRef> {
-        self.frames.pop_ref()
+    pub fn return_wasm(&mut self) -> Option<FuncFrame> {
+        self.frames.pop()
     }
 
     /// Executes the given host function as root.
@@ -183,14 +202,14 @@ impl Stack {
     pub(crate) fn call_host<C>(
         &mut self,
         ctx: C,
-        caller: FuncFrameRef,
+        caller: &FuncFrame,
         host_func: HostFuncEntity<<C as AsContext>::UserState>,
         func_types: &FuncTypeRegistry,
     ) -> Result<(), Trap>
     where
         C: AsContextMut,
     {
-        let instance = self.frames.frame_at(caller).instance();
+        let instance = caller.instance();
         self.call_host_impl(ctx, host_func, Some(instance), func_types)
     }
 
