@@ -2,6 +2,8 @@ use super::stack::StackLimits;
 use wasmparser::WasmFeatures;
 
 /// Configuration for an [`Engine`].
+///
+/// [`Engine`]: [`crate::Engine`]
 #[derive(Debug, Copy, Clone)]
 pub struct Config {
     /// The limits set on the value stack and call stack.

@@ -39,14 +39,14 @@ fn err_stack_overflow() -> TrapCode {
     TrapCode::StackOverflow
 }
 
-/// The configured limits of the [`Stack`].
+/// The configured limits of the Wasm stack.
 #[derive(Debug, Copy, Clone)]
 pub struct StackLimits {
-    /// The initial value stack height that the [`Stack`] prepares.
+    /// The initial value stack height that the Wasm stack prepares.
     initial_value_stack_height: usize,
-    /// The maximum value stack height in use that the [`Stack`] allows.
+    /// The maximum value stack height in use that the Wasm stack allows.
     maximum_value_stack_height: usize,
-    /// The maximum number of nested calls that the [`Stack`] allows.
+    /// The maximum number of nested calls that the Wasm stack allows.
     maximum_recursion_depth: usize,
 }
 
@@ -113,6 +113,8 @@ pub struct Stack {
 
 impl Stack {
     /// Creates a new [`Stack`] given the [`Config`].
+    ///
+    /// [`Config`]: [`crate::Config`]
     pub fn new(limits: StackLimits) -> Self {
         let frames = CallStack::new(limits.maximum_recursion_depth);
         let values = ValueStack::new(

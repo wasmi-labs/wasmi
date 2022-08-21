@@ -38,7 +38,7 @@ pub struct FuncHeader {
 }
 
 impl FuncHeader {
-    /// Returns a reference to the instructions of the [`ResolvedFuncBody`].
+    /// Returns a reference to the instructions of the function.
     pub fn iref(&self) -> InstructionsRef {
         self.iref
     }
@@ -80,7 +80,7 @@ impl CodeMap {
     /// Allocates a new function body to the [`CodeMap`].
     ///
     /// Returns a reference to the allocated function body that can
-    /// be used with [`CodeMap::resolve`] in order to resolve its
+    /// be used with [`CodeMap::header`] in order to resolve its
     /// instructions.
     pub fn alloc<I>(&mut self, len_locals: usize, max_stack_height: usize, insts: I) -> FuncBody
     where
@@ -134,7 +134,7 @@ impl<'a> Instructions<'a> {
     ///
     /// # Panics (Debug)
     ///
-    /// Panics in debug mode if the `pc` is invalid for the [`ResolvedFuncBody`].
+    /// Panics in debug mode if the `pc` is invalid for the [`Instructions`].
     #[inline(always)]
     pub unsafe fn get_release_unchecked(&self, pc: usize) -> &Instruction {
         debug_assert!(

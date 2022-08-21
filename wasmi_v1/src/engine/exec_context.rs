@@ -29,7 +29,7 @@ pub struct FunctionExecutor<'engine, 'func> {
 }
 
 impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
-    /// Creates an execution context for the given [`FunctionFrame`].
+    /// Creates an execution context for the given [`FuncFrame`].
     #[inline(always)]
     pub fn new(
         frame: &'func mut FuncFrame,
