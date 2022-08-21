@@ -1,11 +1,11 @@
 use super::{
     super::{Global, Memory, Table},
     bytecode::{FuncIdx, GlobalIdx, Instruction, LocalIdx, Offset, SignatureIdx},
+    code_map::Instructions,
     AsContextMut,
     CallOutcome,
     DropKeep,
     FuncFrame,
-    ResolvedFuncBody,
     Target,
     ValueStack,
 };
@@ -24,19 +24,19 @@ pub struct FunctionExecutor<'engine, 'func> {
     /// The function frame that is being executed.
     frame: &'func mut FuncFrame,
     /// The resolved function body of the executed function frame.
-    func_body: ResolvedFuncBody<'engine>,
+    insts: Instructions<'engine>,
 }
 
 impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
     /// Creates an execution context for the given [`FunctionFrame`].
     pub fn new(
         frame: &'func mut FuncFrame,
-        func_body: ResolvedFuncBody<'engine>,
+        insts: Instructions<'engine>,
         value_stack: &'engine mut ValueStack,
     ) -> Self {
         Self {
             frame,
-            func_body,
+            insts,
             value_stack,
         }
     }
@@ -56,7 +56,7 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
             //
             // Properly constructed `wasmi` bytecode can never produce invalid `pc`.
             let instr = unsafe {
-                self.func_body.get_release_unchecked(exec_ctx.pc)
+                self.insts.get_release_unchecked(exec_ctx.pc)
             };
             match instr {
                 Instr::GetLocal { local_depth } => { exec_ctx.visit_get_local(*local_depth)?; }

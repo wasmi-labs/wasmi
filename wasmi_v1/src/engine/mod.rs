@@ -13,7 +13,7 @@ mod traits;
 pub(crate) use self::func_args::{FuncParams, FuncResults};
 use self::{
     bytecode::Instruction,
-    code_map::{CodeMap, ResolvedFuncBody},
+    code_map::CodeMap,
     func_types::FuncTypeRegistry,
     stack::{FuncFrame, Stack, ValueStack},
 };
@@ -356,31 +356,31 @@ impl EngineInner {
     fn execute_wasm_func(
         &mut self,
         mut ctx: impl AsContextMut,
-        mut frame: FuncFrame,
+        frame: FuncFrame,
     ) -> Result<(), Trap> {
+        let mut func = self.stack.resolve(frame, &self.code_map);
         'outer: loop {
-            match self
-                .stack
-                .executor(&mut frame, &self.code_map)
-                .execute_frame(&mut ctx)?
-            {
-                CallOutcome::Return => match self.stack.return_wasm() {
+            match self.stack.executor(&mut func).execute_frame(&mut ctx)? {
+                CallOutcome::Return => match self.stack.return_wasm(&self.code_map) {
                     Some(caller) => {
-                        frame = caller;
+                        func = caller;
                         continue 'outer;
                     }
                     None => return Ok(()),
                 },
                 CallOutcome::NestedCall(called_func) => match called_func.as_internal(&ctx) {
                     FuncEntityInternal::Wasm(wasm_func) => {
-                        frame =
-                            self.stack
-                                .call_wasm(frame, called_func, wasm_func, &self.code_map)?;
+                        func = self.stack.call_wasm(
+                            func.frame,
+                            called_func,
+                            wasm_func,
+                            &self.code_map,
+                        )?;
                     }
                     FuncEntityInternal::Host(host_func) => {
                         let host_func = host_func.clone();
                         self.stack
-                            .call_host(&mut ctx, &frame, host_func, &self.func_types)?;
+                            .call_host(&mut ctx, &func, host_func, &self.func_types)?;
                     }
                 },
             }

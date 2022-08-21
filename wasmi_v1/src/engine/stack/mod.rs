@@ -6,7 +6,7 @@ pub use self::{
     values::ValueStack,
 };
 use super::{
-    code_map::CodeMap,
+    code_map::{CodeMap, Instructions},
     exec_context::FunctionExecutor,
     func_types::FuncTypeRegistry,
     FuncParams,
@@ -112,6 +112,13 @@ pub struct Stack {
     frames: CallStack,
 }
 
+/// A resolved [`FuncFrame`] for execution.
+#[derive(Debug)]
+pub struct ResolvedFuncFrame<'engine> {
+    pub frame: FuncFrame,
+    pub insts: Instructions<'engine>,
+}
+
 impl Stack {
     /// Creates a new [`Stack`] given the [`Config`].
     pub fn new(limits: StackLimits) -> Self {
@@ -126,11 +133,19 @@ impl Stack {
     /// Returns a [`FunctionExecutor`] for the referenced [`FuncFrame`].
     pub fn executor<'engine>(
         &'engine mut self,
-        frame: &'engine mut FuncFrame,
-        codemap: &'engine CodeMap,
+        func: &'engine mut ResolvedFuncFrame,
     ) -> FunctionExecutor {
-        let func_body = codemap.resolve(frame.func_body);
-        FunctionExecutor::new(frame, func_body, &mut self.values)
+        FunctionExecutor::new(&mut func.frame, func.insts, &mut self.values)
+    }
+
+    /// Resolves a [`FuncFrame`] for execution.
+    pub fn resolve<'engine>(
+        &mut self,
+        frame: FuncFrame,
+        codemap: &'engine CodeMap,
+    ) -> ResolvedFuncFrame<'engine> {
+        let insts = codemap.resolve(frame.func_body).insts();
+        ResolvedFuncFrame { frame, insts }
     }
 
     /// Initializes the [`Stack`] for the given Wasm root function call.
@@ -142,16 +157,17 @@ impl Stack {
     ) -> Result<FuncFrame, TrapCode> {
         let frame = self.frames.init(func, wasm_func);
         self.call_wasm_impl(frame, code_map)
+            .map(|resolved| resolved.frame)
     }
 
     /// Prepares the [`Stack`] for the given Wasm function call.
-    pub(crate) fn call_wasm(
+    pub(crate) fn call_wasm<'engine>(
         &mut self,
         caller: FuncFrame,
         func: Func,
         wasm_func: &WasmFuncEntity,
-        code_map: &CodeMap,
-    ) -> Result<FuncFrame, TrapCode> {
+        code_map: &'engine CodeMap,
+    ) -> Result<ResolvedFuncFrame<'engine>, TrapCode> {
         let frame = self.frames.push(caller, func, wasm_func)?;
         self.call_wasm_impl(frame, code_map)
     }
@@ -163,26 +179,33 @@ impl Stack {
     /// This does not actually execute any instructions but prepares
     /// the call and value stacks for the instruction execution.
     #[inline(always)]
-    fn call_wasm_impl(
+    fn call_wasm_impl<'engine>(
         &mut self,
         frame: FuncFrame,
-        code_map: &CodeMap,
-    ) -> Result<FuncFrame, TrapCode> {
+        code_map: &'engine CodeMap,
+    ) -> Result<ResolvedFuncFrame<'engine>, TrapCode> {
         let func_body = code_map.resolve(frame.func_body());
         let max_stack_height = func_body.max_stack_height();
         self.values.reserve(max_stack_height)?;
         let len_locals = func_body.len_locals();
+        let insts = func_body.insts();
         self.values
             .extend_zeros(len_locals)
             .expect("stack overflow is unexpected due to previous stack reserve");
-        Ok(frame)
+        Ok(ResolvedFuncFrame { frame, insts })
     }
 
     /// Signals the [`Stack`] to return the last Wasm function call.
     ///
     /// Returns the next function on the call stack if any.
-    pub fn return_wasm(&mut self) -> Option<FuncFrame> {
-        self.frames.pop()
+    pub fn return_wasm<'engine>(
+        &mut self,
+        codemap: &'engine CodeMap,
+    ) -> Option<ResolvedFuncFrame<'engine>> {
+        self.frames.pop().map(|frame| {
+            let insts = codemap.resolve(frame.func_body()).insts();
+            ResolvedFuncFrame { frame, insts }
+        })
     }
 
     /// Executes the given host function as root.
@@ -202,14 +225,14 @@ impl Stack {
     pub(crate) fn call_host<C>(
         &mut self,
         ctx: C,
-        caller: &FuncFrame,
+        caller: &ResolvedFuncFrame,
         host_func: HostFuncEntity<<C as AsContext>::UserState>,
         func_types: &FuncTypeRegistry,
     ) -> Result<(), Trap>
     where
         C: AsContextMut,
     {
-        let instance = caller.instance();
+        let instance = caller.frame.instance();
         self.call_host_impl(ctx, host_func, Some(instance), func_types)
     }
 

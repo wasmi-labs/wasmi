@@ -148,7 +148,12 @@ pub struct ResolvedFuncBody<'a> {
     max_stack_height: usize,
 }
 
-impl ResolvedFuncBody<'_> {
+impl<'a> ResolvedFuncBody<'a> {
+    /// Returns the instructions of the [`ResolvedFuncBody`].
+    pub fn insts(&self) -> Instructions<'a> {
+        Instructions { insts: &self.insts }
+    }
+
     /// Returns the instruction at the given index.
     ///
     /// # Panics
@@ -175,7 +180,13 @@ impl ResolvedFuncBody<'_> {
     }
 }
 
-impl<'a> ResolvedFuncBody<'a> {
+/// The instructions of a resolved [`FuncBody`].
+#[derive(Debug, Copy, Clone)]
+pub struct Instructions<'a> {
+    insts: &'a [Instruction],
+}
+
+impl<'a> Instructions<'a> {
     /// Returns a shared reference to the instruction at the given `pc`.
     ///
     /// # Panics (Debug)
