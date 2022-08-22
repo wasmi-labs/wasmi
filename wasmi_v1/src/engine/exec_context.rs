@@ -12,10 +12,9 @@ use super::{
 };
 use crate::{
     core::{Trap, TrapCode, F32, F64},
-    AsContext,
     Func,
 };
-use core::{cmp, ptr::NonNull};
+use core::cmp;
 use wasmi_core::{memory_units::Pages, ExtendInto, LittleEndianConvert, UntypedValue, WrapInto};
 
 /// State that is used during Wasm function execution.
@@ -260,69 +259,6 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
     }
 }
 
-/// The cached bytes of a linear memory entity.
-#[derive(Debug)]
-pub struct CachedMemory {
-    /// The pointer to the linear memory slice of bytes.
-    data: NonNull<[u8]>,
-}
-
-impl CachedMemory {
-    /// Creates a new [`CachedMemory`] from the given [`Memory`].
-    #[inline]
-    pub fn new(mut ctx: impl AsContextMut, memory: Memory) -> Self {
-        Self {
-            data: memory.data_mut(&mut ctx).into(),
-        }
-    }
-
-    /// Returns an exclusive reference to the underlying byte slices.
-    #[inline]
-    fn data(&self) -> &[u8] {
-        unsafe { self.data.as_ref() }
-    }
-
-    /// Returns an exclusive reference to the underlying byte slices.
-    #[inline]
-    fn data_mut(&mut self) -> &mut [u8] {
-        unsafe { self.data.as_mut() }
-    }
-
-    /// Reads `n` bytes from `memory[offset..offset+n]` into `buffer`
-    /// where `n` is the length of `buffer`.
-    ///
-    /// # Errors
-    ///
-    /// If this operation accesses out of bounds linear memory.
-    #[inline]
-    pub fn read(&self, offset: usize, buffer: &mut [u8]) -> Result<(), TrapCode> {
-        let len_buffer = buffer.len();
-        let slice = self
-            .data()
-            .get(offset..(offset + len_buffer))
-            .ok_or(TrapCode::MemoryAccessOutOfBounds)?;
-        buffer.copy_from_slice(slice);
-        Ok(())
-    }
-
-    /// Writes `n` bytes to `memory[offset..offset+n]` from `buffer`
-    /// where `n` if the length of `buffer`.
-    ///
-    /// # Errors
-    ///
-    /// If this operation accesses out of bounds linear memory.
-    #[inline]
-    pub fn write(&mut self, offset: usize, buffer: &[u8]) -> Result<(), TrapCode> {
-        let len_buffer = buffer.len();
-        let slice = self
-            .data_mut()
-            .get_mut(offset..(offset + len_buffer))
-            .ok_or(TrapCode::MemoryAccessOutOfBounds)?;
-        slice.copy_from_slice(buffer);
-        Ok(())
-    }
-}
-
 /// An execution context for executing a single `wasmi` bytecode instruction.
 #[derive(Debug)]
 struct ExecutionContext<'engine, 'func, Ctx> {
@@ -333,97 +269,11 @@ struct ExecutionContext<'engine, 'func, Ctx> {
     /// The function frame that is being executed.
     frame: &'func mut FuncFrame,
     /// Cached default linear memory.
-    cache: LocalCache<'engine>,
+    cache: &'engine mut InstanceCache,
     /// A mutable [`Store`] context.
     ///
     /// [`Store`]: [`crate::v1::Store`]
     ctx: Ctx,
-}
-
-/// A cache for frequently used instance data.
-#[derive(Debug)]
-pub struct LocalCache<'engine> {
-    /// Stores frequently used instance related data.
-    cache: &'engine mut InstanceCache,
-    /// Cached default linear memory.
-    cached_memory: Option<CachedMemory>,
-}
-
-impl<'engine> From<&'engine mut InstanceCache> for LocalCache<'engine> {
-    fn from(cache: &'engine mut InstanceCache) -> Self {
-        Self {
-            cache,
-            cached_memory: None,
-        }
-    }
-}
-
-impl<'engine> LocalCache<'engine> {
-    /// Returns a cached default linear memory.
-    ///
-    /// # Note
-    ///
-    /// This avoids one indirection compared to using the `default_memory`.
-    #[inline]
-    pub fn default_memory_cache(&mut self, ctx: impl AsContextMut) -> &mut CachedMemory {
-        match self.cached_memory {
-            Some(ref mut cached) => cached,
-            None => self.load_default_memory_cache(ctx),
-        }
-    }
-
-    /// Loads and populates the cached default memory instance.
-    ///
-    /// Returns an exclusive reference to the cached default memory.
-    #[inline]
-    fn load_default_memory_cache(&mut self, ctx: impl AsContextMut) -> &mut CachedMemory {
-        let memory = self.default_memory(&ctx);
-        self.cached_memory = Some(CachedMemory::new(ctx, memory));
-        self.cached_memory
-            .as_mut()
-            .expect("cached_memory was just set to Some")
-    }
-
-    /// Returns the default linear memory.
-    ///
-    /// # Panics
-    ///
-    /// If there exists is no linear memory for the instance.
-    #[inline]
-    pub fn default_memory(&mut self, ctx: impl AsContext) -> Memory {
-        self.cache.default_memory(&ctx)
-    }
-
-    /// Clears the cached default memory instance.
-    ///
-    /// # Note
-    ///
-    /// This is important when operations such as `memory.grow` have
-    /// occured that might have invalidated the cached memory.
-    #[inline]
-    pub fn reset_default_memory_cache(&mut self) {
-        self.cached_memory = None;
-    }
-
-    /// Returns the default table.
-    ///
-    /// # Panics
-    ///
-    /// If there exists is no table for the instance.
-    #[inline]
-    pub fn default_table(&mut self, ctx: impl AsContext) -> Table {
-        self.cache.default_table(&ctx)
-    }
-
-    /// Loads the [`Func`] at `index` of the currently used [`Instance`].
-    ///
-    /// # Panics
-    ///
-    /// If the currently used [`Instance`] does not have a [`Func`] at the index.
-    #[inline]
-    pub fn get_func(&mut self, ctx: impl AsContext, func_idx: u32) -> Func {
-        self.cache.get_func(ctx, func_idx)
-    }
 }
 
 impl<'engine, 'func, Ctx> ExecutionContext<'engine, 'func, Ctx>
@@ -443,7 +293,7 @@ where
             frame,
             ctx,
             pc,
-            cache: LocalCache::from(cache),
+            cache,
         }
     }
 
@@ -513,7 +363,7 @@ where
         UntypedValue: From<T>,
         T: LittleEndianConvert,
     {
-        let memory = self.cache.default_memory_cache(self.ctx.as_context_mut());
+        let memory = self.cache.default_memory_bytes(self.ctx.as_context_mut());
         let entry = self.value_stack.last_mut();
         let raw_address = u32::from(*entry);
         let address = Self::effective_address(offset, raw_address)?;
@@ -545,7 +395,7 @@ where
         T: ExtendInto<U> + LittleEndianConvert,
         UntypedValue: From<U>,
     {
-        let memory = self.cache.default_memory_cache(self.ctx.as_context_mut());
+        let memory = self.cache.default_memory_bytes(self.ctx.as_context_mut());
         let entry = self.value_stack.last_mut();
         let raw_address = u32::from(*entry);
         let address = Self::effective_address(offset, raw_address)?;
@@ -573,7 +423,7 @@ where
         let stack_value = self.value_stack.pop_as::<T>();
         let raw_address = self.value_stack.pop_as::<u32>();
         let address = Self::effective_address(offset, raw_address)?;
-        let memory = self.cache.default_memory_cache(self.ctx.as_context_mut());
+        let memory = self.cache.default_memory_bytes(self.ctx.as_context_mut());
         let bytes = <T as LittleEndianConvert>::into_le_bytes(stack_value);
         memory.write(address, bytes.as_ref())?;
         self.next_instr()
@@ -598,7 +448,7 @@ where
         let wrapped_value = self.value_stack.pop_as::<T>().wrap_into();
         let raw_address = self.value_stack.pop_as::<u32>();
         let address = Self::effective_address(offset, raw_address)?;
-        let memory = self.cache.default_memory_cache(self.ctx.as_context_mut());
+        let memory = self.cache.default_memory_bytes(self.ctx.as_context_mut());
         let bytes = <U as LittleEndianConvert>::into_le_bytes(wrapped_value);
         memory.write(address, bytes.as_ref())?;
         self.next_instr()
@@ -843,7 +693,7 @@ where
         // The memory grow might have invalidated the cached linear memory
         // so we need to reset it in order for the cache to reload in case it
         // is used again.
-        self.cache.reset_default_memory_cache();
+        self.cache.reset_default_memory_bytes();
         self.value_stack.push(new_size);
         self.next_instr()
     }

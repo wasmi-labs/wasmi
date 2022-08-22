@@ -1,11 +1,14 @@
 use crate::{
     module::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
     AsContext,
+    AsContextMut,
     Func,
     Instance,
     Memory,
     Table,
 };
+use core::ptr::NonNull;
+use wasmi_core::TrapCode;
 
 /// A cache for frequently used entities of an [`Instance`].
 #[derive(Debug)]
@@ -18,6 +21,8 @@ pub struct InstanceCache {
     default_table: Option<Table>,
     /// The last accessed function of the currently used [`Instance`].
     last_func: Option<(u32, Func)>,
+    /// The bytes of a default linear memory of the currently used [`Instance`].
+    default_memory_bytes: Option<CachedMemoryBytes>,
 }
 
 impl From<Instance> for InstanceCache {
@@ -27,6 +32,7 @@ impl From<Instance> for InstanceCache {
             default_memory: None,
             default_table: None,
             last_func: None,
+            default_memory_bytes: None,
         }
     }
 }
@@ -40,6 +46,10 @@ impl InstanceCache {
     /// Updates the cached [`Instance`].
     fn set_instance(&mut self, instance: Instance) {
         self.instance = instance;
+        self.default_memory = None;
+        self.default_table = None;
+        self.last_func = None;
+        self.default_memory_bytes = None;
     }
 
     /// Updates the currently used instance resetting all cached entities.
@@ -48,9 +58,6 @@ impl InstanceCache {
             return;
         }
         self.set_instance(instance);
-        self.default_memory = None;
-        self.default_table = None;
-        self.last_func = None;
     }
 
     /// Loads the default [`Memory`] of the currently used [`Instance`].
@@ -98,6 +105,42 @@ impl InstanceCache {
         }
     }
 
+    /// Returns a cached default linear memory.
+    ///
+    /// # Note
+    ///
+    /// This avoids one indirection compared to using the `default_memory`.
+    pub fn default_memory_bytes(&mut self, ctx: impl AsContextMut) -> &mut CachedMemoryBytes {
+        match self.default_memory_bytes {
+            Some(ref mut cached) => cached,
+            None => self.load_default_memory_bytes(ctx),
+        }
+    }
+
+    /// Loads and populates the cached default memory instance.
+    ///
+    /// Returns an exclusive reference to the cached default memory.
+    fn load_default_memory_bytes(&mut self, ctx: impl AsContextMut) -> &mut CachedMemoryBytes {
+        let memory = self.default_memory(&ctx);
+        self.default_memory_bytes = Some(CachedMemoryBytes::new(ctx, memory));
+        self.default_memory_bytes
+            .as_mut()
+            .expect("cached_memory was just set to Some")
+    }
+
+    /// Clears the cached default memory instance.
+    ///
+    /// # Note
+    ///
+    /// - This is important when operations such as `memory.grow` have
+    ///   occured that might have invalidated the cached memory.
+    /// - Conservatively it is also recommended to reset default memory bytes
+    ///   when calling a host function since that might invalidate linear memory
+    ///   without the Wasm engine knowing.
+    pub fn reset_default_memory_bytes(&mut self) {
+        self.default_memory_bytes = None;
+    }
+
     /// Returns the default [`Table`] of the currently used [`Instance`].
     ///
     /// # Panics
@@ -139,5 +182,68 @@ impl InstanceCache {
             Some((index, func)) if index == func_idx => func,
             _ => self.load_func_at(ctx, func_idx),
         }
+    }
+}
+
+/// The cached bytes of a linear memory entity.
+#[derive(Debug)]
+pub struct CachedMemoryBytes {
+    /// The pointer to the linear memory slice of bytes.
+    data: NonNull<[u8]>,
+}
+
+impl CachedMemoryBytes {
+    /// Creates a new [`CachedMemory`] from the given [`Memory`].
+    #[inline]
+    pub fn new(mut ctx: impl AsContextMut, memory: Memory) -> Self {
+        Self {
+            data: memory.data_mut(&mut ctx).into(),
+        }
+    }
+
+    /// Returns an exclusive reference to the underlying byte slices.
+    #[inline]
+    fn data(&self) -> &[u8] {
+        unsafe { self.data.as_ref() }
+    }
+
+    /// Returns an exclusive reference to the underlying byte slices.
+    #[inline]
+    fn data_mut(&mut self) -> &mut [u8] {
+        unsafe { self.data.as_mut() }
+    }
+
+    /// Reads `n` bytes from `memory[offset..offset+n]` into `buffer`
+    /// where `n` is the length of `buffer`.
+    ///
+    /// # Errors
+    ///
+    /// If this operation accesses out of bounds linear memory.
+    #[inline]
+    pub fn read(&self, offset: usize, buffer: &mut [u8]) -> Result<(), TrapCode> {
+        let len_buffer = buffer.len();
+        let slice = self
+            .data()
+            .get(offset..(offset + len_buffer))
+            .ok_or(TrapCode::MemoryAccessOutOfBounds)?;
+        buffer.copy_from_slice(slice);
+        Ok(())
+    }
+
+    /// Writes `n` bytes to `memory[offset..offset+n]` from `buffer`
+    /// where `n` if the length of `buffer`.
+    ///
+    /// # Errors
+    ///
+    /// If this operation accesses out of bounds linear memory.
+    #[inline]
+    pub fn write(&mut self, offset: usize, buffer: &[u8]) -> Result<(), TrapCode> {
+        let len_buffer = buffer.len();
+        let slice = self
+            .data_mut()
+            .get_mut(offset..(offset + len_buffer))
+            .ok_or(TrapCode::MemoryAccessOutOfBounds)?;
+        slice.copy_from_slice(buffer);
+        Ok(())
     }
 }
