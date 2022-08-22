@@ -6,6 +6,48 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Additionally we have an `Internal` section for changes that are of interest to developers.
 
+## [0.15.0] - 2022-08-22
+
+### Fixed
+
+- Fixed bugs found during fuzzing the translation phase of `wasmi`.
+  [**Link**](https://github.com/paritytech/wasmi/commit/43d7037745a266ece2baccd9e78f7d983dacbb93)
+- Fix `Read` trait implementation for `no_std` compilations.
+  [**Link**](https://github.com/paritytech/wasmi/commit/baab359de955240fbb9c89ebbc369d7a6e6d8569)
+
+### Removed
+
+- Removed support for virtual memory based Wasm linear memory.
+  We decided to remove support since benchmarks showed that our current
+  implementation actually regresses performance compared to our naive
+  `Vec` based implementation.
+  [**Link**](https://github.com/paritytech/wasmi/commit/10f8780a49b8cc8d8719e2b74089bf6848b8f982)
+
+### Internal
+
+- The `wasmi::Engine` now caches the bytes of the default linear memory for
+  performance wins in `memory.store` and `memory.load` intense work loads.
+  [**Link**](https://github.com/paritytech/wasmi/commit/c0df344e970bcdd4c6ce25f64265c854a1239220)
+- The `wasmi` engine internals have been reorganized and modernised to improve
+  performance on function call intense work loads. This resulted in performance
+  improvements across the board.
+  [**Link**](https://github.com/paritytech/wasmi/commit/d789570b51effb3a0c397c2d4ea1dc03c5d76918)
+- The Wasm to `wasmi` bytecode translation now properly reuses heap allocations
+  across function translation units which improved translation performance by
+  roughly 10%.
+  [**Link**](https://github.com/paritytech/wasmi/commit/71a913fc508841b3b7f799c8e4406e1e48feb046)
+- Refactor `Trap` type to be of pointer size which resulted in significant
+  performance wins across the board especially for call intense work loads.
+  [**Link**](https://github.com/paritytech/wasmi/commit/4a5d113a11a0f0020491c2cc08dd195a184256f0)
+- Optimized the `wasmi` engine Wasm value stack implementation for significant
+  performance wins across the board.
+  [**Link**](https://github.com/paritytech/wasmi/commit/3886d9190e89d44a701ad5cbbda0c7457feba510)
+- Shrunk size of some internal identifier types for minor performance wins.
+  [**Link**](https://github.com/paritytech/wasmi/commit/3d544b82a5089ae4331024b1e6762dcb48a02898)
+- Added initial naive fuzz testing for Wasm parsing, validation and Wasm to
+  `wasmi` bytecode translation.
+  [**Link**](https://github.com/paritytech/wasmi/commit/4d1f2ad6cbf07e61656185101bbd0bd5a941335f)
+
 ## [0.14.0] - 2022-07-26
 
 ### Added
