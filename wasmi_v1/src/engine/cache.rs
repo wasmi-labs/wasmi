@@ -91,7 +91,7 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a default linear memory.
-    pub fn default_memory(&mut self, ctx: impl AsContext, _instance: Instance) -> Memory {
+    pub fn default_memory(&mut self, ctx: impl AsContext) -> Memory {
         match self.default_memory {
             Some(default_memory) => default_memory,
             None => self.load_default_memory(ctx),
@@ -103,7 +103,7 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a default table.
-    pub fn default_table(&mut self, ctx: impl AsContext, _instance: Instance) -> Table {
+    pub fn default_table(&mut self, ctx: impl AsContext) -> Table {
         match self.default_table {
             Some(default_table) => default_table,
             None => self.load_default_table(ctx),
@@ -134,7 +134,7 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a [`Func`] at the index.
-    pub fn get_func(&mut self, ctx: impl AsContext, _instance: Instance, func_idx: u32) -> Func {
+    pub fn get_func(&mut self, ctx: impl AsContext, func_idx: u32) -> Func {
         match self.last_func {
             Some((index, func)) if index == func_idx => func,
             _ => self.load_func_at(ctx, func_idx),
