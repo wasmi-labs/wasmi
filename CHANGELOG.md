@@ -19,6 +19,9 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 - Changed API of `wasmi::Config` in order to better reflect the API of
   `wasmtime::Config`.
+- Refactor `Trap` type to be of pointer size which resulted in significant
+  performance wins across the board especially for call intense work loads.
+  [**Link**](https://github.com/paritytech/wasmi/commit/4a5d113a11a0f0020491c2cc08dd195a184256f0)
 
 ### Removed
 
@@ -41,9 +44,6 @@ Additionally we have an `Internal` section for changes that are of interest to d
   across function translation units which improved translation performance by
   roughly 10%.
   [**Link**](https://github.com/paritytech/wasmi/commit/71a913fc508841b3b7f799c8e4406e1e48feb046)
-- Refactor `Trap` type to be of pointer size which resulted in significant
-  performance wins across the board especially for call intense work loads.
-  [**Link**](https://github.com/paritytech/wasmi/commit/4a5d113a11a0f0020491c2cc08dd195a184256f0)
 - Optimized the `wasmi` engine Wasm value stack implementation for significant
   performance wins across the board.
   [**Link**](https://github.com/paritytech/wasmi/commit/3886d9190e89d44a701ad5cbbda0c7457feba510)
