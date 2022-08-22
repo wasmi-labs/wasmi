@@ -50,6 +50,10 @@ pub enum RunInstructionTracePre {
         left: i32,
         right: i32,
     },
+    I64Comp {
+        left: i64,
+        right: i64,
+    },
 
     Drop,
 }

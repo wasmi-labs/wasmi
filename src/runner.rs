@@ -473,6 +473,25 @@ impl Interpreter {
                     mmid: mmid as u64,
                 })
             }
+            isa::Instruction::I64Load(offset) => {
+                let raw_address = <_>::from_value_internal(*self.value_stack.top());
+                let address =
+                    effective_address(offset, raw_address).map_or(None, |addr| Some(addr));
+                let mmid = tracer.lookup_memory_instance(
+                    &function_context
+                        .memory
+                        .clone()
+                        .expect("Due to validation memory should exists"),
+                );
+
+                Some(RunInstructionTracePre::Load {
+                    offset,
+                    raw_address,
+                    effective_address: address,
+                    vtype: parity_wasm::elements::ValueType::I64,
+                    mmid: mmid as u64,
+                })
+            }
             isa::Instruction::I32Store(offset) => {
                 let value = <_>::from_value_internal(*self.value_stack.pick(1));
                 let raw_address = <_>::from_value_internal(*self.value_stack.pick(2));
@@ -512,6 +531,18 @@ impl Interpreter {
             | isa::Instruction::I32GeU
             | isa::Instruction::I32LtU
             | isa::Instruction::I32LeU => Some(RunInstructionTracePre::I32Comp {
+                left: <_>::from_value_internal(*self.value_stack.pick(2)),
+                right: <_>::from_value_internal(*self.value_stack.pick(1)),
+            }),
+
+            isa::Instruction::I64Eq
+            | isa::Instruction::I64Ne
+            | isa::Instruction::I64GtS
+            | isa::Instruction::I64GtU
+            | isa::Instruction::I64GeS
+            | isa::Instruction::I64GeU
+            | isa::Instruction::I64LtU
+            | isa::Instruction::I64LeU => Some(RunInstructionTracePre::I64Comp {
                 left: <_>::from_value_internal(*self.value_stack.pick(2)),
                 right: <_>::from_value_internal(*self.value_stack.pick(1)),
             }),
@@ -651,7 +682,7 @@ impl Interpreter {
                 }
             }
 
-            isa::Instruction::I32Load(..) => {
+            isa::Instruction::I32Load(..) | isa::Instruction::I64Load(..) => {
                 if let RunInstructionTracePre::Load {
                     offset,
                     raw_address,
@@ -820,6 +851,31 @@ impl Interpreter {
                 }
             }
 
+            isa::Instruction::I64LtU => {
+                if let RunInstructionTracePre::I64Comp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64Comp {
+                        class: RelOp::UnsignedLt,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64LeU => {
+                if let RunInstructionTracePre::I64Comp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64Comp {
+                        class: RelOp::UnsignedLe,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+
             isa::Instruction::I32Add => {
                 if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
                     StepInfo::I32BinOp {
@@ -868,7 +924,10 @@ impl Interpreter {
                     unreachable!()
                 }
             }
-            _ => unimplemented!(),
+            _ => {
+                println!("{:?}", instructions);
+                unimplemented!()
+            }
         }
     }
 
