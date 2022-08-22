@@ -15,6 +15,11 @@ Additionally we have an `Internal` section for changes that are of interest to d
 - Fix `Read` trait implementation for `no_std` compilations.
   [**Link**](https://github.com/paritytech/wasmi/commit/baab359de955240fbb9c89ebbc369d7a6e6d8569)
 
+### Changed
+
+- Changed API of `wasmi::Config` in order to better reflect the API of
+  `wasmtime::Config`.
+
 ### Removed
 
 - Removed support for virtual memory based Wasm linear memory.
