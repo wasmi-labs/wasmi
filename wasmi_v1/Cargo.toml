@@ -13,7 +13,7 @@ exclude = [ "tests/*", "benches/*" ]
 
 [dependencies]
 wasmparser = { version = "0.83", package = "wasmparser-nostd", default-features = false }
-wasmi_core = { version = "0.2", path = "../core", default-features = false }
+wasmi_core = { version = "0.3", path = "../core", default-features = false }
 spin = { version = "0.9", default-features = false, features = ["mutex", "spin_mutex"] }
 
 [dev-dependencies]
