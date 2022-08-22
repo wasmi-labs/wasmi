@@ -291,9 +291,9 @@ where
         Self {
             value_stack,
             frame,
-            cache,
             ctx,
             pc,
+            cache,
         }
     }
 
@@ -302,8 +302,9 @@ where
     /// # Panics
     ///
     /// If there exists is no linear memory for the instance.
+    #[inline]
     fn default_memory(&mut self) -> Memory {
-        self.cache.default_memory(&self.ctx, self.frame.instance())
+        self.cache.default_memory(&self.ctx)
     }
 
     /// Returns the default table.
@@ -311,8 +312,9 @@ where
     /// # Panics
     ///
     /// If there exists is no table for the instance.
+    #[inline]
     fn default_table(&mut self) -> Table {
-        self.cache.default_table(&self.ctx, self.frame.instance())
+        self.cache.default_table(&self.ctx)
     }
 
     /// Returns the global variable at the given index.
@@ -361,14 +363,13 @@ where
         UntypedValue: From<T>,
         T: LittleEndianConvert,
     {
-        let memory = self.default_memory();
         let entry = self.value_stack.last_mut();
         let raw_address = u32::from(*entry);
         let address = Self::effective_address(offset, raw_address)?;
         let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
-        memory
-            .read(self.ctx.as_context(), address, bytes.as_mut())
-            .map_err(|_| TrapCode::MemoryAccessOutOfBounds)?;
+        self.cache
+            .default_memory_bytes(self.ctx.as_context_mut())
+            .read(address, bytes.as_mut())?;
         let value = <T as LittleEndianConvert>::from_le_bytes(bytes);
         *entry = value.into();
         self.next_instr()
@@ -395,14 +396,13 @@ where
         T: ExtendInto<U> + LittleEndianConvert,
         UntypedValue: From<U>,
     {
-        let memory = self.default_memory();
         let entry = self.value_stack.last_mut();
         let raw_address = u32::from(*entry);
         let address = Self::effective_address(offset, raw_address)?;
         let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
-        memory
-            .read(self.ctx.as_context(), address, bytes.as_mut())
-            .map_err(|_| TrapCode::MemoryAccessOutOfBounds)?;
+        self.cache
+            .default_memory_bytes(self.ctx.as_context_mut())
+            .read(address, bytes.as_mut())?;
         let extended = <T as LittleEndianConvert>::from_le_bytes(bytes).extend_into();
         *entry = extended.into();
         self.next_instr()
@@ -425,11 +425,10 @@ where
         let stack_value = self.value_stack.pop_as::<T>();
         let raw_address = self.value_stack.pop_as::<u32>();
         let address = Self::effective_address(offset, raw_address)?;
-        let memory = self.default_memory();
         let bytes = <T as LittleEndianConvert>::into_le_bytes(stack_value);
-        memory
-            .write(self.ctx.as_context_mut(), address, bytes.as_ref())
-            .map_err(|_| TrapCode::MemoryAccessOutOfBounds)?;
+        self.cache
+            .default_memory_bytes(self.ctx.as_context_mut())
+            .write(address, bytes.as_ref())?;
         self.next_instr()
     }
 
@@ -452,11 +451,10 @@ where
         let wrapped_value = self.value_stack.pop_as::<T>().wrap_into();
         let raw_address = self.value_stack.pop_as::<u32>();
         let address = Self::effective_address(offset, raw_address)?;
-        let memory = self.default_memory();
         let bytes = <U as LittleEndianConvert>::into_le_bytes(wrapped_value);
-        memory
-            .write(self.ctx.as_context_mut(), address, bytes.as_ref())
-            .map_err(|_| TrapCode::MemoryAccessOutOfBounds)?;
+        self.cache
+            .default_memory_bytes(self.ctx.as_context_mut())
+            .write(address, bytes.as_ref())?;
         self.next_instr()
     }
 
@@ -631,11 +629,7 @@ where
     }
 
     fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, Trap> {
-        let callee = self.cache.get_func(
-            &mut self.ctx,
-            self.frame.instance(),
-            func_index.into_inner(),
-        );
+        let callee = self.cache.get_func(&mut self.ctx, func_index.into_inner());
         self.call_func(callee)
     }
 
@@ -700,6 +694,10 @@ where
                 u32::MAX
             }
         };
+        // The memory grow might have invalidated the cached linear memory
+        // so we need to reset it in order for the cache to reload in case it
+        // is used again.
+        self.cache.reset_default_memory_bytes();
         self.value_stack.push(new_size);
         self.next_instr()
     }

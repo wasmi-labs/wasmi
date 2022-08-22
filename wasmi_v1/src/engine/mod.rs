@@ -378,6 +378,7 @@ impl EngineInner {
                         self.stack.call_wasm(frame, wasm_func, &self.code_map)?;
                     }
                     FuncEntityInternal::Host(host_func) => {
+                        cache.reset_default_memory_bytes();
                         let host_func = host_func.clone();
                         self.stack
                             .call_host(&mut ctx, frame, host_func, &self.func_types)?;
