@@ -193,7 +193,7 @@ pub struct CachedMemoryBytes {
 }
 
 impl CachedMemoryBytes {
-    /// Creates a new [`CachedMemory`] from the given [`Memory`].
+    /// Creates a new [`CachedMemoryBytes`] from the given [`Memory`].
     #[inline]
     pub fn new(mut ctx: impl AsContextMut, memory: Memory) -> Self {
         Self {
