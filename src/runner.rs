@@ -522,6 +522,7 @@ impl Interpreter {
             }
 
             isa::Instruction::I32Const(_) => None,
+            isa::Instruction::I64Const(_) => None,
 
             isa::Instruction::I32Eq
             | isa::Instruction::I32Ne
@@ -753,6 +754,7 @@ impl Interpreter {
             }
 
             isa::Instruction::I32Const(value) => StepInfo::I32Const { value },
+            isa::Instruction::I64Const(value) => StepInfo::I64Const { value },
 
             isa::Instruction::I32Eq => {
                 if let RunInstructionTracePre::I32Comp { left, right } = pre_status.unwrap() {
