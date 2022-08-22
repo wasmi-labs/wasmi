@@ -268,7 +268,7 @@ struct ExecutionContext<'engine, 'func, Ctx> {
     value_stack: &'engine mut ValueStack,
     /// The function frame that is being executed.
     frame: &'func mut FuncFrame,
-    /// Cached default linear memory.
+    /// Stores frequently used instance related data.
     cache: &'engine mut InstanceCache,
     /// A mutable [`Store`] context.
     ///
