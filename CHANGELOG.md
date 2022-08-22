@@ -17,6 +17,7 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 ### Changed
 
+- Update to `wasmi_core` version `0.3.0`.
 - Changed API of `wasmi::Config` in order to better reflect the API of
   `wasmtime::Config`.
 - Refactor `Trap` type to be of pointer size which resulted in significant
