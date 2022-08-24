@@ -73,8 +73,8 @@ use alloc::vec::Vec;
 use parity_wasm::elements::ValueType;
 use specs::{
     host_function::TIME_FUNC_INDEX,
-    itable::{BinOp, BitOp, Opcode, RelOp, ShiftOp},
-    mtable::VarType,
+    itable::{BinOp, BitOp, Opcode, RelOp, ShiftOp, TestOp},
+    mtable::{MemoryReadSize, MemoryStoreSize, VarType},
 };
 
 use crate::tracer::FuncDesc;
@@ -375,7 +375,15 @@ impl<'a> Instruction<'a> {
                 },
                 dst_pc,
             },
-            Instruction::BrIfEqz(_) => todo!(),
+            Instruction::BrIfEqz(Target { dst_pc, drop_keep }) => Opcode::BrIfEqz {
+                drop: drop_keep.drop,
+                keep: if let Keep::Single(t) = drop_keep.keep {
+                    vec![t.into()]
+                } else {
+                    vec![]
+                },
+                dst_pc,
+            },
             Instruction::BrIfNez(Target { dst_pc, drop_keep }) => Opcode::BrIf {
                 drop: drop_keep.drop,
                 keep: if let Keep::Single(t) = drop_keep.keep {
@@ -386,7 +394,7 @@ impl<'a> Instruction<'a> {
                 dst_pc,
             },
             Instruction::BrTable(_) => todo!(),
-            Instruction::Unreachable => todo!(),
+            Instruction::Unreachable => Opcode::Unreachable,
             Instruction::Return(drop_keep) => Opcode::Return {
                 drop: drop_keep.drop,
                 keep: if let Keep::Single(t) = drop_keep.keep {
@@ -415,25 +423,35 @@ impl<'a> Instruction<'a> {
             }
             Instruction::CallIndirect(_) => todo!(),
             Instruction::Drop => Opcode::Drop,
-            Instruction::Select => todo!(),
+            Instruction::Select => Opcode::Select,
             Instruction::GetGlobal(_) => todo!(),
             Instruction::SetGlobal(_) => todo!(),
             Instruction::I32Load(offset) => Opcode::Load {
                 offset,
                 vtype: VarType::I32,
+                size: MemoryReadSize::U32,
             },
             Instruction::I64Load(offset) => Opcode::Load {
                 offset,
                 vtype: VarType::I64,
+                size: MemoryReadSize::I64,
             },
             Instruction::F32Load(_) => todo!(),
             Instruction::F64Load(_) => todo!(),
             Instruction::I32Load8S(_) => todo!(),
-            Instruction::I32Load8U(_) => todo!(),
+            Instruction::I32Load8U(offset) => Opcode::Load {
+                offset,
+                vtype: VarType::I32,
+                size: MemoryReadSize::U8,
+            },
             Instruction::I32Load16S(_) => todo!(),
             Instruction::I32Load16U(_) => todo!(),
             Instruction::I64Load8S(_) => todo!(),
-            Instruction::I64Load8U(_) => todo!(),
+            Instruction::I64Load8U(offset) => Opcode::Load {
+                offset,
+                vtype: VarType::I64,
+                size: MemoryReadSize::U8,
+            },
             Instruction::I64Load16S(_) => todo!(),
             Instruction::I64Load16U(_) => todo!(),
             Instruction::I64Load32S(_) => todo!(),
@@ -441,11 +459,20 @@ impl<'a> Instruction<'a> {
             Instruction::I32Store(offset) => Opcode::Store {
                 offset,
                 vtype: VarType::I32,
+                size: MemoryStoreSize::Byte32,
             },
-            Instruction::I64Store(_) => todo!(),
+            Instruction::I64Store(offset) => Opcode::Store {
+                offset,
+                vtype: VarType::I64,
+                size: MemoryStoreSize::Byte64,
+            },
             Instruction::F32Store(_) => todo!(),
             Instruction::F64Store(_) => todo!(),
-            Instruction::I32Store8(_) => todo!(),
+            Instruction::I32Store8(offset) => Opcode::Store {
+                offset,
+                vtype: VarType::I32,
+                size: MemoryStoreSize::Byte8,
+            },
             Instruction::I32Store16(_) => todo!(),
             Instruction::I64Store8(_) => todo!(),
             Instruction::I64Store16(_) => todo!(),
@@ -462,7 +489,10 @@ impl<'a> Instruction<'a> {
             },
             Instruction::F32Const(_) => todo!(),
             Instruction::F64Const(_) => todo!(),
-            Instruction::I32Eqz => todo!(),
+            Instruction::I32Eqz => Opcode::Test {
+                class: TestOp::Eqz,
+                vtype: VarType::I32,
+            },
             Instruction::I32Eq => Opcode::Rel {
                 class: RelOp::Eq,
                 vtype: VarType::I32,
@@ -533,18 +563,27 @@ impl<'a> Instruction<'a> {
                 class: BinOp::Add,
                 vtype: VarType::I32,
             },
-            Instruction::I32Sub => todo!(),
+            Instruction::I32Sub => Opcode::Bin {
+                class: BinOp::Sub,
+                vtype: VarType::I32,
+            },
             Instruction::I32Mul => todo!(),
             Instruction::I32DivS => todo!(),
             Instruction::I32DivU => todo!(),
             Instruction::I32RemS => todo!(),
             Instruction::I32RemU => todo!(),
-            Instruction::I32And => todo!(),
+            Instruction::I32And => Opcode::BinBit {
+                class: BitOp::And,
+                vtype: VarType::I32,
+            },
             Instruction::I32Or => Opcode::BinBit {
                 class: BitOp::Or,
                 vtype: VarType::I32,
             },
-            Instruction::I32Xor => todo!(),
+            Instruction::I32Xor => Opcode::BinBit {
+                class: BitOp::Xor,
+                vtype: VarType::I32,
+            },
             Instruction::I32Shl => Opcode::BinShift {
                 class: ShiftOp::Shl,
                 vtype: VarType::I32,
@@ -554,12 +593,18 @@ impl<'a> Instruction<'a> {
                 class: ShiftOp::UnsignedShr,
                 vtype: VarType::I32,
             },
-            Instruction::I32Rotl => todo!(),
+            Instruction::I32Rotl => Opcode::BinShift {
+                class: ShiftOp::Rotl,
+                vtype: VarType::I32,
+            },
             Instruction::I32Rotr => todo!(),
             Instruction::I64Clz => todo!(),
             Instruction::I64Ctz => todo!(),
             Instruction::I64Popcnt => todo!(),
-            Instruction::I64Add => todo!(),
+            Instruction::I64Add => Opcode::Bin {
+                class: BinOp::Add,
+                vtype: VarType::I64,
+            },
             Instruction::I64Sub => todo!(),
             Instruction::I64Mul => todo!(),
             Instruction::I64DivS => todo!(),
@@ -567,11 +612,20 @@ impl<'a> Instruction<'a> {
             Instruction::I64RemS => todo!(),
             Instruction::I64RemU => todo!(),
             Instruction::I64And => todo!(),
-            Instruction::I64Or => todo!(),
+            Instruction::I64Or => Opcode::BinBit {
+                class: BitOp::Or,
+                vtype: VarType::I64,
+            },
             Instruction::I64Xor => todo!(),
-            Instruction::I64Shl => todo!(),
+            Instruction::I64Shl => Opcode::BinShift {
+                class: ShiftOp::Shl,
+                vtype: VarType::I64,
+            },
             Instruction::I64ShrS => todo!(),
-            Instruction::I64ShrU => todo!(),
+            Instruction::I64ShrU => Opcode::BinShift {
+                class: ShiftOp::UnsignedShr,
+                vtype: VarType::I64,
+            },
             Instruction::I64Rotl => todo!(),
             Instruction::I64Rotr => todo!(),
             Instruction::F32Abs => todo!(),
@@ -602,13 +656,13 @@ impl<'a> Instruction<'a> {
             Instruction::F64Min => todo!(),
             Instruction::F64Max => todo!(),
             Instruction::F64Copysign => todo!(),
-            Instruction::I32WrapI64 => todo!(),
+            Instruction::I32WrapI64 => Opcode::I32WrapI64,
             Instruction::I32TruncSF32 => todo!(),
             Instruction::I32TruncUF32 => todo!(),
             Instruction::I32TruncSF64 => todo!(),
             Instruction::I32TruncUF64 => todo!(),
             Instruction::I64ExtendSI32 => todo!(),
-            Instruction::I64ExtendUI32 => todo!(),
+            Instruction::I64ExtendUI32 => Opcode::I64ExtendUI32,
             Instruction::I64TruncSF32 => todo!(),
             Instruction::I64TruncUF32 => todo!(),
             Instruction::I64TruncSF64 => todo!(),

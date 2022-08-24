@@ -100,6 +100,33 @@ impl Tracer {
             .push((memref, self.next_memory_id()));
     }
 
+    pub(crate) fn statistics_instructions<'a>(&mut self, module_instance: &ModuleRef) {
+        let mut func_index = 0;
+        let mut insts = vec![];
+
+        loop {
+            if let Some(func) = module_instance.func_by_index(func_index) {
+                let body = func.body().unwrap();
+
+                let code = &body.code.vec;
+
+                for inst in code {
+                    if insts.iter().position(|i| i == inst).is_none() {
+                        insts.push(inst.clone())
+                    }
+                }
+            } else {
+                break;
+            }
+
+            func_index = func_index + 1;
+        }
+
+        for inst in insts {
+            println!("{:?}", inst);
+        }
+    }
+
     pub(crate) fn register_module_instance(
         &mut self,
         module: &Module,

@@ -603,6 +603,11 @@ impl ModuleInstance {
             let module = module_ref.loaded_module;
             match tracer {
                 Some(tracer) => {
+                    /*
+                                        (*tracer)
+                                            .borrow_mut()
+                                            .statistics_instructions(&module_ref.instance);
+                    */
                     (*tracer)
                         .borrow_mut()
                         .register_module_instance(module, &module_ref.instance);

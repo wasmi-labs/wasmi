@@ -1,11 +1,19 @@
 use parity_wasm::elements::ValueType;
-use specs::{etable::EventTableEntry, itable::Opcode, step::StepInfo};
+use specs::{
+    etable::EventTableEntry,
+    itable::Opcode,
+    mtable::{MemoryReadSize, MemoryStoreSize},
+    step::StepInfo,
+};
 
 use crate::{runner::ValueInternal, DEFAULT_VALUE_STACK_LIMIT};
 
 use super::itable::IEntry;
 
 pub enum RunInstructionTracePre {
+    BrIfEqz {
+        value: i32,
+    },
     BrIfNez {
         value: i32,
     },
@@ -25,14 +33,16 @@ pub enum RunInstructionTracePre {
         raw_address: u32,
         effective_address: Option<u32>, // use option in case of memory out of bound
         vtype: ValueType,
+        load_size: MemoryReadSize,
         mmid: u64,
     },
     Store {
         offset: u32,
         raw_address: u32,
         effective_address: Option<u32>,
-        value: i32,
+        value: u64,
         vtype: ValueType,
+        store_size: MemoryStoreSize,
         mmid: u64,
         pre_block_value: Option<u64>,
     },
@@ -46,6 +56,12 @@ pub enum RunInstructionTracePre {
         right: u64,
     },
 
+    I64BinOp {
+        left: i64,
+        right: i64,
+    },
+
+    I32Single(i32),
     I32Comp {
         left: i32,
         right: i32,
@@ -53,6 +69,13 @@ pub enum RunInstructionTracePre {
     I64Comp {
         left: i64,
         right: i64,
+    },
+
+    I32WrapI64 {
+        value: i64,
+    },
+    I64ExtendUI32 {
+        value: i32,
     },
 
     Drop,

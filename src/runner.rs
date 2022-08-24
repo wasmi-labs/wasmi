@@ -31,6 +31,7 @@ use parity_wasm::elements::Local;
 use specs::{
     host_function::TIME_FUNC_INDEX,
     itable::{BinOp, BitOp, RelOp, ShiftOp},
+    mtable::{MemoryReadSize, MemoryStoreSize},
     step::StepInfo,
     types::Value,
 };
@@ -432,6 +433,9 @@ impl Interpreter {
             isa::Instruction::TeeLocal(..) => None,
 
             isa::Instruction::Br(_) => None,
+            isa::Instruction::BrIfEqz(_) => Some(RunInstructionTracePre::BrIfEqz {
+                value: <_>::from_value_internal(*self.value_stack.top()),
+            }),
             isa::Instruction::BrIfNez(_) => Some(RunInstructionTracePre::BrIfNez {
                 value: <_>::from_value_internal(*self.value_stack.top()),
             }),
@@ -454,7 +458,13 @@ impl Interpreter {
             }
             isa::Instruction::Drop => Some(RunInstructionTracePre::Drop),
 
-            isa::Instruction::I32Load(offset) => {
+            isa::Instruction::I32Load(offset) | isa::Instruction::I32Load8U(offset) => {
+                let load_size = match *instructions {
+                    isa::Instruction::I32Load(..) => MemoryReadSize::S32,
+                    isa::Instruction::I32Load8U(..) => MemoryReadSize::U8,
+                    _ => unreachable!(),
+                };
+
                 let raw_address = <_>::from_value_internal(*self.value_stack.top());
                 let address =
                     effective_address(offset, raw_address).map_or(None, |addr| Some(addr));
@@ -470,10 +480,16 @@ impl Interpreter {
                     raw_address,
                     effective_address: address,
                     vtype: parity_wasm::elements::ValueType::I32,
+                    load_size,
                     mmid: mmid as u64,
                 })
             }
-            isa::Instruction::I64Load(offset) => {
+            isa::Instruction::I64Load(offset) | isa::Instruction::I64Load8U(offset) => {
+                let load_size = match *instructions {
+                    isa::Instruction::I64Load(..) => MemoryReadSize::I64,
+                    isa::Instruction::I64Load8U(..) => MemoryReadSize::U8,
+                    _ => unreachable!(),
+                };
                 let raw_address = <_>::from_value_internal(*self.value_stack.top());
                 let address =
                     effective_address(offset, raw_address).map_or(None, |addr| Some(addr));
@@ -489,10 +505,51 @@ impl Interpreter {
                     raw_address,
                     effective_address: address,
                     vtype: parity_wasm::elements::ValueType::I64,
+                    load_size,
                     mmid: mmid as u64,
                 })
             }
-            isa::Instruction::I32Store(offset) => {
+            isa::Instruction::I32Store(offset) | isa::Instruction::I32Store8(offset) => {
+                let store_size = match *instructions {
+                    isa::Instruction::I32Store8(_) => MemoryStoreSize::Byte8,
+                    isa::Instruction::I32Store(_) => MemoryStoreSize::Byte32,
+                    _ => unreachable!(),
+                };
+
+                let value: u32 = <_>::from_value_internal(*self.value_stack.pick(1));
+                let raw_address = <_>::from_value_internal(*self.value_stack.pick(2));
+                let address =
+                    effective_address(offset, raw_address).map_or(None, |addr| Some(addr));
+                let mmid = tracer.lookup_memory_instance(&function_context.memory.clone().unwrap());
+
+                let pre_block_value = address.map(|address| {
+                    let mut buf = [0u8; 8];
+                    function_context
+                        .memory
+                        .clone()
+                        .unwrap()
+                        .get_into(address / 8 * 8, &mut buf)
+                        .unwrap();
+                    u64::from_le_bytes(buf)
+                });
+
+                Some(RunInstructionTracePre::Store {
+                    offset,
+                    raw_address,
+                    effective_address: address,
+                    value: value as u64,
+                    vtype: parity_wasm::elements::ValueType::I32,
+                    store_size,
+                    mmid: mmid as u64,
+                    pre_block_value,
+                })
+            }
+            isa::Instruction::I64Store(offset) => {
+                let store_size = match *instructions {
+                    isa::Instruction::I64Store(..) => MemoryStoreSize::Byte64,
+                    _ => unreachable!(),
+                };
+
                 let value = <_>::from_value_internal(*self.value_stack.pick(1));
                 let raw_address = <_>::from_value_internal(*self.value_stack.pick(2));
                 let address =
@@ -515,7 +572,8 @@ impl Interpreter {
                     raw_address,
                     effective_address: address,
                     value,
-                    vtype: parity_wasm::elements::ValueType::I32,
+                    vtype: parity_wasm::elements::ValueType::I64,
+                    store_size,
                     mmid: mmid as u64,
                     pre_block_value,
                 })
@@ -523,6 +581,10 @@ impl Interpreter {
 
             isa::Instruction::I32Const(_) => None,
             isa::Instruction::I64Const(_) => None,
+
+            isa::Instruction::I32Eqz => Some(RunInstructionTracePre::I32Single(
+                <_>::from_value_internal(*self.value_stack.pick(1)),
+            )),
 
             isa::Instruction::I32Eq
             | isa::Instruction::I32Ne
@@ -549,11 +611,30 @@ impl Interpreter {
             }),
 
             isa::Instruction::I32Add
+            | isa::Instruction::I32Sub
             | isa::Instruction::I32Shl
             | isa::Instruction::I32ShrU
-            | isa::Instruction::I32Or => Some(RunInstructionTracePre::I32BinOp {
+            | isa::Instruction::I32And
+            | isa::Instruction::I32Or
+            | isa::Instruction::I32Xor
+            | isa::Instruction::I32Rotl => Some(RunInstructionTracePre::I32BinOp {
                 left: <_>::from_value_internal(*self.value_stack.pick(2)),
                 right: <_>::from_value_internal(*self.value_stack.pick(1)),
+            }),
+
+            isa::Instruction::I64Add
+            | isa::Instruction::I64Shl
+            | isa::Instruction::I64ShrU
+            | isa::Instruction::I64Or => Some(RunInstructionTracePre::I64BinOp {
+                left: <_>::from_value_internal(*self.value_stack.pick(2)),
+                right: <_>::from_value_internal(*self.value_stack.pick(1)),
+            }),
+
+            isa::Instruction::I32WrapI64 => Some(RunInstructionTracePre::I32WrapI64 {
+                value: <_>::from_value_internal(*self.value_stack.pick(1)),
+            }),
+            isa::Instruction::I64ExtendUI32 => Some(RunInstructionTracePre::I64ExtendUI32 {
+                value: <_>::from_value_internal(*self.value_stack.pick(1)),
             }),
 
             _ => {
@@ -610,6 +691,26 @@ impl Interpreter {
                     Keep::None => vec![],
                 },
             },
+            isa::Instruction::BrIfEqz(target) => {
+                if let RunInstructionTracePre::BrIfEqz { value } = pre_status.unwrap() {
+                    StepInfo::BrIfEqz {
+                        condition: value,
+                        dst_pc: target.dst_pc,
+                        drop: target.drop_keep.drop,
+                        keep: if let Keep::Single(t) = target.drop_keep.keep {
+                            vec![t.into()]
+                        } else {
+                            vec![]
+                        },
+                        keep_values: match target.drop_keep.keep {
+                            Keep::Single(_) => vec![(*self.value_stack.top()).0],
+                            Keep::None => vec![],
+                        },
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
             isa::Instruction::BrIfNez(target) => {
                 if let RunInstructionTracePre::BrIfNez { value } = pre_status.unwrap() {
                     StepInfo::BrIfNez {
@@ -683,12 +784,16 @@ impl Interpreter {
                 }
             }
 
-            isa::Instruction::I32Load(..) | isa::Instruction::I64Load(..) => {
+            isa::Instruction::I32Load(..)
+            | isa::Instruction::I32Load8U(..)
+            | isa::Instruction::I64Load(..)
+            | isa::Instruction::I64Load8U(..) => {
                 if let RunInstructionTracePre::Load {
                     offset,
                     raw_address,
                     effective_address,
                     vtype,
+                    load_size,
                     mmid,
                 } = pre_status.unwrap()
                 {
@@ -705,6 +810,7 @@ impl Interpreter {
 
                     StepInfo::Load {
                         vtype: vtype.into(),
+                        load_size,
                         offset,
                         raw_address,
                         effective_address: effective_address.unwrap(),
@@ -716,13 +822,16 @@ impl Interpreter {
                     unreachable!()
                 }
             }
-            isa::Instruction::I32Store(..) => {
+            isa::Instruction::I32Store(..)
+            | isa::Instruction::I32Store8(..)
+            | isa::Instruction::I64Store(..) => {
                 if let RunInstructionTracePre::Store {
                     offset,
                     raw_address,
                     effective_address,
                     value,
                     vtype,
+                    store_size,
                     mmid,
                     pre_block_value,
                 } = pre_status.unwrap()
@@ -740,10 +849,11 @@ impl Interpreter {
 
                     StepInfo::Store {
                         vtype: vtype.into(),
+                        store_size,
                         offset,
                         raw_address,
                         effective_address: effective_address.unwrap(),
-                        value: value as u32 as u64,
+                        value: value as u64,
                         mmid,
                         pre_block_value: pre_block_value.unwrap(),
                         updated_block_value,
@@ -756,6 +866,16 @@ impl Interpreter {
             isa::Instruction::I32Const(value) => StepInfo::I32Const { value },
             isa::Instruction::I64Const(value) => StepInfo::I64Const { value },
 
+            isa::Instruction::I32Eqz => {
+                if let RunInstructionTracePre::I32Single(value) = pre_status.unwrap() {
+                    StepInfo::I32Eqz {
+                        value,
+                        result: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
             isa::Instruction::I32Eq => {
                 if let RunInstructionTracePre::I32Comp { left, right } = pre_status.unwrap() {
                     StepInfo::I32Comp {
@@ -890,10 +1010,46 @@ impl Interpreter {
                     unreachable!()
                 }
             }
+            isa::Instruction::I32Sub => {
+                if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32BinOp {
+                        class: BinOp::Sub,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I32And => {
+                if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32BinBitOp {
+                        class: BitOp::And,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
             isa::Instruction::I32Or => {
                 if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
                     StepInfo::I32BinBitOp {
                         class: BitOp::Or,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I32Xor => {
+                if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32BinBitOp {
+                        class: BitOp::Xor,
                         left,
                         right,
                         value: <_>::from_value_internal(*self.value_stack.top()),
@@ -926,6 +1082,89 @@ impl Interpreter {
                     unreachable!()
                 }
             }
+            isa::Instruction::I32Rotl => {
+                if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32BinShiftOp {
+                        class: ShiftOp::Rotl,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+
+            isa::Instruction::I64Add => {
+                if let RunInstructionTracePre::I64BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64BinOp {
+                        class: BinOp::Add,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64Or => {
+                if let RunInstructionTracePre::I64BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64BinBitOp {
+                        class: BitOp::Or,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64Shl => {
+                if let RunInstructionTracePre::I64BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64BinShiftOp {
+                        class: ShiftOp::Shl,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64ShrU => {
+                if let RunInstructionTracePre::I64BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64BinShiftOp {
+                        class: ShiftOp::UnsignedShr,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+
+            isa::Instruction::I32WrapI64 => {
+                if let RunInstructionTracePre::I32WrapI64 { value } = pre_status.unwrap() {
+                    StepInfo::I32WrapI64 {
+                        value,
+                        result: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64ExtendUI32 => {
+                if let RunInstructionTracePre::I64ExtendUI32 { value } = pre_status.unwrap() {
+                    StepInfo::I64ExtendUI32 {
+                        value,
+                        result: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+
             _ => {
                 println!("{:?}", instructions);
                 unimplemented!()
