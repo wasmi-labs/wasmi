@@ -31,7 +31,7 @@ use parity_wasm::elements::Local;
 use specs::{
     host_function::TIME_FUNC_INDEX,
     itable::{BinOp, BitOp, RelOp, ShiftOp},
-    mtable::{MemoryReadSize, MemoryStoreSize},
+    mtable::{MemoryReadSize, MemoryStoreSize, VarType},
     step::StepInfo,
     types::Value,
 };
@@ -869,8 +869,9 @@ impl Interpreter {
 
             isa::Instruction::I32Eqz => {
                 if let RunInstructionTracePre::I32Single(value) = pre_status.unwrap() {
-                    StepInfo::I32Eqz {
-                        value,
+                    StepInfo::Test {
+                        vtype: VarType::I32,
+                        value: value as u32 as u64,
                         result: <_>::from_value_internal(*self.value_stack.top()),
                     }
                 } else {
