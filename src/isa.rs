@@ -605,7 +605,10 @@ impl<'a> Instruction<'a> {
                 class: BinOp::Add,
                 vtype: VarType::I64,
             },
-            Instruction::I64Sub => todo!(),
+            Instruction::I64Sub => Opcode::Bin {
+                class: BinOp::Sub,
+                vtype: VarType::I64,
+            },
             Instruction::I64Mul => todo!(),
             Instruction::I64DivS => todo!(),
             Instruction::I64DivU => todo!(),

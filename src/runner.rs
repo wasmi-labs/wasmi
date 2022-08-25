@@ -623,6 +623,7 @@ impl Interpreter {
             }),
 
             isa::Instruction::I64Add
+            | isa::Instruction::I64Sub
             | isa::Instruction::I64Shl
             | isa::Instruction::I64ShrU
             | isa::Instruction::I64Or => Some(RunInstructionTracePre::I64BinOp {
@@ -1099,6 +1100,18 @@ impl Interpreter {
                 if let RunInstructionTracePre::I64BinOp { left, right } = pre_status.unwrap() {
                     StepInfo::I64BinOp {
                         class: BinOp::Add,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64Sub => {
+                if let RunInstructionTracePre::I64BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64BinOp {
+                        class: BinOp::Sub,
                         left,
                         right,
                         value: <_>::from_value_internal(*self.value_stack.top()),
