@@ -73,7 +73,7 @@ use alloc::vec::Vec;
 use parity_wasm::elements::ValueType;
 use specs::{
     host_function::TIME_FUNC_INDEX,
-    itable::{BinOp, BitOp, Opcode, RelOp, ShiftOp, TestOp},
+    itable::{BinOp, BitOp, ConversionOp, Opcode, RelOp, ShiftOp, TestOp},
     mtable::{MemoryReadSize, MemoryStoreSize, VarType},
 };
 
@@ -659,13 +659,17 @@ impl<'a> Instruction<'a> {
             Instruction::F64Min => todo!(),
             Instruction::F64Max => todo!(),
             Instruction::F64Copysign => todo!(),
-            Instruction::I32WrapI64 => Opcode::I32WrapI64,
+            Instruction::I32WrapI64 => Opcode::Conversion {
+                class: ConversionOp::I32WrapI64,
+            },
             Instruction::I32TruncSF32 => todo!(),
             Instruction::I32TruncUF32 => todo!(),
             Instruction::I32TruncSF64 => todo!(),
             Instruction::I32TruncUF64 => todo!(),
             Instruction::I64ExtendSI32 => todo!(),
-            Instruction::I64ExtendUI32 => Opcode::I64ExtendUI32,
+            Instruction::I64ExtendUI32 => Opcode::Conversion {
+                class: ConversionOp::I64ExtendUI32,
+            },
             Instruction::I64TruncSF32 => todo!(),
             Instruction::I64TruncUF32 => todo!(),
             Instruction::I64TruncSF64 => todo!(),
