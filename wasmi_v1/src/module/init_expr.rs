@@ -20,10 +20,10 @@ pub struct InitExpr {
     op: InitExprOperand,
 }
 
-impl TryFrom<wasmparser::InitExpr<'_>> for InitExpr {
+impl TryFrom<wasmparser::ConstExpr<'_>> for InitExpr {
     type Error = ModuleError;
 
-    fn try_from(init_expr: wasmparser::InitExpr<'_>) -> Result<Self, Self::Error> {
+    fn try_from(init_expr: wasmparser::ConstExpr<'_>) -> Result<Self, Self::Error> {
         let mut reader = init_expr.get_operators_reader();
         let op = reader.read()?.try_into()?;
         if !matches!(reader.read()?, wasmparser::Operator::End) {

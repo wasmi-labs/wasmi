@@ -71,7 +71,7 @@ impl TryFrom<wasmparser::Export<'_>> for Export {
     type Error = ModuleError;
 
     fn try_from(export: wasmparser::Export<'_>) -> Result<Self, Self::Error> {
-        let field = export.field.into();
+        let field = export.name.into();
         let external = (export.kind, export.index).try_into()?;
         Ok(Export { field, external })
     }
@@ -117,14 +117,11 @@ impl TryFrom<(wasmparser::ExternalKind, u32)> for External {
 
     fn try_from((kind, index): (wasmparser::ExternalKind, u32)) -> Result<Self, Self::Error> {
         match kind {
-            wasmparser::ExternalKind::Function => Ok(External::Func(FuncIdx(index))),
+            wasmparser::ExternalKind::Func => Ok(External::Func(FuncIdx(index))),
             wasmparser::ExternalKind::Table => Ok(External::Table(TableIdx(index))),
             wasmparser::ExternalKind::Memory => Ok(External::Memory(MemoryIdx(index))),
             wasmparser::ExternalKind::Global => Ok(External::Global(GlobalIdx(index))),
-            wasmparser::ExternalKind::Tag
-            | wasmparser::ExternalKind::Type
-            | wasmparser::ExternalKind::Module
-            | wasmparser::ExternalKind::Instance => Err(ModuleError::unsupported(kind)),
+            wasmparser::ExternalKind::Tag => Err(ModuleError::unsupported(kind)),
         }
     }
 }

@@ -1,7 +1,7 @@
 use crate::{GlobalType, MemoryType, ModuleError, TableType};
 use alloc::boxed::Box;
 use core::fmt::{self, Display};
-use wasmparser::ImportSectionEntryType;
+use wasmparser::TypeRef;
 
 /// A [`Module`] import item.
 ///
@@ -67,23 +67,13 @@ impl TryFrom<wasmparser::Import<'_>> for Import {
 
     fn try_from(import: wasmparser::Import) -> Result<Self, Self::Error> {
         let kind = match import.ty {
-            ImportSectionEntryType::Function(func_type) => {
-                Ok(ImportKind::Func(FuncTypeIdx(func_type)))
-            }
-            ImportSectionEntryType::Table(table_type) => {
-                table_type.try_into().map(ImportKind::Table)
-            }
-            ImportSectionEntryType::Memory(memory_type) => {
-                memory_type.try_into().map(ImportKind::Memory)
-            }
-            ImportSectionEntryType::Global(global_type) => {
-                global_type.try_into().map(ImportKind::Global)
-            }
-            ImportSectionEntryType::Tag(_)
-            | ImportSectionEntryType::Module(_)
-            | ImportSectionEntryType::Instance(_) => Err(ModuleError::unsupported(import)),
+            TypeRef::Func(func_type) => Ok(ImportKind::Func(FuncTypeIdx(func_type))),
+            TypeRef::Table(table_type) => table_type.try_into().map(ImportKind::Table),
+            TypeRef::Memory(memory_type) => memory_type.try_into().map(ImportKind::Memory),
+            TypeRef::Global(global_type) => global_type.try_into().map(ImportKind::Global),
+            TypeRef::Tag(_) => Err(ModuleError::unsupported(import)),
         }?;
-        Ok(Self::new(import.module, import.field, kind))
+        Ok(Self::new(import.module, Some(import.name), kind)) // TODO: remove Some
     }
 }
 
