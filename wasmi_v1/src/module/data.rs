@@ -18,10 +18,10 @@ impl TryFrom<wasmparser::Data<'_>> for DataSegment {
         let (memory_index, offset) = match data.kind {
             wasmparser::DataKind::Active {
                 memory_index,
-                init_expr,
+                offset_expr,
             } => {
                 let memory_index = MemoryIdx(memory_index);
-                let offset = InitExpr::try_from(init_expr)?;
+                let offset = InitExpr::try_from(offset_expr)?;
                 (memory_index, offset)
             }
             wasmparser::DataKind::Passive => {
