@@ -19,7 +19,7 @@ pub enum BlockTypeInner {
 }
 
 impl BlockType {
-    /// Creates a new [`BlockType`] from the given [`wasmparser::TypeOrFuncType`].
+    /// Creates a new [`BlockType`] from the given [`wasmparser::BlockType`].
     ///
     /// # Errors
     ///
