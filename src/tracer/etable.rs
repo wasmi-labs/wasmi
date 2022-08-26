@@ -79,6 +79,11 @@ pub enum RunInstructionTracePre {
     },
 
     Drop,
+    Select {
+        first: u64,
+        second: u64,
+        cond: u64,
+    }
 }
 
 #[derive(Debug, Clone)]

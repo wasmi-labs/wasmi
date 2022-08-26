@@ -29,7 +29,6 @@ use alloc::{boxed::Box, vec::Vec};
 use core::{cell::RefCell, fmt, ops, u32, usize};
 use parity_wasm::elements::Local;
 use specs::{
-    host_function::TIME_FUNC_INDEX,
     itable::{BinOp, BitOp, RelOp, ShiftOp},
     mtable::{MemoryReadSize, MemoryStoreSize, VarType},
     step::StepInfo,
@@ -393,9 +392,13 @@ impl Interpreter {
                                     let entry = tracer.etable.entries.last_mut().unwrap();
 
                                     match entry.step {
-                                        StepInfo::CallHostTime { ret_val } => {
+                                        StepInfo::CallHost {
+                                            host_function_idx,
+                                            ret_val,
+                                        } => {
                                             assert!(ret_val.is_none());
-                                            entry.step = StepInfo::CallHostTime {
+                                            entry.step = StepInfo::CallHost {
+                                                host_function_idx,
                                                 ret_val: Some(<_>::from_value_internal(
                                                     return_val.into(),
                                                 )),
@@ -456,7 +459,13 @@ impl Interpreter {
 
                 Some(RunInstructionTracePre::Call { args })
             }
+
             isa::Instruction::Drop => Some(RunInstructionTracePre::Drop),
+            isa::Instruction::Select => Some(RunInstructionTracePre::Select {
+                first: <_>::from_value_internal(*self.value_stack.pick(1)),
+                second: <_>::from_value_internal(*self.value_stack.pick(2)),
+                cond: <_>::from_value_internal(*self.value_stack.pick(3)),
+            }),
 
             isa::Instruction::I32Load(offset) | isa::Instruction::I32Load8U(offset) => {
                 let load_size = match *instructions {
@@ -762,6 +771,24 @@ impl Interpreter {
                     unreachable!()
                 }
             }
+            isa::Instruction::Select => {
+                if let RunInstructionTracePre::Select {
+                    first,
+                    second,
+                    cond,
+                } = pre_status.unwrap()
+                {
+                    StepInfo::Select {
+                        first,
+                        second,
+                        cond,
+                        result: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+
             isa::Instruction::Call(index) => {
                 if let RunInstructionTracePre::Call { args: _ } = pre_status.unwrap() {
                     let tracer = self.tracer.clone().unwrap();
@@ -774,9 +801,9 @@ impl Interpreter {
                             index: desc.index_within_jtable,
                         },
                         specs::types::FunctionType::HostFunction(host_function_idx) => {
-                            match host_function_idx {
-                                TIME_FUNC_INDEX => StepInfo::CallHostTime { ret_val: None },
-                                _ => unreachable!(),
+                            StepInfo::CallHost {
+                                host_function_idx,
+                                ret_val: None,
                             }
                         }
                     }

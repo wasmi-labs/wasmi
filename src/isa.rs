@@ -72,7 +72,6 @@ use std::collections::HashMap;
 use alloc::vec::Vec;
 use parity_wasm::elements::ValueType;
 use specs::{
-    host_function::TIME_FUNC_INDEX,
     itable::{BinOp, BitOp, ConversionOp, Opcode, RelOp, ShiftOp, TestOp},
     mtable::{MemoryReadSize, MemoryStoreSize, VarType},
 };
@@ -414,10 +413,7 @@ impl<'a> Instruction<'a> {
                             .index_within_jtable,
                     },
                     specs::types::FunctionType::HostFunction(host_function_idx) => {
-                        match host_function_idx {
-                            TIME_FUNC_INDEX => Opcode::CallHostTime,
-                            _ => unreachable!(),
-                        }
+                        Opcode::CallHost(host_function_idx)
                     }
                 }
             }
