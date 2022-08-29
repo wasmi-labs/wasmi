@@ -1,11 +1,7 @@
-#![allow(unused_imports, unused_variables)] // TODO: remove
-
 use super::{FuncValidator, FunctionBuilder, RelativeDepth, TranslationError};
 use crate::{
-    engine::bytecode::Instruction,
     module::{BlockType, FuncIdx, FuncTypeIdx, GlobalIdx, MemoryIdx, TableIdx},
 };
-use core::fmt::{self, Display};
 use wasmparser::{BinaryReaderError, VisitOperator};
 
 impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
