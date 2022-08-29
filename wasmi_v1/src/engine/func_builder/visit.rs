@@ -10,10 +10,6 @@ use wasmparser::{BinaryReaderError, VisitOperator};
 
 impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     /// Translates into `wasmi` bytecode if the current code path is reachable.
-    ///
-    /// # Note
-    ///
-    /// Ignores the `translator` closure if the current code path is unreachable.
     fn validate_then_translate<V, F>(
         &mut self,
         validate: V,
@@ -28,6 +24,12 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
         Ok(())
     }
 
+    /// Translates into `wasmi` bytecode if the current code path is reachable.
+    ///
+    /// # Note
+    ///
+    /// This is a simpler version than [`validate_then_translate`] and should
+    /// be preferred if possible.
     fn validate_then_translate_simple(
         &mut self,
         offset: usize,
@@ -69,18 +71,35 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
             },
         )
     }
+
+    /// Forwards to the internal function validator.
+    ///
+    /// # Note
+    ///
+    /// This API is expected to be used if the function validator always
+    /// returns an error. This is useful for unsupported Wasm proposals.
+    fn validate_or_err_simple(
+        &mut self,
+        offset: usize,
+        validate: fn(&mut FuncValidator, usize) -> Result<(), BinaryReaderError>,
+    ) -> Result<(), TranslationError> {
+        validate(&mut self.validator, offset).map_err(Into::into)
+    }
 }
 
 impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser> {
     type Output = Result<(), TranslationError>;
 
     fn visit_unreachable(&mut self, offset: usize) -> Self::Output {
-        self.validate_then_translate(|v| v.visit_unreachable(offset), Self::translate_unreachable)
+        self.validate_then_translate_simple(
+            offset,
+            FuncValidator::visit_unreachable,
+            FunctionBuilder::translate_unreachable,
+        )
     }
 
     fn visit_nop(&mut self, offset: usize) -> Self::Output {
-        self.validator.visit_nop(offset)?;
-        Ok(())
+        self.validate_then_translate_simple(offset, FuncValidator::visit_nop, |_| Ok(()))
     }
 
     fn visit_block(&mut self, offset: usize, ty: wasmparser::BlockType) -> Self::Output {
@@ -114,7 +133,11 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_else(&mut self, offset: usize) -> Self::Output {
-        self.validate_then_translate(|v| v.visit_else(offset), FunctionBuilder::translate_else)
+        self.validate_then_translate_simple(
+            offset,
+            FuncValidator::visit_else,
+            FunctionBuilder::translate_else,
+        )
     }
 
     fn visit_try(&mut self, offset: usize, ty: wasmparser::BlockType) -> Self::Output {
@@ -140,7 +163,11 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_end(&mut self, offset: usize) -> Self::Output {
-        self.validate_then_translate(|v| v.visit_end(offset), |this| this.translate_end())
+        self.validate_then_translate_simple(
+            offset,
+            FuncValidator::visit_end,
+            FunctionBuilder::translate_end,
+        )
     }
 
     fn visit_br(&mut self, offset: usize, relative_depth: u32) -> Self::Output {
@@ -183,8 +210,9 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_return(&mut self, offset: usize) -> Self::Output {
-        self.validate_then_translate(
-            |v| v.visit_return(offset),
+        self.validate_then_translate_simple(
+            offset,
+            FuncValidator::visit_return,
             FunctionBuilder::translate_return,
         )
     }
@@ -233,15 +261,23 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_catch_all(&mut self, offset: usize) -> Self::Output {
-        self.validator.visit_catch_all(offset).map_err(Into::into)
+        self.validate_or_err_simple(offset, FuncValidator::visit_catch_all)
     }
 
     fn visit_drop(&mut self, offset: usize) -> Self::Output {
-        self.validate_then_translate(|v| v.visit_drop(offset), |this| this.translate_drop())
+        self.validate_then_translate_simple(
+            offset,
+            FuncValidator::visit_drop,
+            FunctionBuilder::translate_drop,
+        )
     }
 
     fn visit_select(&mut self, offset: usize) -> Self::Output {
-        self.validate_then_translate(|v| v.visit_select(offset), |this| this.translate_select())
+        self.validate_then_translate_simple(
+            offset,
+            FuncValidator::visit_select,
+            FunctionBuilder::translate_select,
+        )
     }
 
     fn visit_typed_select(&mut self, offset: usize, ty: wasmparser::ValType) -> Self::Output {
