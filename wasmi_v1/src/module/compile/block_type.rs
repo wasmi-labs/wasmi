@@ -1,5 +1,9 @@
 use super::super::{utils::value_type_from_wasmparser, FuncTypeIdx, ModuleResources};
-use crate::{core::ValueType, engine::DedupFuncType, Engine, ModuleError};
+use crate::{
+    core::ValueType,
+    engine::{DedupFuncType, TranslationError},
+    Engine,
+};
 
 /// The type of a Wasm control flow block.
 #[derive(Debug, Copy, Clone)]
@@ -24,14 +28,15 @@ impl BlockType {
     /// # Errors
     ///
     /// If the conversion is not valid or unsupported.
-    pub(super) fn try_from_wasmparser(
-        type_or_func_type: wasmparser::BlockType,
+    pub(crate) fn try_from_wasmparser(
+        block_type: wasmparser::BlockType,
         res: ModuleResources,
-    ) -> Result<Self, ModuleError> {
-        let block_type = match type_or_func_type {
+    ) -> Result<Self, TranslationError> {
+        let block_type = match block_type {
             wasmparser::BlockType::Empty => Self::empty(),
             wasmparser::BlockType::Type(return_type) => {
-                let return_type = value_type_from_wasmparser(&return_type)?;
+                let return_type = value_type_from_wasmparser(&return_type)
+                    .map_err(|_| TranslationError::unsupported_block_type(block_type))?;
                 Self::returns(return_type)
             }
             wasmparser::BlockType::FuncType(func_type_idx) => {

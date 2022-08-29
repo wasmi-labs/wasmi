@@ -16,7 +16,7 @@ use core::slice::Iter as SliceIter;
 ///
 /// [`Module`]: [`super::Module`]
 #[derive(Debug, Copy, Clone)]
-pub struct FuncIdx(pub(super) u32);
+pub struct FuncIdx(pub(crate) u32);
 
 impl FuncIdx {
     /// Returns the [`FuncIdx`] as `u32`.
@@ -34,7 +34,7 @@ impl FuncIdx {
 ///
 /// [`Module`]: [`super::Module`]
 #[derive(Debug, Copy, Clone)]
-pub struct TableIdx(pub(super) u32);
+pub struct TableIdx(pub(crate) u32);
 
 impl TableIdx {
     /// Returns the [`TableIdx`] as `u32`.
@@ -47,7 +47,7 @@ impl TableIdx {
 ///
 /// [`Module`]: [`super::Module`]
 #[derive(Debug, Copy, Clone)]
-pub struct MemoryIdx(pub(super) u32);
+pub struct MemoryIdx(pub(crate) u32);
 
 impl MemoryIdx {
     /// Returns the [`MemoryIdx`] as `u32`.

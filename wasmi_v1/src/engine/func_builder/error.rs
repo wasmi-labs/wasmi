@@ -9,6 +9,15 @@ pub struct TranslationError {
     inner: Box<TranslationErrorInner>,
 }
 
+impl TranslationError {
+    /// Creates a new error indicating an unsupported Wasm block type.
+    pub fn unsupported_block_type(block_type: wasmparser::BlockType) -> Self {
+        Self {
+            inner: Box::new(TranslationErrorInner::UnsupportedBlockType(block_type)),
+        }
+    }
+}
+
 impl From<wasmparser::BinaryReaderError> for TranslationError {
     fn from(error: wasmparser::BinaryReaderError) -> Self {
         Self {
@@ -24,6 +33,9 @@ impl Display for TranslationError {
             TranslationErrorInner::Translate => {
                 write!(f, "encountered error during Wasm to wasmi translation")
             }
+            TranslationErrorInner::UnsupportedBlockType(error) => {
+                write!(f, "encountered unsupported Wasm block type: {:?}", error)
+            }
         }
     }
 }
@@ -35,4 +47,6 @@ enum TranslationErrorInner {
     Validate(wasmparser::BinaryReaderError),
     /// There was a problem translating a Wasm input to `wasmi` bytecode.
     Translate,
+    /// Encountered unsupported Wasm block type.
+    UnsupportedBlockType(wasmparser::BlockType),
 }

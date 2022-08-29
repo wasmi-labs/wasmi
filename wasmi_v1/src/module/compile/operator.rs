@@ -153,7 +153,7 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         let memory_idx = MemoryIdx(memarg.memory);
         let offset = memarg.offset as u32;
         self.func_builder
-            .translate_i32_load_i8(memory_idx, offset)?;
+            .translate_i32_load8_s(memory_idx, offset)?;
         Ok(())
     }
 
@@ -162,7 +162,7 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         let memory_idx = MemoryIdx(memarg.memory);
         let offset = memarg.offset as u32;
         self.func_builder
-            .translate_i32_load_u8(memory_idx, offset)?;
+            .translate_i32_load8_u(memory_idx, offset)?;
         Ok(())
     }
 
@@ -174,7 +174,7 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         let memory_idx = MemoryIdx(memarg.memory);
         let offset = memarg.offset as u32;
         self.func_builder
-            .translate_i32_load_i16(memory_idx, offset)?;
+            .translate_i32_load16_s(memory_idx, offset)?;
         Ok(())
     }
 
@@ -186,7 +186,7 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         let memory_idx = MemoryIdx(memarg.memory);
         let offset = memarg.offset as u32;
         self.func_builder
-            .translate_i32_load_u16(memory_idx, offset)?;
+            .translate_i32_load16_u(memory_idx, offset)?;
         Ok(())
     }
 
@@ -195,7 +195,7 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         let memory_idx = MemoryIdx(memarg.memory);
         let offset = memarg.offset as u32;
         self.func_builder
-            .translate_i64_load_i8(memory_idx, offset)?;
+            .translate_i64_load8_s(memory_idx, offset)?;
         Ok(())
     }
 
@@ -204,7 +204,7 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         let memory_idx = MemoryIdx(memarg.memory);
         let offset = memarg.offset as u32;
         self.func_builder
-            .translate_i64_load_u8(memory_idx, offset)?;
+            .translate_i64_load8_u(memory_idx, offset)?;
         Ok(())
     }
 
@@ -216,7 +216,7 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         let memory_idx = MemoryIdx(memarg.memory);
         let offset = memarg.offset as u32;
         self.func_builder
-            .translate_i64_load_i16(memory_idx, offset)?;
+            .translate_i64_load16_s(memory_idx, offset)?;
         Ok(())
     }
 
@@ -228,7 +228,7 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         let memory_idx = MemoryIdx(memarg.memory);
         let offset = memarg.offset as u32;
         self.func_builder
-            .translate_i64_load_u16(memory_idx, offset)?;
+            .translate_i64_load16_u(memory_idx, offset)?;
         Ok(())
     }
 
@@ -240,7 +240,7 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         let memory_idx = MemoryIdx(memarg.memory);
         let offset = memarg.offset as u32;
         self.func_builder
-            .translate_i64_load_i32(memory_idx, offset)?;
+            .translate_i64_load32_s(memory_idx, offset)?;
         Ok(())
     }
 
@@ -252,7 +252,7 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         let memory_idx = MemoryIdx(memarg.memory);
         let offset = memarg.offset as u32;
         self.func_builder
-            .translate_i64_load_u32(memory_idx, offset)?;
+            .translate_i64_load32_u(memory_idx, offset)?;
         Ok(())
     }
 
@@ -296,7 +296,7 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         let memory_idx = MemoryIdx(memarg.memory);
         let offset = memarg.offset as u32;
         self.func_builder
-            .translate_i32_store_i8(memory_idx, offset)?;
+            .translate_i32_store8(memory_idx, offset)?;
         Ok(())
     }
 
@@ -308,7 +308,7 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         let memory_idx = MemoryIdx(memarg.memory);
         let offset = memarg.offset as u32;
         self.func_builder
-            .translate_i32_store_i16(memory_idx, offset)?;
+            .translate_i32_store16(memory_idx, offset)?;
         Ok(())
     }
 
@@ -320,7 +320,7 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         let memory_idx = MemoryIdx(memarg.memory);
         let offset = memarg.offset as u32;
         self.func_builder
-            .translate_i64_store_i8(memory_idx, offset)?;
+            .translate_i64_store8(memory_idx, offset)?;
         Ok(())
     }
 
@@ -332,7 +332,7 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         let memory_idx = MemoryIdx(memarg.memory);
         let offset = memarg.offset as u32;
         self.func_builder
-            .translate_i64_store_i16(memory_idx, offset)?;
+            .translate_i64_store16(memory_idx, offset)?;
         Ok(())
     }
 
@@ -344,7 +344,7 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         let memory_idx = MemoryIdx(memarg.memory);
         let offset = memarg.offset as u32;
         self.func_builder
-            .translate_i64_store_i32(memory_idx, offset)?;
+            .translate_i64_store32(memory_idx, offset)?;
         Ok(())
     }
 
@@ -352,7 +352,6 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
     pub fn translate_memory_size(
         &mut self,
         memory_idx: u32,
-        _memory_byte: u8,
     ) -> Result<(), ModuleError> {
         self.func_builder
             .translate_memory_size(MemoryIdx(memory_idx))?;
@@ -363,7 +362,6 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
     pub fn translate_memory_grow(
         &mut self,
         memory_idx: u32,
-        _memory_byte: u8,
     ) -> Result<(), ModuleError> {
         self.func_builder
             .translate_memory_grow(MemoryIdx(memory_idx))?;
@@ -434,21 +432,21 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         /// Translate a Wasm `i32_ne` instruction.
         fn translate_i32_ne();
         /// Translate a Wasm `i32_lt` instruction.
-        fn translate_i32_lt();
+        fn translate_i32_lt_s();
         /// Translate a Wasm `u32_lt` instruction.
-        fn translate_u32_lt();
+        fn translate_i32_lt_u();
         /// Translate a Wasm `i32_gt` instruction.
-        fn translate_i32_gt();
+        fn translate_i32_gt_s();
         /// Translate a Wasm `u32_gt` instruction.
-        fn translate_u32_gt();
+        fn translate_i32_gt_u();
         /// Translate a Wasm `i32_le` instruction.
-        fn translate_i32_le();
+        fn translate_i32_le_s();
         /// Translate a Wasm `u32_le` instruction.
-        fn translate_u32_le();
+        fn translate_i32_le_u();
         /// Translate a Wasm `i32_ge` instruction.
-        fn translate_i32_ge();
+        fn translate_i32_ge_s();
         /// Translate a Wasm `u32_ge` instruction.
-        fn translate_u32_ge();
+        fn translate_i32_ge_u();
         /// Translate a Wasm `i64_eqz` instruction.
         fn translate_i64_eqz();
         /// Translate a Wasm `i64_eq` instruction.
@@ -456,21 +454,21 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         /// Translate a Wasm `i64_ne` instruction.
         fn translate_i64_ne();
         /// Translate a Wasm `i64_lt` instruction.
-        fn translate_i64_lt();
+        fn translate_i64_lt_s();
         /// Translate a Wasm `u64_lt` instruction.
-        fn translate_u64_lt();
+        fn translate_i64_lt_u();
         /// Translate a Wasm `i64_gt` instruction.
-        fn translate_i64_gt();
+        fn translate_i64_gt_s();
         /// Translate a Wasm `u64_gt` instruction.
-        fn translate_u64_gt();
+        fn translate_i64_gt_u();
         /// Translate a Wasm `i64_le` instruction.
-        fn translate_i64_le();
+        fn translate_i64_le_s();
         /// Translate a Wasm `u64_le` instruction.
-        fn translate_u64_le();
+        fn translate_i64_le_u();
         /// Translate a Wasm `i64_ge` instruction.
-        fn translate_i64_ge();
+        fn translate_i64_ge_s();
         /// Translate a Wasm `u64_ge` instruction.
-        fn translate_u64_ge();
+        fn translate_i64_ge_u();
         /// Translate a Wasm `f32_eq` instruction.
         fn translate_f32_eq();
         /// Translate a Wasm `f32_ne` instruction.
@@ -508,13 +506,13 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         /// Translate a Wasm `i32_mul` instruction.
         fn translate_i32_mul();
         /// Translate a Wasm `i32_div` instruction.
-        fn translate_i32_div();
+        fn translate_i32_div_s();
         /// Translate a Wasm `u32_div` instruction.
-        fn translate_u32_div();
+        fn translate_i32_div_u();
         /// Translate a Wasm `i32_rem` instruction.
-        fn translate_i32_rem();
+        fn translate_i32_rem_s();
         /// Translate a Wasm `u32_rem` instruction.
-        fn translate_u32_rem();
+        fn translate_i32_rem_u();
         /// Translate a Wasm `i32_and` instruction.
         fn translate_i32_and();
         /// Translate a Wasm `i32_or` instruction.
@@ -524,9 +522,9 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         /// Translate a Wasm `i32_shl` instruction.
         fn translate_i32_shl();
         /// Translate a Wasm `i32_shr` instruction.
-        fn translate_i32_shr();
+        fn translate_i32_shr_s();
         /// Translate a Wasm `u32_shr` instruction.
-        fn translate_u32_shr();
+        fn translate_i32_shr_u();
         /// Translate a Wasm `i32_rotl` instruction.
         fn translate_i32_rotl();
         /// Translate a Wasm `i32_rotr` instruction.
@@ -544,13 +542,13 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         /// Translate a Wasm `i64_mul` instruction.
         fn translate_i64_mul();
         /// Translate a Wasm `i64_div` instruction.
-        fn translate_i64_div();
+        fn translate_i64_div_s();
         /// Translate a Wasm `u64_div` instruction.
-        fn translate_u64_div();
+        fn translate_i64_div_u();
         /// Translate a Wasm `i64_rem` instruction.
-        fn translate_i64_rem();
+        fn translate_i64_rem_s();
         /// Translate a Wasm `u64_rem` instruction.
-        fn translate_u64_rem();
+        fn translate_i64_rem_u();
         /// Translate a Wasm `i64_and` instruction.
         fn translate_i64_and();
         /// Translate a Wasm `i64_or` instruction.
@@ -560,9 +558,9 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         /// Translate a Wasm `i64_shl` instruction.
         fn translate_i64_shl();
         /// Translate a Wasm `i64_shr` instruction.
-        fn translate_i64_shr();
+        fn translate_i64_shr_s();
         /// Translate a Wasm `u64_shr` instruction.
-        fn translate_u64_shr();
+        fn translate_i64_shr_u();
         /// Translate a Wasm `i64_rotl` instruction.
         fn translate_i64_rotl();
         /// Translate a Wasm `i64_rotr` instruction.
@@ -626,43 +624,43 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         /// Translate a Wasm `i32_wrap_i64` instruction.
         fn translate_i32_wrap_i64();
         /// Translate a Wasm `i32_trunc_f32` instruction.
-        fn translate_i32_trunc_f32();
+        fn translate_i32_trunc_f32_s();
         /// Translate a Wasm `u32_trunc_f32` instruction.
-        fn translate_u32_trunc_f32();
+        fn translate_i32_trunc_f32_u();
         /// Translate a Wasm `i32_trunc_f64` instruction.
-        fn translate_i32_trunc_f64();
+        fn translate_i32_trunc_f64_s();
         /// Translate a Wasm `u32_trunc_f64` instruction.
-        fn translate_u32_trunc_f64();
+        fn translate_i32_trunc_f64_u();
         /// Translate a Wasm `i64_extend_i32` instruction.
-        fn translate_i64_extend_i32();
+        fn translate_i64_extend_i32_s();
         /// Translate a Wasm `u64_extend_i32` instruction.
-        fn translate_u64_extend_i32();
+        fn translate_i64_extend_i32_u();
         /// Translate a Wasm `i64_trunc_F3` instruction.
-        fn translate_i64_trunc_f32();
+        fn translate_i64_trunc_f32_s();
         /// Translate a Wasm `u64_trunc_F3` instruction.
-        fn translate_u64_trunc_f32();
+        fn translate_i64_trunc_f32_u();
         /// Translate a Wasm `i64_trunc_F6` instruction.
-        fn translate_i64_trunc_f64();
+        fn translate_i64_trunc_f64_s();
         /// Translate a Wasm `u64_trunc_F6` instruction.
-        fn translate_u64_trunc_f64();
+        fn translate_i64_trunc_f64_u();
         /// Translate a Wasm `f32_convert_i32` instruction.
-        fn translate_f32_convert_i32();
+        fn translate_f32_convert_i32_s();
         /// Translate a Wasm `f32_convert_u32` instruction.
-        fn translate_f32_convert_u32();
+        fn translate_f32_convert_i32_u();
         /// Translate a Wasm `f32_convert_i64` instruction.
-        fn translate_f32_convert_i64();
+        fn translate_f32_convert_i64_s();
         /// Translate a Wasm `f32_convert_u64` instruction.
-        fn translate_f32_convert_u64();
+        fn translate_f32_convert_i64_u();
         /// Translate a Wasm `f32_demote_f64` instruction.
         fn translate_f32_demote_f64();
         /// Translate a Wasm `f64_convert_i32` instruction.
-        fn translate_f64_convert_i32();
+        fn translate_f64_convert_i32_s();
         /// Translate a Wasm `f64_convert_u32` instruction.
-        fn translate_f64_convert_u32();
+        fn translate_f64_convert_i32_u();
         /// Translate a Wasm `f64_convert_i64` instruction.
-        fn translate_f64_convert_i64();
+        fn translate_f64_convert_i64_s();
         /// Translate a Wasm `f64_convert_u64` instruction.
-        fn translate_f64_convert_u64();
+        fn translate_f64_convert_i64_u();
         /// Translate a Wasm `f64_promote_f32` instruction.
         fn translate_f64_promote_f32();
         /// Translate a Wasm `i32_reinterpret_f32` instruction.
@@ -674,30 +672,30 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         /// Translate a Wasm `f64_reinterpret_i64` instruction.
         fn translate_f64_reinterpret_i64();
         /// Translate a Wasm `i32.extend_i8` instruction.
-        fn translate_i32_sign_extend8();
+        fn translate_i32_extend8_s();
         /// Translate a Wasm `i32.extend_i16` instruction.
-        fn translate_i32_sign_extend16();
+        fn translate_i32_extend16_s();
         /// Translate a Wasm `i64.extend_i8` instruction.
-        fn translate_i64_sign_extend8();
+        fn translate_i64_extend8_s();
         /// Translate a Wasm `i64.extend_i16` instruction.
-        fn translate_i64_sign_extend16();
+        fn translate_i64_extend16_s();
         /// Translate a Wasm `i64.extend_i32` instruction.
-        fn translate_i64_sign_extend32();
-        /// Translate a Wasm `i32.truncate_saturate_f32` instruction.
-        fn translate_i32_truncate_saturate_f32();
-        /// Translate a Wasm `u32.truncate_saturate_f32` instruction.
-        fn translate_u32_truncate_saturate_f32();
-        /// Translate a Wasm `i32.truncate_saturate_f64` instruction.
-        fn translate_i32_truncate_saturate_f64();
-        /// Translate a Wasm `u32.truncate_saturate_f64` instruction.
-        fn translate_u32_truncate_saturate_f64();
-        /// Translate a Wasm `i64.truncate_saturate_f32` instruction.
-        fn translate_i64_truncate_saturate_f32();
-        /// Translate a Wasm `u64.truncate_saturate_f32` instruction.
-        fn translate_u64_truncate_saturate_f32();
-        /// Translate a Wasm `i64.truncate_saturate_f64` instruction.
-        fn translate_i64_truncate_saturate_f64();
-        /// Translate a Wasm `u64.truncate_saturate_f64` instruction.
-        fn translate_u64_truncate_saturate_f64();
+        fn translate_i64_extend32_s();
+        /// Translate a Wasm `i32.trunc_sat_f32` instruction.
+        fn translate_i32_trunc_sat_f32_s();
+        /// Translate a Wasm `u32.trunc_sat_f32` instruction.
+        fn translate_i32_trunc_sat_f32_u();
+        /// Translate a Wasm `i32.trunc_sat_f64` instruction.
+        fn translate_i32_trunc_sat_f64_s();
+        /// Translate a Wasm `u32.trunc_sat_f64` instruction.
+        fn translate_i32_trunc_sat_f64_u();
+        /// Translate a Wasm `i64.trunc_sat_f32` instruction.
+        fn translate_i64_trunc_sat_f32_s();
+        /// Translate a Wasm `u64.trunc_sat_f32` instruction.
+        fn translate_i64_trunc_sat_f32_u();
+        /// Translate a Wasm `i64.trunc_sat_f64` instruction.
+        fn translate_i64_trunc_sat_f64_s();
+        /// Translate a Wasm `u64.trunc_sat_f64` instruction.
+        fn translate_i64_trunc_sat_f64_u();
     }
 }

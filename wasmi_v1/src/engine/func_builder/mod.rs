@@ -43,7 +43,9 @@ use crate::{
 use alloc::vec::Vec;
 use core::ops::{Deref, DerefMut};
 use wasmi_core::{Value, ValueType, F32, F64};
-use wasmparser::FuncValidator;
+
+/// The used function validator type.
+type FuncValidator = wasmparser::FuncValidator<wasmparser::ValidatorResources>;
 
 /// The interface to translate a `wasmi` bytecode function using Wasm bytecode.
 pub struct FunctionBuilder<'alloc, 'parser> {
@@ -63,7 +65,8 @@ pub struct FunctionBuilder<'alloc, 'parser> {
     /// Visiting the Wasm `Else` or `End` control flow operator resets
     /// reachability to `true` again.
     reachable: bool,
-    validator: wasmparser::FuncValidator<wasmparser::ValidatorResources>,
+    /// The Wasm function validator.
+    validator: FuncValidator,
     /// The reusable data structures of the [`FunctionBuilder`].
     allocations: &'alloc mut FunctionBuilderAllocations,
 }
@@ -122,7 +125,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
         engine: &Engine,
         func: FuncIdx,
         res: ModuleResources<'parser>,
-        validator: FuncValidator<wasmparser::ValidatorResources>,
+        validator: FuncValidator,
         allocations: &'alloc mut FunctionBuilderAllocations,
     ) -> Self {
         Self::register_func_body_block(func, res, allocations);
@@ -138,7 +141,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Returns an exclusive reference to the function validator.
-    pub fn validator(&mut self) -> &mut FuncValidator<wasmparser::ValidatorResources> {
+    pub fn validator(&mut self) -> &mut FuncValidator {
         // TODO: remove pub
         &mut self.validator
     }
@@ -885,7 +888,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i32.load_i8` instruction.
-    pub fn translate_i32_load_i8(
+    pub fn translate_i32_load8_s(
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
@@ -894,7 +897,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i32.load_u8` instruction.
-    pub fn translate_i32_load_u8(
+    pub fn translate_i32_load8_u(
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
@@ -903,7 +906,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i32.load_i16` instruction.
-    pub fn translate_i32_load_i16(
+    pub fn translate_i32_load16_s(
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
@@ -912,7 +915,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i32.load_u16` instruction.
-    pub fn translate_i32_load_u16(
+    pub fn translate_i32_load16_u(
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
@@ -921,7 +924,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i64.load_i8` instruction.
-    pub fn translate_i64_load_i8(
+    pub fn translate_i64_load8_s(
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
@@ -930,7 +933,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i64.load_u8` instruction.
-    pub fn translate_i64_load_u8(
+    pub fn translate_i64_load8_u(
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
@@ -939,7 +942,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i64.load_i16` instruction.
-    pub fn translate_i64_load_i16(
+    pub fn translate_i64_load16_s(
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
@@ -948,7 +951,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i64.load_u16` instruction.
-    pub fn translate_i64_load_u16(
+    pub fn translate_i64_load16_u(
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
@@ -957,7 +960,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i64.load_i32` instruction.
-    pub fn translate_i64_load_i32(
+    pub fn translate_i64_load32_s(
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
@@ -966,7 +969,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i64.load_u32` instruction.
-    pub fn translate_i64_load_u32(
+    pub fn translate_i64_load32_u(
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
@@ -1044,7 +1047,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i32.store_i8` instruction.
-    pub fn translate_i32_store_i8(
+    pub fn translate_i32_store8(
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
@@ -1053,7 +1056,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i32.store_i16` instruction.
-    pub fn translate_i32_store_i16(
+    pub fn translate_i32_store16(
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
@@ -1062,7 +1065,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i64.store_i8` instruction.
-    pub fn translate_i64_store_i8(
+    pub fn translate_i64_store8(
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
@@ -1071,7 +1074,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i64.store_i16` instruction.
-    pub fn translate_i64_store_i16(
+    pub fn translate_i64_store16(
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
@@ -1080,7 +1083,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i64.store_i32` instruction.
-    pub fn translate_i64_store_i32(
+    pub fn translate_i64_store32(
         &mut self,
         memory_idx: MemoryIdx,
         offset: u32,
@@ -1215,42 +1218,42 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i32.lt` instruction.
-    pub fn translate_i32_lt(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i32_lt_s(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_cmp(ValueType::I32, Instruction::I32LtS)
     }
 
     /// Translate a Wasm `u32.lt` instruction.
-    pub fn translate_u32_lt(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i32_lt_u(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_cmp(ValueType::I32, Instruction::I32LtU)
     }
 
     /// Translate a Wasm `i32.gt` instruction.
-    pub fn translate_i32_gt(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i32_gt_s(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_cmp(ValueType::I32, Instruction::I32GtS)
     }
 
     /// Translate a Wasm `u32.gt` instruction.
-    pub fn translate_u32_gt(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i32_gt_u(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_cmp(ValueType::I32, Instruction::I32GtU)
     }
 
     /// Translate a Wasm `i32.le` instruction.
-    pub fn translate_i32_le(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i32_le_s(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_cmp(ValueType::I32, Instruction::I32LeS)
     }
 
     /// Translate a Wasm `u32.le` instruction.
-    pub fn translate_u32_le(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i32_le_u(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_cmp(ValueType::I32, Instruction::I32LeU)
     }
 
     /// Translate a Wasm `i32.ge` instruction.
-    pub fn translate_i32_ge(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i32_ge_s(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_cmp(ValueType::I32, Instruction::I32GeS)
     }
 
     /// Translate a Wasm `u32.ge` instruction.
-    pub fn translate_u32_ge(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i32_ge_u(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_cmp(ValueType::I32, Instruction::I32GeU)
     }
 
@@ -1270,42 +1273,42 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i64.lt` instruction.
-    pub fn translate_i64_lt(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_lt_s(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_cmp(ValueType::I64, Instruction::I64LtS)
     }
 
     /// Translate a Wasm `u64.lt` instruction.
-    pub fn translate_u64_lt(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_lt_u(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_cmp(ValueType::I64, Instruction::I64LtU)
     }
 
     /// Translate a Wasm `i64.gt` instruction.
-    pub fn translate_i64_gt(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_gt_s(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_cmp(ValueType::I64, Instruction::I64GtS)
     }
 
     /// Translate a Wasm `u64.gt` instruction.
-    pub fn translate_u64_gt(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_gt_u(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_cmp(ValueType::I64, Instruction::I64GtU)
     }
 
     /// Translate a Wasm `i64.le` instruction.
-    pub fn translate_i64_le(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_le_s(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_cmp(ValueType::I64, Instruction::I64LeS)
     }
 
     /// Translate a Wasm `u64.le` instruction.
-    pub fn translate_u64_le(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_le_u(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_cmp(ValueType::I64, Instruction::I64LeU)
     }
 
     /// Translate a Wasm `i64.ge` instruction.
-    pub fn translate_i64_ge(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_ge_s(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_cmp(ValueType::I64, Instruction::I64GeS)
     }
 
     /// Translate a Wasm `u64.ge` instruction.
-    pub fn translate_u64_ge(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_ge_u(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_cmp(ValueType::I64, Instruction::I64GeU)
     }
 
@@ -1465,22 +1468,22 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i32.div` instruction.
-    pub fn translate_i32_div(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i32_div_s(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_operation(ValueType::I32, Instruction::I32DivS)
     }
 
     /// Translate a Wasm `u32.div` instruction.
-    pub fn translate_u32_div(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i32_div_u(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_operation(ValueType::I32, Instruction::I32DivU)
     }
 
     /// Translate a Wasm `i32.rem` instruction.
-    pub fn translate_i32_rem(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i32_rem_s(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_operation(ValueType::I32, Instruction::I32RemS)
     }
 
     /// Translate a Wasm `u32.rem` instruction.
-    pub fn translate_u32_rem(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i32_rem_u(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_operation(ValueType::I32, Instruction::I32RemU)
     }
 
@@ -1505,12 +1508,12 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i32.shr` instruction.
-    pub fn translate_i32_shr(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i32_shr_s(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_operation(ValueType::I32, Instruction::I32ShrS)
     }
 
     /// Translate a Wasm `u32.shr` instruction.
-    pub fn translate_u32_shr(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i32_shr_u(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_operation(ValueType::I32, Instruction::I32ShrU)
     }
 
@@ -1555,22 +1558,22 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i64.div` instruction.
-    pub fn translate_i64_div(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_div_s(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_operation(ValueType::I64, Instruction::I64DivS)
     }
 
     /// Translate a Wasm `u64.div` instruction.
-    pub fn translate_u64_div(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_div_u(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_operation(ValueType::I64, Instruction::I64DivU)
     }
 
     /// Translate a Wasm `i64.rem` instruction.
-    pub fn translate_i64_rem(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_rem_s(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_operation(ValueType::I64, Instruction::I64RemS)
     }
 
     /// Translate a Wasm `u64.rem` instruction.
-    pub fn translate_u64_rem(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_rem_u(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_operation(ValueType::I64, Instruction::I64RemU)
     }
 
@@ -1595,12 +1598,12 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i64.shr` instruction.
-    pub fn translate_i64_shr(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_shr_s(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_operation(ValueType::I64, Instruction::I64ShrS)
     }
 
     /// Translate a Wasm `u64.shr` instruction.
-    pub fn translate_u64_shr(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_shr_u(&mut self) -> Result<(), TranslationError> {
         self.translate_binary_operation(ValueType::I64, Instruction::I64ShrU)
     }
 
@@ -1791,72 +1794,72 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i32.trunc_f32` instruction.
-    pub fn translate_i32_trunc_f32(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i32_trunc_f32_s(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncSF32)
     }
 
     /// Translate a Wasm `u32.trunc_f32` instruction.
-    pub fn translate_u32_trunc_f32(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i32_trunc_f32_u(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncUF32)
     }
 
     /// Translate a Wasm `i32.trunc_f64` instruction.
-    pub fn translate_i32_trunc_f64(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i32_trunc_f64_s(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncSF64)
     }
 
     /// Translate a Wasm `u32.trunc_f64` instruction.
-    pub fn translate_u32_trunc_f64(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i32_trunc_f64_u(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncUF64)
     }
 
     /// Translate a Wasm `i64.extend_i32` instruction.
-    pub fn translate_i64_extend_i32(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_extend_i32_s(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::I32, ValueType::I64, Instruction::I64ExtendSI32)
     }
 
     /// Translate a Wasm `u64.extend_i32` instruction.
-    pub fn translate_u64_extend_i32(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_extend_i32_u(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::I32, ValueType::I64, Instruction::I64ExtendUI32)
     }
 
     /// Translate a Wasm `i64.trunc_f32` instruction.
-    pub fn translate_i64_trunc_f32(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_trunc_f32_s(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncSF32)
     }
 
     /// Translate a Wasm `u64.trunc_f32` instruction.
-    pub fn translate_u64_trunc_f32(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_trunc_f32_u(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncUF32)
     }
 
     /// Translate a Wasm `i64.trunc_f64` instruction.
-    pub fn translate_i64_trunc_f64(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_trunc_f64_s(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncSF64)
     }
 
     /// Translate a Wasm `u64.trunc_f64` instruction.
-    pub fn translate_u64_trunc_f64(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_trunc_f64_u(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncUF64)
     }
 
     /// Translate a Wasm `f32.convert_i32` instruction.
-    pub fn translate_f32_convert_i32(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_f32_convert_i32_s(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::I32, ValueType::F32, Instruction::F32ConvertSI32)
     }
 
     /// Translate a Wasm `f32.convert_u32` instruction.
-    pub fn translate_f32_convert_u32(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_f32_convert_i32_u(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::I32, ValueType::F32, Instruction::F32ConvertUI32)
     }
 
     /// Translate a Wasm `f32.convert_i64` instruction.
-    pub fn translate_f32_convert_i64(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_f32_convert_i64_s(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::I64, ValueType::F32, Instruction::F32ConvertSI64)
     }
 
     /// Translate a Wasm `f32.convert_u64` instruction.
-    pub fn translate_f32_convert_u64(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_f32_convert_i64_u(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::I64, ValueType::F32, Instruction::F32ConvertUI64)
     }
 
@@ -1866,22 +1869,22 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `f64.convert_i32` instruction.
-    pub fn translate_f64_convert_i32(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_f64_convert_i32_s(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::I32, ValueType::F64, Instruction::F64ConvertSI32)
     }
 
     /// Translate a Wasm `f64.convert_u32` instruction.
-    pub fn translate_f64_convert_u32(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_f64_convert_i32_u(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::I32, ValueType::F64, Instruction::F64ConvertUI32)
     }
 
     /// Translate a Wasm `f64.convert_i64` instruction.
-    pub fn translate_f64_convert_i64(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_f64_convert_i64_s(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::I64, ValueType::F64, Instruction::F64ConvertSI64)
     }
 
     /// Translate a Wasm `f64.convert_u64` instruction.
-    pub fn translate_f64_convert_u64(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_f64_convert_i64_u(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::I64, ValueType::F64, Instruction::F64ConvertUI64)
     }
 
@@ -1927,67 +1930,67 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `i32.extend_8s` instruction.
-    pub fn translate_i32_sign_extend8(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i32_extend8_s(&mut self) -> Result<(), TranslationError> {
         self.translate_unary_operation(ValueType::I32, Instruction::I32Extend8S)
     }
 
     /// Translate a Wasm `i32.extend_16s` instruction.
-    pub fn translate_i32_sign_extend16(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i32_extend16_s(&mut self) -> Result<(), TranslationError> {
         self.translate_unary_operation(ValueType::I32, Instruction::I32Extend16S)
     }
 
     /// Translate a Wasm `i64.extend_8s` instruction.
-    pub fn translate_i64_sign_extend8(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_extend8_s(&mut self) -> Result<(), TranslationError> {
         self.translate_unary_operation(ValueType::I64, Instruction::I64Extend8S)
     }
 
     /// Translate a Wasm `i64.extend_16s` instruction.
-    pub fn translate_i64_sign_extend16(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_extend16_s(&mut self) -> Result<(), TranslationError> {
         self.translate_unary_operation(ValueType::I64, Instruction::I64Extend16S)
     }
 
     /// Translate a Wasm `i64.extend_32s` instruction.
-    pub fn translate_i64_sign_extend32(&mut self) -> Result<(), TranslationError> {
+    pub fn translate_i64_extend32_s(&mut self) -> Result<(), TranslationError> {
         self.translate_unary_operation(ValueType::I64, Instruction::I64Extend32S)
     }
 
-    /// Translate a Wasm `i32.truncate_sat_f32` instruction.
-    pub fn translate_i32_truncate_saturate_f32(&mut self) -> Result<(), TranslationError> {
+    /// Translate a Wasm `i32.trunc_sat_f32` instruction.
+    pub fn translate_i32_trunc_sat_f32_s(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncSatF32S)
     }
 
-    /// Translate a Wasm `u32.truncate_sat_f32` instruction.
-    pub fn translate_u32_truncate_saturate_f32(&mut self) -> Result<(), TranslationError> {
+    /// Translate a Wasm `u32.trunc_sat_f32` instruction.
+    pub fn translate_i32_trunc_sat_f32_u(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncSatF32U)
     }
 
-    /// Translate a Wasm `i32.truncate_sat_f64` instruction.
-    pub fn translate_i32_truncate_saturate_f64(&mut self) -> Result<(), TranslationError> {
+    /// Translate a Wasm `i32.trunc_sat_f64` instruction.
+    pub fn translate_i32_trunc_sat_f64_s(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncSatF64S)
     }
 
-    /// Translate a Wasm `u32.truncate_sat_f64` instruction.
-    pub fn translate_u32_truncate_saturate_f64(&mut self) -> Result<(), TranslationError> {
+    /// Translate a Wasm `u32.trunc_sat_f64` instruction.
+    pub fn translate_i32_trunc_sat_f64_u(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncSatF64U)
     }
 
-    /// Translate a Wasm `i64.truncate_sat_f32` instruction.
-    pub fn translate_i64_truncate_saturate_f32(&mut self) -> Result<(), TranslationError> {
+    /// Translate a Wasm `i64.trunc_sat_f32` instruction.
+    pub fn translate_i64_trunc_sat_f32_s(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncSatF32S)
     }
 
-    /// Translate a Wasm `u64.truncate_sat_f32` instruction.
-    pub fn translate_u64_truncate_saturate_f32(&mut self) -> Result<(), TranslationError> {
+    /// Translate a Wasm `u64.trunc_sat_f32` instruction.
+    pub fn translate_i64_trunc_sat_f32_u(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncSatF32U)
     }
 
-    /// Translate a Wasm `i64.truncate_sat_f64` instruction.
-    pub fn translate_i64_truncate_saturate_f64(&mut self) -> Result<(), TranslationError> {
+    /// Translate a Wasm `i64.trunc_sat_f64` instruction.
+    pub fn translate_i64_trunc_sat_f64_s(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncSatF64S)
     }
 
-    /// Translate a Wasm `u64.truncate_sat_f64` instruction.
-    pub fn translate_u64_truncate_saturate_f64(&mut self) -> Result<(), TranslationError> {
+    /// Translate a Wasm `u64.trunc_sat_f64` instruction.
+    pub fn translate_i64_trunc_sat_f64_u(&mut self) -> Result<(), TranslationError> {
         self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncSatF64U)
     }
 }
