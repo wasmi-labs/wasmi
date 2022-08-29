@@ -1,3 +1,5 @@
+#![allow(dead_code)] // TODO: remove
+
 use core::fmt::{self, Display};
 
 /// An error that may occur upon parsing, validating and translating Wasm.
