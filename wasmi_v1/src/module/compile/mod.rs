@@ -75,7 +75,7 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
 
     /// Finishes construction of the function and returns its [`FuncBody`].
     fn finish(self, offset: usize) -> Result<FuncBody, ModuleError> {
-        self.func_builder.finish(offset)
+        self.func_builder.finish(offset).map_err(Into::into)
     }
 
     /// Translates local variables of the Wasm function.
@@ -85,7 +85,9 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         for _ in 0..len_locals {
             let offset = reader.original_position();
             let (amount, value_type) = reader.read()?;
-            self.func_builder.validator().define_locals(offset, amount, value_type)?;
+            self.func_builder
+                .validator()
+                .define_locals(offset, amount, value_type)?;
             let value_type = value_type_from_wasmparser(&value_type)?;
             self.func_builder.translate_locals(amount, value_type)?;
         }

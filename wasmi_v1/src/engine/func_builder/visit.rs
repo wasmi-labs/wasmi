@@ -1,7 +1,8 @@
 #![allow(unused_imports, unused_variables, dead_code)]
 
-use crate::engine::bytecode::Instruction;
 use super::FunctionBuilder;
+use crate::engine::bytecode::Instruction;
+use core::fmt::{self, Display};
 use wasmparser::VisitOperator;
 
 /// An error that may occur upon parsing, validating and translating Wasm.
@@ -15,6 +16,17 @@ impl From<wasmparser::BinaryReaderError> for TranslationError {
     fn from(error: wasmparser::BinaryReaderError) -> Self {
         Self {
             inner: Box::new(TranslationErrorInner::Validate(error)),
+        }
+    }
+}
+
+impl Display for TranslationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &*self.inner {
+            TranslationErrorInner::Validate(error) => error.fmt(f),
+            TranslationErrorInner::Translate => {
+                write!(f, "encountered error during Wasm to wasmi translation")
+            }
         }
     }
 }

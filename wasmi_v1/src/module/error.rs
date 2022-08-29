@@ -1,3 +1,5 @@
+use crate::engine::TranslationError;
+
 use super::ReadError;
 use alloc::string::String;
 use core::{
@@ -12,6 +14,8 @@ pub enum ModuleError {
     Read(ReadError),
     /// Encountered when there is a Wasm parsing error.
     Parser(ParserError),
+    /// Encountered when there is a Wasm to `wasmi` translation error.
+    Translation(TranslationError),
     /// Encountered when unsupported Wasm proposal definitions are used.
     Unsupported { message: String },
 }
@@ -29,6 +33,7 @@ impl Display for ModuleError {
         match self {
             ModuleError::Read(error) => Display::fmt(error, f),
             ModuleError::Parser(error) => Display::fmt(error, f),
+            ModuleError::Translation(error) => Display::fmt(error, f),
             ModuleError::Unsupported { message } => {
                 write!(
                     f,
@@ -49,5 +54,11 @@ impl From<ReadError> for ModuleError {
 impl From<ParserError> for ModuleError {
     fn from(error: ParserError) -> Self {
         Self::Parser(error)
+    }
+}
+
+impl From<TranslationError> for ModuleError {
+    fn from(error: TranslationError) -> Self {
+        Self::Translation(error)
     }
 }

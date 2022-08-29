@@ -30,6 +30,7 @@ pub use self::{
         LabelIdx,
         RelativeDepth,
         Reloc,
+        TranslationError,
     },
     stack::StackLimits,
     traits::{CallParams, CallResults},
