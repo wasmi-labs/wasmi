@@ -100,9 +100,7 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
     fn translate_operators(&mut self) -> Result<usize, ModuleError> {
         let mut reader = self.func_body.get_operators_reader()?;
         while !reader.eof() {
-            let (operator, offset) = reader.read_with_offset()?;
-            self.func_builder.validator().op(offset, &operator)?;
-            self.translate_operator(operator)?;
+            reader.visit_with_offset(&mut self.func_builder)??;
         }
         reader.ensure_end()?;
         Ok(reader.original_position())
