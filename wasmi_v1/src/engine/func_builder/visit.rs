@@ -26,6 +26,8 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     ///
     /// This is a simpler version than [`validate_then_translate`] and should
     /// be preferred if possible.
+    ///
+    /// [`validate_then_translate`]: [`Self::validate_then_translate`]
     fn validate_then_translate_simple(
         &mut self,
         offset: usize,
@@ -45,7 +47,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Validate then translate a Wasm memory operator.
-    fn validate_then_translate_memory_op<F>(
+    fn validate_then_translate_memarg<F>(
         &mut self,
         offset: usize,
         memarg: wasmparser::MemArg,
@@ -90,6 +92,8 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     ///
     /// This API is expected to be used if the function validator always
     /// returns an error. This is useful for unsupported Wasm proposals.
+    ///
+    /// [`validate_or_err`]: [`Self::validate_or_err`]
     fn validate_or_err_memarg(
         &mut self,
         offset: usize,
@@ -112,6 +116,8 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     ///
     /// This API is expected to be used if the function validator always
     /// returns an error. This is useful for unsupported Wasm proposals.
+    ///
+    /// [`validate_or_err`]: [`Self::validate_or_err`]
     fn validate_or_err_memarg_lane(
         &mut self,
         offset: usize,
@@ -136,6 +142,8 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     ///
     /// This API is expected to be used if the function validator always
     /// returns an error. This is useful for unsupported Wasm proposals.
+    ///
+    /// [`validate_or_err`]: [`Self::validate_or_err`]
     fn validate_or_err_lane(
         &mut self,
         offset: usize,
@@ -154,6 +162,8 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     ///
     /// This API is expected to be used if the function validator always
     /// returns an error. This is useful for unsupported Wasm proposals.
+    ///
+    /// [`validate_or_err`]: [`Self::validate_or_err`]
     fn validate_or_err_simple(
         &mut self,
         offset: usize,
@@ -399,7 +409,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_i32_load(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_i32_load,
@@ -408,7 +418,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_i64_load(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_i64_load,
@@ -417,7 +427,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_f32_load(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_f32_load,
@@ -426,7 +436,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_f64_load(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_f64_load,
@@ -435,7 +445,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_i32_load8_s(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_i32_load8_s,
@@ -444,7 +454,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_i32_load8_u(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_i32_load8_u,
@@ -453,7 +463,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_i32_load16_s(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_i32_load16_s,
@@ -462,7 +472,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_i32_load16_u(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_i32_load16_u,
@@ -471,7 +481,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_i64_load8_s(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_i64_load8_s,
@@ -480,7 +490,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_i64_load8_u(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_i64_load8_u,
@@ -489,7 +499,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_i64_load16_s(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_i64_load16_s,
@@ -498,7 +508,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_i64_load16_u(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_i64_load16_u,
@@ -507,7 +517,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_i64_load32_s(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_i64_load32_s,
@@ -516,7 +526,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_i64_load32_u(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_i64_load32_u,
@@ -525,7 +535,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_i32_store(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_i32_store,
@@ -534,7 +544,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_i64_store(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_i64_store,
@@ -543,7 +553,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_f32_store(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_f32_store,
@@ -552,7 +562,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_f64_store(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_f64_store,
@@ -561,7 +571,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_i32_store8(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_i32_store8,
@@ -570,7 +580,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_i32_store16(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_i32_store16,
@@ -579,7 +589,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_i64_store8(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_i64_store8,
@@ -588,7 +598,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_i64_store16(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_i64_store16,
@@ -597,7 +607,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_i64_store32(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        self.validate_then_translate_memory_op(
+        self.validate_then_translate_memarg(
             offset,
             memarg,
             FuncValidator::visit_i64_store32,
