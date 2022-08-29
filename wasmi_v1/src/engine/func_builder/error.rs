@@ -1,5 +1,3 @@
-#![allow(dead_code)] // TODO: remove
-
 use alloc::boxed::Box;
 use core::fmt::{self, Display};
 
@@ -31,9 +29,6 @@ impl Display for TranslationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &*self.inner {
             TranslationErrorInner::Validate(error) => error.fmt(f),
-            TranslationErrorInner::Translate => {
-                write!(f, "encountered error during Wasm to wasmi translation")
-            }
             TranslationErrorInner::UnsupportedBlockType(error) => {
                 write!(f, "encountered unsupported Wasm block type: {:?}", error)
             }
@@ -46,8 +41,6 @@ impl Display for TranslationError {
 enum TranslationErrorInner {
     /// There was either a problem parsing a Wasm input OR validating a Wasm input.
     Validate(wasmparser::BinaryReaderError),
-    /// There was a problem translating a Wasm input to `wasmi` bytecode.
-    Translate,
     /// Encountered unsupported Wasm block type.
     UnsupportedBlockType(wasmparser::BlockType),
 }
