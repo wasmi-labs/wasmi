@@ -1,7 +1,5 @@
 use super::{FuncValidator, FunctionBuilder, RelativeDepth, TranslationError};
-use crate::{
-    module::{BlockType, FuncIdx, FuncTypeIdx, GlobalIdx, MemoryIdx, TableIdx},
-};
+use crate::module::{BlockType, FuncIdx, FuncTypeIdx, GlobalIdx, MemoryIdx, TableIdx};
 use wasmparser::{BinaryReaderError, VisitOperator};
 
 impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
