@@ -391,14 +391,16 @@ impl Interpreter {
 
                                     let entry = tracer.etable.entries.last_mut().unwrap();
 
-                                    match entry.step {
+                                    match &entry.step {
                                         StepInfo::CallHost {
                                             host_function_idx,
+                                            args,
                                             ret_val,
                                         } => {
                                             assert!(ret_val.is_none());
                                             entry.step = StepInfo::CallHost {
-                                                host_function_idx,
+                                                host_function_idx: *host_function_idx,
+                                                args: args.clone(),
                                                 ret_val: Some(<_>::from_value_internal(
                                                     return_val.into(),
                                                 )),
@@ -801,8 +803,15 @@ impl Interpreter {
                             index: desc.index_within_jtable,
                         },
                         specs::types::FunctionType::HostFunction(host_function_idx) => {
+                            let params_len = desc.signature.params().len();
+                            let mut args: Vec<u64> = vec![];
+                            for i in 0..params_len {
+                                args.push(<_>::from_value_internal(*self.value_stack.pick(1 + i)));
+                            }
+
                             StepInfo::CallHost {
                                 host_function_idx,
+                                args,
                                 ret_val: None,
                             }
                         }
