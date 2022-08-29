@@ -72,7 +72,87 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
         )
     }
 
+    /// Forwards to the generic internal function validator.
+    ///
+    /// # Note
+    ///
+    /// This API is expected to be used if the function validator always
+    /// returns an error. This is useful for unsupported Wasm proposals.
+    fn validate_or_err<V>(&mut self, validate: V) -> Result<(), TranslationError>
+    where
+        V: FnOnce(&mut FuncValidator) -> Result<(), BinaryReaderError>,
+    {
+        validate(&mut self.validator).map_err(Into::into)
+    }
+
     /// Forwards to the internal function validator.
+    ///
+    /// This is preferred over the more generic [`validate_or_err`] method
+    /// if applicable.
+    ///
+    /// # Note
+    ///
+    /// This API is expected to be used if the function validator always
+    /// returns an error. This is useful for unsupported Wasm proposals.
+    fn validate_or_err_memarg(
+        &mut self,
+        offset: usize,
+        memarg: wasmparser::MemArg,
+        validate: fn(
+            &mut FuncValidator,
+            usize,
+            wasmparser::MemArg,
+        ) -> Result<(), BinaryReaderError>,
+    ) -> Result<(), TranslationError> {
+        validate(&mut self.validator, offset, memarg).map_err(Into::into)
+    }
+
+    /// Forwards to the internal function validator.
+    ///
+    /// This is preferred over the more generic [`validate_or_err`] method
+    /// if applicable.
+    ///
+    /// # Note
+    ///
+    /// This API is expected to be used if the function validator always
+    /// returns an error. This is useful for unsupported Wasm proposals.
+    fn validate_or_err_memarg_lane(
+        &mut self,
+        offset: usize,
+        memarg: wasmparser::MemArg,
+        lane: u8,
+        validate: fn(
+            &mut FuncValidator,
+            usize,
+            wasmparser::MemArg,
+            u8,
+        ) -> Result<(), BinaryReaderError>,
+    ) -> Result<(), TranslationError> {
+        validate(&mut self.validator, offset, memarg, lane).map_err(Into::into)
+    }
+
+    /// Forwards to the internal function validator.
+    ///
+    /// This is preferred over the more generic [`validate_or_err`] method
+    /// if applicable.
+    ///
+    /// # Note
+    ///
+    /// This API is expected to be used if the function validator always
+    /// returns an error. This is useful for unsupported Wasm proposals.
+    fn validate_or_err_lane(
+        &mut self,
+        offset: usize,
+        lane: u8,
+        validate: fn(&mut FuncValidator, usize, u8) -> Result<(), BinaryReaderError>,
+    ) -> Result<(), TranslationError> {
+        validate(&mut self.validator, offset, lane).map_err(Into::into)
+    }
+
+    /// Forwards to the internal function validator.
+    ///
+    /// This is preferred over the more generic [`validate_or_err`] method
+    /// if applicable.
     ///
     /// # Note
     ///
@@ -1676,51 +1756,51 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
     }
 
     fn visit_memory_init(&mut self, offset: usize, segment: u32, mem: u32) -> Self::Output {
-        todo!()
+        self.validate_or_err(|v| v.visit_memory_init(offset, segment, mem))
     }
 
     fn visit_data_drop(&mut self, offset: usize, segment: u32) -> Self::Output {
-        todo!()
+        self.validate_or_err(|v| v.visit_data_drop(offset, segment))
     }
 
     fn visit_memory_copy(&mut self, offset: usize, dst: u32, src: u32) -> Self::Output {
-        todo!()
+        self.validate_or_err(|v| v.visit_memory_copy(offset, dst, src))
     }
 
     fn visit_memory_fill(&mut self, offset: usize, mem: u32) -> Self::Output {
-        todo!()
+        self.validate_or_err(|v| v.visit_memory_fill(offset, mem))
     }
 
     fn visit_table_init(&mut self, offset: usize, segment: u32, table: u32) -> Self::Output {
-        todo!()
+        self.validate_or_err(|v| v.visit_table_init(offset, segment, table))
     }
 
     fn visit_elem_drop(&mut self, offset: usize, segment: u32) -> Self::Output {
-        todo!()
+        self.validate_or_err(|v| v.visit_elem_drop(offset, segment))
     }
 
     fn visit_table_copy(&mut self, offset: usize, dst_table: u32, src_table: u32) -> Self::Output {
-        todo!()
+        self.validate_or_err(|v| v.visit_table_copy(offset, dst_table, src_table))
     }
 
     fn visit_table_fill(&mut self, offset: usize, table: u32) -> Self::Output {
-        todo!()
+        self.validate_or_err(|v| v.visit_table_fill(offset, table))
     }
 
     fn visit_table_get(&mut self, offset: usize, table: u32) -> Self::Output {
-        todo!()
+        self.validate_or_err(|v| v.visit_table_get(offset, table))
     }
 
     fn visit_table_set(&mut self, offset: usize, table: u32) -> Self::Output {
-        todo!()
+        self.validate_or_err(|v| v.visit_table_set(offset, table))
     }
 
     fn visit_table_grow(&mut self, offset: usize, table: u32) -> Self::Output {
-        todo!()
+        self.validate_or_err(|v| v.visit_table_grow(offset, table))
     }
 
     fn visit_table_size(&mut self, offset: usize, table: u32) -> Self::Output {
-        todo!()
+        self.validate_or_err(|v| v.visit_table_size(offset, table))
     }
 
     fn visit_memory_atomic_notify(
@@ -1728,7 +1808,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_memory_atomic_notify)
     }
 
     fn visit_memory_atomic_wait32(
@@ -1736,7 +1816,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_memory_atomic_wait32)
     }
 
     fn visit_memory_atomic_wait64(
@@ -1744,19 +1824,19 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_memory_atomic_wait64)
     }
 
     fn visit_atomic_fence(&mut self, offset: usize, flags: u8) -> Self::Output {
-        todo!()
+        self.validate_or_err(|v| v.visit_atomic_fence(offset, flags))
     }
 
     fn visit_i32_atomic_load(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_load)
     }
 
     fn visit_i64_atomic_load(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_load)
     }
 
     fn visit_i32_atomic_load8_u(
@@ -1764,7 +1844,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_load8_u)
     }
 
     fn visit_i32_atomic_load16_u(
@@ -1772,7 +1852,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_load16_u)
     }
 
     fn visit_i64_atomic_load8_u(
@@ -1780,7 +1860,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_load8_u)
     }
 
     fn visit_i64_atomic_load16_u(
@@ -1788,7 +1868,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_load16_u)
     }
 
     fn visit_i64_atomic_load32_u(
@@ -1796,7 +1876,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_load32_u)
     }
 
     fn visit_i32_atomic_store(
@@ -1804,7 +1884,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_store)
     }
 
     fn visit_i64_atomic_store(
@@ -1812,7 +1892,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_store)
     }
 
     fn visit_i32_atomic_store8(
@@ -1820,7 +1900,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_store8)
     }
 
     fn visit_i32_atomic_store16(
@@ -1828,7 +1908,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_store16)
     }
 
     fn visit_i64_atomic_store8(
@@ -1836,7 +1916,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_store8)
     }
 
     fn visit_i64_atomic_store16(
@@ -1844,7 +1924,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_store16)
     }
 
     fn visit_i64_atomic_store32(
@@ -1852,7 +1932,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_store32)
     }
 
     fn visit_i32_atomic_rmw_add(
@@ -1860,7 +1940,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_rmw_add)
     }
 
     fn visit_i64_atomic_rmw_add(
@@ -1868,7 +1948,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw_add)
     }
 
     fn visit_i32_atomic_rmw8_add_u(
@@ -1876,7 +1956,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_rmw8_add_u)
     }
 
     fn visit_i32_atomic_rmw16_add_u(
@@ -1884,7 +1964,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_rmw16_add_u)
     }
 
     fn visit_i64_atomic_rmw8_add_u(
@@ -1892,7 +1972,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw8_add_u)
     }
 
     fn visit_i64_atomic_rmw16_add_u(
@@ -1900,7 +1980,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw16_add_u)
     }
 
     fn visit_i64_atomic_rmw32_add_u(
@@ -1908,7 +1988,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw32_add_u)
     }
 
     fn visit_i32_atomic_rmw_sub(
@@ -1916,7 +1996,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_rmw_sub)
     }
 
     fn visit_i64_atomic_rmw_sub(
@@ -1924,7 +2004,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw_sub)
     }
 
     fn visit_i32_atomic_rmw8_sub_u(
@@ -1932,7 +2012,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_rmw8_sub_u)
     }
 
     fn visit_i32_atomic_rmw16_sub_u(
@@ -1940,7 +2020,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_rmw16_sub_u)
     }
 
     fn visit_i64_atomic_rmw8_sub_u(
@@ -1948,7 +2028,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw8_sub_u)
     }
 
     fn visit_i64_atomic_rmw16_sub_u(
@@ -1956,7 +2036,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw16_sub_u)
     }
 
     fn visit_i64_atomic_rmw32_sub_u(
@@ -1964,7 +2044,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw32_sub_u)
     }
 
     fn visit_i32_atomic_rmw_and(
@@ -1972,7 +2052,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_rmw_and)
     }
 
     fn visit_i64_atomic_rmw_and(
@@ -1980,7 +2060,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw_and)
     }
 
     fn visit_i32_atomic_rmw8_and_u(
@@ -1988,7 +2068,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_rmw8_and_u)
     }
 
     fn visit_i32_atomic_rmw16_and_u(
@@ -1996,7 +2076,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_rmw16_and_u)
     }
 
     fn visit_i64_atomic_rmw8_and_u(
@@ -2004,7 +2084,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw8_and_u)
     }
 
     fn visit_i64_atomic_rmw16_and_u(
@@ -2012,7 +2092,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw16_and_u)
     }
 
     fn visit_i64_atomic_rmw32_and_u(
@@ -2020,7 +2100,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw32_and_u)
     }
 
     fn visit_i32_atomic_rmw_or(
@@ -2028,7 +2108,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_rmw_or)
     }
 
     fn visit_i64_atomic_rmw_or(
@@ -2036,7 +2116,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw_or)
     }
 
     fn visit_i32_atomic_rmw8_or_u(
@@ -2044,7 +2124,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_rmw8_or_u)
     }
 
     fn visit_i32_atomic_rmw16_or_u(
@@ -2052,7 +2132,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_rmw16_or_u)
     }
 
     fn visit_i64_atomic_rmw8_or_u(
@@ -2060,7 +2140,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw8_or_u)
     }
 
     fn visit_i64_atomic_rmw16_or_u(
@@ -2068,7 +2148,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw16_or_u)
     }
 
     fn visit_i64_atomic_rmw32_or_u(
@@ -2076,7 +2156,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw32_or_u)
     }
 
     fn visit_i32_atomic_rmw_xor(
@@ -2084,7 +2164,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_rmw_xor)
     }
 
     fn visit_i64_atomic_rmw_xor(
@@ -2092,7 +2172,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw_xor)
     }
 
     fn visit_i32_atomic_rmw8_xor_u(
@@ -2100,7 +2180,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_rmw8_xor_u)
     }
 
     fn visit_i32_atomic_rmw16_xor_u(
@@ -2108,7 +2188,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_rmw16_xor_u)
     }
 
     fn visit_i64_atomic_rmw8_xor_u(
@@ -2116,7 +2196,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw8_xor_u)
     }
 
     fn visit_i64_atomic_rmw16_xor_u(
@@ -2124,7 +2204,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw16_xor_u)
     }
 
     fn visit_i64_atomic_rmw32_xor_u(
@@ -2132,7 +2212,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw32_xor_u)
     }
 
     fn visit_i32_atomic_rmw_xchg(
@@ -2140,7 +2220,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_rmw_xchg)
     }
 
     fn visit_i64_atomic_rmw_xchg(
@@ -2148,7 +2228,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw_xchg)
     }
 
     fn visit_i32_atomic_rmw8_xchg_u(
@@ -2156,7 +2236,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_rmw8_xchg_u)
     }
 
     fn visit_i32_atomic_rmw16_xchg_u(
@@ -2164,7 +2244,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_rmw16_xchg_u)
     }
 
     fn visit_i64_atomic_rmw8_xchg_u(
@@ -2172,7 +2252,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw8_xchg_u)
     }
 
     fn visit_i64_atomic_rmw16_xchg_u(
@@ -2180,7 +2260,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw16_xchg_u)
     }
 
     fn visit_i64_atomic_rmw32_xchg_u(
@@ -2188,7 +2268,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw32_xchg_u)
     }
 
     fn visit_i32_atomic_rmw_cmpxchg(
@@ -2196,7 +2276,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i32_atomic_rmw_cmpxchg)
     }
 
     fn visit_i64_atomic_rmw_cmpxchg(
@@ -2204,7 +2284,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_i64_atomic_rmw_cmpxchg)
     }
 
     fn visit_i32_atomic_rmw8_cmpxchg_u(
@@ -2212,7 +2292,11 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(
+            offset,
+            memarg,
+            FuncValidator::visit_i32_atomic_rmw8_cmpxchg_u,
+        )
     }
 
     fn visit_i32_atomic_rmw16_cmpxchg_u(
@@ -2220,7 +2304,11 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(
+            offset,
+            memarg,
+            FuncValidator::visit_i32_atomic_rmw16_cmpxchg_u,
+        )
     }
 
     fn visit_i64_atomic_rmw8_cmpxchg_u(
@@ -2228,7 +2316,11 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(
+            offset,
+            memarg,
+            FuncValidator::visit_i64_atomic_rmw8_cmpxchg_u,
+        )
     }
 
     fn visit_i64_atomic_rmw16_cmpxchg_u(
@@ -2236,7 +2328,11 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(
+            offset,
+            memarg,
+            FuncValidator::visit_i64_atomic_rmw16_cmpxchg_u,
+        )
     }
 
     fn visit_i64_atomic_rmw32_cmpxchg_u(
@@ -2244,35 +2340,39 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(
+            offset,
+            memarg,
+            FuncValidator::visit_i64_atomic_rmw32_cmpxchg_u,
+        )
     }
 
     fn visit_v128_load(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_v128_load)
     }
 
     fn visit_v128_load8x8_s(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_v128_load8x8_s)
     }
 
     fn visit_v128_load8x8_u(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_v128_load8x8_u)
     }
 
     fn visit_v128_load16x4_s(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_v128_load16x4_s)
     }
 
     fn visit_v128_load16x4_u(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_v128_load16x4_u)
     }
 
     fn visit_v128_load32x2_s(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_v128_load32x2_s)
     }
 
     fn visit_v128_load32x2_u(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_v128_load32x2_u)
     }
 
     fn visit_v128_load8_splat(
@@ -2280,7 +2380,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_v128_load8_splat)
     }
 
     fn visit_v128_load16_splat(
@@ -2288,7 +2388,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_v128_load16_splat)
     }
 
     fn visit_v128_load32_splat(
@@ -2296,7 +2396,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_v128_load32_splat)
     }
 
     fn visit_v128_load64_splat(
@@ -2304,7 +2404,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_v128_load64_splat)
     }
 
     fn visit_v128_load32_zero(
@@ -2312,7 +2412,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_v128_load32_zero)
     }
 
     fn visit_v128_load64_zero(
@@ -2320,11 +2420,11 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         offset: usize,
         memarg: wasmparser::MemArg,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_v128_load64_zero)
     }
 
     fn visit_v128_store(&mut self, offset: usize, memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg(offset, memarg, FuncValidator::visit_v128_store)
     }
 
     fn visit_v128_load8_lane(
@@ -2333,7 +2433,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         memarg: wasmparser::MemArg,
         lane: u8,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg_lane(offset, memarg, lane, FuncValidator::visit_v128_load8_lane)
     }
 
     fn visit_v128_load16_lane(
@@ -2342,7 +2442,12 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         memarg: wasmparser::MemArg,
         lane: u8,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg_lane(
+            offset,
+            memarg,
+            lane,
+            FuncValidator::visit_v128_load16_lane,
+        )
     }
 
     fn visit_v128_load32_lane(
@@ -2351,7 +2456,12 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         memarg: wasmparser::MemArg,
         lane: u8,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg_lane(
+            offset,
+            memarg,
+            lane,
+            FuncValidator::visit_v128_load32_lane,
+        )
     }
 
     fn visit_v128_load64_lane(
@@ -2360,7 +2470,12 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         memarg: wasmparser::MemArg,
         lane: u8,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg_lane(
+            offset,
+            memarg,
+            lane,
+            FuncValidator::visit_v128_load64_lane,
+        )
     }
 
     fn visit_v128_store8_lane(
@@ -2369,7 +2484,12 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         memarg: wasmparser::MemArg,
         lane: u8,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg_lane(
+            offset,
+            memarg,
+            lane,
+            FuncValidator::visit_v128_store8_lane,
+        )
     }
 
     fn visit_v128_store16_lane(
@@ -2378,7 +2498,12 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         memarg: wasmparser::MemArg,
         lane: u8,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg_lane(
+            offset,
+            memarg,
+            lane,
+            FuncValidator::visit_v128_store16_lane,
+        )
     }
 
     fn visit_v128_store32_lane(
@@ -2387,7 +2512,12 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         memarg: wasmparser::MemArg,
         lane: u8,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg_lane(
+            offset,
+            memarg,
+            lane,
+            FuncValidator::visit_v128_store32_lane,
+        )
     }
 
     fn visit_v128_store64_lane(
@@ -2396,930 +2526,941 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         memarg: wasmparser::MemArg,
         lane: u8,
     ) -> Self::Output {
-        todo!()
+        self.validate_or_err_memarg_lane(
+            offset,
+            memarg,
+            lane,
+            FuncValidator::visit_v128_store64_lane,
+        )
     }
 
     fn visit_v128_const(&mut self, offset: usize, value: wasmparser::V128) -> Self::Output {
-        todo!()
+        self.validate_or_err(|v| v.visit_v128_const(offset, value))
     }
 
     fn visit_i8x16_shuffle(&mut self, offset: usize, lanes: [u8; 16]) -> Self::Output {
-        todo!()
+        self.validate_or_err(|v| v.visit_i8x16_shuffle(offset, lanes))
     }
 
     fn visit_i8x16_extract_lane_s(&mut self, offset: usize, lane: u8) -> Self::Output {
-        todo!()
+        self.validate_or_err_lane(offset, lane, FuncValidator::visit_i8x16_extract_lane_s)
     }
 
     fn visit_i8x16_extract_lane_u(&mut self, offset: usize, lane: u8) -> Self::Output {
-        todo!()
+        self.validate_or_err_lane(offset, lane, FuncValidator::visit_i8x16_extract_lane_u)
     }
 
     fn visit_i8x16_replace_lane(&mut self, offset: usize, lane: u8) -> Self::Output {
-        todo!()
+        self.validate_or_err_lane(offset, lane, FuncValidator::visit_i8x16_replace_lane)
     }
 
     fn visit_i16x8_extract_lane_s(&mut self, offset: usize, lane: u8) -> Self::Output {
-        todo!()
+        self.validate_or_err_lane(offset, lane, FuncValidator::visit_i16x8_extract_lane_s)
     }
 
     fn visit_i16x8_extract_lane_u(&mut self, offset: usize, lane: u8) -> Self::Output {
-        todo!()
+        self.validate_or_err_lane(offset, lane, FuncValidator::visit_i16x8_extract_lane_u)
     }
 
     fn visit_i16x8_replace_lane(&mut self, offset: usize, lane: u8) -> Self::Output {
-        todo!()
+        self.validate_or_err_lane(offset, lane, FuncValidator::visit_i16x8_replace_lane)
     }
 
     fn visit_i32x4_extract_lane(&mut self, offset: usize, lane: u8) -> Self::Output {
-        todo!()
+        self.validate_or_err_lane(offset, lane, FuncValidator::visit_i32x4_extract_lane)
     }
 
     fn visit_i32x4_replace_lane(&mut self, offset: usize, lane: u8) -> Self::Output {
-        todo!()
+        self.validate_or_err_lane(offset, lane, FuncValidator::visit_i32x4_replace_lane)
     }
 
     fn visit_i64x2_extract_lane(&mut self, offset: usize, lane: u8) -> Self::Output {
-        todo!()
+        self.validate_or_err_lane(offset, lane, FuncValidator::visit_i64x2_extract_lane)
     }
 
     fn visit_i64x2_replace_lane(&mut self, offset: usize, lane: u8) -> Self::Output {
-        todo!()
+        self.validate_or_err_lane(offset, lane, FuncValidator::visit_i64x2_replace_lane)
     }
 
     fn visit_f32x4_extract_lane(&mut self, offset: usize, lane: u8) -> Self::Output {
-        todo!()
+        self.validate_or_err_lane(offset, lane, FuncValidator::visit_f32x4_extract_lane)
     }
 
     fn visit_f32x4_replace_lane(&mut self, offset: usize, lane: u8) -> Self::Output {
-        todo!()
+        self.validate_or_err_lane(offset, lane, FuncValidator::visit_f32x4_replace_lane)
     }
 
     fn visit_f64x2_extract_lane(&mut self, offset: usize, lane: u8) -> Self::Output {
-        todo!()
+        self.validate_or_err_lane(offset, lane, FuncValidator::visit_f64x2_extract_lane)
     }
 
     fn visit_f64x2_replace_lane(&mut self, offset: usize, lane: u8) -> Self::Output {
-        todo!()
+        self.validate_or_err_lane(offset, lane, FuncValidator::visit_f64x2_replace_lane)
     }
 
     fn visit_i8x16_swizzle(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_swizzle)
     }
 
     fn visit_i8x16_splat(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_splat)
     }
 
     fn visit_i16x8_splat(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_splat)
     }
 
     fn visit_i32x4_splat(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_splat)
     }
 
     fn visit_i64x2_splat(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_splat)
     }
 
     fn visit_f32x4_splat(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_splat)
     }
 
     fn visit_f64x2_splat(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_splat)
     }
 
     fn visit_i8x16_eq(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_eq)
     }
 
     fn visit_i8x16_ne(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_ne)
     }
 
     fn visit_i8x16_lt_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_lt_s)
     }
 
     fn visit_i8x16_lt_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_lt_u)
     }
 
     fn visit_i8x16_gt_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_gt_s)
     }
 
     fn visit_i8x16_gt_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_gt_u)
     }
 
     fn visit_i8x16_le_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_le_s)
     }
 
     fn visit_i8x16_le_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_le_u)
     }
 
     fn visit_i8x16_ge_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_ge_s)
     }
 
     fn visit_i8x16_ge_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_ge_u)
     }
 
     fn visit_i16x8_eq(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_eq)
     }
 
     fn visit_i16x8_ne(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_ne)
     }
 
     fn visit_i16x8_lt_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_lt_s)
     }
 
     fn visit_i16x8_lt_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_lt_u)
     }
 
     fn visit_i16x8_gt_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_gt_s)
     }
 
     fn visit_i16x8_gt_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_gt_u)
     }
 
     fn visit_i16x8_le_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_le_s)
     }
 
     fn visit_i16x8_le_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_le_u)
     }
 
     fn visit_i16x8_ge_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_ge_s)
     }
 
     fn visit_i16x8_ge_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_ge_u)
     }
 
     fn visit_i32x4_eq(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_eq)
     }
 
     fn visit_i32x4_ne(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_ne)
     }
 
     fn visit_i32x4_lt_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_lt_s)
     }
 
     fn visit_i32x4_lt_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_lt_u)
     }
 
     fn visit_i32x4_gt_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_gt_s)
     }
 
     fn visit_i32x4_gt_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_gt_u)
     }
 
     fn visit_i32x4_le_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_le_s)
     }
 
     fn visit_i32x4_le_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_le_u)
     }
 
     fn visit_i32x4_ge_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_ge_s)
     }
 
     fn visit_i32x4_ge_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_ge_u)
     }
 
     fn visit_i64x2_eq(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_eq)
     }
 
     fn visit_i64x2_ne(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_ne)
     }
 
     fn visit_i64x2_lt_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_lt_s)
     }
 
     fn visit_i64x2_gt_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_gt_s)
     }
 
     fn visit_i64x2_le_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_le_s)
     }
 
     fn visit_i64x2_ge_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_ge_s)
     }
 
     fn visit_f32x4_eq(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_eq)
     }
 
     fn visit_f32x4_ne(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_ne)
     }
 
     fn visit_f32x4_lt(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_lt)
     }
 
     fn visit_f32x4_gt(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_gt)
     }
 
     fn visit_f32x4_le(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_le)
     }
 
     fn visit_f32x4_ge(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_ge)
     }
 
     fn visit_f64x2_eq(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_eq)
     }
 
     fn visit_f64x2_ne(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_ne)
     }
 
     fn visit_f64x2_lt(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_lt)
     }
 
     fn visit_f64x2_gt(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_gt)
     }
 
     fn visit_f64x2_le(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_le)
     }
 
     fn visit_f64x2_ge(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_ge)
     }
 
     fn visit_v128_not(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_v128_not)
     }
 
     fn visit_v128_and(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_v128_and)
     }
 
     fn visit_v128_andnot(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_v128_andnot)
     }
 
     fn visit_v128_or(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_v128_or)
     }
 
     fn visit_v128_xor(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_v128_xor)
     }
 
     fn visit_v128_bitselect(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_v128_bitselect)
     }
 
     fn visit_v128_any_true(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_v128_any_true)
     }
 
     fn visit_i8x16_abs(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_abs)
     }
 
     fn visit_i8x16_neg(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_neg)
     }
 
     fn visit_i8x16_popcnt(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_popcnt)
     }
 
     fn visit_i8x16_all_true(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_all_true)
     }
 
     fn visit_i8x16_bitmask(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_bitmask)
     }
 
     fn visit_i8x16_narrow_i16x8_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_narrow_i16x8_s)
     }
 
     fn visit_i8x16_narrow_i16x8_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_narrow_i16x8_u)
     }
 
     fn visit_i8x16_shl(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_shl)
     }
 
     fn visit_i8x16_shr_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_shr_s)
     }
 
     fn visit_i8x16_shr_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_shr_u)
     }
 
     fn visit_i8x16_add(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_add)
     }
 
     fn visit_i8x16_add_sat_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_add_sat_s)
     }
 
     fn visit_i8x16_add_sat_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_add_sat_u)
     }
 
     fn visit_i8x16_sub(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_sub)
     }
 
     fn visit_i8x16_sub_sat_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_sub_sat_s)
     }
 
     fn visit_i8x16_sub_sat_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_sub_sat_u)
     }
 
     fn visit_i8x16_min_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_min_s)
     }
 
     fn visit_i8x16_min_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_min_u)
     }
 
     fn visit_i8x16_max_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_max_s)
     }
 
     fn visit_i8x16_max_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_max_u)
     }
 
     fn visit_i8x16_avgr_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_avgr_u)
     }
 
     fn visit_i16x8_extadd_pairwise_i8x16_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_extadd_pairwise_i8x16_s)
     }
 
     fn visit_i16x8_extadd_pairwise_i8x16_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_extadd_pairwise_i8x16_u)
     }
 
     fn visit_i16x8_abs(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_abs)
     }
 
     fn visit_i16x8_neg(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_neg)
     }
 
     fn visit_i16x8_q15mulr_sat_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_q15mulr_sat_s)
     }
 
     fn visit_i16x8_all_true(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_all_true)
     }
 
     fn visit_i16x8_bitmask(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_bitmask)
     }
 
     fn visit_i16x8_narrow_i32x4_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_narrow_i32x4_s)
     }
 
     fn visit_i16x8_narrow_i32x4_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_narrow_i32x4_u)
     }
 
     fn visit_i16x8_extend_low_i8x16_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_extend_low_i8x16_s)
     }
 
     fn visit_i16x8_extend_high_i8x16_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_extend_high_i8x16_s)
     }
 
     fn visit_i16x8_extend_low_i8x16_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_extend_low_i8x16_u)
     }
 
     fn visit_i16x8_extend_high_i8x16_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_extend_high_i8x16_u)
     }
 
     fn visit_i16x8_shl(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_shl)
     }
 
     fn visit_i16x8_shr_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_shr_s)
     }
 
     fn visit_i16x8_shr_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_shr_u)
     }
 
     fn visit_i16x8_add(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_add)
     }
 
     fn visit_i16x8_add_sat_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_add_sat_s)
     }
 
     fn visit_i16x8_add_sat_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_add_sat_u)
     }
 
     fn visit_i16x8_sub(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_sub)
     }
 
     fn visit_i16x8_sub_sat_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_sub_sat_s)
     }
 
     fn visit_i16x8_sub_sat_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_sub_sat_u)
     }
 
     fn visit_i16x8_mul(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_mul)
     }
 
     fn visit_i16x8_min_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_min_s)
     }
 
     fn visit_i16x8_min_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_min_u)
     }
 
     fn visit_i16x8_max_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_max_s)
     }
 
     fn visit_i16x8_max_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_max_u)
     }
 
     fn visit_i16x8_avgr_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_avgr_u)
     }
 
     fn visit_i16x8_extmul_low_i8x16_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_extmul_low_i8x16_s)
     }
 
     fn visit_i16x8_extmul_high_i8x16_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_extmul_high_i8x16_s)
     }
 
     fn visit_i16x8_extmul_low_i8x16_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_extmul_low_i8x16_u)
     }
 
     fn visit_i16x8_extmul_high_i8x16_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_extmul_high_i8x16_u)
     }
 
     fn visit_i32x4_extadd_pairwise_i16x8_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_extadd_pairwise_i16x8_s)
     }
 
     fn visit_i32x4_extadd_pairwise_i16x8_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_extadd_pairwise_i16x8_u)
     }
 
     fn visit_i32x4_abs(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_abs)
     }
 
     fn visit_i32x4_neg(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_neg)
     }
 
     fn visit_i32x4_all_true(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_all_true)
     }
 
     fn visit_i32x4_bitmask(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_bitmask)
     }
 
     fn visit_i32x4_extend_low_i16x8_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_extend_low_i16x8_s)
     }
 
     fn visit_i32x4_extend_high_i16x8_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_extend_high_i16x8_s)
     }
 
     fn visit_i32x4_extend_low_i16x8_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_extend_low_i16x8_u)
     }
 
     fn visit_i32x4_extend_high_i16x8_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_extend_high_i16x8_u)
     }
 
     fn visit_i32x4_shl(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_shl)
     }
 
     fn visit_i32x4_shr_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_shr_s)
     }
 
     fn visit_i32x4_shr_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_shr_u)
     }
 
     fn visit_i32x4_add(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_add)
     }
 
     fn visit_i32x4_sub(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_sub)
     }
 
     fn visit_i32x4_mul(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_mul)
     }
 
     fn visit_i32x4_min_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_min_s)
     }
 
     fn visit_i32x4_min_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_min_u)
     }
 
     fn visit_i32x4_max_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_max_s)
     }
 
     fn visit_i32x4_max_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_max_u)
     }
 
     fn visit_i32x4_dot_i16x8_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_dot_i16x8_s)
     }
 
     fn visit_i32x4_extmul_low_i16x8_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_extmul_low_i16x8_s)
     }
 
     fn visit_i32x4_extmul_high_i16x8_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_extmul_high_i16x8_s)
     }
 
     fn visit_i32x4_extmul_low_i16x8_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_extmul_low_i16x8_u)
     }
 
     fn visit_i32x4_extmul_high_i16x8_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_extmul_high_i16x8_u)
     }
 
     fn visit_i64x2_abs(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_abs)
     }
 
     fn visit_i64x2_neg(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_neg)
     }
 
     fn visit_i64x2_all_true(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_all_true)
     }
 
     fn visit_i64x2_bitmask(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_bitmask)
     }
 
     fn visit_i64x2_extend_low_i32x4_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_extend_low_i32x4_s)
     }
 
     fn visit_i64x2_extend_high_i32x4_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_extend_high_i32x4_s)
     }
 
     fn visit_i64x2_extend_low_i32x4_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_extend_low_i32x4_u)
     }
 
     fn visit_i64x2_extend_high_i32x4_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_extend_high_i32x4_u)
     }
 
     fn visit_i64x2_shl(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_shl)
     }
 
     fn visit_i64x2_shr_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_shr_s)
     }
 
     fn visit_i64x2_shr_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_shr_u)
     }
 
     fn visit_i64x2_add(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_add)
     }
 
     fn visit_i64x2_sub(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_sub)
     }
 
     fn visit_i64x2_mul(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_mul)
     }
 
     fn visit_i64x2_extmul_low_i32x4_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_extmul_low_i32x4_s)
     }
 
     fn visit_i64x2_extmul_high_i32x4_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_extmul_high_i32x4_s)
     }
 
     fn visit_i64x2_extmul_low_i32x4_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_extmul_low_i32x4_u)
     }
 
     fn visit_i64x2_extmul_high_i32x4_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_extmul_high_i32x4_u)
     }
 
     fn visit_f32x4_ceil(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_ceil)
     }
 
     fn visit_f32x4_floor(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_floor)
     }
 
     fn visit_f32x4_trunc(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_trunc)
     }
 
     fn visit_f32x4_nearest(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_nearest)
     }
 
     fn visit_f32x4_abs(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_abs)
     }
 
     fn visit_f32x4_neg(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_neg)
     }
 
     fn visit_f32x4_sqrt(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_sqrt)
     }
 
     fn visit_f32x4_add(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_add)
     }
 
     fn visit_f32x4_sub(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_sub)
     }
 
     fn visit_f32x4_mul(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_mul)
     }
 
     fn visit_f32x4_div(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_div)
     }
 
     fn visit_f32x4_min(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_min)
     }
 
     fn visit_f32x4_max(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_max)
     }
 
     fn visit_f32x4_pmin(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_pmin)
     }
 
     fn visit_f32x4_pmax(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_pmax)
     }
 
     fn visit_f64x2_ceil(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_ceil)
     }
 
     fn visit_f64x2_floor(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_floor)
     }
 
     fn visit_f64x2_trunc(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_trunc)
     }
 
     fn visit_f64x2_nearest(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_nearest)
     }
 
     fn visit_f64x2_abs(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_abs)
     }
 
     fn visit_f64x2_neg(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_neg)
     }
 
     fn visit_f64x2_sqrt(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_sqrt)
     }
 
     fn visit_f64x2_add(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_add)
     }
 
     fn visit_f64x2_sub(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_sub)
     }
 
     fn visit_f64x2_mul(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_mul)
     }
 
     fn visit_f64x2_div(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_div)
     }
 
     fn visit_f64x2_min(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_min)
     }
 
     fn visit_f64x2_max(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_max)
     }
 
     fn visit_f64x2_pmin(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_pmin)
     }
 
     fn visit_f64x2_pmax(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_pmax)
     }
 
     fn visit_i32x4_trunc_sat_f32x4_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_trunc_sat_f32x4_s)
     }
 
     fn visit_i32x4_trunc_sat_f32x4_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_trunc_sat_f32x4_u)
     }
 
     fn visit_f32x4_convert_i32x4_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_convert_i32x4_s)
     }
 
     fn visit_f32x4_convert_i32x4_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_convert_i32x4_u)
     }
 
     fn visit_i32x4_trunc_sat_f64x2_s_zero(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_trunc_sat_f64x2_s_zero)
     }
 
     fn visit_i32x4_trunc_sat_f64x2_u_zero(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_trunc_sat_f64x2_u_zero)
     }
 
     fn visit_f64x2_convert_low_i32x4_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_convert_low_i32x4_s)
     }
 
     fn visit_f64x2_convert_low_i32x4_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_convert_low_i32x4_u)
     }
 
     fn visit_f32x4_demote_f64x2_zero(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_demote_f64x2_zero)
     }
 
     fn visit_f64x2_promote_low_f32x4(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_promote_low_f32x4)
     }
 
     fn visit_i8x16_relaxed_swizzle(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_relaxed_swizzle)
     }
 
     fn visit_i32x4_relaxed_trunc_sat_f32x4_s(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_relaxed_trunc_sat_f32x4_s)
     }
 
     fn visit_i32x4_relaxed_trunc_sat_f32x4_u(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_relaxed_trunc_sat_f32x4_u)
     }
 
     fn visit_i32x4_relaxed_trunc_sat_f64x2_s_zero(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(
+            offset,
+            FuncValidator::visit_i32x4_relaxed_trunc_sat_f64x2_s_zero,
+        )
     }
 
     fn visit_i32x4_relaxed_trunc_sat_f64x2_u_zero(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(
+            offset,
+            FuncValidator::visit_i32x4_relaxed_trunc_sat_f64x2_u_zero,
+        )
     }
 
     fn visit_f32x4_fma(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_fma)
     }
 
     fn visit_f32x4_fms(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_fms)
     }
 
     fn visit_f64x2_fma(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_fma)
     }
 
     fn visit_f64x2_fms(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_fms)
     }
 
     fn visit_i8x16_laneselect(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i8x16_laneselect)
     }
 
     fn visit_i16x8_laneselect(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i16x8_laneselect)
     }
 
     fn visit_i32x4_laneselect(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i32x4_laneselect)
     }
 
     fn visit_i64x2_laneselect(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_i64x2_laneselect)
     }
 
     fn visit_f32x4_relaxed_min(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_relaxed_min)
     }
 
     fn visit_f32x4_relaxed_max(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f32x4_relaxed_max)
     }
 
     fn visit_f64x2_relaxed_min(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_relaxed_min)
     }
 
     fn visit_f64x2_relaxed_max(&mut self, offset: usize) -> Self::Output {
-        todo!()
+        self.validate_or_err_simple(offset, FuncValidator::visit_f64x2_relaxed_max)
     }
 }
