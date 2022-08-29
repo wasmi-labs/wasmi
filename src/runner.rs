@@ -396,6 +396,7 @@ impl Interpreter {
                                             host_function_idx,
                                             args,
                                             ret_val,
+                                            signature,
                                         } => {
                                             assert!(ret_val.is_none());
                                             entry.step = StepInfo::CallHost {
@@ -404,6 +405,7 @@ impl Interpreter {
                                                 ret_val: Some(<_>::from_value_internal(
                                                     return_val.into(),
                                                 )),
+                                                signature: signature.clone(),
                                             }
                                         }
                                         _ => unreachable!(),
@@ -813,6 +815,7 @@ impl Interpreter {
                                 host_function_idx,
                                 args,
                                 ret_val: None,
+                                signature: desc.signature.clone().into(),
                             }
                         }
                     }
