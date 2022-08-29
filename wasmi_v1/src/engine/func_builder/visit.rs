@@ -1,4 +1,4 @@
-#![allow(unused_imports, unused_variables)]
+#![allow(unused_imports, unused_variables)] // TODO: remove
 
 use super::{FunctionBuilder, TranslationError};
 use crate::engine::bytecode::Instruction;
