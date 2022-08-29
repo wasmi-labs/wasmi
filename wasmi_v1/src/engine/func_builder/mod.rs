@@ -3,6 +3,7 @@ mod control_stack;
 mod inst_builder;
 mod locals_registry;
 mod value_stack;
+mod visit;
 
 pub use self::inst_builder::{InstructionIdx, InstructionsBuilder, LabelIdx, RelativeDepth, Reloc};
 use self::{
