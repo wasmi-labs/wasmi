@@ -1,5 +1,6 @@
 mod control_frame;
 mod control_stack;
+mod error;
 mod inst_builder;
 mod locals_registry;
 mod value_stack;
@@ -19,8 +20,8 @@ use self::{
     value_stack::ValueStack,
 };
 pub use self::{
+    error::TranslationError,
     inst_builder::{InstructionIdx, InstructionsBuilder, LabelIdx, RelativeDepth, Reloc},
-    visit::TranslationError,
 };
 use super::{DropKeep, FuncBody, Instruction, Target};
 use crate::{
