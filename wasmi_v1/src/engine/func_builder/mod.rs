@@ -37,11 +37,11 @@ use crate::{
     Mutability,
 };
 use alloc::vec::Vec;
+use wasmparser::FuncValidator;
 use core::ops::{Deref, DerefMut};
 use wasmi_core::{Value, ValueType, F32, F64};
 
 /// The interface to translate a `wasmi` bytecode function using Wasm bytecode.
-#[derive(Debug)]
 pub struct FunctionBuilder<'alloc, 'parser> {
     /// The [`Engine`] for which the function is translated.
     engine: Engine,
@@ -59,6 +59,7 @@ pub struct FunctionBuilder<'alloc, 'parser> {
     /// Visiting the Wasm `Else` or `End` control flow operator resets
     /// reachability to `true` again.
     reachable: bool,
+    validator: wasmparser::FuncValidator<wasmparser::ValidatorResources>,
     /// The reusable data structures of the [`FunctionBuilder`].
     allocations: &'alloc mut FunctionBuilderAllocations,
 }
@@ -117,6 +118,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
         engine: &Engine,
         func: FuncIdx,
         res: ModuleResources<'parser>,
+        validator: FuncValidator<wasmparser::ValidatorResources>,
         allocations: &'alloc mut FunctionBuilderAllocations,
     ) -> Self {
         Self::register_func_body_block(func, res, allocations);
@@ -126,8 +128,14 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
             func,
             res,
             reachable: true,
+            validator,
             allocations,
         }
+    }
+
+    /// Returns an exclusive reference to the function validator.
+    pub fn validator(&mut self) -> &mut FuncValidator<wasmparser::ValidatorResources> { // TODO: remove pub
+        &mut self.validator
     }
 
     /// Returns the [`FuncType`] of the function that is currently translated.
@@ -214,12 +222,14 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     }
 
     /// Finishes constructing the function and returns its [`FuncBody`].
-    pub fn finish(self) -> FuncBody {
-        self.allocations.inst_builder.finish(
+    pub fn finish(mut self, offset: usize) -> Result<FuncBody, ModuleError> {
+        self.validator.finish(offset)?;
+        let func_body = self.allocations.inst_builder.finish(
             &self.engine,
             self.len_locals(),
             self.value_stack.max_stack_height() as usize,
-        )
+        );
+        Ok(func_body)
     }
 
     /// Returns `true` if the code at the current translation position is reachable.

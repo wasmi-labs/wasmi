@@ -40,8 +40,6 @@ struct FunctionTranslator<'alloc, 'parser> {
     func_body: FunctionBody<'parser>,
     /// The interface to incrementally build up the `wasmi` bytecode function.
     func_builder: FunctionBuilder<'alloc, 'parser>,
-    /// The Wasm validator.
-    validator: FuncValidator<ValidatorResources>,
     /// The `wasmi` module resources.
     ///
     /// Provides immutable information about the translated Wasm module
@@ -59,11 +57,10 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         res: ModuleResources<'parser>,
         allocations: &'alloc mut FunctionBuilderAllocations,
     ) -> Self {
-        let func_builder = FunctionBuilder::new(engine, func, res, allocations);
+        let func_builder = FunctionBuilder::new(engine, func, res, validator, allocations);
         Self {
             func_body,
             func_builder,
-            validator,
             res,
         }
     }
@@ -71,14 +68,14 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
     /// Starts translation of the Wasm stream into `wasmi` bytecode.
     fn translate(mut self) -> Result<FuncBody, ModuleError> {
         self.translate_locals()?;
-        self.translate_operators()?;
-        let func_body = self.finish();
+        let offset = self.translate_operators()?;
+        let func_body = self.finish(offset)?;
         Ok(func_body)
     }
 
     /// Finishes construction of the function and returns its [`FuncBody`].
-    fn finish(self) -> FuncBody {
-        self.func_builder.finish()
+    fn finish(self, offset: usize) -> Result<FuncBody, ModuleError> {
+        self.func_builder.finish(offset)
     }
 
     /// Translates local variables of the Wasm function.
@@ -88,7 +85,7 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
         for _ in 0..len_locals {
             let offset = reader.original_position();
             let (amount, value_type) = reader.read()?;
-            self.validator.define_locals(offset, amount, value_type)?;
+            self.func_builder.validator().define_locals(offset, amount, value_type)?;
             let value_type = value_type_from_wasmparser(&value_type)?;
             self.func_builder.translate_locals(amount, value_type)?;
         }
@@ -96,16 +93,17 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
     }
 
     /// Translates the Wasm operators of the Wasm function.
-    fn translate_operators(&mut self) -> Result<(), ModuleError> {
+    ///
+    /// Returns the offset of the `End` Wasm operator.
+    fn translate_operators(&mut self) -> Result<usize, ModuleError> {
         let mut reader = self.func_body.get_operators_reader()?;
         while !reader.eof() {
             let (operator, offset) = reader.read_with_offset()?;
-            self.validator.op(offset, &operator)?;
+            self.func_builder.validator().op(offset, &operator)?;
             self.translate_operator(operator)?;
         }
         reader.ensure_end()?;
-        self.validator.finish(reader.original_position())?;
-        Ok(())
+        Ok(reader.original_position())
     }
 
     /// Translate a single Wasm operator of the Wasm function.
