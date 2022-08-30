@@ -1,5 +1,3 @@
-use alloc::{boxed::Box, vec::Vec};
-
 mod builder;
 mod compile;
 mod data;
@@ -37,6 +35,7 @@ pub use self::{
     import::{FuncTypeIdx, ImportName},
     instantiate::{InstancePre, InstantiationError},
     read::Read,
+    utils::value_type_from_wasmparser,
 };
 use crate::{
     engine::{DedupFuncType, FuncBody},
@@ -46,6 +45,7 @@ use crate::{
     MemoryType,
     TableType,
 };
+use alloc::{boxed::Box, vec::Vec};
 use core::{iter, slice::Iter as SliceIter};
 
 /// A parsed and validated WebAssembly module.

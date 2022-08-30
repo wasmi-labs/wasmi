@@ -37,7 +37,7 @@ impl TryFrom<wasmparser::GlobalType> for GlobalType {
     type Error = ModuleError;
 
     fn try_from(global_type: wasmparser::GlobalType) -> Result<Self, Self::Error> {
-        let value_type = value_type_from_wasmparser(&global_type.content_type)?;
+        let value_type = value_type_try_from_wasmparser(global_type.content_type)?;
         let mutability = match global_type.mutable {
             true => Mutability::Mutable,
             false => Mutability::Const,
@@ -52,7 +52,7 @@ impl TryFrom<wasmparser::FuncType> for FuncType {
     fn try_from(func_type: wasmparser::FuncType) -> Result<Self, Self::Error> {
         /// Returns `true` if the given [`wasmparser::Type`] is supported by `wasmi`.
         fn is_supported_value_type(value_type: &wasmparser::ValType) -> bool {
-            value_type_from_wasmparser(value_type).is_ok()
+            value_type_try_from_wasmparser(*value_type).is_ok()
         }
         if !func_type.params().iter().all(is_supported_value_type)
             || !func_type.results().iter().all(is_supported_value_type)
@@ -66,7 +66,7 @@ impl TryFrom<wasmparser::FuncType> for FuncType {
         ///
         /// If the [`wasmparser::Type`] is not supported by `wasmi`.
         fn extract_value_type(value_type: &wasmparser::ValType) -> ValueType {
-            value_type_from_wasmparser(value_type)
+            value_type_from_wasmparser(*value_type)
                 .expect("encountered unexpected invalid value type")
         }
         let params = func_type.params().iter().map(extract_value_type);
@@ -76,19 +76,28 @@ impl TryFrom<wasmparser::FuncType> for FuncType {
     }
 }
 
-/// Creates a [`ValueType`] from the given [`wasmparser::Type`].
+/// Creates a [`ValueType`] from the given [`wasmparser::ValType`].
 ///
-/// Returns `None` if the given [`wasmparser::Type`] is not supported by `wasmi`.
-pub fn value_type_from_wasmparser(
-    value_type: &wasmparser::ValType,
-) -> Result<ValueType, ModuleError> {
+/// Returns `None` if the given [`wasmparser::ValType`] is not supported by `wasmi`.
+pub fn value_type_from_wasmparser(value_type: wasmparser::ValType) -> Option<ValueType> {
     match value_type {
-        wasmparser::ValType::I32 => Ok(ValueType::I32),
-        wasmparser::ValType::I64 => Ok(ValueType::I64),
-        wasmparser::ValType::F32 => Ok(ValueType::F32),
-        wasmparser::ValType::F64 => Ok(ValueType::F64),
+        wasmparser::ValType::I32 => Some(ValueType::I32),
+        wasmparser::ValType::I64 => Some(ValueType::I64),
+        wasmparser::ValType::F32 => Some(ValueType::F32),
+        wasmparser::ValType::F64 => Some(ValueType::F64),
         wasmparser::ValType::V128
         | wasmparser::ValType::FuncRef
-        | wasmparser::ValType::ExternRef => Err(ModuleError::unsupported(value_type)),
+        | wasmparser::ValType::ExternRef => None,
     }
+}
+
+/// Creates a [`ValueType`] from the given [`wasmparser::ValType`].
+///
+/// # Errors
+///
+/// If the given [`wasmparser::ValType`] is not supported by `wasmi`.
+pub fn value_type_try_from_wasmparser(
+    value_type: wasmparser::ValType,
+) -> Result<ValueType, ModuleError> {
+    value_type_from_wasmparser(value_type).ok_or_else(|| ModuleError::unsupported(value_type))
 }
