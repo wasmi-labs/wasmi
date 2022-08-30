@@ -24,7 +24,7 @@ pub use self::{
     code_map::FuncBody,
     config::Config,
     func_builder::{
-        FunctionBuilder,
+        FuncBuilder,
         FunctionBuilderAllocations,
         InstructionIdx,
         LabelIdx,

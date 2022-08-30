@@ -1,8 +1,8 @@
-use super::{FuncValidator, FunctionBuilder, RelativeDepth, TranslationError};
+use super::{FuncBuilder, FuncValidator, RelativeDepth, TranslationError};
 use crate::module::{BlockType, FuncIdx, FuncTypeIdx, GlobalIdx, MemoryIdx, TableIdx};
 use wasmparser::{BinaryReaderError, MemArg, VisitOperator, V128};
 
-impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
+impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     /// Translates into `wasmi` bytecode if the current code path is reachable.
     fn validate_then_translate<V, F>(
         &mut self,
@@ -108,7 +108,7 @@ macro_rules! define_unsupported_visit_operator {
     }
 }
 
-impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser> {
+impl<'alloc, 'parser> VisitOperator<'parser> for FuncBuilder<'alloc, 'parser> {
     type Output = Result<(), TranslationError>;
 
     for_each_unsupported_operator!(define_unsupported_visit_operator);
@@ -117,7 +117,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_unreachable,
-            FunctionBuilder::translate_unreachable,
+            FuncBuilder::translate_unreachable,
         )
     }
 
@@ -159,7 +159,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_else,
-            FunctionBuilder::translate_else,
+            FuncBuilder::translate_else,
         )
     }
 
@@ -189,7 +189,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_end,
-            FunctionBuilder::translate_end,
+            FuncBuilder::translate_end,
         )
     }
 
@@ -236,7 +236,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_return,
-            FunctionBuilder::translate_return,
+            FuncBuilder::translate_return,
         )
     }
 
@@ -291,7 +291,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_drop,
-            FunctionBuilder::translate_drop,
+            FuncBuilder::translate_drop,
         )
     }
 
@@ -299,7 +299,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_select,
-            FunctionBuilder::translate_select,
+            FuncBuilder::translate_select,
         )
     }
 
@@ -350,7 +350,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_i32_load,
-            FunctionBuilder::translate_i32_load,
+            FuncBuilder::translate_i32_load,
         )
     }
 
@@ -359,7 +359,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_i64_load,
-            FunctionBuilder::translate_i64_load,
+            FuncBuilder::translate_i64_load,
         )
     }
 
@@ -368,7 +368,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_f32_load,
-            FunctionBuilder::translate_f32_load,
+            FuncBuilder::translate_f32_load,
         )
     }
 
@@ -377,7 +377,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_f64_load,
-            FunctionBuilder::translate_f64_load,
+            FuncBuilder::translate_f64_load,
         )
     }
 
@@ -386,7 +386,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_i32_load8_s,
-            FunctionBuilder::translate_i32_load8_s,
+            FuncBuilder::translate_i32_load8_s,
         )
     }
 
@@ -395,7 +395,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_i32_load8_u,
-            FunctionBuilder::translate_i32_load8_u,
+            FuncBuilder::translate_i32_load8_u,
         )
     }
 
@@ -404,7 +404,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_i32_load16_s,
-            FunctionBuilder::translate_i32_load16_s,
+            FuncBuilder::translate_i32_load16_s,
         )
     }
 
@@ -413,7 +413,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_i32_load16_u,
-            FunctionBuilder::translate_i32_load16_u,
+            FuncBuilder::translate_i32_load16_u,
         )
     }
 
@@ -422,7 +422,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_i64_load8_s,
-            FunctionBuilder::translate_i64_load8_s,
+            FuncBuilder::translate_i64_load8_s,
         )
     }
 
@@ -431,7 +431,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_i64_load8_u,
-            FunctionBuilder::translate_i64_load8_u,
+            FuncBuilder::translate_i64_load8_u,
         )
     }
 
@@ -440,7 +440,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_i64_load16_s,
-            FunctionBuilder::translate_i64_load16_s,
+            FuncBuilder::translate_i64_load16_s,
         )
     }
 
@@ -449,7 +449,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_i64_load16_u,
-            FunctionBuilder::translate_i64_load16_u,
+            FuncBuilder::translate_i64_load16_u,
         )
     }
 
@@ -458,7 +458,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_i64_load32_s,
-            FunctionBuilder::translate_i64_load32_s,
+            FuncBuilder::translate_i64_load32_s,
         )
     }
 
@@ -467,7 +467,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_i64_load32_u,
-            FunctionBuilder::translate_i64_load32_u,
+            FuncBuilder::translate_i64_load32_u,
         )
     }
 
@@ -476,7 +476,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_i32_store,
-            FunctionBuilder::translate_i32_store,
+            FuncBuilder::translate_i32_store,
         )
     }
 
@@ -485,7 +485,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_i64_store,
-            FunctionBuilder::translate_i64_store,
+            FuncBuilder::translate_i64_store,
         )
     }
 
@@ -494,7 +494,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_f32_store,
-            FunctionBuilder::translate_f32_store,
+            FuncBuilder::translate_f32_store,
         )
     }
 
@@ -503,7 +503,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_f64_store,
-            FunctionBuilder::translate_f64_store,
+            FuncBuilder::translate_f64_store,
         )
     }
 
@@ -512,7 +512,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_i32_store8,
-            FunctionBuilder::translate_i32_store8,
+            FuncBuilder::translate_i32_store8,
         )
     }
 
@@ -521,7 +521,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_i32_store16,
-            FunctionBuilder::translate_i32_store16,
+            FuncBuilder::translate_i32_store16,
         )
     }
 
@@ -530,7 +530,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_i64_store8,
-            FunctionBuilder::translate_i64_store8,
+            FuncBuilder::translate_i64_store8,
         )
     }
 
@@ -539,7 +539,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_i64_store16,
-            FunctionBuilder::translate_i64_store16,
+            FuncBuilder::translate_i64_store16,
         )
     }
 
@@ -548,7 +548,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
             offset,
             memarg,
             FuncValidator::visit_i64_store32,
-            FunctionBuilder::translate_i64_store32,
+            FuncBuilder::translate_i64_store32,
         )
     }
 
@@ -614,7 +614,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_eqz,
-            FunctionBuilder::translate_i32_eqz,
+            FuncBuilder::translate_i32_eqz,
         )
     }
 
@@ -622,7 +622,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_eq,
-            FunctionBuilder::translate_i32_eq,
+            FuncBuilder::translate_i32_eq,
         )
     }
 
@@ -630,7 +630,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_ne,
-            FunctionBuilder::translate_i32_ne,
+            FuncBuilder::translate_i32_ne,
         )
     }
 
@@ -638,7 +638,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_lt_s,
-            FunctionBuilder::translate_i32_lt_s,
+            FuncBuilder::translate_i32_lt_s,
         )
     }
 
@@ -646,7 +646,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_lt_u,
-            FunctionBuilder::translate_i32_lt_u,
+            FuncBuilder::translate_i32_lt_u,
         )
     }
 
@@ -654,7 +654,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_gt_s,
-            FunctionBuilder::translate_i32_gt_s,
+            FuncBuilder::translate_i32_gt_s,
         )
     }
 
@@ -662,7 +662,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_gt_u,
-            FunctionBuilder::translate_i32_gt_u,
+            FuncBuilder::translate_i32_gt_u,
         )
     }
 
@@ -670,7 +670,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_le_s,
-            FunctionBuilder::translate_i32_le_s,
+            FuncBuilder::translate_i32_le_s,
         )
     }
 
@@ -678,7 +678,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_le_u,
-            FunctionBuilder::translate_i32_le_u,
+            FuncBuilder::translate_i32_le_u,
         )
     }
 
@@ -686,7 +686,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_ge_s,
-            FunctionBuilder::translate_i32_ge_s,
+            FuncBuilder::translate_i32_ge_s,
         )
     }
 
@@ -694,7 +694,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_ge_u,
-            FunctionBuilder::translate_i32_ge_u,
+            FuncBuilder::translate_i32_ge_u,
         )
     }
 
@@ -702,7 +702,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_eqz,
-            FunctionBuilder::translate_i64_eqz,
+            FuncBuilder::translate_i64_eqz,
         )
     }
 
@@ -710,7 +710,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_eq,
-            FunctionBuilder::translate_i64_eq,
+            FuncBuilder::translate_i64_eq,
         )
     }
 
@@ -718,7 +718,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_ne,
-            FunctionBuilder::translate_i64_ne,
+            FuncBuilder::translate_i64_ne,
         )
     }
 
@@ -726,7 +726,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_lt_s,
-            FunctionBuilder::translate_i64_lt_s,
+            FuncBuilder::translate_i64_lt_s,
         )
     }
 
@@ -734,7 +734,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_lt_u,
-            FunctionBuilder::translate_i64_lt_u,
+            FuncBuilder::translate_i64_lt_u,
         )
     }
 
@@ -742,7 +742,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_gt_s,
-            FunctionBuilder::translate_i64_gt_s,
+            FuncBuilder::translate_i64_gt_s,
         )
     }
 
@@ -750,7 +750,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_gt_u,
-            FunctionBuilder::translate_i64_gt_u,
+            FuncBuilder::translate_i64_gt_u,
         )
     }
 
@@ -758,7 +758,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_le_s,
-            FunctionBuilder::translate_i64_le_s,
+            FuncBuilder::translate_i64_le_s,
         )
     }
 
@@ -766,7 +766,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_le_u,
-            FunctionBuilder::translate_i64_le_u,
+            FuncBuilder::translate_i64_le_u,
         )
     }
 
@@ -774,7 +774,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_ge_s,
-            FunctionBuilder::translate_i64_ge_s,
+            FuncBuilder::translate_i64_ge_s,
         )
     }
 
@@ -782,7 +782,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_ge_u,
-            FunctionBuilder::translate_i64_ge_u,
+            FuncBuilder::translate_i64_ge_u,
         )
     }
 
@@ -790,7 +790,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_eq,
-            FunctionBuilder::translate_f32_eq,
+            FuncBuilder::translate_f32_eq,
         )
     }
 
@@ -798,7 +798,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_ne,
-            FunctionBuilder::translate_f32_ne,
+            FuncBuilder::translate_f32_ne,
         )
     }
 
@@ -806,7 +806,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_lt,
-            FunctionBuilder::translate_f32_lt,
+            FuncBuilder::translate_f32_lt,
         )
     }
 
@@ -814,7 +814,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_gt,
-            FunctionBuilder::translate_f32_gt,
+            FuncBuilder::translate_f32_gt,
         )
     }
 
@@ -822,7 +822,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_le,
-            FunctionBuilder::translate_f32_le,
+            FuncBuilder::translate_f32_le,
         )
     }
 
@@ -830,7 +830,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_ge,
-            FunctionBuilder::translate_f32_ge,
+            FuncBuilder::translate_f32_ge,
         )
     }
 
@@ -838,7 +838,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_eq,
-            FunctionBuilder::translate_f64_eq,
+            FuncBuilder::translate_f64_eq,
         )
     }
 
@@ -846,7 +846,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_ne,
-            FunctionBuilder::translate_f64_ne,
+            FuncBuilder::translate_f64_ne,
         )
     }
 
@@ -854,7 +854,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_lt,
-            FunctionBuilder::translate_f64_lt,
+            FuncBuilder::translate_f64_lt,
         )
     }
 
@@ -862,7 +862,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_gt,
-            FunctionBuilder::translate_f64_gt,
+            FuncBuilder::translate_f64_gt,
         )
     }
 
@@ -870,7 +870,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_le,
-            FunctionBuilder::translate_f64_le,
+            FuncBuilder::translate_f64_le,
         )
     }
 
@@ -878,7 +878,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_ge,
-            FunctionBuilder::translate_f64_ge,
+            FuncBuilder::translate_f64_ge,
         )
     }
 
@@ -886,7 +886,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_clz,
-            FunctionBuilder::translate_i32_clz,
+            FuncBuilder::translate_i32_clz,
         )
     }
 
@@ -894,7 +894,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_ctz,
-            FunctionBuilder::translate_i32_ctz,
+            FuncBuilder::translate_i32_ctz,
         )
     }
 
@@ -902,7 +902,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_popcnt,
-            FunctionBuilder::translate_i32_popcnt,
+            FuncBuilder::translate_i32_popcnt,
         )
     }
 
@@ -910,7 +910,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_add,
-            FunctionBuilder::translate_i32_add,
+            FuncBuilder::translate_i32_add,
         )
     }
 
@@ -918,7 +918,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_sub,
-            FunctionBuilder::translate_i32_sub,
+            FuncBuilder::translate_i32_sub,
         )
     }
 
@@ -926,7 +926,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_mul,
-            FunctionBuilder::translate_i32_mul,
+            FuncBuilder::translate_i32_mul,
         )
     }
 
@@ -934,7 +934,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_div_s,
-            FunctionBuilder::translate_i32_div_s,
+            FuncBuilder::translate_i32_div_s,
         )
     }
 
@@ -942,7 +942,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_div_u,
-            FunctionBuilder::translate_i32_div_u,
+            FuncBuilder::translate_i32_div_u,
         )
     }
 
@@ -950,7 +950,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_rem_s,
-            FunctionBuilder::translate_i32_rem_s,
+            FuncBuilder::translate_i32_rem_s,
         )
     }
 
@@ -958,7 +958,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_rem_u,
-            FunctionBuilder::translate_i32_rem_u,
+            FuncBuilder::translate_i32_rem_u,
         )
     }
 
@@ -966,7 +966,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_and,
-            FunctionBuilder::translate_i32_and,
+            FuncBuilder::translate_i32_and,
         )
     }
 
@@ -974,7 +974,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_or,
-            FunctionBuilder::translate_i32_or,
+            FuncBuilder::translate_i32_or,
         )
     }
 
@@ -982,7 +982,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_xor,
-            FunctionBuilder::translate_i32_xor,
+            FuncBuilder::translate_i32_xor,
         )
     }
 
@@ -990,7 +990,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_shl,
-            FunctionBuilder::translate_i32_shl,
+            FuncBuilder::translate_i32_shl,
         )
     }
 
@@ -998,7 +998,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_shr_s,
-            FunctionBuilder::translate_i32_shr_s,
+            FuncBuilder::translate_i32_shr_s,
         )
     }
 
@@ -1006,7 +1006,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_shr_u,
-            FunctionBuilder::translate_i32_shr_u,
+            FuncBuilder::translate_i32_shr_u,
         )
     }
 
@@ -1014,7 +1014,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_rotl,
-            FunctionBuilder::translate_i32_rotl,
+            FuncBuilder::translate_i32_rotl,
         )
     }
 
@@ -1022,7 +1022,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_rotr,
-            FunctionBuilder::translate_i32_rotr,
+            FuncBuilder::translate_i32_rotr,
         )
     }
 
@@ -1030,7 +1030,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_clz,
-            FunctionBuilder::translate_i64_clz,
+            FuncBuilder::translate_i64_clz,
         )
     }
 
@@ -1038,7 +1038,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_ctz,
-            FunctionBuilder::translate_i64_ctz,
+            FuncBuilder::translate_i64_ctz,
         )
     }
 
@@ -1046,7 +1046,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_popcnt,
-            FunctionBuilder::translate_i64_popcnt,
+            FuncBuilder::translate_i64_popcnt,
         )
     }
 
@@ -1054,7 +1054,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_add,
-            FunctionBuilder::translate_i64_add,
+            FuncBuilder::translate_i64_add,
         )
     }
 
@@ -1062,7 +1062,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_sub,
-            FunctionBuilder::translate_i64_sub,
+            FuncBuilder::translate_i64_sub,
         )
     }
 
@@ -1070,7 +1070,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_mul,
-            FunctionBuilder::translate_i64_mul,
+            FuncBuilder::translate_i64_mul,
         )
     }
 
@@ -1078,7 +1078,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_div_s,
-            FunctionBuilder::translate_i64_div_s,
+            FuncBuilder::translate_i64_div_s,
         )
     }
 
@@ -1086,7 +1086,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_div_u,
-            FunctionBuilder::translate_i64_div_u,
+            FuncBuilder::translate_i64_div_u,
         )
     }
 
@@ -1094,7 +1094,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_rem_s,
-            FunctionBuilder::translate_i64_rem_s,
+            FuncBuilder::translate_i64_rem_s,
         )
     }
 
@@ -1102,7 +1102,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_rem_u,
-            FunctionBuilder::translate_i64_rem_u,
+            FuncBuilder::translate_i64_rem_u,
         )
     }
 
@@ -1110,7 +1110,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_and,
-            FunctionBuilder::translate_i64_and,
+            FuncBuilder::translate_i64_and,
         )
     }
 
@@ -1118,7 +1118,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_or,
-            FunctionBuilder::translate_i64_or,
+            FuncBuilder::translate_i64_or,
         )
     }
 
@@ -1126,7 +1126,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_xor,
-            FunctionBuilder::translate_i64_xor,
+            FuncBuilder::translate_i64_xor,
         )
     }
 
@@ -1134,7 +1134,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_shl,
-            FunctionBuilder::translate_i64_shl,
+            FuncBuilder::translate_i64_shl,
         )
     }
 
@@ -1142,7 +1142,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_shr_s,
-            FunctionBuilder::translate_i64_shr_s,
+            FuncBuilder::translate_i64_shr_s,
         )
     }
 
@@ -1150,7 +1150,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_shr_u,
-            FunctionBuilder::translate_i64_shr_u,
+            FuncBuilder::translate_i64_shr_u,
         )
     }
 
@@ -1158,7 +1158,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_rotl,
-            FunctionBuilder::translate_i64_rotl,
+            FuncBuilder::translate_i64_rotl,
         )
     }
 
@@ -1166,7 +1166,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_rotr,
-            FunctionBuilder::translate_i64_rotr,
+            FuncBuilder::translate_i64_rotr,
         )
     }
 
@@ -1174,7 +1174,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_abs,
-            FunctionBuilder::translate_f32_abs,
+            FuncBuilder::translate_f32_abs,
         )
     }
 
@@ -1182,7 +1182,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_neg,
-            FunctionBuilder::translate_f32_neg,
+            FuncBuilder::translate_f32_neg,
         )
     }
 
@@ -1190,7 +1190,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_ceil,
-            FunctionBuilder::translate_f32_ceil,
+            FuncBuilder::translate_f32_ceil,
         )
     }
 
@@ -1198,7 +1198,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_floor,
-            FunctionBuilder::translate_f32_floor,
+            FuncBuilder::translate_f32_floor,
         )
     }
 
@@ -1206,7 +1206,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_trunc,
-            FunctionBuilder::translate_f32_trunc,
+            FuncBuilder::translate_f32_trunc,
         )
     }
 
@@ -1214,7 +1214,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_nearest,
-            FunctionBuilder::translate_f32_nearest,
+            FuncBuilder::translate_f32_nearest,
         )
     }
 
@@ -1222,7 +1222,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_sqrt,
-            FunctionBuilder::translate_f32_sqrt,
+            FuncBuilder::translate_f32_sqrt,
         )
     }
 
@@ -1230,7 +1230,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_add,
-            FunctionBuilder::translate_f32_add,
+            FuncBuilder::translate_f32_add,
         )
     }
 
@@ -1238,7 +1238,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_sub,
-            FunctionBuilder::translate_f32_sub,
+            FuncBuilder::translate_f32_sub,
         )
     }
 
@@ -1246,7 +1246,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_mul,
-            FunctionBuilder::translate_f32_mul,
+            FuncBuilder::translate_f32_mul,
         )
     }
 
@@ -1254,7 +1254,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_div,
-            FunctionBuilder::translate_f32_div,
+            FuncBuilder::translate_f32_div,
         )
     }
 
@@ -1262,7 +1262,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_min,
-            FunctionBuilder::translate_f32_min,
+            FuncBuilder::translate_f32_min,
         )
     }
 
@@ -1270,7 +1270,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_max,
-            FunctionBuilder::translate_f32_max,
+            FuncBuilder::translate_f32_max,
         )
     }
 
@@ -1278,7 +1278,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_copysign,
-            FunctionBuilder::translate_f32_copysign,
+            FuncBuilder::translate_f32_copysign,
         )
     }
 
@@ -1286,7 +1286,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_abs,
-            FunctionBuilder::translate_f64_abs,
+            FuncBuilder::translate_f64_abs,
         )
     }
 
@@ -1294,7 +1294,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_neg,
-            FunctionBuilder::translate_f64_neg,
+            FuncBuilder::translate_f64_neg,
         )
     }
 
@@ -1302,7 +1302,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_ceil,
-            FunctionBuilder::translate_f64_ceil,
+            FuncBuilder::translate_f64_ceil,
         )
     }
 
@@ -1310,7 +1310,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_floor,
-            FunctionBuilder::translate_f64_floor,
+            FuncBuilder::translate_f64_floor,
         )
     }
 
@@ -1318,7 +1318,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_trunc,
-            FunctionBuilder::translate_f64_trunc,
+            FuncBuilder::translate_f64_trunc,
         )
     }
 
@@ -1326,7 +1326,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_nearest,
-            FunctionBuilder::translate_f64_nearest,
+            FuncBuilder::translate_f64_nearest,
         )
     }
 
@@ -1334,7 +1334,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_sqrt,
-            FunctionBuilder::translate_f64_sqrt,
+            FuncBuilder::translate_f64_sqrt,
         )
     }
 
@@ -1342,7 +1342,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_add,
-            FunctionBuilder::translate_f64_add,
+            FuncBuilder::translate_f64_add,
         )
     }
 
@@ -1350,7 +1350,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_sub,
-            FunctionBuilder::translate_f64_sub,
+            FuncBuilder::translate_f64_sub,
         )
     }
 
@@ -1358,7 +1358,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_mul,
-            FunctionBuilder::translate_f64_mul,
+            FuncBuilder::translate_f64_mul,
         )
     }
 
@@ -1366,7 +1366,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_div,
-            FunctionBuilder::translate_f64_div,
+            FuncBuilder::translate_f64_div,
         )
     }
 
@@ -1374,7 +1374,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_min,
-            FunctionBuilder::translate_f64_min,
+            FuncBuilder::translate_f64_min,
         )
     }
 
@@ -1382,7 +1382,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_max,
-            FunctionBuilder::translate_f64_max,
+            FuncBuilder::translate_f64_max,
         )
     }
 
@@ -1390,7 +1390,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_copysign,
-            FunctionBuilder::translate_f64_copysign,
+            FuncBuilder::translate_f64_copysign,
         )
     }
 
@@ -1398,7 +1398,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_wrap_i64,
-            FunctionBuilder::translate_i32_wrap_i64,
+            FuncBuilder::translate_i32_wrap_i64,
         )
     }
 
@@ -1406,7 +1406,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_trunc_f32s,
-            FunctionBuilder::translate_i32_trunc_f32_s,
+            FuncBuilder::translate_i32_trunc_f32_s,
         )
     }
 
@@ -1414,7 +1414,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_trunc_f32u,
-            FunctionBuilder::translate_i32_trunc_f32_u,
+            FuncBuilder::translate_i32_trunc_f32_u,
         )
     }
 
@@ -1422,7 +1422,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_trunc_f64s,
-            FunctionBuilder::translate_i32_trunc_f64_s,
+            FuncBuilder::translate_i32_trunc_f64_s,
         )
     }
 
@@ -1430,7 +1430,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_trunc_f64u,
-            FunctionBuilder::translate_i32_trunc_f64_u,
+            FuncBuilder::translate_i32_trunc_f64_u,
         )
     }
 
@@ -1438,7 +1438,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_extend_i32s,
-            FunctionBuilder::translate_i64_extend_i32_s,
+            FuncBuilder::translate_i64_extend_i32_s,
         )
     }
 
@@ -1446,7 +1446,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_extend_i32u,
-            FunctionBuilder::translate_i64_extend_i32_u,
+            FuncBuilder::translate_i64_extend_i32_u,
         )
     }
 
@@ -1454,7 +1454,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_trunc_f32s,
-            FunctionBuilder::translate_i64_trunc_f32_s,
+            FuncBuilder::translate_i64_trunc_f32_s,
         )
     }
 
@@ -1462,7 +1462,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_trunc_f32u,
-            FunctionBuilder::translate_i64_trunc_f32_u,
+            FuncBuilder::translate_i64_trunc_f32_u,
         )
     }
 
@@ -1470,7 +1470,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_trunc_f64s,
-            FunctionBuilder::translate_i64_trunc_f64_s,
+            FuncBuilder::translate_i64_trunc_f64_s,
         )
     }
 
@@ -1478,7 +1478,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_trunc_f64u,
-            FunctionBuilder::translate_i64_trunc_f64_u,
+            FuncBuilder::translate_i64_trunc_f64_u,
         )
     }
 
@@ -1486,7 +1486,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_convert_i32s,
-            FunctionBuilder::translate_f32_convert_i32_s,
+            FuncBuilder::translate_f32_convert_i32_s,
         )
     }
 
@@ -1494,7 +1494,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_convert_i32u,
-            FunctionBuilder::translate_f32_convert_i32_u,
+            FuncBuilder::translate_f32_convert_i32_u,
         )
     }
 
@@ -1502,7 +1502,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_convert_i64s,
-            FunctionBuilder::translate_f32_convert_i64_s,
+            FuncBuilder::translate_f32_convert_i64_s,
         )
     }
 
@@ -1510,7 +1510,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_convert_i64u,
-            FunctionBuilder::translate_f32_convert_i64_u,
+            FuncBuilder::translate_f32_convert_i64_u,
         )
     }
 
@@ -1518,7 +1518,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_demote_f64,
-            FunctionBuilder::translate_f32_demote_f64,
+            FuncBuilder::translate_f32_demote_f64,
         )
     }
 
@@ -1526,7 +1526,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_convert_i32_s,
-            FunctionBuilder::translate_f64_convert_i32_s,
+            FuncBuilder::translate_f64_convert_i32_s,
         )
     }
 
@@ -1534,7 +1534,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_convert_i32_u,
-            FunctionBuilder::translate_f64_convert_i32_u,
+            FuncBuilder::translate_f64_convert_i32_u,
         )
     }
 
@@ -1542,7 +1542,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_convert_i64_s,
-            FunctionBuilder::translate_f64_convert_i64_s,
+            FuncBuilder::translate_f64_convert_i64_s,
         )
     }
 
@@ -1550,7 +1550,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_convert_i64_u,
-            FunctionBuilder::translate_f64_convert_i64_u,
+            FuncBuilder::translate_f64_convert_i64_u,
         )
     }
 
@@ -1558,7 +1558,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_promote_f32,
-            FunctionBuilder::translate_f64_promote_f32,
+            FuncBuilder::translate_f64_promote_f32,
         )
     }
 
@@ -1566,7 +1566,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_reinterpret_f32,
-            FunctionBuilder::translate_i32_reinterpret_f32,
+            FuncBuilder::translate_i32_reinterpret_f32,
         )
     }
 
@@ -1574,7 +1574,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_reinterpret_f64,
-            FunctionBuilder::translate_i64_reinterpret_f64,
+            FuncBuilder::translate_i64_reinterpret_f64,
         )
     }
 
@@ -1582,7 +1582,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f32_reinterpret_i32,
-            FunctionBuilder::translate_f32_reinterpret_i32,
+            FuncBuilder::translate_f32_reinterpret_i32,
         )
     }
 
@@ -1590,7 +1590,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_f64_reinterpret_i64,
-            FunctionBuilder::translate_f64_reinterpret_i64,
+            FuncBuilder::translate_f64_reinterpret_i64,
         )
     }
 
@@ -1598,7 +1598,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_extend8_s,
-            FunctionBuilder::translate_i32_extend8_s,
+            FuncBuilder::translate_i32_extend8_s,
         )
     }
 
@@ -1606,7 +1606,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_extend16_s,
-            FunctionBuilder::translate_i32_extend16_s,
+            FuncBuilder::translate_i32_extend16_s,
         )
     }
 
@@ -1614,7 +1614,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_extend8_s,
-            FunctionBuilder::translate_i64_extend8_s,
+            FuncBuilder::translate_i64_extend8_s,
         )
     }
 
@@ -1622,7 +1622,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_extend16_s,
-            FunctionBuilder::translate_i64_extend16_s,
+            FuncBuilder::translate_i64_extend16_s,
         )
     }
 
@@ -1630,7 +1630,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_extend32_s,
-            FunctionBuilder::translate_i64_extend32_s,
+            FuncBuilder::translate_i64_extend32_s,
         )
     }
 
@@ -1638,7 +1638,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_trunc_sat_f32_s,
-            FunctionBuilder::translate_i32_trunc_sat_f32_s,
+            FuncBuilder::translate_i32_trunc_sat_f32_s,
         )
     }
 
@@ -1646,7 +1646,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_trunc_sat_f32_u,
-            FunctionBuilder::translate_i32_trunc_sat_f32_u,
+            FuncBuilder::translate_i32_trunc_sat_f32_u,
         )
     }
 
@@ -1654,7 +1654,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_trunc_sat_f64_s,
-            FunctionBuilder::translate_i32_trunc_sat_f64_s,
+            FuncBuilder::translate_i32_trunc_sat_f64_s,
         )
     }
 
@@ -1662,7 +1662,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i32_trunc_sat_f64_u,
-            FunctionBuilder::translate_i32_trunc_sat_f64_u,
+            FuncBuilder::translate_i32_trunc_sat_f64_u,
         )
     }
 
@@ -1670,7 +1670,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_trunc_sat_f32_s,
-            FunctionBuilder::translate_i64_trunc_sat_f32_s,
+            FuncBuilder::translate_i64_trunc_sat_f32_s,
         )
     }
 
@@ -1678,7 +1678,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_trunc_sat_f32_u,
-            FunctionBuilder::translate_i64_trunc_sat_f32_u,
+            FuncBuilder::translate_i64_trunc_sat_f32_u,
         )
     }
 
@@ -1686,7 +1686,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_trunc_sat_f64_s,
-            FunctionBuilder::translate_i64_trunc_sat_f64_s,
+            FuncBuilder::translate_i64_trunc_sat_f64_s,
         )
     }
 
@@ -1694,7 +1694,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FunctionBuilder<'alloc, 'parser
         self.validate_then_translate_simple(
             offset,
             FuncValidator::visit_i64_trunc_sat_f64_u,
-            FunctionBuilder::translate_i64_trunc_sat_f64_u,
+            FuncBuilder::translate_i64_trunc_sat_f64_u,
         )
     }
 }

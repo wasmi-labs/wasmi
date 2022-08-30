@@ -50,7 +50,7 @@ use wasmi_core::{Value, ValueType, F32, F64};
 type FuncValidator = wasmparser::FuncValidator<wasmparser::ValidatorResources>;
 
 /// The interface to translate a `wasmi` bytecode function using Wasm bytecode.
-pub struct FunctionBuilder<'alloc, 'parser> {
+pub struct FuncBuilder<'alloc, 'parser> {
     /// The [`Engine`] for which the function is translated.
     engine: Engine,
     /// The function under construction.
@@ -69,11 +69,11 @@ pub struct FunctionBuilder<'alloc, 'parser> {
     reachable: bool,
     /// The Wasm function validator.
     validator: FuncValidator,
-    /// The reusable data structures of the [`FunctionBuilder`].
+    /// The reusable data structures of the [`FuncBuilder`].
     allocations: &'alloc mut FunctionBuilderAllocations,
 }
 
-/// Reusable allocations of a [`FunctionBuilder`].
+/// Reusable allocations of a [`FuncBuilder`].
 #[derive(Debug, Default)]
 pub struct FunctionBuilderAllocations {
     /// The control flow frame stack that represents the Wasm control flow.
@@ -90,7 +90,7 @@ pub struct FunctionBuilderAllocations {
     locals: LocalsRegistry,
 }
 
-impl<'alloc, 'parser> Deref for FunctionBuilder<'alloc, 'parser> {
+impl<'alloc, 'parser> Deref for FuncBuilder<'alloc, 'parser> {
     type Target = FunctionBuilderAllocations;
 
     #[inline]
@@ -99,7 +99,7 @@ impl<'alloc, 'parser> Deref for FunctionBuilder<'alloc, 'parser> {
     }
 }
 
-impl<'alloc, 'parser> DerefMut for FunctionBuilder<'alloc, 'parser> {
+impl<'alloc, 'parser> DerefMut for FuncBuilder<'alloc, 'parser> {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.allocations
@@ -112,7 +112,7 @@ impl FunctionBuilderAllocations {
     /// # Note
     ///
     /// This must be called before reusing this [`FunctionBuilderAllocations`]
-    /// by another [`FunctionBuilder`].
+    /// by another [`FuncBuilder`].
     fn reset(&mut self) {
         self.control_frames.reset();
         self.value_stack.reset();
@@ -121,8 +121,8 @@ impl FunctionBuilderAllocations {
     }
 }
 
-impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
-    /// Creates a new [`FunctionBuilder`].
+impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
+    /// Creates a new [`FuncBuilder`].
     pub fn new(
         engine: &Engine,
         func: FuncIdx,
@@ -362,7 +362,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
 
 /// An aquired target.
 ///
-/// Returned by [`FunctionBuilder::acquire_target`].
+/// Returned by [`FuncBuilder::acquire_target`].
 #[derive(Debug)]
 pub enum AquiredTarget {
     /// The branch jumps to the label.
@@ -377,7 +377,7 @@ pub enum AquiredTarget {
     Return(DropKeep),
 }
 
-impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
+impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     /// Translates a Wasm `unreachable` instruction.
     pub fn translate_unreachable(&mut self) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
@@ -622,7 +622,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
             debug_assert_eq!(case, ValueType::I32);
 
             fn compute_inst(
-                builder: &mut FunctionBuilder,
+                builder: &mut FuncBuilder,
                 n: usize,
                 depth: RelativeDepth,
             ) -> Instruction {
