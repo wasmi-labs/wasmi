@@ -142,12 +142,6 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
         }
     }
 
-    /// Returns an exclusive reference to the function validator.
-    pub fn validator(&mut self) -> &mut FuncValidator {
-        // TODO: remove pub
-        &mut self.validator
-    }
-
     /// Returns the [`FuncType`] of the function that is currently translated.
     fn func_type(&self) -> FuncType {
         let dedup_func_type = self.res.get_type_of_func(self.func);
@@ -216,9 +210,13 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     /// Translates the given local variables for the translated function.
     pub fn translate_locals(
         &mut self,
+        offset: usize,
         amount: u32,
-        value_type: ValueType,
+        value_type: wasmparser::ValType,
     ) -> Result<(), TranslationError> {
+        self.validator.define_locals(offset, amount, value_type)?;
+        let value_type = crate::module::value_type_from_wasmparser(value_type)
+            .ok_or_else(|| TranslationError::unsupported_value_type(value_type))?;
         self.locals.register_locals(value_type, amount);
         Ok(())
     }

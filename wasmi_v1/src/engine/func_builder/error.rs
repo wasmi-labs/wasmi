@@ -15,6 +15,13 @@ impl TranslationError {
             inner: Box::new(TranslationErrorInner::UnsupportedBlockType(block_type)),
         }
     }
+
+    /// Creates a new error indicating an unsupported Wasm value type.
+    pub fn unsupported_value_type(value_type: wasmparser::ValType) -> Self {
+        Self {
+            inner: Box::new(TranslationErrorInner::UnsupportedValueType(value_type)),
+        }
+    }
 }
 
 impl From<wasmparser::BinaryReaderError> for TranslationError {
@@ -32,6 +39,9 @@ impl Display for TranslationError {
             TranslationErrorInner::UnsupportedBlockType(error) => {
                 write!(f, "encountered unsupported Wasm block type: {:?}", error)
             }
+            TranslationErrorInner::UnsupportedValueType(error) => {
+                write!(f, "encountered unsupported Wasm value type: {:?}", error)
+            }
         }
     }
 }
@@ -41,6 +51,8 @@ impl Display for TranslationError {
 enum TranslationErrorInner {
     /// There was either a problem parsing a Wasm input OR validating a Wasm input.
     Validate(wasmparser::BinaryReaderError),
-    /// Encountered unsupported Wasm block type.
+    /// Encountered an unsupported Wasm block type.
     UnsupportedBlockType(wasmparser::BlockType),
+    /// Encountered an unsupported Wasm value type.
+    UnsupportedValueType(wasmparser::ValType),
 }

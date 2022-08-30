@@ -1,5 +1,5 @@
 pub use self::block_type::BlockType;
-use super::{utils::value_type_from_wasmparser, FuncIdx, ModuleResources};
+use super::{FuncIdx, ModuleResources};
 use crate::{
     engine::{FuncBody, FuncBuilder, FunctionBuilderAllocations},
     Engine,
@@ -79,10 +79,7 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
             let offset = reader.original_position();
             let (amount, value_type) = reader.read()?;
             self.func_builder
-                .validator()
-                .define_locals(offset, amount, value_type)?;
-            let value_type = value_type_from_wasmparser(&value_type)?;
-            self.func_builder.translate_locals(amount, value_type)?;
+                .translate_locals(offset, amount, value_type)?;
         }
         Ok(())
     }
