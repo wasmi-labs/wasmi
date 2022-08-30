@@ -6,6 +6,23 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Additionally we have an `Internal` section for changes that are of interest to developers.
 
+## [0.16.0] - 2022-08-30
+
+### Changed
+
+- Update `wasmparser-nostd` dependency from version `0.83.0` -> `0.90.0`.
+  [**Link:**](https://github.com/paritytech/wasmi/commit/e9b0463817e277cd9daccca7e66e52e4fd147d8e)
+    - This significantly improved `wasmi`'s Wasm parsing, validation and
+      Wasm to `wasmi` bytecode translation performance.
+
+### Internal
+
+- Transition to the new `wasmparser::VisitOperator` API.
+  [**Link**](https://github.com/paritytech/wasmi/commit/225c8224729661ea091e650e3278c4980bd1d405)
+    - This again significantly improved `wasmi`'s Wasm parsing, validation and
+      Wasm to `wasmi` bytecode translation performance by avoiding many
+      unnecessary unpredictable branches in the process.
+
 ## [0.15.0] - 2022-08-22
 
 ### Fixed
