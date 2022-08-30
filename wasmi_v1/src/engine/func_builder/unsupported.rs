@@ -13,6 +13,9 @@
 ///
 /// [`wasmparser::for_each_operator`]:
 /// https://docs.rs/wasmparser/0.90.0/wasmparser/macro.for_each_operator.html
+///
+/// [`Operator`]: [`wasmparser::Operator`]
+/// [`VisitOperator`]: [`wasmparser::VisitOperator`]
 macro_rules! for_each_unsupported_operator {
     ($mac:ident) => {
         $mac! {
