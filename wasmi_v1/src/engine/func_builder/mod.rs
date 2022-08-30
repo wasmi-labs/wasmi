@@ -1,5 +1,7 @@
 mod control_frame;
 mod control_stack;
+#[macro_use]
+mod unsupported;
 mod error;
 mod inst_builder;
 mod locals_registry;
