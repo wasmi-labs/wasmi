@@ -473,7 +473,7 @@ impl Interpreter {
 
             isa::Instruction::I32Load(offset) | isa::Instruction::I32Load8U(offset) => {
                 let load_size = match *instructions {
-                    isa::Instruction::I32Load(..) => MemoryReadSize::S32,
+                    isa::Instruction::I32Load(..) => MemoryReadSize::U32,
                     isa::Instruction::I32Load8U(..) => MemoryReadSize::U8,
                     _ => unreachable!(),
                 };
