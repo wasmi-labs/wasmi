@@ -74,8 +74,6 @@ impl ValueInternal {
         match ty {
             specs::types::ValueType::I32 => Value::I32(<_>::from_value_internal(self)),
             specs::types::ValueType::I64 => Value::I64(<_>::from_value_internal(self)),
-            specs::types::ValueType::U32 => Value::U32(<_>::from_value_internal(self)),
-            specs::types::ValueType::U64 => Value::U64(<_>::from_value_internal(self)),
         }
     }
 }
