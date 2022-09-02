@@ -1,0 +1,47 @@
+# paritytech/wasmi
+
+stages:
+  - benchmark
+
+default:
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - unknown_failure
+      - api_failure
+
+.rust-info-script:                 &rust-info-script
+  - rustup show
+  - cargo --version
+  - rustup +nightly show
+  - cargo +nightly --version
+  - cargo spellcheck --version
+  - bash --version
+  - sccache -s
+
+.kubernetes-env:          &kubernetes-env
+  image:                           "paritytech/ci-linux:production"
+  tags:
+    - kubernetes-parity-build
+
+.docker-env:                       &docker-env
+  image:                           "paritytech/ci-linux:production"
+  before_script:
+    - *rust-info-script
+  interruptible:                   true
+  tags:
+    - linux-docker
+
+# benchmark
+ts-lint:
+  stage:                  benchmark
+  <<:                     *docker-env
+  script:
+    - git branch
+    - git checkout master
+    # on master
+    - cargo bench --bench benches -- --noplot --save-baseline master
+    # on PR
+    - git checkout $CI_COMMIT_REF_NAME
+    - cargo bench --bench benches -- --noplot --baseline master
