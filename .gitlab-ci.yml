@@ -38,6 +38,7 @@ benchmark:
   stage:                  benchmark
   <<:                     *docker-env
   script:
+    - git fetch
     - git branch
     - git checkout master
     # on master
