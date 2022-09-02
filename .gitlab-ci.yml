@@ -34,7 +34,7 @@ default:
     - linux-docker
 
 # benchmark
-ts-lint:
+benchmark:
   stage:                  benchmark
   <<:                     *docker-env
   script:
