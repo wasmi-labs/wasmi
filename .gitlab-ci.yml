@@ -39,6 +39,7 @@ benchmark:
   <<:                     *docker-env
   script:
     - git fetch
+    - git submodule update --init --recursive
     - git branch
     - git checkout master
     # on master
