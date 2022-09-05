@@ -208,32 +208,23 @@ impl Instruction {
     }
 
     /// Creates a new `local.get` instruction from the given local depth.
-    pub fn local_get<T>(local_depth: T) -> Self
-    where
-        T: Into<LocalIdx>,
-    {
+    pub fn local_get(local_depth: u32) -> Self {
         Self::GetLocal {
-            local_depth: local_depth.into(),
+            local_depth: LocalIdx::from(local_depth),
         }
     }
 
     /// Creates a new `local.set` instruction from the given local depth.
-    pub fn local_set<T>(local_depth: T) -> Self
-    where
-        T: Into<LocalIdx>,
-    {
+    pub fn local_set(local_depth: u32) -> Self {
         Self::SetLocal {
-            local_depth: local_depth.into(),
+            local_depth: LocalIdx::from(local_depth),
         }
     }
 
     /// Creates a new `local.tee` instruction from the given local depth.
-    pub fn local_tee<T>(local_depth: T) -> Self
-    where
-        T: Into<LocalIdx>,
-    {
+    pub fn local_tee(local_depth: u32) -> Self {
         Self::TeeLocal {
-            local_depth: local_depth.into(),
+            local_depth: LocalIdx::from(local_depth),
         }
     }
 }
