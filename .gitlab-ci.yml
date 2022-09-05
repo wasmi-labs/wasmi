@@ -40,7 +40,6 @@ benchmark:
   script:
     - git fetch
     - git submodule update --init --recursive
-    - git branch
     - git checkout master
     # on master
     - cargo bench --bench benches -- --noplot --save-baseline master
