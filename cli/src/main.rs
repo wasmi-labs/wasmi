@@ -52,7 +52,7 @@ fn main() -> Result<()> {
 
 /// Converts the given `.wat` into `.wasm`.
 fn wat2wasm(wat: &str) -> Result<Vec<u8>, wat::Error> {
-    wat::parse_str(&wat)
+    wat::parse_str(wat)
 }
 
 /// Returns the contents of the given `.wasm` or `.wat` file.
@@ -62,7 +62,7 @@ fn wat2wasm(wat: &str) -> Result<Vec<u8>, wat::Error> {
 /// If `wasm_file` is not a valid `.wasm` or `.wat` file.
 fn read_wasm_or_wat(wasm_file: &str) -> Result<Vec<u8>> {
     let mut file_contents =
-        fs::read(&wasm_file).map_err(|_| anyhow!("failed to read Wasm file {wasm_file}"))?;
+        fs::read(wasm_file).map_err(|_| anyhow!("failed to read Wasm file {wasm_file}"))?;
     if wasm_file.ends_with(".wat") {
         let wat = String::from_utf8(file_contents)
             .map_err(|error| anyhow!("failed to read UTF-8 file {wasm_file}: {error}"))?;
