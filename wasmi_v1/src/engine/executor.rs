@@ -284,7 +284,7 @@ where
     /// If there exists is no linear memory for the instance.
     #[inline]
     fn default_memory(&mut self) -> Memory {
-        self.cache.default_memory(&self.ctx)
+        self.cache.default_memory(self.ctx.as_context())
     }
 
     /// Returns the default table.
@@ -294,7 +294,7 @@ where
     /// If there exists is no table for the instance.
     #[inline]
     fn default_table(&mut self) -> Table {
-        self.cache.default_table(&self.ctx)
+        self.cache.default_table(self.ctx.as_context())
     }
 
     /// Returns the global variable at the given index.
@@ -607,7 +607,7 @@ where
     }
 
     fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, Trap> {
-        let callee = self.cache.get_func(&mut self.ctx, func_index.into_inner());
+        let callee = self.cache.get_func(self.ctx.as_context_mut(), func_index.into_inner());
         self.call_func(callee)
     }
 
