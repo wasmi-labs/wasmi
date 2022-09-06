@@ -724,7 +724,7 @@ where
         signature_index: SignatureIdx,
         top: UntypedValue,
     ) -> Result<CallOutcome, Trap> {
-        let func_index: u32 = self.value_stack.pop_as();
+        let func_index: u32 = u32::from(top);
         let table = self.default_table();
         let func = table
             .get(self.ctx.as_context(), func_index as usize)
@@ -744,6 +744,7 @@ where
         if actual_signature != expected_signature {
             return Err(TrapCode::UnexpectedSignature).map_err(Into::into);
         }
+        let top = self.value_stack.try_pop();
         self.call_func(top, func)
     }
 
