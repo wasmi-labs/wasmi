@@ -165,7 +165,7 @@ impl GlobalEntity {
     }
 
     /// Returns the current untyped value of the global variable.
-    pub fn get_untyped(&self) -> UntypedValue {
+    pub(crate) fn get_untyped(&self) -> UntypedValue {
         self.value
     }
 }
