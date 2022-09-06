@@ -28,6 +28,23 @@ pub struct FunctionExecutor<'engine, 'func> {
     insts: Instructions<'engine>,
 }
 
+/// An execution context for executing a single `wasmi` bytecode instruction.
+#[derive(Debug)]
+struct ExecutionContext<'engine, 'func, Ctx> {
+    /// The program counter.
+    pc: usize,
+    /// Stores the value stack of live values on the Wasm stack.
+    value_stack: &'engine mut ValueStack,
+    /// The function frame that is being executed.
+    frame: &'func mut FuncFrame,
+    /// Stores frequently used instance related data.
+    cache: &'engine mut InstanceCache,
+    /// A mutable [`Store`] context.
+    ///
+    /// [`Store`]: [`crate::v1::Store`]
+    ctx: Ctx,
+}
+
 impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
     /// Creates an execution context for the given [`FuncFrame`].
     #[inline(always)]
@@ -257,23 +274,6 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
             }
         }
     }
-}
-
-/// An execution context for executing a single `wasmi` bytecode instruction.
-#[derive(Debug)]
-struct ExecutionContext<'engine, 'func, Ctx> {
-    /// The program counter.
-    pc: usize,
-    /// Stores the value stack of live values on the Wasm stack.
-    value_stack: &'engine mut ValueStack,
-    /// The function frame that is being executed.
-    frame: &'func mut FuncFrame,
-    /// Stores frequently used instance related data.
-    cache: &'engine mut InstanceCache,
-    /// A mutable [`Store`] context.
-    ///
-    /// [`Store`]: [`crate::v1::Store`]
-    ctx: Ctx,
 }
 
 impl<'engine, 'func, Ctx> ExecutionContext<'engine, 'func, Ctx>
