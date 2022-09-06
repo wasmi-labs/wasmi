@@ -55,6 +55,7 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
         use Instruction as Instr;
         cache.update_instance(self.frame.instance());
         let mut exec_ctx = ExecutionContext::new(self.value_stack, self.frame, cache, &mut ctx, self.frame.pc());
+        let mut top = UntypedValue::default();
         loop {
             // # Safety
             //
@@ -63,24 +64,28 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 self.insts.get_release_unchecked(exec_ctx.pc)
             };
             match instr {
-                Instr::LocalGet { local_depth } => { exec_ctx.visit_local_get(*local_depth)?; }
-                Instr::LocalGetEmpty { local_depth } => { exec_ctx.visit_local_get_empty(*local_depth)?; }
-                Instr::LocalSet { local_depth } => { exec_ctx.visit_local_set(*local_depth)?; }
-                Instr::LocalTee { local_depth } => { exec_ctx.visit_local_tee(*local_depth)?; }
-                Instr::Br(target) => { exec_ctx.visit_br(*target)?; }
-                Instr::BrIfEqz(target) => { exec_ctx.visit_br_if_eqz(*target)?; }
-                Instr::BrIfNez(target) => { exec_ctx.visit_br_if_nez(*target)?; }
+                Instr::LocalGet { local_depth } => {
+                    top = exec_ctx.visit_local_get(*local_depth, top)
+                }
+                Instr::LocalGetEmpty { local_depth } => {
+                    top = exec_ctx.visit_local_get_empty(*local_depth)
+                }
+                Instr::LocalSet { local_depth } => { exec_ctx.visit_local_set(*local_depth) }
+                Instr::LocalTee { local_depth } => { exec_ctx.visit_local_tee(*local_depth) }
+                Instr::Br(target) => { exec_ctx.visit_br(*target) }
+                Instr::BrIfEqz(target) => { exec_ctx.visit_br_if_eqz(*target) }
+                Instr::BrIfNez(target) => { exec_ctx.visit_br_if_nez(*target) }
                 Instr::ReturnIfNez(drop_keep)  => {
-                    if let MaybeReturn::Return = exec_ctx.visit_return_if_nez(*drop_keep)? {
+                    if let MaybeReturn::Return = exec_ctx.visit_return_if_nez(*drop_keep) {
                         return Ok(CallOutcome::Return)
                     }
                 }
                 Instr::BrTable { len_targets } => {
-                    exec_ctx.visit_br_table(*len_targets)?;
+                    exec_ctx.visit_br_table(*len_targets)
                 }
                 Instr::Unreachable => { exec_ctx.visit_unreachable()?; }
                 Instr::Return(drop_keep)  => {
-                    exec_ctx.visit_ret(*drop_keep)?;
+                    exec_ctx.visit_ret(*drop_keep);
                     return Ok(CallOutcome::Return)
                 }
                 Instr::Call(func) => {
@@ -89,11 +94,15 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 Instr::CallIndirect(signature)  => {
                     return exec_ctx.visit_call_indirect(*signature)
                 }
-                Instr::Drop => { exec_ctx.visit_drop()?; }
-                Instr::Select => { exec_ctx.visit_select()?; }
-                Instr::GlobalGet(global_idx)  => { exec_ctx.visit_global_get(*global_idx)?; }
-                Instr::GlobalGetEmpty(global_idx) => { exec_ctx.visit_global_get_empty(*global_idx)?; }
-                Instr::GlobalSet(global_idx)  => { exec_ctx.visit_global_set(*global_idx)?; }
+                Instr::Drop => { exec_ctx.visit_drop() }
+                Instr::Select => { exec_ctx.visit_select() }
+                Instr::GlobalGet(global_idx)  => {
+                    top = exec_ctx.visit_global_get(*global_idx, top);
+                }
+                Instr::GlobalGetEmpty(global_idx) => {
+                    top = exec_ctx.visit_global_get_empty(*global_idx);
+                }
+                Instr::GlobalSet(global_idx)  => { exec_ctx.visit_global_set(*global_idx) }
                 Instr::I32Load(offset)  => { exec_ctx.visit_i32_load(*offset)?; }
                 Instr::I64Load(offset)  => { exec_ctx.visit_i64_load(*offset)?; }
                 Instr::F32Load(offset)  => { exec_ctx.visit_f32_load(*offset)?; }
@@ -117,11 +126,11 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 Instr::I64Store8(offset)  => { exec_ctx.visit_i64_store_8(*offset)?; }
                 Instr::I64Store16(offset)  => { exec_ctx.visit_i64_store_16(*offset)?; }
                 Instr::I64Store32(offset)  => { exec_ctx.visit_i64_store_32(*offset)?; }
-                Instr::MemorySize => { exec_ctx.visit_memory_size()?; }
-                Instr::MemorySizeEmpty => { exec_ctx.visit_memory_size_empty()?; }
-                Instr::MemoryGrow => { exec_ctx.visit_memory_grow()?; }
-                Instr::Const(bytes)  => { exec_ctx.visit_const(*bytes)?; }
-                Instr::ConstEmpty(bytes)  => { exec_ctx.visit_const_empty(*bytes)?; }
+                Instr::MemorySize => { top = exec_ctx.visit_memory_size(top); }
+                Instr::MemorySizeEmpty => { top = exec_ctx.visit_memory_size_empty(); }
+                Instr::MemoryGrow => { exec_ctx.visit_memory_grow() }
+                Instr::Const(bytes)  => { top = exec_ctx.visit_const(*bytes, top); }
+                Instr::ConstEmpty(bytes)  => { top = exec_ctx.visit_const_empty(*bytes); }
                 Instr::I32Eqz => { exec_ctx.visit_i32_eqz()?; }
                 Instr::I32Eq => { exec_ctx.visit_i32_eq()?; }
                 Instr::I32Ne => { exec_ctx.visit_i32_ne()?; }
@@ -376,7 +385,7 @@ where
             .read(address, bytes.as_mut())?;
         let value = <T as LittleEndianConvert>::from_le_bytes(bytes);
         *entry = value.into();
-        self.next_instr()
+        self.try_next_instr()
     }
 
     /// Loads a vaoue of type `U` from the default memory at the given address offset and extends it into `T`.
@@ -409,7 +418,7 @@ where
             .read(address, bytes.as_mut())?;
         let extended = <T as LittleEndianConvert>::from_le_bytes(bytes).extend_into();
         *entry = extended.into();
-        self.next_instr()
+        self.try_next_instr()
     }
 
     /// Stores a value of type `T` into the default memory at the given address offset.
@@ -433,7 +442,7 @@ where
         self.cache
             .default_memory_bytes(self.ctx.as_context_mut())
             .write(address, bytes.as_ref())?;
-        self.next_instr()
+        self.try_next_instr()
     }
 
     /// Stores a value of type `T` wrapped to type `U` into the default memory at the given address offset.
@@ -459,13 +468,13 @@ where
         self.cache
             .default_memory_bytes(self.ctx.as_context_mut())
             .write(address, bytes.as_ref())?;
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn execute_unary(&mut self, f: fn(UntypedValue) -> UntypedValue) -> Result<(), Trap> {
         let entry = self.value_stack.last_mut();
         *entry = f(*entry);
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn try_execute_unary(
@@ -474,7 +483,7 @@ where
     ) -> Result<(), Trap> {
         let entry = self.value_stack.last_mut();
         *entry = f(*entry)?;
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn execute_binary(
@@ -485,7 +494,7 @@ where
         let entry = self.value_stack.last_mut();
         let left = *entry;
         *entry = f(left, right);
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn try_execute_binary(
@@ -496,7 +505,7 @@ where
         let entry = self.value_stack.last_mut();
         let left = *entry;
         *entry = f(left, right)?;
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn execute_reinterpret<T, U>(&mut self) -> Result<(), Trap>
@@ -505,18 +514,21 @@ where
         T: From<UntypedValue>,
     {
         // Nothing to do for `wasmi` bytecode.
-        self.next_instr()
+        self.try_next_instr()
     }
 
-    fn next_instr(&mut self) -> Result<(), Trap> {
+    fn try_next_instr(&mut self) -> Result<(), Trap> {
         self.pc += 1;
         Ok(())
     }
 
-    fn branch_to(&mut self, target: Target) -> Result<(), Trap> {
+    fn next_instr(&mut self) {
+        self.pc += 1;
+    }
+
+    fn branch_to(&mut self, target: Target) {
         self.value_stack.drop_keep(target.drop_keep());
         self.pc = target.destination_pc().into_usize();
-        Ok(())
     }
 
     fn call_func(&mut self, func: Func) -> Result<CallOutcome, Trap> {
@@ -525,9 +537,8 @@ where
         Ok(CallOutcome::NestedCall(func))
     }
 
-    fn ret(&mut self, drop_keep: DropKeep) -> Result<(), Trap> {
-        self.value_stack.drop_keep(drop_keep);
-        Ok(())
+    fn ret(&mut self, drop_keep: DropKeep) {
+        self.value_stack.drop_keep(drop_keep)
     }
 }
 
@@ -545,11 +556,11 @@ where
         Err(TrapCode::Unreachable).map_err(Into::into)
     }
 
-    fn visit_br(&mut self, target: Target) -> Result<(), Trap> {
+    fn visit_br(&mut self, target: Target) {
         self.branch_to(target)
     }
 
-    fn visit_br_if_eqz(&mut self, target: Target) -> Result<(), Trap> {
+    fn visit_br_if_eqz(&mut self, target: Target) {
         let condition = self.value_stack.pop_as();
         if condition {
             self.next_instr()
@@ -558,7 +569,7 @@ where
         }
     }
 
-    fn visit_br_if_nez(&mut self, target: Target) -> Result<(), Trap> {
+    fn visit_br_if_nez(&mut self, target: Target) {
         let condition = self.value_stack.pop_as();
         if condition {
             self.branch_to(target)
@@ -567,18 +578,18 @@ where
         }
     }
 
-    fn visit_return_if_nez(&mut self, drop_keep: DropKeep) -> Result<MaybeReturn, Trap> {
+    fn visit_return_if_nez(&mut self, drop_keep: DropKeep) -> MaybeReturn {
         let condition = self.value_stack.pop_as();
         if condition {
-            self.ret(drop_keep)?;
-            Ok(MaybeReturn::Return)
+            self.ret(drop_keep);
+            MaybeReturn::Return
         } else {
             self.pc += 1;
-            Ok(MaybeReturn::Continue)
+            MaybeReturn::Continue
         }
     }
 
-    fn visit_br_table(&mut self, len_targets: usize) -> Result<(), Trap> {
+    fn visit_br_table(&mut self, len_targets: usize) {
         let index: u32 = self.value_stack.pop_as();
         // The index of the default target which is the last target of the slice.
         let max_index = len_targets - 1;
@@ -586,51 +597,59 @@ where
         let normalized_index = cmp::min(index as usize, max_index);
         // Update `pc`:
         self.pc += normalized_index + 1;
-        Ok(())
     }
 
-    fn visit_ret(&mut self, drop_keep: DropKeep) -> Result<(), Trap> {
+    fn visit_ret(&mut self, drop_keep: DropKeep) {
         self.ret(drop_keep)
     }
 
-    fn visit_local_get(&mut self, local_depth: LocalIdx) -> Result<(), Trap> {
+    fn visit_local_get(&mut self, local_depth: LocalIdx, _top: UntypedValue) -> UntypedValue {
+        let local_depth = Self::convert_local_depth(local_depth);
+        let value = self.value_stack.peek(local_depth);
+        self.value_stack.push(value); // TODO: push top instead of value
+        self.next_instr();
+        value
+    }
+
+    fn visit_local_get_empty(&mut self, local_depth: LocalIdx) -> UntypedValue {
+        // TODO: implement properly
         let local_depth = Self::convert_local_depth(local_depth);
         let value = self.value_stack.peek(local_depth);
         self.value_stack.push(value);
-        self.next_instr()
+        self.next_instr();
+        value
     }
 
-    fn visit_local_get_empty(&mut self, local_depth: LocalIdx) -> Result<(), Trap> {
-        // TODO: implement properly
-        self.visit_local_get(local_depth)
-    }
-
-    fn visit_local_set(&mut self, local_depth: LocalIdx) -> Result<(), Trap> {
+    fn visit_local_set(&mut self, local_depth: LocalIdx) {
         let local_depth = Self::convert_local_depth(local_depth);
         let new_value = self.value_stack.pop();
         *self.value_stack.peek_mut(local_depth) = new_value;
         self.next_instr()
     }
 
-    fn visit_local_tee(&mut self, local_depth: LocalIdx) -> Result<(), Trap> {
+    fn visit_local_tee(&mut self, local_depth: LocalIdx) {
         let local_depth = Self::convert_local_depth(local_depth);
         let new_value = self.value_stack.last();
         *self.value_stack.peek_mut(local_depth) = new_value;
         self.next_instr()
     }
 
-    fn visit_global_get(&mut self, global_index: GlobalIdx) -> Result<(), Trap> {
-        let global_value = self.global(global_index).get(self.ctx.as_context());
+    fn visit_global_get(&mut self, global_index: GlobalIdx, _top: UntypedValue) -> UntypedValue {
+        let global_value = self.global(global_index).get(self.ctx.as_context()).into();
         self.value_stack.push(global_value);
-        self.next_instr()
+        self.next_instr();
+        global_value
     }
 
-    fn visit_global_get_empty(&mut self, global_index: GlobalIdx) -> Result<(), Trap> {
+    fn visit_global_get_empty(&mut self, global_index: GlobalIdx) -> UntypedValue {
         // TODO: implement properly
-        self.visit_global_get(global_index)
+        let global_value = self.global(global_index).get(self.ctx.as_context()).into();
+        self.value_stack.push(global_value);
+        self.next_instr();
+        global_value
     }
 
-    fn visit_global_set(&mut self, global_index: GlobalIdx) -> Result<(), Trap> {
+    fn visit_global_set(&mut self, global_index: GlobalIdx) {
         let global = self.global(global_index);
         let new_value = self
             .value_stack
@@ -671,22 +690,25 @@ where
         self.call_func(func)
     }
 
-    fn visit_const(&mut self, bytes: UntypedValue) -> Result<(), Trap> {
+    fn visit_const(&mut self, bytes: UntypedValue, _top: UntypedValue) -> UntypedValue {
         self.value_stack.push(bytes);
-        self.next_instr()
+        self.next_instr();
+        bytes
     }
 
-    fn visit_const_empty(&mut self, bytes: UntypedValue) -> Result<(), Trap> {
+    fn visit_const_empty(&mut self, bytes: UntypedValue) -> UntypedValue {
         // TODO: implement properly
-        self.visit_const(bytes)
+        self.value_stack.push(bytes);
+        self.next_instr();
+        bytes
     }
 
-    fn visit_drop(&mut self) -> Result<(), Trap> {
+    fn visit_drop(&mut self) {
         let _ = self.value_stack.pop();
         self.next_instr()
     }
 
-    fn visit_select(&mut self) -> Result<(), Trap> {
+    fn visit_select(&mut self) {
         self.value_stack.pop2_eval(|e1, e2, e3| {
             let condition = <bool as From<UntypedValue>>::from(e3);
             let result = if condition { *e1 } else { e2 };
@@ -695,19 +717,24 @@ where
         self.next_instr()
     }
 
-    fn visit_memory_size(&mut self) -> Result<(), Trap> {
+    fn visit_memory_size(&mut self, _top: UntypedValue) -> UntypedValue {
         let memory = self.default_memory();
-        let result = memory.current_pages(self.ctx.as_context()).0 as u32;
+        let result = (memory.current_pages(self.ctx.as_context()).0 as u32).into();
         self.value_stack.push(result);
-        self.next_instr()
+        self.next_instr();
+        result
     }
 
-    fn visit_memory_size_empty(&mut self) -> Result<(), Trap> {
+    fn visit_memory_size_empty(&mut self) -> UntypedValue {
         // TODO: implement properly
-        self.visit_memory_size()
+        let memory = self.default_memory();
+        let result = (memory.current_pages(self.ctx.as_context()).0 as u32).into();
+        self.value_stack.push(result);
+        self.next_instr();
+        result
     }
 
-    fn visit_memory_grow(&mut self) -> Result<(), Trap> {
+    fn visit_memory_grow(&mut self) {
         let pages: u32 = self.value_stack.pop_as();
         let memory = self.default_memory();
         let new_size = match memory.grow(self.ctx.as_context_mut(), Pages(pages as usize)) {
