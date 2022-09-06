@@ -738,9 +738,12 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     pub fn translate_local_get(&mut self, local_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let local_depth = builder.relative_local_depth(local_idx);
-            builder
-                .inst_builder
-                .push_inst(Instruction::local_get(local_depth));
+            let instr = if builder.value_stack.is_empty() {
+                Instruction::local_get_empty(local_depth)
+            } else {
+                Instruction::local_get(local_depth)
+            };
+            builder.inst_builder.push_inst(instr);
             let value_type = builder
                 .locals
                 .resolve_local(local_idx)
@@ -787,12 +790,15 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     /// Translate a Wasm `global.get` instruction.
     pub fn translate_global_get(&mut self, global_idx: GlobalIdx) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
+            let global_index = global_idx.into_u32().into();
+            let instr = if builder.value_stack.is_empty() {
+                Instruction::GlobalGetEmpty
+            } else {
+                Instruction::GlobalGet
+            };
+            builder.inst_builder.push_inst(instr(global_index));
             let global_type = builder.res.get_type_of_global(global_idx);
             builder.value_stack.push(global_type.value_type());
-            let global_idx = global_idx.into_u32().into();
-            builder
-                .inst_builder
-                .push_inst(Instruction::GlobalGet(global_idx));
             Ok(())
         })
     }
@@ -1095,8 +1101,13 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     pub fn translate_memory_size(&mut self, memory_idx: MemoryIdx) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
+            let instr = if builder.value_stack.is_empty() {
+                Instruction::MemorySizeEmpty
+            } else {
+                Instruction::MemorySize
+            };
+            builder.inst_builder.push_inst(instr);
             builder.value_stack.push(ValueType::I32);
-            builder.inst_builder.push_inst(Instruction::MemorySize);
             Ok(())
         })
     }
@@ -1127,8 +1138,13 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     {
         self.translate_if_reachable(|builder| {
             let value = value.into();
+            let instr = if builder.value_stack.is_empty() {
+                Instruction::constant_empty(value)
+            } else {
+                Instruction::constant(value)
+            };
+            builder.inst_builder.push_inst(instr);
             builder.value_stack.push(value.value_type());
-            builder.inst_builder.push_inst(Instruction::constant(value));
             Ok(())
         })
     }
