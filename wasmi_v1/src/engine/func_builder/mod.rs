@@ -632,6 +632,7 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
                 builder: &mut FuncBuilder,
                 n: usize,
                 depth: RelativeDepth,
+                is_empty: bool,
             ) -> Instruction {
                 match builder.acquire_target(depth.into_u32()) {
                     AquiredTarget::Branch(label_idx, drop_keep) => {
@@ -639,20 +640,33 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
                             inst_idx: pc,
                             target_idx: n,
                         });
-                        Instruction::Br(Target::new(dst_pc, drop_keep))
+                        let instr = if is_empty {
+                            Instruction::BrEmpty
+                        } else {
+                            Instruction::Br
+                        };
+                        instr(Target::new(dst_pc, drop_keep))
                     }
-                    AquiredTarget::Return(drop_keep) => Instruction::Return(drop_keep),
+                    AquiredTarget::Return(drop_keep) => {
+                        let instr = if is_empty {
+                            Instruction::ReturnEmpty
+                        } else {
+                            Instruction::Return
+                        };
+                        instr(drop_keep)
+                    }
                 }
             }
 
+            let is_empty = builder.value_stack.is_empty();
             let branches = targets
                 .into_iter()
                 .enumerate()
-                .map(|(n, depth)| compute_inst(builder, n, depth))
+                .map(|(n, depth)| compute_inst(builder, n, depth, is_empty))
                 .collect::<Vec<_>>();
             // We include the default target in `len_branches`.
             let len_branches = branches.len();
-            let default_branch = compute_inst(builder, len_branches, default);
+            let default_branch = compute_inst(builder, len_branches, default, is_empty);
             builder.inst_builder.push_inst(Instruction::BrTable {
                 len_targets: len_branches + 1,
             });
