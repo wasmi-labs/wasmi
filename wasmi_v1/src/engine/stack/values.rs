@@ -283,9 +283,9 @@ impl ValueStack {
     /// - Pop entry `e2`.
     /// - Peek entry `&mut e1_ptr`.
     /// - Evaluate `f(e1_ptr, e2, e3)`.
-    pub fn pop2_eval<F>(&mut self, f: F)
+    pub fn pop2_eval<F, R>(&mut self, f: F) -> R
     where
-        F: FnOnce(&mut UntypedValue, UntypedValue, UntypedValue),
+        F: FnOnce(&mut UntypedValue, UntypedValue, UntypedValue) -> R,
     {
         let (e2, e3) = self.pop2();
         let e1 = self.last_mut();

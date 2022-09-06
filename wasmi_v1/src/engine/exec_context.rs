@@ -70,65 +70,65 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 Instr::LocalGetEmpty { local_depth } => {
                     top = exec_ctx.visit_local_get_empty(*local_depth)
                 }
-                Instr::LocalSet { local_depth } => { exec_ctx.visit_local_set(*local_depth) }
-                Instr::LocalTee { local_depth } => { exec_ctx.visit_local_tee(*local_depth) }
+                Instr::LocalSet { local_depth } => { exec_ctx.visit_local_set(*local_depth, top) }
+                Instr::LocalTee { local_depth } => { exec_ctx.visit_local_tee(*local_depth, top) }
                 Instr::Br(target) => { exec_ctx.visit_br(*target) }
-                Instr::BrIfEqz(target) => { exec_ctx.visit_br_if_eqz(*target) }
-                Instr::BrIfNez(target) => { exec_ctx.visit_br_if_nez(*target) }
+                Instr::BrIfEqz(target) => { exec_ctx.visit_br_if_eqz(*target, top) }
+                Instr::BrIfNez(target) => { exec_ctx.visit_br_if_nez(*target, top) }
                 Instr::ReturnIfNez(drop_keep)  => {
-                    if let MaybeReturn::Return = exec_ctx.visit_return_if_nez(*drop_keep) {
+                    if let MaybeReturn::Return = exec_ctx.visit_return_if_nez(*drop_keep, top) {
                         return Ok(CallOutcome::Return)
                     }
                 }
                 Instr::BrTable { len_targets } => {
-                    exec_ctx.visit_br_table(*len_targets)
+                    exec_ctx.visit_br_table(*len_targets, top)
                 }
                 Instr::Unreachable => { exec_ctx.visit_unreachable()?; }
                 Instr::Return(drop_keep)  => {
-                    exec_ctx.visit_ret(*drop_keep);
+                    exec_ctx.visit_ret(*drop_keep, top);
                     return Ok(CallOutcome::Return)
                 }
                 Instr::Call(func) => {
-                    return exec_ctx.visit_call(*func)
+                    return exec_ctx.visit_call(*func, top)
                 }
                 Instr::CallIndirect(signature)  => {
-                    return exec_ctx.visit_call_indirect(*signature)
+                    return exec_ctx.visit_call_indirect(*signature, top)
                 }
-                Instr::Drop => { exec_ctx.visit_drop() }
-                Instr::Select => { exec_ctx.visit_select() }
+                Instr::Drop => { top = exec_ctx.visit_drop(); }
+                Instr::Select => { top = exec_ctx.visit_select(top); }
                 Instr::GlobalGet(global_idx)  => {
                     top = exec_ctx.visit_global_get(*global_idx, top);
                 }
                 Instr::GlobalGetEmpty(global_idx) => {
                     top = exec_ctx.visit_global_get_empty(*global_idx);
                 }
-                Instr::GlobalSet(global_idx)  => { exec_ctx.visit_global_set(*global_idx) }
-                Instr::I32Load(offset)  => { exec_ctx.visit_i32_load(*offset)?; }
-                Instr::I64Load(offset)  => { exec_ctx.visit_i64_load(*offset)?; }
-                Instr::F32Load(offset)  => { exec_ctx.visit_f32_load(*offset)?; }
-                Instr::F64Load(offset)  => { exec_ctx.visit_f64_load(*offset)?; }
-                Instr::I32Load8S(offset)  => { exec_ctx.visit_i32_load_i8(*offset)?; }
-                Instr::I32Load8U(offset)  => { exec_ctx.visit_i32_load_u8(*offset)?; }
-                Instr::I32Load16S(offset)  => { exec_ctx.visit_i32_load_i16(*offset)?; }
-                Instr::I32Load16U(offset)  => { exec_ctx.visit_i32_load_u16(*offset)?; }
-                Instr::I64Load8S(offset)  => { exec_ctx.visit_i64_load_i8(*offset)?; }
-                Instr::I64Load8U(offset)  => { exec_ctx.visit_i64_load_u8(*offset)?; }
-                Instr::I64Load16S(offset)  => { exec_ctx.visit_i64_load_i16(*offset)?; }
-                Instr::I64Load16U(offset)  => { exec_ctx.visit_i64_load_u16(*offset)?; }
-                Instr::I64Load32S(offset)  => { exec_ctx.visit_i64_load_i32(*offset)?; }
-                Instr::I64Load32U(offset)  => { exec_ctx.visit_i64_load_u32(*offset)?; }
-                Instr::I32Store(offset)  => { exec_ctx.visit_i32_store(*offset)?; }
-                Instr::I64Store(offset)  => { exec_ctx.visit_i64_store(*offset)?; }
-                Instr::F32Store(offset)  => { exec_ctx.visit_f32_store(*offset)?; }
-                Instr::F64Store(offset)  => { exec_ctx.visit_f64_store(*offset)?; }
-                Instr::I32Store8(offset)  => { exec_ctx.visit_i32_store_8(*offset)?; }
-                Instr::I32Store16(offset)  => { exec_ctx.visit_i32_store_16(*offset)?; }
-                Instr::I64Store8(offset)  => { exec_ctx.visit_i64_store_8(*offset)?; }
-                Instr::I64Store16(offset)  => { exec_ctx.visit_i64_store_16(*offset)?; }
-                Instr::I64Store32(offset)  => { exec_ctx.visit_i64_store_32(*offset)?; }
+                Instr::GlobalSet(global_idx)  => { exec_ctx.visit_global_set(*global_idx, top) }
+                Instr::I32Load(offset)  => { top = exec_ctx.visit_i32_load(top, *offset)?; }
+                Instr::I64Load(offset)  => { top = exec_ctx.visit_i64_load(top, *offset)?; }
+                Instr::F32Load(offset)  => { top = exec_ctx.visit_f32_load(top, *offset)?; }
+                Instr::F64Load(offset)  => { top = exec_ctx.visit_f64_load(top, *offset)?; }
+                Instr::I32Load8S(offset)  => { top = exec_ctx.visit_i32_load_i8(top, *offset)?; }
+                Instr::I32Load8U(offset)  => { top = exec_ctx.visit_i32_load_u8(top, *offset)?; }
+                Instr::I32Load16S(offset)  => { top = exec_ctx.visit_i32_load_i16(top, *offset)?; }
+                Instr::I32Load16U(offset)  => { top = exec_ctx.visit_i32_load_u16(top, *offset)?; }
+                Instr::I64Load8S(offset)  => { top = exec_ctx.visit_i64_load_i8(top, *offset)?; }
+                Instr::I64Load8U(offset)  => { top = exec_ctx.visit_i64_load_u8(top, *offset)?; }
+                Instr::I64Load16S(offset)  => { top = exec_ctx.visit_i64_load_i16(top, *offset)?; }
+                Instr::I64Load16U(offset)  => { top = exec_ctx.visit_i64_load_u16(top, *offset)?; }
+                Instr::I64Load32S(offset)  => { top = exec_ctx.visit_i64_load_i32(top, *offset)?; }
+                Instr::I64Load32U(offset)  => { top = exec_ctx.visit_i64_load_u32(top, *offset)?; }
+                Instr::I32Store(offset)  => { exec_ctx.visit_i32_store(top, *offset)?; }
+                Instr::I64Store(offset)  => { exec_ctx.visit_i64_store(top, *offset)?; }
+                Instr::F32Store(offset)  => { exec_ctx.visit_f32_store(top, *offset)?; }
+                Instr::F64Store(offset)  => { exec_ctx.visit_f64_store(top, *offset)?; }
+                Instr::I32Store8(offset)  => { exec_ctx.visit_i32_store_8(top, *offset)?; }
+                Instr::I32Store16(offset)  => { exec_ctx.visit_i32_store_16(top, *offset)?; }
+                Instr::I64Store8(offset)  => { exec_ctx.visit_i64_store_8(top, *offset)?; }
+                Instr::I64Store16(offset)  => { exec_ctx.visit_i64_store_16(top, *offset)?; }
+                Instr::I64Store32(offset)  => { exec_ctx.visit_i64_store_32(top, *offset)?; }
                 Instr::MemorySize => { top = exec_ctx.visit_memory_size(top); }
                 Instr::MemorySizeEmpty => { top = exec_ctx.visit_memory_size_empty(); }
-                Instr::MemoryGrow => { exec_ctx.visit_memory_grow() }
+                Instr::MemoryGrow => { top = exec_ctx.visit_memory_grow(top); }
                 Instr::Const(bytes)  => { top = exec_ctx.visit_const(*bytes, top); }
                 Instr::ConstEmpty(bytes)  => { top = exec_ctx.visit_const_empty(*bytes); }
                 Instr::I32Eqz => { top = exec_ctx.visit_i32_eqz(top); }
@@ -371,7 +371,7 @@ where
     /// - `i64.load`
     /// - `f32.load`
     /// - `f64.load`
-    fn execute_load<T>(&mut self, offset: Offset) -> Result<(), Trap>
+    fn execute_load<T>(&mut self, _top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap>
     where
         UntypedValue: From<T>,
         T: LittleEndianConvert,
@@ -384,8 +384,10 @@ where
             .default_memory_bytes(self.ctx.as_context_mut())
             .read(address, bytes.as_mut())?;
         let value = <T as LittleEndianConvert>::from_le_bytes(bytes);
-        *entry = value.into();
-        self.try_next_instr()
+        let result = value.into();
+        *entry = result;
+        self.next_instr();
+        Ok(result)
     }
 
     /// Loads a vaoue of type `U` from the default memory at the given address offset and extends it into `T`.
@@ -404,7 +406,7 @@ where
     /// - `i64.load_16u`
     /// - `i64.load_32s`
     /// - `i64.load_32u`
-    fn execute_load_extend<T, U>(&mut self, offset: Offset) -> Result<(), Trap>
+    fn execute_load_extend<T, U>(&mut self, _top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap>
     where
         T: ExtendInto<U> + LittleEndianConvert,
         UntypedValue: From<U>,
@@ -417,8 +419,10 @@ where
             .default_memory_bytes(self.ctx.as_context_mut())
             .read(address, bytes.as_mut())?;
         let extended = <T as LittleEndianConvert>::from_le_bytes(bytes).extend_into();
-        *entry = extended.into();
-        self.try_next_instr()
+        let result = extended.into();
+        *entry = result;
+        self.next_instr();
+        Ok(result)
     }
 
     /// Stores a value of type `T` into the default memory at the given address offset.
@@ -431,7 +435,7 @@ where
     /// - `i64.store`
     /// - `f32.store`
     /// - `f64.store`
-    fn execute_store<T>(&mut self, offset: Offset) -> Result<(), Trap>
+    fn execute_store<T>(&mut self, _top: UntypedValue, offset: Offset) -> Result<(), Trap>
     where
         T: LittleEndianConvert + From<UntypedValue>,
     {
@@ -456,7 +460,7 @@ where
     /// - `i64.store8`
     /// - `i64.store16`
     /// - `i64.store32`
-    fn execute_store_wrap<T, U>(&mut self, offset: Offset) -> Result<(), Trap>
+    fn execute_store_wrap<T, U>(&mut self, _top: UntypedValue, offset: Offset) -> Result<(), Trap>
     where
         T: WrapInto<U> + From<UntypedValue>,
         U: LittleEndianConvert,
@@ -572,7 +576,7 @@ where
         self.branch_to(target)
     }
 
-    fn visit_br_if_eqz(&mut self, target: Target) {
+    fn visit_br_if_eqz(&mut self, target: Target, _top: UntypedValue) {
         let condition = self.value_stack.pop_as();
         if condition {
             self.next_instr()
@@ -581,7 +585,7 @@ where
         }
     }
 
-    fn visit_br_if_nez(&mut self, target: Target) {
+    fn visit_br_if_nez(&mut self, target: Target, _top: UntypedValue) {
         let condition = self.value_stack.pop_as();
         if condition {
             self.branch_to(target)
@@ -590,7 +594,7 @@ where
         }
     }
 
-    fn visit_return_if_nez(&mut self, drop_keep: DropKeep) -> MaybeReturn {
+    fn visit_return_if_nez(&mut self, drop_keep: DropKeep, _top: UntypedValue) -> MaybeReturn {
         let condition = self.value_stack.pop_as();
         if condition {
             self.ret(drop_keep);
@@ -601,7 +605,7 @@ where
         }
     }
 
-    fn visit_br_table(&mut self, len_targets: usize) {
+    fn visit_br_table(&mut self, len_targets: usize, _top: UntypedValue) {
         let index: u32 = self.value_stack.pop_as();
         // The index of the default target which is the last target of the slice.
         let max_index = len_targets - 1;
@@ -611,7 +615,7 @@ where
         self.pc += normalized_index + 1;
     }
 
-    fn visit_ret(&mut self, drop_keep: DropKeep) {
+    fn visit_ret(&mut self, drop_keep: DropKeep, _top: UntypedValue) {
         self.ret(drop_keep)
     }
 
@@ -632,14 +636,14 @@ where
         value
     }
 
-    fn visit_local_set(&mut self, local_depth: LocalIdx) {
+    fn visit_local_set(&mut self, local_depth: LocalIdx, _top: UntypedValue) {
         let local_depth = Self::convert_local_depth(local_depth);
         let new_value = self.value_stack.pop();
         *self.value_stack.peek_mut(local_depth) = new_value;
         self.next_instr()
     }
 
-    fn visit_local_tee(&mut self, local_depth: LocalIdx) {
+    fn visit_local_tee(&mut self, local_depth: LocalIdx, _top: UntypedValue) {
         let local_depth = Self::convert_local_depth(local_depth);
         let new_value = self.value_stack.last();
         *self.value_stack.peek_mut(local_depth) = new_value;
@@ -661,7 +665,7 @@ where
         global_value
     }
 
-    fn visit_global_set(&mut self, global_index: GlobalIdx) {
+    fn visit_global_set(&mut self, global_index: GlobalIdx, _top: UntypedValue) {
         let global = self.global(global_index);
         let new_value = self
             .value_stack
@@ -673,12 +677,12 @@ where
         self.next_instr()
     }
 
-    fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, Trap> {
+    fn visit_call(&mut self, func_index: FuncIdx, _top: UntypedValue) -> Result<CallOutcome, Trap> {
         let callee = self.cache.get_func(&mut self.ctx, func_index.into_inner());
         self.call_func(callee)
     }
 
-    fn visit_call_indirect(&mut self, signature_index: SignatureIdx) -> Result<CallOutcome, Trap> {
+    fn visit_call_indirect(&mut self, signature_index: SignatureIdx, _top: UntypedValue) -> Result<CallOutcome, Trap> {
         let func_index: u32 = self.value_stack.pop_as();
         let table = self.default_table();
         let func = table
@@ -715,18 +719,22 @@ where
         bytes
     }
 
-    fn visit_drop(&mut self) {
-        let _ = self.value_stack.pop();
-        self.next_instr()
+    fn visit_drop(&mut self) -> UntypedValue {
+        let top = self.value_stack.pop();
+        self.next_instr();
+        top
     }
 
-    fn visit_select(&mut self) {
-        self.value_stack.pop2_eval(|e1, e2, e3| {
+    fn visit_select(&mut self, _top: UntypedValue) -> UntypedValue {
+        let result = self.value_stack.pop2_eval(|e1, e2, e3| {
             let condition = <bool as From<UntypedValue>>::from(e3);
             let result = if condition { *e1 } else { e2 };
             *e1 = result;
+            result
         });
-        self.next_instr()
+        self.next_instr();
+        result
+
     }
 
     fn visit_memory_size(&mut self, _top: UntypedValue) -> UntypedValue {
@@ -746,7 +754,7 @@ where
         result
     }
 
-    fn visit_memory_grow(&mut self) {
+    fn visit_memory_grow(&mut self, _top: UntypedValue) -> UntypedValue {
         let pages: u32 = self.value_stack.pop_as();
         let memory = self.default_memory();
         let new_size = match memory.grow(self.ctx.as_context_mut(), Pages(pages as usize)) {
@@ -756,105 +764,106 @@ where
                 //       in case of failure for this instruction.
                 u32::MAX
             }
-        };
+        }.into();
         // The memory grow might have invalidated the cached linear memory
         // so we need to reset it in order for the cache to reload in case it
         // is used again.
         self.cache.reset_default_memory_bytes();
         self.value_stack.push(new_size);
-        self.next_instr()
+        self.next_instr();
+        new_size
     }
 
-    fn visit_i32_load(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_load::<i32>(offset)
+    fn visit_i32_load(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+        self.execute_load::<i32>(top, offset)
     }
 
-    fn visit_i64_load(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_load::<i64>(offset)
+    fn visit_i64_load(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+        self.execute_load::<i64>(top, offset)
     }
 
-    fn visit_f32_load(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_load::<F32>(offset)
+    fn visit_f32_load(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+        self.execute_load::<F32>(top, offset)
     }
 
-    fn visit_f64_load(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_load::<F64>(offset)
+    fn visit_f64_load(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+        self.execute_load::<F64>(top, offset)
     }
 
-    fn visit_i32_load_i8(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_load_extend::<i8, i32>(offset)
+    fn visit_i32_load_i8(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+        self.execute_load_extend::<i8, i32>(top, offset)
     }
 
-    fn visit_i32_load_u8(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_load_extend::<u8, i32>(offset)
+    fn visit_i32_load_u8(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+        self.execute_load_extend::<u8, i32>(top, offset)
     }
 
-    fn visit_i32_load_i16(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_load_extend::<i16, i32>(offset)
+    fn visit_i32_load_i16(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+        self.execute_load_extend::<i16, i32>(top, offset)
     }
 
-    fn visit_i32_load_u16(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_load_extend::<u16, i32>(offset)
+    fn visit_i32_load_u16(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+        self.execute_load_extend::<u16, i32>(top, offset)
     }
 
-    fn visit_i64_load_i8(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_load_extend::<i8, i64>(offset)
+    fn visit_i64_load_i8(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+        self.execute_load_extend::<i8, i64>(top, offset)
     }
 
-    fn visit_i64_load_u8(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_load_extend::<u8, i64>(offset)
+    fn visit_i64_load_u8(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+        self.execute_load_extend::<u8, i64>(top, offset)
     }
 
-    fn visit_i64_load_i16(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_load_extend::<i16, i64>(offset)
+    fn visit_i64_load_i16(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+        self.execute_load_extend::<i16, i64>(top, offset)
     }
 
-    fn visit_i64_load_u16(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_load_extend::<u16, i64>(offset)
+    fn visit_i64_load_u16(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+        self.execute_load_extend::<u16, i64>(top, offset)
     }
 
-    fn visit_i64_load_i32(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_load_extend::<i32, i64>(offset)
+    fn visit_i64_load_i32(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+        self.execute_load_extend::<i32, i64>(top, offset)
     }
 
-    fn visit_i64_load_u32(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_load_extend::<u32, i64>(offset)
+    fn visit_i64_load_u32(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+        self.execute_load_extend::<u32, i64>(top, offset)
     }
 
-    fn visit_i32_store(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_store::<i32>(offset)
+    fn visit_i32_store(&mut self, top: UntypedValue, offset: Offset) -> Result<(), Trap> {
+        self.execute_store::<i32>(top, offset)
     }
 
-    fn visit_i64_store(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_store::<i64>(offset)
+    fn visit_i64_store(&mut self, top: UntypedValue, offset: Offset) -> Result<(), Trap> {
+        self.execute_store::<i64>(top, offset)
     }
 
-    fn visit_f32_store(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_store::<F32>(offset)
+    fn visit_f32_store(&mut self, top: UntypedValue, offset: Offset) -> Result<(), Trap> {
+        self.execute_store::<F32>(top, offset)
     }
 
-    fn visit_f64_store(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_store::<F64>(offset)
+    fn visit_f64_store(&mut self, top: UntypedValue, offset: Offset) -> Result<(), Trap> {
+        self.execute_store::<F64>(top, offset)
     }
 
-    fn visit_i32_store_8(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_store_wrap::<i32, i8>(offset)
+    fn visit_i32_store_8(&mut self, top: UntypedValue, offset: Offset) -> Result<(), Trap> {
+        self.execute_store_wrap::<i32, i8>(top, offset)
     }
 
-    fn visit_i32_store_16(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_store_wrap::<i32, i16>(offset)
+    fn visit_i32_store_16(&mut self, top: UntypedValue, offset: Offset) -> Result<(), Trap> {
+        self.execute_store_wrap::<i32, i16>(top, offset)
     }
 
-    fn visit_i64_store_8(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_store_wrap::<i64, i8>(offset)
+    fn visit_i64_store_8(&mut self, top: UntypedValue, offset: Offset) -> Result<(), Trap> {
+        self.execute_store_wrap::<i64, i8>(top, offset)
     }
 
-    fn visit_i64_store_16(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_store_wrap::<i64, i16>(offset)
+    fn visit_i64_store_16(&mut self, top: UntypedValue, offset: Offset) -> Result<(), Trap> {
+        self.execute_store_wrap::<i64, i16>(top, offset)
     }
 
-    fn visit_i64_store_32(&mut self, offset: Offset) -> Result<(), Trap> {
-        self.execute_store_wrap::<i64, i32>(offset)
+    fn visit_i64_store_32(&mut self, top: UntypedValue, offset: Offset) -> Result<(), Trap> {
+        self.execute_store_wrap::<i64, i32>(top, offset)
     }
 
     fn visit_i32_eqz(&mut self, top: UntypedValue) -> UntypedValue {
