@@ -503,7 +503,12 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
             let dst_pc =
                 self.try_resolve_label(if_frame.end_label(), |pc| Reloc::Br { inst_idx: pc });
             let target = Target::new(dst_pc, DropKeep::new(0, 0));
-            self.inst_builder.push_inst(Instruction::Br(target));
+            let instr = if self.value_stack.is_empty() {
+                Instruction::BrEmpty
+            } else {
+                Instruction::Br
+            };
+            self.inst_builder.push_inst(instr(target));
         }
         // Now resolve labels for the instructions of the `else` block
         self.inst_builder.resolve_label(if_frame.else_label());
