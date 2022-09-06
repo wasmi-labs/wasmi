@@ -39,13 +39,7 @@ pub fn execute_frame<'engine>(
     use Instruction as Instr;
     let mut executor = Executor::new(&mut ctx, frame, value_stack, cache);
     loop {
-        // # Safety
-        //
-        // Properly constructed `wasmi` bytecode can never produce invalid `pc`.
-        let instr = unsafe {
-            insts.get_release_unchecked(executor.pc)
-        };
-        match *instr {
+        match *instr(&insts, executor.pc) {
             Instr::LocalGet { local_depth } => executor.visit_get_local(local_depth),
             Instr::LocalSet { local_depth } => executor.visit_set_local(local_depth),
             Instr::LocalTee { local_depth } => executor.visit_tee_local(local_depth),
@@ -232,6 +226,15 @@ pub fn execute_frame<'engine>(
             Instr::I64Extend32S => executor.visit_i64_sign_extend32(),
         }
     }
+}
+
+/// Returns the [`Instruction`] at the current program counter.
+#[inline(always)]
+fn instr<'engine>(insts: &Instructions<'engine>, pc: usize) -> &'engine Instruction {
+    // # Safety
+    //
+    // Properly constructed `wasmi` bytecode can never produce invalid `pc`.
+    unsafe { insts.get_release_unchecked(pc) }
 }
 
 /// An execution context for executing a `wasmi` function frame.
