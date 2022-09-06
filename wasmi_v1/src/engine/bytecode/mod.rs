@@ -18,17 +18,27 @@ use wasmi_core::UntypedValue;
 /// each representing either the `BrTable` head or one of its branching targets.
 #[derive(Copy, Debug, Clone, PartialEq, Eq)]
 pub enum Instruction {
-    LocalGet { local_depth: LocalIdx },
+    LocalGet {
+        local_depth: LocalIdx,
+    },
     /// Variant of `LocalGet` required to differentiate
     /// between empty and non-empty value stacks.
-    LocalGetEmpty { local_depth: LocalIdx },
-    LocalSet { local_depth: LocalIdx },
-    LocalTee { local_depth: LocalIdx },
+    LocalGetEmpty {
+        local_depth: LocalIdx,
+    },
+    LocalSet {
+        local_depth: LocalIdx,
+    },
+    LocalTee {
+        local_depth: LocalIdx,
+    },
     Br(Target),
     BrIfEqz(Target),
     BrIfNez(Target),
     ReturnIfNez(DropKeep),
-    BrTable { len_targets: usize },
+    BrTable {
+        len_targets: usize,
+    },
     Unreachable,
     Return(DropKeep),
     Call(FuncIdx),
