@@ -713,8 +713,7 @@ where
         let global = self.global(global_index);
         let new_value = top;
         let new_top = self.value_stack.try_pop().unwrap_or_default();
-        global
-            .set_untyped(self.ctx.as_context_mut(), new_value);
+        global.set_untyped(self.ctx.as_context_mut(), new_value);
         self.next_instr();
         new_top
     }

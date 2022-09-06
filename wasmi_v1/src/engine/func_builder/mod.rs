@@ -669,9 +669,7 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
             } else {
                 Instruction::Return
             };
-            builder
-                .inst_builder
-                .push_inst(instr(drop_keep));
+            builder.inst_builder.push_inst(instr(drop_keep));
             builder.reachable = false;
             Ok(())
         })
