@@ -528,8 +528,8 @@ where
         top: UntypedValue,
         f: fn(UntypedValue, UntypedValue) -> UntypedValue,
     ) -> UntypedValue {
-        let lhs = top;
-        let rhs = self.value_stack.pop();
+        let lhs = self.value_stack.pop();
+        let rhs = top;
         let result = f(lhs, rhs);
         self.next_instr();
         result
@@ -540,8 +540,8 @@ where
         top: UntypedValue,
         f: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<UntypedValue, Trap> {
-        let rhs = self.value_stack.pop();
-        let lhs = top;
+        let lhs = self.value_stack.pop();
+        let rhs = top;
         let result = f(lhs, rhs)?;
         self.next_instr();
         Ok(result)
