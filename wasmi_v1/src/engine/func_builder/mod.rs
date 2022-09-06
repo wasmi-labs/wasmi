@@ -692,10 +692,15 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     /// Translates a Wasm `call` instruction.
     pub fn translate_call(&mut self, func_idx: FuncIdx) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
+            let instr = if builder.value_stack.is_empty() {
+                Instruction::CallEmpty
+            } else {
+                Instruction::Call
+            };
             let func_type = builder.func_type_of(func_idx);
             builder.adjust_value_stack_for_call(&func_type);
             let func_idx = func_idx.into_u32().into();
-            builder.inst_builder.push_inst(Instruction::Call(func_idx));
+            builder.inst_builder.push_inst(instr(func_idx));
             Ok(())
         })
     }

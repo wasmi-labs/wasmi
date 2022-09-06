@@ -106,6 +106,9 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 Instr::Call(func) => {
                     return exec_ctx.visit_call(*func, top)
                 }
+                Instr::CallEmpty(func) => {
+                    return exec_ctx.visit_call_empty(*func)
+                }
                 Instr::CallIndirect(signature)  => {
                     return exec_ctx.visit_call_indirect(*signature, top)
                 }
@@ -566,12 +569,14 @@ where
         self.pc = target.destination_pc().into_usize();
     }
 
-    fn call_func(&mut self, top: UntypedValue, func: Func) -> Result<CallOutcome, Trap> {
+    fn call_func(&mut self, top: Option<UntypedValue>, func: Func) -> Result<CallOutcome, Trap> {
         self.pc += 1;
         self.frame.update_pc(self.pc);
-        // We push the inline cached top most value from the value stack
-        // back to the original value stack before we conduct the call.
-        self.value_stack.push(top);
+        if let Some(top) = top {
+            // We push the inline cached top most value from the value stack
+            // back to the original value stack before we conduct the call.
+            self.value_stack.push(top);
+        }
         Ok(CallOutcome::NestedCall(func))
     }
 
@@ -716,7 +721,12 @@ where
 
     fn visit_call(&mut self, func_index: FuncIdx, top: UntypedValue) -> Result<CallOutcome, Trap> {
         let callee = self.cache.get_func(&mut self.ctx, func_index.into_inner());
-        self.call_func(top, callee)
+        self.call_func(Some(top), callee)
+    }
+
+    fn visit_call_empty(&mut self, func_index: FuncIdx) -> Result<CallOutcome, Trap> {
+        let callee = self.cache.get_func(&mut self.ctx, func_index.into_inner());
+        self.call_func(None, callee)
     }
 
     fn visit_call_indirect(

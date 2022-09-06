@@ -48,6 +48,9 @@ pub enum Instruction {
     /// between empty and non-empty value stacks.
     ReturnEmpty(DropKeep),
     Call(FuncIdx),
+    /// Variant of `Call` required to differentiate
+    /// between empty and non-empty value stacks.
+    CallEmpty(FuncIdx),
     CallIndirect(SignatureIdx),
     Drop,
     Select,
