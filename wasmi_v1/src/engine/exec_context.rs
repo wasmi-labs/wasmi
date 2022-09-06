@@ -770,7 +770,7 @@ where
     }
 
     fn visit_drop(&mut self) -> UntypedValue {
-        let new_top = self.value_stack.pop();
+        let new_top = self.value_stack.try_pop().unwrap_or_default();
         self.next_instr();
         new_top
     }
