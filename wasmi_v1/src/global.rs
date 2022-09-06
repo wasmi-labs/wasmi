@@ -143,7 +143,7 @@ impl GlobalEntity {
                 encountered: new_value.value_type(),
             });
         }
-        self.value = new_value.into();
+        self.set_untyped(new_value.into());
         Ok(())
     }
 
@@ -161,7 +161,7 @@ impl GlobalEntity {
 
     /// Returns the current value of the global variable.
     pub fn get(&self) -> Value {
-        self.value.with_type(self.value_type)
+        self.get_untyped().with_type(self.value_type)
     }
 
     /// Returns the current untyped value of the global variable.
