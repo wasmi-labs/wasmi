@@ -33,6 +33,9 @@ pub enum Instruction {
         local_depth: LocalIdx,
     },
     Br(Target),
+    /// Variant of `Br` required to differentiate
+    /// between empty and non-empty value stacks.
+    BrEmpty(Target),
     BrIfEqz(Target),
     BrIfNez(Target),
     ReturnIfNez(DropKeep),

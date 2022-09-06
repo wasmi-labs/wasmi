@@ -569,9 +569,13 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
                 AquiredTarget::Branch(end_label, drop_keep) => {
                     let dst_pc =
                         builder.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
-                    builder
-                        .inst_builder
-                        .push_inst(Instruction::Br(Target::new(dst_pc, drop_keep)));
+                    let target = Target::new(dst_pc, drop_keep);
+                    let instr = if builder.value_stack.is_empty() {
+                        Instruction::BrEmpty
+                    } else {
+                        Instruction::Br
+                    };
+                    builder.inst_builder.push_inst(instr(target));
                 }
                 AquiredTarget::Return(_) => {
                     // In this case the `br` can be directly translated as `return`.

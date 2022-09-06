@@ -215,6 +215,7 @@ impl InstructionsBuilder {
         match reloc {
             Reloc::Br { inst_idx } => match &mut self.insts[inst_idx.into_usize()] {
                 Instruction::Br(target)
+                | Instruction::BrEmpty(target)
                 | Instruction::BrIfEqz(target)
                 | Instruction::BrIfNez(target) => {
                     target.update_destination_pc(dst_pc);
@@ -228,7 +229,7 @@ impl InstructionsBuilder {
                 inst_idx,
                 target_idx,
             } => match &mut self.insts[inst_idx.into_usize() + target_idx + 1] {
-                Instruction::Br(target) => {
+                Instruction::Br(target) | Instruction::BrEmpty(target) => {
                     target.update_destination_pc(dst_pc);
                 }
                 _ => panic!(
