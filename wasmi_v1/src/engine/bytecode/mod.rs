@@ -229,9 +229,34 @@ impl Instruction {
         Self::Const(value.into())
     }
 
+    /// Creates a new `Const` instruction from the given value.
+    ///
+    /// # Note
+    ///
+    /// This is a special variant indicating that this operation acts on
+    /// an empty value stack.
+    pub fn constant_empty<T>(value: T) -> Self
+    where
+        T: Into<UntypedValue>,
+    {
+        Self::ConstEmpty(value.into())
+    }
+
     /// Creates a new `local.get` instruction from the given local depth.
     pub fn local_get(local_depth: u32) -> Self {
         Self::LocalGet {
+            local_depth: LocalIdx::from(local_depth),
+        }
+    }
+
+    /// Creates a new `local.get` instruction from the given local depth.
+    ///
+    /// # Note
+    ///
+    /// This is a special variant indicating that this operation acts on
+    /// an empty value stack.
+    pub fn local_get_empty(local_depth: u32) -> Self {
+        Self::LocalGetEmpty {
             local_depth: LocalIdx::from(local_depth),
         }
     }
