@@ -321,6 +321,7 @@ where
         ctx: Ctx,
         pc: usize,
     ) -> Self {
+        value_stack.mark_locals();
         Self {
             value_stack,
             frame,
