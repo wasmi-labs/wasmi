@@ -372,7 +372,7 @@ where
             .read(address, bytes.as_mut())?;
         let value = <T as LittleEndianConvert>::from_le_bytes(bytes);
         *entry = value.into();
-        self.next_instr()
+        self.try_next_instr()
     }
 
     /// Loads a vaoue of type `U` from the default memory at the given address offset and extends it into `T`.
@@ -405,7 +405,7 @@ where
             .read(address, bytes.as_mut())?;
         let extended = <T as LittleEndianConvert>::from_le_bytes(bytes).extend_into();
         *entry = extended.into();
-        self.next_instr()
+        self.try_next_instr()
     }
 
     /// Stores a value of type `T` into the default memory at the given address offset.
@@ -429,7 +429,7 @@ where
         self.cache
             .default_memory_bytes(self.ctx.as_context_mut())
             .write(address, bytes.as_ref())?;
-        self.next_instr()
+        self.try_next_instr()
     }
 
     /// Stores a value of type `T` wrapped to type `U` into the default memory at the given address offset.
@@ -455,13 +455,13 @@ where
         self.cache
             .default_memory_bytes(self.ctx.as_context_mut())
             .write(address, bytes.as_ref())?;
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn execute_unary(&mut self, f: fn(UntypedValue) -> UntypedValue) -> Result<(), Trap> {
         let entry = self.value_stack.last_mut();
         *entry = f(*entry);
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn try_execute_unary(
@@ -470,7 +470,7 @@ where
     ) -> Result<(), Trap> {
         let entry = self.value_stack.last_mut();
         *entry = f(*entry)?;
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn execute_binary(
@@ -481,7 +481,7 @@ where
         let entry = self.value_stack.last_mut();
         let left = *entry;
         *entry = f(left, right);
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn try_execute_binary(
@@ -492,7 +492,7 @@ where
         let entry = self.value_stack.last_mut();
         let left = *entry;
         *entry = f(left, right)?;
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn execute_reinterpret<T, U>(&mut self) -> Result<(), Trap>
@@ -501,10 +501,10 @@ where
         T: From<UntypedValue>,
     {
         // Nothing to do for `wasmi` bytecode.
-        self.next_instr()
+        self.try_next_instr()
     }
 
-    fn next_instr(&mut self) -> Result<(), Trap> {
+    fn try_next_instr(&mut self) -> Result<(), Trap> {
         self.pc += 1;
         Ok(())
     }
@@ -548,7 +548,7 @@ where
     fn visit_br_if_eqz(&mut self, target: Target) -> Result<(), Trap> {
         let condition = self.value_stack.pop_as();
         if condition {
-            self.next_instr()
+            self.try_next_instr()
         } else {
             self.branch_to(target)
         }
@@ -559,7 +559,7 @@ where
         if condition {
             self.branch_to(target)
         } else {
-            self.next_instr()
+            self.try_next_instr()
         }
     }
 
@@ -593,34 +593,34 @@ where
         let local_depth = Self::convert_local_depth(local_depth);
         let value = self.value_stack.peek(local_depth);
         self.value_stack.push(value);
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn visit_set_local(&mut self, local_depth: LocalIdx) -> Result<(), Trap> {
         let local_depth = Self::convert_local_depth(local_depth);
         let new_value = self.value_stack.pop();
         *self.value_stack.peek_mut(local_depth) = new_value;
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn visit_tee_local(&mut self, local_depth: LocalIdx) -> Result<(), Trap> {
         let local_depth = Self::convert_local_depth(local_depth);
         let new_value = self.value_stack.last();
         *self.value_stack.peek_mut(local_depth) = new_value;
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn visit_get_global(&mut self, global_index: GlobalIdx) -> Result<(), Trap> {
         let global_value = self.global(global_index).get_untyped(self.ctx.as_context());
         self.value_stack.push(global_value);
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn visit_set_global(&mut self, global_index: GlobalIdx) -> Result<(), Trap> {
         let global = self.global(global_index);
         let new_value = self.value_stack.pop();
         global.set_untyped(self.ctx.as_context_mut(), new_value);
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, Trap> {
@@ -654,12 +654,12 @@ where
 
     fn visit_const(&mut self, bytes: UntypedValue) -> Result<(), Trap> {
         self.value_stack.push(bytes);
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn visit_drop(&mut self) -> Result<(), Trap> {
         let _ = self.value_stack.pop();
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn visit_select(&mut self) -> Result<(), Trap> {
@@ -668,14 +668,14 @@ where
             let result = if condition { *e1 } else { e2 };
             *e1 = result;
         });
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn visit_current_memory(&mut self) -> Result<(), Trap> {
         let memory = self.default_memory();
         let result = memory.current_pages(self.ctx.as_context()).0 as u32;
         self.value_stack.push(result);
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn visit_grow_memory(&mut self) -> Result<(), Trap> {
@@ -694,7 +694,7 @@ where
         // is used again.
         self.cache.reset_default_memory_bytes();
         self.value_stack.push(new_size);
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn visit_i32_load(&mut self, offset: Offset) -> Result<(), Trap> {
