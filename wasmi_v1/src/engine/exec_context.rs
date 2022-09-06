@@ -63,11 +63,11 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
             let instr = unsafe {
                 self.insts.get_release_unchecked(exec_ctx.pc)
             };
-            println!("\
-                \ttop = {:?}\n\
-                \tstack = {:?}\n\
-                \tinstr = {:?}\n\
-            ", top, exec_ctx.value_stack, instr);
+            // println!("\
+            //     \ttop = {:?}\n\
+            //     \tstack = {:?}\n\
+            //     \tinstr = {:?}\n\
+            // ", top, exec_ctx.value_stack, instr);
             match instr {
                 Instr::LocalGet { local_depth } => {
                     top = exec_ctx.visit_local_get(*local_depth, top)
