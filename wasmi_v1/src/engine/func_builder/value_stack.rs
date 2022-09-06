@@ -95,6 +95,11 @@ impl ValueStack {
         self.values.len() as u32
     }
 
+    /// Returns `true` if the [`ValueStack`] is empty.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     /// Shrinks the [`ValueStack`] to the given height.
     ///
     /// # Panics
