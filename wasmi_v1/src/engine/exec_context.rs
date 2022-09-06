@@ -95,8 +95,12 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                     top = exec_ctx.visit_br_table(*len_targets, top);
                 }
                 Instr::Unreachable => { exec_ctx.visit_unreachable()?; }
-                Instr::Return(drop_keep)  => {
-                    exec_ctx.visit_ret(*drop_keep, top);
+                Instr::Return(drop_keep) => {
+                    exec_ctx.visit_return(*drop_keep, top);
+                    return Ok(CallOutcome::Return)
+                }
+                Instr::ReturnEmpty(drop_keep) => {
+                    exec_ctx.visit_return_empty(*drop_keep);
                     return Ok(CallOutcome::Return)
                 }
                 Instr::Call(func) => {
@@ -649,8 +653,12 @@ where
         new_top
     }
 
-    fn visit_ret(&mut self, drop_keep: DropKeep, top: UntypedValue) {
+    fn visit_return(&mut self, drop_keep: DropKeep, top: UntypedValue) {
         self.ret(Some(top), drop_keep)
+    }
+
+    fn visit_return_empty(&mut self, drop_keep: DropKeep) {
+        self.ret(None, drop_keep)
     }
 
     fn visit_local_get(&mut self, local_depth: LocalIdx, top: UntypedValue) -> UntypedValue {

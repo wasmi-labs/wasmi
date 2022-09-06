@@ -664,9 +664,14 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     pub fn translate_return(&mut self) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let drop_keep = builder.drop_keep_return();
+            let instr = if builder.value_stack.is_empty() {
+                Instruction::ReturnEmpty
+            } else {
+                Instruction::Return
+            };
             builder
                 .inst_builder
-                .push_inst(Instruction::Return(drop_keep));
+                .push_inst(instr(drop_keep));
             builder.reachable = false;
             Ok(())
         })

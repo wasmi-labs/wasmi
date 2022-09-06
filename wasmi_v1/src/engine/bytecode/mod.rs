@@ -44,6 +44,9 @@ pub enum Instruction {
     },
     Unreachable,
     Return(DropKeep),
+    /// Variant of `Return` required to differentiate
+    /// between empty and non-empty value stacks.
+    ReturnEmpty(DropKeep),
     Call(FuncIdx),
     CallIndirect(SignatureIdx),
     Drop,
