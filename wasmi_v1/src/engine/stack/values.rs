@@ -3,7 +3,7 @@
 use super::{err_stack_overflow, DEFAULT_MAX_VALUE_STACK_HEIGHT, DEFAULT_MIN_VALUE_STACK_HEIGHT};
 use crate::{core::TrapCode, engine::DropKeep};
 use alloc::vec::Vec;
-use core::{fmt, fmt::Debug, iter, mem::size_of};
+use core::{fmt, fmt::Debug, fmt::Display, iter, mem::size_of};
 use wasmi_core::UntypedValue;
 
 /// The value stack that is used to execute Wasm bytecode.
@@ -33,6 +33,21 @@ impl Debug for ValueStack {
             .field("stack_ptr", &self.stack_ptr)
             .field("entries", &&self.entries[..self.stack_ptr])
             .finish()
+    }
+}
+
+impl Display for ValueStack {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[")?;
+        let elems = &self.entries[..self.stack_ptr];
+        if let Some((head, rest)) = elems.split_first() {
+            write!(f, "0x{:X}", head.to_bits())?;
+            for value in rest {
+                write!(f, ", 0x{:X}", value.to_bits())?;
+            }
+        }
+        write!(f, "]")?;
+        Ok(())
     }
 }
 
