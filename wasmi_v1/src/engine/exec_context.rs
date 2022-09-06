@@ -611,20 +611,15 @@ where
     }
 
     fn visit_get_global(&mut self, global_index: GlobalIdx) -> Result<(), Trap> {
-        let global_value = self.global(global_index).get(self.ctx.as_context());
+        let global_value = self.global(global_index).get_untyped(self.ctx.as_context());
         self.value_stack.push(global_value);
         self.next_instr()
     }
 
     fn visit_set_global(&mut self, global_index: GlobalIdx) -> Result<(), Trap> {
         let global = self.global(global_index);
-        let new_value = self
-            .value_stack
-            .pop()
-            .with_type(global.value_type(self.ctx.as_context()));
-        global
-            .set(self.ctx.as_context_mut(), new_value)
-            .unwrap_or_else(|error| panic!("encountered type mismatch upon global_set: {}", error));
+        let new_value = self.value_stack.pop();
+        global.set_untyped(self.ctx.as_context_mut(), new_value);
         self.next_instr()
     }
 
