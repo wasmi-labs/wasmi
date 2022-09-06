@@ -586,7 +586,7 @@ where
 
     fn visit_ret(&mut self, drop_keep: DropKeep) -> Result<CallOutcome, Trap> {
         self.ret(drop_keep);
-        return Ok(CallOutcome::Return);
+        Ok(CallOutcome::Return)
     }
 
     fn visit_get_local(&mut self, local_depth: LocalIdx) {
