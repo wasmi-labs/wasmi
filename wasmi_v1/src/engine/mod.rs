@@ -391,6 +391,7 @@ impl EngineInner {
     /// # Errors
     ///
     /// - If the execution of the function `frame` trapped.
+    #[inline(always)]
     fn execute_frame(
         &mut self,
         ctx: impl AsContextMut,
