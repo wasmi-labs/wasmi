@@ -7,7 +7,7 @@ pub use self::{
 };
 use super::{
     code_map::{CodeMap, InstructionsRef},
-    exec_context::FunctionExecutor,
+    executor::FunctionExecutor,
     func_types::FuncTypeRegistry,
     FuncParams,
 };

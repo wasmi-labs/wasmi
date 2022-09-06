@@ -4,7 +4,7 @@ pub mod bytecode;
 mod cache;
 pub mod code_map;
 mod config;
-pub mod exec_context;
+pub mod executor;
 mod func_args;
 mod func_builder;
 mod func_types;
