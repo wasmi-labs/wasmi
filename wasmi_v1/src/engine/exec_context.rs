@@ -684,25 +684,24 @@ where
     }
 
     fn visit_global_get(&mut self, global_index: GlobalIdx, top: UntypedValue) -> UntypedValue {
-        let global_value = self.global(global_index).get(self.ctx.as_context()).into();
+        let global_value = self.global(global_index).get_untyped(self.ctx.as_context());
         self.value_stack.push(top);
         self.next_instr();
         global_value
     }
 
     fn visit_global_get_empty(&mut self, global_index: GlobalIdx) -> UntypedValue {
-        let global_value = self.global(global_index).get(self.ctx.as_context()).into();
+        let global_value = self.global(global_index).get_untyped(self.ctx.as_context());
         self.next_instr();
         global_value
     }
 
     fn visit_global_set(&mut self, global_index: GlobalIdx, top: UntypedValue) -> UntypedValue {
         let global = self.global(global_index);
-        let new_value = top.with_type(global.value_type(self.ctx.as_context()));
+        let new_value = top;
         let new_top = self.value_stack.try_pop().unwrap_or_default();
         global
-            .set(self.ctx.as_context_mut(), new_value)
-            .unwrap_or_else(|error| panic!("encountered type mismatch upon global_set: {}", error));
+            .set_untyped(self.ctx.as_context_mut(), new_value);
         self.next_instr();
         new_top
     }

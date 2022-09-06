@@ -46,6 +46,7 @@ criterion_group! {
         bench_execute_rev_comp_v1,
         bench_execute_regex_redux_v1,
         bench_execute_count_until_v1,
+        bench_execute_global_bump,
         bench_execute_fac_recursive_v1,
         bench_execute_fac_opt_v1,
         bench_execute_recursive_ok_v1,
@@ -233,9 +234,8 @@ fn bench_execute_regex_redux_v1(c: &mut Criterion) {
     });
 }
 
-const COUNT_UNTIL: i32 = 100_000;
-
 fn bench_execute_count_until_v1(c: &mut Criterion) {
+    const COUNT_UNTIL: i32 = 100_000;
     c.bench_function("execute/count_until/v1", |b| {
         let (mut store, instance) =
             load_instance_from_wat_v1(include_bytes!("wat/count_until.wat"));
@@ -250,6 +250,26 @@ fn bench_execute_count_until_v1(c: &mut Criterion) {
                 .call(&mut store, &[Value::I32(COUNT_UNTIL)], &mut result)
                 .unwrap();
             assert_eq!(result, [Value::I32(COUNT_UNTIL)]);
+        })
+    });
+}
+
+fn bench_execute_global_bump(c: &mut Criterion) {
+    const BUMP_AMOUNT: i32 = 100_000;
+    c.bench_function("execute/global_bump/v1", |b| {
+        let (mut store, instance) =
+            load_instance_from_wat_v1(include_bytes!("wat/global_bump.wat"));
+        let count_until = instance
+            .get_export(&store, "bump")
+            .and_then(v1::Extern::into_func)
+            .unwrap();
+        let mut result = [Value::I32(0)];
+
+        b.iter(|| {
+            count_until
+                .call(&mut store, &[Value::I32(BUMP_AMOUNT)], &mut result)
+                .unwrap();
+            assert_eq!(result, [Value::I32(BUMP_AMOUNT)]);
         })
     });
 }
