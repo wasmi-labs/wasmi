@@ -53,18 +53,21 @@ impl<'a, T> Caller<'a, T> {
 impl<T> AsContext for Caller<'_, T> {
     type UserState = T;
 
+    #[inline]
     fn as_context(&self) -> StoreContext<'_, Self::UserState> {
         self.store.as_context()
     }
 }
 
 impl<T> AsContextMut for Caller<'_, T> {
+    #[inline]
     fn as_context_mut(&mut self) -> StoreContextMut<'_, Self::UserState> {
         self.store.as_context_mut()
     }
 }
 
 impl<'a, T: AsContextMut> From<&'a mut T> for Caller<'a, T::UserState> {
+    #[inline]
     fn from(ctx: &'a mut T) -> Self {
         Self {
             store: ctx.as_context_mut(),
