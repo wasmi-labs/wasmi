@@ -63,9 +63,10 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 self.insts.get_release_unchecked(exec_ctx.pc)
             };
             match instr {
-                Instr::LocalGet { local_depth } => { exec_ctx.visit_get_local(*local_depth)?; }
-                Instr::LocalSet { local_depth } => { exec_ctx.visit_set_local(*local_depth)?; }
-                Instr::LocalTee { local_depth } => { exec_ctx.visit_tee_local(*local_depth)?; }
+                Instr::LocalGet { local_depth } => { exec_ctx.visit_local_get(*local_depth)?; }
+                Instr::LocalGetEmpty { local_depth } => { exec_ctx.visit_local_get_empty(*local_depth)?; }
+                Instr::LocalSet { local_depth } => { exec_ctx.visit_local_set(*local_depth)?; }
+                Instr::LocalTee { local_depth } => { exec_ctx.visit_local_tee(*local_depth)?; }
                 Instr::Br(target) => { exec_ctx.visit_br(*target)?; }
                 Instr::BrIfEqz(target) => { exec_ctx.visit_br_if_eqz(*target)?; }
                 Instr::BrIfNez(target) => { exec_ctx.visit_br_if_nez(*target)?; }
@@ -90,8 +91,9 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 }
                 Instr::Drop => { exec_ctx.visit_drop()?; }
                 Instr::Select => { exec_ctx.visit_select()?; }
-                Instr::GlobalGet(global_idx)  => { exec_ctx.visit_get_global(*global_idx)?; }
-                Instr::GlobalSet(global_idx)  => { exec_ctx.visit_set_global(*global_idx)?; }
+                Instr::GlobalGet(global_idx)  => { exec_ctx.visit_global_get(*global_idx)?; }
+                Instr::GlobalGetEmpty(global_idx) => { exec_ctx.visit_global_get_empty(*global_idx)?; }
+                Instr::GlobalSet(global_idx)  => { exec_ctx.visit_global_set(*global_idx)?; }
                 Instr::I32Load(offset)  => { exec_ctx.visit_i32_load(*offset)?; }
                 Instr::I64Load(offset)  => { exec_ctx.visit_i64_load(*offset)?; }
                 Instr::F32Load(offset)  => { exec_ctx.visit_f32_load(*offset)?; }
@@ -115,9 +117,11 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 Instr::I64Store8(offset)  => { exec_ctx.visit_i64_store_8(*offset)?; }
                 Instr::I64Store16(offset)  => { exec_ctx.visit_i64_store_16(*offset)?; }
                 Instr::I64Store32(offset)  => { exec_ctx.visit_i64_store_32(*offset)?; }
-                Instr::MemorySize => { exec_ctx.visit_current_memory()?; }
-                Instr::MemoryGrow => { exec_ctx.visit_grow_memory()?; }
+                Instr::MemorySize => { exec_ctx.visit_memory_size()?; }
+                Instr::MemorySizeEmpty => { exec_ctx.visit_memory_size_empty()?; }
+                Instr::MemoryGrow => { exec_ctx.visit_memory_grow()?; }
                 Instr::Const(bytes)  => { exec_ctx.visit_const(*bytes)?; }
+                Instr::ConstEmpty(bytes)  => { exec_ctx.visit_const_empty(*bytes)?; }
                 Instr::I32Eqz => { exec_ctx.visit_i32_eqz()?; }
                 Instr::I32Eq => { exec_ctx.visit_i32_eq()?; }
                 Instr::I32Ne => { exec_ctx.visit_i32_ne()?; }
@@ -589,34 +593,44 @@ where
         self.ret(drop_keep)
     }
 
-    fn visit_get_local(&mut self, local_depth: LocalIdx) -> Result<(), Trap> {
+    fn visit_local_get(&mut self, local_depth: LocalIdx) -> Result<(), Trap> {
         let local_depth = Self::convert_local_depth(local_depth);
         let value = self.value_stack.peek(local_depth);
         self.value_stack.push(value);
         self.next_instr()
     }
 
-    fn visit_set_local(&mut self, local_depth: LocalIdx) -> Result<(), Trap> {
+    fn visit_local_get_empty(&mut self, local_depth: LocalIdx) -> Result<(), Trap> {
+        // TODO: implement properly
+        self.visit_local_get(local_depth)
+    }
+
+    fn visit_local_set(&mut self, local_depth: LocalIdx) -> Result<(), Trap> {
         let local_depth = Self::convert_local_depth(local_depth);
         let new_value = self.value_stack.pop();
         *self.value_stack.peek_mut(local_depth) = new_value;
         self.next_instr()
     }
 
-    fn visit_tee_local(&mut self, local_depth: LocalIdx) -> Result<(), Trap> {
+    fn visit_local_tee(&mut self, local_depth: LocalIdx) -> Result<(), Trap> {
         let local_depth = Self::convert_local_depth(local_depth);
         let new_value = self.value_stack.last();
         *self.value_stack.peek_mut(local_depth) = new_value;
         self.next_instr()
     }
 
-    fn visit_get_global(&mut self, global_index: GlobalIdx) -> Result<(), Trap> {
+    fn visit_global_get(&mut self, global_index: GlobalIdx) -> Result<(), Trap> {
         let global_value = self.global(global_index).get(self.ctx.as_context());
         self.value_stack.push(global_value);
         self.next_instr()
     }
 
-    fn visit_set_global(&mut self, global_index: GlobalIdx) -> Result<(), Trap> {
+    fn visit_global_get_empty(&mut self, global_index: GlobalIdx) -> Result<(), Trap> {
+        // TODO: implement properly
+        self.visit_global_get(global_index)
+    }
+
+    fn visit_global_set(&mut self, global_index: GlobalIdx) -> Result<(), Trap> {
         let global = self.global(global_index);
         let new_value = self
             .value_stack
@@ -662,6 +676,11 @@ where
         self.next_instr()
     }
 
+    fn visit_const_empty(&mut self, bytes: UntypedValue) -> Result<(), Trap> {
+        // TODO: implement properly
+        self.visit_const(bytes)
+    }
+
     fn visit_drop(&mut self) -> Result<(), Trap> {
         let _ = self.value_stack.pop();
         self.next_instr()
@@ -676,14 +695,19 @@ where
         self.next_instr()
     }
 
-    fn visit_current_memory(&mut self) -> Result<(), Trap> {
+    fn visit_memory_size(&mut self) -> Result<(), Trap> {
         let memory = self.default_memory();
         let result = memory.current_pages(self.ctx.as_context()).0 as u32;
         self.value_stack.push(result);
         self.next_instr()
     }
 
-    fn visit_grow_memory(&mut self) -> Result<(), Trap> {
+    fn visit_memory_size_empty(&mut self) -> Result<(), Trap> {
+        // TODO: implement properly
+        self.visit_memory_size()
+    }
+
+    fn visit_memory_grow(&mut self) -> Result<(), Trap> {
         let pages: u32 = self.value_stack.pop_as();
         let memory = self.default_memory();
         let new_size = match memory.grow(self.ctx.as_context_mut(), Pages(pages as usize)) {

@@ -19,6 +19,9 @@ use wasmi_core::UntypedValue;
 #[derive(Copy, Debug, Clone, PartialEq, Eq)]
 pub enum Instruction {
     LocalGet { local_depth: LocalIdx },
+    /// Variant of `LocalGet` required to differentiate
+    /// between empty and non-empty value stacks.
+    LocalGetEmpty { local_depth: LocalIdx },
     LocalSet { local_depth: LocalIdx },
     LocalTee { local_depth: LocalIdx },
     Br(Target),
@@ -33,6 +36,9 @@ pub enum Instruction {
     Drop,
     Select,
     GlobalGet(GlobalIdx),
+    /// Variant of `GlobalGet` required to differentiate
+    /// between empty and non-empty value stacks.
+    GlobalGetEmpty(GlobalIdx),
     GlobalSet(GlobalIdx),
     I32Load(Offset),
     I64Load(Offset),
@@ -58,8 +64,14 @@ pub enum Instruction {
     I64Store16(Offset),
     I64Store32(Offset),
     MemorySize,
+    /// Variant of `MemorySize` required to differentiate
+    /// between empty and non-empty value stacks.
+    MemorySizeEmpty,
     MemoryGrow,
     Const(UntypedValue),
+    /// Variant of `Const` required to differentiate
+    /// between empty and non-empty value stacks.
+    ConstEmpty(UntypedValue),
     I32Eqz,
     I32Eq,
     I32Ne,
