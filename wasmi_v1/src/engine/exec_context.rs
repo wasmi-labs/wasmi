@@ -618,20 +618,20 @@ where
 
     fn visit_br_if_eqz(&mut self, target: Target, top: UntypedValue) -> UntypedValue {
         let condition = bool::from(top);
-        let new_top = self.value_stack.try_pop();
+        let mut new_top = self.value_stack.try_pop();
         if condition {
             self.next_instr()
         } else {
-            self.branch_to(new_top, target)
+            new_top = self.branch_to(new_top, target)
         }
         new_top.unwrap_or_default()
     }
 
     fn visit_br_if_nez(&mut self, target: Target, top: UntypedValue) -> UntypedValue {
         let condition = bool::from(top);
-        let new_top = self.value_stack.try_pop();
+        let mut new_top = self.value_stack.try_pop();
         if condition {
-            self.branch_to(new_top, target);
+            new_top = self.branch_to(new_top, target);
         } else {
             self.next_instr();
         }
