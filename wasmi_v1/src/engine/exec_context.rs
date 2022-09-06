@@ -70,18 +70,24 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 Instr::LocalGetEmpty { local_depth } => {
                     top = exec_ctx.visit_local_get_empty(*local_depth)
                 }
-                Instr::LocalSet { local_depth } => { exec_ctx.visit_local_set(*local_depth, top) }
+                Instr::LocalSet { local_depth } => { top = exec_ctx.visit_local_set(*local_depth, top); }
                 Instr::LocalTee { local_depth } => { exec_ctx.visit_local_tee(*local_depth, top) }
-                Instr::Br(target) => { exec_ctx.visit_br(*target) }
-                Instr::BrIfEqz(target) => { exec_ctx.visit_br_if_eqz(*target, top) }
-                Instr::BrIfNez(target) => { exec_ctx.visit_br_if_nez(*target, top) }
+                Instr::Br(target) => { top = exec_ctx.visit_br(top, *target); }
+                Instr::BrEmpty(target) => { exec_ctx.visit_br_empty(*target) }
+                Instr::BrIfEqz(target) => { top = exec_ctx.visit_br_if_eqz(*target, top); }
+                Instr::BrIfNez(target) => { top = exec_ctx.visit_br_if_nez(*target, top); }
                 Instr::ReturnIfNez(drop_keep)  => {
-                    if let MaybeReturn::Return = exec_ctx.visit_return_if_nez(*drop_keep, top) {
-                        return Ok(CallOutcome::Return)
+                    match exec_ctx.visit_return_if_nez(*drop_keep, top) {
+                        MaybeReturn::Return => {
+                            return Ok(CallOutcome::Return)
+                        }
+                        MaybeReturn::Continue { new_top } => {
+                            top = new_top;
+                        },
                     }
                 }
                 Instr::BrTable { len_targets } => {
-                    exec_ctx.visit_br_table(*len_targets, top)
+                    top = exec_ctx.visit_br_table(*len_targets, top);
                 }
                 Instr::Unreachable => { exec_ctx.visit_unreachable()?; }
                 Instr::Return(drop_keep)  => {
@@ -102,7 +108,9 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 Instr::GlobalGetEmpty(global_idx) => {
                     top = exec_ctx.visit_global_get_empty(*global_idx);
                 }
-                Instr::GlobalSet(global_idx)  => { exec_ctx.visit_global_set(*global_idx, top) }
+                Instr::GlobalSet(global_idx)  => {
+                    top = exec_ctx.visit_global_set(*global_idx, top);
+                }
                 Instr::I32Load(offset)  => { top = exec_ctx.visit_i32_load(top, *offset)?; }
                 Instr::I64Load(offset)  => { top = exec_ctx.visit_i64_load(top, *offset)?; }
                 Instr::F32Load(offset)  => { top = exec_ctx.visit_f32_load(top, *offset)?; }
@@ -117,15 +125,15 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 Instr::I64Load16U(offset)  => { top = exec_ctx.visit_i64_load_u16(top, *offset)?; }
                 Instr::I64Load32S(offset)  => { top = exec_ctx.visit_i64_load_i32(top, *offset)?; }
                 Instr::I64Load32U(offset)  => { top = exec_ctx.visit_i64_load_u32(top, *offset)?; }
-                Instr::I32Store(offset)  => { exec_ctx.visit_i32_store(top, *offset)?; }
-                Instr::I64Store(offset)  => { exec_ctx.visit_i64_store(top, *offset)?; }
-                Instr::F32Store(offset)  => { exec_ctx.visit_f32_store(top, *offset)?; }
-                Instr::F64Store(offset)  => { exec_ctx.visit_f64_store(top, *offset)?; }
-                Instr::I32Store8(offset)  => { exec_ctx.visit_i32_store_8(top, *offset)?; }
-                Instr::I32Store16(offset)  => { exec_ctx.visit_i32_store_16(top, *offset)?; }
-                Instr::I64Store8(offset)  => { exec_ctx.visit_i64_store_8(top, *offset)?; }
-                Instr::I64Store16(offset)  => { exec_ctx.visit_i64_store_16(top, *offset)?; }
-                Instr::I64Store32(offset)  => { exec_ctx.visit_i64_store_32(top, *offset)?; }
+                Instr::I32Store(offset)  => { top = exec_ctx.visit_i32_store(top, *offset)?; }
+                Instr::I64Store(offset)  => { top = exec_ctx.visit_i64_store(top, *offset)?; }
+                Instr::F32Store(offset)  => { top = exec_ctx.visit_f32_store(top, *offset)?; }
+                Instr::F64Store(offset)  => { top = exec_ctx.visit_f64_store(top, *offset)?; }
+                Instr::I32Store8(offset)  => { top = exec_ctx.visit_i32_store_8(top, *offset)?; }
+                Instr::I32Store16(offset)  => { top = exec_ctx.visit_i32_store_16(top, *offset)?; }
+                Instr::I64Store8(offset)  => { top = exec_ctx.visit_i64_store_8(top, *offset)?; }
+                Instr::I64Store16(offset)  => { top = exec_ctx.visit_i64_store_16(top, *offset)?; }
+                Instr::I64Store32(offset)  => { top = exec_ctx.visit_i64_store_32(top, *offset)?; }
                 Instr::MemorySize => { top = exec_ctx.visit_memory_size(top); }
                 Instr::MemorySizeEmpty => { top = exec_ctx.visit_memory_size_empty(); }
                 Instr::MemoryGrow => { top = exec_ctx.visit_memory_grow(top); }
@@ -371,13 +379,12 @@ where
     /// - `i64.load`
     /// - `f32.load`
     /// - `f64.load`
-    fn execute_load<T>(&mut self, _top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap>
+    fn execute_load<T>(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap>
     where
         UntypedValue: From<T>,
         T: LittleEndianConvert,
     {
-        let entry = self.value_stack.last_mut();
-        let raw_address = u32::from(*entry);
+        let raw_address = u32::from(top);
         let address = Self::effective_address(offset, raw_address)?;
         let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
         self.cache
@@ -385,7 +392,6 @@ where
             .read(address, bytes.as_mut())?;
         let value = <T as LittleEndianConvert>::from_le_bytes(bytes);
         let result = value.into();
-        *entry = result;
         self.next_instr();
         Ok(result)
     }
@@ -406,13 +412,16 @@ where
     /// - `i64.load_16u`
     /// - `i64.load_32s`
     /// - `i64.load_32u`
-    fn execute_load_extend<T, U>(&mut self, _top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap>
+    fn execute_load_extend<T, U>(
+        &mut self,
+        top: UntypedValue,
+        offset: Offset,
+    ) -> Result<UntypedValue, Trap>
     where
         T: ExtendInto<U> + LittleEndianConvert,
         UntypedValue: From<U>,
     {
-        let entry = self.value_stack.last_mut();
-        let raw_address = u32::from(*entry);
+        let raw_address = u32::from(top);
         let address = Self::effective_address(offset, raw_address)?;
         let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
         self.cache
@@ -420,7 +429,6 @@ where
             .read(address, bytes.as_mut())?;
         let extended = <T as LittleEndianConvert>::from_le_bytes(bytes).extend_into();
         let result = extended.into();
-        *entry = result;
         self.next_instr();
         Ok(result)
     }
@@ -435,18 +443,20 @@ where
     /// - `i64.store`
     /// - `f32.store`
     /// - `f64.store`
-    fn execute_store<T>(&mut self, _top: UntypedValue, offset: Offset) -> Result<(), Trap>
+    fn execute_store<T>(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap>
     where
         T: LittleEndianConvert + From<UntypedValue>,
     {
-        let stack_value = self.value_stack.pop_as::<T>();
+        let stack_value = top.into();
         let raw_address = self.value_stack.pop_as::<u32>();
         let address = Self::effective_address(offset, raw_address)?;
         let bytes = <T as LittleEndianConvert>::into_le_bytes(stack_value);
         self.cache
             .default_memory_bytes(self.ctx.as_context_mut())
             .write(address, bytes.as_ref())?;
-        self.try_next_instr()
+        self.next_instr();
+        let new_top = self.value_stack.try_pop().unwrap_or_default();
+        Ok(new_top)
     }
 
     /// Stores a value of type `T` wrapped to type `U` into the default memory at the given address offset.
@@ -460,65 +470,67 @@ where
     /// - `i64.store8`
     /// - `i64.store16`
     /// - `i64.store32`
-    fn execute_store_wrap<T, U>(&mut self, _top: UntypedValue, offset: Offset) -> Result<(), Trap>
+    fn execute_store_wrap<T, U>(
+        &mut self,
+        top: UntypedValue,
+        offset: Offset,
+    ) -> Result<UntypedValue, Trap>
     where
         T: WrapInto<U> + From<UntypedValue>,
         U: LittleEndianConvert,
     {
-        let wrapped_value = self.value_stack.pop_as::<T>().wrap_into();
+        let wrapped_value = <T>::from(top).wrap_into();
         let raw_address = self.value_stack.pop_as::<u32>();
         let address = Self::effective_address(offset, raw_address)?;
         let bytes = <U as LittleEndianConvert>::into_le_bytes(wrapped_value);
         self.cache
             .default_memory_bytes(self.ctx.as_context_mut())
             .write(address, bytes.as_ref())?;
-        self.try_next_instr()
+        self.next_instr();
+        let new_top = self.value_stack.try_pop().unwrap_or_default();
+        Ok(new_top)
     }
 
-    fn execute_unary(&mut self, _top: UntypedValue, f: fn(UntypedValue) -> UntypedValue) -> UntypedValue {
-        let entry = self.value_stack.last_mut();
-        let result = f(*entry);
-        *entry = result;
+    fn execute_unary(
+        &mut self,
+        top: UntypedValue,
+        f: fn(UntypedValue) -> UntypedValue,
+    ) -> UntypedValue {
+        let result = f(top);
         self.next_instr();
         result
     }
 
     fn try_execute_unary(
         &mut self,
-        _top: UntypedValue,
+        top: UntypedValue,
         f: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<UntypedValue, Trap> {
-        let entry = self.value_stack.last_mut();
-        let result = f(*entry)?;
-        *entry = result;
-        self.try_next_instr()?;
+        let result = f(top)?;
+        self.next_instr();
         Ok(result)
     }
 
     fn execute_binary(
         &mut self,
-        _top: UntypedValue,
+        top: UntypedValue,
         f: fn(UntypedValue, UntypedValue) -> UntypedValue,
     ) -> UntypedValue {
-        let right = self.value_stack.pop();
-        let entry = self.value_stack.last_mut();
-        let left = *entry;
-        let result = f(left, right);
-        *entry = result;
+        let lhs = top;
+        let rhs = self.value_stack.pop();
+        let result = f(lhs, rhs);
         self.next_instr();
         result
     }
 
     fn try_execute_binary(
         &mut self,
-        _top: UntypedValue,
+        top: UntypedValue,
         f: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<UntypedValue, Trap> {
-        let right = self.value_stack.pop();
-        let entry = self.value_stack.last_mut();
-        let left = *entry;
-        let result = f(left, right)?;
-        *entry = result;
+        let rhs = self.value_stack.pop();
+        let lhs = top;
+        let result = f(lhs, rhs)?;
         self.next_instr();
         Ok(result)
     }
@@ -533,27 +545,31 @@ where
         top
     }
 
-    fn try_next_instr(&mut self) -> Result<(), Trap> {
-        self.pc += 1;
-        Ok(())
-    }
-
     fn next_instr(&mut self) {
         self.pc += 1;
     }
 
-    fn branch_to(&mut self, target: Target) {
+    fn branch_to(&mut self, top: Option<UntypedValue>, target: Target) {
+        if let Some(top) = top {
+            self.value_stack.push(top);
+        }
         self.value_stack.drop_keep(target.drop_keep());
         self.pc = target.destination_pc().into_usize();
     }
 
-    fn call_func(&mut self, func: Func) -> Result<CallOutcome, Trap> {
+    fn call_func(&mut self, top: UntypedValue, func: Func) -> Result<CallOutcome, Trap> {
         self.pc += 1;
         self.frame.update_pc(self.pc);
+        // We push the inline cached top most value from the value stack
+        // back to the original value stack before we conduct the call.
+        self.value_stack.push(top);
         Ok(CallOutcome::NestedCall(func))
     }
 
-    fn ret(&mut self, drop_keep: DropKeep) {
+    fn ret(&mut self, top: Option<UntypedValue>, drop_keep: DropKeep) {
+        if let Some(top) = top {
+            self.value_stack.push(top);
+        }
         self.value_stack.drop_keep(drop_keep)
     }
 }
@@ -561,7 +577,7 @@ where
 #[derive(Debug, Copy, Clone)]
 pub enum MaybeReturn {
     Return,
-    Continue,
+    Continue { new_top: UntypedValue },
 }
 
 impl<'engine, 'func, Ctx> ExecutionContext<'engine, 'func, Ctx>
@@ -572,117 +588,130 @@ where
         Err(TrapCode::Unreachable).map_err(Into::into)
     }
 
-    fn visit_br(&mut self, target: Target) {
-        self.branch_to(target)
+    fn visit_br(&mut self, top: UntypedValue, target: Target) -> UntypedValue {
+        self.branch_to(Some(top), target);
+        self.value_stack.try_pop().unwrap_or_default()
     }
 
-    fn visit_br_if_eqz(&mut self, target: Target, _top: UntypedValue) {
-        let condition = self.value_stack.pop_as();
+    fn visit_br_empty(&mut self, target: Target) {
+        self.branch_to(None, target);
+    }
+
+    fn visit_br_if_eqz(&mut self, target: Target, top: UntypedValue) -> UntypedValue {
+        let condition = bool::from(top);
+        let new_top = self.value_stack.try_pop();
         if condition {
             self.next_instr()
         } else {
-            self.branch_to(target)
+            self.branch_to(new_top, target)
         }
+        new_top.unwrap_or_default()
     }
 
-    fn visit_br_if_nez(&mut self, target: Target, _top: UntypedValue) {
-        let condition = self.value_stack.pop_as();
+    fn visit_br_if_nez(&mut self, target: Target, top: UntypedValue) -> UntypedValue {
+        let condition = bool::from(top);
+        let new_top = self.value_stack.try_pop();
         if condition {
-            self.branch_to(target)
+            self.branch_to(new_top, target);
         } else {
-            self.next_instr()
+            self.next_instr();
         }
+        new_top.unwrap_or_default()
     }
 
-    fn visit_return_if_nez(&mut self, drop_keep: DropKeep, _top: UntypedValue) -> MaybeReturn {
-        let condition = self.value_stack.pop_as();
+    fn visit_return_if_nez(&mut self, drop_keep: DropKeep, top: UntypedValue) -> MaybeReturn {
+        let new_top = self.value_stack.try_pop();
+        let condition = bool::from(top);
         if condition {
-            self.ret(drop_keep);
+            self.ret(new_top, drop_keep);
             MaybeReturn::Return
         } else {
             self.pc += 1;
-            MaybeReturn::Continue
+            let new_top = new_top.unwrap_or_default();
+            MaybeReturn::Continue { new_top }
         }
     }
 
-    fn visit_br_table(&mut self, len_targets: usize, _top: UntypedValue) {
-        let index: u32 = self.value_stack.pop_as();
+    fn visit_br_table(&mut self, len_targets: usize, top: UntypedValue) -> UntypedValue {
+        let new_top = self.value_stack.try_pop().unwrap_or_default();
+        let index = u32::from(top);
         // The index of the default target which is the last target of the slice.
         let max_index = len_targets - 1;
         // A normalized index will always yield a target without panicking.
         let normalized_index = cmp::min(index as usize, max_index);
         // Update `pc`:
         self.pc += normalized_index + 1;
+        new_top
     }
 
-    fn visit_ret(&mut self, drop_keep: DropKeep, _top: UntypedValue) {
-        self.ret(drop_keep)
+    fn visit_ret(&mut self, drop_keep: DropKeep, top: UntypedValue) {
+        self.ret(Some(top), drop_keep)
     }
 
-    fn visit_local_get(&mut self, local_depth: LocalIdx, _top: UntypedValue) -> UntypedValue {
-        let local_depth = Self::convert_local_depth(local_depth);
+    fn visit_local_get(&mut self, local_depth: LocalIdx, top: UntypedValue) -> UntypedValue {
+        let local_depth = Self::convert_local_depth(local_depth) - 1;
         let value = self.value_stack.peek(local_depth);
-        self.value_stack.push(value); // TODO: push top instead of value
+        self.value_stack.push(top);
         self.next_instr();
         value
     }
 
     fn visit_local_get_empty(&mut self, local_depth: LocalIdx) -> UntypedValue {
-        // TODO: implement properly
         let local_depth = Self::convert_local_depth(local_depth);
         let value = self.value_stack.peek(local_depth);
-        self.value_stack.push(value);
         self.next_instr();
         value
     }
 
-    fn visit_local_set(&mut self, local_depth: LocalIdx, _top: UntypedValue) {
-        let local_depth = Self::convert_local_depth(local_depth);
+    fn visit_local_set(&mut self, local_depth: LocalIdx, _top: UntypedValue) -> UntypedValue {
+        let local_depth = Self::convert_local_depth(local_depth) - 1;
         let new_value = self.value_stack.pop();
+        let new_top = self.value_stack.try_pop().unwrap_or_default();
         *self.value_stack.peek_mut(local_depth) = new_value;
+        self.next_instr();
+        new_top
+    }
+
+    fn visit_local_tee(&mut self, local_depth: LocalIdx, top: UntypedValue) {
+        let local_depth = Self::convert_local_depth(local_depth) - 1;
+        *self.value_stack.peek_mut(local_depth) = top;
         self.next_instr()
     }
 
-    fn visit_local_tee(&mut self, local_depth: LocalIdx, _top: UntypedValue) {
-        let local_depth = Self::convert_local_depth(local_depth);
-        let new_value = self.value_stack.last();
-        *self.value_stack.peek_mut(local_depth) = new_value;
-        self.next_instr()
-    }
-
-    fn visit_global_get(&mut self, global_index: GlobalIdx, _top: UntypedValue) -> UntypedValue {
+    fn visit_global_get(&mut self, global_index: GlobalIdx, top: UntypedValue) -> UntypedValue {
         let global_value = self.global(global_index).get(self.ctx.as_context()).into();
-        self.value_stack.push(global_value);
+        self.value_stack.push(top);
         self.next_instr();
         global_value
     }
 
     fn visit_global_get_empty(&mut self, global_index: GlobalIdx) -> UntypedValue {
-        // TODO: implement properly
         let global_value = self.global(global_index).get(self.ctx.as_context()).into();
-        self.value_stack.push(global_value);
         self.next_instr();
         global_value
     }
 
-    fn visit_global_set(&mut self, global_index: GlobalIdx, _top: UntypedValue) {
+    fn visit_global_set(&mut self, global_index: GlobalIdx, top: UntypedValue) -> UntypedValue {
         let global = self.global(global_index);
-        let new_value = self
-            .value_stack
-            .pop()
-            .with_type(global.value_type(self.ctx.as_context()));
+        let new_value = top.with_type(global.value_type(self.ctx.as_context()));
+        let new_top = self.value_stack.try_pop().unwrap_or_default();
         global
             .set(self.ctx.as_context_mut(), new_value)
             .unwrap_or_else(|error| panic!("encountered type mismatch upon global_set: {}", error));
-        self.next_instr()
+        self.next_instr();
+        new_top
     }
 
-    fn visit_call(&mut self, func_index: FuncIdx, _top: UntypedValue) -> Result<CallOutcome, Trap> {
+    fn visit_call(&mut self, func_index: FuncIdx, top: UntypedValue) -> Result<CallOutcome, Trap> {
         let callee = self.cache.get_func(&mut self.ctx, func_index.into_inner());
-        self.call_func(callee)
+        self.call_func(top, callee)
     }
 
-    fn visit_call_indirect(&mut self, signature_index: SignatureIdx, _top: UntypedValue) -> Result<CallOutcome, Trap> {
+    fn visit_call_indirect(
+        &mut self,
+        signature_index: SignatureIdx,
+        top: UntypedValue,
+    ) -> Result<CallOutcome, Trap> {
         let func_index: u32 = self.value_stack.pop_as();
         let table = self.default_table();
         let func = table
@@ -703,59 +732,52 @@ where
         if actual_signature != expected_signature {
             return Err(TrapCode::UnexpectedSignature).map_err(Into::into);
         }
-        self.call_func(func)
+        self.call_func(top, func)
     }
 
-    fn visit_const(&mut self, bytes: UntypedValue, _top: UntypedValue) -> UntypedValue {
-        self.value_stack.push(bytes);
+    fn visit_const(&mut self, bytes: UntypedValue, top: UntypedValue) -> UntypedValue {
+        self.value_stack.push(top);
         self.next_instr();
         bytes
     }
 
     fn visit_const_empty(&mut self, bytes: UntypedValue) -> UntypedValue {
-        // TODO: implement properly
-        self.value_stack.push(bytes);
         self.next_instr();
         bytes
     }
 
     fn visit_drop(&mut self) -> UntypedValue {
-        let top = self.value_stack.pop();
+        let new_top = self.value_stack.pop();
         self.next_instr();
-        top
+        new_top
     }
 
-    fn visit_select(&mut self, _top: UntypedValue) -> UntypedValue {
-        let result = self.value_stack.pop2_eval(|e1, e2, e3| {
-            let condition = <bool as From<UntypedValue>>::from(e3);
-            let result = if condition { *e1 } else { e2 };
-            *e1 = result;
-            result
-        });
+    fn visit_select(&mut self, top: UntypedValue) -> UntypedValue {
+        let (condition, if_true) = self.value_stack.pop2();
+        let condition = <bool as From<UntypedValue>>::from(condition);
+        let if_false = top;
+        let result = if condition { if_true } else { if_false };
         self.next_instr();
         result
-
     }
 
-    fn visit_memory_size(&mut self, _top: UntypedValue) -> UntypedValue {
+    fn visit_memory_size(&mut self, top: UntypedValue) -> UntypedValue {
         let memory = self.default_memory();
         let result = (memory.current_pages(self.ctx.as_context()).0 as u32).into();
-        self.value_stack.push(result);
+        self.value_stack.push(top);
         self.next_instr();
         result
     }
 
     fn visit_memory_size_empty(&mut self) -> UntypedValue {
-        // TODO: implement properly
         let memory = self.default_memory();
         let result = (memory.current_pages(self.ctx.as_context()).0 as u32).into();
-        self.value_stack.push(result);
         self.next_instr();
         result
     }
 
-    fn visit_memory_grow(&mut self, _top: UntypedValue) -> UntypedValue {
-        let pages: u32 = self.value_stack.pop_as();
+    fn visit_memory_grow(&mut self, top: UntypedValue) -> UntypedValue {
+        let pages: u32 = top.into();
         let memory = self.default_memory();
         let new_size = match memory.grow(self.ctx.as_context_mut(), Pages(pages as usize)) {
             Ok(Pages(old_size)) => old_size as u32,
@@ -764,12 +786,12 @@ where
                 //       in case of failure for this instruction.
                 u32::MAX
             }
-        }.into();
+        }
+        .into();
         // The memory grow might have invalidated the cached linear memory
         // so we need to reset it in order for the cache to reload in case it
         // is used again.
         self.cache.reset_default_memory_bytes();
-        self.value_stack.push(new_size);
         self.next_instr();
         new_size
     }
@@ -790,79 +812,139 @@ where
         self.execute_load::<F64>(top, offset)
     }
 
-    fn visit_i32_load_i8(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+    fn visit_i32_load_i8(
+        &mut self,
+        top: UntypedValue,
+        offset: Offset,
+    ) -> Result<UntypedValue, Trap> {
         self.execute_load_extend::<i8, i32>(top, offset)
     }
 
-    fn visit_i32_load_u8(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+    fn visit_i32_load_u8(
+        &mut self,
+        top: UntypedValue,
+        offset: Offset,
+    ) -> Result<UntypedValue, Trap> {
         self.execute_load_extend::<u8, i32>(top, offset)
     }
 
-    fn visit_i32_load_i16(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+    fn visit_i32_load_i16(
+        &mut self,
+        top: UntypedValue,
+        offset: Offset,
+    ) -> Result<UntypedValue, Trap> {
         self.execute_load_extend::<i16, i32>(top, offset)
     }
 
-    fn visit_i32_load_u16(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+    fn visit_i32_load_u16(
+        &mut self,
+        top: UntypedValue,
+        offset: Offset,
+    ) -> Result<UntypedValue, Trap> {
         self.execute_load_extend::<u16, i32>(top, offset)
     }
 
-    fn visit_i64_load_i8(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+    fn visit_i64_load_i8(
+        &mut self,
+        top: UntypedValue,
+        offset: Offset,
+    ) -> Result<UntypedValue, Trap> {
         self.execute_load_extend::<i8, i64>(top, offset)
     }
 
-    fn visit_i64_load_u8(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+    fn visit_i64_load_u8(
+        &mut self,
+        top: UntypedValue,
+        offset: Offset,
+    ) -> Result<UntypedValue, Trap> {
         self.execute_load_extend::<u8, i64>(top, offset)
     }
 
-    fn visit_i64_load_i16(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+    fn visit_i64_load_i16(
+        &mut self,
+        top: UntypedValue,
+        offset: Offset,
+    ) -> Result<UntypedValue, Trap> {
         self.execute_load_extend::<i16, i64>(top, offset)
     }
 
-    fn visit_i64_load_u16(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+    fn visit_i64_load_u16(
+        &mut self,
+        top: UntypedValue,
+        offset: Offset,
+    ) -> Result<UntypedValue, Trap> {
         self.execute_load_extend::<u16, i64>(top, offset)
     }
 
-    fn visit_i64_load_i32(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+    fn visit_i64_load_i32(
+        &mut self,
+        top: UntypedValue,
+        offset: Offset,
+    ) -> Result<UntypedValue, Trap> {
         self.execute_load_extend::<i32, i64>(top, offset)
     }
 
-    fn visit_i64_load_u32(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
+    fn visit_i64_load_u32(
+        &mut self,
+        top: UntypedValue,
+        offset: Offset,
+    ) -> Result<UntypedValue, Trap> {
         self.execute_load_extend::<u32, i64>(top, offset)
     }
 
-    fn visit_i32_store(&mut self, top: UntypedValue, offset: Offset) -> Result<(), Trap> {
+    fn visit_i32_store(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
         self.execute_store::<i32>(top, offset)
     }
 
-    fn visit_i64_store(&mut self, top: UntypedValue, offset: Offset) -> Result<(), Trap> {
+    fn visit_i64_store(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
         self.execute_store::<i64>(top, offset)
     }
 
-    fn visit_f32_store(&mut self, top: UntypedValue, offset: Offset) -> Result<(), Trap> {
+    fn visit_f32_store(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
         self.execute_store::<F32>(top, offset)
     }
 
-    fn visit_f64_store(&mut self, top: UntypedValue, offset: Offset) -> Result<(), Trap> {
+    fn visit_f64_store(&mut self, top: UntypedValue, offset: Offset) -> Result<UntypedValue, Trap> {
         self.execute_store::<F64>(top, offset)
     }
 
-    fn visit_i32_store_8(&mut self, top: UntypedValue, offset: Offset) -> Result<(), Trap> {
+    fn visit_i32_store_8(
+        &mut self,
+        top: UntypedValue,
+        offset: Offset,
+    ) -> Result<UntypedValue, Trap> {
         self.execute_store_wrap::<i32, i8>(top, offset)
     }
 
-    fn visit_i32_store_16(&mut self, top: UntypedValue, offset: Offset) -> Result<(), Trap> {
+    fn visit_i32_store_16(
+        &mut self,
+        top: UntypedValue,
+        offset: Offset,
+    ) -> Result<UntypedValue, Trap> {
         self.execute_store_wrap::<i32, i16>(top, offset)
     }
 
-    fn visit_i64_store_8(&mut self, top: UntypedValue, offset: Offset) -> Result<(), Trap> {
+    fn visit_i64_store_8(
+        &mut self,
+        top: UntypedValue,
+        offset: Offset,
+    ) -> Result<UntypedValue, Trap> {
         self.execute_store_wrap::<i64, i8>(top, offset)
     }
 
-    fn visit_i64_store_16(&mut self, top: UntypedValue, offset: Offset) -> Result<(), Trap> {
+    fn visit_i64_store_16(
+        &mut self,
+        top: UntypedValue,
+        offset: Offset,
+    ) -> Result<UntypedValue, Trap> {
         self.execute_store_wrap::<i64, i16>(top, offset)
     }
 
-    fn visit_i64_store_32(&mut self, top: UntypedValue, offset: Offset) -> Result<(), Trap> {
+    fn visit_i64_store_32(
+        &mut self,
+        top: UntypedValue,
+        offset: Offset,
+    ) -> Result<UntypedValue, Trap> {
         self.execute_store_wrap::<i64, i32>(top, offset)
     }
 
@@ -1259,7 +1341,7 @@ where
     }
 
     fn visit_i32_wrap_i64(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::i32_wrap_i64)
+        self.execute_unary(top, UntypedValue::i32_wrap_i64)
     }
 
     fn visit_i32_trunc_f32(&mut self, top: UntypedValue) -> Result<UntypedValue, Trap> {
@@ -1279,11 +1361,11 @@ where
     }
 
     fn visit_i64_extend_i32(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::i64_extend_i32_s)
+        self.execute_unary(top, UntypedValue::i64_extend_i32_s)
     }
 
     fn visit_i64_extend_u32(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::i64_extend_i32_u)
+        self.execute_unary(top, UntypedValue::i64_extend_i32_u)
     }
 
     fn visit_i64_trunc_f32(&mut self, top: UntypedValue) -> Result<UntypedValue, Trap> {
@@ -1303,43 +1385,43 @@ where
     }
 
     fn visit_f32_convert_i32(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::f32_convert_i32_s)
+        self.execute_unary(top, UntypedValue::f32_convert_i32_s)
     }
 
     fn visit_f32_convert_u32(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::f32_convert_i32_u)
+        self.execute_unary(top, UntypedValue::f32_convert_i32_u)
     }
 
     fn visit_f32_convert_i64(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::f32_convert_i64_s)
+        self.execute_unary(top, UntypedValue::f32_convert_i64_s)
     }
 
     fn visit_f32_convert_u64(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::f32_convert_i64_u)
+        self.execute_unary(top, UntypedValue::f32_convert_i64_u)
     }
 
     fn visit_f32_demote_f64(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::f32_demote_f64)
+        self.execute_unary(top, UntypedValue::f32_demote_f64)
     }
 
     fn visit_f64_convert_i32(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::f64_convert_i32_s)
+        self.execute_unary(top, UntypedValue::f64_convert_i32_s)
     }
 
     fn visit_f64_convert_u32(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::f64_convert_i32_u)
+        self.execute_unary(top, UntypedValue::f64_convert_i32_u)
     }
 
     fn visit_f64_convert_i64(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::f64_convert_i64_s)
+        self.execute_unary(top, UntypedValue::f64_convert_i64_s)
     }
 
     fn visit_f64_convert_u64(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::f64_convert_i64_u)
+        self.execute_unary(top, UntypedValue::f64_convert_i64_u)
     }
 
     fn visit_f64_promote_f32(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::f64_promote_f32)
+        self.execute_unary(top, UntypedValue::f64_promote_f32)
     }
 
     fn visit_i32_reinterpret_f32(&mut self, top: UntypedValue) -> UntypedValue {
@@ -1359,54 +1441,54 @@ where
     }
 
     fn visit_i32_sign_extend8(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::i32_extend8_s)
+        self.execute_unary(top, UntypedValue::i32_extend8_s)
     }
 
     fn visit_i32_sign_extend16(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::i32_extend16_s)
+        self.execute_unary(top, UntypedValue::i32_extend16_s)
     }
 
     fn visit_i64_sign_extend8(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::i64_extend8_s)
+        self.execute_unary(top, UntypedValue::i64_extend8_s)
     }
 
     fn visit_i64_sign_extend16(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::i64_extend16_s)
+        self.execute_unary(top, UntypedValue::i64_extend16_s)
     }
 
     fn visit_i64_sign_extend32(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::i64_extend32_s)
+        self.execute_unary(top, UntypedValue::i64_extend32_s)
     }
 
     fn visit_i32_trunc_sat_f32(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::i32_trunc_sat_f32_s)
+        self.execute_unary(top, UntypedValue::i32_trunc_sat_f32_s)
     }
 
     fn visit_u32_trunc_sat_f32(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::i32_trunc_sat_f32_u)
+        self.execute_unary(top, UntypedValue::i32_trunc_sat_f32_u)
     }
 
     fn visit_i32_trunc_sat_f64(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::i32_trunc_sat_f64_s)
+        self.execute_unary(top, UntypedValue::i32_trunc_sat_f64_s)
     }
 
     fn visit_u32_trunc_sat_f64(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::i32_trunc_sat_f64_u)
+        self.execute_unary(top, UntypedValue::i32_trunc_sat_f64_u)
     }
 
     fn visit_i64_trunc_sat_f32(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::i64_trunc_sat_f32_s)
+        self.execute_unary(top, UntypedValue::i64_trunc_sat_f32_s)
     }
 
     fn visit_u64_trunc_sat_f32(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::i64_trunc_sat_f32_u)
+        self.execute_unary(top, UntypedValue::i64_trunc_sat_f32_u)
     }
 
     fn visit_i64_trunc_sat_f64(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::i64_trunc_sat_f64_s)
+        self.execute_unary(top, UntypedValue::i64_trunc_sat_f64_s)
     }
 
     fn visit_u64_trunc_sat_f64(&mut self, top: UntypedValue) -> UntypedValue {
-        self.execute_unary(top,UntypedValue::i64_trunc_sat_f64_u)
+        self.execute_unary(top, UntypedValue::i64_trunc_sat_f64_u)
     }
 }

@@ -195,24 +195,6 @@ impl ValueStack {
         self.stack_ptr -= drop;
     }
 
-    /// Returns the last stack entry of the [`ValueStack`].
-    ///
-    /// # Note
-    ///
-    /// This has the same effect as [`ValueStack::peek`]`(0)`.
-    pub fn last(&self) -> UntypedValue {
-        self.get_release_unchecked(self.stack_ptr - 1)
-    }
-
-    /// Returns the last stack entry of the [`ValueStack`].
-    ///
-    /// # Note
-    ///
-    /// This has the same effect as [`ValueStack::peek`]`(0)`.
-    pub fn last_mut(&mut self) -> &mut UntypedValue {
-        self.get_release_unchecked_mut(self.stack_ptr - 1)
-    }
-
     /// Peeks the entry at the given depth from the last entry.
     ///
     /// # Note
@@ -246,6 +228,15 @@ impl ValueStack {
         self.get_release_unchecked(self.stack_ptr)
     }
 
+    /// Pops the last [`UntypedValue`] from the [`ValueStack`] if any.
+    pub fn try_pop(&mut self) -> Option<UntypedValue> {
+        if self.is_empty() {
+            return None;
+        }
+        self.stack_ptr -= 1;
+        self.get_release_unchecked(self.stack_ptr).into()
+    }
+
     /// Drops the last value on the [`ValueStack`].
     pub fn drop(&mut self, depth: usize) {
         self.stack_ptr -= depth;
@@ -275,23 +266,6 @@ impl ValueStack {
         )
     }
 
-    /// Evaluates `f` on the top three stack entries.
-    ///
-    /// In summary this procedure does the following:
-    ///
-    /// - Pop entry `e3`.
-    /// - Pop entry `e2`.
-    /// - Peek entry `&mut e1_ptr`.
-    /// - Evaluate `f(e1_ptr, e2, e3)`.
-    pub fn pop2_eval<F, R>(&mut self, f: F) -> R
-    where
-        F: FnOnce(&mut UntypedValue, UntypedValue, UntypedValue) -> R,
-    {
-        let (e2, e3) = self.pop2();
-        let e1 = self.last_mut();
-        f(e1, e2, e3)
-    }
-
     /// Pushes the [`UntypedValue`] to the end of the [`ValueStack`].
     ///
     /// # Note
@@ -317,6 +291,11 @@ impl ValueStack {
     /// Returns the current length of the [`ValueStack`].
     pub fn len(&self) -> usize {
         self.stack_ptr
+    }
+
+    /// Returns `true` if the [`ValueStack`] is empty.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     /// Reserves enough space for `additional` entries in the [`ValueStack`].
