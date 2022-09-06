@@ -18,6 +18,8 @@ pub struct ValueStack {
     entries: Vec<UntypedValue>,
     /// Index of the first free place in the stack.
     stack_ptr: usize,
+    /// Index of the last local variable of the current function frame.
+    locals_ptr: usize,
     /// The maximum value stack height.
     ///
     /// # Note
@@ -112,6 +114,7 @@ impl ValueStack {
         Self {
             entries,
             stack_ptr: 0,
+            locals_ptr: 0,
             maximum_len,
         }
     }
@@ -245,7 +248,9 @@ impl ValueStack {
 
     /// Pops the last [`UntypedValue`] from the [`ValueStack`] if any.
     pub fn try_pop(&mut self) -> Option<UntypedValue> {
-        if self.is_empty() {
+        if self.locals_ptr == self.stack_ptr {
+            // Cannot pop more values since we would otherwise
+            // drop local variables of the current frame.
             return None;
         }
         self.stack_ptr -= 1;
@@ -308,11 +313,6 @@ impl ValueStack {
         self.stack_ptr
     }
 
-    /// Returns `true` if the [`ValueStack`] is empty.
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
     /// Reserves enough space for `additional` entries in the [`ValueStack`].
     ///
     /// # Note
@@ -371,6 +371,11 @@ impl ValueStack {
     /// function execution happens.
     pub fn clear(&mut self) {
         self.stack_ptr = 0;
+    }
+
+    /// Marks the current state of the [`ValueStack`] as initialized with locals.
+    pub fn mark_locals(&mut self) {
+        self.locals_ptr = self.stack_ptr;
     }
 }
 
