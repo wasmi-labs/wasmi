@@ -199,7 +199,7 @@ impl ValueStack {
     ///
     /// # Note
     ///
-    /// Given a `depth` of 1 has the same effect as [`ValueStack::last`].
+    /// Returns a shared reference to the last element for a `depth` of 1.
     ///
     /// A `depth` of 0 is invalid and undefined.
     pub fn peek(&self, depth: usize) -> UntypedValue {
@@ -210,7 +210,7 @@ impl ValueStack {
     ///
     /// # Note
     ///
-    /// Given a `depth` of 1 has the same effect as [`ValueStack::last_mut`].
+    /// Returns an exclusive reference to the last element for a `depth` of 1.
     ///
     /// A `depth` of 0 is invalid and undefined.
     pub fn peek_mut(&mut self, depth: usize) -> &mut UntypedValue {
