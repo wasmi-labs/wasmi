@@ -792,7 +792,7 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
             let global_idx = global_idx.into_u32().into();
             builder
                 .inst_builder
-                .push_inst(Instruction::GetGlobal(global_idx));
+                .push_inst(Instruction::GlobalGet(global_idx));
             Ok(())
         })
     }
@@ -808,7 +808,7 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
             let global_idx = global_idx.into_u32().into();
             builder
                 .inst_builder
-                .push_inst(Instruction::SetGlobal(global_idx));
+                .push_inst(Instruction::GlobalSet(global_idx));
             Ok(())
         })
     }
@@ -1096,7 +1096,7 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
         self.translate_if_reachable(|builder| {
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
             builder.value_stack.push(ValueType::I32);
-            builder.inst_builder.push_inst(Instruction::CurrentMemory);
+            builder.inst_builder.push_inst(Instruction::MemorySize);
             Ok(())
         })
     }
@@ -1106,7 +1106,7 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
         self.translate_if_reachable(|builder| {
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
             debug_assert_eq!(builder.value_stack.top(), ValueType::I32);
-            builder.inst_builder.push_inst(Instruction::GrowMemory);
+            builder.inst_builder.push_inst(Instruction::MemoryGrow);
             Ok(())
         })
     }

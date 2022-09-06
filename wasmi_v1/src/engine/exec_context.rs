@@ -63,9 +63,9 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 self.insts.get_release_unchecked(exec_ctx.pc)
             };
             match instr {
-                Instr::GetLocal { local_depth } => { exec_ctx.visit_get_local(*local_depth)?; }
-                Instr::SetLocal { local_depth } => { exec_ctx.visit_set_local(*local_depth)?; }
-                Instr::TeeLocal { local_depth } => { exec_ctx.visit_tee_local(*local_depth)?; }
+                Instr::LocalGet { local_depth } => { exec_ctx.visit_get_local(*local_depth)?; }
+                Instr::LocalSet { local_depth } => { exec_ctx.visit_set_local(*local_depth)?; }
+                Instr::LocalTee { local_depth } => { exec_ctx.visit_tee_local(*local_depth)?; }
                 Instr::Br(target) => { exec_ctx.visit_br(*target)?; }
                 Instr::BrIfEqz(target) => { exec_ctx.visit_br_if_eqz(*target)?; }
                 Instr::BrIfNez(target) => { exec_ctx.visit_br_if_nez(*target)?; }
@@ -90,8 +90,8 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 }
                 Instr::Drop => { exec_ctx.visit_drop()?; }
                 Instr::Select => { exec_ctx.visit_select()?; }
-                Instr::GetGlobal(global_idx)  => { exec_ctx.visit_get_global(*global_idx)?; }
-                Instr::SetGlobal(global_idx)  => { exec_ctx.visit_set_global(*global_idx)?; }
+                Instr::GlobalGet(global_idx)  => { exec_ctx.visit_get_global(*global_idx)?; }
+                Instr::GlobalSet(global_idx)  => { exec_ctx.visit_set_global(*global_idx)?; }
                 Instr::I32Load(offset)  => { exec_ctx.visit_i32_load(*offset)?; }
                 Instr::I64Load(offset)  => { exec_ctx.visit_i64_load(*offset)?; }
                 Instr::F32Load(offset)  => { exec_ctx.visit_f32_load(*offset)?; }
@@ -115,8 +115,8 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 Instr::I64Store8(offset)  => { exec_ctx.visit_i64_store_8(*offset)?; }
                 Instr::I64Store16(offset)  => { exec_ctx.visit_i64_store_16(*offset)?; }
                 Instr::I64Store32(offset)  => { exec_ctx.visit_i64_store_32(*offset)?; }
-                Instr::CurrentMemory => { exec_ctx.visit_current_memory()?; }
-                Instr::GrowMemory => { exec_ctx.visit_grow_memory()?; }
+                Instr::MemorySize => { exec_ctx.visit_current_memory()?; }
+                Instr::MemoryGrow => { exec_ctx.visit_grow_memory()?; }
                 Instr::Const(bytes)  => { exec_ctx.visit_const(*bytes)?; }
                 Instr::I32Eqz => { exec_ctx.visit_i32_eqz()?; }
                 Instr::I32Eq => { exec_ctx.visit_i32_eq()?; }
