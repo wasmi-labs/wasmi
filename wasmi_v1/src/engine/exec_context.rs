@@ -70,7 +70,7 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 Instr::BrIfEqz(target) => { exec_ctx.visit_br_if_eqz(*target)?; }
                 Instr::BrIfNez(target) => { exec_ctx.visit_br_if_nez(*target)?; }
                 Instr::ReturnIfNez(drop_keep)  => {
-                    if let MaybeReturn::Return = exec_ctx.visit_return_if_nez(*drop_keep)? {
+                    if let MaybeReturn::Return = exec_ctx.visit_return_if_nez(*drop_keep) {
                         return Ok(CallOutcome::Return)
                     }
                 }
@@ -79,7 +79,7 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 }
                 Instr::Unreachable => { exec_ctx.visit_unreachable()?; }
                 Instr::Return(drop_keep)  => {
-                    exec_ctx.visit_ret(*drop_keep)?;
+                    exec_ctx.visit_ret(*drop_keep);
                     return Ok(CallOutcome::Return)
                 }
                 Instr::Call(func) => {
@@ -521,9 +521,8 @@ where
         Ok(CallOutcome::NestedCall(func))
     }
 
-    fn ret(&mut self, drop_keep: DropKeep) -> Result<(), Trap> {
-        self.value_stack.drop_keep(drop_keep);
-        Ok(())
+    fn ret(&mut self, drop_keep: DropKeep) {
+        self.value_stack.drop_keep(drop_keep)
     }
 }
 
@@ -563,14 +562,14 @@ where
         }
     }
 
-    fn visit_return_if_nez(&mut self, drop_keep: DropKeep) -> Result<MaybeReturn, Trap> {
+    fn visit_return_if_nez(&mut self, drop_keep: DropKeep) -> MaybeReturn {
         let condition = self.value_stack.pop_as();
         if condition {
-            self.ret(drop_keep)?;
-            Ok(MaybeReturn::Return)
+            self.ret(drop_keep);
+            MaybeReturn::Return
         } else {
-            self.pc += 1;
-            Ok(MaybeReturn::Continue)
+            self.next_instr();
+            MaybeReturn::Continue
         }
     }
 
@@ -585,7 +584,7 @@ where
         Ok(())
     }
 
-    fn visit_ret(&mut self, drop_keep: DropKeep) -> Result<(), Trap> {
+    fn visit_ret(&mut self, drop_keep: DropKeep) {
         self.ret(drop_keep)
     }
 
