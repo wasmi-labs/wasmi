@@ -604,8 +604,7 @@ where
     }
 
     fn visit_br(&mut self, top: UntypedValue, target: Target) -> UntypedValue {
-        self.branch_to(Some(top), target);
-        self.value_stack.try_pop().unwrap_or_default()
+        self.branch_to(Some(top), target).unwrap_or_default()
     }
 
     fn visit_br_empty(&mut self, target: Target) {
