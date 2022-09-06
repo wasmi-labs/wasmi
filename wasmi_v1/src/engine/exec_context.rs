@@ -562,12 +562,17 @@ where
         self.pc += 1;
     }
 
-    fn branch_to(&mut self, top: Option<UntypedValue>, target: Target) {
+    fn branch_to(&mut self, top: Option<UntypedValue>, target: Target) -> Option<UntypedValue> {
         if let Some(top) = top {
             self.value_stack.push(top);
         }
         self.value_stack.drop_keep(target.drop_keep());
         self.pc = target.destination_pc().into_usize();
+        if target.drop_keep().keep() >= 1 {
+            Some(self.value_stack.pop())
+        } else {
+            None
+        }
     }
 
     fn call_func(&mut self, top: Option<UntypedValue>, func: Func) -> Result<CallOutcome, Trap> {
