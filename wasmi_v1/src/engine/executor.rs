@@ -37,8 +37,7 @@ pub fn execute_frame<'engine>(
     cache: &mut InstanceCache,
 ) -> Result<CallOutcome, Trap> {
     use Instruction as Instr;
-    cache.update_instance(frame.instance());
-    let mut exec_ctx = ExecutionContext::new(value_stack, frame, cache, &mut ctx, frame.pc());
+    let mut exec_ctx = ExecutionContext::new(&mut ctx, frame, value_stack, cache);
     loop {
         // # Safety
         //
@@ -257,19 +256,21 @@ where
     Ctx: AsContextMut,
 {
     /// Creates a new [`ExecutionContext`] for executing a single `wasmi` bytecode instruction.
+    #[inline(always)]
     pub fn new(
-        value_stack: &'engine mut ValueStack,
-        frame: &'func mut FuncFrame,
-        cache: &'engine mut InstanceCache,
         ctx: Ctx,
-        pc: usize,
+        frame: &'func mut FuncFrame,
+        value_stack: &'engine mut ValueStack,
+        cache: &'engine mut InstanceCache,
     ) -> Self {
+        cache.update_instance(frame.instance());
+        let pc = frame.pc();
         Self {
-            value_stack,
-            frame,
             ctx,
-            pc,
+            frame,
+            value_stack,
             cache,
+            pc,
         }
     }
 
