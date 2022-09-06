@@ -305,7 +305,7 @@ where
     fn global(&self, global_index: GlobalIdx) -> Global {
         self.frame
             .instance()
-            .get_global(&self.ctx, global_index.into_inner())
+            .get_global(self.ctx.as_context(), global_index.into_inner())
             .unwrap_or_else(|| panic!("missing global at index {:?}", global_index))
     }
 
@@ -348,7 +348,7 @@ where
         let address = Self::effective_address(offset, raw_address)?;
         let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
         self.cache
-            .default_memory_bytes(&mut self.ctx)
+            .default_memory_bytes(self.ctx.as_context_mut())
             .read(address, bytes.as_mut())?;
         let value = <T as LittleEndianConvert>::from_le_bytes(bytes);
         *entry = value.into();
@@ -382,7 +382,7 @@ where
         let address = Self::effective_address(offset, raw_address)?;
         let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
         self.cache
-            .default_memory_bytes(&mut self.ctx)
+            .default_memory_bytes(self.ctx.as_context_mut())
             .read(address, bytes.as_mut())?;
         let extended = <T as LittleEndianConvert>::from_le_bytes(bytes).extend_into();
         *entry = extended.into();
@@ -409,7 +409,7 @@ where
         let address = Self::effective_address(offset, raw_address)?;
         let bytes = <T as LittleEndianConvert>::into_le_bytes(stack_value);
         self.cache
-            .default_memory_bytes(&mut self.ctx)
+            .default_memory_bytes(self.ctx.as_context_mut())
             .write(address, bytes.as_ref())?;
         self.next_instr();
         Ok(())
@@ -436,7 +436,7 @@ where
         let address = Self::effective_address(offset, raw_address)?;
         let bytes = <U as LittleEndianConvert>::into_le_bytes(wrapped_value);
         self.cache
-            .default_memory_bytes(&mut self.ctx)
+            .default_memory_bytes(self.ctx.as_context_mut())
             .write(address, bytes.as_ref())?;
         self.next_instr();
         Ok(())
@@ -594,7 +594,7 @@ where
     }
 
     fn visit_get_global(&mut self, global_index: GlobalIdx) {
-        let global_value = self.global(global_index).get_untyped(&self.ctx);
+        let global_value = self.global(global_index).get_untyped(self.ctx.as_context());
         self.value_stack.push(global_value);
         self.next_instr()
     }
@@ -602,7 +602,7 @@ where
     fn visit_set_global(&mut self, global_index: GlobalIdx) {
         let global = self.global(global_index);
         let new_value = self.value_stack.pop();
-        global.set_untyped(&mut self.ctx, new_value);
+        global.set_untyped(self.ctx.as_context_mut(), new_value);
         self.next_instr()
     }
 
@@ -615,14 +615,14 @@ where
         let func_index: u32 = self.value_stack.pop_as();
         let table = self.default_table();
         let func = table
-            .get(&self.ctx, func_index as usize)
+            .get(self.ctx.as_context(), func_index as usize)
             .map_err(|_| TrapCode::TableAccessOutOfBounds)?
             .ok_or(TrapCode::ElemUninitialized)?;
-        let actual_signature = func.signature(&self.ctx);
+        let actual_signature = func.signature(self.ctx.as_context());
         let expected_signature = self
             .frame
             .instance()
-            .get_signature(&self.ctx, signature_index.into_inner())
+            .get_signature(self.ctx.as_context(), signature_index.into_inner())
             .unwrap_or_else(|| {
                 panic!(
                     "missing signature for call_indirect at index: {:?}",
@@ -656,7 +656,7 @@ where
 
     fn visit_current_memory(&mut self) {
         let memory = self.default_memory();
-        let result = memory.current_pages(&self.ctx).0 as u32;
+        let result = memory.current_pages(self.ctx.as_context()).0 as u32;
         self.value_stack.push(result);
         self.next_instr()
     }
@@ -664,7 +664,7 @@ where
     fn visit_grow_memory(&mut self) {
         let pages: u32 = self.value_stack.pop_as();
         let memory = self.default_memory();
-        let new_size = match memory.grow(&mut self.ctx, Pages(pages as usize)) {
+        let new_size = match memory.grow(self.ctx.as_context_mut(), Pages(pages as usize)) {
             Ok(Pages(old_size)) => old_size as u32,
             Err(_) => {
                 // Note: The WebAssembly spec demands to return `0xFFFF_FFFF`
