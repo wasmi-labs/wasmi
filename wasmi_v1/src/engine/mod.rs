@@ -16,6 +16,7 @@ use self::{
     bytecode::Instruction,
     cache::InstanceCache,
     code_map::CodeMap,
+    executor::execute_frame,
     func_types::FuncTypeRegistry,
     stack::{FuncFrame, Stack, ValueStack},
 };
@@ -362,11 +363,7 @@ impl EngineInner {
         cache: &mut InstanceCache,
     ) -> Result<(), Trap> {
         'outer: loop {
-            match self
-                .stack
-                .executor(frame, &self.code_map)
-                .execute_frame(&mut ctx, cache)?
-            {
+            match self.execute_frame(&mut ctx, frame, cache)? {
                 CallOutcome::Return => match self.stack.return_wasm() {
                     Some(caller) => {
                         *frame = caller;
@@ -387,5 +384,20 @@ impl EngineInner {
                 },
             }
         }
+    }
+
+    /// Executes the given function `frame` and returns the result.
+    ///
+    /// # Errors
+    ///
+    /// - If the execution of the function `frame` trapped.
+    fn execute_frame(
+        &mut self,
+        ctx: impl AsContextMut,
+        frame: &mut FuncFrame,
+        cache: &mut InstanceCache,
+    ) -> Result<CallOutcome, Trap> {
+        let insts = self.code_map.insts(frame.iref());
+        execute_frame(ctx, frame, insts, &mut self.stack.values, cache)
     }
 }
