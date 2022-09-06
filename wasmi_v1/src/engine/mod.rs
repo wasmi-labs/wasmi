@@ -282,20 +282,20 @@ impl EngineInner {
         Results: CallResults,
     {
         self.initialize_args(params);
-        let signature = match func.as_internal(&ctx) {
+        let signature = match func.as_internal(ctx.as_context()) {
             FuncEntityInternal::Wasm(wasm_func) => {
                 let signature = wasm_func.signature();
                 let mut frame = self.stack.call_wasm_root(wasm_func, &self.code_map)?;
                 let instance = wasm_func.instance();
                 let mut cache = InstanceCache::from(instance);
-                self.execute_wasm_func(&mut ctx, &mut frame, &mut cache)?;
+                self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
                 signature
             }
             FuncEntityInternal::Host(host_func) => {
                 let signature = host_func.signature();
                 let host_func = host_func.clone();
                 self.stack
-                    .call_host_root(&mut ctx, host_func, &self.func_types)?;
+                    .call_host_root(ctx.as_context_mut(), host_func, &self.func_types)?;
                 signature
             }
         };
@@ -363,7 +363,7 @@ impl EngineInner {
         cache: &mut InstanceCache,
     ) -> Result<(), Trap> {
         'outer: loop {
-            match self.execute_frame(&mut ctx, frame, cache)? {
+            match self.execute_frame(ctx.as_context_mut(), frame, cache)? {
                 CallOutcome::Return => match self.stack.return_wasm() {
                     Some(caller) => {
                         *frame = caller;
@@ -371,7 +371,7 @@ impl EngineInner {
                     }
                     None => return Ok(()),
                 },
-                CallOutcome::NestedCall(called_func) => match called_func.as_internal(&ctx) {
+                CallOutcome::NestedCall(called_func) => match called_func.as_internal(ctx.as_context()) {
                     FuncEntityInternal::Wasm(wasm_func) => {
                         self.stack.call_wasm(frame, wasm_func, &self.code_map)?;
                     }
@@ -379,7 +379,7 @@ impl EngineInner {
                         cache.reset_default_memory_bytes();
                         let host_func = host_func.clone();
                         self.stack
-                            .call_host(&mut ctx, frame, host_func, &self.func_types)?;
+                            .call_host(ctx.as_context_mut(), frame, host_func, &self.func_types)?;
                     }
                 },
             }
