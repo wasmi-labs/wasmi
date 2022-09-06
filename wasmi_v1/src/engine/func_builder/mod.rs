@@ -668,12 +668,12 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     /// Translates a Wasm `return` control flow operator.
     pub fn translate_return(&mut self) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let drop_keep = builder.drop_keep_return();
             let instr = if builder.value_stack.is_empty() {
                 Instruction::ReturnEmpty
             } else {
                 Instruction::Return
             };
+            let drop_keep = builder.drop_keep_return();
             builder.inst_builder.push_inst(instr(drop_keep));
             builder.reachable = false;
             Ok(())
