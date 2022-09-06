@@ -92,13 +92,9 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                     }
                 }
                 Instr::BrTable { len_targets } => exec_ctx.visit_br_table(*len_targets),
-                Instr::Unreachable => { exec_ctx.visit_unreachable()?; }
-                Instr::Return(drop_keep) => {
-                    return exec_ctx.visit_ret(*drop_keep)
-                }
-                Instr::Call(func) => {
-                    return exec_ctx.visit_call(*func)
-                }
+                Instr::Unreachable => exec_ctx.visit_unreachable()?,
+                Instr::Return(drop_keep) => return exec_ctx.visit_ret(*drop_keep),
+                Instr::Call(func) => return exec_ctx.visit_call(*func),
                 Instr::CallIndirect(signature) => {
                     return exec_ctx.visit_call_indirect(*signature)
                 }
@@ -106,29 +102,29 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 Instr::Select => exec_ctx.visit_select(),
                 Instr::GlobalGet(global_idx) => exec_ctx.visit_get_global(*global_idx),
                 Instr::GlobalSet(global_idx) => exec_ctx.visit_set_global(*global_idx),
-                Instr::I32Load(offset) => { exec_ctx.visit_i32_load(*offset)? }
-                Instr::I64Load(offset) => { exec_ctx.visit_i64_load(*offset)? }
-                Instr::F32Load(offset) => { exec_ctx.visit_f32_load(*offset)? }
-                Instr::F64Load(offset) => { exec_ctx.visit_f64_load(*offset)? }
-                Instr::I32Load8S(offset) => { exec_ctx.visit_i32_load_i8(*offset)? }
-                Instr::I32Load8U(offset) => { exec_ctx.visit_i32_load_u8(*offset)? }
-                Instr::I32Load16S(offset) => { exec_ctx.visit_i32_load_i16(*offset)? }
-                Instr::I32Load16U(offset) => { exec_ctx.visit_i32_load_u16(*offset)? }
-                Instr::I64Load8S(offset) => { exec_ctx.visit_i64_load_i8(*offset)? }
-                Instr::I64Load8U(offset) => { exec_ctx.visit_i64_load_u8(*offset)? }
-                Instr::I64Load16S(offset) => { exec_ctx.visit_i64_load_i16(*offset)? }
-                Instr::I64Load16U(offset) => { exec_ctx.visit_i64_load_u16(*offset)? }
-                Instr::I64Load32S(offset) => { exec_ctx.visit_i64_load_i32(*offset)? }
-                Instr::I64Load32U(offset) => { exec_ctx.visit_i64_load_u32(*offset)? }
-                Instr::I32Store(offset) => { exec_ctx.visit_i32_store(*offset)? }
-                Instr::I64Store(offset) => { exec_ctx.visit_i64_store(*offset)? }
-                Instr::F32Store(offset) => { exec_ctx.visit_f32_store(*offset)? }
-                Instr::F64Store(offset) => { exec_ctx.visit_f64_store(*offset)? }
-                Instr::I32Store8(offset) => { exec_ctx.visit_i32_store_8(*offset)? }
-                Instr::I32Store16(offset) => { exec_ctx.visit_i32_store_16(*offset)? }
-                Instr::I64Store8(offset) => { exec_ctx.visit_i64_store_8(*offset)? }
-                Instr::I64Store16(offset) => { exec_ctx.visit_i64_store_16(*offset)? }
-                Instr::I64Store32(offset) => { exec_ctx.visit_i64_store_32(*offset)? }
+                Instr::I32Load(offset) => exec_ctx.visit_i32_load(*offset)?,
+                Instr::I64Load(offset) => exec_ctx.visit_i64_load(*offset)?,
+                Instr::F32Load(offset) => exec_ctx.visit_f32_load(*offset)?,
+                Instr::F64Load(offset) => exec_ctx.visit_f64_load(*offset)?,
+                Instr::I32Load8S(offset) => exec_ctx.visit_i32_load_i8(*offset)?,
+                Instr::I32Load8U(offset) => exec_ctx.visit_i32_load_u8(*offset)?,
+                Instr::I32Load16S(offset) => exec_ctx.visit_i32_load_i16(*offset)?,
+                Instr::I32Load16U(offset) => exec_ctx.visit_i32_load_u16(*offset)?,
+                Instr::I64Load8S(offset) => exec_ctx.visit_i64_load_i8(*offset)?,
+                Instr::I64Load8U(offset) => exec_ctx.visit_i64_load_u8(*offset)?,
+                Instr::I64Load16S(offset) => exec_ctx.visit_i64_load_i16(*offset)?,
+                Instr::I64Load16U(offset) => exec_ctx.visit_i64_load_u16(*offset)?,
+                Instr::I64Load32S(offset) => exec_ctx.visit_i64_load_i32(*offset)?,
+                Instr::I64Load32U(offset) => exec_ctx.visit_i64_load_u32(*offset)?,
+                Instr::I32Store(offset) => exec_ctx.visit_i32_store(*offset)?,
+                Instr::I64Store(offset) => exec_ctx.visit_i64_store(*offset)?,
+                Instr::F32Store(offset) => exec_ctx.visit_f32_store(*offset)?,
+                Instr::F64Store(offset) => exec_ctx.visit_f64_store(*offset)?,
+                Instr::I32Store8(offset) => exec_ctx.visit_i32_store_8(*offset)?,
+                Instr::I32Store16(offset) => exec_ctx.visit_i32_store_16(*offset)?,
+                Instr::I64Store8(offset) => exec_ctx.visit_i64_store_8(*offset)?,
+                Instr::I64Store16(offset) => exec_ctx.visit_i64_store_16(*offset)?,
+                Instr::I64Store32(offset) => exec_ctx.visit_i64_store_32(*offset)?,
                 Instr::MemorySize => exec_ctx.visit_current_memory(),
                 Instr::MemoryGrow => exec_ctx.visit_grow_memory(),
                 Instr::Const(bytes) => exec_ctx.visit_const(*bytes),
@@ -172,10 +168,10 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 Instr::I32Add => exec_ctx.visit_i32_add(),
                 Instr::I32Sub => exec_ctx.visit_i32_sub(),
                 Instr::I32Mul => exec_ctx.visit_i32_mul(),
-                Instr::I32DivS => { exec_ctx.visit_i32_div_s()? }
-                Instr::I32DivU => { exec_ctx.visit_i32_div_u()? }
-                Instr::I32RemS => { exec_ctx.visit_i32_rem_s()? }
-                Instr::I32RemU => { exec_ctx.visit_i32_rem_u()? }
+                Instr::I32DivS => exec_ctx.visit_i32_div_s()?,
+                Instr::I32DivU => exec_ctx.visit_i32_div_u()?,
+                Instr::I32RemS => exec_ctx.visit_i32_rem_s()?,
+                Instr::I32RemU => exec_ctx.visit_i32_rem_u()?,
                 Instr::I32And => exec_ctx.visit_i32_and(),
                 Instr::I32Or => exec_ctx.visit_i32_or(),
                 Instr::I32Xor => exec_ctx.visit_i32_xor(),
@@ -190,10 +186,10 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 Instr::I64Add => exec_ctx.visit_i64_add(),
                 Instr::I64Sub => exec_ctx.visit_i64_sub(),
                 Instr::I64Mul => exec_ctx.visit_i64_mul(),
-                Instr::I64DivS => { exec_ctx.visit_i64_div_s()? }
-                Instr::I64DivU => { exec_ctx.visit_i64_div_u()? }
-                Instr::I64RemS => { exec_ctx.visit_i64_rem_s()? }
-                Instr::I64RemU => { exec_ctx.visit_i64_rem_u()? }
+                Instr::I64DivS => exec_ctx.visit_i64_div_s()?,
+                Instr::I64DivU => exec_ctx.visit_i64_div_u()?,
+                Instr::I64RemS => exec_ctx.visit_i64_rem_s()?,
+                Instr::I64RemU => exec_ctx.visit_i64_rem_u()?,
                 Instr::I64And => exec_ctx.visit_i64_and(),
                 Instr::I64Or => exec_ctx.visit_i64_or(),
                 Instr::I64Xor => exec_ctx.visit_i64_xor(),
@@ -212,7 +208,7 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 Instr::F32Add => exec_ctx.visit_f32_add(),
                 Instr::F32Sub => exec_ctx.visit_f32_sub(),
                 Instr::F32Mul => exec_ctx.visit_f32_mul(),
-                Instr::F32Div => { exec_ctx.visit_f32_div()? }
+                Instr::F32Div => exec_ctx.visit_f32_div()?,
                 Instr::F32Min => exec_ctx.visit_f32_min(),
                 Instr::F32Max => exec_ctx.visit_f32_max(),
                 Instr::F32Copysign => exec_ctx.visit_f32_copysign(),
@@ -226,21 +222,21 @@ impl<'engine, 'func> FunctionExecutor<'engine, 'func> {
                 Instr::F64Add => exec_ctx.visit_f64_add(),
                 Instr::F64Sub => exec_ctx.visit_f64_sub(),
                 Instr::F64Mul => exec_ctx.visit_f64_mul(),
-                Instr::F64Div => { exec_ctx.visit_f64_div()? }
+                Instr::F64Div => exec_ctx.visit_f64_div()?,
                 Instr::F64Min => exec_ctx.visit_f64_min(),
                 Instr::F64Max => exec_ctx.visit_f64_max(),
                 Instr::F64Copysign => exec_ctx.visit_f64_copysign(),
                 Instr::I32WrapI64 => exec_ctx.visit_i32_wrap_i64(),
-                Instr::I32TruncSF32 => { exec_ctx.visit_i32_trunc_f32()? }
-                Instr::I32TruncUF32 => { exec_ctx.visit_u32_trunc_f32()? }
-                Instr::I32TruncSF64 => { exec_ctx.visit_i32_trunc_f64()? }
-                Instr::I32TruncUF64 => { exec_ctx.visit_u32_trunc_f64()? }
+                Instr::I32TruncSF32 => exec_ctx.visit_i32_trunc_f32()?,
+                Instr::I32TruncUF32 => exec_ctx.visit_u32_trunc_f32()?,
+                Instr::I32TruncSF64 => exec_ctx.visit_i32_trunc_f64()?,
+                Instr::I32TruncUF64 => exec_ctx.visit_u32_trunc_f64()?,
                 Instr::I64ExtendSI32 => exec_ctx.visit_i64_extend_i32(),
                 Instr::I64ExtendUI32 => exec_ctx.visit_i64_extend_u32(),
-                Instr::I64TruncSF32 => { exec_ctx.visit_i64_trunc_f32()? }
-                Instr::I64TruncUF32 => { exec_ctx.visit_u64_trunc_f32()? }
-                Instr::I64TruncSF64 => { exec_ctx.visit_i64_trunc_f64()? }
-                Instr::I64TruncUF64 => { exec_ctx.visit_u64_trunc_f64()? }
+                Instr::I64TruncSF32 => exec_ctx.visit_i64_trunc_f32()?,
+                Instr::I64TruncUF32 => exec_ctx.visit_u64_trunc_f32()?,
+                Instr::I64TruncSF64 => exec_ctx.visit_i64_trunc_f64()?,
+                Instr::I64TruncUF64 => exec_ctx.visit_u64_trunc_f64()?,
                 Instr::F32ConvertSI32 => exec_ctx.visit_f32_convert_i32(),
                 Instr::F32ConvertUI32 => exec_ctx.visit_f32_convert_u32(),
                 Instr::F32ConvertSI64 => exec_ctx.visit_f32_convert_i64(),
