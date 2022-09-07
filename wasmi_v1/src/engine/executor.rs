@@ -458,10 +458,7 @@ where
     }
 
     fn execute_binary(&mut self, f: fn(UntypedValue, UntypedValue) -> UntypedValue) {
-        let right = self.value_stack.pop();
-        let entry = self.value_stack.last_mut();
-        let left = *entry;
-        *entry = f(left, right);
+        self.value_stack.eval_top2(f);
         self.next_instr()
     }
 
@@ -469,10 +466,7 @@ where
         &mut self,
         f: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), Trap> {
-        let right = self.value_stack.pop();
-        let entry = self.value_stack.last_mut();
-        let left = *entry;
-        *entry = f(left, right)?;
+        self.value_stack.try_eval_top2(f)?;
         self.try_next_instr()
     }
 
