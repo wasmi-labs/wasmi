@@ -1,4 +1,5 @@
 use super::super::super::engine::InstructionIdx;
+use core::fmt::Display;
 
 /// Defines how many stack values are going to be dropped and kept after branching.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -9,20 +10,47 @@ pub struct DropKeep {
     keep: u16,
 }
 
+/// An error that may occur upon operating on [`DropKeep`].
+#[derive(Debug, Copy, Clone)]
+pub enum DropKeepError {
+    /// The amount of kept elements exceeds the engine's limits.
+    OutOfBoundsKeep,
+    /// The amount of dropped elements exceeds the engine's limits.
+    OutOfBoundsDrop,
+}
+
+impl Display for DropKeepError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            DropKeepError::OutOfBoundsKeep => {
+                write!(f, "amount of kept elements exceeds engine's limits")
+            }
+            DropKeepError::OutOfBoundsDrop => {
+                write!(f, "amount of dropped elements exceeds engine's limits")
+            }
+        }
+    }
+}
+
 impl DropKeep {
+    /// Creates a new [`DropKeep`] that drops or keeps nothing.
+    pub fn none() -> Self {
+        Self { drop: 0, keep: 0 }
+    }
+
     /// Creates a new [`DropKeep`] with the given amounts to drop and keep.
     ///
     /// # Panics
     ///
     /// - If `drop` or `keep` values do not respect their limitations.
-    pub fn new(drop: usize, keep: usize) -> Self {
-        let drop = drop.try_into().unwrap_or_else(|error| {
-            panic!("encountered invalid `drop` amount of {}: {}", drop, error)
-        });
-        let keep = keep.try_into().unwrap_or_else(|error| {
-            panic!("encountered invalid `keep` amount of {}: {}", keep, error)
-        });
-        Self { drop, keep }
+    pub fn new(drop: usize, keep: usize) -> Result<Self, DropKeepError> {
+        let drop = drop
+            .try_into()
+            .map_err(|_| DropKeepError::OutOfBoundsDrop)?;
+        let keep = keep
+            .try_into()
+            .map_err(|_| DropKeepError::OutOfBoundsKeep)?;
+        Ok(Self { drop, keep })
     }
 
     /// Returns the amount of stack values to drop.

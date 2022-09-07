@@ -384,6 +384,10 @@ impl ValueStack {
 mod tests {
     use super::*;
 
+    fn drop_keep(drop: usize, keep: usize) -> DropKeep {
+        DropKeep::new(drop, keep).unwrap()
+    }
+
     #[test]
     fn drop_keep_works() {
         fn assert_drop_keep<E>(stack: &ValueStack, drop_keep: DropKeep, expected: E)
@@ -408,40 +412,40 @@ mod tests {
         // Drop is always 0 but keep varies:
         for keep in 0..stack.len() {
             // Assert that nothing was changed since nothing was dropped.
-            assert_drop_keep(&stack, DropKeep::new(0, keep), test_inputs);
+            assert_drop_keep(&stack, drop_keep(0, keep), test_inputs);
         }
 
         // Drop is always 1 but keep varies:
-        assert_drop_keep(&stack, DropKeep::new(1, 0), [1, 2, 3, 4, 5]);
-        assert_drop_keep(&stack, DropKeep::new(1, 1), [1, 2, 3, 4, 6]);
-        assert_drop_keep(&stack, DropKeep::new(1, 2), [1, 2, 3, 5, 6]);
-        assert_drop_keep(&stack, DropKeep::new(1, 3), [1, 2, 4, 5, 6]);
-        assert_drop_keep(&stack, DropKeep::new(1, 4), [1, 3, 4, 5, 6]);
-        assert_drop_keep(&stack, DropKeep::new(1, 5), [2, 3, 4, 5, 6]);
+        assert_drop_keep(&stack, drop_keep(1, 0), [1, 2, 3, 4, 5]);
+        assert_drop_keep(&stack, drop_keep(1, 1), [1, 2, 3, 4, 6]);
+        assert_drop_keep(&stack, drop_keep(1, 2), [1, 2, 3, 5, 6]);
+        assert_drop_keep(&stack, drop_keep(1, 3), [1, 2, 4, 5, 6]);
+        assert_drop_keep(&stack, drop_keep(1, 4), [1, 3, 4, 5, 6]);
+        assert_drop_keep(&stack, drop_keep(1, 5), [2, 3, 4, 5, 6]);
 
         // Drop is always 2 but keep varies:
-        assert_drop_keep(&stack, DropKeep::new(2, 0), [1, 2, 3, 4]);
-        assert_drop_keep(&stack, DropKeep::new(2, 1), [1, 2, 3, 6]);
-        assert_drop_keep(&stack, DropKeep::new(2, 2), [1, 2, 5, 6]);
-        assert_drop_keep(&stack, DropKeep::new(2, 3), [1, 4, 5, 6]);
-        assert_drop_keep(&stack, DropKeep::new(2, 4), [3, 4, 5, 6]);
+        assert_drop_keep(&stack, drop_keep(2, 0), [1, 2, 3, 4]);
+        assert_drop_keep(&stack, drop_keep(2, 1), [1, 2, 3, 6]);
+        assert_drop_keep(&stack, drop_keep(2, 2), [1, 2, 5, 6]);
+        assert_drop_keep(&stack, drop_keep(2, 3), [1, 4, 5, 6]);
+        assert_drop_keep(&stack, drop_keep(2, 4), [3, 4, 5, 6]);
 
         // Drop is always 3 but keep varies:
-        assert_drop_keep(&stack, DropKeep::new(3, 0), [1, 2, 3]);
-        assert_drop_keep(&stack, DropKeep::new(3, 1), [1, 2, 6]);
-        assert_drop_keep(&stack, DropKeep::new(3, 2), [1, 5, 6]);
-        assert_drop_keep(&stack, DropKeep::new(3, 3), [4, 5, 6]);
+        assert_drop_keep(&stack, drop_keep(3, 0), [1, 2, 3]);
+        assert_drop_keep(&stack, drop_keep(3, 1), [1, 2, 6]);
+        assert_drop_keep(&stack, drop_keep(3, 2), [1, 5, 6]);
+        assert_drop_keep(&stack, drop_keep(3, 3), [4, 5, 6]);
 
         // Drop is always 4 but keep varies:
-        assert_drop_keep(&stack, DropKeep::new(4, 0), [1, 2]);
-        assert_drop_keep(&stack, DropKeep::new(4, 1), [1, 6]);
-        assert_drop_keep(&stack, DropKeep::new(4, 2), [5, 6]);
+        assert_drop_keep(&stack, drop_keep(4, 0), [1, 2]);
+        assert_drop_keep(&stack, drop_keep(4, 1), [1, 6]);
+        assert_drop_keep(&stack, drop_keep(4, 2), [5, 6]);
 
         // Drop is always 5 but keep varies:
-        assert_drop_keep(&stack, DropKeep::new(5, 0), [1]);
-        assert_drop_keep(&stack, DropKeep::new(5, 1), [6]);
+        assert_drop_keep(&stack, drop_keep(5, 0), [1]);
+        assert_drop_keep(&stack, drop_keep(5, 1), [6]);
 
         // Drop is always 6.
-        assert_drop_keep(&stack, DropKeep::new(6, 0), iter::repeat(0).take(0));
+        assert_drop_keep(&stack, drop_keep(6, 0), iter::repeat(0).take(0));
     }
 }

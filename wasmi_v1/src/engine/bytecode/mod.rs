@@ -5,7 +5,16 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
-pub use self::utils::{DropKeep, FuncIdx, GlobalIdx, LocalDepth, Offset, SignatureIdx, Target};
+pub use self::utils::{
+    DropKeep,
+    DropKeepError,
+    FuncIdx,
+    GlobalIdx,
+    LocalDepth,
+    Offset,
+    SignatureIdx,
+    Target,
+};
 use wasmi_core::UntypedValue;
 
 /// The internal `wasmi` bytecode that is stored for Wasm functions.
