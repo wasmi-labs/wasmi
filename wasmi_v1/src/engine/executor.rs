@@ -574,20 +574,20 @@ where
     }
 
     fn visit_get_local(&mut self, local_depth: LocalDepth) {
-        let value = self.value_stack.peek(local_depth.into_index());
+        let value = self.value_stack.peek(local_depth.into_inner());
         self.value_stack.push(value);
         self.next_instr()
     }
 
     fn visit_set_local(&mut self, local_depth: LocalDepth) {
         let new_value = self.value_stack.pop();
-        *self.value_stack.peek_mut(local_depth.into_index()) = new_value;
+        *self.value_stack.peek_mut(local_depth.into_inner()) = new_value;
         self.next_instr()
     }
 
     fn visit_tee_local(&mut self, local_depth: LocalDepth) {
         let new_value = self.value_stack.last();
-        *self.value_stack.peek_mut(local_depth.into_index()) = new_value;
+        *self.value_stack.peek_mut(local_depth.into_inner()) = new_value;
         self.next_instr()
     }
 

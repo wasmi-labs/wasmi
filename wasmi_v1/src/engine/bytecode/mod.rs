@@ -208,21 +208,21 @@ impl Instruction {
     }
 
     /// Creates a new `local.get` instruction from the given local depth.
-    pub fn local_get(local_depth: u32) -> Self {
+    pub fn local_get(local_depth: usize) -> Self {
         Self::LocalGet {
             local_depth: LocalDepth::from(local_depth),
         }
     }
 
     /// Creates a new `local.set` instruction from the given local depth.
-    pub fn local_set(local_depth: u32) -> Self {
+    pub fn local_set(local_depth: usize) -> Self {
         Self::LocalSet {
             local_depth: LocalDepth::from(local_depth),
         }
     }
 
     /// Creates a new `local.tee` instruction from the given local depth.
-    pub fn local_tee(local_depth: u32) -> Self {
+    pub fn local_tee(local_depth: usize) -> Self {
         Self::LocalTee {
             local_depth: LocalDepth::from(local_depth),
         }

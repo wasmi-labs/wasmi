@@ -322,17 +322,13 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     }
 
     /// Returns the relative depth on the stack of the local variable.
-    ///
-    /// # Note
-    ///
-    /// See stack layout definition in `isa.rs`.
-    fn relative_local_depth(&self, local_idx: u32) -> u32 {
+    fn relative_local_depth(&self, local_idx: u32) -> usize {
         debug_assert!(self.is_reachable());
-        let stack_height = self.value_stack.len();
-        let len_params_locals = self.locals.len_registered();
+        let stack_height = self.value_stack.len() as usize;
+        let len_params_locals = self.locals.len_registered() as usize;
         stack_height
             .checked_add(len_params_locals)
-            .and_then(|x| x.checked_sub(local_idx))
+            .and_then(|x| x.checked_sub(local_idx as usize))
             .unwrap_or_else(|| panic!("cannot convert local index into local depth: {}", local_idx))
     }
 
