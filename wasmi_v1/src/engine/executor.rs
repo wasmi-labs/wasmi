@@ -97,16 +97,14 @@ where
                 Instr::BrIfNez(target) => self.visit_br_if_nez(target),
                 Instr::ReturnIfNez(drop_keep) => {
                     if let MaybeReturn::Return = self.visit_return_if_nez(drop_keep) {
-                        return Ok(CallOutcome::Return)
+                        return Ok(CallOutcome::Return);
                     }
                 }
                 Instr::BrTable { len_targets } => self.visit_br_table(len_targets),
                 Instr::Unreachable => self.visit_unreachable()?,
                 Instr::Return(drop_keep) => return self.visit_ret(drop_keep),
                 Instr::Call(func) => return self.visit_call(func),
-                Instr::CallIndirect(signature) => {
-                    return self.visit_call_indirect(signature)
-                }
+                Instr::CallIndirect(signature) => return self.visit_call_indirect(signature),
                 Instr::Drop => self.visit_drop(),
                 Instr::Select => self.visit_select(),
                 Instr::GlobalGet(global_idx) => self.visit_get_global(global_idx),
@@ -608,7 +606,9 @@ where
     }
 
     fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, Trap> {
-        let callee = self.cache.get_func(self.ctx.as_context_mut(), func_index.into_inner());
+        let callee = self
+            .cache
+            .get_func(self.ctx.as_context_mut(), func_index.into_inner());
         self.call_func(callee)
     }
 

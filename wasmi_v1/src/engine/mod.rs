@@ -371,17 +371,23 @@ impl EngineInner {
                     }
                     None => return Ok(()),
                 },
-                CallOutcome::NestedCall(called_func) => match called_func.as_internal(ctx.as_context()) {
-                    FuncEntityInternal::Wasm(wasm_func) => {
-                        self.stack.call_wasm(frame, wasm_func, &self.code_map)?;
+                CallOutcome::NestedCall(called_func) => {
+                    match called_func.as_internal(ctx.as_context()) {
+                        FuncEntityInternal::Wasm(wasm_func) => {
+                            self.stack.call_wasm(frame, wasm_func, &self.code_map)?;
+                        }
+                        FuncEntityInternal::Host(host_func) => {
+                            cache.reset_default_memory_bytes();
+                            let host_func = host_func.clone();
+                            self.stack.call_host(
+                                ctx.as_context_mut(),
+                                frame,
+                                host_func,
+                                &self.func_types,
+                            )?;
+                        }
                     }
-                    FuncEntityInternal::Host(host_func) => {
-                        cache.reset_default_memory_bytes();
-                        let host_func = host_func.clone();
-                        self.stack
-                            .call_host(ctx.as_context_mut(), frame, host_func, &self.func_types)?;
-                    }
-                },
+                }
             }
         }
     }
