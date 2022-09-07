@@ -7,7 +7,6 @@ pub use self::{
 };
 use super::{
     code_map::{CodeMap, InstructionsRef},
-    exec_context::FunctionExecutor,
     func_types::FuncTypeRegistry,
     FuncParams,
 };
@@ -122,17 +121,6 @@ impl Stack {
             limits.maximum_value_stack_height,
         );
         Self { frames, values }
-    }
-
-    /// Returns a [`FunctionExecutor`] for the referenced [`FuncFrame`].
-    #[inline(always)]
-    pub fn executor<'engine>(
-        &'engine mut self,
-        frame: &'engine mut FuncFrame,
-        codemap: &'engine CodeMap,
-    ) -> FunctionExecutor {
-        let insts = codemap.insts(frame.iref());
-        FunctionExecutor::new(frame, insts, &mut self.values)
     }
 
     /// Initializes the [`Stack`] for the given Wasm root function call.

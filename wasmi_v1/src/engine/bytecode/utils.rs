@@ -1,33 +1,56 @@
 use super::super::super::engine::InstructionIdx;
+use core::fmt::Display;
 
 /// Defines how many stack values are going to be dropped and kept after branching.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct DropKeep {
     /// The amount of stack values dropped.
-    drop: u32,
+    drop: u16,
     /// The amount of stack values kept.
-    keep: u32,
+    keep: u16,
+}
+
+/// An error that may occur upon operating on [`DropKeep`].
+#[derive(Debug, Copy, Clone)]
+pub enum DropKeepError {
+    /// The amount of kept elements exceeds the engine's limits.
+    OutOfBoundsKeep,
+    /// The amount of dropped elements exceeds the engine's limits.
+    OutOfBoundsDrop,
+}
+
+impl Display for DropKeepError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            DropKeepError::OutOfBoundsKeep => {
+                write!(f, "amount of kept elements exceeds engine's limits")
+            }
+            DropKeepError::OutOfBoundsDrop => {
+                write!(f, "amount of dropped elements exceeds engine's limits")
+            }
+        }
+    }
 }
 
 impl DropKeep {
+    /// Creates a new [`DropKeep`] that drops or keeps nothing.
+    pub fn none() -> Self {
+        Self { drop: 0, keep: 0 }
+    }
+
     /// Creates a new [`DropKeep`] with the given amounts to drop and keep.
     ///
     /// # Panics
     ///
     /// - If `drop` or `keep` values do not respect their limitations.
-    pub fn new(drop: usize, keep: usize) -> Self {
-        let drop = drop.try_into().unwrap_or_else(|error| {
-            panic!("encountered invalid `drop` amount of {}: {}", drop, error)
-        });
-        let keep = keep.try_into().unwrap_or_else(|error| {
-            panic!("encountered invalid `keep` amount of {}: {}", keep, error)
-        });
-        Self { drop, keep }
-    }
-
-    /// Creates a new [`DropKeep`] from the given amounts to drop and keep.
-    pub fn new32(drop: u32, keep: u32) -> Self {
-        Self { drop, keep }
+    pub fn new(drop: usize, keep: usize) -> Result<Self, DropKeepError> {
+        let drop = drop
+            .try_into()
+            .map_err(|_| DropKeepError::OutOfBoundsDrop)?;
+        let keep = keep
+            .try_into()
+            .map_err(|_| DropKeepError::OutOfBoundsKeep)?;
+        Ok(Self { drop, keep })
     }
 
     /// Returns the amount of stack values to drop.
@@ -123,24 +146,26 @@ impl SignatureIdx {
     }
 }
 
-/// A local variable index.
+/// A local variable depth access index.
 ///
 /// # Note
 ///
-/// Refers to a local variable of the currently executed function.
+/// The depth refers to the relative position of a local
+/// variable on the value stack with respect to the height
+/// of the value stack at the time of access.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct LocalIdx(u32);
+pub struct LocalDepth(usize);
 
-impl From<u32> for LocalIdx {
-    fn from(index: u32) -> Self {
+impl From<usize> for LocalDepth {
+    fn from(index: usize) -> Self {
         Self(index)
     }
 }
 
-impl LocalIdx {
-    /// Returns the inner `u32` index.
-    pub fn into_inner(self) -> u32 {
+impl LocalDepth {
+    /// Returns the depth as `usize` index.
+    pub fn into_inner(self) -> usize {
         self.0
     }
 }

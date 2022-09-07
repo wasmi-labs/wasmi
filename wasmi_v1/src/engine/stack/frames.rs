@@ -53,7 +53,7 @@ impl FuncFrame {
     }
 
     /// Returns a reference to the instructions of the [`FuncFrame`].
-    pub(super) fn iref(&self) -> InstructionsRef {
+    pub fn iref(&self) -> InstructionsRef {
         self.iref
     }
 }
