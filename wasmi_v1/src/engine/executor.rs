@@ -320,13 +320,12 @@ where
     /// # Errors
     ///
     /// If the resulting effective address overflows.
-    fn effective_address(offset: Offset, address: u32) -> Result<usize, Trap> {
+    fn effective_address(offset: Offset, address: u32) -> Result<usize, TrapCode> {
         offset
             .into_inner()
             .checked_add(address)
             .map(|address| address as usize)
             .ok_or(TrapCode::MemoryAccessOutOfBounds)
-            .map_err(Into::into)
     }
 
     /// Loads a value of type `T` from the default memory at the given address offset.
@@ -344,15 +343,16 @@ where
         UntypedValue: From<T>,
         T: LittleEndianConvert,
     {
-        let entry = self.value_stack.last_mut();
-        let raw_address = u32::from(*entry);
-        let address = Self::effective_address(offset, raw_address)?;
-        let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
-        self.cache
-            .default_memory_bytes(self.ctx.as_context_mut())
-            .read(address, bytes.as_mut())?;
-        let value = <T as LittleEndianConvert>::from_le_bytes(bytes);
-        *entry = value.into();
+        self.value_stack.try_eval_top(|address| {
+            let raw_address = u32::from(address);
+            let address = Self::effective_address(offset, raw_address)?;
+            let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
+            self.cache
+                .default_memory_bytes(self.ctx.as_context_mut())
+                .read(address, bytes.as_mut())?;
+            let value = <T as LittleEndianConvert>::from_le_bytes(bytes);
+            Ok(value.into())
+        })?;
         self.next_instr();
         Ok(())
     }
@@ -378,15 +378,16 @@ where
         T: ExtendInto<U> + LittleEndianConvert,
         UntypedValue: From<U>,
     {
-        let entry = self.value_stack.last_mut();
-        let raw_address = u32::from(*entry);
-        let address = Self::effective_address(offset, raw_address)?;
-        let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
-        self.cache
-            .default_memory_bytes(self.ctx.as_context_mut())
-            .read(address, bytes.as_mut())?;
-        let extended = <T as LittleEndianConvert>::from_le_bytes(bytes).extend_into();
-        *entry = extended.into();
+        self.value_stack.try_eval_top(|address| {
+            let raw_address = u32::from(address);
+            let address = Self::effective_address(offset, raw_address)?;
+            let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
+            self.cache
+                .default_memory_bytes(self.ctx.as_context_mut())
+                .read(address, bytes.as_mut())?;
+            let value = <T as LittleEndianConvert>::from_le_bytes(bytes).extend_into();
+            Ok(value.into())
+        })?;
         self.next_instr();
         Ok(())
     }
@@ -405,10 +406,10 @@ where
     where
         T: LittleEndianConvert + From<UntypedValue>,
     {
-        let stack_value = self.value_stack.pop_as::<T>();
-        let raw_address = self.value_stack.pop_as::<u32>();
-        let address = Self::effective_address(offset, raw_address)?;
-        let bytes = <T as LittleEndianConvert>::into_le_bytes(stack_value);
+        let (address, value) = self.value_stack.pop2();
+        let value = T::from(value);
+        let address = Self::effective_address(offset, u32::from(address))?;
+        let bytes = <T as LittleEndianConvert>::into_le_bytes(value);
         self.cache
             .default_memory_bytes(self.ctx.as_context_mut())
             .write(address, bytes.as_ref())?;
@@ -432,9 +433,9 @@ where
         T: WrapInto<U> + From<UntypedValue>,
         U: LittleEndianConvert,
     {
-        let wrapped_value = self.value_stack.pop_as::<T>().wrap_into();
-        let raw_address = self.value_stack.pop_as::<u32>();
-        let address = Self::effective_address(offset, raw_address)?;
+        let (address, value) = self.value_stack.pop2();
+        let wrapped_value = T::from(value).wrap_into();
+        let address = Self::effective_address(offset, u32::from(address))?;
         let bytes = <U as LittleEndianConvert>::into_le_bytes(wrapped_value);
         self.cache
             .default_memory_bytes(self.ctx.as_context_mut())
@@ -444,8 +445,7 @@ where
     }
 
     fn execute_unary(&mut self, f: fn(UntypedValue) -> UntypedValue) {
-        let entry = self.value_stack.last_mut();
-        *entry = f(*entry);
+        self.value_stack.eval_top(f);
         self.next_instr()
     }
 
@@ -453,16 +453,12 @@ where
         &mut self,
         f: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), Trap> {
-        let entry = self.value_stack.last_mut();
-        *entry = f(*entry)?;
+        self.value_stack.try_eval_top(f)?;
         self.try_next_instr()
     }
 
     fn execute_binary(&mut self, f: fn(UntypedValue, UntypedValue) -> UntypedValue) {
-        let right = self.value_stack.pop();
-        let entry = self.value_stack.last_mut();
-        let left = *entry;
-        *entry = f(left, right);
+        self.value_stack.eval_top2(f);
         self.next_instr()
     }
 
@@ -470,10 +466,7 @@ where
         &mut self,
         f: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), Trap> {
-        let right = self.value_stack.pop();
-        let entry = self.value_stack.last_mut();
-        let left = *entry;
-        *entry = f(left, right)?;
+        self.value_stack.try_eval_top2(f)?;
         self.try_next_instr()
     }
 

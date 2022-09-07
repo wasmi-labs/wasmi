@@ -200,6 +200,7 @@ impl ValueStack {
     /// # Note
     ///
     /// This has the same effect as [`ValueStack::peek`]`(0)`.
+    #[inline]
     pub fn last(&self) -> UntypedValue {
         self.get_release_unchecked(self.stack_ptr - 1)
     }
@@ -209,6 +210,7 @@ impl ValueStack {
     /// # Note
     ///
     /// This has the same effect as [`ValueStack::peek`]`(0)`.
+    #[inline]
     pub fn last_mut(&mut self) -> &mut UntypedValue {
         self.get_release_unchecked_mut(self.stack_ptr - 1)
     }
@@ -290,6 +292,54 @@ impl ValueStack {
         let (e2, e3) = self.pop2();
         let e1 = self.last_mut();
         f(e1, e2, e3)
+    }
+
+    /// Evaluates the given closure `f` for the top most stack value.
+    pub fn eval_top<F>(&mut self, f: F)
+    where
+        F: FnOnce(UntypedValue) -> UntypedValue,
+    {
+        let top = self.last();
+        *self.last_mut() = f(top);
+    }
+
+    /// Evaluates the given fallible closure `f` for the top most stack value.
+    ///
+    /// # Errors
+    ///
+    /// If the closure execution fails.
+    pub fn try_eval_top<F>(&mut self, f: F) -> Result<(), TrapCode>
+    where
+        F: FnOnce(UntypedValue) -> Result<UntypedValue, TrapCode>,
+    {
+        let top = self.last();
+        *self.last_mut() = f(top)?;
+        Ok(())
+    }
+
+    /// Evaluates the given closure `f` for the 2 top most stack values.
+    pub fn eval_top2<F>(&mut self, f: F)
+    where
+        F: FnOnce(UntypedValue, UntypedValue) -> UntypedValue,
+    {
+        let rhs = self.pop();
+        let lhs = self.last();
+        *self.last_mut() = f(lhs, rhs);
+    }
+
+    /// Evaluates the given fallible closure `f` for the 2 top most stack values.
+    ///
+    /// # Errors
+    ///
+    /// If the closure execution fails.
+    pub fn try_eval_top2<F>(&mut self, f: F) -> Result<(), TrapCode>
+    where
+        F: FnOnce(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
+    {
+        let rhs = self.pop();
+        let lhs = self.last();
+        *self.last_mut() = f(lhs, rhs)?;
+        Ok(())
     }
 
     /// Pushes the [`UntypedValue`] to the end of the [`ValueStack`].
