@@ -4,9 +4,9 @@ use super::super::super::engine::InstructionIdx;
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct DropKeep {
     /// The amount of stack values dropped.
-    drop: u32,
+    drop: u16,
     /// The amount of stack values kept.
-    keep: u32,
+    keep: u16,
 }
 
 impl DropKeep {
@@ -22,11 +22,6 @@ impl DropKeep {
         let keep = keep.try_into().unwrap_or_else(|error| {
             panic!("encountered invalid `keep` amount of {}: {}", keep, error)
         });
-        Self { drop, keep }
-    }
-
-    /// Creates a new [`DropKeep`] from the given amounts to drop and keep.
-    pub fn new32(drop: u32, keep: u32) -> Self {
         Self { drop, keep }
     }
 

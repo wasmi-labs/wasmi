@@ -292,7 +292,7 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
             height_diff,
         );
         let drop = height_diff - keep;
-        DropKeep::new32(drop, keep)
+        DropKeep::new(drop as usize, keep as usize)
     }
 
     /// Compute [`DropKeep`] for the return statement.
