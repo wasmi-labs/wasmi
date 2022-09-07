@@ -318,11 +318,6 @@ where
             .unwrap_or_else(|| panic!("missing global at index {:?}", global_index))
     }
 
-    /// Returns the local depth as `usize`.
-    fn convert_local_depth(local_depth: LocalIdx) -> usize {
-        local_depth.into_inner() as usize
-    }
-
     /// Calculates the effective address of a linear memory access.
     ///
     /// # Errors
@@ -582,23 +577,20 @@ where
     }
 
     fn visit_get_local(&mut self, local_depth: LocalDepth) {
-        let local_depth = Self::convert_local_depth(local_depth);
-        let value = self.value_stack.peek(local_depth);
+        let value = self.value_stack.peek(local_depth.into_index());
         self.value_stack.push(value);
         self.next_instr()
     }
 
     fn visit_set_local(&mut self, local_depth: LocalDepth) {
-        let local_depth = Self::convert_local_depth(local_depth);
         let new_value = self.value_stack.pop();
-        *self.value_stack.peek_mut(local_depth) = new_value;
+        *self.value_stack.peek_mut(local_depth.into_index()) = new_value;
         self.next_instr()
     }
 
     fn visit_tee_local(&mut self, local_depth: LocalDepth) {
-        let local_depth = Self::convert_local_depth(local_depth);
         let new_value = self.value_stack.last();
-        *self.value_stack.peek_mut(local_depth) = new_value;
+        *self.value_stack.peek_mut(local_depth.into_index()) = new_value;
         self.next_instr()
     }
 
