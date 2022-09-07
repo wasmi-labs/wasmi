@@ -317,6 +317,31 @@ impl ValueStack {
         Ok(())
     }
 
+    /// Evaluates the given closure `f` for the 2 top most stack values.
+    pub fn eval_top2<F>(&mut self, f: F)
+    where
+        F: FnOnce(UntypedValue, UntypedValue) -> UntypedValue,
+    {
+        let rhs = self.pop();
+        let lhs = self.last();
+        *self.last_mut() = f(lhs, rhs);
+    }
+
+    /// Evaluates the given fallible closure `f` for the 2 top most stack values.
+    ///
+    /// # Errors
+    ///
+    /// If the closure execution fails.
+    pub fn try_eval_top2<F>(&mut self, f: F) -> Result<(), TrapCode>
+    where
+        F: FnOnce(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
+    {
+        let rhs = self.pop();
+        let lhs = self.last();
+        *self.last_mut() = f(lhs, rhs)?;
+        Ok(())
+    }
+
     /// Pushes the [`UntypedValue`] to the end of the [`ValueStack`].
     ///
     /// # Note
