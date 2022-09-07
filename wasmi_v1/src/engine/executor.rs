@@ -343,15 +343,16 @@ where
         UntypedValue: From<T>,
         T: LittleEndianConvert,
     {
-        let entry = self.value_stack.last_mut();
-        let raw_address = u32::from(*entry);
-        let address = Self::effective_address(offset, raw_address)?;
-        let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
-        self.cache
-            .default_memory_bytes(self.ctx.as_context_mut())
-            .read(address, bytes.as_mut())?;
-        let value = <T as LittleEndianConvert>::from_le_bytes(bytes);
-        *entry = value.into();
+        self.value_stack.try_eval_top(|address| {
+            let raw_address = u32::from(address);
+            let address = Self::effective_address(offset, raw_address)?;
+            let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
+            self.cache
+                .default_memory_bytes(self.ctx.as_context_mut())
+                .read(address, bytes.as_mut())?;
+            let value = <T as LittleEndianConvert>::from_le_bytes(bytes);
+            Ok(value.into())
+        })?;
         self.next_instr();
         Ok(())
     }
@@ -377,15 +378,16 @@ where
         T: ExtendInto<U> + LittleEndianConvert,
         UntypedValue: From<U>,
     {
-        let entry = self.value_stack.last_mut();
-        let raw_address = u32::from(*entry);
-        let address = Self::effective_address(offset, raw_address)?;
-        let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
-        self.cache
-            .default_memory_bytes(self.ctx.as_context_mut())
-            .read(address, bytes.as_mut())?;
-        let extended = <T as LittleEndianConvert>::from_le_bytes(bytes).extend_into();
-        *entry = extended.into();
+        self.value_stack.try_eval_top(|address| {
+            let raw_address = u32::from(address);
+            let address = Self::effective_address(offset, raw_address)?;
+            let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
+            self.cache
+                .default_memory_bytes(self.ctx.as_context_mut())
+                .read(address, bytes.as_mut())?;
+            let value = <T as LittleEndianConvert>::from_le_bytes(bytes).extend_into();
+            Ok(value.into())
+        })?;
         self.next_instr();
         Ok(())
     }
@@ -443,8 +445,7 @@ where
     }
 
     fn execute_unary(&mut self, f: fn(UntypedValue) -> UntypedValue) {
-        let entry = self.value_stack.last_mut();
-        *entry = f(*entry);
+        self.value_stack.eval_top(f);
         self.next_instr()
     }
 
@@ -452,8 +453,7 @@ where
         &mut self,
         f: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), Trap> {
-        let entry = self.value_stack.last_mut();
-        *entry = f(*entry)?;
+        self.value_stack.try_eval_top(f)?;
         self.try_next_instr()
     }
 
