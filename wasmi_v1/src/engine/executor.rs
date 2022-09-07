@@ -320,13 +320,12 @@ where
     /// # Errors
     ///
     /// If the resulting effective address overflows.
-    fn effective_address(offset: Offset, address: u32) -> Result<usize, Trap> {
+    fn effective_address(offset: Offset, address: u32) -> Result<usize, TrapCode> {
         offset
             .into_inner()
             .checked_add(address)
             .map(|address| address as usize)
             .ok_or(TrapCode::MemoryAccessOutOfBounds)
-            .map_err(Into::into)
     }
 
     /// Loads a value of type `T` from the default memory at the given address offset.
