@@ -406,10 +406,10 @@ where
     where
         T: LittleEndianConvert + From<UntypedValue>,
     {
-        let stack_value = self.value_stack.pop_as::<T>();
-        let raw_address = self.value_stack.pop_as::<u32>();
-        let address = Self::effective_address(offset, raw_address)?;
-        let bytes = <T as LittleEndianConvert>::into_le_bytes(stack_value);
+        let (address, value) = self.value_stack.pop2();
+        let value = T::from(value);
+        let address = Self::effective_address(offset, u32::from(address))?;
+        let bytes = <T as LittleEndianConvert>::into_le_bytes(value);
         self.cache
             .default_memory_bytes(self.ctx.as_context_mut())
             .write(address, bytes.as_ref())?;
@@ -433,9 +433,9 @@ where
         T: WrapInto<U> + From<UntypedValue>,
         U: LittleEndianConvert,
     {
-        let wrapped_value = self.value_stack.pop_as::<T>().wrap_into();
-        let raw_address = self.value_stack.pop_as::<u32>();
-        let address = Self::effective_address(offset, raw_address)?;
+        let (address, value) = self.value_stack.pop2();
+        let wrapped_value = T::from(value).wrap_into();
+        let address = Self::effective_address(offset, u32::from(address))?;
         let bytes = <U as LittleEndianConvert>::into_le_bytes(wrapped_value);
         self.cache
             .default_memory_bytes(self.ctx.as_context_mut())
