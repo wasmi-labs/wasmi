@@ -123,23 +123,25 @@ impl SignatureIdx {
     }
 }
 
-/// A local variable index.
+/// A local variable depth access index.
 ///
 /// # Note
 ///
-/// Refers to a local variable of the currently executed function.
+/// The depth refers to the relative position of a local
+/// variable on the value stack with respect to the height
+/// of the value stack at the time of access.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct LocalIdx(u32);
+pub struct LocalDepth(u32);
 
-impl From<u32> for LocalIdx {
+impl From<u32> for LocalDepth {
     fn from(index: u32) -> Self {
         Self(index)
     }
 }
 
-impl LocalIdx {
-    /// Returns the inner `u32` index.
+impl LocalDepth {
+    /// Returns the depth as `u32` value.
     pub fn into_inner(self) -> u32 {
         self.0
     }

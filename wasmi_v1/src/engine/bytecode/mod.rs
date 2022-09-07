@@ -5,7 +5,7 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
-pub use self::utils::{DropKeep, FuncIdx, GlobalIdx, LocalIdx, Offset, SignatureIdx, Target};
+pub use self::utils::{DropKeep, FuncIdx, GlobalIdx, LocalDepth, Offset, SignatureIdx, Target};
 use wasmi_core::UntypedValue;
 
 /// The internal `wasmi` bytecode that is stored for Wasm functions.
@@ -18,9 +18,9 @@ use wasmi_core::UntypedValue;
 /// each representing either the `BrTable` head or one of its branching targets.
 #[derive(Copy, Debug, Clone, PartialEq, Eq)]
 pub enum Instruction {
-    LocalGet { local_depth: LocalIdx },
-    LocalSet { local_depth: LocalIdx },
-    LocalTee { local_depth: LocalIdx },
+    LocalGet { local_depth: LocalDepth },
+    LocalSet { local_depth: LocalDepth },
+    LocalTee { local_depth: LocalDepth },
     Br(Target),
     BrIfEqz(Target),
     BrIfNez(Target),
@@ -210,21 +210,21 @@ impl Instruction {
     /// Creates a new `local.get` instruction from the given local depth.
     pub fn local_get(local_depth: u32) -> Self {
         Self::LocalGet {
-            local_depth: LocalIdx::from(local_depth),
+            local_depth: LocalDepth::from(local_depth),
         }
     }
 
     /// Creates a new `local.set` instruction from the given local depth.
     pub fn local_set(local_depth: u32) -> Self {
         Self::LocalSet {
-            local_depth: LocalIdx::from(local_depth),
+            local_depth: LocalDepth::from(local_depth),
         }
     }
 
     /// Creates a new `local.tee` instruction from the given local depth.
     pub fn local_tee(local_depth: u32) -> Self {
         Self::LocalTee {
-            local_depth: LocalIdx::from(local_depth),
+            local_depth: LocalDepth::from(local_depth),
         }
     }
 }
