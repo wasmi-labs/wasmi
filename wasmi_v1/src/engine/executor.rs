@@ -28,7 +28,6 @@ use wasmi_core::{memory_units::Pages, ExtendInto, LittleEndianConvert, UntypedVa
 ///
 /// - If the execution of the function `frame` trapped.
 #[inline(always)]
-#[rustfmt::skip]
 pub fn execute_frame<'engine>(
     ctx: impl AsContextMut,
     frame: &mut FuncFrame,
