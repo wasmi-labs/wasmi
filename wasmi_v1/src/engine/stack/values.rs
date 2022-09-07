@@ -200,6 +200,7 @@ impl ValueStack {
     /// # Note
     ///
     /// This has the same effect as [`ValueStack::peek`]`(0)`.
+    #[inline]
     pub fn last(&self) -> UntypedValue {
         self.get_release_unchecked(self.stack_ptr - 1)
     }
@@ -209,6 +210,7 @@ impl ValueStack {
     /// # Note
     ///
     /// This has the same effect as [`ValueStack::peek`]`(0)`.
+    #[inline]
     pub fn last_mut(&mut self) -> &mut UntypedValue {
         self.get_release_unchecked_mut(self.stack_ptr - 1)
     }
