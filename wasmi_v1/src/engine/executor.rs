@@ -30,14 +30,14 @@ use wasmi_core::{memory_units::Pages, ExtendInto, LittleEndianConvert, UntypedVa
 #[inline(always)]
 #[rustfmt::skip]
 pub fn execute_frame<'engine>(
-    mut ctx: impl AsContextMut,
+    ctx: impl AsContextMut,
     frame: &mut FuncFrame,
     insts: Instructions<'engine>,
     value_stack: &'engine mut ValueStack,
     cache: &mut InstanceCache,
 ) -> Result<CallOutcome, Trap> {
     use Instruction as Instr;
-    let mut executor = Executor::new(&mut ctx, frame, value_stack, cache);
+    let mut executor = Executor::new(ctx, frame, value_stack, cache);
     loop {
         match *instr(&insts, executor.pc) {
             Instr::LocalGet { local_depth } => executor.visit_get_local(local_depth),
