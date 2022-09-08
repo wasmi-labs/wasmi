@@ -623,6 +623,7 @@ impl Interpreter {
 
             isa::Instruction::I32Add
             | isa::Instruction::I32Sub
+            | isa::Instruction::I32Mul
             | isa::Instruction::I32Shl
             | isa::Instruction::I32ShrU
             | isa::Instruction::I32And
@@ -1053,6 +1054,18 @@ impl Interpreter {
                 if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
                     StepInfo::I32BinOp {
                         class: BinOp::Sub,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I32Mul => {
+                if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32BinOp {
+                        class: BinOp::Mul,
                         left,
                         right,
                         value: <_>::from_value_internal(*self.value_stack.top()),

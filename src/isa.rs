@@ -563,7 +563,10 @@ impl<'a> Instruction<'a> {
                 class: BinOp::Sub,
                 vtype: VarType::I32,
             },
-            Instruction::I32Mul => todo!(),
+            Instruction::I32Mul => Opcode::Bin {
+                class: BinOp::Mul,
+                vtype: VarType::I32,
+            },
             Instruction::I32DivS => todo!(),
             Instruction::I32DivU => todo!(),
             Instruction::I32RemS => todo!(),
