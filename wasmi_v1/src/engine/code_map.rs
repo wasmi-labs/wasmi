@@ -136,7 +136,7 @@ impl<'a> Instructions<'a> {
     ///
     /// Panics in debug mode if the `pc` is invalid for the [`Instructions`].
     #[inline(always)]
-    pub unsafe fn get_release_unchecked(&self, pc: usize) -> &Instruction {
+    pub unsafe fn get_release_unchecked(&self, pc: usize) -> &'a Instruction {
         debug_assert!(
             self.insts.get(pc).is_some(),
             "unexpectedly missing instruction at index {pc}",

@@ -265,7 +265,7 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     /// # Panics
     ///
     /// If underflow of the value stack is detected.
-    fn compute_drop_keep(&self, depth: u32) -> DropKeep {
+    fn compute_drop_keep(&self, depth: u32) -> Result<DropKeep, TranslationError> {
         debug_assert!(self.is_reachable());
         let frame = self.control_frames.nth_back(depth);
         // Find out how many values we need to keep (copy to the new stack location after the drop).
@@ -292,7 +292,7 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
             height_diff,
         );
         let drop = height_diff - keep;
-        DropKeep::new32(drop, keep)
+        DropKeep::new(drop as usize, keep as usize).map_err(Into::into)
     }
 
     /// Compute [`DropKeep`] for the return statement.
@@ -301,7 +301,7 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     ///
     /// - If the control flow frame stack is empty.
     /// - If the value stack is underflown.
-    fn drop_keep_return(&self) -> DropKeep {
+    fn drop_keep_return(&self) -> Result<DropKeep, TranslationError> {
         debug_assert!(self.is_reachable());
         assert!(
             !self.control_frames.is_empty(),
@@ -312,27 +312,24 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
             .len()
             .checked_sub(1)
             .expect("control flow frame stack must not be empty") as u32;
-        let drop_keep = self.compute_drop_keep(max_depth);
+        let drop_keep = self.compute_drop_keep(max_depth)?;
         let len_params_locals = self.locals.len_registered() as usize;
         DropKeep::new(
             // Drop all local variables and parameters upon exit.
             drop_keep.drop() + len_params_locals,
             drop_keep.keep(),
         )
+        .map_err(Into::into)
     }
 
     /// Returns the relative depth on the stack of the local variable.
-    ///
-    /// # Note
-    ///
-    /// See stack layout definition in `isa.rs`.
-    fn relative_local_depth(&self, local_idx: u32) -> u32 {
+    fn relative_local_depth(&self, local_idx: u32) -> usize {
         debug_assert!(self.is_reachable());
-        let stack_height = self.value_stack.len();
-        let len_params_locals = self.locals.len_registered();
+        let stack_height = self.value_stack.len() as usize;
+        let len_params_locals = self.locals.len_registered() as usize;
         stack_height
             .checked_add(len_params_locals)
-            .and_then(|x| x.checked_sub(local_idx))
+            .and_then(|x| x.checked_sub(local_idx as usize))
             .unwrap_or_else(|| panic!("cannot convert local index into local depth: {}", local_idx))
     }
 
@@ -342,18 +339,18 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     ///
     /// - If the `depth` is greater than the current height of the control frame stack.
     /// - If the value stack underflowed.
-    fn acquire_target(&self, relative_depth: u32) -> AquiredTarget {
+    fn acquire_target(&self, relative_depth: u32) -> Result<AquiredTarget, TranslationError> {
         debug_assert!(self.is_reachable());
         if self.control_frames.is_root(relative_depth) {
-            let drop_keep = self.drop_keep_return();
-            AquiredTarget::Return(drop_keep)
+            let drop_keep = self.drop_keep_return()?;
+            Ok(AquiredTarget::Return(drop_keep))
         } else {
             let label = self
                 .control_frames
                 .nth_back(relative_depth)
                 .branch_destination();
-            let drop_keep = self.compute_drop_keep(relative_depth);
-            AquiredTarget::Branch(label, drop_keep)
+            let drop_keep = self.compute_drop_keep(relative_depth)?;
+            Ok(AquiredTarget::Branch(label, drop_keep))
         }
     }
 }
@@ -461,7 +458,7 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
                 stack_height,
             ));
             let dst_pc = self.try_resolve_label(else_label, |pc| Reloc::Br { inst_idx: pc });
-            let branch_target = Target::new(dst_pc, DropKeep::new(0, 0));
+            let branch_target = Target::new(dst_pc, DropKeep::none());
             self.inst_builder
                 .push_inst(Instruction::BrIfEqz(branch_target));
         } else {
@@ -502,7 +499,7 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
         if reachable {
             let dst_pc =
                 self.try_resolve_label(if_frame.end_label(), |pc| Reloc::Br { inst_idx: pc });
-            let target = Target::new(dst_pc, DropKeep::new(0, 0));
+            let target = Target::new(dst_pc, DropKeep::none());
             self.inst_builder.push_inst(Instruction::Br(target));
         }
         // Now resolve labels for the instructions of the `else` block
@@ -565,7 +562,7 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     /// Translates a Wasm `br` control flow operator.
     pub fn translate_br(&mut self, relative_depth: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            match builder.acquire_target(relative_depth) {
+            match builder.acquire_target(relative_depth)? {
                 AquiredTarget::Branch(end_label, drop_keep) => {
                     let dst_pc =
                         builder.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
@@ -588,7 +585,7 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
         self.translate_if_reachable(|builder| {
             let condition = builder.value_stack.pop1();
             debug_assert_eq!(condition, ValueType::I32);
-            match builder.acquire_target(relative_depth) {
+            match builder.acquire_target(relative_depth)? {
                 AquiredTarget::Branch(end_label, drop_keep) => {
                     let dst_pc =
                         builder.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
@@ -623,16 +620,16 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
                 builder: &mut FuncBuilder,
                 n: usize,
                 depth: RelativeDepth,
-            ) -> Instruction {
-                match builder.acquire_target(depth.into_u32()) {
+            ) -> Result<Instruction, TranslationError> {
+                match builder.acquire_target(depth.into_u32())? {
                     AquiredTarget::Branch(label_idx, drop_keep) => {
                         let dst_pc = builder.try_resolve_label(label_idx, |pc| Reloc::BrTable {
                             inst_idx: pc,
                             target_idx: n,
                         });
-                        Instruction::Br(Target::new(dst_pc, drop_keep))
+                        Ok(Instruction::Br(Target::new(dst_pc, drop_keep)))
                     }
-                    AquiredTarget::Return(drop_keep) => Instruction::Return(drop_keep),
+                    AquiredTarget::Return(drop_keep) => Ok(Instruction::Return(drop_keep)),
                 }
             }
 
@@ -640,10 +637,10 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
                 .into_iter()
                 .enumerate()
                 .map(|(n, depth)| compute_inst(builder, n, depth))
-                .collect::<Vec<_>>();
+                .collect::<Result<Vec<_>, _>>()?;
             // We include the default target in `len_branches`.
             let len_branches = branches.len();
-            let default_branch = compute_inst(builder, len_branches, default);
+            let default_branch = compute_inst(builder, len_branches, default)?;
             builder.inst_builder.push_inst(Instruction::BrTable {
                 len_targets: len_branches + 1,
             });
@@ -659,7 +656,7 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     /// Translates a Wasm `return` control flow operator.
     pub fn translate_return(&mut self) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let drop_keep = builder.drop_keep_return();
+            let drop_keep = builder.drop_keep_return()?;
             builder
                 .inst_builder
                 .push_inst(Instruction::Return(drop_keep));

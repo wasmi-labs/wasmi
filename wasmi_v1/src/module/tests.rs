@@ -86,6 +86,10 @@ where
     }
 }
 
+fn drop_keep(drop: usize, keep: usize) -> DropKeep {
+    DropKeep::new(drop, keep).unwrap()
+}
+
 #[test]
 fn implicit_return_no_value() {
     let wasm = wat2wasm(
@@ -96,7 +100,7 @@ fn implicit_return_no_value() {
         )
     "#,
     );
-    let expected = [Instruction::Return(DropKeep::new(0, 0))];
+    let expected = [Instruction::Return(drop_keep(0, 0))];
     assert_func_bodies(&wasm, [expected]);
 }
 
@@ -113,7 +117,7 @@ fn implicit_return_with_value() {
     );
     let expected = [
         Instruction::constant(0),
-        Instruction::Return(DropKeep::new(0, 1)),
+        Instruction::Return(drop_keep(0, 1)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -128,7 +132,7 @@ fn implicit_return_param() {
         )
     "#,
     );
-    let expected = [Instruction::Return(DropKeep::new(1, 0))];
+    let expected = [Instruction::Return(drop_keep(1, 0))];
     assert_func_bodies(&wasm, [expected]);
 }
 
@@ -145,7 +149,7 @@ fn get_local() {
     );
     let expected = [
         Instruction::local_get(1),
-        Instruction::Return(DropKeep::new(1, 1)),
+        Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -167,7 +171,7 @@ fn get_local_2() {
         Instruction::local_get(2),
         Instruction::local_get(2),
         Instruction::Drop,
-        Instruction::Return(DropKeep::new(2, 1)),
+        Instruction::Return(drop_keep(2, 1)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -191,7 +195,7 @@ fn get_local_3() {
         Instruction::local_get(2),
         Instruction::Drop,
         Instruction::Drop,
-        Instruction::Return(DropKeep::new(2, 0)),
+        Instruction::Return(drop_keep(2, 0)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -210,7 +214,7 @@ fn explicit_return() {
     );
     let expected = [
         Instruction::local_get(1),
-        Instruction::Return(DropKeep::new(1, 1)),
+        Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -232,7 +236,7 @@ fn simple_add() {
         Instruction::local_get(2),
         Instruction::local_get(2),
         Instruction::I32Add,
-        Instruction::Return(DropKeep::new(2, 1)),
+        Instruction::Return(drop_keep(2, 1)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -262,7 +266,7 @@ fn simple_mul_add() {
         Instruction::I32Add,
         Instruction::I32Add,
         Instruction::I32Mul,
-        Instruction::Return(DropKeep::new(2, 1)),
+        Instruction::Return(drop_keep(2, 1)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -283,7 +287,7 @@ fn drop_locals() {
     let expected = [
         Instruction::local_get(2),
         Instruction::local_set(1),
-        Instruction::Return(DropKeep::new(2, 0)),
+        Instruction::Return(drop_keep(2, 0)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -292,7 +296,7 @@ macro_rules! target {
     ( $inst_idx:expr, drop: $drop:expr, keep: $keep:expr ) => {
         Target::new(
             InstructionIdx::from_usize($inst_idx),
-            DropKeep::new($drop, $keep),
+            drop_keep($drop, $keep),
         )
     };
 }
@@ -317,9 +321,9 @@ fn if_without_else() {
         /* 0 */ Instruction::constant(1),
         /* 1 */ Instruction::BrIfEqz(target!(4, drop: 0, keep: 0)),
         /* 2 */ Instruction::constant(2),
-        /* 3 */ Instruction::Return(DropKeep::new(1, 1)),
+        /* 3 */ Instruction::Return(drop_keep(1, 1)),
         /* 4 */ Instruction::constant(3),
-        /* 5 */ Instruction::Return(DropKeep::new(1, 1)),
+        /* 5 */ Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -351,7 +355,7 @@ fn if_else() {
         Instruction::Br(target!(7, drop: 0, keep: 0)),
         Instruction::constant(3),
         Instruction::local_set(1),
-        Instruction::Return(DropKeep::new(1, 0)),
+        Instruction::Return(drop_keep(1, 0)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -380,7 +384,7 @@ fn if_else_returns_result() {
         /* 3 */ Instruction::Br(target!(5, drop: 0, keep: 0)),
         /* 4 */ Instruction::constant(3),
         /* 5 */ Instruction::Drop,
-        /* 6 */ Instruction::Return(DropKeep::new(0, 0)),
+        /* 6 */ Instruction::Return(drop_keep(0, 0)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -417,7 +421,7 @@ fn if_else_branch_from_true_branch() {
         /*  7 */ Instruction::Br(target!(9, drop: 0, keep: 0)),
         /*  8 */ Instruction::constant(3),
         /*  9 */ Instruction::Drop,
-        /* 10 */ Instruction::Return(DropKeep::new(0, 0)),
+        /* 10 */ Instruction::Return(drop_keep(0, 0)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -454,7 +458,7 @@ fn if_else_branch_from_false_branch() {
         /*  7 */ Instruction::Drop,
         /*  8 */ Instruction::constant(3),
         /*  9 */ Instruction::Drop,
-        /* 10 */ Instruction::Return(DropKeep::new(0, 0)),
+        /* 10 */ Instruction::Return(drop_keep(0, 0)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -485,12 +489,12 @@ fn if_else_both_unreachable_before_end() {
         /* 0 */ Instruction::local_get(1),
         /* 1 */ Instruction::BrIfEqz(target!(4, drop: 0, keep: 0)),
         /* 2 */ Instruction::constant(1),
-        /* 3 */ Instruction::Return(DropKeep::new(1, 1)),
+        /* 3 */ Instruction::Return(drop_keep(1, 1)),
         /* 4 */ Instruction::constant(2),
-        /* 5 */ Instruction::Return(DropKeep::new(1, 1)),
+        /* 5 */ Instruction::Return(drop_keep(1, 1)),
         /* 6 */ Instruction::Drop,
         /* 7 */ Instruction::constant(3),
-        /* 8 */ Instruction::Return(DropKeep::new(1, 1)),
+        /* 8 */ Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -516,7 +520,7 @@ fn loop_() {
         Instruction::BrIfNez(target!(0, drop: 0, keep: 0)),
         Instruction::constant(2),
         Instruction::Drop,
-        Instruction::Return(DropKeep::new(0, 0)),
+        Instruction::Return(drop_keep(0, 0)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -533,7 +537,7 @@ fn loop_empty() {
         )
     "#,
     );
-    let expected = [Instruction::Return(DropKeep::new(0, 0))];
+    let expected = [Instruction::Return(drop_keep(0, 0))];
     assert_func_bodies(&wasm, [expected]);
 }
 
@@ -564,7 +568,7 @@ fn spec_as_br_if_value_cond() {
         /* 3 */ Instruction::BrTable { len_targets: 2 },
         /* 4 */ Instruction::Br(target!(6, drop: 1, keep: 1)),
         /* 5 */ Instruction::Br(target!(6, drop: 1, keep: 1)),
-        /* 6 */ Instruction::Return(DropKeep::new(0, 1)),
+        /* 6 */ Instruction::Return(drop_keep(0, 1)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -590,7 +594,7 @@ fn br_table() {
         /* 1 */ Instruction::BrTable { len_targets: 2 },
         /* 2 */ Instruction::Br(target!(0, drop: 0, keep: 0)),
         /* 3 */ Instruction::Br(target!(4, drop: 0, keep: 0)),
-        /* 4 */ Instruction::Return(DropKeep::new(0, 0)),
+        /* 4 */ Instruction::Return(drop_keep(0, 0)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -622,7 +626,7 @@ fn br_table_returns_result() {
         /* 4 */ Instruction::Br(target!(6, drop: 0, keep: 1)),
         /* 5 */ Instruction::Unreachable,
         /* 6 */ Instruction::Drop,
-        /* 7 */ Instruction::Return(DropKeep::new(0, 0)),
+        /* 7 */ Instruction::Return(drop_keep(0, 0)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -649,9 +653,9 @@ fn wabt_example() {
         /* 0 */ Instruction::local_get(1),
         /* 1 */ Instruction::BrIfNez(target!(4, drop: 0, keep: 0)),
         /* 2 */ Instruction::constant(1),
-        /* 3 */ Instruction::Return(DropKeep::new(1, 1)),
+        /* 3 */ Instruction::Return(drop_keep(1, 1)),
         /* 4 */ Instruction::constant(2),
-        /* 5 */ Instruction::Return(DropKeep::new(1, 1)),
+        /* 5 */ Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -668,7 +672,7 @@ fn br_return() {
         )
     "#,
     );
-    let expected = [Instruction::Return(DropKeep::new(0, 0))];
+    let expected = [Instruction::Return(drop_keep(0, 0))];
     assert_func_bodies(&wasm, [expected]);
 }
 
@@ -687,8 +691,8 @@ fn br_if_return() {
     );
     let expected = [
         Instruction::local_get(1),
-        Instruction::ReturnIfNez(DropKeep::new(1, 0)),
-        Instruction::Return(DropKeep::new(1, 0)),
+        Instruction::ReturnIfNez(drop_keep(1, 0)),
+        Instruction::Return(drop_keep(1, 0)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
@@ -715,8 +719,8 @@ fn br_table_return() {
         /* 1 */ Instruction::BrTable { len_targets: 3 },
         /* 2 */ Instruction::Br(target!(5, drop: 0, keep: 0)),
         /* 3 */ Instruction::Br(target!(5, drop: 0, keep: 0)),
-        /* 4 */ Instruction::Return(DropKeep::new(1, 0)),
-        /* 5 */ Instruction::Return(DropKeep::new(1, 0)),
+        /* 4 */ Instruction::Return(drop_keep(1, 0)),
+        /* 5 */ Instruction::Return(drop_keep(1, 0)),
     ];
     assert_func_bodies(&wasm, [expected]);
 }
