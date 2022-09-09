@@ -278,7 +278,6 @@ impl Stack {
             "the root stack frame must be on the call stack"
         );
         let len = func.func_body().len_regs() as usize;
-        let args = res.provider_pool.resolve(args);
         debug_assert!(
             args.len() <= len,
             "encountered more call arguments than register in function frame: #params {}, #registers {}",
@@ -290,6 +289,7 @@ impl Stack {
         let caller_region = caller.region;
         let frame_ref = self.frames.push_frame(callee_region, results, func)?;
         if !args.is_empty() {
+            let args = res.provider_pool.resolve(args);
             let (caller_regs, callee_regs) =
                 self.values.paired_frame_regs(caller_region, callee_region);
             let params = callee_regs.into_iter().take(args.len());
