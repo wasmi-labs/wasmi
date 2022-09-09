@@ -75,6 +75,11 @@ impl ExecProviderSlice {
     pub fn len(&self) -> usize {
         (self.end - self.start) as usize
     }
+
+    /// Returns `true` if the [`ExecProviderSlice`] is empty.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 /// Either an [`ExecRegister`] or a [`ConstRef`] input value.
