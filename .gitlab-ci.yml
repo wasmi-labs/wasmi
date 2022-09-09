@@ -36,6 +36,8 @@ default:
 # benchmark
 benchmark:
   stage:                  benchmark
+  rules:
+  - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                   # PRs
   <<:                     *docker-env
   script:
     - git fetch
@@ -45,4 +47,5 @@ benchmark:
     - cargo bench --bench benches -- --noplot --save-baseline master
     # on PR
     - git checkout $CI_COMMIT_REF_NAME
-    - cargo bench --bench benches -- --noplot --baseline master
+    - cargo bench --bench benches -- --noplot --baseline master | tee benchmarks-report.txt
+    - bash ./scripts/ci/benchmarks-report.sh benchmarks-report.txt
