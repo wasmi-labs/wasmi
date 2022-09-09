@@ -66,21 +66,9 @@ pub struct ExecProviderSlice {
 }
 
 impl ExecProviderSlice {
-    /// Creates a new [`ExecProviderSlice`] with the given properties.
-    ///
-    /// # Panics
-    ///
-    /// If `start + len` does not fit into a `u16`.
-    pub(crate) fn new(start: u16, len: u16) -> Self {
-        let end: u16 = start.checked_add(len).unwrap_or_else(|| {
-            panic!("encountered overflow in provider slice at {start} with len {len}")
-        });
-        Self { start, end }
-    }
-
     /// Creates a new empty [`ExecProviderSlice`].
     pub(crate) fn empty() -> Self {
-        Self::new(0, 0)
+        Self { start: 0, end: 0 }
     }
 
     /// Returns the number of [`ExecProvider`]s in the [`ExecProviderSlice`].
