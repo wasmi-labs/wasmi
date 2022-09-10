@@ -1,41 +1,20 @@
 use super::inner::StackLimits;
+use wasmparser::WasmFeatures;
 
-/// Configuration for an [`Engine`][`super::Engine`].
+/// Configuration for an [`Engine`].
+///
+/// [`Engine`]: [`crate::Engine`]
 #[derive(Debug, Copy, Clone)]
 pub struct Config {
-    /// The value and call stack limits.
+    /// The limits set on the value stack and call stack.
     stack_limits: StackLimits,
-    /// Is `true` if the [`mutable-global`] Wasm proposal is enabled.
-    ///
-    /// # Note
-    ///
-    /// Enabled by default.
-    ///
-    /// [`mutable-global`]: https://github.com/WebAssembly/mutable-global
+    /// Is `true` if the `mutable-global` Wasm proposal is enabled.
     mutable_global: bool,
-    /// Is `true` if the [`sign-extension`] Wasm proposal is enabled.
-    ///
-    /// # Note
-    ///
-    /// Enabled by default.
-    ///
-    /// [`sign-extension`]: https://github.com/WebAssembly/sign-extension-ops
+    /// Is `true` if the `sign-extension` Wasm proposal is enabled.
     sign_extension: bool,
-    /// Is `true` if the [`saturating-float-to-int`] Wasm proposal is enabled.
-    ///
-    /// # Note
-    ///
-    /// Enabled by default.
-    ///
-    /// [`saturating-float-to-int`]: https://github.com/WebAssembly/nontrapping-float-to-int-conversions
+    /// Is `true` if the `saturating-float-to-int` Wasm proposal is enabled.
     saturating_float_to_int: bool,
     /// Is `true` if the [`multi-value`] Wasm proposal is enabled.
-    ///
-    /// # Note
-    ///
-    /// Enabled by default.
-    ///
-    /// [`multi-value`]: https://github.com/WebAssembly/multi-value
     multi_value: bool,
 }
 
@@ -52,96 +31,85 @@ impl Default for Config {
 }
 
 impl Config {
-    /// Creates the [`Config`] for the Wasm MVP (minimum viable product).
+    /// Sets the [`StackLimits`] for the [`Config`].
+    pub fn set_stack_limits(&mut self, stack_limits: StackLimits) -> &mut Self {
+        self.stack_limits = stack_limits;
+        self
+    }
+
+    /// Returns the [`StackLimits`] of the [`Config`].
+    pub(super) fn stack_limits(&self) -> StackLimits {
+        self.stack_limits
+    }
+
+    /// Enable or disable the [`mutable-global`] Wasm proposal for the [`Config`].
     ///
     /// # Note
     ///
-    /// The Wasm MVP has no Wasm proposals enabled by default.
-    pub fn mvp() -> Self {
-        Self {
-            stack_limits: StackLimits::default(),
-            mutable_global: false,
-            sign_extension: false,
-            saturating_float_to_int: false,
-            multi_value: false,
-        }
-    }
-
-    /// Enables the `mutable-global` Wasm proposal.
-    pub const fn enable_mutable_global(mut self, enable: bool) -> Self {
+    /// Enabled by default.
+    ///
+    /// [`mutable-global`]: https://github.com/WebAssembly/mutable-global
+    pub fn wasm_mutable_global(&mut self, enable: bool) -> &mut Self {
         self.mutable_global = enable;
         self
     }
 
-    /// Returns `true` if the `mutable-global` Wasm proposal is enabled.
-    pub const fn mutable_global(&self) -> bool {
-        self.mutable_global
-    }
-
-    /// Enables the `sign-extension` Wasm proposal.
-    pub const fn enable_sign_extension(mut self, enable: bool) -> Self {
+    /// Enable or disable the [`sign-extension`] Wasm proposal for the [`Config`].
+    ///
+    /// # Note
+    ///
+    /// Enabled by default.
+    ///
+    /// [`sign-extension`]: https://github.com/WebAssembly/sign-extension-ops
+    pub fn wasm_sign_extension(&mut self, enable: bool) -> &mut Self {
         self.sign_extension = enable;
         self
     }
 
-    /// Returns `true` if the `sign-extension` Wasm proposal is enabled.
-    pub const fn sign_extension(&self) -> bool {
-        self.sign_extension
-    }
-
-    /// Enables the `saturating-float-to-int` Wasm proposal.
-    pub const fn enable_saturating_float_to_int(mut self, enable: bool) -> Self {
+    /// Enable or disable the [`saturating-float-to-int`] Wasm proposal for the [`Config`].
+    ///
+    /// # Note
+    ///
+    /// Enabled by default.
+    ///
+    /// [`saturating-float-to-int`]:
+    /// https://github.com/WebAssembly/nontrapping-float-to-int-conversions
+    pub fn wasm_saturating_float_to_int(&mut self, enable: bool) -> &mut Self {
         self.saturating_float_to_int = enable;
         self
     }
 
-    /// Returns `true` if the `saturating-float-to-int` Wasm proposal is enabled.
-    pub const fn saturating_float_to_int(&self) -> bool {
-        self.saturating_float_to_int
-    }
-
-    /// Enables the `multi-value` Wasm proposal.
-    pub const fn enable_multi_value(mut self, enable: bool) -> Self {
+    /// Enable or disable the [`multi-value`] Wasm proposal for the [`Config`].
+    ///
+    /// # Note
+    ///
+    /// Enabled by default.
+    ///
+    /// [`multi-value`]: https://github.com/WebAssembly/multi-value
+    pub fn wasm_multi_value(&mut self, enable: bool) -> &mut Self {
         self.multi_value = enable;
         self
     }
 
-    /// Returns `true` if the `multi-value` Wasm proposal is enabled.
-    pub const fn multi_value(&self) -> bool {
-        self.multi_value
-    }
-
-    /// Sets the maximum stack size for executions.
-    pub fn set_max_stack_size(mut self, limit: usize) -> Self {
-        self.stack_limits.set_max_stack_size(limit);
-        self
-    }
-
-    /// Returns the maximum stack size allowed for executions.
-    ///
-    /// # Note
-    ///
-    /// Executions requiring more stack space trigger a `StackOverflow` trap.
-    pub fn max_stack_size(&self) -> usize {
-        self.stack_limits.max_stack_size()
-    }
-
-    /// Sets the maximum stack limit for executions.
-    ///
-    /// # Note
-    ///
-    /// Executions requiring deeper nested calls trigger a `StackOverflow` trap.
-    pub fn set_max_recursion_depth(mut self, limit: usize) -> Self {
-        self.stack_limits.set_max_recursion_depth(limit);
-        self
-    }
-
-    /// Returns the maximum stack size limit allowed for executions.
-    ///
-    /// # Note
-    ///
-    /// Executions requiring deeper nested calls trigger a `StackOverflow` trap.
-    pub fn max_recursion_depth(&self) -> usize {
-        self.stack_limits.max_recursion_depth()
+    /// Returns the [`WasmFeatures`] represented by the [`Config`].
+    pub fn wasm_features(&self) -> WasmFeatures {
+        WasmFeatures {
+            multi_value: self.multi_value,
+            mutable_global: self.mutable_global,
+            saturating_float_to_int: self.saturating_float_to_int,
+            sign_extension: self.sign_extension,
+            reference_types: false,
+            bulk_memory: false,
+            module_linking: false,
+            simd: false,
+            relaxed_simd: false,
+            threads: false,
+            tail_call: false,
+            deterministic_only: true,
+            multi_memory: false,
+            exceptions: false,
+            memory64: false,
+            extended_const: false,
+        }
     }
 }

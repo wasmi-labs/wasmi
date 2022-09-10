@@ -86,11 +86,7 @@ impl EngineInner {
     /// Creates a new [`EngineInner`] with the given [`Config`].
     pub fn new(config: &Config) -> Self {
         let engine_ident = EngineIdent::new();
-        let stack_limits = StackLimits {
-            initial_len: 1,
-            maximum_len: config.max_stack_size(),
-            maximum_recursion_depth: config.max_recursion_depth(),
-        };
+        let stack_limits = config.stack_limits();
         Self {
             config: *config,
             code_map: CodeMap::default(),

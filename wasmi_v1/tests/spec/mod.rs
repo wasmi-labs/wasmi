@@ -12,13 +12,23 @@ use self::{
 };
 use wasmi::Config;
 
+fn config_mvp() -> Config {
+    let mut config = Config::default();
+    config.wasm_mutable_global(false);
+    config.wasm_multi_value(false);
+    config.wasm_saturating_float_to_int(false);
+    config.wasm_sign_extension(false);
+    config
+}
+
 /// Run Wasm spec test suite using MVP `wasmi` configuration.
 ///
 /// # Note
 ///
 /// The Wasm MVP has no Wasm proposals enabled.
 fn run_wasm_spec_test(file_name: &str) {
-    let config = Config::mvp().enable_mutable_global(true);
+    let mut config = config_mvp();
+    config.wasm_mutable_global(true);
     self::run::run_wasm_spec_test(file_name, config)
 }
 
@@ -35,11 +45,11 @@ macro_rules! define_local_tests {
 }
 
 mod missing_features {
-    use super::Config;
+    use super::config_mvp;
 
     /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
     fn run_wasm_spec_test(file_name: &str) {
-        super::run::run_wasm_spec_test(file_name, Config::mvp())
+        super::run::run_wasm_spec_test(file_name, config_mvp())
     }
 
     define_local_tests! {
@@ -62,11 +72,12 @@ macro_rules! define_spec_tests {
 }
 
 mod saturating_float_to_int {
-    use super::Config;
+    use super::config_mvp;
 
     /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
     fn run_wasm_spec_test(file_name: &str) {
-        let config = Config::mvp().enable_saturating_float_to_int(true);
+        let mut config = config_mvp();
+        config.wasm_saturating_float_to_int(true);
         super::run::run_wasm_spec_test(file_name, config)
     }
 
@@ -76,11 +87,12 @@ mod saturating_float_to_int {
 }
 
 mod sign_extension_ops {
-    use super::Config;
+    use super::config_mvp;
 
     /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
     fn run_wasm_spec_test(file_name: &str) {
-        let config = Config::mvp().enable_sign_extension(true);
+        let mut config = config_mvp();
+        config.wasm_sign_extension(true);
         super::run::run_wasm_spec_test(file_name, config)
     }
 
@@ -91,11 +103,12 @@ mod sign_extension_ops {
 }
 
 mod multi_value {
-    use super::Config;
+    use super::config_mvp;
 
     /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
     fn run_wasm_spec_test(file_name: &str) {
-        let config = Config::mvp().enable_multi_value(true);
+        let mut config = config_mvp();
+        config.wasm_multi_value(true);
         super::run::run_wasm_spec_test(file_name, config)
     }
 
