@@ -1,5 +1,5 @@
 use super::{
-    super::{Global, Memory, Table},
+    super::{Memory, Table},
     bytecode::{FuncIdx, GlobalIdx, Instruction, LocalDepth, Offset, SignatureIdx},
     cache::InstanceCache,
     code_map::Instructions,
@@ -308,11 +308,9 @@ where
     /// # Panics
     ///
     /// If there is no global variable at the given index.
-    fn global(&self, global_index: GlobalIdx) -> Global {
-        self.frame
-            .instance()
-            .get_global(self.ctx.as_context(), global_index.into_inner())
-            .unwrap_or_else(|| panic!("missing global at index {:?}", global_index))
+    fn global(&mut self, global_index: GlobalIdx) -> &mut UntypedValue {
+        self.cache
+            .get_global(self.ctx.as_context_mut(), global_index.into_inner())
     }
 
     /// Calculates the effective address of a linear memory access.
@@ -585,15 +583,14 @@ where
     }
 
     fn visit_global_get(&mut self, global_index: GlobalIdx) {
-        let global_value = self.global(global_index).get_untyped(self.ctx.as_context());
+        let global_value = *self.global(global_index);
         self.value_stack.push(global_value);
         self.next_instr()
     }
 
     fn visit_global_set(&mut self, global_index: GlobalIdx) {
-        let global = self.global(global_index);
         let new_value = self.value_stack.pop();
-        global.set_untyped(self.ctx.as_context_mut(), new_value);
+        *self.global(global_index) = new_value;
         self.next_instr()
     }
 
