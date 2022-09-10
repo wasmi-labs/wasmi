@@ -1776,9 +1776,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         results: <ExecuteTypes as InstructionTypes>::RegisterSlice,
         params: <ExecuteTypes as InstructionTypes>::ProviderSlice,
     ) -> Result<CallOutcome, Trap> {
-        let callee = self
-            .cache
-            .get_func(&mut self.ctx, func.into_u32());
+        let callee = self.cache.get_func(&mut self.ctx, func.into_u32());
         self.call_func(callee, results, params)
     }
 
