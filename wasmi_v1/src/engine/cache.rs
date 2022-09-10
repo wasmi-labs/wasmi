@@ -188,7 +188,8 @@ impl InstanceCache {
         }
     }
 
-    /// Loads the [`Global`] at `index` of the currently used [`Instance`].
+    /// Loads the pointer to the value of the global variable at `index`
+    /// of the currently used [`Instance`].
     ///
     /// # Panics
     ///
@@ -208,7 +209,8 @@ impl InstanceCache {
         global
     }
 
-    /// Loads the [`Global`] at `index` of the currently used [`Instance`].
+    /// Returns a pointer to the value of the global variable at `index`
+    /// of the currently used [`Instance`].
     ///
     /// # Panics
     ///
