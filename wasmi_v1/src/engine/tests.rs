@@ -627,9 +627,9 @@ fn br_table_simple() {
     );
     let module = create_module(&wasm[..]);
     let engine = module.engine();
-    let c10 = ExecProvider::from_immediate(engine.alloc_const(10_i32));
-    let c20 = ExecProvider::from_immediate(engine.alloc_const(20_i32));
-    let c30 = ExecProvider::from_immediate(engine.alloc_const(30_i32));
+    let c10 = 10_i32.into();
+    let c20 = 20_i32.into();
+    let c30 = 30_i32.into();
     let reg0 = ExecRegister::from_inner(0);
     let results = engine.alloc_provider_slice([]);
     let global = Global::from(0);
@@ -650,19 +650,19 @@ fn br_table_simple() {
         },
         /* 4 case default */ ExecInstruction::ReturnMulti { results },
         // branch for case 0
-        /* 5 */ ExecInstruction::GlobalSet {
+        /* 5 */ ExecInstruction::GlobalSetImm {
             global,
             value: c10,
         },
         /* 6 */ ExecInstruction::ReturnMulti { results },
         // branch for case 1
-        /* 7 */ ExecInstruction::GlobalSet {
+        /* 7 */ ExecInstruction::GlobalSetImm {
             global,
             value: c20,
         },
         /* 8 */ ExecInstruction::ReturnMulti { results },
         // branch for case 2
-        /* 9 */ ExecInstruction::GlobalSet {
+        /* 9 */ ExecInstruction::GlobalSetImm {
             global,
             value: c30,
         },
@@ -790,28 +790,28 @@ fn br_table_const_case() {
         ));
         let module = create_module(&wasm[..]);
         let engine = module.engine();
-        let c10 = ExecProvider::from_immediate(engine.alloc_const(10_i32));
-        let c20 = ExecProvider::from_immediate(engine.alloc_const(20_i32));
-        let c30 = ExecProvider::from_immediate(engine.alloc_const(30_i32));
+        let c10 = 10_i32.into();
+        let c20 = 20_i32.into();
+        let c30 = 30_i32.into();
         let results = engine.alloc_provider_slice([]);
         let global = Global::from(0);
         #[rustfmt::skip]
         let expected = [
             /* 0 */ expect_branch(engine),
             // branch for case 0
-            /* 1 */ ExecInstruction::GlobalSet {
+            /* 1 */ ExecInstruction::GlobalSetImm {
                 global,
                 value: c10,
             },
             /* 2 */ ExecInstruction::ReturnMulti { results },
             // branch for case 1
-            /* 3 */ ExecInstruction::GlobalSet {
+            /* 3 */ ExecInstruction::GlobalSetImm {
                 global,
                 value: c20,
             },
             /* 4 */ ExecInstruction::ReturnMulti { results },
             // branch for case 2
-            /* 5 */ ExecInstruction::GlobalSet {
+            /* 5 */ ExecInstruction::GlobalSetImm {
                 global,
                 value: c30,
             },
@@ -2475,12 +2475,11 @@ fn global_set_const() {
         ));
         let module = create_module(&wasm[..]);
         let engine = module.engine();
-        let value = ExecProvider::from_immediate(engine.alloc_const(new_value));
         let results = engine.alloc_provider_slice([]);
         let expected = [
-            ExecInstruction::GlobalSet {
+            ExecInstruction::GlobalSetImm {
                 global: GlobalIndex::from(global_index),
-                value: value.into(),
+                value: new_value.into(),
             },
             ExecInstruction::ReturnMulti { results },
         ];

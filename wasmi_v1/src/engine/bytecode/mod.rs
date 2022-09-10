@@ -403,7 +403,14 @@ where
         /// The index of the global variable to set the value.
         global: Global,
         /// The new value of the global variable.
-        value: T::Provider,
+        value: T::Register,
+    },
+    /// Equivalent to the Wasm `global.set` instruction.
+    GlobalSetImm {
+        /// The index of the global variable to set the value.
+        global: Global,
+        /// The new value of the global variable.
+        value: T::Immediate,
     },
     /// Equivalent to the Wasm `i32.load` instruction.
     I32Load {

@@ -1194,7 +1194,17 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
         self.translate_if_reachable(|builder| {
             let global = Global::from(global_idx.into_u32());
             let value = builder.providers.pop();
-            builder.push_instr(Instruction::GlobalSet { global, value });
+            let instr = match value {
+                IrProvider::Register(register) => Instruction::GlobalSet {
+                    global,
+                    value: register,
+                },
+                IrProvider::Immediate(immediate) => Instruction::GlobalSetImm {
+                    global,
+                    value: immediate,
+                },
+            };
+            builder.push_instr(instr);
             Ok(())
         })
     }

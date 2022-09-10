@@ -423,8 +423,12 @@ impl EngineInner {
                 ExecInstruction::GlobalGet { result, global }
             }
             Instruction::GlobalSet { global, value } => {
-                let value = Self::compile_provider(res, context, value);
+                let value = Self::compile_register(context, value);
                 ExecInstruction::GlobalSet { global, value }
+            }
+            Instruction::GlobalSetImm { global, value } => {
+                let value = Self::compile_immediate(value);
+                ExecInstruction::GlobalSetImm { global, value }
             }
 
             Instruction::I32Load {

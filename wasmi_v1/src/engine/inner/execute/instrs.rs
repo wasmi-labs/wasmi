@@ -210,6 +210,9 @@ pub(super) fn execute_frame(
             Instr::GlobalSet { global, value } => {
                 exec_ctx.exec_global_set(global, value)?;
             }
+            Instr::GlobalSetImm { global, value } => {
+                exec_ctx.exec_global_set_imm(global, value)?;
+            }
             Instr::I32Load {
                 result,
                 ptr,
@@ -1870,10 +1873,20 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     fn exec_global_set(
         &mut self,
         global: bytecode::Global,
-        value: <ExecuteTypes as InstructionTypes>::Provider,
+        value: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
         let global_var = self.resolve_global(global);
-        let value = self.load_provider(value);
+        let value = self.get_register(value);
+        global_var.set_untyped(&mut self.ctx, value);
+        self.next_instr()
+    }
+
+    fn exec_global_set_imm(
+        &mut self,
+        global: bytecode::Global,
+        value: <ExecuteTypes as InstructionTypes>::Immediate,
+    ) -> Result<(), Trap> {
+        let global_var = self.resolve_global(global);
         global_var.set_untyped(&mut self.ctx, value);
         self.next_instr()
     }

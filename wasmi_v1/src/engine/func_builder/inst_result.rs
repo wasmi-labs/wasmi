@@ -32,6 +32,7 @@ impl IrInstruction {
             Self::CopyMany { results, .. } => results.single_mut(),
             Self::Select { result, .. } | Self::GlobalGet { result, .. } => Some(result),
             Self::GlobalSet { .. } => None,
+            Self::GlobalSetImm { .. } => None,
             Self::I32Load { result, .. }
             | Self::I64Load { result, .. }
             | Self::F32Load { result, .. }

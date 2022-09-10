@@ -454,7 +454,15 @@ impl<T> Display for DisplayExecInstruction<'_, '_, T> {
                     f,
                     "{} <- {}",
                     DisplayGlobal::from(global),
-                    DisplayExecProvider::new(res, value),
+                    DisplayExecRegister::from(value),
+                )
+            }
+            Instr::GlobalSetImm { global, value } => {
+                writeln!(
+                    f,
+                    "{} <- {}",
+                    DisplayGlobal::from(global),
+                    DisplayUntypedValue::from(value),
                 )
             }
             Instr::I32Load { result, ptr, offset } => self.write_load(f, "i32.load", result, ptr, offset),
