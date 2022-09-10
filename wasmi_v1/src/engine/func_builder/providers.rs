@@ -28,6 +28,14 @@ pub struct StackCheckpoint {
 }
 
 impl Stacks {
+    /// Resets the [`Stack`] counters for reuse.
+    pub fn reset(&mut self) {
+        self.len_dynamic = 0;
+        self.max_dynamic = 0;
+        self.len_preserved = 0;
+        self.max_preserved = 0;
+    }
+
     pub fn max_dynamic(&self) -> usize {
         self.max_dynamic
     }
@@ -88,6 +96,13 @@ impl Stacks {
 }
 
 impl Providers {
+    /// Resets the [`Providers`] for reuse.
+    pub fn reset(&mut self) {
+        self.locals.reset();
+        self.providers.clear();
+        self.stacks.reset();
+    }
+
     /// Preserves `local.get` values on the provider stack if any.
     ///
     /// Returns `Some` preserved register if any provider had to be preserved.
@@ -634,6 +649,11 @@ pub struct ProviderSliceArena {
 }
 
 impl ProviderSliceArena {
+    /// Resets the [`ProviderSliceArena`] for reuse.
+    pub fn reset(&mut self) {
+        self.providers.clear()
+    }
+
     /// Allocates a new [`IrProviderSlice`] consisting of the given registers.
     pub fn alloc<T>(&mut self, registers: T) -> IrProviderSlice
     where

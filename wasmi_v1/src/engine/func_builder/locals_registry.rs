@@ -26,6 +26,11 @@ pub struct LocalsRegistry {
 }
 
 impl LocalsRegistry {
+    /// Resets the [`LocalsRegistry`] for reuse.
+    pub fn reset(&mut self) {
+        self.max_index = 0;
+    }
+
     /// Returns the number of registered local variables.
     ///
     /// # Note

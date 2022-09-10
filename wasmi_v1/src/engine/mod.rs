@@ -20,7 +20,7 @@ mod tests;
 pub(crate) use self::{
     bytecode::{ExecInstruction, ExecRegisterSlice, Instruction, InstructionTypes, Target},
     func_args::{FuncParams, FuncResults},
-    func_builder::{FunctionBuilder, IrProvider, IrRegister},
+    func_builder::{FunctionBuilder, FunctionBuilderAllocations, IrProvider, IrRegister},
     provider::{DedupProviderSliceArena, ExecProvider, ExecProviderSlice},
     traits::{CallParams, CallResults},
 };

@@ -49,6 +49,11 @@ impl Display for LabelError {
 }
 
 impl LabelRegistry {
+    /// Resets the [`LabelRegistry`] for reuse.
+    pub fn reset(&mut self) {
+        self.labels.clear()
+    }
+
     /// Allocates a new unpinned [`Label`].
     pub fn new_label(&mut self) -> LabelRef {
         let index = self.labels.len();

@@ -53,7 +53,10 @@ use crate::{
     ModuleError,
 };
 use alloc::vec::Vec;
-use core::mem;
+use core::{
+    mem,
+    ops::{Deref, DerefMut},
+};
 use wasmi_core::{TrapCode, UntypedValue, ValueType, F32, F64};
 
 pub struct CompileContext<'a> {
@@ -142,25 +145,13 @@ macro_rules! store_op {
 
 /// The interface to translate a `wasmi` bytecode function using Wasm bytecode.
 #[derive(Debug)]
-pub struct FunctionBuilder<'parser> {
+pub struct FunctionBuilder<'alloc, 'parser> {
     /// The [`Engine`] for which the function is translated.
     engine: Engine,
     /// The function under construction.
     func: FuncIdx,
     /// The immutable `wasmi` module resources.
     res: ModuleResources<'parser>,
-    /// The control flow frame stack that represents the Wasm control flow.
-    control_frames: ControlFlowStack,
-    /// The emulated value stack.
-    providers: Providers,
-    /// Arena for register slices.
-    provider_slices: ProviderSliceArena,
-    /// The instruction builder.
-    ///
-    /// # Note
-    ///
-    /// Allows to incrementally construct the instruction of a function.
-    inst_builder: InstructionsBuilder,
     /// This represents the reachability of the currently translated code.
     ///
     /// - `true`: The currently translated code is reachable.
@@ -178,33 +169,70 @@ pub struct FunctionBuilder<'parser> {
     /// and must not be applied if for example a `i32.const` or similar was
     /// in between.
     allow_set_local_override: bool,
+    /// Reusable resources that may be shared across many [`FunctionBuilder`]s.
+    allocations: &'alloc mut FunctionBuilderAllocations,
 }
 
-impl<'parser> FunctionBuilder<'parser> {
+impl<'alloc, 'parser> Deref for FunctionBuilder<'alloc, 'parser> {
+    type Target = FunctionBuilderAllocations;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        self.allocations
+    }
+}
+
+impl<'alloc, 'parser> DerefMut for FunctionBuilder<'alloc, 'parser> {
+    #[inline]
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.allocations
+    }
+}
+
+/// Reusable allocations of a [`FunctionBuilder`].
+#[derive(Debug, Default)]
+pub struct FunctionBuilderAllocations {
+    control_frames: ControlFlowStack,
+    /// The emulated value stack.
+    providers: Providers,
+    /// Arena for register slices.
+    provider_slices: ProviderSliceArena,
+    /// The instruction builder.
+    ///
+    /// # Note
+    ///
+    /// Allows to incrementally construct the instruction of a function.
+    inst_builder: InstructionsBuilder,
+}
+
+impl FunctionBuilderAllocations {
+    /// Resets the [`FunctionBuilderAllocations`] for reuse.
+    pub fn reset(&mut self) {
+        self.control_frames.reset();
+        self.providers.reset();
+        self.provider_slices.reset();
+        self.inst_builder.reset();
+    }
+}
+
+impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     /// Creates a new [`FunctionBuilder`].
-    pub fn new(engine: &Engine, func: FuncIdx, res: ModuleResources<'parser>) -> Self {
-        let mut inst_builder = InstructionsBuilder::default();
-        let mut control_frames = ControlFlowStack::default();
-        let mut providers = Providers::default();
-        let reg_slices = ProviderSliceArena::default();
-        Self::register_func_body_block(
-            func,
-            res,
-            &mut inst_builder,
-            &mut control_frames,
-            &mut providers,
-        );
-        Self::register_func_params(func, res, &mut providers);
+    pub fn new(
+        engine: &Engine,
+        func: FuncIdx,
+        res: ModuleResources<'parser>,
+        allocations: &'alloc mut FunctionBuilderAllocations,
+    ) -> Self {
+        allocations.reset();
+        Self::register_func_body_block(func, res, allocations);
+        Self::register_func_params(func, res, allocations);
         Self {
             engine: engine.clone(),
             func,
             res,
-            control_frames,
-            inst_builder,
             reachable: true,
-            providers,
-            provider_slices: reg_slices,
             allow_set_local_override: false,
+            allocations,
         }
     }
 
@@ -217,23 +245,23 @@ impl<'parser> FunctionBuilder<'parser> {
     fn register_func_body_block(
         func: FuncIdx,
         res: ModuleResources<'parser>,
-        inst_builder: &mut InstructionsBuilder,
-        control_frames: &mut ControlFlowStack,
-        providers: &mut Providers,
+        allocations: &mut FunctionBuilderAllocations,
     ) {
         let func_type = res.get_type_of_func(func);
         let block_type = BlockType::func_type(func_type);
-        let end_label = inst_builder.new_label();
-        let results = providers.peek_dynamic_many(block_type.len_results(res.engine()) as usize);
+        let end_label = allocations.inst_builder.new_label();
+        let results = allocations
+            .providers
+            .peek_dynamic_many(block_type.len_results(res.engine()) as usize);
         let block_frame = BlockControlFrame::new(results, block_type, end_label, 0);
-        control_frames.push_frame(block_frame);
+        allocations.control_frames.push_frame(block_frame);
     }
 
     /// Registers the function parameters in the emulated value stack.
     fn register_func_params(
         func: FuncIdx,
         res: ModuleResources<'parser>,
-        providers: &mut Providers,
+        allocations: &mut FunctionBuilderAllocations,
     ) -> usize {
         let dedup_func_type = res.get_type_of_func(func);
         let func_type = res
@@ -241,7 +269,7 @@ impl<'parser> FunctionBuilder<'parser> {
             .resolve_func_type(dedup_func_type, Clone::clone);
         let params = func_type.params();
         for param_type in params {
-            providers.register_locals(*param_type, 1);
+            allocations.providers.register_locals(*param_type, 1);
         }
         params.len()
     }
@@ -257,9 +285,12 @@ impl<'parser> FunctionBuilder<'parser> {
     }
 
     /// Finishes constructing the function and returns its [`FuncBody`].
-    pub fn finish(mut self) -> FuncBody {
-        self.inst_builder
-            .finish(&self.engine, &self.provider_slices, &self.providers)
+    pub fn finish(self) -> FuncBody {
+        self.allocations.inst_builder.finish(
+            &self.engine,
+            &self.allocations.provider_slices,
+            &self.allocations.providers,
+        )
     }
 
     /// Returns `true` if the code at the current translation position is reachable.
@@ -298,8 +329,8 @@ impl<'parser> FunctionBuilder<'parser> {
             0 => ReturnProviders::None,
             1 => ReturnProviders::One(self.providers.peek()),
             n => {
-                let providers = self.providers.peek_n(n).iter().copied();
-                let slice = self.provider_slices.alloc(providers);
+                let providers = self.allocations.providers.peek_n(n).iter().copied();
+                let slice = self.allocations.provider_slices.alloc(providers);
                 ReturnProviders::Many(slice)
             }
         }
@@ -335,8 +366,9 @@ impl<'parser> FunctionBuilder<'parser> {
             let frame = self.control_frames.nth_back(relative_depth);
             let target = frame.branch_destination();
             let results = frame.branch_results();
-            let returned = self.providers.peek_n(results.len() as usize);
-            let true_copies = TrueCopies::analyze(&mut self.provider_slices, results, returned);
+            let returned = self.allocations.providers.peek_n(results.len() as usize);
+            let true_copies =
+                TrueCopies::analyze(&mut self.allocations.provider_slices, results, returned);
             BranchingTarget::Branch {
                 target,
                 true_copies,
@@ -481,7 +513,7 @@ impl ReturnProviders {
     }
 }
 
-impl<'parser> FunctionBuilder<'parser> {
+impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     /// Translates a Wasm `unreachable` instruction.
     pub fn translate_unreachable(&mut self) -> Result<(), ModuleError> {
         self.update_allow_set_local_override(false);
@@ -554,10 +586,10 @@ impl<'parser> FunctionBuilder<'parser> {
             // can be jumped to again for which they always need their inputs
             // in their expected registers.
             let len_params = branch_results.len() as usize;
-            self.inst_builder.push_copy_many_instr(
-                &mut self.provider_slices,
+            self.allocations.inst_builder.push_copy_many_instr(
+                &mut self.allocations.provider_slices,
                 branch_results,
-                self.providers.pop_n(len_params).as_slice(),
+                self.allocations.providers.pop_n(len_params).as_slice(),
             );
             self.providers.push_dynamic_many(len_params);
             // After putting all required copy intsructions we can now
@@ -696,9 +728,9 @@ impl<'parser> FunctionBuilder<'parser> {
                 //
                 // This requires us to serialize a `br` from the ending of the
                 // `then` block to the end of the `if` block.
-                let returned = self.providers.peek_n(results.len() as usize);
-                self.inst_builder.push_br(
-                    &mut self.provider_slices,
+                let returned = self.allocations.providers.peek_n(results.len() as usize);
+                self.allocations.inst_builder.push_br(
+                    &mut self.allocations.provider_slices,
                     if_frame.end_label(),
                     results,
                     returned,
@@ -710,9 +742,9 @@ impl<'parser> FunctionBuilder<'parser> {
             }
             if reachable && !else_reachable {
                 // Case: only `then` is reachable
-                let returned = self.providers.pop_n(results.len() as usize);
-                self.inst_builder.push_copy_many_instr(
-                    &mut self.provider_slices,
+                let returned = self.allocations.providers.pop_n(results.len() as usize);
+                self.allocations.inst_builder.push_copy_many_instr(
+                    &mut self.allocations.provider_slices,
                     results,
                     returned.as_slice(),
                 );
@@ -757,9 +789,12 @@ impl<'parser> FunctionBuilder<'parser> {
     /// Inserts a `copy` or `copy_many` instruction to write back results to
     /// parent control flow block upon ending one of its children.
     fn copy_frame_results(&mut self, results: IrRegisterSlice) -> Result<(), ModuleError> {
-        let returned = self.providers.peek_n(results.len() as usize);
-        self.inst_builder
-            .push_copy_many_instr(&mut self.provider_slices, results, returned);
+        let returned = self.allocations.providers.peek_n(results.len() as usize);
+        self.allocations.inst_builder.push_copy_many_instr(
+            &mut self.allocations.provider_slices,
+            results,
+            returned,
+        );
         Ok(())
     }
 
@@ -975,8 +1010,8 @@ impl<'parser> FunctionBuilder<'parser> {
         func_type: &FuncType,
     ) -> (IrProviderSlice, IrRegisterSlice) {
         let (params, results) = func_type.params_results();
-        let params_providers = self.providers.pop_n(params.len());
-        let params_slice = self.provider_slices.alloc(params_providers);
+        let params_providers = self.allocations.providers.pop_n(params.len());
+        let params_slice = self.allocations.provider_slices.alloc(params_providers);
         let results_slice = self.providers.push_dynamic_many(results.len());
         (params_slice, results_slice)
     }
