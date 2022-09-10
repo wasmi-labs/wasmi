@@ -522,8 +522,8 @@ impl<'parser> FunctionBuilder<'parser> {
     /// Translates a Wasm `block` control flow operator.
     pub fn translate_block(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
         self.update_allow_set_local_override(false);
-        let stack_height = self.frame_stack_height(block_type);
         if self.is_reachable() {
+            let stack_height = self.frame_stack_height(block_type);
             let end_label = self.inst_builder.new_label();
             let results = self.block_results(block_type);
             self.control_frames.push_frame(BlockControlFrame::new(
@@ -536,7 +536,6 @@ impl<'parser> FunctionBuilder<'parser> {
             self.control_frames.push_frame(UnreachableControlFrame::new(
                 ControlFrameKind::Block,
                 block_type,
-                stack_height,
             ));
         }
         Ok(())
@@ -545,8 +544,8 @@ impl<'parser> FunctionBuilder<'parser> {
     /// Translates a Wasm `loop` control flow operator.
     pub fn translate_loop(&mut self, block_type: BlockType) -> Result<(), ModuleError> {
         self.update_allow_set_local_override(false);
-        let stack_height = self.frame_stack_height(block_type);
         if self.is_reachable() {
+            let stack_height = self.frame_stack_height(block_type);
             let len_params = block_type.len_params(&self.engine) as usize;
             let branch_results = self.providers.block_results(len_params, len_params);
             let end_results = self.block_results(block_type);
@@ -576,7 +575,6 @@ impl<'parser> FunctionBuilder<'parser> {
             self.control_frames.push_frame(UnreachableControlFrame::new(
                 ControlFrameKind::Loop,
                 block_type,
-                stack_height,
             ));
         }
         Ok(())
@@ -595,11 +593,9 @@ impl<'parser> FunctionBuilder<'parser> {
         if !self.is_reachable() {
             // Simply emit an unreachable `if` block in case the current
             // code is already unreachable and bail out early.
-            let stack_height = self.frame_stack_height(block_type);
             self.control_frames.push_frame(UnreachableControlFrame::new(
                 ControlFrameKind::If,
                 block_type,
-                stack_height,
             ));
             return Ok(());
         }
@@ -750,9 +746,10 @@ impl<'parser> FunctionBuilder<'parser> {
     /// Updates the value stack, removing all intermediate values used
     /// to execute the block and put its results on the stack.
     fn finalize_frame(&mut self, frame: ControlFrame) -> Result<(), ModuleError> {
-        let frame_stack_height = frame.stack_height();
         let len_results = frame.block_type().len_results(&self.engine) as usize;
-        self.providers.shrink_to(frame_stack_height);
+        if let Some(frame_stack_height) = frame.stack_height() {
+            self.providers.shrink_to(frame_stack_height);
+        }
         self.providers.push_dynamic_many(len_results);
         Ok(())
     }

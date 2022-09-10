@@ -381,8 +381,6 @@ pub struct UnreachableControlFrame {
     pub block_type: BlockType,
     /// The kind of the unreachable control flow frame.
     pub kind: ControlFrameKind,
-    /// The value stack size upon entering the unreachable control frame.
-    pub stack_height: u32,
 }
 
 /// The kind of a control flow frame.
@@ -398,22 +396,13 @@ pub enum ControlFrameKind {
 
 impl UnreachableControlFrame {
     /// Creates a new [`UnreachableControlFrame`] with the given type and kind.
-    pub fn new(kind: ControlFrameKind, block_type: BlockType, stack_height: u32) -> Self {
-        Self {
-            kind,
-            block_type,
-            stack_height,
-        }
+    pub fn new(kind: ControlFrameKind, block_type: BlockType) -> Self {
+        Self { kind, block_type }
     }
 
     /// Returns the [`ControlFrameKind`] of the [`UnreachableControlFrame`].
     pub fn kind(&self) -> ControlFrameKind {
         self.kind
-    }
-
-    /// Returns the value stack height upon entering the [`IfControlFrame`].
-    pub fn stack_height(&self) -> u32 {
-        self.stack_height
     }
 
     /// Returns the [`BlockType`] of the [`IfControlFrame`].
@@ -474,12 +463,12 @@ impl ControlFrame {
     }
 
     /// Returns the value stack height upon entering the control flow frame.
-    pub fn stack_height(&self) -> u32 {
+    pub fn stack_height(&self) -> Option<u32> {
         match self {
-            Self::Block(frame) => frame.stack_height(),
-            Self::Loop(frame) => frame.stack_height(),
-            Self::If(frame) => frame.stack_height(),
-            Self::Unreachable(frame) => frame.stack_height(),
+            Self::Block(frame) => Some(frame.stack_height()),
+            Self::Loop(frame) => Some(frame.stack_height()),
+            Self::If(frame) => Some(frame.stack_height()),
+            Self::Unreachable(_) => None,
         }
     }
 
