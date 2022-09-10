@@ -8,7 +8,7 @@ use crate::{
     Table,
 };
 use core::ptr::NonNull;
-use wasmi_core::TrapCode;
+use wasmi_core::{TrapCode, UntypedValue};
 
 /// A cache for frequently used entities of an [`Instance`].
 #[derive(Debug)]
@@ -21,6 +21,8 @@ pub struct InstanceCache {
     default_table: Option<Table>,
     /// The last accessed function of the currently used [`Instance`].
     last_func: Option<(u32, Func)>,
+    /// The last accessed global variable value of the currently used [`Instance`].
+    last_global: Option<(u32, NonNull<UntypedValue>)>,
     /// The bytes of a default linear memory of the currently used [`Instance`].
     default_memory_bytes: Option<CachedMemoryBytes>,
 }
@@ -32,6 +34,7 @@ impl From<Instance> for InstanceCache {
             default_memory: None,
             default_table: None,
             last_func: None,
+            last_global: None,
             default_memory_bytes: None,
         }
     }
@@ -49,6 +52,7 @@ impl InstanceCache {
         self.default_memory = None;
         self.default_table = None;
         self.last_func = None;
+        self.last_global = None;
         self.default_memory_bytes = None;
     }
 
@@ -182,6 +186,44 @@ impl InstanceCache {
             Some((index, func)) if index == func_idx => func,
             _ => self.load_func_at(ctx, func_idx),
         }
+    }
+
+    /// Loads the pointer to the value of the global variable at `index`
+    /// of the currently used [`Instance`].
+    ///
+    /// # Panics
+    ///
+    /// If the currently used [`Instance`] does not have a default table.
+    fn load_global_at(&mut self, ctx: impl AsContextMut, index: u32) -> NonNull<UntypedValue> {
+        let global = self
+            .instance()
+            .get_global(ctx.as_context(), index)
+            .map(|g| g.get_untyped_ptr(ctx))
+            .unwrap_or_else(|| {
+                panic!(
+                    "missing global variable at index {index} for instance: {:?}",
+                    self.instance
+                )
+            });
+        self.last_global = Some((index, global));
+        global
+    }
+
+    /// Returns a pointer to the value of the global variable at `index`
+    /// of the currently used [`Instance`].
+    ///
+    /// # Panics
+    ///
+    /// If the currently used [`Instance`] does not have a [`Func`] at the index.
+    pub fn get_global(&mut self, ctx: impl AsContextMut, global_idx: u32) -> &mut UntypedValue {
+        let mut ptr = match self.last_global {
+            Some((index, global)) if index == global_idx => global,
+            _ => self.load_global_at(ctx, global_idx),
+        };
+        // SAFETY: This deref is safe since we only hold this pointer
+        //         as long as we are sure that nothing else can manipulate
+        //         the global in a way that would invalidate the pointer.
+        unsafe { ptr.as_mut() }
     }
 }
 

@@ -1,5 +1,5 @@
 use super::{
-    super::{Global, Memory, Table},
+    super::{Memory, Table},
     bytecode::{FuncIdx, GlobalIdx, Instruction, LocalDepth, Offset, SignatureIdx},
     cache::InstanceCache,
     code_map::Instructions,
@@ -88,9 +88,9 @@ where
         use Instruction as Instr;
         loop {
             match *self.instr() {
-                Instr::LocalGet { local_depth } => self.visit_get_local(local_depth),
-                Instr::LocalSet { local_depth } => self.visit_set_local(local_depth),
-                Instr::LocalTee { local_depth } => self.visit_tee_local(local_depth),
+                Instr::LocalGet { local_depth } => self.visit_local_get(local_depth),
+                Instr::LocalSet { local_depth } => self.visit_local_set(local_depth),
+                Instr::LocalTee { local_depth } => self.visit_local_tee(local_depth),
                 Instr::Br(target) => self.visit_br(target),
                 Instr::BrIfEqz(target) => self.visit_br_if_eqz(target),
                 Instr::BrIfNez(target) => self.visit_br_if_nez(target),
@@ -106,8 +106,8 @@ where
                 Instr::CallIndirect(signature) => return self.visit_call_indirect(signature),
                 Instr::Drop => self.visit_drop(),
                 Instr::Select => self.visit_select(),
-                Instr::GlobalGet(global_idx) => self.visit_get_global(global_idx),
-                Instr::GlobalSet(global_idx) => self.visit_set_global(global_idx),
+                Instr::GlobalGet(global_idx) => self.visit_global_get(global_idx),
+                Instr::GlobalSet(global_idx) => self.visit_global_set(global_idx),
                 Instr::I32Load(offset) => self.visit_i32_load(offset)?,
                 Instr::I64Load(offset) => self.visit_i64_load(offset)?,
                 Instr::F32Load(offset) => self.visit_f32_load(offset)?,
@@ -308,11 +308,9 @@ where
     /// # Panics
     ///
     /// If there is no global variable at the given index.
-    fn global(&self, global_index: GlobalIdx) -> Global {
-        self.frame
-            .instance()
-            .get_global(self.ctx.as_context(), global_index.into_inner())
-            .unwrap_or_else(|| panic!("missing global at index {:?}", global_index))
+    fn global(&mut self, global_index: GlobalIdx) -> &mut UntypedValue {
+        self.cache
+            .get_global(self.ctx.as_context_mut(), global_index.into_inner())
     }
 
     /// Calculates the effective address of a linear memory access.
@@ -566,34 +564,33 @@ where
         Ok(CallOutcome::Return)
     }
 
-    fn visit_get_local(&mut self, local_depth: LocalDepth) {
+    fn visit_local_get(&mut self, local_depth: LocalDepth) {
         let value = self.value_stack.peek(local_depth.into_inner());
         self.value_stack.push(value);
         self.next_instr()
     }
 
-    fn visit_set_local(&mut self, local_depth: LocalDepth) {
+    fn visit_local_set(&mut self, local_depth: LocalDepth) {
         let new_value = self.value_stack.pop();
         *self.value_stack.peek_mut(local_depth.into_inner()) = new_value;
         self.next_instr()
     }
 
-    fn visit_tee_local(&mut self, local_depth: LocalDepth) {
+    fn visit_local_tee(&mut self, local_depth: LocalDepth) {
         let new_value = self.value_stack.last();
         *self.value_stack.peek_mut(local_depth.into_inner()) = new_value;
         self.next_instr()
     }
 
-    fn visit_get_global(&mut self, global_index: GlobalIdx) {
-        let global_value = self.global(global_index).get_untyped(self.ctx.as_context());
+    fn visit_global_get(&mut self, global_index: GlobalIdx) {
+        let global_value = *self.global(global_index);
         self.value_stack.push(global_value);
         self.next_instr()
     }
 
-    fn visit_set_global(&mut self, global_index: GlobalIdx) {
-        let global = self.global(global_index);
+    fn visit_global_set(&mut self, global_index: GlobalIdx) {
         let new_value = self.value_stack.pop();
-        global.set_untyped(self.ctx.as_context_mut(), new_value);
+        *self.global(global_index) = new_value;
         self.next_instr()
     }
 
