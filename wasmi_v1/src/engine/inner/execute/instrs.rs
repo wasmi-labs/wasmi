@@ -1862,8 +1862,8 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         result: <ExecuteTypes as InstructionTypes>::Register,
         global: bytecode::Global,
     ) -> Result<(), Trap> {
-        let value = self.resolve_global(global).get(&self.ctx);
-        self.set_register(result, value.into());
+        let value = self.resolve_global(global).get_untyped(&self.ctx);
+        self.set_register(result, value);
         self.next_instr()
     }
 
@@ -1873,17 +1873,8 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         value: <ExecuteTypes as InstructionTypes>::Provider,
     ) -> Result<(), Trap> {
         let global_var = self.resolve_global(global);
-        let value = self
-            .load_provider(value)
-            .with_type(global_var.value_type(&self.ctx));
-        global_var
-            .set(&mut self.ctx, value)
-            .unwrap_or_else(|error| {
-                panic!(
-                    "unexpected type mismatch upon `global.set` for global {:?}: {}",
-                    global_var, error
-                )
-            });
+        let value = self.load_provider(value);
+        global_var.set_untyped(&mut self.ctx, value);
         self.next_instr()
     }
 

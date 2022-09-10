@@ -1,3 +1,5 @@
+use wasmi_core::UntypedValue;
+
 use super::{AsContext, AsContextMut, Index, Stored};
 use crate::core::{Value, ValueType};
 use core::{fmt, fmt::Display};
@@ -93,7 +95,9 @@ impl GlobalType {
 #[derive(Debug)]
 pub struct GlobalEntity {
     /// The current value of the global variable.
-    value: Value,
+    value: UntypedValue,
+    /// The value type of the global variable.
+    value_type: ValueType,
     /// The mutability of the global variable.
     mutability: Mutability,
 }
@@ -102,7 +106,8 @@ impl GlobalEntity {
     /// Creates a new global entity with the given initial value and mutability.
     pub fn new(initial_value: Value, mutability: Mutability) -> Self {
         Self {
-            value: initial_value,
+            value: initial_value.into(),
+            value_type: initial_value.value_type(),
             mutability,
         }
     }
@@ -114,7 +119,7 @@ impl GlobalEntity {
 
     /// Returns the type of the global variable value.
     pub fn value_type(&self) -> ValueType {
-        self.value.value_type()
+        self.value_type
     }
 
     /// Returns the [`GlobalType`] of the global variable.
@@ -138,12 +143,29 @@ impl GlobalEntity {
                 encountered: new_value.value_type(),
             });
         }
-        self.value = new_value;
+        self.set_untyped(new_value.into());
         Ok(())
+    }
+
+    /// Sets a new untyped value for the global variable.
+    ///
+    /// # Note
+    ///
+    /// This is an inherently unsafe API and only exists to allow
+    /// for efficient `global.set` through the interpreter which is
+    /// safe since the interpreter only handles validated Wasm code
+    /// where the checks in [`Global::set`] cannot fail.
+    pub(crate) fn set_untyped(&mut self, new_value: UntypedValue) {
+        self.value = new_value;
     }
 
     /// Returns the current value of the global variable.
     pub fn get(&self) -> Value {
+        self.get_untyped().with_type(self.value_type)
+    }
+
+    /// Returns the current untyped value of the global variable.
+    pub(crate) fn get_untyped(&self) -> UntypedValue {
         self.value
     }
 }
@@ -217,6 +239,25 @@ impl Global {
             .set(new_value)
     }
 
+    /// Sets a new untyped value for the global variable.
+    ///
+    /// # Note
+    ///
+    /// This is an inherently unsafe API and only exists to allow
+    /// for efficient `global.set` through the interpreter which is
+    /// safe since the interpreter only handles validated Wasm code
+    /// where the checks in [`Global::set`] cannot fail.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Global`].
+    pub(crate) fn set_untyped(&self, mut ctx: impl AsContextMut, new_value: UntypedValue) {
+        ctx.as_context_mut()
+            .store
+            .resolve_global_mut(*self)
+            .set_untyped(new_value)
+    }
+
     /// Returns the current value of the global variable.
     ///
     /// # Panics
@@ -224,5 +265,14 @@ impl Global {
     /// Panics if `ctx` does not own this [`Global`].
     pub fn get(&self, ctx: impl AsContext) -> Value {
         ctx.as_context().store.resolve_global(*self).get()
+    }
+
+    /// Returns the current untyped value of the global variable.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Global`].
+    pub(crate) fn get_untyped(&self, ctx: impl AsContext) -> UntypedValue {
+        ctx.as_context().store.resolve_global(*self).get_untyped()
     }
 }
