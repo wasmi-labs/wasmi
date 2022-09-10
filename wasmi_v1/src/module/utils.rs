@@ -5,7 +5,7 @@ impl TryFrom<wasmparser::TableType> for TableType {
     type Error = ModuleError;
 
     fn try_from(table_type: wasmparser::TableType) -> Result<Self, Self::Error> {
-        if table_type.element_type != wasmparser::Type::FuncRef {
+        if table_type.element_type != wasmparser::ValType::FuncRef {
             return Err(ModuleError::unsupported(table_type));
         }
         let initial = table_type.initial as usize;
@@ -51,11 +51,11 @@ impl TryFrom<wasmparser::FuncType> for FuncType {
 
     fn try_from(func_type: wasmparser::FuncType) -> Result<Self, Self::Error> {
         /// Returns `true` if the given [`wasmparser::Type`] is supported by `wasmi`.
-        fn is_supported_value_type(value_type: &wasmparser::Type) -> bool {
+        fn is_supported_value_type(value_type: &wasmparser::ValType) -> bool {
             value_type_from_wasmparser(value_type).is_ok()
         }
-        if !func_type.params.iter().all(is_supported_value_type)
-            || !func_type.returns.iter().all(is_supported_value_type)
+        if !func_type.params().iter().all(is_supported_value_type)
+            || !func_type.results().iter().all(is_supported_value_type)
         {
             // One of more function parameter or result types are not supported by `wasmi`.
             return Err(ModuleError::unsupported(func_type));
@@ -65,12 +65,12 @@ impl TryFrom<wasmparser::FuncType> for FuncType {
         /// # Panics
         ///
         /// If the [`wasmparser::Type`] is not supported by `wasmi`.
-        fn extract_value_type(value_type: &wasmparser::Type) -> ValueType {
+        fn extract_value_type(value_type: &wasmparser::ValType) -> ValueType {
             value_type_from_wasmparser(value_type)
                 .expect("encountered unexpected invalid value type")
         }
-        let params = func_type.params.iter().map(extract_value_type);
-        let results = func_type.returns.iter().map(extract_value_type);
+        let params = func_type.params().iter().map(extract_value_type);
+        let results = func_type.results().iter().map(extract_value_type);
         let func_type = FuncType::new(params, results);
         Ok(func_type)
     }
@@ -79,17 +79,16 @@ impl TryFrom<wasmparser::FuncType> for FuncType {
 /// Creates a [`ValueType`] from the given [`wasmparser::Type`].
 ///
 /// Returns `None` if the given [`wasmparser::Type`] is not supported by `wasmi`.
-pub fn value_type_from_wasmparser(value_type: &wasmparser::Type) -> Result<ValueType, ModuleError> {
+pub fn value_type_from_wasmparser(
+    value_type: &wasmparser::ValType,
+) -> Result<ValueType, ModuleError> {
     match value_type {
-        wasmparser::Type::I32 => Ok(ValueType::I32),
-        wasmparser::Type::I64 => Ok(ValueType::I64),
-        wasmparser::Type::F32 => Ok(ValueType::F32),
-        wasmparser::Type::F64 => Ok(ValueType::F64),
-        wasmparser::Type::V128
-        | wasmparser::Type::FuncRef
-        | wasmparser::Type::ExternRef
-        | wasmparser::Type::ExnRef
-        | wasmparser::Type::Func
-        | wasmparser::Type::EmptyBlockType => Err(ModuleError::unsupported(value_type)),
+        wasmparser::ValType::I32 => Ok(ValueType::I32),
+        wasmparser::ValType::I64 => Ok(ValueType::I64),
+        wasmparser::ValType::F32 => Ok(ValueType::F32),
+        wasmparser::ValType::F64 => Ok(ValueType::F64),
+        wasmparser::ValType::V128
+        | wasmparser::ValType::FuncRef
+        | wasmparser::ValType::ExternRef => Err(ModuleError::unsupported(value_type)),
     }
 }

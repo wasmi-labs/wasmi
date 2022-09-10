@@ -16,16 +16,16 @@ impl TryFrom<wasmparser::Element<'_>> for ElementSegment {
     type Error = ModuleError;
 
     fn try_from(element: wasmparser::Element<'_>) -> Result<Self, Self::Error> {
-        if !matches!(element.ty, wasmparser::Type::FuncRef) {
+        if !matches!(element.ty, wasmparser::ValType::FuncRef) {
             return Err(ModuleError::unsupported(element.ty));
         }
         let (table_index, offset) = match element.kind {
             wasmparser::ElementKind::Active {
                 table_index,
-                init_expr,
+                offset_expr,
             } => {
                 let table_index = TableIdx(table_index);
-                let offset = InitExpr::try_from(init_expr)?;
+                let offset = InitExpr::try_from(offset_expr)?;
                 (table_index, offset)
             }
             wasmparser::ElementKind::Passive | wasmparser::ElementKind::Declared => {

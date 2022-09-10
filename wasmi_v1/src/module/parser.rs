@@ -1,3 +1,5 @@
+use core::ops::Range;
+
 use super::{
     compile::translate,
     import::FuncTypeIdx,
@@ -14,6 +16,7 @@ use wasmparser::{
     Chunk,
     DataSectionReader,
     ElementSectionReader,
+    Encoding,
     ExportSectionReader,
     FunctionBody,
     FunctionSectionReader,
@@ -22,7 +25,7 @@ use wasmparser::{
     MemorySectionReader,
     Parser as WasmParser,
     Payload,
-    Range,
+    SectionReader,
     TableSectionReader,
     TypeSectionReader,
     Validator,
@@ -59,8 +62,7 @@ impl<'engine> ModuleParser<'engine> {
     /// Creates a new [`ModuleParser`] for the given [`Engine`].
     fn new(engine: &'engine Engine) -> Self {
         let builder = ModuleBuilder::new(engine);
-        let mut validator = Validator::default();
-        validator.wasm_features(Self::features(engine));
+        let validator = Validator::new_with_features(Self::features(engine));
         let parser = WasmParser::new(0);
         let allocations = FunctionBuilderAllocations::default();
         Self {
@@ -140,7 +142,11 @@ impl<'engine> ModuleParser<'engine> {
     /// - If `wasmi` limits are exceeded.
     fn process_payload(&mut self, payload: Payload) -> Result<bool, ModuleError> {
         match payload {
-            Payload::Version { num, range } => self.process_version(num, range),
+            Payload::Version {
+                num,
+                encoding,
+                range,
+            } => self.process_version(num, encoding, range),
             Payload::TypeSection(section) => self.process_types(section),
             Payload::ImportSection(section) => self.process_imports(section),
             Payload::AliasSection(section) => self.process_aliases(section),
@@ -158,13 +164,39 @@ impl<'engine> ModuleParser<'engine> {
             Payload::CustomSection { .. } => Ok(()),
             Payload::CodeSectionStart { count, range, .. } => self.process_code_start(count, range),
             Payload::CodeSectionEntry(func_body) => self.process_code_entry(func_body),
-            Payload::ModuleSectionStart { count, range, .. } => {
-                self.process_module_start(count, range)
-            }
-            Payload::ModuleSectionEntry { range, .. } => self.process_module_entry(range),
             Payload::UnknownSection { id, range, .. } => self.process_unknown(id, range),
-            Payload::End => {
-                self.process_end()?;
+            Payload::ModuleSection { parser: _, range } => {
+                self.process_unsupported_component_model(range)
+            }
+            Payload::CoreTypeSection(section) => {
+                self.process_unsupported_component_model(section.range())
+            }
+            Payload::ComponentSection { parser: _, range } => {
+                self.process_unsupported_component_model(range)
+            }
+            Payload::ComponentInstanceSection(section) => {
+                self.process_unsupported_component_model(section.range())
+            }
+            Payload::ComponentAliasSection(section) => {
+                self.process_unsupported_component_model(section.range())
+            }
+            Payload::ComponentTypeSection(section) => {
+                self.process_unsupported_component_model(section.range())
+            }
+            Payload::ComponentCanonicalSection(section) => {
+                self.process_unsupported_component_model(section.range())
+            }
+            Payload::ComponentStartSection(section) => {
+                self.process_unsupported_component_model(section.range())
+            }
+            Payload::ComponentImportSection(section) => {
+                self.process_unsupported_component_model(section.range())
+            }
+            Payload::ComponentExportSection(section) => {
+                self.process_unsupported_component_model(section.range())
+            }
+            Payload::End(offset) => {
+                self.process_end(offset)?;
                 return Ok(true);
             }
         }?;
@@ -172,14 +204,21 @@ impl<'engine> ModuleParser<'engine> {
     }
 
     /// Processes the end of the Wasm binary.
-    fn process_end(&mut self) -> Result<(), ModuleError> {
-        self.validator.end()?;
+    fn process_end(&mut self, offset: usize) -> Result<(), ModuleError> {
+        self.validator.end(offset)?;
         Ok(())
     }
 
     /// Validates the Wasm version section.
-    fn process_version(&mut self, num: u32, range: Range) -> Result<(), ModuleError> {
-        self.validator.version(num, &range).map_err(Into::into)
+    fn process_version(
+        &mut self,
+        num: u32,
+        encoding: Encoding,
+        range: Range<usize>,
+    ) -> Result<(), ModuleError> {
+        self.validator
+            .version(num, encoding, &range)
+            .map_err(Into::into)
     }
 
     /// Processes the Wasm type section.
@@ -195,9 +234,7 @@ impl<'engine> ModuleParser<'engine> {
         self.validator.type_section(&section)?;
         let len_types = section.get_count();
         let func_types = (0..len_types).map(|_| match section.read()? {
-            wasmparser::TypeDef::Func(ty) => ty.try_into(),
-            wasmparser::TypeDef::Instance(ty) => Err(ModuleError::unsupported(ty)),
-            wasmparser::TypeDef::Module(ty) => Err(ModuleError::unsupported(ty)),
+            wasmparser::Type::Func(ty) => ty.try_into(),
         });
         self.builder.push_func_types(func_types)?;
         Ok(())
@@ -353,7 +390,7 @@ impl<'engine> ModuleParser<'engine> {
     /// # Errors
     ///
     /// If the start function declaration fails to validate.
-    fn process_start(&mut self, func: u32, range: Range) -> Result<(), ModuleError> {
+    fn process_start(&mut self, func: u32, range: Range<usize>) -> Result<(), ModuleError> {
         self.validator.start_section(func, &range)?;
         self.builder.set_start(FuncIdx(func));
         Ok(())
@@ -382,7 +419,7 @@ impl<'engine> ModuleParser<'engine> {
     ///
     /// This is part of the bulk memory operations Wasm proposal and not yet supported
     /// by `wasmi`.
-    fn process_data_count(&mut self, count: u32, range: Range) -> Result<(), ModuleError> {
+    fn process_data_count(&mut self, count: u32, range: Range<usize>) -> Result<(), ModuleError> {
         self.validator
             .data_count_section(count, &range)
             .map_err(Into::into)
@@ -416,7 +453,7 @@ impl<'engine> ModuleParser<'engine> {
     /// # Errors
     ///
     /// If the code start section fails to validate.
-    fn process_code_start(&mut self, count: u32, range: Range) -> Result<(), ModuleError> {
+    fn process_code_start(&mut self, count: u32, range: Range<usize>) -> Result<(), ModuleError> {
         self.validator.code_section_start(count, &range)?;
         // We have to adjust the initial func reference to the first
         // internal function before we process any of the internal functions.
@@ -446,7 +483,7 @@ impl<'engine> ModuleParser<'engine> {
     fn process_code_entry(&mut self, func_body: FunctionBody) -> Result<(), ModuleError> {
         let func = self.next_func();
         let engine = self.builder.engine();
-        let validator = self.validator.code_section_entry()?;
+        let validator = self.validator.code_section_entry(&func_body)?;
         let module_resources = ModuleResources::new(&self.builder);
         let func_body = translate(
             engine,
@@ -460,27 +497,13 @@ impl<'engine> ModuleParser<'engine> {
         Ok(())
     }
 
-    /// Process the start of the module entries.
-    ///
-    /// # Note
-    ///
-    /// This is part of the module linking Wasm proposal and not yet supported
-    /// by `wasmi`.
-    fn process_module_start(&mut self, count: u32, range: Range) -> Result<(), ModuleError> {
-        self.validator
-            .module_section_start(count, &range)
-            .map_err(Into::into)
-    }
-
-    /// Process a module entry.
-    ///
-    /// # Note
-    ///
-    /// This is part of the module linking Wasm proposal and not yet supported
-    /// by `wasmi`.
-    fn process_module_entry(&mut self, range: Range) -> Result<(), ModuleError> {
+    /// Process the entries for the Wasm component model proposal.
+    fn process_unsupported_component_model(
+        &mut self,
+        range: Range<usize>,
+    ) -> Result<(), ModuleError> {
         Err(ModuleError::unsupported(format!(
-            "module linking entry at {:?}",
+            "encountered unsupported Wasm component model section: {:?}",
             range
         )))
     }
@@ -490,7 +513,7 @@ impl<'engine> ModuleParser<'engine> {
     /// # Note
     ///
     /// This generally will be treated as an error for now.
-    fn process_unknown(&mut self, id: u8, range: Range) -> Result<(), ModuleError> {
+    fn process_unknown(&mut self, id: u8, range: Range<usize>) -> Result<(), ModuleError> {
         self.validator
             .unknown_section(id, &range)
             .map_err(Into::into)

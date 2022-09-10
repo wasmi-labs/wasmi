@@ -100,7 +100,7 @@ impl Config {
             sign_extension: self.sign_extension,
             reference_types: false,
             bulk_memory: false,
-            module_linking: false,
+            component_model: false,
             simd: false,
             relaxed_simd: false,
             threads: false,

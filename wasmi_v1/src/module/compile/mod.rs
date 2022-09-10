@@ -128,9 +128,11 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
             Operator::BrTable { table } => self.translate_br_table(table),
             Operator::Return => self.translate_return(),
             Operator::Call { function_index } => self.translate_call(function_index),
-            Operator::CallIndirect { index, table_index } => {
-                self.translate_call_indirect(index, table_index)
-            }
+            Operator::CallIndirect {
+                index,
+                table_index,
+                table_byte: _,
+            } => self.translate_call_indirect(index, table_index),
             Operator::ReturnCall { .. }
             | Operator::ReturnCallIndirect { .. }
             | Operator::Delegate { .. }
