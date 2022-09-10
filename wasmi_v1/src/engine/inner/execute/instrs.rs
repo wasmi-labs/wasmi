@@ -75,6 +75,7 @@ pub(super) fn execute_frame(
     frame: StackFrameView,
     cache: &mut InstanceCache,
 ) -> Result<CallOutcome, Trap> {
+    cache.update_instance(frame.instance());
     let func_body = code_map.resolve(frame.func_body());
     let mut exec_ctx = ExecContext {
         pc: frame.pc(),
@@ -1082,7 +1083,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     ///
     /// If there exists is no linear memory for the instance.
     fn default_memory(&mut self) -> Memory {
-        self.cache.default_memory(&self.ctx, self.frame.instance())
+        self.cache.default_memory(&self.ctx)
     }
 
     /// Returns the default table.
@@ -1091,7 +1092,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     ///
     /// If there exists is no table for the instance.
     fn default_table(&mut self) -> Table {
-        self.cache.default_table(&self.ctx, self.frame.instance())
+        self.cache.default_table(&self.ctx)
     }
 
     /// Loads the value of the given [`ConstRef`].
@@ -1164,12 +1165,11 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         offset: bytecode::Offset,
         buffer: &mut [u8],
     ) -> Result<(), Trap> {
-        let memory = self.default_memory();
         let ptr = self.get_register(ptr);
         let address = Self::effective_address(offset, ptr)?;
-        memory
-            .read(&self.ctx, address, buffer.as_mut())
-            .map_err(|_| TrapCode::MemoryAccessOutOfBounds)?;
+        self.cache
+            .default_memory_bytes(self.ctx.as_context_mut())
+            .read(address, buffer)?;
         Ok(())
     }
 
@@ -1188,12 +1188,11 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         offset: bytecode::Offset,
         bytes: &[u8],
     ) -> Result<(), Trap> {
-        let memory = self.default_memory();
         let ptr = self.get_register(ptr);
         let address = Self::effective_address(offset, ptr)?;
-        memory
-            .write(&mut self.ctx, address, bytes)
-            .map_err(|_| TrapCode::MemoryAccessOutOfBounds)?;
+        self.cache
+            .default_memory_bytes(self.ctx.as_context_mut())
+            .write(address, bytes)?;
         Ok(())
     }
 
@@ -1779,7 +1778,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     ) -> Result<CallOutcome, Trap> {
         let callee = self
             .cache
-            .get_func(&mut self.ctx, self.frame.instance(), func.into_u32());
+            .get_func(&mut self.ctx, func.into_u32());
         self.call_func(callee, results, params)
     }
 
@@ -2203,6 +2202,10 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
                 u32::MAX
             }
         };
+        // The memory grow might have invalidated the cached linear memory
+        // so we need to reset it in order for the cache to reload in case it
+        // is used again.
+        self.cache.reset_default_memory_bytes();
         self.set_register(result, old_size.into());
         self.next_instr()
     }
