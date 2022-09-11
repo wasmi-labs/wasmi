@@ -993,7 +993,7 @@ pub(super) fn execute_frame(
 
 /// State that is used during Wasm function execution.
 #[derive(Debug)]
-pub struct ExecContext<'engine, 'func2, 'ctx, 'cache, T> {
+pub struct ExecContext<'engine, 'func, 'ctx, 'cache, T> {
     /// The program counter.
     ///
     /// # Note
@@ -1003,7 +1003,7 @@ pub struct ExecContext<'engine, 'func2, 'ctx, 'cache, T> {
     /// keep it in sync.
     pc: usize,
     /// The function frame that is being executed.
-    frame: StackFrameView<'func2>,
+    frame: StackFrameView<'func>,
     /// The read-only engine resources.
     res: &'engine EngineResources,
     /// The associated store context.
@@ -1017,7 +1017,7 @@ pub struct ExecContext<'engine, 'func2, 'ctx, 'cache, T> {
     cache: &'cache mut InstanceCache,
 }
 
-impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache, T> {
+impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, T> {
     /// Modifies the `pc` to continue to the next instruction.
     ///
     /// # Note
