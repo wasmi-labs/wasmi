@@ -12,10 +12,8 @@ use crate::{
         Target,
     },
     module::{FuncIdx, FuncTypeIdx},
-    AsContext,
     AsContextMut,
     Func,
-    Global,
     Memory,
     StoreContextMut,
     Table,
@@ -1111,22 +1109,14 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         unsafe { self.res.const_pool.resolve_unchecked(cref) }
     }
 
-    /// Returns the global variable at the given global variable index.
+    /// Returns the global variable at the given index.
     ///
     /// # Panics
     ///
     /// If there is no global variable at the given index.
-    fn resolve_global(&self, global_index: bytecode::Global) -> Global {
-        self.frame
-            .instance()
-            .get_global(self.ctx.as_context(), global_index.into_inner())
-            .unwrap_or_else(|| {
-                panic!(
-                    "missing global at index {:?} for instance {:?}",
-                    global_index,
-                    self.frame.instance()
-                )
-            })
+    fn resolve_global(&mut self, global_index: bytecode::Global) -> &mut UntypedValue {
+        self.cache
+            .get_global(self.ctx.as_context_mut(), global_index.into_inner())
     }
 
     /// Calculates the effective address of a linear memory access.
@@ -1865,7 +1855,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         result: <ExecuteTypes as InstructionTypes>::Register,
         global: bytecode::Global,
     ) -> Result<(), Trap> {
-        let value = self.resolve_global(global).get_untyped(&self.ctx);
+        let value = *self.resolve_global(global);
         self.set_register(result, value);
         self.next_instr()
     }
@@ -1875,9 +1865,8 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         global: bytecode::Global,
         value: <ExecuteTypes as InstructionTypes>::Register,
     ) -> Result<(), Trap> {
-        let global_var = self.resolve_global(global);
         let value = self.get_register(value);
-        global_var.set_untyped(&mut self.ctx, value);
+        *self.resolve_global(global) = value;
         self.next_instr()
     }
 
@@ -1886,8 +1875,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         global: bytecode::Global,
         value: <ExecuteTypes as InstructionTypes>::Immediate,
     ) -> Result<(), Trap> {
-        let global_var = self.resolve_global(global);
-        global_var.set_untyped(&mut self.ctx, value);
+        *self.resolve_global(global) = value;
         self.next_instr()
     }
 
