@@ -107,6 +107,7 @@ pub struct Executor<'engine, 'func, 'ctx, 'cache, T> {
 
 impl<'engine, 'func, 'ctx, 'cache, T> Executor<'engine, 'func, 'ctx, 'cache, T> {
     /// Create a new [`ExecContext`] for the given function `frame`.
+    #[inline(always)]
     fn new(
         ctx: StoreContextMut<'ctx, T>,
         code_map: &'engine CodeMap,
@@ -128,6 +129,7 @@ impl<'engine, 'func, 'ctx, 'cache, T> Executor<'engine, 'func, 'ctx, 'cache, T> 
     }
 
     /// Returns a shared reference to the next [`ExecInstruction`].
+    #[inline]
     fn instr(&self) -> &ExecInstruction {
         // # Safety
         //
@@ -137,6 +139,7 @@ impl<'engine, 'func, 'ctx, 'cache, T> Executor<'engine, 'func, 'ctx, 'cache, T> 
     }
 
     /// Executes the given function frame until the end.
+    #[inline(always)]
     fn execute(mut self) -> Result<CallOutcome, Trap> {
         loop {
             use bytecode::Instruction as Instr;
