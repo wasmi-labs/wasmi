@@ -1030,6 +1030,11 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
         Ok(())
     }
 
+    /// Modifies the `pc` to continue to the next instruction.
+    fn next_instr(&mut self) {
+        self.pc += 1;
+    }
+
     /// Modifies the `pc` to branches to the given `target`.
     ///
     /// # Note
@@ -1251,7 +1256,8 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
         self.load_bytes(ptr, offset, buffer.as_mut())?;
         let extended = <V as LittleEndianConvert>::from_le_bytes(buffer).extend_into();
         self.set_register(result, extended.into());
-        self.try_next_instr()
+        self.next_instr();
+        Ok(())
     }
 
     /// Stores a value of type `T` into the default memory at the given address offset.
@@ -1276,7 +1282,8 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
         let new_value = V::from(self.get_register(new_value));
         let bytes = <V as LittleEndianConvert>::into_le_bytes(new_value);
         self.store_bytes(ptr, offset, bytes.as_ref())?;
-        self.try_next_instr()
+        self.next_instr();
+        Ok(())
     }
 
     /// Stores a value of type `T` into the default memory at the given address offset.
@@ -1301,7 +1308,8 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
         let new_value = V::from(new_value);
         let bytes = <V as LittleEndianConvert>::into_le_bytes(new_value);
         self.store_bytes(ptr, offset, bytes.as_ref())?;
-        self.try_next_instr()
+        self.next_instr();
+        Ok(())
     }
 
     /// Stores a value of type `T` wrapped to type `U` into the default memory at the given address offset.
@@ -1328,7 +1336,8 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
         let new_value = V::from(self.get_register(new_value)).wrap_into();
         let bytes = <U as LittleEndianConvert>::into_le_bytes(new_value);
         self.store_bytes(ptr, offset, bytes.as_ref())?;
-        self.try_next_instr()
+        self.next_instr();
+        Ok(())
     }
 
     /// Stores a value of type `T` wrapped to type `U` into the default memory at the given address offset.
@@ -1355,7 +1364,8 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
         let new_value = V::from(new_value).wrap_into();
         let bytes = <U as LittleEndianConvert>::into_le_bytes(new_value);
         self.store_bytes(ptr, offset, bytes.as_ref())?;
-        self.try_next_instr()
+        self.next_instr();
+        Ok(())
     }
 
     /// Executes the given unary `wasmi` operation.
