@@ -74,12 +74,12 @@ pub(super) fn execute_frame(
     frame: StackFrameView,
     cache: &mut InstanceCache,
 ) -> Result<CallOutcome, Trap> {
-    ExecContext::new(ctx.as_context_mut(), code_map, res, frame, cache).execute()
+    Executor::new(ctx.as_context_mut(), code_map, res, frame, cache).execute()
 }
 
-/// State that is used during Wasm function execution.
+/// An executor to execute a single function frame until it is done.
 #[derive(Debug)]
-pub struct ExecContext<'engine, 'func, 'ctx, 'cache, T> {
+pub struct Executor<'engine, 'func, 'ctx, 'cache, T> {
     /// The program counter.
     ///
     /// # Note
@@ -105,7 +105,7 @@ pub struct ExecContext<'engine, 'func, 'ctx, 'cache, T> {
     func_body: ResolvedFuncBody<'engine>,
 }
 
-impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, T> {
+impl<'engine, 'func, 'ctx, 'cache, T> Executor<'engine, 'func, 'ctx, 'cache, T> {
     /// Create a new [`ExecContext`] for the given function `frame`.
     fn new(
         ctx: StoreContextMut<'ctx, T>,
@@ -1225,7 +1225,7 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
     }
 }
 
-impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache, T> {
+impl<'engine, 'func2, 'ctx, 'cache, T> Executor<'engine, 'func2, 'ctx, 'cache, T> {
     fn exec_br(&mut self, target: Target) {
         self.branch_to_target(target)
     }
