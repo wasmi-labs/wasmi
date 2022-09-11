@@ -1163,7 +1163,7 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
         ptr: ExecRegister,
         offset: bytecode::Offset,
         buffer: &mut [u8],
-    ) -> Result<(), Trap> {
+    ) -> Result<(), TrapCode> {
         let ptr = self.get_register(ptr);
         let address = Self::effective_address(offset, ptr)?;
         self.cache
@@ -1186,7 +1186,7 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
         ptr: ExecRegister,
         offset: bytecode::Offset,
         bytes: &[u8],
-    ) -> Result<(), Trap> {
+    ) -> Result<(), TrapCode> {
         let ptr = self.get_register(ptr);
         let address = Self::effective_address(offset, ptr)?;
         self.cache
