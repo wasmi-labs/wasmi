@@ -1025,7 +1025,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     /// This is a convenience function with the purpose to simplify
     /// the process to change the behavior of the dispatch once required
     /// for optimization purposes.
-    fn next_instr(&mut self) -> Result<(), Trap> {
+    fn try_next_instr(&mut self) -> Result<(), Trap> {
         self.pc += 1;
         Ok(())
     }
@@ -1219,7 +1219,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         self.load_bytes(ptr, offset, buffer.as_mut())?;
         let value = <V as LittleEndianConvert>::from_le_bytes(buffer);
         self.set_register(result, value.into());
-        self.next_instr()
+        self.try_next_instr()
     }
 
     /// Loads a vaoue of type `U` from the default memory at the given address offset and extends it into `T`.
@@ -1252,7 +1252,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         self.load_bytes(ptr, offset, buffer.as_mut())?;
         let extended = <V as LittleEndianConvert>::from_le_bytes(buffer).extend_into();
         self.set_register(result, extended.into());
-        self.next_instr()
+        self.try_next_instr()
     }
 
     /// Stores a value of type `T` into the default memory at the given address offset.
@@ -1277,7 +1277,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         let new_value = V::from(self.get_register(new_value));
         let bytes = <V as LittleEndianConvert>::into_le_bytes(new_value);
         self.store_bytes(ptr, offset, bytes.as_ref())?;
-        self.next_instr()
+        self.try_next_instr()
     }
 
     /// Stores a value of type `T` into the default memory at the given address offset.
@@ -1302,7 +1302,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         let new_value = V::from(new_value);
         let bytes = <V as LittleEndianConvert>::into_le_bytes(new_value);
         self.store_bytes(ptr, offset, bytes.as_ref())?;
-        self.next_instr()
+        self.try_next_instr()
     }
 
     /// Stores a value of type `T` wrapped to type `U` into the default memory at the given address offset.
@@ -1329,7 +1329,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         let new_value = V::from(self.get_register(new_value)).wrap_into();
         let bytes = <U as LittleEndianConvert>::into_le_bytes(new_value);
         self.store_bytes(ptr, offset, bytes.as_ref())?;
-        self.next_instr()
+        self.try_next_instr()
     }
 
     /// Stores a value of type `T` wrapped to type `U` into the default memory at the given address offset.
@@ -1356,7 +1356,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         let new_value = V::from(new_value).wrap_into();
         let bytes = <U as LittleEndianConvert>::into_le_bytes(new_value);
         self.store_bytes(ptr, offset, bytes.as_ref())?;
-        self.next_instr()
+        self.try_next_instr()
     }
 
     /// Executes the given unary `wasmi` operation.
@@ -1378,7 +1378,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     ) -> Result<(), Trap> {
         let input = self.get_register(input);
         self.set_register(result, op(input));
-        self.next_instr()
+        self.try_next_instr()
     }
 
     /// Executes the given fallible unary `wasmi` operation.
@@ -1400,7 +1400,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     ) -> Result<(), Trap> {
         let input = self.get_register(input);
         self.set_register(result, op(input)?);
-        self.next_instr()
+        self.try_next_instr()
     }
 
     /// Loads the value of the given `provider`.
@@ -1434,7 +1434,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         let lhs = self.get_register(lhs);
         let rhs = self.get_register(rhs);
         self.set_register(result, op(lhs, rhs));
-        self.next_instr()
+        self.try_next_instr()
     }
 
     /// Executes the given binary `wasmi` operation.
@@ -1457,7 +1457,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     ) -> Result<(), Trap> {
         let lhs = self.get_register(lhs);
         self.set_register(result, op(lhs, rhs));
-        self.next_instr()
+        self.try_next_instr()
     }
 
     /// Executes the given fallible binary `wasmi` operation.
@@ -1481,7 +1481,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         let lhs = self.get_register(lhs);
         let rhs = self.get_register(rhs);
         self.set_register(result, op(lhs, rhs)?);
-        self.next_instr()
+        self.try_next_instr()
     }
 
     /// Executes the given fallible binary `wasmi` operation.
@@ -1504,7 +1504,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     ) -> Result<(), Trap> {
         let lhs = self.get_register(lhs);
         self.set_register(result, op(lhs, rhs)?);
-        self.next_instr()
+        self.try_next_instr()
     }
 
     /// Executes a conditional branch.
@@ -1524,7 +1524,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         if op(condition) {
             return self.branch_to_target(target);
         }
-        self.next_instr()
+        self.try_next_instr()
     }
 
     /// Executes a conditional branch and copy a single value.
@@ -1551,7 +1551,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
             self.set_register(result, returned);
             return self.branch_to_target(target);
         }
-        self.next_instr()
+        self.try_next_instr()
     }
 
     /// Executes a conditional branch and copy multiple values.
@@ -1574,7 +1574,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
             self.copy_many(results, returned);
             return self.branch_to_target(target);
         }
-        self.next_instr()
+        self.try_next_instr()
     }
 }
 
@@ -1818,7 +1818,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     ) -> Result<(), Trap> {
         let input = self.get_register(input);
         self.set_register(result, input);
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn exec_copy_imm(
@@ -1827,7 +1827,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         input: <ExecuteTypes as InstructionTypes>::Immediate,
     ) -> Result<(), Trap> {
         self.set_register(result, input);
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn exec_copy_many(
@@ -1836,7 +1836,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         inputs: <ExecuteTypes as InstructionTypes>::ProviderSlice,
     ) -> Result<(), Trap> {
         self.copy_many(results, inputs);
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn exec_select(
@@ -1854,7 +1854,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
             self.load_provider(if_false)
         };
         self.set_register(result, case);
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn exec_global_get(
@@ -1864,7 +1864,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     ) -> Result<(), Trap> {
         let value = *self.resolve_global(global);
         self.set_register(result, value);
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn exec_global_set(
@@ -1874,7 +1874,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     ) -> Result<(), Trap> {
         let value = self.get_register(value);
         *self.resolve_global(global) = value;
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn exec_global_set_imm(
@@ -1883,7 +1883,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         value: <ExecuteTypes as InstructionTypes>::Immediate,
     ) -> Result<(), Trap> {
         *self.resolve_global(global) = value;
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn exec_i32_load(
@@ -2181,7 +2181,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         let memory = self.default_memory();
         let size = memory.current_pages(&self.ctx).0 as u32;
         self.set_register(result, size.into());
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn exec_memory_grow(
@@ -2204,7 +2204,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         // is used again.
         self.cache.reset_default_memory_bytes();
         self.set_register(result, old_size.into());
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn exec_i32_eq(
