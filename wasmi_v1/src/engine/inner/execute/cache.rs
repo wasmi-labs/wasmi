@@ -74,7 +74,7 @@ impl InstanceCache {
             .instance()
             .get_memory(ctx.as_context(), DEFAULT_MEMORY_INDEX)
             .unwrap_or_else(|| {
-                panic!(
+                unreachable!(
                     "missing default linear memory for instance: {:?}",
                     self.instance
                 )
@@ -92,7 +92,7 @@ impl InstanceCache {
         let default_table = self
             .instance()
             .get_table(ctx.as_context(), DEFAULT_TABLE_INDEX)
-            .unwrap_or_else(|| panic!("missing default table for instance: {:?}", self.instance));
+            .unwrap_or_else(|| unreachable!("missing default table for instance: {:?}", self.instance));
         self.default_table = Some(default_table);
         default_table
     }
@@ -167,7 +167,7 @@ impl InstanceCache {
             .instance()
             .get_func(ctx.as_context(), index)
             .unwrap_or_else(|| {
-                panic!(
+                unreachable!(
                     "missing func at index {index} for instance: {:?}",
                     self.instance
                 )
@@ -200,7 +200,7 @@ impl InstanceCache {
             .get_global(ctx.as_context(), index)
             .map(|g| g.get_untyped_ptr(ctx))
             .unwrap_or_else(|| {
-                panic!(
+                unreachable!(
                     "missing global variable at index {index} for instance: {:?}",
                     self.instance
                 )
