@@ -166,13 +166,13 @@ pub(super) fn execute_frame(
                 params,
             } => return exec_ctx.exec_call_indirect(func_type_idx, results, index, params),
             Instr::Copy { result, input } => {
-                exec_ctx.exec_copy(result, input)?;
+                exec_ctx.exec_copy(result, input)
             }
             Instr::CopyImm { result, input } => {
-                exec_ctx.exec_copy_imm(result, input)?;
+                exec_ctx.exec_copy_imm(result, input)
             }
             Instr::CopyMany { results, inputs } => {
-                exec_ctx.exec_copy_many(results, inputs)?;
+                exec_ctx.exec_copy_many(results, inputs)
             }
             Instr::Select {
                 result,
@@ -180,16 +180,16 @@ pub(super) fn execute_frame(
                 if_true,
                 if_false,
             } => {
-                exec_ctx.exec_select(result, condition, if_true, if_false)?;
+                exec_ctx.exec_select(result, condition, if_true, if_false)
             }
             Instr::GlobalGet { result, global } => {
-                exec_ctx.exec_global_get(result, global)?;
+                exec_ctx.exec_global_get(result, global)
             }
             Instr::GlobalSet { global, value } => {
-                exec_ctx.exec_global_set(global, value)?;
+                exec_ctx.exec_global_set(global, value)
             }
             Instr::GlobalSetImm { global, value } => {
-                exec_ctx.exec_global_set_imm(global, value)?;
+                exec_ctx.exec_global_set_imm(global, value)
             }
             Instr::I32Load {
                 result,
@@ -344,10 +344,10 @@ pub(super) fn execute_frame(
                 exec_ctx.exec_i64_store_32_imm(ptr, offset, value)?;
             }
             Instr::MemorySize { result } => {
-                exec_ctx.exec_memory_size(result)?;
+                exec_ctx.exec_memory_size(result)
             }
             Instr::MemoryGrow { result, amount } => {
-                exec_ctx.exec_memory_grow(result, amount)?;
+                exec_ctx.exec_memory_grow(result, amount)
             }
             Instr::I32Eq { result, lhs, rhs } => exec_ctx.exec_i32_eq(result, lhs, rhs),
             Instr::I32EqImm { result, lhs, rhs } => exec_ctx.exec_i32_eq_imm(result, lhs, rhs),
@@ -679,18 +679,6 @@ pub struct ExecContext<'engine, 'func, 'ctx, 'cache, T> {
 
 impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, T> {
     /// Modifies the `pc` to continue to the next instruction.
-    ///
-    /// # Note
-    ///
-    /// This is a convenience function with the purpose to simplify
-    /// the process to change the behavior of the dispatch once required
-    /// for optimization purposes.
-    fn try_next_instr(&mut self) -> Result<(), Trap> {
-        self.pc += 1;
-        Ok(())
-    }
-
-    /// Modifies the `pc` to continue to the next instruction.
     fn next_instr(&mut self) {
         self.pc += 1;
     }
@@ -876,7 +864,8 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
         self.load_bytes(ptr, offset, buffer.as_mut())?;
         let value = <V as LittleEndianConvert>::from_le_bytes(buffer);
         self.set_register(result, value.into());
-        self.try_next_instr()
+        self.next_instr();
+        Ok(())
     }
 
     /// Loads a vaoue of type `U` from the default memory at the given address offset and extends it into `T`.
@@ -1062,7 +1051,8 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
     ) -> Result<(), Trap> {
         let input = self.get_register(input);
         self.set_register(result, op(input)?);
-        self.try_next_instr()
+        self.next_instr();
+        Ok(())
     }
 
     /// Loads the value of the given `provider`.
@@ -1143,7 +1133,8 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
         let lhs = self.get_register(lhs);
         let rhs = self.get_register(rhs);
         self.set_register(result, op(lhs, rhs)?);
-        self.try_next_instr()
+        self.next_instr();
+        Ok(())
     }
 
     /// Executes the given fallible binary `wasmi` operation.
@@ -1166,7 +1157,8 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
     ) -> Result<(), Trap> {
         let lhs = self.get_register(lhs);
         self.set_register(result, op(lhs, rhs)?);
-        self.try_next_instr()
+        self.next_instr();
+        Ok(())
     }
 
     /// Executes a conditional branch.
@@ -1460,28 +1452,28 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         input: <ExecuteTypes as InstructionTypes>::Register,
-    ) -> Result<(), Trap> {
+    ) {
         let input = self.get_register(input);
         self.set_register(result, input);
-        self.try_next_instr()
+        self.next_instr()
     }
 
     fn exec_copy_imm(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         input: <ExecuteTypes as InstructionTypes>::Immediate,
-    ) -> Result<(), Trap> {
+    ) {
         self.set_register(result, input);
-        self.try_next_instr()
+        self.next_instr()
     }
 
     fn exec_copy_many(
         &mut self,
         results: <ExecuteTypes as InstructionTypes>::RegisterSlice,
         inputs: <ExecuteTypes as InstructionTypes>::ProviderSlice,
-    ) -> Result<(), Trap> {
+    ) {
         self.copy_many(results, inputs);
-        self.try_next_instr()
+        self.next_instr()
     }
 
     fn exec_select(
@@ -1490,7 +1482,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         condition: <ExecuteTypes as InstructionTypes>::Register,
         if_true: <ExecuteTypes as InstructionTypes>::Provider,
         if_false: <ExecuteTypes as InstructionTypes>::Provider,
-    ) -> Result<(), Trap> {
+    ) {
         let condition = self.get_register(condition);
         let zero = UntypedValue::from(0_i32);
         let case = if condition != zero {
@@ -1499,36 +1491,36 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
             self.load_provider(if_false)
         };
         self.set_register(result, case);
-        self.try_next_instr()
+        self.next_instr()
     }
 
     fn exec_global_get(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         global: bytecode::Global,
-    ) -> Result<(), Trap> {
+    ) {
         let value = *self.resolve_global(global);
         self.set_register(result, value);
-        self.try_next_instr()
+        self.next_instr()
     }
 
     fn exec_global_set(
         &mut self,
         global: bytecode::Global,
         value: <ExecuteTypes as InstructionTypes>::Register,
-    ) -> Result<(), Trap> {
+    ) {
         let value = self.get_register(value);
         *self.resolve_global(global) = value;
-        self.try_next_instr()
+        self.next_instr()
     }
 
     fn exec_global_set_imm(
         &mut self,
         global: bytecode::Global,
         value: <ExecuteTypes as InstructionTypes>::Immediate,
-    ) -> Result<(), Trap> {
+    ) {
         *self.resolve_global(global) = value;
-        self.try_next_instr()
+        self.next_instr()
     }
 
     fn exec_i32_load(
@@ -1822,18 +1814,18 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     fn exec_memory_size(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
-    ) -> Result<(), Trap> {
+    ) {
         let memory = self.default_memory();
         let size = memory.current_pages(&self.ctx).0 as u32;
         self.set_register(result, size.into());
-        self.try_next_instr()
+        self.next_instr()
     }
 
     fn exec_memory_grow(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         amount: <ExecuteTypes as InstructionTypes>::Provider,
-    ) -> Result<(), Trap> {
+    ) {
         let amount = u32::from(self.load_provider(amount));
         let memory = self.default_memory();
         let old_size = match memory.grow(self.ctx.as_context_mut(), Pages(amount as usize)) {
@@ -1849,7 +1841,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         // is used again.
         self.cache.reset_default_memory_bytes();
         self.set_register(result, old_size.into());
-        self.try_next_instr()
+        self.next_instr()
     }
 
     fn exec_i32_eq(
