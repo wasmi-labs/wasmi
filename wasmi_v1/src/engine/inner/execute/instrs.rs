@@ -165,32 +165,18 @@ pub(super) fn execute_frame(
                 index,
                 params,
             } => return exec_ctx.exec_call_indirect(func_type_idx, results, index, params),
-            Instr::Copy { result, input } => {
-                exec_ctx.exec_copy(result, input)
-            }
-            Instr::CopyImm { result, input } => {
-                exec_ctx.exec_copy_imm(result, input)
-            }
-            Instr::CopyMany { results, inputs } => {
-                exec_ctx.exec_copy_many(results, inputs)
-            }
+            Instr::Copy { result, input } => exec_ctx.exec_copy(result, input),
+            Instr::CopyImm { result, input } => exec_ctx.exec_copy_imm(result, input),
+            Instr::CopyMany { results, inputs } => exec_ctx.exec_copy_many(results, inputs),
             Instr::Select {
                 result,
                 condition,
                 if_true,
                 if_false,
-            } => {
-                exec_ctx.exec_select(result, condition, if_true, if_false)
-            }
-            Instr::GlobalGet { result, global } => {
-                exec_ctx.exec_global_get(result, global)
-            }
-            Instr::GlobalSet { global, value } => {
-                exec_ctx.exec_global_set(global, value)
-            }
-            Instr::GlobalSetImm { global, value } => {
-                exec_ctx.exec_global_set_imm(global, value)
-            }
+            } => exec_ctx.exec_select(result, condition, if_true, if_false),
+            Instr::GlobalGet { result, global } => exec_ctx.exec_global_get(result, global),
+            Instr::GlobalSet { global, value } => exec_ctx.exec_global_set(global, value),
+            Instr::GlobalSetImm { global, value } => exec_ctx.exec_global_set_imm(global, value),
             Instr::I32Load {
                 result,
                 ptr,
@@ -343,12 +329,8 @@ pub(super) fn execute_frame(
             Instr::I64Store32Imm { ptr, offset, value } => {
                 exec_ctx.exec_i64_store_32_imm(ptr, offset, value)?;
             }
-            Instr::MemorySize { result } => {
-                exec_ctx.exec_memory_size(result)
-            }
-            Instr::MemoryGrow { result, amount } => {
-                exec_ctx.exec_memory_grow(result, amount)
-            }
+            Instr::MemorySize { result } => exec_ctx.exec_memory_size(result),
+            Instr::MemoryGrow { result, amount } => exec_ctx.exec_memory_grow(result, amount),
             Instr::I32Eq { result, lhs, rhs } => exec_ctx.exec_i32_eq(result, lhs, rhs),
             Instr::I32EqImm { result, lhs, rhs } => exec_ctx.exec_i32_eq_imm(result, lhs, rhs),
             Instr::I32Ne { result, lhs, rhs } => exec_ctx.exec_i32_ne(result, lhs, rhs),
