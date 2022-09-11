@@ -91,34 +91,34 @@ pub(super) fn execute_frame(
         use bytecode::Instruction as Instr;
         match *instr {
             Instr::Br { target } => {
-                exec_ctx.exec_br(target)?;
+                exec_ctx.exec_br(target)
             }
             Instr::BrCopy {
                 target,
                 result,
                 returned,
             } => {
-                exec_ctx.exec_br_copy(target, result, returned)?;
+                exec_ctx.exec_br_copy(target, result, returned)
             }
             Instr::BrCopyImm {
                 target,
                 result,
                 returned,
             } => {
-                exec_ctx.exec_br_copy_imm(target, result, returned)?;
+                exec_ctx.exec_br_copy_imm(target, result, returned)
             }
             Instr::BrCopyMulti {
                 results,
                 returned,
                 target,
             } => {
-                exec_ctx.exec_br_copy_multi(target, results, returned)?;
+                exec_ctx.exec_br_copy_multi(target, results, returned)
             }
             Instr::BrEqz { target, condition } => {
-                exec_ctx.exec_br_eqz(target, condition)?;
+                exec_ctx.exec_br_eqz(target, condition)
             }
             Instr::BrNez { target, condition } => {
-                exec_ctx.exec_br_nez(target, condition)?;
+                exec_ctx.exec_br_nez(target, condition)
             }
             Instr::BrNezCopy {
                 result,
@@ -126,7 +126,7 @@ pub(super) fn execute_frame(
                 target,
                 condition,
             } => {
-                exec_ctx.exec_br_nez_copy(target, condition, result, returned)?;
+                exec_ctx.exec_br_nez_copy(target, condition, result, returned)
             }
             Instr::BrNezCopyImm {
                 result,
@@ -134,7 +134,7 @@ pub(super) fn execute_frame(
                 target,
                 condition,
             } => {
-                exec_ctx.exec_br_nez_copy_imm(target, condition, result, returned)?;
+                exec_ctx.exec_br_nez_copy_imm(target, condition, result, returned)
             }
             Instr::BrNezCopyMulti {
                 results,
@@ -142,38 +142,38 @@ pub(super) fn execute_frame(
                 target,
                 condition,
             } => {
-                exec_ctx.exec_br_nez_copy_multi(target, condition, results, returned)?;
+                exec_ctx.exec_br_nez_copy_multi(target, condition, results, returned)
             }
             Instr::ReturnNez { result, condition } => {
                 if let ConditionalReturn::Return { result } =
-                    exec_ctx.exec_return_nez(result, condition)?
+                    exec_ctx.exec_return_nez(result, condition)
                 {
                     return Ok(CallOutcome::ReturnSingle { returned: result });
                 }
             }
             Instr::ReturnNezImm { result, condition } => {
                 if let ConditionalReturn::Return { result } =
-                    exec_ctx.exec_return_nez_imm(result, condition)?
+                    exec_ctx.exec_return_nez_imm(result, condition)
                 {
                     return Ok(CallOutcome::ReturnSingle { returned: result });
                 }
             }
             Instr::ReturnNezMulti { results, condition } => {
                 if let ConditionalReturnMulti::Return { results } =
-                    exec_ctx.exec_return_nez_multi(results, condition)?
+                    exec_ctx.exec_return_nez_multi(results, condition)
                 {
                     return Ok(CallOutcome::ReturnMulti { returned: results });
                 }
             }
             Instr::BrTable { case, len_targets } => {
-                exec_ctx.exec_br_table(case, len_targets)?;
+                exec_ctx.exec_br_table(case, len_targets)
             }
             Instr::Trap { trap_code } => {
                 exec_ctx.exec_trap(trap_code)?;
             }
-            Instr::Return { result } => return exec_ctx.exec_return(result),
-            Instr::ReturnImm { result } => return exec_ctx.exec_return_imm(result),
-            Instr::ReturnMulti { results } => return exec_ctx.exec_return_multi(results),
+            Instr::Return { result } => return Ok(exec_ctx.exec_return(result)),
+            Instr::ReturnImm { result } => return Ok(exec_ctx.exec_return_imm(result)),
+            Instr::ReturnMulti { results } => return Ok(exec_ctx.exec_return_multi(results)),
             Instr::Call {
                 func_idx,
                 results,
@@ -1036,15 +1036,8 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
     }
 
     /// Modifies the `pc` to branches to the given `target`.
-    ///
-    /// # Note
-    ///
-    /// This is a convenience function with the purpose to simplify
-    /// the process to change the behavior of the dispatch once required
-    /// for optimization purposes.
-    fn try_branch_to_target(&mut self, target: Target) -> Result<(), Trap> {
+    fn branch_to_target(&mut self, target: Target) {
         self.pc = target.destination().into_inner() as usize;
-        Ok(())
     }
 
     /// Returns the [`CallOutcome`] to call to the given function.
@@ -1519,30 +1512,22 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
     /// Executes a conditional branch.
     ///
     /// Only branches when `op(condition)` evaluates to `true`.
-    ///
-    /// # Errors
-    ///
-    /// Returns `Result::Ok` for convenience.
     fn exec_branch_conditionally(
         &mut self,
         target: Target,
         condition: ExecRegister,
         op: fn(UntypedValue) -> bool,
-    ) -> Result<(), Trap> {
+    ) {
         let condition = self.get_register(condition);
         if op(condition) {
-            return self.try_branch_to_target(target);
+            return self.branch_to_target(target);
         }
-        self.try_next_instr()
+        self.next_instr()
     }
 
     /// Executes a conditional branch and copy a single value.
     ///
     /// Only branches when `op(condition)` evaluates to `true`.
-    ///
-    /// # Errors
-    ///
-    /// Returns `Result::Ok` for convenience.
     fn exec_branch_conditionally_single<F>(
         &mut self,
         target: Target,
@@ -1550,7 +1535,7 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
         result: ExecRegister,
         returned: F,
         op: fn(UntypedValue) -> bool,
-    ) -> Result<(), Trap>
+    )
     where
         F: FnOnce(&Self) -> UntypedValue,
     {
@@ -1558,18 +1543,14 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
         if op(condition) {
             let returned = returned(self);
             self.set_register(result, returned);
-            return self.try_branch_to_target(target);
+            return self.branch_to_target(target);
         }
-        self.try_next_instr()
+        self.next_instr()
     }
 
     /// Executes a conditional branch and copy multiple values.
     ///
     /// Only branches when `op(condition)` evaluates to `true`.
-    ///
-    /// # Errors
-    ///
-    /// Returns `Result::Ok` for convenience.
     fn exec_branch_conditionally_multi(
         &mut self,
         target: Target,
@@ -1577,19 +1558,19 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
         results: ExecRegisterSlice,
         returned: ExecProviderSlice,
         op: fn(UntypedValue) -> bool,
-    ) -> Result<(), Trap> {
+    )  {
         let condition = self.get_register(condition);
         if op(condition) {
             self.copy_many(results, returned);
-            return self.try_branch_to_target(target);
+            return self.branch_to_target(target);
         }
-        self.try_next_instr()
+        self.next_instr()
     }
 }
 
 impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache, T> {
-    fn exec_br(&mut self, target: Target) -> Result<(), Trap> {
-        self.try_branch_to_target(target)
+    fn exec_br(&mut self, target: Target) {
+        self.branch_to_target(target)
     }
 
     fn exec_br_copy(
@@ -1597,10 +1578,10 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         target: Target,
         result: <ExecuteTypes as InstructionTypes>::Register,
         returned: <ExecuteTypes as InstructionTypes>::Register,
-    ) -> Result<(), Trap> {
+    ) {
         let returned = self.get_register(returned);
         self.set_register(result, returned);
-        self.try_branch_to_target(target)
+        self.branch_to_target(target)
     }
 
     fn exec_br_copy_imm(
@@ -1608,9 +1589,9 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         target: Target,
         result: <ExecuteTypes as InstructionTypes>::Register,
         returned: <ExecuteTypes as InstructionTypes>::Immediate,
-    ) -> Result<(), Trap> {
+    ) {
         self.set_register(result, returned);
-        self.try_branch_to_target(target)
+        self.branch_to_target(target)
     }
 
     fn exec_br_copy_multi(
@@ -1618,16 +1599,16 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         target: Target,
         results: <ExecuteTypes as InstructionTypes>::RegisterSlice,
         returned: <ExecuteTypes as InstructionTypes>::ProviderSlice,
-    ) -> Result<(), Trap> {
+    ) {
         self.copy_many(results, returned);
-        self.try_branch_to_target(target)
+        self.branch_to_target(target)
     }
 
     fn exec_br_eqz(
         &mut self,
         target: Target,
         condition: <ExecuteTypes as InstructionTypes>::Register,
-    ) -> Result<(), Trap> {
+    ) {
         self.exec_branch_conditionally(target, condition, |condition| {
             condition == UntypedValue::from(0_i32)
         })
@@ -1637,7 +1618,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         &mut self,
         target: Target,
         condition: <ExecuteTypes as InstructionTypes>::Register,
-    ) -> Result<(), Trap> {
+    ) {
         self.exec_branch_conditionally(target, condition, |condition| {
             condition != UntypedValue::from(0_i32)
         })
@@ -1649,7 +1630,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         condition: <ExecuteTypes as InstructionTypes>::Register,
         result: <ExecuteTypes as InstructionTypes>::Register,
         returned: <ExecuteTypes as InstructionTypes>::Register,
-    ) -> Result<(), Trap> {
+    ) {
         self.exec_branch_conditionally_single(
             target,
             condition,
@@ -1665,7 +1646,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         condition: <ExecuteTypes as InstructionTypes>::Register,
         result: <ExecuteTypes as InstructionTypes>::Register,
         returned: <ExecuteTypes as InstructionTypes>::Immediate,
-    ) -> Result<(), Trap> {
+    ) {
         self.exec_branch_conditionally_single(
             target,
             condition,
@@ -1681,7 +1662,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         condition: <ExecuteTypes as InstructionTypes>::Register,
         results: <ExecuteTypes as InstructionTypes>::RegisterSlice,
         returned: <ExecuteTypes as InstructionTypes>::ProviderSlice,
-    ) -> Result<(), Trap> {
+    ) {
         self.exec_branch_conditionally_multi(target, condition, results, returned, |condition| {
             condition != UntypedValue::from(0_i32)
         })
@@ -1691,9 +1672,9 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         &mut self,
         condition: <ExecuteTypes as InstructionTypes>::Register,
         exec_branch: F,
-    ) -> Result<ConditionalReturn, Trap>
+    ) -> ConditionalReturn
     where
-        F: FnOnce(&mut Self) -> Result<ConditionalReturn, Trap>,
+        F: FnOnce(&mut Self) -> ConditionalReturn,
     {
         let condition = self.get_register(condition);
         let zero = UntypedValue::from(0_i32);
@@ -1701,17 +1682,17 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         if condition != zero {
             return exec_branch(self);
         }
-        Ok(ConditionalReturn::Continue)
+        ConditionalReturn::Continue
     }
 
     fn exec_return_nez(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
         condition: <ExecuteTypes as InstructionTypes>::Register,
-    ) -> Result<ConditionalReturn, Trap> {
+    ) -> ConditionalReturn {
         self.exec_return_nez_impl(condition, |this| {
             let result = this.get_register(result);
-            Ok(ConditionalReturn::Return { result })
+            ConditionalReturn::Return { result }
         })
     }
 
@@ -1719,29 +1700,29 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Immediate,
         condition: <ExecuteTypes as InstructionTypes>::Register,
-    ) -> Result<ConditionalReturn, Trap> {
-        self.exec_return_nez_impl(condition, |_| Ok(ConditionalReturn::Return { result }))
+    ) -> ConditionalReturn {
+        self.exec_return_nez_impl(condition, |_| ConditionalReturn::Return { result })
     }
 
     fn exec_return_nez_multi(
         &mut self,
         results: <ExecuteTypes as InstructionTypes>::ProviderSlice,
         condition: <ExecuteTypes as InstructionTypes>::Register,
-    ) -> Result<ConditionalReturnMulti, Trap> {
+    ) -> ConditionalReturnMulti {
         let condition = self.get_register(condition);
         let zero = UntypedValue::from(0_i32);
         self.pc += 1;
         if condition != zero {
-            return Ok(ConditionalReturnMulti::Return { results });
+            return ConditionalReturnMulti::Return { results };
         }
-        Ok(ConditionalReturnMulti::Continue)
+        ConditionalReturnMulti::Continue
     }
 
     fn exec_br_table(
         &mut self,
         case: <ExecuteTypes as InstructionTypes>::Register,
         len_targets: usize,
-    ) -> Result<(), Trap> {
+    ) {
         let index = u32::from(self.get_register(case)) as usize;
         // The index of the default target is the last target of the `br_table`.
         let max_index = len_targets - 1;
@@ -1750,33 +1731,32 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         // Simply branch to the selected instruction which is going to be either
         // a `br` or a `return` instruction as demanded by the `wasmi` bytecode.
         self.pc += normalized_index + 1;
-        Ok(())
     }
 
-    fn exec_trap(&mut self, trap_code: TrapCode) -> Result<(), Trap> {
-        Err(Trap::from(trap_code))
+    fn exec_trap(&mut self, trap_code: TrapCode) -> Result<(), TrapCode> {
+        Err(trap_code)
     }
 
     fn exec_return(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Register,
-    ) -> Result<CallOutcome, Trap> {
+    ) -> CallOutcome {
         let result = self.get_register(result);
-        Ok(CallOutcome::ReturnSingle { returned: result })
+        CallOutcome::ReturnSingle { returned: result }
     }
 
     fn exec_return_imm(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Immediate,
-    ) -> Result<CallOutcome, Trap> {
-        Ok(CallOutcome::ReturnSingle { returned: result })
+    ) -> CallOutcome {
+        CallOutcome::ReturnSingle { returned: result }
     }
 
     fn exec_return_multi(
         &mut self,
         results: <ExecuteTypes as InstructionTypes>::ProviderSlice,
-    ) -> Result<CallOutcome, Trap> {
-        Ok(CallOutcome::ReturnMulti { returned: results })
+    ) -> CallOutcome {
+        CallOutcome::ReturnMulti { returned: results }
     }
 
     fn exec_call(
