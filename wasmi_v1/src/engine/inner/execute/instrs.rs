@@ -202,9 +202,9 @@ impl<'engine, 'func, 'ctx, 'cache, T> Executor<'engine, 'func, 'ctx, 'cache, T> 
                 Instr::Trap { trap_code } => {
                     self.exec_trap(trap_code)?;
                 }
-                Instr::Return { result } => return Ok(self.exec_return(result)),
-                Instr::ReturnImm { result } => return Ok(self.exec_return_imm(result)),
-                Instr::ReturnMulti { results } => return Ok(self.exec_return_multi(results)),
+                Instr::Return { result } => return self.exec_return(result),
+                Instr::ReturnImm { result } => return self.exec_return_imm(result),
+                Instr::ReturnMulti { results } => return self.exec_return_multi(results),
                 Instr::Call {
                     func_idx,
                     results,
@@ -1394,23 +1394,26 @@ impl<'engine, 'func2, 'ctx, 'cache, T> Executor<'engine, 'func2, 'ctx, 'cache, T
         Err(trap_code)
     }
 
-    fn exec_return(&mut self, result: <ExecuteTypes as InstructionTypes>::Register) -> CallOutcome {
+    fn exec_return(
+        &mut self,
+        result: <ExecuteTypes as InstructionTypes>::Register,
+    ) -> Result<CallOutcome, Trap> {
         let result = self.get_register(result);
-        CallOutcome::ReturnSingle { returned: result }
+        Ok(CallOutcome::ReturnSingle { returned: result })
     }
 
     fn exec_return_imm(
         &mut self,
         result: <ExecuteTypes as InstructionTypes>::Immediate,
-    ) -> CallOutcome {
-        CallOutcome::ReturnSingle { returned: result }
+    ) -> Result<CallOutcome, Trap> {
+        Ok(CallOutcome::ReturnSingle { returned: result })
     }
 
     fn exec_return_multi(
         &mut self,
         results: <ExecuteTypes as InstructionTypes>::ProviderSlice,
-    ) -> CallOutcome {
-        CallOutcome::ReturnMulti { returned: results }
+    ) -> Result<CallOutcome, Trap> {
+        Ok(CallOutcome::ReturnMulti { returned: results })
     }
 
     fn exec_call(
