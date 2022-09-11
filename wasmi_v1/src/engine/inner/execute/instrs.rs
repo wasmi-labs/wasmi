@@ -1793,10 +1793,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         self.exec_store_wrap_imm::<i64, i32>(ptr, offset, value)
     }
 
-    fn exec_memory_size(
-        &mut self,
-        result: <ExecuteTypes as InstructionTypes>::Register,
-    ) {
+    fn exec_memory_size(&mut self, result: <ExecuteTypes as InstructionTypes>::Register) {
         let memory = self.default_memory();
         let size = memory.current_pages(&self.ctx).0 as u32;
         self.set_register(result, size.into());
