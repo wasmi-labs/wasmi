@@ -1083,6 +1083,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     /// # Panics
     ///
     /// If there exists is no linear memory for the instance.
+    #[inline]
     fn default_memory(&mut self) -> Memory {
         self.cache.default_memory(&self.ctx)
     }
@@ -1092,6 +1093,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     /// # Panics
     ///
     /// If there exists is no table for the instance.
+    #[inline]
     fn default_table(&mut self) -> Table {
         self.cache.default_table(&self.ctx)
     }
@@ -1101,6 +1103,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     /// # Panics (Debug)
     ///
     /// If the constant pool does not inhabit the given [`ConstRef`].
+    #[inline]
     fn resolve_cref(&self, cref: ConstRef) -> UntypedValue {
         // Safety: We can safely assume that all const references at this
         //         point are valid since we have validated them during
@@ -1114,6 +1117,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     /// # Panics
     ///
     /// If there is no global variable at the given index.
+    #[inline]
     fn resolve_global(&mut self, global_index: bytecode::Global) -> &mut UntypedValue {
         self.cache
             .get_global(self.ctx.as_context_mut(), global_index.into_inner())
@@ -1124,6 +1128,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     /// # Errors
     ///
     /// If the resulting effective address overflows.
+    #[inline]
     fn effective_address(offset: bytecode::Offset, ptr: UntypedValue) -> Result<usize, Trap> {
         offset
             .into_inner()
@@ -1134,11 +1139,13 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     }
 
     /// Returns the value of the `register`.
+    #[inline]
     fn get_register(&self, register: ExecRegister) -> UntypedValue {
         self.frame.regs.get(register)
     }
 
     /// Sets the value of the `register` to `new_value`.
+    #[inline]
     fn set_register(&mut self, register: ExecRegister, new_value: UntypedValue) {
         self.frame.regs.set(register, new_value)
     }
