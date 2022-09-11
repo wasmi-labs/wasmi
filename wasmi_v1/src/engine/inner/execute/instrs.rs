@@ -2,7 +2,7 @@ use super::{cache::InstanceCache, stack::StackFrameView, CallOutcome};
 use crate::{
     engine::{
         bytecode::{self, ExecRegister, ExecuteTypes},
-        code_map::CodeMap,
+        code_map::{CodeMap, ResolvedFuncBody},
         inner::EngineResources,
         ConstRef,
         ExecProvider,
@@ -18,6 +18,7 @@ use crate::{
     StoreContextMut,
     Table,
 };
+use bytecode::ExecInstruction;
 use core::cmp;
 use wasmi_core::{
     memory_units::Pages,
@@ -73,23 +74,10 @@ pub(super) fn execute_frame(
     frame: StackFrameView,
     cache: &mut InstanceCache,
 ) -> Result<CallOutcome, Trap> {
-    cache.update_instance(frame.instance());
-    let func_body = code_map.resolve(frame.func_body());
-    let mut exec_ctx = ExecContext {
-        pc: frame.pc(),
-        frame,
-        res,
-        ctx: ctx.as_context_mut(),
-        cache,
-    };
+    let mut exec_ctx = ExecContext::new(ctx.as_context_mut(), code_map, res, frame, cache);
     loop {
-        // # Safety
-        //
-        // Since the Wasm and `wasmi` bytecode has already been validated the
-        // indices passed at this point can be assumed to be valid always.
-        let instr = unsafe { func_body.get_release_unchecked(exec_ctx.pc) };
         use bytecode::Instruction as Instr;
-        match *instr {
+        match *exec_ctx.instr() {
             Instr::Br { target } => exec_ctx.exec_br(target),
             Instr::BrCopy {
                 target,
@@ -657,9 +645,41 @@ pub struct ExecContext<'engine, 'func, 'ctx, 'cache, T> {
     /// This is mainly used as a cache for fast default
     /// linear memory and default table accesses.
     cache: &'cache mut InstanceCache,
+    /// The resolved function body.
+    func_body: ResolvedFuncBody<'engine>,
 }
 
 impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, T> {
+    /// Create a new [`ExecContext`] for the given function `frame`.
+    fn new(
+        ctx: StoreContextMut<'ctx, T>,
+        code_map: &'engine CodeMap,
+        res: &'engine EngineResources,
+        frame: StackFrameView<'func>,
+        cache: &'cache mut InstanceCache,
+    ) -> Self {
+        let func_body = code_map.resolve(frame.func_body());
+        cache.update_instance(frame.instance());
+        let pc = frame.pc();
+        Self {
+            pc,
+            frame,
+            res,
+            ctx,
+            cache,
+            func_body,
+        }
+    }
+
+    /// Returns a shared reference to the next [`ExecInstruction`].
+    fn instr(&self) -> &ExecInstruction {
+        // # Safety
+        //
+        // Since the Wasm and `wasmi` bytecode has already been validated the
+        // indices passed at this point can be assumed to be valid always.
+        unsafe { self.func_body.get_release_unchecked(self.pc) }
+    }
+
     /// Modifies the `pc` to continue to the next instruction.
     fn next_instr(&mut self) {
         self.pc += 1;
