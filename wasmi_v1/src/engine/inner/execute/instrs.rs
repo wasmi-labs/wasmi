@@ -1129,13 +1129,12 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
     ///
     /// If the resulting effective address overflows.
     #[inline]
-    fn effective_address(offset: bytecode::Offset, ptr: UntypedValue) -> Result<usize, Trap> {
+    fn effective_address(offset: bytecode::Offset, ptr: UntypedValue) -> Result<usize, TrapCode> {
         offset
             .into_inner()
             .checked_add(u32::from(ptr))
             .map(|address| address as usize)
             .ok_or(TrapCode::MemoryAccessOutOfBounds)
-            .map_err(Into::into)
     }
 
     /// Returns the value of the `register`.
