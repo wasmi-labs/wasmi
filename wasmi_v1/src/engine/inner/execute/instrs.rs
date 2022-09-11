@@ -1037,7 +1037,7 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
     /// This is a convenience function with the purpose to simplify
     /// the process to change the behavior of the dispatch once required
     /// for optimization purposes.
-    fn branch_to_target(&mut self, target: Target) -> Result<(), Trap> {
+    fn try_branch_to_target(&mut self, target: Target) -> Result<(), Trap> {
         self.pc = target.destination().into_inner() as usize;
         Ok(())
     }
@@ -1522,7 +1522,7 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
     ) -> Result<(), Trap> {
         let condition = self.get_register(condition);
         if op(condition) {
-            return self.branch_to_target(target);
+            return self.try_branch_to_target(target);
         }
         self.try_next_instr()
     }
@@ -1549,7 +1549,7 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
         if op(condition) {
             let returned = returned(self);
             self.set_register(result, returned);
-            return self.branch_to_target(target);
+            return self.try_branch_to_target(target);
         }
         self.try_next_instr()
     }
@@ -1572,7 +1572,7 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
         let condition = self.get_register(condition);
         if op(condition) {
             self.copy_many(results, returned);
-            return self.branch_to_target(target);
+            return self.try_branch_to_target(target);
         }
         self.try_next_instr()
     }
@@ -1580,7 +1580,7 @@ impl<'engine, 'func, 'ctx, 'cache, T> ExecContext<'engine, 'func, 'ctx, 'cache, 
 
 impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache, T> {
     fn exec_br(&mut self, target: Target) -> Result<(), Trap> {
-        self.branch_to_target(target)
+        self.try_branch_to_target(target)
     }
 
     fn exec_br_copy(
@@ -1591,7 +1591,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
     ) -> Result<(), Trap> {
         let returned = self.get_register(returned);
         self.set_register(result, returned);
-        self.branch_to_target(target)
+        self.try_branch_to_target(target)
     }
 
     fn exec_br_copy_imm(
@@ -1601,7 +1601,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         returned: <ExecuteTypes as InstructionTypes>::Immediate,
     ) -> Result<(), Trap> {
         self.set_register(result, returned);
-        self.branch_to_target(target)
+        self.try_branch_to_target(target)
     }
 
     fn exec_br_copy_multi(
@@ -1611,7 +1611,7 @@ impl<'engine, 'func2, 'ctx, 'cache, T> ExecContext<'engine, 'func2, 'ctx, 'cache
         returned: <ExecuteTypes as InstructionTypes>::ProviderSlice,
     ) -> Result<(), Trap> {
         self.copy_many(results, returned);
-        self.branch_to_target(target)
+        self.try_branch_to_target(target)
     }
 
     fn exec_br_eqz(
