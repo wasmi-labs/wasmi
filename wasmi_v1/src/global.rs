@@ -2,7 +2,7 @@ use wasmi_core::UntypedValue;
 
 use super::{AsContext, AsContextMut, Index, Stored};
 use crate::core::{Value, ValueType};
-use core::{fmt, fmt::Display};
+use core::{fmt, fmt::Display, ptr::NonNull};
 
 /// A raw index to a global variable entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -168,6 +168,11 @@ impl GlobalEntity {
     pub(crate) fn get_untyped(&self) -> UntypedValue {
         self.value
     }
+
+    /// Returns a pointer to the untyped value of the global variable.
+    pub(crate) fn get_untyped_ptr(&mut self) -> NonNull<UntypedValue> {
+        NonNull::from(&mut self.value)
+    }
 }
 
 /// A Wasm global variable reference.
@@ -239,25 +244,6 @@ impl Global {
             .set(new_value)
     }
 
-    /// Sets a new untyped value for the global variable.
-    ///
-    /// # Note
-    ///
-    /// This is an inherently unsafe API and only exists to allow
-    /// for efficient `global.set` through the interpreter which is
-    /// safe since the interpreter only handles validated Wasm code
-    /// where the checks in [`Global::set`] cannot fail.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `ctx` does not own this [`Global`].
-    pub(crate) fn set_untyped(&self, mut ctx: impl AsContextMut, new_value: UntypedValue) {
-        ctx.as_context_mut()
-            .store
-            .resolve_global_mut(*self)
-            .set_untyped(new_value)
-    }
-
     /// Returns the current value of the global variable.
     ///
     /// # Panics
@@ -267,12 +253,11 @@ impl Global {
         ctx.as_context().store.resolve_global(*self).get()
     }
 
-    /// Returns the current untyped value of the global variable.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `ctx` does not own this [`Global`].
-    pub(crate) fn get_untyped(&self, ctx: impl AsContext) -> UntypedValue {
-        ctx.as_context().store.resolve_global(*self).get_untyped()
+    /// Returns a pointer to the untyped value of the global variable.
+    pub(crate) fn get_untyped_ptr(&self, mut ctx: impl AsContextMut) -> NonNull<UntypedValue> {
+        ctx.as_context_mut()
+            .store
+            .resolve_global_mut(*self)
+            .get_untyped_ptr()
     }
 }
