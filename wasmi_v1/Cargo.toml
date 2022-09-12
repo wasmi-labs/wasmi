@@ -21,7 +21,7 @@ wat = "1"
 assert_matches = "1.5"
 wast = "44.0"
 anyhow = "1.0"
-criterion = "0.3.5"
+criterion = "0.4.0"
 
 [features]
 default = ["std"]
