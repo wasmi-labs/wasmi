@@ -153,10 +153,16 @@ macro_rules! float {
 
         impl ::core::fmt::Display for $for {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                <$is as ::core::fmt::Display>::fmt(
-                    &<$is as ::core::convert::From<Self>>::from(*self),
-                    f,
-                )
+                if <$is as ::core::convert::From<Self>>::from(*self).is_nan()
+                    && <$is as ::core::convert::From<Self>>::from(*self).is_sign_negative()
+                {
+                    ::core::write!(f, "-NaN")
+                } else {
+                    <$is as ::core::fmt::Display>::fmt(
+                        &<$is as ::core::convert::From<Self>>::from(*self),
+                        f,
+                    )
+                }
             }
         }
     };
