@@ -411,7 +411,10 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     }
 
     /// Translates a Wasm `block` control flow operator.
-    pub fn translate_block(&mut self, block_type: wasmparser::BlockType) -> Result<(), TranslationError> {
+    pub fn translate_block(
+        &mut self,
+        block_type: wasmparser::BlockType,
+    ) -> Result<(), TranslationError> {
         let block_type = BlockType::try_from_wasmparser(block_type, self.res)?;
         if self.is_reachable() {
             let stack_height = self.frame_stack_height(block_type);
@@ -431,7 +434,10 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     }
 
     /// Translates a Wasm `loop` control flow operator.
-    pub fn translate_loop(&mut self, block_type: wasmparser::BlockType) -> Result<(), TranslationError> {
+    pub fn translate_loop(
+        &mut self,
+        block_type: wasmparser::BlockType,
+    ) -> Result<(), TranslationError> {
         let block_type = BlockType::try_from_wasmparser(block_type, self.res)?;
         if self.is_reachable() {
             let stack_height = self.frame_stack_height(block_type);
@@ -449,7 +455,10 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     }
 
     /// Translates a Wasm `if` control flow operator.
-    pub fn translate_if(&mut self, block_type: wasmparser::BlockType) -> Result<(), TranslationError> {
+    pub fn translate_if(
+        &mut self,
+        block_type: wasmparser::BlockType,
+    ) -> Result<(), TranslationError> {
         let block_type = BlockType::try_from_wasmparser(block_type, self.res)?;
         if self.is_reachable() {
             let condition = self.value_stack.pop1();
@@ -1156,12 +1165,18 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `f32.const` instruction.
-    pub fn translate_f32_const(&mut self, value: wasmparser::Ieee32) -> Result<(), TranslationError> {
+    pub fn translate_f32_const(
+        &mut self,
+        value: wasmparser::Ieee32,
+    ) -> Result<(), TranslationError> {
         self.translate_const(F32::from_bits(value.bits()))
     }
 
     /// Translate a Wasm `f64.const` instruction.
-    pub fn translate_f64_const(&mut self, value: wasmparser::Ieee64) -> Result<(), TranslationError> {
+    pub fn translate_f64_const(
+        &mut self,
+        value: wasmparser::Ieee64,
+    ) -> Result<(), TranslationError> {
         self.translate_const(F64::from_bits(value.bits()))
     }
 

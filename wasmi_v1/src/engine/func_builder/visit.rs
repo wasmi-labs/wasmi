@@ -662,9 +662,7 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FuncBuilder<'alloc, 'parser> {
         let table_cloned = table.clone();
         self.validate_then_translate(
             |v| v.visit_br_table(offset, table_cloned),
-            |this| {
-                this.translate_br_table(table)
-            }
+            |this| this.translate_br_table(table),
         )
     }
 }
