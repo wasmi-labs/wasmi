@@ -1,6 +1,6 @@
 use super::{FuncBuilder, FuncValidator, RelativeDepth, TranslationError};
 use crate::module::{BlockType, FuncIdx, FuncTypeIdx, GlobalIdx, MemoryIdx, TableIdx};
-use wasmparser::{BinaryReaderError, MemArg, VisitOperator, V128};
+use wasmparser::{BinaryReaderError, VisitOperator};
 
 impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     /// Translates into `wasmi` bytecode if the current code path is reachable.
@@ -66,25 +66,6 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
                 translate(this, memory_idx, memory_offset)
             },
         )
-    }
-
-    /// Forwards to the internal function validator.
-    ///
-    /// This is preferred over the more generic [`validate_or_err`] method
-    /// if applicable.
-    ///
-    /// # Note
-    ///
-    /// This API is expected to be used if the function validator always
-    /// returns an error. This is useful for unsupported Wasm proposals.
-    ///
-    /// [`validate_or_err`]: [`Self::validate_or_err`]
-    fn validate_or_err_simple(
-        &mut self,
-        offset: usize,
-        validate: fn(&mut FuncValidator, usize) -> Result<(), BinaryReaderError>,
-    ) -> Result<(), TranslationError> {
-        validate(&mut self.validator, offset).map_err(Into::into)
     }
 }
 
@@ -163,28 +144,6 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FuncBuilder<'alloc, 'parser> {
         )
     }
 
-    fn visit_try(&mut self, offset: usize, ty: wasmparser::BlockType) -> Self::Output {
-        self.validator.visit_try(offset, ty).map_err(Into::into)
-    }
-
-    fn visit_catch(&mut self, offset: usize, index: u32) -> Self::Output {
-        self.validator
-            .visit_catch(offset, index)
-            .map_err(Into::into)
-    }
-
-    fn visit_throw(&mut self, offset: usize, index: u32) -> Self::Output {
-        self.validator
-            .visit_throw(offset, index)
-            .map_err(Into::into)
-    }
-
-    fn visit_rethrow(&mut self, offset: usize, relative_depth: u32) -> Self::Output {
-        self.validator
-            .visit_rethrow(offset, relative_depth)
-            .map_err(Into::into)
-    }
-
     fn visit_end(&mut self, offset: usize) -> Self::Output {
         self.validate_then_translate_simple(
             offset,
@@ -260,33 +219,6 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FuncBuilder<'alloc, 'parser> {
         )
     }
 
-    fn visit_return_call(&mut self, offset: usize, function_index: u32) -> Self::Output {
-        self.validator
-            .visit_return_call(offset, function_index)
-            .map_err(Into::into)
-    }
-
-    fn visit_return_call_indirect(
-        &mut self,
-        offset: usize,
-        index: u32,
-        table_index: u32,
-    ) -> Self::Output {
-        self.validator
-            .visit_return_call_indirect(offset, index, table_index)
-            .map_err(Into::into)
-    }
-
-    fn visit_delegate(&mut self, offset: usize, relative_depth: u32) -> Self::Output {
-        self.validator
-            .visit_delegate(offset, relative_depth)
-            .map_err(Into::into)
-    }
-
-    fn visit_catch_all(&mut self, offset: usize) -> Self::Output {
-        self.validate_or_err_simple(offset, FuncValidator::visit_catch_all)
-    }
-
     fn visit_drop(&mut self, offset: usize) -> Self::Output {
         self.validate_then_translate_simple(
             offset,
@@ -300,13 +232,6 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FuncBuilder<'alloc, 'parser> {
             offset,
             FuncValidator::visit_select,
             FuncBuilder::translate_select,
-        )
-    }
-
-    fn visit_typed_select(&mut self, offset: usize, ty: wasmparser::ValType) -> Self::Output {
-        self.validate_then_translate(
-            |v| v.visit_typed_select(offset, ty),
-            |this| this.translate_select(),
         )
     }
 
@@ -592,22 +517,6 @@ impl<'alloc, 'parser> VisitOperator<'parser> for FuncBuilder<'alloc, 'parser> {
             |v| v.visit_f64_const(offset, value),
             |this| this.translate_f64_const(value.bits().into()),
         )
-    }
-
-    fn visit_ref_null(&mut self, offset: usize, ty: wasmparser::ValType) -> Self::Output {
-        self.validator
-            .visit_ref_null(offset, ty)
-            .map_err(Into::into)
-    }
-
-    fn visit_ref_is_null(&mut self, offset: usize) -> Self::Output {
-        self.validator.visit_ref_is_null(offset).map_err(Into::into)
-    }
-
-    fn visit_ref_func(&mut self, offset: usize, function_index: u32) -> Self::Output {
-        self.validator
-            .visit_ref_func(offset, function_index)
-            .map_err(Into::into)
     }
 
     fn visit_i32_eqz(&mut self, offset: usize) -> Self::Output {
