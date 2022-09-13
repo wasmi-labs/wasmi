@@ -17,9 +17,20 @@
 
 # `wasmi`- WebAssembly (Wasm) Interpreter
 
-`wasmi` was conceived as a component of [parity-ethereum](https://github.com/paritytech/parity-ethereum) (ethereum-like contracts in wasm) and [substrate](https://github.com/paritytech/substrate). These projects are related to blockchain and require a high degree of correctness. The project is not trying to be involved in any implementation of any work-in-progress Wasm proposals. Instead the project tries to be as close as possible to the specification, therefore avoiding features that are not directly supported by the specification.
+`wasmi` is an efficient WebAssembly interpreter with low-overhead and support
+for embedded environment such as WebAssembly itself.
 
-With all that said `wasmi` should be a good option for initial prototyping and there shouldn't be a problem migrating from `wasmi` to another specification compliant execution engine later on.
+At Parity we are using `wasmi` in [Substrate](https://github.com/paritytech/substrate)
+as the execution engine for our WebAssembly based smart contracts.
+Furthermore we run `wasmi` within the Substrate runtime which is a WebAssembly
+environment itself and driven via [Wasmtime] at the time of this writing.
+As such `wasmi`'s implementation requires a high degree of correctness and
+Wasm specification conformance.
+
+Since `wasmi` is relatively lightweight compared to other Wasm virtual machines
+such as Wasmtime it is also a decent option for initial prototyping.
+
+[Wasmtime]: https://github.com/bytecodealliance/wasmtime
 
 ## Distinct Features
 
@@ -30,7 +41,7 @@ The following list states some of the distinct features of `wasmi`.
     - WebAssembly specification compliance.
 - Can itself be compiled to and executed via WebAssembly.
 - Low-overhead and cross-platform WebAssembly runtime.
-- Loosely mirrors the [Wasmtime API](https://docs.rs/wasmtime/0.39.1/wasmtime/)
+- Loosely mirrors the [Wasmtime API](https://docs.rs/wasmtime/)
   to act as a drop-in solution.
 
 ## WebAssembly Proposals
