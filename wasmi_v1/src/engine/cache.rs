@@ -198,13 +198,13 @@ impl InstanceCache {
         let global = self
             .instance()
             .get_global(ctx.as_context(), index)
-            .map(|g| g.get_untyped_ptr(ctx))
-            .unwrap_or_else(|| {
-                panic!(
+            .map_or_else(
+                || panic!(
                     "missing global variable at index {index} for instance: {:?}",
                     self.instance
-                )
-            });
+                ),
+                |g| g.get_untyped_ptr(ctx),
+            );
         self.last_global = Some((index, global));
         global
     }
