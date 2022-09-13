@@ -1,5 +1,5 @@
 (module
-    (func $trunc_i32_f32 (export "trunc_f2i") (param $n i32) (param $input32 f32) (param $input64 f64) (result)
+    (func (export "trunc_f2i") (param $n i32) (param $input32 f32) (param $input64 f64) (result)
         (local $i i32)
         (block $exit
             (if
