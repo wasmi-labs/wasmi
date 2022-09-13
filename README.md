@@ -28,16 +28,16 @@ The following list states some of the distinct features of `wasmi`.
 - Primarily concerned about
     - correct and deterministic WebAssembly execution.
     - WebAssembly specification compliance.
-- Can itself be compiled to WebAssembly.
+- Can itself be compiled to and executed via WebAssembly.
 - Low-overhead and cross-platform WebAssembly runtime.
 - Loosely mirrors the [Wasmtime API](https://docs.rs/wasmtime/0.39.1/wasmtime/)
   to act as a drop-in solution.
 
-## Wasm Proposals
+## WebAssembly Proposals
 
 The new `wasmi_v1` engine supports a variety of WebAssembly proposals and will support even more of them in the future.
 
-| Wasm Proposal | Status | Comment |
+| WebAssembly Proposal | Status | Comment |
 |:--|:--:|:--|
 | [`mutable-global`] | ✅ | |
 | [`saturating-float-to-int`] | ✅ | |
