@@ -218,22 +218,22 @@ impl UntypedValue {
 
     /// Execute `i32.div_s` Wasm operation.
     pub fn i32_div_s(self, rhs: Self) -> Result<Self, TrapCode> {
-        self.try_execute_binary(rhs, <i32 as ArithmeticOps<i32>>::div)
+        self.try_execute_binary(rhs, <i32 as Integer<i32>>::div)
     }
 
     /// Execute `i64.div_s` Wasm operation.
     pub fn i64_div_s(self, rhs: Self) -> Result<Self, TrapCode> {
-        self.try_execute_binary(rhs, <i64 as ArithmeticOps<i64>>::div)
+        self.try_execute_binary(rhs, <i64 as Integer<i64>>::div)
     }
 
     /// Execute `i32.div_u` Wasm operation.
     pub fn i32_div_u(self, rhs: Self) -> Result<Self, TrapCode> {
-        self.try_execute_binary(rhs, <u32 as ArithmeticOps<u32>>::div)
+        self.try_execute_binary(rhs, <u32 as Integer<u32>>::div)
     }
 
     /// Execute `i64.div_u` Wasm operation.
     pub fn i64_div_u(self, rhs: Self) -> Result<Self, TrapCode> {
-        self.try_execute_binary(rhs, <u64 as ArithmeticOps<u64>>::div)
+        self.try_execute_binary(rhs, <u64 as Integer<u64>>::div)
     }
 
     /// Execute `i32.rem_s` Wasm operation.
@@ -652,13 +652,13 @@ impl UntypedValue {
     }
 
     /// Execute `f32.div` Wasm operation.
-    pub fn f32_div(self, rhs: Self) -> Result<Self, TrapCode> {
-        self.try_execute_binary(rhs, <F32 as ArithmeticOps<F32>>::div)
+    pub fn f32_div(self, rhs: Self) -> Self {
+        self.execute_binary(rhs, <F32 as Float<F32>>::div)
     }
 
     /// Execute `f64.div` Wasm operation.
-    pub fn f64_div(self, rhs: Self) -> Result<Self, TrapCode> {
-        self.try_execute_binary(rhs, <F64 as ArithmeticOps<F64>>::div)
+    pub fn f64_div(self, rhs: Self) -> Self {
+        self.execute_binary(rhs, <F64 as Float<F64>>::div)
     }
 
     /// Execute `f64.min` Wasm operation.

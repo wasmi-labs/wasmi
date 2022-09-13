@@ -200,8 +200,6 @@ pub trait ArithmeticOps<T>: Copy {
     fn sub(self, other: T) -> T;
     /// Multiply two values.
     fn mul(self, other: T) -> T;
-    /// Divide two values.
-    fn div(self, other: T) -> Result<T, TrapCode>;
 }
 
 /// Integer value.
@@ -216,7 +214,17 @@ pub trait Integer<T>: ArithmeticOps<T> {
     fn rotl(self, other: T) -> T;
     /// Get right bit rotation result.
     fn rotr(self, other: T) -> T;
+    /// Divide two values.
+    ///
+    /// # Errors
+    ///
+    /// If `other` is equal to zero.
+    fn div(self, other: T) -> Result<T, TrapCode>;
     /// Get division remainder.
+    ///
+    /// # Errors
+    ///
+    /// If `other` is equal to zero.
     fn rem(self, other: T) -> Result<T, TrapCode>;
 }
 
@@ -240,6 +248,8 @@ pub trait Float<T>: ArithmeticOps<T> {
     fn is_sign_positive(self) -> bool;
     /// Returns `true` if the sign of the number is negative.
     fn is_sign_negative(self) -> bool;
+    /// Returns the division of the two numbers.
+    fn div(self, other: T) -> T;
     /// Returns the minimum of the two numbers.
     fn min(self, other: T) -> T;
     /// Returns the maximum of the two numbers.
@@ -776,16 +786,6 @@ macro_rules! impl_integer_arithmetic_ops {
             fn mul(self, other: $type) -> $type {
                 self.wrapping_mul(other)
             }
-            #[inline]
-            fn div(self, other: $type) -> Result<$type, TrapCode> {
-                if other == 0 {
-                    return Err(TrapCode::DivisionByZero);
-                }
-                match self.overflowing_div(other) {
-                    (result, false) => Ok(result),
-                    (_, true) => Err(TrapCode::IntegerOverflow),
-                }
-            }
         }
     };
 }
@@ -809,10 +809,6 @@ macro_rules! impl_float_arithmetic_ops {
             #[inline]
             fn mul(self, other: $type) -> $type {
                 self * other
-            }
-            #[inline]
-            fn div(self, other: $type) -> Result<$type, TrapCode> {
-                Ok(self / other)
             }
         }
     };
@@ -847,7 +843,17 @@ macro_rules! impl_integer {
                 self.rotate_right(other as u32)
             }
             #[inline]
-            fn rem(self, other: $type) -> Result<$type, TrapCode> {
+            fn div(self, other: $type) -> Result<$type, TrapCode> {
+                if other == 0 {
+                    return Err(TrapCode::DivisionByZero);
+                }
+                match self.overflowing_div(other) {
+                    (result, false) => Ok(result),
+                    (_, true) => Err(TrapCode::IntegerOverflow),
+                }
+            }
+            #[inline]
+            fn rem(self, other: Self) -> Result<Self, TrapCode> {
                 if other == 0 {
                     return Err(TrapCode::DivisionByZero);
                 }
@@ -927,6 +933,10 @@ macro_rules! impl_float {
             #[inline]
             fn is_sign_negative(self) -> bool {
                 $fXX::is_sign_negative($fXX::from(self)).into()
+            }
+            #[inline]
+            fn div(self, other: Self) -> Self {
+                self / other
             }
             #[inline]
             fn min(self, other: $type) -> $type {
