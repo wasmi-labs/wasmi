@@ -26,7 +26,7 @@ pub struct LocalsRegistry {
 }
 
 impl LocalsRegistry {
-    /// Resets the [`LocalsRegistry`] for reuse.
+    /// Resets the [`LocalsRegistry`] to allow for reuse.
     pub fn reset(&mut self) {
         self.max_index = 0;
     }

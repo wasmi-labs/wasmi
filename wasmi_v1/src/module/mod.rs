@@ -32,6 +32,7 @@ pub use self::{
     import::{FuncTypeIdx, ImportName},
     instantiate::{InstancePre, InstantiationError},
     read::Read,
+    utils::value_type_from_wasmparser,
 };
 use crate::{
     engine::{DedupFuncType, FuncBody},

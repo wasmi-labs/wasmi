@@ -367,18 +367,21 @@ pub struct StoreContext<'a, T> {
 }
 
 impl<'a, T: AsContext> From<&'a T> for StoreContext<'a, T::UserState> {
+    #[inline]
     fn from(ctx: &'a T) -> Self {
         ctx.as_context()
     }
 }
 
 impl<'a, T: AsContext> From<&'a mut T> for StoreContext<'a, T::UserState> {
+    #[inline]
     fn from(ctx: &'a mut T) -> Self {
         T::as_context(ctx)
     }
 }
 
 impl<'a, T: AsContextMut> From<&'a mut T> for StoreContextMut<'a, T::UserState> {
+    #[inline]
     fn from(ctx: &'a mut T) -> Self {
         ctx.as_context_mut()
     }
@@ -431,6 +434,7 @@ where
 impl<T> AsContext for StoreContext<'_, T> {
     type UserState = T;
 
+    #[inline]
     fn as_context(&self) -> StoreContext<'_, Self::UserState> {
         StoreContext { store: self.store }
     }
@@ -439,12 +443,14 @@ impl<T> AsContext for StoreContext<'_, T> {
 impl<T> AsContext for StoreContextMut<'_, T> {
     type UserState = T;
 
+    #[inline]
     fn as_context(&self) -> StoreContext<'_, Self::UserState> {
         StoreContext { store: self.store }
     }
 }
 
 impl<T> AsContextMut for StoreContextMut<'_, T> {
+    #[inline]
     fn as_context_mut(&mut self) -> StoreContextMut<'_, Self::UserState> {
         StoreContextMut {
             store: &mut *self.store,
@@ -455,12 +461,14 @@ impl<T> AsContextMut for StoreContextMut<'_, T> {
 impl<T> AsContext for Store<T> {
     type UserState = T;
 
+    #[inline]
     fn as_context(&self) -> StoreContext<'_, Self::UserState> {
         StoreContext { store: self }
     }
 }
 
 impl<T> AsContextMut for Store<T> {
+    #[inline]
     fn as_context_mut(&mut self) -> StoreContextMut<'_, Self::UserState> {
         StoreContextMut { store: self }
     }

@@ -1,6 +1,6 @@
 [package]
 name = "wasmi_core"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 authors = ["Parity Technologies <admin@parity.io>"]
 license = "MIT/Apache-2.0"
@@ -15,7 +15,6 @@ memory_units = "0.4.0"
 libm = "0.2.1"
 num-rational = { version = "0.4", default-features = false, features = ["num-bigint"] }
 num-traits = { version = "0.2.8", default-features = false }
-region = { version = "3.0", optional = true }
 downcast-rs = { version = "1.2", default-features = false }
 
 [dev-dependencies]
@@ -30,13 +29,3 @@ std = [
     "num-traits/std",
     "downcast-rs/std",
 ]
-# Enables OS supported virtual memory.
-#
-# Note
-#
-# - This feature is only supported on 64-bit platforms.
-#   For 32-bit platforms the linear memory will fallback to using the Vec
-#   based implementation.
-# - The default is to fall back is an inefficient vector based implementation.
-# - By nature this feature requires `region` and the Rust standard library.
-virtual_memory = ["region", "std"]

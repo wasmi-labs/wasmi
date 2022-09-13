@@ -468,7 +468,7 @@ impl ControlFrame {
             Self::Block(frame) => Some(frame.stack_height()),
             Self::Loop(frame) => Some(frame.stack_height()),
             Self::If(frame) => Some(frame.stack_height()),
-            Self::Unreachable(_) => None,
+            Self::Unreachable(_frame) => None,
         }
     }
 

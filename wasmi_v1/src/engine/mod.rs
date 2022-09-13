@@ -36,8 +36,9 @@ pub use self::{
     code_map::FuncBody,
     config::Config,
     const_pool::{ConstPool, ConstRef},
-    func_builder::RelativeDepth,
+    func_builder::{RelativeDepth, TranslationError},
     func_types::DedupFuncType,
+    inner::StackLimits,
 };
 use crate::{AsContext, AsContextMut, Func, FuncType};
 use alloc::sync::Arc;

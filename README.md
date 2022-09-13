@@ -21,7 +21,7 @@
 
 With all that said `wasmi` should be a good option for initial prototyping and there shouldn't be a problem migrating from `wasmi` to another specification compliant execution engine later on.
 
-# Distinct Features
+## Distinct Features
 
 The following list states some of the distinct features of `wasmi`.
 
@@ -33,7 +33,7 @@ The following list states some of the distinct features of `wasmi`.
 - Loosely mirrors the [Wasmtime API](https://docs.rs/wasmtime/0.39.1/wasmtime/)
   to act as a drop-in solution.
 
-# Wasm Proposals
+## Wasm Proposals
 
 The new `wasmi_v1` engine supports a variety of WebAssembly proposals and will support even more of them in the future.
 
@@ -56,8 +56,6 @@ The new `wasmi_v1` engine supports a variety of WebAssembly proposals and will s
 [`bulk-memory`]: https://github.com/WebAssembly/bulk-memory-operations
 [`simd` ]: https://github.com/webassembly/simd
 [`tail-calls`]: https://github.com/WebAssembly/tail-call
-
-# Developer Notes
 
 ## Building
 
@@ -89,7 +87,7 @@ After Git submodules have been initialized and updated you can test using:
 cargo test --workspace
 ```
 
-## Platforms
+## Supported Platforms
 
 Supported platforms are primarily Linux, MacOS, Windows and WebAssembly.
 
@@ -99,18 +97,7 @@ Use the following command in order to produce a WebAssembly build:
 cargo build --no-default-features --target wasm32-unknown-unknown
 ```
 
-## Features
-
-### Virtual Memory
-
-On 64-bit platforms we further provide cross-platform suppport for virtual memory usage.
-For this build `wasmi` using:
-
-```
-cargo build --features virtual_memory
-```
-
-#### Performance Note
+## Release Builds
 
 In order to reap the most performance out of `wasmi` we highly recommended
 to compile the `wasmi` crate using the following Cargo `profile`:
@@ -134,7 +121,7 @@ cargo bench
 For example `cargo bench execute` will only execute the benchmark
 tests that test the performance of WebAssembly execution.
 
-# License
+## License
 
 `wasmi` is primarily distributed under the terms of both the MIT
 license and the APACHE license (Version 2.0), at your choice.

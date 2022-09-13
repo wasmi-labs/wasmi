@@ -5,7 +5,7 @@ use crate::{GlobalType, ModuleError};
 ///
 /// [`Module`]: [`super::Module`]
 #[derive(Debug, Copy, Clone)]
-pub struct GlobalIdx(pub(super) u32);
+pub struct GlobalIdx(pub(crate) u32);
 
 impl GlobalIdx {
     /// Returns the [`GlobalIdx`] as `u32`.

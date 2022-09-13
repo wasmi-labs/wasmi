@@ -1,6 +1,6 @@
 [package]
 name = "wasmi"
-version = "0.14.0"
+version = "0.16.0"
 edition = "2021"
 authors = ["Parity Technologies <admin@parity.io>", "Robin Freyler <robin.freyler@gmail.com>"]
 license = "MIT/Apache-2.0"
@@ -13,7 +13,7 @@ exclude = [ "tests/*", "benches/*" ]
 
 [dependencies]
 wasmparser = { version = "0.90", package = "wasmparser-nostd", default-features = false }
-wasmi_core = { version = "0.2", path = "../core", default-features = false }
+wasmi_core = { version = "0.3", path = "../core", default-features = false }
 spin = { version = "0.9", default-features = false, features = ["mutex", "spin_mutex"] }
 
 [dev-dependencies]
@@ -21,7 +21,7 @@ wat = "1"
 assert_matches = "1.5"
 wast = "44.0"
 anyhow = "1.0"
-criterion = "0.3.5"
+criterion = "0.4.0"
 
 [features]
 default = ["std"]
@@ -31,16 +31,6 @@ std = [
     "wasmparser/std",
     "spin/std",
 ]
-# Enables OS supported virtual memory.
-#
-# Note
-#
-# - This feature is only supported on 64-bit platforms.
-#   For 32-bit platforms the linear memory will fallback to using the Vec
-#   based implementation.
-# - The default is to fall back is an inefficient vector based implementation.
-# - By nature this feature requires `region` and the Rust standard library.
-virtual_memory = ["wasmi_core/virtual_memory", "std"]
 
 [[bench]]
 name = "benches"

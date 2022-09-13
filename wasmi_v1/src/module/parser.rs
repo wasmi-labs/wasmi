@@ -54,7 +54,7 @@ pub struct ModuleParser<'engine> {
     parser: WasmParser,
     /// Currently processed function.
     func: FuncIdx,
-    /// Reusable and shared resources for the [`FunctionBuilder`].
+    /// Reusable allocations for building functions.
     allocations: FunctionBuilderAllocations,
 }
 

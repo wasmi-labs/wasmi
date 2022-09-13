@@ -87,7 +87,7 @@ pub struct InstructionsBuilder {
 }
 
 impl InstructionsBuilder {
-    /// Resets the [`InstructionsBuilder`] for reuse.
+    /// Resets the [`InstructionsBuilder`] to allow for reuse.
     pub fn reset(&mut self) {
         self.insts.clear();
         self.labels.reset();
