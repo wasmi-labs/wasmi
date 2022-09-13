@@ -87,6 +87,11 @@ After Git submodules have been initialized and updated you can test using:
 cargo test --workspace
 ```
 
+## Development
+
+Before pushing a PR to our repository we would like you to execute the
+`ci.sh` script that can be found in the repository's root folder.
+
 ## Supported Platforms
 
 Supported platforms are primarily Linux, MacOS, Windows and WebAssembly.
