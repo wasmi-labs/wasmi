@@ -106,7 +106,7 @@ pub struct Executor<'engine, 'func, 'ctx, 'cache, T> {
 }
 
 impl<'engine, 'func, 'ctx, 'cache, T> Executor<'engine, 'func, 'ctx, 'cache, T> {
-    /// Create a new [`ExecContext`] for the given function `frame`.
+    /// Create a new [`Executor`] for the given function `frame`.
     #[inline(always)]
     fn new(
         ctx: StoreContextMut<'ctx, T>,

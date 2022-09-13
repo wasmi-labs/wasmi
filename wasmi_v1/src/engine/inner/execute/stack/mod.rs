@@ -58,14 +58,14 @@ impl Display for LimitsError {
     }
 }
 
-/// The configured limits of the [`Stack`].
+/// The configured limits of the Wasm stack.
 #[derive(Debug, Copy, Clone)]
 pub struct StackLimits {
-    /// The initial number of stack registers that the [`Stack`] prepares.
+    /// The initial number of stack registers that the `wasmi` engine prepares.
     pub initial_len: usize,
-    /// The maximum number of stack registers in use that the [`Stack`] allows.
+    /// The maximum number of stack registers in use that the `wasmi` engine allows.
     pub maximum_len: usize,
-    /// The maximum number of nested calls that the [`Stack`] allows.
+    /// The maximum number of nested calls that the `wasmi` engine allows.
     pub maximum_recursion_depth: usize,
 }
 

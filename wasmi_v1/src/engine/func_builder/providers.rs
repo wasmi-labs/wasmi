@@ -28,7 +28,7 @@ pub struct StackCheckpoint {
 }
 
 impl Stacks {
-    /// Resets the [`Stack`] counters for reuse.
+    /// Resets the value stack counters for reuse.
     pub fn reset(&mut self) {
         self.len_dynamic = 0;
         self.max_dynamic = 0;
