@@ -199,10 +199,12 @@ impl InstanceCache {
             .instance()
             .get_global(ctx.as_context(), index)
             .map_or_else(
-                || panic!(
-                    "missing global variable at index {index} for instance: {:?}",
-                    self.instance
-                ),
+                || {
+                    panic!(
+                        "missing global variable at index {index} for instance: {:?}",
+                        self.instance
+                    )
+                },
                 |g| g.get_untyped_ptr(ctx),
             );
         self.last_global = Some((index, global));

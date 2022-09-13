@@ -1,5 +1,5 @@
 use super::{InstantiationError, Module};
-use crate::{AsContextMut, Error, Instance, InstanceEntityBuilder};
+use crate::{module::FuncIdx, AsContextMut, Error, Instance, InstanceEntityBuilder};
 
 /// A partially instantiated [`Instance`] where the `start` function has not yet been executed.
 ///
@@ -33,7 +33,7 @@ impl<'a> InstancePre<'a> {
     ///
     /// Returns `None` if the [`Module`] does not have a `start` function.
     fn start_fn(&self) -> Option<u32> {
-        self.module.start.map(|idx| idx.into_u32())
+        self.module.start.map(FuncIdx::into_u32)
     }
 
     /// Runs the `start` function of the [`Instance`] and returns its handle.

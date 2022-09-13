@@ -624,22 +624,6 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
         table: wasmparser::BrTable<'parser>,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let default = RelativeDepth::from_u32(table.default());
-            let targets = table
-                .targets()
-                .map(|relative_depth| {
-                    relative_depth.unwrap_or_else(|error| {
-                        panic!(
-                            "encountered unexpected invalid relative depth for `br_table` target: {}",
-                            error,
-                        )
-                    })
-                })
-                .map(RelativeDepth::from_u32);
-
-            let case = builder.value_stack.pop1();
-            debug_assert_eq!(case, ValueType::I32);
-
             fn compute_inst(
                 builder: &mut FuncBuilder,
                 n: usize,
@@ -656,6 +640,22 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
                     AquiredTarget::Return(drop_keep) => Ok(Instruction::Return(drop_keep)),
                 }
             }
+
+            let default = RelativeDepth::from_u32(table.default());
+            let targets = table
+                .targets()
+                .map(|relative_depth| {
+                    relative_depth.unwrap_or_else(|error| {
+                        panic!(
+                            "encountered unexpected invalid relative depth for `br_table` target: {}",
+                            error,
+                        )
+                    })
+                })
+                .map(RelativeDepth::from_u32);
+
+            let case = builder.value_stack.pop1();
+            debug_assert_eq!(case, ValueType::I32);
 
             let branches = targets
                 .into_iter()

@@ -73,11 +73,11 @@ where
         cache.update_instance(frame.instance());
         let pc = frame.pc();
         Self {
-            ctx,
-            frame,
-            value_stack,
-            cache,
             pc,
+            value_stack,
+            frame,
+            cache,
+            ctx,
             insts,
         }
     }
