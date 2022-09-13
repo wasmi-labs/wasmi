@@ -1,4 +1,4 @@
-use super::{FunctionBuilder, FuncValidator, TranslationError};
+use super::{FuncValidator, FunctionBuilder, TranslationError};
 use wasmparser::{BinaryReaderError, VisitOperator};
 
 /// A helper macro to conveniently iterate over all opcodes supported by this

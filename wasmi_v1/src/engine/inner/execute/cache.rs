@@ -92,7 +92,9 @@ impl InstanceCache {
         let default_table = self
             .instance()
             .get_table(ctx.as_context(), DEFAULT_TABLE_INDEX)
-            .unwrap_or_else(|| unreachable!("missing default table for instance: {:?}", self.instance));
+            .unwrap_or_else(|| {
+                unreachable!("missing default table for instance: {:?}", self.instance)
+            });
         self.default_table = Some(default_table);
         default_table
     }
