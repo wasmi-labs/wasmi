@@ -1,12 +1,12 @@
 mod cache;
-mod instrs;
+mod executor;
 mod stack;
 
 #[cfg(test)]
 mod tests;
 
 pub use self::stack::{Stack, StackLimits};
-use self::{cache::InstanceCache, instrs::execute_frame, stack::StackFrameRef};
+use self::{cache::InstanceCache, executor::execute_frame, stack::StackFrameRef};
 use super::{super::ExecRegisterSlice, EngineInner};
 use crate::{
     engine::{CallParams, CallResults, DedupFuncType, ExecProviderSlice},
