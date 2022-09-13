@@ -3859,3 +3859,47 @@ fn regression_const_lhs() {
     ];
     assert_func_bodies_for_module(&module, [expected]);
 }
+
+#[test]
+fn global_get_mutable() {
+    let wasm = wat2wasm(
+        r#"
+            (module
+                (global $g0 (mut i32) (i32.const 42))
+                (func (export "func") (result i32)
+                    (global.get $g0)
+                )
+            )
+        "#,
+    );
+    let module = create_module(&wasm[..]);
+    let v0 = ExecRegister::from_inner(0);
+    let g0 = Global::from(0);
+    let expected = [
+        ExecInstruction::GlobalGet {
+            result: v0,
+            global: g0,
+        },
+        ExecInstruction::Return { result: v0 },
+    ];
+    assert_func_bodies_for_module(&module, [expected]);
+}
+
+#[test]
+fn global_get_const() {
+    let wasm = wat2wasm(
+        r#"
+            (module
+                (global $g0 i32 (i32.const 42))
+                (func (export "func") (result i32)
+                    (global.get $g0)
+                )
+            )
+        "#,
+    );
+    let module = create_module(&wasm[..]);
+    let expected = [ExecInstruction::ReturnImm {
+        result: 42_i32.into(),
+    }];
+    assert_func_bodies_for_module(&module, [expected]);
+}

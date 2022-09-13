@@ -34,6 +34,14 @@ impl TryFrom<wasmparser::ConstExpr<'_>> for InitExpr {
 }
 
 impl InitExpr {
+    /// Evaluates the [`InitExpr`] without context if possible.
+    pub fn eval_plain(&self) -> Option<Value> {
+        match self.op {
+            InitExprOperand::Const(value) => Some(value),
+            InitExprOperand::GlobalGet(_) => None,
+        }
+    }
+
     /// Returns a slice over the operators of the [`InitExpr`].
     pub fn operators(&self) -> &[InitExprOperand] {
         core::slice::from_ref(&self.op)

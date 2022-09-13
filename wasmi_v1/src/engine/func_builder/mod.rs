@@ -47,6 +47,8 @@ use crate::{
         BlockType,
         FuncIdx,
         FuncTypeIdx,
+        GlobalIdx,
+        InitExpr,
         MemoryIdx,
         ModuleResources,
         TableIdx,
@@ -1234,8 +1236,18 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     /// Translate a Wasm `global.get` instruction.
     pub fn translate_global_get(&mut self, global_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let result = builder.providers.push_dynamic();
             let global = Global::from(global_idx);
+            let (global_type, init_expr) = builder.res.get_global(GlobalIdx(global_idx));
+            if global_type.mutability().is_const() {
+                if let Some(init_value) = init_expr.and_then(InitExpr::eval_plain) {
+                    // In this case we can replace the `global.get` call
+                    // directly with its assigned constant value.
+                    builder.providers.push_const(init_value);
+                    return Ok(());
+                }
+            }
+            // Cannot replace `global.get` with a constant value, fallback.
+            let result = builder.providers.push_dynamic();
             builder.push_instr(Instruction::GlobalGet { result, global });
             Ok(())
         })

@@ -19,7 +19,6 @@ use self::{
     export::Export,
     global::Global,
     import::{Import, ImportKind},
-    init_expr::InitExpr,
     parser::parse,
     read::ReadError,
 };
@@ -30,6 +29,7 @@ pub use self::{
     export::{ExportItem, ExportItemKind, FuncIdx, MemoryIdx, ModuleExportsIter, TableIdx},
     global::GlobalIdx,
     import::{FuncTypeIdx, ImportName},
+    init_expr::InitExpr,
     instantiate::{InstancePre, InstantiationError},
     read::Read,
     utils::value_type_from_wasmparser,
