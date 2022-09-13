@@ -43,7 +43,7 @@ The new `wasmi_v1` engine supports a variety of WebAssembly proposals and will s
 | [`saturating-float-to-int`] | ✅ | |
 | [`sign-extension`] | ✅ | |
 | [`multi-value`] | ✅ | |
-| [`reference-types`] | ❌ | No support is planned for `wasmi`. |
+| [`reference-types`] | ⌛ | Planned but not yet implemented. Low priority. |
 | [`bulk-memory`] | ⌛ | Planned but not yet implemented. Low priority. |
 | [`simd`] | ❌ | No support is planned for `wasmi`. |
 | [`tail-calls`] | ⌛ | Not yet part of the Wasm standard but support in `wasmi` is planned. Low priority. |
