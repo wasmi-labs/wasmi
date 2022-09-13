@@ -11,6 +11,7 @@ use criterion::{criterion_group, criterion_main, Bencher, Criterion};
 use std::{slice, time::Duration};
 use wasmi as v1;
 use wasmi::core::Value;
+use wasmi_core::{F32, F64};
 
 const WASM_KERNEL: &str =
     "benches/wasm/wasm_kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
@@ -46,6 +47,7 @@ criterion_group! {
         bench_execute_rev_comp_v1,
         bench_execute_regex_redux_v1,
         bench_execute_count_until_v1,
+        bench_execute_trunc_f2i,
         bench_execute_global_bump,
         bench_execute_fac_recursive_v1,
         bench_execute_fac_opt_v1,
@@ -250,6 +252,24 @@ fn bench_execute_count_until_v1(c: &mut Criterion) {
                 .call(&mut store, &[Value::I32(COUNT_UNTIL)], &mut result)
                 .unwrap();
             assert_eq!(result, [Value::I32(COUNT_UNTIL)]);
+        })
+    });
+}
+
+fn bench_execute_trunc_f2i(c: &mut Criterion) {
+    const ITERATIONS: i32 = 25_000;
+    c.bench_function("execute/trunc_f2i/v1", |b| {
+        let (mut store, instance) = load_instance_from_wat_v1(include_bytes!("wat/trunc_f2i.wat"));
+        let count_until = instance
+            .get_export(&store, "trunc_f2i")
+            .and_then(v1::Extern::into_func)
+            .unwrap();
+        let count_until = count_until.typed::<(i32, F32, F64), (), _>(&store).unwrap();
+
+        b.iter(|| {
+            count_until
+                .call(&mut store, (ITERATIONS, F32::from(42.0), F64::from(69.0)))
+                .unwrap();
         })
     });
 }

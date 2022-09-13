@@ -500,18 +500,17 @@ impl WrapInto<F32> for F64 {
 }
 
 macro_rules! impl_try_truncate_into {
-    (@primitive $from: ident, $into: ident, $to_primitive:path) => {
+    (@primitive $from: ident, $into: ident, $to_primitive:path, $rmin:literal, $rmax:literal) => {
         impl TryTruncateInto<$into, TrapCode> for $from {
             #[inline]
             fn try_truncate_into(self) -> Result<$into, TrapCode> {
-                // Casting from a float to an integer will round the float towards zero
                 if self.is_nan() {
                     return Err(TrapCode::InvalidConversionToInt);
                 }
-                num_rational::BigRational::from_float(self)
-                    .map(|val| val.to_integer())
-                    .and_then(|val| $to_primitive(&val))
-                    .ok_or(TrapCode::IntegerOverflow)
+                if self <= $rmin || self >= $rmax {
+                    return Err(TrapCode::IntegerOverflow);
+                }
+                Ok(self as _)
             }
         }
 
@@ -548,14 +547,14 @@ macro_rules! impl_try_truncate_into {
     };
 }
 
-impl_try_truncate_into!(@primitive f32, i32, num_traits::cast::ToPrimitive::to_i32);
-impl_try_truncate_into!(@primitive f32, i64, num_traits::cast::ToPrimitive::to_i64);
-impl_try_truncate_into!(@primitive f64, i32, num_traits::cast::ToPrimitive::to_i32);
-impl_try_truncate_into!(@primitive f64, i64, num_traits::cast::ToPrimitive::to_i64);
-impl_try_truncate_into!(@primitive f32, u32, num_traits::cast::ToPrimitive::to_u32);
-impl_try_truncate_into!(@primitive f32, u64, num_traits::cast::ToPrimitive::to_u64);
-impl_try_truncate_into!(@primitive f64, u32, num_traits::cast::ToPrimitive::to_u32);
-impl_try_truncate_into!(@primitive f64, u64, num_traits::cast::ToPrimitive::to_u64);
+impl_try_truncate_into!(@primitive f32, i32, num_traits::cast::ToPrimitive::to_i32, -2147483904.0_f32, 2147483648.0_f32);
+impl_try_truncate_into!(@primitive f32, u32, num_traits::cast::ToPrimitive::to_u32,          -1.0_f32, 4294967296.0_f32);
+impl_try_truncate_into!(@primitive f64, i32, num_traits::cast::ToPrimitive::to_i32, -2147483649.0_f64, 2147483648.0_f64);
+impl_try_truncate_into!(@primitive f64, u32, num_traits::cast::ToPrimitive::to_u32,          -1.0_f64, 4294967296.0_f64);
+impl_try_truncate_into!(@primitive f32, i64, num_traits::cast::ToPrimitive::to_i64, -9223373136366403584.0_f32,  9223372036854775808.0_f32);
+impl_try_truncate_into!(@primitive f32, u64, num_traits::cast::ToPrimitive::to_u64,                   -1.0_f32, 18446744073709551616.0_f32);
+impl_try_truncate_into!(@primitive f64, i64, num_traits::cast::ToPrimitive::to_i64, -9223372036854777856.0_f64,  9223372036854775808.0_f64);
+impl_try_truncate_into!(@primitive f64, u64, num_traits::cast::ToPrimitive::to_u64,                   -1.0_f64, 18446744073709551616.0_f64);
 impl_try_truncate_into!(@wrapped F32, f32, i32);
 impl_try_truncate_into!(@wrapped F32, f32, i64);
 impl_try_truncate_into!(@wrapped F64, f64, i32);
