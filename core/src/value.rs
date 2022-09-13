@@ -98,6 +98,12 @@ pub trait WrapInto<T> {
 /// when the input float is NaN.
 pub trait TryTruncateInto<T, E> {
     /// Convert one type to another by rounding to the nearest integer towards zero.
+    ///
+    /// # Errors
+    ///
+    /// - If the input float value is NaN (not a number).
+    /// - If the input float value cannot be represented using the truncated
+    ///   integer type.
     fn try_truncate_into(self) -> Result<T, E>;
 }
 
@@ -200,8 +206,6 @@ pub trait ArithmeticOps<T>: Copy {
     fn sub(self, other: T) -> T;
     /// Multiply two values.
     fn mul(self, other: T) -> T;
-    /// Divide two values.
-    fn div(self, other: T) -> Result<T, TrapCode>;
 }
 
 /// Integer value.
@@ -216,7 +220,17 @@ pub trait Integer<T>: ArithmeticOps<T> {
     fn rotl(self, other: T) -> T;
     /// Get right bit rotation result.
     fn rotr(self, other: T) -> T;
+    /// Divide two values.
+    ///
+    /// # Errors
+    ///
+    /// If `other` is equal to zero.
+    fn div(self, other: T) -> Result<T, TrapCode>;
     /// Get division remainder.
+    ///
+    /// # Errors
+    ///
+    /// If `other` is equal to zero.
     fn rem(self, other: T) -> Result<T, TrapCode>;
 }
 
@@ -240,6 +254,8 @@ pub trait Float<T>: ArithmeticOps<T> {
     fn is_sign_positive(self) -> bool;
     /// Returns `true` if the sign of the number is negative.
     fn is_sign_negative(self) -> bool;
+    /// Returns the division of the two numbers.
+    fn div(self, other: T) -> T;
     /// Returns the minimum of the two numbers.
     fn min(self, other: T) -> T;
     /// Returns the maximum of the two numbers.
@@ -776,16 +792,6 @@ macro_rules! impl_integer_arithmetic_ops {
             fn mul(self, other: $type) -> $type {
                 self.wrapping_mul(other)
             }
-            #[inline]
-            fn div(self, other: $type) -> Result<$type, TrapCode> {
-                if other == 0 {
-                    return Err(TrapCode::DivisionByZero);
-                }
-                match self.overflowing_div(other) {
-                    (result, false) => Ok(result),
-                    (_, true) => Err(TrapCode::IntegerOverflow),
-                }
-            }
         }
     };
 }
@@ -796,23 +802,19 @@ impl_integer_arithmetic_ops!(i64);
 impl_integer_arithmetic_ops!(u64);
 
 macro_rules! impl_float_arithmetic_ops {
-    ($type: ident) => {
-        impl ArithmeticOps<$type> for $type {
+    ($type:ty) => {
+        impl ArithmeticOps<Self> for $type {
             #[inline]
-            fn add(self, other: $type) -> $type {
+            fn add(self, other: Self) -> Self {
                 self + other
             }
             #[inline]
-            fn sub(self, other: $type) -> $type {
+            fn sub(self, other: Self) -> Self {
                 self - other
             }
             #[inline]
-            fn mul(self, other: $type) -> $type {
+            fn mul(self, other: Self) -> Self {
                 self * other
-            }
-            #[inline]
-            fn div(self, other: $type) -> Result<$type, TrapCode> {
-                Ok(self / other)
             }
         }
     };
@@ -824,30 +826,40 @@ impl_float_arithmetic_ops!(F32);
 impl_float_arithmetic_ops!(F64);
 
 macro_rules! impl_integer {
-    ($type: ident) => {
-        impl Integer<$type> for $type {
+    ($type:ty) => {
+        impl Integer<Self> for $type {
             #[inline]
-            fn leading_zeros(self) -> $type {
+            fn leading_zeros(self) -> Self {
                 self.leading_zeros() as $type
             }
             #[inline]
-            fn trailing_zeros(self) -> $type {
+            fn trailing_zeros(self) -> Self {
                 self.trailing_zeros() as $type
             }
             #[inline]
-            fn count_ones(self) -> $type {
+            fn count_ones(self) -> Self {
                 self.count_ones() as $type
             }
             #[inline]
-            fn rotl(self, other: $type) -> $type {
+            fn rotl(self, other: Self) -> Self {
                 self.rotate_left(other as u32)
             }
             #[inline]
-            fn rotr(self, other: $type) -> $type {
+            fn rotr(self, other: Self) -> Self {
                 self.rotate_right(other as u32)
             }
             #[inline]
-            fn rem(self, other: $type) -> Result<$type, TrapCode> {
+            fn div(self, other: $type) -> Result<$type, TrapCode> {
+                if other == 0 {
+                    return Err(TrapCode::DivisionByZero);
+                }
+                match self.overflowing_div(other) {
+                    (result, false) => Ok(result),
+                    (_, true) => Err(TrapCode::IntegerOverflow),
+                }
+            }
+            #[inline]
+            fn rem(self, other: Self) -> Result<Self, TrapCode> {
                 if other == 0 {
                     return Err(TrapCode::DivisionByZero);
                 }
@@ -879,57 +891,60 @@ mod fmath {
 macro_rules! impl_float {
     ($type:ident, $fXX:ident, $iXX:ident) => {
         // In this particular instance we want to directly compare floating point numbers.
-        impl Float<$type> for $type {
+        impl Float<Self> for $type {
             #[inline]
-            fn abs(self) -> $type {
-                fmath::$fXX::abs($fXX::from(self)).into()
+            fn abs(self) -> Self {
+                fmath::$fXX::abs(<$fXX>::from(self)).into()
             }
             #[inline]
-            fn floor(self) -> $type {
-                fmath::$fXX::floor($fXX::from(self)).into()
+            fn floor(self) -> Self {
+                fmath::$fXX::floor(<$fXX>::from(self)).into()
             }
             #[inline]
-            fn ceil(self) -> $type {
-                fmath::$fXX::ceil($fXX::from(self)).into()
+            fn ceil(self) -> Self {
+                fmath::$fXX::ceil(<$fXX>::from(self)).into()
             }
             #[inline]
-            fn trunc(self) -> $type {
-                fmath::$fXX::trunc($fXX::from(self)).into()
+            fn trunc(self) -> Self {
+                fmath::$fXX::trunc(<$fXX>::from(self)).into()
             }
             #[inline]
-            fn round(self) -> $type {
-                fmath::$fXX::round($fXX::from(self)).into()
+            fn round(self) -> Self {
+                fmath::$fXX::round(<$fXX>::from(self)).into()
             }
             #[inline]
-            fn nearest(self) -> $type {
+            fn nearest(self) -> Self {
                 let round = self.round();
-                if fmath::$fXX::fract($fXX::from(self)).abs() != 0.5 {
+                if fmath::$fXX::fract(<$fXX>::from(self)).abs() != 0.5 {
                     return round;
                 }
-
-                use core::ops::Rem;
-                if round.rem(2.0) == 1.0 {
+                let rem = ::core::ops::Rem::rem(round, 2.0);
+                if rem == 1.0 {
                     self.floor()
-                } else if round.rem(2.0) == -1.0 {
+                } else if rem == -1.0 {
                     self.ceil()
                 } else {
                     round
                 }
             }
             #[inline]
-            fn sqrt(self) -> $type {
-                fmath::$fXX::sqrt($fXX::from(self)).into()
+            fn sqrt(self) -> Self {
+                fmath::$fXX::sqrt(<$fXX>::from(self)).into()
             }
             #[inline]
             fn is_sign_positive(self) -> bool {
-                $fXX::is_sign_positive($fXX::from(self)).into()
+                <$fXX>::is_sign_positive(<$fXX>::from(self)).into()
             }
             #[inline]
             fn is_sign_negative(self) -> bool {
-                $fXX::is_sign_negative($fXX::from(self)).into()
+                <$fXX>::is_sign_negative(<$fXX>::from(self)).into()
             }
             #[inline]
-            fn min(self, other: $type) -> $type {
+            fn div(self, other: Self) -> Self {
+                self / other
+            }
+            #[inline]
+            fn min(self, other: Self) -> Self {
                 // The implementation strictly adheres to the mandated behavior for the Wasm specification.
                 // Note: In other contexts this API is also known as: `nan_min`.
                 match (self.is_nan(), other.is_nan()) {
@@ -945,7 +960,7 @@ macro_rules! impl_float {
                 }
             }
             #[inline]
-            fn max(self, other: $type) -> $type {
+            fn max(self, other: Self) -> Self {
                 // The implementation strictly adheres to the mandated behavior for the Wasm specification.
                 // Note: In other contexts this API is also known as: `nan_max`.
                 match (self.is_nan(), other.is_nan()) {
@@ -961,7 +976,7 @@ macro_rules! impl_float {
                 }
             }
             #[inline]
-            fn copysign(self, other: $type) -> $type {
+            fn copysign(self, other: Self) -> Self {
                 use core::mem::size_of;
                 let sign_mask: $iXX = 1 << ((size_of::<$iXX>() << 3) - 1);
                 let self_int: $iXX = self.transmute_into();

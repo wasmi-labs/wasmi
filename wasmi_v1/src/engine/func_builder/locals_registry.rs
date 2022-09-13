@@ -45,9 +45,9 @@ impl LocalGroup {
     pub fn new(value_type: ValueType, min_index: u32, max_index: u32) -> Self {
         assert!(min_index < max_index);
         Self {
-            value_type,
             min_index,
             max_index,
+            value_type,
         }
     }
 

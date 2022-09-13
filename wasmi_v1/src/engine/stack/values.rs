@@ -159,7 +159,7 @@ impl ValueStack {
             .entries
             .get_mut(self.stack_ptr..self.stack_ptr + additional)
             .ok_or(TrapCode::StackOverflow)?;
-        cells.fill(Default::default());
+        cells.fill(UntypedValue::default());
         self.stack_ptr += additional;
         Ok(())
     }

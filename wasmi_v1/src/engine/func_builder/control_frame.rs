@@ -3,12 +3,12 @@ use crate::{engine::LabelIdx, module::BlockType};
 /// A Wasm `block` control flow frame.
 #[derive(Debug, Copy, Clone)]
 pub struct BlockControlFrame {
-    /// Label representing the end of the [`BlockControlFrame`].
-    end_label: LabelIdx,
     /// The type of the [`BlockControlFrame`].
     block_type: BlockType,
     /// The value stack height upon entering the [`BlockControlFrame`].
     stack_height: u32,
+    /// Label representing the end of the [`BlockControlFrame`].
+    end_label: LabelIdx,
 }
 
 impl BlockControlFrame {
@@ -16,8 +16,8 @@ impl BlockControlFrame {
     pub fn new(block_type: BlockType, end_label: LabelIdx, stack_height: u32) -> Self {
         Self {
             block_type,
-            end_label,
             stack_height,
+            end_label,
         }
     }
 
@@ -49,12 +49,12 @@ impl BlockControlFrame {
 /// A Wasm `loop` control flow frame.
 #[derive(Debug, Copy, Clone)]
 pub struct LoopControlFrame {
-    /// Label representing the head of the [`LoopControlFrame`].
-    head_label: LabelIdx,
     /// The type of the [`LoopControlFrame`].
     block_type: BlockType,
     /// The value stack height upon entering the [`LoopControlFrame`].
     stack_height: u32,
+    /// Label representing the head of the [`LoopControlFrame`].
+    head_label: LabelIdx,
 }
 
 impl LoopControlFrame {
@@ -62,8 +62,8 @@ impl LoopControlFrame {
     pub fn new(block_type: BlockType, head_label: LabelIdx, stack_height: u32) -> Self {
         Self {
             block_type,
-            head_label,
             stack_height,
+            head_label,
         }
     }
 
@@ -90,14 +90,14 @@ impl LoopControlFrame {
 /// A Wasm `if` and `else` control flow frames.
 #[derive(Debug, Copy, Clone)]
 pub struct IfControlFrame {
-    /// Label representing the end of the [`IfControlFrame`].
-    end_label: LabelIdx,
-    /// Label representing the optional `else` branch of the [`IfControlFrame`].
-    else_label: LabelIdx,
     /// The type of the [`IfControlFrame`].
     block_type: BlockType,
     /// The value stack height upon entering the [`IfControlFrame`].
     stack_height: u32,
+    /// Label representing the end of the [`IfControlFrame`].
+    end_label: LabelIdx,
+    /// Label representing the optional `else` branch of the [`IfControlFrame`].
+    else_label: LabelIdx,
     /// End of `then` branch is reachable.
     ///
     /// # Note
@@ -126,9 +126,9 @@ impl IfControlFrame {
         );
         Self {
             block_type,
+            stack_height,
             end_label,
             else_label,
-            stack_height,
             end_of_then_is_reachable: None,
         }
     }
@@ -196,7 +196,7 @@ pub enum ControlFrameKind {
 impl UnreachableControlFrame {
     /// Creates a new [`UnreachableControlFrame`] with the given type and kind.
     pub fn new(kind: ControlFrameKind, block_type: BlockType) -> Self {
-        Self { kind, block_type }
+        Self { block_type, kind }
     }
 
     /// Returns the [`ControlFrameKind`] of the [`UnreachableControlFrame`].

@@ -177,8 +177,7 @@ impl<T> HostFuncTrampoline<T> {
     /// Creates a new [`HostFuncTrampoline`] from the given trampoline function.
     pub fn new<F>(trampoline: F) -> Self
     where
-        F: Fn(Caller<T>, FuncParams) -> Result<FuncResults, Trap>,
-        F: Send + Sync + 'static,
+        F: Fn(Caller<T>, FuncParams) -> Result<FuncResults, Trap> + Send + Sync + 'static,
     {
         Self {
             closure: Arc::new(trampoline),
@@ -296,7 +295,7 @@ impl Func {
         // These checks can be avoided using the [`TypedFunc`] API.
         let func_type = self.func_type(&ctx);
         let (expected_inputs, expected_outputs) = func_type.params_results();
-        let actual_inputs = inputs.iter().map(|value| value.value_type());
+        let actual_inputs = inputs.iter().map(Value::value_type);
         if expected_inputs.iter().copied().ne(actual_inputs) {
             return Err(FuncError::MismatchingParameters { func: *self }).map_err(Into::into);
         }
@@ -320,6 +319,11 @@ impl Func {
     /// This performs static type checks given `Params` as parameter types
     /// to [`Func`] and `Results` as result types of [`Func`] so that those
     /// type checks can be avoided when calling the created [`TypedFunc`].
+    ///
+    /// # Errors
+    ///
+    /// If the function signature of `self` does not match `Params` and `Results`
+    /// as parameter types and result types respectively.
     pub fn typed<Params, Results, S>(&self, ctx: S) -> Result<TypedFunc<Params, Results>, Error>
     where
         Params: WasmParams,
