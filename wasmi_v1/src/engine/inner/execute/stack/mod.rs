@@ -41,6 +41,23 @@ pub const DEFAULT_VALUE_STACK_LIMIT: usize = 1024 * DEFAULT_VALUE_STACK_INIT;
 /// Maximum number of levels on the call stack.
 pub const DEFAULT_CALL_STACK_LIMIT: usize = 64 * 1024;
 
+/// An error that may occur when configuring [`StackLimits`].
+#[derive(Debug)]
+pub enum LimitsError {
+    /// The initial value stack height exceeds the maximum value stack height.
+    InitialValueStackExceedsMaximum,
+}
+
+impl Display for LimitsError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LimitsError::InitialValueStackExceedsMaximum => {
+                write!(f, "initial value stack heihgt exceeds maximum stack height")
+            }
+        }
+    }
+}
+
 /// The configured limits of the [`Stack`].
 #[derive(Debug, Copy, Clone)]
 pub struct StackLimits {
@@ -62,6 +79,28 @@ impl Default for StackLimits {
             maximum_len,
             maximum_recursion_depth: DEFAULT_CALL_STACK_LIMIT,
         }
+    }
+}
+
+impl StackLimits {
+    /// Creates a new [`StackLimits`] configuration.
+    ///
+    /// # Errors
+    ///
+    /// If the `initial_value_stack_height` exceeds `maximum_value_stack_height`.
+    pub fn new(
+        initial_len: usize,
+        maximum_len: usize,
+        maximum_recursion_depth: usize,
+    ) -> Result<Self, LimitsError> {
+        if initial_len > maximum_len {
+            return Err(LimitsError::InitialValueStackExceedsMaximum);
+        }
+        Ok(Self {
+            initial_len,
+            maximum_len,
+            maximum_recursion_depth,
+        })
     }
 }
 
