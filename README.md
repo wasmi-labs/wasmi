@@ -102,7 +102,7 @@ Use the following command in order to produce a WebAssembly build:
 cargo build --no-default-features --target wasm32-unknown-unknown
 ```
 
-## Release Builds
+## Production Builds
 
 In order to reap the most performance out of `wasmi` we highly recommended
 to compile the `wasmi` crate using the following Cargo `profile`:
@@ -112,6 +112,13 @@ to compile the `wasmi` crate using the following Cargo `profile`:
 lto = "fat"
 codegen-units = 1
 ```
+
+When compiling for the WebAssembly target we highly recommend to post-optimize
+`wasmi` using [Binaryen]'s `wasm-opt` tool since our experiments displayed a
+80-100% performance improvements when executed under Wasmtime and also
+slightly smaller Wasm binaries.
+
+[Binaryen]: https://github.com/WebAssembly/binaryen
 
 ## Benchmarks
 
