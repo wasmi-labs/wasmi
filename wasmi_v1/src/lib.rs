@@ -70,8 +70,16 @@
 //! ```
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![allow(clippy::len_without_is_empty)]
-#![warn(clippy::cast_lossless)]
+#![warn(
+    clippy::cast_lossless,
+    clippy::missing_errors_doc,
+    clippy::used_underscore_binding,
+    clippy::redundant_closure_for_method_calls,
+    clippy::type_repetition_in_bounds,
+    clippy::inconsistent_struct_constructor,
+    clippy::default_trait_access,
+    clippy::items_after_statements
+)]
 
 #[cfg(not(feature = "std"))]
 #[macro_use]

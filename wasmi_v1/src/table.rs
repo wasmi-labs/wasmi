@@ -235,6 +235,7 @@ impl TableEntity {
 #[repr(transparent)]
 pub struct Table(Stored<TableIdx>);
 
+#[allow(clippy::len_without_is_empty)]
 impl Table {
     /// Creates a new table reference.
     pub(super) fn from_inner(stored: Stored<TableIdx>) -> Self {

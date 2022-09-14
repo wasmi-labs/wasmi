@@ -1,6 +1,6 @@
 [package]
 name = "wasmi_core"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 authors = ["Parity Technologies <admin@parity.io>"]
 license = "MIT/Apache-2.0"
@@ -13,7 +13,6 @@ keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
 [dependencies]
 memory_units = "0.4.0"
 libm = "0.2.1"
-num-rational = { version = "0.4", default-features = false, features = ["num-bigint"] }
 num-traits = { version = "0.2.8", default-features = false }
 downcast-rs = { version = "1.2", default-features = false }
 
@@ -24,8 +23,6 @@ rand = "0.8.2"
 default = ["std"]
 # Use `no-default-features` for a `no_std` build.
 std = [
-    "num-rational/std",
-    "num-rational/num-bigint-std",
     "num-traits/std",
     "downcast-rs/std",
 ]

@@ -237,8 +237,8 @@ impl<'ctx, 'engine, T> DisplayExecInstruction<'ctx, 'engine, T> {
 impl<T> Display for DisplayExecInstruction<'_, '_, T> {
     #[rustfmt::skip]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let res = self.res;
         use Instruction as Instr;
+        let res = self.res;
         match self.instr {
             Instr::Br { target } => {
                 writeln!(

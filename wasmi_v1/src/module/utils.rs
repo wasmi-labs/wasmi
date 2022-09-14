@@ -26,7 +26,7 @@ impl TryFrom<wasmparser::MemoryType> for MemoryType {
         let initial = memory_type.initial.try_into().map_err(into_error)?;
         let maximum = memory_type
             .maximum
-            .map(|value| value.try_into())
+            .map(TryInto::try_into)
             .transpose()
             .map_err(into_error)?;
         Ok(MemoryType::new(initial, maximum))
@@ -54,12 +54,6 @@ impl TryFrom<wasmparser::FuncType> for FuncType {
         fn is_supported_value_type(value_type: &wasmparser::ValType) -> bool {
             value_type_try_from_wasmparser(*value_type).is_ok()
         }
-        if !func_type.params().iter().all(is_supported_value_type)
-            || !func_type.results().iter().all(is_supported_value_type)
-        {
-            // One of more function parameter or result types are not supported by `wasmi`.
-            return Err(ModuleError::unsupported(func_type));
-        }
         /// Returns the [`ValueType`] from the given [`wasmparser::Type`].
         ///
         /// # Panics
@@ -68,6 +62,12 @@ impl TryFrom<wasmparser::FuncType> for FuncType {
         fn extract_value_type(value_type: &wasmparser::ValType) -> ValueType {
             value_type_from_wasmparser(*value_type)
                 .expect("encountered unexpected invalid value type")
+        }
+        if !func_type.params().iter().all(is_supported_value_type)
+            || !func_type.results().iter().all(is_supported_value_type)
+        {
+            // One of more function parameter or result types are not supported by `wasmi`.
+            return Err(ModuleError::unsupported(func_type));
         }
         let params = func_type.params().iter().map(extract_value_type);
         let results = func_type.results().iter().map(extract_value_type);

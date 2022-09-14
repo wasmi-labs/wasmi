@@ -10,7 +10,6 @@ use core::{
     ops::{Shl, Shr},
 };
 use wasmi_core::{
-    ArithmeticOps,
     ExtendInto,
     Float,
     Integer,

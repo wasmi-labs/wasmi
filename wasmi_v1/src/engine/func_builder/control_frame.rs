@@ -4,14 +4,14 @@ use crate::module::BlockType;
 /// A Wasm `block` control flow frame.
 #[derive(Debug, Copy, Clone)]
 pub struct BlockControlFrame {
-    /// The registers holding the results of the [`BlockControlFrame`].
-    results: IrRegisterSlice,
-    /// Label representing the end of the [`BlockControlFrame`].
-    end_label: LabelRef,
     /// The type of the [`BlockControlFrame`].
     block_type: BlockType,
     /// The value stack height upon entering the [`BlockControlFrame`].
     stack_height: u32,
+    /// The registers holding the results of the [`BlockControlFrame`].
+    results: IrRegisterSlice,
+    /// Label representing the end of the [`BlockControlFrame`].
+    end_label: LabelRef,
 }
 
 impl BlockControlFrame {
@@ -23,10 +23,10 @@ impl BlockControlFrame {
         stack_height: u32,
     ) -> Self {
         Self {
-            results,
             block_type,
-            end_label,
             stack_height,
+            results,
+            end_label,
         }
     }
 
@@ -76,16 +76,16 @@ impl BlockControlFrame {
 /// A Wasm `loop` control flow frame.
 #[derive(Debug, Copy, Clone)]
 pub struct LoopControlFrame {
+    /// The type of the [`LoopControlFrame`].
+    block_type: BlockType,
+    /// The value stack height upon entering the [`LoopControlFrame`].
+    stack_height: u32,
     /// The registers holding the results of the [`LoopControlFrame`].
     branch_results: IrRegisterSlice,
     /// The registers holding the results of the [`LoopControlFrame`].
     end_results: IrRegisterSlice,
     /// Label representing the head of the [`LoopControlFrame`].
     head_label: LabelRef,
-    /// The type of the [`LoopControlFrame`].
-    block_type: BlockType,
-    /// The value stack height upon entering the [`LoopControlFrame`].
-    stack_height: u32,
 }
 
 impl LoopControlFrame {
@@ -98,11 +98,11 @@ impl LoopControlFrame {
         stack_height: u32,
     ) -> Self {
         Self {
+            block_type,
+            stack_height,
             branch_results,
             end_results,
-            block_type,
             head_label,
-            stack_height,
         }
     }
 
@@ -147,14 +147,14 @@ impl LoopControlFrame {
 /// A Wasm `if` and `else` control flow frames.
 #[derive(Debug, Copy, Clone)]
 pub struct IfControlFrame {
-    /// The registers holding the results of the [`IfControlFrame`].
-    results: IrRegisterSlice,
-    /// Label representing the end of the [`IfControlFrame`].
-    end_label: LabelRef,
     /// The type of the [`IfControlFrame`].
     block_type: BlockType,
     /// The provider stack height upon entering the [`IfControlFrame`].
     stack_height: u32,
+    /// The registers holding the results of the [`IfControlFrame`].
+    results: IrRegisterSlice,
+    /// Label representing the end of the [`IfControlFrame`].
+    end_label: LabelRef,
     /// The reachability of the `if` and its `then` and `else` blocks.
     pub reachability: IfReachability,
 }
@@ -274,10 +274,10 @@ impl IfControlFrame {
             );
         }
         Self {
-            results,
             block_type,
-            end_label,
             stack_height,
+            results,
+            end_label,
             reachability,
         }
     }
@@ -397,7 +397,7 @@ pub enum ControlFrameKind {
 impl UnreachableControlFrame {
     /// Creates a new [`UnreachableControlFrame`] with the given type and kind.
     pub fn new(kind: ControlFrameKind, block_type: BlockType) -> Self {
-        Self { kind, block_type }
+        Self { block_type, kind }
     }
 
     /// Returns the [`ControlFrameKind`] of the [`UnreachableControlFrame`].

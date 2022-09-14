@@ -975,6 +975,12 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
     ) -> Result<(), TranslationError> {
         self.update_allow_set_local_override(false);
         self.translate_if_reachable(|builder| {
+            fn make_branch(builder: &mut FunctionBuilder, depth: RelativeDepth) -> IrInstruction {
+                builder
+                    .branching_target(depth.into_u32())
+                    .unconditional_instr()
+            }
+
             let default = RelativeDepth::from_u32(table.default());
             let targets = table
                 .targets()
@@ -987,12 +993,6 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
                     })
                 })
                 .map(RelativeDepth::from_u32);
-
-            fn make_branch(builder: &mut FunctionBuilder, depth: RelativeDepth) -> IrInstruction {
-                builder
-                    .branching_target(depth.into_u32())
-                    .unconditional_instr()
-            }
 
             let case = builder.providers.pop();
             match case {
@@ -2605,7 +2605,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
 
     /// Translate a Wasm `f32.div` instruction.
     pub fn translate_f32_div(&mut self) -> Result<(), TranslationError> {
-        self.translate_fallible_binary_operation(
+        self.translate_binary_operation(
             make_op!(F32Div),
             make_op!(F32DivImm),
             UntypedValue::f32_div,
@@ -2724,7 +2724,7 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
 
     /// Translate a Wasm `f64.div` instruction.
     pub fn translate_f64_div(&mut self) -> Result<(), TranslationError> {
-        self.translate_fallible_binary_operation(
+        self.translate_binary_operation(
             make_op!(F64Div),
             make_op!(F64DivImm),
             UntypedValue::f64_div,

@@ -192,6 +192,10 @@ impl Engine {
     /// This functionality is intended for debugging purposes.
     ///
     /// [`Display`]: [`core::fmt::Display`]
+    ///
+    /// # Errors
+    ///
+    /// If `f` fails to write any parts of `func`.
     pub fn write_func(
         &self,
         f: &mut dyn fmt::Write,

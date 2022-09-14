@@ -561,10 +561,10 @@ impl<'engine, 'func, 'ctx, 'cache, T> Executor<'engine, 'func, 'ctx, 'cache, T> 
                 Instr::F32Mul { result, lhs, rhs } => self.exec_f32_mul(result, lhs, rhs),
                 Instr::F32MulImm { result, lhs, rhs } => self.exec_f32_mul_imm(result, lhs, rhs),
                 Instr::F32Div { result, lhs, rhs } => {
-                    self.exec_f32_div(result, lhs, rhs)?;
+                    self.exec_f32_div(result, lhs, rhs)
                 }
                 Instr::F32DivImm { result, lhs, rhs } => {
-                    self.exec_f32_div_imm(result, lhs, rhs)?;
+                    self.exec_f32_div_imm(result, lhs, rhs)
                 }
                 Instr::F32Min { result, lhs, rhs } => self.exec_f32_min(result, lhs, rhs),
                 Instr::F32MinImm { result, lhs, rhs } => self.exec_f32_min_imm(result, lhs, rhs),
@@ -588,10 +588,10 @@ impl<'engine, 'func, 'ctx, 'cache, T> Executor<'engine, 'func, 'ctx, 'cache, T> 
                 Instr::F64Mul { result, lhs, rhs } => self.exec_f64_mul(result, lhs, rhs),
                 Instr::F64MulImm { result, lhs, rhs } => self.exec_f64_mul_imm(result, lhs, rhs),
                 Instr::F64Div { result, lhs, rhs } => {
-                    self.exec_f64_div(result, lhs, rhs)?;
+                    self.exec_f64_div(result, lhs, rhs)
                 }
                 Instr::F64DivImm { result, lhs, rhs } => {
-                    self.exec_f64_div_imm(result, lhs, rhs)?;
+                    self.exec_f64_div_imm(result, lhs, rhs)
                 }
                 Instr::F64Min { result, lhs, rhs } => self.exec_f64_min(result, lhs, rhs),
                 Instr::F64MinImm { result, lhs, rhs } => self.exec_f64_min_imm(result, lhs, rhs),
@@ -3132,8 +3132,8 @@ impl<'engine, 'func2, 'ctx, 'cache, T> Executor<'engine, 'func2, 'ctx, 'cache, T
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
         rhs: <ExecuteTypes as InstructionTypes>::Register,
-    ) -> Result<(), Trap> {
-        self.exec_fallible_binary_reg_op(result, lhs, rhs, UntypedValue::f32_div)
+    ) {
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::f32_div)
     }
 
     fn exec_f32_div_imm(
@@ -3141,8 +3141,8 @@ impl<'engine, 'func2, 'ctx, 'cache, T> Executor<'engine, 'func2, 'ctx, 'cache, T
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
         rhs: <ExecuteTypes as InstructionTypes>::Immediate,
-    ) -> Result<(), Trap> {
-        self.exec_fallible_binary_imm_op(result, lhs, rhs, UntypedValue::f32_div)
+    ) {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::f32_div)
     }
 
     fn exec_f32_min(
@@ -3314,8 +3314,8 @@ impl<'engine, 'func2, 'ctx, 'cache, T> Executor<'engine, 'func2, 'ctx, 'cache, T
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
         rhs: <ExecuteTypes as InstructionTypes>::Register,
-    ) -> Result<(), Trap> {
-        self.exec_fallible_binary_reg_op(result, lhs, rhs, UntypedValue::f64_div)
+    ) {
+        self.exec_binary_reg_op(result, lhs, rhs, UntypedValue::f64_div)
     }
 
     fn exec_f64_div_imm(
@@ -3323,8 +3323,8 @@ impl<'engine, 'func2, 'ctx, 'cache, T> Executor<'engine, 'func2, 'ctx, 'cache, T
         result: <ExecuteTypes as InstructionTypes>::Register,
         lhs: <ExecuteTypes as InstructionTypes>::Register,
         rhs: <ExecuteTypes as InstructionTypes>::Immediate,
-    ) -> Result<(), Trap> {
-        self.exec_fallible_binary_imm_op(result, lhs, rhs, UntypedValue::f64_div)
+    ) {
+        self.exec_binary_imm_op(result, lhs, rhs, UntypedValue::f64_div)
     }
 
     fn exec_f64_min(

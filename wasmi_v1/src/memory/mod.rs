@@ -260,6 +260,10 @@ impl Memory {
     }
 
     /// Creates a new linear memory to the store.
+    ///
+    /// # Errors
+    ///
+    /// If more than [`u32::MAX`] much linear memory is allocated.
     pub fn new(mut ctx: impl AsContextMut, memory_type: MemoryType) -> Result<Self, MemoryError> {
         let entity = MemoryEntity::new(memory_type)?;
         let memory = ctx.as_context_mut().store.alloc_memory(entity);

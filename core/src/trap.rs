@@ -171,7 +171,7 @@ impl Display for Trap {
 #[cfg(feature = "std")]
 impl StdError for Trap {
     fn description(&self) -> &str {
-        self.as_code().map(|code| code.trap_message()).unwrap_or("")
+        self.as_code().map_or("", |code| code.trap_message())
     }
 }
 

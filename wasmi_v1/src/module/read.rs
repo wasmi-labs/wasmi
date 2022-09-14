@@ -37,6 +37,11 @@ pub trait Read {
     /// Provides the same guarantees to the caller as [`std::io::Read::read`][io_read_read].
     ///
     /// [io_read_read]: https://doc.rust-lang.org/std/io/trait.Read.html#tymethod.read
+    ///
+    /// # Errors
+    ///
+    /// - If `self` stream is already at its end.
+    /// - For any unknown error returned by the generic [`Read`] implementer.
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, ReadError>;
 }
 
