@@ -86,6 +86,8 @@ pub struct FunctionBuilderAllocations {
     inst_builder: InstructionsBuilder,
     /// Stores and resolves local variable types.
     locals: LocalsRegistry,
+    /// Buffer for translating `br_table`.
+    br_table_branches: Vec<Instruction>,
 }
 
 impl<'alloc, 'parser> Deref for FuncBuilder<'alloc, 'parser> {
@@ -116,6 +118,7 @@ impl FunctionBuilderAllocations {
         self.value_stack.reset();
         self.inst_builder.reset();
         self.locals.reset();
+        self.br_table_branches.clear();
     }
 }
 
@@ -657,19 +660,20 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
             let case = builder.value_stack.pop1();
             debug_assert_eq!(case, ValueType::I32);
 
-            let branches = targets
-                .into_iter()
-                .enumerate()
-                .map(|(n, depth)| compute_inst(builder, n, depth))
-                .collect::<Result<Vec<_>, _>>()?;
+            builder.br_table_branches.clear();
+            for (n, depth) in targets.into_iter().enumerate() {
+                let relative_depth = compute_inst(builder, n, depth)?;
+                builder.br_table_branches.push(relative_depth);
+            }
+
             // We include the default target in `len_branches`.
-            let len_branches = branches.len();
+            let len_branches = builder.br_table_branches.len();
             let default_branch = compute_inst(builder, len_branches, default)?;
             builder.inst_builder.push_inst(Instruction::BrTable {
                 len_targets: len_branches + 1,
             });
-            for branch in branches {
-                builder.inst_builder.push_inst(branch);
+            for branch in builder.allocations.br_table_branches.drain(..) {
+                builder.allocations.inst_builder.push_inst(branch);
             }
             builder.inst_builder.push_inst(default_branch);
             builder.reachable = false;
