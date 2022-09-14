@@ -560,12 +560,8 @@ impl<'engine, 'func, 'ctx, 'cache, T> Executor<'engine, 'func, 'ctx, 'cache, T> 
                 Instr::F32SubImm { result, lhs, rhs } => self.exec_f32_sub_imm(result, lhs, rhs),
                 Instr::F32Mul { result, lhs, rhs } => self.exec_f32_mul(result, lhs, rhs),
                 Instr::F32MulImm { result, lhs, rhs } => self.exec_f32_mul_imm(result, lhs, rhs),
-                Instr::F32Div { result, lhs, rhs } => {
-                    self.exec_f32_div(result, lhs, rhs)
-                }
-                Instr::F32DivImm { result, lhs, rhs } => {
-                    self.exec_f32_div_imm(result, lhs, rhs)
-                }
+                Instr::F32Div { result, lhs, rhs } => self.exec_f32_div(result, lhs, rhs),
+                Instr::F32DivImm { result, lhs, rhs } => self.exec_f32_div_imm(result, lhs, rhs),
                 Instr::F32Min { result, lhs, rhs } => self.exec_f32_min(result, lhs, rhs),
                 Instr::F32MinImm { result, lhs, rhs } => self.exec_f32_min_imm(result, lhs, rhs),
                 Instr::F32Max { result, lhs, rhs } => self.exec_f32_max(result, lhs, rhs),
@@ -587,12 +583,8 @@ impl<'engine, 'func, 'ctx, 'cache, T> Executor<'engine, 'func, 'ctx, 'cache, T> 
                 Instr::F64SubImm { result, lhs, rhs } => self.exec_f64_sub_imm(result, lhs, rhs),
                 Instr::F64Mul { result, lhs, rhs } => self.exec_f64_mul(result, lhs, rhs),
                 Instr::F64MulImm { result, lhs, rhs } => self.exec_f64_mul_imm(result, lhs, rhs),
-                Instr::F64Div { result, lhs, rhs } => {
-                    self.exec_f64_div(result, lhs, rhs)
-                }
-                Instr::F64DivImm { result, lhs, rhs } => {
-                    self.exec_f64_div_imm(result, lhs, rhs)
-                }
+                Instr::F64Div { result, lhs, rhs } => self.exec_f64_div(result, lhs, rhs),
+                Instr::F64DivImm { result, lhs, rhs } => self.exec_f64_div_imm(result, lhs, rhs),
                 Instr::F64Min { result, lhs, rhs } => self.exec_f64_min(result, lhs, rhs),
                 Instr::F64MinImm { result, lhs, rhs } => self.exec_f64_min_imm(result, lhs, rhs),
                 Instr::F64Max { result, lhs, rhs } => self.exec_f64_max(result, lhs, rhs),
