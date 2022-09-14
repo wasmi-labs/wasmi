@@ -211,6 +211,8 @@ pub struct FunctionBuilderAllocations {
     ///
     /// Allows to incrementally construct the instruction of a function.
     inst_builder: InstructionsBuilder,
+    /// Buffer for translating `br_table`.
+    br_table_branches: Vec<IrInstruction>,
 }
 
 impl FunctionBuilderAllocations {
@@ -220,6 +222,7 @@ impl FunctionBuilderAllocations {
         self.providers.reset();
         self.provider_slices.reset();
         self.inst_builder.reset();
+        self.br_table_branches.clear();
     }
 }
 
@@ -997,18 +1000,19 @@ impl<'alloc, 'parser> FunctionBuilder<'alloc, 'parser> {
             let case = builder.providers.pop();
             match case {
                 IrProvider::Register(case) => {
-                    let branches = targets
-                        .into_iter()
-                        .map(|depth| make_branch(builder, depth))
-                        .collect::<Vec<_>>();
+                    builder.br_table_branches.clear();
+                    for depth in targets {
+                        let branch = make_branch(builder, depth);
+                        builder.br_table_branches.push(branch);
+                    }
                     // We do not include the default target in `len_branches`.
-                    let len_non_default_targets = branches.len();
+                    let len_non_default_targets = builder.br_table_branches.len();
                     let default_branch = make_branch(builder, default);
                     // Note: We include the default branch in this amount.
                     let len_targets = len_non_default_targets + 1;
                     builder.push_instr(Instruction::BrTable { case, len_targets });
-                    for branch in branches {
-                        builder.push_instr(branch);
+                    for branch in builder.allocations.br_table_branches.drain(..) {
+                        builder.allocations.inst_builder.push_inst(branch);
                     }
                     builder.push_instr(default_branch);
                 }
