@@ -56,5 +56,6 @@ benchmark:
     - cargo bench --bench benches -- --noplot --baseline master | tee bench-report-pr.txt
     - bash ./scripts/ci/benchmarks-report.sh bench-report-master.txt bench-report-pr.txt
     - pwd
+    - mkdir -p artifacts
     - cp bench-report-* ./artifacts/
     - cp target/criterion/output_* ./artifacts/
