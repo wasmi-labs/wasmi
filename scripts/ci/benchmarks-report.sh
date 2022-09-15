@@ -10,22 +10,52 @@ echo $CI_COMMIT_BRANCH
 RAW_REPORT=$1
 PR_COMMENTS_URL="https://api.github.com/repos/paritytech/wasmi/issues/${CI_COMMIT_BRANCH}/comments"
 
-sed -e '1,3d' \
-    -e '/^B.*:.*$/d' \
-    -e 's/^B[a-z]\+\s/\*\*/g' \
-    -e 's/^\*\*.*$/&\*\*/g' \
-    -e 's/^.*time/time/g' \
-    -e 's/^[ \t]*//' \
-    -e 's/^$/||/g' \
-    -e 's/Performance has improved./:green_circle: **Performance has improved.**/g' \
-    -e 's/Performance has regressed./:red_circle: **Performance has regressed.**/g' \
-    -e 's/Change within noise threshold./:white_circle: **Change within noise threshold.**/g' \
-    -e 's/No change in performance detected./:white_circle: **No change in performance detected.**/g' \
-    -e 's/$/\\n/g' $1 \
-    | tr -d '\n' \
-    | tee formatted-report.txt
+# master report to json
+sed -e 's/^Found.*//g' \
+    -e 's/^\s\+[[:digit:]].*//g' \
+    -e 's/\//_/g' \
+    -e 's/^[a-z0-9_]\+/"&": {/g' \
+    -e 's/time:\s\+\[.\{10\}/"time": "/g' \
+    -e 's/\s[[:digit:]]\+\.[[:digit:]]\+\s..\]/"},/g' \
+    -e '1s/^/{\n/g' \
+    -e '/^$/d' \
+    -e 's/  */ /g' -e 's/^ *\(.*\) *$/\1/' $1 \
+    | sed -z 's/.$//' \
+    | sed -e '$s/.$/}/g' \
+    | tee target/criterion/output_master.json
 
-RESULT=$(cat formatted-report.txt)
+# PR report to json
+sed -e 's/^Found.*//g' \
+    -e 's/^\s\+[[:digit:]].*//g' \
+    -e 's/\//_/g' \
+    -e 's/^[a-z0-9_]\+/"&": {/g' \
+    -e 's/time:\s\+\[.\{10\}/"time": "/g' \
+    -e 's/\s[[:digit:]]\+\.[[:digit:]]\+\s..\]/",/g' \
+    -e 's/change:\s.\{10\}/"change":"/g' \
+    -e 's/\s[-+].*$/",/g' \
+    -e 's/\(No\|Ch\).*$/"perf_change":":white_circle:"},/' \
+    -e 's/Performance has regressed./"perf_change":":red_circle:"},/' \
+    -e 's/Performance has improved./"perf_change":":green_circle:"},/' \
+    -e '1s/^/{\n/g' \
+    -e '/^$/d' \
+    -e 's/  */ /g' -e 's/^ *\(.*\) *$/\1/' $2 \
+    | sed -z 's/.$//' \
+    | sed -e '$s/.$/}/g' \
+    | tee target/criterion/output_pr.json
+
+cd target/criterion
+echo
+
+for d in */; do
+    # echo "${d::-1}"
+    echo -n "| ${d::-1} "\
+         "| $(cat output_master.json | jq .${d::-1}.time | tr -d '"') "\
+         "| $(cat output_pr.json | jq .${d::-1}.time | tr -d '"') "\
+         "| $(cat output_pr.json | jq .${d::-1}.perf_change | tr -d '"') "\
+         "$(cat output_pr.json | jq .${d::-1}.change | tr -d '"') |\n" >> bench-final-report.txt
+done
+
+RESULT=$(cat bench-final-report.txt)
 
 # If there is already a comment by the user `paritytech-cicd-pr` in the PR which triggered
 # this run, then we can just edit this comment (using `PATCH` instead of `POST`).
@@ -48,4 +78,4 @@ curl -X ${REQUEST_TYPE} ${PR_COMMENTS_URL} -v \
     -H "Cookie: logged_in=no" \
     -H "Authorization: token ${GITHUB_PR_TOKEN}" \
     -H "Content-Type: application/json; charset=utf-8" \
-    -d $"{ \"body\": \"| Benchmarks results |\n|---|\n ${RESULT} \" }"
+    -d $"{ \"body\": \"|BENCHMARK|MASTER|PR|Diff|\n|---|---|---|---|\n ${RESULT} \" }"

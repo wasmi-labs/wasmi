@@ -44,8 +44,8 @@ benchmark:
     - git submodule update --init --recursive
     - git checkout master
     # on master
-    - cargo bench --bench benches -- --noplot --save-baseline master
+    - cargo bench --bench benches -- --noplot --save-baseline master | tee bench-report-master.txt
     # on PR
     - git checkout $CI_COMMIT_REF_NAME
-    - cargo bench --bench benches -- --noplot --baseline master | tee benchmarks-report.txt
-    - bash ./scripts/ci/benchmarks-report.sh benchmarks-report.txt
+    - cargo bench --bench benches -- --noplot --baseline master | tee bench-report-pr.txt
+    - bash ./scripts/ci/benchmarks-report.sh bench-report-master.txt bench-report-pr.txt
