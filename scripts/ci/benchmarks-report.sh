@@ -17,10 +17,10 @@ sed -e 's/^Found.*//g' \
     -e 's/\//_/g' \
     -e 's/^[a-z0-9_]\+/"&": {/g' \
     -e 's/time:\s\+\[.\{10\}/"time": "/g' \
-    -e 's/.\{10\}\]/"},/g' \
+    -e 's/.\{9\}\]/"},/g' \
     -e '1s/^/{\n/g' \
     -e '/^$/d' \
-    -e 's/  */ /g'
+    -e 's/  */ /g' \
     -e 's/^ *\(.*\) *$/\1/' $1 \
     | sed -z 's/.$//' \
     | sed -e '$s/.$/}/g' \
@@ -45,7 +45,7 @@ sed -e 's/^Found.*//g' \
     -e 's/Performance has improved./"perf_change":":green_circle:"},/' \
     -e '1s/^/{\n/g' \
     -e '/^$/d' \
-    -e 's/  */ /g'
+    -e 's/  */ /g' \
     -e 's/^ *\(.*\) *$/\1/' $2 \
     | sed -z 's/.$//' \
     | sed -e '$s/.$/}/g' \
