@@ -17,10 +17,11 @@ sed -e 's/^Found.*//g' \
     -e 's/\//_/g' \
     -e 's/^[a-z0-9_]\+/"&": {/g' \
     -e 's/time:\s\+\[.\{10\}/"time": "/g' \
-    -e 's/.\{5\}\]$/"},/g' \
+    -e 's/.\{9\}\]$/"},/g' \
     -e '1s/^/{\n/g' \
     -e '/^$/d' \
-    -e 's/  */ /g' -e 's/^ *\(.*\) *$/\1/' $1 \
+    -e 's/  */ /g'
+    -e 's/^ *\(.*\) *$/\1/' $1 \
     | sed -z 's/.$//' \
     | sed -e '$s/.$/}/g' \
     | tee target/criterion/output_master.json
@@ -36,7 +37,7 @@ sed -e 's/^Found.*//g' \
     -e 's/\//_/g' \
     -e 's/^[a-z0-9_]\+/"&": {/g' \
     -e 's/time:\s\+\[.\{10\}/"time": "/g' \
-    -e 's/.\{10\}\]$/",/g' \
+    -e 's/.\{9\}\]$/",/g' \
     -e 's/change:\s.\{10\}/"change":"/g' \
     -e 's/\s[-+].*$/",/g' \
     -e 's/\(No\|Ch\).*$/"perf_change":":white_circle:"},/' \
@@ -44,7 +45,8 @@ sed -e 's/^Found.*//g' \
     -e 's/Performance has improved./"perf_change":":green_circle:"},/' \
     -e '1s/^/{\n/g' \
     -e '/^$/d' \
-    -e 's/  */ /g' -e 's/^ *\(.*\) *$/\1/' $2 \
+    -e 's/  */ /g'
+    -e 's/^ *\(.*\) *$/\1/' $2 \
     | sed -z 's/.$//' \
     | sed -e '$s/.$/}/g' \
     | tee target/criterion/output_pr.json
