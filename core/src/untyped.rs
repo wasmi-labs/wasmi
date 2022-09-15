@@ -217,41 +217,81 @@ impl UntypedValue {
     }
 
     /// Execute `i32.div_s` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `rhs` is equal to zero.
+    /// - If the operation result overflows.
     pub fn i32_div_s(self, rhs: Self) -> Result<Self, TrapCode> {
-        self.try_execute_binary(rhs, <i32 as ArithmeticOps<i32>>::div)
+        self.try_execute_binary(rhs, <i32 as Integer<i32>>::div)
     }
 
     /// Execute `i64.div_s` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `rhs` is equal to zero.
+    /// - If the operation result overflows.
     pub fn i64_div_s(self, rhs: Self) -> Result<Self, TrapCode> {
-        self.try_execute_binary(rhs, <i64 as ArithmeticOps<i64>>::div)
+        self.try_execute_binary(rhs, <i64 as Integer<i64>>::div)
     }
 
     /// Execute `i32.div_u` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `rhs` is equal to zero.
+    /// - If the operation result overflows.
     pub fn i32_div_u(self, rhs: Self) -> Result<Self, TrapCode> {
-        self.try_execute_binary(rhs, <u32 as ArithmeticOps<u32>>::div)
+        self.try_execute_binary(rhs, <u32 as Integer<u32>>::div)
     }
 
     /// Execute `i64.div_u` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `rhs` is equal to zero.
+    /// - If the operation result overflows.
     pub fn i64_div_u(self, rhs: Self) -> Result<Self, TrapCode> {
-        self.try_execute_binary(rhs, <u64 as ArithmeticOps<u64>>::div)
+        self.try_execute_binary(rhs, <u64 as Integer<u64>>::div)
     }
 
     /// Execute `i32.rem_s` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `rhs` is equal to zero.
+    /// - If the operation result overflows.
     pub fn i32_rem_s(self, rhs: Self) -> Result<Self, TrapCode> {
         self.try_execute_binary(rhs, <i32 as Integer<i32>>::rem)
     }
 
     /// Execute `i64.rem_s` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `rhs` is equal to zero.
+    /// - If the operation result overflows.
     pub fn i64_rem_s(self, rhs: Self) -> Result<Self, TrapCode> {
         self.try_execute_binary(rhs, <i64 as Integer<i64>>::rem)
     }
 
     /// Execute `i32.rem_u` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `rhs` is equal to zero.
+    /// - If the operation result overflows.
     pub fn i32_rem_u(self, rhs: Self) -> Result<Self, TrapCode> {
         self.try_execute_binary(rhs, <u32 as Integer<u32>>::rem)
     }
 
     /// Execute `i64.rem_u` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `rhs` is equal to zero.
+    /// - If the operation result overflows.
     pub fn i64_rem_u(self, rhs: Self) -> Result<Self, TrapCode> {
         self.try_execute_binary(rhs, <u64 as Integer<u64>>::rem)
     }
@@ -652,13 +692,13 @@ impl UntypedValue {
     }
 
     /// Execute `f32.div` Wasm operation.
-    pub fn f32_div(self, rhs: Self) -> Result<Self, TrapCode> {
-        self.try_execute_binary(rhs, <F32 as ArithmeticOps<F32>>::div)
+    pub fn f32_div(self, rhs: Self) -> Self {
+        self.execute_binary(rhs, <F32 as Float<F32>>::div)
     }
 
     /// Execute `f64.div` Wasm operation.
-    pub fn f64_div(self, rhs: Self) -> Result<Self, TrapCode> {
-        self.try_execute_binary(rhs, <F64 as ArithmeticOps<F64>>::div)
+    pub fn f64_div(self, rhs: Self) -> Self {
+        self.execute_binary(rhs, <F64 as Float<F64>>::div)
     }
 
     /// Execute `f64.min` Wasm operation.
@@ -682,21 +722,65 @@ impl UntypedValue {
     }
 
     /// Execute `i32.trunc_f32_s` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `self` is NaN (not a number).
+    /// - If `self` is positive or negative infinity.
+    /// - If the integer value of `self` is out of bounds of the target type.
+    ///
+    /// Read more about the failure cases in the [WebAssembly specification].
+    ///
+    /// [WebAssembly specification]:
+    /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
     pub fn i32_trunc_f32_s(self) -> Result<Self, TrapCode> {
         self.try_execute_unary(<F32 as TryTruncateInto<i32, TrapCode>>::try_truncate_into)
     }
 
     /// Execute `i32.trunc_f32_u` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `self` is NaN (not a number).
+    /// - If `self` is positive or negative infinity.
+    /// - If the integer value of `self` is out of bounds of the target type.
+    ///
+    /// Read more about the failure cases in the [WebAssembly specification].
+    ///
+    /// [WebAssembly specification]:
+    /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
     pub fn i32_trunc_f32_u(self) -> Result<Self, TrapCode> {
         self.try_execute_unary(<F32 as TryTruncateInto<u32, TrapCode>>::try_truncate_into)
     }
 
     /// Execute `i32.trunc_f64_s` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `self` is NaN (not a number).
+    /// - If `self` is positive or negative infinity.
+    /// - If the integer value of `self` is out of bounds of the target type.
+    ///
+    /// Read more about the failure cases in the [WebAssembly specification].
+    ///
+    /// [WebAssembly specification]:
+    /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
     pub fn i32_trunc_f64_s(self) -> Result<Self, TrapCode> {
         self.try_execute_unary(<F64 as TryTruncateInto<i32, TrapCode>>::try_truncate_into)
     }
 
     /// Execute `i32.trunc_f64_u` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `self` is NaN (not a number).
+    /// - If `self` is positive or negative infinity.
+    /// - If the integer value of `self` is out of bounds of the target type.
+    ///
+    /// Read more about the failure cases in the [WebAssembly specification].
+    ///
+    /// [WebAssembly specification]:
+    /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
     pub fn i32_trunc_f64_u(self) -> Result<Self, TrapCode> {
         self.try_execute_unary(<F64 as TryTruncateInto<u32, TrapCode>>::try_truncate_into)
     }
@@ -712,21 +796,65 @@ impl UntypedValue {
     }
 
     /// Execute `i64.trunc_f32_s` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `self` is NaN (not a number).
+    /// - If `self` is positive or negative infinity.
+    /// - If the integer value of `self` is out of bounds of the target type.
+    ///
+    /// Read more about the failure cases in the [WebAssembly specification].
+    ///
+    /// [WebAssembly specification]:
+    /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
     pub fn i64_trunc_f32_s(self) -> Result<Self, TrapCode> {
         self.try_execute_unary(<F32 as TryTruncateInto<i64, TrapCode>>::try_truncate_into)
     }
 
     /// Execute `i64.trunc_f32_u` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `self` is NaN (not a number).
+    /// - If `self` is positive or negative infinity.
+    /// - If the integer value of `self` is out of bounds of the target type.
+    ///
+    /// Read more about the failure cases in the [WebAssembly specification].
+    ///
+    /// [WebAssembly specification]:
+    /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
     pub fn i64_trunc_f32_u(self) -> Result<Self, TrapCode> {
         self.try_execute_unary(<F32 as TryTruncateInto<u64, TrapCode>>::try_truncate_into)
     }
 
     /// Execute `i64.trunc_f64_s` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `self` is NaN (not a number).
+    /// - If `self` is positive or negative infinity.
+    /// - If the integer value of `self` is out of bounds of the target type.
+    ///
+    /// Read more about the failure cases in the [WebAssembly specification].
+    ///
+    /// [WebAssembly specification]:
+    /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
     pub fn i64_trunc_f64_s(self) -> Result<Self, TrapCode> {
         self.try_execute_unary(<F64 as TryTruncateInto<i64, TrapCode>>::try_truncate_into)
     }
 
     /// Execute `i64.trunc_f64_u` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `self` is NaN (not a number).
+    /// - If `self` is positive or negative infinity.
+    /// - If the integer value of `self` is out of bounds of the target type.
+    ///
+    /// Read more about the failure cases in the [WebAssembly specification].
+    ///
+    /// [WebAssembly specification]:
+    /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
     pub fn i64_trunc_f64_u(self) -> Result<Self, TrapCode> {
         self.try_execute_unary(<F64 as TryTruncateInto<u64, TrapCode>>::try_truncate_into)
     }

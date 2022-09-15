@@ -239,7 +239,7 @@ pub struct Linker<T> {
     /// Helps to avoid heap memory allocations at the cost of a small
     /// memory overhead.
     externals: Vec<Extern>,
-    _marker: PhantomData<fn() -> T>,
+    marker: PhantomData<fn() -> T>,
 }
 
 impl<T> Debug for Linker<T> {
@@ -257,7 +257,7 @@ impl<T> Clone for Linker<T> {
             strings: self.strings.clone(),
             definitions: self.definitions.clone(),
             externals: Vec::new(),
-            _marker: self._marker,
+            marker: self.marker,
         }
     }
 }
@@ -275,11 +275,15 @@ impl<T> Linker<T> {
             strings: StringInterner::default(),
             definitions: BTreeMap::default(),
             externals: Vec::new(),
-            _marker: PhantomData,
+            marker: PhantomData,
         }
     }
 
     /// Define a new item in this [`Linker`].
+    ///
+    /// # Errors
+    ///
+    /// If there already is a definition under the same name for this [`Linker`].
     pub fn define(
         &mut self,
         module: &str,
@@ -350,6 +354,11 @@ impl<T> Linker<T> {
     }
 
     /// Instantiates the given [`Module`] using the definitions in the [`Linker`].
+    ///
+    /// # Errors
+    ///
+    /// - If the linker does not define imports of the instantiated [`Module`].
+    /// - If any imported item does not satisfy its type requirements.
     pub fn instantiate<'a>(
         &mut self,
         context: impl AsContextMut,

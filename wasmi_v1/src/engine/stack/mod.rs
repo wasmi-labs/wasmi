@@ -120,7 +120,7 @@ impl Stack {
             limits.initial_value_stack_height,
             limits.maximum_value_stack_height,
         );
-        Self { frames, values }
+        Self { values, frames }
     }
 
     /// Initializes the [`Stack`] for the given Wasm root function call.

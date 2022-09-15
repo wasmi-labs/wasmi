@@ -73,11 +73,11 @@ where
         cache.update_instance(frame.instance());
         let pc = frame.pc();
         Self {
-            ctx,
-            frame,
-            value_stack,
-            cache,
             pc,
+            value_stack,
+            frame,
+            cache,
+            ctx,
             insts,
         }
     }
@@ -214,7 +214,7 @@ where
                 Instr::F32Add => self.visit_f32_add(),
                 Instr::F32Sub => self.visit_f32_sub(),
                 Instr::F32Mul => self.visit_f32_mul(),
-                Instr::F32Div => self.visit_f32_div()?,
+                Instr::F32Div => self.visit_f32_div(),
                 Instr::F32Min => self.visit_f32_min(),
                 Instr::F32Max => self.visit_f32_max(),
                 Instr::F32Copysign => self.visit_f32_copysign(),
@@ -228,7 +228,7 @@ where
                 Instr::F64Add => self.visit_f64_add(),
                 Instr::F64Sub => self.visit_f64_sub(),
                 Instr::F64Mul => self.visit_f64_mul(),
-                Instr::F64Div => self.visit_f64_div()?,
+                Instr::F64Div => self.visit_f64_div(),
                 Instr::F64Min => self.visit_f64_min(),
                 Instr::F64Max => self.visit_f64_max(),
                 Instr::F64Copysign => self.visit_f64_copysign(),
@@ -1082,8 +1082,8 @@ where
         self.execute_binary(UntypedValue::f32_mul)
     }
 
-    fn visit_f32_div(&mut self) -> Result<(), Trap> {
-        self.try_execute_binary(UntypedValue::f32_div)
+    fn visit_f32_div(&mut self) {
+        self.execute_binary(UntypedValue::f32_div)
     }
 
     fn visit_f32_min(&mut self) {
@@ -1138,8 +1138,8 @@ where
         self.execute_binary(UntypedValue::f64_mul)
     }
 
-    fn visit_f64_div(&mut self) -> Result<(), Trap> {
-        self.try_execute_binary(UntypedValue::f64_div)
+    fn visit_f64_div(&mut self) {
+        self.execute_binary(UntypedValue::f64_div)
     }
 
     fn visit_f64_min(&mut self) {

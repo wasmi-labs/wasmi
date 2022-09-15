@@ -1,7 +1,5 @@
 mod control_frame;
 mod control_stack;
-#[macro_use]
-mod unsupported;
 mod error;
 mod inst_builder;
 mod locals_registry;
@@ -88,6 +86,8 @@ pub struct FunctionBuilderAllocations {
     inst_builder: InstructionsBuilder,
     /// Stores and resolves local variable types.
     locals: LocalsRegistry,
+    /// Buffer for translating `br_table`.
+    br_table_branches: Vec<Instruction>,
 }
 
 impl<'alloc, 'parser> Deref for FuncBuilder<'alloc, 'parser> {
@@ -118,6 +118,7 @@ impl FunctionBuilderAllocations {
         self.value_stack.reset();
         self.inst_builder.reset();
         self.locals.reset();
+        self.br_table_branches.clear();
     }
 }
 
@@ -374,6 +375,11 @@ pub enum AquiredTarget {
 
 impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     /// Translates a Wasm `unreachable` instruction.
+    pub fn translate_nop(&mut self) -> Result<(), TranslationError> {
+        Ok(())
+    }
+
+    /// Translates a Wasm `unreachable` instruction.
     pub fn translate_unreachable(&mut self) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             builder.inst_builder.push_inst(Instruction::Unreachable);
@@ -408,7 +414,11 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     }
 
     /// Translates a Wasm `block` control flow operator.
-    pub fn translate_block(&mut self, block_type: BlockType) -> Result<(), TranslationError> {
+    pub fn translate_block(
+        &mut self,
+        block_type: wasmparser::BlockType,
+    ) -> Result<(), TranslationError> {
+        let block_type = BlockType::try_from_wasmparser(block_type, self.res)?;
         if self.is_reachable() {
             let stack_height = self.frame_stack_height(block_type);
             let end_label = self.inst_builder.new_label();
@@ -427,7 +437,11 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     }
 
     /// Translates a Wasm `loop` control flow operator.
-    pub fn translate_loop(&mut self, block_type: BlockType) -> Result<(), TranslationError> {
+    pub fn translate_loop(
+        &mut self,
+        block_type: wasmparser::BlockType,
+    ) -> Result<(), TranslationError> {
+        let block_type = BlockType::try_from_wasmparser(block_type, self.res)?;
         if self.is_reachable() {
             let stack_height = self.frame_stack_height(block_type);
             let header = self.inst_builder.new_label();
@@ -444,7 +458,11 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     }
 
     /// Translates a Wasm `if` control flow operator.
-    pub fn translate_if(&mut self, block_type: BlockType) -> Result<(), TranslationError> {
+    pub fn translate_if(
+        &mut self,
+        block_type: wasmparser::BlockType,
+    ) -> Result<(), TranslationError> {
+        let block_type = BlockType::try_from_wasmparser(block_type, self.res)?;
         if self.is_reachable() {
             let condition = self.value_stack.pop1();
             debug_assert_eq!(condition, ValueType::I32);
@@ -604,18 +622,11 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     }
 
     /// Translates a Wasm `br_table` control flow operator.
-    pub fn translate_br_table<T>(
+    pub fn translate_br_table(
         &mut self,
-        default: RelativeDepth,
-        targets: T,
-    ) -> Result<(), TranslationError>
-    where
-        T: IntoIterator<Item = RelativeDepth>,
-    {
+        table: wasmparser::BrTable<'parser>,
+    ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let case = builder.value_stack.pop1();
-            debug_assert_eq!(case, ValueType::I32);
-
             fn compute_inst(
                 builder: &mut FuncBuilder,
                 n: usize,
@@ -633,19 +644,36 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
                 }
             }
 
-            let branches = targets
-                .into_iter()
-                .enumerate()
-                .map(|(n, depth)| compute_inst(builder, n, depth))
-                .collect::<Result<Vec<_>, _>>()?;
+            let default = RelativeDepth::from_u32(table.default());
+            let targets = table
+                .targets()
+                .map(|relative_depth| {
+                    relative_depth.unwrap_or_else(|error| {
+                        panic!(
+                            "encountered unexpected invalid relative depth for `br_table` target: {}",
+                            error,
+                        )
+                    })
+                })
+                .map(RelativeDepth::from_u32);
+
+            let case = builder.value_stack.pop1();
+            debug_assert_eq!(case, ValueType::I32);
+
+            builder.br_table_branches.clear();
+            for (n, depth) in targets.into_iter().enumerate() {
+                let relative_depth = compute_inst(builder, n, depth)?;
+                builder.br_table_branches.push(relative_depth);
+            }
+
             // We include the default target in `len_branches`.
-            let len_branches = branches.len();
+            let len_branches = builder.br_table_branches.len();
             let default_branch = compute_inst(builder, len_branches, default)?;
             builder.inst_builder.push_inst(Instruction::BrTable {
                 len_targets: len_branches + 1,
             });
-            for branch in branches {
-                builder.inst_builder.push_inst(branch);
+            for branch in builder.allocations.br_table_branches.drain(..) {
+                builder.allocations.inst_builder.push_inst(branch);
             }
             builder.inst_builder.push_inst(default_branch);
             builder.reachable = false;
@@ -678,8 +706,9 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     }
 
     /// Translates a Wasm `call` instruction.
-    pub fn translate_call(&mut self, func_idx: FuncIdx) -> Result<(), TranslationError> {
+    pub fn translate_call(&mut self, func_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
+            let func_idx = FuncIdx(func_idx);
             let func_type = builder.func_type_of(func_idx);
             builder.adjust_value_stack_for_call(&func_type);
             let func_idx = func_idx.into_u32().into();
@@ -691,12 +720,15 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     /// Translates a Wasm `call_indirect` instruction.
     pub fn translate_call_indirect(
         &mut self,
-        func_type_idx: FuncTypeIdx,
-        table_idx: TableIdx,
+        index: u32,
+        table_index: u32,
+        _table_byte: u8,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             /// The default Wasm MVP table index.
             const DEFAULT_TABLE_INDEX: u32 = 0;
+            let func_type_idx = FuncTypeIdx(index);
+            let table_idx = TableIdx(table_index);
             assert_eq!(table_idx.into_u32(), DEFAULT_TABLE_INDEX);
             let func_type_offset = builder.value_stack.pop1();
             debug_assert_eq!(func_type_offset, ValueType::I32);
@@ -782,8 +814,9 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `global.get` instruction.
-    pub fn translate_global_get(&mut self, global_idx: GlobalIdx) -> Result<(), TranslationError> {
+    pub fn translate_global_get(&mut self, global_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
+            let global_idx = GlobalIdx(global_idx);
             let global_type = builder.res.get_type_of_global(global_idx);
             builder.value_stack.push(global_type.value_type());
             let global_idx = global_idx.into_u32().into();
@@ -795,8 +828,9 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `global.set` instruction.
-    pub fn translate_global_set(&mut self, global_idx: GlobalIdx) -> Result<(), TranslationError> {
+    pub fn translate_global_set(&mut self, global_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
+            let global_idx = GlobalIdx(global_idx);
             let global_type = builder.res.get_type_of_global(global_idx);
             debug_assert_eq!(global_type.mutability(), Mutability::Mutable);
             let expected = global_type.value_type();
@@ -808,6 +842,13 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
                 .push_inst(Instruction::GlobalSet(global_idx));
             Ok(())
         })
+    }
+
+    /// Decompose a [`wasmparser::MemArg`] into its raw parts.
+    fn decompose_memarg(memarg: wasmparser::MemArg) -> (MemoryIdx, u32) {
+        let memory_idx = MemoryIdx(memarg.memory);
+        let offset = memarg.offset as u32;
+        (memory_idx, offset)
     }
 
     /// Translate a Wasm `<ty>.load` instruction.
@@ -832,12 +873,12 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     /// - `i64.load_u32`
     fn translate_load(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
         loaded_type: ValueType,
         make_inst: fn(Offset) -> Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
+            let (memory_idx, offset) = Self::decompose_memarg(memarg);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
             let pointer = builder.value_stack.pop1();
             debug_assert_eq!(pointer, ValueType::I32);
@@ -851,127 +892,113 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     /// Translate a Wasm `i32.load` instruction.
     pub fn translate_i32_load(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_load(memory_idx, offset, ValueType::I32, Instruction::I32Load)
+        self.translate_load(memarg, ValueType::I32, Instruction::I32Load)
     }
 
     /// Translate a Wasm `i64.load` instruction.
     pub fn translate_i64_load(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_load(memory_idx, offset, ValueType::I64, Instruction::I64Load)
+        self.translate_load(memarg, ValueType::I64, Instruction::I64Load)
     }
 
     /// Translate a Wasm `f32.load` instruction.
     pub fn translate_f32_load(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_load(memory_idx, offset, ValueType::F32, Instruction::F32Load)
+        self.translate_load(memarg, ValueType::F32, Instruction::F32Load)
     }
 
     /// Translate a Wasm `f64.load` instruction.
     pub fn translate_f64_load(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_load(memory_idx, offset, ValueType::F64, Instruction::F64Load)
+        self.translate_load(memarg, ValueType::F64, Instruction::F64Load)
     }
 
     /// Translate a Wasm `i32.load_i8` instruction.
     pub fn translate_i32_load8_s(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_load(memory_idx, offset, ValueType::I32, Instruction::I32Load8S)
+        self.translate_load(memarg, ValueType::I32, Instruction::I32Load8S)
     }
 
     /// Translate a Wasm `i32.load_u8` instruction.
     pub fn translate_i32_load8_u(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_load(memory_idx, offset, ValueType::I32, Instruction::I32Load8U)
+        self.translate_load(memarg, ValueType::I32, Instruction::I32Load8U)
     }
 
     /// Translate a Wasm `i32.load_i16` instruction.
     pub fn translate_i32_load16_s(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_load(memory_idx, offset, ValueType::I32, Instruction::I32Load16S)
+        self.translate_load(memarg, ValueType::I32, Instruction::I32Load16S)
     }
 
     /// Translate a Wasm `i32.load_u16` instruction.
     pub fn translate_i32_load16_u(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_load(memory_idx, offset, ValueType::I32, Instruction::I32Load16U)
+        self.translate_load(memarg, ValueType::I32, Instruction::I32Load16U)
     }
 
     /// Translate a Wasm `i64.load_i8` instruction.
     pub fn translate_i64_load8_s(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_load(memory_idx, offset, ValueType::I64, Instruction::I64Load8S)
+        self.translate_load(memarg, ValueType::I64, Instruction::I64Load8S)
     }
 
     /// Translate a Wasm `i64.load_u8` instruction.
     pub fn translate_i64_load8_u(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_load(memory_idx, offset, ValueType::I64, Instruction::I64Load8U)
+        self.translate_load(memarg, ValueType::I64, Instruction::I64Load8U)
     }
 
     /// Translate a Wasm `i64.load_i16` instruction.
     pub fn translate_i64_load16_s(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_load(memory_idx, offset, ValueType::I64, Instruction::I64Load16S)
+        self.translate_load(memarg, ValueType::I64, Instruction::I64Load16S)
     }
 
     /// Translate a Wasm `i64.load_u16` instruction.
     pub fn translate_i64_load16_u(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_load(memory_idx, offset, ValueType::I64, Instruction::I64Load16U)
+        self.translate_load(memarg, ValueType::I64, Instruction::I64Load16U)
     }
 
     /// Translate a Wasm `i64.load_i32` instruction.
     pub fn translate_i64_load32_s(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_load(memory_idx, offset, ValueType::I64, Instruction::I64Load32S)
+        self.translate_load(memarg, ValueType::I64, Instruction::I64Load32S)
     }
 
     /// Translate a Wasm `i64.load_u32` instruction.
     pub fn translate_i64_load32_u(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_load(memory_idx, offset, ValueType::I64, Instruction::I64Load32U)
+        self.translate_load(memarg, ValueType::I64, Instruction::I64Load32U)
     }
 
     /// Translate a Wasm `<ty>.store` instruction.
@@ -991,12 +1018,12 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     /// - `i64.store_i32`
     fn translate_store(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
         stored_value: ValueType,
         make_inst: fn(Offset) -> Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
+            let (memory_idx, offset) = Self::decompose_memarg(memarg);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
             let (pointer, stored) = builder.value_stack.pop2();
             debug_assert_eq!(pointer, ValueType::I32);
@@ -1010,87 +1037,83 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     /// Translate a Wasm `i32.store` instruction.
     pub fn translate_i32_store(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_store(memory_idx, offset, ValueType::I32, Instruction::I32Store)
+        self.translate_store(memarg, ValueType::I32, Instruction::I32Store)
     }
 
     /// Translate a Wasm `i64.store` instruction.
     pub fn translate_i64_store(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_store(memory_idx, offset, ValueType::I64, Instruction::I64Store)
+        self.translate_store(memarg, ValueType::I64, Instruction::I64Store)
     }
 
     /// Translate a Wasm `f32.store` instruction.
     pub fn translate_f32_store(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_store(memory_idx, offset, ValueType::F32, Instruction::F32Store)
+        self.translate_store(memarg, ValueType::F32, Instruction::F32Store)
     }
 
     /// Translate a Wasm `f64.store` instruction.
     pub fn translate_f64_store(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_store(memory_idx, offset, ValueType::F64, Instruction::F64Store)
+        self.translate_store(memarg, ValueType::F64, Instruction::F64Store)
     }
 
     /// Translate a Wasm `i32.store_i8` instruction.
     pub fn translate_i32_store8(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_store(memory_idx, offset, ValueType::I32, Instruction::I32Store8)
+        self.translate_store(memarg, ValueType::I32, Instruction::I32Store8)
     }
 
     /// Translate a Wasm `i32.store_i16` instruction.
     pub fn translate_i32_store16(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_store(memory_idx, offset, ValueType::I32, Instruction::I32Store16)
+        self.translate_store(memarg, ValueType::I32, Instruction::I32Store16)
     }
 
     /// Translate a Wasm `i64.store_i8` instruction.
     pub fn translate_i64_store8(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_store(memory_idx, offset, ValueType::I64, Instruction::I64Store8)
+        self.translate_store(memarg, ValueType::I64, Instruction::I64Store8)
     }
 
     /// Translate a Wasm `i64.store_i16` instruction.
     pub fn translate_i64_store16(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_store(memory_idx, offset, ValueType::I64, Instruction::I64Store16)
+        self.translate_store(memarg, ValueType::I64, Instruction::I64Store16)
     }
 
     /// Translate a Wasm `i64.store_i32` instruction.
     pub fn translate_i64_store32(
         &mut self,
-        memory_idx: MemoryIdx,
-        offset: u32,
+        memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
-        self.translate_store(memory_idx, offset, ValueType::I64, Instruction::I64Store32)
+        self.translate_store(memarg, ValueType::I64, Instruction::I64Store32)
     }
 
     /// Translate a Wasm `memory.size` instruction.
-    pub fn translate_memory_size(&mut self, memory_idx: MemoryIdx) -> Result<(), TranslationError> {
+    pub fn translate_memory_size(
+        &mut self,
+        memory_idx: u32,
+        _mem_byte: u8,
+    ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
+            let memory_idx = MemoryIdx(memory_idx);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
             builder.value_stack.push(ValueType::I32);
             builder.inst_builder.push_inst(Instruction::MemorySize);
@@ -1099,8 +1122,13 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `memory.grow` instruction.
-    pub fn translate_memory_grow(&mut self, memory_idx: MemoryIdx) -> Result<(), TranslationError> {
+    pub fn translate_memory_grow(
+        &mut self,
+        memory_idx: u32,
+        _mem_byte: u8,
+    ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
+            let memory_idx = MemoryIdx(memory_idx);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
             debug_assert_eq!(builder.value_stack.top(), ValueType::I32);
             builder.inst_builder.push_inst(Instruction::MemoryGrow);
@@ -1141,13 +1169,19 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     }
 
     /// Translate a Wasm `f32.const` instruction.
-    pub fn translate_f32_const(&mut self, value: F32) -> Result<(), TranslationError> {
-        self.translate_const(value)
+    pub fn translate_f32_const(
+        &mut self,
+        value: wasmparser::Ieee32,
+    ) -> Result<(), TranslationError> {
+        self.translate_const(F32::from_bits(value.bits()))
     }
 
     /// Translate a Wasm `f64.const` instruction.
-    pub fn translate_f64_const(&mut self, value: F64) -> Result<(), TranslationError> {
-        self.translate_const(value)
+    pub fn translate_f64_const(
+        &mut self,
+        value: wasmparser::Ieee64,
+    ) -> Result<(), TranslationError> {
+        self.translate_const(F64::from_bits(value.bits()))
     }
 
     /// Translate a Wasm unary comparison instruction.

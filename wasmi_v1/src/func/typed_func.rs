@@ -21,7 +21,7 @@ use wasmi_core::Trap;
 #[repr(transparent)]
 pub struct TypedFunc<Params, Results> {
     /// The parameter and result typed encoded in Rust type system.
-    _signature: PhantomData<fn(Params) -> Results>,
+    signature: PhantomData<fn(Params) -> Results>,
     /// The underlying [`Func`] instance.
     func: Func,
 }
@@ -29,7 +29,7 @@ pub struct TypedFunc<Params, Results> {
 impl<Params, Results> Debug for TypedFunc<Params, Results> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("TypedFunc")
-            .field("_signature", &self._signature)
+            .field("signature", &self.signature)
             .field("func", &self.func)
             .finish()
     }
@@ -79,7 +79,7 @@ where
             return Err(Error::Func(FuncError::MismatchingResults { func }));
         }
         Ok(Self {
-            _signature: PhantomData,
+            signature: PhantomData,
             func,
         })
     }
@@ -94,6 +94,10 @@ where
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`TypedFunc`].
+    ///
+    /// # Errors
+    ///
+    /// If the execution of the called Wasm function traps.
     pub fn call(&self, mut ctx: impl AsContextMut, params: Params) -> Result<Results, Trap> {
         // Note: Cloning an [`Engine`] is intentionally a cheap operation.
         ctx.as_context().store.engine().clone().execute_func(
