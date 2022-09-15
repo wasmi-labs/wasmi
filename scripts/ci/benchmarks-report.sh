@@ -11,6 +11,7 @@ RAW_REPORT=$1
 PR_COMMENTS_URL="https://api.github.com/repos/paritytech/wasmi/issues/${CI_COMMIT_BRANCH}/comments"
 
 # master report to json
+echo "PARSING MASTER REPORT"
 sed -e 's/^Found.*//g' \
     -e 's/^\s\+[[:digit:]].*//g' \
     -e 's/\//_/g' \
@@ -24,7 +25,11 @@ sed -e 's/^Found.*//g' \
     | sed -e '$s/.$/}/g' \
     | tee target/criterion/output_master.json
 
+echo "SHOW PARSED MASTER REPORT"
+cat target/criterion/output_master.json
+
 # PR report to json
+echo "PARSING PR REPORT"
 sed -e 's/^Found.*//g' \
     -e 's/^\s\+[[:digit:]].*//g' \
     -e 's/\//_/g' \
@@ -43,11 +48,14 @@ sed -e 's/^Found.*//g' \
     | sed -e '$s/.$/}/g' \
     | tee target/criterion/output_pr.json
 
+echo "SHOW PARSED PR REPORT"
+cat target/criterion/output_pr.json
+
 cd target/criterion
 echo
 
 for d in */; do
-    # echo "${d::-1}"
+    echo "GETTING BENCHMARK ${d::-1} DETAILS"
     echo -n "| ${d::-1} "\
          "| $(cat output_master.json | jq .${d::-1}.time | tr -d '"') "\
          "| $(cat output_pr.json | jq .${d::-1}.time | tr -d '"') "\
@@ -56,6 +64,7 @@ for d in */; do
 done
 
 RESULT=$(cat bench-final-report.txt)
+echo $RESULT
 
 # If there is already a comment by the user `paritytech-cicd-pr` in the PR which triggered
 # this run, then we can just edit this comment (using `PATCH` instead of `POST`).
