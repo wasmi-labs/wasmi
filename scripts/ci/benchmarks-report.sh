@@ -71,7 +71,7 @@ if [ ! -z "$EXISTING_COMMENT_URL" ]; then
    PR_COMMENTS_URL="$EXISTING_COMMENT_URL"
 fi
 
-echo "Comment will be posted here $PR_COMMENTS_URL
+echo "Comment will be posted here $PR_COMMENTS_URL"
 
 curl -X ${REQUEST_TYPE} ${PR_COMMENTS_URL} -v \
     -H "Cookie: logged_in=no" \
