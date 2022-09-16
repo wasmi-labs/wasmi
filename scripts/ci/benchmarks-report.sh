@@ -10,7 +10,7 @@ PR_COMMENTS_URL="https://api.github.com/repos/paritytech/wasmi/issues/${CI_COMMI
 
 # master report to json
 echo "PARSING MASTER REPORT"
-sed -e 's/^Found.*//g' \
+sed --debug -e 's/^Found.*//g' \
     -e 's/^\s\+[[:digit:]].*$//g' \
     -e 's/\//_/g' \
     -e 's/^[a-z0-9_]\+/"&": {/g' \
