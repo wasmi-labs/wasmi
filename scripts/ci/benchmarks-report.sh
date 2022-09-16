@@ -25,7 +25,7 @@ sed --debug -e 's/^Found.*//g' \
     | tee target/criterion/output_master.json
 
 # PR report to json
-sed -e 's/^Found.*//g' \
+sed --debug -e 's/^Found.*//g' \
     -e 's/^\s\+[[:digit:]].*//g' \
     -e 's/\//_/g' \
     -e 's/^[a-z0-9_]\+/"&": {/g' \
