@@ -20,7 +20,7 @@ default:
   - bash --version
   - sccache -s
 
-.kubernetes-env:          &kubernetes-env
+.kubernetes-env:                   &kubernetes-env
   image:                           "paritytech/ci-linux:production"
   tags:
     - kubernetes-parity-build
@@ -34,18 +34,18 @@ default:
     - linux-docker
 
 # benchmark
-benchmark:
-  stage:                  benchmark
+criterion-benchmark:
+  stage:                           benchmark
   rules:
   - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                   # PRs
-  <<:                     *docker-env
+  <<:                              *docker-env
   script:
     - git fetch
     - git submodule update --init --recursive
     - git checkout master
     # on master
-    - cargo bench --bench benches -- --noplot --save-baseline master | tee bench-report-master.txt
+    - cargo bench --bench benches -- --noplot --save-baseline master | tee bench-report-master
     # on PR
     - git checkout $CI_COMMIT_SHA
-    - cargo bench --bench benches -- --noplot --baseline master | tee bench-report-pr.txt
-    - bash ./scripts/ci/benchmarks-report.sh bench-report-master.txt bench-report-pr.txt
+    - cargo bench --bench benches -- --noplot --baseline master | tee bench-report-pr
+    - bash ./scripts/ci/benchmarks-report.sh bench-report-master bench-report-pr
