@@ -39,12 +39,6 @@ benchmark:
   rules:
   - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                   # PRs
   <<:                     *docker-env
-  artifacts:
-    name:                          "${CI_JOB_NAME}_${CI_COMMIT_REF_NAME}"
-    when:                          on_success
-    expire_in:                     1 days
-    paths:
-      - ./artifacts/
   script:
     - git fetch
     - git submodule update --init --recursive
@@ -55,7 +49,3 @@ benchmark:
     - git checkout $CI_COMMIT_SHA
     - cargo bench --bench benches -- --noplot --baseline master | tee bench-report-pr.txt
     - bash ./scripts/ci/benchmarks-report.sh bench-report-master.txt bench-report-pr.txt
-    - pwd
-    - mkdir -p artifacts
-    - cp bench-report-* ./artifacts/
-    - cp target/criterion/output_* ./artifacts/

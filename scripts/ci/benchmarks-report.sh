@@ -77,4 +77,11 @@ curl -X ${REQUEST_TYPE} ${PR_COMMENTS_URL} -v \
     -H "Cookie: logged_in=no" \
     -H "Authorization: token ${GITHUB_PR_TOKEN}" \
     -H "Content-Type: application/json; charset=utf-8" \
-    -d $"{ \"body\": \"|BENCHMARK|MASTER|PR|Diff|\n|---|---|---|---|\n ${RESULT} \" }"
+    -d $"{ \
+    \"body\": \
+    \"## CRITERION BENCHMARKS ## \n \
+    |BENCHMARK|MASTER|PR|Diff|\n \
+    |---|---|---|---|\n \
+    ${RESULT}\n \
+    [Link to pipeline](${CI_JOB_URL}) \" \
+    }"
