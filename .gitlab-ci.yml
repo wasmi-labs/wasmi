@@ -11,15 +11,6 @@ default:
       - unknown_failure
       - api_failure
 
-.rust-info-script:                 &rust-info-script
-  - rustup show
-  - cargo --version
-  - rustup +nightly show
-  - cargo +nightly --version
-  - cargo spellcheck --version
-  - bash --version
-  - sccache -s
-
 .kubernetes-env:                   &kubernetes-env
   image:                           "paritytech/ci-linux:production"
   tags:
@@ -27,8 +18,6 @@ default:
 
 .docker-env:                       &docker-env
   image:                           "paritytech/ci-linux:production"
-  before_script:
-    - *rust-info-script
   interruptible:                   true
   tags:
     - linux-docker
