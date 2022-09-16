@@ -1,0 +1,40 @@
+# paritytech/wasmi
+
+stages:
+  - benchmark
+
+default:
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - unknown_failure
+      - api_failure
+
+.kubernetes-env:                   &kubernetes-env
+  image:                           "paritytech/ci-linux:production"
+  tags:
+    - kubernetes-parity-build
+
+.docker-env:                       &docker-env
+  image:                           "paritytech/ci-linux:production"
+  interruptible:                   true
+  tags:
+    - linux-docker
+
+# benchmark
+criterion-benchmark:
+  stage:                           benchmark
+  rules:
+  - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                   # PRs
+  <<:                              *docker-env
+  script:
+    - git fetch
+    - git submodule update --init --recursive
+    - git checkout master
+    # on master
+    - cargo bench --bench benches -- --noplot --save-baseline master | tee bench-report-master.txt
+    # on PR
+    - git checkout $CI_COMMIT_SHA
+    - cargo bench --bench benches -- --noplot --baseline master | tee bench-report-pr.txt
+    - bash ./scripts/ci/benchmarks-report.sh bench-report-master.txt bench-report-pr.txt
