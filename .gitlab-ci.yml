@@ -52,7 +52,7 @@ benchmark:
     # on master
     - cargo bench --bench benches -- --noplot --save-baseline master | tee bench-report-master.txt
     # on PR
-    - git checkout $CI_COMMIT_REF_NAME
+    - git checkout $CI_COMMIT_SHA
     - cargo bench --bench benches -- --noplot --baseline master | tee bench-report-pr.txt
     - bash ./scripts/ci/benchmarks-report.sh bench-report-master.txt bench-report-pr.txt
     - pwd
