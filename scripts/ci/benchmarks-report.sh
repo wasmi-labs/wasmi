@@ -78,10 +78,10 @@ curl -X ${REQUEST_TYPE} ${PR_COMMENTS_URL} -v \
     -H "Authorization: token ${GITHUB_PR_TOKEN}" \
     -H "Content-Type: application/json; charset=utf-8" \
     -d $"{ \
-    \"body\": \
-    \"## CRITERION BENCHMARKS ## \n\n \
-    |BENCHMARK|MASTER|PR|Diff|\n \
-    |---|---|---|---|\n \
-    ${RESULT}\n\n \
-    [Link to pipeline](${CI_JOB_URL}) \" \
-    }"
+\"body\": \
+\"## CRITERION BENCHMARKS ## \n\n \
+|BENCHMARK|MASTER|PR|Diff|\n \
+|---|---|---|---|\n \
+${RESULT}\n\n \
+[Link to pipeline](${CI_JOB_URL}) \" \
+}"
