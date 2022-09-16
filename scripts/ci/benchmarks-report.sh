@@ -50,7 +50,7 @@ cd target/criterion
 # Prepare report table
 for d in */; do
     d=${d::-1}
-    echo -n "| ${d} "\
+    echo -n "| \`${d}\` "\
          "| $(cat output_master.json | jq .${d}.time | tr -d '"') "\
          "| $(cat output_pr.json | jq .${d}.time | tr -d '"') "\
          "| $(cat output_pr.json | jq .${d}.perf_change | tr -d '"') "\
