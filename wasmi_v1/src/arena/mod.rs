@@ -34,7 +34,7 @@ pub trait Index: Copy {
 #[derive(Debug)]
 pub struct Arena<Idx, T> {
     entities: Vec<T>,
-    __marker: PhantomData<fn() -> Idx>,
+    __marker: PhantomData<Idx>,
 }
 
 impl<Idx, T> Default for Arena<Idx, T> {
@@ -138,8 +138,8 @@ impl<'a, Idx, T> IntoIterator for &'a Arena<Idx, T>
 where
     Idx: Index,
 {
-    type IntoIter = Iter<'a, Idx, T>;
     type Item = (Idx, &'a T);
+    type IntoIter = Iter<'a, Idx, T>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
@@ -150,8 +150,8 @@ impl<'a, Idx, T> IntoIterator for &'a mut Arena<Idx, T>
 where
     Idx: Index,
 {
-    type IntoIter = IterMut<'a, Idx, T>;
     type Item = (Idx, &'a mut T);
+    type IntoIter = IterMut<'a, Idx, T>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()
@@ -162,7 +162,7 @@ where
 #[derive(Debug)]
 pub struct Iter<'a, Idx, T> {
     iter: iter::Enumerate<slice::Iter<'a, T>>,
-    __marker: PhantomData<fn() -> Idx>,
+    __marker: PhantomData<Idx>,
 }
 
 impl<'a, Idx, T> Iterator for Iter<'a, Idx, T>
@@ -171,14 +171,14 @@ where
 {
     type Item = (Idx, &'a T);
 
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-
     fn next(&mut self) -> Option<Self::Item> {
         self.iter
             .next()
             .map(|(idx, entity)| (Idx::from_usize(idx), entity))
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
     }
 }
 
@@ -202,11 +202,11 @@ where
     }
 }
 
-/// An iterator over exlusive references of arena entities and their indices.
+/// An iterator over exclusive references of arena entities and their indices.
 #[derive(Debug)]
 pub struct IterMut<'a, Idx, T> {
     iter: iter::Enumerate<slice::IterMut<'a, T>>,
-    __marker: PhantomData<fn() -> Idx>,
+    __marker: PhantomData<Idx>,
 }
 
 impl<'a, Idx, T> Iterator for IterMut<'a, Idx, T>
@@ -215,14 +215,14 @@ where
 {
     type Item = (Idx, &'a mut T);
 
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-
     fn next(&mut self) -> Option<Self::Item> {
         self.iter
             .next()
             .map(|(idx, entity)| (Idx::from_usize(idx), entity))
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
     }
 }
 
