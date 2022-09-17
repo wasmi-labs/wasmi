@@ -311,7 +311,7 @@ impl Memory {
             .grow(additional)
     }
 
-    /// Returns a shared slice to the bytes underlying to the byte buffer.
+    /// Returns a shared slice to the bytes underlying the [`Memory`].
     ///
     /// # Panics
     ///
@@ -320,7 +320,7 @@ impl Memory {
         ctx.into().store.resolve_memory(*self).data()
     }
 
-    /// Returns an exclusive slice to the bytes underlying to the byte buffer.
+    /// Returns an exclusive slice to the bytes underlying the [`Memory`].
     ///
     /// # Panics
     ///
@@ -329,7 +329,7 @@ impl Memory {
         ctx.into().store.resolve_memory_mut(*self).data_mut()
     }
 
-    /// Returns an exclusive slice to the bytes underlying to the [`Memory`], and an exclusive
+    /// Returns an exclusive slice to the bytes underlying the [`Memory`], and an exclusive
     /// reference to the user provided state.
     ///
     /// # Panics
