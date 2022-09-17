@@ -329,7 +329,7 @@ impl Memory {
         ctx.into().store.resolve_memory_mut(*self).data_mut()
     }
 
-    /// Returns an exclusive slice to the bytes underlying to the byte buffer, and a shared
+    /// Returns an exclusive slice to the bytes underlying to the [`Memory`], and an exclusive
     /// reference to the user provided state.
     ///
     /// # Panics

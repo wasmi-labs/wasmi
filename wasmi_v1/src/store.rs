@@ -299,8 +299,8 @@ impl<T> Store<T> {
             .unwrap_or_else(|| panic!("failed to resolve stored linear memory: {:?}", entity_index))
     }
 
-    /// Returns an exclusive reference to the associated entity of the linear memory and a shared
-    /// reference to the user provided state.
+    /// Returns an exclusive reference to the associated entity of the linear memory and an
+    /// exclusive reference to the user provided state.
     ///
     /// # Panics
     ///
