@@ -33,7 +33,7 @@ pub struct FuncHeader {
     iref: InstructionsRef,
     /// The number of local variables of the function.
     len_locals: usize,
-    /// The maximum stack heihgt usage of the function during execution.
+    /// The maximum stack height usage of the function during execution.
     max_stack_height: usize,
 }
 
