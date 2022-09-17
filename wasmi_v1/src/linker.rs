@@ -239,7 +239,7 @@ pub struct Linker<T> {
     /// Helps to avoid heap memory allocations at the cost of a small
     /// memory overhead.
     externals: Vec<Extern>,
-    marker: PhantomData<fn() -> T>,
+    marker: PhantomData<T>,
 }
 
 impl<T> Debug for Linker<T> {

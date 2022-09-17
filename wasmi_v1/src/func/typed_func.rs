@@ -21,7 +21,7 @@ use wasmi_core::Trap;
 #[repr(transparent)]
 pub struct TypedFunc<Params, Results> {
     /// The parameter and result typed encoded in Rust type system.
-    signature: PhantomData<fn(Params) -> Results>,
+    signature: PhantomData<(Params, Results)>,
     /// The underlying [`Func`] instance.
     func: Func,
 }
@@ -134,7 +134,7 @@ where
 ///
 /// [`Engine`]: [`crate::Engine`].
 pub struct CallResultsTuple<Results> {
-    _marker: PhantomData<fn() -> Results>,
+    _marker: PhantomData<Results>,
 }
 
 impl<Results> Default for CallResultsTuple<Results> {

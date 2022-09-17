@@ -162,7 +162,7 @@ where
 #[derive(Debug)]
 pub struct Iter<'a, Idx, T> {
     iter: iter::Enumerate<slice::Iter<'a, T>>,
-    __marker: PhantomData<Idx>,
+    __marker: PhantomData<fn() -> Idx>,
 }
 
 impl<'a, Idx, T> Iterator for Iter<'a, Idx, T>
@@ -206,7 +206,7 @@ where
 #[derive(Debug)]
 pub struct IterMut<'a, Idx, T> {
     iter: iter::Enumerate<slice::IterMut<'a, T>>,
-    __marker: PhantomData<Idx>,
+    __marker: PhantomData<fn() -> Idx>,
 }
 
 impl<'a, Idx, T> Iterator for IterMut<'a, Idx, T>
