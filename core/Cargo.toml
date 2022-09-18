@@ -11,7 +11,6 @@ description = "Core abstractions and primitives for the wasmi WebAssembly interp
 keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
 
 [dependencies]
-memory_units = "0.4.0"
 libm = "0.2.1"
 num-traits = { version = "0.2.8", default-features = false }
 downcast-rs = { version = "1.2", default-features = false }

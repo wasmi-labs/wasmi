@@ -14,6 +14,7 @@
 mod host_error;
 mod nan_preserving_float;
 mod trap;
+mod units;
 mod untyped;
 mod value;
 
@@ -23,15 +24,11 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std as alloc;
 
-/// WebAssembly-specific sizes and units.
-pub mod memory_units {
-    pub use memory_units::{size_of, wasm32::*, ByteSize, Bytes, RoundUpTo};
-}
-
 pub use self::{
     host_error::HostError,
     nan_preserving_float::{F32, F64},
     trap::{Trap, TrapCode},
+    units::{Bytes, Pages},
     untyped::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedError, UntypedValue},
     value::{
         ArithmeticOps,
