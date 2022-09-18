@@ -519,7 +519,7 @@ fn bench_execute_memory_sum_v1(c: &mut Criterion) {
             .get_export(&store, "mem")
             .and_then(v1::Extern::into_memory)
             .unwrap();
-        mem.grow(&mut store, v1::core::memory_units::Pages(1))
+        mem.grow(&mut store, v1::core::Pages::new(1).unwrap())
             .unwrap();
         let len = 100_000;
         let mut expected_sum: i64 = 0;
@@ -549,7 +549,7 @@ fn bench_execute_memory_fill_v1(c: &mut Criterion) {
             .get_export(&store, "mem")
             .and_then(v1::Extern::into_memory)
             .unwrap();
-        mem.grow(&mut store, v1::core::memory_units::Pages(1))
+        mem.grow(&mut store, v1::core::Pages::new(1).unwrap())
             .unwrap();
         let ptr = 0x100;
         let len = 100_000;
@@ -652,7 +652,7 @@ fn bench_execute_vec_add_v1(c: &mut Criterion) {
             .get_export(&store, "mem")
             .and_then(v1::Extern::into_memory)
             .unwrap();
-        mem.grow(&mut store, v1::core::memory_units::Pages(25))
+        mem.grow(&mut store, v1::core::Pages::new(25).unwrap())
             .unwrap();
         let len = 100_000;
         test_for(

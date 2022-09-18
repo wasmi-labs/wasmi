@@ -15,7 +15,7 @@ use crate::{
     Func,
 };
 use core::cmp;
-use wasmi_core::{memory_units::Pages, ExtendInto, LittleEndianConvert, UntypedValue, WrapInto};
+use wasmi_core::{ExtendInto, LittleEndianConvert, Pages, UntypedValue, WrapInto};
 
 /// Executes the given function `frame`.
 ///
@@ -646,27 +646,29 @@ where
 
     fn visit_current_memory(&mut self) {
         let memory = self.default_memory();
-        let result = memory.current_pages(self.ctx.as_context()).0 as u32;
+        let result: u32 = memory.current_pages(self.ctx.as_context()).into();
         self.value_stack.push(result);
         self.next_instr()
     }
 
     fn visit_grow_memory(&mut self) {
-        let pages: u32 = self.value_stack.pop_as();
+        /// The WebAssembly spec demands to return `0xFFFF_FFFF`
+        /// in case of failure for the `memory.grow` instruction.
+        const ERR_VALUE: u32 = u32::MAX;
         let memory = self.default_memory();
-        let new_size = match memory.grow(self.ctx.as_context_mut(), Pages(pages as usize)) {
-            Ok(Pages(old_size)) => old_size as u32,
-            Err(_) => {
-                // Note: The WebAssembly spec demands to return `0xFFFF_FFFF`
-                //       in case of failure for this instruction.
-                u32::MAX
-            }
-        };
+        let result = Pages::new(self.value_stack.pop_as())
+            .map(|additional| {
+                memory
+                    .grow(self.ctx.as_context_mut(), additional)
+                    .map(u32::from)
+                    .unwrap_or(ERR_VALUE)
+            })
+            .unwrap_or(ERR_VALUE);
         // The memory grow might have invalidated the cached linear memory
         // so we need to reset it in order for the cache to reload in case it
         // is used again.
         self.cache.reset_default_memory_bytes();
-        self.value_stack.push(new_size);
+        self.value_stack.push(result);
         self.next_instr()
     }
 

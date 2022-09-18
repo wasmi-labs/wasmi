@@ -29,7 +29,8 @@ impl TryFrom<wasmparser::MemoryType> for MemoryType {
             .map(TryInto::try_into)
             .transpose()
             .map_err(into_error)?;
-        Ok(MemoryType::new(initial, maximum))
+        Ok(MemoryType::new(initial, maximum)
+            .expect("valid wasmparser MemoryType must be valid in wasmi")) // TODO: better return error
     }
 }
 

@@ -3,7 +3,7 @@ mod byte_buffer;
 use self::byte_buffer::ByteBuffer;
 use super::{AsContext, AsContextMut, Index, StoreContext, StoreContextMut, Stored};
 use core::{fmt, fmt::Display};
-use wasmi_core::memory_units::{Bytes, Pages};
+use wasmi_core::Pages;
 
 /// A raw index to a linear memory entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -32,6 +32,8 @@ pub enum MemoryError {
     OutOfBoundsGrowth,
     /// Tried to access linear memory out of bounds.
     OutOfBoundsAccess,
+    /// Tried to create an invalid linear memory type.
+    InvalidMemoryType,
     /// Occurs when a memory type does not satisfy the constraints of another.
     UnsatisfyingMemoryType {
         /// The unsatisfying [`MemoryType`].
@@ -53,6 +55,9 @@ impl Display for MemoryError {
             Self::OutOfBoundsAccess => {
                 write!(f, "tried to access virtual memory out of bounds")
             }
+            Self::InvalidMemoryType => {
+                write!(f, "tried to create an invalid virtual memory type")
+            }
             Self::UnsatisfyingMemoryType {
                 unsatisfying,
                 required,
@@ -67,11 +72,6 @@ impl Display for MemoryError {
     }
 }
 
-/// Returns the maximum virtual memory buffer length in bytes.
-fn max_memory_len() -> usize {
-    i32::MAX as u32 as usize
-}
-
 /// The memory type of a linear memory.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct MemoryType {
@@ -81,11 +81,18 @@ pub struct MemoryType {
 
 impl MemoryType {
     /// Creates a new memory type with initial and optional maximum pages.
-    pub fn new(initial: u32, maximum: Option<u32>) -> Self {
-        Self {
-            initial_pages: Pages(initial as usize),
-            maximum_pages: maximum.map(|value| Pages(value as usize)),
-        }
+    pub fn new(initial: u32, maximum: Option<u32>) -> Result<Self, MemoryError> {
+        let initial_pages = Pages::new(initial).ok_or(MemoryError::InvalidMemoryType)?;
+        let maximum_pages = match maximum {
+            Some(maximum) => Pages::new(maximum)
+                .ok_or(MemoryError::InvalidMemoryType)?
+                .into(),
+            None => None,
+        };
+        Ok(Self {
+            initial_pages,
+            maximum_pages,
+        })
     }
 
     /// Returns the initial pages of the memory type.
@@ -139,20 +146,12 @@ pub struct MemoryEntity {
 }
 
 impl MemoryEntity {
-    /// The maximum amount of pages of a linear memory.
-    ///
-    /// # Note
-    ///
-    /// On a 32-bit platform with a page size of 65536 bytes there
-    /// can only be 65536 pages for a total of ~4GB bytes of memory.
-    const MAX_PAGES: Pages = Pages(65536);
-
     /// Creates a new memory entity with the given memory type.
     pub fn new(memory_type: MemoryType) -> Result<Self, MemoryError> {
         let initial_pages = memory_type.initial_pages();
-        let initial_bytes = Bytes::from(initial_pages);
+        let initial_bytes = initial_pages.to_bytes();
         let memory = Self {
-            bytes: ByteBuffer::new(initial_bytes.0)?,
+            bytes: ByteBuffer::new(initial_bytes)?,
             memory_type,
             current_pages: initial_pages,
         };
@@ -179,23 +178,21 @@ impl MemoryEntity {
     /// the grow operation.
     pub fn grow(&mut self, additional: Pages) -> Result<Pages, MemoryError> {
         let current_pages = self.current_pages();
-        if additional == Pages(0) {
+        if additional == Pages::default() {
             // Nothing to do in this case. Bail out early.
             return Ok(current_pages);
         }
         let maximum_pages = self
             .memory_type()
             .maximum_pages()
-            .unwrap_or(Self::MAX_PAGES);
+            .unwrap_or_else(Pages::max);
         let new_pages = current_pages
-            .0
-            .checked_add(additional.0)
-            .filter(|&new_pages| new_pages <= maximum_pages.0)
-            .map(Pages)
+            .checked_add(additional)
+            .filter(|&new_pages| new_pages <= maximum_pages)
             .ok_or(MemoryError::OutOfBoundsGrowth)?;
         // At this point it is okay to grow the underlying virtual memory
         // by the given amount of additional pages.
-        self.bytes.grow(Bytes::from(additional).0)?;
+        self.bytes.grow(additional.to_bytes())?;
         self.current_pages = new_pages;
         Ok(current_pages)
     }
