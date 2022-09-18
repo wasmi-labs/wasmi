@@ -54,8 +54,8 @@ impl ByteBuffer {
     /// - If the initial length is 0.
     /// - If the initial length exceeds the maximum supported limit.
     pub fn new(initial_len: Bytes) -> Result<Self, MemoryError> {
-        let initial_len = Self::bytes_to_buffer_len(initial_len)
-            .ok_or(MemoryError::OutOfBoundsAllocation)?;
+        let initial_len =
+            Self::bytes_to_buffer_len(initial_len).ok_or(MemoryError::OutOfBoundsAllocation)?;
         let bytes = vec![0x00_u8; initial_len];
         Ok(Self { bytes })
     }
