@@ -81,6 +81,11 @@ pub struct MemoryType {
 
 impl MemoryType {
     /// Creates a new memory type with initial and optional maximum pages.
+    ///
+    /// # Errors
+    ///
+    /// If the linear memory type initial or maximum size exceeds the
+    /// maximum limits of 2^16 pages.
     pub fn new(initial: u32, maximum: Option<u32>) -> Result<Self, MemoryError> {
         let initial_pages = Pages::new(initial).ok_or(MemoryError::InvalidMemoryType)?;
         let maximum_pages = match maximum {

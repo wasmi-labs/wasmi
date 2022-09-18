@@ -656,14 +656,12 @@ where
         /// in case of failure for the `memory.grow` instruction.
         const ERR_VALUE: u32 = u32::MAX;
         let memory = self.default_memory();
-        let result = Pages::new(self.value_stack.pop_as())
-            .map(|additional| {
-                memory
-                    .grow(self.ctx.as_context_mut(), additional)
-                    .map(u32::from)
-                    .unwrap_or(ERR_VALUE)
-            })
-            .unwrap_or(ERR_VALUE);
+        let result = Pages::new(self.value_stack.pop_as()).map_or(ERR_VALUE, |additional| {
+            memory
+                .grow(self.ctx.as_context_mut(), additional)
+                .map(u32::from)
+                .unwrap_or(ERR_VALUE)
+        });
         // The memory grow might have invalidated the cached linear memory
         // so we need to reset it in order for the cache to reload in case it
         // is used again.
