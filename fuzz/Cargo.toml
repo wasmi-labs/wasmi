@@ -24,3 +24,9 @@ name = "translate"
 path = "fuzz_targets/translate.rs"
 test = false
 doc = false
+
+[[bin]]
+name = "differential"
+path = "fuzz_targets/differential.rs"
+test = false
+doc = false
