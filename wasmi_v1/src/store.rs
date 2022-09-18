@@ -299,6 +299,24 @@ impl<T> Store<T> {
             .unwrap_or_else(|| panic!("failed to resolve stored linear memory: {:?}", entity_index))
     }
 
+    /// Returns an exclusive reference to the associated entity of the linear memory and an
+    /// exclusive reference to the user provided state.
+    ///
+    /// # Panics
+    ///
+    /// - If the linear memory does not originate from this store.
+    /// - If the linear memory cannot be resolved to its entity.
+    pub(super) fn resolve_memory_and_state_mut(
+        &mut self,
+        memory: Memory,
+    ) -> (&mut MemoryEntity, &mut T) {
+        let entity_index = self.unwrap_index(memory.into_inner());
+        let memory_entity = self.memories.get_mut(entity_index).unwrap_or_else(|| {
+            panic!("failed to resolve stored linear memory: {:?}", entity_index)
+        });
+        (memory_entity, &mut self.user_state)
+    }
+
     /// Returns a shared reference to the associated entity of the Wasm or host function.
     ///
     /// # Panics
