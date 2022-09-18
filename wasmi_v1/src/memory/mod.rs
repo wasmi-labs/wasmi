@@ -308,7 +308,7 @@ impl Memory {
             .grow(additional)
     }
 
-    /// Returns a shared slice to the bytes underlying to the byte buffer.
+    /// Returns a shared slice to the bytes underlying the [`Memory`].
     ///
     /// # Panics
     ///
@@ -317,13 +317,27 @@ impl Memory {
         ctx.into().store.resolve_memory(*self).data()
     }
 
-    /// Returns an exclusive slice to the bytes underlying to the byte buffer.
+    /// Returns an exclusive slice to the bytes underlying the [`Memory`].
     ///
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Memory`].
     pub fn data_mut<'a, T: 'a>(&self, ctx: impl Into<StoreContextMut<'a, T>>) -> &'a mut [u8] {
         ctx.into().store.resolve_memory_mut(*self).data_mut()
+    }
+
+    /// Returns an exclusive slice to the bytes underlying the [`Memory`], and an exclusive
+    /// reference to the user provided state.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Memory`].
+    pub fn data_and_store_mut<'a, T: 'a>(
+        &self,
+        ctx: impl Into<StoreContextMut<'a, T>>,
+    ) -> (&'a mut [u8], &'a mut T) {
+        let (memory, store) = ctx.into().store.resolve_memory_and_state_mut(*self);
+        (memory.data_mut(), store)
     }
 
     /// Reads `n` bytes from `memory[offset..offset+n]` into `buffer`
