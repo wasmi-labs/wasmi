@@ -66,7 +66,9 @@ impl ByteBuffer {
     ///
     /// If the new length of the byte buffer would exceed the maximum supported limit.
     pub fn grow(&mut self, additional: Bytes) -> Result<(), MemoryError> {
-        let new_len = self.offset_to_new_len(additional).ok_or(MemoryError::OutOfBoundsGrowth)?;
+        let new_len = self
+            .offset_to_new_len(additional)
+            .ok_or(MemoryError::OutOfBoundsGrowth)?;
         assert!(new_len >= self.len());
         self.bytes.resize(new_len, 0x00_u8);
         Ok(())
