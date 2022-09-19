@@ -172,7 +172,7 @@ jobs:
           version: '0.18.0'
           args: --workspace
       - name: Upload to codecov.io
-        uses: codecov/codecov-action@v3.1.0
+        uses: codecov/codecov-action@v3.1.1
         with:
           token: ${{secrets.CODECOV_TOKEN}}
       - name: Archive code coverage results
