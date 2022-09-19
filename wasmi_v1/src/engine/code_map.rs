@@ -18,7 +18,7 @@ impl Index for FuncBody {
     }
 }
 
-/// A reference to the [`Instructions`] of a [`FuncBody`].
+/// A reference to the [`InstructionsPtr`] of a [`FuncBody`].
 #[derive(Debug, Copy, Clone)]
 pub struct InstructionsRef {
     /// The start index in the instructions array.
@@ -173,10 +173,6 @@ pub struct InstructionsPtr<'a> {
 
 impl<'a> InstructionsPtr<'a> {
     /// Returns a shared reference to the instruction at the given `pc`.
-    ///
-    /// # Panics (Debug)
-    ///
-    /// Panics in debug mode if the `pc` is invalid for the [`Instructions`].
     #[inline(always)]
     pub unsafe fn get(&self, pc: usize) -> &'a Instruction {
         // # Safety
