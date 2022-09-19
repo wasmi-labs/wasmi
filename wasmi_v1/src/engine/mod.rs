@@ -18,7 +18,7 @@ use self::{
     code_map::CodeMap,
     executor::execute_frame,
     func_types::FuncTypeRegistry,
-    stack::{FuncFrame, Stack, ValueStack},
+    stack::{FuncFrame, Stack},
 };
 pub use self::{
     bytecode::{DropKeep, Target},
