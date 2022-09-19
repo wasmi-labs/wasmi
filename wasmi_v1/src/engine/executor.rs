@@ -3,6 +3,7 @@ use super::{
     bytecode::{FuncIdx, GlobalIdx, Instruction, LocalDepth, Offset, SignatureIdx},
     cache::InstanceCache,
     code_map::{CodeMap, Instructions},
+    func_types::FuncTypeRegistry,
     stack::Stack,
     CallOutcome,
     DropKeep,
@@ -37,8 +38,18 @@ pub fn execute_frame<'engine>(
     instrs: Instructions<'engine>,
     stack: &'engine mut Stack,
     code_map: &'engine CodeMap,
+    func_types: &'engine FuncTypeRegistry,
 ) -> Result<CallOutcome, Trap> {
-    Executor::new(ctx.as_context_mut(), frame, cache, instrs, stack, code_map).execute()
+    Executor::new(
+        ctx.as_context_mut(),
+        frame,
+        cache,
+        instrs,
+        stack,
+        code_map,
+        func_types,
+    )
+    .execute()
 }
 
 /// An execution context for executing a `wasmi` function frame.
@@ -62,6 +73,8 @@ struct Executor<'ctx, 'engine, HostData> {
     instrs: Instructions<'engine>,
     /// The codemap that stores the instructions of all compiled Wasm functions.
     code_map: &'engine CodeMap,
+    /// The function type registry.
+    func_types: &'engine FuncTypeRegistry,
 }
 
 impl<'ctx, 'engine, HostData> Executor<'ctx, 'engine, HostData> {
@@ -74,6 +87,7 @@ impl<'ctx, 'engine, HostData> Executor<'ctx, 'engine, HostData> {
         instrs: Instructions<'engine>,
         value_stack: &'engine mut Stack,
         code_map: &'engine CodeMap,
+        func_types: &'engine FuncTypeRegistry,
     ) -> Self {
         cache.update_instance(frame.instance());
         Self {
@@ -83,6 +97,7 @@ impl<'ctx, 'engine, HostData> Executor<'ctx, 'engine, HostData> {
             ctx,
             instrs,
             code_map,
+            func_types,
         }
     }
 
