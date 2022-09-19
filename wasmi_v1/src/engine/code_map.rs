@@ -1,9 +1,8 @@
 //! Datastructure to efficiently store function bodies and their instructions.
 
-use core::{marker::PhantomData, ptr::NonNull};
-
 use super::{super::Index, Instruction};
 use alloc::vec::Vec;
+use core::{marker::PhantomData, ptr::NonNull};
 
 /// A reference to a Wasm function body stored in the [`CodeMap`].
 #[derive(Debug, Copy, Clone)]
