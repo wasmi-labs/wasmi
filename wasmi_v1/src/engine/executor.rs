@@ -57,7 +57,7 @@ struct Executor<'engine, Ctx> {
     /// [`Store`]: [`crate::v1::Store`]
     ctx: Ctx,
     /// The instructions of the executed function frame.
-    insts: Instructions<'engine>,
+    instrs: Instructions<'engine>,
 }
 
 impl<'engine, Ctx> Executor<'engine, Ctx>
@@ -70,7 +70,7 @@ where
         ctx: Ctx,
         frame: FuncFrame,
         cache: &'engine mut InstanceCache,
-        insts: Instructions<'engine>,
+        instrs: Instructions<'engine>,
         value_stack: &'engine mut ValueStack,
     ) -> Self {
         cache.update_instance(frame.instance());
@@ -79,7 +79,7 @@ where
             frame,
             cache,
             ctx,
-            insts,
+            instrs,
         }
     }
 
@@ -281,7 +281,7 @@ where
         // # Safety
         //
         // Properly constructed `wasmi` bytecode can never produce invalid `pc`.
-        unsafe { self.insts.get_release_unchecked(self.frame.pc()) }
+        unsafe { self.instrs.get_release_unchecked(self.frame.pc()) }
     }
 
     /// Returns the default linear memory.
