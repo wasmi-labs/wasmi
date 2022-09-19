@@ -19,7 +19,7 @@ use crate::{
 };
 use core::{
     fmt::{self, Display},
-    mem::size_of,
+    mem::size_of, ops::{Deref, DerefMut},
 };
 use wasmi_core::{Trap, TrapCode};
 
@@ -105,9 +105,25 @@ impl Default for StackLimits {
 #[derive(Debug, Default)]
 pub struct Stack {
     /// The value stack.
-    pub(crate) values: ValueStack,
+    pub values: ValueStack,
     /// The frame stack.
     frames: CallStack,
+}
+
+impl Deref for Stack {
+    type Target = ValueStack;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.values
+    }
+}
+
+impl DerefMut for Stack {
+    #[inline]
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.values
+    }
 }
 
 impl Stack {
