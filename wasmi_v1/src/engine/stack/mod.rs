@@ -19,7 +19,8 @@ use crate::{
 };
 use core::{
     fmt::{self, Display},
-    mem::size_of, ops::{Deref, DerefMut},
+    mem::size_of,
+    ops::{Deref, DerefMut},
 };
 use wasmi_core::{Trap, TrapCode};
 
