@@ -4,7 +4,6 @@ use super::{
     cache::InstanceCache,
     code_map::{CodeMap, Instructions},
     stack::Stack,
-    AsContextMut,
     CallOutcome,
     DropKeep,
     FuncFrame,
@@ -12,7 +11,10 @@ use super::{
 };
 use crate::{
     core::{Trap, TrapCode, F32, F64},
+    AsContext,
+    AsContextMut,
     Func,
+    StoreContextMut,
 };
 use core::cmp;
 use wasmi_core::{memory_units::Pages, ExtendInto, LittleEndianConvert, UntypedValue, WrapInto};
@@ -29,19 +31,19 @@ use wasmi_core::{memory_units::Pages, ExtendInto, LittleEndianConvert, UntypedVa
 /// - If the execution of the function `frame` trapped.
 #[inline(always)]
 pub fn execute_frame<'engine>(
-    ctx: impl AsContextMut,
+    mut ctx: impl AsContextMut,
     frame: FuncFrame,
     cache: &mut InstanceCache,
     instrs: Instructions<'engine>,
     stack: &'engine mut Stack,
     code_map: &'engine CodeMap,
 ) -> Result<CallOutcome, Trap> {
-    Executor::new(ctx, frame, cache, instrs, stack, code_map).execute()
+    Executor::new(ctx.as_context_mut(), frame, cache, instrs, stack, code_map).execute()
 }
 
 /// An execution context for executing a `wasmi` function frame.
 #[derive(Debug)]
-struct Executor<'engine, Ctx> {
+struct Executor<'ctx, 'engine, HostData> {
     /// The function frame that is being executed.
     ///
     /// This frequently changes when calling a function or returning from one.
@@ -55,21 +57,18 @@ struct Executor<'engine, Ctx> {
     /// A mutable [`Store`] context.
     ///
     /// [`Store`]: [`crate::v1::Store`]
-    ctx: Ctx,
+    ctx: StoreContextMut<'ctx, HostData>,
     /// The instructions of the executed function frame.
     instrs: Instructions<'engine>,
     /// The codemap that stores the instructions of all compiled Wasm functions.
     code_map: &'engine CodeMap,
 }
 
-impl<'engine, Ctx> Executor<'engine, Ctx>
-where
-    Ctx: AsContextMut,
-{
+impl<'ctx, 'engine, HostData> Executor<'ctx, 'engine, HostData> {
     /// Creates a new [`Executor`] for executing a `wasmi` function frame.
     #[inline(always)]
     pub fn new(
-        ctx: Ctx,
+        ctx: StoreContextMut<'ctx, HostData>,
         frame: FuncFrame,
         cache: &'engine mut InstanceCache,
         instrs: Instructions<'engine>,
@@ -512,10 +511,7 @@ pub enum MaybeReturn {
     Continue,
 }
 
-impl<'engine, Ctx> Executor<'engine, Ctx>
-where
-    Ctx: AsContextMut,
-{
+impl<'ctx, 'engine, HostData> Executor<'ctx, 'engine, HostData> {
     fn visit_unreachable(&mut self) -> Result<(), Trap> {
         Err(TrapCode::Unreachable).map_err(Into::into)
     }
