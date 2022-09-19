@@ -1,5 +1,7 @@
 //! Datastructure to efficiently store function bodies and their instructions.
 
+use core::{marker::PhantomData, ptr::NonNull};
+
 use super::{super::Index, Instruction};
 use alloc::vec::Vec;
 
@@ -130,17 +132,32 @@ impl<'a> Instructions<'a> {
         self.insts.get(index)
     }
 
+    /// Returns an [`InstructionsPtr`] to the first instruction of the [`Instructions`].
+    pub fn as_ptr(&self) -> InstructionsPtr<'a> {
+        InstructionsPtr {
+            first: NonNull::from(&self.insts[0]),
+            lt: PhantomData,
+        }
+    }
+}
+
+/// A pointer to the first instruction of a compiled Wasm function.
+#[derive(Debug, Copy, Clone)]
+pub struct InstructionsPtr<'a> {
+    /// The pointer to the first instruction of the compiled Wasm function.
+    first: NonNull<Instruction>,
+    /// Conserves the lifetime of the instruction.
+    lt: PhantomData<&'a Instruction>,
+}
+
+impl<'a> InstructionsPtr<'a> {
     /// Returns a shared reference to the instruction at the given `pc`.
     ///
     /// # Panics (Debug)
     ///
     /// Panics in debug mode if the `pc` is invalid for the [`Instructions`].
     #[inline(always)]
-    pub unsafe fn get_release_unchecked(&self, pc: usize) -> &'a Instruction {
-        debug_assert!(
-            self.insts.get(pc).is_some(),
-            "unexpectedly missing instruction at index {pc}",
-        );
+    pub unsafe fn get(&self, pc: usize) -> &'a Instruction {
         // # Safety
         //
         // This access is safe since all possible accesses have already been
@@ -150,6 +167,6 @@ impl<'a> Instructions<'a> {
         //
         // Note that eliminating this bounds check is extremely valuable since this
         // part of the `wasmi` interpreter is part of the interpreter's hot path.
-        self.insts.get_unchecked(pc)
+        &*self.first.as_ptr().add(pc)
     }
 }

@@ -2,7 +2,7 @@ use super::{
     super::{Memory, Table},
     bytecode::{FuncIdx, GlobalIdx, Instruction, LocalDepth, Offset, SignatureIdx},
     cache::InstanceCache,
-    code_map::Instructions,
+    code_map::InstructionsPtr,
     AsContextMut,
     CallOutcome,
     DropKeep,
@@ -32,7 +32,7 @@ pub fn execute_frame<'engine>(
     ctx: impl AsContextMut,
     frame: &mut FuncFrame,
     cache: &mut InstanceCache,
-    insts: Instructions<'engine>,
+    insts: InstructionsPtr<'engine>,
     value_stack: &'engine mut ValueStack,
 ) -> Result<CallOutcome, Trap> {
     Executor::new(ctx, frame, cache, insts, value_stack).execute()
@@ -54,7 +54,7 @@ struct Executor<'engine, 'func, Ctx> {
     /// [`Store`]: [`crate::v1::Store`]
     ctx: Ctx,
     /// The instructions of the executed function frame.
-    insts: Instructions<'engine>,
+    insts: InstructionsPtr<'engine>,
 }
 
 impl<'engine, 'func, Ctx> Executor<'engine, 'func, Ctx>
@@ -67,7 +67,7 @@ where
         ctx: Ctx,
         frame: &'func mut FuncFrame,
         cache: &'engine mut InstanceCache,
-        insts: Instructions<'engine>,
+        insts: InstructionsPtr<'engine>,
         value_stack: &'engine mut ValueStack,
     ) -> Self {
         cache.update_instance(frame.instance());
@@ -280,7 +280,7 @@ where
         // # Safety
         //
         // Properly constructed `wasmi` bytecode can never produce invalid `pc`.
-        unsafe { self.insts.get_release_unchecked(self.pc) }
+        unsafe { self.insts.get(self.pc) }
     }
 
     /// Returns the default linear memory.
