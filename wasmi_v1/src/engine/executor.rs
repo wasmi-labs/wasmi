@@ -2,7 +2,7 @@ use super::{
     super::{Memory, Table},
     bytecode::{FuncIdx, GlobalIdx, Instruction, LocalDepth, Offset, SignatureIdx},
     cache::InstanceCache,
-    code_map::Instructions,
+    code_map::{CodeMap, Instructions},
     stack::Stack,
     AsContextMut,
     CallOutcome,
@@ -34,9 +34,10 @@ pub fn execute_frame<'engine>(
     frame: FuncFrame,
     cache: &mut InstanceCache,
     insts: Instructions<'engine>,
-    value_stack: &'engine mut Stack,
+    stack: &'engine mut Stack,
+    code_map: &'engine CodeMap,
 ) -> Result<CallOutcome, Trap> {
-    Executor::new(ctx, frame, cache, insts, value_stack).execute()
+    Executor::new(ctx, frame, cache, insts, stack, code_map).execute()
 }
 
 /// An execution context for executing a `wasmi` function frame.
@@ -58,6 +59,8 @@ struct Executor<'engine, Ctx> {
     ctx: Ctx,
     /// The instructions of the executed function frame.
     instrs: Instructions<'engine>,
+    /// The codemap that stores the instructions of all compiled Wasm functions.
+    code_map: &'engine CodeMap,
 }
 
 impl<'engine, Ctx> Executor<'engine, Ctx>
@@ -72,6 +75,7 @@ where
         cache: &'engine mut InstanceCache,
         instrs: Instructions<'engine>,
         value_stack: &'engine mut ValueStack,
+        code_map: &'engine CodeMap,
     ) -> Self {
         cache.update_instance(frame.instance());
         Self {
@@ -80,6 +84,7 @@ where
             cache,
             ctx,
             instrs,
+            code_map,
         }
     }
 
