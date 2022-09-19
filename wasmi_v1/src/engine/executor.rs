@@ -8,7 +8,7 @@ use super::{
     DropKeep,
     FuncFrame,
     Target,
-    ValueStack,
+    ValueStack, stack::Stack,
 };
 use crate::{
     core::{Trap, TrapCode, F32, F64},
@@ -33,7 +33,7 @@ pub fn execute_frame<'engine>(
     frame: FuncFrame,
     cache: &mut InstanceCache,
     insts: Instructions<'engine>,
-    value_stack: &'engine mut ValueStack,
+    value_stack: &'engine mut Stack,
 ) -> Result<CallOutcome, Trap> {
     Executor::new(ctx, frame, cache, insts, value_stack).execute()
 }
