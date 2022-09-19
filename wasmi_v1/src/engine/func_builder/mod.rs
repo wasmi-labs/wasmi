@@ -340,27 +340,27 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     ///
     /// - If the `depth` is greater than the current height of the control frame stack.
     /// - If the value stack underflowed.
-    fn acquire_target(&self, relative_depth: u32) -> Result<AquiredTarget, TranslationError> {
+    fn acquire_target(&self, relative_depth: u32) -> Result<AcquiredTarget, TranslationError> {
         debug_assert!(self.is_reachable());
         if self.control_frames.is_root(relative_depth) {
             let drop_keep = self.drop_keep_return()?;
-            Ok(AquiredTarget::Return(drop_keep))
+            Ok(AcquiredTarget::Return(drop_keep))
         } else {
             let label = self
                 .control_frames
                 .nth_back(relative_depth)
                 .branch_destination();
             let drop_keep = self.compute_drop_keep(relative_depth)?;
-            Ok(AquiredTarget::Branch(label, drop_keep))
+            Ok(AcquiredTarget::Branch(label, drop_keep))
         }
     }
 }
 
-/// An aquired target.
+/// An acquired target.
 ///
 /// Returned by [`FuncBuilder::acquire_target`].
 #[derive(Debug)]
-pub enum AquiredTarget {
+pub enum AcquiredTarget {
     /// The branch jumps to the label.
     Branch(LabelIdx, DropKeep),
     /// The branch returns to the caller.
@@ -559,7 +559,7 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
         let frame_stack_height = frame.stack_height();
         if self.control_frames.len() == 1 {
             // If the control flow frames stack is empty after this point
-            // we know that we are endeding the function body `block`
+            // we know that we are ending the function body `block`
             // frame and therefore we have to return from the function.
             self.translate_return()?;
         } else {
@@ -581,14 +581,14 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     pub fn translate_br(&mut self, relative_depth: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             match builder.acquire_target(relative_depth)? {
-                AquiredTarget::Branch(end_label, drop_keep) => {
+                AcquiredTarget::Branch(end_label, drop_keep) => {
                     let dst_pc =
                         builder.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
                     builder
                         .inst_builder
                         .push_inst(Instruction::Br(Target::new(dst_pc, drop_keep)));
                 }
-                AquiredTarget::Return(_) => {
+                AcquiredTarget::Return(_) => {
                     // In this case the `br` can be directly translated as `return`.
                     builder.translate_return()?;
                 }
@@ -604,14 +604,14 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
             let condition = builder.value_stack.pop1();
             debug_assert_eq!(condition, ValueType::I32);
             match builder.acquire_target(relative_depth)? {
-                AquiredTarget::Branch(end_label, drop_keep) => {
+                AcquiredTarget::Branch(end_label, drop_keep) => {
                     let dst_pc =
                         builder.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
                     builder
                         .inst_builder
                         .push_inst(Instruction::BrIfNez(Target::new(dst_pc, drop_keep)));
                 }
-                AquiredTarget::Return(drop_keep) => {
+                AcquiredTarget::Return(drop_keep) => {
                     builder
                         .inst_builder
                         .push_inst(Instruction::ReturnIfNez(drop_keep));
@@ -633,14 +633,14 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
                 depth: RelativeDepth,
             ) -> Result<Instruction, TranslationError> {
                 match builder.acquire_target(depth.into_u32())? {
-                    AquiredTarget::Branch(label_idx, drop_keep) => {
+                    AcquiredTarget::Branch(label_idx, drop_keep) => {
                         let dst_pc = builder.try_resolve_label(label_idx, |pc| Reloc::BrTable {
                             inst_idx: pc,
                             target_idx: n,
                         });
                         Ok(Instruction::Br(Target::new(dst_pc, drop_keep)))
                     }
-                    AquiredTarget::Return(drop_keep) => Ok(Instruction::Return(drop_keep)),
+                    AcquiredTarget::Return(drop_keep) => Ok(Instruction::Return(drop_keep)),
                 }
             }
 

@@ -91,7 +91,7 @@ impl GlobalType {
     }
 }
 
-/// A global variable entitiy.
+/// A global variable entity.
 #[derive(Debug)]
 pub struct GlobalEntity {
     /// The current value of the global variable.

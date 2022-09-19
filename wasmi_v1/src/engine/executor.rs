@@ -355,11 +355,11 @@ where
         Ok(())
     }
 
-    /// Loads a vaoue of type `U` from the default memory at the given address offset and extends it into `T`.
+    /// Loads a value of type `U` from the default memory at the given address offset and extends it into `T`.
     ///
     /// # Note
     ///
-    /// This can be used to emuate the following Wasm operands:
+    /// This can be used to emulate the following Wasm operands:
     ///
     /// - `i32.load_8s`
     /// - `i32.load_8u`

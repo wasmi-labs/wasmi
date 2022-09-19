@@ -23,7 +23,7 @@ impl Module {
     /// Instantiates a new [`Instance`] from the given compiled [`Module`].
     ///
     /// Uses the given `context` to store the instance data to.
-    /// The given `externals` are joned with the imports in the same order in which they occure.
+    /// The given `externals` are joined with the imports in the same order in which they occurred.
     ///
     /// # Note
     ///
