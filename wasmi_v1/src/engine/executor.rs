@@ -43,8 +43,12 @@ pub fn execute_frame<'engine>(
 #[derive(Debug)]
 struct Executor<'engine, Ctx> {
     /// The function frame that is being executed.
+    ///
+    /// This frequently changes when calling a function or returning from one.
     frame: FuncFrame,
-    /// Stores the value stack of live values on the Wasm stack.
+    /// The stack required for driving the execution.
+    ///
+    /// This hosts the value stack as well as the call stack.
     value_stack: &'engine mut ValueStack,
     /// Stores frequently used instance related data.
     cache: &'engine mut InstanceCache,
