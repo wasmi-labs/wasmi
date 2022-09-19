@@ -23,7 +23,8 @@ impl ByteBuf {
     /// In this implementation we won't reallocate the virtually allocated
     /// buffer and instead simply adjust the `len` field of the `ByteBuf`
     /// wrapper in order to efficiently grow the virtual memory.
-    const ALLOCATION_SIZE: usize = u32::MAX as usize;
+    const ALLOCATION_SIZE: usize =
+        validation::LINEAR_MEMORY_MAX_PAGES as usize * super::LINEAR_MEMORY_PAGE_SIZE.0;
 
     /// Creates a new byte buffer with the given initial length.
     pub fn new(len: usize) -> Result<Self, String> {
@@ -95,5 +96,11 @@ mod tests {
     fn regression_realloc_too_big() {
         let mut byte_buf = ByteBuf::new(100).unwrap();
         assert!(byte_buf.realloc(ByteBuf::ALLOCATION_SIZE + 1).is_err());
+    }
+
+    #[test]
+    fn allocate_maximum_number_of_pages() {
+        let mut byte_buf = ByteBuf::new(100).unwrap();
+        byte_buf.realloc(ByteBuf::ALLOCATION_SIZE).unwrap();
     }
 }

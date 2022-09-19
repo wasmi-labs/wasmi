@@ -55,7 +55,7 @@ impl Debug for VirtualMemory {
 
 impl VirtualMemory {
     /// The maximum allocation size for a `wasmi` virtual memory.
-    const MAX_ALLOCATION_SIZE: usize = u32::MAX as usize;
+    const MAX_ALLOCATION_SIZE: usize = u32::MAX as usize + 1;
 
     /// Create a new virtual memory allocation.
     ///
