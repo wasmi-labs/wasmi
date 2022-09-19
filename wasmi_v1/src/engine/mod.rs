@@ -47,13 +47,6 @@ use core::sync::atomic::{AtomicU32, Ordering};
 pub use func_types::DedupFuncType;
 use spin::mutex::Mutex;
 
-/// The outcome of a `wasmi` function execution.
-#[derive(Debug, Copy, Clone)]
-pub enum CallOutcome {
-    /// The function has returned.
-    Return,
-}
-
 /// A unique engine index.
 ///
 /// # Note
@@ -356,35 +349,10 @@ impl EngineInner {
     /// - When a called host function trapped.
     fn execute_wasm_func(
         &mut self,
-        mut ctx: impl AsContextMut,
-        mut frame: FuncFrame,
-        cache: &mut InstanceCache,
-    ) -> Result<(), Trap> {
-        'outer: loop {
-            match self.execute_frame(ctx.as_context_mut(), frame, cache)? {
-                CallOutcome::Return => match self.stack.return_wasm() {
-                    Some(caller) => {
-                        frame = caller;
-                        continue 'outer;
-                    }
-                    None => return Ok(()),
-                },
-            }
-        }
-    }
-
-    /// Executes the given function `frame` and returns the result.
-    ///
-    /// # Errors
-    ///
-    /// - If the execution of the function `frame` trapped.
-    #[inline(always)]
-    fn execute_frame(
-        &mut self,
         ctx: impl AsContextMut,
         frame: FuncFrame,
         cache: &mut InstanceCache,
-    ) -> Result<CallOutcome, Trap> {
+    ) -> Result<(), Trap> {
         let insts = self.code_map.insts(frame.iref());
         execute_frame(
             ctx,
@@ -394,6 +362,7 @@ impl EngineInner {
             &mut self.stack,
             &self.code_map,
             &self.func_types,
-        )
+        )?;
+        Ok(())
     }
 }
