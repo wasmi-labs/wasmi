@@ -353,12 +353,10 @@ impl EngineInner {
         frame: FuncFrame,
         cache: &mut InstanceCache,
     ) -> Result<(), Trap> {
-        let insts = self.code_map.insts(frame.iref());
         execute_frame(
             ctx,
             frame,
             cache,
-            insts,
             &mut self.stack,
             &self.code_map,
             &self.func_types,

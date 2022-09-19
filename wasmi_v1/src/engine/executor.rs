@@ -35,7 +35,6 @@ pub fn execute_frame<'engine>(
     mut ctx: impl AsContextMut,
     frame: FuncFrame,
     cache: &mut InstanceCache,
-    instrs: Instructions<'engine>,
     stack: &'engine mut Stack,
     code_map: &'engine CodeMap,
     func_types: &'engine FuncTypeRegistry,
@@ -44,7 +43,6 @@ pub fn execute_frame<'engine>(
         ctx.as_context_mut(),
         frame,
         cache,
-        instrs,
         stack,
         code_map,
         func_types,
@@ -84,12 +82,12 @@ impl<'ctx, 'engine, HostData> Executor<'ctx, 'engine, HostData> {
         ctx: StoreContextMut<'ctx, HostData>,
         frame: FuncFrame,
         cache: &'engine mut InstanceCache,
-        instrs: Instructions<'engine>,
         value_stack: &'engine mut Stack,
         code_map: &'engine CodeMap,
         func_types: &'engine FuncTypeRegistry,
     ) -> Self {
         cache.update_instance(frame.instance());
+        let instrs = code_map.insts(frame.iref());
         Self {
             stack: value_stack,
             frame,
