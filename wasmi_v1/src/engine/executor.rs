@@ -519,7 +519,7 @@ impl<'ctx, 'engine, HostData> Executor<'ctx, 'engine, HostData> {
             FuncEntityInternal::Wasm(wasm_func) => {
                 self.frame = self
                     .stack
-                    .call_wasm(&mut self.frame, wasm_func, &self.code_map)?;
+                    .call_wasm(&mut self.frame, wasm_func, self.code_map)?;
                 self.instrs = self.code_map.insts(self.frame.iref());
                 self.cache.update_instance(self.frame.instance());
             }
@@ -528,9 +528,9 @@ impl<'ctx, 'engine, HostData> Executor<'ctx, 'engine, HostData> {
                 let host_func = host_func.clone();
                 self.stack.call_host(
                     self.ctx.as_context_mut(),
-                    &mut self.frame,
+                    &self.frame,
                     host_func,
-                    &self.func_types,
+                    self.func_types,
                 )?;
             }
         }
