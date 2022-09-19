@@ -32,11 +32,11 @@ pub fn execute_frame<'engine>(
     ctx: impl AsContextMut,
     frame: FuncFrame,
     cache: &mut InstanceCache,
-    insts: Instructions<'engine>,
+    instrs: Instructions<'engine>,
     stack: &'engine mut Stack,
     code_map: &'engine CodeMap,
 ) -> Result<CallOutcome, Trap> {
-    Executor::new(ctx, frame, cache, insts, stack, code_map).execute()
+    Executor::new(ctx, frame, cache, instrs, stack, code_map).execute()
 }
 
 /// An execution context for executing a `wasmi` function frame.
