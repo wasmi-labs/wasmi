@@ -67,6 +67,7 @@ struct Executor<'ctx, 'engine, HostData> {
 
 impl<'ctx, 'engine, HostData> Executor<'ctx, 'engine, HostData> {
     /// Creates a new [`Executor`] for executing a `wasmi` function frame.
+    #[inline(always)]
     pub fn new(
         ctx: StoreContextMut<'ctx, HostData>,
         frame: FuncFrame,
@@ -88,6 +89,7 @@ impl<'ctx, 'engine, HostData> Executor<'ctx, 'engine, HostData> {
     }
 
     /// Executes the function frame until it returns or traps.
+    #[inline(always)]
     fn execute(mut self) -> Result<(), Trap> {
         use Instruction as Instr;
         'next: loop {
