@@ -9,7 +9,6 @@ use super::{
     DropKeep,
     FuncFrame,
     Target,
-    ValueStack,
 };
 use crate::{
     core::{Trap, TrapCode, F32, F64},
@@ -50,7 +49,7 @@ struct Executor<'engine, Ctx> {
     /// The stack required for driving the execution.
     ///
     /// This hosts the value stack as well as the call stack.
-    value_stack: &'engine mut ValueStack,
+    stack: &'engine mut Stack,
     /// Stores frequently used instance related data.
     cache: &'engine mut InstanceCache,
     /// A mutable [`Store`] context.
@@ -74,12 +73,12 @@ where
         frame: FuncFrame,
         cache: &'engine mut InstanceCache,
         instrs: Instructions<'engine>,
-        value_stack: &'engine mut ValueStack,
+        value_stack: &'engine mut Stack,
         code_map: &'engine CodeMap,
     ) -> Self {
         cache.update_instance(frame.instance());
         Self {
-            value_stack,
+            stack: value_stack,
             frame,
             cache,
             ctx,
@@ -347,7 +346,7 @@ where
         UntypedValue: From<T>,
         T: LittleEndianConvert,
     {
-        self.value_stack.try_eval_top(|address| {
+        self.stack.try_eval_top(|address| {
             let raw_address = u32::from(address);
             let address = Self::effective_address(offset, raw_address)?;
             let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
@@ -382,7 +381,7 @@ where
         T: ExtendInto<U> + LittleEndianConvert,
         UntypedValue: From<U>,
     {
-        self.value_stack.try_eval_top(|address| {
+        self.stack.try_eval_top(|address| {
             let raw_address = u32::from(address);
             let address = Self::effective_address(offset, raw_address)?;
             let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
@@ -410,7 +409,7 @@ where
     where
         T: LittleEndianConvert + From<UntypedValue>,
     {
-        let (address, value) = self.value_stack.pop2();
+        let (address, value) = self.stack.pop2();
         let value = T::from(value);
         let address = Self::effective_address(offset, u32::from(address))?;
         let bytes = <T as LittleEndianConvert>::into_le_bytes(value);
@@ -437,7 +436,7 @@ where
         T: WrapInto<U> + From<UntypedValue>,
         U: LittleEndianConvert,
     {
-        let (address, value) = self.value_stack.pop2();
+        let (address, value) = self.stack.pop2();
         let wrapped_value = T::from(value).wrap_into();
         let address = Self::effective_address(offset, u32::from(address))?;
         let bytes = <U as LittleEndianConvert>::into_le_bytes(wrapped_value);
@@ -449,7 +448,7 @@ where
     }
 
     fn execute_unary(&mut self, f: fn(UntypedValue) -> UntypedValue) {
-        self.value_stack.eval_top(f);
+        self.stack.eval_top(f);
         self.next_instr()
     }
 
@@ -457,12 +456,12 @@ where
         &mut self,
         f: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), Trap> {
-        self.value_stack.try_eval_top(f)?;
+        self.stack.try_eval_top(f)?;
         self.try_next_instr()
     }
 
     fn execute_binary(&mut self, f: fn(UntypedValue, UntypedValue) -> UntypedValue) {
-        self.value_stack.eval_top2(f);
+        self.stack.eval_top2(f);
         self.next_instr()
     }
 
@@ -470,7 +469,7 @@ where
         &mut self,
         f: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), Trap> {
-        self.value_stack.try_eval_top2(f)?;
+        self.stack.try_eval_top2(f)?;
         self.try_next_instr()
     }
 
@@ -493,7 +492,7 @@ where
     }
 
     fn branch_to(&mut self, target: Target) {
-        self.value_stack.drop_keep(target.drop_keep());
+        self.stack.drop_keep(target.drop_keep());
         self.frame.update_pc(target.destination_pc().into_usize());
     }
 
@@ -503,7 +502,7 @@ where
     }
 
     fn ret(&mut self, drop_keep: DropKeep) {
-        self.value_stack.drop_keep(drop_keep)
+        self.stack.drop_keep(drop_keep)
     }
 }
 
@@ -526,7 +525,7 @@ where
     }
 
     fn visit_br_if_eqz(&mut self, target: Target) {
-        let condition = self.value_stack.pop_as();
+        let condition = self.stack.pop_as();
         if condition {
             self.next_instr()
         } else {
@@ -535,7 +534,7 @@ where
     }
 
     fn visit_br_if_nez(&mut self, target: Target) {
-        let condition = self.value_stack.pop_as();
+        let condition = self.stack.pop_as();
         if condition {
             self.branch_to(target)
         } else {
@@ -544,7 +543,7 @@ where
     }
 
     fn visit_return_if_nez(&mut self, drop_keep: DropKeep) -> MaybeReturn {
-        let condition = self.value_stack.pop_as();
+        let condition = self.stack.pop_as();
         if condition {
             self.ret(drop_keep);
             MaybeReturn::Return
@@ -555,7 +554,7 @@ where
     }
 
     fn visit_br_table(&mut self, len_targets: usize) {
-        let index: u32 = self.value_stack.pop_as();
+        let index: u32 = self.stack.pop_as();
         // The index of the default target which is the last target of the slice.
         let max_index = len_targets - 1;
         // A normalized index will always yield a target without panicking.
@@ -570,31 +569,31 @@ where
     }
 
     fn visit_local_get(&mut self, local_depth: LocalDepth) {
-        let value = self.value_stack.peek(local_depth.into_inner());
-        self.value_stack.push(value);
+        let value = self.stack.peek(local_depth.into_inner());
+        self.stack.push(value);
         self.next_instr()
     }
 
     fn visit_local_set(&mut self, local_depth: LocalDepth) {
-        let new_value = self.value_stack.pop();
-        *self.value_stack.peek_mut(local_depth.into_inner()) = new_value;
+        let new_value = self.stack.pop();
+        *self.stack.peek_mut(local_depth.into_inner()) = new_value;
         self.next_instr()
     }
 
     fn visit_local_tee(&mut self, local_depth: LocalDepth) {
-        let new_value = self.value_stack.last();
-        *self.value_stack.peek_mut(local_depth.into_inner()) = new_value;
+        let new_value = self.stack.last();
+        *self.stack.peek_mut(local_depth.into_inner()) = new_value;
         self.next_instr()
     }
 
     fn visit_global_get(&mut self, global_index: GlobalIdx) {
         let global_value = *self.global(global_index);
-        self.value_stack.push(global_value);
+        self.stack.push(global_value);
         self.next_instr()
     }
 
     fn visit_global_set(&mut self, global_index: GlobalIdx) {
-        let new_value = self.value_stack.pop();
+        let new_value = self.stack.pop();
         *self.global(global_index) = new_value;
         self.next_instr()
     }
@@ -607,7 +606,7 @@ where
     }
 
     fn visit_call_indirect(&mut self, signature_index: SignatureIdx) -> Result<CallOutcome, Trap> {
-        let func_index: u32 = self.value_stack.pop_as();
+        let func_index: u32 = self.stack.pop_as();
         let table = self.default_table();
         let func = table
             .get(self.ctx.as_context(), func_index as usize)
@@ -631,17 +630,17 @@ where
     }
 
     fn visit_const(&mut self, bytes: UntypedValue) {
-        self.value_stack.push(bytes);
+        self.stack.push(bytes);
         self.next_instr()
     }
 
     fn visit_drop(&mut self) {
-        let _ = self.value_stack.pop();
+        let _ = self.stack.pop();
         self.next_instr()
     }
 
     fn visit_select(&mut self) {
-        self.value_stack.pop2_eval(|e1, e2, e3| {
+        self.stack.pop2_eval(|e1, e2, e3| {
             let condition = <bool as From<UntypedValue>>::from(e3);
             let result = if condition { *e1 } else { e2 };
             *e1 = result;
@@ -652,12 +651,12 @@ where
     fn visit_current_memory(&mut self) {
         let memory = self.default_memory();
         let result = memory.current_pages(self.ctx.as_context()).0 as u32;
-        self.value_stack.push(result);
+        self.stack.push(result);
         self.next_instr()
     }
 
     fn visit_grow_memory(&mut self) {
-        let pages: u32 = self.value_stack.pop_as();
+        let pages: u32 = self.stack.pop_as();
         let memory = self.default_memory();
         let new_size = match memory.grow(self.ctx.as_context_mut(), Pages(pages as usize)) {
             Ok(Pages(old_size)) => old_size as u32,
@@ -671,7 +670,7 @@ where
         // so we need to reset it in order for the cache to reload in case it
         // is used again.
         self.cache.reset_default_memory_bytes();
-        self.value_stack.push(new_size);
+        self.stack.push(new_size);
         self.next_instr()
     }
 
