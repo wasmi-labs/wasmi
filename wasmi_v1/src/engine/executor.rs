@@ -30,7 +30,7 @@ use wasmi_core::{memory_units::Pages, ExtendInto, LittleEndianConvert, UntypedVa
 #[inline(always)]
 pub fn execute_frame<'engine>(
     ctx: impl AsContextMut,
-    frame: &mut FuncFrame,
+    frame: FuncFrame,
     cache: &mut InstanceCache,
     insts: Instructions<'engine>,
     value_stack: &'engine mut ValueStack,
@@ -40,13 +40,13 @@ pub fn execute_frame<'engine>(
 
 /// An execution context for executing a `wasmi` function frame.
 #[derive(Debug)]
-struct Executor<'engine, 'func, Ctx> {
+struct Executor<'engine, Ctx> {
     /// The program counter.
     pc: usize,
     /// Stores the value stack of live values on the Wasm stack.
     value_stack: &'engine mut ValueStack,
     /// The function frame that is being executed.
-    frame: &'func mut FuncFrame,
+    frame: FuncFrame,
     /// Stores frequently used instance related data.
     cache: &'engine mut InstanceCache,
     /// A mutable [`Store`] context.
@@ -57,7 +57,7 @@ struct Executor<'engine, 'func, Ctx> {
     insts: Instructions<'engine>,
 }
 
-impl<'engine, 'func, Ctx> Executor<'engine, 'func, Ctx>
+impl<'engine, Ctx> Executor<'engine, Ctx>
 where
     Ctx: AsContextMut,
 {
@@ -65,7 +65,7 @@ where
     #[inline(always)]
     pub fn new(
         ctx: Ctx,
-        frame: &'func mut FuncFrame,
+        frame: FuncFrame,
         cache: &'engine mut InstanceCache,
         insts: Instructions<'engine>,
         value_stack: &'engine mut ValueStack,
@@ -508,7 +508,7 @@ pub enum MaybeReturn {
     Continue,
 }
 
-impl<'engine, 'func, Ctx> Executor<'engine, 'func, Ctx>
+impl<'engine, Ctx> Executor<'engine, Ctx>
 where
     Ctx: AsContextMut,
 {

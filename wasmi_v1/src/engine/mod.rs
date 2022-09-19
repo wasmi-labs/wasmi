@@ -285,10 +285,10 @@ impl EngineInner {
         let signature = match func.as_internal(ctx.as_context()) {
             FuncEntityInternal::Wasm(wasm_func) => {
                 let signature = wasm_func.signature();
-                let mut frame = self.stack.call_wasm_root(wasm_func, &self.code_map)?;
+                let frame = self.stack.call_wasm_root(wasm_func, &self.code_map)?;
                 let instance = wasm_func.instance();
                 let mut cache = InstanceCache::from(instance);
-                self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
+                self.execute_wasm_func(ctx.as_context_mut(), frame, &mut cache)?;
                 signature
             }
             FuncEntityInternal::Host(host_func) => {
@@ -359,14 +359,14 @@ impl EngineInner {
     fn execute_wasm_func(
         &mut self,
         mut ctx: impl AsContextMut,
-        frame: &mut FuncFrame,
+        mut frame: FuncFrame,
         cache: &mut InstanceCache,
     ) -> Result<(), Trap> {
         'outer: loop {
             match self.execute_frame(ctx.as_context_mut(), frame, cache)? {
                 CallOutcome::Return => match self.stack.return_wasm() {
                     Some(caller) => {
-                        *frame = caller;
+                        frame = caller;
                         continue 'outer;
                     }
                     None => return Ok(()),
@@ -374,14 +374,14 @@ impl EngineInner {
                 CallOutcome::NestedCall(called_func) => {
                     match called_func.as_internal(ctx.as_context()) {
                         FuncEntityInternal::Wasm(wasm_func) => {
-                            self.stack.call_wasm(frame, wasm_func, &self.code_map)?;
+                            self.stack.call_wasm(&mut frame, wasm_func, &self.code_map)?;
                         }
                         FuncEntityInternal::Host(host_func) => {
                             cache.reset_default_memory_bytes();
                             let host_func = host_func.clone();
                             self.stack.call_host(
                                 ctx.as_context_mut(),
-                                frame,
+                                &mut frame,
                                 host_func,
                                 &self.func_types,
                             )?;
@@ -401,7 +401,7 @@ impl EngineInner {
     fn execute_frame(
         &mut self,
         ctx: impl AsContextMut,
-        frame: &mut FuncFrame,
+        frame: FuncFrame,
         cache: &mut InstanceCache,
     ) -> Result<CallOutcome, Trap> {
         let insts = self.code_map.insts(frame.iref());
