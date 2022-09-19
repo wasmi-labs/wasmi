@@ -29,11 +29,25 @@ pub struct FuncFrame {
 
 impl FuncFrame {
     /// Returns the program counter.
+    #[inline]
     pub fn pc(&self) -> usize {
         self.pc
     }
 
+    /// Bumps the program counter.
+    #[inline]
+    pub fn bump_pc(&mut self) {
+        self.bump_pc_by(1)
+    }
+
+    /// Bumps the program counter by an offset.
+    #[inline]
+    pub fn bump_pc_by(&mut self, delta: usize) {
+        self.pc += delta;
+    }
+
     /// Updates the program counter.
+    #[inline]
     pub fn update_pc(&mut self, new_pc: usize) {
         self.pc = new_pc;
     }

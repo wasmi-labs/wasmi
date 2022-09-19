@@ -42,12 +42,10 @@ pub fn execute_frame<'engine>(
 /// An execution context for executing a `wasmi` function frame.
 #[derive(Debug)]
 struct Executor<'engine, Ctx> {
-    /// The program counter.
-    pc: usize,
-    /// Stores the value stack of live values on the Wasm stack.
-    value_stack: &'engine mut ValueStack,
     /// The function frame that is being executed.
     frame: FuncFrame,
+    /// Stores the value stack of live values on the Wasm stack.
+    value_stack: &'engine mut ValueStack,
     /// Stores frequently used instance related data.
     cache: &'engine mut InstanceCache,
     /// A mutable [`Store`] context.
@@ -72,9 +70,7 @@ where
         value_stack: &'engine mut ValueStack,
     ) -> Self {
         cache.update_instance(frame.instance());
-        let pc = frame.pc();
         Self {
-            pc,
             value_stack,
             frame,
             cache,
@@ -281,7 +277,7 @@ where
         // # Safety
         //
         // Properly constructed `wasmi` bytecode can never produce invalid `pc`.
-        unsafe { self.insts.get_release_unchecked(self.pc) }
+        unsafe { self.insts.get_release_unchecked(self.frame.pc()) }
     }
 
     /// Returns the default linear memory.
@@ -479,22 +475,21 @@ where
     }
 
     fn try_next_instr(&mut self) -> Result<(), Trap> {
-        self.pc += 1;
+        self.frame.bump_pc();
         Ok(())
     }
 
     fn next_instr(&mut self) {
-        self.pc += 1;
+        self.frame.bump_pc();
     }
 
     fn branch_to(&mut self, target: Target) {
         self.value_stack.drop_keep(target.drop_keep());
-        self.pc = target.destination_pc().into_usize();
+        self.frame.update_pc(target.destination_pc().into_usize());
     }
 
     fn call_func(&mut self, func: Func) -> Result<CallOutcome, Trap> {
-        self.pc += 1;
-        self.frame.update_pc(self.pc);
+        self.frame.bump_pc();
         Ok(CallOutcome::NestedCall(func))
     }
 
@@ -557,7 +552,7 @@ where
         // A normalized index will always yield a target without panicking.
         let normalized_index = cmp::min(index as usize, max_index);
         // Update `pc`:
-        self.pc += normalized_index + 1;
+        self.frame.bump_pc_by(normalized_index + 1)
     }
 
     fn visit_ret(&mut self, drop_keep: DropKeep) -> Result<CallOutcome, Trap> {
