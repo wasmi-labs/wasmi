@@ -504,7 +504,7 @@ impl<'ctx, 'engine, HostData> Executor<'ctx, 'engine, HostData> {
             FuncEntityInternal::Wasm(wasm_func) => {
                 self.frame = self
                     .stack
-                    .call_wasm(&mut self.frame, wasm_func, self.code_map)?;
+                    .call_wasm(self.frame, wasm_func, self.code_map)?;
                 self.instrs = self.code_map.insts(self.frame.iref());
                 self.cache.update_instance(self.frame.instance());
             }

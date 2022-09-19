@@ -154,7 +154,7 @@ impl Stack {
     /// Prepares the [`Stack`] for the given Wasm function call.
     pub(crate) fn call_wasm<'engine>(
         &mut self,
-        caller: &mut FuncFrame,
+        caller: FuncFrame,
         wasm_func: &WasmFuncEntity,
         code_map: &'engine CodeMap,
     ) -> Result<FuncFrame, TrapCode> {
