@@ -33,20 +33,11 @@ use wasmi_core::{memory_units::Pages, ExtendInto, LittleEndianConvert, UntypedVa
 pub fn execute_frame<'engine>(
     mut ctx: impl AsContextMut,
     frame: FuncFrame,
-    cache: &mut InstanceCache,
     stack: &'engine mut Stack,
     code_map: &'engine CodeMap,
     func_types: &'engine FuncTypeRegistry,
 ) -> Result<(), Trap> {
-    Executor::new(
-        ctx.as_context_mut(),
-        frame,
-        cache,
-        stack,
-        code_map,
-        func_types,
-    )
-    .execute()
+    Executor::new(ctx.as_context_mut(), frame, stack, code_map, func_types).execute()
 }
 
 /// An execution context for executing a `wasmi` function frame.
@@ -61,7 +52,7 @@ struct Executor<'ctx, 'engine, HostData> {
     /// This hosts the value stack as well as the call stack.
     stack: &'engine mut Stack,
     /// Stores frequently used instance related data.
-    cache: &'engine mut InstanceCache,
+    cache: InstanceCache,
     /// A mutable [`Store`] context.
     ///
     /// [`Store`]: [`crate::v1::Store`]
@@ -79,12 +70,11 @@ impl<'ctx, 'engine, HostData> Executor<'ctx, 'engine, HostData> {
     pub fn new(
         ctx: StoreContextMut<'ctx, HostData>,
         frame: FuncFrame,
-        cache: &'engine mut InstanceCache,
         value_stack: &'engine mut Stack,
         code_map: &'engine CodeMap,
         func_types: &'engine FuncTypeRegistry,
     ) -> Self {
-        cache.update_instance(frame.instance());
+        let cache = InstanceCache::from(frame.instance());
         let instrs = code_map.insts(frame.iref());
         Self {
             stack: value_stack,

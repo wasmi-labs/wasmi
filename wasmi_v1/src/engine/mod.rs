@@ -14,7 +14,6 @@ mod traits;
 pub(crate) use self::func_args::{FuncParams, FuncResults};
 use self::{
     bytecode::Instruction,
-    cache::InstanceCache,
     code_map::CodeMap,
     executor::execute_frame,
     func_types::FuncTypeRegistry,
@@ -277,9 +276,7 @@ impl EngineInner {
             FuncEntityInternal::Wasm(wasm_func) => {
                 let signature = wasm_func.signature();
                 let frame = self.stack.call_wasm_root(wasm_func, &self.code_map)?;
-                let instance = wasm_func.instance();
-                let mut cache = InstanceCache::from(instance);
-                self.execute_wasm_func(ctx.as_context_mut(), frame, &mut cache)?;
+                self.execute_wasm_func(ctx.as_context_mut(), frame)?;
                 signature
             }
             FuncEntityInternal::Host(host_func) => {
@@ -347,16 +344,10 @@ impl EngineInner {
     ///
     /// - When encountering a Wasm trap during the execution of `func`.
     /// - When a called host function trapped.
-    fn execute_wasm_func(
-        &mut self,
-        ctx: impl AsContextMut,
-        frame: FuncFrame,
-        cache: &mut InstanceCache,
-    ) -> Result<(), Trap> {
+    fn execute_wasm_func(&mut self, ctx: impl AsContextMut, frame: FuncFrame) -> Result<(), Trap> {
         execute_frame(
             ctx,
             frame,
-            cache,
             &mut self.stack,
             &self.code_map,
             &self.func_types,
