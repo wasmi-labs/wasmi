@@ -176,8 +176,8 @@ impl Engine {
     #[cfg(test)]
     pub(crate) fn resolve_inst(&self, func_body: FuncBody, index: usize) -> Option<Instruction> {
         let this = self.inner.lock();
-        let iref = this.code_map.header(func_body).iref();
-        this.code_map.insts(iref).get(index).copied()
+        let iref = this.code_map.header(func_body).bounded_iref();
+        this.code_map.bounded_insts(iref).get(index).copied()
     }
 
     /// Executes the given [`Func`] using the given arguments `params` and stores the result into `results`.
@@ -404,7 +404,7 @@ impl EngineInner {
         frame: &mut FuncFrame,
         cache: &mut InstanceCache,
     ) -> Result<CallOutcome, Trap> {
-        let insts = self.code_map.insts(frame.iref()).as_ptr();
+        let insts = self.code_map.insts(frame.iref());
         execute_frame(ctx, frame, cache, insts, &mut self.stack.values)
     }
 }

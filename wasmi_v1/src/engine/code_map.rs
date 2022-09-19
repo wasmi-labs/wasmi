@@ -23,6 +23,13 @@ impl Index for FuncBody {
 pub struct InstructionsRef {
     /// The start index in the instructions array.
     start: usize,
+}
+
+/// A bounded reference to the [`Instructions`] of a [`FuncBod`].
+#[cfg(test)]
+pub struct BoundedInstructionsRef {
+    /// The start index in the instructions array.
+    start: usize,
     /// The end index in the instructions array.
     end: usize,
 }
@@ -36,12 +43,23 @@ pub struct FuncHeader {
     len_locals: usize,
     /// The maximum stack height usage of the function during execution.
     max_stack_height: usize,
+    /// The number of instructionf of the function.
+    #[cfg_attr(not(test), allow(dead_code))]
+    len_instrs: usize,
 }
 
 impl FuncHeader {
     /// Returns a reference to the instructions of the function.
     pub fn iref(&self) -> InstructionsRef {
         self.iref
+    }
+
+    /// Returns a bounded reference to the instruction of the function.
+    #[cfg(test)]
+    pub fn bounded_iref(&self) -> BoundedInstructionsRef {
+        let start = self.iref.start;
+        let end = start + self.len_instrs;
+        BoundedInstructionsRef { start, end }
     }
 
     /// Returns the amount of local variable of the function.
@@ -89,20 +107,30 @@ impl CodeMap {
     {
         let start = self.insts.len();
         self.insts.extend(insts);
-        let end = self.insts.len();
-        let iref = InstructionsRef { start, end };
+        let len_instrs = self.insts.len() - start;
+        let iref = InstructionsRef { start };
         let header = FuncHeader {
             iref,
             len_locals,
             max_stack_height: len_locals + max_stack_height,
+            len_instrs,
         };
         let header_index = self.headers.len();
         self.headers.push(header);
         FuncBody(header_index)
     }
 
-    /// Resolves the instructions given an [`InstructionsRef`].
-    pub fn insts(&self, iref: InstructionsRef) -> Instructions {
+    /// Resolves the pointer to the first instruction of a compiled function.
+    pub fn insts(&self, iref: InstructionsRef) -> InstructionsPtr {
+        InstructionsPtr {
+            first: NonNull::from(&self.insts[iref.start]),
+            lt: PhantomData,
+        }
+    }
+
+    /// Resolves the pointer to the first instruction of a compiled function.
+    #[cfg(test)]
+    pub fn bounded_insts(&self, iref: BoundedInstructionsRef) -> Instructions {
         Instructions {
             insts: &self.insts[iref.start..iref.end],
         }
@@ -116,10 +144,12 @@ impl CodeMap {
 
 /// The instructions of a resolved [`FuncBody`].
 #[derive(Debug, Copy, Clone)]
+#[cfg(test)]
 pub struct Instructions<'a> {
     insts: &'a [Instruction],
 }
 
+#[cfg(test)]
 impl<'a> Instructions<'a> {
     /// Returns the instruction at the given index.
     ///
@@ -129,14 +159,6 @@ impl<'a> Instructions<'a> {
     #[cfg(test)]
     pub fn get(&self, index: usize) -> Option<&Instruction> {
         self.insts.get(index)
-    }
-
-    /// Returns an [`InstructionsPtr`] to the first instruction of the [`Instructions`].
-    pub fn as_ptr(&self) -> InstructionsPtr<'a> {
-        InstructionsPtr {
-            first: NonNull::from(&self.insts[0]),
-            lt: PhantomData,
-        }
     }
 }
 
