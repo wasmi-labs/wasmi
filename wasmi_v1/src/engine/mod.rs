@@ -141,7 +141,12 @@ impl Engine {
         F: FnOnce(&FuncType) -> R,
     {
         // Note: The clone operation on FuncType is intentionally cheap.
-        f(self.inner.lock().res.func_types.resolve_func_type(func_type))
+        f(self
+            .inner
+            .lock()
+            .res
+            .func_types
+            .resolve_func_type(func_type))
     }
 
     /// Allocates the instructions of a Wasm function body to the [`Engine`].

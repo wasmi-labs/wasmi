@@ -3,16 +3,19 @@ use super::{
     bytecode::{FuncIdx, GlobalIdx, Instruction, LocalDepth, Offset, SignatureIdx},
     cache::InstanceCache,
     code_map::Instructions,
+    stack::Stack,
     AsContextMut,
     CallOutcome,
     DropKeep,
+    EngineResources,
     FuncFrame,
     Target,
-    stack::Stack, EngineResources,
 };
 use crate::{
     core::{Trap, TrapCode, F32, F64},
-    Func, StoreContextMut, AsContext,
+    AsContext,
+    Func,
+    StoreContextMut,
 };
 use core::cmp;
 use wasmi_core::{memory_units::Pages, ExtendInto, LittleEndianConvert, UntypedValue, WrapInto};
