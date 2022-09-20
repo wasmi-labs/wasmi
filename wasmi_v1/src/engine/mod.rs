@@ -127,7 +127,7 @@ impl Engine {
 
     /// Allocates a new function type to the engine.
     pub(super) fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
-        self.inner.lock().func_types.alloc_func_type(func_type)
+        self.inner.lock().res.func_types.alloc_func_type(func_type)
     }
 
     /// Resolves a deduplicated function type into a [`FuncType`] entity.
@@ -141,7 +141,7 @@ impl Engine {
         F: FnOnce(&FuncType) -> R,
     {
         // Note: The clone operation on FuncType is intentionally cheap.
-        f(self.inner.lock().func_types.resolve_func_type(func_type))
+        f(self.inner.lock().res.func_types.resolve_func_type(func_type))
     }
 
     /// Allocates the instructions of a Wasm function body to the [`Engine`].
@@ -176,8 +176,8 @@ impl Engine {
     #[cfg(test)]
     pub(crate) fn resolve_inst(&self, func_body: FuncBody, index: usize) -> Option<Instruction> {
         let this = self.inner.lock();
-        let iref = this.code_map.header(func_body).iref();
-        this.code_map.insts(iref).get(index).copied()
+        let iref = this.res.code_map.header(func_body).iref();
+        this.res.code_map.insts(iref).get(index).copied()
     }
 
     /// Executes the given [`Func`] using the given arguments `params` and stores the result into `results`.
@@ -219,6 +219,13 @@ pub struct EngineInner {
     config: Config,
     /// The value and call stacks.
     stack: Stack,
+    /// Immutable function execution resources.
+    res: EngineResources,
+}
+
+/// The resources of the engine that are immutable during function execution.
+#[derive(Debug)]
+pub struct EngineResources {
     /// Stores all Wasm function bodies that the interpreter is aware of.
     code_map: CodeMap,
     /// Deduplicated function types.
@@ -230,6 +237,16 @@ pub struct EngineInner {
     func_types: FuncTypeRegistry,
 }
 
+impl EngineResources {
+    /// Creates new [`EngineResources`] for the given [`EngineIdx`].
+    pub fn new(engine_idx: EngineIdx) -> Self {
+        Self {
+            code_map: CodeMap::default(),
+            func_types: FuncTypeRegistry::new(engine_idx),
+        }
+    }
+}
+
 impl EngineInner {
     /// Creates a new [`EngineInner`] with the given [`Config`].
     pub fn new(config: &Config) -> Self {
@@ -237,8 +254,7 @@ impl EngineInner {
         Self {
             config: *config,
             stack: Stack::new(config.stack_limits()),
-            code_map: CodeMap::default(),
-            func_types: FuncTypeRegistry::new(engine_idx),
+            res: EngineResources::new(engine_idx),
         }
     }
 
@@ -260,7 +276,7 @@ impl EngineInner {
         I: IntoIterator<Item = Instruction>,
         I::IntoIter: ExactSizeIterator,
     {
-        self.code_map.alloc(len_locals, max_stack_height, insts)
+        self.res.code_map.alloc(len_locals, max_stack_height, insts)
     }
 
     /// Executes the given [`Func`] using the given arguments `args` and stores the result into `results`.
@@ -285,7 +301,7 @@ impl EngineInner {
         let signature = match func.as_internal(ctx.as_context()) {
             FuncEntityInternal::Wasm(wasm_func) => {
                 let signature = wasm_func.signature();
-                let mut frame = self.stack.call_wasm_root(wasm_func, &self.code_map)?;
+                let mut frame = self.stack.call_wasm_root(wasm_func, &self.res.code_map)?;
                 let instance = wasm_func.instance();
                 let mut cache = InstanceCache::from(instance);
                 self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
@@ -295,7 +311,7 @@ impl EngineInner {
                 let signature = host_func.signature();
                 let host_func = host_func.clone();
                 self.stack
-                    .call_host_root(ctx.as_context_mut(), host_func, &self.func_types)?;
+                    .call_host_root(ctx.as_context_mut(), host_func, &self.res.func_types)?;
                 signature
             }
         };
@@ -331,7 +347,7 @@ impl EngineInner {
     where
         Results: CallResults,
     {
-        let result_types = self.func_types.resolve_func_type(func_type).results();
+        let result_types = self.res.func_types.resolve_func_type(func_type).results();
         assert_eq!(
             self.stack.values.len(),
             results.len_results(),
@@ -374,7 +390,7 @@ impl EngineInner {
                 CallOutcome::NestedCall(called_func) => {
                     match called_func.as_internal(ctx.as_context()) {
                         FuncEntityInternal::Wasm(wasm_func) => {
-                            self.stack.call_wasm(frame, wasm_func, &self.code_map)?;
+                            self.stack.call_wasm(frame, wasm_func, &self.res.code_map)?;
                         }
                         FuncEntityInternal::Host(host_func) => {
                             cache.reset_default_memory_bytes();
@@ -383,7 +399,7 @@ impl EngineInner {
                                 ctx.as_context_mut(),
                                 frame,
                                 host_func,
-                                &self.func_types,
+                                &self.res.func_types,
                             )?;
                         }
                     }
@@ -404,7 +420,7 @@ impl EngineInner {
         frame: &mut FuncFrame,
         cache: &mut InstanceCache,
     ) -> Result<CallOutcome, Trap> {
-        let insts = self.code_map.insts(frame.iref());
+        let insts = self.res.code_map.insts(frame.iref());
         execute_frame(ctx, frame, cache, insts, &mut self.stack)
     }
 }
