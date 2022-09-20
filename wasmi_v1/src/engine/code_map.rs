@@ -157,3 +157,10 @@ impl<'a> InstructionsPtr<'a> {
         &*self.first.as_ptr().add(pc)
     }
 }
+
+#[test]
+fn size_of_instruction_ref_ptr() {
+    let ptr_size = core::mem::size_of::<*const ()>();
+    assert_eq!(core::mem::size_of::<InstructionsRef>(), ptr_size,);
+    assert_eq!(core::mem::size_of::<InstructionsPtr>(), ptr_size,);
+}
