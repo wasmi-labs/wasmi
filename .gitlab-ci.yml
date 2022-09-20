@@ -20,7 +20,7 @@ default:
   image:                           "paritytech/ci-linux:production"
   interruptible:                   true
   tags:
-    - linux-docker
+    - linux-docker-benches
 
 # benchmark
 criterion-benchmark:
