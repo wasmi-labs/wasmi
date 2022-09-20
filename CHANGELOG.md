@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Additionally we have an `Internal` section for changes that are of interest to developers.
 
+## [0.13.2] - 2022-09-20
+
+**Note:** This is going to be the last release with the legacy `wasmi` engine.
+          Future releases are going to use the new Wasm execution engines
+          that are currently in development.
+          We may consider to publish the legacy `wasmi` engine as `wasmi-legacy`
+          crate.
+
+### Fixed
+
+- Support allocating 4GB of memory (https://github.com/paritytech/wasmi/pull/452)
+
+## [0.13.1] - 2022-09-20
+
+**Note:** Yanked because of missing `wasmi_core` bump.
+
 ## [0.13.0] - 2022-07-25
 
 **Note:** This is going to be the last release with the legacy `wasmi` engine.
