@@ -90,7 +90,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     #[inline(always)]
     fn execute(mut self) -> Result<(), Trap> {
         use Instruction as Instr;
-        'next: loop {
+        loop {
             match *self.instr() {
                 Instr::LocalGet { local_depth } => self.visit_local_get(local_depth),
                 Instr::LocalSet { local_depth } => self.visit_local_set(local_depth),
@@ -105,10 +105,11 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
                 }
                 Instr::BrTable { len_targets } => self.visit_br_table(len_targets),
                 Instr::Unreachable => self.visit_unreachable()?,
-                Instr::Return(drop_keep) => match self.visit_ret(drop_keep) {
-                    MaybeReturn::Return => return Ok(()),
-                    MaybeReturn::Continue => continue 'next,
-                },
+                Instr::Return(drop_keep) => {
+                    if let MaybeReturn::Return = self.visit_ret(drop_keep) {
+                        return Ok(());
+                    }
+                }
                 Instr::Call(func) => self.visit_call(func)?,
                 Instr::CallIndirect(signature) => self.visit_call_indirect(signature)?,
                 Instr::Drop => self.visit_drop(),
