@@ -18,7 +18,7 @@ use self::{
     code_map::CodeMap,
     executor::execute_frame,
     func_types::FuncTypeRegistry,
-    stack::{FuncFrame, Stack, ValueStack},
+    stack::{FuncFrame, Stack},
 };
 pub use self::{
     bytecode::{DropKeep, Target},
@@ -405,6 +405,6 @@ impl EngineInner {
         cache: &mut InstanceCache,
     ) -> Result<CallOutcome, Trap> {
         let insts = self.code_map.insts(frame.iref());
-        execute_frame(ctx, frame, cache, insts, &mut self.stack.values)
+        execute_frame(ctx, frame, cache, insts, &mut self.stack)
     }
 }

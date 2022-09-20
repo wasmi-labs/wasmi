@@ -8,7 +8,7 @@ use super::{
     DropKeep,
     FuncFrame,
     Target,
-    ValueStack,
+    stack::Stack,
 };
 use crate::{
     core::{Trap, TrapCode, F32, F64},
@@ -33,7 +33,7 @@ pub fn execute_frame<'engine>(
     frame: &mut FuncFrame,
     cache: &mut InstanceCache,
     insts: Instructions<'engine>,
-    value_stack: &'engine mut ValueStack,
+    value_stack: &'engine mut Stack,
 ) -> Result<CallOutcome, Trap> {
     Executor::new(ctx, frame, cache, insts, value_stack).execute()
 }
@@ -44,7 +44,7 @@ struct Executor<'engine, 'func, Ctx> {
     /// The program counter.
     pc: usize,
     /// Stores the value stack of live values on the Wasm stack.
-    value_stack: &'engine mut ValueStack,
+    value_stack: &'engine mut Stack,
     /// The function frame that is being executed.
     frame: &'func mut FuncFrame,
     /// Stores frequently used instance related data.
@@ -68,7 +68,7 @@ where
         frame: &'func mut FuncFrame,
         cache: &'engine mut InstanceCache,
         insts: Instructions<'engine>,
-        value_stack: &'engine mut ValueStack,
+        value_stack: &'engine mut Stack,
     ) -> Self {
         cache.update_instance(frame.instance());
         let pc = frame.pc();
