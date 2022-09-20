@@ -8,7 +8,7 @@ use super::{
     DropKeep,
     FuncFrame,
     Target,
-    stack::Stack,
+    stack::Stack, EngineResources,
 };
 use crate::{
     core::{Trap, TrapCode, F32, F64},
@@ -32,10 +32,10 @@ pub fn execute_frame<'engine>(
     mut ctx: impl AsContextMut,
     frame: &mut FuncFrame,
     cache: &mut InstanceCache,
-    insts: Instructions<'engine>,
     value_stack: &'engine mut Stack,
+    res: &'engine EngineResources,
 ) -> Result<CallOutcome, Trap> {
-    Executor::new(ctx.as_context_mut(), frame, cache, insts, value_stack).execute()
+    Executor::new(ctx.as_context_mut(), frame, cache, value_stack, res).execute()
 }
 
 /// An execution context for executing a `wasmi` function frame.
@@ -64,10 +64,11 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         ctx: StoreContextMut<'ctx, HostData>,
         frame: &'func mut FuncFrame,
         cache: &'engine mut InstanceCache,
-        insts: Instructions<'engine>,
         value_stack: &'engine mut Stack,
+        res: &'engine EngineResources,
     ) -> Self {
         cache.update_instance(frame.instance());
+        let insts = res.code_map.insts(frame.iref());
         let pc = frame.pc();
         Self {
             pc,

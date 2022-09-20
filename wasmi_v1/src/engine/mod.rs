@@ -420,7 +420,6 @@ impl EngineInner {
         frame: &mut FuncFrame,
         cache: &mut InstanceCache,
     ) -> Result<CallOutcome, Trap> {
-        let insts = self.res.code_map.insts(frame.iref());
-        execute_frame(ctx, frame, cache, insts, &mut self.stack)
+        execute_frame(ctx, frame, cache, &mut self.stack, &self.res)
     }
 }
