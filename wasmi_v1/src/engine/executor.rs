@@ -47,7 +47,7 @@ struct Executor<'ctx, 'engine, 'func, HostData> {
     /// The program counter.
     pc: usize,
     /// Stores the value stack of live values on the Wasm stack.
-    value_stack: &'engine mut Stack,
+    stack: &'engine mut Stack,
     /// The function frame that is being executed.
     frame: &'func mut FuncFrame,
     /// Stores frequently used instance related data.
@@ -77,7 +77,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         let pc = frame.pc();
         Self {
             pc,
-            value_stack,
+            stack: value_stack,
             frame,
             cache,
             ctx,
@@ -349,7 +349,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         UntypedValue: From<T>,
         T: LittleEndianConvert,
     {
-        self.value_stack.try_eval_top(|address| {
+        self.stack.try_eval_top(|address| {
             let raw_address = u32::from(address);
             let address = Self::effective_address(offset, raw_address)?;
             let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
@@ -384,7 +384,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         T: ExtendInto<U> + LittleEndianConvert,
         UntypedValue: From<U>,
     {
-        self.value_stack.try_eval_top(|address| {
+        self.stack.try_eval_top(|address| {
             let raw_address = u32::from(address);
             let address = Self::effective_address(offset, raw_address)?;
             let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
@@ -412,7 +412,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     where
         T: LittleEndianConvert + From<UntypedValue>,
     {
-        let (address, value) = self.value_stack.pop2();
+        let (address, value) = self.stack.pop2();
         let value = T::from(value);
         let address = Self::effective_address(offset, u32::from(address))?;
         let bytes = <T as LittleEndianConvert>::into_le_bytes(value);
@@ -439,7 +439,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         T: WrapInto<U> + From<UntypedValue>,
         U: LittleEndianConvert,
     {
-        let (address, value) = self.value_stack.pop2();
+        let (address, value) = self.stack.pop2();
         let wrapped_value = T::from(value).wrap_into();
         let address = Self::effective_address(offset, u32::from(address))?;
         let bytes = <U as LittleEndianConvert>::into_le_bytes(wrapped_value);
@@ -451,7 +451,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     }
 
     fn execute_unary(&mut self, f: fn(UntypedValue) -> UntypedValue) {
-        self.value_stack.eval_top(f);
+        self.stack.eval_top(f);
         self.next_instr()
     }
 
@@ -459,12 +459,12 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         &mut self,
         f: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), Trap> {
-        self.value_stack.try_eval_top(f)?;
+        self.stack.try_eval_top(f)?;
         self.try_next_instr()
     }
 
     fn execute_binary(&mut self, f: fn(UntypedValue, UntypedValue) -> UntypedValue) {
-        self.value_stack.eval_top2(f);
+        self.stack.eval_top2(f);
         self.next_instr()
     }
 
@@ -472,7 +472,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         &mut self,
         f: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), Trap> {
-        self.value_stack.try_eval_top2(f)?;
+        self.stack.try_eval_top2(f)?;
         self.try_next_instr()
     }
 
@@ -495,7 +495,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     }
 
     fn branch_to(&mut self, target: Target) {
-        self.value_stack.drop_keep(target.drop_keep());
+        self.stack.drop_keep(target.drop_keep());
         self.pc = target.destination_pc().into_usize();
     }
 
@@ -509,7 +509,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.frame.update_pc(self.pc + 1);
         match called.as_internal(self.ctx.as_context()) {
             FuncEntityInternal::Wasm(wasm_func) => {
-                self.value_stack
+                self.stack
                     .call_wasm(&mut self.frame, wasm_func, &self.res.code_map)?;
                 self.sync_frame();
             }
@@ -517,7 +517,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
                 self.pc += 1;
                 self.cache.reset_default_memory_bytes();
                 let host_func = host_func.clone();
-                self.value_stack.call_host(
+                self.stack.call_host(
                     self.ctx.as_context_mut(),
                     &self.frame,
                     host_func,
@@ -529,8 +529,8 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     }
 
     fn ret(&mut self, drop_keep: DropKeep) -> MaybeReturn {
-        self.value_stack.drop_keep(drop_keep);
-        match self.value_stack.return_wasm() {
+        self.stack.drop_keep(drop_keep);
+        match self.stack.return_wasm() {
             Some(caller) => {
                 *self.frame = caller;
                 self.sync_frame();
@@ -557,7 +557,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     }
 
     fn visit_br_if_eqz(&mut self, target: Target) {
-        let condition = self.value_stack.pop_as();
+        let condition = self.stack.pop_as();
         if condition {
             self.next_instr()
         } else {
@@ -566,7 +566,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     }
 
     fn visit_br_if_nez(&mut self, target: Target) {
-        let condition = self.value_stack.pop_as();
+        let condition = self.stack.pop_as();
         if condition {
             self.branch_to(target)
         } else {
@@ -575,7 +575,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     }
 
     fn visit_return_if_nez(&mut self, drop_keep: DropKeep) -> MaybeReturn {
-        let condition = self.value_stack.pop_as();
+        let condition = self.stack.pop_as();
         if condition {
             self.ret(drop_keep)
         } else {
@@ -585,7 +585,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     }
 
     fn visit_br_table(&mut self, len_targets: usize) {
-        let index: u32 = self.value_stack.pop_as();
+        let index: u32 = self.stack.pop_as();
         // The index of the default target which is the last target of the slice.
         let max_index = len_targets - 1;
         // A normalized index will always yield a target without panicking.
@@ -599,31 +599,31 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     }
 
     fn visit_local_get(&mut self, local_depth: LocalDepth) {
-        let value = self.value_stack.peek(local_depth.into_inner());
-        self.value_stack.push(value);
+        let value = self.stack.peek(local_depth.into_inner());
+        self.stack.push(value);
         self.next_instr()
     }
 
     fn visit_local_set(&mut self, local_depth: LocalDepth) {
-        let new_value = self.value_stack.pop();
-        *self.value_stack.peek_mut(local_depth.into_inner()) = new_value;
+        let new_value = self.stack.pop();
+        *self.stack.peek_mut(local_depth.into_inner()) = new_value;
         self.next_instr()
     }
 
     fn visit_local_tee(&mut self, local_depth: LocalDepth) {
-        let new_value = self.value_stack.last();
-        *self.value_stack.peek_mut(local_depth.into_inner()) = new_value;
+        let new_value = self.stack.last();
+        *self.stack.peek_mut(local_depth.into_inner()) = new_value;
         self.next_instr()
     }
 
     fn visit_global_get(&mut self, global_index: GlobalIdx) {
         let global_value = *self.global(global_index);
-        self.value_stack.push(global_value);
+        self.stack.push(global_value);
         self.next_instr()
     }
 
     fn visit_global_set(&mut self, global_index: GlobalIdx) {
-        let new_value = self.value_stack.pop();
+        let new_value = self.stack.pop();
         *self.global(global_index) = new_value;
         self.next_instr()
     }
@@ -636,7 +636,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     }
 
     fn visit_call_indirect(&mut self, signature_index: SignatureIdx) -> Result<(), Trap> {
-        let func_index: u32 = self.value_stack.pop_as();
+        let func_index: u32 = self.stack.pop_as();
         let table = self.default_table();
         let func = table
             .get(self.ctx.as_context(), func_index as usize)
@@ -660,17 +660,17 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     }
 
     fn visit_const(&mut self, bytes: UntypedValue) {
-        self.value_stack.push(bytes);
+        self.stack.push(bytes);
         self.next_instr()
     }
 
     fn visit_drop(&mut self) {
-        let _ = self.value_stack.pop();
+        let _ = self.stack.pop();
         self.next_instr()
     }
 
     fn visit_select(&mut self) {
-        self.value_stack.pop2_eval(|e1, e2, e3| {
+        self.stack.pop2_eval(|e1, e2, e3| {
             let condition = <bool as From<UntypedValue>>::from(e3);
             let result = if condition { *e1 } else { e2 };
             *e1 = result;
@@ -681,12 +681,12 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     fn visit_current_memory(&mut self) {
         let memory = self.default_memory();
         let result = memory.current_pages(self.ctx.as_context()).0 as u32;
-        self.value_stack.push(result);
+        self.stack.push(result);
         self.next_instr()
     }
 
     fn visit_grow_memory(&mut self) {
-        let pages: u32 = self.value_stack.pop_as();
+        let pages: u32 = self.stack.pop_as();
         let memory = self.default_memory();
         let new_size = match memory.grow(self.ctx.as_context_mut(), Pages(pages as usize)) {
             Ok(Pages(old_size)) => old_size as u32,
@@ -700,7 +700,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         // so we need to reset it in order for the cache to reload in case it
         // is used again.
         self.cache.reset_default_memory_bytes();
-        self.value_stack.push(new_size);
+        self.stack.push(new_size);
         self.next_instr()
     }
 
