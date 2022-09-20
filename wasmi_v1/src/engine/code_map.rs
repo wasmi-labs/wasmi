@@ -34,9 +34,6 @@ pub struct FuncHeader {
     len_locals: usize,
     /// The maximum stack height usage of the function during execution.
     max_stack_height: usize,
-    /// The number of instructionf of the function.
-    #[cfg_attr(not(test), allow(dead_code))]
-    len_instrs: usize,
 }
 
 impl FuncHeader {
@@ -93,13 +90,11 @@ impl CodeMap {
     {
         let start = self.insts.len();
         self.insts.extend(insts);
-        let len_instrs = self.insts.len() - start;
         let iref = InstructionsRef { start };
         let header = FuncHeader {
             iref,
             len_locals,
             max_stack_height: len_locals + max_stack_height,
-            len_instrs,
         };
         let header_index = self.headers.len();
         self.headers.push(header);
@@ -120,7 +115,10 @@ impl CodeMap {
     pub fn get_instr(&self, func_body: FuncBody, index: usize) -> Option<&Instruction> {
         let header = self.header(func_body);
         let start = header.iref.start;
-        let end = start + header.len_instrs;
+        let end = self
+            .header_next(func_body)
+            .map(|header| header.iref.start)
+            .unwrap_or(self.insts.len());
         let instrs = &self.insts[start..end];
         instrs.get(index)
     }
@@ -129,6 +127,15 @@ impl CodeMap {
     #[inline]
     pub fn header(&self, func_body: FuncBody) -> &FuncHeader {
         &self.headers[func_body.0]
+    }
+
+    /// Returns the [`FuncHeader`] of the next function of [`FuncBody`].
+    ///
+    /// This is important to synthesize how many instructions there are in
+    /// the function referred to by [`FuncBody`].
+    #[cfg(test)]
+    pub fn header_next(&self, func_body: FuncBody) -> Option<&FuncHeader> {
+        self.headers.get(func_body.0 + 1)
     }
 }
 
