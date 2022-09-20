@@ -5,7 +5,6 @@ use super::{
     code_map::Instructions,
     stack::Stack,
     AsContextMut,
-    CallOutcome,
     DropKeep,
     EngineResources,
     FuncFrame,
@@ -38,7 +37,7 @@ pub fn execute_frame<'engine>(
     cache: &mut InstanceCache,
     value_stack: &'engine mut Stack,
     res: &'engine EngineResources,
-) -> Result<CallOutcome, Trap> {
+) -> Result<(), Trap> {
     Executor::new(ctx.as_context_mut(), frame, cache, value_stack, res).execute()
 }
 
@@ -89,9 +88,9 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
 
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
-    fn execute(mut self) -> Result<CallOutcome, Trap> {
+    fn execute(mut self) -> Result<(), Trap> {
         use Instruction as Instr;
-        loop {
+        'next: loop {
             match *self.instr() {
                 Instr::LocalGet { local_depth } => self.visit_local_get(local_depth),
                 Instr::LocalSet { local_depth } => self.visit_local_set(local_depth),
@@ -101,12 +100,15 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
                 Instr::BrIfNez(target) => self.visit_br_if_nez(target),
                 Instr::ReturnIfNez(drop_keep) => {
                     if let MaybeReturn::Return = self.visit_return_if_nez(drop_keep) {
-                        return Ok(CallOutcome::Return);
+                        return Ok(());
                     }
                 }
                 Instr::BrTable { len_targets } => self.visit_br_table(len_targets),
                 Instr::Unreachable => self.visit_unreachable()?,
-                Instr::Return(drop_keep) => return self.visit_ret(drop_keep),
+                Instr::Return(drop_keep) => match self.visit_ret(drop_keep) {
+                    MaybeReturn::Return => return Ok(()),
+                    MaybeReturn::Continue => continue 'next,
+                },
                 Instr::Call(func) => self.visit_call(func)?,
                 Instr::CallIndirect(signature) => self.visit_call_indirect(signature)?,
                 Instr::Drop => self.visit_drop(),
@@ -496,15 +498,19 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.pc = target.destination_pc().into_usize();
     }
 
+    fn sync_frame(&mut self) {
+        self.cache.update_instance(self.frame.instance());
+        self.insts = self.res.code_map.insts(self.frame.iref());
+        self.pc = self.frame.pc();
+    }
+
     fn call_func(&mut self, called: Func) -> Result<(), Trap> {
         self.frame.update_pc(self.pc + 1);
         match called.as_internal(self.ctx.as_context()) {
             FuncEntityInternal::Wasm(wasm_func) => {
                 self.value_stack
                     .call_wasm(&mut self.frame, wasm_func, &self.res.code_map)?;
-                self.cache.update_instance(self.frame.instance());
-                self.insts = self.res.code_map.insts(self.frame.iref());
-                self.pc = 0;
+                self.sync_frame();
             }
             FuncEntityInternal::Host(host_func) => {
                 self.pc += 1;
@@ -521,8 +527,16 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         Ok(())
     }
 
-    fn ret(&mut self, drop_keep: DropKeep) {
-        self.value_stack.drop_keep(drop_keep)
+    fn ret(&mut self, drop_keep: DropKeep) -> MaybeReturn {
+        self.value_stack.drop_keep(drop_keep);
+        match self.value_stack.return_wasm() {
+            Some(caller) => {
+                *self.frame = caller;
+                self.sync_frame();
+                MaybeReturn::Continue
+            }
+            None => MaybeReturn::Return,
+        }
     }
 }
 
@@ -562,8 +576,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     fn visit_return_if_nez(&mut self, drop_keep: DropKeep) -> MaybeReturn {
         let condition = self.value_stack.pop_as();
         if condition {
-            self.ret(drop_keep);
-            MaybeReturn::Return
+            self.ret(drop_keep)
         } else {
             self.next_instr();
             MaybeReturn::Continue
@@ -580,9 +593,8 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.pc += normalized_index + 1;
     }
 
-    fn visit_ret(&mut self, drop_keep: DropKeep) -> Result<CallOutcome, Trap> {
-        self.ret(drop_keep);
-        Ok(CallOutcome::Return)
+    fn visit_ret(&mut self, drop_keep: DropKeep) -> MaybeReturn {
+        self.ret(drop_keep)
     }
 
     fn visit_local_get(&mut self, local_depth: LocalDepth) {
