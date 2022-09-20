@@ -58,6 +58,8 @@ struct Executor<'ctx, 'engine, 'func, HostData> {
     ctx: StoreContextMut<'ctx, HostData>,
     /// The instructions of the executed function frame.
     insts: Instructions<'engine>,
+    /// The engine resources immutable during function execution.
+    res: &'engine EngineResources,
 }
 
 impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
@@ -80,6 +82,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
             cache,
             ctx,
             insts,
+            res,
         }
     }
 
