@@ -35,10 +35,10 @@ pub fn execute_frame<'engine>(
     mut ctx: impl AsContextMut,
     frame: &mut FuncFrame,
     cache: &mut InstanceCache,
-    value_stack: &'engine mut Stack,
+    stack: &'engine mut Stack,
     res: &'engine EngineResources,
 ) -> Result<(), Trap> {
-    Executor::new(ctx.as_context_mut(), frame, cache, value_stack, res).execute()
+    Executor::new(ctx.as_context_mut(), frame, cache, stack, res).execute()
 }
 
 /// An execution context for executing a `wasmi` function frame.
@@ -69,7 +69,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         ctx: StoreContextMut<'ctx, HostData>,
         frame: &'func mut FuncFrame,
         cache: &'engine mut InstanceCache,
-        value_stack: &'engine mut Stack,
+        stack: &'engine mut Stack,
         res: &'engine EngineResources,
     ) -> Self {
         cache.update_instance(frame.instance());
@@ -77,7 +77,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         let pc = frame.pc();
         Self {
             pc,
-            stack: value_stack,
+            stack,
             frame,
             cache,
             ctx,
