@@ -61,7 +61,7 @@ impl VirtualMemory {
 
     /// The maximum allocation size for a `wasmi` virtual memory on 32-bit.
     #[cfg(target_pointer_width = "32")]
-    const MAX_ALLOCATION_SIZE: usize = i32::MAX as u32 as usize + 1; // 2GB
+    const MAX_ALLOCATION_SIZE: usize = i32::MAX as usize + 1; // 2GB
 
     /// The maximum allocation size for a `wasmi` virtual memory on 64-bit.
     #[cfg(target_pointer_width = "64")]
