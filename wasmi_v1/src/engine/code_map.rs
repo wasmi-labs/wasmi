@@ -103,7 +103,7 @@ impl CodeMap {
 
     /// Resolves the pointer to the first instruction of a compiled function.
     #[inline]
-    pub fn insts(&self, iref: InstructionsRef) -> InstructionsPtr {
+    pub fn instrs(&self, iref: InstructionsRef) -> InstructionsPtr {
         InstructionsPtr {
             first: NonNull::from(&self.insts[iref.start]),
             lt: PhantomData,
