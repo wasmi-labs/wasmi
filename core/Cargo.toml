@@ -1,6 +1,6 @@
 [package]
 name = "wasmi_core"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Parity Technologies <admin@parity.io>"]
 license = "MIT/Apache-2.0"

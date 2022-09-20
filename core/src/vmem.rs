@@ -54,8 +54,18 @@ impl Debug for VirtualMemory {
 }
 
 impl VirtualMemory {
-    /// The maximum allocation size for a `wasmi` virtual memory.
-    const MAX_ALLOCATION_SIZE: usize = u32::MAX as usize;
+    /// The maximum allocation size for a `wasmi` virtual memory on 16-bit.
+    #[cfg(target_pointer_width = "16")]
+    const MAX_ALLOCATION_SIZE: usize =
+        compile_error!("16-bit architectures are current unsupported by wasmi");
+
+    /// The maximum allocation size for a `wasmi` virtual memory on 32-bit.
+    #[cfg(target_pointer_width = "32")]
+    const MAX_ALLOCATION_SIZE: usize = i32::MAX as usize + 1; // 2GB
+
+    /// The maximum allocation size for a `wasmi` virtual memory on 64-bit.
+    #[cfg(target_pointer_width = "64")]
+    const MAX_ALLOCATION_SIZE: usize = u32::MAX as usize + 1; // 4GB
 
     /// Create a new virtual memory allocation.
     ///
