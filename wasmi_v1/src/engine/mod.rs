@@ -52,8 +52,6 @@ use spin::mutex::Mutex;
 pub enum CallOutcome {
     /// The function has returned.
     Return,
-    /// The function called another function.
-    NestedCall(Func),
 }
 
 /// A unique engine index.
@@ -392,23 +390,6 @@ impl EngineInner {
                     }
                     None => return Ok(()),
                 },
-                CallOutcome::NestedCall(called_func) => {
-                    match called_func.as_internal(ctx.as_context()) {
-                        FuncEntityInternal::Wasm(wasm_func) => {
-                            self.stack.call_wasm(frame, wasm_func, &self.res.code_map)?;
-                        }
-                        FuncEntityInternal::Host(host_func) => {
-                            cache.reset_default_memory_bytes();
-                            let host_func = host_func.clone();
-                            self.stack.call_host(
-                                ctx.as_context_mut(),
-                                frame,
-                                host_func,
-                                &self.res.func_types,
-                            )?;
-                        }
-                    }
-                }
             }
         }
     }

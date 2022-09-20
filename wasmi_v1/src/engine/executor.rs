@@ -13,6 +13,7 @@ use super::{
 };
 use crate::{
     core::{Trap, TrapCode, F32, F64},
+    func::FuncEntityInternal,
     AsContext,
     Func,
     StoreContextMut,
@@ -106,8 +107,8 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
                 Instr::BrTable { len_targets } => self.visit_br_table(len_targets),
                 Instr::Unreachable => self.visit_unreachable()?,
                 Instr::Return(drop_keep) => return self.visit_ret(drop_keep),
-                Instr::Call(func) => return self.visit_call(func),
-                Instr::CallIndirect(signature) => return self.visit_call_indirect(signature),
+                Instr::Call(func) => self.visit_call(func)?,
+                Instr::CallIndirect(signature) => self.visit_call_indirect(signature)?,
                 Instr::Drop => self.visit_drop(),
                 Instr::Select => self.visit_select(),
                 Instr::GlobalGet(global_idx) => self.visit_global_get(global_idx),
@@ -495,10 +496,29 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.pc = target.destination_pc().into_usize();
     }
 
-    fn call_func(&mut self, func: Func) -> Result<CallOutcome, Trap> {
-        self.pc += 1;
-        self.frame.update_pc(self.pc);
-        Ok(CallOutcome::NestedCall(func))
+    fn call_func(&mut self, called: Func) -> Result<(), Trap> {
+        self.frame.update_pc(self.pc + 1);
+        match called.as_internal(self.ctx.as_context()) {
+            FuncEntityInternal::Wasm(wasm_func) => {
+                self.value_stack
+                    .call_wasm(&mut self.frame, wasm_func, &self.res.code_map)?;
+                self.cache.update_instance(self.frame.instance());
+                self.insts = self.res.code_map.insts(self.frame.iref());
+                self.pc = 0;
+            }
+            FuncEntityInternal::Host(host_func) => {
+                self.pc += 1;
+                self.cache.reset_default_memory_bytes();
+                let host_func = host_func.clone();
+                self.value_stack.call_host(
+                    self.ctx.as_context_mut(),
+                    &self.frame,
+                    host_func,
+                    &self.res.func_types,
+                )?;
+            }
+        }
+        Ok(())
     }
 
     fn ret(&mut self, drop_keep: DropKeep) {
@@ -595,14 +615,14 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.next_instr()
     }
 
-    fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, Trap> {
+    fn visit_call(&mut self, func_index: FuncIdx) -> Result<(), Trap> {
         let callee = self
             .cache
             .get_func(self.ctx.as_context_mut(), func_index.into_inner());
         self.call_func(callee)
     }
 
-    fn visit_call_indirect(&mut self, signature_index: SignatureIdx) -> Result<CallOutcome, Trap> {
+    fn visit_call_indirect(&mut self, signature_index: SignatureIdx) -> Result<(), Trap> {
         let func_index: u32 = self.value_stack.pop_as();
         let table = self.default_table();
         let func = table
