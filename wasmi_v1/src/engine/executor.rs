@@ -3,7 +3,7 @@ use super::{
     bytecode::{FuncIdx, GlobalIdx, Instruction, LocalDepth, Offset, SignatureIdx},
     cache::InstanceCache,
     code_map::InstructionsPtr,
-    stack::ValueStack,
+    stack::ValueStackRef,
     AsContextMut,
     CallOutcome,
     DropKeep,
@@ -46,7 +46,7 @@ struct Executor<'ctx, 'engine, 'func, HostData> {
     /// The program counter.
     pc: usize,
     /// Stores the value stack of live values on the Wasm stack.
-    value_stack: &'engine mut ValueStack,
+    value_stack: ValueStackRef<'engine>,
     /// The instructions of the executed function frame.
     instrs: InstructionsPtr<'engine>,
     /// A mutable [`Store`] context.
@@ -71,6 +71,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     ) -> Self {
         cache.update_instance(frame.instance());
         let pc = frame.pc();
+        let value_stack = ValueStackRef::new(value_stack);
         Self {
             pc,
             value_stack,
@@ -490,14 +491,20 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.pc = target.destination_pc().into_usize();
     }
 
+    fn sync_stack_ptr(&mut self) {
+        self.value_stack.sync();
+    }
+
     fn call_func(&mut self, func: Func) -> Result<CallOutcome, TrapCode> {
         self.pc += 1;
         self.frame.update_pc(self.pc);
+        self.sync_stack_ptr();
         Ok(CallOutcome::NestedCall(func))
     }
 
     fn ret(&mut self, drop_keep: DropKeep) {
-        self.value_stack.drop_keep(drop_keep)
+        self.value_stack.drop_keep(drop_keep);
+        self.sync_stack_ptr();
     }
 }
 
