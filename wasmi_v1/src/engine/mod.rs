@@ -39,7 +39,7 @@ pub use self::{
 use super::{func::FuncEntityInternal, AsContextMut, Func};
 use crate::{
     arena::{GuardedEntity, Index},
-    core::Trap,
+    core::{Trap, TrapCode},
     FuncType,
 };
 use alloc::sync::Arc;
@@ -403,7 +403,18 @@ impl EngineInner {
         frame: &mut FuncFrame,
         cache: &mut InstanceCache,
     ) -> Result<CallOutcome, Trap> {
+        /// Converts a [`TrapCode`] into a [`Trap`].
+        ///
+        /// This function exists for performance reasons since its `#[cold]`
+        /// annotation has severe effects on performance.
+        #[inline]
+        #[cold]
+        fn make_trap(code: TrapCode) -> Trap {
+            code.into()
+        }
+
+        let value_stack = &mut self.stack.values;
         let instrs = self.code_map.insts(frame.iref());
-        execute_frame(ctx, &mut self.stack.values, instrs, cache, frame)
+        execute_frame(ctx, value_stack, instrs, cache, frame).map_err(make_trap)
     }
 }

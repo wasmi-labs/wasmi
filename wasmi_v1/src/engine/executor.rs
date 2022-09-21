@@ -11,7 +11,7 @@ use super::{
     ValueStack,
 };
 use crate::{
-    core::{Trap, TrapCode, F32, F64},
+    core::{TrapCode, F32, F64},
     AsContext,
     Func,
     StoreContextMut,
@@ -36,7 +36,7 @@ pub fn execute_frame<'engine>(
     instrs: Instructions<'engine>,
     cache: &'engine mut InstanceCache,
     frame: &mut FuncFrame,
-) -> Result<CallOutcome, Trap> {
+) -> Result<CallOutcome, TrapCode> {
     Executor::new(value_stack, instrs, ctx.as_context_mut(), cache, frame).execute()
 }
 
@@ -83,7 +83,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
 
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
-    fn execute(mut self) -> Result<CallOutcome, Trap> {
+    fn execute(mut self) -> Result<CallOutcome, TrapCode> {
         use Instruction as Instr;
         loop {
             match *self.instr() {
@@ -335,7 +335,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     /// - `i64.load`
     /// - `f32.load`
     /// - `f64.load`
-    fn execute_load<T>(&mut self, offset: Offset) -> Result<(), Trap>
+    fn execute_load<T>(&mut self, offset: Offset) -> Result<(), TrapCode>
     where
         UntypedValue: From<T>,
         T: LittleEndianConvert,
@@ -370,7 +370,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     /// - `i64.load_16u`
     /// - `i64.load_32s`
     /// - `i64.load_32u`
-    fn execute_load_extend<T, U>(&mut self, offset: Offset) -> Result<(), Trap>
+    fn execute_load_extend<T, U>(&mut self, offset: Offset) -> Result<(), TrapCode>
     where
         T: ExtendInto<U> + LittleEndianConvert,
         UntypedValue: From<U>,
@@ -399,7 +399,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     /// - `i64.store`
     /// - `f32.store`
     /// - `f64.store`
-    fn execute_store<T>(&mut self, offset: Offset) -> Result<(), Trap>
+    fn execute_store<T>(&mut self, offset: Offset) -> Result<(), TrapCode>
     where
         T: LittleEndianConvert + From<UntypedValue>,
     {
@@ -425,7 +425,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     /// - `i64.store8`
     /// - `i64.store16`
     /// - `i64.store32`
-    fn execute_store_wrap<T, U>(&mut self, offset: Offset) -> Result<(), Trap>
+    fn execute_store_wrap<T, U>(&mut self, offset: Offset) -> Result<(), TrapCode>
     where
         T: WrapInto<U> + From<UntypedValue>,
         U: LittleEndianConvert,
@@ -449,7 +449,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     fn try_execute_unary(
         &mut self,
         f: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
-    ) -> Result<(), Trap> {
+    ) -> Result<(), TrapCode> {
         self.value_stack.try_eval_top(f)?;
         self.try_next_instr()
     }
@@ -462,7 +462,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     fn try_execute_binary(
         &mut self,
         f: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
-    ) -> Result<(), Trap> {
+    ) -> Result<(), TrapCode> {
         self.value_stack.try_eval_top2(f)?;
         self.try_next_instr()
     }
@@ -476,7 +476,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.next_instr()
     }
 
-    fn try_next_instr(&mut self) -> Result<(), Trap> {
+    fn try_next_instr(&mut self) -> Result<(), TrapCode> {
         self.pc += 1;
         Ok(())
     }
@@ -490,7 +490,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.pc = target.destination_pc().into_usize();
     }
 
-    fn call_func(&mut self, func: Func) -> Result<CallOutcome, Trap> {
+    fn call_func(&mut self, func: Func) -> Result<CallOutcome, TrapCode> {
         self.pc += 1;
         self.frame.update_pc(self.pc);
         Ok(CallOutcome::NestedCall(func))
@@ -508,7 +508,7 @@ pub enum MaybeReturn {
 }
 
 impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
-    fn visit_unreachable(&mut self) -> Result<(), Trap> {
+    fn visit_unreachable(&mut self) -> Result<(), TrapCode> {
         Err(TrapCode::Unreachable).map_err(Into::into)
     }
 
@@ -555,7 +555,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.pc += normalized_index + 1;
     }
 
-    fn visit_ret(&mut self, drop_keep: DropKeep) -> Result<CallOutcome, Trap> {
+    fn visit_ret(&mut self, drop_keep: DropKeep) -> Result<CallOutcome, TrapCode> {
         self.ret(drop_keep);
         Ok(CallOutcome::Return)
     }
@@ -590,14 +590,14 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.next_instr()
     }
 
-    fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, Trap> {
+    fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
         let callee = self
             .cache
             .get_func(self.ctx.as_context_mut(), func_index.into_inner());
         self.call_func(callee)
     }
 
-    fn visit_call_indirect(&mut self, signature_index: SignatureIdx) -> Result<CallOutcome, Trap> {
+    fn visit_call_indirect(&mut self, signature_index: SignatureIdx) -> Result<CallOutcome, TrapCode> {
         let func_index: u32 = self.value_stack.pop_as();
         let table = self.default_table();
         let func = table
@@ -666,95 +666,95 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.next_instr()
     }
 
-    fn visit_i32_load(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_i32_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_load::<i32>(offset)
     }
 
-    fn visit_i64_load(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_i64_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_load::<i64>(offset)
     }
 
-    fn visit_f32_load(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_f32_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_load::<F32>(offset)
     }
 
-    fn visit_f64_load(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_f64_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_load::<F64>(offset)
     }
 
-    fn visit_i32_load_i8(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_i32_load_i8(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_load_extend::<i8, i32>(offset)
     }
 
-    fn visit_i32_load_u8(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_i32_load_u8(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_load_extend::<u8, i32>(offset)
     }
 
-    fn visit_i32_load_i16(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_i32_load_i16(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_load_extend::<i16, i32>(offset)
     }
 
-    fn visit_i32_load_u16(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_i32_load_u16(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_load_extend::<u16, i32>(offset)
     }
 
-    fn visit_i64_load_i8(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_i64_load_i8(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_load_extend::<i8, i64>(offset)
     }
 
-    fn visit_i64_load_u8(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_i64_load_u8(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_load_extend::<u8, i64>(offset)
     }
 
-    fn visit_i64_load_i16(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_i64_load_i16(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_load_extend::<i16, i64>(offset)
     }
 
-    fn visit_i64_load_u16(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_i64_load_u16(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_load_extend::<u16, i64>(offset)
     }
 
-    fn visit_i64_load_i32(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_i64_load_i32(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_load_extend::<i32, i64>(offset)
     }
 
-    fn visit_i64_load_u32(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_i64_load_u32(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_load_extend::<u32, i64>(offset)
     }
 
-    fn visit_i32_store(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_i32_store(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_store::<i32>(offset)
     }
 
-    fn visit_i64_store(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_i64_store(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_store::<i64>(offset)
     }
 
-    fn visit_f32_store(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_f32_store(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_store::<F32>(offset)
     }
 
-    fn visit_f64_store(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_f64_store(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_store::<F64>(offset)
     }
 
-    fn visit_i32_store_8(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_i32_store_8(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_store_wrap::<i32, i8>(offset)
     }
 
-    fn visit_i32_store_16(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_i32_store_16(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_store_wrap::<i32, i16>(offset)
     }
 
-    fn visit_i64_store_8(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_i64_store_8(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_store_wrap::<i64, i8>(offset)
     }
 
-    fn visit_i64_store_16(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_i64_store_16(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_store_wrap::<i64, i16>(offset)
     }
 
-    fn visit_i64_store_32(&mut self, offset: Offset) -> Result<(), Trap> {
+    fn visit_i64_store_32(&mut self, offset: Offset) -> Result<(), TrapCode> {
         self.execute_store_wrap::<i64, i32>(offset)
     }
 
@@ -918,19 +918,19 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.execute_binary(UntypedValue::i32_mul)
     }
 
-    fn visit_i32_div_s(&mut self) -> Result<(), Trap> {
+    fn visit_i32_div_s(&mut self) -> Result<(), TrapCode> {
         self.try_execute_binary(UntypedValue::i32_div_s)
     }
 
-    fn visit_i32_div_u(&mut self) -> Result<(), Trap> {
+    fn visit_i32_div_u(&mut self) -> Result<(), TrapCode> {
         self.try_execute_binary(UntypedValue::i32_div_u)
     }
 
-    fn visit_i32_rem_s(&mut self) -> Result<(), Trap> {
+    fn visit_i32_rem_s(&mut self) -> Result<(), TrapCode> {
         self.try_execute_binary(UntypedValue::i32_rem_s)
     }
 
-    fn visit_i32_rem_u(&mut self) -> Result<(), Trap> {
+    fn visit_i32_rem_u(&mut self) -> Result<(), TrapCode> {
         self.try_execute_binary(UntypedValue::i32_rem_u)
     }
 
@@ -990,19 +990,19 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.execute_binary(UntypedValue::i64_mul)
     }
 
-    fn visit_i64_div_s(&mut self) -> Result<(), Trap> {
+    fn visit_i64_div_s(&mut self) -> Result<(), TrapCode> {
         self.try_execute_binary(UntypedValue::i64_div_s)
     }
 
-    fn visit_i64_div_u(&mut self) -> Result<(), Trap> {
+    fn visit_i64_div_u(&mut self) -> Result<(), TrapCode> {
         self.try_execute_binary(UntypedValue::i64_div_u)
     }
 
-    fn visit_i64_rem_s(&mut self) -> Result<(), Trap> {
+    fn visit_i64_rem_s(&mut self) -> Result<(), TrapCode> {
         self.try_execute_binary(UntypedValue::i64_rem_s)
     }
 
-    fn visit_i64_rem_u(&mut self) -> Result<(), Trap> {
+    fn visit_i64_rem_u(&mut self) -> Result<(), TrapCode> {
         self.try_execute_binary(UntypedValue::i64_rem_u)
     }
 
@@ -1154,19 +1154,19 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.execute_unary(UntypedValue::i32_wrap_i64)
     }
 
-    fn visit_i32_trunc_f32(&mut self) -> Result<(), Trap> {
+    fn visit_i32_trunc_f32(&mut self) -> Result<(), TrapCode> {
         self.try_execute_unary(UntypedValue::i32_trunc_f32_s)
     }
 
-    fn visit_u32_trunc_f32(&mut self) -> Result<(), Trap> {
+    fn visit_u32_trunc_f32(&mut self) -> Result<(), TrapCode> {
         self.try_execute_unary(UntypedValue::i32_trunc_f32_u)
     }
 
-    fn visit_i32_trunc_f64(&mut self) -> Result<(), Trap> {
+    fn visit_i32_trunc_f64(&mut self) -> Result<(), TrapCode> {
         self.try_execute_unary(UntypedValue::i32_trunc_f64_s)
     }
 
-    fn visit_u32_trunc_f64(&mut self) -> Result<(), Trap> {
+    fn visit_u32_trunc_f64(&mut self) -> Result<(), TrapCode> {
         self.try_execute_unary(UntypedValue::i32_trunc_f64_u)
     }
 
@@ -1178,19 +1178,19 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.execute_unary(UntypedValue::i64_extend_i32_u)
     }
 
-    fn visit_i64_trunc_f32(&mut self) -> Result<(), Trap> {
+    fn visit_i64_trunc_f32(&mut self) -> Result<(), TrapCode> {
         self.try_execute_unary(UntypedValue::i64_trunc_f32_s)
     }
 
-    fn visit_u64_trunc_f32(&mut self) -> Result<(), Trap> {
+    fn visit_u64_trunc_f32(&mut self) -> Result<(), TrapCode> {
         self.try_execute_unary(UntypedValue::i64_trunc_f32_u)
     }
 
-    fn visit_i64_trunc_f64(&mut self) -> Result<(), Trap> {
+    fn visit_i64_trunc_f64(&mut self) -> Result<(), TrapCode> {
         self.try_execute_unary(UntypedValue::i64_trunc_f64_s)
     }
 
-    fn visit_u64_trunc_f64(&mut self) -> Result<(), Trap> {
+    fn visit_u64_trunc_f64(&mut self) -> Result<(), TrapCode> {
         self.try_execute_unary(UntypedValue::i64_trunc_f64_u)
     }
 
