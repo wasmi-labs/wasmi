@@ -263,6 +263,15 @@ impl<'a> ValueStackRef<'a> {
         Ok(())
     }
 
+    /// Pushes the [`UntypedValue`] to the end of the [`ValueStack`].
+    ///
+    /// # Note
+    ///
+    /// - This operation heavily relies on the prior validation of
+    ///   the executed WebAssembly bytecode for correctness.
+    /// - Especially the stack-depth analysis during compilation with
+    ///   a manual stack extension before function call prevents this
+    ///   procedure from panicking.
     pub fn push<T>(&mut self, entry: T)
     where
         T: Into<UntypedValue>,
