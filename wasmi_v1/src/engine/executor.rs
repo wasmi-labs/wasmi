@@ -12,7 +12,9 @@ use super::{
 };
 use crate::{
     core::{Trap, TrapCode, F32, F64},
-    Func, StoreContextMut, AsContext,
+    AsContext,
+    Func,
+    StoreContextMut,
 };
 use core::cmp;
 use wasmi_core::{memory_units::Pages, ExtendInto, LittleEndianConvert, UntypedValue, WrapInto};
