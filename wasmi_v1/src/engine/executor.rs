@@ -43,8 +43,6 @@ pub fn execute_frame<'engine>(
 /// An execution context for executing a `wasmi` function frame.
 #[derive(Debug)]
 struct Executor<'ctx, 'engine, 'func, HostData> {
-    /// The program counter.
-    pc: usize,
     /// Stores the value stack of live values on the Wasm stack.
     value_stack: ValueStackRef<'engine>,
     /// The instructions of the executed function frame.
@@ -70,10 +68,8 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         frame: &'func mut FuncFrame,
     ) -> Self {
         cache.update_instance(frame.instance());
-        let pc = frame.pc();
         let value_stack = ValueStackRef::new(value_stack);
         Self {
-            pc,
             value_stack,
             instrs,
             ctx,
@@ -280,7 +276,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         // # Safety
         //
         // Properly constructed `wasmi` bytecode can never produce invalid `pc`.
-        unsafe { self.instrs.get(self.pc) }
+        unsafe { self.instrs.get() }
     }
 
     /// Returns the default linear memory.
@@ -478,17 +474,17 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     }
 
     fn try_next_instr(&mut self) -> Result<(), TrapCode> {
-        self.pc += 1;
+        self.next_instr();
         Ok(())
     }
 
     fn next_instr(&mut self) {
-        self.pc += 1;
+        self.instrs.bump_pc();
     }
 
     fn branch_to(&mut self, target: Target) {
         self.value_stack.drop_keep(target.drop_keep());
-        self.pc = target.destination_pc().into_usize();
+        self.instrs.update_pc(target.destination_pc().into_usize());
     }
 
     fn sync_stack_ptr(&mut self) {
@@ -496,8 +492,8 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     }
 
     fn call_func(&mut self, func: Func) -> Result<CallOutcome, TrapCode> {
-        self.pc += 1;
-        self.frame.update_pc(self.pc);
+        self.instrs.bump_pc();
+        self.frame.update_pc(self.instrs.pc());
         self.sync_stack_ptr();
         Ok(CallOutcome::NestedCall(func))
     }
@@ -559,7 +555,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         // A normalized index will always yield a target without panicking.
         let normalized_index = cmp::min(index as usize, max_index);
         // Update `pc`:
-        self.pc += normalized_index + 1;
+        self.instrs.bump_pc_by(normalized_index + 1)
     }
 
     fn visit_ret(&mut self, drop_keep: DropKeep) -> Result<CallOutcome, TrapCode> {
