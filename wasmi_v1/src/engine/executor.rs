@@ -33,7 +33,7 @@ use wasmi_core::{memory_units::Pages, ExtendInto, LittleEndianConvert, UntypedVa
 pub fn execute_frame<'engine>(
     mut ctx: impl AsContextMut,
     frame: &mut FuncFrame,
-    cache: &mut InstanceCache,
+    cache: &'engine mut InstanceCache,
     instrs: Instructions<'engine>,
     value_stack: &'engine mut ValueStack,
 ) -> Result<CallOutcome, Trap> {
