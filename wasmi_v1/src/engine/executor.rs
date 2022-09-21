@@ -478,6 +478,7 @@ where
         Ok(())
     }
 
+    #[inline(always)]
     fn next_instr(&mut self) {
         self.frame.update_pc(self.frame.pc() + 1)
     }
