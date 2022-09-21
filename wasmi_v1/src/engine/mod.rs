@@ -286,8 +286,7 @@ impl EngineInner {
             FuncEntityInternal::Wasm(wasm_func) => {
                 let signature = wasm_func.signature();
                 let mut frame = self.stack.call_wasm_root(wasm_func, &self.code_map)?;
-                let instance = wasm_func.instance();
-                let mut cache = InstanceCache::from(instance);
+                let mut cache = InstanceCache::from(frame.instance());
                 self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
                 signature
             }
