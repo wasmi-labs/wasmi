@@ -3,12 +3,12 @@ use super::{
     bytecode::{FuncIdx, GlobalIdx, Instruction, LocalDepth, Offset, SignatureIdx},
     cache::InstanceCache,
     code_map::InstructionsPtr,
+    stack::ValueStack,
     AsContextMut,
     CallOutcome,
     DropKeep,
     FuncFrame,
     Target,
-    stack::ValueStack,
 };
 use crate::{
     core::{TrapCode, F32, F64},
