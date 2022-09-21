@@ -597,7 +597,10 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.call_func(callee)
     }
 
-    fn visit_call_indirect(&mut self, signature_index: SignatureIdx) -> Result<CallOutcome, TrapCode> {
+    fn visit_call_indirect(
+        &mut self,
+        signature_index: SignatureIdx,
+    ) -> Result<CallOutcome, TrapCode> {
         let func_index: u32 = self.value_stack.pop_as();
         let table = self.default_table();
         let func = table
