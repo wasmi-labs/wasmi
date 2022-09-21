@@ -3,6 +3,7 @@ use super::{
     bytecode::{FuncIdx, GlobalIdx, Instruction, LocalDepth, Offset, SignatureIdx},
     cache::InstanceCache,
     code_map::Instructions,
+    stack::ValueStackRef,
     AsContextMut,
     CallOutcome,
     DropKeep,
@@ -46,7 +47,7 @@ struct Executor<'ctx, 'engine, 'func, HostData> {
     /// The program counter.
     pc: usize,
     /// Stores the value stack of live values on the Wasm stack.
-    value_stack: &'engine mut ValueStack,
+    value_stack: ValueStackRef<'engine>,
     /// The instructions of the executed function frame.
     instrs: Instructions<'engine>,
     /// A mutable [`Store`] context.
@@ -57,6 +58,12 @@ struct Executor<'ctx, 'engine, 'func, HostData> {
     cache: &'engine mut InstanceCache,
     /// The function frame that is being executed.
     frame: &'func mut FuncFrame,
+    /// The stack pointer of the value stack.
+    ///
+    /// This is required since the stack poitner of the `value_stack`
+    /// field is just a cache in order to synchronize the stack pointer
+    /// after a successful execution.
+    sp: &'engine mut usize,
 }
 
 impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
@@ -71,6 +78,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     ) -> Self {
         cache.update_instance(frame.instance());
         let pc = frame.pc();
+        let (sp, value_stack) = ValueStackRef::new(value_stack);
         Self {
             pc,
             value_stack,
@@ -78,6 +86,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
             ctx,
             cache,
             frame,
+            sp,
         }
     }
 
@@ -490,14 +499,20 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.pc = target.destination_pc().into_usize();
     }
 
+    fn sync_stack_ptr(&mut self) {
+        *self.sp = self.value_stack.stack_ptr();
+    }
+
     fn call_func(&mut self, func: Func) -> Result<CallOutcome, TrapCode> {
         self.pc += 1;
         self.frame.update_pc(self.pc);
+        self.sync_stack_ptr();
         Ok(CallOutcome::NestedCall(func))
     }
 
     fn ret(&mut self, drop_keep: DropKeep) {
-        self.value_stack.drop_keep(drop_keep)
+        self.value_stack.drop_keep(drop_keep);
+        self.sync_stack_ptr();
     }
 }
 
