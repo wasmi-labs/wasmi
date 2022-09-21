@@ -11,6 +11,8 @@ use crate::{
 pub struct ValueStackRef<'a> {
     pub(super) stack_ptr: usize,
     pub(super) values: &'a mut [UntypedValue],
+    /// The original stack pointer required to keep in sync.
+    orig_sp: &'a mut usize,
 }
 
 impl<'a> ValueStackRef<'a> {
@@ -20,21 +22,19 @@ impl<'a> ValueStackRef<'a> {
     /// the underlying [`ValueStack`]. This is important in order to synchronize
     /// the [`ValueStack`] with the changes done to the [`ValueStackRef`]
     /// when necessary.
-    pub fn new(stack: &'a mut ValueStack) -> (&'a mut usize, Self) {
+    pub fn new(stack: &'a mut ValueStack) -> Self {
         let sp = &mut stack.stack_ptr;
         let stack_ptr = *sp;
-        (
-            sp,
-            Self {
-                stack_ptr,
-                values: &mut stack.entries[..],
-            },
-        )
+        Self {
+            stack_ptr,
+            values: &mut stack.entries[..],
+            orig_sp: sp,
+        }
     }
 
-    /// Returns the current value of the stack pointer.
-    pub fn stack_ptr(&self) -> usize {
-        self.stack_ptr
+    /// Synchronizes the original value stack pointer.
+    pub fn sync(&mut self) {
+        *self.orig_sp = self.stack_ptr;
     }
 
     /// Returns the current capacity of the underlying [`ValueStack`].

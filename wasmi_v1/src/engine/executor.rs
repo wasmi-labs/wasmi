@@ -58,12 +58,6 @@ struct Executor<'ctx, 'engine, 'func, HostData> {
     cache: &'engine mut InstanceCache,
     /// The function frame that is being executed.
     frame: &'func mut FuncFrame,
-    /// The stack pointer of the value stack.
-    ///
-    /// This is required since the stack poitner of the `value_stack`
-    /// field is just a cache in order to synchronize the stack pointer
-    /// after a successful execution.
-    sp: &'engine mut usize,
 }
 
 impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
@@ -78,7 +72,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     ) -> Self {
         cache.update_instance(frame.instance());
         let pc = frame.pc();
-        let (sp, value_stack) = ValueStackRef::new(value_stack);
+        let value_stack = ValueStackRef::new(value_stack);
         Self {
             pc,
             value_stack,
@@ -86,7 +80,6 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
             ctx,
             cache,
             frame,
-            sp,
         }
     }
 
@@ -500,7 +493,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     }
 
     fn sync_stack_ptr(&mut self) {
-        *self.sp = self.value_stack.stack_ptr();
+        self.value_stack.sync();
     }
 
     fn call_func(&mut self, func: Func) -> Result<CallOutcome, TrapCode> {

@@ -28,7 +28,7 @@ fn drop_keep_works() {
         E::Item: Into<UntypedValue>,
     {
         let mut s = stack.clone();
-        let (_sp, mut s) = ValueStackRef::new(&mut s);
+        let mut s = ValueStackRef::new(&mut s);
         s.drop_keep(drop_keep);
         let expected = expected.into_iter().map(Into::into);
         assert!(s.iter().copied().eq(expected));
