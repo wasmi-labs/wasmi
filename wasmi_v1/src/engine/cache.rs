@@ -42,7 +42,7 @@ impl From<Instance> for InstanceCache {
 
 impl InstanceCache {
     /// Resolves the instances.
-    fn instance(&self) -> Instance {
+    pub fn instance(&self) -> Instance {
         self.instance
     }
 

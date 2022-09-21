@@ -103,10 +103,15 @@ impl CodeMap {
 
     /// Resolves the pointer to the first instruction of a compiled function.
     #[inline]
-    pub fn instrs(&self, pc: usize, iref: InstructionsRef) -> InstructionsPtr {
+    pub fn instrs<'func>(
+        &self,
+        pc: &'func mut usize,
+        iref: InstructionsRef,
+    ) -> InstructionsPtr<'_, 'func> {
         InstructionsPtr {
-            pc,
+            pc: *pc,
             base_ptr: NonNull::from(&self.insts[iref.start]),
+            orig_pc: pc,
             lt: PhantomData,
         }
     }
@@ -141,21 +146,23 @@ impl CodeMap {
 }
 
 /// A pointer to the first instruction of a compiled Wasm function.
-#[derive(Debug, Copy, Clone)]
-pub struct InstructionsPtr<'a> {
+#[derive(Debug)]
+pub struct InstructionsPtr<'a, 'func> {
     /// The program counter.
     pc: usize,
     /// The base pointer to the instructions of the compiled Wasm function.
     base_ptr: NonNull<Instruction>,
+    /// THe original program counter of the function frame.
+    orig_pc: &'func mut usize,
     /// Conserves the lifetime of the instruction.
     lt: PhantomData<&'a Instruction>,
 }
 
-impl<'a> InstructionsPtr<'a> {
-    /// Returns the current program counter.
+impl<'a, 'func> InstructionsPtr<'a, 'func> {
+    /// Synchronizes the original program counter.
     #[inline]
-    pub fn pc(&self) -> usize {
-        self.pc
+    pub fn sync_pc(&mut self) {
+        *self.orig_pc = self.pc;
     }
 
     /// Bumps the program counter.
@@ -202,5 +209,5 @@ impl<'a> InstructionsPtr<'a> {
 fn size_of_instruction_ref_ptr() {
     let ptr_size = core::mem::size_of::<*const ()>();
     assert_eq!(core::mem::size_of::<InstructionsRef>(), ptr_size);
-    assert_eq!(core::mem::size_of::<InstructionsPtr>(), ptr_size * 2);
+    assert_eq!(core::mem::size_of::<InstructionsPtr>(), ptr_size * 3);
 }

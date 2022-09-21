@@ -7,7 +7,6 @@ use super::{
     AsContextMut,
     CallOutcome,
     DropKeep,
-    FuncFrame,
     Target,
 };
 use crate::{
@@ -30,14 +29,13 @@ use wasmi_core::{memory_units::Pages, ExtendInto, LittleEndianConvert, UntypedVa
 ///
 /// - If the execution of the function `frame` trapped.
 #[inline(always)]
-pub fn execute_frame<'engine>(
+pub fn execute_frame<'engine, 'func>(
     mut ctx: impl AsContextMut,
     value_stack: &'engine mut ValueStack,
-    instrs: InstructionsPtr<'engine>,
+    instrs: InstructionsPtr<'engine, 'func>,
     cache: &'engine mut InstanceCache,
-    frame: &mut FuncFrame,
 ) -> Result<CallOutcome, TrapCode> {
-    Executor::new(value_stack, instrs, ctx.as_context_mut(), cache, frame).execute()
+    Executor::new(value_stack, instrs, ctx.as_context_mut(), cache).execute()
 }
 
 /// An execution context for executing a `wasmi` function frame.
@@ -46,15 +44,13 @@ struct Executor<'ctx, 'engine, 'func, HostData> {
     /// Stores the value stack of live values on the Wasm stack.
     value_stack: ValueStackRef<'engine>,
     /// The instructions of the executed function frame.
-    instrs: InstructionsPtr<'engine>,
+    instrs: InstructionsPtr<'engine, 'func>,
     /// A mutable [`Store`] context.
     ///
     /// [`Store`]: [`crate::v1::Store`]
     ctx: StoreContextMut<'ctx, HostData>,
     /// Stores frequently used instance related data.
     cache: &'engine mut InstanceCache,
-    /// The function frame that is being executed.
-    frame: &'func mut FuncFrame,
 }
 
 impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
@@ -62,19 +58,16 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     #[inline(always)]
     pub fn new(
         value_stack: &'engine mut ValueStack,
-        instrs: InstructionsPtr<'engine>,
+        instrs: InstructionsPtr<'engine, 'func>,
         ctx: StoreContextMut<'ctx, HostData>,
         cache: &'engine mut InstanceCache,
-        frame: &'func mut FuncFrame,
     ) -> Self {
-        cache.update_instance(frame.instance());
         let value_stack = ValueStackRef::new(value_stack);
         Self {
             value_stack,
             instrs,
             ctx,
             cache,
-            frame,
         }
     }
 
@@ -493,7 +486,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
 
     fn call_func(&mut self, func: Func) -> Result<CallOutcome, TrapCode> {
         self.instrs.bump_pc();
-        self.frame.update_pc(self.instrs.pc());
+        self.instrs.sync_pc();
         self.sync_stack_ptr();
         Ok(CallOutcome::NestedCall(func))
     }
@@ -612,7 +605,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
             .ok_or(TrapCode::ElemUninitialized)?;
         let actual_signature = func.signature(self.ctx.as_context());
         let expected_signature = self
-            .frame
+            .cache
             .instance()
             .get_signature(self.ctx.as_context(), signature_index.into_inner())
             .unwrap_or_else(|| {
