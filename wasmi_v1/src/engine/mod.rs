@@ -18,7 +18,7 @@ use self::{
     code_map::CodeMap,
     executor::execute_frame,
     func_types::FuncTypeRegistry,
-    stack::{FuncFrame, Stack, ValueStack},
+    stack::{FuncFrame, Stack},
 };
 pub use self::{
     bytecode::{DropKeep, Target},
@@ -39,7 +39,7 @@ pub use self::{
 use super::{func::FuncEntityInternal, AsContextMut, Func};
 use crate::{
     arena::{GuardedEntity, Index},
-    core::Trap,
+    core::{Trap, TrapCode},
     FuncType,
 };
 use alloc::sync::Arc;
@@ -288,8 +288,7 @@ impl EngineInner {
             FuncEntityInternal::Wasm(wasm_func) => {
                 let signature = wasm_func.signature();
                 let mut frame = self.stack.call_wasm_root(wasm_func, &self.code_map)?;
-                let instance = wasm_func.instance();
-                let mut cache = InstanceCache::from(instance);
+                let mut cache = InstanceCache::from(frame.instance());
                 self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
                 signature
             }
@@ -406,7 +405,18 @@ impl EngineInner {
         frame: &mut FuncFrame,
         cache: &mut InstanceCache,
     ) -> Result<CallOutcome, Trap> {
-        let insts = self.code_map.instrs(frame.iref());
-        execute_frame(ctx, frame, cache, insts, &mut self.stack.values)
+        /// Converts a [`TrapCode`] into a [`Trap`].
+        ///
+        /// This function exists for performance reasons since its `#[cold]`
+        /// annotation has severe effects on performance.
+        #[inline]
+        #[cold]
+        fn make_trap(code: TrapCode) -> Trap {
+            code.into()
+        }
+
+        let value_stack = &mut self.stack.values;
+        let instrs = self.code_map.instrs(frame.iref());
+        execute_frame(ctx, value_stack, instrs, cache, frame).map_err(make_trap)
     }
 }
