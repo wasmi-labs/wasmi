@@ -3,7 +3,7 @@ use super::{
     bytecode::{FuncIdx, GlobalIdx, Instruction, LocalDepth, Offset, SignatureIdx},
     cache::InstanceCache,
     code_map::InstructionsPtr,
-    stack::ValueStackRef,
+    stack::{ValueStack, ValueStackRef},
     AsContextMut,
     CallOutcome,
     DropKeep,
