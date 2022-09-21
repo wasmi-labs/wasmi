@@ -32,10 +32,10 @@ pub fn execute_frame<'engine>(
     ctx: impl AsContextMut,
     frame: &mut FuncFrame,
     cache: &mut InstanceCache,
-    insts: Instructions<'engine>,
+    instrs: Instructions<'engine>,
     value_stack: &'engine mut ValueStack,
 ) -> Result<CallOutcome, Trap> {
-    Executor::new(ctx, frame, cache, insts, value_stack).execute()
+    Executor::new(ctx, frame, cache, instrs, value_stack).execute()
 }
 
 /// An execution context for executing a `wasmi` function frame.
@@ -54,7 +54,7 @@ struct Executor<'engine, 'func, Ctx> {
     /// [`Store`]: [`crate::v1::Store`]
     ctx: Ctx,
     /// The instructions of the executed function frame.
-    insts: Instructions<'engine>,
+    instrs: Instructions<'engine>,
 }
 
 impl<'engine, 'func, Ctx> Executor<'engine, 'func, Ctx>
@@ -67,7 +67,7 @@ where
         ctx: Ctx,
         frame: &'func mut FuncFrame,
         cache: &'engine mut InstanceCache,
-        insts: Instructions<'engine>,
+        instrs: Instructions<'engine>,
         value_stack: &'engine mut ValueStack,
     ) -> Self {
         cache.update_instance(frame.instance());
@@ -78,7 +78,7 @@ where
             frame,
             cache,
             ctx,
-            insts,
+            instrs,
         }
     }
 
@@ -280,7 +280,7 @@ where
         // # Safety
         //
         // Properly constructed `wasmi` bytecode can never produce invalid `pc`.
-        unsafe { self.insts.get_release_unchecked(self.pc) }
+        unsafe { self.instrs.get_release_unchecked(self.pc) }
     }
 
     /// Returns the default linear memory.
