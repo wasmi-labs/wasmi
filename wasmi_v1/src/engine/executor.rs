@@ -32,12 +32,12 @@ use wasmi_core::{memory_units::Pages, ExtendInto, LittleEndianConvert, UntypedVa
 #[inline(always)]
 pub fn execute_frame<'engine>(
     mut ctx: impl AsContextMut,
-    frame: &mut FuncFrame,
-    cache: &'engine mut InstanceCache,
-    instrs: Instructions<'engine>,
     value_stack: &'engine mut ValueStack,
+    instrs: Instructions<'engine>,
+    cache: &'engine mut InstanceCache,
+    frame: &mut FuncFrame,
 ) -> Result<CallOutcome, Trap> {
-    Executor::new(ctx.as_context_mut(), frame, cache, instrs, value_stack).execute()
+    Executor::new(value_stack, instrs, ctx.as_context_mut(), cache, frame).execute()
 }
 
 /// An execution context for executing a `wasmi` function frame.
@@ -47,37 +47,37 @@ struct Executor<'ctx, 'engine, 'func, HostData> {
     pc: usize,
     /// Stores the value stack of live values on the Wasm stack.
     value_stack: &'engine mut ValueStack,
-    /// The function frame that is being executed.
-    frame: &'func mut FuncFrame,
-    /// Stores frequently used instance related data.
-    cache: &'engine mut InstanceCache,
+    /// The instructions of the executed function frame.
+    instrs: Instructions<'engine>,
     /// A mutable [`Store`] context.
     ///
     /// [`Store`]: [`crate::v1::Store`]
     ctx: StoreContextMut<'ctx, HostData>,
-    /// The instructions of the executed function frame.
-    instrs: Instructions<'engine>,
+    /// Stores frequently used instance related data.
+    cache: &'engine mut InstanceCache,
+    /// The function frame that is being executed.
+    frame: &'func mut FuncFrame,
 }
 
 impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     /// Creates a new [`Executor`] for executing a `wasmi` function frame.
     #[inline(always)]
     pub fn new(
-        ctx: StoreContextMut<'ctx, HostData>,
-        frame: &'func mut FuncFrame,
-        cache: &'engine mut InstanceCache,
-        instrs: Instructions<'engine>,
         value_stack: &'engine mut ValueStack,
+        instrs: Instructions<'engine>,
+        ctx: StoreContextMut<'ctx, HostData>,
+        cache: &'engine mut InstanceCache,
+        frame: &'func mut FuncFrame,
     ) -> Self {
         cache.update_instance(frame.instance());
         let pc = frame.pc();
         Self {
             pc,
             value_stack,
-            frame,
-            cache,
-            ctx,
             instrs,
+            ctx,
+            cache,
+            frame,
         }
     }
 
