@@ -121,11 +121,11 @@ impl<'a> ValueStackRef<'a> {
         self.stack_ptr -= drop;
     }
 
-    /// Returns the last stack entry of the [`ValueStack`].
+    /// Returns the last stack entry of the [`ValueStackRef`].
     ///
     /// # Note
     ///
-    /// This has the same effect as [`ValueStack::peek`]`(0)`.
+    /// This has the same effect as [`ValueStackRef::peek`]`(0)`.
     #[inline]
     pub fn last(&self) -> UntypedValue {
         self.get_release_unchecked(self.stack_ptr - 1)
@@ -135,7 +135,7 @@ impl<'a> ValueStackRef<'a> {
     ///
     /// # Note
     ///
-    /// This has the same effect as [`ValueStack::peek`]`(0)`.
+    /// This has the same effect as [`ValueStackRef::peek`]`(0)`.
     #[inline]
     pub fn last_mut(&mut self) -> &mut UntypedValue {
         self.get_release_unchecked_mut(self.stack_ptr - 1)
@@ -145,7 +145,7 @@ impl<'a> ValueStackRef<'a> {
     ///
     /// # Note
     ///
-    /// Given a `depth` of 1 has the same effect as [`ValueStack::last`].
+    /// Given a `depth` of 1 has the same effect as [`ValueStackRef::last`].
     ///
     /// A `depth` of 0 is invalid and undefined.
     pub fn peek(&self, depth: usize) -> UntypedValue {
@@ -156,7 +156,7 @@ impl<'a> ValueStackRef<'a> {
     ///
     /// # Note
     ///
-    /// Given a `depth` of 1 has the same effect as [`ValueStack::last_mut`].
+    /// Given a `depth` of 1 has the same effect as [`ValueStackRef::last_mut`].
     ///
     /// A `depth` of 0 is invalid and undefined.
     pub fn peek_mut(&mut self, depth: usize) -> &mut UntypedValue {
@@ -187,7 +187,7 @@ impl<'a> ValueStackRef<'a> {
     /// # Note
     ///
     /// - This operation is slightly more efficient than using
-    ///   [`ValueStack::pop`] twice.
+    ///   [`ValueStackRef::pop`] twice.
     /// - This operation heavily relies on the prior validation of
     ///   the executed WebAssembly bytecode for correctness.
     pub fn pop2(&mut self) -> (UntypedValue, UntypedValue) {
