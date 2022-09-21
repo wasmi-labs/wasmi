@@ -32,6 +32,7 @@ criterion-benchmark:
     - git fetch
     - git submodule update --init --recursive
     - git checkout master
+    - git pull
     # on master
     - cargo bench --bench benches -- --noplot --save-baseline master | tee bench-report-master.txt
     # on PR
