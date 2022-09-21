@@ -148,6 +148,7 @@ impl<'a> ValueStackRef<'a> {
     /// Given a `depth` of 1 has the same effect as [`ValueStackRef::last`].
     ///
     /// A `depth` of 0 is invalid and undefined.
+    #[inline]
     pub fn peek(&self, depth: usize) -> UntypedValue {
         self.get_release_unchecked(self.stack_ptr - depth)
     }
@@ -159,6 +160,7 @@ impl<'a> ValueStackRef<'a> {
     /// Given a `depth` of 1 has the same effect as [`ValueStackRef::last_mut`].
     ///
     /// A `depth` of 0 is invalid and undefined.
+    #[inline]
     pub fn peek_mut(&mut self, depth: usize) -> &mut UntypedValue {
         self.get_release_unchecked_mut(self.stack_ptr - depth)
     }
@@ -169,12 +171,14 @@ impl<'a> ValueStackRef<'a> {
     ///
     /// This operation heavily relies on the prior validation of
     /// the executed WebAssembly bytecode for correctness.
+    #[inline]
     pub fn pop(&mut self) -> UntypedValue {
         self.stack_ptr -= 1;
         self.get_release_unchecked(self.stack_ptr)
     }
 
     /// Pops the last [`UntypedValue`] from the [`ValueStack`] as `T`.
+    #[inline]
     pub fn pop_as<T>(&mut self) -> T
     where
         T: From<UntypedValue>,
@@ -190,6 +194,7 @@ impl<'a> ValueStackRef<'a> {
     ///   [`ValueStackRef::pop`] twice.
     /// - This operation heavily relies on the prior validation of
     ///   the executed WebAssembly bytecode for correctness.
+    #[inline]
     pub fn pop2(&mut self) -> (UntypedValue, UntypedValue) {
         self.stack_ptr -= 2;
         (
@@ -206,6 +211,7 @@ impl<'a> ValueStackRef<'a> {
     /// - Pop entry `e2`.
     /// - Peek entry `&mut e1_ptr`.
     /// - Evaluate `f(e1_ptr, e2, e3)`.
+    #[inline]
     pub fn pop2_eval<F>(&mut self, f: F)
     where
         F: FnOnce(&mut UntypedValue, UntypedValue, UntypedValue),
@@ -216,6 +222,7 @@ impl<'a> ValueStackRef<'a> {
     }
 
     /// Evaluates the given closure `f` for the top most stack value.
+    #[inline]
     pub fn eval_top<F>(&mut self, f: F)
     where
         F: FnOnce(UntypedValue) -> UntypedValue,
@@ -229,6 +236,7 @@ impl<'a> ValueStackRef<'a> {
     /// # Errors
     ///
     /// If the closure execution fails.
+    #[inline]
     pub fn try_eval_top<F>(&mut self, f: F) -> Result<(), TrapCode>
     where
         F: FnOnce(UntypedValue) -> Result<UntypedValue, TrapCode>,
@@ -239,6 +247,7 @@ impl<'a> ValueStackRef<'a> {
     }
 
     /// Evaluates the given closure `f` for the 2 top most stack values.
+    #[inline]
     pub fn eval_top2<F>(&mut self, f: F)
     where
         F: FnOnce(UntypedValue, UntypedValue) -> UntypedValue,
@@ -253,6 +262,7 @@ impl<'a> ValueStackRef<'a> {
     /// # Errors
     ///
     /// If the closure execution fails.
+    #[inline]
     pub fn try_eval_top2<F>(&mut self, f: F) -> Result<(), TrapCode>
     where
         F: FnOnce(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
@@ -272,6 +282,7 @@ impl<'a> ValueStackRef<'a> {
     /// - Especially the stack-depth analysis during compilation with
     ///   a manual stack extension before function call prevents this
     ///   procedure from panicking.
+    #[inline]
     pub fn push<T>(&mut self, entry: T)
     where
         T: Into<UntypedValue>,
