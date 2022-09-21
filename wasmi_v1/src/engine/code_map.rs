@@ -110,32 +110,32 @@ impl CodeMap {
         }
     }
 
-    /// Resolves the instruction at `index` of the compiled [`FuncBody`].
-    #[cfg(test)]
-    pub fn get_instr(&self, func_body: FuncBody, index: usize) -> Option<&Instruction> {
-        let header = self.header(func_body);
-        let start = header.iref.start;
-        let end = self
-            .header_next(func_body)
-            .map(|header| header.iref.start)
-            .unwrap_or(self.insts.len());
-        let instrs = &self.insts[start..end];
-        instrs.get(index)
-    }
-
     /// Returns the [`FuncHeader`] of the [`FuncBody`].
     #[inline]
     pub fn header(&self, func_body: FuncBody) -> &FuncHeader {
         &self.headers[func_body.0]
     }
 
-    /// Returns the [`FuncHeader`] of the next function of [`FuncBody`].
+    /// Resolves the instruction at `index` of the compiled [`FuncBody`].
+    #[cfg(test)]
+    pub fn get_instr(&self, func_body: FuncBody, index: usize) -> Option<&Instruction> {
+        let header = self.header(func_body);
+        let start = header.iref.start;
+        let end = self.instr_end(func_body);
+        let instrs = &self.insts[start..end];
+        instrs.get(index)
+    }
+
+    /// Returns the `end` index of the instructions of [`FuncBody`].
     ///
     /// This is important to synthesize how many instructions there are in
     /// the function referred to by [`FuncBody`].
     #[cfg(test)]
-    pub fn header_next(&self, func_body: FuncBody) -> Option<&FuncHeader> {
-        self.headers.get(func_body.0 + 1)
+    pub fn instr_end(&self, func_body: FuncBody) -> usize {
+        self.headers
+            .get(func_body.0 + 1)
+            .map(|header| header.iref.start)
+            .unwrap_or(self.insts.len())
     }
 }
 
