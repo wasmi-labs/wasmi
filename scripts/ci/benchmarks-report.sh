@@ -1,9 +1,11 @@
 #!/bin/bash
 
-# Takes raw reports from
-# "cargo bench --bench benches -- --noplot --save-baseline master" output as 1st argument
-# "cargo bench --bench benches -- --noplot --baseline master" output as 2nd argument
-# Parses them to json and posts formatted results to PR on a GitHub as a comment
+# This script takes as an argument benchmark report JSON file produced
+# by the command "cargo criterion --message-format=json". Executed first
+# against a 'master' branch and on a PR commit afterwards.
+# Formats it using 'jq' with filters defined in the './scripts/ci/benchmark-filter.jq'.
+# And posts formatted results to a PR on a GitHub as an issue comment.
+
 set -eu
 set -o pipefail
 
