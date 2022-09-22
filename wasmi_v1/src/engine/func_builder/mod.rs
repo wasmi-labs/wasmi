@@ -42,7 +42,6 @@ use crate::{
     Mutability,
 };
 use alloc::vec::Vec;
-use core::ops::{Deref, DerefMut};
 use wasmi_core::{Value, ValueType, F32, F64};
 
 /// The used function validator type.
@@ -89,22 +88,6 @@ pub struct FunctionBuilderAllocations {
     locals: LocalsRegistry,
     /// Buffer for translating `br_table`.
     br_table_branches: Vec<Instruction>,
-}
-
-impl<'parser> Deref for FuncBuilder<'parser> {
-    type Target = FunctionBuilderAllocations;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.allocations
-    }
-}
-
-impl<'parser> DerefMut for FuncBuilder<'parser> {
-    #[inline]
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.allocations
-    }
 }
 
 impl FunctionBuilderAllocations {
@@ -204,8 +187,9 @@ impl<'parser> FuncBuilder<'parser> {
     where
         F: FnOnce(InstructionIdx) -> Reloc,
     {
-        let pc = self.inst_builder.current_pc();
-        self.inst_builder
+        let pc = self.allocations.inst_builder.current_pc();
+        self.allocations
+            .inst_builder
             .try_resolve_label(label, || reloc_provider(pc))
     }
 
@@ -219,13 +203,13 @@ impl<'parser> FuncBuilder<'parser> {
         self.validator.define_locals(offset, amount, value_type)?;
         let value_type = crate::module::value_type_from_wasmparser(value_type)
             .ok_or_else(|| TranslationError::unsupported_value_type(value_type))?;
-        self.locals.register_locals(value_type, amount);
+        self.allocations.locals.register_locals(value_type, amount);
         Ok(())
     }
 
     /// Returns the number of local variables of the function under construction.
     fn len_locals(&self) -> usize {
-        let len_params_locals = self.locals.len_registered() as usize;
+        let len_params_locals = self.allocations.locals.len_registered() as usize;
         let len_params = self.func_type().params().len();
         debug_assert!(len_params_locals >= len_params);
         len_params_locals - len_params
@@ -240,7 +224,7 @@ impl<'parser> FuncBuilder<'parser> {
         let func_body = self.allocations.inst_builder.finish(
             &self.engine,
             self.len_locals(),
-            self.value_stack.max_stack_height() as usize,
+            self.allocations.value_stack.max_stack_height() as usize,
         );
         let allocations = ReusableAllocations {
             translation: self.allocations,
@@ -276,7 +260,7 @@ impl<'parser> FuncBuilder<'parser> {
     /// If underflow of the value stack is detected.
     fn compute_drop_keep(&self, depth: u32) -> Result<DropKeep, TranslationError> {
         debug_assert!(self.is_reachable());
-        let frame = self.control_frames.nth_back(depth);
+        let frame = self.allocations.control_frames.nth_back(depth);
         // Find out how many values we need to keep (copy to the new stack location after the drop).
         let keep = match frame.kind() {
             ControlFrameKind::Block | ControlFrameKind::If => {
@@ -285,7 +269,7 @@ impl<'parser> FuncBuilder<'parser> {
             ControlFrameKind::Loop => frame.block_type().len_params(&self.engine),
         };
         // Find out how many values we need to drop.
-        let current_height = self.value_stack.len();
+        let current_height = self.allocations.value_stack.len();
         let origin_height = frame.stack_height().expect("frame is reachable");
         assert!(
             origin_height <= current_height,
@@ -313,16 +297,17 @@ impl<'parser> FuncBuilder<'parser> {
     fn drop_keep_return(&self) -> Result<DropKeep, TranslationError> {
         debug_assert!(self.is_reachable());
         assert!(
-            !self.control_frames.is_empty(),
+            !self.allocations.control_frames.is_empty(),
             "drop_keep_return cannot be called with the frame stack empty"
         );
         let max_depth = self
+            .allocations
             .control_frames
             .len()
             .checked_sub(1)
             .expect("control flow frame stack must not be empty") as u32;
         let drop_keep = self.compute_drop_keep(max_depth)?;
-        let len_params_locals = self.locals.len_registered() as usize;
+        let len_params_locals = self.allocations.locals.len_registered() as usize;
         DropKeep::new(
             // Drop all local variables and parameters upon exit.
             drop_keep.drop() + len_params_locals,
@@ -334,8 +319,8 @@ impl<'parser> FuncBuilder<'parser> {
     /// Returns the relative depth on the stack of the local variable.
     fn relative_local_depth(&self, local_idx: u32) -> usize {
         debug_assert!(self.is_reachable());
-        let stack_height = self.value_stack.len() as usize;
-        let len_params_locals = self.locals.len_registered() as usize;
+        let stack_height = self.allocations.value_stack.len() as usize;
+        let len_params_locals = self.allocations.locals.len_registered() as usize;
         stack_height
             .checked_add(len_params_locals)
             .and_then(|x| x.checked_sub(local_idx as usize))
@@ -350,11 +335,12 @@ impl<'parser> FuncBuilder<'parser> {
     /// - If the value stack underflowed.
     fn acquire_target(&self, relative_depth: u32) -> Result<AcquiredTarget, TranslationError> {
         debug_assert!(self.is_reachable());
-        if self.control_frames.is_root(relative_depth) {
+        if self.allocations.control_frames.is_root(relative_depth) {
             let drop_keep = self.drop_keep_return()?;
             Ok(AcquiredTarget::Return(drop_keep))
         } else {
             let label = self
+                .allocations
                 .control_frames
                 .nth_back(relative_depth)
                 .branch_destination();
@@ -390,7 +376,10 @@ impl<'parser> FuncBuilder<'parser> {
     /// Translates a Wasm `unreachable` instruction.
     pub fn translate_unreachable(&mut self) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.inst_builder.push_inst(Instruction::Unreachable);
+            builder
+                .allocations
+                .inst_builder
+                .push_inst(Instruction::Unreachable);
             builder.reachable = false;
             Ok(())
         })
@@ -411,7 +400,7 @@ impl<'parser> FuncBuilder<'parser> {
     /// since we have already validated the input Wasm prior.
     fn frame_stack_height(&self, block_type: BlockType) -> u32 {
         let len_params = block_type.len_params(&self.engine);
-        let stack_height = self.value_stack.len();
+        let stack_height = self.allocations.value_stack.len();
         stack_height.checked_sub(len_params).unwrap_or_else(|| {
             panic!(
                 "encountered emulated value stack underflow with \
@@ -429,17 +418,17 @@ impl<'parser> FuncBuilder<'parser> {
         let block_type = BlockType::try_from_wasmparser(block_type, self.res)?;
         if self.is_reachable() {
             let stack_height = self.frame_stack_height(block_type);
-            let end_label = self.inst_builder.new_label();
-            self.control_frames.push_frame(BlockControlFrame::new(
-                block_type,
-                end_label,
-                stack_height,
-            ));
+            let end_label = self.allocations.inst_builder.new_label();
+            self.allocations
+                .control_frames
+                .push_frame(BlockControlFrame::new(block_type, end_label, stack_height));
         } else {
-            self.control_frames.push_frame(UnreachableControlFrame::new(
-                ControlFrameKind::Block,
-                block_type,
-            ));
+            self.allocations
+                .control_frames
+                .push_frame(UnreachableControlFrame::new(
+                    ControlFrameKind::Block,
+                    block_type,
+                ));
         }
         Ok(())
     }
@@ -452,15 +441,18 @@ impl<'parser> FuncBuilder<'parser> {
         let block_type = BlockType::try_from_wasmparser(block_type, self.res)?;
         if self.is_reachable() {
             let stack_height = self.frame_stack_height(block_type);
-            let header = self.inst_builder.new_label();
-            self.inst_builder.resolve_label(header);
-            self.control_frames
+            let header = self.allocations.inst_builder.new_label();
+            self.allocations.inst_builder.resolve_label(header);
+            self.allocations
+                .control_frames
                 .push_frame(LoopControlFrame::new(block_type, header, stack_height));
         } else {
-            self.control_frames.push_frame(UnreachableControlFrame::new(
-                ControlFrameKind::Loop,
-                block_type,
-            ));
+            self.allocations
+                .control_frames
+                .push_frame(UnreachableControlFrame::new(
+                    ControlFrameKind::Loop,
+                    block_type,
+                ));
         }
         Ok(())
     }
@@ -472,40 +464,45 @@ impl<'parser> FuncBuilder<'parser> {
     ) -> Result<(), TranslationError> {
         let block_type = BlockType::try_from_wasmparser(block_type, self.res)?;
         if self.is_reachable() {
-            let condition = self.value_stack.pop1();
+            let condition = self.allocations.value_stack.pop1();
             debug_assert_eq!(condition, ValueType::I32);
             let stack_height = self.frame_stack_height(block_type);
-            let else_label = self.inst_builder.new_label();
-            let end_label = self.inst_builder.new_label();
-            self.control_frames.push_frame(IfControlFrame::new(
-                block_type,
-                end_label,
-                else_label,
-                stack_height,
-            ));
+            let else_label = self.allocations.inst_builder.new_label();
+            let end_label = self.allocations.inst_builder.new_label();
+            self.allocations
+                .control_frames
+                .push_frame(IfControlFrame::new(
+                    block_type,
+                    end_label,
+                    else_label,
+                    stack_height,
+                ));
             let dst_pc = self.try_resolve_label(else_label, |pc| Reloc::Br { inst_idx: pc });
             let branch_target = Target::new(dst_pc, DropKeep::none());
-            self.inst_builder
+            self.allocations
+                .inst_builder
                 .push_inst(Instruction::BrIfEqz(branch_target));
         } else {
-            self.control_frames.push_frame(UnreachableControlFrame::new(
-                ControlFrameKind::If,
-                block_type,
-            ));
+            self.allocations
+                .control_frames
+                .push_frame(UnreachableControlFrame::new(
+                    ControlFrameKind::If,
+                    block_type,
+                ));
         }
         Ok(())
     }
 
     /// Translates a Wasm `else` control flow operator.
     pub fn translate_else(&mut self) -> Result<(), TranslationError> {
-        let mut if_frame = match self.control_frames.pop_frame() {
+        let mut if_frame = match self.allocations.control_frames.pop_frame() {
             ControlFrame::If(if_frame) => if_frame,
             ControlFrame::Unreachable(frame) if matches!(frame.kind(), ControlFrameKind::If) => {
                 // Encountered `Else` block for unreachable `If` block.
                 //
                 // In this case we can simply ignore the entire `Else` block
                 // since it is unreachable anyways.
-                self.control_frames.push_frame(frame);
+                self.allocations.control_frames.push_frame(frame);
                 return Ok(());
             }
             unexpected => panic!(
@@ -526,18 +523,24 @@ impl<'parser> FuncBuilder<'parser> {
             let dst_pc =
                 self.try_resolve_label(if_frame.end_label(), |pc| Reloc::Br { inst_idx: pc });
             let target = Target::new(dst_pc, DropKeep::none());
-            self.inst_builder.push_inst(Instruction::Br(target));
+            self.allocations
+                .inst_builder
+                .push_inst(Instruction::Br(target));
         }
         // Now resolve labels for the instructions of the `else` block
-        self.inst_builder.resolve_label(if_frame.else_label());
+        self.allocations
+            .inst_builder
+            .resolve_label(if_frame.else_label());
         // We need to reset the value stack to exactly how it has been
         // when entering the `if` in the first place so that the `else`
         // block has the same parameters on top of the stack.
-        self.value_stack.shrink_to(if_frame.stack_height());
+        self.allocations
+            .value_stack
+            .shrink_to(if_frame.stack_height());
         if_frame.block_type().foreach_param(&self.engine, |param| {
             self.allocations.value_stack.push(param);
         });
-        self.control_frames.push_frame(if_frame);
+        self.allocations.control_frames.push_frame(if_frame);
         // We can reset reachability now since the parent `if` block was reachable.
         self.reachable = true;
         Ok(())
@@ -565,7 +568,7 @@ impl<'parser> FuncBuilder<'parser> {
         // These bindings are required because of borrowing issues.
         let frame_reachable = frame.is_reachable();
         let frame_stack_height = frame.stack_height();
-        if self.control_frames.len() == 1 {
+        if self.allocations.control_frames.len() == 1 {
             // If the control flow frames stack is empty after this point
             // we know that we are ending the function body `block`
             // frame and therefore we have to return from the function.
@@ -576,9 +579,9 @@ impl<'parser> FuncBuilder<'parser> {
             self.reachable = frame_reachable;
         }
         if let Some(frame_stack_height) = frame_stack_height {
-            self.value_stack.shrink_to(frame_stack_height);
+            self.allocations.value_stack.shrink_to(frame_stack_height);
         }
-        let frame = self.control_frames.pop_frame();
+        let frame = self.allocations.control_frames.pop_frame();
         frame.block_type().foreach_result(&self.engine, |result| {
             self.allocations.value_stack.push(result)
         });
@@ -593,6 +596,7 @@ impl<'parser> FuncBuilder<'parser> {
                     let dst_pc =
                         builder.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
                     builder
+                        .allocations
                         .inst_builder
                         .push_inst(Instruction::Br(Target::new(dst_pc, drop_keep)));
                 }
@@ -609,18 +613,20 @@ impl<'parser> FuncBuilder<'parser> {
     /// Translates a Wasm `br_if` control flow operator.
     pub fn translate_br_if(&mut self, relative_depth: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let condition = builder.value_stack.pop1();
+            let condition = builder.allocations.value_stack.pop1();
             debug_assert_eq!(condition, ValueType::I32);
             match builder.acquire_target(relative_depth)? {
                 AcquiredTarget::Branch(end_label, drop_keep) => {
                     let dst_pc =
                         builder.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
                     builder
+                        .allocations
                         .inst_builder
                         .push_inst(Instruction::BrIfNez(Target::new(dst_pc, drop_keep)));
                 }
                 AcquiredTarget::Return(drop_keep) => {
                     builder
+                        .allocations
                         .inst_builder
                         .push_inst(Instruction::ReturnIfNez(drop_keep));
                 }
@@ -665,25 +671,25 @@ impl<'parser> FuncBuilder<'parser> {
                 })
                 .map(RelativeDepth::from_u32);
 
-            let case = builder.value_stack.pop1();
+            let case = builder.allocations.value_stack.pop1();
             debug_assert_eq!(case, ValueType::I32);
 
-            builder.br_table_branches.clear();
+            builder.allocations.br_table_branches.clear();
             for (n, depth) in targets.into_iter().enumerate() {
                 let relative_depth = compute_inst(builder, n, depth)?;
-                builder.br_table_branches.push(relative_depth);
+                builder.allocations.br_table_branches.push(relative_depth);
             }
 
             // We include the default target in `len_branches`.
-            let len_branches = builder.br_table_branches.len();
+            let len_branches = builder.allocations.br_table_branches.len();
             let default_branch = compute_inst(builder, len_branches, default)?;
-            builder.inst_builder.push_inst(Instruction::BrTable {
+            builder.allocations.inst_builder.push_inst(Instruction::BrTable {
                 len_targets: len_branches + 1,
             });
             for branch in builder.allocations.br_table_branches.drain(..) {
                 builder.allocations.inst_builder.push_inst(branch);
             }
-            builder.inst_builder.push_inst(default_branch);
+            builder.allocations.inst_builder.push_inst(default_branch);
             builder.reachable = false;
             Ok(())
         })
@@ -694,6 +700,7 @@ impl<'parser> FuncBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let drop_keep = builder.drop_keep_return()?;
             builder
+                .allocations
                 .inst_builder
                 .push_inst(Instruction::Return(drop_keep));
             builder.reachable = false;
@@ -705,11 +712,11 @@ impl<'parser> FuncBuilder<'parser> {
     fn adjust_value_stack_for_call(&mut self, func_type: &FuncType) {
         let (params, results) = func_type.params_results();
         for param in params.iter().rev() {
-            let popped = self.value_stack.pop1();
+            let popped = self.allocations.value_stack.pop1();
             debug_assert_eq!(popped, *param);
         }
         for result in results {
-            self.value_stack.push(*result);
+            self.allocations.value_stack.push(*result);
         }
     }
 
@@ -720,7 +727,10 @@ impl<'parser> FuncBuilder<'parser> {
             let func_type = builder.func_type_of(func_idx);
             builder.adjust_value_stack_for_call(&func_type);
             let func_idx = func_idx.into_u32().into();
-            builder.inst_builder.push_inst(Instruction::Call(func_idx));
+            builder
+                .allocations
+                .inst_builder
+                .push_inst(Instruction::Call(func_idx));
             Ok(())
         })
     }
@@ -738,12 +748,13 @@ impl<'parser> FuncBuilder<'parser> {
             let func_type_idx = FuncTypeIdx(index);
             let table_idx = TableIdx(table_index);
             assert_eq!(table_idx.into_u32(), DEFAULT_TABLE_INDEX);
-            let func_type_offset = builder.value_stack.pop1();
+            let func_type_offset = builder.allocations.value_stack.pop1();
             debug_assert_eq!(func_type_offset, ValueType::I32);
             let func_type = builder.func_type_at(func_type_idx);
             builder.adjust_value_stack_for_call(&func_type);
             let func_type_idx = func_type_idx.into_u32().into();
             builder
+                .allocations
                 .inst_builder
                 .push_inst(Instruction::CallIndirect(func_type_idx));
             Ok(())
@@ -753,8 +764,11 @@ impl<'parser> FuncBuilder<'parser> {
     /// Translates a Wasm `drop` instruction.
     pub fn translate_drop(&mut self) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.value_stack.pop1();
-            builder.inst_builder.push_inst(Instruction::Drop);
+            builder.allocations.value_stack.pop1();
+            builder
+                .allocations
+                .inst_builder
+                .push_inst(Instruction::Drop);
             Ok(())
         })
     }
@@ -762,11 +776,14 @@ impl<'parser> FuncBuilder<'parser> {
     /// Translates a Wasm `select` instruction.
     pub fn translate_select(&mut self) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let (v0, v1, selector) = builder.value_stack.pop3();
+            let (v0, v1, selector) = builder.allocations.value_stack.pop3();
             debug_assert_eq!(selector, ValueType::I32);
             debug_assert_eq!(v0, v1);
-            builder.value_stack.push(v0);
-            builder.inst_builder.push_inst(Instruction::Select);
+            builder.allocations.value_stack.push(v0);
+            builder
+                .allocations
+                .inst_builder
+                .push_inst(Instruction::Select);
             Ok(())
         })
     }
@@ -776,13 +793,15 @@ impl<'parser> FuncBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let local_depth = builder.relative_local_depth(local_idx);
             builder
+                .allocations
                 .inst_builder
                 .push_inst(Instruction::local_get(local_depth));
             let value_type = builder
+                .allocations
                 .locals
                 .resolve_local(local_idx)
                 .unwrap_or_else(|| panic!("failed to resolve local {}", local_idx));
-            builder.value_stack.push(value_type);
+            builder.allocations.value_stack.push(value_type);
             Ok(())
         })
     }
@@ -790,12 +809,14 @@ impl<'parser> FuncBuilder<'parser> {
     /// Translate a Wasm `local.set` instruction.
     pub fn translate_local_set(&mut self, local_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let actual = builder.value_stack.pop1();
+            let actual = builder.allocations.value_stack.pop1();
             let local_depth = builder.relative_local_depth(local_idx);
             builder
+                .allocations
                 .inst_builder
                 .push_inst(Instruction::local_set(local_depth));
             let expected = builder
+                .allocations
                 .locals
                 .resolve_local(local_idx)
                 .unwrap_or_else(|| panic!("failed to resolve local {}", local_idx));
@@ -809,13 +830,15 @@ impl<'parser> FuncBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let local_depth = builder.relative_local_depth(local_idx);
             builder
+                .allocations
                 .inst_builder
                 .push_inst(Instruction::local_tee(local_depth));
             let expected = builder
+                .allocations
                 .locals
                 .resolve_local(local_idx)
                 .unwrap_or_else(|| panic!("failed to resolve local {}", local_idx));
-            let actual = builder.value_stack.top();
+            let actual = builder.allocations.value_stack.top();
             debug_assert_eq!(actual, expected);
             Ok(())
         })
@@ -826,9 +849,13 @@ impl<'parser> FuncBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let global_idx = GlobalIdx(global_idx);
             let global_type = builder.res.get_type_of_global(global_idx);
-            builder.value_stack.push(global_type.value_type());
+            builder
+                .allocations
+                .value_stack
+                .push(global_type.value_type());
             let global_idx = global_idx.into_u32().into();
             builder
+                .allocations
                 .inst_builder
                 .push_inst(Instruction::GlobalGet(global_idx));
             Ok(())
@@ -842,10 +869,11 @@ impl<'parser> FuncBuilder<'parser> {
             let global_type = builder.res.get_type_of_global(global_idx);
             debug_assert_eq!(global_type.mutability(), Mutability::Mutable);
             let expected = global_type.value_type();
-            let actual = builder.value_stack.pop1();
+            let actual = builder.allocations.value_stack.pop1();
             debug_assert_eq!(actual, expected);
             let global_idx = global_idx.into_u32().into();
             builder
+                .allocations
                 .inst_builder
                 .push_inst(Instruction::GlobalSet(global_idx));
             Ok(())
@@ -888,11 +916,14 @@ impl<'parser> FuncBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let (memory_idx, offset) = Self::decompose_memarg(memarg);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
-            let pointer = builder.value_stack.pop1();
+            let pointer = builder.allocations.value_stack.pop1();
             debug_assert_eq!(pointer, ValueType::I32);
-            builder.value_stack.push(loaded_type);
+            builder.allocations.value_stack.push(loaded_type);
             let offset = Offset::from(offset);
-            builder.inst_builder.push_inst(make_inst(offset));
+            builder
+                .allocations
+                .inst_builder
+                .push_inst(make_inst(offset));
             Ok(())
         })
     }
@@ -1033,11 +1064,14 @@ impl<'parser> FuncBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let (memory_idx, offset) = Self::decompose_memarg(memarg);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
-            let (pointer, stored) = builder.value_stack.pop2();
+            let (pointer, stored) = builder.allocations.value_stack.pop2();
             debug_assert_eq!(pointer, ValueType::I32);
             assert_eq!(stored_value, stored);
             let offset = Offset::from(offset);
-            builder.inst_builder.push_inst(make_inst(offset));
+            builder
+                .allocations
+                .inst_builder
+                .push_inst(make_inst(offset));
             Ok(())
         })
     }
@@ -1123,8 +1157,11 @@ impl<'parser> FuncBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let memory_idx = MemoryIdx(memory_idx);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
-            builder.value_stack.push(ValueType::I32);
-            builder.inst_builder.push_inst(Instruction::MemorySize);
+            builder.allocations.value_stack.push(ValueType::I32);
+            builder
+                .allocations
+                .inst_builder
+                .push_inst(Instruction::MemorySize);
             Ok(())
         })
     }
@@ -1138,8 +1175,11 @@ impl<'parser> FuncBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let memory_idx = MemoryIdx(memory_idx);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
-            debug_assert_eq!(builder.value_stack.top(), ValueType::I32);
-            builder.inst_builder.push_inst(Instruction::MemoryGrow);
+            debug_assert_eq!(builder.allocations.value_stack.top(), ValueType::I32);
+            builder
+                .allocations
+                .inst_builder
+                .push_inst(Instruction::MemoryGrow);
             Ok(())
         })
     }
@@ -1160,8 +1200,11 @@ impl<'parser> FuncBuilder<'parser> {
     {
         self.translate_if_reachable(|builder| {
             let value = value.into();
-            builder.value_stack.push(value.value_type());
-            builder.inst_builder.push_inst(Instruction::constant(value));
+            builder.allocations.value_stack.push(value.value_type());
+            builder
+                .allocations
+                .inst_builder
+                .push_inst(Instruction::constant(value));
             Ok(())
         })
     }
@@ -1206,10 +1249,10 @@ impl<'parser> FuncBuilder<'parser> {
         inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let condition = builder.value_stack.pop1();
+            let condition = builder.allocations.value_stack.pop1();
             debug_assert_eq!(condition, input_type);
-            builder.value_stack.push(ValueType::I32);
-            builder.inst_builder.push_inst(inst);
+            builder.allocations.value_stack.push(ValueType::I32);
+            builder.allocations.inst_builder.push_inst(inst);
             Ok(())
         })
     }
@@ -1237,11 +1280,11 @@ impl<'parser> FuncBuilder<'parser> {
         inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let (v0, v1) = builder.value_stack.pop2();
+            let (v0, v1) = builder.allocations.value_stack.pop2();
             debug_assert_eq!(v0, v1);
             debug_assert_eq!(v0, input_type);
-            builder.value_stack.push(ValueType::I32);
-            builder.inst_builder.push_inst(inst);
+            builder.allocations.value_stack.push(ValueType::I32);
+            builder.allocations.inst_builder.push_inst(inst);
             Ok(())
         })
     }
@@ -1433,9 +1476,9 @@ impl<'parser> FuncBuilder<'parser> {
         inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let actual_type = builder.value_stack.top();
+            let actual_type = builder.allocations.value_stack.top();
             debug_assert_eq!(actual_type, value_type);
-            builder.inst_builder.push_inst(inst);
+            builder.allocations.inst_builder.push_inst(inst);
             Ok(())
         })
     }
@@ -1482,11 +1525,11 @@ impl<'parser> FuncBuilder<'parser> {
         inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let (v0, v1) = builder.value_stack.pop2();
+            let (v0, v1) = builder.allocations.value_stack.pop2();
             debug_assert_eq!(v0, v1);
             debug_assert_eq!(v0, value_type);
-            builder.value_stack.push(value_type);
-            builder.inst_builder.push_inst(inst);
+            builder.allocations.value_stack.push(value_type);
+            builder.allocations.inst_builder.push_inst(inst);
             Ok(())
         })
     }
@@ -1819,10 +1862,10 @@ impl<'parser> FuncBuilder<'parser> {
         inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let input = builder.value_stack.pop1();
+            let input = builder.allocations.value_stack.pop1();
             debug_assert_eq!(input, input_type);
-            builder.value_stack.push(output_type);
-            builder.inst_builder.push_inst(inst);
+            builder.allocations.value_stack.push(output_type);
+            builder.allocations.inst_builder.push_inst(inst);
             Ok(())
         })
     }
