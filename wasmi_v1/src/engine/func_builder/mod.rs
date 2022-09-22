@@ -33,6 +33,7 @@ use crate::{
         GlobalIdx,
         MemoryIdx,
         ModuleResources,
+        ReusableAllocations,
         TableIdx,
         DEFAULT_MEMORY_INDEX,
     },
@@ -43,13 +44,12 @@ use crate::{
 use alloc::vec::Vec;
 use core::ops::{Deref, DerefMut};
 use wasmi_core::{Value, ValueType, F32, F64};
-use wasmparser::FuncValidatorAllocations;
 
 /// The used function validator type.
 type FuncValidator = wasmparser::FuncValidator<wasmparser::ValidatorResources>;
 
 /// The interface to translate a `wasmi` bytecode function using Wasm bytecode.
-pub struct FuncBuilder<'alloc, 'parser> {
+pub struct FuncBuilder<'parser> {
     /// The [`Engine`] for which the function is translated.
     engine: Engine,
     /// The function under construction.
@@ -69,7 +69,7 @@ pub struct FuncBuilder<'alloc, 'parser> {
     /// The Wasm function validator.
     validator: FuncValidator,
     /// The reusable data structures of the [`FuncBuilder`].
-    allocations: &'alloc mut FunctionBuilderAllocations,
+    allocations: FunctionBuilderAllocations,
 }
 
 /// Reusable allocations of a [`FuncBuilder`].
@@ -91,19 +91,19 @@ pub struct FunctionBuilderAllocations {
     br_table_branches: Vec<Instruction>,
 }
 
-impl<'alloc, 'parser> Deref for FuncBuilder<'alloc, 'parser> {
+impl<'parser> Deref for FuncBuilder<'parser> {
     type Target = FunctionBuilderAllocations;
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        self.allocations
+        &self.allocations
     }
 }
 
-impl<'alloc, 'parser> DerefMut for FuncBuilder<'alloc, 'parser> {
+impl<'parser> DerefMut for FuncBuilder<'parser> {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
-        self.allocations
+        &mut self.allocations
     }
 }
 
@@ -123,17 +123,17 @@ impl FunctionBuilderAllocations {
     }
 }
 
-impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
+impl<'parser> FuncBuilder<'parser> {
     /// Creates a new [`FuncBuilder`].
     pub fn new(
         engine: &Engine,
         func: FuncIdx,
         res: ModuleResources<'parser>,
         validator: FuncValidator,
-        allocations: &'alloc mut FunctionBuilderAllocations,
+        mut allocations: FunctionBuilderAllocations,
     ) -> Self {
-        Self::register_func_body_block(func, res, allocations);
-        Self::register_func_params(func, res, allocations);
+        Self::register_func_body_block(func, res, &mut allocations);
+        Self::register_func_params(func, res, &mut allocations);
         Self {
             engine: engine.clone(),
             func,
@@ -235,14 +235,17 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     pub fn finish(
         mut self,
         offset: usize,
-    ) -> Result<(FuncBody, FuncValidatorAllocations), TranslationError> {
+    ) -> Result<(FuncBody, ReusableAllocations), TranslationError> {
         self.validator.finish(offset)?;
         let func_body = self.allocations.inst_builder.finish(
             &self.engine,
             self.len_locals(),
             self.value_stack.max_stack_height() as usize,
         );
-        let allocations = self.validator.into_allocations();
+        let allocations = ReusableAllocations {
+            translation: self.allocations,
+            validation: self.validator.into_allocations(),
+        };
         Ok((func_body, allocations))
     }
 
@@ -378,7 +381,7 @@ pub enum AcquiredTarget {
     Return(DropKeep),
 }
 
-impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
+impl<'parser> FuncBuilder<'parser> {
     /// Translates a Wasm `unreachable` instruction.
     pub fn translate_nop(&mut self) -> Result<(), TranslationError> {
         Ok(())
