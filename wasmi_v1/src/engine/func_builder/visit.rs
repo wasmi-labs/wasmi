@@ -600,7 +600,7 @@ macro_rules! for_each_unsupported_operator {
     };
 }
 
-impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
+impl<'parser> FuncBuilder<'parser> {
     /// Translates into `wasmi` bytecode if the current code path is reachable.
     fn validate_then_translate<V, F>(
         &mut self,
@@ -652,7 +652,7 @@ macro_rules! define_unsupported_visit_operator {
     }
 }
 
-impl<'alloc, 'parser> VisitOperator<'parser> for FuncBuilder<'alloc, 'parser> {
+impl<'parser> VisitOperator<'parser> for FuncBuilder<'parser> {
     type Output = Result<(), TranslationError>;
 
     for_each_supported_operator!(define_supported_visit_operator);

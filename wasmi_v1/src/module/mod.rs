@@ -34,6 +34,7 @@ pub use self::{
     global::GlobalIdx,
     import::{FuncTypeIdx, ImportName},
     instantiate::{InstancePre, InstantiationError},
+    parser::ReusableAllocations,
     read::Read,
     utils::value_type_from_wasmparser,
 };

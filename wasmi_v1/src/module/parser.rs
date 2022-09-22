@@ -58,10 +58,15 @@ pub struct ModuleParser<'engine> {
     parser: WasmParser,
     /// Currently processed function.
     func: FuncIdx,
-    /// Reusable allocations for building functions.
-    allocations: FunctionBuilderAllocations,
-    /// Reusable allocations for validating functions.
-    validator_allocations: FuncValidatorAllocations,
+    /// Reusable allocations for validating and translation functions.
+    allocations: ReusableAllocations,
+}
+
+/// Reusable heap allocations for function validation and translation.
+#[derive(Default)]
+pub struct ReusableAllocations {
+    pub translation: FunctionBuilderAllocations,
+    pub validation: FuncValidatorAllocations,
 }
 
 impl<'engine> ModuleParser<'engine> {
@@ -75,8 +80,7 @@ impl<'engine> ModuleParser<'engine> {
             validator,
             parser,
             func: FuncIdx(0),
-            allocations: FunctionBuilderAllocations::default(),
-            validator_allocations: FuncValidatorAllocations::default(),
+            allocations: ReusableAllocations::default(),
         }
     }
 
@@ -477,17 +481,17 @@ impl<'engine> ModuleParser<'engine> {
         let engine = self.builder.engine();
         let validator = self.validator.code_section_entry(&func_body)?;
         let module_resources = ModuleResources::new(&self.builder);
-        let validator_allocations = take(&mut self.validator_allocations);
-        let (func_body, validator_allocations) = translate(
+        let allocations = take(&mut self.allocations);
+        let (func_body, allocations) = translate(
             engine,
             func,
             func_body,
-            validator.into_validator(validator_allocations),
+            validator.into_validator(allocations.validation),
             module_resources,
-            &mut self.allocations,
+            allocations.translation,
         )?;
         self.builder.func_bodies.push(func_body);
-        let _ = replace(&mut self.validator_allocations, validator_allocations);
+        let _ = replace(&mut self.allocations, allocations);
         Ok(())
     }
 
