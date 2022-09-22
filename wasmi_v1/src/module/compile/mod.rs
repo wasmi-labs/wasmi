@@ -5,7 +5,7 @@ use crate::{
     Engine,
     ModuleError,
 };
-use wasmparser::{FuncValidator, FunctionBody, ValidatorResources};
+use wasmparser::{FuncValidator, FuncValidatorAllocations, FunctionBody, ValidatorResources};
 
 mod block_type;
 
@@ -29,7 +29,7 @@ pub fn translate<'parser>(
     validator: FuncValidator<ValidatorResources>,
     res: ModuleResources<'parser>,
     allocations: &mut FunctionBuilderAllocations,
-) -> Result<FuncBody, ModuleError> {
+) -> Result<(FuncBody, FuncValidatorAllocations), ModuleError> {
     FunctionTranslator::new(engine, func, func_body, validator, res, allocations).translate()
 }
 
@@ -59,15 +59,15 @@ impl<'alloc, 'parser> FunctionTranslator<'alloc, 'parser> {
     }
 
     /// Starts translation of the Wasm stream into `wasmi` bytecode.
-    fn translate(mut self) -> Result<FuncBody, ModuleError> {
+    fn translate(mut self) -> Result<(FuncBody, FuncValidatorAllocations), ModuleError> {
         self.translate_locals()?;
         let offset = self.translate_operators()?;
-        let func_body = self.finish(offset)?;
-        Ok(func_body)
+        let (func_body, allocations) = self.finish(offset)?;
+        Ok((func_body, allocations))
     }
 
     /// Finishes construction of the function and returns its [`FuncBody`].
-    fn finish(self, offset: usize) -> Result<FuncBody, ModuleError> {
+    fn finish(self, offset: usize) -> Result<(FuncBody, FuncValidatorAllocations), ModuleError> {
         self.func_builder.finish(offset).map_err(Into::into)
     }
 
