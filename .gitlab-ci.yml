@@ -24,6 +24,7 @@ criterion-benchmark:
   - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                   # PRs
   <<:                              *docker-env
   script:
+    - cargo install cargo-criterion
     - git fetch
     - git submodule update --init --recursive
     - git checkout master
