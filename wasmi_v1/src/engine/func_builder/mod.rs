@@ -43,6 +43,7 @@ use crate::{
 use alloc::vec::Vec;
 use core::ops::{Deref, DerefMut};
 use wasmi_core::{Value, ValueType, F32, F64};
+use wasmparser::FuncValidatorAllocations;
 
 /// The used function validator type.
 type FuncValidator = wasmparser::FuncValidator<wasmparser::ValidatorResources>;
@@ -231,14 +232,18 @@ impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
     }
 
     /// Finishes constructing the function and returns its [`FuncBody`].
-    pub fn finish(mut self, offset: usize) -> Result<FuncBody, TranslationError> {
+    pub fn finish(
+        mut self,
+        offset: usize,
+    ) -> Result<(FuncBody, FuncValidatorAllocations), TranslationError> {
         self.validator.finish(offset)?;
         let func_body = self.allocations.inst_builder.finish(
             &self.engine,
             self.len_locals(),
             self.value_stack.max_stack_height() as usize,
         );
-        Ok(func_body)
+        let allocations = self.validator.into_allocations();
+        Ok((func_body, allocations))
     }
 
     /// Returns `true` if the code at the current translation position is reachable.
