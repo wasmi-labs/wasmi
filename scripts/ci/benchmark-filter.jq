@@ -2,7 +2,7 @@ def round(p):
   if
     . != null
   then
-    .*(100/p) | round | ./(1/p)
+    .*(100/p) | round | ./(1/p) | if . > 0 then "+\(.)" else . end
   else
     empty
   end;
@@ -11,15 +11,15 @@ def perf_to_emoji(p):
   if
     p == "Improved"
   then
-    ":green_circle:"
+    ":green_circle: "
   elif
     p == "Regressed"
   then
-    ":red_circle:"
+    ":red_circle: "
   elif
     p == "NoChange"
   then
-    ":white_circle:"
+    ":white_circle: "
   else
     empty
   end;

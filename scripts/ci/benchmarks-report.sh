@@ -30,7 +30,7 @@ fi
 echo "Comment will be posted here $PR_COMMENTS_URL"
 
 # POST/PATCH comment to the PR
-curl -X ${REQUEST_TYPE} ${PR_COMMENTS_URL} -v \
+curl -X ${REQUEST_TYPE} ${PR_COMMENTS_URL} \
     -H "Cookie: logged_in=no" \
     -H "Authorization: token ${GITHUB_PR_TOKEN}" \
     -H "Content-Type: application/json; charset=utf-8" \
