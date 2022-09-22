@@ -11,11 +11,6 @@ default:
       - unknown_failure
       - api_failure
 
-.kubernetes-env:                   &kubernetes-env
-  image:                           "paritytech/ci-linux:production"
-  tags:
-    - kubernetes-parity-build
-
 .docker-env:                       &docker-env
   image:                           "paritytech/ci-linux:production"
   interruptible:                   true
@@ -33,9 +28,10 @@ criterion-benchmark:
     - git submodule update --init --recursive
     - git checkout master
     - git pull
-    # on master
-    - cargo bench --bench benches -- --noplot --save-baseline master | tee bench-report-master.txt
-    # on PR
+    - cd wasmi_v1
+    # benchmark master
+    - cargo criterion --message-format=json | tee -a benchmarks.json
+    # benchmark PR
     - git checkout $CI_COMMIT_SHA
-    - cargo bench --bench benches -- --noplot --baseline master | tee bench-report-pr.txt
-    - bash ./scripts/ci/benchmarks-report.sh bench-report-master.txt bench-report-pr.txt
+    - cargo criterion --message-format=json | tee -a benchmarks.json
+    - bash ../scripts/ci/benchmarks-report.sh benchmarks.json

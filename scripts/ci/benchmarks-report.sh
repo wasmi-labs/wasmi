@@ -9,55 +9,8 @@ set -o pipefail
 
 PR_COMMENTS_URL="https://api.github.com/repos/paritytech/wasmi/issues/${CI_COMMIT_BRANCH}/comments"
 
-# master report to json
-echo "PARSING MASTER REPORT"
-sed -e 's/^Found.*//g' \
-    -e 's/^\s\+[[:digit:]].*$//g' \
-    -e 's/\//_/g' \
-    -e 's/^[a-z0-9_]\+/"&": {/g' \
-    -e 's/time:\s\+\[.\{10\}/"time": "/g' \
-    -e 's/.\{10\}\]/"},/g' \
-    -e '1s/^/{\n/g' \
-    -e '/^$/d' \
-    -e 's/  */ /g' \
-    -e 's/^ *\(.*\) *$/\1/' $1 \
-    | sed -z 's/.$//' \
-    | sed -e '$s/.$/}/g' \
-    | tee target/criterion/output_master.json
-
-# PR report to json
-sed -e 's/^Found.*//g' \
-    -e 's/^\s\+[[:digit:]].*//g' \
-    -e 's/\//_/g' \
-    -e 's/^[a-z0-9_]\+/"&": {/g' \
-    -e 's/time:\s\+\[.\{10\}/"time": "/g' \
-    -e 's/.\{10\}\]$/",/g' \
-    -e 's/change:\s.\{10\}/"change":"/g' \
-    -e 's/\s[-+].*$/",/g' \
-    -e 's/\(No\|Ch\).*$/"perf_change":":white_circle:"},/' \
-    -e 's/Performance has regressed./"perf_change":":red_circle:"},/' \
-    -e 's/Performance has improved./"perf_change":":green_circle:"},/' \
-    -e '1s/^/{\n/g' \
-    -e '/^$/d' \
-    -e 's/  */ /g' \
-    -e 's/^ *\(.*\) *$/\1/' $2 \
-    | sed -z 's/.$//' \
-    | sed -e '$s/.$/}/g' \
-    | tee target/criterion/output_pr.json
-
-cd target/criterion
-
-# Prepare report table
-for d in */; do
-    d=${d::-1}
-    echo -n "| \`${d}\` "\
-         "| $(cat output_master.json | jq .${d}.time | tr -d '"') "\
-         "| $(cat output_pr.json | jq .${d}.time | tr -d '"') "\
-         "| $(cat output_pr.json | jq .${d}.perf_change | tr -d '"') "\
-         "$(cat output_pr.json | jq .${d}.change | tr -d '"') |\n" >> bench-final-report.txt
-done
-
-RESULT=$(cat bench-final-report.txt)
+# Format benchmarks into a table
+RESULT=$(jq -s -f ../scripts/ci/benchmark-filter.jq $1 | tr -d '"' | tr -d '\n')
 
 # Check whether comment from paritytech-cicd-pr already exists
 EXISTING_COMMENT_URL=$(curl --silent $PR_COMMENTS_URL \
