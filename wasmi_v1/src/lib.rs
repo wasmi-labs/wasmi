@@ -81,6 +81,7 @@
     clippy::map_unwrap_or,
     clippy::items_after_statements
 )]
+#![recursion_limit = "550"]
 
 #[cfg(not(feature = "std"))]
 #[macro_use]
