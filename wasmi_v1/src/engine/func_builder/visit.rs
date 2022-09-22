@@ -170,20 +170,20 @@ macro_rules! for_each_supported_operator {
             fn visit_f64_max() => fn translate_f64_max
             fn visit_f64_copysign() => fn translate_f64_copysign
             fn visit_i32_wrap_i64() => fn translate_i32_wrap_i64
-            fn visit_i32_trunc_f32s() => fn translate_i32_trunc_f32_s
-            fn visit_i32_trunc_f32u() => fn translate_i32_trunc_f32_u
-            fn visit_i32_trunc_f64s() => fn translate_i32_trunc_f64_s
-            fn visit_i32_trunc_f64u() => fn translate_i32_trunc_f64_u
-            fn visit_i64_extend_i32s() => fn translate_i64_extend_i32_s
-            fn visit_i64_extend_i32u() => fn translate_i64_extend_i32_u
-            fn visit_i64_trunc_f32s() => fn translate_i64_trunc_f32_s
-            fn visit_i64_trunc_f32u() => fn translate_i64_trunc_f32_u
-            fn visit_i64_trunc_f64s() => fn translate_i64_trunc_f64_s
-            fn visit_i64_trunc_f64u() => fn translate_i64_trunc_f64_u
-            fn visit_f32_convert_i32s() => fn translate_f32_convert_i32_s
-            fn visit_f32_convert_i32u() => fn translate_f32_convert_i32_u
-            fn visit_f32_convert_i64s() => fn translate_f32_convert_i64_s
-            fn visit_f32_convert_i64u() => fn translate_f32_convert_i64_u
+            fn visit_i32_trunc_f32_s() => fn translate_i32_trunc_f32_s
+            fn visit_i32_trunc_f32_u() => fn translate_i32_trunc_f32_u
+            fn visit_i32_trunc_f64_s() => fn translate_i32_trunc_f64_s
+            fn visit_i32_trunc_f64_u() => fn translate_i32_trunc_f64_u
+            fn visit_i64_extend_i32_s() => fn translate_i64_extend_i32_s
+            fn visit_i64_extend_i32_u() => fn translate_i64_extend_i32_u
+            fn visit_i64_trunc_f32_s() => fn translate_i64_trunc_f32_s
+            fn visit_i64_trunc_f32_u() => fn translate_i64_trunc_f32_u
+            fn visit_i64_trunc_f64_s() => fn translate_i64_trunc_f64_s
+            fn visit_i64_trunc_f64_u() => fn translate_i64_trunc_f64_u
+            fn visit_f32_convert_i32_s() => fn translate_f32_convert_i32_s
+            fn visit_f32_convert_i32_u() => fn translate_f32_convert_i32_u
+            fn visit_f32_convert_i64_s() => fn translate_f32_convert_i64_s
+            fn visit_f32_convert_i64_u() => fn translate_f32_convert_i64_u
             fn visit_f32_demote_f64() => fn translate_f32_demote_f64
             fn visit_f64_convert_i32_s() => fn translate_f64_convert_i32_s
             fn visit_f64_convert_i32_u() => fn translate_f64_convert_i32_u
@@ -580,23 +580,27 @@ macro_rules! for_each_unsupported_operator {
             I32x4RelaxedTruncSatF32x4U => visit_i32x4_relaxed_trunc_sat_f32x4_u
             I32x4RelaxedTruncSatF64x2SZero => visit_i32x4_relaxed_trunc_sat_f64x2_s_zero
             I32x4RelaxedTruncSatF64x2UZero => visit_i32x4_relaxed_trunc_sat_f64x2_u_zero
-            F32x4Fma => visit_f32x4_fma
-            F32x4Fms => visit_f32x4_fms
-            F64x2Fma => visit_f64x2_fma
-            F64x2Fms => visit_f64x2_fms
-            I8x16LaneSelect => visit_i8x16_laneselect
-            I16x8LaneSelect => visit_i16x8_laneselect
-            I32x4LaneSelect => visit_i32x4_laneselect
-            I64x2LaneSelect => visit_i64x2_laneselect
+            F32x4RelaxedFma => visit_f32x4_relaxed_fma
+            F32x4RelaxedFnma => visit_f32x4_relaxed_fnma
+            F64x2RelaxedFma => visit_f64x2_relaxed_fma
+            F64x2RelaxedFnma => visit_f64x2_relaxed_fnma
+            I8x16RelaxedLaneselect => visit_i8x16_relaxed_laneselect
+            I16x8RelaxedLaneselect => visit_i16x8_relaxed_laneselect
+            I32x4RelaxedLaneselect => visit_i32x4_relaxed_laneselect
+            I64x2RelaxedLaneselect => visit_i64x2_relaxed_laneselect
             F32x4RelaxedMin => visit_f32x4_relaxed_min
             F32x4RelaxedMax => visit_f32x4_relaxed_max
             F64x2RelaxedMin => visit_f64x2_relaxed_min
             F64x2RelaxedMax => visit_f64x2_relaxed_max
+            I16x8RelaxedQ15mulrS => visit_i16x8_relaxed_q15mulr_s
+            I16x8DotI8x16I7x16S => visit_i16x8_dot_i8x16_i7x16_s
+            I32x4DotI8x16I7x16AddS => visit_i32x4_dot_i8x16_i7x16_add_s
+            F32x4RelaxedDotBf16x8AddF32x4 => visit_f32x4_relaxed_dot_bf16x8_add_f32x4
         }
     };
 }
 
-impl<'alloc, 'parser> FuncBuilder<'alloc, 'parser> {
+impl<'parser> FuncBuilder<'parser> {
     /// Translates into `wasmi` bytecode if the current code path is reachable.
     fn validate_then_translate<V, F>(
         &mut self,
@@ -648,7 +652,7 @@ macro_rules! define_unsupported_visit_operator {
     }
 }
 
-impl<'alloc, 'parser> VisitOperator<'parser> for FuncBuilder<'alloc, 'parser> {
+impl<'parser> VisitOperator<'parser> for FuncBuilder<'parser> {
     type Output = Result<(), TranslationError>;
 
     for_each_supported_operator!(define_supported_visit_operator);

@@ -158,7 +158,7 @@ impl ExactSizeIterator for ExportsIter<'_> {
 
 impl FusedIterator for ExportsIter<'_> {}
 
-/// A module instance entitiy builder.
+/// A module instance entity builder.
 #[derive(Debug)]
 pub struct InstanceEntityBuilder {
     /// The [`InstanceEntity`] under construction.

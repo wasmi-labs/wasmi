@@ -47,7 +47,7 @@
 //!     // In order to create Wasm module instances and link their imports
 //!     // and exports we require a `Linker`.
 //!     let mut linker = <Linker<HostState>>::new();
-//!     // Instantiation of a Wasm module requires defning its imports and then
+//!     // Instantiation of a Wasm module requires defining its imports and then
 //!     // afterwards we can fetch exports by name, as well as asserting the
 //!     // type signature of the function with `get_typed_func`.
 //!     //

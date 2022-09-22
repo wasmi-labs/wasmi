@@ -130,7 +130,7 @@ impl LocalsRegistry {
                 Some(value_type)
             }
             Err(_) => unreachable!(
-                "unexectedly could not find valid local group index \
+                "unexpectedly could not find valid local group index \
                 using `local_index` = {}",
                 local_index
             ),

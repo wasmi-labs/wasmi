@@ -3,7 +3,7 @@ mod values;
 
 pub use self::{
     frames::{CallStack, FuncFrame},
-    values::ValueStack,
+    values::{ValueStack, ValueStackRef},
 };
 use super::{
     code_map::{CodeMap, InstructionsRef},
@@ -23,10 +23,10 @@ use core::{
 };
 use wasmi_core::{Trap, TrapCode};
 
-/// Default value for initial value stack heihgt in bytes.
+/// Default value for initial value stack height in bytes.
 const DEFAULT_MIN_VALUE_STACK_HEIGHT: usize = 1024;
 
-/// Default value for maximum value stack heihgt in bytes.
+/// Default value for maximum value stack height in bytes.
 const DEFAULT_MAX_VALUE_STACK_HEIGHT: usize = 1024 * DEFAULT_MIN_VALUE_STACK_HEIGHT;
 
 /// Default value for maximum recursion depth.

@@ -245,7 +245,7 @@ impl InstructionsBuilder {
     ///
     /// This feeds the built-up instructions of the function body
     /// into the [`Engine`] so that the [`Engine`] is
-    /// aware of the Wasm function existance. Returns a `FuncBody`
+    /// aware of the Wasm function existence. Returns a `FuncBody`
     /// reference that allows to retrieve the instructions.
     #[must_use]
     pub fn finish(

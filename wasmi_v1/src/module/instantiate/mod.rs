@@ -4,7 +4,7 @@ mod pre;
 pub use self::{error::InstantiationError, pre::InstancePre};
 use super::{export, InitExpr, Module, ModuleImportType};
 use crate::{
-    module::{init_expr::InitExprOperand, DEFAULT_MEMORY_INDEX},
+    module::{init_expr::InitExprOperand, DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
     AsContext,
     AsContextMut,
     Error,
@@ -23,7 +23,7 @@ impl Module {
     /// Instantiates a new [`Instance`] from the given compiled [`Module`].
     ///
     /// Uses the given `context` to store the instance data to.
-    /// The given `externals` are joned with the imports in the same order in which they occure.
+    /// The given `externals` are joined with the imports in the same order in which they occurred.
     ///
     /// # Note
     ///
@@ -314,9 +314,6 @@ impl Module {
         }
     }
 
-    /// The index of the default Wasm table.
-    const DEFAULT_TABLE_INDEX: u32 = 0;
-
     /// Initializes the [`Instance`] tables with the Wasm element segments of the [`Module`].
     fn initialize_table_elements(
         &self,
@@ -333,14 +330,12 @@ impl Module {
                     offset_expr,
                 )
                 }) as usize;
-            let table = builder
-                .get_table(Self::DEFAULT_TABLE_INDEX)
-                .unwrap_or_else(|| {
-                    panic!(
-                        "expected default table at index {} but found none",
-                        Self::DEFAULT_TABLE_INDEX
-                    )
-                });
+            let table = builder.get_table(DEFAULT_TABLE_INDEX).unwrap_or_else(|| {
+                panic!(
+                    "expected default table at index {} but found none",
+                    DEFAULT_TABLE_INDEX
+                )
+            });
             // Note: This checks not only that the elements in the element segments properly
             //       fit into the table at the given offset but also that the element segment
             //       consists of at least 1 element member.
@@ -385,14 +380,12 @@ impl Module {
                     offset_expr,
                 )
                 }) as usize;
-            let memory = builder
-                .get_memory(Self::DEFAULT_TABLE_INDEX)
-                .unwrap_or_else(|| {
-                    panic!(
-                        "expected default memory at index {} but found none",
-                        DEFAULT_MEMORY_INDEX
-                    )
-                });
+            let memory = builder.get_memory(DEFAULT_MEMORY_INDEX).unwrap_or_else(|| {
+                panic!(
+                    "expected default memory at index {} but found none",
+                    DEFAULT_MEMORY_INDEX
+                )
+            });
             memory.write(context.as_context_mut(), offset, data_segment.data())?;
         }
         Ok(())

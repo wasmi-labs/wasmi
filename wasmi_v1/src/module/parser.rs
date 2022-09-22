@@ -1,4 +1,7 @@
-use core::ops::Range;
+use core::{
+    mem::{replace, take},
+    ops::Range,
+};
 
 use super::{
     compile::translate,
@@ -18,6 +21,7 @@ use wasmparser::{
     ElementSectionReader,
     Encoding,
     ExportSectionReader,
+    FuncValidatorAllocations,
     FunctionBody,
     FunctionSectionReader,
     GlobalSectionReader,
@@ -54,8 +58,15 @@ pub struct ModuleParser<'engine> {
     parser: WasmParser,
     /// Currently processed function.
     func: FuncIdx,
-    /// Reusable allocations for building functions.
-    allocations: FunctionBuilderAllocations,
+    /// Reusable allocations for validating and translation functions.
+    allocations: ReusableAllocations,
+}
+
+/// Reusable heap allocations for function validation and translation.
+#[derive(Default)]
+pub struct ReusableAllocations {
+    pub translation: FunctionBuilderAllocations,
+    pub validation: FuncValidatorAllocations,
 }
 
 impl<'engine> ModuleParser<'engine> {
@@ -69,7 +80,7 @@ impl<'engine> ModuleParser<'engine> {
             validator,
             parser,
             func: FuncIdx(0),
-            allocations: FunctionBuilderAllocations::default(),
+            allocations: ReusableAllocations::default(),
         }
     }
 
@@ -148,7 +159,6 @@ impl<'engine> ModuleParser<'engine> {
             } => self.process_version(num, encoding, range),
             Payload::TypeSection(section) => self.process_types(section),
             Payload::ImportSection(section) => self.process_imports(section),
-            Payload::AliasSection(section) => self.process_aliases(section),
             Payload::InstanceSection(section) => self.process_instances(section),
             Payload::FunctionSection(section) => self.process_functions(section),
             Payload::TableSection(section) => self.process_tables(section),
@@ -255,19 +265,6 @@ impl<'engine> ModuleParser<'engine> {
         let imports = (0..len_imports).map(|_| section.read()?.try_into());
         self.builder.push_imports(imports)?;
         Ok(())
-    }
-
-    /// Process module aliases.
-    ///
-    /// # Note
-    ///
-    /// This is part of the module linking Wasm proposal and not yet supported
-    /// by `wasmi`.
-    fn process_aliases(
-        &mut self,
-        section: wasmparser::AliasSectionReader,
-    ) -> Result<(), ModuleError> {
-        self.validator.alias_section(&section).map_err(Into::into)
     }
 
     /// Process module instances.
@@ -484,15 +481,17 @@ impl<'engine> ModuleParser<'engine> {
         let engine = self.builder.engine();
         let validator = self.validator.code_section_entry(&func_body)?;
         let module_resources = ModuleResources::new(&self.builder);
-        let func_body = translate(
+        let allocations = take(&mut self.allocations);
+        let (func_body, allocations) = translate(
             engine,
             func,
             func_body,
-            validator,
+            validator.into_validator(allocations.validation),
             module_resources,
-            &mut self.allocations,
+            allocations.translation,
         )?;
         self.builder.func_bodies.push(func_body);
+        let _ = replace(&mut self.allocations, allocations);
         Ok(())
     }
 

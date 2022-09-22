@@ -23,7 +23,7 @@ use wasmi_core::UntypedValue;
 ///
 /// This representation slightly differs from WebAssembly instructions.
 ///
-/// For example the `BrTable` instruciton is unrolled into separate instructions
+/// For example the `BrTable` instruction is unrolled into separate instructions
 /// each representing either the `BrTable` head or one of its branching targets.
 #[derive(Copy, Debug, Clone, PartialEq, Eq)]
 pub enum Instruction {

@@ -367,7 +367,7 @@ pub trait AsContextMut: AsContext {
 
 /// A temporary handle to a `&Store<T>`.
 ///
-/// This type is sutable for [`AsContext`] trait bounds on methods if desired.
+/// This type is suitable for [`AsContext`] trait bounds on methods if desired.
 /// For more information, see [`Store`].
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
@@ -398,7 +398,7 @@ impl<'a, T: AsContextMut> From<&'a mut T> for StoreContextMut<'a, T::UserState> 
 
 /// A temporary handle to a `&mut Store<T>`.
 ///
-/// This type is sutable for [`AsContextMut`] or [`AsContext`] trait bounds on methods if desired.
+/// This type is suitable for [`AsContextMut`] or [`AsContext`] trait bounds on methods if desired.
 /// For more information, see [`Store`].
 #[derive(Debug)]
 #[repr(transparent)]
