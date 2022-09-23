@@ -140,7 +140,7 @@ impl CodeMap {
 #[derive(Debug, Copy, Clone)]
 pub struct InstructionsPtr<'a> {
     /// The pointer to the first instruction of the compiled Wasm function.
-    first: NonNull<Instruction>,
+    ptr: NonNull<Instruction>,
     /// Conserves the lifetime of the instruction.
     lt: PhantomData<&'a Instruction>,
 }
@@ -151,7 +151,7 @@ impl<'a> InstructionsPtr<'a> {
     #[inline]
     fn new(first_instr: &Instruction) -> Self {
         Self {
-            first: NonNull::from(first_instr),
+            ptr: NonNull::from(first_instr),
             lt: PhantomData,
         }
     }
@@ -168,7 +168,7 @@ impl<'a> InstructionsPtr<'a> {
         //
         // Note that eliminating this bounds check is extremely valuable since this
         // part of the `wasmi` interpreter is part of the interpreter's hot path.
-        &*self.first.as_ptr().add(pc)
+        &*self.ptr.as_ptr().add(pc)
     }
 }
 
