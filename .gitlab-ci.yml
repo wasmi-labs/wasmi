@@ -40,5 +40,6 @@ criterion-benchmark:
     - git submodule update --init --recursive
     - pushd ./crates/wasmi
     - cargo criterion --message-format=json | tee -a ../target/ci/benchmarks.json
+    - popd
     # Evaluates Benchmark Results
-    - bash ../scripts/ci/benchmarks-report.sh ../target/ci/benchmarks.json
+    - bash ./scripts/ci/benchmarks-report.sh ./target/ci/benchmarks.json
