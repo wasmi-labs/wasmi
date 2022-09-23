@@ -1,5 +1,4 @@
 use std::{fs::File, io::Read as _};
-
 use wasmi::{Config, StackLimits};
 
 /// Returns the Wasm binary at the given `file_name` as `Vec<u8>`.
@@ -37,7 +36,7 @@ fn bench_config() -> Config {
 /// # Panics
 ///
 /// If the benchmark Wasm file could not be opened, read or parsed.
-pub fn load_module_from_file_v1(file_name: &str) -> wasmi::Module {
+pub fn load_module_from_file(file_name: &str) -> wasmi::Module {
     let wasm = load_wasm_from_file(file_name);
     let engine = wasmi::Engine::new(&bench_config());
     wasmi::Module::new(&engine, &wasm[..]).unwrap_or_else(|error| {
@@ -48,7 +47,7 @@ pub fn load_module_from_file_v1(file_name: &str) -> wasmi::Module {
     })
 }
 
-/// Parses the Wasm binary from the given `file_name` into a `wasmi` `v1` module.
+/// Parses the Wasm binary from the given `file_name` into a `wasmi` module.
 ///
 /// # Note
 ///
@@ -57,8 +56,8 @@ pub fn load_module_from_file_v1(file_name: &str) -> wasmi::Module {
 /// # Panics
 ///
 /// If the benchmark Wasm file could not be opened, read or parsed.
-pub fn load_instance_from_file_v1(file_name: &str) -> (wasmi::Store<()>, wasmi::Instance) {
-    let module = load_module_from_file_v1(file_name);
+pub fn load_instance_from_file(file_name: &str) -> (wasmi::Store<()>, wasmi::Instance) {
+    let module = load_module_from_file(file_name);
     let mut linker = <wasmi::Linker<()>>::default();
     let mut store = wasmi::Store::new(module.engine(), ());
     let instance = linker
@@ -74,7 +73,7 @@ pub fn wat2wasm(bytes: &[u8]) -> Vec<u8> {
     wat::parse_bytes(bytes).unwrap().into_owned()
 }
 
-/// Parses the Wasm source from the given `.wat` bytes into a `wasmi` `v0` module.
+/// Parses the Wasm source from the given `.wat` bytes into a `wasmi` module.
 ///
 /// # Note
 ///
@@ -83,7 +82,7 @@ pub fn wat2wasm(bytes: &[u8]) -> Vec<u8> {
 /// # Panics
 ///
 /// If the benchmark Wasm file could not be opened, read or parsed.
-pub fn load_instance_from_wat_v1(wat_bytes: &[u8]) -> (wasmi::Store<()>, wasmi::Instance) {
+pub fn load_instance_from_wat(wat_bytes: &[u8]) -> (wasmi::Store<()>, wasmi::Instance) {
     let wasm = wat2wasm(wat_bytes);
     let engine = wasmi::Engine::new(&bench_config());
     let module = wasmi::Module::new(&engine, &wasm[..]).unwrap();

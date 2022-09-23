@@ -1,9 +1,9 @@
 mod bench;
 
 use self::bench::{
-    load_instance_from_file_v1,
-    load_instance_from_wat_v1,
-    load_module_from_file_v1,
+    load_instance_from_file,
+    load_instance_from_wat,
+    load_module_from_file,
     load_wasm_from_file,
     wat2wasm,
 };
@@ -19,13 +19,13 @@ const REVCOMP_INPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-input.
 const REVCOMP_OUTPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-output.txt");
 
 criterion_group!(
-    name = bench_compile_and_validate;
+    name = bench_translate;
     config = Criterion::default()
         .sample_size(10)
         .measurement_time(Duration::from_millis(2000))
         .warm_up_time(Duration::from_millis(1000));
     targets =
-        bench_compile_and_validate_v1,
+        bench_translate_wasm_kernel,
 );
 criterion_group!(
     name = bench_instantiate;
@@ -34,7 +34,7 @@ criterion_group!(
         .measurement_time(Duration::from_millis(2000))
         .warm_up_time(Duration::from_millis(1000));
     targets =
-        bench_instantiate_v1,
+        bench_instantiate_wasm_kernel,
 );
 criterion_group! {
     name = bench_execute;
@@ -43,30 +43,30 @@ criterion_group! {
         .measurement_time(Duration::from_millis(2000))
         .warm_up_time(Duration::from_millis(1000));
     targets =
-        bench_execute_tiny_keccak_v1,
-        bench_execute_rev_comp_v1,
-        bench_execute_regex_redux_v1,
-        bench_execute_count_until_v1,
+        bench_execute_tiny_keccak,
+        bench_execute_rev_comp,
+        bench_execute_regex_redux,
+        bench_execute_count_until,
         bench_execute_trunc_f2i,
         bench_execute_global_bump,
-        bench_execute_fac_recursive_v1,
-        bench_execute_fac_opt_v1,
-        bench_execute_recursive_ok_v1,
-        bench_execute_recursive_scan_v1,
-        bench_execute_recursive_trap_v1,
-        bench_execute_host_calls_v1,
-        bench_execute_fibonacci_recursive_v1,
-        bench_execute_fibonacci_iterative_v1,
-        bench_execute_recursive_is_even_v1,
-        bench_execute_memory_sum_v1,
-        bench_execute_memory_fill_v1,
-        bench_execute_vec_add_v1,
+        bench_execute_fac_recursive,
+        bench_execute_fac_opt,
+        bench_execute_recursive_ok,
+        bench_execute_recursive_scan,
+        bench_execute_recursive_trap,
+        bench_execute_host_calls,
+        bench_execute_fibonacci_recursive,
+        bench_execute_fibonacci_iterative,
+        bench_execute_recursive_is_even,
+        bench_execute_memory_sum,
+        bench_execute_memory_fill,
+        bench_execute_vec_add,
 }
 
-criterion_main!(bench_compile_and_validate, bench_instantiate, bench_execute);
+criterion_main!(bench_translate, bench_instantiate, bench_execute);
 
-fn bench_compile_and_validate_v1(c: &mut Criterion) {
-    c.bench_function("compile_and_validate/v1", |b| {
+fn bench_translate_wasm_kernel(c: &mut Criterion) {
+    c.bench_function("translate/wasm_kernel", |b| {
         let wasm_bytes = load_wasm_from_file(WASM_KERNEL);
         b.iter(|| {
             let engine = v1::Engine::default();
@@ -75,9 +75,9 @@ fn bench_compile_and_validate_v1(c: &mut Criterion) {
     });
 }
 
-fn bench_instantiate_v1(c: &mut Criterion) {
-    c.bench_function("instantiate/v1", |b| {
-        let module = load_module_from_file_v1(WASM_KERNEL);
+fn bench_instantiate_wasm_kernel(c: &mut Criterion) {
+    c.bench_function("instantiate/wasm_kernel", |b| {
+        let module = load_module_from_file(WASM_KERNEL);
         let mut linker = <v1::Linker<()>>::default();
         b.iter(|| {
             let mut store = v1::Store::new(module.engine(), ());
@@ -86,9 +86,9 @@ fn bench_instantiate_v1(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_tiny_keccak_v1(c: &mut Criterion) {
-    c.bench_function("execute/tiny_keccak/v1", |b| {
-        let (mut store, instance) = load_instance_from_file_v1(WASM_KERNEL);
+fn bench_execute_tiny_keccak(c: &mut Criterion) {
+    c.bench_function("execute/tiny_keccak", |b| {
+        let (mut store, instance) = load_instance_from_file(WASM_KERNEL);
         let prepare = instance
             .get_export(&store, "prepare_tiny_keccak")
             .and_then(v1::Extern::into_func)
@@ -109,9 +109,9 @@ fn bench_execute_tiny_keccak_v1(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_rev_comp_v1(c: &mut Criterion) {
-    c.bench_function("execute/rev_complement/v1", |b| {
-        let (mut store, instance) = load_instance_from_file_v1(WASM_KERNEL);
+fn bench_execute_rev_comp(c: &mut Criterion) {
+    c.bench_function("execute/rev_complement", |b| {
+        let (mut store, instance) = load_instance_from_file(WASM_KERNEL);
 
         // Allocate buffers for the input and output.
         let mut result = Value::I32(0);
@@ -182,9 +182,9 @@ fn bench_execute_rev_comp_v1(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_regex_redux_v1(c: &mut Criterion) {
-    c.bench_function("execute/regex_redux/v1", |b| {
-        let (mut store, instance) = load_instance_from_file_v1(WASM_KERNEL);
+fn bench_execute_regex_redux(c: &mut Criterion) {
+    c.bench_function("execute/regex_redux", |b| {
+        let (mut store, instance) = load_instance_from_file(WASM_KERNEL);
 
         // Allocate buffers for the input and output.
         let mut result = Value::I32(0);
@@ -236,11 +236,10 @@ fn bench_execute_regex_redux_v1(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_count_until_v1(c: &mut Criterion) {
+fn bench_execute_count_until(c: &mut Criterion) {
     const COUNT_UNTIL: i32 = 100_000;
-    c.bench_function("execute/count_until/v1", |b| {
-        let (mut store, instance) =
-            load_instance_from_wat_v1(include_bytes!("wat/count_until.wat"));
+    c.bench_function("execute/count_until", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/count_until.wat"));
         let count_until = instance
             .get_export(&store, "count_until")
             .and_then(v1::Extern::into_func)
@@ -258,8 +257,8 @@ fn bench_execute_count_until_v1(c: &mut Criterion) {
 
 fn bench_execute_trunc_f2i(c: &mut Criterion) {
     const ITERATIONS: i32 = 25_000;
-    c.bench_function("execute/trunc_f2i/v1", |b| {
-        let (mut store, instance) = load_instance_from_wat_v1(include_bytes!("wat/trunc_f2i.wat"));
+    c.bench_function("execute/trunc_f2i", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/trunc_f2i.wat"));
         let count_until = instance
             .get_export(&store, "trunc_f2i")
             .and_then(v1::Extern::into_func)
@@ -276,9 +275,8 @@ fn bench_execute_trunc_f2i(c: &mut Criterion) {
 
 fn bench_execute_global_bump(c: &mut Criterion) {
     const BUMP_AMOUNT: i32 = 100_000;
-    c.bench_function("execute/global_bump/v1", |b| {
-        let (mut store, instance) =
-            load_instance_from_wat_v1(include_bytes!("wat/global_bump.wat"));
+    c.bench_function("execute/global_bump", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/global_bump.wat"));
         let count_until = instance
             .get_export(&store, "bump")
             .and_then(v1::Extern::into_func)
@@ -294,9 +292,9 @@ fn bench_execute_global_bump(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_fac_recursive_v1(c: &mut Criterion) {
-    c.bench_function("execute/factorial_recursive/v1", |b| {
-        let (mut store, instance) = load_instance_from_wat_v1(include_bytes!("wat/factorial.wat"));
+fn bench_execute_fac_recursive(c: &mut Criterion) {
+    c.bench_function("execute/factorial_recursive", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/factorial.wat"));
         let fac = instance
             .get_export(&store, "recursive_factorial")
             .and_then(v1::Extern::into_func)
@@ -311,9 +309,9 @@ fn bench_execute_fac_recursive_v1(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_fac_opt_v1(c: &mut Criterion) {
-    c.bench_function("execute/factorial_iterative/v1", |b| {
-        let (mut store, instance) = load_instance_from_wat_v1(include_bytes!("wat/factorial.wat"));
+fn bench_execute_fac_opt(c: &mut Criterion) {
+    c.bench_function("execute/factorial_iterative", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/factorial.wat"));
         let fac = instance
             .get_export(&store, "iterative_factorial")
             .and_then(v1::Extern::into_func)
@@ -330,10 +328,9 @@ fn bench_execute_fac_opt_v1(c: &mut Criterion) {
 
 const RECURSIVE_DEPTH: i32 = 8000;
 
-fn bench_execute_recursive_ok_v1(c: &mut Criterion) {
-    c.bench_function("execute/recursive_ok/v1", |b| {
-        let (mut store, instance) =
-            load_instance_from_wat_v1(include_bytes!("wat/recursive_ok.wat"));
+fn bench_execute_recursive_ok(c: &mut Criterion) {
+    c.bench_function("execute/recursive_ok", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/recursive_ok.wat"));
         let bench_call = instance
             .get_export(&store, "call")
             .and_then(v1::Extern::into_func)
@@ -353,10 +350,10 @@ const RECURSIVE_SCAN_DEPTH: i32 = 8000;
 const RECURSIVE_SCAN_EXPECTED: i32 =
     ((RECURSIVE_SCAN_DEPTH * RECURSIVE_SCAN_DEPTH) + RECURSIVE_SCAN_DEPTH) / 2;
 
-fn bench_execute_recursive_scan_v1(c: &mut Criterion) {
-    c.bench_function("execute/recursive_scan/v1", |b| {
+fn bench_execute_recursive_scan(c: &mut Criterion) {
+    c.bench_function("execute/recursive_scan", |b| {
         let (mut store, instance) =
-            load_instance_from_wat_v1(include_bytes!("wat/recursive_scan.wat"));
+            load_instance_from_wat(include_bytes!("wat/recursive_scan.wat"));
         let bench_call = instance
             .get_export(&store, "func")
             .and_then(v1::Extern::into_func)
@@ -372,10 +369,10 @@ fn bench_execute_recursive_scan_v1(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_recursive_trap_v1(c: &mut Criterion) {
-    c.bench_function("execute/recursive_trap/v1", |b| {
+fn bench_execute_recursive_trap(c: &mut Criterion) {
+    c.bench_function("execute/recursive_trap", |b| {
         let (mut store, instance) =
-            load_instance_from_wat_v1(include_bytes!("wat/recursive_trap.wat"));
+            load_instance_from_wat(include_bytes!("wat/recursive_trap.wat"));
         let bench_call = instance
             .get_export(&store, "call")
             .and_then(v1::Extern::into_func)
@@ -397,9 +394,9 @@ fn bench_execute_recursive_trap_v1(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_recursive_is_even_v1(c: &mut Criterion) {
-    c.bench_function("execute/recursive_is_even/v1", |b| {
-        let (mut store, instance) = load_instance_from_wat_v1(include_bytes!("wat/is_even.wat"));
+fn bench_execute_recursive_is_even(c: &mut Criterion) {
+    c.bench_function("execute/recursive_is_even", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/is_even.wat"));
         let bench_call = instance
             .get_export(&store, "is_even")
             .and_then(v1::Extern::into_func)
@@ -419,8 +416,8 @@ fn bench_execute_recursive_is_even_v1(c: &mut Criterion) {
 /// How often the `host_call` should be called per Wasm invocation.
 const HOST_CALLS_REPETITIONS: i64 = 1000;
 
-fn bench_execute_host_calls_v1(c: &mut Criterion) {
-    c.bench_function("execute/host_calls/v1", |b| {
+fn bench_execute_host_calls(c: &mut Criterion) {
+    c.bench_function("execute/host_calls", |b| {
         let wasm = wat2wasm(include_bytes!("wat/host_calls.wat"));
         let engine = v1::Engine::default();
         let module = v1::Module::new(&engine, &wasm[..]).unwrap();
@@ -472,9 +469,9 @@ const FIBONACCI_REC_RESULT: i64 = fib(FIBONACCI_REC_N);
 const FIBONACCI_INC_N: i64 = 100_000;
 const FIBONACCI_INC_RESULT: i64 = fib(FIBONACCI_INC_N);
 
-fn bench_execute_fibonacci_recursive_v1(c: &mut Criterion) {
-    c.bench_function("execute/fib_recursive/v1", |b| {
-        let (mut store, instance) = load_instance_from_wat_v1(include_bytes!("wat/fibonacci.wat"));
+fn bench_execute_fibonacci_recursive(c: &mut Criterion) {
+    c.bench_function("execute/fib_recursive", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/fibonacci.wat"));
         let bench_call = instance
             .get_export(&store, "fib_recursive")
             .and_then(v1::Extern::into_func)
@@ -490,9 +487,9 @@ fn bench_execute_fibonacci_recursive_v1(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_fibonacci_iterative_v1(c: &mut Criterion) {
-    c.bench_function("execute/fib_iterative/v1", |b| {
-        let (mut store, instance) = load_instance_from_wat_v1(include_bytes!("wat/fibonacci.wat"));
+fn bench_execute_fibonacci_iterative(c: &mut Criterion) {
+    c.bench_function("execute/fib_iterative", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/fibonacci.wat"));
         let bench_call = instance
             .get_export(&store, "fib_iterative")
             .and_then(v1::Extern::into_func)
@@ -508,9 +505,9 @@ fn bench_execute_fibonacci_iterative_v1(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_memory_sum_v1(c: &mut Criterion) {
-    c.bench_function("execute/memory_sum/v1", |b| {
-        let (mut store, instance) = load_instance_from_wat_v1(include_bytes!("wat/memory-sum.wat"));
+fn bench_execute_memory_sum(c: &mut Criterion) {
+    c.bench_function("execute/memory_sum", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/memory-sum.wat"));
         let sum = instance
             .get_export(&store, "sum_bytes")
             .and_then(v1::Extern::into_func)
@@ -537,10 +534,9 @@ fn bench_execute_memory_sum_v1(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_memory_fill_v1(c: &mut Criterion) {
-    c.bench_function("execute/memory_fill/v1", |b| {
-        let (mut store, instance) =
-            load_instance_from_wat_v1(include_bytes!("wat/memory-fill.wat"));
+fn bench_execute_memory_fill(c: &mut Criterion) {
+    c.bench_function("execute/memory_fill", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/memory-fill.wat"));
         let fill = instance
             .get_export(&store, "fill_bytes")
             .and_then(v1::Extern::into_func)
@@ -569,7 +565,7 @@ fn bench_execute_memory_fill_v1(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_vec_add_v1(c: &mut Criterion) {
+fn bench_execute_vec_add(c: &mut Criterion) {
     fn test_for<A, B>(
         b: &mut Bencher,
         vec_add: v1::Func,
@@ -641,9 +637,9 @@ fn bench_execute_vec_add_v1(c: &mut Criterion) {
         }
     }
 
-    c.bench_function("execute/memory_vec_add/v1", |b| {
+    c.bench_function("execute/memory_vec_add", |b| {
         let (mut store, instance) =
-            load_instance_from_wat_v1(include_bytes!("wat/memory-vec-add.wat"));
+            load_instance_from_wat(include_bytes!("wat/memory-vec-add.wat"));
         let vec_add = instance
             .get_export(&store, "vec_add")
             .and_then(v1::Extern::into_func)
