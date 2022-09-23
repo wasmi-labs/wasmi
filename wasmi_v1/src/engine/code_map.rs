@@ -64,8 +64,6 @@ impl FuncHeader {
 /// Datastructure to efficiently store Wasm function bodies.
 #[derive(Debug, Default)]
 pub struct CodeMap {
-    /// The headers of all compiled functions.
-    headers: Vec<FuncHeader>,
     /// The instructions of all allocated function bodies.
     ///
     /// By storing all `wasmi` bytecode instructions in a single
@@ -76,6 +74,8 @@ pub struct CodeMap {
     /// Also this improves efficiency of deallocating the [`CodeMap`]
     /// and generally improves data locality.
     instrs: Vec<Instruction>,
+    /// The headers of all compiled functions.
+    headers: Vec<FuncHeader>,
 }
 
 impl CodeMap {
