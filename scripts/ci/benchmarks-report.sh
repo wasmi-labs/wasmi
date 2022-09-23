@@ -12,7 +12,7 @@ set -o pipefail
 PR_COMMENTS_URL="https://api.github.com/repos/paritytech/wasmi/issues/${CI_COMMIT_BRANCH}/comments"
 
 # Format benchmarks into a table
-RESULT=$(jq -s -f ../scripts/ci/benchmark-filter.jq $1 | tr -d '"' | tr -d '\n')
+RESULT=$(jq -s -f ./scripts/ci/benchmark-filter.jq $1 | tr -d '"' | tr -d '\n')
 
 # Check whether comment from paritytech-cicd-pr already exists
 EXISTING_COMMENT_URL=$(curl --silent $PR_COMMENTS_URL \
