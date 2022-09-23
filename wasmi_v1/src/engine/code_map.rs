@@ -75,7 +75,7 @@ pub struct CodeMap {
     ///
     /// Also this improves efficiency of deallocating the [`CodeMap`]
     /// and generally improves data locality.
-    insts: Vec<Instruction>,
+    instrs: Vec<Instruction>,
 }
 
 impl CodeMap {
@@ -88,8 +88,8 @@ impl CodeMap {
     where
         I: IntoIterator<Item = Instruction>,
     {
-        let start = self.insts.len();
-        self.insts.extend(insts);
+        let start = self.instrs.len();
+        self.instrs.extend(insts);
         let iref = InstructionsRef { start };
         let header = FuncHeader {
             iref,
@@ -104,7 +104,7 @@ impl CodeMap {
     /// Resolves the pointer to the first instruction of a compiled function.
     #[inline]
     pub fn instrs(&self, iref: InstructionsRef) -> InstructionsPtr {
-        InstructionsPtr::new(&self.insts[iref.start])
+        InstructionsPtr::new(&self.instrs[iref.start])
     }
 
     /// Returns the [`FuncHeader`] of the [`FuncBody`].
@@ -119,7 +119,7 @@ impl CodeMap {
         let header = self.header(func_body);
         let start = header.iref.start;
         let end = self.instr_end(func_body);
-        let instrs = &self.insts[start..end];
+        let instrs = &self.instrs[start..end];
         instrs.get(index)
     }
 
@@ -132,7 +132,7 @@ impl CodeMap {
         self.headers
             .get(func_body.0 + 1)
             .map(|header| header.iref.start)
-            .unwrap_or(self.insts.len())
+            .unwrap_or(self.instrs.len())
     }
 }
 
