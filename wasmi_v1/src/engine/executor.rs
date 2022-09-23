@@ -616,7 +616,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
             .ok_or(TrapCode::ElemUninitialized)?;
         let actual_signature = func.signature(self.ctx.as_context());
         let expected_signature = self
-            .cache
+            .frame
             .instance()
             .get_signature(self.ctx.as_context(), signature_index.into_inner())
             .unwrap_or_else(|| {
