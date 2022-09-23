@@ -12,7 +12,7 @@ keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
 exclude = [ "tests/*", "benches/*" ]
 
 [dependencies]
-wasmparser = { version = "0.90", package = "wasmparser-nostd", default-features = false }
+wasmparser = { version = "0.91", package = "wasmparser-nostd", default-features = false }
 wasmi_core = { version = "0.4", path = "../core", default-features = false }
 spin = { version = "0.9", default-features = false, features = ["mutex", "spin_mutex"] }
 
