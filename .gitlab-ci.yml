@@ -26,14 +26,19 @@ criterion-benchmark:
   script:
     - cargo install cargo-criterion
     - git fetch
-    - git submodule update --init --recursive
+    # Benchmark Branch: `master`
     - git checkout master
     - git pull
+    - git submodule update --init --recursive
     - mkdir -p ./target/ci
-    - cd ./crates/wasmi
-    # benchmark master
+    - pushd ./crates/wasmi
     - cargo criterion --message-format=json | tee -a ../target/ci/benchmarks.json
-    # benchmark PR
+    - popd
+    - git submodule deinit --all -f
+    # Benchmark Branch: PR
     - git checkout $CI_COMMIT_SHA
+    - git submodule update --init --recursive
+    - pushd ./crates/wasmi
     - cargo criterion --message-format=json | tee -a ../target/ci/benchmarks.json
+    # Evaluates Benchmark Results
     - bash ../scripts/ci/benchmarks-report.sh ../target/ci/benchmarks.json
