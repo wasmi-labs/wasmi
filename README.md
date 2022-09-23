@@ -101,7 +101,7 @@ cargo test --workspace
 ## Development
 
 Before pushing a PR to our repository we would like you to execute the
-`ci.sh` script that can be found in the repository's root folder.
+`scripts/run-local-ci.sh` script that can be found in the repository's root folder.
 
 ## Supported Platforms
 
