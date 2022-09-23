@@ -104,10 +104,7 @@ impl CodeMap {
     /// Resolves the pointer to the first instruction of a compiled function.
     #[inline]
     pub fn instrs(&self, iref: InstructionsRef) -> InstructionsPtr {
-        InstructionsPtr {
-            first: NonNull::from(&self.insts[iref.start]),
-            lt: PhantomData,
-        }
+        InstructionsPtr::new(&self.insts[iref.start])
     }
 
     /// Returns the [`FuncHeader`] of the [`FuncBody`].
@@ -149,6 +146,16 @@ pub struct InstructionsPtr<'a> {
 }
 
 impl<'a> InstructionsPtr<'a> {
+    /// Creates an [`InstructionsPtr`] from the reference to the
+    /// first instruction of a compiled function.
+    #[inline]
+    fn new(first_instr: &Instruction) -> Self {
+        Self {
+            first: NonNull::from(first_instr),
+            lt: PhantomData,
+        }
+    }
+
     /// Returns a shared reference to the instruction at the given `pc`.
     #[inline(always)]
     pub unsafe fn get(&self, pc: usize) -> &'a Instruction {
