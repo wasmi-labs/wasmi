@@ -40,7 +40,7 @@ curl -X ${REQUEST_TYPE} ${PR_COMMENTS_URL} \
 \"body\": \
 \"## CRITERION BENCHMARKS ## \n\n \
 |BENCHMARK|MASTER|PR|Diff|\n \
-|---|---|---|---|\n \
+|---|---:|---:|---|\n \
 ${RESULT}\n\n \
 [Link to pipeline](${CI_JOB_URL}) \" \
 }"
