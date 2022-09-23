@@ -31,15 +31,15 @@ criterion-benchmark:
     - git pull
     - git submodule update --init --recursive
     - mkdir -p ./target/ci
-    - pushd ./crates/wasmi
-    - cargo criterion --message-format=json | tee -a ../target/ci/benchmarks.json
+    - pushd ./crates/wasmi/
+    - cargo criterion --message-format=json | tee -a ../../target/ci/benchmarks.json
     - popd
     - git submodule deinit --all -f
     # Benchmark Branch: PR
     - git checkout $CI_COMMIT_SHA
     - git submodule update --init --recursive
-    - pushd ./crates/wasmi
-    - cargo criterion --message-format=json | tee -a ../target/ci/benchmarks.json
+    - pushd ./crates/wasmi/
+    - cargo criterion --message-format=json | tee -a ../../target/ci/benchmarks.json
     - popd
     # Evaluates Benchmark Results
     - bash ./scripts/ci/benchmarks-report.sh ./target/ci/benchmarks.json
