@@ -120,12 +120,22 @@ Additionally we have an `Internal` section for changes that are of interest to d
   free to [open an issue](https://github.com/paritytech/wasmi/issues)
   and provide us with your use case.
 
+## [0.13.2] - 2022-09-20
+
+### Fixed
+
+- Support allocating 4GB of memory (https://github.com/paritytech/wasmi/pull/452)
+
+## [0.13.1] - 2022-09-20
+
+**Note:** Yanked because of missing `wasmi_core` bump.
+
 ## [0.13.0] - 2022-07-25
 
-**Note:** This is the last release using the legacy `wasmi` engine.
+**Note:** This is the last major release of the legacy `wasmi` engine.
           Future releases are using the new Wasm execution engines
           that are currently in development.
-          We may consider to publish new versions of this Wasm engine
+          We may consider to publish new major versions of this Wasm engine
           as `wasmi-legacy` crate.
 
 ### Changed
