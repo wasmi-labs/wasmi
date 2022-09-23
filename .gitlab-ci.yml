@@ -30,7 +30,7 @@ criterion-benchmark:
     - git checkout master
     - git pull
     - mkdir -p ./target/ci
-    - cd ./wasmi_v1
+    - cd ./crates/wasmi
     # benchmark master
     - cargo criterion --message-format=json | tee -a ../target/ci/benchmarks.json
     # benchmark PR
