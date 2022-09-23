@@ -64,7 +64,7 @@ def perf_to_emoji(d):
 #   | select(.[0].id != null) --- filter out 'benchmark-group' objects (they don't have 'id' keys)
 # --- EXTRACTION OF A BENCHMARK DETAILS ---
 # --- And giving them a form of Markdown table row '| benchmark | master time | pr time | master/pr difference |'
-# --- at this point JSON transformed has following structure '[{master(0)},{PR(1)}],[{master(0)},{PR(1)}],...'
+# --- at this point JSON already reshaped into following structure '[{master(0)},{PR(1)}],[{master(0)},{PR(1)}],...'
 # --- Following jq filter will iterate over arrays of 'master,PR' objects and extract and format data
 #   | "| `\(.[0].id)` " + --- select 'id' which gives a benchmark name
 #   "| \(format_time(.[0].slope.estimate; 0.0001)) " + --- select and reshape 'master time'
