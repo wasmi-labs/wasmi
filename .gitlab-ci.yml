@@ -27,6 +27,7 @@ criterion-benchmark:
     - cargo install cargo-criterion
     - git fetch
     # Benchmark Branch: `master`
+    - rustup default 1.58
     - git checkout master
     - git pull
     - git submodule update --init --recursive
@@ -36,6 +37,7 @@ criterion-benchmark:
     - popd
     - git submodule deinit --all -f
     # Benchmark Branch: PR
+    - rustup default stable
     - git checkout $CI_COMMIT_SHA
     - git submodule update --init --recursive
     - pushd ./crates/wasmi/
