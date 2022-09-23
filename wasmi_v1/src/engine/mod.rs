@@ -416,7 +416,7 @@ impl EngineInner {
         }
 
         let value_stack = &mut self.stack.values;
-        let instrs = self.code_map.instrs(frame.pc(), frame.iref());
+        let instrs = self.code_map.instrs(frame.iref());
         execute_frame(ctx, value_stack, instrs, cache, frame).map_err(make_trap)
     }
 }

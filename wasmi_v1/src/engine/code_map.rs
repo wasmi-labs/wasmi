@@ -103,10 +103,9 @@ impl CodeMap {
 
     /// Resolves the pointer to the first instruction of a compiled function.
     #[inline]
-    pub fn instrs(&self, pc: usize, iref: InstructionsRef) -> InstructionsPtr {
+    pub fn instrs(&self, iref: InstructionsRef) -> InstructionsPtr {
         InstructionsPtr {
-            pc,
-            base_ptr: NonNull::from(&self.insts[iref.start]),
+            first: NonNull::from(&self.insts[iref.start]),
             lt: PhantomData,
         }
     }
@@ -143,48 +142,16 @@ impl CodeMap {
 /// A pointer to the first instruction of a compiled Wasm function.
 #[derive(Debug, Copy, Clone)]
 pub struct InstructionsPtr<'a> {
-    /// The program counter.
-    pc: usize,
-    /// The base pointer to the instructions of the compiled Wasm function.
-    base_ptr: NonNull<Instruction>,
+    /// The pointer to the first instruction of the compiled Wasm function.
+    first: NonNull<Instruction>,
     /// Conserves the lifetime of the instruction.
     lt: PhantomData<&'a Instruction>,
 }
 
 impl<'a> InstructionsPtr<'a> {
-    /// Returns the current program counter.
-    #[inline]
-    pub fn pc(&self) -> usize {
-        self.pc
-    }
-
-    /// Bumps the program counter.
-    ///
-    /// This is used for continuing with the next instruction.
-    #[inline]
-    pub fn bump_pc(&mut self) {
-        self.bump_pc_by(1)
-    }
-
-    /// Bumps the program counter.
-    ///
-    /// This is used for continuing with the next instruction.
-    #[inline]
-    pub fn bump_pc_by(&mut self, delta: usize) {
-        self.pc += delta;
-    }
-
-    /// Sets the `pc` to the `new_pc`.
-    ///
-    /// This is used for branching to some instruction.
-    #[inline]
-    pub fn update_pc(&mut self, new_pc: usize) {
-        self.pc = new_pc;
-    }
-
     /// Returns a shared reference to the instruction at the given `pc`.
     #[inline(always)]
-    pub unsafe fn get(&self) -> &'a Instruction {
+    pub unsafe fn get(&self, pc: usize) -> &'a Instruction {
         // # Safety
         //
         // This access is safe since all possible accesses have already been
@@ -194,7 +161,7 @@ impl<'a> InstructionsPtr<'a> {
         //
         // Note that eliminating this bounds check is extremely valuable since this
         // part of the `wasmi` interpreter is part of the interpreter's hot path.
-        &*self.base_ptr.as_ptr().add(self.pc)
+        &*self.first.as_ptr().add(pc)
     }
 }
 
@@ -202,5 +169,5 @@ impl<'a> InstructionsPtr<'a> {
 fn size_of_instruction_ref_ptr() {
     let ptr_size = core::mem::size_of::<*const ()>();
     assert_eq!(core::mem::size_of::<InstructionsRef>(), ptr_size);
-    assert_eq!(core::mem::size_of::<InstructionsPtr>(), ptr_size * 2);
+    assert_eq!(core::mem::size_of::<InstructionsPtr>(), ptr_size);
 }
