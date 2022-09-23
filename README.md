@@ -46,7 +46,7 @@ The following list states some of the distinct features of `wasmi`.
 
 ## WebAssembly Proposals
 
-The new `wasmi_v1` engine supports a variety of WebAssembly proposals and will support even more of them in the future.
+The new `wasmi` engine supports a variety of WebAssembly proposals and will support even more of them in the future.
 
 | WebAssembly Proposal | Status | Comment |
 |:--|:--:|:--|
@@ -101,7 +101,7 @@ cargo test --workspace
 ## Development
 
 Before pushing a PR to our repository we would like you to execute the
-`ci.sh` script that can be found in the repository's root folder.
+`scripts/run-local-ci.sh` script that can be found in the repository's root folder.
 
 ## Supported Platforms
 
