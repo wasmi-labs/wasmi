@@ -29,10 +29,11 @@ criterion-benchmark:
     - git submodule update --init --recursive
     - git checkout master
     - git pull
-    - cd wasmi_v1
+    - mkdir -p ./target/ci
+    - cd ./wasmi_v1
     # benchmark master
-    - cargo criterion --message-format=json | tee -a benchmarks.json
+    - cargo criterion --message-format=json | tee -a ../target/ci/benchmarks.json
     # benchmark PR
     - git checkout $CI_COMMIT_SHA
-    - cargo criterion --message-format=json | tee -a benchmarks.json
-    - bash ../scripts/ci/benchmarks-report.sh benchmarks.json
+    - cargo criterion --message-format=json | tee -a ../target/ci/benchmarks.json
+    - bash ../scripts/ci/benchmarks-report.sh ../target/ci/benchmarks.json
