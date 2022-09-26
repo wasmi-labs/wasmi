@@ -15,7 +15,14 @@ pub use self::utils::{
     SignatureIdx,
     Target,
 };
+use core::fmt::Debug;
 use wasmi_core::UntypedValue;
+
+/// Internal types of an [`Instruction`] type.
+pub trait InstructionTypes {
+    /// A branching target.
+    type Target: Debug + Copy + Clone + PartialEq + Eq;
+}
 
 /// The internal `wasmi` bytecode that is stored for Wasm functions.
 ///
@@ -25,14 +32,17 @@ use wasmi_core::UntypedValue;
 ///
 /// For example the `BrTable` instruction is unrolled into separate instructions
 /// each representing either the `BrTable` head or one of its branching targets.
-#[derive(Copy, Debug, Clone, PartialEq, Eq)]
-pub enum Instruction {
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum Instruction<T>
+where
+    T: InstructionTypes,
+{
     LocalGet { local_depth: LocalDepth },
     LocalSet { local_depth: LocalDepth },
     LocalTee { local_depth: LocalDepth },
-    Br(Target),
-    BrIfEqz(Target),
-    BrIfNez(Target),
+    Br(<T as InstructionTypes>::Target),
+    BrIfEqz(<T as InstructionTypes>::Target),
+    BrIfNez(<T as InstructionTypes>::Target),
     ReturnIfNez(DropKeep),
     BrTable { len_targets: usize },
     Unreachable,
@@ -207,11 +217,14 @@ pub enum Instruction {
     I64TruncSatF64U,
 }
 
-impl Instruction {
+impl<T> Instruction<T>
+where
+    T: InstructionTypes,
+{
     /// Creates a new `Const` instruction from the given value.
-    pub fn constant<T>(value: T) -> Self
+    pub fn constant<C>(value: C) -> Self
     where
-        T: Into<UntypedValue>,
+        C: Into<UntypedValue>,
     {
         Self::Const(value.into())
     }

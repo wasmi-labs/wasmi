@@ -16,7 +16,7 @@ use self::{
     bytecode::Instruction,
     cache::InstanceCache,
     code_map::CodeMap,
-    executor::execute_frame,
+    executor::{execute_frame, ExecInstruction},
     func_types::FuncTypeRegistry,
     stack::{FuncFrame, Stack, ValueStack},
 };
@@ -154,7 +154,7 @@ impl Engine {
         insts: I,
     ) -> FuncBody
     where
-        I: IntoIterator<Item = Instruction>,
+        I: IntoIterator<Item = ExecInstruction>,
         I::IntoIter: ExactSizeIterator,
     {
         self.inner
@@ -174,7 +174,11 @@ impl Engine {
     ///
     /// If the [`FuncBody`] is invalid for the [`Engine`].
     #[cfg(test)]
-    pub(crate) fn resolve_inst(&self, func_body: FuncBody, index: usize) -> Option<Instruction> {
+    pub(crate) fn resolve_inst(
+        &self,
+        func_body: FuncBody,
+        index: usize,
+    ) -> Option<ExecInstruction> {
         let this = self.inner.lock();
         let iref = this.code_map.header(func_body).iref();
         this.code_map.insts(iref).get(index).copied()
@@ -257,7 +261,7 @@ impl EngineInner {
         insts: I,
     ) -> FuncBody
     where
-        I: IntoIterator<Item = Instruction>,
+        I: IntoIterator<Item = ExecInstruction>,
         I::IntoIter: ExactSizeIterator,
     {
         self.code_map.alloc(len_locals, max_stack_height, insts)

@@ -1,6 +1,6 @@
 use super::*;
 use crate::{
-    engine::{bytecode::Instruction, DropKeep, Instr, Target},
+    engine::{bytecode::Instruction, executor::ExecInstruction, DropKeep, Instr, Target},
     Engine,
 };
 
@@ -31,7 +31,7 @@ fn assert_func_body<E>(
     func_body: FuncBody,
     expected_instructions: E,
 ) where
-    E: IntoIterator<Item = Instruction>,
+    E: IntoIterator<Item = ExecInstruction>,
     <E as IntoIterator>::IntoIter: ExactSizeIterator,
 {
     let expected_instructions = expected_instructions.into_iter();
@@ -75,7 +75,7 @@ fn assert_func_body<E>(
 fn assert_func_bodies<E, T>(wasm_bytes: impl AsRef<[u8]>, expected: E)
 where
     E: IntoIterator<Item = T>,
-    T: IntoIterator<Item = Instruction>,
+    T: IntoIterator<Item = ExecInstruction>,
     <T as IntoIterator>::IntoIter: ExactSizeIterator,
 {
     let wasm_bytes = wasm_bytes.as_ref();

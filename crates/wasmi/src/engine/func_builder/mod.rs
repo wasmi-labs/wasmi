@@ -23,7 +23,7 @@ pub use self::{
     error::TranslationError,
     inst_builder::{Instr, InstructionsBuilder, LabelRef, RelativeDepth, Reloc},
 };
-use super::{DropKeep, FuncBody, Instruction, Target};
+use super::{bytecode::InstructionTypes, DropKeep, FuncBody, Instruction, Target};
 use crate::{
     engine::bytecode::Offset,
     module::{
@@ -46,6 +46,17 @@ use wasmi_core::{Value, ValueType, F32, F64};
 
 /// The used function validator type.
 type FuncValidator = wasmparser::FuncValidator<wasmparser::ValidatorResources>;
+
+/// Base implementer for intermeidate representation (IR) [`InstructionTypes`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum IrInstructionTypes {}
+
+impl InstructionTypes for IrInstructionTypes {
+    type Target = Target;
+}
+
+/// An intermediate representation [`Instruction`].
+pub type IrInstruction = Instruction<IrInstructionTypes>;
 
 /// The interface to translate a `wasmi` bytecode function using Wasm bytecode.
 pub struct FuncBuilder<'parser> {
@@ -87,7 +98,7 @@ pub struct FunctionBuilderAllocations {
     /// Stores and resolves local variable types.
     locals: LocalsRegistry,
     /// Buffer for translating `br_table`.
-    br_table_branches: Vec<Instruction>,
+    br_table_branches: Vec<IrInstruction>,
 }
 
 impl FunctionBuilderAllocations {
@@ -639,7 +650,7 @@ impl<'parser> FuncBuilder<'parser> {
                 builder: &mut FuncBuilder,
                 n: usize,
                 depth: RelativeDepth,
-            ) -> Result<Instruction, TranslationError> {
+            ) -> Result<IrInstruction, TranslationError> {
                 match builder.acquire_target(depth.into_u32())? {
                     AcquiredTarget::Branch(label_idx, drop_keep) => {
                         let dst_pc = builder.try_resolve_label(label_idx, |pc| Reloc::BrTable {
@@ -896,7 +907,7 @@ impl<'parser> FuncBuilder<'parser> {
         &mut self,
         memarg: wasmparser::MemArg,
         loaded_type: ValueType,
-        make_inst: fn(Offset) -> Instruction,
+        make_inst: fn(Offset) -> IrInstruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let (memory_idx, offset) = Self::decompose_memarg(memarg);
@@ -1041,7 +1052,7 @@ impl<'parser> FuncBuilder<'parser> {
         &mut self,
         memarg: wasmparser::MemArg,
         stored_value: ValueType,
-        make_inst: fn(Offset) -> Instruction,
+        make_inst: fn(Offset) -> IrInstruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let (memory_idx, offset) = Self::decompose_memarg(memarg);
@@ -1225,7 +1236,7 @@ impl<'parser> FuncBuilder<'parser> {
     fn translate_unary_cmp(
         &mut self,
         input_type: ValueType,
-        inst: Instruction,
+        inst: IrInstruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let condition = builder.alloc.value_stack.pop1();
@@ -1256,7 +1267,7 @@ impl<'parser> FuncBuilder<'parser> {
     fn translate_binary_cmp(
         &mut self,
         input_type: ValueType,
-        inst: Instruction,
+        inst: IrInstruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let (v0, v1) = builder.alloc.value_stack.pop2();
@@ -1452,7 +1463,7 @@ impl<'parser> FuncBuilder<'parser> {
     pub fn translate_unary_operation(
         &mut self,
         value_type: ValueType,
-        inst: Instruction,
+        inst: IrInstruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let actual_type = builder.alloc.value_stack.top();
@@ -1501,7 +1512,7 @@ impl<'parser> FuncBuilder<'parser> {
     pub fn translate_binary_operation(
         &mut self,
         value_type: ValueType,
-        inst: Instruction,
+        inst: IrInstruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let (v0, v1) = builder.alloc.value_stack.pop2();
@@ -1838,7 +1849,7 @@ impl<'parser> FuncBuilder<'parser> {
         &mut self,
         input_type: ValueType,
         output_type: ValueType,
-        inst: Instruction,
+        inst: IrInstruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let input = builder.alloc.value_stack.pop1();

@@ -1,6 +1,14 @@
 use super::{
     super::{Memory, Table},
-    bytecode::{FuncIdx, GlobalIdx, Instruction, LocalDepth, Offset, SignatureIdx},
+    bytecode::{
+        FuncIdx,
+        GlobalIdx,
+        Instruction,
+        InstructionTypes,
+        LocalDepth,
+        Offset,
+        SignatureIdx,
+    },
     cache::InstanceCache,
     code_map::Instructions,
     stack::ValueStackRef,
@@ -19,6 +27,17 @@ use crate::{
 };
 use core::cmp;
 use wasmi_core::{memory_units::Pages, ExtendInto, LittleEndianConvert, UntypedValue, WrapInto};
+
+/// Base implementer for executable [`InstructionTypes`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum ExecInstructionTypes {}
+
+impl InstructionTypes for ExecInstructionTypes {
+    type Target = Target;
+}
+
+/// An executable compiled [`Instruction`].
+pub type ExecInstruction = Instruction<ExecInstructionTypes>;
 
 /// Executes the given function `frame`.
 ///
@@ -275,9 +294,9 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         }
     }
 
-    /// Returns the [`Instruction`] at the current program counter.
+    /// Returns the [`ExecInstruction`] at the current program counter.
     #[inline(always)]
-    fn instr(&self) -> &'engine Instruction {
+    fn instr(&self) -> &'engine ExecInstruction {
         // # Safety
         //
         // Properly constructed `wasmi` bytecode can never produce invalid `pc`.
