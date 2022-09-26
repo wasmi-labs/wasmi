@@ -69,7 +69,7 @@ impl Default for Label {
 
 /// A unique label identifier.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct LabelIdx(pub(crate) usize);
+pub struct LabelRef(pub(crate) usize);
 
 /// A relocation entry that specifies.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -122,14 +122,14 @@ impl InstructionsBuilder {
     }
 
     /// Creates a new unresolved label and returns an index to it.
-    pub fn new_label(&mut self) -> LabelIdx {
-        let idx = LabelIdx(self.labels.len());
+    pub fn new_label(&mut self) -> LabelRef {
+        let idx = LabelRef(self.labels.len());
         self.labels.push(Label::default());
         idx
     }
 
     /// Returns `true` if `label` has been resolved.
-    fn is_resolved(&self, label: LabelIdx) -> bool {
+    fn is_resolved(&self, label: LabelRef) -> bool {
         if let Label::Resolved(_) = &self.labels[label.0] {
             return true;
         }
@@ -145,7 +145,7 @@ impl InstructionsBuilder {
     /// This is used at a position of the Wasm bytecode where it is clear that
     /// the given label can be resolved properly.
     /// This usually takes place when encountering the Wasm `End` operand for example.
-    pub fn resolve_label_if_unresolved(&mut self, label: LabelIdx) {
+    pub fn resolve_label_if_unresolved(&mut self, label: LabelRef) {
         if self.is_resolved(label) {
             // Nothing to do in this case.
             return;
@@ -164,7 +164,7 @@ impl InstructionsBuilder {
     /// # Panics
     ///
     /// If the label has already been resolved.
-    pub fn resolve_label(&mut self, label: LabelIdx) {
+    pub fn resolve_label(&mut self, label: LabelRef) {
         let dst_pc = self.current_pc();
         let old_label = mem::replace(&mut self.labels[label.0], Label::Resolved(dst_pc));
         match old_label {
@@ -185,7 +185,7 @@ impl InstructionsBuilder {
     ///
     /// If resolution fails puts a placeholder into the respective label
     /// and push the new user for later resolution to take place.
-    pub fn try_resolve_label<F>(&mut self, label: LabelIdx, reloc_provider: F) -> Instr
+    pub fn try_resolve_label<F>(&mut self, label: LabelRef, reloc_provider: F) -> Instr
     where
         F: FnOnce() -> Reloc,
     {

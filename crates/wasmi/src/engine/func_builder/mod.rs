@@ -21,7 +21,7 @@ use self::{
 };
 pub use self::{
     error::TranslationError,
-    inst_builder::{Instr, InstructionsBuilder, LabelIdx, RelativeDepth, Reloc},
+    inst_builder::{Instr, InstructionsBuilder, LabelRef, RelativeDepth, Reloc},
 };
 use super::{DropKeep, FuncBody, Instruction, Target};
 use crate::{
@@ -183,7 +183,7 @@ impl<'parser> FuncBuilder<'parser> {
     /// Try to resolve the given label.
     ///
     /// In case the label cannot yet be resolved register the [`Reloc`] as its user.
-    fn try_resolve_label<F>(&mut self, label: LabelIdx, reloc_provider: F) -> Instr
+    fn try_resolve_label<F>(&mut self, label: LabelRef, reloc_provider: F) -> Instr
     where
         F: FnOnce(Instr) -> Reloc,
     {
@@ -356,7 +356,7 @@ impl<'parser> FuncBuilder<'parser> {
 #[derive(Debug)]
 pub enum AcquiredTarget {
     /// The branch jumps to the label.
-    Branch(LabelIdx, DropKeep),
+    Branch(LabelRef, DropKeep),
     /// The branch returns to the caller.
     ///
     /// # Note

@@ -28,7 +28,7 @@ pub use self::{
         FuncBuilder,
         FunctionBuilderAllocations,
         Instr,
-        LabelIdx,
+        LabelRef,
         RelativeDepth,
         Reloc,
         TranslationError,

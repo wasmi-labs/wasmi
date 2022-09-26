@@ -1,4 +1,4 @@
-use crate::{engine::LabelIdx, module::BlockType};
+use crate::{engine::LabelRef, module::BlockType};
 
 /// A Wasm `block` control flow frame.
 #[derive(Debug, Copy, Clone)]
@@ -8,12 +8,12 @@ pub struct BlockControlFrame {
     /// The value stack height upon entering the [`BlockControlFrame`].
     stack_height: u32,
     /// Label representing the end of the [`BlockControlFrame`].
-    end_label: LabelIdx,
+    end_label: LabelRef,
 }
 
 impl BlockControlFrame {
     /// Creates a new [`BlockControlFrame`].
-    pub fn new(block_type: BlockType, end_label: LabelIdx, stack_height: u32) -> Self {
+    pub fn new(block_type: BlockType, end_label: LabelRef, stack_height: u32) -> Self {
         Self {
             block_type,
             stack_height,
@@ -26,12 +26,12 @@ impl BlockControlFrame {
     /// # Note
     ///
     /// Branches to [`BlockControlFrame`] jump to the end of the frame.
-    pub fn branch_destination(&self) -> LabelIdx {
+    pub fn branch_destination(&self) -> LabelRef {
         self.end_label
     }
 
     /// Returns the label to the end of the [`BlockControlFrame`].
-    pub fn end_label(&self) -> LabelIdx {
+    pub fn end_label(&self) -> LabelRef {
         self.end_label
     }
 
@@ -54,12 +54,12 @@ pub struct LoopControlFrame {
     /// The value stack height upon entering the [`LoopControlFrame`].
     stack_height: u32,
     /// Label representing the head of the [`LoopControlFrame`].
-    head_label: LabelIdx,
+    head_label: LabelRef,
 }
 
 impl LoopControlFrame {
     /// Creates a new [`LoopControlFrame`].
-    pub fn new(block_type: BlockType, head_label: LabelIdx, stack_height: u32) -> Self {
+    pub fn new(block_type: BlockType, head_label: LabelRef, stack_height: u32) -> Self {
         Self {
             block_type,
             stack_height,
@@ -72,7 +72,7 @@ impl LoopControlFrame {
     /// # Note
     ///
     /// Branches to [`LoopControlFrame`] jump to the head of the loop.
-    pub fn branch_destination(&self) -> LabelIdx {
+    pub fn branch_destination(&self) -> LabelRef {
         self.head_label
     }
 
@@ -95,9 +95,9 @@ pub struct IfControlFrame {
     /// The value stack height upon entering the [`IfControlFrame`].
     stack_height: u32,
     /// Label representing the end of the [`IfControlFrame`].
-    end_label: LabelIdx,
+    end_label: LabelRef,
     /// Label representing the optional `else` branch of the [`IfControlFrame`].
-    else_label: LabelIdx,
+    else_label: LabelRef,
     /// End of `then` branch is reachable.
     ///
     /// # Note
@@ -116,8 +116,8 @@ impl IfControlFrame {
     /// Creates a new [`IfControlFrame`].
     pub fn new(
         block_type: BlockType,
-        end_label: LabelIdx,
-        else_label: LabelIdx,
+        end_label: LabelRef,
+        else_label: LabelRef,
         stack_height: u32,
     ) -> Self {
         assert_ne!(
@@ -138,17 +138,17 @@ impl IfControlFrame {
     /// # Note
     ///
     /// Branches to [`IfControlFrame`] jump to the end of the if and else frame.
-    pub fn branch_destination(&self) -> LabelIdx {
+    pub fn branch_destination(&self) -> LabelRef {
         self.end_label
     }
 
     /// Returns the label to the end of the [`IfControlFrame`].
-    pub fn end_label(&self) -> LabelIdx {
+    pub fn end_label(&self) -> LabelRef {
         self.end_label
     }
 
     /// Returns the label to the optional `else` of the [`IfControlFrame`].
-    pub fn else_label(&self) -> LabelIdx {
+    pub fn else_label(&self) -> LabelRef {
         self.else_label
     }
 
@@ -259,7 +259,7 @@ impl ControlFrame {
     }
 
     /// Returns the label for the branch destination of the [`ControlFrame`].
-    pub fn branch_destination(&self) -> LabelIdx {
+    pub fn branch_destination(&self) -> LabelRef {
         match self {
             Self::Block(frame) => frame.branch_destination(),
             Self::Loop(frame) => frame.branch_destination(),
@@ -276,7 +276,7 @@ impl ControlFrame {
     /// All [`ControlFrame`] kinds have it except [`ControlFrame::Loop`].
     /// In order to a [`ControlFrame::Loop`] to branch outside it is required
     /// to be wrapped in another control frame such as [`ControlFrame::Block`].
-    pub fn end_label(&self) -> LabelIdx {
+    pub fn end_label(&self) -> LabelRef {
         match self {
             Self::Block(frame) => frame.end_label(),
             Self::If(frame) => frame.end_label(),
