@@ -10,7 +10,7 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 ### Added
 
-- Added `Memory::data_and_store_mut` API inspired by Wasmtime's API. (https://github.com/paritytech/wasmi/pull/462)
+- Added `Memory::data_and_store_mut` API inspired by Wasmtime's API. (https://github.com/paritytech/wasmi/pull/448)
 
 ### Changed
 
