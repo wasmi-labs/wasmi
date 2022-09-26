@@ -70,22 +70,25 @@ impl DropKeep {
 /// need to be dropped and kept in order to maintain
 /// value stack integrity.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct Target {
-    /// The destination program counter.
-    dst_pc: Instr,
+pub struct BranchParams {
+    /// The target instruction to branch to.
+    target: Instr,
     /// How many values on the stack need to be dropped and kept.
     drop_keep: DropKeep,
 }
 
-impl Target {
+impl BranchParams {
     /// Creates a new `wasmi` branching target.
     pub fn new(dst_pc: Instr, drop_keep: DropKeep) -> Self {
-        Self { dst_pc, drop_keep }
+        Self {
+            target: dst_pc,
+            drop_keep,
+        }
     }
 
     /// Returns the destination program counter (as index).
-    pub fn destination_pc(self) -> Instr {
-        self.dst_pc
+    pub fn target(self) -> Instr {
+        self.target
     }
 
     /// Updates the destination program counter (as index).
@@ -93,15 +96,14 @@ impl Target {
     /// # Panics
     ///
     /// If the old destination program counter was not [`InstructionIdx::INVALID`].
-    pub fn update_destination_pc(&mut self, new_destination_pc: Instr) {
+    pub fn update_target(&mut self, new_destination_pc: Instr) {
         assert_eq!(
-            self.destination_pc(),
+            self.target(),
             Instr::INVALID,
-            "can only update the destination pc of a target with an invalid \
-            destination pc but found a valid one: {:?}",
-            self.destination_pc(),
+            "tried to update the target of a branch that already has a valid target: {:?}",
+            self.target(),
         );
-        self.dst_pc = new_destination_pc;
+        self.target = new_destination_pc;
     }
 
     /// Returns the amount of stack values to drop and keep upon taking the branch.

@@ -1,6 +1,6 @@
 use super::*;
 use crate::{
-    engine::{bytecode::Instruction, executor::ExecInstruction, DropKeep, Instr, Target},
+    engine::{bytecode::Instruction, executor::ExecInstruction, BranchParams, DropKeep, Instr},
     Engine,
 };
 
@@ -294,7 +294,7 @@ fn drop_locals() {
 
 macro_rules! target {
     ( $inst_idx:expr, drop: $drop:expr, keep: $keep:expr ) => {
-        Target::new(Instr::from_usize($inst_idx), drop_keep($drop, $keep))
+        BranchParams::new(Instr::from_usize($inst_idx), drop_keep($drop, $keep))
     };
 }
 

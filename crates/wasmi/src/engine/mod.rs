@@ -21,7 +21,7 @@ use self::{
     stack::{FuncFrame, Stack, ValueStack},
 };
 pub use self::{
-    bytecode::{DropKeep, Target},
+    bytecode::{BranchParams, DropKeep},
     code_map::FuncBody,
     config::Config,
     func_builder::{

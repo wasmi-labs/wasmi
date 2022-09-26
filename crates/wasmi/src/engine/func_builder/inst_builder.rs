@@ -1,9 +1,9 @@
 //! Abstractions to build up instructions forming Wasm function bodies.
 
+use super::IrInstruction;
 use crate::engine::{executor::ExecInstruction, Engine, FuncBody, Instruction};
 use alloc::vec::Vec;
 use core::mem;
-use super::IrInstruction;
 
 /// A reference to an instruction of the partially
 /// constructed function body of the [`InstructionsBuilder`].
@@ -215,7 +215,7 @@ impl InstructionsBuilder {
                 Instruction::Br(target)
                 | Instruction::BrIfEqz(target)
                 | Instruction::BrIfNez(target) => {
-                    target.update_destination_pc(dst_pc);
+                    target.update_target(dst_pc);
                 }
                 _ => panic!(
                     "branch relocation points to a non-branch instruction: {:?}",
@@ -227,7 +227,7 @@ impl InstructionsBuilder {
                 target_idx,
             } => match &mut self.insts[inst_idx.into_usize() + target_idx + 1] {
                 Instruction::Br(target) => {
-                    target.update_destination_pc(dst_pc);
+                    target.update_target(dst_pc);
                 }
                 _ => panic!(
                     "`br_table` relocation points to a non-`br_table` instruction: {:?}",

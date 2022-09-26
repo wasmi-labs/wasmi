@@ -23,7 +23,7 @@ pub use self::{
     error::TranslationError,
     inst_builder::{Instr, InstructionsBuilder, LabelRef, RelativeDepth, Reloc},
 };
-use super::{bytecode::InstructionTypes, DropKeep, FuncBody, Instruction, Target};
+use super::{bytecode::InstructionTypes, BranchParams, DropKeep, FuncBody, Instruction};
 use crate::{
     engine::bytecode::Offset,
     module::{
@@ -52,7 +52,7 @@ type FuncValidator = wasmparser::FuncValidator<wasmparser::ValidatorResources>;
 pub enum IrInstructionTypes {}
 
 impl InstructionTypes for IrInstructionTypes {
-    type Target = Target;
+    type BranchParams = BranchParams;
 }
 
 /// An intermediate representation [`Instruction`].
@@ -491,7 +491,7 @@ impl<'parser> FuncBuilder<'parser> {
                 stack_height,
             ));
             let dst_pc = self.try_resolve_label(else_label, |pc| Reloc::Br { inst_idx: pc });
-            let branch_target = Target::new(dst_pc, DropKeep::none());
+            let branch_target = BranchParams::new(dst_pc, DropKeep::none());
             self.alloc
                 .inst_builder
                 .push_inst(Instruction::BrIfEqz(branch_target));
@@ -535,7 +535,7 @@ impl<'parser> FuncBuilder<'parser> {
         if reachable {
             let dst_pc =
                 self.try_resolve_label(if_frame.end_label(), |pc| Reloc::Br { inst_idx: pc });
-            let target = Target::new(dst_pc, DropKeep::none());
+            let target = BranchParams::new(dst_pc, DropKeep::none());
             self.alloc.inst_builder.push_inst(Instruction::Br(target));
         }
         // Now resolve labels for the instructions of the `else` block
@@ -603,7 +603,7 @@ impl<'parser> FuncBuilder<'parser> {
                     builder
                         .alloc
                         .inst_builder
-                        .push_inst(Instruction::Br(Target::new(dst_pc, drop_keep)));
+                        .push_inst(Instruction::Br(BranchParams::new(dst_pc, drop_keep)));
                 }
                 AcquiredTarget::Return(_) => {
                     // In this case the `br` can be directly translated as `return`.
@@ -627,7 +627,7 @@ impl<'parser> FuncBuilder<'parser> {
                     builder
                         .alloc
                         .inst_builder
-                        .push_inst(Instruction::BrIfNez(Target::new(dst_pc, drop_keep)));
+                        .push_inst(Instruction::BrIfNez(BranchParams::new(dst_pc, drop_keep)));
                 }
                 AcquiredTarget::Return(drop_keep) => {
                     builder
@@ -657,7 +657,7 @@ impl<'parser> FuncBuilder<'parser> {
                             inst_idx: pc,
                             target_idx: n,
                         });
-                        Ok(Instruction::Br(Target::new(dst_pc, drop_keep)))
+                        Ok(Instruction::Br(BranchParams::new(dst_pc, drop_keep)))
                     }
                     AcquiredTarget::Return(drop_keep) => Ok(Instruction::Return(drop_keep)),
                 }

@@ -6,6 +6,7 @@ mod utils;
 mod tests;
 
 pub use self::utils::{
+    BranchParams,
     DropKeep,
     DropKeepError,
     FuncIdx,
@@ -13,7 +14,6 @@ pub use self::utils::{
     LocalDepth,
     Offset,
     SignatureIdx,
-    Target,
 };
 use core::fmt::Debug;
 use wasmi_core::UntypedValue;
@@ -21,7 +21,7 @@ use wasmi_core::UntypedValue;
 /// Internal types of an [`Instruction`] type.
 pub trait InstructionTypes {
     /// A branching target.
-    type Target: Debug + Copy + Clone + PartialEq + Eq;
+    type BranchParams: Debug + Copy + Clone + PartialEq + Eq;
 }
 
 /// The internal `wasmi` bytecode that is stored for Wasm functions.
@@ -40,9 +40,9 @@ where
     LocalGet { local_depth: LocalDepth },
     LocalSet { local_depth: LocalDepth },
     LocalTee { local_depth: LocalDepth },
-    Br(<T as InstructionTypes>::Target),
-    BrIfEqz(<T as InstructionTypes>::Target),
-    BrIfNez(<T as InstructionTypes>::Target),
+    Br(<T as InstructionTypes>::BranchParams),
+    BrIfEqz(<T as InstructionTypes>::BranchParams),
+    BrIfNez(<T as InstructionTypes>::BranchParams),
     ReturnIfNez(DropKeep),
     BrTable { len_targets: usize },
     Unreachable,
