@@ -11,16 +11,17 @@ pub enum Label {
     Unpinned,
 }
 
-impl Label {
-    /// Returns `true` if the [`Label`] has already been pinned.
-    pub fn is_pinned(&self) -> bool {
-        matches!(self, Self::Pinned(_))
-    }
-}
-
 /// A reference to an [`Label`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct LabelRef(usize);
+pub struct LabelRef(u32);
+
+impl LabelRef {
+    /// Returns the `usize` value of the [`LabelRef`].
+    #[inline]
+    fn into_usize(self) -> usize {
+        self.0 as usize
+    }
+}
 
 /// The label registry.
 ///
@@ -63,9 +64,25 @@ impl LabelRegistry {
 
     /// Allocates a new unpinned [`Label`].
     pub fn new_label(&mut self) -> LabelRef {
-        let index = self.labels.len();
+        let index: u32 = self
+            .labels
+            .len()
+            .try_into()
+            .unwrap_or_else(|err| panic!("cannot have more than u32::MAX label refs: {err}"));
         self.labels.push(Label::Unpinned);
         LabelRef(index)
+    }
+
+    /// Returns a shared reference to the underlying [`Label`].
+    #[inline]
+    fn get_label(&self, label: LabelRef) -> &Label {
+        &self.labels[label.into_usize()]
+    }
+
+    /// Returns an exclusive reference to the underlying [`Label`].
+    #[inline]
+    fn get_label_mut(&mut self, label: LabelRef) -> &mut Label {
+        &mut self.labels[label.into_usize()]
     }
 
     /// Pins the `label` to the given `instr`.
@@ -74,25 +91,22 @@ impl LabelRegistry {
     ///
     /// If the `label` has already been pinned to some other [`Instr`].
     pub fn pin_label(&mut self, label: LabelRef, instr: Instr) -> Result<(), LabelError> {
-        match &mut self.labels[label.0] {
-            Label::Pinned(pinned) => {
-                return Err(LabelError::AlreadyPinned {
-                    label,
-                    pinned_to: *pinned,
-                })
-            }
+        match self.get_label_mut(label) {
+            Label::Pinned(pinned) => Err(LabelError::AlreadyPinned {
+                label,
+                pinned_to: *pinned,
+            }),
             unpinned @ Label::Unpinned => {
                 *unpinned = Label::Pinned(instr);
+                Ok(())
             }
         }
-        Ok(())
     }
 
     /// Pins the `label` to the given `instr` if unpinned.
     pub fn try_pin_label(&mut self, label: LabelRef, instr: Instr) {
-        let label = &mut self.labels[label.0];
-        if !label.is_pinned() {
-            *label = Label::Pinned(instr)
+        if let unpinned @ Label::Unpinned = self.get_label_mut(label) {
+            *unpinned = Label::Pinned(instr)
         }
     }
 
@@ -102,7 +116,7 @@ impl LabelRegistry {
     ///
     /// If the `label` is unpinned.
     pub fn resolve_label(&self, label: LabelRef) -> Result<Instr, LabelError> {
-        match &self.labels[label.0] {
+        match self.get_label(label) {
             Label::Pinned(instr) => Ok(*instr),
             Label::Unpinned => Err(LabelError::Unpinned { label }),
         }
