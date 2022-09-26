@@ -444,7 +444,7 @@ impl<'parser> FuncBuilder<'parser> {
         if self.is_reachable() {
             let stack_height = self.frame_stack_height(block_type);
             let header = self.alloc.inst_builder.new_label();
-            self.alloc.inst_builder.resolve_label(header);
+            self.alloc.inst_builder.pin_label(header);
             self.alloc.control_frames.push_frame(LoopControlFrame::new(
                 block_type,
                 header,
@@ -528,7 +528,7 @@ impl<'parser> FuncBuilder<'parser> {
             self.alloc.inst_builder.push_inst(Instruction::Br(target));
         }
         // Now resolve labels for the instructions of the `else` block
-        self.alloc.inst_builder.resolve_label(if_frame.else_label());
+        self.alloc.inst_builder.pin_label(if_frame.else_label());
         // We need to reset the value stack to exactly how it has been
         // when entering the `if` in the first place so that the `else`
         // block has the same parameters on top of the stack.
@@ -552,12 +552,12 @@ impl<'parser> FuncBuilder<'parser> {
             //       in case there was an `Else` block.
             self.alloc
                 .inst_builder
-                .resolve_label_if_unresolved(if_frame.else_label());
+                .pin_label_if_unpinned(if_frame.else_label());
         }
         if frame.is_reachable() && !matches!(frame.kind(), ControlFrameKind::Loop) {
             // At this point we can resolve the `End` labels.
             // Note that `loop` control frames do not have an `End` label.
-            self.alloc.inst_builder.resolve_label(frame.end_label());
+            self.alloc.inst_builder.pin_label(frame.end_label());
         }
         // These bindings are required because of borrowing issues.
         let frame_reachable = frame.is_reachable();

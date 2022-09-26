@@ -145,12 +145,12 @@ impl InstructionsBuilder {
     /// This is used at a position of the Wasm bytecode where it is clear that
     /// the given label can be resolved properly.
     /// This usually takes place when encountering the Wasm `End` operand for example.
-    pub fn resolve_label_if_unresolved(&mut self, label: LabelRef) {
+    pub fn pin_label_if_unpinned(&mut self, label: LabelRef) {
         if self.is_resolved(label) {
             // Nothing to do in this case.
             return;
         }
-        self.resolve_label(label);
+        self.pin_label(label);
     }
 
     /// Resolve the label at the current instruction position.
@@ -164,7 +164,7 @@ impl InstructionsBuilder {
     /// # Panics
     ///
     /// If the label has already been resolved.
-    pub fn resolve_label(&mut self, label: LabelRef) {
+    pub fn pin_label(&mut self, label: LabelRef) {
         let dst_pc = self.current_pc();
         let old_label = mem::replace(&mut self.labels[label.0], Label::Resolved(dst_pc));
         match old_label {
