@@ -1,4 +1,5 @@
-use crate::{engine::LabelRef, module::BlockType};
+use super::labels::LabelRef;
+use crate::module::BlockType;
 
 /// A Wasm `block` control flow frame.
 #[derive(Debug, Copy, Clone)]

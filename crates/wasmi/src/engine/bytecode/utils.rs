@@ -1,4 +1,3 @@
-use super::super::super::engine::Instr;
 use core::fmt::Display;
 
 /// Defines how many stack values are going to be dropped and kept after branching.
@@ -61,54 +60,6 @@ impl DropKeep {
     /// Returns the amount of stack values to keep.
     pub fn keep(self) -> usize {
         self.keep as usize
-    }
-}
-
-/// A branching target.
-///
-/// This also specifies how many values on the stack
-/// need to be dropped and kept in order to maintain
-/// value stack integrity.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct BranchParams {
-    /// The target instruction to branch to.
-    target: Instr,
-    /// How many values on the stack need to be dropped and kept.
-    drop_keep: DropKeep,
-}
-
-impl BranchParams {
-    /// Creates a new `wasmi` branching target.
-    pub fn new(dst_pc: Instr, drop_keep: DropKeep) -> Self {
-        Self {
-            target: dst_pc,
-            drop_keep,
-        }
-    }
-
-    /// Returns the destination program counter (as index).
-    pub fn target(self) -> Instr {
-        self.target
-    }
-
-    /// Updates the destination program counter (as index).
-    ///
-    /// # Panics
-    ///
-    /// If the old destination program counter was not [`InstructionIdx::INVALID`].
-    pub fn update_target(&mut self, new_destination_pc: Instr) {
-        assert_eq!(
-            self.target(),
-            Instr::INVALID,
-            "tried to update the target of a branch that already has a valid target: {:?}",
-            self.target(),
-        );
-        self.target = new_destination_pc;
-    }
-
-    /// Returns the amount of stack values to drop and keep upon taking the branch.
-    pub fn drop_keep(self) -> DropKeep {
-        self.drop_keep
     }
 }
 

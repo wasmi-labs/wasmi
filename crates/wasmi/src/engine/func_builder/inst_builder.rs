@@ -1,9 +1,17 @@
 //! Abstractions to build up instructions forming Wasm function bodies.
 
-use super::IrInstruction;
-use crate::engine::{executor::ExecInstruction, Engine, FuncBody, Instruction};
+use super::{
+    labels::{LabelRef, LabelRegistry},
+    IrBranchParams,
+    IrInstruction,
+};
+use crate::engine::{
+    executor::{ExecBranchParams, ExecInstruction},
+    Engine,
+    FuncBody,
+    Instruction,
+};
 use alloc::vec::Vec;
-use core::mem;
 
 /// A reference to an instruction of the partially
 /// constructed function body of the [`InstructionsBuilder`].
@@ -11,16 +19,6 @@ use core::mem;
 pub struct Instr(u32);
 
 impl Instr {
-    /// An invalid instruction index.
-    ///
-    /// # Note
-    ///
-    /// This can be used to represent temporarily invalid [`InstructionIdx`]
-    /// without major performance implications for the bytecode itself, e.g.
-    /// when representing invalid [`InstructionIdx`] by wrapping them in an
-    /// `Option`.
-    pub const INVALID: Self = Self(u32::MAX);
-
     /// Creates an [`InstructionIdx`] from the given `usize` value.
     ///
     /// # Note
@@ -46,40 +44,40 @@ impl Instr {
     }
 }
 
-/// A resolved or unresolved label.
-#[derive(Debug, PartialEq, Eq)]
-enum Label {
-    /// An unresolved label.
-    Unresolved {
-        /// The uses of the unresolved label.
-        uses: Vec<Reloc>,
-    },
-    /// A fully resolved label.
-    ///
-    /// # Note
-    ///
-    /// A fully resolved label no longer required knowledge about its uses.
-    Resolved(Instr),
-}
+// /// A resolved or unresolved label.
+// #[derive(Debug, PartialEq, Eq)]
+// enum Label {
+//     /// An unresolved label.
+//     Unresolved {
+//         /// The uses of the unresolved label.
+//         uses: Vec<Reloc>,
+//     },
+//     /// A fully resolved label.
+//     ///
+//     /// # Note
+//     ///
+//     /// A fully resolved label no longer required knowledge about its uses.
+//     Resolved(Instr),
+// }
 
-impl Default for Label {
-    fn default() -> Self {
-        Self::Unresolved { uses: Vec::new() }
-    }
-}
+// impl Default for Label {
+//     fn default() -> Self {
+//         Self::Unresolved { uses: Vec::new() }
+//     }
+// }
 
-/// A unique label identifier.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct LabelRef(pub(crate) usize);
+// /// A unique label identifier.
+// #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+// pub struct LabelRef(pub(crate) usize);
 
-/// A relocation entry that specifies.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Reloc {
-    /// Patch the target of the `br`, `br_eqz` or `br_nez` instruction.
-    Br { inst_idx: Instr },
-    /// Patch the specified target index inside of a Wasm `br_table` instruction.
-    BrTable { inst_idx: Instr, target_idx: usize },
-}
+// /// A relocation entry that specifies.
+// #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+// pub enum Reloc {
+//     /// Patch the target of the `br`, `br_eqz` or `br_nez` instruction.
+//     Br { inst_idx: Instr },
+//     /// Patch the specified target index inside of a Wasm `br_table` instruction.
+//     BrTable { inst_idx: Instr, target_idx: usize },
+// }
 
 /// The relative depth of a Wasm branching target.
 #[derive(Debug, Copy, Clone)]
@@ -107,14 +105,14 @@ pub struct InstructionsBuilder {
     /// The instructions of the partially constructed function body.
     insts: Vec<IrInstruction>,
     /// All labels and their uses.
-    labels: Vec<Label>,
+    labels: LabelRegistry,
 }
 
 impl InstructionsBuilder {
     /// Resets the [`InstructionsBuilder`] to allow for reuse.
     pub fn reset(&mut self) {
         self.insts.clear();
-        self.labels.clear();
+        self.labels.reset();
     }
 
     /// Returns the current instruction pointer as index.
@@ -124,17 +122,7 @@ impl InstructionsBuilder {
 
     /// Creates a new unresolved label and returns an index to it.
     pub fn new_label(&mut self) -> LabelRef {
-        let idx = LabelRef(self.labels.len());
-        self.labels.push(Label::default());
-        idx
-    }
-
-    /// Returns `true` if `label` has been resolved.
-    fn is_resolved(&self, label: LabelRef) -> bool {
-        if let Label::Resolved(_) = &self.labels[label.0] {
-            return true;
-        }
-        false
+        self.labels.new_label()
     }
 
     /// Resolve the label at the current instruction position.
@@ -147,11 +135,7 @@ impl InstructionsBuilder {
     /// the given label can be resolved properly.
     /// This usually takes place when encountering the Wasm `End` operand for example.
     pub fn pin_label_if_unpinned(&mut self, label: LabelRef) {
-        if self.is_resolved(label) {
-            // Nothing to do in this case.
-            return;
-        }
-        self.pin_label(label);
+        self.labels.try_pin_label(label, self.current_pc())
     }
 
     /// Resolve the label at the current instruction position.
@@ -166,37 +150,9 @@ impl InstructionsBuilder {
     ///
     /// If the label has already been resolved.
     pub fn pin_label(&mut self, label: LabelRef) {
-        let dst_pc = self.current_pc();
-        let old_label = mem::replace(&mut self.labels[label.0], Label::Resolved(dst_pc));
-        match old_label {
-            Label::Resolved(idx) => panic!(
-                "tried to resolve already resolved label {:?} -> {:?} to {:?}",
-                label, idx, dst_pc
-            ),
-            Label::Unresolved { uses } => {
-                // Patch all relocations that have been recorded as uses of the resolved label.
-                for reloc in uses {
-                    self.patch_relocation(reloc, dst_pc);
-                }
-            }
-        }
-    }
-
-    /// Tries to resolve the label into the [`InstructionIdx`].
-    ///
-    /// If resolution fails puts a placeholder into the respective label
-    /// and push the new user for later resolution to take place.
-    pub fn try_resolve_label<F>(&mut self, label: LabelRef, reloc_provider: F) -> Instr
-    where
-        F: FnOnce() -> Reloc,
-    {
-        match &mut self.labels[label.0] {
-            Label::Resolved(dst_pc) => *dst_pc,
-            Label::Unresolved { uses } => {
-                uses.push(reloc_provider());
-                Instr::INVALID
-            }
-        }
+        self.labels
+            .pin_label(label, self.current_pc())
+            .unwrap_or_else(|err| panic!("failed to pin label: {err}"));
     }
 
     /// Pushes the internal instruction bytecode to the [`InstructionsBuilder`].
@@ -206,35 +162,6 @@ impl InstructionsBuilder {
         let idx = self.current_pc();
         self.insts.push(inst);
         idx
-    }
-
-    /// Allows to patch the branch target of branch instructions.
-    pub fn patch_relocation(&mut self, reloc: Reloc, dst_pc: Instr) {
-        match reloc {
-            Reloc::Br { inst_idx } => match &mut self.insts[inst_idx.into_usize()] {
-                Instruction::Br(target)
-                | Instruction::BrIfEqz(target)
-                | Instruction::BrIfNez(target) => {
-                    target.update_target(dst_pc);
-                }
-                _ => panic!(
-                    "branch relocation points to a non-branch instruction: {:?}",
-                    reloc
-                ),
-            },
-            Reloc::BrTable {
-                inst_idx,
-                target_idx,
-            } => match &mut self.insts[inst_idx.into_usize() + target_idx + 1] {
-                Instruction::Br(target) => {
-                    target.update_target(dst_pc);
-                }
-                _ => panic!(
-                    "`br_table` relocation points to a non-`br_table` instruction: {:?}",
-                    reloc
-                ),
-            },
-        }
     }
 
     /// Finishes construction of the function body instructions.
@@ -262,16 +189,28 @@ impl InstructionsBuilder {
     }
 }
 
+impl IrBranchParams {
+    /// Compiles the [`IrBranchParams`] to an [`ExecBranchParams`].
+    fn compile(self, labels: &LabelRegistry) -> ExecBranchParams {
+        ExecBranchParams::new(
+            labels
+                .resolve_label(self.target())
+                .unwrap_or_else(|err| panic!("failed to resolve label: {err}")),
+            self.drop_keep(),
+        )
+    }
+}
+
 impl IrInstruction {
     /// Compiles the [`IrInstruction`] to an [`ExecInstruction`].
-    fn compile(self, labels: &Vec<Label>) -> ExecInstruction {
+    fn compile(self, labels: &LabelRegistry) -> ExecInstruction {
         match self {
             Self::LocalGet { local_depth } => Instruction::LocalGet { local_depth },
             Self::LocalSet { local_depth } => Instruction::LocalSet { local_depth },
             Self::LocalTee { local_depth } => Instruction::LocalTee { local_depth },
-            Self::Br(target) => Instruction::Br(target),
-            Self::BrIfEqz(target) => Instruction::BrIfEqz(target),
-            Self::BrIfNez(target) => Instruction::BrIfNez(target),
+            Self::Br(target) => Instruction::Br(target.compile(labels)),
+            Self::BrIfEqz(target) => Instruction::BrIfEqz(target.compile(labels)),
+            Self::BrIfNez(target) => Instruction::BrIfNez(target.compile(labels)),
             Self::ReturnIfNez(drop_keep) => Instruction::ReturnIfNez(drop_keep),
             Self::BrTable { len_targets } => Instruction::BrTable { len_targets },
             Self::Unreachable => Instruction::Unreachable,

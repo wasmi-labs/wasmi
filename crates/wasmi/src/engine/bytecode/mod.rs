@@ -6,7 +6,6 @@ mod utils;
 mod tests;
 
 pub use self::utils::{
-    BranchParams,
     DropKeep,
     DropKeepError,
     FuncIdx,

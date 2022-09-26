@@ -2,6 +2,7 @@ mod control_frame;
 mod control_stack;
 mod error;
 mod inst_builder;
+mod labels;
 mod locals_registry;
 mod value_stack;
 mod visit;
@@ -16,14 +17,15 @@ use self::{
         UnreachableControlFrame,
     },
     control_stack::ControlFlowStack,
+    labels::LabelRef,
     locals_registry::LocalsRegistry,
     value_stack::ValueStack,
 };
 pub use self::{
     error::TranslationError,
-    inst_builder::{Instr, InstructionsBuilder, LabelRef, RelativeDepth, Reloc},
+    inst_builder::{Instr, InstructionsBuilder, RelativeDepth},
 };
-use super::{bytecode::InstructionTypes, BranchParams, DropKeep, FuncBody, Instruction};
+use super::{bytecode::InstructionTypes, DropKeep, FuncBody, Instruction};
 use crate::{
     engine::bytecode::Offset,
     module::{
@@ -52,11 +54,41 @@ type FuncValidator = wasmparser::FuncValidator<wasmparser::ValidatorResources>;
 pub enum IrInstructionTypes {}
 
 impl InstructionTypes for IrInstructionTypes {
-    type BranchParams = BranchParams;
+    type BranchParams = IrBranchParams;
 }
 
 /// An intermediate representation [`Instruction`].
 pub type IrInstruction = Instruction<IrInstructionTypes>;
+
+/// A branching target.
+///
+/// This also specifies how many values on the stack
+/// need to be dropped and kept in order to maintain
+/// value stack integrity.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct IrBranchParams {
+    /// The label that refers to the branching target.
+    target: LabelRef,
+    /// How many values on the stack need to be dropped and kept.
+    drop_keep: DropKeep,
+}
+
+impl IrBranchParams {
+    /// Creates new branching parameters.
+    pub fn new(target: LabelRef, drop_keep: DropKeep) -> Self {
+        Self { target, drop_keep }
+    }
+
+    /// Returns the branching target.
+    pub fn target(self) -> LabelRef {
+        self.target
+    }
+
+    /// Returns the amount of stack values to drop and keep upon taking the branch.
+    pub fn drop_keep(self) -> DropKeep {
+        self.drop_keep
+    }
+}
 
 /// The interface to translate a `wasmi` bytecode function using Wasm bytecode.
 pub struct FuncBuilder<'parser> {
@@ -189,19 +221,6 @@ impl<'parser> FuncBuilder<'parser> {
             allocations.locals.register_locals(*param_type, 1);
         }
         params.len()
-    }
-
-    /// Try to resolve the given label.
-    ///
-    /// In case the label cannot yet be resolved register the [`Reloc`] as its user.
-    fn try_resolve_label<F>(&mut self, label: LabelRef, reloc_provider: F) -> Instr
-    where
-        F: FnOnce(Instr) -> Reloc,
-    {
-        let pc = self.alloc.inst_builder.current_pc();
-        self.alloc
-            .inst_builder
-            .try_resolve_label(label, || reloc_provider(pc))
     }
 
     /// Translates the given local variables for the translated function.
@@ -490,8 +509,7 @@ impl<'parser> FuncBuilder<'parser> {
                 else_label,
                 stack_height,
             ));
-            let dst_pc = self.try_resolve_label(else_label, |pc| Reloc::Br { inst_idx: pc });
-            let branch_target = BranchParams::new(dst_pc, DropKeep::none());
+            let branch_target = IrBranchParams::new(else_label, DropKeep::none());
             self.alloc
                 .inst_builder
                 .push_inst(Instruction::BrIfEqz(branch_target));
@@ -533,9 +551,7 @@ impl<'parser> FuncBuilder<'parser> {
         // Create the jump from the end of the `then` block to the `if`
         // block's end label in case the end of `then` is reachable.
         if reachable {
-            let dst_pc =
-                self.try_resolve_label(if_frame.end_label(), |pc| Reloc::Br { inst_idx: pc });
-            let target = BranchParams::new(dst_pc, DropKeep::none());
+            let target = IrBranchParams::new(if_frame.end_label(), DropKeep::none());
             self.alloc.inst_builder.push_inst(Instruction::Br(target));
         }
         // Now resolve labels for the instructions of the `else` block
@@ -598,12 +614,10 @@ impl<'parser> FuncBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             match builder.acquire_target(relative_depth)? {
                 AcquiredTarget::Branch(end_label, drop_keep) => {
-                    let dst_pc =
-                        builder.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
                     builder
                         .alloc
                         .inst_builder
-                        .push_inst(Instruction::Br(BranchParams::new(dst_pc, drop_keep)));
+                        .push_inst(Instruction::Br(IrBranchParams::new(end_label, drop_keep)));
                 }
                 AcquiredTarget::Return(_) => {
                     // In this case the `br` can be directly translated as `return`.
@@ -622,12 +636,9 @@ impl<'parser> FuncBuilder<'parser> {
             debug_assert_eq!(condition, ValueType::I32);
             match builder.acquire_target(relative_depth)? {
                 AcquiredTarget::Branch(end_label, drop_keep) => {
-                    let dst_pc =
-                        builder.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
-                    builder
-                        .alloc
-                        .inst_builder
-                        .push_inst(Instruction::BrIfNez(BranchParams::new(dst_pc, drop_keep)));
+                    builder.alloc.inst_builder.push_inst(Instruction::BrIfNez(
+                        IrBranchParams::new(end_label, drop_keep),
+                    ));
                 }
                 AcquiredTarget::Return(drop_keep) => {
                     builder
@@ -648,16 +659,11 @@ impl<'parser> FuncBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             fn compute_inst(
                 builder: &mut FuncBuilder,
-                n: usize,
                 depth: RelativeDepth,
             ) -> Result<IrInstruction, TranslationError> {
                 match builder.acquire_target(depth.into_u32())? {
-                    AcquiredTarget::Branch(label_idx, drop_keep) => {
-                        let dst_pc = builder.try_resolve_label(label_idx, |pc| Reloc::BrTable {
-                            inst_idx: pc,
-                            target_idx: n,
-                        });
-                        Ok(Instruction::Br(BranchParams::new(dst_pc, drop_keep)))
+                    AcquiredTarget::Branch(label, drop_keep) => {
+                        Ok(Instruction::Br(IrBranchParams::new(label, drop_keep)))
                     }
                     AcquiredTarget::Return(drop_keep) => Ok(Instruction::Return(drop_keep)),
                 }
@@ -680,14 +686,14 @@ impl<'parser> FuncBuilder<'parser> {
             debug_assert_eq!(case, ValueType::I32);
 
             builder.alloc.br_table_branches.clear();
-            for (n, depth) in targets.into_iter().enumerate() {
-                let relative_depth = compute_inst(builder, n, depth)?;
+            for depth in targets.into_iter() {
+                let relative_depth = compute_inst(builder, depth)?;
                 builder.alloc.br_table_branches.push(relative_depth);
             }
 
             // We include the default target in `len_branches`.
             let len_branches = builder.alloc.br_table_branches.len();
-            let default_branch = compute_inst(builder, len_branches, default)?;
+            let default_branch = compute_inst(builder, default)?;
             builder.alloc.inst_builder.push_inst(Instruction::BrTable {
                 len_targets: len_branches + 1,
             });

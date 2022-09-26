@@ -13,10 +13,10 @@ use super::{
     code_map::Instructions,
     stack::ValueStackRef,
     AsContextMut,
-    BranchParams,
     CallOutcome,
     DropKeep,
     FuncFrame,
+    Instr,
     ValueStack,
 };
 use crate::{
@@ -33,11 +33,41 @@ use wasmi_core::{memory_units::Pages, ExtendInto, LittleEndianConvert, UntypedVa
 pub enum ExecInstructionTypes {}
 
 impl InstructionTypes for ExecInstructionTypes {
-    type BranchParams = BranchParams;
+    type BranchParams = ExecBranchParams;
 }
 
 /// An executable compiled [`Instruction`].
 pub type ExecInstruction = Instruction<ExecInstructionTypes>;
+
+/// A branching target.
+///
+/// This also specifies how many values on the stack
+/// need to be dropped and kept in order to maintain
+/// value stack integrity.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct ExecBranchParams {
+    /// The target instruction to branch to.
+    target: Instr,
+    /// How many values on the stack need to be dropped and kept.
+    drop_keep: DropKeep,
+}
+
+impl ExecBranchParams {
+    /// Creates new branching parameters.
+    pub fn new(target: Instr, drop_keep: DropKeep) -> Self {
+        Self { target, drop_keep }
+    }
+
+    /// Returns the branching target.
+    pub fn target(self) -> Instr {
+        self.target
+    }
+
+    /// Returns the amount of stack values to drop and keep upon taking the branch.
+    pub fn drop_keep(self) -> DropKeep {
+        self.drop_keep
+    }
+}
 
 /// Executes the given function `frame`.
 ///
@@ -506,7 +536,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.pc += 1;
     }
 
-    fn branch_to(&mut self, target: BranchParams) {
+    fn branch_to(&mut self, target: ExecBranchParams) {
         self.value_stack.drop_keep(target.drop_keep());
         self.pc = target.target().into_usize();
     }
@@ -539,11 +569,11 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         Err(TrapCode::Unreachable).map_err(Into::into)
     }
 
-    fn visit_br(&mut self, target: BranchParams) {
+    fn visit_br(&mut self, target: ExecBranchParams) {
         self.branch_to(target)
     }
 
-    fn visit_br_if_eqz(&mut self, target: BranchParams) {
+    fn visit_br_if_eqz(&mut self, target: ExecBranchParams) {
         let condition = self.value_stack.pop_as();
         if condition {
             self.next_instr()
@@ -552,7 +582,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         }
     }
 
-    fn visit_br_if_nez(&mut self, target: BranchParams) {
+    fn visit_br_if_nez(&mut self, target: ExecBranchParams) {
         let condition = self.value_stack.pop_as();
         if condition {
             self.branch_to(target)
