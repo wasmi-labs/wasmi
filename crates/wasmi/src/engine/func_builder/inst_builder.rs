@@ -3,7 +3,6 @@
 use crate::engine::{executor::ExecInstruction, Engine, FuncBody, Instruction};
 use alloc::vec::Vec;
 use core::mem;
-
 use super::IrInstruction;
 
 /// A reference to an instruction of the partially
