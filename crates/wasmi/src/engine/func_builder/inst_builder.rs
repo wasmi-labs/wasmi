@@ -7,9 +7,9 @@ use core::mem;
 /// A reference to an instruction of the partially
 /// constructed function body of the [`InstructionsBuilder`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct InstructionIdx(u32);
+pub struct Instr(u32);
 
-impl InstructionIdx {
+impl Instr {
     /// An invalid instruction index.
     ///
     /// # Note
@@ -58,7 +58,7 @@ enum Label {
     /// # Note
     ///
     /// A fully resolved label no longer required knowledge about its uses.
-    Resolved(InstructionIdx),
+    Resolved(Instr),
 }
 
 impl Default for Label {
@@ -75,12 +75,9 @@ pub struct LabelIdx(pub(crate) usize);
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Reloc {
     /// Patch the target of the `br`, `br_eqz` or `br_nez` instruction.
-    Br { inst_idx: InstructionIdx },
+    Br { inst_idx: Instr },
     /// Patch the specified target index inside of a Wasm `br_table` instruction.
-    BrTable {
-        inst_idx: InstructionIdx,
-        target_idx: usize,
-    },
+    BrTable { inst_idx: Instr, target_idx: usize },
 }
 
 /// The relative depth of a Wasm branching target.
@@ -120,8 +117,8 @@ impl InstructionsBuilder {
     }
 
     /// Returns the current instruction pointer as index.
-    pub fn current_pc(&self) -> InstructionIdx {
-        InstructionIdx::from_usize(self.insts.len())
+    pub fn current_pc(&self) -> Instr {
+        Instr::from_usize(self.insts.len())
     }
 
     /// Creates a new unresolved label and returns an index to it.
@@ -188,7 +185,7 @@ impl InstructionsBuilder {
     ///
     /// If resolution fails puts a placeholder into the respective label
     /// and push the new user for later resolution to take place.
-    pub fn try_resolve_label<F>(&mut self, label: LabelIdx, reloc_provider: F) -> InstructionIdx
+    pub fn try_resolve_label<F>(&mut self, label: LabelIdx, reloc_provider: F) -> Instr
     where
         F: FnOnce() -> Reloc,
     {
@@ -196,7 +193,7 @@ impl InstructionsBuilder {
             Label::Resolved(dst_pc) => *dst_pc,
             Label::Unresolved { uses } => {
                 uses.push(reloc_provider());
-                InstructionIdx::INVALID
+                Instr::INVALID
             }
         }
     }
@@ -204,14 +201,14 @@ impl InstructionsBuilder {
     /// Pushes the internal instruction bytecode to the [`InstructionsBuilder`].
     ///
     /// Returns an [`InstructionIdx`] to refer to the pushed instruction.
-    pub fn push_inst(&mut self, inst: Instruction) -> InstructionIdx {
+    pub fn push_inst(&mut self, inst: Instruction) -> Instr {
         let idx = self.current_pc();
         self.insts.push(inst);
         idx
     }
 
     /// Allows to patch the branch target of branch instructions.
-    pub fn patch_relocation(&mut self, reloc: Reloc, dst_pc: InstructionIdx) {
+    pub fn patch_relocation(&mut self, reloc: Reloc, dst_pc: Instr) {
         match reloc {
             Reloc::Br { inst_idx } => match &mut self.insts[inst_idx.into_usize()] {
                 Instruction::Br(target)

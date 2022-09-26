@@ -21,7 +21,7 @@ use self::{
 };
 pub use self::{
     error::TranslationError,
-    inst_builder::{InstructionIdx, InstructionsBuilder, LabelIdx, RelativeDepth, Reloc},
+    inst_builder::{Instr, InstructionsBuilder, LabelIdx, RelativeDepth, Reloc},
 };
 use super::{DropKeep, FuncBody, Instruction, Target};
 use crate::{
@@ -183,9 +183,9 @@ impl<'parser> FuncBuilder<'parser> {
     /// Try to resolve the given label.
     ///
     /// In case the label cannot yet be resolved register the [`Reloc`] as its user.
-    fn try_resolve_label<F>(&mut self, label: LabelIdx, reloc_provider: F) -> InstructionIdx
+    fn try_resolve_label<F>(&mut self, label: LabelIdx, reloc_provider: F) -> Instr
     where
-        F: FnOnce(InstructionIdx) -> Reloc,
+        F: FnOnce(Instr) -> Reloc,
     {
         let pc = self.alloc.inst_builder.current_pc();
         self.alloc

@@ -27,7 +27,7 @@ pub use self::{
     func_builder::{
         FuncBuilder,
         FunctionBuilderAllocations,
-        InstructionIdx,
+        Instr,
         LabelIdx,
         RelativeDepth,
         Reloc,
