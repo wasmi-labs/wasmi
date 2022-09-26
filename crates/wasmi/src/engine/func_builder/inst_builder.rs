@@ -44,41 +44,6 @@ impl Instr {
     }
 }
 
-// /// A resolved or unresolved label.
-// #[derive(Debug, PartialEq, Eq)]
-// enum Label {
-//     /// An unresolved label.
-//     Unresolved {
-//         /// The uses of the unresolved label.
-//         uses: Vec<Reloc>,
-//     },
-//     /// A fully resolved label.
-//     ///
-//     /// # Note
-//     ///
-//     /// A fully resolved label no longer required knowledge about its uses.
-//     Resolved(Instr),
-// }
-
-// impl Default for Label {
-//     fn default() -> Self {
-//         Self::Unresolved { uses: Vec::new() }
-//     }
-// }
-
-// /// A unique label identifier.
-// #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-// pub struct LabelRef(pub(crate) usize);
-
-// /// A relocation entry that specifies.
-// #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-// pub enum Reloc {
-//     /// Patch the target of the `br`, `br_eqz` or `br_nez` instruction.
-//     Br { inst_idx: Instr },
-//     /// Patch the specified target index inside of a Wasm `br_table` instruction.
-//     BrTable { inst_idx: Instr, target_idx: usize },
-// }
-
 /// The relative depth of a Wasm branching target.
 #[derive(Debug, Copy, Clone)]
 pub struct RelativeDepth(u32);
