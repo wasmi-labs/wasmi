@@ -227,6 +227,12 @@ impl BranchParams {
 pub struct BranchOffset(i32);
 
 impl BranchOffset {
+    /// Creates a [`BranchOffset`] from the given raw `i32` value.
+    #[cfg(test)]
+    pub fn from_i32(value: i32) -> Self {
+        Self(value)
+    }
+
     /// Creates an uninitalized [`BranchOffset`].
     pub fn uninit() -> Self {
         Self(0)
