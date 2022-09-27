@@ -1,3 +1,5 @@
+use crate::engine::bytecode::BranchOffset;
+
 use super::Instr;
 use alloc::vec::Vec;
 use core::fmt::{self, Display};
@@ -29,6 +31,23 @@ impl LabelRef {
 #[derive(Debug, Default)]
 pub struct LabelRegistry {
     labels: Vec<Label>,
+    users: Vec<LabelUser>,
+}
+
+/// A user of a label.
+#[derive(Debug)]
+pub struct LabelUser {
+    /// The label in use by the user.
+    label: LabelRef,
+    /// The reference to the using instruction.
+    user: Instr,
+}
+
+impl LabelUser {
+    /// Creates a new [`LabelUser`].
+    pub fn new(label: LabelRef, user: Instr) -> Self {
+        Self { label, user }
+    }
 }
 
 /// An error that may occur while operating on the [`LabelRegistry`].
@@ -59,7 +78,8 @@ impl Display for LabelError {
 impl LabelRegistry {
     /// Resets the [`LabelRegistry`] for reuse.
     pub fn reset(&mut self) {
-        self.labels.clear()
+        self.labels.clear();
+        self.users.clear();
     }
 
     /// Allocates a new unpinned [`Label`].
@@ -119,6 +139,23 @@ impl LabelRegistry {
         match self.get_label(label) {
             Label::Pinned(instr) => Ok(*instr),
             Label::Unpinned => Err(LabelError::Unpinned { label }),
+        }
+    }
+
+    /// Tries to resolve the `label`.
+    ///
+    /// Returns the proper `BranchOffset` in case the `label` has already been
+    /// pinned and returns an uninitialized `BranchOffset` otherwise.
+    ///
+    /// In case the `label` has not yet been pinned the `user` is registered
+    /// for deferred label resolution.
+    pub fn try_resolve_label(&mut self, label: LabelRef, user: Instr) -> BranchOffset {
+        match *self.get_label(label) {
+            Label::Pinned(target) => BranchOffset::init(user, target),
+            Label::Unpinned => {
+                self.users.push(LabelUser::new(label, user));
+                BranchOffset::uninit()
+            }
         }
     }
 }
