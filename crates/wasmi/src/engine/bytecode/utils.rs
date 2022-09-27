@@ -1,5 +1,5 @@
-use core::fmt::Display;
 use crate::engine::Instr;
+use core::fmt::Display;
 
 /// Defines how many stack values are going to be dropped and kept after branching.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -186,13 +186,13 @@ pub struct BranchParams {
 }
 
 impl BranchParams {
-    /// Creates uninitialized [`BranchParams`].
-    pub fn uninit(drop_keep: DropKeep) -> Self {
-        Self { offset: BranchOffset::uninit(), drop_keep }
+    /// Creates new [`BranchParams`].
+    pub fn new(offset: BranchOffset, drop_keep: DropKeep) -> Self {
+        Self { offset, drop_keep }
     }
 
     /// Returns `true` if the [`BranchParams`] have been initialized already.
-    pub fn is_init(&self) -> bool {
+    fn is_init(&self) -> bool {
         self.offset.is_init()
     }
 
@@ -203,8 +203,8 @@ impl BranchParams {
     /// - If the [`BranchParams`] have already been initialized.
     /// - If the given [`BranchOffset`] is not properly initialized.
     pub fn init(&mut self, offset: BranchOffset) {
-        assert!(!offset.is_init());
-        assert!(self.offset.is_init());
+        assert!(offset.is_init());
+        assert!(!self.is_init());
         self.offset = offset;
     }
 
@@ -242,5 +242,10 @@ impl BranchOffset {
     /// Returns `true` if the [`BranchOffset`] has been initialized.
     pub fn is_init(self) -> bool {
         self.0 != 0
+    }
+
+    /// Returns the `i32` representation of the [`BranchOffset`].
+    pub fn into_i32(self) -> i32 {
+        self.0
     }
 }

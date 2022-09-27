@@ -1,8 +1,10 @@
-use crate::engine::bytecode::BranchOffset;
-
 use super::Instr;
+use crate::engine::bytecode::BranchOffset;
 use alloc::vec::Vec;
-use core::fmt::{self, Display};
+use core::{
+    fmt::{self, Display},
+    slice::Iter as SliceIter,
+};
 
 /// A label during the `wasmi` compilation process.
 #[derive(Debug, Copy, Clone)]
@@ -130,18 +132,6 @@ impl LabelRegistry {
         }
     }
 
-    /// Resolves a `label` to its pinned [`Instr`].
-    ///
-    /// # Errors
-    ///
-    /// If the `label` is unpinned.
-    pub fn resolve_label(&self, label: LabelRef) -> Result<Instr, LabelError> {
-        match self.get_label(label) {
-            Label::Pinned(instr) => Ok(*instr),
-            Label::Unpinned => Err(LabelError::Unpinned { label }),
-        }
-    }
-
     /// Tries to resolve the `label`.
     ///
     /// Returns the proper `BranchOffset` in case the `label` has already been
@@ -157,5 +147,57 @@ impl LabelRegistry {
                 BranchOffset::uninit()
             }
         }
+    }
+
+    /// Resolves a `label` to its pinned [`Instr`].
+    ///
+    /// # Errors
+    ///
+    /// If the `label` is unpinned.
+    fn resolve_label(&self, label: LabelRef) -> Result<Instr, LabelError> {
+        match self.get_label(label) {
+            Label::Pinned(instr) => Ok(*instr),
+            Label::Unpinned => Err(LabelError::Unpinned { label }),
+        }
+    }
+
+    /// Returns an iterator over pairs of user [`Instr`] and their [`BranchOffset`].
+    ///
+    /// # Panics
+    ///
+    /// If used before all used branching labels have been pinned.
+    pub fn resolved_users(&self) -> ResolvedUserIter {
+        ResolvedUserIter {
+            users: self.users.iter(),
+            registry: self,
+        }
+    }
+}
+
+/// Iterator over resolved label users.
+///
+/// Iterates over pairs of user [`Instr`] and its respective [`BranchOffset`]
+/// which allows the [`InstructionsBuilder`] to properly update the branching
+/// offsets.
+///
+/// [`InstructionsBuilder`]: [`super::InstructionsBuilder`]
+#[derive(Debug)]
+pub struct ResolvedUserIter<'a> {
+    users: SliceIter<'a, LabelUser>,
+    registry: &'a LabelRegistry,
+}
+
+impl<'a> Iterator for ResolvedUserIter<'a> {
+    type Item = (Instr, BranchOffset);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next = self.users.next()?;
+        let src = next.user;
+        let dst = self
+            .registry
+            .resolve_label(next.label)
+            .unwrap_or_else(|err| panic!("failed to resolve user: {err}"));
+        let offset = BranchOffset::init(src, dst);
+        Some((src, offset))
     }
 }

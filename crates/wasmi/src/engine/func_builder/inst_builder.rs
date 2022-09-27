@@ -1,15 +1,10 @@
 //! Abstractions to build up instructions forming Wasm function bodies.
 
-use super::{
-    labels::{LabelRef, LabelRegistry},
-    IrBranchParams,
-    IrInstruction,
-};
+use super::labels::{LabelRef, LabelRegistry};
 use crate::engine::{
-    executor::{ExecBranchParams, ExecInstruction},
+    bytecode::{BranchOffset, Instruction},
     Engine,
     FuncBody,
-    Instruction,
 };
 use alloc::vec::Vec;
 
@@ -19,7 +14,7 @@ use alloc::vec::Vec;
 pub struct Instr(u32);
 
 impl Instr {
-    /// Creates an [`InstructionIdx`] from the given `usize` value.
+    /// Creates an [`Instr`] from the given `usize` value.
     ///
     /// # Note
     ///
@@ -27,11 +22,11 @@ impl Instr {
     ///
     /// # Panics
     ///
-    /// If the `value` exceeds limitations for [`InstructionIdx`].
+    /// If the `value` exceeds limitations for [`Instr`].
     pub fn from_usize(value: usize) -> Self {
         let value = value.try_into().unwrap_or_else(|error| {
             panic!(
-                "encountered invalid value of {} for `InstructionIdx`: {}",
+                "invalid index {} for instruction reference: {}",
                 value, error
             )
         });
@@ -41,6 +36,11 @@ impl Instr {
     /// Returns an `usize` representation of the instruction index.
     pub fn into_usize(self) -> usize {
         self.0 as usize
+    }
+
+    /// Creates an [`Instr`] form the given `u32` value.
+    pub fn from_u32(value: u32) -> Self {
+        Self(value)
     }
 
     /// Returns an `u32` representation of the instruction index.
@@ -73,7 +73,7 @@ impl RelativeDepth {
 #[derive(Debug, Default)]
 pub struct InstructionsBuilder {
     /// The instructions of the partially constructed function body.
-    insts: Vec<IrInstruction>,
+    insts: Vec<Instruction>,
     /// All labels and their uses.
     labels: LabelRegistry,
 }
@@ -128,10 +128,27 @@ impl InstructionsBuilder {
     /// Pushes the internal instruction bytecode to the [`InstructionsBuilder`].
     ///
     /// Returns an [`InstructionIdx`] to refer to the pushed instruction.
-    pub fn push_inst(&mut self, inst: IrInstruction) -> Instr {
+    pub fn push_inst(&mut self, inst: Instruction) -> Instr {
         let idx = self.current_pc();
         self.insts.push(inst);
         idx
+    }
+
+    /// Try resolving the `label` for the currently constructed instruction.
+    ///
+    /// Returns an uninitialized [`BranchOffset`] if the `label` cannot yet
+    /// be resolved and defers resolution to later.
+    pub fn try_resolve_label(&mut self, label: LabelRef) -> BranchOffset {
+        let user = self.current_pc();
+        self.try_resolve_label_for(label, user)
+    }
+
+    /// Try resolving the `label` for the given `instr`.
+    ///
+    /// Returns an uninitialized [`BranchOffset`] if the `label` cannot yet
+    /// be resolved and defers resolution to later.
+    pub fn try_resolve_label_for(&mut self, label: LabelRef, instr: Instr) -> BranchOffset {
+        self.labels.try_resolve_label(label, instr)
     }
 
     /// Finishes construction of the function body instructions.
@@ -149,210 +166,37 @@ impl InstructionsBuilder {
         len_locals: usize,
         max_stack_height: usize,
     ) -> FuncBody {
-        engine.alloc_func_body(
-            len_locals,
-            max_stack_height,
-            self.insts
-                .drain(..)
-                .map(|instr| instr.compile(&self.labels)),
-        )
+        self.update_branch_offsets();
+        engine.alloc_func_body(len_locals, max_stack_height, self.insts.drain(..))
+    }
+
+    /// Updates the branch offsets of all branch instructions inplace.
+    ///
+    /// # Panics
+    ///
+    /// If this is used before all branching labels have been pinned.
+    fn update_branch_offsets(&mut self) {
+        for (user, offset) in self.labels.resolved_users() {
+            self.insts[user.into_usize()].update_branch_offset(offset);
+        }
     }
 }
 
-impl IrBranchParams {
-    /// Compiles the [`IrBranchParams`] to an [`ExecBranchParams`].
-    fn compile(self, labels: &LabelRegistry) -> ExecBranchParams {
-        ExecBranchParams::new(
-            labels
-                .resolve_label(self.target())
-                .unwrap_or_else(|err| panic!("failed to resolve label: {err}")),
-            self.drop_keep(),
-        )
-    }
-}
-
-impl IrInstruction {
-    /// Compiles the [`IrInstruction`] to an [`ExecInstruction`].
-    fn compile(self, labels: &LabelRegistry) -> ExecInstruction {
+impl Instruction {
+    /// Updates the [`BranchOffset`] for the branch [`Instruction].
+    ///
+    /// # Panics
+    ///
+    /// If `self` is not a branch [`Instruction`].
+    pub fn update_branch_offset(&mut self, offset: BranchOffset) {
         match self {
-            Self::LocalGet { local_depth } => Instruction::LocalGet { local_depth },
-            Self::LocalSet { local_depth } => Instruction::LocalSet { local_depth },
-            Self::LocalTee { local_depth } => Instruction::LocalTee { local_depth },
-            Self::Br(target) => Instruction::Br(target.compile(labels)),
-            Self::BrIfEqz(target) => Instruction::BrIfEqz(target.compile(labels)),
-            Self::BrIfNez(target) => Instruction::BrIfNez(target.compile(labels)),
-            Self::ReturnIfNez(drop_keep) => Instruction::ReturnIfNez(drop_keep),
-            Self::BrTable { len_targets } => Instruction::BrTable { len_targets },
-            Self::Unreachable => Instruction::Unreachable,
-            Self::Return(drop_keep) => Instruction::Return(drop_keep),
-            Self::Call(func_idx) => Instruction::Call(func_idx),
-            Self::CallIndirect(func_type_idx) => Instruction::CallIndirect(func_type_idx),
-            Self::Drop => Instruction::Drop,
-            Self::Select => Instruction::Select,
-            Self::GlobalGet(global_idx) => Instruction::GlobalGet(global_idx),
-            Self::GlobalSet(global_idx) => Instruction::GlobalSet(global_idx),
-            Self::I32Load(offset) => Instruction::I32Load(offset),
-            Self::I64Load(offset) => Instruction::I64Load(offset),
-            Self::F32Load(offset) => Instruction::F32Load(offset),
-            Self::F64Load(offset) => Instruction::F64Load(offset),
-            Self::I32Load8S(offset) => Instruction::I32Load8S(offset),
-            Self::I32Load8U(offset) => Instruction::I32Load8U(offset),
-            Self::I32Load16S(offset) => Instruction::I32Load16S(offset),
-            Self::I32Load16U(offset) => Instruction::I32Load16U(offset),
-            Self::I64Load8S(offset) => Instruction::I64Load8S(offset),
-            Self::I64Load8U(offset) => Instruction::I64Load8U(offset),
-            Self::I64Load16S(offset) => Instruction::I64Load16S(offset),
-            Self::I64Load16U(offset) => Instruction::I64Load16U(offset),
-            Self::I64Load32S(offset) => Instruction::I64Load32S(offset),
-            Self::I64Load32U(offset) => Instruction::I64Load32U(offset),
-            Self::I32Store(offset) => Instruction::I32Store(offset),
-            Self::I64Store(offset) => Instruction::I64Store(offset),
-            Self::F32Store(offset) => Instruction::F32Store(offset),
-            Self::F64Store(offset) => Instruction::F64Store(offset),
-            Self::I32Store8(offset) => Instruction::I32Store8(offset),
-            Self::I32Store16(offset) => Instruction::I32Store16(offset),
-            Self::I64Store8(offset) => Instruction::I64Store8(offset),
-            Self::I64Store16(offset) => Instruction::I64Store16(offset),
-            Self::I64Store32(offset) => Instruction::I64Store32(offset),
-            Self::MemorySize => Instruction::MemorySize,
-            Self::MemoryGrow => Instruction::MemoryGrow,
-            Self::Const(value) => Instruction::Const(value),
-            Self::I32Eqz => Instruction::I32Eqz,
-            Self::I32Eq => Instruction::I32Eq,
-            Self::I32Ne => Instruction::I32Ne,
-            Self::I32LtS => Instruction::I32LtS,
-            Self::I32LtU => Instruction::I32LtU,
-            Self::I32GtS => Instruction::I32GtS,
-            Self::I32GtU => Instruction::I32GtU,
-            Self::I32LeS => Instruction::I32LeS,
-            Self::I32LeU => Instruction::I32LeU,
-            Self::I32GeS => Instruction::I32GeS,
-            Self::I32GeU => Instruction::I32GeU,
-            Self::I64Eqz => Instruction::I64Eqz,
-            Self::I64Eq => Instruction::I64Eq,
-            Self::I64Ne => Instruction::I64Ne,
-            Self::I64LtS => Instruction::I64LtS,
-            Self::I64LtU => Instruction::I64LtU,
-            Self::I64GtS => Instruction::I64GtS,
-            Self::I64GtU => Instruction::I64GtU,
-            Self::I64LeS => Instruction::I64LeS,
-            Self::I64LeU => Instruction::I64LeU,
-            Self::I64GeS => Instruction::I64GeS,
-            Self::I64GeU => Instruction::I64GeU,
-            Self::F32Eq => Instruction::F32Eq,
-            Self::F32Ne => Instruction::F32Ne,
-            Self::F32Lt => Instruction::F32Lt,
-            Self::F32Gt => Instruction::F32Gt,
-            Self::F32Le => Instruction::F32Le,
-            Self::F32Ge => Instruction::F32Ge,
-            Self::F64Eq => Instruction::F64Eq,
-            Self::F64Ne => Instruction::F64Ne,
-            Self::F64Lt => Instruction::F64Lt,
-            Self::F64Gt => Instruction::F64Gt,
-            Self::F64Le => Instruction::F64Le,
-            Self::F64Ge => Instruction::F64Ge,
-            Self::I32Clz => Instruction::I32Clz,
-            Self::I32Ctz => Instruction::I32Ctz,
-            Self::I32Popcnt => Instruction::I32Popcnt,
-            Self::I32Add => Instruction::I32Add,
-            Self::I32Sub => Instruction::I32Sub,
-            Self::I32Mul => Instruction::I32Mul,
-            Self::I32DivS => Instruction::I32DivS,
-            Self::I32DivU => Instruction::I32DivU,
-            Self::I32RemS => Instruction::I32RemS,
-            Self::I32RemU => Instruction::I32RemU,
-            Self::I32And => Instruction::I32And,
-            Self::I32Or => Instruction::I32Or,
-            Self::I32Xor => Instruction::I32Xor,
-            Self::I32Shl => Instruction::I32Shl,
-            Self::I32ShrS => Instruction::I32ShrS,
-            Self::I32ShrU => Instruction::I32ShrU,
-            Self::I32Rotl => Instruction::I32Rotl,
-            Self::I32Rotr => Instruction::I32Rotr,
-            Self::I64Clz => Instruction::I64Clz,
-            Self::I64Ctz => Instruction::I64Ctz,
-            Self::I64Popcnt => Instruction::I64Popcnt,
-            Self::I64Add => Instruction::I64Add,
-            Self::I64Sub => Instruction::I64Sub,
-            Self::I64Mul => Instruction::I64Mul,
-            Self::I64DivS => Instruction::I64DivS,
-            Self::I64DivU => Instruction::I64DivU,
-            Self::I64RemS => Instruction::I64RemS,
-            Self::I64RemU => Instruction::I64RemU,
-            Self::I64And => Instruction::I64And,
-            Self::I64Or => Instruction::I64Or,
-            Self::I64Xor => Instruction::I64Xor,
-            Self::I64Shl => Instruction::I64Shl,
-            Self::I64ShrS => Instruction::I64ShrS,
-            Self::I64ShrU => Instruction::I64ShrU,
-            Self::I64Rotl => Instruction::I64Rotl,
-            Self::I64Rotr => Instruction::I64Rotr,
-            Self::F32Abs => Instruction::F32Abs,
-            Self::F32Neg => Instruction::F32Neg,
-            Self::F32Ceil => Instruction::F32Ceil,
-            Self::F32Floor => Instruction::F32Floor,
-            Self::F32Trunc => Instruction::F32Trunc,
-            Self::F32Nearest => Instruction::F32Nearest,
-            Self::F32Sqrt => Instruction::F32Sqrt,
-            Self::F32Add => Instruction::F32Add,
-            Self::F32Sub => Instruction::F32Sub,
-            Self::F32Mul => Instruction::F32Mul,
-            Self::F32Div => Instruction::F32Div,
-            Self::F32Min => Instruction::F32Min,
-            Self::F32Max => Instruction::F32Max,
-            Self::F32Copysign => Instruction::F32Copysign,
-            Self::F64Abs => Instruction::F64Abs,
-            Self::F64Neg => Instruction::F64Neg,
-            Self::F64Ceil => Instruction::F64Ceil,
-            Self::F64Floor => Instruction::F64Floor,
-            Self::F64Trunc => Instruction::F64Trunc,
-            Self::F64Nearest => Instruction::F64Nearest,
-            Self::F64Sqrt => Instruction::F64Sqrt,
-            Self::F64Add => Instruction::F64Add,
-            Self::F64Sub => Instruction::F64Sub,
-            Self::F64Mul => Instruction::F64Mul,
-            Self::F64Div => Instruction::F64Div,
-            Self::F64Min => Instruction::F64Min,
-            Self::F64Max => Instruction::F64Max,
-            Self::F64Copysign => Instruction::F64Copysign,
-            Self::I32WrapI64 => Instruction::I32WrapI64,
-            Self::I32TruncSF32 => Instruction::I32TruncSF32,
-            Self::I32TruncUF32 => Instruction::I32TruncUF32,
-            Self::I32TruncSF64 => Instruction::I32TruncSF64,
-            Self::I32TruncUF64 => Instruction::I32TruncUF64,
-            Self::I64ExtendSI32 => Instruction::I64ExtendSI32,
-            Self::I64ExtendUI32 => Instruction::I64ExtendUI32,
-            Self::I64TruncSF32 => Instruction::I64TruncSF32,
-            Self::I64TruncUF32 => Instruction::I64TruncUF32,
-            Self::I64TruncSF64 => Instruction::I64TruncSF64,
-            Self::I64TruncUF64 => Instruction::I64TruncUF64,
-            Self::F32ConvertSI32 => Instruction::F32ConvertSI32,
-            Self::F32ConvertUI32 => Instruction::F32ConvertUI32,
-            Self::F32ConvertSI64 => Instruction::F32ConvertSI64,
-            Self::F32ConvertUI64 => Instruction::F32ConvertUI64,
-            Self::F32DemoteF64 => Instruction::F32DemoteF64,
-            Self::F64ConvertSI32 => Instruction::F64ConvertSI32,
-            Self::F64ConvertUI32 => Instruction::F64ConvertUI32,
-            Self::F64ConvertSI64 => Instruction::F64ConvertSI64,
-            Self::F64ConvertUI64 => Instruction::F64ConvertUI64,
-            Self::F64PromoteF32 => Instruction::F64PromoteF32,
-            Self::I32ReinterpretF32 => Instruction::I32ReinterpretF32,
-            Self::I64ReinterpretF64 => Instruction::I64ReinterpretF64,
-            Self::F32ReinterpretI32 => Instruction::F32ReinterpretI32,
-            Self::F64ReinterpretI64 => Instruction::F64ReinterpretI64,
-            Self::I32Extend8S => Instruction::I32Extend8S,
-            Self::I32Extend16S => Instruction::I32Extend16S,
-            Self::I64Extend8S => Instruction::I64Extend8S,
-            Self::I64Extend16S => Instruction::I64Extend16S,
-            Self::I64Extend32S => Instruction::I64Extend32S,
-            Self::I32TruncSatF32S => Instruction::I32TruncSatF32S,
-            Self::I32TruncSatF32U => Instruction::I32TruncSatF32U,
-            Self::I32TruncSatF64S => Instruction::I32TruncSatF64S,
-            Self::I32TruncSatF64U => Instruction::I32TruncSatF64U,
-            Self::I64TruncSatF32S => Instruction::I64TruncSatF32S,
-            Self::I64TruncSatF32U => Instruction::I64TruncSatF32U,
-            Self::I64TruncSatF64S => Instruction::I64TruncSatF64S,
-            Self::I64TruncSatF64U => Instruction::I64TruncSatF64U,
+            Instruction::Br(params)
+            | Instruction::BrIfEqz(params)
+            | Instruction::BrIfNez(params) => params.init(offset),
+            _ => panic!(
+                "tried to update branch offset of a non-branch instruction: {:?}",
+                self
+            ),
         }
     }
 }

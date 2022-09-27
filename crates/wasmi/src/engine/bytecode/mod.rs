@@ -6,6 +6,8 @@ mod utils;
 mod tests;
 
 pub use self::utils::{
+    BranchOffset,
+    BranchParams,
     DropKeep,
     DropKeepError,
     FuncIdx,
@@ -13,17 +15,9 @@ pub use self::utils::{
     LocalDepth,
     Offset,
     SignatureIdx,
-    BranchOffset,
-    BranchParams,
 };
 use core::fmt::Debug;
 use wasmi_core::UntypedValue;
-
-/// Internal types of an [`Instruction`] type.
-pub trait InstructionTypes {
-    /// A branching target.
-    type BranchParams: Debug + Copy + Clone + PartialEq + Eq;
-}
 
 /// The internal `wasmi` bytecode that is stored for Wasm functions.
 ///
@@ -34,16 +28,13 @@ pub trait InstructionTypes {
 /// For example the `BrTable` instruction is unrolled into separate instructions
 /// each representing either the `BrTable` head or one of its branching targets.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum Instruction<T>
-where
-    T: InstructionTypes,
-{
+pub enum Instruction {
     LocalGet { local_depth: LocalDepth },
     LocalSet { local_depth: LocalDepth },
     LocalTee { local_depth: LocalDepth },
-    Br(<T as InstructionTypes>::BranchParams),
-    BrIfEqz(<T as InstructionTypes>::BranchParams),
-    BrIfNez(<T as InstructionTypes>::BranchParams),
+    Br(BranchParams),
+    BrIfEqz(BranchParams),
+    BrIfNez(BranchParams),
     ReturnIfNez(DropKeep),
     BrTable { len_targets: usize },
     Unreachable,
@@ -218,10 +209,7 @@ where
     I64TruncSatF64U,
 }
 
-impl<T> Instruction<T>
-where
-    T: InstructionTypes,
-{
+impl Instruction {
     /// Creates a new `Const` instruction from the given value.
     pub fn constant<C>(value: C) -> Self
     where

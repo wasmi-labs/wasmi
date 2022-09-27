@@ -1,8 +1,7 @@
 use super::*;
 use crate::{
     engine::{
-        bytecode::Instruction,
-        executor::{ExecBranchParams, ExecInstruction},
+        bytecode::{BranchParams, Instruction},
         DropKeep,
         Instr,
     },
@@ -36,7 +35,7 @@ fn assert_func_body<E>(
     func_body: FuncBody,
     expected_instructions: E,
 ) where
-    E: IntoIterator<Item = ExecInstruction>,
+    E: IntoIterator<Item = Instruction>,
     <E as IntoIterator>::IntoIter: ExactSizeIterator,
 {
     let expected_instructions = expected_instructions.into_iter();
@@ -80,7 +79,7 @@ fn assert_func_body<E>(
 fn assert_func_bodies<E, T>(wasm_bytes: impl AsRef<[u8]>, expected: E)
 where
     E: IntoIterator<Item = T>,
-    T: IntoIterator<Item = ExecInstruction>,
+    T: IntoIterator<Item = Instruction>,
     <T as IntoIterator>::IntoIter: ExactSizeIterator,
 {
     let wasm_bytes = wasm_bytes.as_ref();
@@ -299,7 +298,8 @@ fn drop_locals() {
 
 macro_rules! target {
     ( $inst_idx:expr, drop: $drop:expr, keep: $keep:expr ) => {
-        ExecBranchParams::new(Instr::from_usize($inst_idx), drop_keep($drop, $keep))
+        // BranchParams::init(Instr::from_usize($inst_idx), drop_keep($drop, $keep))
+        todo!() // TODO
     };
 }
 

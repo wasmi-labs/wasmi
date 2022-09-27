@@ -25,9 +25,9 @@ pub use self::{
     error::TranslationError,
     inst_builder::{Instr, InstructionsBuilder, RelativeDepth},
 };
-use super::{bytecode::InstructionTypes, DropKeep, FuncBody, Instruction};
+use super::{DropKeep, FuncBody, Instruction};
 use crate::{
-    engine::bytecode::Offset,
+    engine::bytecode::{BranchParams, Offset},
     module::{
         BlockType,
         FuncIdx,
@@ -48,47 +48,6 @@ use wasmi_core::{Value, ValueType, F32, F64};
 
 /// The used function validator type.
 type FuncValidator = wasmparser::FuncValidator<wasmparser::ValidatorResources>;
-
-/// Base implementer for intermeidate representation (IR) [`InstructionTypes`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum IrInstructionTypes {}
-
-impl InstructionTypes for IrInstructionTypes {
-    type BranchParams = IrBranchParams;
-}
-
-/// An intermediate representation [`Instruction`].
-pub type IrInstruction = Instruction<IrInstructionTypes>;
-
-/// A branching target.
-///
-/// This also specifies how many values on the stack
-/// need to be dropped and kept in order to maintain
-/// value stack integrity.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct IrBranchParams {
-    /// The label that refers to the branching target.
-    target: LabelRef,
-    /// How many values on the stack need to be dropped and kept.
-    drop_keep: DropKeep,
-}
-
-impl IrBranchParams {
-    /// Creates new branching parameters.
-    pub fn new(target: LabelRef, drop_keep: DropKeep) -> Self {
-        Self { target, drop_keep }
-    }
-
-    /// Returns the branching target.
-    pub fn target(self) -> LabelRef {
-        self.target
-    }
-
-    /// Returns the amount of stack values to drop and keep upon taking the branch.
-    pub fn drop_keep(self) -> DropKeep {
-        self.drop_keep
-    }
-}
 
 /// The interface to translate a `wasmi` bytecode function using Wasm bytecode.
 pub struct FuncBuilder<'parser> {
@@ -130,7 +89,7 @@ pub struct FunctionBuilderAllocations {
     /// Stores and resolves local variable types.
     locals: LocalsRegistry,
     /// Buffer for translating `br_table`.
-    br_table_branches: Vec<IrInstruction>,
+    br_table_branches: Vec<Instruction>,
 }
 
 impl FunctionBuilderAllocations {
@@ -378,6 +337,11 @@ impl<'parser> FuncBuilder<'parser> {
             Ok(AcquiredTarget::Branch(label, drop_keep))
         }
     }
+
+    /// Creates [`BranchParams`] to `target` using `drop_keep` for the current instruction.
+    fn branch_params(&mut self, target: LabelRef, drop_keep: DropKeep) -> BranchParams {
+        BranchParams::new(self.alloc.inst_builder.try_resolve_label(target), drop_keep)
+    }
 }
 
 /// An acquired target.
@@ -509,10 +473,10 @@ impl<'parser> FuncBuilder<'parser> {
                 else_label,
                 stack_height,
             ));
-            let branch_target = IrBranchParams::new(else_label, DropKeep::none());
+            let branch_params = self.branch_params(else_label, DropKeep::none());
             self.alloc
                 .inst_builder
-                .push_inst(Instruction::BrIfEqz(branch_target));
+                .push_inst(Instruction::BrIfEqz(branch_params));
         } else {
             self.alloc
                 .control_frames
@@ -551,8 +515,8 @@ impl<'parser> FuncBuilder<'parser> {
         // Create the jump from the end of the `then` block to the `if`
         // block's end label in case the end of `then` is reachable.
         if reachable {
-            let target = IrBranchParams::new(if_frame.end_label(), DropKeep::none());
-            self.alloc.inst_builder.push_inst(Instruction::Br(target));
+            let params = self.branch_params(if_frame.end_label(), DropKeep::none());
+            self.alloc.inst_builder.push_inst(Instruction::Br(params));
         }
         // Now resolve labels for the instructions of the `else` block
         self.alloc.inst_builder.pin_label(if_frame.else_label());
@@ -614,10 +578,11 @@ impl<'parser> FuncBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             match builder.acquire_target(relative_depth)? {
                 AcquiredTarget::Branch(end_label, drop_keep) => {
+                    let params = builder.branch_params(end_label, drop_keep);
                     builder
                         .alloc
                         .inst_builder
-                        .push_inst(Instruction::Br(IrBranchParams::new(end_label, drop_keep)));
+                        .push_inst(Instruction::Br(params));
                 }
                 AcquiredTarget::Return(_) => {
                     // In this case the `br` can be directly translated as `return`.
@@ -636,9 +601,11 @@ impl<'parser> FuncBuilder<'parser> {
             debug_assert_eq!(condition, ValueType::I32);
             match builder.acquire_target(relative_depth)? {
                 AcquiredTarget::Branch(end_label, drop_keep) => {
-                    builder.alloc.inst_builder.push_inst(Instruction::BrIfNez(
-                        IrBranchParams::new(end_label, drop_keep),
-                    ));
+                    let params = builder.branch_params(end_label, drop_keep);
+                    builder
+                        .alloc
+                        .inst_builder
+                        .push_inst(Instruction::BrIfNez(params));
                 }
                 AcquiredTarget::Return(drop_keep) => {
                     builder
@@ -657,13 +624,22 @@ impl<'parser> FuncBuilder<'parser> {
         table: wasmparser::BrTable<'parser>,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            fn compute_inst(
+            fn offset_instr(base: Instr, offset: usize) -> Instr {
+                Instr::from_u32(base.into_u32() + offset as u32)
+            }
+
+            fn compute_instr(
                 builder: &mut FuncBuilder,
+                n: usize,
                 depth: RelativeDepth,
-            ) -> Result<IrInstruction, TranslationError> {
+            ) -> Result<Instruction, TranslationError> {
                 match builder.acquire_target(depth.into_u32())? {
                     AcquiredTarget::Branch(label, drop_keep) => {
-                        Ok(Instruction::Br(IrBranchParams::new(label, drop_keep)))
+                        let base = builder.alloc.inst_builder.current_pc();
+                        let instr = offset_instr(base, n + 1);
+                        let offset = builder.alloc.inst_builder.try_resolve_label_for(label, instr);
+                        let params = BranchParams::new(offset, drop_keep);
+                        Ok(Instruction::Br(params))
                     }
                     AcquiredTarget::Return(drop_keep) => Ok(Instruction::Return(drop_keep)),
                 }
@@ -686,14 +662,14 @@ impl<'parser> FuncBuilder<'parser> {
             debug_assert_eq!(case, ValueType::I32);
 
             builder.alloc.br_table_branches.clear();
-            for depth in targets.into_iter() {
-                let relative_depth = compute_inst(builder, depth)?;
+            for (n, depth) in targets.into_iter().enumerate() {
+                let relative_depth = compute_instr(builder, n, depth)?;
                 builder.alloc.br_table_branches.push(relative_depth);
             }
 
             // We include the default target in `len_branches`.
             let len_branches = builder.alloc.br_table_branches.len();
-            let default_branch = compute_inst(builder, default)?;
+            let default_branch = compute_instr(builder, len_branches, default)?;
             builder.alloc.inst_builder.push_inst(Instruction::BrTable {
                 len_targets: len_branches + 1,
             });
@@ -913,7 +889,7 @@ impl<'parser> FuncBuilder<'parser> {
         &mut self,
         memarg: wasmparser::MemArg,
         loaded_type: ValueType,
-        make_inst: fn(Offset) -> IrInstruction,
+        make_inst: fn(Offset) -> Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let (memory_idx, offset) = Self::decompose_memarg(memarg);
@@ -1058,7 +1034,7 @@ impl<'parser> FuncBuilder<'parser> {
         &mut self,
         memarg: wasmparser::MemArg,
         stored_value: ValueType,
-        make_inst: fn(Offset) -> IrInstruction,
+        make_inst: fn(Offset) -> Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let (memory_idx, offset) = Self::decompose_memarg(memarg);
@@ -1242,7 +1218,7 @@ impl<'parser> FuncBuilder<'parser> {
     fn translate_unary_cmp(
         &mut self,
         input_type: ValueType,
-        inst: IrInstruction,
+        inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let condition = builder.alloc.value_stack.pop1();
@@ -1273,7 +1249,7 @@ impl<'parser> FuncBuilder<'parser> {
     fn translate_binary_cmp(
         &mut self,
         input_type: ValueType,
-        inst: IrInstruction,
+        inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let (v0, v1) = builder.alloc.value_stack.pop2();
@@ -1469,7 +1445,7 @@ impl<'parser> FuncBuilder<'parser> {
     pub fn translate_unary_operation(
         &mut self,
         value_type: ValueType,
-        inst: IrInstruction,
+        inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let actual_type = builder.alloc.value_stack.top();
@@ -1518,7 +1494,7 @@ impl<'parser> FuncBuilder<'parser> {
     pub fn translate_binary_operation(
         &mut self,
         value_type: ValueType,
-        inst: IrInstruction,
+        inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let (v0, v1) = builder.alloc.value_stack.pop2();
@@ -1855,7 +1831,7 @@ impl<'parser> FuncBuilder<'parser> {
         &mut self,
         input_type: ValueType,
         output_type: ValueType,
-        inst: IrInstruction,
+        inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let input = builder.alloc.value_stack.pop1();

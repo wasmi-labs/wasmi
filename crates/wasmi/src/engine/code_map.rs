@@ -1,6 +1,6 @@
 //! Datastructure to efficiently store function bodies and their instructions.
 
-use super::{super::Index, executor::ExecInstruction};
+use super::{super::Index, Instruction};
 use alloc::vec::Vec;
 
 /// A reference to a Wasm function body stored in the [`CodeMap`].
@@ -73,7 +73,7 @@ pub struct CodeMap {
     ///
     /// Also this improves efficiency of deallocating the [`CodeMap`]
     /// and generally improves data locality.
-    insts: Vec<ExecInstruction>,
+    insts: Vec<Instruction>,
 }
 
 impl CodeMap {
@@ -84,7 +84,7 @@ impl CodeMap {
     /// instructions.
     pub fn alloc<I>(&mut self, len_locals: usize, max_stack_height: usize, insts: I) -> FuncBody
     where
-        I: IntoIterator<Item = ExecInstruction>,
+        I: IntoIterator<Item = Instruction>,
     {
         let start = self.insts.len();
         self.insts.extend(insts);
@@ -116,7 +116,7 @@ impl CodeMap {
 /// The instructions of a resolved [`FuncBody`].
 #[derive(Debug, Copy, Clone)]
 pub struct Instructions<'a> {
-    insts: &'a [ExecInstruction],
+    insts: &'a [Instruction],
 }
 
 impl<'a> Instructions<'a> {
@@ -126,7 +126,7 @@ impl<'a> Instructions<'a> {
     ///
     /// If there is no instruction at the given index.
     #[cfg(test)]
-    pub fn get(&self, index: usize) -> Option<&ExecInstruction> {
+    pub fn get(&self, index: usize) -> Option<&Instruction> {
         self.insts.get(index)
     }
 
@@ -136,7 +136,7 @@ impl<'a> Instructions<'a> {
     ///
     /// Panics in debug mode if the `pc` is invalid for the [`Instructions`].
     #[inline(always)]
-    pub unsafe fn get_release_unchecked(&self, pc: usize) -> &'a ExecInstruction {
+    pub unsafe fn get_release_unchecked(&self, pc: usize) -> &'a Instruction {
         debug_assert!(
             self.insts.get(pc).is_some(),
             "unexpectedly missing instruction at index {pc}",
