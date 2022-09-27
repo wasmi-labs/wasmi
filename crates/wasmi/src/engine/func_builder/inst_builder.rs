@@ -127,7 +127,7 @@ impl InstructionsBuilder {
 
     /// Pushes the internal instruction bytecode to the [`InstructionsBuilder`].
     ///
-    /// Returns an [`InstructionIdx`] to refer to the pushed instruction.
+    /// Returns an [`Instr`] to refer to the pushed instruction.
     pub fn push_inst(&mut self, inst: Instruction) -> Instr {
         let idx = self.current_pc();
         self.insts.push(inst);
