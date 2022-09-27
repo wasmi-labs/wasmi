@@ -12,6 +12,20 @@ pub mod stack;
 mod traits;
 
 pub(crate) use self::func_args::{FuncParams, FuncResults};
+pub use self::{
+    bytecode::DropKeep,
+    code_map::FuncBody,
+    config::Config,
+    func_builder::{
+        FuncBuilder,
+        FunctionBuilderAllocations,
+        Instr,
+        RelativeDepth,
+        TranslationError,
+    },
+    stack::StackLimits,
+    traits::{CallParams, CallResults},
+};
 use self::{
     bytecode::Instruction,
     cache::InstanceCache,
@@ -19,22 +33,6 @@ use self::{
     executor::execute_frame,
     func_types::FuncTypeRegistry,
     stack::{FuncFrame, Stack, ValueStack},
-};
-pub use self::{
-    bytecode::{DropKeep, Target},
-    code_map::FuncBody,
-    config::Config,
-    func_builder::{
-        FuncBuilder,
-        FunctionBuilderAllocations,
-        InstructionIdx,
-        LabelIdx,
-        RelativeDepth,
-        Reloc,
-        TranslationError,
-    },
-    stack::StackLimits,
-    traits::{CallParams, CallResults},
 };
 use super::{func::FuncEntityInternal, AsContextMut, Func};
 use crate::{

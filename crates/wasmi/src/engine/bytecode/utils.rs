@@ -1,4 +1,4 @@
-use super::super::super::engine::InstructionIdx;
+use crate::engine::Instr;
 use core::fmt::Display;
 
 /// Defines how many stack values are going to be dropped and kept after branching.
@@ -61,52 +61,6 @@ impl DropKeep {
     /// Returns the amount of stack values to keep.
     pub fn keep(self) -> usize {
         self.keep as usize
-    }
-}
-
-/// A branching target.
-///
-/// This also specifies how many values on the stack
-/// need to be dropped and kept in order to maintain
-/// value stack integrity.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct Target {
-    /// The destination program counter.
-    dst_pc: InstructionIdx,
-    /// How many values on the stack need to be dropped and kept.
-    drop_keep: DropKeep,
-}
-
-impl Target {
-    /// Creates a new `wasmi` branching target.
-    pub fn new(dst_pc: InstructionIdx, drop_keep: DropKeep) -> Self {
-        Self { dst_pc, drop_keep }
-    }
-
-    /// Returns the destination program counter (as index).
-    pub fn destination_pc(self) -> InstructionIdx {
-        self.dst_pc
-    }
-
-    /// Updates the destination program counter (as index).
-    ///
-    /// # Panics
-    ///
-    /// If the old destination program counter was not [`InstructionIdx::INVALID`].
-    pub fn update_destination_pc(&mut self, new_destination_pc: InstructionIdx) {
-        assert_eq!(
-            self.destination_pc(),
-            InstructionIdx::INVALID,
-            "can only update the destination pc of a target with an invalid \
-            destination pc but found a valid one: {:?}",
-            self.destination_pc(),
-        );
-        self.dst_pc = new_destination_pc;
-    }
-
-    /// Returns the amount of stack values to drop and keep upon taking the branch.
-    pub fn drop_keep(self) -> DropKeep {
-        self.drop_keep
     }
 }
 
@@ -212,6 +166,92 @@ impl From<u32> for Offset {
 impl Offset {
     /// Returns the inner `u32` index.
     pub fn into_inner(self) -> u32 {
+        self.0
+    }
+}
+
+/// A branching target.
+///
+/// This also specifies how many values on the stack
+/// need to be dropped and kept in order to maintain
+/// value stack integrity.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct BranchParams {
+    /// The branching offset.
+    ///
+    /// How much instruction pointer is offset upon taking the branch.
+    offset: BranchOffset,
+    /// How many values on the stack need to be dropped and kept.
+    drop_keep: DropKeep,
+}
+
+impl BranchParams {
+    /// Creates new [`BranchParams`].
+    pub fn new(offset: BranchOffset, drop_keep: DropKeep) -> Self {
+        Self { offset, drop_keep }
+    }
+
+    /// Returns `true` if the [`BranchParams`] have been initialized already.
+    fn is_init(&self) -> bool {
+        self.offset.is_init()
+    }
+
+    /// Initializes the [`BranchParams`] with a proper [`BranchOffset`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`BranchParams`] have already been initialized.
+    /// - If the given [`BranchOffset`] is not properly initialized.
+    pub fn init(&mut self, offset: BranchOffset) {
+        assert!(offset.is_init());
+        assert!(!self.is_init());
+        self.offset = offset;
+    }
+
+    /// Returns the branching offset.
+    pub fn offset(self) -> BranchOffset {
+        self.offset
+    }
+
+    /// Returns the amount of stack values to drop and keep upon taking the branch.
+    pub fn drop_keep(self) -> DropKeep {
+        self.drop_keep
+    }
+}
+
+/// The branching offset.
+///
+/// This defines how much the instruction pointer is offset
+/// upon taking the respective branch.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct BranchOffset(i32);
+
+impl BranchOffset {
+    /// Creates a [`BranchOffset`] from the given raw `i32` value.
+    #[cfg(test)]
+    pub fn from_i32(value: i32) -> Self {
+        Self(value)
+    }
+
+    /// Creates an uninitalized [`BranchOffset`].
+    pub fn uninit() -> Self {
+        Self(0)
+    }
+
+    /// Creates an initialized [`BranchOffset`] from `src` to `dst`.
+    pub fn init(src: Instr, dst: Instr) -> Self {
+        let src = src.into_u32() as i32;
+        let dst = dst.into_u32() as i32;
+        Self(dst - src)
+    }
+
+    /// Returns `true` if the [`BranchOffset`] has been initialized.
+    pub fn is_init(self) -> bool {
+        self.0 != 0
+    }
+
+    /// Returns the `i32` representation of the [`BranchOffset`].
+    pub fn into_i32(self) -> i32 {
         self.0
     }
 }

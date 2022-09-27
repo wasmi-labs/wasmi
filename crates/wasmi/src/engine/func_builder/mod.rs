@@ -2,6 +2,7 @@ mod control_frame;
 mod control_stack;
 mod error;
 mod inst_builder;
+mod labels;
 mod locals_registry;
 mod value_stack;
 mod visit;
@@ -16,16 +17,17 @@ use self::{
         UnreachableControlFrame,
     },
     control_stack::ControlFlowStack,
+    labels::LabelRef,
     locals_registry::LocalsRegistry,
     value_stack::ValueStack,
 };
 pub use self::{
     error::TranslationError,
-    inst_builder::{InstructionIdx, InstructionsBuilder, LabelIdx, RelativeDepth, Reloc},
+    inst_builder::{Instr, InstructionsBuilder, RelativeDepth},
 };
-use super::{DropKeep, FuncBody, Instruction, Target};
+use super::{DropKeep, FuncBody, Instruction};
 use crate::{
-    engine::bytecode::Offset,
+    engine::bytecode::{BranchParams, Offset},
     module::{
         BlockType,
         FuncIdx,
@@ -178,19 +180,6 @@ impl<'parser> FuncBuilder<'parser> {
             allocations.locals.register_locals(*param_type, 1);
         }
         params.len()
-    }
-
-    /// Try to resolve the given label.
-    ///
-    /// In case the label cannot yet be resolved register the [`Reloc`] as its user.
-    fn try_resolve_label<F>(&mut self, label: LabelIdx, reloc_provider: F) -> InstructionIdx
-    where
-        F: FnOnce(InstructionIdx) -> Reloc,
-    {
-        let pc = self.alloc.inst_builder.current_pc();
-        self.alloc
-            .inst_builder
-            .try_resolve_label(label, || reloc_provider(pc))
     }
 
     /// Translates the given local variables for the translated function.
@@ -348,6 +337,11 @@ impl<'parser> FuncBuilder<'parser> {
             Ok(AcquiredTarget::Branch(label, drop_keep))
         }
     }
+
+    /// Creates [`BranchParams`] to `target` using `drop_keep` for the current instruction.
+    fn branch_params(&mut self, target: LabelRef, drop_keep: DropKeep) -> BranchParams {
+        BranchParams::new(self.alloc.inst_builder.try_resolve_label(target), drop_keep)
+    }
 }
 
 /// An acquired target.
@@ -356,7 +350,7 @@ impl<'parser> FuncBuilder<'parser> {
 #[derive(Debug)]
 pub enum AcquiredTarget {
     /// The branch jumps to the label.
-    Branch(LabelIdx, DropKeep),
+    Branch(LabelRef, DropKeep),
     /// The branch returns to the caller.
     ///
     /// # Note
@@ -444,7 +438,7 @@ impl<'parser> FuncBuilder<'parser> {
         if self.is_reachable() {
             let stack_height = self.frame_stack_height(block_type);
             let header = self.alloc.inst_builder.new_label();
-            self.alloc.inst_builder.resolve_label(header);
+            self.alloc.inst_builder.pin_label(header);
             self.alloc.control_frames.push_frame(LoopControlFrame::new(
                 block_type,
                 header,
@@ -479,11 +473,10 @@ impl<'parser> FuncBuilder<'parser> {
                 else_label,
                 stack_height,
             ));
-            let dst_pc = self.try_resolve_label(else_label, |pc| Reloc::Br { inst_idx: pc });
-            let branch_target = Target::new(dst_pc, DropKeep::none());
+            let branch_params = self.branch_params(else_label, DropKeep::none());
             self.alloc
                 .inst_builder
-                .push_inst(Instruction::BrIfEqz(branch_target));
+                .push_inst(Instruction::BrIfEqz(branch_params));
         } else {
             self.alloc
                 .control_frames
@@ -522,13 +515,11 @@ impl<'parser> FuncBuilder<'parser> {
         // Create the jump from the end of the `then` block to the `if`
         // block's end label in case the end of `then` is reachable.
         if reachable {
-            let dst_pc =
-                self.try_resolve_label(if_frame.end_label(), |pc| Reloc::Br { inst_idx: pc });
-            let target = Target::new(dst_pc, DropKeep::none());
-            self.alloc.inst_builder.push_inst(Instruction::Br(target));
+            let params = self.branch_params(if_frame.end_label(), DropKeep::none());
+            self.alloc.inst_builder.push_inst(Instruction::Br(params));
         }
         // Now resolve labels for the instructions of the `else` block
-        self.alloc.inst_builder.resolve_label(if_frame.else_label());
+        self.alloc.inst_builder.pin_label(if_frame.else_label());
         // We need to reset the value stack to exactly how it has been
         // when entering the `if` in the first place so that the `else`
         // block has the same parameters on top of the stack.
@@ -552,12 +543,12 @@ impl<'parser> FuncBuilder<'parser> {
             //       in case there was an `Else` block.
             self.alloc
                 .inst_builder
-                .resolve_label_if_unresolved(if_frame.else_label());
+                .pin_label_if_unpinned(if_frame.else_label());
         }
         if frame.is_reachable() && !matches!(frame.kind(), ControlFrameKind::Loop) {
             // At this point we can resolve the `End` labels.
             // Note that `loop` control frames do not have an `End` label.
-            self.alloc.inst_builder.resolve_label(frame.end_label());
+            self.alloc.inst_builder.pin_label(frame.end_label());
         }
         // These bindings are required because of borrowing issues.
         let frame_reachable = frame.is_reachable();
@@ -587,12 +578,11 @@ impl<'parser> FuncBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             match builder.acquire_target(relative_depth)? {
                 AcquiredTarget::Branch(end_label, drop_keep) => {
-                    let dst_pc =
-                        builder.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
+                    let params = builder.branch_params(end_label, drop_keep);
                     builder
                         .alloc
                         .inst_builder
-                        .push_inst(Instruction::Br(Target::new(dst_pc, drop_keep)));
+                        .push_inst(Instruction::Br(params));
                 }
                 AcquiredTarget::Return(_) => {
                     // In this case the `br` can be directly translated as `return`.
@@ -611,12 +601,11 @@ impl<'parser> FuncBuilder<'parser> {
             debug_assert_eq!(condition, ValueType::I32);
             match builder.acquire_target(relative_depth)? {
                 AcquiredTarget::Branch(end_label, drop_keep) => {
-                    let dst_pc =
-                        builder.try_resolve_label(end_label, |pc| Reloc::Br { inst_idx: pc });
+                    let params = builder.branch_params(end_label, drop_keep);
                     builder
                         .alloc
                         .inst_builder
-                        .push_inst(Instruction::BrIfNez(Target::new(dst_pc, drop_keep)));
+                        .push_inst(Instruction::BrIfNez(params));
                 }
                 AcquiredTarget::Return(drop_keep) => {
                     builder
@@ -635,18 +624,22 @@ impl<'parser> FuncBuilder<'parser> {
         table: wasmparser::BrTable<'parser>,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            fn compute_inst(
+            fn offset_instr(base: Instr, offset: usize) -> Instr {
+                Instr::from_u32(base.into_u32() + offset as u32)
+            }
+
+            fn compute_instr(
                 builder: &mut FuncBuilder,
                 n: usize,
                 depth: RelativeDepth,
             ) -> Result<Instruction, TranslationError> {
                 match builder.acquire_target(depth.into_u32())? {
-                    AcquiredTarget::Branch(label_idx, drop_keep) => {
-                        let dst_pc = builder.try_resolve_label(label_idx, |pc| Reloc::BrTable {
-                            inst_idx: pc,
-                            target_idx: n,
-                        });
-                        Ok(Instruction::Br(Target::new(dst_pc, drop_keep)))
+                    AcquiredTarget::Branch(label, drop_keep) => {
+                        let base = builder.alloc.inst_builder.current_pc();
+                        let instr = offset_instr(base, n + 1);
+                        let offset = builder.alloc.inst_builder.try_resolve_label_for(label, instr);
+                        let params = BranchParams::new(offset, drop_keep);
+                        Ok(Instruction::Br(params))
                     }
                     AcquiredTarget::Return(drop_keep) => Ok(Instruction::Return(drop_keep)),
                 }
@@ -670,13 +663,13 @@ impl<'parser> FuncBuilder<'parser> {
 
             builder.alloc.br_table_branches.clear();
             for (n, depth) in targets.into_iter().enumerate() {
-                let relative_depth = compute_inst(builder, n, depth)?;
+                let relative_depth = compute_instr(builder, n, depth)?;
                 builder.alloc.br_table_branches.push(relative_depth);
             }
 
             // We include the default target in `len_branches`.
             let len_branches = builder.alloc.br_table_branches.len();
-            let default_branch = compute_inst(builder, len_branches, default)?;
+            let default_branch = compute_instr(builder, len_branches, default)?;
             builder.alloc.inst_builder.push_inst(Instruction::BrTable {
                 len_targets: len_branches + 1,
             });

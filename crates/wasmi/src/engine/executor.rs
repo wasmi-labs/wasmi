@@ -1,6 +1,6 @@
 use super::{
     super::{Memory, Table},
-    bytecode::{FuncIdx, GlobalIdx, Instruction, LocalDepth, Offset, SignatureIdx},
+    bytecode::{BranchParams, FuncIdx, GlobalIdx, Instruction, LocalDepth, Offset, SignatureIdx},
     cache::InstanceCache,
     code_map::Instructions,
     stack::ValueStackRef,
@@ -8,7 +8,6 @@ use super::{
     CallOutcome,
     DropKeep,
     FuncFrame,
-    Target,
     ValueStack,
 };
 use crate::{
@@ -487,9 +486,9 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.pc += 1;
     }
 
-    fn branch_to(&mut self, target: Target) {
+    fn branch_to(&mut self, target: BranchParams) {
         self.value_stack.drop_keep(target.drop_keep());
-        self.pc = target.destination_pc().into_usize();
+        self.pc = (self.pc as isize + target.offset().into_i32() as isize) as usize;
     }
 
     fn sync_stack_ptr(&mut self) {
@@ -520,11 +519,11 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         Err(TrapCode::Unreachable).map_err(Into::into)
     }
 
-    fn visit_br(&mut self, target: Target) {
+    fn visit_br(&mut self, target: BranchParams) {
         self.branch_to(target)
     }
 
-    fn visit_br_if_eqz(&mut self, target: Target) {
+    fn visit_br_if_eqz(&mut self, target: BranchParams) {
         let condition = self.value_stack.pop_as();
         if condition {
             self.next_instr()
@@ -533,7 +532,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         }
     }
 
-    fn visit_br_if_nez(&mut self, target: Target) {
+    fn visit_br_if_nez(&mut self, target: BranchParams) {
         let condition = self.value_stack.pop_as();
         if condition {
             self.branch_to(target)
