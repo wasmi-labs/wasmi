@@ -38,9 +38,14 @@ impl Instr {
         Self(value)
     }
 
-    /// Returns the underlying `usize` value of the instruction index.
+    /// Returns an `usize` representation of the instruction index.
     pub fn into_usize(self) -> usize {
         self.0 as usize
+    }
+
+    /// Returns an `u32` representation of the instruction index.
+    pub fn into_u32(self) -> u32 {
+        self.0
     }
 }
 

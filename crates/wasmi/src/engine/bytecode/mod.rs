@@ -13,6 +13,8 @@ pub use self::utils::{
     LocalDepth,
     Offset,
     SignatureIdx,
+    BranchOffset,
+    BranchParams,
 };
 use core::fmt::Debug;
 use wasmi_core::UntypedValue;

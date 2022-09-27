@@ -1,4 +1,5 @@
 use core::fmt::Display;
+use crate::engine::Instr;
 
 /// Defines how many stack values are going to be dropped and kept after branching.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -166,5 +167,80 @@ impl Offset {
     /// Returns the inner `u32` index.
     pub fn into_inner(self) -> u32 {
         self.0
+    }
+}
+
+/// A branching target.
+///
+/// This also specifies how many values on the stack
+/// need to be dropped and kept in order to maintain
+/// value stack integrity.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct BranchParams {
+    /// The branching offset.
+    ///
+    /// How much instruction pointer is offset upon taking the branch.
+    offset: BranchOffset,
+    /// How many values on the stack need to be dropped and kept.
+    drop_keep: DropKeep,
+}
+
+impl BranchParams {
+    /// Creates uninitialized [`BranchParams`].
+    pub fn uninit(drop_keep: DropKeep) -> Self {
+        Self { offset: BranchOffset::uninit(), drop_keep }
+    }
+
+    /// Returns `true` if the [`BranchParams`] have been initialized already.
+    pub fn is_init(&self) -> bool {
+        self.offset.is_init()
+    }
+
+    /// Initializes the [`BranchParams`] with a proper [`BranchOffset`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`BranchParams`] have already been initialized.
+    /// - If the given [`BranchOffset`] is not properly initialized.
+    pub fn init(&mut self, offset: BranchOffset) {
+        assert!(!offset.is_init());
+        assert!(self.offset.is_init());
+        self.offset = offset;
+    }
+
+    /// Returns the branching offset.
+    pub fn offset(self) -> BranchOffset {
+        self.offset
+    }
+
+    /// Returns the amount of stack values to drop and keep upon taking the branch.
+    pub fn drop_keep(self) -> DropKeep {
+        self.drop_keep
+    }
+}
+
+/// The branching offset.
+///
+/// This defines how much the instruction pointer is offset
+/// upon taking the respective branch.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct BranchOffset(i32);
+
+impl BranchOffset {
+    /// Creates an uninitalized [`BranchOffset`].
+    pub fn uninit() -> Self {
+        Self(0)
+    }
+
+    /// Creates an initialized [`BranchOffset`] from `src` to `dst`.
+    pub fn init(src: Instr, dst: Instr) -> Self {
+        let src = src.into_u32() as i32;
+        let dst = dst.into_u32() as i32;
+        Self(dst - src)
+    }
+
+    /// Returns `true` if the [`BranchOffset`] has been initialized.
+    pub fn is_init(self) -> bool {
+        self.0 != 0
     }
 }
