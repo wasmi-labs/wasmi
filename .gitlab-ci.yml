@@ -75,7 +75,8 @@ wasmtime-benchmark:
     - source ~/.profile
 
     # `wasmtime` Branch: `master`
-    - git checkout master
+    # FIXME: CHECKOUT TO ANOTHER COMMIT JUST TO CHECK WHETHER BENCHMARKS ARE WORKING
+    - git checkout 5babb505
     - git pull
     - git submodule update --init --recursive
     - mkdir -p ./target/ci
