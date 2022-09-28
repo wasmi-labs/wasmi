@@ -2,7 +2,7 @@
 
 use super::{super::Index, Instruction};
 use alloc::vec::Vec;
-use core::{marker::PhantomData, ptr::NonNull};
+use core::ptr::NonNull;
 
 /// A reference to a Wasm function body stored in the [`CodeMap`].
 #[derive(Debug, Copy, Clone)]
@@ -121,19 +121,16 @@ impl CodeMap {
 
 /// The instruction pointer of a [`FuncFrame`].
 #[derive(Debug, Copy, Clone)]
-pub struct InstructionPtr<'a> {
+pub struct InstructionPtr {
     /// The pointer to the instruction.
     ptr: NonNull<Instruction>,
-    /// The lifetime of the instruction reference.
-    lt: PhantomData<&'a Instruction>,
 }
 
-impl<'a> InstructionPtr<'a> {
+impl InstructionPtr {
     /// Creates a new [`InstructionPtr`] for `instr`.
-    pub fn new(instr: &'a Instruction) -> Self {
+    pub fn new(instr: &Instruction) -> Self {
         Self {
             ptr: NonNull::from(instr),
-            lt: PhantomData,
         }
     }
 
@@ -156,7 +153,7 @@ impl<'a> InstructionPtr<'a> {
     /// The caller is responsible for calling this method only when it is
     /// guaranteed that the [`InstructionPtr`] is validly pointing inside
     /// the boundaries of its associated compiled Wasm function.
-    pub unsafe fn get(&self) -> &'a Instruction {
+    pub unsafe fn get(&self) -> &Instruction {
         self.ptr.as_ref()
     }
 }
