@@ -2,7 +2,7 @@ use super::{
     super::{Memory, Table},
     bytecode::{BranchParams, FuncIdx, GlobalIdx, Instruction, LocalDepth, Offset, SignatureIdx},
     cache::InstanceCache,
-    code_map::Instructions,
+    code_map::InstructionPtr,
     stack::ValueStackRef,
     AsContextMut,
     CallOutcome,
@@ -33,22 +33,19 @@ use wasmi_core::{memory_units::Pages, ExtendInto, LittleEndianConvert, UntypedVa
 pub fn execute_frame<'engine>(
     mut ctx: impl AsContextMut,
     value_stack: &'engine mut ValueStack,
-    instrs: Instructions<'engine>,
     cache: &'engine mut InstanceCache,
     frame: &mut FuncFrame,
 ) -> Result<CallOutcome, TrapCode> {
-    Executor::new(value_stack, instrs, ctx.as_context_mut(), cache, frame).execute()
+    Executor::new(value_stack, ctx.as_context_mut(), cache, frame).execute()
 }
 
 /// An execution context for executing a `wasmi` function frame.
 #[derive(Debug)]
 struct Executor<'ctx, 'engine, 'func, HostData> {
-    /// The program counter.
-    pc: usize,
+    /// The pointer to the currently executed instruction.
+    ip: InstructionPtr,
     /// Stores the value stack of live values on the Wasm stack.
     value_stack: ValueStackRef<'engine>,
-    /// The instructions of the executed function frame.
-    instrs: Instructions<'engine>,
     /// A mutable [`Store`] context.
     ///
     /// [`Store`]: [`crate::v1::Store`]
@@ -64,18 +61,16 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     #[inline(always)]
     pub fn new(
         value_stack: &'engine mut ValueStack,
-        instrs: Instructions<'engine>,
         ctx: StoreContextMut<'ctx, HostData>,
         cache: &'engine mut InstanceCache,
         frame: &'func mut FuncFrame,
     ) -> Self {
         cache.update_instance(frame.instance());
-        let pc = frame.pc();
+        let ip = frame.ip();
         let value_stack = ValueStackRef::new(value_stack);
         Self {
-            pc,
+            ip,
             value_stack,
-            instrs,
             ctx,
             cache,
             frame,
@@ -276,11 +271,11 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
 
     /// Returns the [`Instruction`] at the current program counter.
     #[inline(always)]
-    fn instr(&self) -> &'engine Instruction {
+    fn instr(&self) -> &Instruction {
         // # Safety
         //
         // Properly constructed `wasmi` bytecode can never produce invalid `pc`.
-        unsafe { self.instrs.get_release_unchecked(self.pc) }
+        unsafe { self.ip.get() }
     }
 
     /// Returns the default linear memory.
@@ -478,17 +473,33 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     }
 
     fn try_next_instr(&mut self) -> Result<(), TrapCode> {
-        self.pc += 1;
+        self.next_instr();
         Ok(())
     }
 
     fn next_instr(&mut self) {
-        self.pc += 1;
+        // Safety: This is safe since we carefully constructed the `wasmi`
+        //         bytecode in conjunction with Wasm validation so that the
+        //         offsets of the instruction pointer within the sequence of
+        //         instructions never make the instruction pointer point out
+        //         of bounds of the instructions that belong to the function
+        //         that is currently executed.
+        unsafe {
+            self.ip.offset(1);
+        };
     }
 
     fn branch_to(&mut self, target: BranchParams) {
         self.value_stack.drop_keep(target.drop_keep());
-        self.pc = (self.pc as isize + target.offset().into_i32() as isize) as usize;
+        // Safety: This is safe since we carefully constructed the `wasmi`
+        //         bytecode in conjunction with Wasm validation so that the
+        //         offsets of the instruction pointer within the sequence of
+        //         instructions never make the instruction pointer point out
+        //         of bounds of the instructions that belong to the function
+        //         that is currently executed.
+        unsafe {
+            self.ip.offset(target.offset().into_i32() as isize);
+        }
     }
 
     fn sync_stack_ptr(&mut self) {
@@ -496,8 +507,8 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     }
 
     fn call_func(&mut self, func: Func) -> Result<CallOutcome, TrapCode> {
-        self.pc += 1;
-        self.frame.update_pc(self.pc);
+        self.next_instr();
+        self.frame.update_ip(self.ip);
         self.sync_stack_ptr();
         Ok(CallOutcome::NestedCall(func))
     }
@@ -559,7 +570,9 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         // A normalized index will always yield a target without panicking.
         let normalized_index = cmp::min(index as usize, max_index);
         // Update `pc`:
-        self.pc += normalized_index + 1;
+        unsafe {
+            self.ip.offset((normalized_index + 1) as isize);
+        }
     }
 
     fn visit_ret(&mut self, drop_keep: DropKeep) -> Result<CallOutcome, TrapCode> {

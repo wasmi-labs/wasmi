@@ -1,15 +1,15 @@
 //! Data structures to represent the Wasm call stack during execution.
 
 use super::{err_stack_overflow, DEFAULT_MAX_RECURSION_DEPTH};
-use crate::{core::TrapCode, engine::code_map::InstructionsRef, Instance};
+use crate::{core::TrapCode, engine::code_map::InstructionPtr, Instance};
 use alloc::vec::Vec;
 use core::mem::replace;
 
 /// A function frame of a function on the call stack.
 #[derive(Debug, Copy, Clone)]
 pub struct FuncFrame {
-    /// The reference to the instructions of the function frame.
-    iref: InstructionsRef,
+    /// The pointer to the currently executed instruction.
+    ip: InstructionPtr,
     /// The instance in which the function has been defined.
     ///
     /// # Note
@@ -18,43 +18,27 @@ pub struct FuncFrame {
     /// non-local to the function such as linear memories, global variables
     /// and tables.
     instance: Instance,
-    /// The current value of the program counter.
-    ///
-    /// # Note
-    ///
-    /// The program counter always points to the instruction
-    /// that is going to executed next.
-    pc: usize,
 }
 
 impl FuncFrame {
-    /// Returns the program counter.
-    pub fn pc(&self) -> usize {
-        self.pc
-    }
-
-    /// Updates the program counter.
-    pub fn update_pc(&mut self, new_pc: usize) {
-        self.pc = new_pc;
-    }
-
     /// Creates a new [`FuncFrame`].
-    pub fn new(iref: InstructionsRef, instance: Instance) -> Self {
-        Self {
-            iref,
-            instance,
-            pc: 0,
-        }
+    pub fn new(ip: InstructionPtr, instance: Instance) -> Self {
+        Self { ip, instance }
+    }
+
+    /// Returns the current instruction pointer.
+    pub fn ip(&self) -> InstructionPtr {
+        self.ip
+    }
+
+    /// Updates the instruction pointer.
+    pub fn update_ip(&mut self, new_ip: InstructionPtr) {
+        self.ip = new_ip;
     }
 
     /// Returns the instance of the [`FuncFrame`].
     pub fn instance(&self) -> Instance {
         self.instance
-    }
-
-    /// Returns a reference to the instructions of the [`FuncFrame`].
-    pub fn iref(&self) -> InstructionsRef {
-        self.iref
     }
 }
 
@@ -83,22 +67,22 @@ impl CallStack {
     }
 
     /// Initializes the [`CallStack`] given the Wasm function.
-    pub(crate) fn init(&mut self, iref: InstructionsRef, instance: Instance) -> FuncFrame {
+    pub(crate) fn init(&mut self, ip: InstructionPtr, instance: Instance) -> FuncFrame {
         self.clear();
-        FuncFrame::new(iref, instance)
+        FuncFrame::new(ip, instance)
     }
 
     /// Pushes a Wasm function onto the [`CallStack`].
     pub(crate) fn push(
         &mut self,
         caller: &mut FuncFrame,
-        iref: InstructionsRef,
+        ip: InstructionPtr,
         instance: Instance,
     ) -> Result<FuncFrame, TrapCode> {
         if self.len() == self.recursion_limit {
             return Err(err_stack_overflow());
         }
-        let frame = FuncFrame::new(iref, instance);
+        let frame = FuncFrame::new(ip, instance);
         let caller = replace(caller, frame);
         self.frames.push(caller);
         Ok(frame)

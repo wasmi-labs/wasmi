@@ -2,6 +2,7 @@
 
 use super::{super::Index, Instruction};
 use alloc::vec::Vec;
+use core::ptr::NonNull;
 
 /// A reference to a Wasm function body stored in the [`CodeMap`].
 #[derive(Debug, Copy, Clone)]
@@ -17,13 +18,11 @@ impl Index for FuncBody {
     }
 }
 
-/// A reference to the [`Instructions`] of a [`FuncBody`].
+/// A reference to the instructions of a compiled Wasm function.
 #[derive(Debug, Copy, Clone)]
 pub struct InstructionsRef {
     /// The start index in the instructions array.
     start: usize,
-    /// The end index in the instructions array.
-    end: usize,
 }
 
 /// Meta information about a compiled function.
@@ -88,8 +87,7 @@ impl CodeMap {
     {
         let start = self.insts.len();
         self.insts.extend(insts);
-        let end = self.insts.len();
-        let iref = InstructionsRef { start, end };
+        let iref = InstructionsRef { start };
         let header = FuncHeader {
             iref,
             len_locals,
@@ -100,56 +98,77 @@ impl CodeMap {
         FuncBody(header_index)
     }
 
-    /// Resolves the instructions given an [`InstructionsRef`].
-    pub fn insts(&self, iref: InstructionsRef) -> Instructions {
-        Instructions {
-            insts: &self.insts[iref.start..iref.end],
-        }
+    /// Returns an [`InstructionPtr`] to the instruction at [`InstructionsRef`].
+    #[inline]
+    pub fn instr_ptr(&self, iref: InstructionsRef) -> InstructionPtr {
+        InstructionPtr::new(&self.insts[iref.start])
     }
 
     /// Returns the [`FuncHeader`] of the [`FuncBody`].
     pub fn header(&self, func_body: FuncBody) -> &FuncHeader {
         &self.headers[func_body.0]
     }
-}
 
-/// The instructions of a resolved [`FuncBody`].
-#[derive(Debug, Copy, Clone)]
-pub struct Instructions<'a> {
-    insts: &'a [Instruction],
-}
-
-impl<'a> Instructions<'a> {
-    /// Returns the instruction at the given index.
-    ///
-    /// # Panics
-    ///
-    /// If there is no instruction at the given index.
+    /// Resolves the instruction at `index` of the compiled [`FuncBody`].
     #[cfg(test)]
-    pub fn get(&self, index: usize) -> Option<&Instruction> {
-        self.insts.get(index)
+    pub fn get_instr(&self, func_body: FuncBody, index: usize) -> Option<&Instruction> {
+        let header = self.header(func_body);
+        let start = header.iref.start;
+        let end = self.instr_end(func_body);
+        let instrs = &self.insts[start..end];
+        instrs.get(index)
     }
 
-    /// Returns a shared reference to the instruction at the given `pc`.
+    /// Returns the `end` index of the instructions of [`FuncBody`].
     ///
-    /// # Panics (Debug)
+    /// This is important to synthesize how many instructions there are in
+    /// the function referred to by [`FuncBody`].
+    #[cfg(test)]
+    pub fn instr_end(&self, func_body: FuncBody) -> usize {
+        self.headers
+            .get(func_body.0 + 1)
+            .map(|header| header.iref.start)
+            .unwrap_or(self.insts.len())
+    }
+}
+
+/// The instruction pointer to the instruction of a function on the call stack.
+#[derive(Debug, Copy, Clone)]
+pub struct InstructionPtr {
+    /// The pointer to the instruction.
+    ptr: NonNull<Instruction>,
+}
+
+impl InstructionPtr {
+    /// Creates a new [`InstructionPtr`] for `instr`.
+    pub fn new(instr: &Instruction) -> Self {
+        Self {
+            ptr: NonNull::from(instr),
+        }
+    }
+
+    /// Offset the [`InstructionPtr`] by the given value.
     ///
-    /// Panics in debug mode if the `pc` is invalid for the [`Instructions`].
+    /// # Safety
+    ///
+    /// The caller is responsible for calling this method only with valid
+    /// offset values so that the [`InstructionPtr`] never points out of valid
+    /// bounds of the instructions of the same compiled Wasm function.
     #[inline(always)]
-    pub unsafe fn get_release_unchecked(&self, pc: usize) -> &'a Instruction {
-        debug_assert!(
-            self.insts.get(pc).is_some(),
-            "unexpectedly missing instruction at index {pc}",
-        );
-        // # Safety
-        //
-        // This access is safe since all possible accesses have already been
-        // checked during Wasm validation. Functions and their instructions including
-        // jump addresses are immutable after Wasm function compilation and validation
-        // and therefore this bounds check can be safely eliminated.
-        //
-        // Note that eliminating this bounds check is extremely valuable since this
-        // part of the `wasmi` interpreter is part of the interpreter's hot path.
-        self.insts.get_unchecked(pc)
+    pub unsafe fn offset(&mut self, by: isize) {
+        let new_ptr = &*self.ptr.as_ptr().offset(by);
+        self.ptr = NonNull::from(new_ptr);
+    }
+
+    /// Returns a shared reference to the currently pointed at [`Instruction`].
+    ///
+    /// # Safety
+    ///
+    /// The caller is responsible for calling this method only when it is
+    /// guaranteed that the [`InstructionPtr`] is validly pointing inside
+    /// the boundaries of its associated compiled Wasm function.
+    #[inline(always)]
+    pub unsafe fn get(&self) -> &Instruction {
+        self.ptr.as_ref()
     }
 }

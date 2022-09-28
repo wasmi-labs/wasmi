@@ -6,7 +6,7 @@ pub use self::{
     values::{ValueStack, ValueStackRef},
 };
 use super::{
-    code_map::{CodeMap, InstructionsRef},
+    code_map::{CodeMap, InstructionPtr},
     func_types::FuncTypeRegistry,
     FuncParams,
 };
@@ -141,9 +141,9 @@ impl Stack {
         wasm_func: &WasmFuncEntity,
         code_map: &'engine CodeMap,
     ) -> Result<FuncFrame, TrapCode> {
-        let iref = self.call_wasm_impl(wasm_func, code_map)?;
+        let ip = self.call_wasm_impl(wasm_func, code_map)?;
         let instance = wasm_func.instance();
-        let frame = self.frames.push(caller, iref, instance)?;
+        let frame = self.frames.push(caller, ip, instance)?;
         Ok(frame)
     }
 
@@ -152,7 +152,7 @@ impl Stack {
         &mut self,
         wasm_func: &WasmFuncEntity,
         code_map: &'engine CodeMap,
-    ) -> Result<InstructionsRef, TrapCode> {
+    ) -> Result<InstructionPtr, TrapCode> {
         let header = code_map.header(wasm_func.func_body());
         let max_stack_height = header.max_stack_height();
         self.values.reserve(max_stack_height)?;
@@ -161,7 +161,8 @@ impl Stack {
             .extend_zeros(len_locals)
             .expect("stack overflow is unexpected due to previous stack reserve");
         let iref = header.iref();
-        Ok(iref)
+        let ip = code_map.instr_ptr(iref);
+        Ok(ip)
     }
 
     /// Signals the [`Stack`] to return the last Wasm function call.
