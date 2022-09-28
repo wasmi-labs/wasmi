@@ -72,7 +72,7 @@ wasmtime-benchmark:
     # Install dependencies
     - cargo install cargo-wasi
     - curl https://wasmtime.dev/install.sh -sSf | bash
-    - exec bash
+    - source ~/.profile
 
     # `wasmtime` Branch: `master`
     - git checkout master
@@ -109,4 +109,4 @@ publish-report:
   - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                   # PRs
   <<:                              *kubernetes-env
   script:
-    - ./scripts/ci/benchmarks-report.sh
+    - bash ./scripts/ci/benchmarks-report.sh
