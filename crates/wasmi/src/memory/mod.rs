@@ -68,7 +68,7 @@ impl Display for MemoryError {
 }
 
 /// Returns the maximum virtual memory buffer length in bytes.
-fn max_memory_len() -> usize {
+const fn max_memory_len() -> usize {
     i32::MAX as u32 as usize
 }
 
@@ -264,10 +264,14 @@ impl Memory {
     /// # Errors
     ///
     /// If more than [`u32::MAX`] much linear memory is allocated.
-    pub fn new(mut ctx: impl AsContextMut, memory_type: MemoryType) -> Result<Self, MemoryError> {
+    pub fn new(ctx: impl AsContextMut, memory_type: MemoryType) -> Result<Self, MemoryError> {
         let entity = MemoryEntity::new(memory_type)?;
-        let memory = ctx.as_context_mut().store.alloc_memory(entity);
-        Ok(memory)
+        Ok(Self::with_entity(ctx, entity))
+    }
+
+    /// Creates a new linear memory to the store by memory entity.
+    pub fn with_entity(mut ctx: impl AsContextMut, entity: MemoryEntity) -> Self {
+        ctx.as_context_mut().store.alloc_memory(entity)
     }
 
     /// Returns the memory type of the linear memory.

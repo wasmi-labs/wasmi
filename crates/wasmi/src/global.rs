@@ -92,7 +92,7 @@ impl GlobalType {
 }
 
 /// A global variable entity.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GlobalEntity {
     /// The current value of the global variable.
     value: UntypedValue,
@@ -198,10 +198,15 @@ impl Global {
     }
 
     /// Creates a new global variable to the store.
-    pub fn new(mut ctx: impl AsContextMut, initial_value: Value, mutability: Mutability) -> Self {
+    pub fn new(ctx: impl AsContextMut, initial_value: Value, mutability: Mutability) -> Self {
+        Self::with_entity(ctx,GlobalEntity::new(initial_value, mutability))
+    }
+
+    /// Creates a new global variable to the store by global entity.
+    pub fn with_entity(mut ctx: impl AsContextMut, entity: GlobalEntity) -> Self {
         ctx.as_context_mut()
             .store
-            .alloc_global(GlobalEntity::new(initial_value, mutability))
+            .alloc_global(entity)
     }
 
     /// Returns `true` if the global variable is mutable.
