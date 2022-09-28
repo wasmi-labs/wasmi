@@ -85,7 +85,7 @@ wasmtime-benchmark:
     - pushd ./crates/wasmi/
     - wasmtime run --dir=. ../../target/ci/benches-master.wasm -- --bench --save-baseline master-wasm | tee ../../target/ci/wasmtime-master
     - popd
-    - git submodule deinit --all -f`
+    - git submodule deinit --all -f
 
     # `wasmtime` Branch: `pr`
     - git checkout $CI_COMMIT_SHA
