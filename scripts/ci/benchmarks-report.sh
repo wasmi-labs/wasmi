@@ -34,13 +34,13 @@ RESULT=$(for d in */; do
             WASM_PR_TIME=$(jq .slope.point_estimate ../wasmtime-criterion/${d}new/estimates.json)
             WASM_DIFF=$(jq .mean.point_estimate ../wasmtime-criterion/${d}change/estimates.json)
 
-            echo -n "| \`${d::-1}\` "\
-                "| $(format_time $MASTER_TIME)" \
-                "| $(format_time $PR_TIME)" \
-                "| $(echo $DIFF*100 | bc -l | xargs printf "%.2f") %" \
-                "| $(format_time $WASM_MASTER_TIME)" \
-                "| $(format_time $WASM_PR_TIME)" \
-                "| $(echo $WASM_DIFF*100 | bc -l | xargs printf "%.2f") %|\n"
+            echo -n "<tr><td><b>${d::-1}</td>"\
+                "<td> $(format_time $MASTER_TIME)</td>" \
+                "<td> $(format_time $PR_TIME)</td>" \
+                "<td> $(echo $DIFF*100 | bc -l | xargs printf "%.2f") %</td>" \
+                "<td> $(format_time $WASM_MASTER_TIME)</td>" \
+                "<td> $(format_time $WASM_PR_TIME)</td>" \
+                "<td> $(echo $WASM_DIFF*100 | bc -l | xargs printf "%.2f") %</td></tr>"
         done)
 
 popd
@@ -69,9 +69,18 @@ curl -X ${REQUEST_TYPE} ${PR_COMMENTS_URL} \
     -H "Content-Type: application/json; charset=utf-8" \
     -d $"{ \
 \"body\": \
-\"## CRITERION BENCHMARKS ## \n\n \
-|BENCHMARK|MASTER|PR|DIFF|MASTER(WASM)|PR(WASM)|DIFF(WASM)|\n \
-|---|---:|---:|---|---:|---:|---|\n \
-${RESULT}\n\n \
+\"## BENCHMARKS ## \n\n \
+<table> \
+<thead> \
+<tr> \
+<th></th><th colspan=3>CARGO BENCH</th><th colspan=3>WASMTIME</th> \
+</tr> \
+<tr> \
+<th>BENCHMARK</th><th>MASTER</th><th>PR</th><th>DIFF</th><th>MASTER</th><th>PR</th><th>DIFF</th> \
+</tr> \
+</thead> \
+<tbody> \
+${RESULT} \
+</tbody> \n\n \
 [Link to pipeline](${CI_JOB_URL}) \" \
 }"
