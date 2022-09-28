@@ -81,6 +81,7 @@ curl -X ${REQUEST_TYPE} ${PR_COMMENTS_URL} \
 </thead> \
 <tbody> \
 ${RESULT} \
-</tbody> \n\n \
+</tbody>
+</table> \n\n \
 [Link to pipeline](${CI_JOB_URL}) \" \
 }"
