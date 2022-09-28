@@ -23,8 +23,6 @@ impl Index for FuncBody {
 pub struct InstructionsRef {
     /// The start index in the instructions array.
     start: usize,
-    /// The end index in the instructions array.
-    end: usize,
 }
 
 /// Meta information about a compiled function.
@@ -89,8 +87,7 @@ impl CodeMap {
     {
         let start = self.insts.len();
         self.insts.extend(insts);
-        let end = self.insts.len();
-        let iref = InstructionsRef { start, end };
+        let iref = InstructionsRef { start };
         let header = FuncHeader {
             iref,
             len_locals,
