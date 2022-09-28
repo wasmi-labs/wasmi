@@ -2,6 +2,7 @@
 
 use super::{super::Index, Instruction};
 use alloc::vec::Vec;
+use core::{marker::PhantomData, ptr::NonNull};
 
 /// A reference to a Wasm function body stored in the [`CodeMap`].
 #[derive(Debug, Copy, Clone)]
@@ -107,9 +108,56 @@ impl CodeMap {
         }
     }
 
+    /// Returns an [`InstructionPtr`] to the instruction at [`InstructionsRef`].
+    pub fn instr_ptr(&self, iref: InstructionsRef) -> InstructionPtr {
+        InstructionPtr::new(&self.insts[iref.start])
+    }
+
     /// Returns the [`FuncHeader`] of the [`FuncBody`].
     pub fn header(&self, func_body: FuncBody) -> &FuncHeader {
         &self.headers[func_body.0]
+    }
+}
+
+/// The instruction pointer of a [`FuncFrame`].
+#[derive(Debug, Copy, Clone)]
+pub struct InstructionPtr<'a> {
+    /// The pointer to the instruction.
+    ptr: NonNull<Instruction>,
+    /// The lifetime of the instruction reference.
+    lt: PhantomData<&'a Instruction>,
+}
+
+impl<'a> InstructionPtr<'a> {
+    /// Creates a new [`InstructionPtr`] for `instr`.
+    pub fn new(instr: &'a Instruction) -> Self {
+        Self {
+            ptr: NonNull::from(instr),
+            lt: PhantomData,
+        }
+    }
+
+    /// Offset the [`InstructionPtr`] by the given value.
+    ///
+    /// # Safety
+    ///
+    /// The caller is responsible for calling this method only with valid
+    /// offset values so that the [`InstructionPtr`] never points out of valid
+    /// bounds of the instructions of the same compiled Wasm function.
+    pub unsafe fn offset(&mut self, by: isize) {
+        let new_ptr = &*self.ptr.as_ptr().offset(by);
+        self.ptr = NonNull::from(new_ptr);
+    }
+
+    /// Returns a shared reference to the currently pointed at [`Instruction`].
+    ///
+    /// # Safety
+    ///
+    /// The caller is responsible for calling this method only when it is
+    /// guaranteed that the [`InstructionPtr`] is validly pointing inside
+    /// the boundaries of its associated compiled Wasm function.
+    pub unsafe fn get(&self) -> &'a Instruction {
+        self.ptr.as_ref()
     }
 }
 
