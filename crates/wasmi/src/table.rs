@@ -250,14 +250,12 @@ impl Table {
 
     /// Creates a new table to the store.
     pub fn new(ctx: impl AsContextMut, table_type: TableType) -> Self {
-        Self::with_entity(ctx,TableEntity::new(table_type))
+        Self::with_entity(ctx, TableEntity::new(table_type))
     }
 
     /// Creates a new table to the store by table entity.
     pub fn with_entity(mut ctx: impl AsContextMut, entity: TableEntity) -> Self {
-        ctx.as_context_mut()
-            .store
-            .alloc_table(entity)
+        ctx.as_context_mut().store.alloc_table(entity)
     }
 
     /// Returns the type and limits of the table.
