@@ -99,6 +99,7 @@ impl CodeMap {
     }
 
     /// Returns an [`InstructionPtr`] to the instruction at [`InstructionsRef`].
+    #[inline]
     pub fn instr_ptr(&self, iref: InstructionsRef) -> InstructionPtr {
         InstructionPtr::new(&self.insts[iref.start])
     }
@@ -153,6 +154,7 @@ impl InstructionPtr {
     /// The caller is responsible for calling this method only with valid
     /// offset values so that the [`InstructionPtr`] never points out of valid
     /// bounds of the instructions of the same compiled Wasm function.
+    #[inline(always)]
     pub unsafe fn offset(&mut self, by: isize) {
         let new_ptr = &*self.ptr.as_ptr().offset(by);
         self.ptr = NonNull::from(new_ptr);
@@ -165,6 +167,7 @@ impl InstructionPtr {
     /// The caller is responsible for calling this method only when it is
     /// guaranteed that the [`InstructionPtr`] is validly pointing inside
     /// the boundaries of its associated compiled Wasm function.
+    #[inline(always)]
     pub unsafe fn get(&self) -> &Instruction {
         self.ptr.as_ref()
     }
