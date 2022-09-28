@@ -173,9 +173,11 @@ impl Engine {
     /// If the [`FuncBody`] is invalid for the [`Engine`].
     #[cfg(test)]
     pub(crate) fn resolve_inst(&self, func_body: FuncBody, index: usize) -> Option<Instruction> {
-        let this = self.inner.lock();
-        let iref = this.code_map.header(func_body).iref();
-        this.code_map.insts(iref).get(index).copied()
+        self.inner
+            .lock()
+            .code_map
+            .get_instr(func_body, index)
+            .copied()
     }
 
     /// Executes the given [`Func`] using the given arguments `params` and stores the result into `results`.

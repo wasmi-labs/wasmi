@@ -101,13 +101,6 @@ impl CodeMap {
         FuncBody(header_index)
     }
 
-    /// Resolves the instructions given an [`InstructionsRef`].
-    pub fn insts(&self, iref: InstructionsRef) -> Instructions {
-        Instructions {
-            insts: &self.insts[iref.start..iref.end],
-        }
-    }
-
     /// Returns an [`InstructionPtr`] to the instruction at [`InstructionsRef`].
     pub fn instr_ptr(&self, iref: InstructionsRef) -> InstructionPtr {
         InstructionPtr::new(&self.insts[iref.start])
@@ -116,6 +109,28 @@ impl CodeMap {
     /// Returns the [`FuncHeader`] of the [`FuncBody`].
     pub fn header(&self, func_body: FuncBody) -> &FuncHeader {
         &self.headers[func_body.0]
+    }
+
+    /// Resolves the instruction at `index` of the compiled [`FuncBody`].
+    #[cfg(test)]
+    pub fn get_instr(&self, func_body: FuncBody, index: usize) -> Option<&Instruction> {
+        let header = self.header(func_body);
+        let start = header.iref.start;
+        let end = self.instr_end(func_body);
+        let instrs = &self.insts[start..end];
+        instrs.get(index)
+    }
+
+    /// Returns the `end` index of the instructions of [`FuncBody`].
+    ///
+    /// This is important to synthesize how many instructions there are in
+    /// the function referred to by [`FuncBody`].
+    #[cfg(test)]
+    pub fn instr_end(&self, func_body: FuncBody) -> usize {
+        self.headers
+            .get(func_body.0 + 1)
+            .map(|header| header.iref.start)
+            .unwrap_or(self.insts.len())
     }
 }
 
@@ -155,46 +170,5 @@ impl InstructionPtr {
     /// the boundaries of its associated compiled Wasm function.
     pub unsafe fn get(&self) -> &Instruction {
         self.ptr.as_ref()
-    }
-}
-
-/// The instructions of a resolved [`FuncBody`].
-#[derive(Debug, Copy, Clone)]
-pub struct Instructions<'a> {
-    insts: &'a [Instruction],
-}
-
-impl<'a> Instructions<'a> {
-    /// Returns the instruction at the given index.
-    ///
-    /// # Panics
-    ///
-    /// If there is no instruction at the given index.
-    #[cfg(test)]
-    pub fn get(&self, index: usize) -> Option<&Instruction> {
-        self.insts.get(index)
-    }
-
-    /// Returns a shared reference to the instruction at the given `pc`.
-    ///
-    /// # Panics (Debug)
-    ///
-    /// Panics in debug mode if the `pc` is invalid for the [`Instructions`].
-    #[inline(always)]
-    pub unsafe fn get_release_unchecked(&self, pc: usize) -> &'a Instruction {
-        debug_assert!(
-            self.insts.get(pc).is_some(),
-            "unexpectedly missing instruction at index {pc}",
-        );
-        // # Safety
-        //
-        // This access is safe since all possible accesses have already been
-        // checked during Wasm validation. Functions and their instructions including
-        // jump addresses are immutable after Wasm function compilation and validation
-        // and therefore this bounds check can be safely eliminated.
-        //
-        // Note that eliminating this bounds check is extremely valuable since this
-        // part of the `wasmi` interpreter is part of the interpreter's hot path.
-        self.insts.get_unchecked(pc)
     }
 }
