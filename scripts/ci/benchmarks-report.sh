@@ -12,12 +12,12 @@ set -o pipefail
 function format_time {
     if (( $(echo $1'<'1000 | bc -l) ))
       then
-        printf "%.4f ns\n" $1
+        printf "%.4f ns" $1
     elif (( $(echo $1'<'1000000 | bc -l) ))
       then
-        printf "%.4f µs\n" $(echo $1/1000 | bc -l )
+        printf "%.4f µs" $(echo $1/1000 | bc -l )
     else
-        printf "%.4f ms\n" $(echo $1/1000000 | bc -l )
+        printf "%.4f ms" $(echo $1/1000000 | bc -l )
     fi
 }
 
@@ -35,12 +35,12 @@ RESULT=$(for d in */; do
             WASM_DIFF=$(jq .mean.point_estimate ../wasmtime-criterion/${d}change/estimates.json)
 
             echo -n "| \`${d::-1}\` "\
-                "| $(format_time $MASTER_TIME) " \
-                "| $(format_time $PR_TIME) " \
-                "| $(echo $DIFF*100 | bc -l | xargs printf "%.4f")  %" \
-                "| $(format_time $WASM_MASTER_TIME) " \
-                "| $(format_time $WASM_PR_TIME) " \
-                "| $(echo $WASM_DIFF*100 | bc -l | xargs printf "%.4f") % |\n"
+                "| $(format_time $MASTER_TIME)" \
+                "| $(format_time $PR_TIME)" \
+                "| $(echo $DIFF*100 | bc -l | xargs printf "%.4f") %" \
+                "| $(format_time $WASM_MASTER_TIME)" \
+                "| $(format_time $WASM_PR_TIME)" \
+                "| $(echo $WASM_DIFF*100 | bc -l | xargs printf "%.4f") %|\n"
         done)
 
 popd
