@@ -8,8 +8,8 @@ impl TryFrom<wasmparser::TableType> for TableType {
         if table_type.element_type != wasmparser::ValType::FuncRef {
             return Err(ModuleError::unsupported(table_type));
         }
-        let initial = table_type.initial as usize;
-        let maximum = table_type.maximum.map(|value| value as usize);
+        let initial = table_type.initial;
+        let maximum = table_type.maximum;
         Ok(TableType::new(initial, maximum))
     }
 }

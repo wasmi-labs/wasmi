@@ -28,11 +28,11 @@ pub enum TableError {
     /// Occurs when growing a table out of its set bounds.
     GrowOutOfBounds {
         /// The maximum allowed table size.
-        maximum: usize,
+        maximum: u32,
         /// The current table size before the growth operation.
-        current: usize,
+        current: u32,
         /// The amount of requested invalid growth.
-        grow_by: usize,
+        grow_by: u32,
     },
     /// Occurs when accessing the table out of bounds.
     AccessOutOfBounds {
@@ -89,9 +89,9 @@ impl Display for TableError {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct TableType {
     /// The initial size of the [`Table`].
-    initial: usize,
+    initial: u32,
     /// The optional maximum size fo the [`Table`].
-    maximum: Option<usize>,
+    maximum: Option<u32>,
 }
 
 impl TableType {
@@ -100,7 +100,7 @@ impl TableType {
     /// # Panics
     ///
     /// - If the `initial` limit is greater than the `maximum` limit if any.
-    pub fn new(initial: usize, maximum: Option<usize>) -> Self {
+    pub fn new(initial: u32, maximum: Option<u32>) -> Self {
         if let Some(maximum) = maximum {
             assert!(initial <= maximum);
         }
@@ -108,12 +108,12 @@ impl TableType {
     }
 
     /// Returns the initial size.
-    pub fn initial(self) -> usize {
+    pub fn initial(self) -> u32 {
         self.initial
     }
 
     /// Returns the maximum size if any.
-    pub fn maximum(self) -> Option<usize> {
+    pub fn maximum(self) -> Option<u32> {
         self.maximum
     }
 
@@ -155,7 +155,7 @@ impl TableEntity {
     /// Creates a new table entity with the given resizable limits.
     pub fn new(table_type: TableType) -> Self {
         Self {
-            elements: vec![None; table_type.initial()],
+            elements: vec![None; table_type.initial() as usize],
             table_type,
         }
     }
@@ -184,9 +184,9 @@ impl TableEntity {
     /// # Errors
     ///
     /// If the table is grown beyond its maximum limits.
-    pub fn grow(&mut self, grow_by: usize) -> Result<(), TableError> {
-        let maximum = self.table_type.maximum().unwrap_or(u32::MAX as usize);
-        let current = self.len();
+    pub fn grow(&mut self, grow_by: u32) -> Result<(), TableError> {
+        let maximum = self.table_type.maximum().unwrap_or(u32::MAX);
+        let current = self.len() as u32;
         let new_len = current
             .checked_add(grow_by)
             .filter(|&new_len| new_len <= maximum)
@@ -194,7 +194,7 @@ impl TableEntity {
                 maximum,
                 current,
                 grow_by,
-            })?;
+            })? as usize;
         self.elements.resize(new_len, None);
         Ok(())
     }
@@ -291,7 +291,7 @@ impl Table {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Table`].
-    pub fn grow(&self, mut ctx: impl AsContextMut, grow_by: usize) -> Result<(), TableError> {
+    pub fn grow(&self, mut ctx: impl AsContextMut, grow_by: u32) -> Result<(), TableError> {
         ctx.as_context_mut()
             .store
             .resolve_table_mut(*self)
