@@ -40,7 +40,8 @@ RESULT=$(for d in */; do
                 "| $(echo $DIFF*100 | bc -l | xargs printf "%.4f")  %" \
                 "| $(format_time $WASM_MASTER_TIME) " \
                 "| $(format_time $WASM_PR_TIME) " \
-                "| $(echo $WASM_DIFF*100 | bc -l | xargs printf "%.4f") % |\n")
+                "| $(echo $WASM_DIFF*100 | bc -l | xargs printf "%.4f") % |\n"
+        done)
 
 popd
 
