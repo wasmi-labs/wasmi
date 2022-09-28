@@ -18,7 +18,7 @@ impl Index for FuncBody {
     }
 }
 
-/// A reference to the [`Instructions`] of a [`FuncBody`].
+/// A reference to the instructions of a compiled Wasm function.
 #[derive(Debug, Copy, Clone)]
 pub struct InstructionsRef {
     /// The start index in the instructions array.
@@ -132,7 +132,7 @@ impl CodeMap {
     }
 }
 
-/// The instruction pointer of a [`FuncFrame`].
+/// The instruction pointer to the instruction of a function on the call stack.
 #[derive(Debug, Copy, Clone)]
 pub struct InstructionPtr {
     /// The pointer to the instruction.
