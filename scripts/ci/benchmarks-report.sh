@@ -86,7 +86,7 @@ curl -X ${REQUEST_TYPE} ${PR_COMMENTS_URL} \
 <table> \
 <thead> \
 <tr> \
-<th><\/th><th colspan=3>CARGO BENCH<\/th><th colspan=3>WASMTIME<\/th> \
+<th><\/th><th colspan=3>NATIVE<\/th><th colspan=3>WASMTIME<\/th> \
 <\/tr> \
 <tr> \
 <th>BENCHMARK<\/th><th>MASTER<\/th><th>PR<\/th><th>DIFF<\/th><th>MASTER<\/th><th>PR<\/th><th>DIFF<\/th> \
