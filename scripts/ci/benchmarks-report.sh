@@ -62,31 +62,6 @@ fi
 
 echo "Comment will be posted here $PR_COMMENTS_URL"
 
-# DEBUG
-echo "DEBUG START"
-echo "RESULTING JSON"
-RESULTING_JSON=$"{ \
-\"body\": \
-\"## BENCHMARKS ## \n\n \
-<table> \
-<thead> \
-<tr> \
-<th><\/th><th colspan=3>CARGO BENCH<\/th><th colspan=3>WASMTIME<\/th> \
-<\/tr> \
-<tr> \
-<th>BENCHMARK<\/th><th>MASTER<\/th><th>PR<\/th><th>DIFF<\/th><th>MASTER<\/th><th>PR<\/th><th>DIFF<\/th> \
-<\/tr> \
-<\/thead> \
-<tbody> \
-${RESULT} \
-<\/tbody>
-<\/table> \n\n \
-[Link to pipeline](${CI_JOB_URL}) \" \
-}"
-
-echo $RESULTING_JSON | jq
-echo "DEBUG END"
-
 # POST/PATCH comment to the PR
 curl -X ${REQUEST_TYPE} ${PR_COMMENTS_URL} \
     -H "Cookie: logged_in=no" \
@@ -106,7 +81,7 @@ curl -X ${REQUEST_TYPE} ${PR_COMMENTS_URL} \
 <\/thead> \
 <tbody> \
 ${RESULT} \
-<\/tbody>
+<\/tbody> \
 <\/table> \n\n \
 [Link to pipeline](${CI_JOB_URL}) \" \
 }"
