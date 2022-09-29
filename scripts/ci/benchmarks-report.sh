@@ -11,13 +11,23 @@ set -o pipefail
 
 function format_time {
     if (( $(echo $1'<'1000 | bc -l) ))
-      then
-        printf "%.2f ns" $1
+      then printf "%.2f ns" $1
     elif (( $(echo $1'<'1000000 | bc -l) ))
-      then
-        printf "%.2f µs" $(echo $1/1000 | bc -l )
+      then printf "%.2f µs" $(echo $1/1000 | bc -l )
     else
-        printf "%.2f ms" $(echo $1/1000000 | bc -l )
+      printf "%.2f ms" $(echo $1/1000000 | bc -l )
+    fi
+}
+
+function get_performance_change_status {
+    if echo $1 | grep -e "Performance has regressed" >> /dev/null
+      then echo ":red_circle:"
+    elif echo $1 | grep -e "Performance has improved" >> /dev/null
+      then echo ":green_circle:"
+    elif echo $1 | grep -e "No change in performance detected" >> /dev/null
+      then echo ":white_circle:"
+    elif echo $1 | grep -e "Change within noise threshold" >> /dev/null
+      then echo ":white_circle:"
     fi
 }
 
@@ -29,18 +39,21 @@ pushd ./target/ci/criterion
 RESULT=$(for d in */; do
             MASTER_TIME=$(jq .slope.point_estimate ${d}master/estimates.json)
             PR_TIME=$(jq .slope.point_estimate ${d}new/estimates.json)
+            PERF_CHANGE=$(get_performance_change_status "$(grep -A 3 -e $(echo "${d::-1}" | tr "_" ".") ../bench-pr)")
             DIFF=$(jq .mean.point_estimate ${d}change/estimates.json)
+
             WASM_MASTER_TIME=$(jq .slope.point_estimate ../wasmtime-criterion/${d}master-wasm/estimates.json)
             WASM_PR_TIME=$(jq .slope.point_estimate ../wasmtime-criterion/${d}new/estimates.json)
+            WASM_PERF_CHANGE=$(get_performance_change_status "$(grep -A 3 -e $(echo "${d::-1}" | tr "_" ".") ../wasmtime-pr)")
             WASM_DIFF=$(jq .mean.point_estimate ../wasmtime-criterion/${d}change/estimates.json)
 
             echo -n "<tr><td><b>${d::-1}<\/td>"\
                 "<td> $(format_time $MASTER_TIME)<\/td>" \
                 "<td> $(format_time $PR_TIME)<\/td>" \
-                "<td> $(echo $DIFF*100 | bc -l | xargs printf "%.2f") %<\/td>" \
+                "<td> $PERF_CHANGE $(echo $DIFF*100 | bc -l | xargs printf "%.2f") %<\/td>" \
                 "<td> $(format_time $WASM_MASTER_TIME)<\/td>" \
                 "<td> $(format_time $WASM_PR_TIME)<\/td>" \
-                "<td> $(echo $WASM_DIFF*100 | bc -l | xargs printf "%.2f") %<\/td><\/tr>"
+                "<td> $WASM_PERF_CHANGE $(echo $WASM_DIFF*100 | bc -l | xargs printf "%.2f") %<\/td><\/tr>"
         done)
 
 popd
