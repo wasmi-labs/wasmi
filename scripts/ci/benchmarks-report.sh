@@ -1,14 +1,12 @@
 #!/bin/bash
 
-# This script takes as an argument benchmark report JSON file produced
-# by the command "cargo criterion --message-format=json". Executed first
-# against a 'master' branch and on a PR commit afterwards.
-# Formats it using 'jq' with filters defined in the './scripts/ci/benchmark-filter.jq'.
-# And posts formatted results to a PR on a GitHub as an issue comment.
+# This script prepares table with results of benchmarks and posts it to the
+# GitHub's PR as an issue comment.
 
 set -eu
 set -o pipefail
 
+# Transform timing details into more readable format
 function format_time {
     if (( $(echo $1'<'1000 | bc -l) ))
       then printf "%.2f ns" $1
@@ -19,6 +17,7 @@ function format_time {
     fi
 }
 
+# Derive performance change status from benchmarks raw command prompt log
 function get_performance_change_status {
     if echo $1 | grep -e "Performance has regressed" >> /dev/null
       then echo ":red_circle:"
@@ -35,7 +34,7 @@ PR_COMMENTS_URL="https://api.github.com/repos/paritytech/wasmi/issues/${CI_COMMI
 
 pushd ./target/ci/criterion
 
-# Format benchmarks into a table
+# Format benchmarks details into a table
 RESULT=$(for d in */; do
             MASTER_TIME=$(jq .slope.point_estimate ${d}master/estimates.json)
             PR_TIME=$(jq .slope.point_estimate ${d}new/estimates.json)
@@ -47,7 +46,7 @@ RESULT=$(for d in */; do
             WASM_PERF_CHANGE=$(get_performance_change_status "$(grep -A 3 -e $(echo "${d::-1}" | tr "_" ".") ../wasmtime-pr)")
             WASM_DIFF=$(jq .mean.point_estimate ../wasmtime-criterion/${d}change/estimates.json)
 
-            echo -n "<tr><td><b>${d::-1}<\/td>"\
+            echo -n "<tr><td><tt>${d::-1}<\/td>"\
                 "<td> $(format_time $MASTER_TIME)<\/td>" \
                 "<td> $(format_time $PR_TIME)<\/td>" \
                 "<td> $PERF_CHANGE $(echo $DIFF*100 | bc -l | xargs printf "%.2f") %<\/td>" \

@@ -96,8 +96,6 @@ wasmtime-benchmark:
     - pushd ./crates/wasmi/
     - wasmtime run --dir=. ../../target/ci/benches-pr.wasm -- --bench --baseline master-wasm | tee ../../target/ci/wasmtime-pr
     - popd
-    - git submodule deinit --all -f
-    - ls ./target
     - mv ./crates/wasmi/target/criterion ./target/ci/wasmtime-criterion
 
 # report
