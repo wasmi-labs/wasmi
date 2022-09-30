@@ -9,11 +9,11 @@ set -o pipefail
 # Transform timing details into more readable format
 function format_time {
     if (( $(echo $1'<'1000 | bc -l) ))
-      then printf "%.2f ns" $1
+      then printf "%.2fns" $1
     elif (( $(echo $1'<'1000000 | bc -l) ))
-      then printf "%.2f µs" $(echo $1/1000 | bc -l )
+      then printf "%.2fµs" $(echo $1/1000 | bc -l )
     else
-      printf "%.2f ms" $(echo $1/1000000 | bc -l )
+      printf "%.2fms" $(echo $1/1000000 | bc -l )
     fi
 }
 
