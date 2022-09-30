@@ -9,11 +9,11 @@ set -o pipefail
 # Transform timing details into more readable format
 function format_time {
     if (( $(echo $1'<'1000 | bc -l) ))
-      then printf "%.2f ns" $1
+      then printf "%.2fns" $1
     elif (( $(echo $1'<'1000000 | bc -l) ))
-      then printf "%.2f µs" $(echo $1/1000 | bc -l )
+      then printf "%.2fµs" $(echo $1/1000 | bc -l )
     else
-      printf "%.2f ms" $(echo $1/1000000 | bc -l )
+      printf "%.2fms" $(echo $1/1000000 | bc -l )
     fi
 }
 
@@ -30,12 +30,25 @@ function get_performance_change_status {
     fi
 }
 
+# Native vs wasmtime overhead status badges
+function wasmtime_overhead_status {
+    if [[ $1 -le 50 ]]
+      then echo ":green_circle: $1%"
+    elif [[ $1 -le 100 ]]
+      then echo ":yellow_circle: $1%"
+    else
+      echo ":red_circle: $1%"
+    fi
+}
+
 PR_COMMENTS_URL="https://api.github.com/repos/paritytech/wasmi/issues/${CI_COMMIT_BRANCH}/comments"
 
 pushd ./target/ci/criterion
 
 # Format benchmarks details into a table
 RESULT=$(for d in */; do
+            BENCH_ID=$(jq .full_id ${d}master/benchmark.json | tr -d '"')
+
             MASTER_TIME=$(jq .slope.point_estimate ${d}master/estimates.json)
             PR_TIME=$(jq .slope.point_estimate ${d}new/estimates.json)
             PERF_CHANGE=$(get_performance_change_status "$(grep -A 3 -e $(echo "${d::-1}" | tr "_" ".") ../bench-pr)")
@@ -46,13 +59,16 @@ RESULT=$(for d in */; do
             WASM_PERF_CHANGE=$(get_performance_change_status "$(grep -A 3 -e $(echo "${d::-1}" | tr "_" ".") ../wasmtime-pr)")
             WASM_DIFF=$(jq .mean.point_estimate ../wasmtime-criterion/${d}change/estimates.json)
 
-            echo -n "<tr><td><tt>${d::-1}<\/td>"\
-                "<td> $(format_time $MASTER_TIME)<\/td>" \
-                "<td> $(format_time $PR_TIME)<\/td>" \
-                "<td> $PERF_CHANGE $(echo $DIFF*100 | bc -l | xargs printf "%.2f") %<\/td>" \
-                "<td> $(format_time $WASM_MASTER_TIME)<\/td>" \
-                "<td> $(format_time $WASM_PR_TIME)<\/td>" \
-                "<td> $WASM_PERF_CHANGE $(echo $WASM_DIFF*100 | bc -l | xargs printf "%.2f") %<\/td><\/tr>"
+            WT_OVERHEAD=$(echo "($WASM_PR_TIME-$PR_TIME)/$PR_TIME*100" | bc -l | xargs printf "%.0f")
+
+            echo -n "<tr><td nowrap><tt>$BENCH_ID<\/td>"\
+                "<td nowrap> $(format_time $MASTER_TIME)<\/td>" \
+                "<td nowrap> $(format_time $PR_TIME)<\/td>" \
+                "<td nowrap> $PERF_CHANGE $(echo $DIFF*100 | bc -l | xargs printf "%.2f%%")<\/td>" \
+                "<td nowrap> $(format_time $WASM_MASTER_TIME)<\/td>" \
+                "<td nowrap> $(format_time $WASM_PR_TIME)<\/td>" \
+                "<td nowrap> $WASM_PERF_CHANGE $(echo $WASM_DIFF*100 | bc -l | xargs printf "%.2f%%")<\/td>" \
+                "<td nowrap> $(wasmtime_overhead_status $WT_OVERHEAD)<\/td><\/tr>"
         done)
 
 popd
@@ -85,10 +101,10 @@ curl -X ${REQUEST_TYPE} ${PR_COMMENTS_URL} \
 <table> \
 <thead> \
 <tr> \
-<th><\/th><th colspan=3>NATIVE<\/th><th colspan=3>WASMTIME<\/th> \
+<th><\/th><th colspan=3>NATIVE<\/th><th colspan=3>WASMTIME<\/th><th></th> \
 <\/tr> \
 <tr> \
-<th>BENCHMARK<\/th><th>MASTER<\/th><th>PR<\/th><th>DIFF<\/th><th>MASTER<\/th><th>PR<\/th><th>DIFF<\/th> \
+<th>BENCHMARK<\/th><th>MASTER<\/th><th>PR<\/th><th>DIFF<\/th><th>MASTER<\/th><th>PR<\/th><th>DIFF<\/th><th>WASMTIME OVERHEAD<\/th> \
 <\/tr> \
 <\/thead> \
 <tbody> \
