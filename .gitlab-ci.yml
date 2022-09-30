@@ -75,6 +75,7 @@ wasmtime-benchmark:
     - source ~/.profile
 
     # `wasmtime` Branch: `master`
+    - git fetch
     - git checkout master
     - git pull
     - git submodule update --init --recursive
