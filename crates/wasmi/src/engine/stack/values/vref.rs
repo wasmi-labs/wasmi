@@ -113,15 +113,18 @@ impl<'a> ValueStackRef<'a> {
         let keep = drop_keep.keep();
         if keep == 0 {
             // Bail out early when there are no values to keep.
-            self.stack_ptr -= drop;
-            return;
-        }
-        // Copy kept values over to their new place on the stack.
-        // Note: We cannot use `memcpy` since the slices may overlap.
-        let src = self.stack_ptr - keep;
-        let dst = self.stack_ptr - keep - drop;
-        for i in 0..keep {
-            *self.get_release_unchecked_mut(dst + i) = self.get_release_unchecked(src + i);
+        } else if keep == 1 {
+            // Bail out early when there is only one value to copy.
+            *self.get_release_unchecked_mut(self.stack_ptr - 1 - drop) =
+                self.get_release_unchecked(self.stack_ptr - 1);
+        } else {
+            // Copy kept values over to their new place on the stack.
+            // Note: We cannot use `memcpy` since the slices may overlap.
+            let src = self.stack_ptr - keep;
+            let dst = self.stack_ptr - keep - drop;
+            for i in 0..keep {
+                *self.get_release_unchecked_mut(dst + i) = self.get_release_unchecked(src + i);
+            }
         }
         self.stack_ptr -= drop;
     }
