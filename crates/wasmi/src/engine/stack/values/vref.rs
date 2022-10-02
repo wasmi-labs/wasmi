@@ -111,6 +111,11 @@ impl<'a> ValueStackRef<'a> {
             return;
         }
         let keep = drop_keep.keep();
+        if keep == 0 {
+            // Bail out early when there are no values to keep.
+            self.stack_ptr -= drop;
+            return;
+        }
         // Copy kept values over to their new place on the stack.
         // Note: We cannot use `memcpy` since the slices may overlap.
         let src = self.stack_ptr - keep;
