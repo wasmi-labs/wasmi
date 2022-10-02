@@ -6,6 +6,27 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Additionally we have an `Internal` section for changes that are of interest to developers.
 
+## [0.18.0] - UNRELEASED
+
+### Added
+
+- Added Contibution Guidelines and Code of Conduct to the repository. (https://github.com/paritytech/wasmi/pull/485)
+
+### Changed
+
+- Optimized instruction dispatch in the `wasmi` interpreter.
+  (https://github.com/paritytech/wasmi/pull/478, https://github.com/paritytech/wasmi/pull/482)
+  - This yielded combined speed-ups of ~20% across the board.
+  - As a side effect we also refactored the way we compute branching offsets
+    at Wasm module compilation time which improved performance of Wasm module
+    compilation by roughly 5%.
+
+### Internal
+
+- Our CI now also benchmarks `wasmi` when ran inside Wasmtime as Wasm.
+  (https://github.com/paritytech/wasmi/pull/483, https://github.com/paritytech/wasmi/pull/487)
+  - This allows us to optimize `wasmi` towards Wasm performance more easily in the future.
+
 ## [0.17.0] - 2022-09-23
 
 ### Added
