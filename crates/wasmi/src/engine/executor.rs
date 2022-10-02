@@ -1,11 +1,22 @@
 use super::{
     super::{Memory, Table},
-    bytecode::{BranchParams, FuncIdx, GlobalIdx, Instruction, LocalDepth, Offset, SignatureIdx},
+    bytecode::{
+        BranchOffset,
+        BranchParams,
+        BranchParamsKeep,
+        FuncIdx,
+        GlobalIdx,
+        Instruction,
+        LocalDepth,
+        Offset,
+        SignatureIdx,
+    },
     cache::InstanceCache,
     code_map::InstructionPtr,
     stack::ValueStackRef,
     AsContextMut,
     CallOutcome,
+    Drop,
     DropKeep,
     FuncFrame,
     ValueStack,
@@ -86,17 +97,25 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
                 Instr::LocalGet { local_depth } => self.visit_local_get(local_depth),
                 Instr::LocalSet { local_depth } => self.visit_local_set(local_depth),
                 Instr::LocalTee { local_depth } => self.visit_local_tee(local_depth),
-                Instr::Br(target) => self.visit_br(target),
-                Instr::BrIfEqz(target) => self.visit_br_if_eqz(target),
-                Instr::BrIfNez(target) => self.visit_br_if_nez(target),
-                Instr::ReturnIfNez(drop_keep) => {
-                    if let MaybeReturn::Return = self.visit_return_if_nez(drop_keep) {
+                Instr::Br(params) => self.visit_br(params),
+                Instr::BrIfEqz(params) => self.visit_br_if_eqz(params),
+                Instr::BrIfNez(params) => self.visit_br_if_nez(params),
+                Instr::BrKeep(params) => self.visit_br_keep(params),
+                Instr::BrIfNezKeep(params) => self.visit_br_if_nez_keep(params),
+                Instr::ReturnIfNez(drop) => {
+                    if let MaybeReturn::Return = self.visit_return_if_nez(drop) {
+                        return Ok(CallOutcome::Return);
+                    }
+                }
+                Instr::ReturnIfNezKeep(drop_keep) => {
+                    if let MaybeReturn::Return = self.visit_return_if_nez_keep(drop_keep) {
                         return Ok(CallOutcome::Return);
                     }
                 }
                 Instr::BrTable { len_targets } => self.visit_br_table(len_targets),
                 Instr::Unreachable => self.visit_unreachable()?,
-                Instr::Return(drop_keep) => return self.visit_ret(drop_keep),
+                Instr::Return(drop) => return self.visit_ret(drop),
+                Instr::ReturnKeep(drop_keep) => return self.visit_ret_keep(drop_keep),
                 Instr::Call(func) => return self.visit_call(func),
                 Instr::CallIndirect(signature) => return self.visit_call_indirect(signature),
                 Instr::Drop => self.visit_drop(),
@@ -447,7 +466,8 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         f: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), TrapCode> {
         self.value_stack.try_eval_top(f)?;
-        self.try_next_instr()
+        self.next_instr();
+        Ok(())
     }
 
     fn execute_binary(&mut self, f: fn(UntypedValue, UntypedValue) -> UntypedValue) {
@@ -460,7 +480,8 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         f: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), TrapCode> {
         self.value_stack.try_eval_top2(f)?;
-        self.try_next_instr()
+        self.next_instr();
+        Ok(())
     }
 
     fn execute_reinterpret<T, U>(&mut self)
@@ -472,34 +493,37 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.next_instr()
     }
 
-    fn try_next_instr(&mut self) -> Result<(), TrapCode> {
-        self.next_instr();
-        Ok(())
-    }
-
+    #[inline]
     fn next_instr(&mut self) {
-        // Safety: This is safe since we carefully constructed the `wasmi`
-        //         bytecode in conjunction with Wasm validation so that the
-        //         offsets of the instruction pointer within the sequence of
-        //         instructions never make the instruction pointer point out
-        //         of bounds of the instructions that belong to the function
-        //         that is currently executed.
-        unsafe {
-            self.ip.offset(1);
-        };
+        self.ip_add(1)
     }
 
-    fn branch_to(&mut self, target: BranchParams) {
-        self.value_stack.drop_keep(target.drop_keep());
+    #[inline]
+    fn branch_to(&mut self, params: BranchParams) {
+        self.value_stack.drop(params.drop());
+        self.ip_add_offset(params.offset())
+    }
+
+    #[inline]
+    fn branch_to_keep(&mut self, params: BranchParamsKeep) {
+        self.value_stack.drop_keep(params.drop_keep());
+        self.ip_add_offset(params.offset())
+    }
+
+    #[inline]
+    fn ip_add_offset(&mut self, offset: BranchOffset) {
+        self.ip_add(offset.into_i32() as isize)
+    }
+
+    #[inline]
+    fn ip_add(&mut self, delta: isize) {
         // Safety: This is safe since we carefully constructed the `wasmi`
         //         bytecode in conjunction with Wasm validation so that the
         //         offsets of the instruction pointer within the sequence of
         //         instructions never make the instruction pointer point out
         //         of bounds of the instructions that belong to the function
         //         that is currently executed.
-        unsafe {
-            self.ip.offset(target.offset().into_i32() as isize);
-        }
+        unsafe { self.ip.offset(delta) }
     }
 
     fn sync_stack_ptr(&mut self) {
@@ -513,7 +537,14 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         Ok(CallOutcome::NestedCall(func))
     }
 
-    fn ret(&mut self, drop_keep: DropKeep) {
+    #[inline]
+    fn ret(&mut self, drop: Drop) {
+        self.value_stack.drop(drop);
+        self.sync_stack_ptr();
+    }
+
+    #[inline]
+    fn ret_keep(&mut self, drop_keep: DropKeep) {
         self.value_stack.drop_keep(drop_keep);
         self.sync_stack_ptr();
     }
@@ -530,32 +561,56 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         Err(TrapCode::Unreachable).map_err(Into::into)
     }
 
-    fn visit_br(&mut self, target: BranchParams) {
-        self.branch_to(target)
+    fn visit_br(&mut self, params: BranchParams) {
+        self.branch_to(params)
     }
 
-    fn visit_br_if_eqz(&mut self, target: BranchParams) {
+    fn visit_br_keep(&mut self, params: BranchParamsKeep) {
+        self.branch_to_keep(params)
+    }
+
+    fn visit_br_if_eqz(&mut self, params: BranchParams) {
         let condition = self.value_stack.pop_as();
         if condition {
             self.next_instr()
         } else {
-            self.branch_to(target)
+            self.branch_to(params)
         }
     }
 
-    fn visit_br_if_nez(&mut self, target: BranchParams) {
+    fn visit_br_if_nez(&mut self, params: BranchParams) {
         let condition = self.value_stack.pop_as();
         if condition {
-            self.branch_to(target)
+            self.branch_to(params)
         } else {
             self.next_instr()
         }
     }
 
-    fn visit_return_if_nez(&mut self, drop_keep: DropKeep) -> MaybeReturn {
+    fn visit_br_if_nez_keep(&mut self, params: BranchParamsKeep) {
         let condition = self.value_stack.pop_as();
         if condition {
-            self.ret(drop_keep);
+            self.branch_to_keep(params)
+        } else {
+            self.next_instr()
+        }
+    }
+
+    fn visit_return_if_nez(&mut self, drop: Drop) -> MaybeReturn {
+        let condition = self.value_stack.pop_as();
+        if condition {
+            self.ret(drop);
+            MaybeReturn::Return
+        } else {
+            self.next_instr();
+            MaybeReturn::Continue
+        }
+    }
+
+    fn visit_return_if_nez_keep(&mut self, drop_keep: DropKeep) -> MaybeReturn {
+        let condition = self.value_stack.pop_as();
+        if condition {
+            self.ret_keep(drop_keep);
             MaybeReturn::Return
         } else {
             self.next_instr();
@@ -575,8 +630,13 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         }
     }
 
-    fn visit_ret(&mut self, drop_keep: DropKeep) -> Result<CallOutcome, TrapCode> {
-        self.ret(drop_keep);
+    fn visit_ret(&mut self, drop: Drop) -> Result<CallOutcome, TrapCode> {
+        self.ret(drop);
+        Ok(CallOutcome::Return)
+    }
+
+    fn visit_ret_keep(&mut self, drop_keep: DropKeep) -> Result<CallOutcome, TrapCode> {
+        self.ret_keep(drop_keep);
         Ok(CallOutcome::Return)
     }
 

@@ -1,11 +1,42 @@
 use crate::engine::Instr;
 use core::fmt::Display;
 
-/// Defines how many stack values are going to be dropped and kept after branching.
+/// Defines how many stack values are going to be dropped upon branching.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct Drop {
+    drop: u16,
+}
+
+impl Drop {
+    /// Creates a new [`Drop`] that drops nothing.
+    pub fn none() -> Self {
+        Self { drop: 0 }
+    }
+
+    /// Creates a new [`DropKeep`] with the given amounts to drop and keep.
+    ///
+    /// # Panics
+    ///
+    /// - If `drop` or `keep` values do not respect their limitations.
+    pub fn new(drop: usize) -> Result<Self, DropKeepError> {
+        let drop = drop
+            .try_into()
+            .map_err(|_| DropKeepError::OutOfBoundsDrop)?;
+        Ok(Self { drop })
+    }
+
+    /// Returns the amount of stack values to drop.
+    #[inline]
+    pub fn drop(self) -> usize {
+        self.drop as usize
+    }
+}
+
+/// Defines how many stack values are going to be dropped and kept upon branching.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct DropKeep {
     /// The amount of stack values dropped.
-    drop: u16,
+    drop: Drop,
     /// The amount of stack values kept.
     keep: u16,
 }
@@ -33,20 +64,13 @@ impl Display for DropKeepError {
 }
 
 impl DropKeep {
-    /// Creates a new [`DropKeep`] that drops or keeps nothing.
-    pub fn none() -> Self {
-        Self { drop: 0, keep: 0 }
-    }
-
     /// Creates a new [`DropKeep`] with the given amounts to drop and keep.
     ///
     /// # Panics
     ///
     /// - If `drop` or `keep` values do not respect their limitations.
     pub fn new(drop: usize, keep: usize) -> Result<Self, DropKeepError> {
-        let drop = drop
-            .try_into()
-            .map_err(|_| DropKeepError::OutOfBoundsDrop)?;
+        let drop = Drop::new(drop)?;
         let keep = keep
             .try_into()
             .map_err(|_| DropKeepError::OutOfBoundsKeep)?;
@@ -54,11 +78,13 @@ impl DropKeep {
     }
 
     /// Returns the amount of stack values to drop.
+    #[inline]
     pub fn drop(self) -> usize {
-        self.drop as usize
+        self.drop.drop()
     }
 
     /// Returns the amount of stack values to keep.
+    #[inline]
     pub fn keep(self) -> usize {
         self.keep as usize
     }
@@ -176,7 +202,7 @@ impl Offset {
 /// need to be dropped and kept in order to maintain
 /// value stack integrity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct BranchParams {
+pub struct BranchParamsKeep {
     /// The branching offset.
     ///
     /// How much instruction pointer is offset upon taking the branch.
@@ -185,10 +211,59 @@ pub struct BranchParams {
     drop_keep: DropKeep,
 }
 
-impl BranchParams {
-    /// Creates new [`BranchParams`].
+impl BranchParamsKeep {
+    /// Creates new [`BranchParamsKeep`].
     pub fn new(offset: BranchOffset, drop_keep: DropKeep) -> Self {
         Self { offset, drop_keep }
+    }
+
+    /// Returns `true` if the [`BranchParamsKeep`] have been initialized already.
+    fn is_init(&self) -> bool {
+        self.offset.is_init()
+    }
+
+    /// Initializes the [`BranchParamsKeep`] with a proper [`BranchOffset`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`BranchParamsKeep`] have already been initialized.
+    /// - If the given [`BranchOffset`] is not properly initialized.
+    pub fn init(&mut self, offset: BranchOffset) {
+        assert!(offset.is_init());
+        assert!(!self.is_init());
+        self.offset = offset;
+    }
+
+    /// Returns the branching offset.
+    pub fn offset(self) -> BranchOffset {
+        self.offset
+    }
+
+    /// Returns the amount of stack values to drop and keep upon taking the branch.
+    pub fn drop_keep(self) -> DropKeep {
+        self.drop_keep
+    }
+}
+
+/// A branching target.
+///
+/// This also specifies how many values on the stack
+/// need to be dropped and kept in order to maintain
+/// value stack integrity.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct BranchParams {
+    /// The branching offset.
+    ///
+    /// How much instruction pointer is offset upon taking the branch.
+    offset: BranchOffset,
+    /// How many values on the stack need to be dropped.
+    drop: Drop,
+}
+
+impl BranchParams {
+    /// Creates new [`BranchParamsKeep`].
+    pub fn new(offset: BranchOffset, drop: Drop) -> Self {
+        Self { offset, drop }
     }
 
     /// Returns `true` if the [`BranchParams`] have been initialized already.
@@ -214,8 +289,8 @@ impl BranchParams {
     }
 
     /// Returns the amount of stack values to drop and keep upon taking the branch.
-    pub fn drop_keep(self) -> DropKeep {
-        self.drop_keep
+    pub fn drop(self) -> Drop {
+        self.drop
     }
 }
 

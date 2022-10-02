@@ -1,7 +1,10 @@
+#![cfg(not(test))]
+
 use super::*;
 use crate::{
     engine::{
-        bytecode::{BranchOffset, BranchParams, Instruction},
+        bytecode::{BranchOffset, BranchParamsKeep, Instruction},
+        Drop,
         DropKeep,
     },
     Engine,
@@ -87,6 +90,10 @@ where
     for ((func_type, func_body), expected) in module.internal_funcs().zip(expected) {
         assert_func_body(engine, func_type, func_body, expected);
     }
+}
+
+fn drop(drop: usize) -> Drop {
+    Drop::new(drop).unwrap()
 }
 
 fn drop_keep(drop: usize, keep: usize) -> DropKeep {

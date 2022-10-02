@@ -193,6 +193,7 @@ impl Instruction {
             Instruction::Br(params)
             | Instruction::BrIfEqz(params)
             | Instruction::BrIfNez(params) => params.init(offset),
+            Instruction::BrKeep(params) | Instruction::BrIfNezKeep(params) => params.init(offset),
             _ => panic!(
                 "tried to update branch offset of a non-branch instruction: {:?}",
                 self

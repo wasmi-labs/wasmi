@@ -25,9 +25,9 @@ pub use self::{
     error::TranslationError,
     inst_builder::{Instr, InstructionsBuilder, RelativeDepth},
 };
-use super::{DropKeep, FuncBody, Instruction};
+use super::{bytecode::DropKeepError, Drop, DropKeep, FuncBody, Instruction};
 use crate::{
-    engine::bytecode::{BranchParams, Offset},
+    engine::bytecode::{BranchParams, BranchParamsKeep, Offset},
     module::{
         BlockType,
         FuncIdx,
@@ -105,6 +105,34 @@ impl FunctionBuilderAllocations {
         self.inst_builder.reset();
         self.locals.reset();
         self.br_table_branches.clear();
+    }
+}
+
+/// How many value a return or branch instruction drops and keeps on the stack.
+///
+/// # Note
+///
+/// Only dropping but not keeping any values around is more efficient and is
+/// the reason why we differentiate at compilation time between the two.
+#[derive(Debug, Copy, Clone)]
+pub enum JumpDropKeep {
+    /// The branch or return requires keeping values.
+    DropKeep(DropKeep),
+    /// The branch or return does not keep any values.
+    Drop(Drop),
+}
+
+impl JumpDropKeep {
+    /// Returns a [`JumpDropKeep`] with the `additional` amount of dropped values.
+    pub fn add_drop(self, additional: usize) -> Result<JumpDropKeep, DropKeepError> {
+        let result = match self {
+            Self::DropKeep(drop_keep) => Self::DropKeep(DropKeep::new(
+                drop_keep.drop() + additional,
+                drop_keep.keep(),
+            )?),
+            Self::Drop(drop) => Self::Drop(Drop::new(drop.drop() + additional)?),
+        };
+        Ok(result)
     }
 }
 
@@ -247,7 +275,7 @@ impl<'parser> FuncBuilder<'parser> {
     /// # Panics
     ///
     /// If underflow of the value stack is detected.
-    fn compute_drop_keep(&self, depth: u32) -> Result<DropKeep, TranslationError> {
+    fn compute_drop_keep(&self, depth: u32) -> Result<JumpDropKeep, TranslationError> {
         debug_assert!(self.is_reachable());
         let frame = self.alloc.control_frames.nth_back(depth);
         // Find out how many values we need to keep (copy to the new stack location after the drop).
@@ -274,7 +302,11 @@ impl<'parser> FuncBuilder<'parser> {
             height_diff,
         );
         let drop = height_diff - keep;
-        DropKeep::new(drop as usize, keep as usize).map_err(Into::into)
+        let result = match keep {
+            0 => JumpDropKeep::Drop(Drop::new(drop as usize)?),
+            _ => JumpDropKeep::DropKeep(DropKeep::new(drop as usize, keep as usize)?),
+        };
+        Ok(result)
     }
 
     /// Compute [`DropKeep`] for the return statement.
@@ -283,7 +315,7 @@ impl<'parser> FuncBuilder<'parser> {
     ///
     /// - If the control flow frame stack is empty.
     /// - If the value stack is underflown.
-    fn drop_keep_return(&self) -> Result<DropKeep, TranslationError> {
+    fn drop_keep_return(&self) -> Result<JumpDropKeep, TranslationError> {
         debug_assert!(self.is_reachable());
         assert!(
             !self.alloc.control_frames.is_empty(),
@@ -295,14 +327,12 @@ impl<'parser> FuncBuilder<'parser> {
             .len()
             .checked_sub(1)
             .expect("control flow frame stack must not be empty") as u32;
-        let drop_keep = self.compute_drop_keep(max_depth)?;
         let len_params_locals = self.alloc.locals.len_registered() as usize;
-        DropKeep::new(
+        let drop_keep = self
+            .compute_drop_keep(max_depth)?
             // Drop all local variables and parameters upon exit.
-            drop_keep.drop() + len_params_locals,
-            drop_keep.keep(),
-        )
-        .map_err(Into::into)
+            .add_drop(len_params_locals)?;
+        Ok(drop_keep)
     }
 
     /// Returns the relative depth on the stack of the local variable.
@@ -338,9 +368,14 @@ impl<'parser> FuncBuilder<'parser> {
         }
     }
 
-    /// Creates [`BranchParams`] to `target` using `drop_keep` for the current instruction.
-    fn branch_params(&mut self, target: LabelRef, drop_keep: DropKeep) -> BranchParams {
-        BranchParams::new(self.alloc.inst_builder.try_resolve_label(target), drop_keep)
+    /// Creates [`BranchParams`] to `target` using `drop` for the current instruction.
+    fn branch_params(&mut self, target: LabelRef, drop: Drop) -> BranchParams {
+        BranchParams::new(self.alloc.inst_builder.try_resolve_label(target), drop)
+    }
+
+    /// Creates [`BranchParamsKeep`] to `target` using `drop_keep` for the current instruction.
+    fn branch_params_keep(&mut self, target: LabelRef, drop_keep: DropKeep) -> BranchParamsKeep {
+        BranchParamsKeep::new(self.alloc.inst_builder.try_resolve_label(target), drop_keep)
     }
 }
 
@@ -350,7 +385,7 @@ impl<'parser> FuncBuilder<'parser> {
 #[derive(Debug)]
 pub enum AcquiredTarget {
     /// The branch jumps to the label.
-    Branch(LabelRef, DropKeep),
+    Branch(LabelRef, JumpDropKeep),
     /// The branch returns to the caller.
     ///
     /// # Note
@@ -358,7 +393,7 @@ pub enum AcquiredTarget {
     /// This is returned if the `relative_depth` points to the outmost
     /// function body `block`. WebAssembly defines branches to this control
     /// flow frame as equivalent to returning from the function.
-    Return(DropKeep),
+    Return(JumpDropKeep),
 }
 
 impl<'parser> FuncBuilder<'parser> {
@@ -473,7 +508,7 @@ impl<'parser> FuncBuilder<'parser> {
                 else_label,
                 stack_height,
             ));
-            let branch_params = self.branch_params(else_label, DropKeep::none());
+            let branch_params = self.branch_params(else_label, Drop::none());
             self.alloc
                 .inst_builder
                 .push_inst(Instruction::BrIfEqz(branch_params));
@@ -515,7 +550,7 @@ impl<'parser> FuncBuilder<'parser> {
         // Create the jump from the end of the `then` block to the `if`
         // block's end label in case the end of `then` is reachable.
         if reachable {
-            let params = self.branch_params(if_frame.end_label(), DropKeep::none());
+            let params = self.branch_params(if_frame.end_label(), Drop::none());
             self.alloc.inst_builder.push_inst(Instruction::Br(params));
         }
         // Now resolve labels for the instructions of the `else` block
@@ -578,11 +613,17 @@ impl<'parser> FuncBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             match builder.acquire_target(relative_depth)? {
                 AcquiredTarget::Branch(end_label, drop_keep) => {
-                    let params = builder.branch_params(end_label, drop_keep);
-                    builder
-                        .alloc
-                        .inst_builder
-                        .push_inst(Instruction::Br(params));
+                    let instr = match drop_keep {
+                        JumpDropKeep::DropKeep(drop_keep) => {
+                            let params = builder.branch_params_keep(end_label, drop_keep);
+                            Instruction::BrKeep(params)
+                        }
+                        JumpDropKeep::Drop(drop) => {
+                            let params = builder.branch_params(end_label, drop);
+                            Instruction::Br(params)
+                        }
+                    };
+                    builder.alloc.inst_builder.push_inst(instr);
                 }
                 AcquiredTarget::Return(_) => {
                     // In this case the `br` can be directly translated as `return`.
@@ -601,17 +642,26 @@ impl<'parser> FuncBuilder<'parser> {
             debug_assert_eq!(condition, ValueType::I32);
             match builder.acquire_target(relative_depth)? {
                 AcquiredTarget::Branch(end_label, drop_keep) => {
-                    let params = builder.branch_params(end_label, drop_keep);
-                    builder
-                        .alloc
-                        .inst_builder
-                        .push_inst(Instruction::BrIfNez(params));
+                    let instr = match drop_keep {
+                        JumpDropKeep::DropKeep(drop_keep) => {
+                            let params = builder.branch_params_keep(end_label, drop_keep);
+                            Instruction::BrIfNezKeep(params)
+                        }
+                        JumpDropKeep::Drop(drop) => {
+                            let params = builder.branch_params(end_label, drop);
+                            Instruction::BrIfNez(params)
+                        }
+                    };
+                    builder.alloc.inst_builder.push_inst(instr);
                 }
                 AcquiredTarget::Return(drop_keep) => {
-                    builder
-                        .alloc
-                        .inst_builder
-                        .push_inst(Instruction::ReturnIfNez(drop_keep));
+                    let instr = match drop_keep {
+                        JumpDropKeep::DropKeep(drop_keep) => {
+                            Instruction::ReturnIfNezKeep(drop_keep)
+                        }
+                        JumpDropKeep::Drop(drop) => Instruction::ReturnIfNez(drop),
+                    };
+                    builder.alloc.inst_builder.push_inst(instr);
                 }
             }
             Ok(())
@@ -638,10 +688,29 @@ impl<'parser> FuncBuilder<'parser> {
                         let base = builder.alloc.inst_builder.current_pc();
                         let instr = offset_instr(base, n + 1);
                         let offset = builder.alloc.inst_builder.try_resolve_label_for(label, instr);
-                        let params = BranchParams::new(offset, drop_keep);
-                        Ok(Instruction::Br(params))
+                        let instr = match drop_keep {
+                            JumpDropKeep::DropKeep(drop_keep) => {
+                                let params = BranchParamsKeep::new(offset, drop_keep);
+                                Instruction::BrKeep(params)
+                            }
+                            JumpDropKeep::Drop(drop) => {
+                                let params = BranchParams::new(offset, drop);
+                                Instruction::Br(params)
+                            }
+                        };
+                        Ok(instr)
                     }
-                    AcquiredTarget::Return(drop_keep) => Ok(Instruction::Return(drop_keep)),
+                    AcquiredTarget::Return(drop_keep) => {
+                        let instr = match drop_keep {
+                            JumpDropKeep::DropKeep(drop_keep) => {
+                                Instruction::ReturnKeep(drop_keep)
+                            }
+                            JumpDropKeep::Drop(drop) => {
+                                Instruction::Return(drop)
+                            }
+                        };
+                        Ok(instr)
+                    }
                 }
             }
 
@@ -686,10 +755,11 @@ impl<'parser> FuncBuilder<'parser> {
     pub fn translate_return(&mut self) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let drop_keep = builder.drop_keep_return()?;
-            builder
-                .alloc
-                .inst_builder
-                .push_inst(Instruction::Return(drop_keep));
+            let instr = match drop_keep {
+                JumpDropKeep::DropKeep(drop_keep) => Instruction::ReturnKeep(drop_keep),
+                JumpDropKeep::Drop(drop) => Instruction::Return(drop),
+            };
+            builder.alloc.inst_builder.push_inst(instr);
             builder.reachable = false;
             Ok(())
         })

@@ -12,8 +12,16 @@ pub mod stack;
 mod traits;
 
 pub(crate) use self::func_args::{FuncParams, FuncResults};
+use self::{
+    bytecode::Instruction,
+    cache::InstanceCache,
+    code_map::CodeMap,
+    executor::execute_frame,
+    func_types::FuncTypeRegistry,
+    stack::{FuncFrame, Stack, ValueStack},
+};
 pub use self::{
-    bytecode::DropKeep,
+    bytecode::{Drop, DropKeep},
     code_map::FuncBody,
     config::Config,
     func_builder::{
@@ -26,18 +34,10 @@ pub use self::{
     stack::StackLimits,
     traits::{CallParams, CallResults},
 };
-use self::{
-    bytecode::Instruction,
-    cache::InstanceCache,
-    code_map::CodeMap,
-    executor::execute_frame,
-    func_types::FuncTypeRegistry,
-    stack::{FuncFrame, Stack, ValueStack},
-};
 use super::{func::FuncEntityInternal, AsContextMut, Func};
 use crate::{
     arena::{GuardedEntity, Index},
-    core::{Trap, TrapCode},
+    core::{Trap, TrapCode, UntypedValue},
     FuncType,
 };
 use alloc::sync::Arc;
@@ -308,9 +308,9 @@ impl EngineInner {
         Params: CallParams,
     {
         self.stack.clear();
-        for param in params.feed_params() {
-            self.stack.values.push(param);
-        }
+        self.stack
+            .values
+            .extend(params.feed_params().map(UntypedValue::from));
     }
 
     /// Writes the results of the function execution back into the `results` buffer.

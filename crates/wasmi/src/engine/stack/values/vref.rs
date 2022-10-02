@@ -1,7 +1,7 @@
 use super::ValueStack;
 use crate::{
     core::{TrapCode, UntypedValue},
-    engine::DropKeep,
+    engine::{Drop, DropKeep},
 };
 
 /// A mutable view over the [`ValueStack`].
@@ -104,6 +104,7 @@ impl<'a> ValueStackRef<'a> {
     /// top `k` entries are the top `k` entries before this operation.
     ///
     /// Note that `k + d` cannot be greater than the stack length.
+    #[inline]
     pub fn drop_keep(&mut self, drop_keep: DropKeep) {
         let drop = drop_keep.drop();
         if drop == 0 {
@@ -119,6 +120,13 @@ impl<'a> ValueStackRef<'a> {
             *self.get_release_unchecked_mut(dst + i) = self.get_release_unchecked(src + i);
         }
         self.stack_ptr -= drop;
+    }
+
+    /// Drops some amount of entries from the value stack.
+    #[inline]
+    pub fn drop(&mut self, drop: Drop) {
+        if drop.drop() == 0 { return }
+        self.stack_ptr -= drop.drop();
     }
 
     /// Returns the last stack entry of the [`ValueStackRef`].
