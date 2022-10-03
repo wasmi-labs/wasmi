@@ -47,7 +47,7 @@ pushd ./target/ci/criterion
 
 # Format benchmarks details into a table
 RESULT=$(for d in */; do
-            BENCH_ID=$(jq .full_id ${d}master/benchmark.json | tr -d '"')
+            BENCH_ID=$(jq .full_id ${d}master/benchmark.json | tr -d '"' | sed -e 's/\//\/<\/tt><br><tt>/' )
 
             MASTER_TIME=$(jq .slope.point_estimate ${d}master/estimates.json)
             PR_TIME=$(jq .slope.point_estimate ${d}new/estimates.json)
@@ -61,7 +61,7 @@ RESULT=$(for d in */; do
 
             WT_OVERHEAD=$(echo "($WASM_PR_TIME-$PR_TIME)/$PR_TIME*100" | bc -l | xargs printf "%.0f")
 
-            echo -n "<tr><td nowrap><tt>$BENCH_ID<\/td>"\
+            echo -n "<tr><td><tt>$BENCH_ID<\/td>"\
                 "<td nowrap> $(format_time $MASTER_TIME)<\/td>" \
                 "<td nowrap> $(format_time $PR_TIME)<\/td>" \
                 "<td nowrap> $PERF_CHANGE $(echo $DIFF*100 | bc -l | xargs printf "%.2f%%")<\/td>" \
