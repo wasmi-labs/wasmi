@@ -47,7 +47,7 @@ pushd ./target/ci/criterion
 
 # Format benchmarks details into a table
 RESULT=$(for d in */; do
-            BENCH_ID=$(jq .full_id ${d}master/benchmark.json | tr -d '"')
+            BENCH_ID=$(jq .full_id ${d}master/benchmark.json | tr -d '"' | sed -e 's/\//\/<\/tt><br><tt>/' )
 
             MASTER_TIME=$(jq .slope.point_estimate ${d}master/estimates.json)
             PR_TIME=$(jq .slope.point_estimate ${d}new/estimates.json)
