@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use specs::types::FunctionType;
+use specs::{host_function::HostFunctionDesc, types::FunctionType};
 
 use crate::{FuncRef, MemoryRef, Module, ModuleRef, Signature};
 
@@ -35,11 +35,12 @@ pub struct Tracer {
     last_jump_eid: Vec<u64>,
     function_index_allocator: u32,
     pub(crate) function_index_translation: HashMap<u32, FuncDesc>,
+    pub host_function_index_lookup: HashMap<usize, HostFunctionDesc>,
 }
 
 impl Tracer {
     /// Create an empty tracer
-    pub fn default() -> Self {
+    pub fn new(host_plugin_lookup: HashMap<usize, HostFunctionDesc>) -> Self {
         Tracer {
             itable: ITable::default(),
             imtable: IMTable::default(),
@@ -51,6 +52,7 @@ impl Tracer {
             function_lookup: vec![],
             function_index_allocator: 1,
             function_index_translation: Default::default(),
+            host_function_index_lookup: host_plugin_lookup,
         }
     }
 
@@ -82,6 +84,13 @@ impl Tracer {
         let r = self.function_index_allocator;
         self.function_index_allocator = r + 1;
         r
+    }
+
+    fn lookup_host_plugin(&self, function_index: usize) -> HostFunctionDesc {
+        self.host_function_index_lookup
+            .get(&function_index)
+            .unwrap()
+            .clone()
     }
 }
 
@@ -151,7 +160,15 @@ impl Tracer {
                         }
                         crate::func::FuncInstanceInternal::Host {
                             host_func_index, ..
-                        } => FunctionType::HostFunction(host_func_index),
+                        } => {
+                            let plugin_desc = self.lookup_host_plugin(host_func_index);
+
+                            FunctionType::HostFunction {
+                                plugin: plugin_desc.plugin,
+                                function_index: host_func_index,
+                                function_name: plugin_desc.name,
+                            }
+                        }
                     };
 
                     self.function_lookup

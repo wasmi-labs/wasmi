@@ -405,16 +405,22 @@ impl<'a> Instruction<'a> {
             Instruction::Call(func_index) => {
                 let func_desc = function_mapping.get(&func_index).unwrap();
 
-                match func_desc.ftype {
+                match &func_desc.ftype {
                     specs::types::FunctionType::WasmFunction => Opcode::Call {
                         index: function_mapping
                             .get(&func_index)
                             .unwrap()
                             .index_within_jtable,
                     },
-                    specs::types::FunctionType::HostFunction(host_function_idx) => {
-                        Opcode::CallHost(host_function_idx)
-                    }
+                    specs::types::FunctionType::HostFunction {
+                        plugin,
+                        function_index,
+                        function_name,
+                    } => Opcode::CallHost {
+                        plugin: *plugin,
+                        function_index: *function_index,
+                        function_name: function_name.clone(),
+                    },
                 }
             }
             Instruction::CallIndirect(_) => todo!(),
