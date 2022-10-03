@@ -13,7 +13,7 @@ default:
       - api_failure
 
 .docker-env:                       &docker-env
-  image:                           "paritytech/ci-linux:production"
+  image:                           "paritytech/ci-linux:staging"
   interruptible:                   true
   tags:
     - linux-docker-benches
