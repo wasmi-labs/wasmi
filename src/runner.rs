@@ -469,10 +469,11 @@ impl Interpreter {
                 cond: <_>::from_value_internal(*self.value_stack.pick(3)),
             }),
 
-            isa::Instruction::I32Load(offset) | isa::Instruction::I32Load8U(offset) => {
+            isa::Instruction::I32Load(offset) | isa::Instruction::I32Load8U(offset) | isa::Instruction::I32Load8S(offset) => {
                 let load_size = match *instructions {
                     isa::Instruction::I32Load(..) => MemoryReadSize::U32,
                     isa::Instruction::I32Load8U(..) => MemoryReadSize::U8,
+                    isa::Instruction::I32Load8S(..) => MemoryReadSize::S8,
                     _ => unreachable!(),
                 };
 
@@ -825,6 +826,7 @@ impl Interpreter {
 
             isa::Instruction::I32Load(..)
             | isa::Instruction::I32Load8U(..)
+            | isa::Instruction::I32Load8S(..)
             | isa::Instruction::I64Load(..)
             | isa::Instruction::I64Load8U(..) => {
                 if let RunInstructionTracePre::Load {

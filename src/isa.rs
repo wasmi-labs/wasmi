@@ -434,7 +434,11 @@ impl<'a> Instruction<'a> {
             },
             Instruction::F32Load(_) => todo!(),
             Instruction::F64Load(_) => todo!(),
-            Instruction::I32Load8S(_) => todo!(),
+            Instruction::I32Load8S(offset) => Opcode::Load {
+                offset,
+                vtype: VarType::I32,
+                size: MemoryReadSize::S8,
+            },
             Instruction::I32Load8U(offset) => Opcode::Load {
                 offset,
                 vtype: VarType::I32,
