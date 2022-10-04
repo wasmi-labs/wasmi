@@ -463,10 +463,10 @@ impl Interpreter {
             }
 
             isa::Instruction::Drop => Some(RunInstructionTracePre::Drop),
-            isa::Instruction::Select => Some(RunInstructionTracePre::Select {
-                first: <_>::from_value_internal(*self.value_stack.pick(1)),
-                second: <_>::from_value_internal(*self.value_stack.pick(2)),
-                cond: <_>::from_value_internal(*self.value_stack.pick(3)),
+            isa::Instruction::Select(_) => Some(RunInstructionTracePre::Select {
+                cond: <_>::from_value_internal(*self.value_stack.pick(1)),
+                val2: <_>::from_value_internal(*self.value_stack.pick(2)),
+                val1: <_>::from_value_internal(*self.value_stack.pick(3)),
             }),
 
             isa::Instruction::I32Load(offset) | isa::Instruction::I32Load8U(offset) | isa::Instruction::I32Load8S(offset) => {
@@ -775,18 +775,14 @@ impl Interpreter {
                     unreachable!()
                 }
             }
-            isa::Instruction::Select => {
-                if let RunInstructionTracePre::Select {
-                    first,
-                    second,
-                    cond,
-                } = pre_status.unwrap()
-                {
+            isa::Instruction::Select(vtype) => {
+                if let RunInstructionTracePre::Select { val1, val2, cond } = pre_status.unwrap() {
                     StepInfo::Select {
-                        first,
-                        second,
+                        val1,
+                        val2,
                         cond,
                         result: <_>::from_value_internal(*self.value_stack.top()),
+                        vtype: vtype.into(),
                     }
                 } else {
                     unreachable!()
@@ -1345,7 +1341,7 @@ impl Interpreter {
             isa::Instruction::CallIndirect(index) => self.run_call_indirect(context, *index),
 
             isa::Instruction::Drop => self.run_drop(),
-            isa::Instruction::Select => self.run_select(),
+            isa::Instruction::Select(_) => self.run_select(),
 
             isa::Instruction::GetLocal(depth, ..) => self.run_get_local(*depth),
             isa::Instruction::SetLocal(depth, ..) => self.run_set_local(*depth),

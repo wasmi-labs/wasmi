@@ -181,7 +181,7 @@ pub enum Instruction<'a> {
     CallIndirect(u32),
 
     Drop,
-    Select,
+    Select(ValueType),
 
     GetGlobal(u32),
     SetGlobal(u32),
@@ -419,7 +419,7 @@ impl<'a> Instruction<'a> {
             }
             Instruction::CallIndirect(_) => todo!(),
             Instruction::Drop => Opcode::Drop,
-            Instruction::Select => Opcode::Select,
+            Instruction::Select(_) => Opcode::Select,
             Instruction::GetGlobal(_) => todo!(),
             Instruction::SetGlobal(_) => todo!(),
             Instruction::I32Load(offset) => Opcode::Load {
@@ -710,7 +710,7 @@ impl<'a> Into<u32> for Instruction<'a> {
             Instruction::Call(_) => 9,
             Instruction::CallIndirect(_) => 10,
             Instruction::Drop => 11,
-            Instruction::Select => 12,
+            Instruction::Select(..) => 12,
             Instruction::GetGlobal(_) => 13,
             Instruction::SetGlobal(_) => 14,
             Instruction::I32Load(_) => 15,
@@ -897,7 +897,7 @@ pub(crate) enum InstructionInternal {
     CallIndirect(u32),
 
     Drop,
-    Select,
+    Select(ValueType),
 
     GetGlobal(u32),
     SetGlobal(u32),
@@ -1153,7 +1153,7 @@ impl<'a> Iterator for InstructionIter<'a> {
             InstructionInternal::CallIndirect(x) => Instruction::CallIndirect(x),
 
             InstructionInternal::Drop => Instruction::Drop,
-            InstructionInternal::Select => Instruction::Select,
+            InstructionInternal::Select(vtype) => Instruction::Select(vtype),
 
             InstructionInternal::GetGlobal(x) => Instruction::GetGlobal(x),
             InstructionInternal::SetGlobal(x) => Instruction::SetGlobal(x),

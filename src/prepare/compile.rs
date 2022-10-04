@@ -327,7 +327,11 @@ impl Compiler {
             }
             Select => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::Select);
+                if let StackValueType::Specific(t) = context.value_stack.top()? {
+                    self.sink.emit(isa::InstructionInternal::Select(*t));
+                } else {
+                    unreachable!()
+                }
             }
 
             GetLocal(index) => {
