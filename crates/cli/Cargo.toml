@@ -13,7 +13,7 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-clap = { version = "3.2", features = ["derive"] }
+clap = { version = "4", features = ["derive"] }
 wasmi = { path = "../wasmi" }
 wat = "1"
 anyhow = "1"
