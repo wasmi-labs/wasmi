@@ -70,10 +70,10 @@ wasmtime-benchmark:
       - target/ci/
   script:
     # Install dependencies
-    - cargo install cargo-wasi
-    - curl https://wasmtime.dev/install.sh -sSf | bash
-    - export WASMTIME_HOME="$HOME/.wasmtime"
-    - export PATH="$WASMTIME_HOME/bin:$PATH"
+    # - cargo install cargo-wasi
+    # - curl https://wasmtime.dev/install.sh -sSf | bash
+    # - export WASMTIME_HOME="$HOME/.wasmtime"
+    # - export PATH="$WASMTIME_HOME/bin:$PATH"
 
     # `wasmtime` Branch: `master`
     - git fetch
