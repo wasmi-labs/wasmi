@@ -597,7 +597,10 @@ impl<'a> Instruction<'a> {
                 class: ShiftOp::Shl,
                 vtype: VarType::I32,
             },
-            Instruction::I32ShrS => todo!(),
+            Instruction::I32ShrS => Opcode::BinShift {
+                class: ShiftOp::SignedShr,
+                vtype: VarType::I32,
+            },
             Instruction::I32ShrU => Opcode::BinShift {
                 class: ShiftOp::UnsignedShr,
                 vtype: VarType::I32,
@@ -606,7 +609,10 @@ impl<'a> Instruction<'a> {
                 class: ShiftOp::Rotl,
                 vtype: VarType::I32,
             },
-            Instruction::I32Rotr => todo!(),
+            Instruction::I32Rotr => Opcode::BinShift {
+                class: ShiftOp::Rotr,
+                vtype: VarType::I32,
+            },
             Instruction::I64Clz => todo!(),
             Instruction::I64Ctz => todo!(),
             Instruction::I64Popcnt => todo!(),
@@ -633,13 +639,22 @@ impl<'a> Instruction<'a> {
                 class: ShiftOp::Shl,
                 vtype: VarType::I64,
             },
-            Instruction::I64ShrS => todo!(),
+            Instruction::I64ShrS => Opcode::BinShift {
+                class: ShiftOp::SignedShr,
+                vtype: VarType::I64,
+            },
             Instruction::I64ShrU => Opcode::BinShift {
                 class: ShiftOp::UnsignedShr,
                 vtype: VarType::I64,
             },
-            Instruction::I64Rotl => todo!(),
-            Instruction::I64Rotr => todo!(),
+            Instruction::I64Rotl => Opcode::BinShift {
+                class: ShiftOp::Rotl,
+                vtype: VarType::I64,
+            },
+            Instruction::I64Rotr => Opcode::BinShift {
+                class: ShiftOp::Rotr,
+                vtype: VarType::I64,
+            },
             Instruction::F32Abs => todo!(),
             Instruction::F32Neg => todo!(),
             Instruction::F32Ceil => todo!(),

@@ -473,7 +473,9 @@ impl Interpreter {
                 val1: <_>::from_value_internal(*self.value_stack.pick(3)),
             }),
 
-            isa::Instruction::I32Load(offset) | isa::Instruction::I32Load8U(offset) | isa::Instruction::I32Load8S(offset) => {
+            isa::Instruction::I32Load(offset)
+            | isa::Instruction::I32Load8U(offset)
+            | isa::Instruction::I32Load8S(offset) => {
                 let load_size = match *instructions {
                     isa::Instruction::I32Load(..) => MemoryReadSize::U32,
                     isa::Instruction::I32Load8U(..) => MemoryReadSize::U8,
@@ -631,10 +633,12 @@ impl Interpreter {
             | isa::Instruction::I32Mul
             | isa::Instruction::I32Shl
             | isa::Instruction::I32ShrU
+            | isa::Instruction::I32ShrS
             | isa::Instruction::I32And
             | isa::Instruction::I32Or
             | isa::Instruction::I32Xor
-            | isa::Instruction::I32Rotl => Some(RunInstructionTracePre::I32BinOp {
+            | isa::Instruction::I32Rotl
+            | isa::Instruction::I32Rotr => Some(RunInstructionTracePre::I32BinOp {
                 left: <_>::from_value_internal(*self.value_stack.pick(2)),
                 right: <_>::from_value_internal(*self.value_stack.pick(1)),
             }),
@@ -643,7 +647,12 @@ impl Interpreter {
             | isa::Instruction::I64Sub
             | isa::Instruction::I64Shl
             | isa::Instruction::I64ShrU
-            | isa::Instruction::I64Or => Some(RunInstructionTracePre::I64BinOp {
+            | isa::Instruction::I64ShrS
+            | isa::Instruction::I64And
+            | isa::Instruction::I64Or
+            | isa::Instruction::I64Xor
+            | isa::Instruction::I64Rotl
+            | isa::Instruction::I64Rotr => Some(RunInstructionTracePre::I64BinOp {
                 left: <_>::from_value_internal(*self.value_stack.pick(2)),
                 right: <_>::from_value_internal(*self.value_stack.pick(1)),
             }),
@@ -1142,10 +1151,34 @@ impl Interpreter {
                     unreachable!()
                 }
             }
+            isa::Instruction::I32ShrS => {
+                if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32BinShiftOp {
+                        class: ShiftOp::SignedShr,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
             isa::Instruction::I32Rotl => {
                 if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
                     StepInfo::I32BinShiftOp {
                         class: ShiftOp::Rotl,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I32Rotr => {
+                if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32BinShiftOp {
+                        class: ShiftOp::Rotr,
                         left,
                         right,
                         value: <_>::from_value_internal(*self.value_stack.top()),
@@ -1207,6 +1240,42 @@ impl Interpreter {
                 if let RunInstructionTracePre::I64BinOp { left, right } = pre_status.unwrap() {
                     StepInfo::I64BinShiftOp {
                         class: ShiftOp::UnsignedShr,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64ShrS => {
+                if let RunInstructionTracePre::I64BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64BinShiftOp {
+                        class: ShiftOp::SignedShr,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64Rotl => {
+                if let RunInstructionTracePre::I64BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64BinShiftOp {
+                        class: ShiftOp::Rotl,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64Rotr => {
+                if let RunInstructionTracePre::I64BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64BinShiftOp {
+                        class: ShiftOp::Rotr,
                         left,
                         right,
                         value: <_>::from_value_internal(*self.value_stack.top()),
