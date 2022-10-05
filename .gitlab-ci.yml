@@ -72,7 +72,8 @@ wasmtime-benchmark:
     # Install dependencies
     - cargo install cargo-wasi
     - curl https://wasmtime.dev/install.sh -sSf | bash
-    - source ~/.profile
+    - export WASMTIME_HOME="$HOME/.wasmtime"
+    - export PATH="$WASMTIME_HOME/bin:$PATH"
 
     # `wasmtime` Branch: `master`
     - git fetch
