@@ -1,4 +1,7 @@
 # paritytech/wasmi
+# To run benchmarks on a GitLab's "shell" runner following dependencies should be installed
+# cargo-wasi
+# wasmtime
 
 stages:
   - benchmarks
@@ -69,11 +72,6 @@ wasmtime-benchmark:
     paths:
       - target/ci/
   script:
-    # Install dependencies
-    # - cargo install cargo-wasi
-    # - curl https://wasmtime.dev/install.sh -sSf | bash
-    # - export WASMTIME_HOME="$HOME/.wasmtime"
-    # - export PATH="$WASMTIME_HOME/bin:$PATH"
 
     # `wasmtime` Branch: `master`
     - git fetch
