@@ -43,7 +43,7 @@ criterion-benchmark:
     - git submodule update --init --recursive
     - mkdir -p ./target/ci
     - pushd ./crates/wasmi/
-    - cargo bench --bench benches -- --noplot --save-baseline master | tee ../../target/ci/bench-master
+    - cargo +nightly bench --bench benches -- --noplot --save-baseline master | tee ../../target/ci/bench-master
     - popd
     - git submodule deinit --all -f
 
@@ -51,7 +51,7 @@ criterion-benchmark:
     - git checkout $CI_COMMIT_SHA
     - git submodule update --init --recursive
     - pushd ./crates/wasmi/
-    - cargo bench --bench benches -- --noplot --baseline master | tee ../../target/ci/bench-pr
+    - cargo +nightly bench --bench benches -- --noplot --baseline master | tee ../../target/ci/bench-pr
     - popd
 
     # Save benchmark report
@@ -80,7 +80,7 @@ wasmtime-benchmark:
     - git pull
     - git submodule update --init --recursive
     - mkdir -p ./target/ci
-    - cargo wasi build --profile bench --bench benches --verbose
+    - cargo +nightly wasi build --profile bench --bench benches --verbose
     - cp `ls -t target/wasm32-wasi/release/deps/*wasi.wasm` target/ci/benches-master.wasm
     - pushd ./crates/wasmi/
     - wasmtime run --dir=. ../../target/ci/benches-master.wasm -- --bench --save-baseline master-wasm | tee ../../target/ci/wasmtime-master
@@ -91,7 +91,7 @@ wasmtime-benchmark:
     - git checkout $CI_COMMIT_SHA
     - git submodule update --init --recursive
     - mkdir -p ./target/ci
-    - cargo wasi build --profile bench --bench benches --verbose
+    - cargo +nightly wasi build --profile bench --bench benches --verbose
     - cp `ls -t target/wasm32-wasi/release/deps/*wasi.wasm` target/ci/benches-pr.wasm
     - pushd ./crates/wasmi/
     - wasmtime run --dir=. ../../target/ci/benches-pr.wasm -- --bench --baseline master-wasm | tee ../../target/ci/wasmtime-pr
