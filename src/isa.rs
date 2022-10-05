@@ -629,12 +629,18 @@ impl<'a> Instruction<'a> {
             Instruction::I64DivU => todo!(),
             Instruction::I64RemS => todo!(),
             Instruction::I64RemU => todo!(),
-            Instruction::I64And => todo!(),
+            Instruction::I64And => Opcode::BinBit {
+                class: BitOp::And,
+                vtype: VarType::I64,
+            },
             Instruction::I64Or => Opcode::BinBit {
                 class: BitOp::Or,
                 vtype: VarType::I64,
             },
-            Instruction::I64Xor => todo!(),
+            Instruction::I64Xor => Opcode::BinBit {
+                class: BitOp::Xor,
+                vtype: VarType::I64,
+            },
             Instruction::I64Shl => Opcode::BinShift {
                 class: ShiftOp::Shl,
                 vtype: VarType::I64,

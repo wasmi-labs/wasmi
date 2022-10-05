@@ -1212,10 +1212,34 @@ impl Interpreter {
                     unreachable!()
                 }
             }
+            isa::Instruction::I64And => {
+                if let RunInstructionTracePre::I64BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64BinBitOp {
+                        class: BitOp::And,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
             isa::Instruction::I64Or => {
                 if let RunInstructionTracePre::I64BinOp { left, right } = pre_status.unwrap() {
                     StepInfo::I64BinBitOp {
                         class: BitOp::Or,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64Xor => {
+                if let RunInstructionTracePre::I64BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64BinBitOp {
+                        class: BitOp::Xor,
                         left,
                         right,
                         value: <_>::from_value_internal(*self.value_stack.top()),
