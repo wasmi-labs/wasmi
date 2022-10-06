@@ -660,8 +660,13 @@ impl Interpreter {
             isa::Instruction::I32WrapI64 => Some(RunInstructionTracePre::I32WrapI64 {
                 value: <_>::from_value_internal(*self.value_stack.pick(1)),
             }),
-            isa::Instruction::I64ExtendUI32 => Some(RunInstructionTracePre::I64ExtendUI32 {
+            isa::Instruction::I64ExtendUI32 => Some(RunInstructionTracePre::I64ExtendI32 {
                 value: <_>::from_value_internal(*self.value_stack.pick(1)),
+                sign: false,
+            }),
+            isa::Instruction::I64ExtendSI32 => Some(RunInstructionTracePre::I64ExtendI32 {
+                value: <_>::from_value_internal(*self.value_stack.pick(1)),
+                sign: true,
             }),
 
             _ => {
@@ -1319,11 +1324,12 @@ impl Interpreter {
                     unreachable!()
                 }
             }
-            isa::Instruction::I64ExtendUI32 => {
-                if let RunInstructionTracePre::I64ExtendUI32 { value } = pre_status.unwrap() {
-                    StepInfo::I64ExtendUI32 {
+            isa::Instruction::I64ExtendSI32 | isa::Instruction::I64ExtendUI32 => {
+                if let RunInstructionTracePre::I64ExtendI32 { value, sign } = pre_status.unwrap() {
+                    StepInfo::I64ExtendI32 {
                         value,
                         result: <_>::from_value_internal(*self.value_stack.top()),
+                        sign,
                     }
                 } else {
                     unreachable!()

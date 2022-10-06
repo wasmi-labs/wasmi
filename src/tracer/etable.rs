@@ -74,8 +74,9 @@ pub enum RunInstructionTracePre {
     I32WrapI64 {
         value: i64,
     },
-    I64ExtendUI32 {
+    I64ExtendI32 {
         value: i32,
+        sign: bool,
     },
 
     Drop,
