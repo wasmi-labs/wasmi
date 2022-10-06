@@ -696,9 +696,11 @@ impl<'a> Instruction<'a> {
             Instruction::I32TruncUF32 => todo!(),
             Instruction::I32TruncSF64 => todo!(),
             Instruction::I32TruncUF64 => todo!(),
-            Instruction::I64ExtendSI32 => todo!(),
+            Instruction::I64ExtendSI32 => Opcode::Conversion {
+                class: ConversionOp::I64ExtendI32s,
+            },
             Instruction::I64ExtendUI32 => Opcode::Conversion {
-                class: ConversionOp::I64ExtendUI32,
+                class: ConversionOp::I64ExtendI32u,
             },
             Instruction::I64TruncSF32 => todo!(),
             Instruction::I64TruncUF32 => todo!(),
