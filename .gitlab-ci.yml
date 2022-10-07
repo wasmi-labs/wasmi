@@ -1,6 +1,5 @@
 # paritytech/wasmi
 
-
 stages:
   - benchmarks
   - report
