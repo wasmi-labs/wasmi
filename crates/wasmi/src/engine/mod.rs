@@ -36,7 +36,6 @@ use self::{
 };
 use super::{func::FuncEntityInternal, AsContextMut, Func};
 use crate::{
-    arena::{GuardedEntity, Index},
     core::{Trap, TrapCode},
     FuncType,
 };
@@ -44,6 +43,7 @@ use alloc::sync::Arc;
 use core::sync::atomic::{AtomicU32, Ordering};
 pub use func_types::DedupFuncType;
 use spin::mutex::Mutex;
+use wasmi_arena::{GuardedEntity, Index};
 
 /// The outcome of a `wasmi` function execution.
 #[derive(Debug, Copy, Clone)]
