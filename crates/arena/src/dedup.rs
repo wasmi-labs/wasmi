@@ -38,11 +38,13 @@ impl<Idx, T> DedupArena<Idx, T> {
     }
 
     /// Returns the allocated number of entities.
+    #[inline]
     pub fn len(&self) -> usize {
         self.entities.len()
     }
 
     /// Returns `true` if the [`Arena`] has not yet allocated entities.
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -92,11 +94,13 @@ where
     }
 
     /// Returns a shared reference to the entity at the given index if any.
+    #[inline]
     pub fn get(&self, index: Idx) -> Option<&T> {
         self.entities.get(index)
     }
 
     /// Returns an exclusive reference to the entity at the given index if any.
+    #[inline]
     pub fn get_mut(&mut self, index: Idx) -> Option<&mut T> {
         self.entities.get_mut(index)
     }
@@ -153,6 +157,7 @@ where
 {
     type Output = T;
 
+    #[inline]
     fn index(&self, index: Idx) -> &Self::Output {
         &self.entities[index]
     }
@@ -162,6 +167,7 @@ impl<Idx, T> ops::IndexMut<Idx> for DedupArena<Idx, T>
 where
     Idx: Index,
 {
+    #[inline]
     fn index_mut(&mut self, index: Idx) -> &mut Self::Output {
         &mut self.entities[index]
     }

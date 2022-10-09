@@ -1,12 +1,7 @@
-use wasmi_core::ValueType;
-
 use super::{EngineIdx, Guarded};
-use crate::{
-    arena::{DedupArena, GuardedEntity},
-    FuncType,
-    Index,
-    Store,
-};
+use crate::{FuncType, Store};
+use wasmi_arena::{DedupArena, GuardedEntity, Index};
+use wasmi_core::ValueType;
 
 /// A raw index to a function signature entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

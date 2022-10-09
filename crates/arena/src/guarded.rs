@@ -1,4 +1,4 @@
-use crate::arena::Index;
+use crate::Index;
 
 /// A guarded entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

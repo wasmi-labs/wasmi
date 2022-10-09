@@ -92,7 +92,6 @@ extern crate std as alloc;
 #[macro_use]
 mod foreach_tuple;
 
-mod arena;
 mod engine;
 mod error;
 mod external;
@@ -122,15 +121,6 @@ pub mod errors {
     };
 }
 
-use self::{
-    arena::{GuardedEntity, Index},
-    func::{FuncEntity, FuncIdx},
-    global::{GlobalEntity, GlobalIdx},
-    instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
-    memory::{MemoryEntity, MemoryIdx},
-    store::Stored,
-    table::{TableEntity, TableIdx},
-};
 pub use self::{
     engine::{Config, Engine, StackLimits},
     error::Error,
@@ -152,4 +142,12 @@ pub use self::{
     },
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
+};
+use self::{
+    func::{FuncEntity, FuncIdx},
+    global::{GlobalEntity, GlobalIdx},
+    instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
+    memory::{MemoryEntity, MemoryIdx},
+    store::Stored,
+    table::{TableEntity, TableIdx},
 };

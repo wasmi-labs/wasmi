@@ -1,8 +1,9 @@
 #![allow(clippy::len_without_is_empty)]
 
-use super::{AsContext, AsContextMut, Func, Index, Stored};
+use super::{AsContext, AsContextMut, Func, Stored};
 use alloc::vec::Vec;
 use core::{fmt, fmt::Display};
+use wasmi_arena::Index;
 
 /// A raw index to a table entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
