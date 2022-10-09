@@ -4,7 +4,7 @@ use crate::{
         bytecode::{BranchOffset, BranchParams, Instruction},
         DropKeep,
     },
-    Engine,
+    Engine, Module,
 };
 
 /// Converts the `wat` string source into `wasm` encoded byte.
