@@ -11,6 +11,9 @@ mod func_types;
 pub mod stack;
 mod traits;
 
+#[cfg(test)]
+mod tests;
+
 pub(crate) use self::func_args::{FuncParams, FuncResults};
 pub use self::{
     bytecode::DropKeep,
