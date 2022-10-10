@@ -69,15 +69,6 @@ impl ValueInternal {
     }
 }
 
-impl ValueInternal {
-    pub fn value_with_type(self, ty: specs::types::ValueType) -> Value {
-        match ty {
-            specs::types::ValueType::I32 => Value::I32(<_>::from_value_internal(self)),
-            specs::types::ValueType::I64 => Value::I64(<_>::from_value_internal(self)),
-        }
-    }
-}
-
 trait FromValueInternal
 where
     Self: Sized,
@@ -127,6 +118,13 @@ macro_rules! impl_from_value_internal_float	{
 
 impl_from_value_internal!(i8, u8, i16, u16, i32, u32, i64, u64);
 impl_from_value_internal_float!(f32, f64, F32, F64);
+
+pub fn from_value_internal_to_u64_with_typ(vtype: VarType, val: ValueInternal) -> u64 {
+    match vtype {
+        VarType::I32 => val.0 as u32 as u64,
+        VarType::I64 => val.0 as u64,
+    }
+}
 
 impl From<bool> for ValueInternal {
     fn from(other: bool) -> Self {
@@ -404,7 +402,8 @@ impl Interpreter {
                                                 host_function_idx: *host_function_idx,
                                                 function_name: function_name.clone(),
                                                 args: args.clone(),
-                                                ret_val: Some(<_>::from_value_internal(
+                                                ret_val: Some(from_value_internal_to_u64_with_typ(
+                                                    signature.return_type.unwrap().into(),
                                                     return_val.into(),
                                                 )),
                                                 signature: signature.clone(),
@@ -467,10 +466,10 @@ impl Interpreter {
             }
 
             isa::Instruction::Drop => Some(RunInstructionTracePre::Drop),
-            isa::Instruction::Select(_) => Some(RunInstructionTracePre::Select {
-                cond: <_>::from_value_internal(*self.value_stack.pick(1)),
-                val2: <_>::from_value_internal(*self.value_stack.pick(2)),
-                val1: <_>::from_value_internal(*self.value_stack.pick(3)),
+            isa::Instruction::Select(vtype) => Some(RunInstructionTracePre::Select {
+                cond: from_value_internal_to_u64_with_typ(VarType::I32, *self.value_stack.pick(1)),
+                val2: from_value_internal_to_u64_with_typ(vtype.into(), *self.value_stack.pick(2)),
+                val1: from_value_internal_to_u64_with_typ(vtype.into(), *self.value_stack.pick(3)),
             }),
 
             isa::Instruction::I32Load(offset)
@@ -685,7 +684,7 @@ impl Interpreter {
         match *instructions {
             isa::Instruction::GetLocal(depth, vtype) => StepInfo::GetLocal {
                 depth,
-                value: <_>::from_value_internal(*self.value_stack.top()),
+                value: from_value_internal_to_u64_with_typ(vtype.into(), *self.value_stack.top()),
                 vtype: vtype.into(),
             },
             isa::Instruction::SetLocal(..) => {
@@ -697,7 +696,7 @@ impl Interpreter {
                 {
                     StepInfo::SetLocal {
                         depth,
-                        value: <_>::from_value_internal(value),
+                        value: from_value_internal_to_u64_with_typ(vtype.into(), value),
                         vtype: vtype.into(),
                     }
                 } else {
@@ -706,7 +705,7 @@ impl Interpreter {
             }
             isa::Instruction::TeeLocal(depth, vtype) => StepInfo::TeeLocal {
                 depth,
-                value: <_>::from_value_internal(*self.value_stack.top()),
+                value: from_value_internal_to_u64_with_typ(vtype.into(), *self.value_stack.top()),
                 vtype: vtype.into(),
             },
 
@@ -799,7 +798,10 @@ impl Interpreter {
                         val1,
                         val2,
                         cond,
-                        result: <_>::from_value_internal(*self.value_stack.top()),
+                        result: from_value_internal_to_u64_with_typ(
+                            vtype.into(),
+                            *self.value_stack.top(),
+                        ),
                         vtype: vtype.into(),
                     }
                 } else {
@@ -825,8 +827,14 @@ impl Interpreter {
                         } => {
                             let params_len = desc.signature.params().len();
                             let mut args: Vec<u64> = vec![];
+                            let signature: specs::host_function::Signature =
+                                desc.signature.clone().into();
+                            let params = signature.params.clone();
                             for i in 0..params_len {
-                                args.push(<_>::from_value_internal(*self.value_stack.pick(1 + i)));
+                                args.push(from_value_internal_to_u64_with_typ(
+                                    (params[i]).into(),
+                                    *self.value_stack.pick(1 + i),
+                                ));
                             }
 
                             StepInfo::CallHost {
@@ -835,7 +843,7 @@ impl Interpreter {
                                 function_name: function_name.clone(),
                                 args,
                                 ret_val: None,
-                                signature: desc.signature.clone().into(),
+                                signature,
                             }
                         }
                     }
@@ -875,7 +883,10 @@ impl Interpreter {
                         offset,
                         raw_address,
                         effective_address: effective_address.unwrap(),
-                        value: <_>::from_value_internal(*self.value_stack.top()),
+                        value: from_value_internal_to_u64_with_typ(
+                            vtype.into(),
+                            *self.value_stack.top(),
+                        ),
                         block_value,
                         mmid,
                     }
