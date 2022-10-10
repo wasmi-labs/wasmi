@@ -241,6 +241,7 @@ fn drop_locals() {
     assert_eq!(
         code,
         vec![
+            isa::Instruction::I32Const(0),
             isa::Instruction::GetLocal(2, ValueType::I32),
             isa::Instruction::SetLocal(1, ValueType::I32),
             isa::Instruction::Return(isa::DropKeep {
@@ -316,9 +317,10 @@ fn if_else() {
     assert_eq!(
         code,
         vec![
+            isa::Instruction::I32Const(0),
             isa::Instruction::I32Const(1),
             isa::Instruction::BrIfEqz(isa::Target {
-                dst_pc: pcs[5],
+                dst_pc: pcs[6],
                 drop_keep: isa::DropKeep {
                     drop: 0,
                     keep: isa::Keep::None,
@@ -327,7 +329,7 @@ fn if_else() {
             isa::Instruction::I32Const(2),
             isa::Instruction::SetLocal(1, ValueType::I32),
             isa::Instruction::Br(isa::Target {
-                dst_pc: pcs[7],
+                dst_pc: pcs[8],
                 drop_keep: isa::DropKeep {
                     drop: 0,
                     keep: isa::Keep::None,

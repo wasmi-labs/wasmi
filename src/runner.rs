@@ -2361,9 +2361,14 @@ impl FunctionContext {
     ) -> Result<(), TrapCode> {
         debug_assert!(!self.is_initialized);
 
-        let num_locals = locals.iter().map(|l| l.count() as usize).sum();
-
-        value_stack.extend(num_locals)?;
+        {
+            /*
+             * Since we have explicitly pushed local variables via T.const instruction,
+             * we bypass extendind value_stack here.
+             */
+            // let num_locals = locals.iter().map(|l| l.count() as usize).sum();
+            // value_stack.extend(num_locals)?;
+        }
 
         self.is_initialized = true;
         Ok(())

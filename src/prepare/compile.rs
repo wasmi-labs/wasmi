@@ -2,7 +2,7 @@ use alloc::{string::String, vec::Vec};
 
 use parity_wasm::elements::{BlockType, FuncBody, Instruction, ValueType};
 
-use crate::isa::{self};
+use crate::isa::{self, InstructionInternal};
 use validation::{
     func::{
         require_label,
@@ -88,6 +88,17 @@ impl FuncValidator for Compiler {
         compiler
             .label_stack
             .push(BlockFrameType::Block { end_label });
+
+        for local_group in body.locals() {
+            for _ in 0..local_group.count() {
+                match local_group.value_type() {
+                    ValueType::I32 => compiler.sink.emit(InstructionInternal::I32Const(0)),
+                    ValueType::I64 => compiler.sink.emit(InstructionInternal::I64Const(0)),
+                    ValueType::F32 => compiler.sink.emit(InstructionInternal::F32Const(0)),
+                    ValueType::F64 => compiler.sink.emit(InstructionInternal::F64Const(0)),
+                }
+            }
+        }
 
         compiler
     }
