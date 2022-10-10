@@ -5,6 +5,7 @@ use crate::{
         DropKeep,
     },
     Engine,
+    Module,
 };
 
 /// Converts the `wat` string source into `wasm` encoded byte.

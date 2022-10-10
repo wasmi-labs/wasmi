@@ -1,8 +1,8 @@
-use wasmi_core::UntypedValue;
-
-use super::{AsContext, AsContextMut, Index, Stored};
+use super::{AsContext, AsContextMut, Stored};
 use crate::core::{Value, ValueType};
 use core::{fmt, fmt::Display, ptr::NonNull};
+use wasmi_arena::Index;
+use wasmi_core::UntypedValue;
 
 /// A raw index to a global variable entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

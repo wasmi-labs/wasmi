@@ -15,6 +15,7 @@ categories.workspace = true
 [dependencies]
 wasmparser = { version = "0.91", package = "wasmparser-nostd", default-features = false }
 wasmi_core = { version = "0.4", path = "../core", default-features = false }
+wasmi_arena = { version = "0.1", path = "../arena", default-features = false }
 spin = { version = "0.9", default-features = false, features = [
     "mutex",
     "spin_mutex",
@@ -29,8 +30,7 @@ criterion = { version = "0.4", default-features = false }
 
 [features]
 default = ["std"]
-# Use `no-default-features` for a `no_std` build.
-std = ["wasmi_core/std", "wasmparser/std", "spin/std"]
+std = ["wasmi_core/std", "wasmi_arena/std", "wasmparser/std", "spin/std"]
 
 [[bench]]
 name = "benches"

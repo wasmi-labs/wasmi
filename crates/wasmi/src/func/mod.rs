@@ -13,7 +13,6 @@ use super::{
     engine::{DedupFuncType, FuncBody, FuncParams, FuncResults},
     AsContext,
     AsContextMut,
-    Index,
     Instance,
     StoreContext,
     Stored,
@@ -25,6 +24,7 @@ use crate::{
 };
 use alloc::sync::Arc;
 use core::{fmt, fmt::Debug};
+use wasmi_arena::Index;
 
 /// A raw index to a function entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

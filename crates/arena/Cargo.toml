@@ -1,0 +1,17 @@
+[package]
+name = "wasmi_arena"
+version = "0.1.0"
+documentation = "https://docs.rs/wasmi_arena/"
+description = "Entity arena data structures for wasmi"
+exclude = ["tests/*", "benches/*"]
+authors.workspace = true
+repository.workspace = true
+edition.workspace = true
+readme.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[features]
+default = ["std"]
+std = []

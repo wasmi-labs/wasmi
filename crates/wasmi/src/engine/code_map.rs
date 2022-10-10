@@ -1,8 +1,9 @@
 //! Datastructure to efficiently store function bodies and their instructions.
 
-use super::{super::Index, Instruction};
+use super::Instruction;
 use alloc::vec::Vec;
 use core::ptr::NonNull;
+use wasmi_arena::Index;
 
 /// A reference to a Wasm function body stored in the [`CodeMap`].
 #[derive(Debug, Copy, Clone)]
