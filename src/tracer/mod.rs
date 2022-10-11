@@ -167,6 +167,7 @@ impl Tracer {
                                 plugin: plugin_desc.plugin,
                                 function_index: host_func_index,
                                 function_name: plugin_desc.name,
+                                op_index_in_plugin: plugin_desc.op_index_in_plugin,
                             }
                         }
                     };

@@ -416,10 +416,12 @@ impl<'a> Instruction<'a> {
                         plugin,
                         function_index,
                         function_name,
+                        op_index_in_plugin,
                     } => Opcode::CallHost {
                         plugin: *plugin,
                         function_index: *function_index,
                         function_name: function_name.clone(),
+                        op_index_in_plugin: *op_index_in_plugin,
                     },
                 }
             }

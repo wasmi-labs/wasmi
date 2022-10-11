@@ -395,6 +395,7 @@ impl Interpreter {
                                             args,
                                             ret_val,
                                             signature,
+                                            op_index_in_plugin,
                                         } => {
                                             assert!(ret_val.is_none());
                                             entry.step = StepInfo::CallHost {
@@ -407,6 +408,7 @@ impl Interpreter {
                                                     return_val.into(),
                                                 )),
                                                 signature: signature.clone(),
+                                                op_index_in_plugin: *op_index_in_plugin,
                                             }
                                         }
                                         _ => unreachable!(),
@@ -824,6 +826,7 @@ impl Interpreter {
                             plugin,
                             function_index: host_function_idx,
                             function_name,
+                            op_index_in_plugin,
                         } => {
                             let params_len = desc.signature.params().len();
                             let mut args: Vec<u64> = vec![];
@@ -844,6 +847,7 @@ impl Interpreter {
                                 args,
                                 ret_val: None,
                                 signature,
+                                op_index_in_plugin: *op_index_in_plugin,
                             }
                         }
                     }
@@ -2361,9 +2365,14 @@ impl FunctionContext {
     ) -> Result<(), TrapCode> {
         debug_assert!(!self.is_initialized);
 
-        let num_locals = locals.iter().map(|l| l.count() as usize).sum();
-
-        value_stack.extend(num_locals)?;
+        {
+            /*
+             * Since we have explicitly pushed local variables via T.const instruction,
+             * we bypass extendind value_stack here.
+             */
+            // let num_locals = locals.iter().map(|l| l.count() as usize).sum();
+            // value_stack.extend(num_locals)?;
+        }
 
         self.is_initialized = true;
         Ok(())
