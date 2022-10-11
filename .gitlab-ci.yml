@@ -16,7 +16,7 @@ default:
   image:                           "paritytech/ci-linux:staging"
   interruptible:                   true
   tags:
-    - linux-docker-benches
+    - benchmark
 
 .kubernetes-env:                   &kubernetes-env
   image:                           "paritytech/tools:latest"
