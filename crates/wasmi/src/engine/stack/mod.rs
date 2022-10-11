@@ -160,8 +160,8 @@ impl Stack {
         self.values
             .extend_zeros(len_locals)
             .expect("stack overflow is unexpected due to previous stack reserve");
-        let iref = header.iref();
-        let ip = code_map.instr_ptr(iref);
+        let inst_index = header.start_index();
+        let ip = code_map.instr_ptr(inst_index);
         Ok(ip)
     }
 

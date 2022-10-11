@@ -19,18 +19,11 @@ impl Index for FuncBody {
     }
 }
 
-/// A reference to the instructions of a compiled Wasm function.
-#[derive(Debug, Copy, Clone)]
-pub struct InstructionsRef {
-    /// The start index in the instructions array.
-    start: usize,
-}
-
 /// Meta information about a compiled function.
 #[derive(Debug, Copy, Clone)]
 pub struct FuncHeader {
-    /// A reference to the instructions of the function.
-    iref: InstructionsRef,
+    /// The start index in the instructions array.
+    start: usize,
     /// The number of local variables of the function.
     len_locals: usize,
     /// The maximum stack height usage of the function during execution.
@@ -38,9 +31,9 @@ pub struct FuncHeader {
 }
 
 impl FuncHeader {
-    /// Returns a reference to the instructions of the function.
-    pub fn iref(&self) -> InstructionsRef {
-        self.iref
+    /// Returns the start index in the instructions of the function.
+    pub fn start_index(&self) -> usize {
+        self.start
     }
 
     /// Returns the amount of local variable of the function.
@@ -88,9 +81,8 @@ impl CodeMap {
     {
         let start = self.insts.len();
         self.insts.extend(insts);
-        let iref = InstructionsRef { start };
         let header = FuncHeader {
-            iref,
+            start,
             len_locals,
             max_stack_height: len_locals + max_stack_height,
         };
@@ -99,10 +91,10 @@ impl CodeMap {
         FuncBody(header_index)
     }
 
-    /// Returns an [`InstructionPtr`] to the instruction at [`InstructionsRef`].
+    /// Returns an [`InstructionPtr`] to the instruction at instruction index.
     #[inline]
-    pub fn instr_ptr(&self, iref: InstructionsRef) -> InstructionPtr {
-        InstructionPtr::new(&self.insts[iref.start])
+    pub fn instr_ptr(&self, inst_index: usize) -> InstructionPtr {
+        InstructionPtr::new(&self.insts[inst_index])
     }
 
     /// Returns the [`FuncHeader`] of the [`FuncBody`].
@@ -114,7 +106,7 @@ impl CodeMap {
     #[cfg(test)]
     pub fn get_instr(&self, func_body: FuncBody, index: usize) -> Option<&Instruction> {
         let header = self.header(func_body);
-        let start = header.iref.start;
+        let start = header.start;
         let end = self.instr_end(func_body);
         let instrs = &self.insts[start..end];
         instrs.get(index)
@@ -128,7 +120,7 @@ impl CodeMap {
     pub fn instr_end(&self, func_body: FuncBody) -> usize {
         self.headers
             .get(func_body.0 + 1)
-            .map(|header| header.iref.start)
+            .map(|header| header.start)
             .unwrap_or(self.insts.len())
     }
 }
@@ -147,7 +139,6 @@ impl InstructionPtr {
             ptr: NonNull::from(instr),
         }
     }
-
     /// Offset the [`InstructionPtr`] by the given value.
     ///
     /// # Safety
