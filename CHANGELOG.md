@@ -6,6 +6,59 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Additionally we have an `Internal` section for changes that are of interest to developers.
 
+## [0.18.0] - 2022-10-02
+
+### Added
+
+- Added Contibution Guidelines and Code of Conduct to the repository. (https://github.com/paritytech/wasmi/pull/485)
+
+### Changed
+
+- Optimized instruction dispatch in the `wasmi` interpreter.
+  (https://github.com/paritytech/wasmi/pull/478, https://github.com/paritytech/wasmi/pull/482)
+  - This yielded combined speed-ups of ~20% across the board.
+  - As a side effect we also refactored the way we compute branching offsets
+    at Wasm module compilation time which improved performance of Wasm module
+    compilation by roughly 5%.
+
+### Internal
+
+- Our CI now also benchmarks `wasmi` when ran inside Wasmtime as Wasm.
+  (https://github.com/paritytech/wasmi/pull/483, https://github.com/paritytech/wasmi/pull/487)
+  - This allows us to optimize `wasmi` towards Wasm performance more easily in the future.
+
+## [0.17.0] - 2022-09-23
+
+### Added
+
+- Added `Memory::data_and_store_mut` API inspired by Wasmtime's API. (https://github.com/paritytech/wasmi/pull/448)
+
+### Changed
+
+- Updated `wasmparser-nostd` dependency from `0.90.0` to `0.91.0`.
+    - This improved performance of Wasm module compilation by ~10%.
+- Updated `wasmi_core` from `0.3.0` to `0.4.0`.
+- Optimized execution of several Wasm float to int conversion instructions. (https://github.com/paritytech/wasmi/pull/439)
+    - We measured a performance improvement of 6000% or in other words those
+      instructions are now 60 times faster than before.
+    - This allowed us to remove the big `num-rational` dependency from `wasmi_core`
+      for some nice speed-ups in compilation time of `wasmi` itself.
+- Optimized `global.get` and `global.set` Wasm instruction execution. (https://github.com/paritytech/wasmi/pull/427)
+    - This improved performance of those instructions by up to 17%.
+- Optimized Wasm value stack emulation. (https://github.com/paritytech/wasmi/pull/459)
+    - This improved performance of compute intense workloads by up to 23%.
+
+### Internal
+
+- Added automated continuous benchmarking to `wasmi`. (https://github.com/paritytech/wasmi/pull/422)
+    - This allows us to have a more consistent overview over the performance of `wasmi`.
+- Updated `criterion` benchmarking framework to version `0.4.0`.
+- Reuse allocations during Wasm validation and translation:
+     - Wasm validation and translation combined. (https://github.com/paritytech/wasmi/pull/462)
+     - Wasm `br_table` translations. (https://github.com/paritytech/wasmi/pull/440)
+- Enabled more useful `clippy` lints for `wasmi` and `wasmi_core`. (https://github.com/paritytech/wasmi/pull/438)
+- Reorganized the `wasmi` workspace. (https://github.com/paritytech/wasmi/pull/466)
+
 ## [0.16.0] - 2022-08-30
 
 ### Changed
@@ -120,12 +173,22 @@ Additionally we have an `Internal` section for changes that are of interest to d
   free to [open an issue](https://github.com/paritytech/wasmi/issues)
   and provide us with your use case.
 
+## [0.13.2] - 2022-09-20
+
+### Fixed
+
+- Support allocating 4GB of memory (https://github.com/paritytech/wasmi/pull/452)
+
+## [0.13.1] - 2022-09-20
+
+**Note:** Yanked because of missing `wasmi_core` bump.
+
 ## [0.13.0] - 2022-07-25
 
-**Note:** This is the last release using the legacy `wasmi` engine.
+**Note:** This is the last major release of the legacy `wasmi` engine.
           Future releases are using the new Wasm execution engines
           that are currently in development.
-          We may consider to publish new versions of this Wasm engine
+          We may consider to publish new major versions of this Wasm engine
           as `wasmi-legacy` crate.
 
 ### Changed

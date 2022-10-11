@@ -1,0 +1,25 @@
+[package]
+name = "wasmi_core"
+version = "0.4.0"
+documentation = "https://docs.rs/wasmi_core"
+description = "Core primitives for the wasmi WebAssembly interpreter"
+authors.workspace = true
+repository.workspace = true
+edition.workspace = true
+readme.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+libm = "0.2.1"
+num-traits = { version = "0.2.8", default-features = false }
+downcast-rs = { version = "1.2", default-features = false }
+
+[dev-dependencies]
+rand = "0.8.2"
+
+[features]
+default = ["std"]
+# Use `no-default-features` for a `no_std` build.
+std = ["num-traits/std", "downcast-rs/std"]

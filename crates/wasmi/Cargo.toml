@@ -1,0 +1,37 @@
+[package]
+name = "wasmi"
+version = "0.18.0"
+documentation = "https://docs.rs/wasmi/"
+description = "WebAssembly interpreter"
+exclude = ["tests/*", "benches/*"]
+authors.workspace = true
+repository.workspace = true
+edition.workspace = true
+readme.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+wasmparser = { version = "0.91", package = "wasmparser-nostd", default-features = false }
+wasmi_core = { version = "0.4", path = "../core", default-features = false }
+wasmi_arena = { version = "0.1", path = "../arena", default-features = false }
+spin = { version = "0.9", default-features = false, features = [
+    "mutex",
+    "spin_mutex",
+] }
+
+[dev-dependencies]
+wat = "1"
+assert_matches = "1.5"
+wast = "44.0"
+anyhow = "1.0"
+criterion = { version = "0.4", default-features = false }
+
+[features]
+default = ["std"]
+std = ["wasmi_core/std", "wasmi_arena/std", "wasmparser/std", "spin/std"]
+
+[[bench]]
+name = "benches"
+harness = false
