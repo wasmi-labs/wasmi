@@ -92,7 +92,7 @@ wasmtime-benchmark:
     - git checkout $CI_COMMIT_SHA
     - git submodule update --init --recursive
     - mkdir -p ./target/ci
-    - cargo +beta wasi build --profile bench --bench benches --verbose
+    - cargo +nightly wasi build --profile bench --bench benches --verbose
     - cp `ls -t target/wasm32-wasi/release/deps/*wasi.wasm` target/ci/benches-pr.wasm
     - pushd ./crates/wasmi/
     - wasmtime run --dir=. ../../target/ci/benches-pr.wasm -- --bench --baseline master-wasm | tee ../../target/ci/wasmtime-pr
