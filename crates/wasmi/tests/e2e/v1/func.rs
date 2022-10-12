@@ -44,7 +44,7 @@ fn dynamic_add2_works() {
 #[test]
 fn static_add2_works() {
     let (mut store, add2) = setup_add2();
-    let typed_add2 = add2.typed::<(i32, i32), i32, _>(&mut store).unwrap();
+    let typed_add2 = add2.typed::<(i32, i32), i32>(&mut store).unwrap();
     let result = typed_add2.call(&mut store, (1, 2)).unwrap();
     assert_eq!(result, 3);
 }
@@ -75,7 +75,7 @@ fn dynamic_add3_works() {
 #[test]
 fn static_add3_works() {
     let (mut store, add3) = setup_add3();
-    let typed_add3 = add3.typed::<(i32, i32, i32), i32, _>(&mut store).unwrap();
+    let typed_add3 = add3.typed::<(i32, i32, i32), i32>(&mut store).unwrap();
     let result = typed_add3.call(&mut store, (1, 2, 3)).unwrap();
     assert_eq!(result, 6);
 }
@@ -103,7 +103,7 @@ fn dynamic_duplicate_works() {
 #[test]
 fn static_duplicate_works() {
     let (mut store, duplicate) = setup_duplicate();
-    let typed_duplicate = duplicate.typed::<i32, (i32, i32), _>(&mut store).unwrap();
+    let typed_duplicate = duplicate.typed::<i32, (i32, i32)>(&mut store).unwrap();
     let result = typed_duplicate.call(&mut store, 10).unwrap();
     assert_eq!(result, (10, 10));
 }
@@ -190,7 +190,7 @@ fn dynamic_many_params_works() {
 #[test]
 fn static_many_params_works() {
     let (mut store, func) = setup_many_params();
-    let typed_func = func.typed::<I32x16, (), _>(&mut store).unwrap();
+    let typed_func = func.typed::<I32x16, ()>(&mut store).unwrap();
     let inputs = ascending_tuple();
     let result = typed_func.call(&mut store, inputs);
     assert_matches!(result, Ok(()));
@@ -220,7 +220,7 @@ fn dynamic_many_results_works() {
 #[test]
 fn static_many_results_works() {
     let (mut store, func) = setup_many_results();
-    let typed_func = func.typed::<(), I32x16, _>(&mut store).unwrap();
+    let typed_func = func.typed::<(), I32x16>(&mut store).unwrap();
     let result = typed_func.call(&mut store, ()).unwrap();
     let expected = ascending_tuple();
     assert_eq_tuple!(result, expected; 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
@@ -284,7 +284,7 @@ fn dynamic_many_params_many_results_works() {
 #[test]
 fn static_many_params_many_results_works() {
     let (mut store, func) = setup_many_params_many_results();
-    let typed_func = func.typed::<I32x16, I32x16, _>(&mut store).unwrap();
+    let typed_func = func.typed::<I32x16, I32x16>(&mut store).unwrap();
     let inputs = ascending_tuple();
     let result = typed_func.call(&mut store, inputs).unwrap();
     assert_eq_tuple!(result, inputs; 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
@@ -320,7 +320,7 @@ fn static_many_types_works() {
         |v0: i32, v1: u32, v2: i64, v3: u64, v4: F32, v5: F64| (v0, v1, v2, v3, v4, v5),
     );
     let typed_func = func
-        .typed::<(i32, u32, i64, u64, F32, F64), (i32, u32, i64, u64, F32, F64), _>(&mut store)
+        .typed::<(i32, u32, i64, u64, F32, F64), (i32, u32, i64, u64, F32, F64)>(&mut store)
         .unwrap();
     let inputs = (0, 1, 2, 3, 4.0.into(), 5.0.into());
     let result = typed_func.call(&mut store, inputs).unwrap();
@@ -390,32 +390,32 @@ fn static_type_check_works() {
     let identity = Func::wrap(&mut store, |value: i32| value);
     // Case: Too few inputs given to function.
     assert_matches!(
-        identity.typed::<(), i32, _>(&mut store),
+        identity.typed::<(), i32>(&mut store),
         Err(Error::Func(FuncError::MismatchingParameters { .. }))
     );
     // Case: Too many inputs given to function.
     assert_matches!(
-        identity.typed::<(i32, i32), i32, _>(&mut store),
+        identity.typed::<(i32, i32), i32>(&mut store),
         Err(Error::Func(FuncError::MismatchingParameters { .. }))
     );
     // Case: Too few results given to function.
     assert_matches!(
-        identity.typed::<i32, (), _>(&mut store),
+        identity.typed::<i32, ()>(&mut store),
         Err(Error::Func(FuncError::MismatchingResults { .. }))
     );
     // Case: Too many results given to function.
     assert_matches!(
-        identity.typed::<i32, (i32, i32), _>(&mut store),
+        identity.typed::<i32, (i32, i32)>(&mut store),
         Err(Error::Func(FuncError::MismatchingResults { .. }))
     );
     // Case: Mismatching type given as input to function.
     assert_matches!(
-        identity.typed::<i64, i32, _>(&mut store),
+        identity.typed::<i64, i32>(&mut store),
         Err(Error::Func(FuncError::MismatchingParameters { .. }))
     );
     // Case: Mismatching type given as output of function.
     assert_matches!(
-        identity.typed::<i32, i64, _>(&mut store),
+        identity.typed::<i32, i64>(&mut store),
         Err(Error::Func(FuncError::MismatchingResults { .. }))
     );
 }

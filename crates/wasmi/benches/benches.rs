@@ -263,7 +263,7 @@ fn bench_execute_trunc_f2i(c: &mut Criterion) {
             .get_export(&store, "trunc_f2i")
             .and_then(v1::Extern::into_func)
             .unwrap();
-        let count_until = count_until.typed::<(i32, F32, F64), (), _>(&store).unwrap();
+        let count_until = count_until.typed::<(i32, F32, F64), ()>(&store).unwrap();
 
         b.iter(|| {
             count_until

@@ -60,7 +60,7 @@
 //!         .get_export(&store, "hello")
 //!         .and_then(Extern::into_func)
 //!         .ok_or_else(|| anyhow!("could not find function \"hello\""))?
-//!         .typed::<(), (), _>(&mut store)?;
+//!         .typed::<(), ()>(&mut store)?;
 //!
 //!     // And finally we can call the wasm!
 //!     hello.call(&mut store, ())?;
