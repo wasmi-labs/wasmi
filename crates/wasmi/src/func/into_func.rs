@@ -102,6 +102,7 @@ where
 {
     type Ok = T1;
 
+    #[inline]
     fn into_fallible(self) -> Result<Self::Ok, Trap> {
         Ok(self)
     }
@@ -113,6 +114,7 @@ where
 {
     type Ok = T1;
 
+    #[inline]
     fn into_fallible(self) -> Result<<Self as WasmResults>::Ok, Trap> {
         self
     }
@@ -128,6 +130,7 @@ macro_rules! impl_wasm_return_type {
         {
             type Ok = ($($tuple,)*);
 
+            #[inline]
             fn into_fallible(self) -> Result<Self::Ok, Trap> {
                 Ok(self)
             }
@@ -141,6 +144,7 @@ macro_rules! impl_wasm_return_type {
         {
             type Ok = ($($tuple,)*);
 
+            #[inline]
             fn into_fallible(self) -> Result<<Self as WasmResults>::Ok, Trap> {
                 self
             }
@@ -159,6 +163,7 @@ macro_rules! impl_wasm_type {
     ( $( type $rust_type:ty = $wasmi_type:ident );* $(;)? ) => {
         $(
             impl WasmType for $rust_type {
+                #[inline]
                 fn value_type() -> ValueType {
                     ValueType::$wasmi_type
                 }
@@ -230,10 +235,12 @@ where
     type Values = [Value; 1];
     type ValuesIter = array::IntoIter<Value, 1>;
 
+    #[inline]
     fn value_types() -> Self::Types {
         [<T1 as WasmType>::value_type()]
     }
 
+    #[inline]
     fn values(self) -> Self::Values {
         [<T1 as Into<Value>>::into(self)]
     }
