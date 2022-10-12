@@ -73,7 +73,7 @@ impl CallStack {
 
     /// Pushes a Wasm caller function onto the [`CallStack`].
     pub(crate) fn push(&mut self, caller: FuncFrame) -> Result<(), TrapCode> {
-        if self.len() == self.recursion_limit {
+        if self.len() >= self.recursion_limit {
             return Err(err_stack_overflow());
         }
         self.frames.push(caller);

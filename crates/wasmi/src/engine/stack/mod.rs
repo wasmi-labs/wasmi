@@ -134,7 +134,7 @@ impl Stack {
         Ok(self.frames.init(iref, instance))
     }
 
-    /// Prepares the [`Stack`] for the given Wasm function call and return the callee.
+    /// Prepares the [`Stack`] for the given Wasm function call.
     pub(crate) fn call_wasm<'engine>(
         &mut self,
         caller: &FuncFrame,
