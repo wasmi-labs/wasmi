@@ -137,13 +137,13 @@ impl Stack {
     /// Prepares the [`Stack`] for the given Wasm function call and return the callee.
     pub(crate) fn call_wasm<'engine>(
         &mut self,
-        caller: FuncFrame,
+        caller: &FuncFrame,
         wasm_func: &WasmFuncEntity,
         code_map: &'engine CodeMap,
     ) -> Result<FuncFrame, TrapCode> {
         let ip = self.call_wasm_impl(wasm_func, code_map)?;
+        self.frames.push(caller.clone())?;
         let instance = wasm_func.instance();
-        self.frames.push(caller)?;
         let frame = FuncFrame::new(ip, instance);
         Ok(frame)
     }
