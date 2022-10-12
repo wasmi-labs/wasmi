@@ -43,7 +43,7 @@ criterion-benchmark:
     - git submodule update --init --recursive
     - mkdir -p ./target/ci
     - pushd ./crates/wasmi/
-    - cargo bench --bench benches -- --noplot --save-baseline master | tee ../../target/ci/bench-master
+    - cargo +stable bench --bench benches -- --noplot --save-baseline master | tee ../../target/ci/bench-master
     - popd
     - git submodule deinit --all -f
 
@@ -51,7 +51,7 @@ criterion-benchmark:
     - git checkout $CI_COMMIT_SHA
     - git submodule update --init --recursive
     - pushd ./crates/wasmi/
-    - cargo bench --bench benches -- --noplot --baseline master | tee ../../target/ci/bench-pr
+    - cargo +nightly bench --bench benches -- --noplot --baseline master | tee ../../target/ci/bench-pr
     - popd
 
     # Save benchmark report
