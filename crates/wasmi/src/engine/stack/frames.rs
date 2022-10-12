@@ -3,7 +3,6 @@
 use super::{err_stack_overflow, DEFAULT_MAX_RECURSION_DEPTH};
 use crate::{core::TrapCode, engine::code_map::InstructionPtr, Instance};
 use alloc::vec::Vec;
-use core::mem::replace;
 
 /// A function frame of a function on the call stack.
 #[derive(Debug, Copy, Clone)]
@@ -72,20 +71,13 @@ impl CallStack {
         FuncFrame::new(ip, instance)
     }
 
-    /// Pushes a Wasm function onto the [`CallStack`].
-    pub(crate) fn push(
-        &mut self,
-        caller: &mut FuncFrame,
-        ip: InstructionPtr,
-        instance: Instance,
-    ) -> Result<FuncFrame, TrapCode> {
+    /// Pushes a Wasm caller function onto the [`CallStack`].
+    pub(crate) fn push(&mut self, caller: FuncFrame) -> Result<(), TrapCode> {
         if self.len() == self.recursion_limit {
             return Err(err_stack_overflow());
         }
-        let frame = FuncFrame::new(ip, instance);
-        let caller = replace(caller, frame);
         self.frames.push(caller);
-        Ok(frame)
+        Ok(())
     }
 
     /// Pops the last [`FuncFrame`] from the [`CallStack`] if any.

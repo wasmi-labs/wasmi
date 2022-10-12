@@ -376,7 +376,9 @@ impl EngineInner {
                 CallOutcome::NestedCall(called_func) => {
                     match called_func.as_internal(ctx.as_context()) {
                         FuncEntityInternal::Wasm(wasm_func) => {
-                            self.stack.call_wasm(frame, wasm_func, &self.code_map)?;
+                            *frame =
+                                self.stack
+                                    .call_wasm(frame.clone(), wasm_func, &self.code_map)?;
                         }
                         FuncEntityInternal::Host(host_func) => {
                             cache.reset_default_memory_bytes();
