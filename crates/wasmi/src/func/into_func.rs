@@ -290,3 +290,52 @@ macro_rules! impl_wasm_type_list {
     };
 }
 for_each_tuple!(impl_wasm_type_list);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::{F32, F64};
+
+    /// Utility struct helper for the `implements_wasm_results` macro.
+    pub struct ImplementsWasmResults<T> {
+        marker: core::marker::PhantomData<fn() -> T>,
+    }
+    /// Utility trait for the fallback case of the `implements_wasm_results` macro.
+    pub trait ImplementsWasmResultsFallback {
+        const VALUE: bool = false;
+    }
+    impl<T> ImplementsWasmResultsFallback for ImplementsWasmResults<T> {}
+    /// Utility trait impl for the `true` case of the `implements_wasm_results` macro.
+    impl<T> ImplementsWasmResults<T>
+    where
+        T: WasmResults,
+    {
+        // We need to allow for dead code at this point because
+        // the Rust compiler thinks this function is unused even
+        // though it acts as the specialized case for detection.
+        #[allow(dead_code)]
+        pub const VALUE: bool = true;
+    }
+    /// Returns `true` if the given type `T` implements the `WasmResults` trait.
+    #[macro_export]
+    #[doc(hidden)]
+    macro_rules! implements_wasm_results {
+        ( $T:ty $(,)? ) => {{
+            #[allow(unused_imports)]
+            use ImplementsWasmResultsFallback as _;
+            ImplementsWasmResults::<$T>::VALUE
+        }};
+    }
+
+    #[test]
+    fn into_func_trait_impls() {
+        assert!(implements_wasm_results!(()));
+        assert!(implements_wasm_results!(i32));
+        assert!(implements_wasm_results!((i32,)));
+        assert!(implements_wasm_results!((i32, u32, i64, u64, F32, F64)));
+        assert!(implements_wasm_results!(Result<(), Trap>));
+        assert!(implements_wasm_results!(Result<i32, Trap>));
+        assert!(implements_wasm_results!(Result<(i32,), Trap>));
+        assert!(implements_wasm_results!(Result<(i32, u32, i64, u64, F32, F64), Trap>));
+    }
+}
