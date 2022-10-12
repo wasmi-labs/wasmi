@@ -107,6 +107,17 @@ where
     }
 }
 
+impl<T1> WasmResults for Result<T1, Trap>
+where
+    T1: WasmType,
+{
+    type Ok = T1;
+
+    fn into_fallible(self) -> Result<<Self as WasmResults>::Ok, Trap> {
+        self
+    }
+}
+
 macro_rules! impl_wasm_return_type {
     ( $n:literal $( $tuple:ident )* ) => {
         impl<$($tuple),*> WasmResults for ($($tuple,)*)
