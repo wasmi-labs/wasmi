@@ -7,10 +7,6 @@ stages:
 default:
   retry:
     max: 2
-    when:
-      - runner_system_failure
-      - unknown_failure
-      - api_failure
 
 .docker-env:                       &docker-env
   image:                           "paritytech/ci-linux:staging"
