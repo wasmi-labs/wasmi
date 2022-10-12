@@ -324,7 +324,10 @@ impl Func {
     ///
     /// If the function signature of `self` does not match `Params` and `Results`
     /// as parameter types and result types respectively.
-    pub fn typed<Params, Results>(&self, ctx: impl AsContext) -> Result<TypedFunc<Params, Results>, Error>
+    pub fn typed<Params, Results>(
+        &self,
+        ctx: impl AsContext,
+    ) -> Result<TypedFunc<Params, Results>, Error>
     where
         Params: WasmParams,
         Results: WasmResults,
