@@ -125,7 +125,7 @@ pub use self::{
     engine::{Config, Engine, StackLimits},
     error::Error,
     external::Extern,
-    func::{Caller, Func, TypedFunc, WasmParams, WasmResults},
+    func::{Caller, Func, IntoFunc, TypedFunc, WasmParams, WasmResults, WasmRet, WasmType},
     func_type::FuncType,
     global::{Global, GlobalType, Mutability},
     instance::{ExportsIter, Instance},

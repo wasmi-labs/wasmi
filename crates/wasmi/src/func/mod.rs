@@ -6,7 +6,7 @@ mod typed_func;
 pub use self::{
     caller::Caller,
     error::FuncError,
-    into_func::IntoFunc,
+    into_func::{IntoFunc, WasmRet, WasmType},
     typed_func::{TypedFunc, WasmParams, WasmResults},
 };
 use super::{

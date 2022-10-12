@@ -34,10 +34,10 @@ macro_rules! impl_into_func {
             $(
                 $tuple: WasmType,
             )*
-            R: WasmResults,
+            R: WasmRet,
         {
             type Params = ($($tuple,)*);
-            type Results = <R as WasmResults>::Ok;
+            type Results = <R as WasmRet>::Ok;
 
             #[allow(non_snake_case)]
             fn into_func(self) -> (FuncType, HostFuncTrampoline<T>) {
@@ -61,10 +61,10 @@ macro_rules! impl_into_func {
             $(
                 $tuple: WasmType,
             )*
-            R: WasmResults,
+            R: WasmRet,
         {
             type Params = ($($tuple,)*);
-            type Results = <R as WasmResults>::Ok;
+            type Results = <R as WasmRet>::Ok;
 
             #[allow(non_snake_case)]
             fn into_func(self) -> (FuncType, HostFuncTrampoline<T>) {
@@ -88,15 +88,15 @@ macro_rules! impl_into_func {
 for_each_tuple!(impl_into_func);
 
 /// Types and type sequences that can be used as return values of host functions.
-pub trait WasmResults {
+pub trait WasmRet {
     #[doc(hidden)]
     type Ok: WasmTypeList;
 
     #[doc(hidden)]
-    fn into_fallible(self) -> Result<<Self as WasmResults>::Ok, Trap>;
+    fn into_fallible(self) -> Result<<Self as WasmRet>::Ok, Trap>;
 }
 
-impl<T1> WasmResults for T1
+impl<T1> WasmRet for T1
 where
     T1: WasmType,
 {
@@ -108,21 +108,21 @@ where
     }
 }
 
-impl<T1> WasmResults for Result<T1, Trap>
+impl<T1> WasmRet for Result<T1, Trap>
 where
     T1: WasmType,
 {
     type Ok = T1;
 
     #[inline]
-    fn into_fallible(self) -> Result<<Self as WasmResults>::Ok, Trap> {
+    fn into_fallible(self) -> Result<<Self as WasmRet>::Ok, Trap> {
         self
     }
 }
 
 macro_rules! impl_wasm_return_type {
     ( $n:literal $( $tuple:ident )* ) => {
-        impl<$($tuple),*> WasmResults for ($($tuple,)*)
+        impl<$($tuple),*> WasmRet for ($($tuple,)*)
         where
             $(
                 $tuple: WasmType
@@ -136,7 +136,7 @@ macro_rules! impl_wasm_return_type {
             }
         }
 
-        impl<$($tuple),*> WasmResults for Result<($($tuple,)*), Trap>
+        impl<$($tuple),*> WasmRet for Result<($($tuple,)*), Trap>
         where
             $(
                 $tuple: WasmType
@@ -145,7 +145,7 @@ macro_rules! impl_wasm_return_type {
             type Ok = ($($tuple,)*);
 
             #[inline]
-            fn into_fallible(self) -> Result<<Self as WasmResults>::Ok, Trap> {
+            fn into_fallible(self) -> Result<<Self as WasmRet>::Ok, Trap> {
                 self
             }
         }
@@ -315,18 +315,18 @@ mod tests {
     use crate::core::{F32, F64};
 
     /// Utility struct helper for the `implements_wasm_results` macro.
-    pub struct ImplementsWasmResults<T> {
+    pub struct ImplementsWasmRet<T> {
         marker: core::marker::PhantomData<fn() -> T>,
     }
     /// Utility trait for the fallback case of the `implements_wasm_results` macro.
-    pub trait ImplementsWasmResultsFallback {
+    pub trait ImplementsWasmRetFallback {
         const VALUE: bool = false;
     }
-    impl<T> ImplementsWasmResultsFallback for ImplementsWasmResults<T> {}
+    impl<T> ImplementsWasmRetFallback for ImplementsWasmRet<T> {}
     /// Utility trait impl for the `true` case of the `implements_wasm_results` macro.
-    impl<T> ImplementsWasmResults<T>
+    impl<T> ImplementsWasmRet<T>
     where
-        T: WasmResults,
+        T: WasmRet,
     {
         // We need to allow for dead code at this point because
         // the Rust compiler thinks this function is unused even
@@ -334,14 +334,14 @@ mod tests {
         #[allow(dead_code)]
         pub const VALUE: bool = true;
     }
-    /// Returns `true` if the given type `T` implements the `WasmResults` trait.
+    /// Returns `true` if the given type `T` implements the `WasmRet` trait.
     #[macro_export]
     #[doc(hidden)]
     macro_rules! implements_wasm_results {
         ( $T:ty $(,)? ) => {{
             #[allow(unused_imports)]
-            use ImplementsWasmResultsFallback as _;
-            ImplementsWasmResults::<$T>::VALUE
+            use ImplementsWasmRetFallback as _;
+            ImplementsWasmRet::<$T>::VALUE
         }};
     }
 
