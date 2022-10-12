@@ -142,7 +142,7 @@ impl Stack {
         code_map: &'engine CodeMap,
     ) -> Result<FuncFrame, TrapCode> {
         let ip = self.call_wasm_impl(wasm_func, code_map)?;
-        self.frames.push(caller.clone())?;
+        self.frames.push(*caller)?;
         let instance = wasm_func.instance();
         let frame = FuncFrame::new(ip, instance);
         Ok(frame)
