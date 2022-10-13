@@ -353,7 +353,7 @@ impl<T> Linker<T> {
     /// - If the linker does not define imports of the instantiated [`Module`].
     /// - If any imported item does not satisfy its type requirements.
     pub fn instantiate<'a>(
-        &mut self,
+        &self,
         context: impl AsContextMut,
         module: &'a Module,
     ) -> Result<InstancePre<'a>, Error> {
