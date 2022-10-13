@@ -1050,6 +1050,54 @@ impl Interpreter {
                 }
             }
 
+            isa::Instruction::I64Eq => {
+                if let RunInstructionTracePre::I64Comp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64Comp {
+                        class: RelOp::Eq,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64Ne => {
+                if let RunInstructionTracePre::I64Comp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64Comp {
+                        class: RelOp::Ne,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64GtS => {
+                if let RunInstructionTracePre::I64Comp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64Comp {
+                        class: RelOp::SignedGt,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64GtU => {
+                if let RunInstructionTracePre::I64Comp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64Comp {
+                        class: RelOp::UnsignedGt,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
             isa::Instruction::I64LtU => {
                 if let RunInstructionTracePre::I64Comp { left, right } = pre_status.unwrap() {
                     StepInfo::I64Comp {
@@ -1078,6 +1126,18 @@ impl Interpreter {
                 if let RunInstructionTracePre::I64Comp { left, right } = pre_status.unwrap() {
                     StepInfo::I64Comp {
                         class: RelOp::UnsignedGe,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64GeS => {
+                if let RunInstructionTracePre::I64Comp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64Comp {
+                        class: RelOp::SignedGe,
                         left,
                         right,
                         value: <_>::from_value_internal(*self.value_stack.top()),
