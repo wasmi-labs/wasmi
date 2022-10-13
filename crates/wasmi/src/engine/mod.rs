@@ -11,7 +11,24 @@ mod func_types;
 pub mod stack;
 mod traits;
 
+#[cfg(test)]
+mod tests;
+
 pub(crate) use self::func_args::{FuncParams, FuncResults};
+pub use self::{
+    bytecode::DropKeep,
+    code_map::FuncBody,
+    config::Config,
+    func_builder::{
+        FuncBuilder,
+        FunctionBuilderAllocations,
+        Instr,
+        RelativeDepth,
+        TranslationError,
+    },
+    stack::StackLimits,
+    traits::{CallParams, CallResults},
+};
 use self::{
     bytecode::Instruction,
     cache::InstanceCache,
@@ -20,25 +37,8 @@ use self::{
     func_types::FuncTypeRegistry,
     stack::{FuncFrame, Stack, ValueStack},
 };
-pub use self::{
-    bytecode::{DropKeep, Target},
-    code_map::FuncBody,
-    config::Config,
-    func_builder::{
-        FuncBuilder,
-        FunctionBuilderAllocations,
-        InstructionIdx,
-        LabelIdx,
-        RelativeDepth,
-        Reloc,
-        TranslationError,
-    },
-    stack::StackLimits,
-    traits::{CallParams, CallResults},
-};
 use super::{func::FuncEntityInternal, AsContextMut, Func};
 use crate::{
-    arena::{GuardedEntity, Index},
     core::{Trap, TrapCode},
     FuncType,
 };
@@ -46,6 +46,7 @@ use alloc::sync::Arc;
 use core::sync::atomic::{AtomicU32, Ordering};
 pub use func_types::DedupFuncType;
 use spin::mutex::Mutex;
+use wasmi_arena::{GuardedEntity, Index};
 
 /// The outcome of a `wasmi` function execution.
 #[derive(Debug, Copy, Clone)]
@@ -175,9 +176,11 @@ impl Engine {
     /// If the [`FuncBody`] is invalid for the [`Engine`].
     #[cfg(test)]
     pub(crate) fn resolve_inst(&self, func_body: FuncBody, index: usize) -> Option<Instruction> {
-        let this = self.inner.lock();
-        let iref = this.code_map.header(func_body).iref();
-        this.code_map.insts(iref).get(index).copied()
+        self.inner
+            .lock()
+            .code_map
+            .get_instr(func_body, index)
+            .copied()
     }
 
     /// Executes the given [`Func`] using the given arguments `params` and stores the result into `results`.
@@ -414,7 +417,6 @@ impl EngineInner {
         }
 
         let value_stack = &mut self.stack.values;
-        let instrs = self.code_map.insts(frame.iref());
-        execute_frame(ctx, value_stack, instrs, cache, frame).map_err(make_trap)
+        execute_frame(ctx, value_stack, cache, frame).map_err(make_trap)
     }
 }

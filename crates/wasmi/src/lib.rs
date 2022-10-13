@@ -60,7 +60,7 @@
 //!         .get_export(&store, "hello")
 //!         .and_then(Extern::into_func)
 //!         .ok_or_else(|| anyhow!("could not find function \"hello\""))?
-//!         .typed::<(), (), _>(&mut store)?;
+//!         .typed::<(), ()>(&mut store)?;
 //!
 //!     // And finally we can call the wasm!
 //!     hello.call(&mut store, ())?;
@@ -92,7 +92,6 @@ extern crate std as alloc;
 #[macro_use]
 mod foreach_tuple;
 
-mod arena;
 mod engine;
 mod error;
 mod external;
@@ -122,20 +121,11 @@ pub mod errors {
     };
 }
 
-use self::{
-    arena::{GuardedEntity, Index},
-    func::{FuncEntity, FuncIdx},
-    global::{GlobalEntity, GlobalIdx},
-    instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
-    memory::{MemoryEntity, MemoryIdx},
-    store::Stored,
-    table::{TableEntity, TableIdx},
-};
 pub use self::{
     engine::{Config, Engine, StackLimits},
     error::Error,
     external::Extern,
-    func::{Caller, Func, TypedFunc, WasmParams, WasmResults},
+    func::{Caller, Func, IntoFunc, TypedFunc, WasmParams, WasmResults, WasmRet, WasmType},
     func_type::FuncType,
     global::{Global, GlobalType, Mutability},
     instance::{ExportsIter, Instance},
@@ -152,4 +142,12 @@ pub use self::{
     },
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
+};
+use self::{
+    func::{FuncEntity, FuncIdx},
+    global::{GlobalEntity, GlobalIdx},
+    instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
+    memory::{MemoryEntity, MemoryIdx},
+    store::Stored,
+    table::{TableEntity, TableIdx},
 };

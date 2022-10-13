@@ -1,17 +1,19 @@
 [package]
 name = "wasmi_cli"
 version = "0.11.0"
-edition = "2021"
-authors = ["Parity Technologies <admin@parity.io>", "Robin Freyler <robin.freyler@gmail.com>"]
-license = "MIT/Apache-2.0"
-readme = "../../README.md"
-repository = "https://github.com/paritytech/wasmi"
-documentation = "https://paritytech.github.io/wasmi/"
+documentation = "https://docs.rs/wasmi/"
 description = "WebAssembly interpreter"
-keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
+publish = false                          # We might want to publish this crate when dust has settled.
+authors.workspace = true
+repository.workspace = true
+edition.workspace = true
+readme.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
 
 [dependencies]
-clap = { version = "3.2", features = ["derive"] }
+clap = { version = "4", features = ["derive"] }
 wasmi = { path = "../wasmi" }
 wat = "1"
 anyhow = "1"

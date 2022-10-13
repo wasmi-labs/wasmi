@@ -1,5 +1,4 @@
 use super::{
-    arena::Arena,
     engine::DedupFuncType,
     Engine,
     Func,
@@ -19,8 +18,8 @@ use super::{
     TableEntity,
     TableIdx,
 };
-use crate::{GuardedEntity, Index};
 use core::sync::atomic::{AtomicU32, Ordering};
+use wasmi_arena::{Arena, GuardedEntity, Index};
 
 /// A unique store index.
 ///

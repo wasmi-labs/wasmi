@@ -4,7 +4,6 @@ use super::{
     Extern,
     Func,
     Global,
-    Index,
     Memory,
     StoreContext,
     Stored,
@@ -16,6 +15,7 @@ use alloc::{
     vec::Vec,
 };
 use core::{iter::FusedIterator, ops::Deref};
+use wasmi_arena::Index;
 
 /// A raw index to a module instance entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

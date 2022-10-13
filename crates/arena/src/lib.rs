@@ -4,6 +4,24 @@
 //! These allocators mainly serve as the backbone for an efficient Wasm store
 //! implementation.
 
+#![cfg_attr(not(feature = "std"), no_std)]
+#![warn(
+    clippy::cast_lossless,
+    clippy::missing_errors_doc,
+    clippy::used_underscore_binding,
+    clippy::redundant_closure_for_method_calls,
+    clippy::type_repetition_in_bounds,
+    clippy::inconsistent_struct_constructor,
+    clippy::default_trait_access,
+    clippy::map_unwrap_or,
+    clippy::items_after_statements
+)]
+#[cfg(not(feature = "std"))]
+#[macro_use]
+extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std as alloc;
+
 mod dedup;
 mod guarded;
 
@@ -13,8 +31,7 @@ mod tests;
 pub use self::{dedup::DedupArena, guarded::GuardedEntity};
 use alloc::vec::Vec;
 use core::{
-    iter,
-    iter::{DoubleEndedIterator, ExactSizeIterator},
+    iter::{DoubleEndedIterator, Enumerate, ExactSizeIterator},
     marker::PhantomData,
     ops,
     slice,
@@ -34,7 +51,7 @@ pub trait Index: Copy {
 #[derive(Debug)]
 pub struct Arena<Idx, T> {
     entities: Vec<T>,
-    __marker: PhantomData<Idx>,
+    marker: PhantomData<Idx>,
 }
 
 impl<Idx, T> Default for Arena<Idx, T> {
@@ -59,16 +76,18 @@ impl<Idx, T> Arena<Idx, T> {
     pub fn new() -> Self {
         Self {
             entities: Vec::new(),
-            __marker: PhantomData,
+            marker: PhantomData,
         }
     }
 
     /// Returns the allocated number of entities.
+    #[inline]
     pub fn len(&self) -> usize {
         self.entities.len()
     }
 
     /// Returns `true` if the arena has not yet allocated entities.
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -82,7 +101,7 @@ impl<Idx, T> Arena<Idx, T> {
     pub fn iter(&self) -> Iter<Idx, T> {
         Iter {
             iter: self.entities.iter().enumerate(),
-            __marker: PhantomData,
+            marker: PhantomData,
         }
     }
 
@@ -90,7 +109,7 @@ impl<Idx, T> Arena<Idx, T> {
     pub fn iter_mut(&mut self) -> IterMut<Idx, T> {
         IterMut {
             iter: self.entities.iter_mut().enumerate(),
-            __marker: PhantomData,
+            marker: PhantomData,
         }
     }
 }
@@ -105,6 +124,7 @@ where
     }
 
     /// Allocates a new entity and returns its index.
+    #[inline]
     pub fn alloc(&mut self, entity: T) -> Idx {
         let index = self.next_index();
         self.entities.push(entity);
@@ -112,11 +132,13 @@ where
     }
 
     /// Returns a shared reference to the entity at the given index if any.
+    #[inline]
     pub fn get(&self, index: Idx) -> Option<&T> {
         self.entities.get(index.into_usize())
     }
 
     /// Returns an exclusive reference to the entity at the given index if any.
+    #[inline]
     pub fn get_mut(&mut self, index: Idx) -> Option<&mut T> {
         self.entities.get_mut(index.into_usize())
     }
@@ -129,7 +151,7 @@ impl<Idx, T> FromIterator<T> for Arena<Idx, T> {
     {
         Self {
             entities: Vec::from_iter(iter),
-            __marker: PhantomData,
+            marker: PhantomData,
         }
     }
 }
@@ -161,8 +183,8 @@ where
 /// An iterator over shared references of arena entities and their indices.
 #[derive(Debug)]
 pub struct Iter<'a, Idx, T> {
-    iter: iter::Enumerate<slice::Iter<'a, T>>,
-    __marker: PhantomData<fn() -> Idx>,
+    iter: Enumerate<slice::Iter<'a, T>>,
+    marker: PhantomData<fn() -> Idx>,
 }
 
 impl<'a, Idx, T> Iterator for Iter<'a, Idx, T>
@@ -171,12 +193,14 @@ where
 {
     type Item = (Idx, &'a T);
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.iter
             .next()
             .map(|(idx, entity)| (Idx::from_usize(idx), entity))
     }
 
+    #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter.size_hint()
     }
@@ -186,6 +210,7 @@ impl<'a, Idx, T> DoubleEndedIterator for Iter<'a, Idx, T>
 where
     Idx: Index,
 {
+    #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter
             .next()
@@ -205,8 +230,8 @@ where
 /// An iterator over exclusive references of arena entities and their indices.
 #[derive(Debug)]
 pub struct IterMut<'a, Idx, T> {
-    iter: iter::Enumerate<slice::IterMut<'a, T>>,
-    __marker: PhantomData<fn() -> Idx>,
+    iter: Enumerate<slice::IterMut<'a, T>>,
+    marker: PhantomData<fn() -> Idx>,
 }
 
 impl<'a, Idx, T> Iterator for IterMut<'a, Idx, T>
@@ -215,12 +240,14 @@ where
 {
     type Item = (Idx, &'a mut T);
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.iter
             .next()
             .map(|(idx, entity)| (Idx::from_usize(idx), entity))
     }
 
+    #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter.size_hint()
     }
@@ -230,6 +257,7 @@ impl<'a, Idx, T> DoubleEndedIterator for IterMut<'a, Idx, T>
 where
     Idx: Index,
 {
+    #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter
             .next()
@@ -241,8 +269,16 @@ impl<'a, Idx, T> ExactSizeIterator for IterMut<'a, Idx, T>
 where
     Idx: Index,
 {
+    #[inline]
     fn len(&self) -> usize {
         self.iter.len()
+    }
+}
+
+impl<Idx, T> Arena<Idx, T> {
+    /// Panics with an index out of bounds message.
+    fn index_out_of_bounds(len: usize, index: usize) -> ! {
+        panic!("index out of bounds: the len is {len} but the index is {index}")
     }
 }
 
@@ -252,13 +288,10 @@ where
 {
     type Output = T;
 
+    #[inline]
     fn index(&self, index: Idx) -> &Self::Output {
-        self.get(index).unwrap_or_else(|| {
-            panic!(
-                "tried to access out of bounds arena entity at {}",
-                index.into_usize()
-            )
-        })
+        self.get(index)
+            .unwrap_or_else(|| Self::index_out_of_bounds(self.len(), index.into_usize()))
     }
 }
 
@@ -266,12 +299,10 @@ impl<Idx, T> ops::IndexMut<Idx> for Arena<Idx, T>
 where
     Idx: Index,
 {
+    #[inline]
     fn index_mut(&mut self, index: Idx) -> &mut Self::Output {
-        self.get_mut(index).unwrap_or_else(|| {
-            panic!(
-                "tried to access out of bounds arena entity at {}",
-                index.into_usize()
-            )
-        })
+        let len = self.len();
+        self.get_mut(index)
+            .unwrap_or_else(|| Self::index_out_of_bounds(len, index.into_usize()))
     }
 }

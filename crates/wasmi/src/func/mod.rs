@@ -6,14 +6,13 @@ mod typed_func;
 pub use self::{
     caller::Caller,
     error::FuncError,
-    into_func::IntoFunc,
+    into_func::{IntoFunc, WasmRet, WasmType},
     typed_func::{TypedFunc, WasmParams, WasmResults},
 };
 use super::{
     engine::{DedupFuncType, FuncBody, FuncParams, FuncResults},
     AsContext,
     AsContextMut,
-    Index,
     Instance,
     StoreContext,
     Stored,
@@ -25,6 +24,7 @@ use crate::{
 };
 use alloc::sync::Arc;
 use core::{fmt, fmt::Debug};
+use wasmi_arena::Index;
 
 /// A raw index to a function entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -324,11 +324,13 @@ impl Func {
     ///
     /// If the function signature of `self` does not match `Params` and `Results`
     /// as parameter types and result types respectively.
-    pub fn typed<Params, Results, S>(&self, ctx: S) -> Result<TypedFunc<Params, Results>, Error>
+    pub fn typed<Params, Results>(
+        &self,
+        ctx: impl AsContext,
+    ) -> Result<TypedFunc<Params, Results>, Error>
     where
         Params: WasmParams,
         Results: WasmResults,
-        S: AsContext,
     {
         TypedFunc::new(ctx, *self)
     }

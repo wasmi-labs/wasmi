@@ -6,6 +6,51 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Additionally we have an `Internal` section for changes that are of interest to developers.
 
+## [0.18.1] - 2022-10-13
+
+### Changed
+
+- Optimize for common cases for branch and return instructions.
+  (https://github.com/paritytech/wasmi/pull/493)
+    - This led to up to 10% performance improvement according to our benchmarks
+      in some cases.
+- Removed extraneous `S: impl AsContext` generic parameter from `Func::typed` method.
+- Make `IntoFunc`, `WasmType` and `WasmRet` traits publicly available.
+- Add missing impl for `WasmRet` for `Result<T, Trap> where T: WasmType`.
+    - Without this impl it was impossible to provide closures to `Func::wrap`
+      that returned `Result<T, Trap>` where `T: WasmType`, only `Result<(), Trap>`
+      or `Result<(T,), Trap>` was possible before.
+
+### Internal
+
+- Added `wasmi_arena` crate which defines all internally used arena data structures.
+  (https://github.com/paritytech/wasmi/pull/502)
+- Update to `clap 4.0` in `wasmi_cli`. (https://github.com/paritytech/wasmi/pull/498)
+- Many more improvements to our internal benchmarking CI.
+  (https://github.com/paritytech/wasmi/pull/494, https://github.com/paritytech/wasmi/pull/501,
+  https://github.com/paritytech/wasmi/pull/506, https://github.com/paritytech/wasmi/pull/509)
+
+## [0.18.0] - 2022-10-02
+
+### Added
+
+- Added Contibution Guidelines and Code of Conduct to the repository. (https://github.com/paritytech/wasmi/pull/485)
+
+### Changed
+
+- Optimized instruction dispatch in the `wasmi` interpreter.
+  (https://github.com/paritytech/wasmi/pull/478, https://github.com/paritytech/wasmi/pull/482)
+  - This yielded combined speed-ups of ~20% across the board.
+  - As a side effect we also refactored the way we compute branching offsets
+    at Wasm module compilation time which improved performance of Wasm module
+    compilation by roughly 5%.
+
+### Internal
+
+- Our CI now also benchmarks `wasmi` when ran inside Wasmtime as Wasm.
+  (https://github.com/paritytech/wasmi/pull/483, https://github.com/paritytech/wasmi/pull/487)
+  - This allows us to optimize `wasmi` towards Wasm performance more easily in the future.
+
 ## [0.17.0] - 2022-09-23
 
 ### Added

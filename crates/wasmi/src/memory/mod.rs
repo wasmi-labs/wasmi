@@ -1,8 +1,9 @@
 mod byte_buffer;
 
 use self::byte_buffer::ByteBuffer;
-use super::{AsContext, AsContextMut, Index, StoreContext, StoreContextMut, Stored};
+use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
 use core::{fmt, fmt::Display};
+use wasmi_arena::Index;
 use wasmi_core::memory_units::{Bytes, Pages};
 
 /// A raw index to a linear memory entity.
