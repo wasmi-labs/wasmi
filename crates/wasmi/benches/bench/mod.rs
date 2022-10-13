@@ -58,7 +58,7 @@ pub fn load_module_from_file(file_name: &str) -> wasmi::Module {
 /// If the benchmark Wasm file could not be opened, read or parsed.
 pub fn load_instance_from_file(file_name: &str) -> (wasmi::Store<()>, wasmi::Instance) {
     let module = load_module_from_file(file_name);
-    let mut linker = <wasmi::Linker<()>>::default();
+    let linker = <wasmi::Linker<()>>::default();
     let mut store = wasmi::Store::new(module.engine(), ());
     let instance = linker
         .instantiate(&mut store, &module)
@@ -86,7 +86,7 @@ pub fn load_instance_from_wat(wat_bytes: &[u8]) -> (wasmi::Store<()>, wasmi::Ins
     let wasm = wat2wasm(wat_bytes);
     let engine = wasmi::Engine::new(&bench_config());
     let module = wasmi::Module::new(&engine, &wasm[..]).unwrap();
-    let mut linker = <wasmi::Linker<()>>::default();
+    let linker = <wasmi::Linker<()>>::default();
     let mut store = wasmi::Store::new(&engine, ());
     let instance = linker
         .instantiate(&mut store, &module)

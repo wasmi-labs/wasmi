@@ -78,7 +78,7 @@ fn bench_translate_wasm_kernel(c: &mut Criterion) {
 fn bench_instantiate_wasm_kernel(c: &mut Criterion) {
     c.bench_function("instantiate/wasm_kernel", |b| {
         let module = load_module_from_file(WASM_KERNEL);
-        let mut linker = <v1::Linker<()>>::default();
+        let linker = <v1::Linker<()>>::default();
         b.iter(|| {
             let mut store = v1::Store::new(module.engine(), ());
             let _instance = linker.instantiate(&mut store, &module).unwrap();
