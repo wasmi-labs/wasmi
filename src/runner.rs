@@ -1074,6 +1074,18 @@ impl Interpreter {
                     unreachable!()
                 }
             }
+            isa::Instruction::I64GeU => {
+                if let RunInstructionTracePre::I64Comp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64Comp {
+                        class: RelOp::UnsignedGe,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
 
             isa::Instruction::I32Add => {
                 if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
