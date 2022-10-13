@@ -536,21 +536,36 @@ impl<'a> Instruction<'a> {
                 vtype: VarType::I32,
             },
             Instruction::I64Eqz => todo!(),
-            Instruction::I64Eq => todo!(),
-            Instruction::I64Ne => todo!(),
+            Instruction::I64Eq => Opcode::Rel {
+                class: RelOp::Eq,
+                vtype: VarType::I64,
+            },
+            Instruction::I64Ne => Opcode::Rel {
+                class: RelOp::Ne,
+                vtype: VarType::I64,
+            },
             Instruction::I64LtS => todo!(),
             Instruction::I64LtU => Opcode::Rel {
                 class: RelOp::UnsignedLt,
                 vtype: VarType::I64,
             },
-            Instruction::I64GtS => todo!(),
-            Instruction::I64GtU => todo!(),
+            Instruction::I64GtS => Opcode::Rel {
+                class: RelOp::SignedGt,
+                vtype: VarType::I64,
+            },
+            Instruction::I64GtU => Opcode::Rel {
+                class: RelOp::UnsignedGt,
+                vtype: VarType::I64,
+            },
             Instruction::I64LeS => todo!(),
             Instruction::I64LeU => Opcode::Rel {
                 class: RelOp::UnsignedLe,
                 vtype: VarType::I64,
             },
-            Instruction::I64GeS => todo!(),
+            Instruction::I64GeS => Opcode::Rel {
+                class: RelOp::SignedGe,
+                vtype: VarType::I64,
+            },
             Instruction::I64GeU => Opcode::Rel {
                 class: RelOp::UnsignedGe,
                 vtype: VarType::I64,
