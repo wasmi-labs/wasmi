@@ -378,6 +378,7 @@ impl<T> Linker<T> {
         let module_name = import.module();
         let field_name = import.field();
         let resolved = self.resolve(module_name, field_name);
+        let context = context.as_context();
         match import.item_type() {
             ModuleImportType::Func(expected_func_type) => {
                 let func = resolved.and_then(Extern::into_func).ok_or_else(make_err)?;
@@ -385,14 +386,8 @@ impl<T> Linker<T> {
                 if &actual_func_type != expected_func_type {
                     return Err(LinkerError::FuncTypeMismatch {
                         name: import.name().clone(),
-                        expected: context
-                            .as_context()
-                            .store
-                            .resolve_func_type(*expected_func_type),
-                        actual: context
-                            .as_context()
-                            .store
-                            .resolve_func_type(actual_func_type),
+                        expected: context.store.resolve_func_type(*expected_func_type),
+                        actual: context.store.resolve_func_type(actual_func_type),
                     })
                     .map_err(Into::into);
                 }
@@ -400,7 +395,7 @@ impl<T> Linker<T> {
             }
             ModuleImportType::Table(expected_table_type) => {
                 let table = resolved.and_then(Extern::into_table).ok_or_else(make_err)?;
-                let actual_table_type = table.table_type(context.as_context());
+                let actual_table_type = table.table_type(context);
                 actual_table_type.satisfies(expected_table_type)?;
                 Ok(Extern::Table(table))
             }
@@ -408,7 +403,7 @@ impl<T> Linker<T> {
                 let memory = resolved
                     .and_then(Extern::into_memory)
                     .ok_or_else(make_err)?;
-                let actual_memory_type = memory.memory_type(context.as_context());
+                let actual_memory_type = memory.memory_type(context);
                 actual_memory_type.satisfies(expected_memory_type)?;
                 Ok(Extern::Memory(memory))
             }
@@ -416,7 +411,7 @@ impl<T> Linker<T> {
                 let global = resolved
                     .and_then(Extern::into_global)
                     .ok_or_else(make_err)?;
-                let actual_global_type = global.global_type(context.as_context());
+                let actual_global_type = global.global_type(context);
                 if &actual_global_type != expected_global_type {
                     return Err(LinkerError::GlobalTypeMismatch {
                         name: import.name().clone(),
