@@ -354,74 +354,74 @@ impl<T> Linker<T> {
     /// - If any imported item does not satisfy its type requirements.
     pub fn instantiate<'a>(
         &self,
-        context: impl AsContextMut,
+        mut context: impl AsContextMut,
         module: &'a Module,
     ) -> Result<InstancePre<'a>, Error> {
-        let mut externals = Vec::with_capacity(module.imports().len());
-
-        for import in module.imports() {
-            let module_name = import.module();
-            let field_name = import.field();
-            let external = match import.item_type() {
-                ModuleImportType::Func(expected_func_type) => {
-                    let func = self
-                        .resolve(module_name, field_name)
-                        .and_then(Extern::into_func)
-                        .ok_or_else(|| LinkerError::cannot_find_definition_of_import(&import))?;
-                    let actual_func_type = func.signature(&context);
-                    if &actual_func_type != expected_func_type {
-                        return Err(LinkerError::FuncTypeMismatch {
-                            name: import.name().clone(),
-                            expected: context
-                                .as_context()
-                                .store
-                                .resolve_func_type(*expected_func_type),
-                            actual: context
-                                .as_context()
-                                .store
-                                .resolve_func_type(actual_func_type),
-                        })
-                        .map_err(Into::into);
-                    }
-                    Extern::Func(func)
-                }
-                ModuleImportType::Table(expected_table_type) => {
-                    let table = self
-                        .resolve(module_name, field_name)
-                        .and_then(Extern::into_table)
-                        .ok_or_else(|| LinkerError::cannot_find_definition_of_import(&import))?;
-                    let actual_table_type = table.table_type(context.as_context());
-                    actual_table_type.satisfies(expected_table_type)?;
-                    Extern::Table(table)
-                }
-                ModuleImportType::Memory(expected_memory_type) => {
-                    let memory = self
-                        .resolve(module_name, field_name)
-                        .and_then(Extern::into_memory)
-                        .ok_or_else(|| LinkerError::cannot_find_definition_of_import(&import))?;
-                    let actual_memory_type = memory.memory_type(context.as_context());
-                    actual_memory_type.satisfies(expected_memory_type)?;
-                    Extern::Memory(memory)
-                }
-                ModuleImportType::Global(expected_global_type) => {
-                    let global = self
-                        .resolve(module_name, field_name)
-                        .and_then(Extern::into_global)
-                        .ok_or_else(|| LinkerError::cannot_find_definition_of_import(&import))?;
-                    let actual_global_type = global.global_type(context.as_context());
-                    if &actual_global_type != expected_global_type {
-                        return Err(LinkerError::GlobalTypeMismatch {
-                            name: import.name().clone(),
-                            expected: *expected_global_type,
-                            actual: actual_global_type,
-                        })
-                        .map_err(Into::into);
-                    }
-                    Extern::Global(global)
-                }
-            };
-            externals.push(external);
-        }
+        let externals = module
+            .imports()
+            .map(|import| self.process_import(&mut context, import))
+            .collect::<Result<Vec<Extern>, Error>>()?;
         module.instantiate(context, externals)
+    }
+
+    /// Processes a single [`Module`] import.
+    ///
+    /// # Errors
+    ///
+    /// If the imported item does not satisfy constraints set by the [`Module`].
+    fn process_import(
+        &self,
+        context: impl AsContextMut,
+        import: ModuleImport,
+    ) -> Result<Extern, Error> {
+        let make_err = || LinkerError::cannot_find_definition_of_import(&import);
+        let module_name = import.module();
+        let field_name = import.field();
+        let resolved = self.resolve(module_name, field_name);
+        let context = context.as_context();
+        match import.item_type() {
+            ModuleImportType::Func(expected_func_type) => {
+                let func = resolved.and_then(Extern::into_func).ok_or_else(make_err)?;
+                let actual_func_type = func.signature(&context);
+                if &actual_func_type != expected_func_type {
+                    return Err(LinkerError::FuncTypeMismatch {
+                        name: import.name().clone(),
+                        expected: context.store.resolve_func_type(*expected_func_type),
+                        actual: context.store.resolve_func_type(actual_func_type),
+                    })
+                    .map_err(Into::into);
+                }
+                Ok(Extern::Func(func))
+            }
+            ModuleImportType::Table(expected_table_type) => {
+                let table = resolved.and_then(Extern::into_table).ok_or_else(make_err)?;
+                let actual_table_type = table.table_type(context);
+                actual_table_type.satisfies(expected_table_type)?;
+                Ok(Extern::Table(table))
+            }
+            ModuleImportType::Memory(expected_memory_type) => {
+                let memory = resolved
+                    .and_then(Extern::into_memory)
+                    .ok_or_else(make_err)?;
+                let actual_memory_type = memory.memory_type(context);
+                actual_memory_type.satisfies(expected_memory_type)?;
+                Ok(Extern::Memory(memory))
+            }
+            ModuleImportType::Global(expected_global_type) => {
+                let global = resolved
+                    .and_then(Extern::into_global)
+                    .ok_or_else(make_err)?;
+                let actual_global_type = global.global_type(context);
+                if &actual_global_type != expected_global_type {
+                    return Err(LinkerError::GlobalTypeMismatch {
+                        name: import.name().clone(),
+                        expected: *expected_global_type,
+                        actual: actual_global_type,
+                    })
+                    .map_err(Into::into);
+                }
+                Ok(Extern::Global(global))
+            }
+        }
     }
 }
