@@ -1849,72 +1849,72 @@ impl<'parser> FuncBuilder<'parser> {
 
     /// Translate a Wasm `i32.trunc_f32` instruction.
     pub fn translate_i32_trunc_f32_s(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncSF32)
+        self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncF32S)
     }
 
     /// Translate a Wasm `u32.trunc_f32` instruction.
     pub fn translate_i32_trunc_f32_u(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncUF32)
+        self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncF32U)
     }
 
     /// Translate a Wasm `i32.trunc_f64` instruction.
     pub fn translate_i32_trunc_f64_s(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncSF64)
+        self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncF64S)
     }
 
     /// Translate a Wasm `u32.trunc_f64` instruction.
     pub fn translate_i32_trunc_f64_u(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncUF64)
+        self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncF64U)
     }
 
     /// Translate a Wasm `i64.extend_i32` instruction.
     pub fn translate_i64_extend_i32_s(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::I32, ValueType::I64, Instruction::I64ExtendSI32)
+        self.translate_conversion(ValueType::I32, ValueType::I64, Instruction::I64ExtendI32S)
     }
 
     /// Translate a Wasm `u64.extend_i32` instruction.
     pub fn translate_i64_extend_i32_u(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::I32, ValueType::I64, Instruction::I64ExtendUI32)
+        self.translate_conversion(ValueType::I32, ValueType::I64, Instruction::I64ExtendI32U)
     }
 
     /// Translate a Wasm `i64.trunc_f32` instruction.
     pub fn translate_i64_trunc_f32_s(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncSF32)
+        self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncF32S)
     }
 
     /// Translate a Wasm `u64.trunc_f32` instruction.
     pub fn translate_i64_trunc_f32_u(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncUF32)
+        self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncF32U)
     }
 
     /// Translate a Wasm `i64.trunc_f64` instruction.
     pub fn translate_i64_trunc_f64_s(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncSF64)
+        self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncF64S)
     }
 
     /// Translate a Wasm `u64.trunc_f64` instruction.
     pub fn translate_i64_trunc_f64_u(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncUF64)
+        self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncF64U)
     }
 
     /// Translate a Wasm `f32.convert_i32` instruction.
     pub fn translate_f32_convert_i32_s(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::I32, ValueType::F32, Instruction::F32ConvertSI32)
+        self.translate_conversion(ValueType::I32, ValueType::F32, Instruction::F32ConvertI32S)
     }
 
     /// Translate a Wasm `f32.convert_u32` instruction.
     pub fn translate_f32_convert_i32_u(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::I32, ValueType::F32, Instruction::F32ConvertUI32)
+        self.translate_conversion(ValueType::I32, ValueType::F32, Instruction::F32ConvertI32U)
     }
 
     /// Translate a Wasm `f32.convert_i64` instruction.
     pub fn translate_f32_convert_i64_s(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::I64, ValueType::F32, Instruction::F32ConvertSI64)
+        self.translate_conversion(ValueType::I64, ValueType::F32, Instruction::F32ConvertI64S)
     }
 
     /// Translate a Wasm `f32.convert_u64` instruction.
     pub fn translate_f32_convert_i64_u(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::I64, ValueType::F32, Instruction::F32ConvertUI64)
+        self.translate_conversion(ValueType::I64, ValueType::F32, Instruction::F32ConvertI64U)
     }
 
     /// Translate a Wasm `f32.demote_f64` instruction.
@@ -1924,22 +1924,22 @@ impl<'parser> FuncBuilder<'parser> {
 
     /// Translate a Wasm `f64.convert_i32` instruction.
     pub fn translate_f64_convert_i32_s(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::I32, ValueType::F64, Instruction::F64ConvertSI32)
+        self.translate_conversion(ValueType::I32, ValueType::F64, Instruction::F64ConvertI32S)
     }
 
     /// Translate a Wasm `f64.convert_u32` instruction.
     pub fn translate_f64_convert_i32_u(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::I32, ValueType::F64, Instruction::F64ConvertUI32)
+        self.translate_conversion(ValueType::I32, ValueType::F64, Instruction::F64ConvertI32U)
     }
 
     /// Translate a Wasm `f64.convert_i64` instruction.
     pub fn translate_f64_convert_i64_s(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::I64, ValueType::F64, Instruction::F64ConvertSI64)
+        self.translate_conversion(ValueType::I64, ValueType::F64, Instruction::F64ConvertI64S)
     }
 
     /// Translate a Wasm `f64.convert_u64` instruction.
     pub fn translate_f64_convert_i64_u(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::I64, ValueType::F64, Instruction::F64ConvertUI64)
+        self.translate_conversion(ValueType::I64, ValueType::F64, Instruction::F64ConvertI64U)
     }
 
     /// Translate a Wasm `f64.promote_f32` instruction.
