@@ -377,12 +377,10 @@ impl<T> Linker<T> {
         let make_err = || LinkerError::cannot_find_definition_of_import(&import);
         let module_name = import.module();
         let field_name = import.field();
+        let resolved = self.resolve(module_name, field_name);
         match import.item_type() {
             ModuleImportType::Func(expected_func_type) => {
-                let func = self
-                    .resolve(module_name, field_name)
-                    .and_then(Extern::into_func)
-                    .ok_or_else(make_err)?;
+                let func = resolved.and_then(Extern::into_func).ok_or_else(make_err)?;
                 let actual_func_type = func.signature(&context);
                 if &actual_func_type != expected_func_type {
                     return Err(LinkerError::FuncTypeMismatch {
@@ -401,17 +399,13 @@ impl<T> Linker<T> {
                 Ok(Extern::Func(func))
             }
             ModuleImportType::Table(expected_table_type) => {
-                let table = self
-                    .resolve(module_name, field_name)
-                    .and_then(Extern::into_table)
-                    .ok_or_else(make_err)?;
+                let table = resolved.and_then(Extern::into_table).ok_or_else(make_err)?;
                 let actual_table_type = table.table_type(context.as_context());
                 actual_table_type.satisfies(expected_table_type)?;
                 Ok(Extern::Table(table))
             }
             ModuleImportType::Memory(expected_memory_type) => {
-                let memory = self
-                    .resolve(module_name, field_name)
+                let memory = resolved
                     .and_then(Extern::into_memory)
                     .ok_or_else(make_err)?;
                 let actual_memory_type = memory.memory_type(context.as_context());
@@ -419,8 +413,7 @@ impl<T> Linker<T> {
                 Ok(Extern::Memory(memory))
             }
             ModuleImportType::Global(expected_global_type) => {
-                let global = self
-                    .resolve(module_name, field_name)
+                let global = resolved
                     .and_then(Extern::into_global)
                     .ok_or_else(make_err)?;
                 let actual_global_type = global.global_type(context.as_context());
