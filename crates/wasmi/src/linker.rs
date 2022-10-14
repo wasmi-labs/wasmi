@@ -234,11 +234,6 @@ pub struct Linker<T> {
     strings: StringInterner,
     /// Stores the definitions given their names.
     definitions: BTreeMap<ImportKey, Extern>,
-    /// Reusable buffer to be used for module instantiations.
-    ///
-    /// Helps to avoid heap memory allocations at the cost of a small
-    /// memory overhead.
-    externals: Vec<Extern>,
     marker: PhantomData<fn() -> T>,
 }
 
@@ -256,7 +251,6 @@ impl<T> Clone for Linker<T> {
         Self {
             strings: self.strings.clone(),
             definitions: self.definitions.clone(),
-            externals: Vec::new(),
             marker: self.marker,
         }
     }
@@ -274,7 +268,6 @@ impl<T> Linker<T> {
         Self {
             strings: StringInterner::default(),
             definitions: BTreeMap::default(),
-            externals: Vec::new(),
             marker: PhantomData,
         }
     }
@@ -360,12 +353,11 @@ impl<T> Linker<T> {
     /// - If the linker does not define imports of the instantiated [`Module`].
     /// - If any imported item does not satisfy its type requirements.
     pub fn instantiate<'a>(
-        &mut self,
+        &self,
         context: impl AsContextMut,
         module: &'a Module,
     ) -> Result<InstancePre<'a>, Error> {
-        // Clear the cached externals buffer.
-        self.externals.clear();
+        let mut externals = Vec::with_capacity(module.imports().len());
 
         for import in module.imports() {
             let module_name = import.module();
@@ -428,8 +420,8 @@ impl<T> Linker<T> {
                     Extern::Global(global)
                 }
             };
-            self.externals.push(external);
+            externals.push(external);
         }
-        module.instantiate(context, self.externals.drain(..))
+        module.instantiate(context, externals)
     }
 }
