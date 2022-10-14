@@ -374,6 +374,7 @@ impl<T> Linker<T> {
         context: impl AsContextMut,
         import: ModuleImport,
     ) -> Result<Extern, Error> {
+        let make_err = || LinkerError::cannot_find_definition_of_import(&import);
         let module_name = import.module();
         let field_name = import.field();
         match import.item_type() {
@@ -381,7 +382,7 @@ impl<T> Linker<T> {
                 let func = self
                     .resolve(module_name, field_name)
                     .and_then(Extern::into_func)
-                    .ok_or_else(|| LinkerError::cannot_find_definition_of_import(&import))?;
+                    .ok_or_else(make_err)?;
                 let actual_func_type = func.signature(&context);
                 if &actual_func_type != expected_func_type {
                     return Err(LinkerError::FuncTypeMismatch {
@@ -403,7 +404,7 @@ impl<T> Linker<T> {
                 let table = self
                     .resolve(module_name, field_name)
                     .and_then(Extern::into_table)
-                    .ok_or_else(|| LinkerError::cannot_find_definition_of_import(&import))?;
+                    .ok_or_else(make_err)?;
                 let actual_table_type = table.table_type(context.as_context());
                 actual_table_type.satisfies(expected_table_type)?;
                 Ok(Extern::Table(table))
@@ -412,7 +413,7 @@ impl<T> Linker<T> {
                 let memory = self
                     .resolve(module_name, field_name)
                     .and_then(Extern::into_memory)
-                    .ok_or_else(|| LinkerError::cannot_find_definition_of_import(&import))?;
+                    .ok_or_else(make_err)?;
                 let actual_memory_type = memory.memory_type(context.as_context());
                 actual_memory_type.satisfies(expected_memory_type)?;
                 Ok(Extern::Memory(memory))
@@ -421,7 +422,7 @@ impl<T> Linker<T> {
                 let global = self
                     .resolve(module_name, field_name)
                     .and_then(Extern::into_global)
-                    .ok_or_else(|| LinkerError::cannot_find_definition_of_import(&import))?;
+                    .ok_or_else(make_err)?;
                 let actual_global_type = global.global_type(context.as_context());
                 if &actual_global_type != expected_global_type {
                     return Err(LinkerError::GlobalTypeMismatch {
