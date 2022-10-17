@@ -1,5 +1,5 @@
 use crate::core::ValueType;
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 use core::fmt::{self, Display};
 
 /// A function type representing a function's parameter and result types.
