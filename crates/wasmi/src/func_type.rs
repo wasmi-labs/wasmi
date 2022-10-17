@@ -1,5 +1,5 @@
 use crate::core::ValueType;
-use alloc::{sync::Arc, vec::Vec};
+use alloc::vec::Vec;
 use core::fmt::{self, Display};
 
 /// A function type representing a function's parameter and result types.
@@ -16,7 +16,7 @@ pub struct FuncType {
     /// by results in their order.
     /// The `len_params` field denotes how many parameters there are in
     /// the head of the vector before the results.
-    params_results: Arc<[ValueType]>,
+    params_results: Box<[ValueType]>,
 }
 
 impl Display for FuncType {
