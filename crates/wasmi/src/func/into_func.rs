@@ -254,11 +254,12 @@ where
         [<T1 as Into<UntypedValue>>::into(self)]
     }
 
+    #[inline]
     fn from_untyped_values(values: &[UntypedValue]) -> Option<Self> {
-        if values.len() != 1 {
-            return None;
+        if let [value] = *values {
+            return Some(value.into());
         }
-        Some(values[0].into())
+        return None;
     }
 }
 
