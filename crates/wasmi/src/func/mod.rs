@@ -302,6 +302,10 @@ impl Func {
         if expected_outputs.len() != outputs.len() {
             return Err(FuncError::MismatchingResults { func: *self }).map_err(Into::into);
         }
+        outputs
+            .iter_mut()
+            .zip(expected_outputs.iter().copied().map(Value::default))
+            .for_each(|(output, expected_output)| *output = expected_output);
         // Note: Cloning an [`Engine`] is intentionally a cheap operation.
         ctx.as_context().store.engine().clone().execute_func(
             ctx.as_context_mut(),

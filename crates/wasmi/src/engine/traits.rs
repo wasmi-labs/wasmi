@@ -1,5 +1,6 @@
 use crate::core::Value;
 use core::{iter, slice};
+use wasmi_core::UntypedValue;
 
 /// Types implementing this trait may be used as parameters for function execution.
 ///
@@ -12,32 +13,44 @@ use core::{iter, slice};
 /// [`Engine`]: [`crate::Engine`]
 pub trait CallParams {
     /// The iterator over the parameter values.
-    type Params: Iterator<Item = Value>;
-
-    /// Returns the number of given parameter values.
-    ///
-    /// # Note
-    ///
-    /// Used by the [`Engine`] to determine how many parameters are received.
-    ///
-    /// [`Engine`]: [`crate::Engine`]
-    fn len_params(&self) -> usize;
+    type Params: ExactSizeIterator<Item = UntypedValue>;
 
     /// Feeds the parameter values from the caller.
-    fn feed_params(self) -> Self::Params;
+    fn call_params(self) -> Self::Params;
 }
 
 impl<'a> CallParams for &'a [Value] {
-    type Params = iter::Copied<slice::Iter<'a, Value>>;
+    type Params = CallParamsValueIter<'a>;
 
-    fn len_params(&self) -> usize {
-        self.len()
-    }
-
-    fn feed_params(self) -> Self::Params {
-        self.iter().copied()
+    #[inline]
+    fn call_params(self) -> Self::Params {
+        CallParamsValueIter {
+            iter: self.iter().copied(),
+        }
     }
 }
+
+/// An iterator over the [`UntypedValue`] call parameters.
+#[derive(Debug)]
+pub struct CallParamsValueIter<'a> {
+    iter: iter::Copied<slice::Iter<'a, Value>>,
+}
+
+impl<'a> Iterator for CallParamsValueIter<'a> {
+    type Item = UntypedValue;
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(UntypedValue::from)
+    }
+}
+
+impl ExactSizeIterator for CallParamsValueIter<'_> {}
 
 /// Types implementing this trait may be used as results for function execution.
 ///
@@ -53,43 +66,22 @@ pub trait CallResults {
     /// The type of the returned results value.
     type Results;
 
-    /// Returns the number of expected result values.
-    ///
-    /// # Note
-    ///
-    /// Used by the [`Engine`] to determine how many results are expected.
-    ///
-    /// [`Engine`]: [`crate::Engine`]
-    fn len_results(&self) -> usize;
-
     /// Feeds the result values back to the caller.
     ///
     /// # Panics
     ///
     /// If the given `results` do not match the expected amount.
-    fn feed_results<T>(self, results: T) -> Self::Results
-    where
-        T: IntoIterator<Item = Value>,
-        T::IntoIter: ExactSizeIterator;
+    fn call_results(self, results: &[UntypedValue]) -> Self::Results;
 }
 
 impl<'a> CallResults for &'a mut [Value] {
     type Results = Self;
 
-    fn len_results(&self) -> usize {
-        self.len()
-    }
-
-    fn feed_results<T>(self, results: T) -> Self::Results
-    where
-        T: IntoIterator<Item = Value>,
-        T::IntoIter: ExactSizeIterator,
-    {
-        let results = results.into_iter();
-        assert_eq!(self.len_results(), results.len());
-        for (dst, src) in self.iter_mut().zip(results) {
-            *dst = src;
-        }
+    fn call_results(self, results: &[UntypedValue]) -> Self::Results {
+        assert_eq!(self.len(), results.len());
+        self.iter_mut().zip(results).for_each(|(dst, src)| {
+            *dst = src.with_type(dst.value_type());
+        });
         self
     }
 }
