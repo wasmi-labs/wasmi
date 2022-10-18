@@ -101,8 +101,13 @@ impl Tracer {
         for i in 0..(pages * 8192) {
             let mut buf = [0u8; 8];
             (*memref).get_into(i * 8, &mut buf).unwrap();
-            self.imtable
-                .push(self.next_memory_id(), i, u64::from_le_bytes(buf));
+            self.imtable.push(
+                false,
+                true,
+                self.next_memory_id(),
+                i,
+                u64::from_le_bytes(buf),
+            );
         }
 
         self.memory_instance_lookup
