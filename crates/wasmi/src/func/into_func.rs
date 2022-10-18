@@ -222,18 +222,8 @@ pub trait WasmTypeList: DecodeUntypedSlice + EncodeUntypedSlice + Sized {
     /// Returns an array representing the [`ValueType`] sequence of `Self`.
     fn value_types() -> Self::Types;
 
-    /// Returns an array representing the [`Value`] sequence of `self`.
-    fn values(self) -> Self::Values;
-
     /// Returns an array representing the [`UntypedValue`] sequence of `self`.
     fn untyped_values(self) -> Self::UntypedValues;
-
-    /// Consumes the [`Value`] iterator and creates `Self` if possible.
-    ///
-    /// Returns `None` if construction of `Self` is impossible.
-    fn from_values<T>(values: T) -> Option<Self>
-    where
-        T: Iterator<Item = Value>;
 
     /// Consumes the [`UntypedValue`] iterator and creates `Self` if possible.
     ///
@@ -260,27 +250,8 @@ where
     }
 
     #[inline]
-    fn values(self) -> Self::Values {
-        [<T1 as Into<Value>>::into(self)]
-    }
-
-    #[inline]
     fn untyped_values(self) -> Self::UntypedValues {
         [<T1 as Into<UntypedValue>>::into(self)]
-    }
-
-    fn from_values<T>(mut values: T) -> Option<Self>
-    where
-        T: Iterator<Item = Value>,
-    {
-        let value: T1 = values.next().and_then(Value::try_into)?;
-        if values.next().is_some() {
-            // Note: If the iterator yielded more items than
-            //       necessary we create no value from this procedure
-            //       as it is likely a bug.
-            return None;
-        }
-        Some(value)
     }
 
     fn from_untyped_values(values: &[UntypedValue]) -> Option<Self> {
@@ -317,36 +288,11 @@ macro_rules! impl_wasm_type_list {
 
             #[inline]
             #[allow(non_snake_case)]
-            fn values(self) -> Self::Values {
-                let ($($tuple,)*) = self;
-                [$(
-                    <$tuple as Into<Value>>::into($tuple)
-                ),*]
-            }
-
-            #[inline]
-            #[allow(non_snake_case)]
             fn untyped_values(self) -> Self::UntypedValues {
                 let ($($tuple,)*) = self;
                 [$(
                     <$tuple as Into<UntypedValue>>::into($tuple)
                 ),*]
-            }
-
-            fn from_values<T>(mut values: T) -> Option<Self>
-            where
-                T: Iterator<Item = Value>,
-            {
-                let result = ($(
-                    values.next().and_then(Value::try_into::<$tuple>)?,
-                )*);
-                if values.next().is_some() {
-                    // Note: If the iterator yielded more items than
-                    //       necessary we create no value from this procedure
-                    //       as it is likely a bug.
-                    return None
-                }
-                Some(result)
             }
 
             #[inline]
