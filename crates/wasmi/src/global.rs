@@ -187,7 +187,7 @@ impl Global {
     ///
     /// This API is primarily used by the [`Store`] itself.
     ///
-    /// [`Store`]: [`crate::v1::Store`]
+    /// [`Store`]: [`crate::Store`]
     pub(super) fn from_inner(stored: Stored<GlobalIdx>) -> Self {
         Self(stored)
     }

@@ -36,7 +36,7 @@ impl Module {
     /// provided [`Func`] has a different function signature than required by the module import.
     ///
     /// [`Linker`]: struct.Linker.html
-    /// [`Func`]: [`crate::v1::Func`]
+    /// [`Func`]: [`crate::Func`]
     pub(crate) fn instantiate<I>(
         &self,
         mut context: impl AsContextMut,
@@ -95,7 +95,7 @@ impl Module {
     /// - If the externally provided [`Table`], [`Memory`], [`Func`] or [`Global`] has a type
     ///   mismatch with the expected module import type.
     ///
-    /// [`Func`]: [`crate::v1::Func`]
+    /// [`Func`]: [`crate::Func`]
     fn extract_imports<I>(
         &self,
         context: &mut impl AsContextMut,
@@ -168,7 +168,7 @@ impl Module {
     /// This also stores [`Func`] references into the [`Instance`] under construction.
     ///
     /// [`Store`]: struct.Store.html
-    /// [`Func`]: [`crate::v1::Func`]
+    /// [`Func`]: [`crate::Func`]
     fn extract_functions(
         &self,
         context: &mut impl AsContextMut,

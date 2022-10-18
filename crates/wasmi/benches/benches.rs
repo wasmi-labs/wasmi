@@ -11,7 +11,7 @@ use criterion::{criterion_group, criterion_main, Bencher, Criterion};
 use std::{slice, time::Duration};
 use wasmi as v1;
 use wasmi::core::Value;
-use wasmi_core::{F32, F64};
+use wasmi_core::{ValueType, F32, F64};
 
 const WASM_KERNEL: &str =
     "benches/wasm/wasm_kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
@@ -48,6 +48,14 @@ criterion_group! {
         bench_execute_regex_redux,
         bench_execute_count_until,
         bench_execute_trunc_f2i,
+        bench_execute_typed_bare_call_0,
+        bench_execute_typed_bare_call_1,
+        bench_execute_typed_bare_call_4,
+        bench_execute_typed_bare_call_16,
+        bench_execute_bare_call_0,
+        bench_execute_bare_call_1,
+        bench_execute_bare_call_4,
+        bench_execute_bare_call_16,
         bench_execute_global_bump,
         bench_execute_fac_recursive,
         bench_execute_fac_opt,
@@ -273,6 +281,211 @@ fn bench_execute_trunc_f2i(c: &mut Criterion) {
     });
 }
 
+fn bench_execute_typed_bare_call_0(c: &mut Criterion) {
+    const REPETITIONS: usize = 20_000;
+    c.bench_function("execute/bare_call_0/typed", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
+        let bare_call = instance
+            .get_export(&store, "bare_call_0")
+            .and_then(v1::Extern::into_func)
+            .unwrap();
+        let bare_call = bare_call.typed::<(), ()>(&store).unwrap();
+        b.iter(|| {
+            for _ in 0..REPETITIONS {
+                bare_call.call(&mut store, ()).unwrap();
+            }
+        })
+    });
+}
+
+fn bench_execute_typed_bare_call_1(c: &mut Criterion) {
+    const REPETITIONS: usize = 20_000;
+    c.bench_function("execute/bare_call_1/typed", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
+        let bare_call = instance
+            .get_export(&store, "bare_call_1")
+            .and_then(v1::Extern::into_func)
+            .unwrap();
+        let bare_call = bare_call.typed::<i32, i32>(&store).unwrap();
+        b.iter(|| {
+            for _ in 0..REPETITIONS {
+                let _ = bare_call.call(&mut store, 0).unwrap();
+            }
+        })
+    });
+}
+
+fn bench_execute_typed_bare_call_4(c: &mut Criterion) {
+    const REPETITIONS: usize = 20_000;
+    type InOut = (i32, i64, F32, F64);
+    c.bench_function("execute/bare_call_4/typed", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
+        let bare_call = instance
+            .get_export(&store, "bare_call_4")
+            .and_then(v1::Extern::into_func)
+            .unwrap();
+        let bare_call = bare_call.typed::<InOut, InOut>(&store).unwrap();
+        b.iter(|| {
+            for _ in 0..REPETITIONS {
+                let _ = bare_call
+                    .call(&mut store, (0, 0, F32::from(0.0), F64::from(0.0)))
+                    .unwrap();
+            }
+        })
+    });
+}
+
+fn bench_execute_typed_bare_call_16(c: &mut Criterion) {
+    const REPETITIONS: usize = 20_000;
+    type InOut = (
+        i32,
+        i64,
+        F32,
+        F64,
+        i32,
+        i64,
+        F32,
+        F64,
+        i32,
+        i64,
+        F32,
+        F64,
+        i32,
+        i64,
+        F32,
+        F64,
+    );
+    c.bench_function("execute/bare_call_16/typed", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
+        let bare_call = instance
+            .get_export(&store, "bare_call_16")
+            .and_then(v1::Extern::into_func)
+            .unwrap();
+        let bare_call = bare_call.typed::<InOut, InOut>(&store).unwrap();
+        b.iter(|| {
+            for _ in 0..REPETITIONS {
+                let _ = bare_call
+                    .call(
+                        &mut store,
+                        (
+                            0,
+                            0,
+                            F32::from(0.0),
+                            F64::from(0.0),
+                            0,
+                            0,
+                            F32::from(0.0),
+                            F64::from(0.0),
+                            0,
+                            0,
+                            F32::from(0.0),
+                            F64::from(0.0),
+                            0,
+                            0,
+                            F32::from(0.0),
+                            F64::from(0.0),
+                        ),
+                    )
+                    .unwrap();
+            }
+        })
+    });
+}
+
+fn bench_execute_bare_call_0(c: &mut Criterion) {
+    const REPETITIONS: usize = 20_000;
+    c.bench_function("execute/bare_call_0", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
+        let bare_call = instance
+            .get_export(&store, "bare_call_0")
+            .and_then(v1::Extern::into_func)
+            .unwrap();
+        let params = &[];
+        let results = &mut [];
+        b.iter(|| {
+            for _ in 0..REPETITIONS {
+                bare_call.call(&mut store, params, results).unwrap();
+            }
+        })
+    });
+}
+
+fn bench_execute_bare_call_1(c: &mut Criterion) {
+    const REPETITIONS: usize = 20_000;
+    c.bench_function("execute/bare_call_1", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
+        let bare_call = instance
+            .get_export(&store, "bare_call_1")
+            .and_then(v1::Extern::into_func)
+            .unwrap();
+        let params = &[Value::I32(0)];
+        let results = &mut [Value::I32(0)];
+        b.iter(|| {
+            for _ in 0..REPETITIONS {
+                bare_call.call(&mut store, params, results).unwrap();
+            }
+        })
+    });
+}
+
+fn bench_execute_bare_call_4(c: &mut Criterion) {
+    const REPETITIONS: usize = 20_000;
+    c.bench_function("execute/bare_call_4", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
+        let bare_call = instance
+            .get_export(&store, "bare_call_4")
+            .and_then(v1::Extern::into_func)
+            .unwrap();
+        let params = &[
+            Value::default(ValueType::I32),
+            Value::default(ValueType::I64),
+            Value::default(ValueType::F32),
+            Value::default(ValueType::F64),
+        ];
+        let results = &mut [Value::I32(0); 4];
+        b.iter(|| {
+            for _ in 0..REPETITIONS {
+                bare_call.call(&mut store, params, results).unwrap();
+            }
+        })
+    });
+}
+
+fn bench_execute_bare_call_16(c: &mut Criterion) {
+    const REPETITIONS: usize = 20_000;
+    c.bench_function("execute/bare_call_16", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
+        let bare_call = instance
+            .get_export(&store, "bare_call_16")
+            .and_then(v1::Extern::into_func)
+            .unwrap();
+        let params = &[
+            Value::default(ValueType::I32),
+            Value::default(ValueType::I64),
+            Value::default(ValueType::F32),
+            Value::default(ValueType::F64),
+            Value::default(ValueType::I32),
+            Value::default(ValueType::I64),
+            Value::default(ValueType::F32),
+            Value::default(ValueType::F64),
+            Value::default(ValueType::I32),
+            Value::default(ValueType::I64),
+            Value::default(ValueType::F32),
+            Value::default(ValueType::F64),
+            Value::default(ValueType::I32),
+            Value::default(ValueType::I64),
+            Value::default(ValueType::F32),
+            Value::default(ValueType::F64),
+        ];
+        let results = &mut [Value::I32(0); 16];
+        b.iter(|| {
+            for _ in 0..REPETITIONS {
+                bare_call.call(&mut store, params, results).unwrap();
+            }
+        })
+    });
+}
+
 fn bench_execute_global_bump(c: &mut Criterion) {
     const BUMP_AMOUNT: i32 = 100_000;
     c.bench_function("execute/global_bump", |b| {
@@ -326,9 +539,8 @@ fn bench_execute_fac_opt(c: &mut Criterion) {
     });
 }
 
-const RECURSIVE_DEPTH: i32 = 8000;
-
 fn bench_execute_recursive_ok(c: &mut Criterion) {
+    const RECURSIVE_DEPTH: i32 = 8000;
     c.bench_function("execute/recursive_ok", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/recursive_ok.wat"));
         let bench_call = instance
@@ -346,11 +558,10 @@ fn bench_execute_recursive_ok(c: &mut Criterion) {
     });
 }
 
-const RECURSIVE_SCAN_DEPTH: i32 = 8000;
-const RECURSIVE_SCAN_EXPECTED: i32 =
-    ((RECURSIVE_SCAN_DEPTH * RECURSIVE_SCAN_DEPTH) + RECURSIVE_SCAN_DEPTH) / 2;
-
 fn bench_execute_recursive_scan(c: &mut Criterion) {
+    const RECURSIVE_SCAN_DEPTH: i32 = 8000;
+    const RECURSIVE_SCAN_EXPECTED: i32 =
+        ((RECURSIVE_SCAN_DEPTH * RECURSIVE_SCAN_DEPTH) + RECURSIVE_SCAN_DEPTH) / 2;
     c.bench_function("execute/recursive_scan", |b| {
         let (mut store, instance) =
             load_instance_from_wat(include_bytes!("wat/recursive_scan.wat"));
@@ -362,7 +573,7 @@ fn bench_execute_recursive_scan(c: &mut Criterion) {
 
         b.iter(|| {
             bench_call
-                .call(&mut store, &[Value::I32(RECURSIVE_DEPTH)], &mut result)
+                .call(&mut store, &[Value::I32(RECURSIVE_SCAN_DEPTH)], &mut result)
                 .unwrap();
             assert_eq!(result, [Value::I32(RECURSIVE_SCAN_EXPECTED)]);
         })
