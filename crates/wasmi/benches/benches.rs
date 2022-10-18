@@ -11,7 +11,7 @@ use criterion::{criterion_group, criterion_main, Bencher, Criterion};
 use std::{slice, time::Duration};
 use wasmi as v1;
 use wasmi::core::Value;
-use wasmi_core::{F32, F64, ValueType};
+use wasmi_core::{ValueType, F32, F64};
 
 const WASM_KERNEL: &str =
     "benches/wasm/wasm_kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
@@ -292,9 +292,7 @@ fn bench_execute_typed_bare_call_0(c: &mut Criterion) {
         let bare_call = bare_call.typed::<(), ()>(&store).unwrap();
         b.iter(|| {
             for _ in 0..REPETITIONS {
-                bare_call
-                    .call(&mut store, ())
-                    .unwrap();
+                bare_call.call(&mut store, ()).unwrap();
             }
         })
     });
@@ -311,9 +309,7 @@ fn bench_execute_typed_bare_call_1(c: &mut Criterion) {
         let bare_call = bare_call.typed::<i32, i32>(&store).unwrap();
         b.iter(|| {
             for _ in 0..REPETITIONS {
-                let _ = bare_call
-                    .call(&mut store, 0)
-                    .unwrap();
+                let _ = bare_call.call(&mut store, 0).unwrap();
             }
         })
     });
@@ -342,10 +338,22 @@ fn bench_execute_typed_bare_call_4(c: &mut Criterion) {
 fn bench_execute_typed_bare_call_16(c: &mut Criterion) {
     const REPETITIONS: usize = 20_000;
     type InOut = (
-        i32, i64, F32, F64,
-        i32, i64, F32, F64,
-        i32, i64, F32, F64,
-        i32, i64, F32, F64,
+        i32,
+        i64,
+        F32,
+        F64,
+        i32,
+        i64,
+        F32,
+        F64,
+        i32,
+        i64,
+        F32,
+        F64,
+        i32,
+        i64,
+        F32,
+        F64,
     );
     c.bench_function("execute/bare_call_16/typed", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
@@ -357,12 +365,27 @@ fn bench_execute_typed_bare_call_16(c: &mut Criterion) {
         b.iter(|| {
             for _ in 0..REPETITIONS {
                 let _ = bare_call
-                    .call(&mut store, (
-                        0, 0, F32::from(0.0), F64::from(0.0),
-                        0, 0, F32::from(0.0), F64::from(0.0),
-                        0, 0, F32::from(0.0), F64::from(0.0),
-                        0, 0, F32::from(0.0), F64::from(0.0),
-                    ))
+                    .call(
+                        &mut store,
+                        (
+                            0,
+                            0,
+                            F32::from(0.0),
+                            F64::from(0.0),
+                            0,
+                            0,
+                            F32::from(0.0),
+                            F64::from(0.0),
+                            0,
+                            0,
+                            F32::from(0.0),
+                            F64::from(0.0),
+                            0,
+                            0,
+                            F32::from(0.0),
+                            F64::from(0.0),
+                        ),
+                    )
                     .unwrap();
             }
         })
@@ -381,9 +404,7 @@ fn bench_execute_bare_call_0(c: &mut Criterion) {
         let results = &mut [];
         b.iter(|| {
             for _ in 0..REPETITIONS {
-                bare_call
-                    .call(&mut store, params, results)
-                    .unwrap();
+                bare_call.call(&mut store, params, results).unwrap();
             }
         })
     });
@@ -401,9 +422,7 @@ fn bench_execute_bare_call_1(c: &mut Criterion) {
         let results = &mut [Value::I32(0)];
         b.iter(|| {
             for _ in 0..REPETITIONS {
-                bare_call
-                    .call(&mut store, params, results)
-                    .unwrap();
+                bare_call.call(&mut store, params, results).unwrap();
             }
         })
     });
@@ -426,9 +445,7 @@ fn bench_execute_bare_call_4(c: &mut Criterion) {
         let results = &mut [Value::I32(0); 4];
         b.iter(|| {
             for _ in 0..REPETITIONS {
-                bare_call
-                    .call(&mut store, params, results)
-                    .unwrap();
+                bare_call.call(&mut store, params, results).unwrap();
             }
         })
     });
@@ -463,9 +480,7 @@ fn bench_execute_bare_call_16(c: &mut Criterion) {
         let results = &mut [Value::I32(0); 16];
         b.iter(|| {
             for _ in 0..REPETITIONS {
-                bare_call
-                    .call(&mut store, params, results)
-                    .unwrap();
+                bare_call.call(&mut store, params, results).unwrap();
             }
         })
     });
