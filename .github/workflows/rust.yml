@@ -135,11 +135,16 @@ jobs:
           toolchain: nightly
           override: true
           components: miri
-      - name: Clippy (default features)
+      - name: Clippy (--lib)
         uses: actions-rs/cargo@v1
         with:
           command: miri
           args: test --lib --workspace
+      - name: Clippy (--doc)
+        uses: actions-rs/cargo@v1
+        with:
+          command: miri
+          args: test --doc --workspace
 
   clippy:
     name: Clippy
