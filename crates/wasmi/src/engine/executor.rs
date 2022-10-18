@@ -48,7 +48,7 @@ struct Executor<'ctx, 'engine, 'func, HostData> {
     value_stack: ValueStackRef<'engine>,
     /// A mutable [`Store`] context.
     ///
-    /// [`Store`]: [`crate::v1::Store`]
+    /// [`Store`]: [`crate::Store`]
     ctx: StoreContextMut<'ctx, HostData>,
     /// Stores frequently used instance related data.
     cache: &'engine mut InstanceCache,
