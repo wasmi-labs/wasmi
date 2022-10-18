@@ -202,14 +202,6 @@ pub trait WasmTypeList: DecodeUntypedSlice + EncodeUntypedSlice + Sized {
     /// The iterator type of the sequence of [`ValueType`].
     type TypesIter: ExactSizeIterator<Item = ValueType> + DoubleEndedIterator + FusedIterator;
 
-    /// The [`Value`] sequence as array.
-    type Values: IntoIterator<IntoIter = Self::ValuesIter, Item = Value>
-        + AsRef<[Value]>
-        + AsMut<[Value]>;
-
-    /// The iterator type of the sequence of [`Value`].
-    type ValuesIter: ExactSizeIterator<Item = Value> + DoubleEndedIterator + FusedIterator;
-
     type UntypedValues: IntoIterator<IntoIter = Self::UntypedValuesIter, Item = UntypedValue>
         + AsRef<[UntypedValue]>
         + AsMut<[UntypedValue]>;
@@ -239,8 +231,6 @@ where
 
     type Types = [ValueType; 1];
     type TypesIter = array::IntoIter<ValueType, 1>;
-    type Values = [Value; 1];
-    type ValuesIter = array::IntoIter<Value, 1>;
     type UntypedValues = [UntypedValue; 1];
     type UntypedValuesIter = array::IntoIter<UntypedValue, 1>;
 
@@ -275,8 +265,6 @@ macro_rules! impl_wasm_type_list {
 
             type Types = [ValueType; $n];
             type TypesIter = array::IntoIter<ValueType, $n>;
-            type Values = [Value; $n];
-            type ValuesIter = array::IntoIter<Value, $n>;
             type UntypedValues = [UntypedValue; $n];
             type UntypedValuesIter = array::IntoIter<UntypedValue, $n>;
 
