@@ -68,8 +68,8 @@ where
         let func_type = func.func_type(&ctx);
         let (expected_params, expected_results) = func_type.params_results();
         let (actual_params, actual_results) = (
-            <Params as WasmTypeList>::value_types(),
-            <Results as WasmTypeList>::value_types(),
+            <Params as WasmTypeList>::types(),
+            <Results as WasmTypeList>::types(),
         );
         if actual_params.as_ref() != expected_params {
             return Err(Error::Func(FuncError::MismatchingParameters { func }));
@@ -112,11 +112,11 @@ impl<Params> CallParams for Params
 where
     Params: WasmParams,
 {
-    type Params = <Params as WasmTypeList>::UntypedValuesIter;
+    type Params = <Params as WasmTypeList>::ValuesIter;
 
     #[inline]
     fn call_params(self) -> Self::Params {
-        <Params as WasmTypeList>::untyped_values(self).into_iter()
+        <Params as WasmTypeList>::values(self).into_iter()
     }
 }
 
@@ -156,7 +156,7 @@ where
     type Results = Results;
 
     fn call_results(self, results: &[UntypedValue]) -> Self::Results {
-        <Results as WasmTypeList>::from_untyped_values(results)
+        <Results as WasmTypeList>::from_values(results)
             .expect("unable to construct typed results from call results")
     }
 }

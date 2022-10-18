@@ -69,8 +69,8 @@ macro_rules! impl_into_func {
             #[allow(non_snake_case)]
             fn into_func(self) -> (FuncType, HostFuncTrampoline<T>) {
                 let signature = FuncType::new(
-                    <Self::Params as WasmTypeList>::value_types(),
-                    <Self::Results as WasmTypeList>::value_types(),
+                    <Self::Params as WasmTypeList>::types(),
+                    <Self::Results as WasmTypeList>::types(),
                 );
                 let trampoline = HostFuncTrampoline::new(
                     move |caller: Caller<T>, params_results: FuncParams| -> Result<FuncResults, Trap> {
@@ -197,30 +197,32 @@ pub trait WasmTypeList: DecodeUntypedSlice + EncodeUntypedSlice + Sized {
     /// The [`ValueType`] sequence as array.
     type Types: IntoIterator<IntoIter = Self::TypesIter, Item = ValueType>
         + AsRef<[ValueType]>
-        + AsMut<[ValueType]>;
+        + AsMut<[ValueType]>
+        + Copy
+        + Clone;
 
     /// The iterator type of the sequence of [`ValueType`].
     type TypesIter: ExactSizeIterator<Item = ValueType> + DoubleEndedIterator + FusedIterator;
 
-    type UntypedValues: IntoIterator<IntoIter = Self::UntypedValuesIter, Item = UntypedValue>
+    type Values: IntoIterator<IntoIter = Self::ValuesIter, Item = UntypedValue>
         + AsRef<[UntypedValue]>
-        + AsMut<[UntypedValue]>;
+        + AsMut<[UntypedValue]>
+        + Copy
+        + Clone;
 
     /// The iterator type of the sequence of [`Value`].
-    type UntypedValuesIter: ExactSizeIterator<Item = UntypedValue>
-        + DoubleEndedIterator
-        + FusedIterator;
+    type ValuesIter: ExactSizeIterator<Item = UntypedValue> + DoubleEndedIterator + FusedIterator;
 
     /// Returns an array representing the [`ValueType`] sequence of `Self`.
-    fn value_types() -> Self::Types;
+    fn types() -> Self::Types;
 
     /// Returns an array representing the [`UntypedValue`] sequence of `self`.
-    fn untyped_values(self) -> Self::UntypedValues;
+    fn values(self) -> Self::Values;
 
     /// Consumes the [`UntypedValue`] iterator and creates `Self` if possible.
     ///
     /// Returns `None` if construction of `Self` is impossible.
-    fn from_untyped_values(values: &[UntypedValue]) -> Option<Self>;
+    fn from_values(values: &[UntypedValue]) -> Option<Self>;
 }
 
 impl<T1> WasmTypeList for T1
@@ -231,21 +233,21 @@ where
 
     type Types = [ValueType; 1];
     type TypesIter = array::IntoIter<ValueType, 1>;
-    type UntypedValues = [UntypedValue; 1];
-    type UntypedValuesIter = array::IntoIter<UntypedValue, 1>;
+    type Values = [UntypedValue; 1];
+    type ValuesIter = array::IntoIter<UntypedValue, 1>;
 
     #[inline]
-    fn value_types() -> Self::Types {
+    fn types() -> Self::Types {
         [<T1 as WasmType>::value_type()]
     }
 
     #[inline]
-    fn untyped_values(self) -> Self::UntypedValues {
+    fn values(self) -> Self::Values {
         [<T1 as Into<UntypedValue>>::into(self)]
     }
 
     #[inline]
-    fn from_untyped_values(values: &[UntypedValue]) -> Option<Self> {
+    fn from_values(values: &[UntypedValue]) -> Option<Self> {
         if let [value] = *values {
             return Some(value.into());
         }
@@ -265,11 +267,11 @@ macro_rules! impl_wasm_type_list {
 
             type Types = [ValueType; $n];
             type TypesIter = array::IntoIter<ValueType, $n>;
-            type UntypedValues = [UntypedValue; $n];
-            type UntypedValuesIter = array::IntoIter<UntypedValue, $n>;
+            type Values = [UntypedValue; $n];
+            type ValuesIter = array::IntoIter<UntypedValue, $n>;
 
             #[inline]
-            fn value_types() -> Self::Types {
+            fn types() -> Self::Types {
                 [$(
                     <$tuple as WasmType>::value_type()
                 ),*]
@@ -277,7 +279,7 @@ macro_rules! impl_wasm_type_list {
 
             #[inline]
             #[allow(non_snake_case)]
-            fn untyped_values(self) -> Self::UntypedValues {
+            fn values(self) -> Self::Values {
                 let ($($tuple,)*) = self;
                 [$(
                     <$tuple as Into<UntypedValue>>::into($tuple)
@@ -286,7 +288,7 @@ macro_rules! impl_wasm_type_list {
 
             #[inline]
             #[allow(non_snake_case)]
-            fn from_untyped_values(values: &[UntypedValue]) -> Option<Self> {
+            fn from_values(values: &[UntypedValue]) -> Option<Self> {
                 if let [$($tuple),*] = *values {
                     return Some(
                         ( $( Into::into($tuple), )* )
