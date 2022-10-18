@@ -251,7 +251,7 @@ where
         if let [value] = *values {
             return Some(value.into());
         }
-        return None;
+        None
     }
 }
 

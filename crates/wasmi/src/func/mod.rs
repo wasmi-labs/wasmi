@@ -302,7 +302,7 @@ impl Func {
         if expected_outputs.len() != outputs.len() {
             return Err(FuncError::MismatchingResults { func: *self }).map_err(Into::into);
         }
-        for (output, output_type) in outputs.into_iter().zip(expected_outputs) {
+        for (output, output_type) in outputs.iter_mut().zip(expected_outputs) {
             *output = Value::default(*output_type);
         }
         // Note: Cloning an [`Engine`] is intentionally a cheap operation.
