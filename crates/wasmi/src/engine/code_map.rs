@@ -143,7 +143,9 @@ impl InstructionPtr {
     /// Creates a new [`InstructionPtr`] for `instr`.
     #[inline]
     pub fn new(instr: &[Instruction]) -> Self {
-        Self { ptr: instr.as_ptr() }
+        Self {
+            ptr: instr.as_ptr(),
+        }
     }
 
     /// Offset the [`InstructionPtr`] by the given value.
