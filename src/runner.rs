@@ -457,6 +457,8 @@ impl Interpreter {
             isa::Instruction::BrIfNez(_) => Some(RunInstructionTracePre::BrIfNez {
                 value: <_>::from_value_internal(*self.value_stack.top()),
             }),
+
+            isa::Instruction::Unreachable => None,
             isa::Instruction::Return(..) => None,
 
             isa::Instruction::Call(func_idx) => {
@@ -571,9 +573,10 @@ impl Interpreter {
                     pre_block_value,
                 })
             }
-            isa::Instruction::I64Store(offset) => {
+            isa::Instruction::I64Store(offset) | isa::Instruction::I64Store8(offset) => {
                 let store_size = match *instructions {
                     isa::Instruction::I64Store(..) => MemoryStoreSize::Byte64,
+                    isa::Instruction::I64Store8(..) => MemoryStoreSize::Byte8,
                     _ => unreachable!(),
                 };
 
@@ -966,7 +969,8 @@ impl Interpreter {
             }
             isa::Instruction::I32Store(..)
             | isa::Instruction::I32Store8(..)
-            | isa::Instruction::I64Store(..) => {
+            | isa::Instruction::I64Store(..)
+            | isa::Instruction::I64Store8(..) => {
                 if let RunInstructionTracePre::Store {
                     offset,
                     raw_address,
