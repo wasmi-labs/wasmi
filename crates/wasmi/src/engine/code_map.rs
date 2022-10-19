@@ -101,7 +101,7 @@ impl CodeMap {
     /// Returns an [`InstructionPtr`] to the instruction at [`InstructionsRef`].
     #[inline]
     pub fn instr_ptr(&self, iref: InstructionsRef) -> InstructionPtr {
-        InstructionPtr::new(&self.insts[iref.start])
+        InstructionPtr::new(&self.insts[iref.start..])
     }
 
     /// Returns the [`FuncHeader`] of the [`FuncBody`].
@@ -142,8 +142,8 @@ pub struct InstructionPtr {
 impl InstructionPtr {
     /// Creates a new [`InstructionPtr`] for `instr`.
     #[inline]
-    pub fn new(instr: &Instruction) -> Self {
-        Self { ptr: instr }
+    pub fn new(instr: &[Instruction]) -> Self {
+        Self { ptr: instr.as_ptr() }
     }
 
     /// Offset the [`InstructionPtr`] by the given value.
