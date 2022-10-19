@@ -1,8 +1,16 @@
 use std::collections::HashMap;
 
-use specs::{host_function::HostFunctionDesc, types::FunctionType};
+use specs::{host_function::HostFunctionDesc, mtable::VarType, types::FunctionType};
 
-use crate::{FuncRef, MemoryRef, Module, ModuleRef, Signature};
+use crate::{
+    runner::{from_value_internal_to_u64_with_typ, ValueInternal},
+    FuncRef,
+    GlobalRef,
+    MemoryRef,
+    Module,
+    ModuleRef,
+    Signature,
+};
 
 use self::{
     etable::ETable,
@@ -31,6 +39,7 @@ pub struct Tracer {
     pub jtable: JTable,
     module_instance_lookup: Vec<(ModuleRef, u16)>,
     memory_instance_lookup: Vec<(MemoryRef, u16)>,
+    global_instance_lookup: Vec<(GlobalRef, (u16, u16))>,
     function_lookup: Vec<(FuncRef, u16)>,
     last_jump_eid: Vec<u64>,
     function_index_allocator: u32,
@@ -49,6 +58,7 @@ impl Tracer {
             jtable: JTable::default(),
             module_instance_lookup: vec![],
             memory_instance_lookup: vec![],
+            global_instance_lookup: vec![],
             function_lookup: vec![],
             function_index_allocator: 1,
             function_index_translation: Default::default(),
@@ -106,12 +116,34 @@ impl Tracer {
                 true,
                 self.next_memory_id(),
                 i,
+                VarType::I64,
                 u64::from_le_bytes(buf),
             );
         }
 
         self.memory_instance_lookup
             .push((memref, self.next_memory_id()));
+    }
+
+    pub(crate) fn push_global(&mut self, moid: u16, globalidx: u32, globalref: &GlobalRef) {
+        let vtype = globalref.elements_value_type().into();
+
+        if let Some((_origin_moid, _origin_idx)) = self.lookup_global_instance(globalref) {
+            // Import global does not support yet.
+            todo!()
+        } else {
+            self.global_instance_lookup
+                .push((globalref.clone(), (moid, globalidx as u16)));
+
+            self.imtable.push(
+                true,
+                globalref.is_mutable(),
+                moid,
+                globalidx,
+                vtype,
+                from_value_internal_to_u64_with_typ(vtype, ValueInternal::from(globalref.get())),
+            )
+        }
     }
 
     pub(crate) fn statistics_instructions<'a>(&mut self, module_instance: &ModuleRef) {
@@ -248,6 +280,16 @@ impl Tracer {
         }
 
         unreachable!()
+    }
+
+    pub fn lookup_global_instance(&self, global_instance: &GlobalRef) -> Option<(u16, u16)> {
+        for m in &self.global_instance_lookup {
+            if &m.0 == global_instance {
+                return Some(m.1);
+            }
+        }
+
+        None
     }
 
     pub fn lookup_function(&self, function: &FuncRef) -> u16 {

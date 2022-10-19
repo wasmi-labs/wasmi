@@ -479,10 +479,18 @@ impl ModuleInstance {
 
         match &tracer {
             Some(tracer) => {
-                if let Some(memory_ref) = module_ref.memory_by_index(DEFAULT_MEMORY_INDEX) {
-                    let t = tracer.clone();
-                    let mut t = (*t).borrow_mut();
-                    t.push_init_memory(memory_ref)
+                let current_module_id = { tracer.borrow().next_module_id() };
+
+                {
+                    let mut tracer = tracer.borrow_mut();
+
+                    for (globalidx, globalref) in module_ref.globals().iter().enumerate() {
+                        tracer.push_global(current_module_id, globalidx as u32, globalref);
+                    }
+
+                    if let Some(memory_ref) = module_ref.memory_by_index(DEFAULT_MEMORY_INDEX) {
+                        tracer.push_init_memory(memory_ref)
+                    }
                 }
             }
             None => (),
