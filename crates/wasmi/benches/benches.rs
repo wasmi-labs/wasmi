@@ -58,8 +58,8 @@ criterion_group! {
         bench_execute_bare_call_4,
         bench_execute_bare_call_16,
         bench_execute_global_bump,
-        bench_execute_fac_recursive,
-        bench_execute_fac_opt,
+        bench_execute_factorial_recursive,
+        bench_execute_factorial_iterative,
         bench_execute_recursive_ok,
         bench_execute_recursive_scan,
         bench_execute_recursive_trap,
@@ -529,36 +529,38 @@ fn bench_execute_global_bump(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_fac_recursive(c: &mut Criterion) {
+fn bench_execute_factorial_recursive(c: &mut Criterion) {
+    const REPETITIONS: usize = 1_000;
     c.bench_function("execute/factorial_recursive", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/factorial.wat"));
         let fac = instance
             .get_export(&store, "recursive_factorial")
             .and_then(v1::Extern::into_func)
+            .unwrap()
+            .typed::<i64, i64>(&store)
             .unwrap();
-        let mut result = [Value::I64(0)];
-
         b.iter(|| {
-            fac.call(&mut store, &[Value::I64(25)], &mut result)
-                .unwrap();
-            assert_eq!(result, [Value::I64(7034535277573963776)]);
+            for _ in 0..REPETITIONS {
+                assert_eq!(fac.call(&mut store, 25).unwrap(), 7034535277573963776);
+            }
         })
     });
 }
 
-fn bench_execute_fac_opt(c: &mut Criterion) {
+fn bench_execute_factorial_iterative(c: &mut Criterion) {
+    const REPETITIONS: usize = 1_000;
     c.bench_function("execute/factorial_iterative", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/factorial.wat"));
         let fac = instance
             .get_export(&store, "iterative_factorial")
             .and_then(v1::Extern::into_func)
+            .unwrap()
+            .typed::<i64, i64>(&store)
             .unwrap();
-        let mut result = [Value::I64(0)];
-
         b.iter(|| {
-            fac.call(&mut store, &[Value::I64(25)], &mut result)
-                .unwrap();
-            assert_eq!(result, [Value::I64(7034535277573963776)]);
+            for _ in 0..REPETITIONS {
+                assert_eq!(fac.call(&mut store, 25).unwrap(), 7034535277573963776);
+            }
         })
     });
 }
