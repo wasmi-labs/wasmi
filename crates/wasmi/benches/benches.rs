@@ -257,9 +257,7 @@ fn bench_execute_count_until(c: &mut Criterion) {
             .unwrap();
 
         b.iter(|| {
-            let result = count_until
-                .call(&mut store, COUNT_UNTIL)
-                .unwrap();
+            let result = count_until.call(&mut store, COUNT_UNTIL).unwrap();
             assert_eq!(result, COUNT_UNTIL);
         })
     });

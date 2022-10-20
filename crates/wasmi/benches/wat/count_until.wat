@@ -1,7 +1,7 @@
 ;; Exports a function `count_until` that takes an input `n`.
 ;; The exported function counts an integer `n` times and then returns 0.
 (module
-  (func $count_until (export "count_until") (param $limit i32) (result i32)
+  (func (export "count_until") (param $limit i32) (result i32)
     (local $counter i32)
     (block
         (loop
