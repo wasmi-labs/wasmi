@@ -252,14 +252,15 @@ fn bench_execute_count_until(c: &mut Criterion) {
         let count_until = instance
             .get_export(&store, "count_until")
             .and_then(v1::Extern::into_func)
+            .unwrap()
+            .typed::<i32, i32>(&store)
             .unwrap();
-        let mut result = [Value::I32(0)];
 
         b.iter(|| {
-            count_until
-                .call(&mut store, &[Value::I32(COUNT_UNTIL)], &mut result)
+            let result = count_until
+                .call(&mut store, COUNT_UNTIL)
                 .unwrap();
-            assert_eq!(result, [Value::I32(COUNT_UNTIL)]);
+            assert_eq!(result, COUNT_UNTIL);
         })
     });
 }
