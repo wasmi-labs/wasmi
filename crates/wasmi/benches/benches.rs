@@ -63,8 +63,7 @@ criterion_group! {
         bench_execute_recursive_scan,
         bench_execute_recursive_trap,
         bench_execute_host_calls,
-        bench_execute_fibonacci_recursive,
-        bench_execute_fibonacci_iterative,
+        bench_execute_fibonacci,
         bench_execute_recursive_is_even,
         bench_execute_memory_sum,
         bench_execute_memory_fill,
@@ -672,61 +671,53 @@ fn bench_execute_host_calls(c: &mut Criterion) {
     });
 }
 
-const fn fib(n: i64) -> i64 {
-    if n <= 1 {
-        return n;
+fn bench_execute_fibonacci(c: &mut Criterion) {
+    const fn fib(n: i64) -> i64 {
+        if n <= 1 {
+            return n;
+        }
+        let mut n1: i64 = 1;
+        let mut n2: i64 = 1;
+        let mut i = 2;
+        while i < n {
+            let tmp = n1.wrapping_add(n2);
+            n1 = n2;
+            n2 = tmp;
+            i += 1;
+        }
+        n2
     }
-    let mut n1: i64 = 1;
-    let mut n2: i64 = 1;
-    let mut i = 2;
-    while i < n {
-        let tmp = n1.wrapping_add(n2);
-        n1 = n2;
-        n2 = tmp;
-        i += 1;
-    }
-    n2
-}
 
-const FIBONACCI_REC_N: i64 = 25;
-const FIBONACCI_REC_RESULT: i64 = fib(FIBONACCI_REC_N);
-const FIBONACCI_INC_N: i64 = 100_000;
-const FIBONACCI_INC_RESULT: i64 = fib(FIBONACCI_INC_N);
-
-fn bench_execute_fibonacci_recursive(c: &mut Criterion) {
-    c.bench_function("execute/fib_recursive", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/fibonacci.wat"));
-        let bench_call = instance
-            .get_export(&store, "fib_recursive")
-            .and_then(v1::Extern::into_func)
-            .unwrap();
-        let mut result = [Value::I32(0)];
-
-        b.iter(|| {
-            bench_call
-                .call(&mut store, &[Value::I64(FIBONACCI_REC_N)], &mut result)
+    const FIBONACCI_REC_N: i64 = 25;
+    const FIBONACCI_REC_RESULT: i64 = fib(FIBONACCI_REC_N);
+    const FIBONACCI_INC_N: i64 = 100_000;
+    const FIBONACCI_INC_RESULT: i64 = fib(FIBONACCI_INC_N);
+    let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/fibonacci.wat"));
+    let mut bench_fib = |bench_id: &str, func_name: &str, input: i64, expected: i64| {
+        c.bench_function(bench_id, |b| {
+            let fib = instance
+                .get_export(&store, func_name)
+                .and_then(v1::Extern::into_func)
+                .unwrap()
+                .typed::<i64, i64>(&store)
                 .unwrap();
+            b.iter(|| {
+                assert_eq!(fib.call(&mut store, input).unwrap(), expected);
+            });
         });
-        assert_eq!(result, [Value::I64(FIBONACCI_REC_RESULT)]);
-    });
-}
-
-fn bench_execute_fibonacci_iterative(c: &mut Criterion) {
-    c.bench_function("execute/fib_iterative", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/fibonacci.wat"));
-        let bench_call = instance
-            .get_export(&store, "fib_iterative")
-            .and_then(v1::Extern::into_func)
-            .unwrap();
-        let mut result = [Value::I32(0)];
-
-        b.iter(|| {
-            bench_call
-                .call(&mut store, &[Value::I64(FIBONACCI_INC_N)], &mut result)
-                .unwrap();
-        });
-        assert_eq!(result, [Value::I64(FIBONACCI_INC_RESULT)]);
-    });
+    };
+    bench_fib(
+        "execute/fib_recursive",
+        "fib_recursive",
+        FIBONACCI_REC_N,
+        FIBONACCI_REC_RESULT,
+    );
+    bench_fib(
+        "execute/fib_iterative",
+        "fib_iterative",
+        FIBONACCI_INC_N,
+        FIBONACCI_INC_RESULT,
+    );
 }
 
 fn bench_execute_memory_sum(c: &mut Criterion) {
