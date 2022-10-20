@@ -690,7 +690,7 @@ impl<'parser> FuncBuilder<'parser> {
         })
     }
 
-    /// Adjusts the emulated [`ValueStack`] given the [`FuncType`] of the call.
+    /// Adjusts the emulated value stack given the [`FuncType`] of the call.
     fn adjust_value_stack_for_call(&mut self, func_type: &FuncType) {
         let (params, results) = func_type.params_results();
         self.stack_height.pop_n(params.len() as u32);

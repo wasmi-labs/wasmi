@@ -35,7 +35,7 @@ impl LocalsRegistry {
         self.len_registered
     }
 
-    /// Registers the `amount` of locals with their shared [`ValueType`].
+    /// Registers an `amount` of local variables.
     ///
     /// # Panics
     ///
