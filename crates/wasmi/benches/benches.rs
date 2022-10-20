@@ -47,6 +47,7 @@ criterion_group! {
         bench_execute_rev_comp,
         bench_execute_regex_redux,
         bench_execute_count_until,
+        bench_execute_br_table,
         bench_execute_trunc_f2i,
         bench_execute_typed_bare_call_0,
         bench_execute_typed_bare_call_1,
@@ -259,6 +260,30 @@ fn bench_execute_count_until(c: &mut Criterion) {
                 .call(&mut store, &[Value::I32(COUNT_UNTIL)], &mut result)
                 .unwrap();
             assert_eq!(result, [Value::I32(COUNT_UNTIL)]);
+        })
+    });
+}
+
+fn bench_execute_br_table(c: &mut Criterion) {
+    const REPETITIONS: usize = 20_000;
+    c.bench_function("execute/br_table", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/br_table.wat"));
+        let br_table = instance
+            .get_export(&store, "br_table")
+            .and_then(v1::Extern::into_func)
+            .unwrap()
+            .typed::<i32, i32>(&store)
+            .unwrap();
+        let expected = [
+            -10, -20, -30, -40, -50, -60, -70, -80, -90, -100, -110, -120, -130, -140, -150, -160,
+        ];
+
+        b.iter(|| {
+            for input in 0..REPETITIONS {
+                let cramped = input % expected.len();
+                let result = br_table.call(&mut store, cramped as i32).unwrap();
+                assert_eq!(result, expected[cramped]);
+            }
         })
     });
 }
