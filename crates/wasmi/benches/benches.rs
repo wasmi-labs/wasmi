@@ -58,8 +58,7 @@ criterion_group! {
         bench_execute_bare_call_4,
         bench_execute_bare_call_16,
         bench_execute_global_bump,
-        bench_execute_factorial_recursive,
-        bench_execute_factorial_iterative,
+        bench_execute_factorial,
         bench_execute_recursive_ok,
         bench_execute_recursive_scan,
         bench_execute_recursive_trap,
@@ -529,40 +528,28 @@ fn bench_execute_global_bump(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_factorial_recursive(c: &mut Criterion) {
+fn bench_execute_factorial(c: &mut Criterion) {
     const REPETITIONS: usize = 1_000;
-    c.bench_function("execute/factorial_recursive", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/factorial.wat"));
-        let fac = instance
-            .get_export(&store, "recursive_factorial")
-            .and_then(v1::Extern::into_func)
-            .unwrap()
-            .typed::<i64, i64>(&store)
-            .unwrap();
-        b.iter(|| {
-            for _ in 0..REPETITIONS {
-                assert_eq!(fac.call(&mut store, 25).unwrap(), 7034535277573963776);
-            }
-        })
-    });
-}
-
-fn bench_execute_factorial_iterative(c: &mut Criterion) {
-    const REPETITIONS: usize = 1_000;
-    c.bench_function("execute/factorial_iterative", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/factorial.wat"));
-        let fac = instance
-            .get_export(&store, "iterative_factorial")
-            .and_then(v1::Extern::into_func)
-            .unwrap()
-            .typed::<i64, i64>(&store)
-            .unwrap();
-        b.iter(|| {
-            for _ in 0..REPETITIONS {
-                assert_eq!(fac.call(&mut store, 25).unwrap(), 7034535277573963776);
-            }
-        })
-    });
+    const INPUT: i64 = 25;
+    const RESULT: i64 = 7034535277573963776; // factorial(25)
+    let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/factorial.wat"));
+    let mut bench_fac = |bench_id: &str, func_name: &str| {
+        c.bench_function(bench_id, |b| {
+            let fac = instance
+                .get_export(&store, func_name)
+                .and_then(v1::Extern::into_func)
+                .unwrap()
+                .typed::<i64, i64>(&store)
+                .unwrap();
+            b.iter(|| {
+                for _ in 0..REPETITIONS {
+                    assert_eq!(fac.call(&mut store, INPUT).unwrap(), RESULT);
+                }
+            })
+        });
+    };
+    bench_fac("execute/factorial_recursive", "recursive_factorial");
+    bench_fac("execute/factorial_iterative", "iterative_factorial");
 }
 
 fn bench_execute_recursive_ok(c: &mut Criterion) {
