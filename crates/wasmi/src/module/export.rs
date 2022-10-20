@@ -94,19 +94,19 @@ impl Export {
 /// [`Module`]: [`super::Module`]
 #[derive(Debug, Copy, Clone)]
 pub enum External {
-    /// An exported function and its index witihn the [`Module`].
+    /// An exported function and its index within the [`Module`].
     ///
     /// [`Module`]: [`super::Module`]
     Func(FuncIdx),
-    /// An exported table and its index witihn the [`Module`].
+    /// An exported table and its index within the [`Module`].
     ///
     /// [`Module`]: [`super::Module`]
     Table(TableIdx),
-    /// An exported linear memory and its index witihn the [`Module`].
+    /// An exported linear memory and its index within the [`Module`].
     ///
     /// [`Module`]: [`super::Module`]
     Memory(MemoryIdx),
-    /// An exported global variable and its index witihn the [`Module`].
+    /// An exported global variable and its index within the [`Module`].
     ///
     /// [`Module`]: [`super::Module`]
     Global(GlobalIdx),

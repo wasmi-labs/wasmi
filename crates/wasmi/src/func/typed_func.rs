@@ -1,13 +1,12 @@
 use super::{into_func::WasmTypeList, Func, FuncError};
 use crate::{
-    core::Value,
     engine::{CallParams, CallResults},
     AsContext,
     AsContextMut,
     Error,
 };
 use core::{fmt, fmt::Debug, marker::PhantomData};
-use wasmi_core::Trap;
+use wasmi_core::{Trap, UntypedValue};
 
 /// A typed [`Func`] instance.
 ///
@@ -69,8 +68,8 @@ where
         let func_type = func.func_type(&ctx);
         let (expected_params, expected_results) = func_type.params_results();
         let (actual_params, actual_results) = (
-            <Params as WasmTypeList>::value_types(),
-            <Results as WasmTypeList>::value_types(),
+            <Params as WasmTypeList>::types(),
+            <Results as WasmTypeList>::types(),
         );
         if actual_params.as_ref() != expected_params {
             return Err(Error::Func(FuncError::MismatchingParameters { func }));
@@ -115,11 +114,8 @@ where
 {
     type Params = <Params as WasmTypeList>::ValuesIter;
 
-    fn len_params(&self) -> usize {
-        <Params as WasmTypeList>::LEN
-    }
-
-    fn feed_params(self) -> Self::Params {
+    #[inline]
+    fn call_params(self) -> Self::Params {
         <Params as WasmTypeList>::values(self).into_iter()
     }
 }
@@ -159,19 +155,9 @@ where
 {
     type Results = Results;
 
-    fn len_results(&self) -> usize {
-        <Results as WasmTypeList>::LEN
-    }
-
-    fn feed_results<T>(self, results: T) -> Self::Results
-    where
-        T: IntoIterator<Item = Value>,
-        T::IntoIter: ExactSizeIterator,
-    {
-        let results = results.into_iter();
-        assert_eq!(self.len_results(), results.len());
+    fn call_results(self, results: &[UntypedValue]) -> Self::Results {
         <Results as WasmTypeList>::from_values(results)
-            .expect("unable to construct typed results from value iterator")
+            .expect("unable to construct typed results from call results")
     }
 }
 
