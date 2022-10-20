@@ -428,8 +428,8 @@ impl<'a> Instruction<'a> {
             Instruction::CallIndirect(_) => todo!(),
             Instruction::Drop => Opcode::Drop,
             Instruction::Select(_) => Opcode::Select,
-            Instruction::GetGlobal(_) => todo!(),
-            Instruction::SetGlobal(_) => todo!(),
+            Instruction::GetGlobal(idx) => Opcode::GlobalGet { idx: idx as u64 },
+            Instruction::SetGlobal(idx) => Opcode::GlobalSet { idx: idx as u64 },
             Instruction::I32Load(offset) => Opcode::Load {
                 offset,
                 vtype: VarType::I32,
@@ -482,7 +482,11 @@ impl<'a> Instruction<'a> {
                 size: MemoryStoreSize::Byte8,
             },
             Instruction::I32Store16(_) => todo!(),
-            Instruction::I64Store8(_) => todo!(),
+            Instruction::I64Store8(offset) => Opcode::Store {
+                offset,
+                vtype: VarType::I64,
+                size: MemoryStoreSize::Byte8,
+            },
             Instruction::I64Store16(_) => todo!(),
             Instruction::I64Store32(_) => todo!(),
             Instruction::CurrentMemory => todo!(),

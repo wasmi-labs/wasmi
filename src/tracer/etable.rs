@@ -27,6 +27,10 @@ pub enum RunInstructionTracePre {
         value: ValueInternal,
         vtype: ValueType,
     },
+    SetGlobal {
+        idx: u32,
+        value: ValueInternal,
+    },
 
     Load {
         offset: u32,
@@ -84,7 +88,7 @@ pub enum RunInstructionTracePre {
         val1: u64,
         val2: u64,
         cond: u64,
-    }
+    },
 }
 
 #[derive(Debug, Clone)]
