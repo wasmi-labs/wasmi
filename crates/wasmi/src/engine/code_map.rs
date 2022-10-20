@@ -2,7 +2,6 @@
 
 use super::Instruction;
 use alloc::vec::Vec;
-use core::ptr::NonNull;
 use wasmi_arena::Index;
 
 /// A reference to a Wasm function body stored in the [`CodeMap`].
@@ -102,7 +101,7 @@ impl CodeMap {
     /// Returns an [`InstructionPtr`] to the instruction at [`InstructionsRef`].
     #[inline]
     pub fn instr_ptr(&self, iref: InstructionsRef) -> InstructionPtr {
-        InstructionPtr::new(&self.insts[iref.start])
+        InstructionPtr::new(self.insts[iref.start..].as_ptr())
     }
 
     /// Returns the [`FuncHeader`] of the [`FuncBody`].
@@ -137,15 +136,14 @@ impl CodeMap {
 #[derive(Debug, Copy, Clone)]
 pub struct InstructionPtr {
     /// The pointer to the instruction.
-    ptr: NonNull<Instruction>,
+    ptr: *const Instruction,
 }
 
 impl InstructionPtr {
     /// Creates a new [`InstructionPtr`] for `instr`.
-    pub fn new(instr: &Instruction) -> Self {
-        Self {
-            ptr: NonNull::from(instr),
-        }
+    #[inline]
+    pub fn new(ptr: *const Instruction) -> Self {
+        Self { ptr }
     }
 
     /// Offset the [`InstructionPtr`] by the given value.
@@ -157,8 +155,7 @@ impl InstructionPtr {
     /// bounds of the instructions of the same compiled Wasm function.
     #[inline(always)]
     pub unsafe fn offset(&mut self, by: isize) {
-        let new_ptr = &*self.ptr.as_ptr().offset(by);
-        self.ptr = NonNull::from(new_ptr);
+        self.ptr = self.ptr.offset(by);
     }
 
     /// Returns a shared reference to the currently pointed at [`Instruction`].
@@ -170,6 +167,6 @@ impl InstructionPtr {
     /// the boundaries of its associated compiled Wasm function.
     #[inline(always)]
     pub unsafe fn get(&self) -> &Instruction {
-        self.ptr.as_ref()
+        &*self.ptr
     }
 }
