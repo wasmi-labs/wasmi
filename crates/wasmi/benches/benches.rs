@@ -47,6 +47,7 @@ criterion_group! {
         bench_execute_rev_comp,
         bench_execute_regex_redux,
         bench_execute_count_until,
+        bench_execute_br_table,
         bench_execute_trunc_f2i,
         bench_execute_typed_bare_call_0,
         bench_execute_typed_bare_call_1,
@@ -57,14 +58,12 @@ criterion_group! {
         bench_execute_bare_call_4,
         bench_execute_bare_call_16,
         bench_execute_global_bump,
-        bench_execute_fac_recursive,
-        bench_execute_fac_opt,
+        bench_execute_factorial,
         bench_execute_recursive_ok,
         bench_execute_recursive_scan,
         bench_execute_recursive_trap,
         bench_execute_host_calls,
-        bench_execute_fibonacci_recursive,
-        bench_execute_fibonacci_iterative,
+        bench_execute_fibonacci,
         bench_execute_recursive_is_even,
         bench_execute_memory_sum,
         bench_execute_memory_fill,
@@ -251,14 +250,37 @@ fn bench_execute_count_until(c: &mut Criterion) {
         let count_until = instance
             .get_export(&store, "count_until")
             .and_then(v1::Extern::into_func)
+            .unwrap()
+            .typed::<i32, i32>(&store)
             .unwrap();
-        let mut result = [Value::I32(0)];
 
         b.iter(|| {
-            count_until
-                .call(&mut store, &[Value::I32(COUNT_UNTIL)], &mut result)
-                .unwrap();
-            assert_eq!(result, [Value::I32(COUNT_UNTIL)]);
+            let result = count_until.call(&mut store, COUNT_UNTIL).unwrap();
+            assert_eq!(result, COUNT_UNTIL);
+        })
+    });
+}
+
+fn bench_execute_br_table(c: &mut Criterion) {
+    const REPETITIONS: usize = 20_000;
+    c.bench_function("execute/br_table", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/br_table.wat"));
+        let br_table = instance
+            .get_export(&store, "br_table")
+            .and_then(v1::Extern::into_func)
+            .unwrap()
+            .typed::<i32, i32>(&store)
+            .unwrap();
+        let expected = [
+            -10, -20, -30, -40, -50, -60, -70, -80, -90, -100, -110, -120, -130, -140, -150, -160,
+        ];
+
+        b.iter(|| {
+            for input in 0..REPETITIONS {
+                let cramped = input % expected.len();
+                let result = br_table.call(&mut store, cramped as i32).unwrap();
+                assert_eq!(result, expected[cramped]);
+            }
         })
     });
 }
@@ -505,38 +527,28 @@ fn bench_execute_global_bump(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_fac_recursive(c: &mut Criterion) {
-    c.bench_function("execute/factorial_recursive", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/factorial.wat"));
-        let fac = instance
-            .get_export(&store, "recursive_factorial")
-            .and_then(v1::Extern::into_func)
-            .unwrap();
-        let mut result = [Value::I64(0)];
-
-        b.iter(|| {
-            fac.call(&mut store, &[Value::I64(25)], &mut result)
+fn bench_execute_factorial(c: &mut Criterion) {
+    const REPETITIONS: usize = 1_000;
+    const INPUT: i64 = 25;
+    const RESULT: i64 = 7034535277573963776; // factorial(25)
+    let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/factorial.wat"));
+    let mut bench_fac = |bench_id: &str, func_name: &str| {
+        c.bench_function(bench_id, |b| {
+            let fac = instance
+                .get_export(&store, func_name)
+                .and_then(v1::Extern::into_func)
+                .unwrap()
+                .typed::<i64, i64>(&store)
                 .unwrap();
-            assert_eq!(result, [Value::I64(7034535277573963776)]);
-        })
-    });
-}
-
-fn bench_execute_fac_opt(c: &mut Criterion) {
-    c.bench_function("execute/factorial_iterative", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/factorial.wat"));
-        let fac = instance
-            .get_export(&store, "iterative_factorial")
-            .and_then(v1::Extern::into_func)
-            .unwrap();
-        let mut result = [Value::I64(0)];
-
-        b.iter(|| {
-            fac.call(&mut store, &[Value::I64(25)], &mut result)
-                .unwrap();
-            assert_eq!(result, [Value::I64(7034535277573963776)]);
-        })
-    });
+            b.iter(|| {
+                for _ in 0..REPETITIONS {
+                    assert_eq!(fac.call(&mut store, INPUT).unwrap(), RESULT);
+                }
+            })
+        });
+    };
+    bench_fac("execute/factorial_recursive", "recursive_factorial");
+    bench_fac("execute/factorial_iterative", "iterative_factorial");
 }
 
 fn bench_execute_recursive_ok(c: &mut Criterion) {
@@ -659,61 +671,53 @@ fn bench_execute_host_calls(c: &mut Criterion) {
     });
 }
 
-const fn fib(n: i64) -> i64 {
-    if n <= 1 {
-        return n;
+fn bench_execute_fibonacci(c: &mut Criterion) {
+    const fn fib(n: i64) -> i64 {
+        if n <= 1 {
+            return n;
+        }
+        let mut n1: i64 = 1;
+        let mut n2: i64 = 1;
+        let mut i = 2;
+        while i < n {
+            let tmp = n1.wrapping_add(n2);
+            n1 = n2;
+            n2 = tmp;
+            i += 1;
+        }
+        n2
     }
-    let mut n1: i64 = 1;
-    let mut n2: i64 = 1;
-    let mut i = 2;
-    while i < n {
-        let tmp = n1.wrapping_add(n2);
-        n1 = n2;
-        n2 = tmp;
-        i += 1;
-    }
-    n2
-}
 
-const FIBONACCI_REC_N: i64 = 25;
-const FIBONACCI_REC_RESULT: i64 = fib(FIBONACCI_REC_N);
-const FIBONACCI_INC_N: i64 = 100_000;
-const FIBONACCI_INC_RESULT: i64 = fib(FIBONACCI_INC_N);
-
-fn bench_execute_fibonacci_recursive(c: &mut Criterion) {
-    c.bench_function("execute/fib_recursive", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/fibonacci.wat"));
-        let bench_call = instance
-            .get_export(&store, "fib_recursive")
-            .and_then(v1::Extern::into_func)
-            .unwrap();
-        let mut result = [Value::I32(0)];
-
-        b.iter(|| {
-            bench_call
-                .call(&mut store, &[Value::I64(FIBONACCI_REC_N)], &mut result)
+    const FIBONACCI_REC_N: i64 = 25;
+    const FIBONACCI_REC_RESULT: i64 = fib(FIBONACCI_REC_N);
+    const FIBONACCI_INC_N: i64 = 100_000;
+    const FIBONACCI_INC_RESULT: i64 = fib(FIBONACCI_INC_N);
+    let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/fibonacci.wat"));
+    let mut bench_fib = |bench_id: &str, func_name: &str, input: i64, expected: i64| {
+        c.bench_function(bench_id, |b| {
+            let fib = instance
+                .get_export(&store, func_name)
+                .and_then(v1::Extern::into_func)
+                .unwrap()
+                .typed::<i64, i64>(&store)
                 .unwrap();
+            b.iter(|| {
+                assert_eq!(fib.call(&mut store, input).unwrap(), expected);
+            });
         });
-        assert_eq!(result, [Value::I64(FIBONACCI_REC_RESULT)]);
-    });
-}
-
-fn bench_execute_fibonacci_iterative(c: &mut Criterion) {
-    c.bench_function("execute/fib_iterative", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/fibonacci.wat"));
-        let bench_call = instance
-            .get_export(&store, "fib_iterative")
-            .and_then(v1::Extern::into_func)
-            .unwrap();
-        let mut result = [Value::I32(0)];
-
-        b.iter(|| {
-            bench_call
-                .call(&mut store, &[Value::I64(FIBONACCI_INC_N)], &mut result)
-                .unwrap();
-        });
-        assert_eq!(result, [Value::I64(FIBONACCI_INC_RESULT)]);
-    });
+    };
+    bench_fib(
+        "execute/fib_recursive",
+        "fib_recursive",
+        FIBONACCI_REC_N,
+        FIBONACCI_REC_RESULT,
+    );
+    bench_fib(
+        "execute/fib_iterative",
+        "fib_iterative",
+        FIBONACCI_INC_N,
+        FIBONACCI_INC_RESULT,
+    );
 }
 
 fn bench_execute_memory_sum(c: &mut Criterion) {
