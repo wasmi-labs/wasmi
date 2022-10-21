@@ -11,7 +11,6 @@ use super::{
 };
 use alloc::{
     collections::{btree_map, BTreeMap},
-    string::{String, ToString},
     vec::Vec,
 };
 use core::iter::FusedIterator;
@@ -43,7 +42,7 @@ pub struct InstanceEntity {
     funcs: Box<[Func]>,
     memories: Box<[Memory]>,
     globals: Box<[Global]>,
-    exports: BTreeMap<String, Extern>,
+    exports: BTreeMap<Box<str>, Extern>,
 }
 
 impl InstanceEntity {
@@ -111,18 +110,18 @@ impl InstanceEntity {
 /// An iterator over the [`Extern`] declarations of an [`Instance`].
 #[derive(Debug)]
 pub struct ExportsIter<'a> {
-    iter: btree_map::Iter<'a, String, Extern>,
+    iter: btree_map::Iter<'a, Box<str>, Extern>,
 }
 
 impl<'a> ExportsIter<'a> {
     /// Creates a new [`ExportsIter`].
-    fn new(iter: btree_map::Iter<'a, String, Extern>) -> Self {
+    fn new(iter: btree_map::Iter<'a, Box<str>, Extern>) -> Self {
         Self { iter }
     }
 
     /// Prepares an item to match the expected iterator `Item` signature.
-    fn convert_item((name, export): (&'a String, &'a Extern)) -> (&'a str, &'a Extern) {
-        (name.as_str(), export)
+    fn convert_item((name, export): (&'a Box<str>, &'a Extern)) -> (&'a str, &'a Extern) {
+        (&*name, export)
     }
 }
 
@@ -156,7 +155,7 @@ pub struct InstanceEntityBuilder {
     funcs: Vec<Func>,
     memories: Vec<Memory>,
     globals: Vec<Global>,
-    exports: BTreeMap<String, Extern>,
+    exports: BTreeMap<Box<str>, Extern>,
 }
 
 impl InstanceEntityBuilder {
@@ -232,7 +231,7 @@ impl InstanceEntityBuilder {
                 new_value, name, old_value,
             )
         }
-        self.exports.insert(name.to_string(), new_value);
+        self.exports.insert(name.into(), new_value);
     }
 
     /// Finishes constructing the [`InstanceEntity`].
