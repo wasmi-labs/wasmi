@@ -19,6 +19,20 @@ impl Pages {
     }
 }
 
+impl From<u16> for Pages {
+    /// Creates an `amount` of [`Pages`].
+    ///
+    /// # Note
+    ///
+    /// This is infallible since `u16` cannot represent invalid amounts
+    /// of [`Pages`]. However, `u16` can also not represent [`Pages::max()`].
+    ///
+    /// [`Pages::max()`]: struct.Pages.html#method.max
+    fn from(amount: u16) -> Self {
+        Self(amount as u32)
+    }
+}
+
 impl Pages {
     /// Creates a new amount of [`Pages`] if the amount is within bounds.
     ///
