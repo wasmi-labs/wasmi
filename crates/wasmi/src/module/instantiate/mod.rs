@@ -145,12 +145,9 @@ impl Module {
                     imported.satisfies(required)?;
                     builder.push_memory(memory);
                 }
-                (ModuleImportType::Global(expected), Extern::Global(global)) => {
-                    let expected = *expected;
-                    let actual = global.global_type(&context);
-                    if expected != actual {
-                        return Err(InstantiationError::GlobalTypeMismatch { expected, actual });
-                    }
+                (ModuleImportType::Global(required), Extern::Global(global)) => {
+                    let imported = global.global_type(context.as_context());
+                    imported.satisfies(required)?;
                     builder.push_global(global);
                 }
                 (expected_import, actual_extern_val) => {
