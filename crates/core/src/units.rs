@@ -53,12 +53,9 @@ impl Pages {
     where
         T: Into<u32>,
     {
-        let lhs = u32::from(self);
-        let rhs = rhs.into();
-        let max = u32::from(Self::max());
-        lhs.checked_add(rhs)
-            .filter(move |&result| result <= max)
-            .map(Self)
+        let lhs: u32 = self.into();
+        let rhs: u32 = rhs.into();
+        lhs.checked_add(rhs.into()).and_then(Self::new)
     }
 
     /// Returns the amount of bytes required for the amount of [`Pages`].
