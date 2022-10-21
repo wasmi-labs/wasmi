@@ -14,7 +14,7 @@ use alloc::{
     string::{String, ToString},
     vec::Vec,
 };
-use core::{iter::FusedIterator, ops::Deref};
+use core::iter::FusedIterator;
 use wasmi_arena::Index;
 
 /// A raw index to a module instance entity.
@@ -38,11 +38,11 @@ impl Index for InstanceIdx {
 #[derive(Debug)]
 pub struct InstanceEntity {
     initialized: bool,
-    func_types: Vec<DedupFuncType>,
-    tables: Vec<Table>,
-    funcs: Vec<Func>,
-    memories: Vec<Memory>,
-    globals: Vec<Global>,
+    func_types: Box<[DedupFuncType]>,
+    tables: Box<[Table]>,
+    funcs: Box<[Func]>,
+    memories: Box<[Memory]>,
+    globals: Box<[Global]>,
     exports: BTreeMap<String, Extern>,
 }
 
@@ -51,28 +51,18 @@ impl InstanceEntity {
     pub(crate) fn uninitialized() -> InstanceEntity {
         Self {
             initialized: false,
-            func_types: Vec::new(),
-            tables: Vec::new(),
-            funcs: Vec::new(),
-            memories: Vec::new(),
-            globals: Vec::new(),
+            func_types: [].into(),
+            tables: [].into(),
+            funcs: [].into(),
+            memories: [].into(),
+            globals: [].into(),
             exports: BTreeMap::new(),
         }
     }
 
     /// Creates a new [`InstanceEntityBuilder`].
     pub(crate) fn build() -> InstanceEntityBuilder {
-        InstanceEntityBuilder {
-            instance: Self {
-                initialized: false,
-                func_types: Vec::default(),
-                tables: Vec::default(),
-                funcs: Vec::default(),
-                memories: Vec::default(),
-                globals: Vec::default(),
-                exports: BTreeMap::default(),
-            },
-        }
+        InstanceEntityBuilder::default()
     }
 
     /// Returns `true` if the [`InstanceEntity`] has been fully initialized.
@@ -159,39 +149,75 @@ impl ExactSizeIterator for ExportsIter<'_> {
 impl FusedIterator for ExportsIter<'_> {}
 
 /// A module instance entity builder.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct InstanceEntityBuilder {
-    /// The [`InstanceEntity`] under construction.
-    instance: InstanceEntity,
+    func_types: Vec<DedupFuncType>,
+    tables: Vec<Table>,
+    funcs: Vec<Func>,
+    memories: Vec<Memory>,
+    globals: Vec<Global>,
+    exports: BTreeMap<String, Extern>,
 }
 
 impl InstanceEntityBuilder {
+    /// Returns the linear memory at the `index` if any.
+    pub(crate) fn get_memory(&self, index: u32) -> Memory {
+        self.memories
+            .get(index as usize)
+            .copied()
+            .unwrap_or_else(|| panic!("missing `Memory` at index: {index}"))
+    }
+
+    /// Returns the table at the `index` if any.
+    pub(crate) fn get_table(&self, index: u32) -> Table {
+        self.tables
+            .get(index as usize)
+            .copied()
+            .unwrap_or_else(|| panic!("missing `Table` at index: {index}"))
+    }
+
+    /// Returns the global variable at the `index` if any.
+    pub(crate) fn get_global(&self, index: u32) -> Global {
+        self.globals
+            .get(index as usize)
+            .copied()
+            .unwrap_or_else(|| panic!("missing `Global` at index: {index}"))
+    }
+
+    /// Returns the function at the `index` if any.
+    pub(crate) fn get_func(&self, index: u32) -> Func {
+        self.funcs
+            .get(index as usize)
+            .copied()
+            .unwrap_or_else(|| panic!("missing `Func` at index: {index}"))
+    }
+
     /// Pushes a new [`Memory`] to the [`InstanceEntity`] under construction.
-    pub(crate) fn push_memory(&mut self, memory: Memory) {
-        self.instance.memories.push(memory);
+    pub fn push_memory(&mut self, memory: Memory) {
+        self.memories.push(memory);
     }
 
     /// Pushes a new [`Table`] to the [`InstanceEntity`] under construction.
-    pub(crate) fn push_table(&mut self, table: Table) {
-        self.instance.tables.push(table);
+    pub fn push_table(&mut self, table: Table) {
+        self.tables.push(table);
     }
 
     /// Pushes a new [`Global`] to the [`InstanceEntity`] under construction.
-    pub(crate) fn push_global(&mut self, global: Global) {
-        self.instance.globals.push(global);
+    pub fn push_global(&mut self, global: Global) {
+        self.globals.push(global);
     }
 
     /// Pushes a new [`Func`] to the [`InstanceEntity`] under construction.
-    pub(crate) fn push_func(&mut self, func: Func) {
-        self.instance.funcs.push(func);
+    pub fn push_func(&mut self, func: Func) {
+        self.funcs.push(func);
     }
 
     /// Pushes a new deduplicated [`FuncType`] to the [`InstanceEntity`]
     /// under construction.
     ///
     /// [`FuncType`]: [`crate::FuncType`]
-    pub(crate) fn push_func_type(&mut self, func_type: DedupFuncType) {
-        self.instance.func_types.push(func_type);
+    pub fn push_func_type(&mut self, func_type: DedupFuncType) {
+        self.func_types.push(func_type);
     }
 
     /// Pushes a new [`Extern`] under the given `name` to the [`InstanceEntity`] under construction.
@@ -199,28 +225,27 @@ impl InstanceEntityBuilder {
     /// # Panics
     ///
     /// If the name has already been used by an already pushed [`Extern`].
-    pub(crate) fn push_export(&mut self, name: &str, new_value: Extern) {
-        if let Some(old_value) = self.instance.exports.get(name) {
+    pub fn push_export(&mut self, name: &str, new_value: Extern) {
+        if let Some(old_value) = self.exports.get(name) {
             panic!(
                 "tried to register {:?} for name {} but name is already used by {:?}",
                 new_value, name, old_value,
             )
         }
-        self.instance.exports.insert(name.to_string(), new_value);
+        self.exports.insert(name.to_string(), new_value);
     }
 
     /// Finishes constructing the [`InstanceEntity`].
-    pub(crate) fn finish(mut self) -> InstanceEntity {
-        self.instance.initialized = true;
-        self.instance
-    }
-}
-
-impl Deref for InstanceEntityBuilder {
-    type Target = InstanceEntity;
-
-    fn deref(&self) -> &Self::Target {
-        &self.instance
+    pub fn finish(self) -> InstanceEntity {
+        InstanceEntity {
+            initialized: true,
+            func_types: self.func_types.into(),
+            tables: self.tables.into(),
+            funcs: self.funcs.into(),
+            memories: self.memories.into(),
+            globals: self.globals.into(),
+            exports: self.exports,
+        }
     }
 }
 

@@ -251,14 +251,7 @@ impl Module {
         match operands[0] {
             InitExprOperand::Const(value) => value,
             InitExprOperand::GlobalGet(global_index) => {
-                let global = builder
-                    .get_global(global_index.into_u32())
-                    .unwrap_or_else(|| {
-                        panic!(
-                            "encountered missing global at index {:?} for initializer expression evaluation",
-                            global_index
-                        )
-                    });
+                let global = builder.get_global(global_index.into_u32());
                 global.get(context)
             }
         }
@@ -271,42 +264,22 @@ impl Module {
             let external = match export.external() {
                 export::External::Func(func_index) => {
                     let func_index = func_index.into_u32();
-                    let func = builder.get_func(func_index).unwrap_or_else(|| {
-                        panic!(
-                            "encountered missing function at index {:?} upon element initialization",
-                            func_index,
-                        )
-                    });
+                    let func = builder.get_func(func_index);
                     Extern::Func(func)
                 }
                 export::External::Table(table_index) => {
                     let table_index = table_index.into_u32();
-                    let table = builder.get_table(table_index).unwrap_or_else(|| {
-                        panic!(
-                            "encountered missing table at index {:?} upon element initialization",
-                            table_index,
-                        )
-                    });
+                    let table = builder.get_table(table_index);
                     Extern::Table(table)
                 }
                 export::External::Memory(memory_index) => {
                     let memory_index = memory_index.into_u32();
-                    let memory = builder.get_memory(memory_index).unwrap_or_else(|| {
-                        panic!(
-                            "encountered missing memory at index {:?} upon element initialization",
-                            memory_index,
-                        )
-                    });
+                    let memory = builder.get_memory(memory_index);
                     Extern::Memory(memory)
                 }
                 export::External::Global(global_index) => {
                     let global_index = global_index.into_u32();
-                    let global = builder.get_global(global_index).unwrap_or_else(|| {
-                        panic!(
-                            "encountered missing global at index {:?} upon element initialization",
-                            global_index,
-                        )
-                    });
+                    let global = builder.get_global(global_index);
                     Extern::Global(global)
                 }
             };
@@ -330,12 +303,7 @@ impl Module {
                     offset_expr,
                 )
                 }) as usize;
-            let table = builder.get_table(DEFAULT_TABLE_INDEX).unwrap_or_else(|| {
-                panic!(
-                    "expected default table at index {} but found none",
-                    DEFAULT_TABLE_INDEX
-                )
-            });
+            let table = builder.get_table(DEFAULT_TABLE_INDEX);
             // Note: This checks not only that the elements in the element segments properly
             //       fit into the table at the given offset but also that the element segment
             //       consists of at least 1 element member.
@@ -352,12 +320,7 @@ impl Module {
             // Finally do the actual initialization of the table elements.
             for (i, func_index) in element_segment.items().iter().enumerate() {
                 let func_index = func_index.into_u32();
-                let func = builder.get_func(func_index).unwrap_or_else(|| {
-                    panic!(
-                        "encountered missing function at index {} upon element initialization",
-                        func_index
-                    )
-                });
+                let func = builder.get_func(func_index);
                 table.set(context.as_context_mut(), offset + i, Some(func))?;
             }
         }
@@ -380,12 +343,7 @@ impl Module {
                     offset_expr,
                 )
                 }) as usize;
-            let memory = builder.get_memory(DEFAULT_MEMORY_INDEX).unwrap_or_else(|| {
-                panic!(
-                    "expected default memory at index {} but found none",
-                    DEFAULT_MEMORY_INDEX
-                )
-            });
+            let memory = builder.get_memory(DEFAULT_MEMORY_INDEX);
             memory.write(context.as_context_mut(), offset, data_segment.data())?;
         }
         Ok(())
