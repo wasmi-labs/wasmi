@@ -7,6 +7,13 @@ pub struct Pages(u32);
 
 impl Pages {
     /// The maximum amount of pages on the `wasm32` target.
+    ///
+    /// # Note
+    ///
+    /// This is the maximum since WebAssembly is a 32-bit platform
+    /// and a page is 2^16 bytes in size. Therefore there can be at
+    /// most 2^16 pages of a single linear memory so that all bytes
+    /// are still accessible.
     pub const fn max() -> Self {
         Self(65536) // 2^16
     }
@@ -14,6 +21,10 @@ impl Pages {
 
 impl Pages {
     /// Creates a new amount of [`Pages`] if the amount is within bounds.
+    ///
+    /// Returns `None` if the given `amount` of [`Pages`] exceeds [`Pages::max()`].
+    ///
+    /// [`Pages::max()`]: struct.Pages.html#method.max
     pub fn new(amount: u32) -> Option<Self> {
         if amount > u32::from(Self::max()) {
             return None;
