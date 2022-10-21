@@ -155,9 +155,11 @@ impl MemoryEntity {
     /// Creates a new memory entity with the given memory type.
     pub fn new(memory_type: MemoryType) -> Result<Self, MemoryError> {
         let initial_pages = memory_type.initial_pages();
-        let initial_bytes = initial_pages.to_bytes();
+        let initial_len = initial_pages
+            .to_bytes()
+            .ok_or(MemoryError::OutOfBoundsAllocation)?;
         let memory = Self {
-            bytes: ByteBuffer::new(initial_bytes)?,
+            bytes: ByteBuffer::new(initial_len),
             memory_type,
             current_pages: initial_pages,
         };
@@ -196,9 +198,12 @@ impl MemoryEntity {
             .checked_add(additional)
             .filter(|&new_pages| new_pages <= maximum_pages)
             .ok_or(MemoryError::OutOfBoundsGrowth)?;
+        let new_size = new_pages
+            .to_bytes()
+            .ok_or(MemoryError::OutOfBoundsAllocation)?;
         // At this point it is okay to grow the underlying virtual memory
         // by the given amount of additional pages.
-        self.bytes.grow(additional.to_bytes())?;
+        self.bytes.grow(new_size);
         self.current_pages = new_pages;
         Ok(current_pages)
     }

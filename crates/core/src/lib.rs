@@ -28,7 +28,7 @@ pub use self::{
     host_error::HostError,
     nan_preserving_float::{F32, F64},
     trap::{Trap, TrapCode},
-    units::{Bytes, Pages},
+    units::Pages,
     untyped::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedError, UntypedValue},
     value::{
         ArithmeticOps,
