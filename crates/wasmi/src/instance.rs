@@ -12,6 +12,7 @@ use super::{
 };
 use crate::module::{FuncIdx, ModuleImportType};
 use alloc::{
+    boxed::Box,
     collections::{btree_map, BTreeMap},
     sync::Arc,
     vec::Vec,
