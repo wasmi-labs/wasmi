@@ -184,30 +184,48 @@ impl InstanceEntityBuilder {
         self.start_fn
     }
 
+    /// Returns the linear memory at the `index`.
+    ///
+    /// # Panics
+    ///
+    /// If there is no linear memory at the given `index.
+    pub fn get_memory(&self, index: u32) -> Memory {
         self.memories
             .get(index as usize)
             .copied()
             .unwrap_or_else(|| panic!("missing `Memory` at index: {index}"))
     }
 
-    /// Returns the table at the `index` if any.
-    pub(crate) fn get_table(&self, index: u32) -> Table {
+    /// Returns the table at the `index`.
+    ///
+    /// # Panics
+    ///
+    /// If there is no table at the given `index.
+    pub fn get_table(&self, index: u32) -> Table {
         self.tables
             .get(index as usize)
             .copied()
             .unwrap_or_else(|| panic!("missing `Table` at index: {index}"))
     }
 
-    /// Returns the global variable at the `index` if any.
-    pub(crate) fn get_global(&self, index: u32) -> Global {
+    /// Returns the global variable at the `index`.
+    ///
+    /// # Panics
+    ///
+    /// If there is no global variable at the given `index.
+    pub fn get_global(&self, index: u32) -> Global {
         self.globals
             .get(index as usize)
             .copied()
             .unwrap_or_else(|| panic!("missing `Global` at index: {index}"))
     }
 
-    /// Returns the function at the `index` if any.
-    pub(crate) fn get_func(&self, index: u32) -> Func {
+    /// Returns the function at the `index`.
+    ///
+    /// # Panics
+    ///
+    /// If there is no function at the given `index.
+    pub fn get_func(&self, index: u32) -> Func {
         self.funcs
             .get(index as usize)
             .copied()
