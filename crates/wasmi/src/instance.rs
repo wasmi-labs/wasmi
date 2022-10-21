@@ -9,6 +9,7 @@ use super::{
     Stored,
     Table,
 };
+use crate::module::FuncIdx;
 use alloc::{
     collections::{btree_map, BTreeMap},
     vec::Vec,
@@ -159,12 +160,30 @@ pub struct InstanceEntityBuilder {
     funcs: Vec<Func>,
     memories: Vec<Memory>,
     globals: Vec<Global>,
+    start_fn: Option<FuncIdx>,
     exports: BTreeMap<Box<str>, Extern>,
 }
 
 impl InstanceEntityBuilder {
-    /// Returns the linear memory at the `index` if any.
-    pub(crate) fn get_memory(&self, index: u32) -> Memory {
+    /// Sets the start function of the built instance.
+    ///
+    /// # Panics
+    ///
+    /// If the start function has already been set.
+    pub fn set_start(&mut self, start_fn: FuncIdx) {
+        match &mut self.start_fn {
+            Some(_) => panic!("already set start function"),
+            None => {
+                self.start_fn = Some(start_fn);
+            }
+        }
+    }
+
+    /// Returns the optional start function index.
+    pub fn get_start(&self) -> Option<FuncIdx> {
+        self.start_fn
+    }
+
         self.memories
             .get(index as usize)
             .copied()

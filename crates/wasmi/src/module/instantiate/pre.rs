@@ -1,4 +1,4 @@
-use super::{InstantiationError, Module};
+use super::InstantiationError;
 use crate::{module::FuncIdx, AsContextMut, Error, Instance, InstanceEntityBuilder};
 
 /// A partially instantiated [`Instance`] where the `start` function has not yet been executed.
@@ -9,31 +9,22 @@ use crate::{module::FuncIdx, AsContextMut, Error, Instance, InstanceEntityBuilde
 /// conformant module instantiation. This API provides control over the precise instantiation
 /// process with regard to this need.
 #[derive(Debug)]
-pub struct InstancePre<'a> {
+pub struct InstancePre {
     handle: Instance,
-    module: &'a Module,
     builder: InstanceEntityBuilder,
 }
 
-impl<'a> InstancePre<'a> {
+impl InstancePre {
     /// Creates a new [`InstancePre`].
-    pub(super) fn new(
-        handle: Instance,
-        module: &'a Module,
-        builder: InstanceEntityBuilder,
-    ) -> Self {
-        Self {
-            handle,
-            module,
-            builder,
-        }
+    pub(super) fn new(handle: Instance, builder: InstanceEntityBuilder) -> Self {
+        Self { handle, builder }
     }
 
     /// Returns the index of the `start` function if any.
     ///
     /// Returns `None` if the [`Module`] does not have a `start` function.
     fn start_fn(&self) -> Option<u32> {
-        self.module.start.map(FuncIdx::into_u32)
+        self.builder.get_start().map(FuncIdx::into_u32)
     }
 
     /// Runs the `start` function of the [`Instance`] and returns its handle.

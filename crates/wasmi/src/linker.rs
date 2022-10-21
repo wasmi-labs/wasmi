@@ -356,7 +356,7 @@ impl<T> Linker<T> {
         &self,
         mut context: impl AsContextMut,
         module: &'a Module,
-    ) -> Result<InstancePre<'a>, Error> {
+    ) -> Result<InstancePre, Error> {
         let externals = module
             .imports()
             .map(|import| self.process_import(&mut context, import))

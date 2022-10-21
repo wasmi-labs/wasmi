@@ -55,13 +55,14 @@ impl Module {
         self.extract_memories(&mut context, &mut builder);
         self.extract_globals(&mut context, &mut builder);
         self.extract_exports(&mut builder);
+        self.extract_start_fn(&mut builder);
 
         self.initialize_table_elements(&mut context, &mut builder)?;
         self.initialize_memory_data(&mut context, &mut builder)?;
 
         // At this point the module instantiation is nearly done.
         // The only thing that is missing is to run the `start` function.
-        Ok(InstancePre::new(handle, self, builder))
+        Ok(InstancePre::new(handle, builder))
     }
 
     /// Extracts the Wasm function signatures from the
@@ -284,6 +285,13 @@ impl Module {
                 }
             };
             builder.push_export(field, external);
+        }
+    }
+
+    /// Extracts the optional start function for the build instance.
+    fn extract_start_fn(&self, builder: &mut InstanceEntityBuilder) {
+        if let Some(start_fn) = self.start {
+            builder.set_start(start_fn)
         }
     }
 
