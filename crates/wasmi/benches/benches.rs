@@ -19,7 +19,7 @@ use wasmi::{
     Module,
     Store,
 };
-use wasmi_core::{memory_units::Pages, ValueType, F32, F64};
+use wasmi_core::{Pages, ValueType, F32, F64};
 
 const WASM_KERNEL: &str =
     "benches/wasm/wasm_kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
@@ -739,7 +739,7 @@ fn bench_execute_memory_sum(c: &mut Criterion) {
             .get_export(&store, "mem")
             .and_then(Extern::into_memory)
             .unwrap();
-        mem.grow(&mut store, Pages(1)).unwrap();
+        mem.grow(&mut store, Pages::new(1).unwrap()).unwrap();
         let len = 100_000;
         let mut expected_sum: i64 = 0;
         for (n, byte) in &mut mem.data_mut(&mut store)[..len].iter_mut().enumerate() {
@@ -767,7 +767,7 @@ fn bench_execute_memory_fill(c: &mut Criterion) {
             .get_export(&store, "mem")
             .and_then(Extern::into_memory)
             .unwrap();
-        mem.grow(&mut store, Pages(1)).unwrap();
+        mem.grow(&mut store, Pages::new(1).unwrap()).unwrap();
         let ptr = 0x100;
         let len = 100_000;
         let value = 0x42_u8;
@@ -869,7 +869,7 @@ fn bench_execute_vec_add(c: &mut Criterion) {
             .get_export(&store, "mem")
             .and_then(Extern::into_memory)
             .unwrap();
-        mem.grow(&mut store, Pages(25)).unwrap();
+        mem.grow(&mut store, Pages::new(25).unwrap()).unwrap();
         let len = 100_000;
         test_for(
             b,
