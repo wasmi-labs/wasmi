@@ -871,7 +871,8 @@ fn bench_execute_vec_add(c: &mut Criterion) {
             .unwrap();
         mem.grow(&mut store, Pages::new(25).unwrap()).unwrap();
         let len = 100_000;
-        test_for(b,
+        test_for(
+            b,
             vec_add,
             &mut store,
             mem,
