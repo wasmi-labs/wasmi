@@ -43,14 +43,14 @@ use crate::{
     MemoryType,
     TableType,
 };
-use alloc::{boxed::Box, vec::Vec};
+use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use core::{iter, slice::Iter as SliceIter};
 
 /// A parsed and validated WebAssembly module.
 #[derive(Debug)]
 pub struct Module {
     engine: Engine,
-    func_types: Box<[DedupFuncType]>,
+    func_types: Arc<[DedupFuncType]>,
     imports: ModuleImports,
     funcs: Box<[DedupFuncType]>,
     tables: Box<[TableType]>,
@@ -160,11 +160,21 @@ impl Module {
         }
     }
 
-    /// Returns a slice over the [`FuncType`] of the [`Module`].
-    ///
-    /// [`FuncType`]: struct.FuncType.html
-    fn func_types(&self) -> &[DedupFuncType] {
-        &self.func_types[..]
+    /// Returns the number of non-imported functions of the [`Module`].
+    pub(crate) fn len_funcs(&self) -> usize {
+        self.funcs.len()
+    }
+    /// Returns the number of non-imported tables of the [`Module`].
+    pub(crate) fn len_tables(&self) -> usize {
+        self.tables.len()
+    }
+    /// Returns the number of non-imported linear memories of the [`Module`].
+    pub(crate) fn len_memories(&self) -> usize {
+        self.memories.len()
+    }
+    /// Returns the number of non-imported global variables of the [`Module`].
+    pub(crate) fn len_globals(&self) -> usize {
+        self.memories.len()
     }
 
     /// Returns an iterator over the imports of the [`Module`].
