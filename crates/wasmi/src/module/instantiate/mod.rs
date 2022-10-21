@@ -46,7 +46,7 @@ impl Module {
         I: IntoIterator<Item = Extern>,
     {
         let handle = context.as_context_mut().store.alloc_instance();
-        let mut builder = InstanceEntity::build();
+        let mut builder = InstanceEntity::build(self);
 
         self.extract_func_types(&mut context, &mut builder);
         self.extract_imports(&mut context, &mut builder, externals)?;

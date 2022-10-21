@@ -5,11 +5,12 @@ use super::{
     Func,
     Global,
     Memory,
+    Module,
     StoreContext,
     Stored,
     Table,
 };
-use crate::module::FuncIdx;
+use crate::module::{FuncIdx, ModuleImportType};
 use alloc::{
     collections::{btree_map, BTreeMap},
     vec::Vec,
@@ -61,8 +62,8 @@ impl InstanceEntity {
     }
 
     /// Creates a new [`InstanceEntityBuilder`].
-    pub(crate) fn build() -> InstanceEntityBuilder {
-        InstanceEntityBuilder::default()
+    pub(crate) fn build(module: &Module) -> InstanceEntityBuilder {
+        InstanceEntityBuilder::new(module)
     }
 
     /// Returns `true` if the [`InstanceEntity`] has been fully initialized.
@@ -153,7 +154,7 @@ impl ExactSizeIterator for ExportsIter<'_> {
 impl FusedIterator for ExportsIter<'_> {}
 
 /// A module instance entity builder.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct InstanceEntityBuilder {
     func_types: Vec<DedupFuncType>,
     tables: Vec<Table>,
@@ -165,6 +166,39 @@ pub struct InstanceEntityBuilder {
 }
 
 impl InstanceEntityBuilder {
+    /// Creates a new [`InstanceEntityBuilder`] optimized for the [`Module`].
+    pub fn new(module: &Module) -> Self {
+        let mut len_funcs = module.len_funcs();
+        let mut len_globals = module.len_globals();
+        let mut len_tables = module.len_tables();
+        let mut len_memories = module.len_memories();
+        for import in module.imports() {
+            match import.item_type() {
+                ModuleImportType::Func(_) => {
+                    len_funcs += 1;
+                }
+                ModuleImportType::Table(_) => {
+                    len_tables += 1;
+                }
+                ModuleImportType::Memory(_) => {
+                    len_memories += 1;
+                }
+                ModuleImportType::Global(_) => {
+                    len_globals += 1;
+                }
+            }
+        }
+        Self {
+            func_types: Vec::new(),
+            tables: Vec::with_capacity(len_tables),
+            funcs: Vec::with_capacity(len_funcs),
+            memories: Vec::with_capacity(len_memories),
+            globals: Vec::with_capacity(len_globals),
+            start_fn: None,
+            exports: BTreeMap::default(),
+        }
+    }
+
     /// Sets the start function of the built instance.
     ///
     /// # Panics

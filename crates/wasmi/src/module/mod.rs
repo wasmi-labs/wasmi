@@ -160,6 +160,23 @@ impl Module {
         }
     }
 
+    /// Returns the number of non-imported functions of the [`Module`].
+    pub(crate) fn len_funcs(&self) -> usize {
+        self.funcs.len()
+    }
+    /// Returns the number of non-imported tables of the [`Module`].
+    pub(crate) fn len_tables(&self) -> usize {
+        self.tables.len()
+    }
+    /// Returns the number of non-imported linear memories of the [`Module`].
+    pub(crate) fn len_memories(&self) -> usize {
+        self.memories.len()
+    }
+    /// Returns the number of non-imported global variables of the [`Module`].
+    pub(crate) fn len_globals(&self) -> usize {
+        self.memories.len()
+    }
+
     /// Returns a slice over the [`FuncType`] of the [`Module`].
     ///
     /// [`FuncType`]: struct.FuncType.html
