@@ -128,6 +128,10 @@ impl<'a> ExportsIter<'a> {
 impl<'a> Iterator for ExportsIter<'a> {
     type Item = (&'a str, &'a Extern);
 
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next().map(Self::convert_item)
     }
