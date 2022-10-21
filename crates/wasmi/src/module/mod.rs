@@ -45,12 +45,13 @@ use crate::{
 };
 use alloc::{boxed::Box, vec::Vec};
 use core::{iter, slice::Iter as SliceIter};
+use alloc::sync::Arc;
 
 /// A parsed and validated WebAssembly module.
 #[derive(Debug)]
 pub struct Module {
     engine: Engine,
-    func_types: Box<[DedupFuncType]>,
+    func_types: Arc<[DedupFuncType]>,
     imports: ModuleImports,
     funcs: Box<[DedupFuncType]>,
     tables: Box<[TableType]>,
@@ -175,13 +176,6 @@ impl Module {
     /// Returns the number of non-imported global variables of the [`Module`].
     pub(crate) fn len_globals(&self) -> usize {
         self.memories.len()
-    }
-
-    /// Returns a slice over the [`FuncType`] of the [`Module`].
-    ///
-    /// [`FuncType`]: struct.FuncType.html
-    fn func_types(&self) -> &[DedupFuncType] {
-        &self.func_types[..]
     }
 
     /// Returns an iterator over the imports of the [`Module`].

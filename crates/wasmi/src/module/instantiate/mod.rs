@@ -78,9 +78,7 @@ impl Module {
         _context: &mut impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) {
-        for func_type in self.func_types() {
-            builder.push_func_type(*func_type);
-        }
+        builder.set_func_types(&self.func_types);
     }
 
     /// Extract the Wasm imports from the module and zips them with the given external values.

@@ -10,6 +10,7 @@ use super::{
     Stored,
     Table,
 };
+use alloc::sync::Arc;
 use crate::module::{FuncIdx, ModuleImportType};
 use alloc::{
     collections::{btree_map, BTreeMap},
@@ -39,7 +40,7 @@ impl Index for InstanceIdx {
 #[derive(Debug)]
 pub struct InstanceEntity {
     initialized: bool,
-    func_types: Box<[DedupFuncType]>,
+    func_types: Arc<[DedupFuncType]>,
     tables: Box<[Table]>,
     funcs: Box<[Func]>,
     memories: Box<[Memory]>,
@@ -52,7 +53,7 @@ impl InstanceEntity {
     pub(crate) fn uninitialized() -> InstanceEntity {
         Self {
             initialized: false,
-            func_types: [].into(),
+            func_types: Arc::new([]),
             tables: [].into(),
             funcs: [].into(),
             memories: [].into(),
@@ -156,7 +157,7 @@ impl FusedIterator for ExportsIter<'_> {}
 /// A module instance entity builder.
 #[derive(Debug)]
 pub struct InstanceEntityBuilder {
-    func_types: Vec<DedupFuncType>,
+    func_types: Arc<[DedupFuncType]>,
     tables: Vec<Table>,
     funcs: Vec<Func>,
     memories: Vec<Memory>,
@@ -189,7 +190,7 @@ impl InstanceEntityBuilder {
             }
         }
         Self {
-            func_types: Vec::new(),
+            func_types: Arc::new([]),
             tables: Vec::with_capacity(len_tables),
             funcs: Vec::with_capacity(len_funcs),
             memories: Vec::with_capacity(len_memories),
@@ -290,8 +291,8 @@ impl InstanceEntityBuilder {
     /// under construction.
     ///
     /// [`FuncType`]: [`crate::FuncType`]
-    pub fn push_func_type(&mut self, func_type: DedupFuncType) {
-        self.func_types.push(func_type);
+    pub fn set_func_types(&mut self, func_types: &Arc<[DedupFuncType]>) {
+        self.func_types = func_types.clone();
     }
 
     /// Pushes a new [`Extern`] under the given `name` to the [`InstanceEntity`] under construction.
