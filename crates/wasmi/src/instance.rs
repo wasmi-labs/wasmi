@@ -124,8 +124,9 @@ impl<'a> ExportsIter<'a> {
     }
 
     /// Prepares an item to match the expected iterator `Item` signature.
+    #[allow(clippy::borrowed_box)]
     fn convert_item((name, export): (&'a Box<str>, &'a Extern)) -> (&'a str, &'a Extern) {
-        (&*name, export)
+        (&**name, export)
     }
 }
 
@@ -170,6 +171,11 @@ pub struct InstanceEntityBuilder {
 impl InstanceEntityBuilder {
     /// Creates a new [`InstanceEntityBuilder`] optimized for the [`Module`].
     pub fn new(module: &Module) -> Self {
+        fn vec_with_capacity_exact<T>(capacity: usize) -> Vec<T> {
+            let mut v = Vec::new();
+            v.reserve_exact(capacity);
+            v
+        }
         let mut len_funcs = module.len_funcs();
         let mut len_globals = module.len_globals();
         let mut len_tables = module.len_tables();
@@ -189,11 +195,6 @@ impl InstanceEntityBuilder {
                     len_globals += 1;
                 }
             }
-        }
-        fn vec_with_capacity_exact<T>(capacity: usize) -> Vec<T> {
-            let mut v = Vec::new();
-            v.reserve_exact(capacity);
-            v
         }
         Self {
             func_types: Arc::new([]),
@@ -320,7 +321,7 @@ impl InstanceEntityBuilder {
     pub fn finish(self) -> InstanceEntity {
         InstanceEntity {
             initialized: true,
-            func_types: self.func_types.into(),
+            func_types: self.func_types,
             tables: self.tables.into(),
             funcs: self.funcs.into(),
             memories: self.memories.into(),
