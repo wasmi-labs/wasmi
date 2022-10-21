@@ -189,12 +189,17 @@ impl InstanceEntityBuilder {
                 }
             }
         }
+        fn vec_with_capacity_exact<T>(capacity: usize) -> Vec<T> {
+            let mut v = Vec::new();
+            v.reserve_exact(capacity);
+            v
+        }
         Self {
             func_types: Arc::new([]),
-            tables: Vec::with_capacity(len_tables),
-            funcs: Vec::with_capacity(len_funcs),
-            memories: Vec::with_capacity(len_memories),
-            globals: Vec::with_capacity(len_globals),
+            tables: vec_with_capacity_exact(len_tables),
+            funcs: vec_with_capacity_exact(len_funcs),
+            memories: vec_with_capacity_exact(len_memories),
+            globals: vec_with_capacity_exact(len_globals),
             start_fn: None,
             exports: BTreeMap::default(),
         }
