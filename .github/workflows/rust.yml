@@ -124,6 +124,28 @@ jobs:
           command: audit
           args: ''
 
+  miri:
+    name: Miri
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: miri
+      - name: Clippy (--lib)
+        uses: actions-rs/cargo@v1
+        with:
+          command: miri
+          args: test --lib --workspace
+      - name: Clippy (--doc)
+        uses: actions-rs/cargo@v1
+        with:
+          command: miri
+          args: test --doc --workspace
+
   clippy:
     name: Clippy
     runs-on: ubuntu-latest

@@ -1,121 +1,87 @@
-use alloc::vec::Vec;
 use core::cmp;
-use wasmi_core::ValueType;
 
-/// The value stack that is emulated during Wasm to `wasmi` bytecode translation.
-#[derive(Debug, Default)]
-pub struct ValueStack {
-    /// The values of the emulated value stack.
-    values: Vec<ValueType>,
+/// The current height of the emulated Wasm value stack.
+#[derive(Debug, Default, Copy, Clone)]
+pub struct ValueStackHeight {
+    /// The current height of the emulated value stack of the translated function.
+    ///
+    /// # Note
+    ///
+    /// This does not include input parameters and local variables.
+    height: u32,
     /// The maximum height of the emulated value stack of the translated function.
     ///
     /// # Note
     ///
     /// This does not include input parameters and local variables.
-    max_stack_height: u32,
+    max_height: u32,
 }
 
-impl ValueStack {
-    /// Resets the [`ValueStack`] to allow for reuse.
-    pub fn reset(&mut self) {
-        self.values.clear();
-        self.max_stack_height = 0;
-    }
-
-    /// Returns the maximum value stack height.
-    pub fn max_stack_height(&self) -> u32 {
-        self.max_stack_height
-    }
-
-    /// Updates the pinned maximum stack height.
-    fn update_max_height(&mut self) {
-        let max = self.max_stack_height;
-        let len = self.len();
-        self.max_stack_height = cmp::max(len, max);
-    }
-
-    /// Pushes the [`ValueType`] to the emulated [`ValueStack`].
+impl ValueStackHeight {
+    /// Returns the current length of the emulated value stack.
     ///
     /// # Note
     ///
-    /// In this [`ValueStack`] we push [`ValueType`] instead of [`Value`]
-    /// to the stack since we are just emulating the Wasm [`ValueStack`] during
-    /// translation from Wasm bytecode to `wasmi` bytecode.
+    /// This does not include input parameters and local variables.
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
+    /// Returns the maximum value stack height.
     ///
-    /// [`Value`]: [`wasmi_core::Value`]
-    pub fn push(&mut self, value_type: ValueType) {
-        self.values.push(value_type);
+    /// # Note
+    ///
+    /// This does not include input parameters and local variables.
+    pub fn max_stack_height(&self) -> u32 {
+        self.max_height
+    }
+
+    /// Updates the pinned maximum value stack height.
+    fn update_max_height(&mut self) {
+        self.max_height = cmp::max(self.height, self.max_height);
+    }
+
+    /// Pushes an `amount` of values to the emulated value stack.
+    pub fn push_n(&mut self, amount: u32) {
+        self.height += amount;
         self.update_max_height();
     }
 
-    /// Returns the top most [`ValueType`] form the emulated [`ValueStack`].
-    pub fn top(&self) -> ValueType {
-        *self
-            .values
-            .last()
-            .expect("tried to peek last value from empty emulated value stack")
+    /// Pushes a value to the emulated value stack.
+    pub fn push(&mut self) {
+        self.push_n(1)
     }
 
-    /// Pops the top most [`ValueType`] from the emulated [`ValueStack`].
+    /// Pops an `amount` of elements from the emulated value stack.
+    pub fn pop_n(&mut self, amount: u32) {
+        debug_assert!(amount <= self.height);
+        self.height -= amount;
+    }
+
+    /// Pops 1 element from the emulated value stack.
+    pub fn pop1(&mut self) {
+        self.pop_n(1)
+    }
+
+    /// Pops 2 elements from the emulated value stack.
+    pub fn pop2(&mut self) {
+        self.pop_n(2)
+    }
+
+    /// Pops 3 elements from the emulated value stack.
+    pub fn pop3(&mut self) {
+        self.pop_n(3)
+    }
+
+    /// Shrinks the emulated value stack to the given height.
     ///
     /// # Panics
     ///
-    /// If the emulated [`ValueStack`] is empty.
-    pub fn pop1(&mut self) -> ValueType {
-        self.values
-            .pop()
-            .expect("tried to pop value from an empty emulated value stack")
-    }
-
-    /// Pops the 2 top most [`ValueType`] from the emulated [`ValueStack`].
-    ///
-    /// # Panics
-    ///
-    /// If the emulated [`ValueStack`] is empty.
-    pub fn pop2(&mut self) -> (ValueType, ValueType) {
-        let rhs = self.pop1();
-        let lhs = self.pop1();
-        (lhs, rhs)
-    }
-
-    /// Pops the 3 top most [`ValueType`] from the emulated [`ValueStack`].
-    ///
-    /// # Panics
-    ///
-    /// If the emulated [`ValueStack`] is empty.
-    pub fn pop3(&mut self) -> (ValueType, ValueType, ValueType) {
-        let v2 = self.pop1();
-        let v1 = self.pop1();
-        let v0 = self.pop1();
-        (v0, v1, v2)
-    }
-
-    /// Returns the current length of the emulated [`ValueStack`].
-    pub fn len(&self) -> u32 {
-        self.values.len() as u32
-    }
-
-    /// Shrinks the [`ValueStack`] to the given height.
-    ///
-    /// # Panics
-    ///
-    /// If the [`ValueStack`] height already is below the height since this
+    /// If the value stack height already is below the height since this
     /// usually indicates a bug in the translation of the Wasm to `wasmi`
     /// bytecode procedures.
     pub fn shrink_to(&mut self, new_height: u32) {
-        let current_height = self.len();
-        assert!(
-            new_height <= current_height,
-            "tried to shrink the value stack of height {} to height {}",
-            current_height,
-            new_height
-        );
-        let new_height = usize::try_from(new_height).unwrap_or_else(|error| {
-            panic!(
-                "could not convert stack height from `u32` to `usize`: {}",
-                error
-            )
-        });
-        self.values.resize(new_height, ValueType::I32);
+        assert!(new_height <= self.height);
+        self.height = new_height;
     }
 }

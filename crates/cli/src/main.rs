@@ -91,7 +91,7 @@ fn load_wasm_func(
     let module = wasmi::Module::new(&engine, &mut &wasm_bytes[..]).map_err(|error| {
         anyhow!("failed to parse and validate Wasm module {wasm_file}: {error}")
     })?;
-    let mut linker = <wasmi::Linker<()>>::new();
+    let linker = <wasmi::Linker<()>>::new();
     let instance = linker
         .instantiate(&mut store, &module)
         .and_then(|pre| pre.start(&mut store))

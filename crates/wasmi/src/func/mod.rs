@@ -6,7 +6,7 @@ mod typed_func;
 pub use self::{
     caller::Caller,
     error::FuncError,
-    into_func::IntoFunc,
+    into_func::{IntoFunc, WasmRet, WasmType},
     typed_func::{TypedFunc, WasmParams, WasmResults},
 };
 use super::{
@@ -302,6 +302,10 @@ impl Func {
         if expected_outputs.len() != outputs.len() {
             return Err(FuncError::MismatchingResults { func: *self }).map_err(Into::into);
         }
+        outputs
+            .iter_mut()
+            .zip(expected_outputs.iter().copied().map(Value::default))
+            .for_each(|(output, expected_output)| *output = expected_output);
         // Note: Cloning an [`Engine`] is intentionally a cheap operation.
         ctx.as_context().store.engine().clone().execute_func(
             ctx.as_context_mut(),
@@ -324,11 +328,13 @@ impl Func {
     ///
     /// If the function signature of `self` does not match `Params` and `Results`
     /// as parameter types and result types respectively.
-    pub fn typed<Params, Results, S>(&self, ctx: S) -> Result<TypedFunc<Params, Results>, Error>
+    pub fn typed<Params, Results>(
+        &self,
+        ctx: impl AsContext,
+    ) -> Result<TypedFunc<Params, Results>, Error>
     where
         Params: WasmParams,
         Results: WasmResults,
-        S: AsContext,
     {
         TypedFunc::new(ctx, *self)
     }

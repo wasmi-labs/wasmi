@@ -19,7 +19,7 @@ use self::{
     control_stack::ControlFlowStack,
     labels::LabelRef,
     locals_registry::LocalsRegistry,
-    value_stack::ValueStack,
+    value_stack::ValueStackHeight,
 };
 pub use self::{
     error::TranslationError,
@@ -69,6 +69,10 @@ pub struct FuncBuilder<'parser> {
     reachable: bool,
     /// The Wasm function validator.
     validator: FuncValidator,
+    /// The height of the emulated value stack.
+    stack_height: ValueStackHeight,
+    /// Stores and resolves local variable types.
+    locals: LocalsRegistry,
     /// The reusable data structures of the [`FuncBuilder`].
     alloc: FunctionBuilderAllocations,
 }
@@ -78,16 +82,12 @@ pub struct FuncBuilder<'parser> {
 pub struct FunctionBuilderAllocations {
     /// The control flow frame stack that represents the Wasm control flow.
     control_frames: ControlFlowStack,
-    /// The emulated value stack.
-    value_stack: ValueStack,
     /// The instruction builder.
     ///
     /// # Note
     ///
     /// Allows to incrementally construct the instruction of a function.
     inst_builder: InstructionsBuilder,
-    /// Stores and resolves local variable types.
-    locals: LocalsRegistry,
     /// Buffer for translating `br_table`.
     br_table_branches: Vec<Instruction>,
 }
@@ -101,9 +101,7 @@ impl FunctionBuilderAllocations {
     /// by another [`FuncBuilder`].
     fn reset(&mut self) {
         self.control_frames.reset();
-        self.value_stack.reset();
         self.inst_builder.reset();
-        self.locals.reset();
         self.br_table_branches.clear();
     }
 }
@@ -117,14 +115,17 @@ impl<'parser> FuncBuilder<'parser> {
         validator: FuncValidator,
         mut allocations: FunctionBuilderAllocations,
     ) -> Self {
+        let mut locals = LocalsRegistry::default();
         Self::register_func_body_block(func, res, &mut allocations);
-        Self::register_func_params(func, res, &mut allocations);
+        Self::register_func_params(func, res, &mut locals);
         Self {
             engine: engine.clone(),
             func,
             res,
             reachable: true,
             validator,
+            stack_height: ValueStackHeight::default(),
+            locals,
             alloc: allocations,
         }
     }
@@ -169,15 +170,15 @@ impl<'parser> FuncBuilder<'parser> {
     fn register_func_params(
         func: FuncIdx,
         res: ModuleResources<'parser>,
-        allocations: &mut FunctionBuilderAllocations,
+        locals: &mut LocalsRegistry,
     ) -> usize {
         let dedup_func_type = res.get_type_of_func(func);
         let func_type = res
             .engine()
             .resolve_func_type(dedup_func_type, Clone::clone);
         let params = func_type.params();
-        for param_type in params {
-            allocations.locals.register_locals(*param_type, 1);
+        for _param_type in params {
+            locals.register_locals(1);
         }
         params.len()
     }
@@ -190,15 +191,13 @@ impl<'parser> FuncBuilder<'parser> {
         value_type: wasmparser::ValType,
     ) -> Result<(), TranslationError> {
         self.validator.define_locals(offset, amount, value_type)?;
-        let value_type = crate::module::value_type_from_wasmparser(value_type)
-            .ok_or_else(|| TranslationError::unsupported_value_type(value_type))?;
-        self.alloc.locals.register_locals(value_type, amount);
+        self.locals.register_locals(amount);
         Ok(())
     }
 
     /// Returns the number of local variables of the function under construction.
     fn len_locals(&self) -> usize {
-        let len_params_locals = self.alloc.locals.len_registered() as usize;
+        let len_params_locals = self.locals.len_registered() as usize;
         let len_params = self.func_type().params().len();
         debug_assert!(len_params_locals >= len_params);
         len_params_locals - len_params
@@ -213,7 +212,7 @@ impl<'parser> FuncBuilder<'parser> {
         let func_body = self.alloc.inst_builder.finish(
             &self.engine,
             self.len_locals(),
-            self.alloc.value_stack.max_stack_height() as usize,
+            self.stack_height.max_stack_height() as usize,
         );
         let allocations = ReusableAllocations {
             translation: self.alloc,
@@ -258,7 +257,7 @@ impl<'parser> FuncBuilder<'parser> {
             ControlFrameKind::Loop => frame.block_type().len_params(&self.engine),
         };
         // Find out how many values we need to drop.
-        let current_height = self.alloc.value_stack.len();
+        let current_height = self.stack_height.height();
         let origin_height = frame.stack_height().expect("frame is reachable");
         assert!(
             origin_height <= current_height,
@@ -296,7 +295,7 @@ impl<'parser> FuncBuilder<'parser> {
             .checked_sub(1)
             .expect("control flow frame stack must not be empty") as u32;
         let drop_keep = self.compute_drop_keep(max_depth)?;
-        let len_params_locals = self.alloc.locals.len_registered() as usize;
+        let len_params_locals = self.locals.len_registered() as usize;
         DropKeep::new(
             // Drop all local variables and parameters upon exit.
             drop_keep.drop() + len_params_locals,
@@ -308,8 +307,8 @@ impl<'parser> FuncBuilder<'parser> {
     /// Returns the relative depth on the stack of the local variable.
     fn relative_local_depth(&self, local_idx: u32) -> usize {
         debug_assert!(self.is_reachable());
-        let stack_height = self.alloc.value_stack.len() as usize;
-        let len_params_locals = self.alloc.locals.len_registered() as usize;
+        let stack_height = self.stack_height.height() as usize;
+        let len_params_locals = self.locals.len_registered() as usize;
         stack_height
             .checked_add(len_params_locals)
             .and_then(|x| x.checked_sub(local_idx as usize))
@@ -394,7 +393,7 @@ impl<'parser> FuncBuilder<'parser> {
     /// since we have already validated the input Wasm prior.
     fn frame_stack_height(&self, block_type: BlockType) -> u32 {
         let len_params = block_type.len_params(&self.engine);
-        let stack_height = self.alloc.value_stack.len();
+        let stack_height = self.stack_height.height();
         stack_height.checked_sub(len_params).unwrap_or_else(|| {
             panic!(
                 "encountered emulated value stack underflow with \
@@ -462,8 +461,7 @@ impl<'parser> FuncBuilder<'parser> {
     ) -> Result<(), TranslationError> {
         let block_type = BlockType::try_from_wasmparser(block_type, self.res)?;
         if self.is_reachable() {
-            let condition = self.alloc.value_stack.pop1();
-            debug_assert_eq!(condition, ValueType::I32);
+            self.stack_height.pop1();
             let stack_height = self.frame_stack_height(block_type);
             let else_label = self.alloc.inst_builder.new_label();
             let end_label = self.alloc.inst_builder.new_label();
@@ -523,9 +521,9 @@ impl<'parser> FuncBuilder<'parser> {
         // We need to reset the value stack to exactly how it has been
         // when entering the `if` in the first place so that the `else`
         // block has the same parameters on top of the stack.
-        self.alloc.value_stack.shrink_to(if_frame.stack_height());
-        if_frame.block_type().foreach_param(&self.engine, |param| {
-            self.alloc.value_stack.push(param);
+        self.stack_height.shrink_to(if_frame.stack_height());
+        if_frame.block_type().foreach_param(&self.engine, |_param| {
+            self.stack_height.push();
         });
         self.alloc.control_frames.push_frame(if_frame);
         // We can reset reachability now since the parent `if` block was reachable.
@@ -564,12 +562,12 @@ impl<'parser> FuncBuilder<'parser> {
             self.reachable = frame_reachable;
         }
         if let Some(frame_stack_height) = frame_stack_height {
-            self.alloc.value_stack.shrink_to(frame_stack_height);
+            self.stack_height.shrink_to(frame_stack_height);
         }
         let frame = self.alloc.control_frames.pop_frame();
         frame
             .block_type()
-            .foreach_result(&self.engine, |result| self.alloc.value_stack.push(result));
+            .foreach_result(&self.engine, |_result| self.stack_height.push());
         Ok(())
     }
 
@@ -597,8 +595,7 @@ impl<'parser> FuncBuilder<'parser> {
     /// Translates a Wasm `br_if` control flow operator.
     pub fn translate_br_if(&mut self, relative_depth: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let condition = builder.alloc.value_stack.pop1();
-            debug_assert_eq!(condition, ValueType::I32);
+            builder.stack_height.pop1();
             match builder.acquire_target(relative_depth)? {
                 AcquiredTarget::Branch(end_label, drop_keep) => {
                     let params = builder.branch_params(end_label, drop_keep);
@@ -658,9 +655,7 @@ impl<'parser> FuncBuilder<'parser> {
                 })
                 .map(RelativeDepth::from_u32);
 
-            let case = builder.alloc.value_stack.pop1();
-            debug_assert_eq!(case, ValueType::I32);
-
+            builder.stack_height.pop1();
             builder.alloc.br_table_branches.clear();
             for (n, depth) in targets.into_iter().enumerate() {
                 let relative_depth = compute_instr(builder, n, depth)?;
@@ -695,16 +690,11 @@ impl<'parser> FuncBuilder<'parser> {
         })
     }
 
-    /// Adjusts the emulated [`ValueStack`] given the [`FuncType`] of the call.
+    /// Adjusts the emulated value stack given the [`FuncType`] of the call.
     fn adjust_value_stack_for_call(&mut self, func_type: &FuncType) {
         let (params, results) = func_type.params_results();
-        for param in params.iter().rev() {
-            let popped = self.alloc.value_stack.pop1();
-            debug_assert_eq!(popped, *param);
-        }
-        for result in results {
-            self.alloc.value_stack.push(*result);
-        }
+        self.stack_height.pop_n(params.len() as u32);
+        self.stack_height.push_n(results.len() as u32);
     }
 
     /// Translates a Wasm `call` instruction.
@@ -735,8 +725,7 @@ impl<'parser> FuncBuilder<'parser> {
             let func_type_idx = FuncTypeIdx(index);
             let table_idx = TableIdx(table_index);
             assert_eq!(table_idx.into_u32(), DEFAULT_TABLE_INDEX);
-            let func_type_offset = builder.alloc.value_stack.pop1();
-            debug_assert_eq!(func_type_offset, ValueType::I32);
+            builder.stack_height.pop1();
             let func_type = builder.func_type_at(func_type_idx);
             builder.adjust_value_stack_for_call(&func_type);
             let func_type_idx = func_type_idx.into_u32().into();
@@ -751,7 +740,7 @@ impl<'parser> FuncBuilder<'parser> {
     /// Translates a Wasm `drop` instruction.
     pub fn translate_drop(&mut self) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.alloc.value_stack.pop1();
+            builder.stack_height.pop1();
             builder.alloc.inst_builder.push_inst(Instruction::Drop);
             Ok(())
         })
@@ -760,10 +749,8 @@ impl<'parser> FuncBuilder<'parser> {
     /// Translates a Wasm `select` instruction.
     pub fn translate_select(&mut self) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let (v0, v1, selector) = builder.alloc.value_stack.pop3();
-            debug_assert_eq!(selector, ValueType::I32);
-            debug_assert_eq!(v0, v1);
-            builder.alloc.value_stack.push(v0);
+            builder.stack_height.pop3();
+            builder.stack_height.push();
             builder.alloc.inst_builder.push_inst(Instruction::Select);
             Ok(())
         })
@@ -777,12 +764,7 @@ impl<'parser> FuncBuilder<'parser> {
                 .alloc
                 .inst_builder
                 .push_inst(Instruction::local_get(local_depth));
-            let value_type = builder
-                .alloc
-                .locals
-                .resolve_local(local_idx)
-                .unwrap_or_else(|| panic!("failed to resolve local {}", local_idx));
-            builder.alloc.value_stack.push(value_type);
+            builder.stack_height.push();
             Ok(())
         })
     }
@@ -790,18 +772,12 @@ impl<'parser> FuncBuilder<'parser> {
     /// Translate a Wasm `local.set` instruction.
     pub fn translate_local_set(&mut self, local_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let actual = builder.alloc.value_stack.pop1();
+            builder.stack_height.pop1();
             let local_depth = builder.relative_local_depth(local_idx);
             builder
                 .alloc
                 .inst_builder
                 .push_inst(Instruction::local_set(local_depth));
-            let expected = builder
-                .alloc
-                .locals
-                .resolve_local(local_idx)
-                .unwrap_or_else(|| panic!("failed to resolve local {}", local_idx));
-            debug_assert_eq!(actual, expected);
             Ok(())
         })
     }
@@ -814,13 +790,6 @@ impl<'parser> FuncBuilder<'parser> {
                 .alloc
                 .inst_builder
                 .push_inst(Instruction::local_tee(local_depth));
-            let expected = builder
-                .alloc
-                .locals
-                .resolve_local(local_idx)
-                .unwrap_or_else(|| panic!("failed to resolve local {}", local_idx));
-            let actual = builder.alloc.value_stack.top();
-            debug_assert_eq!(actual, expected);
             Ok(())
         })
     }
@@ -829,8 +798,7 @@ impl<'parser> FuncBuilder<'parser> {
     pub fn translate_global_get(&mut self, global_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let global_idx = GlobalIdx(global_idx);
-            let global_type = builder.res.get_type_of_global(global_idx);
-            builder.alloc.value_stack.push(global_type.value_type());
+            builder.stack_height.push();
             let global_idx = global_idx.into_u32().into();
             builder
                 .alloc
@@ -846,9 +814,7 @@ impl<'parser> FuncBuilder<'parser> {
             let global_idx = GlobalIdx(global_idx);
             let global_type = builder.res.get_type_of_global(global_idx);
             debug_assert_eq!(global_type.mutability(), Mutability::Mutable);
-            let expected = global_type.value_type();
-            let actual = builder.alloc.value_stack.pop1();
-            debug_assert_eq!(actual, expected);
+            builder.stack_height.pop1();
             let global_idx = global_idx.into_u32().into();
             builder
                 .alloc
@@ -888,15 +854,14 @@ impl<'parser> FuncBuilder<'parser> {
     fn translate_load(
         &mut self,
         memarg: wasmparser::MemArg,
-        loaded_type: ValueType,
+        _loaded_type: ValueType,
         make_inst: fn(Offset) -> Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let (memory_idx, offset) = Self::decompose_memarg(memarg);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
-            let pointer = builder.alloc.value_stack.pop1();
-            debug_assert_eq!(pointer, ValueType::I32);
-            builder.alloc.value_stack.push(loaded_type);
+            builder.stack_height.pop1();
+            builder.stack_height.push();
             let offset = Offset::from(offset);
             builder.alloc.inst_builder.push_inst(make_inst(offset));
             Ok(())
@@ -1033,15 +998,13 @@ impl<'parser> FuncBuilder<'parser> {
     fn translate_store(
         &mut self,
         memarg: wasmparser::MemArg,
-        stored_value: ValueType,
+        _stored_value: ValueType,
         make_inst: fn(Offset) -> Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let (memory_idx, offset) = Self::decompose_memarg(memarg);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
-            let (pointer, stored) = builder.alloc.value_stack.pop2();
-            debug_assert_eq!(pointer, ValueType::I32);
-            assert_eq!(stored_value, stored);
+            builder.stack_height.pop2();
             let offset = Offset::from(offset);
             builder.alloc.inst_builder.push_inst(make_inst(offset));
             Ok(())
@@ -1129,7 +1092,7 @@ impl<'parser> FuncBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let memory_idx = MemoryIdx(memory_idx);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
-            builder.alloc.value_stack.push(ValueType::I32);
+            builder.stack_height.push();
             builder
                 .alloc
                 .inst_builder
@@ -1147,7 +1110,6 @@ impl<'parser> FuncBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let memory_idx = MemoryIdx(memory_idx);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
-            debug_assert_eq!(builder.alloc.value_stack.top(), ValueType::I32);
             builder
                 .alloc
                 .inst_builder
@@ -1172,7 +1134,7 @@ impl<'parser> FuncBuilder<'parser> {
     {
         self.translate_if_reachable(|builder| {
             let value = value.into();
-            builder.alloc.value_stack.push(value.value_type());
+            builder.stack_height.push();
             builder
                 .alloc
                 .inst_builder
@@ -1217,13 +1179,12 @@ impl<'parser> FuncBuilder<'parser> {
     /// - `i64.eqz`
     fn translate_unary_cmp(
         &mut self,
-        input_type: ValueType,
+        _input_type: ValueType,
         inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let condition = builder.alloc.value_stack.pop1();
-            debug_assert_eq!(condition, input_type);
-            builder.alloc.value_stack.push(ValueType::I32);
+            builder.stack_height.pop1();
+            builder.stack_height.push();
             builder.alloc.inst_builder.push_inst(inst);
             Ok(())
         })
@@ -1248,14 +1209,12 @@ impl<'parser> FuncBuilder<'parser> {
     /// - `{i32, u32, i64, u64, f32, f64}.ge`
     fn translate_binary_cmp(
         &mut self,
-        input_type: ValueType,
+        _input_type: ValueType,
         inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let (v0, v1) = builder.alloc.value_stack.pop2();
-            debug_assert_eq!(v0, v1);
-            debug_assert_eq!(v0, input_type);
-            builder.alloc.value_stack.push(ValueType::I32);
+            builder.stack_height.pop2();
+            builder.stack_height.push();
             builder.alloc.inst_builder.push_inst(inst);
             Ok(())
         })
@@ -1444,12 +1403,10 @@ impl<'parser> FuncBuilder<'parser> {
     /// - `{f32, f64}.sqrt`
     pub fn translate_unary_operation(
         &mut self,
-        value_type: ValueType,
+        _value_type: ValueType,
         inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let actual_type = builder.alloc.value_stack.top();
-            debug_assert_eq!(actual_type, value_type);
             builder.alloc.inst_builder.push_inst(inst);
             Ok(())
         })
@@ -1493,14 +1450,12 @@ impl<'parser> FuncBuilder<'parser> {
     /// - `{f32, f64}.copysign`
     pub fn translate_binary_operation(
         &mut self,
-        value_type: ValueType,
+        _value_type: ValueType,
         inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let (v0, v1) = builder.alloc.value_stack.pop2();
-            debug_assert_eq!(v0, v1);
-            debug_assert_eq!(v0, value_type);
-            builder.alloc.value_stack.push(value_type);
+            builder.stack_height.pop2();
+            builder.stack_height.push();
             builder.alloc.inst_builder.push_inst(inst);
             Ok(())
         })
@@ -1829,14 +1784,13 @@ impl<'parser> FuncBuilder<'parser> {
     /// - `f64.reinterpret_i64`
     pub fn translate_conversion(
         &mut self,
-        input_type: ValueType,
-        output_type: ValueType,
+        _input_type: ValueType,
+        _output_type: ValueType,
         inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let input = builder.alloc.value_stack.pop1();
-            debug_assert_eq!(input, input_type);
-            builder.alloc.value_stack.push(output_type);
+            builder.stack_height.pop1();
+            builder.stack_height.push();
             builder.alloc.inst_builder.push_inst(inst);
             Ok(())
         })
@@ -1849,72 +1803,72 @@ impl<'parser> FuncBuilder<'parser> {
 
     /// Translate a Wasm `i32.trunc_f32` instruction.
     pub fn translate_i32_trunc_f32_s(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncSF32)
+        self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncF32S)
     }
 
     /// Translate a Wasm `u32.trunc_f32` instruction.
     pub fn translate_i32_trunc_f32_u(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncUF32)
+        self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncF32U)
     }
 
     /// Translate a Wasm `i32.trunc_f64` instruction.
     pub fn translate_i32_trunc_f64_s(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncSF64)
+        self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncF64S)
     }
 
     /// Translate a Wasm `u32.trunc_f64` instruction.
     pub fn translate_i32_trunc_f64_u(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncUF64)
+        self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncF64U)
     }
 
     /// Translate a Wasm `i64.extend_i32` instruction.
     pub fn translate_i64_extend_i32_s(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::I32, ValueType::I64, Instruction::I64ExtendSI32)
+        self.translate_conversion(ValueType::I32, ValueType::I64, Instruction::I64ExtendI32S)
     }
 
     /// Translate a Wasm `u64.extend_i32` instruction.
     pub fn translate_i64_extend_i32_u(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::I32, ValueType::I64, Instruction::I64ExtendUI32)
+        self.translate_conversion(ValueType::I32, ValueType::I64, Instruction::I64ExtendI32U)
     }
 
     /// Translate a Wasm `i64.trunc_f32` instruction.
     pub fn translate_i64_trunc_f32_s(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncSF32)
+        self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncF32S)
     }
 
     /// Translate a Wasm `u64.trunc_f32` instruction.
     pub fn translate_i64_trunc_f32_u(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncUF32)
+        self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncF32U)
     }
 
     /// Translate a Wasm `i64.trunc_f64` instruction.
     pub fn translate_i64_trunc_f64_s(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncSF64)
+        self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncF64S)
     }
 
     /// Translate a Wasm `u64.trunc_f64` instruction.
     pub fn translate_i64_trunc_f64_u(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncUF64)
+        self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncF64U)
     }
 
     /// Translate a Wasm `f32.convert_i32` instruction.
     pub fn translate_f32_convert_i32_s(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::I32, ValueType::F32, Instruction::F32ConvertSI32)
+        self.translate_conversion(ValueType::I32, ValueType::F32, Instruction::F32ConvertI32S)
     }
 
     /// Translate a Wasm `f32.convert_u32` instruction.
     pub fn translate_f32_convert_i32_u(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::I32, ValueType::F32, Instruction::F32ConvertUI32)
+        self.translate_conversion(ValueType::I32, ValueType::F32, Instruction::F32ConvertI32U)
     }
 
     /// Translate a Wasm `f32.convert_i64` instruction.
     pub fn translate_f32_convert_i64_s(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::I64, ValueType::F32, Instruction::F32ConvertSI64)
+        self.translate_conversion(ValueType::I64, ValueType::F32, Instruction::F32ConvertI64S)
     }
 
     /// Translate a Wasm `f32.convert_u64` instruction.
     pub fn translate_f32_convert_i64_u(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::I64, ValueType::F32, Instruction::F32ConvertUI64)
+        self.translate_conversion(ValueType::I64, ValueType::F32, Instruction::F32ConvertI64U)
     }
 
     /// Translate a Wasm `f32.demote_f64` instruction.
@@ -1924,22 +1878,22 @@ impl<'parser> FuncBuilder<'parser> {
 
     /// Translate a Wasm `f64.convert_i32` instruction.
     pub fn translate_f64_convert_i32_s(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::I32, ValueType::F64, Instruction::F64ConvertSI32)
+        self.translate_conversion(ValueType::I32, ValueType::F64, Instruction::F64ConvertI32S)
     }
 
     /// Translate a Wasm `f64.convert_u32` instruction.
     pub fn translate_f64_convert_i32_u(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::I32, ValueType::F64, Instruction::F64ConvertUI32)
+        self.translate_conversion(ValueType::I32, ValueType::F64, Instruction::F64ConvertI32U)
     }
 
     /// Translate a Wasm `f64.convert_i64` instruction.
     pub fn translate_f64_convert_i64_s(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::I64, ValueType::F64, Instruction::F64ConvertSI64)
+        self.translate_conversion(ValueType::I64, ValueType::F64, Instruction::F64ConvertI64S)
     }
 
     /// Translate a Wasm `f64.convert_u64` instruction.
     pub fn translate_f64_convert_i64_u(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(ValueType::I64, ValueType::F64, Instruction::F64ConvertUI64)
+        self.translate_conversion(ValueType::I64, ValueType::F64, Instruction::F64ConvertI64U)
     }
 
     /// Translate a Wasm `f64.promote_f32` instruction.
