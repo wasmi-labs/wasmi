@@ -43,9 +43,8 @@ use crate::{
     MemoryType,
     TableType,
 };
-use alloc::{boxed::Box, vec::Vec};
+use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use core::{iter, slice::Iter as SliceIter};
-use alloc::sync::Arc;
 
 /// A parsed and validated WebAssembly module.
 #[derive(Debug)]

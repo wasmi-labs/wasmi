@@ -10,10 +10,10 @@ use super::{
     Stored,
     Table,
 };
-use alloc::sync::Arc;
 use crate::module::{FuncIdx, ModuleImportType};
 use alloc::{
     collections::{btree_map, BTreeMap},
+    sync::Arc,
     vec::Vec,
 };
 use core::iter::FusedIterator;
