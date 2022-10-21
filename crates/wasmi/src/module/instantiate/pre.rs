@@ -22,7 +22,7 @@ impl InstancePre {
 
     /// Returns the index of the `start` function if any.
     ///
-    /// Returns `None` if the [`Module`] does not have a `start` function.
+    /// Returns `None` if the Wasm module does not have a `start` function.
     fn start_fn(&self) -> Option<u32> {
         self.builder.get_start().map(FuncIdx::into_u32)
     }
