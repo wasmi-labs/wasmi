@@ -27,7 +27,7 @@ impl From<u16> for Pages {
     ///
     /// [`Pages::max()`]: struct.Pages.html#method.max
     fn from(amount: u16) -> Self {
-        Self(amount as u32)
+        Self(u32::from(amount))
     }
 }
 
@@ -53,7 +53,7 @@ impl Pages {
     {
         let lhs: u32 = self.into();
         let rhs: u32 = rhs.into();
-        lhs.checked_add(rhs.into()).and_then(Self::new)
+        lhs.checked_add(rhs).and_then(Self::new)
     }
 
     /// Returns the amount of bytes required for the amount of [`Pages`].
@@ -158,7 +158,7 @@ impl Bytes {
 
     /// Actual underlying implementation of [`Bytes::new`].
     fn new_impl(pages: Pages, max: u64) -> Option<Bytes> {
-        let pages = u32::from(pages) as u64;
+        let pages = u64::from(u32::from(pages));
         let bytes_per_page = usize::from(Self::per_page()) as u64;
         let bytes = pages
             .checked_mul(bytes_per_page)
