@@ -32,6 +32,11 @@ impl From<u16> for Pages {
 }
 
 impl Pages {
+    /// Returns the amount of bytes required for the amount of [`Pages`].
+    pub fn into_inner(self) -> u32 {
+        self.0
+    }
+
     /// Creates a new amount of [`Pages`] if the amount is within bounds.
     ///
     /// Returns `None` if the given `amount` of [`Pages`] exceeds [`Pages::max()`].
