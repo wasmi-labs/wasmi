@@ -66,6 +66,7 @@ criterion_group! {
         bench_execute_bare_call_4,
         bench_execute_bare_call_16,
         bench_execute_global_bump,
+        bench_execute_global_const,
         bench_execute_factorial,
         bench_execute_recursive_ok,
         bench_execute_recursive_scan,
@@ -531,6 +532,25 @@ fn bench_execute_global_bump(c: &mut Criterion) {
                 .call(&mut store, &[Value::I32(BUMP_AMOUNT)], &mut result)
                 .unwrap();
             assert_eq!(result, [Value::I32(BUMP_AMOUNT)]);
+        })
+    });
+}
+
+fn bench_execute_global_const(c: &mut Criterion) {
+    const LIMIT: i32 = 100_000;
+    c.bench_function("execute/global_const", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/global_const.wat"));
+        let count_until = instance
+            .get_export(&store, "call")
+            .and_then(Extern::into_func)
+            .unwrap();
+        let mut result = [Value::I32(0)];
+
+        b.iter(|| {
+            count_until
+                .call(&mut store, &[Value::I32(LIMIT)], &mut result)
+                .unwrap();
+            assert_eq!(result, [Value::I32(LIMIT)]);
         })
     });
 }
