@@ -89,14 +89,14 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
                 Instr::Br(params) => self.visit_br(params),
                 Instr::BrIfEqz(params) => self.visit_br_if_eqz(params),
                 Instr::BrIfNez(params) => self.visit_br_if_nez(params),
+                Instr::BrTable { len_targets } => self.visit_br_table(len_targets),
+                Instr::Unreachable => self.visit_unreachable()?,
+                Instr::Return(drop_keep) => return self.visit_ret(drop_keep),
                 Instr::ReturnIfNez(drop_keep) => {
                     if let MaybeReturn::Return = self.visit_return_if_nez(drop_keep) {
                         return Ok(CallOutcome::Return);
                     }
                 }
-                Instr::BrTable { len_targets } => self.visit_br_table(len_targets),
-                Instr::Unreachable => self.visit_unreachable()?,
-                Instr::Return(drop_keep) => return self.visit_ret(drop_keep),
                 Instr::Call(func) => return self.visit_call(func),
                 Instr::CallIndirect(signature) => return self.visit_call_indirect(signature),
                 Instr::Drop => self.visit_drop(),
