@@ -1909,15 +1909,10 @@ impl<'parser> FuncBuilder<'parser> {
     /// - `f64.reinterpret_i64`
     pub fn translate_reinterpret(
         &mut self,
-        input_type: ValueType,
-        output_type: ValueType,
+        _input_type: ValueType,
+        _output_type: ValueType,
     ) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|builder| {
-            let input = builder.alloc.value_stack.pop1();
-            debug_assert_eq!(input, input_type);
-            builder.alloc.value_stack.push(output_type);
-            Ok(())
-        })
+        Ok(())
     }
 
     /// Translate a Wasm `i32.reinterpret_f32` instruction.
