@@ -6,6 +6,35 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Additionally we have an `Internal` section for changes that are of interest to developers.
 
+## [0.19.0] - 2022-10-20
+
+### Fixed
+
+- Fixed a potential undefined behavior as reported by the `miri` tool
+  with respect to its experimental stacked borrows. (https://github.com/paritytech/wasmi/pull/524)
+
+### Changed
+
+- Optimized Wasm to `wasmi` translation phase by removing unnecessary Wasm
+  validation type checks. (https://github.com/paritytech/wasmi/pull/527)
+    - Speedups were in the range of 15%.
+- `Linker::instantiate` now takes `&self` instead of `&mut self`. (https://github.com/paritytech/wasmi/pull/512)
+  - This allows users to easily predefine a linker and reused its definitions
+    as shared resource.
+- Fixed a bug were `Caller::new` was public. (https://github.com/paritytech/wasmi/pull/514)
+  - It is now a private method as it was meant to be.
+- Optimized `TypedFunc::call` at slight cost of `Func::call`. (https://github.com/paritytech/wasmi/pull/522)
+  - For many parameters and return values the measured improvements are in the range of 25%.
+    Note that this is only significant for a large amount of host to Wasm calls of small functions.
+
+### Internal
+
+- Added new benchmarks and cleaned up benchmarking code in general.
+  - https://github.com/paritytech/wasmi/pull/525
+    https://github.com/paritytech/wasmi/pull/526
+    https://github.com/paritytech/wasmi/pull/521
+- Add `miri` testing to `wasmi` CI (https://github.com/paritytech/wasmi/pull/523)
+
 ## [0.18.1] - 2022-10-13
 
 ### Changed

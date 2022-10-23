@@ -97,6 +97,17 @@ If you struggle to get your PR into a shape that our CI accepts please feel
 free to reach out to the maintainers and provide them with the information
 they need in order to help unblock you.
 
+### Fuzz Testing
+
+Run `wasmi` fuzz tests using the following command:
+
+```
+cargo +nightly fuzz run <target>
+```
+Where `<target>` is the name of any of the files under `fuzz/fuzz_targets`
+directory. Unfortunately `+nightly` is required because the `cargo fuzz` tool
+does not work on the stable Rust channel.
+
 ## Optimizations
 
 If you are working on changes that are going to optimize any part of the `wasmi`

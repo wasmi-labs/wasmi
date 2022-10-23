@@ -2,8 +2,8 @@ use super::ModuleImportType;
 use crate::{
     engine::DedupFuncType,
     errors::{MemoryError, TableError},
+    global::GlobalError,
     Extern,
-    GlobalType,
     Table,
 };
 use core::{fmt, fmt::Display};
@@ -33,13 +33,8 @@ pub enum InstantiationError {
     Table(TableError),
     /// Occurs when an imported memory does not satisfy the required memory type.
     Memory(MemoryError),
-    /// Caused when a global variable has a mismatching global variable type and mutability.
-    GlobalTypeMismatch {
-        /// The expected global type for the global variable import.
-        expected: GlobalType,
-        /// The actual global type found for the global variable import.
-        actual: GlobalType,
-    },
+    /// Occurs when an imported global variable does not satisfy the required global type.
+    Global(GlobalError),
     /// Caused when an element segment does not fit into the specified table instance.
     ElementSegmentDoesNotFit {
         /// The table of the element segment.
@@ -78,11 +73,6 @@ impl Display for InstantiationError {
                     expected, actual
                 )
             }
-            Self::GlobalTypeMismatch { expected, actual } => write!(
-                f,
-                "expected {:?} global type but found {:?} value type",
-                expected, actual,
-            ),
             Self::ElementSegmentDoesNotFit {
                 table,
                 offset,
@@ -97,6 +87,7 @@ impl Display for InstantiationError {
             }
             Self::Table(error) => Display::fmt(error, f),
             Self::Memory(error) => Display::fmt(error, f),
+            Self::Global(error) => Display::fmt(error, f),
         }
     }
 }
@@ -110,5 +101,11 @@ impl From<TableError> for InstantiationError {
 impl From<MemoryError> for InstantiationError {
     fn from(error: MemoryError) -> Self {
         Self::Memory(error)
+    }
+}
+
+impl From<GlobalError> for InstantiationError {
+    fn from(error: GlobalError) -> Self {
+        Self::Global(error)
     }
 }
