@@ -12,6 +12,7 @@ mod parser;
 mod read;
 mod utils;
 
+pub(crate) use self::init_expr::InitExpr;
 use self::{
     builder::ModuleBuilder,
     data::DataSegment,
@@ -19,7 +20,6 @@ use self::{
     export::Export,
     global::Global,
     import::{Import, ImportKind},
-    init_expr::InitExpr,
     parser::parse,
     read::ReadError,
 };

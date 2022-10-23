@@ -80,6 +80,13 @@ pub enum Mutability {
     Mutable,
 }
 
+impl Mutability {
+    /// Returns `true` if this mutability is constant.
+    pub fn is_const(&self) -> bool {
+        matches!(self, Self::Const)
+    }
+}
+
 /// The type of a global variable.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct GlobalType {
