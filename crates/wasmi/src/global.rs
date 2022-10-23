@@ -34,6 +34,13 @@ pub enum GlobalError {
         /// The type of the new value that mismatches the type of the global variable.
         encountered: ValueType,
     },
+    /// Occurs when a global type does not satisfy the constraints of another.
+    UnsatisfyingGlobalType {
+        /// The unsatisfying [`GlobalType`].
+        unsatisfying: GlobalType,
+        /// The required [`GlobalType`].
+        required: GlobalType,
+    },
 }
 
 impl Display for GlobalError {
@@ -48,6 +55,16 @@ impl Display for GlobalError {
                     f,
                     "type mismatch upon writing global variable. expected {} but encountered {}.",
                     expected, encountered,
+                )
+            }
+            Self::UnsatisfyingGlobalType {
+                unsatisfying,
+                required,
+            } => {
+                write!(
+                    f,
+                    "global type {:?} does not satisfy requirements of {:?}",
+                    unsatisfying, required,
                 )
             }
         }
@@ -88,6 +105,22 @@ impl GlobalType {
     /// Returns the [`Mutability`] of the global variable.
     pub fn mutability(&self) -> Mutability {
         self.mutability
+    }
+
+    /// Checks if `self` satisfies the given `GlobalType`.
+    ///
+    /// # Errors
+    ///
+    /// - If the initial limits of the `required` [`GlobalType`] are greater than `self`.
+    /// - If the maximum limits of the `required` [`GlobalType`] are greater than `self`.
+    pub(crate) fn satisfies(&self, required: &GlobalType) -> Result<(), GlobalError> {
+        if self != required {
+            return Err(GlobalError::UnsatisfyingGlobalType {
+                unsatisfying: *self,
+                required: *required,
+            });
+        }
+        Ok(())
     }
 }
 

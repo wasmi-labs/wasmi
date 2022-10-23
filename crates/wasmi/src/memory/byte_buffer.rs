@@ -1,4 +1,3 @@
-use super::{max_memory_len, MemoryError};
 use alloc::{vec, vec::Vec};
 
 /// A `Vec`-based byte buffer implementation.
@@ -20,28 +19,20 @@ impl ByteBuffer {
     ///
     /// - If the initial length is 0.
     /// - If the initial length exceeds the maximum supported limit.
-    pub fn new(initial_len: usize) -> Result<Self, MemoryError> {
-        if initial_len > max_memory_len() {
-            return Err(MemoryError::OutOfBoundsAllocation);
+    pub fn new(initial_len: usize) -> Self {
+        Self {
+            bytes: vec![0x00_u8; initial_len],
         }
-        let bytes = vec![0x00_u8; initial_len];
-        Ok(Self { bytes })
     }
 
-    /// Grows the byte buffer by the given delta.
+    /// Grows the byte buffer to the given `new_size`.
     ///
-    /// # Errors
+    /// # Panics
     ///
-    /// If the new length of the byte buffer would exceed the maximum supported limit.
-    pub fn grow(&mut self, delta: usize) -> Result<(), MemoryError> {
-        let new_len = self
-            .len()
-            .checked_add(delta)
-            .filter(|&new_len| new_len < max_memory_len())
-            .ok_or(MemoryError::OutOfBoundsGrowth)?;
-        assert!(new_len >= self.len());
-        self.bytes.resize(new_len, 0x00_u8);
-        Ok(())
+    /// If the current size of the [`ByteBuffer`] is larger than `new_size`.
+    pub fn grow(&mut self, new_size: usize) {
+        assert!(new_size >= self.len());
+        self.bytes.resize(new_size, 0x00_u8);
     }
 
     /// Returns the length of the byte buffer in bytes.

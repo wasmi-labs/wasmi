@@ -5,16 +5,19 @@ use super::{
     Func,
     Global,
     Memory,
+    Module,
     StoreContext,
     Stored,
     Table,
 };
+use crate::module::{FuncIdx, ModuleImportType};
 use alloc::{
+    boxed::Box,
     collections::{btree_map, BTreeMap},
-    string::{String, ToString},
+    sync::Arc,
     vec::Vec,
 };
-use core::{iter::FusedIterator, ops::Deref};
+use core::iter::FusedIterator;
 use wasmi_arena::Index;
 
 /// A raw index to a module instance entity.
@@ -38,12 +41,12 @@ impl Index for InstanceIdx {
 #[derive(Debug)]
 pub struct InstanceEntity {
     initialized: bool,
-    func_types: Vec<DedupFuncType>,
-    tables: Vec<Table>,
-    funcs: Vec<Func>,
-    memories: Vec<Memory>,
-    globals: Vec<Global>,
-    exports: BTreeMap<String, Extern>,
+    func_types: Arc<[DedupFuncType]>,
+    tables: Box<[Table]>,
+    funcs: Box<[Func]>,
+    memories: Box<[Memory]>,
+    globals: Box<[Global]>,
+    exports: BTreeMap<Box<str>, Extern>,
 }
 
 impl InstanceEntity {
@@ -51,28 +54,18 @@ impl InstanceEntity {
     pub(crate) fn uninitialized() -> InstanceEntity {
         Self {
             initialized: false,
-            func_types: Vec::new(),
-            tables: Vec::new(),
-            funcs: Vec::new(),
-            memories: Vec::new(),
-            globals: Vec::new(),
+            func_types: Arc::new([]),
+            tables: [].into(),
+            funcs: [].into(),
+            memories: [].into(),
+            globals: [].into(),
             exports: BTreeMap::new(),
         }
     }
 
     /// Creates a new [`InstanceEntityBuilder`].
-    pub(crate) fn build() -> InstanceEntityBuilder {
-        InstanceEntityBuilder {
-            instance: Self {
-                initialized: false,
-                func_types: Vec::default(),
-                tables: Vec::default(),
-                funcs: Vec::default(),
-                memories: Vec::default(),
-                globals: Vec::default(),
-                exports: BTreeMap::default(),
-            },
-        }
+    pub(crate) fn build(module: &Module) -> InstanceEntityBuilder {
+        InstanceEntityBuilder::new(module)
     }
 
     /// Returns `true` if the [`InstanceEntity`] has been fully initialized.
@@ -121,23 +114,28 @@ impl InstanceEntity {
 /// An iterator over the [`Extern`] declarations of an [`Instance`].
 #[derive(Debug)]
 pub struct ExportsIter<'a> {
-    iter: btree_map::Iter<'a, String, Extern>,
+    iter: btree_map::Iter<'a, Box<str>, Extern>,
 }
 
 impl<'a> ExportsIter<'a> {
     /// Creates a new [`ExportsIter`].
-    fn new(iter: btree_map::Iter<'a, String, Extern>) -> Self {
+    fn new(iter: btree_map::Iter<'a, Box<str>, Extern>) -> Self {
         Self { iter }
     }
 
     /// Prepares an item to match the expected iterator `Item` signature.
-    fn convert_item((name, export): (&'a String, &'a Extern)) -> (&'a str, &'a Extern) {
-        (name.as_str(), export)
+    #[allow(clippy::borrowed_box)]
+    fn convert_item((name, export): (&'a Box<str>, &'a Extern)) -> (&'a str, &'a Extern) {
+        (&**name, export)
     }
 }
 
 impl<'a> Iterator for ExportsIter<'a> {
     type Item = (&'a str, &'a Extern);
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
 
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next().map(Self::convert_item)
@@ -161,37 +159,147 @@ impl FusedIterator for ExportsIter<'_> {}
 /// A module instance entity builder.
 #[derive(Debug)]
 pub struct InstanceEntityBuilder {
-    /// The [`InstanceEntity`] under construction.
-    instance: InstanceEntity,
+    func_types: Arc<[DedupFuncType]>,
+    tables: Vec<Table>,
+    funcs: Vec<Func>,
+    memories: Vec<Memory>,
+    globals: Vec<Global>,
+    start_fn: Option<FuncIdx>,
+    exports: BTreeMap<Box<str>, Extern>,
 }
 
 impl InstanceEntityBuilder {
+    /// Creates a new [`InstanceEntityBuilder`] optimized for the [`Module`].
+    pub fn new(module: &Module) -> Self {
+        fn vec_with_capacity_exact<T>(capacity: usize) -> Vec<T> {
+            let mut v = Vec::new();
+            v.reserve_exact(capacity);
+            v
+        }
+        let mut len_funcs = module.len_funcs();
+        let mut len_globals = module.len_globals();
+        let mut len_tables = module.len_tables();
+        let mut len_memories = module.len_memories();
+        for import in module.imports() {
+            match import.item_type() {
+                ModuleImportType::Func(_) => {
+                    len_funcs += 1;
+                }
+                ModuleImportType::Table(_) => {
+                    len_tables += 1;
+                }
+                ModuleImportType::Memory(_) => {
+                    len_memories += 1;
+                }
+                ModuleImportType::Global(_) => {
+                    len_globals += 1;
+                }
+            }
+        }
+        Self {
+            func_types: Arc::new([]),
+            tables: vec_with_capacity_exact(len_tables),
+            funcs: vec_with_capacity_exact(len_funcs),
+            memories: vec_with_capacity_exact(len_memories),
+            globals: vec_with_capacity_exact(len_globals),
+            start_fn: None,
+            exports: BTreeMap::default(),
+        }
+    }
+
+    /// Sets the start function of the built instance.
+    ///
+    /// # Panics
+    ///
+    /// If the start function has already been set.
+    pub fn set_start(&mut self, start_fn: FuncIdx) {
+        match &mut self.start_fn {
+            Some(_) => panic!("already set start function"),
+            None => {
+                self.start_fn = Some(start_fn);
+            }
+        }
+    }
+
+    /// Returns the optional start function index.
+    pub fn get_start(&self) -> Option<FuncIdx> {
+        self.start_fn
+    }
+
+    /// Returns the linear memory at the `index`.
+    ///
+    /// # Panics
+    ///
+    /// If there is no linear memory at the given `index.
+    pub fn get_memory(&self, index: u32) -> Memory {
+        self.memories
+            .get(index as usize)
+            .copied()
+            .unwrap_or_else(|| panic!("missing `Memory` at index: {index}"))
+    }
+
+    /// Returns the table at the `index`.
+    ///
+    /// # Panics
+    ///
+    /// If there is no table at the given `index.
+    pub fn get_table(&self, index: u32) -> Table {
+        self.tables
+            .get(index as usize)
+            .copied()
+            .unwrap_or_else(|| panic!("missing `Table` at index: {index}"))
+    }
+
+    /// Returns the global variable at the `index`.
+    ///
+    /// # Panics
+    ///
+    /// If there is no global variable at the given `index.
+    pub fn get_global(&self, index: u32) -> Global {
+        self.globals
+            .get(index as usize)
+            .copied()
+            .unwrap_or_else(|| panic!("missing `Global` at index: {index}"))
+    }
+
+    /// Returns the function at the `index`.
+    ///
+    /// # Panics
+    ///
+    /// If there is no function at the given `index.
+    pub fn get_func(&self, index: u32) -> Func {
+        self.funcs
+            .get(index as usize)
+            .copied()
+            .unwrap_or_else(|| panic!("missing `Func` at index: {index}"))
+    }
+
     /// Pushes a new [`Memory`] to the [`InstanceEntity`] under construction.
-    pub(crate) fn push_memory(&mut self, memory: Memory) {
-        self.instance.memories.push(memory);
+    pub fn push_memory(&mut self, memory: Memory) {
+        self.memories.push(memory);
     }
 
     /// Pushes a new [`Table`] to the [`InstanceEntity`] under construction.
-    pub(crate) fn push_table(&mut self, table: Table) {
-        self.instance.tables.push(table);
+    pub fn push_table(&mut self, table: Table) {
+        self.tables.push(table);
     }
 
     /// Pushes a new [`Global`] to the [`InstanceEntity`] under construction.
-    pub(crate) fn push_global(&mut self, global: Global) {
-        self.instance.globals.push(global);
+    pub fn push_global(&mut self, global: Global) {
+        self.globals.push(global);
     }
 
     /// Pushes a new [`Func`] to the [`InstanceEntity`] under construction.
-    pub(crate) fn push_func(&mut self, func: Func) {
-        self.instance.funcs.push(func);
+    pub fn push_func(&mut self, func: Func) {
+        self.funcs.push(func);
     }
 
     /// Pushes a new deduplicated [`FuncType`] to the [`InstanceEntity`]
     /// under construction.
     ///
     /// [`FuncType`]: [`crate::FuncType`]
-    pub(crate) fn push_func_type(&mut self, func_type: DedupFuncType) {
-        self.instance.func_types.push(func_type);
+    pub fn set_func_types(&mut self, func_types: &Arc<[DedupFuncType]>) {
+        self.func_types = func_types.clone();
     }
 
     /// Pushes a new [`Extern`] under the given `name` to the [`InstanceEntity`] under construction.
@@ -199,28 +307,27 @@ impl InstanceEntityBuilder {
     /// # Panics
     ///
     /// If the name has already been used by an already pushed [`Extern`].
-    pub(crate) fn push_export(&mut self, name: &str, new_value: Extern) {
-        if let Some(old_value) = self.instance.exports.get(name) {
+    pub fn push_export(&mut self, name: &str, new_value: Extern) {
+        if let Some(old_value) = self.exports.get(name) {
             panic!(
                 "tried to register {:?} for name {} but name is already used by {:?}",
                 new_value, name, old_value,
             )
         }
-        self.instance.exports.insert(name.to_string(), new_value);
+        self.exports.insert(name.into(), new_value);
     }
 
     /// Finishes constructing the [`InstanceEntity`].
-    pub(crate) fn finish(mut self) -> InstanceEntity {
-        self.instance.initialized = true;
-        self.instance
-    }
-}
-
-impl Deref for InstanceEntityBuilder {
-    type Target = InstanceEntity;
-
-    fn deref(&self) -> &Self::Target {
-        &self.instance
+    pub fn finish(self) -> InstanceEntity {
+        InstanceEntity {
+            initialized: true,
+            func_types: self.func_types,
+            tables: self.tables.into(),
+            funcs: self.funcs.into(),
+            memories: self.memories.into(),
+            globals: self.globals.into(),
+            exports: self.exports,
+        }
     }
 }
 
