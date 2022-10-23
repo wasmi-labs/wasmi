@@ -38,6 +38,22 @@ impl InitExpr {
     pub fn operators(&self) -> &[InitExprOperand] {
         core::slice::from_ref(&self.op)
     }
+
+    /// Evaluates the given constant [`InitExpr`] if possible.
+    ///
+    /// Returns `None` if it is not possible to constant evaluate `expr`.
+    pub fn eval_const(&self) -> Option<Value> {
+        match self.op {
+            InitExprOperand::Const(value) => Some(value),
+            InitExprOperand::GlobalGet(_) => {
+                // Note: We do not need to handle `global.get` since
+                //       that is only allowed for imported non-mutable
+                //       global variables which have a value that is only
+                //       known post-instantiation time.
+                None
+            }
+        }
+    }
 }
 
 /// A single operand of an initializer expression.
