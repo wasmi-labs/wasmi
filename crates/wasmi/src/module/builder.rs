@@ -50,6 +50,13 @@ pub struct ModuleImports {
     pub(super) globals: Vec<ImportName>,
 }
 
+impl ModuleImports {
+    /// Returns the number of imported global variables.
+    pub fn len_globals(&self) -> usize {
+        self.globals.len()
+    }
+}
+
 /// The resources of a [`Module`] required for translating function bodies.
 #[derive(Debug, Copy, Clone)]
 pub struct ModuleResources<'a> {
@@ -80,6 +87,15 @@ impl<'a> ModuleResources<'a> {
     /// Returns the [`GlobalType`] the the indexed global variable.
     pub fn get_type_of_global(&self, global_idx: GlobalIdx) -> GlobalType {
         self.res.globals[global_idx.into_usize()]
+    }
+
+    /// Returns the global variable type and optional initial value.
+    pub fn get_global(&self, global_idx: GlobalIdx) -> (GlobalType, Option<&InitExpr>) {
+        let index = global_idx.into_u32() as usize;
+        let offset = self.res.imports.len_globals();
+        let global_type = self.res.globals[index];
+        let init_expr = self.res.globals_init.get(index + offset);
+        (global_type, init_expr)
     }
 }
 

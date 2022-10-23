@@ -799,11 +799,12 @@ impl<'parser> FuncBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let global_idx = GlobalIdx(global_idx);
             builder.stack_height.push();
-            let global_idx = global_idx.into_u32().into();
-            builder
-                .alloc
-                .inst_builder
-                .push_inst(Instruction::GlobalGet(global_idx));
+            let (global_type, init_value) = builder.res.get_global(global_idx);
+            let instr = match init_value.and_then(|expr| expr.eval_const()) {
+                Some(value) if global_type.mutability().is_const() => Instruction::constant(value),
+                _ => Instruction::GlobalGet(global_idx.into_u32().into()),
+            };
+            builder.alloc.inst_builder.push_inst(instr);
             Ok(())
         })
     }
