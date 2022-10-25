@@ -131,6 +131,6 @@ impl FuncTypeRegistry {
         let entity_index = self.unwrap_index(func_type.into_inner());
         self.func_types
             .get(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored function type: {:?}", entity_index))
+            .unwrap_or_else(|| panic!("failed to resolve stored function type: {entity_index:?}"))
     }
 }

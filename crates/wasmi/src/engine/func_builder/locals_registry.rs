@@ -46,8 +46,8 @@ impl LocalsRegistry {
         }
         self.len_registered = self.len_registered.checked_add(amount).unwrap_or_else(|| {
             panic!(
-                "tried to register too many local variables for function: got {}, additional {}",
-                self.len_registered, amount
+                "tried to register too many local variables for function: got {}, additional {amount}",
+                self.len_registered
             )
         });
     }
