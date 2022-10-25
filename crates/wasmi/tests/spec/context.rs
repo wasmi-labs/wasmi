@@ -60,19 +60,19 @@ impl<'a> TestContext<'a> {
             println!("print");
         });
         let print_i32 = Func::wrap(&mut store, |value: i32| {
-            println!("print: {}", value);
+            println!("print: {value}");
         });
         let print_f32 = Func::wrap(&mut store, |value: F32| {
-            println!("print: {:?}", value);
+            println!("print: {value:?}");
         });
         let print_f64 = Func::wrap(&mut store, |value: F64| {
-            println!("print: {:?}", value);
+            println!("print: {value:?}");
         });
         let print_i32_f32 = Func::wrap(&mut store, |v0: i32, v1: F32| {
-            println!("print: {:?} {:?}", v0, v1);
+            println!("print: {v0:?} {v1:?}");
         });
         let print_f64_f64 = Func::wrap(&mut store, |v0: F64, v1: F64| {
-            println!("print: {:?} {:?}", v0, v1);
+            println!("print: {v0:?} {v1:?}");
         });
         linker.define("spectest", "memory", default_memory).unwrap();
         linker.define("spectest", "table", default_table).unwrap();
