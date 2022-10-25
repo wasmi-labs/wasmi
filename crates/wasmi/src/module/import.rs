@@ -31,9 +31,9 @@ impl Display for ImportName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let module_name = &*self.module;
         if let Some(field_name) = self.field.as_deref() {
-            write!(f, "{}::{}", module_name, field_name)
+            write!(f, "{module_name}::{field_name}")
         } else {
-            write!(f, "{}", module_name)
+            write!(f, "{module_name}")
         }
     }
 }

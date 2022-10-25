@@ -315,9 +315,9 @@ impl<T> Linker<T> {
     fn insert(&mut self, key: ImportKey, item: Extern) -> Result<(), LinkerError> {
         match self.definitions.entry(key) {
             Entry::Occupied(_) => {
-                let (module_name, field_name) = self.resolve_import_key(key).unwrap_or_else(|| {
-                    panic!("encountered missing import names for key {:?}", key)
-                });
+                let (module_name, field_name) = self
+                    .resolve_import_key(key)
+                    .unwrap_or_else(|| panic!("encountered missing import names for key {key:?}"));
                 let import_name = ImportName::new(module_name, field_name);
                 return Err(LinkerError::DuplicateDefinition {
                     import_name,

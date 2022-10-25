@@ -24,9 +24,9 @@ impl Display for FuncType {
         write!(f, "fn(")?;
         let (params, results) = self.params_results();
         if let Some((first, rest)) = params.split_first() {
-            write!(f, "{}", first)?;
+            write!(f, "{first}")?;
             for param in rest {
-                write!(f, ", {}", param)?;
+                write!(f, ", {param}")?;
             }
         }
         write!(f, ")")?;
@@ -35,9 +35,9 @@ impl Display for FuncType {
             if !rest.is_empty() {
                 write!(f, "(")?;
             }
-            write!(f, "{}", first)?;
+            write!(f, "{first}")?;
             for result in rest {
-                write!(f, ", {}", result)?;
+                write!(f, ", {result}")?;
             }
             if !rest.is_empty() {
                 write!(f, ")")?;

@@ -63,14 +63,12 @@ impl Display for InstantiationError {
             ),
             Self::ImportsExternalsMismatch { expected, actual } => write!(
                 f,
-                "expected {:?} external for import but found {:?}",
-                expected, actual
+                "expected {expected:?} external for import but found {actual:?}",
             ),
             Self::SignatureMismatch { expected, actual } => {
                 write!(
                     f,
-                    "expected {:?} function signature but found {:?}",
-                    expected, actual
+                    "expected {expected:?} function signature but found {actual:?}",
                 )
             }
             Self::ElementSegmentDoesNotFit {
@@ -79,11 +77,10 @@ impl Display for InstantiationError {
                 amount,
             } => write!(
                 f,
-                "table {:?} does not fit {} elements starting from offset {}",
-                table, offset, amount,
+                "table {table:?} does not fit {offset} elements starting from offset {amount}",
             ),
             Self::FoundStartFn { index } => {
-                write!(f, "found an unexpected start function with index {}", index)
+                write!(f, "found an unexpected start function with index {index}")
             }
             Self::Table(error) => Display::fmt(error, f),
             Self::Memory(error) => Display::fmt(error, f),
