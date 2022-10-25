@@ -146,6 +146,7 @@ impl Tracer {
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn statistics_instructions<'a>(&mut self, module_instance: &ModuleRef) {
         let mut func_index = 0;
         let mut insts = vec![];

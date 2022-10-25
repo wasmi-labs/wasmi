@@ -32,7 +32,6 @@ use specs::{
     itable::{BinOp, BitOp, RelOp, ShiftOp},
     mtable::{MemoryReadSize, MemoryStoreSize, VarType},
     step::StepInfo,
-    types::Value,
 };
 use std::rc::Rc;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
@@ -2502,8 +2501,8 @@ impl FunctionContext {
 
     pub fn initialize(
         &mut self,
-        locals: &[Local],
-        value_stack: &mut ValueStack,
+        _locals: &[Local],
+        _value_stack: &mut ValueStack,
     ) -> Result<(), TrapCode> {
         debug_assert!(!self.is_initialized);
 
@@ -2659,6 +2658,7 @@ impl ValueStack {
         Ok(())
     }
 
+    #[allow(dead_code)]
     fn extend(&mut self, len: usize) -> Result<(), TrapCode> {
         let cells = self
             .buf
