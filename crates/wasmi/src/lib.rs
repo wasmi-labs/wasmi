@@ -78,7 +78,6 @@
     clippy::type_repetition_in_bounds,
     clippy::inconsistent_struct_constructor,
     clippy::default_trait_access,
-    clippy::map_unwrap_or,
     clippy::items_after_statements
 )]
 #![recursion_limit = "550"]

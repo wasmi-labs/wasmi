@@ -199,7 +199,7 @@ fn static_many_params_works() {
 fn setup_many_results() -> (Store<()>, Func) {
     let mut store = test_setup();
     // Function taking 16 arguments (maximum) and doing nothing.
-    let func = Func::wrap(&mut store, || ascending_tuple());
+    let func = Func::wrap(&mut store, ascending_tuple);
     (store, func)
 }
 

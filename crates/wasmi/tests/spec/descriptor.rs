@@ -20,10 +20,9 @@ impl TestDescriptor {
     ///
     /// If the corresponding Wasm test spec file cannot properly be read.
     pub fn new(name: &str) -> Self {
-        let path = format!("tests/spec/{}.wast", name);
-        let file = fs::read_to_string(&path).unwrap_or_else(|error| {
-            panic!("{}, failed to read `.wast` test file: {}", path, error)
-        });
+        let path = format!("tests/spec/{name}.wast");
+        let file = fs::read_to_string(&path)
+            .unwrap_or_else(|error| panic!("{path}, failed to read `.wast` test file: {error}"));
         Self { path, file }
     }
 
@@ -61,6 +60,6 @@ pub struct TestSpan<'a> {
 impl Display for TestSpan<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (line, col) = self.span.linecol_in(self.contents);
-        write!(f, "{}:{}:{}", self.path, line, col)
+        write!(f, "{}:{line}:{col}", self.path)
     }
 }

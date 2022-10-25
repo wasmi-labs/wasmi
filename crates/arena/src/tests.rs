@@ -10,7 +10,7 @@ impl Index for usize {
     }
 }
 
-const TEST_ENTITIES: &[&'static str] = &["a", "b", "c", "d"];
+const TEST_ENTITIES: &[&str] = &["a", "b", "c", "d"];
 
 mod arena {
     use super::*;

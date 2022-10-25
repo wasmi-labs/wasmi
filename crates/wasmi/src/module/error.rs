@@ -22,7 +22,7 @@ pub enum ModuleError {
 impl ModuleError {
     pub(crate) fn unsupported(definition: impl Debug) -> Self {
         Self::Unsupported {
-            message: format!("{:?}", definition).into(),
+            message: format!("{definition:?}").into(),
         }
     }
 }
@@ -34,11 +34,7 @@ impl Display for ModuleError {
             ModuleError::Parser(error) => Display::fmt(error, f),
             ModuleError::Translation(error) => Display::fmt(error, f),
             ModuleError::Unsupported { message } => {
-                write!(
-                    f,
-                    "encountered unsupported Wasm proposal item: {:?}",
-                    message
-                )
+                write!(f, "encountered unsupported Wasm proposal item: {message:?}",)
             }
         }
     }

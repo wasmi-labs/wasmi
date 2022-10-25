@@ -145,7 +145,7 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                             error
                         )
                     });
-                assert_results(&test_context, span, &results, &expected);
+                assert_results(test_context, span, &results, &expected);
             }
             WastDirective::AssertExhaustion {
                 span,
@@ -178,13 +178,12 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
             }
             WastDirective::AssertException { span, exec } => {
                 test_context.profile().bump_assert_exception();
-                match execute_wast_execute(test_context, span, exec) {
-                    Ok(results) => panic!(
+                if let Ok(results) = execute_wast_execute(test_context, span, exec) {
+                    panic!(
                         "{}: expected to fail due to exception but succeeded with: {:?}",
                         test_context.spanned(span),
                         results
-                    ),
-                    Err(_) => {}
+                    )
                 }
             }
         }

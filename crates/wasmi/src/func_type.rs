@@ -24,9 +24,9 @@ impl Display for FuncType {
         write!(f, "fn(")?;
         let (params, results) = self.params_results();
         if let Some((first, rest)) = params.split_first() {
-            write!(f, "{}", first)?;
+            write!(f, "{first}")?;
             for param in rest {
-                write!(f, ", {}", param)?;
+                write!(f, ", {param}")?;
             }
         }
         write!(f, ")")?;
@@ -35,9 +35,9 @@ impl Display for FuncType {
             if !rest.is_empty() {
                 write!(f, "(")?;
             }
-            write!(f, "{}", first)?;
+            write!(f, "{first}")?;
             for result in rest {
-                write!(f, ", {}", result)?;
+                write!(f, ", {result}")?;
             }
             if !rest.is_empty() {
                 write!(f, ")")?;
@@ -90,13 +90,13 @@ mod tests {
     #[test]
     fn display_0in_0out() {
         let func_type = FuncType::new([], []);
-        assert_eq!(format!("{}", func_type), String::from("fn()"),);
+        assert_eq!(format!("{func_type}"), String::from("fn()"),);
     }
 
     #[test]
     fn display_1in_1out() {
         let func_type = FuncType::new([ValueType::I32], [ValueType::I32]);
-        assert_eq!(format!("{}", func_type), String::from("fn(i32) -> i32"),);
+        assert_eq!(format!("{func_type}"), String::from("fn(i32) -> i32"),);
     }
 
     #[test]
@@ -111,7 +111,7 @@ mod tests {
             [],
         );
         assert_eq!(
-            format!("{}", func_type),
+            format!("{func_type}"),
             String::from("fn(i32, i64, f32, f64)"),
         );
     }
@@ -128,7 +128,7 @@ mod tests {
             ],
         );
         assert_eq!(
-            format!("{}", func_type),
+            format!("{func_type}"),
             String::from("fn() -> (i32, i64, f32, f64)"),
         );
     }
@@ -150,7 +150,7 @@ mod tests {
             ],
         );
         assert_eq!(
-            format!("{}", func_type),
+            format!("{func_type}"),
             String::from("fn(i32, i64, f32, f64) -> (i32, i64, f32, f64)"),
         );
     }
