@@ -176,10 +176,7 @@ impl TestContext<'_> {
     /// If there have been no Wasm module instances registered so far.
     pub fn instance_by_name_or_last(&self, name: Option<&str>) -> Result<Instance, TestError> {
         name.map(|name| self.instance_by_name(name))
-            .unwrap_or_else(|| {
-                self.last_instance
-                    .ok_or_else(|| TestError::NoModuleInstancesFound)
-            })
+            .unwrap_or_else(|| self.last_instance.ok_or(TestError::NoModuleInstancesFound))
     }
 
     /// Registers the given [`Instance`] with the given `name` and sets it as the last instance.
