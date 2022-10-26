@@ -3,6 +3,10 @@ use alloc::{sync::Arc, vec::Vec};
 use core::fmt::{self, Display};
 
 /// A function type representing a function's parameter and result types.
+///
+/// # Note
+///
+/// Can be cloned cheaply.
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub struct FuncType {
     /// The number of function parameters.
