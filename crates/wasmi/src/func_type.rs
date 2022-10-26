@@ -77,10 +77,6 @@ impl FuncType {
         &self.params_results[..self.len_params]
     }
 
-    // pub fn into_params(self) -> impl ExactSizeIterator<Item = ValueType> + 'static {
-    //     self.params_results[..self.len_params].iter().copied()
-    // }
-
     /// Returns the result types of the function type.
     pub fn results(&self) -> &[ValueType] {
         &self.params_results[self.len_params..]
