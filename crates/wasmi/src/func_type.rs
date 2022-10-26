@@ -57,18 +57,18 @@ impl Display for FuncType {
 }
 
 impl FuncType {
-    /// Creates a new function signature.
-    pub fn new<I, O>(inputs: I, outputs: O) -> Self
+    /// Creates a new [`FuncType`].
+    pub fn new<P, R>(params: P, results: R) -> Self
     where
-        I: IntoIterator<Item = ValueType>,
-        O: IntoIterator<Item = ValueType>,
+        P: IntoIterator<Item = ValueType>,
+        R: IntoIterator<Item = ValueType>,
     {
-        let mut inputs_outputs = inputs.into_iter().collect::<Vec<_>>();
-        let len_inputs = inputs_outputs.len();
-        inputs_outputs.extend(outputs);
+        let mut params_results = params.into_iter().collect::<Vec<_>>();
+        let len_params = params_results.len();
+        params_results.extend(results);
         Self {
-            params_results: inputs_outputs.into(),
-            len_params: len_inputs,
+            params_results: params_results.into(),
+            len_params,
         }
     }
 
