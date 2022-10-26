@@ -93,7 +93,58 @@ mod tests {
     use super::*;
     use core::borrow::Borrow;
 
-    fn assert_func_type(func_type: impl Borrow<FuncType>, expected: &str) {
+    #[test]
+    fn new_empty_works() {
+        let ft = FuncType::new([], []);
+        assert!(ft.params().is_empty());
+        assert!(ft.results().is_empty());
+        assert_eq!(ft.params(), ft.params_results().0);
+        assert_eq!(ft.results(), ft.params_results().1);
+    }
+
+    #[test]
+    fn new_works() {
+        let types = [
+            &[ValueType::I32][..],
+            &[ValueType::I64][..],
+            &[ValueType::F32][..],
+            &[ValueType::F64][..],
+            &[ValueType::I32, ValueType::I32][..],
+            &[ValueType::I32, ValueType::I32, ValueType::I32][..],
+            &[
+                ValueType::I32,
+                ValueType::I32,
+                ValueType::I32,
+                ValueType::I32,
+            ][..],
+            &[
+                ValueType::I32,
+                ValueType::I32,
+                ValueType::I32,
+                ValueType::I32,
+                ValueType::I32,
+                ValueType::I32,
+                ValueType::I32,
+                ValueType::I32,
+            ][..],
+            &[
+                ValueType::I32,
+                ValueType::I64,
+                ValueType::F32,
+                ValueType::F64,
+            ][..],
+        ];
+        for params in types {
+            for results in types {
+                let ft = FuncType::new(params.iter().copied(), results.iter().copied());
+                assert_eq!(ft.params(), params);
+                assert_eq!(ft.results(), results);
+                assert_eq!(ft.params(), ft.params_results().0);
+                assert_eq!(ft.results(), ft.params_results().1);
+            }
+        }
+    }
+
     fn assert_display(func_type: impl Borrow<FuncType>, expected: &str) {
         assert_eq!(format!("{}", func_type.borrow()), String::from(expected),);
     }
