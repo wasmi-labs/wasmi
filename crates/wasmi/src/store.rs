@@ -256,7 +256,7 @@ impl<T> Store<T> {
         let entity_index = self.unwrap_index(table.into_inner());
         self.tables
             .get(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored table: {:?}", entity_index))
+            .unwrap_or_else(|| panic!("failed to resolve stored table: {entity_index:?}"))
     }
 
     /// Returns an exclusive reference to the associated entity of the table.
@@ -269,7 +269,7 @@ impl<T> Store<T> {
         let entity_index = self.unwrap_index(table.into_inner());
         self.tables
             .get_mut(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored table: {:?}", entity_index))
+            .unwrap_or_else(|| panic!("failed to resolve stored table: {entity_index:?}"))
     }
 
     /// Returns a shared reference to the associated entity of the linear memory.
@@ -282,7 +282,7 @@ impl<T> Store<T> {
         let entity_index = self.unwrap_index(memory.into_inner());
         self.memories
             .get(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored linear memory: {:?}", entity_index))
+            .unwrap_or_else(|| panic!("failed to resolve stored linear memory: {entity_index:?}"))
     }
 
     /// Returns an exclusive reference to the associated entity of the linear memory.
@@ -295,7 +295,7 @@ impl<T> Store<T> {
         let entity_index = self.unwrap_index(memory.into_inner());
         self.memories
             .get_mut(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored linear memory: {:?}", entity_index))
+            .unwrap_or_else(|| panic!("failed to resolve stored linear memory: {entity_index:?}"))
     }
 
     /// Returns an exclusive reference to the associated entity of the linear memory and an
@@ -310,9 +310,10 @@ impl<T> Store<T> {
         memory: Memory,
     ) -> (&mut MemoryEntity, &mut T) {
         let entity_index = self.unwrap_index(memory.into_inner());
-        let memory_entity = self.memories.get_mut(entity_index).unwrap_or_else(|| {
-            panic!("failed to resolve stored linear memory: {:?}", entity_index)
-        });
+        let memory_entity = self
+            .memories
+            .get_mut(entity_index)
+            .unwrap_or_else(|| panic!("failed to resolve stored linear memory: {entity_index:?}"));
         (memory_entity, &mut self.user_state)
     }
 

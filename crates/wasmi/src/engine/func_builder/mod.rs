@@ -313,7 +313,7 @@ impl<'parser> FuncBuilder<'parser> {
         stack_height
             .checked_add(len_params_locals)
             .and_then(|x| x.checked_sub(local_idx as usize))
-            .unwrap_or_else(|| panic!("cannot convert local index into local depth: {}", local_idx))
+            .unwrap_or_else(|| panic!("cannot convert local index into local depth: {local_idx}"))
     }
 
     /// Returns the target at the given `depth` together with its [`DropKeep`].

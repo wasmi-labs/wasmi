@@ -48,7 +48,7 @@ fn assert_func_body<E>(
                 (
                     index,
                     engine.resolve_inst(func_body, index).unwrap_or_else(|| {
-                        panic!("encountered missing instruction at position {}", index)
+                        panic!("encountered missing instruction at position {index}")
                     }),
                     expected,
                 )
@@ -57,16 +57,12 @@ fn assert_func_body<E>(
         assert_eq!(
             actual,
             expected,
-            "encountered instruction mismatch for {} at position {}",
+            "encountered instruction mismatch for {} at position {index}",
             engine.resolve_func_type(func_type, Clone::clone),
-            index
         );
     }
     if let Some(unexpected) = engine.resolve_inst(func_body, len_expected) {
-        panic!(
-            "encountered unexpected instruction at position {}: {:?}",
-            len_expected, unexpected,
-        );
+        panic!("encountered unexpected instruction at position {len_expected}: {unexpected:?}",);
     }
 }
 

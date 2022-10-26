@@ -248,25 +248,25 @@ impl<'a> Iterator for ModuleImportsIter<'a> {
             Some(imported) => match imported {
                 Imported::Func(name) => {
                     let func_type = self.funcs.next().unwrap_or_else(|| {
-                        panic!("unexpected missing imported function for {:?}", name)
+                        panic!("unexpected missing imported function for {name:?}")
                     });
                     ModuleImport::new(name, *func_type)
                 }
                 Imported::Table(name) => {
                     let table_type = self.tables.next().unwrap_or_else(|| {
-                        panic!("unexpected missing imported table for {:?}", name)
+                        panic!("unexpected missing imported table for {name:?}")
                     });
                     ModuleImport::new(name, *table_type)
                 }
                 Imported::Memory(name) => {
                     let memory_type = self.memories.next().unwrap_or_else(|| {
-                        panic!("unexpected missing imported linear memory for {:?}", name)
+                        panic!("unexpected missing imported linear memory for {name:?}")
                     });
                     ModuleImport::new(name, *memory_type)
                 }
                 Imported::Global(name) => {
                     let global_type = self.globals.next().unwrap_or_else(|| {
-                        panic!("unexpected missing imported global variable for {:?}", name)
+                        panic!("unexpected missing imported global variable for {name:?}")
                     });
                     ModuleImport::new(name, *global_type)
                 }

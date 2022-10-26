@@ -188,7 +188,7 @@ mod tests {
 
     #[test]
     fn pages_max() {
-        assert_eq!(Pages::max(), pages(u16::MAX as u32 + 1));
+        assert_eq!(Pages::max(), pages(u32::from(u16::MAX) + 1));
     }
 
     #[test]
@@ -196,9 +196,12 @@ mod tests {
         assert_eq!(Pages::new(0), Some(Pages(0)));
         assert_eq!(Pages::new(1), Some(Pages(1)));
         assert_eq!(Pages::new(1000), Some(Pages(1000)));
-        assert_eq!(Pages::new(u16::MAX as u32), Some(Pages(u16::MAX as u32)));
-        assert_eq!(Pages::new(u16::MAX as u32 + 1), Some(Pages::max()));
-        assert_eq!(Pages::new(u16::MAX as u32 + 2), None);
+        assert_eq!(
+            Pages::new(u32::from(u16::MAX)),
+            Some(Pages(u32::from(u16::MAX)))
+        );
+        assert_eq!(Pages::new(u32::from(u16::MAX) + 1), Some(Pages::max()));
+        assert_eq!(Pages::new(u32::from(u16::MAX) + 2), None);
         assert_eq!(Pages::new(u32::MAX), None);
     }
 
@@ -273,8 +276,8 @@ mod tests {
                 Some(bytes(n * bytes_per_page))
             );
         }
-        assert!(Bytes::new64(Pages(u16::MAX as u32 + 1)).is_some());
-        assert!(Bytes::new64(Pages(u16::MAX as u32 + 2)).is_none());
+        assert!(Bytes::new64(Pages(u32::from(u16::MAX) + 1)).is_some());
+        assert!(Bytes::new64(Pages(u32::from(u16::MAX) + 2)).is_none());
         assert!(Bytes::new64(Pages::max()).is_some());
     }
 }

@@ -172,6 +172,11 @@ jobs:
         with:
           command: clippy
           args: --workspace --no-default-features -- -D warnings
+      - name: Clippy (tests)
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --workspace --tests -- -D warnings
 
   coverage:
     name: Coverage
