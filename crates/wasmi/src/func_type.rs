@@ -23,20 +23,6 @@ pub struct FuncType {
     params_results: Arc<[ValueType]>,
 }
 
-/// Writes the elements of a `slice` separated by the `separator`.
-fn write_slice<T>(f: &mut fmt::Formatter, slice: &[T], separator: &str) -> fmt::Result
-where
-    T: Display,
-{
-    if let Some((first, rest)) = slice.split_first() {
-        write!(f, "{first}")?;
-        for param in rest {
-            write!(f, "{separator} {param}")?;
-        }
-    }
-    Ok(())
-}
-
 impl Display for FuncType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "fn(")?;
@@ -58,6 +44,20 @@ impl Display for FuncType {
         }
         Ok(())
     }
+}
+
+/// Writes the elements of a `slice` separated by the `separator`.
+fn write_slice<T>(f: &mut fmt::Formatter, slice: &[T], separator: &str) -> fmt::Result
+where
+    T: Display,
+{
+    if let Some((first, rest)) = slice.split_first() {
+        write!(f, "{first}")?;
+        for param in rest {
+            write!(f, "{separator} {param}")?;
+        }
+    }
+    Ok(())
 }
 
 impl FuncType {
