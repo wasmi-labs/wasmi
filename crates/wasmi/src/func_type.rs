@@ -94,27 +94,28 @@ mod tests {
     use core::borrow::Borrow;
 
     fn assert_func_type(func_type: impl Borrow<FuncType>, expected: &str) {
+    fn assert_display(func_type: impl Borrow<FuncType>, expected: &str) {
         assert_eq!(format!("{}", func_type.borrow()), String::from(expected),);
     }
 
     #[test]
     fn display_0in_0out() {
-        assert_func_type(FuncType::new([], []), "fn()");
+        assert_display(FuncType::new([], []), "fn()");
     }
 
     #[test]
     fn display_1in_0out() {
-        assert_func_type(FuncType::new([ValueType::I32], []), "fn(i32)");
+        assert_display(FuncType::new([ValueType::I32], []), "fn(i32)");
     }
 
     #[test]
     fn display_0in_1out() {
-        assert_func_type(FuncType::new([], [ValueType::I32]), "fn() -> i32");
+        assert_display(FuncType::new([], [ValueType::I32]), "fn() -> i32");
     }
 
     #[test]
     fn display_1in_1out() {
-        assert_func_type(
+        assert_display(
             FuncType::new([ValueType::I32], [ValueType::I32]),
             "fn(i32) -> i32",
         );
@@ -122,7 +123,7 @@ mod tests {
 
     #[test]
     fn display_4in_0out() {
-        assert_func_type(
+        assert_display(
             FuncType::new(
                 [
                     ValueType::I32,
@@ -138,7 +139,7 @@ mod tests {
 
     #[test]
     fn display_0in_4out() {
-        assert_func_type(
+        assert_display(
             FuncType::new(
                 [],
                 [
@@ -154,7 +155,7 @@ mod tests {
 
     #[test]
     fn display_4in_4out() {
-        assert_func_type(
+        assert_display(
             FuncType::new(
                 [
                     ValueType::I32,
