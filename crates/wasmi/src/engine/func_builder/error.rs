@@ -46,10 +46,10 @@ impl Display for TranslationError {
         match &*self.inner {
             TranslationErrorInner::Validate(error) => error.fmt(f),
             TranslationErrorInner::UnsupportedBlockType(error) => {
-                write!(f, "encountered unsupported Wasm block type: {:?}", error)
+                write!(f, "encountered unsupported Wasm block type: {error:?}")
             }
             TranslationErrorInner::UnsupportedValueType(error) => {
-                write!(f, "encountered unsupported Wasm value type: {:?}", error)
+                write!(f, "encountered unsupported Wasm value type: {error:?}")
             }
             TranslationErrorInner::DropKeep(error) => error.fmt(f),
         }
