@@ -386,17 +386,9 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     /// - `f64.store`
     fn execute_store<T>(&mut self, offset: Offset) -> Result<(), TrapCode>
     where
-        T: LittleEndianConvert + From<UntypedValue>,
+        T: WrapInto<T> + LittleEndianConvert + From<UntypedValue>,
     {
-        let (address, value) = self.value_stack.pop2();
-        let value = T::from(value);
-        let address = Self::effective_address(offset, u32::from(address))?;
-        let bytes = <T as LittleEndianConvert>::into_le_bytes(value);
-        self.cache
-            .default_memory_bytes(self.ctx.as_context_mut())
-            .write(address, bytes.as_ref())?;
-        self.next_instr();
-        Ok(())
+        self.execute_store_wrap::<T, T>(offset)
     }
 
     /// Stores a value of type `T` wrapped to type `U` into the default memory at the given address offset.
