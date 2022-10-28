@@ -333,21 +333,10 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     /// - `f64.load`
     fn execute_load<T>(&mut self, offset: Offset) -> Result<(), TrapCode>
     where
+        T: ExtendInto<T> + LittleEndianConvert,
         UntypedValue: From<T>,
-        T: LittleEndianConvert,
     {
-        self.value_stack.try_eval_top(|address| {
-            let raw_address = u32::from(address);
-            let address = Self::effective_address(offset, raw_address)?;
-            let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
-            self.cache
-                .default_memory_bytes(self.ctx.as_context_mut())
-                .read(address, bytes.as_mut())?;
-            let value = <T as LittleEndianConvert>::from_le_bytes(bytes);
-            Ok(value.into())
-        })?;
-        self.next_instr();
-        Ok(())
+        self.execute_load_extend::<T, T>(offset)
     }
 
     /// Loads a value of type `U` from the default memory at the given address offset and extends it into `T`.

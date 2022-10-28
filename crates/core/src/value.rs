@@ -626,10 +626,27 @@ impl_extend_into!(i64, f64, F64);
 impl_extend_into!(u64, f64, F64);
 impl_extend_into!(f32, f64, F64);
 
+impl_extend_into!(i32, i32);
+impl_extend_into!(i64, i64);
+
 impl ExtendInto<F64> for F32 {
     #[inline]
     fn extend_into(self) -> F64 {
         F64::from(f64::from(f32::from(self)))
+    }
+}
+
+impl ExtendInto<F64> for F64 {
+    #[inline]
+    fn extend_into(self) -> F64 {
+        self
+    }
+}
+
+impl ExtendInto<F32> for F32 {
+    #[inline]
+    fn extend_into(self) -> F32 {
+        self
     }
 }
 
