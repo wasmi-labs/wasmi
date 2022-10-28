@@ -648,10 +648,13 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     }
 
     fn visit_select(&mut self) {
-        self.value_stack.pop2_eval(|e1, e2, e3| {
+        self.value_stack.eval_top3(|e1, e2, e3| {
             let condition = <bool as From<UntypedValue>>::from(e3);
-            let result = if condition { *e1 } else { e2 };
-            *e1 = result;
+            if condition {
+                e1
+            } else {
+                e2
+            }
         });
         self.next_instr()
     }
