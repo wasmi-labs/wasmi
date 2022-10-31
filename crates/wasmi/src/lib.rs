@@ -86,7 +86,7 @@
 #[macro_use]
 extern crate alloc;
 #[cfg(feature = "std")]
-extern crate alloc;
+extern crate std as alloc;
 
 #[macro_use]
 mod foreach_tuple;
