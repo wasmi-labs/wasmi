@@ -416,8 +416,8 @@ impl FromValue for bool {
 impl FromValue for i8 {
     #[inline]
     fn from_value(val: Value) -> Option<Self> {
-        let min = i32::from(i8::min_value());
-        let max = i32::from(i8::max_value());
+        let min = i32::from(i8::MIN);
+        let max = i32::from(i8::MAx);
         match val {
             Value::I32(val) if min <= val && val <= max => Some(val as i8),
             _ => None,
@@ -431,8 +431,8 @@ impl FromValue for i8 {
 impl FromValue for i16 {
     #[inline]
     fn from_value(val: Value) -> Option<Self> {
-        let min = i32::from(i16::min_value());
-        let max = i32::from(i16::max_value());
+        let min = i32::from(i16::MIN);
+        let max = i32::from(i16::MAX);
         match val {
             Value::I32(val) if min <= val && val <= max => Some(val as i16),
             _ => None,
@@ -446,8 +446,8 @@ impl FromValue for i16 {
 impl FromValue for u8 {
     #[inline]
     fn from_value(val: Value) -> Option<Self> {
-        let min = i32::from(u8::min_value());
-        let max = i32::from(u8::max_value());
+        let min = i32::from(u8::MIN);
+        let max = i32::from(u8::MAX);
         match val {
             Value::I32(val) if min <= val && val <= max => Some(val as u8),
             _ => None,
@@ -461,8 +461,8 @@ impl FromValue for u8 {
 impl FromValue for u16 {
     #[inline]
     fn from_value(val: Value) -> Option<Self> {
-        let min = i32::from(u16::min_value());
-        let max = i32::from(u16::max_value());
+        let min = i32::from(u16::MIN);
+        let max = i32::from(u16::MAX);
         match val {
             Value::I32(val) if min <= val && val <= max => Some(val as u16),
             _ => None,
@@ -503,10 +503,6 @@ impl_wrap_into!(i64, i16);
 impl_wrap_into!(i64, i32);
 impl_wrap_into!(i64, f32, F32);
 impl_wrap_into!(u64, f32, F32);
-// Casting from an f64 to an f32 will produce the closest possible value (rounding strategy unspecified)
-// NOTE: currently this will cause Undefined Behavior if the value is finite but larger or smaller than the
-// largest or smallest finite value representable by f32. This is a bug and will be fixed.
-impl_wrap_into!(f64, f32);
 
 // Casting to self
 impl_wrap_into!(i32, i32);
@@ -616,13 +612,6 @@ impl_extend_into!(u16, i64);
 impl_extend_into!(i32, i64);
 impl_extend_into!(u32, i64);
 impl_extend_into!(u32, u64);
-impl_extend_into!(i32, f32);
-impl_extend_into!(i32, f64);
-impl_extend_into!(u32, f32);
-impl_extend_into!(u32, f64);
-impl_extend_into!(i64, f64);
-impl_extend_into!(u64, f64);
-impl_extend_into!(f32, f64);
 
 impl_extend_into!(i32, f32, F32);
 impl_extend_into!(i32, f64, F64);
