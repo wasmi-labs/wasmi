@@ -417,7 +417,7 @@ impl FromValue for i8 {
     #[inline]
     fn from_value(val: Value) -> Option<Self> {
         let min = i32::from(i8::MIN);
-        let max = i32::from(i8::MAx);
+        let max = i32::from(i8::MAX);
         match val {
             Value::I32(val) if min <= val && val <= max => Some(val as i8),
             _ => None,
