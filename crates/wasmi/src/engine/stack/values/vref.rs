@@ -211,22 +211,15 @@ impl<'a> ValueStackRef<'a> {
         )
     }
 
-    /// Evaluates `f` on the top three stack entries.
-    ///
-    /// In summary this procedure does the following:
-    ///
-    /// - Pop entry `e3`.
-    /// - Pop entry `e2`.
-    /// - Peek entry `&mut e1_ptr`.
-    /// - Evaluate `f(e1_ptr, e2, e3)`.
+    /// Evaluates the given closure `f` for the 3 top most stack values.
     #[inline]
-    pub fn pop2_eval<F>(&mut self, f: F)
+    pub fn eval_top3<F>(&mut self, f: F)
     where
-        F: FnOnce(&mut UntypedValue, UntypedValue, UntypedValue),
+        F: FnOnce(UntypedValue, UntypedValue, UntypedValue) -> UntypedValue,
     {
         let (e2, e3) = self.pop2();
-        let e1 = self.last_mut();
-        f(e1, e2, e3)
+        let e1 = self.last();
+        *self.last_mut() = f(e1, e2, e3)
     }
 
     /// Evaluates the given closure `f` for the top most stack value.
