@@ -508,6 +508,12 @@ impl_wrap_into!(u64, f32, F32);
 // largest or smallest finite value representable by f32. This is a bug and will be fixed.
 impl_wrap_into!(f64, f32);
 
+// Casting to self
+impl_wrap_into!(i32, i32);
+impl_wrap_into!(i64, i64);
+impl_wrap_into!(F32, F32);
+impl_wrap_into!(F64, F64);
+
 impl WrapInto<F32> for F64 {
     #[inline]
     fn wrap_into(self) -> F32 {
@@ -625,6 +631,12 @@ impl_extend_into!(u32, f64, F64);
 impl_extend_into!(i64, f64, F64);
 impl_extend_into!(u64, f64, F64);
 impl_extend_into!(f32, f64, F64);
+
+// Casting to self
+impl_extend_into!(i32, i32);
+impl_extend_into!(i64, i64);
+impl_extend_into!(F32, F32);
+impl_extend_into!(F64, F64);
 
 impl ExtendInto<F64> for F32 {
     #[inline]
