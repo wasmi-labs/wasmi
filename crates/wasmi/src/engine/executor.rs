@@ -333,21 +333,10 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     /// - `f64.load`
     fn execute_load<T>(&mut self, offset: Offset) -> Result<(), TrapCode>
     where
+        T: ExtendInto<T> + LittleEndianConvert,
         UntypedValue: From<T>,
-        T: LittleEndianConvert,
     {
-        self.value_stack.try_eval_top(|address| {
-            let raw_address = u32::from(address);
-            let address = Self::effective_address(offset, raw_address)?;
-            let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
-            self.cache
-                .default_memory_bytes(self.ctx.as_context_mut())
-                .read(address, bytes.as_mut())?;
-            let value = <T as LittleEndianConvert>::from_le_bytes(bytes);
-            Ok(value.into())
-        })?;
-        self.next_instr();
-        Ok(())
+        self.execute_load_extend::<T, T>(offset)
     }
 
     /// Loads a value of type `U` from the default memory at the given address offset and extends it into `T`.
@@ -397,17 +386,9 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     /// - `f64.store`
     fn execute_store<T>(&mut self, offset: Offset) -> Result<(), TrapCode>
     where
-        T: LittleEndianConvert + From<UntypedValue>,
+        T: WrapInto<T> + LittleEndianConvert + From<UntypedValue>,
     {
-        let (address, value) = self.value_stack.pop2();
-        let value = T::from(value);
-        let address = Self::effective_address(offset, u32::from(address))?;
-        let bytes = <T as LittleEndianConvert>::into_le_bytes(value);
-        self.cache
-            .default_memory_bytes(self.ctx.as_context_mut())
-            .write(address, bytes.as_ref())?;
-        self.next_instr();
-        Ok(())
+        self.execute_store_wrap::<T, T>(offset)
     }
 
     /// Stores a value of type `T` wrapped to type `U` into the default memory at the given address offset.
@@ -648,10 +629,13 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     }
 
     fn visit_select(&mut self) {
-        self.value_stack.pop2_eval(|e1, e2, e3| {
+        self.value_stack.eval_top3(|e1, e2, e3| {
             let condition = <bool as From<UntypedValue>>::from(e3);
-            let result = if condition { *e1 } else { e2 };
-            *e1 = result;
+            if condition {
+                e1
+            } else {
+                e2
+            }
         });
         self.next_instr()
     }
