@@ -26,7 +26,7 @@ impl GlobalIdx {
 pub struct Global {
     /// The type of the global variable.
     global_type: GlobalType,
-    /// The initial value of the global variabel.
+    /// The initial value of the global variable.
     ///
     /// # Note
     ///

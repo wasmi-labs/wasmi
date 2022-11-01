@@ -131,7 +131,7 @@ impl Module {
     /// # Errors
     ///
     /// - If the `stream` cannot be decoded into a valid Wasm module.
-    /// - If unsupported Wasm proposals are encounterd.
+    /// - If unsupported Wasm proposals are encountered.
     pub fn new(engine: &Engine, stream: impl Read) -> Result<Self, Error> {
         parse(engine, stream).map_err(Into::into)
     }
@@ -238,10 +238,6 @@ pub struct ModuleImportsIter<'a> {
 impl<'a> Iterator for ModuleImportsIter<'a> {
     type Item = ModuleImport<'a>;
 
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.names.size_hint()
-    }
-
     fn next(&mut self) -> Option<Self::Item> {
         let import = match self.names.next() {
             None => return None,
@@ -273,6 +269,10 @@ impl<'a> Iterator for ModuleImportsIter<'a> {
             },
         };
         Some(import)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.names.size_hint()
     }
 }
 
@@ -376,14 +376,14 @@ pub struct InternalFuncsIter<'a> {
 impl<'a> Iterator for InternalFuncsIter<'a> {
     type Item = (DedupFuncType, FuncBody);
 
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-
     fn next(&mut self) -> Option<Self::Item> {
         self.iter
             .next()
             .map(|(func_type, func_body)| (*func_type, *func_body))
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
     }
 }
 
@@ -402,12 +402,12 @@ pub struct InternalGlobalsIter<'a> {
 impl<'a> Iterator for InternalGlobalsIter<'a> {
     type Item = (&'a GlobalType, &'a InitExpr);
 
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
     }
 }
 
