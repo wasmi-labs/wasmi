@@ -30,6 +30,9 @@ criterion_group!(
     targets =
         bench_translate_wasm_kernel,
         bench_translate_spidermonkey,
+        bench_translate_erc20,
+        bench_translate_erc721,
+        bench_translate_erc1155,
 );
 criterion_group!(
     name = bench_instantiate;
@@ -82,9 +85,10 @@ const WASM_KERNEL: &str =
 const REVCOMP_INPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-input.txt");
 const REVCOMP_OUTPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-output.txt");
 
-fn bench_translate_wasm_kernel(c: &mut Criterion) {
-    c.bench_function("translate/wasm_kernel", |b| {
-        let wasm_bytes = load_wasm_from_file(WASM_KERNEL);
+fn bench_translate_for(c: &mut Criterion, name: &str, path: &str) {
+    let bench_id = format!("translate/{name}");
+    c.bench_function(&bench_id, |b| {
+        let wasm_bytes = load_wasm_from_file(path);
         b.iter(|| {
             let engine = Engine::default();
             let _module = Module::new(&engine, &wasm_bytes[..]).unwrap();
@@ -92,14 +96,24 @@ fn bench_translate_wasm_kernel(c: &mut Criterion) {
     });
 }
 
+fn bench_translate_wasm_kernel(c: &mut Criterion) {
+    bench_translate_for(c, "wasm_kernel", WASM_KERNEL)
+}
+
 fn bench_translate_spidermonkey(c: &mut Criterion) {
-    c.bench_function("translate/spidermonkey", |b| {
-        let wasm_bytes = load_wasm_from_file("benches/wasm/spidermonkey.wasm");
-        b.iter(|| {
-            let engine = Engine::default();
-            let _module = Module::new(&engine, &wasm_bytes[..]).unwrap();
-        })
-    });
+    bench_translate_for(c, "spidermonkey", "benches/wasm/spidermonkey.wasm")
+}
+
+fn bench_translate_erc20(c: &mut Criterion) {
+    bench_translate_for(c, "erc20", "benches/wasm/erc20.wasm")
+}
+
+fn bench_translate_erc721(c: &mut Criterion) {
+    bench_translate_for(c, "erc721", "benches/wasm/erc721.wasm")
+}
+
+fn bench_translate_erc1155(c: &mut Criterion) {
+    bench_translate_for(c, "erc1155", "benches/wasm/erc1155.wasm")
 }
 
 fn bench_instantiate_wasm_kernel(c: &mut Criterion) {
