@@ -29,6 +29,7 @@ criterion_group!(
         .warm_up_time(Duration::from_millis(1000));
     targets =
         bench_translate_wasm_kernel,
+        bench_translate_spidermonkey,
 );
 criterion_group!(
     name = bench_instantiate;
@@ -84,6 +85,16 @@ const REVCOMP_OUTPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-outpu
 fn bench_translate_wasm_kernel(c: &mut Criterion) {
     c.bench_function("translate/wasm_kernel", |b| {
         let wasm_bytes = load_wasm_from_file(WASM_KERNEL);
+        b.iter(|| {
+            let engine = Engine::default();
+            let _module = Module::new(&engine, &wasm_bytes[..]).unwrap();
+        })
+    });
+}
+
+fn bench_translate_spidermonkey(c: &mut Criterion) {
+    c.bench_function("translate/spidermonkey", |b| {
+        let wasm_bytes = load_wasm_from_file("benches/wasm/spidermonkey.wasm");
         b.iter(|| {
             let engine = Engine::default();
             let _module = Module::new(&engine, &wasm_bytes[..]).unwrap();
