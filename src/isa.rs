@@ -601,10 +601,22 @@ impl<'a> Instruction<'a> {
                 class: BinOp::Mul,
                 vtype: VarType::I32,
             },
-            Instruction::I32DivS => todo!(),
-            Instruction::I32DivU => todo!(),
-            Instruction::I32RemS => todo!(),
-            Instruction::I32RemU => todo!(),
+            Instruction::I32DivS => Opcode::Bin {
+                class: BinOp::SignedDiv,
+                vtype: VarType::I32,
+            },
+            Instruction::I32DivU => Opcode::Bin {
+                class: BinOp::UnsignedDiv,
+                vtype: VarType::I32,
+            },
+            Instruction::I32RemS => Opcode::Bin {
+                class: BinOp::SignedRem,
+                vtype: VarType::I32,
+            },
+            Instruction::I32RemU => Opcode::Bin {
+                class: BinOp::UnsignedRem,
+                vtype: VarType::I32,
+            },
             Instruction::I32And => Opcode::BinBit {
                 class: BitOp::And,
                 vtype: VarType::I32,
@@ -648,11 +660,26 @@ impl<'a> Instruction<'a> {
                 class: BinOp::Sub,
                 vtype: VarType::I64,
             },
-            Instruction::I64Mul => todo!(),
-            Instruction::I64DivS => todo!(),
-            Instruction::I64DivU => todo!(),
-            Instruction::I64RemS => todo!(),
-            Instruction::I64RemU => todo!(),
+            Instruction::I64Mul => Opcode::Bin {
+                class: BinOp::Mul,
+                vtype: VarType::I64,
+            },
+            Instruction::I64DivS => Opcode::Bin {
+                class: BinOp::SignedDiv,
+                vtype: VarType::I64,
+            },
+            Instruction::I64DivU => Opcode::Bin {
+                class: BinOp::UnsignedDiv,
+                vtype: VarType::I64,
+            },
+            Instruction::I64RemS => Opcode::Bin {
+                class: BinOp::SignedRem,
+                vtype: VarType::I64,
+            },
+            Instruction::I64RemU => Opcode::Bin {
+                class: BinOp::UnsignedRem,
+                vtype: VarType::I64,
+            },
             Instruction::I64And => Opcode::BinBit {
                 class: BitOp::And,
                 vtype: VarType::I64,
