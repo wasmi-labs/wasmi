@@ -21,11 +21,6 @@ use wasmi::{
 };
 use wasmi_core::{Pages, ValueType, F32, F64};
 
-const WASM_KERNEL: &str =
-    "benches/wasm/wasm_kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
-const REVCOMP_INPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-input.txt");
-const REVCOMP_OUTPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-output.txt");
-
 criterion_group!(
     name = bench_translate;
     config = Criterion::default()
@@ -80,6 +75,11 @@ criterion_group! {
 }
 
 criterion_main!(bench_translate, bench_instantiate, bench_execute);
+
+const WASM_KERNEL: &str =
+    "benches/wasm/wasm_kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
+const REVCOMP_INPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-input.txt");
+const REVCOMP_OUTPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-output.txt");
 
 fn bench_translate_wasm_kernel(c: &mut Criterion) {
     c.bench_function("translate/wasm_kernel", |b| {
