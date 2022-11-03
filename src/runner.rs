@@ -642,6 +642,10 @@ impl Interpreter {
             isa::Instruction::I32Add
             | isa::Instruction::I32Sub
             | isa::Instruction::I32Mul
+            | isa::Instruction::I32DivS
+            | isa::Instruction::I32DivU
+            | isa::Instruction::I32RemS
+            | isa::Instruction::I32RemU
             | isa::Instruction::I32Shl
             | isa::Instruction::I32ShrU
             | isa::Instruction::I32ShrS
@@ -656,6 +660,11 @@ impl Interpreter {
 
             isa::Instruction::I64Add
             | isa::Instruction::I64Sub
+            | isa::Instruction::I64Mul
+            | isa::Instruction::I64DivS
+            | isa::Instruction::I64DivU
+            | isa::Instruction::I64RemS
+            | isa::Instruction::I64RemU
             | isa::Instruction::I64Shl
             | isa::Instruction::I64ShrU
             | isa::Instruction::I64ShrS
@@ -1252,6 +1261,54 @@ impl Interpreter {
                     unreachable!()
                 }
             }
+            isa::Instruction::I32DivU => {
+                if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32BinOp {
+                        class: BinOp::UnsignedDiv,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I32RemU => {
+                if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32BinOp {
+                        class: BinOp::UnsignedRem,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I32DivS => {
+                if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32BinOp {
+                        class: BinOp::SignedDiv,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I32RemS => {
+                if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32BinOp {
+                        class: BinOp::SignedRem,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
             isa::Instruction::I32And => {
                 if let RunInstructionTracePre::I32BinOp { left, right } = pre_status.unwrap() {
                     StepInfo::I32BinBitOp {
@@ -1365,6 +1422,66 @@ impl Interpreter {
                 if let RunInstructionTracePre::I64BinOp { left, right } = pre_status.unwrap() {
                     StepInfo::I64BinOp {
                         class: BinOp::Sub,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64Mul => {
+                if let RunInstructionTracePre::I64BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64BinOp {
+                        class: BinOp::Mul,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64DivU => {
+                if let RunInstructionTracePre::I64BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64BinOp {
+                        class: BinOp::UnsignedDiv,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64RemU => {
+                if let RunInstructionTracePre::I64BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64BinOp {
+                        class: BinOp::UnsignedRem,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64DivS => {
+                if let RunInstructionTracePre::I64BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64BinOp {
+                        class: BinOp::SignedDiv,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64RemS => {
+                if let RunInstructionTracePre::I64BinOp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64BinOp {
+                        class: BinOp::SignedRem,
                         left,
                         right,
                         value: <_>::from_value_internal(*self.value_stack.top()),
