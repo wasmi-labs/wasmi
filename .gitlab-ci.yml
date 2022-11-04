@@ -35,7 +35,6 @@ criterion-benchmark:
     # Show Versions
     - cargo --version
     - rustc --version
-    - wasmtime --version
 
     - git fetch
     # Benchmark Branch: `master`
@@ -73,7 +72,6 @@ wasmtime-benchmark:
     # Show Versions
     - cargo --version
     - rustc --version
-    - wasmtime --version
 
     # Install dependencies
     - cargo install cargo-wasi
