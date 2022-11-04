@@ -31,11 +31,13 @@ pub struct UntypedValue {
 
 impl UntypedValue {
     /// Returns the underlying bits of the [`UntypedValue`].
+    #[inline]
     pub fn to_bits(self) -> u64 {
         self.bits
     }
 
     /// Converts the [`UntypedValue`] into a [`Value`].
+    #[inline]
     pub fn with_type(self, value_type: ValueType) -> Value {
         match value_type {
             ValueType::I32 => Value::I32(<_>::from(self)),
@@ -50,6 +52,7 @@ macro_rules! impl_from_untyped_for_int {
     ( $( $int:ty ),* $(,)? ) => {
         $(
             impl From<UntypedValue> for $int {
+                #[inline]
                 fn from(untyped: UntypedValue) -> Self {
                     untyped.to_bits() as _
                 }
@@ -63,6 +66,7 @@ macro_rules! impl_from_untyped_for_float {
     ( $( $float:ty ),* $(,)? ) => {
         $(
             impl From<UntypedValue> for $float {
+                #[inline]
                 fn from(untyped: UntypedValue) -> Self {
                     Self::from_bits(untyped.to_bits() as _)
                 }
@@ -73,12 +77,14 @@ macro_rules! impl_from_untyped_for_float {
 impl_from_untyped_for_float!(f32, f64, F32, F64);
 
 impl From<UntypedValue> for bool {
+    #[inline]
     fn from(untyped: UntypedValue) -> Self {
         untyped.to_bits() != 0
     }
 }
 
 impl From<Value> for UntypedValue {
+    #[inline]
     fn from(value: Value) -> Self {
         match value {
             Value::I32(value) => value.into(),
@@ -93,6 +99,7 @@ macro_rules! impl_from_unsigned_prim {
     ( $( $prim:ty ),* $(,)? ) => {
         $(
             impl From<$prim> for UntypedValue {
+                #[inline]
                 fn from(value: $prim) -> Self {
                     Self { bits: value as _ }
                 }
@@ -109,6 +116,7 @@ macro_rules! impl_from_signed_prim {
     ( $( $prim:ty as $base:ty ),* $(,)? ) => {
         $(
             impl From<$prim> for UntypedValue {
+                #[inline]
                 fn from(value: $prim) -> Self {
                     Self { bits: value as $base as _ }
                 }
@@ -128,6 +136,7 @@ macro_rules! impl_from_float {
     ( $( $float:ty ),* $(,)? ) => {
         $(
             impl From<$float> for UntypedValue {
+                #[inline]
                 fn from(value: $float) -> Self {
                     Self {
                         bits: value.to_bits() as _,
