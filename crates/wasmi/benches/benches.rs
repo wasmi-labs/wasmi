@@ -132,7 +132,7 @@ fn bench_instantiate_wasm_kernel(c: &mut Criterion) {
 
 fn bench_instantiate_contract(c: &mut Criterion, name: &str, path: &str) {
     let bench_id = format!("instantiate/{name}");
-    c.bench_function(&bench_id, |b| {
+    c.bench_function(&bench_id, |_b| {
         let module = load_module_from_file(path);
         let engine = module.engine();
         let mut store = Store::new(&engine, ());
@@ -240,9 +240,9 @@ fn bench_instantiate_contract(c: &mut Criterion, name: &str, path: &str) {
                 Func::wrap(&mut store, |_0: i32, _1: i32, _2: i32| unimplemented!()),
             )
             .unwrap();
-        b.iter(|| {
-            let _instance = linker.instantiate(&mut store, &module).unwrap();
-        })
+        // b.iter(|| {
+        //     let _instance = linker.instantiate(&mut store, &module).unwrap();
+        // })
     });
 }
 
