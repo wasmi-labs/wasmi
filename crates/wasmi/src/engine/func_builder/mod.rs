@@ -1905,6 +1905,9 @@ impl<'parser> FuncBuilder<'parser> {
 
     /// Translate a Wasm reinterpret instruction.
     ///
+    /// Since `wasmi` bytecode is untyped those reinterpret
+    /// instructions from Wasm are simply dropped from codegen.
+    ///
     /// - `i32.reinterpret_f32`
     /// - `i64.reinterpret_f64`
     /// - `f32.reinterpret_i32`
