@@ -25,7 +25,7 @@ extern crate alloc;
 extern crate std as alloc;
 
 pub use self::{
-    host_error::HostError,
+    host_error::{HostErrType, HostError},
     nan_preserving_float::{F32, F64},
     trap::{Trap, TrapCode},
     units::Pages,

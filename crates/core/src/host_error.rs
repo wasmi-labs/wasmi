@@ -60,3 +60,33 @@ use downcast_rs::{impl_downcast, DowncastSync};
 /// ```
 pub trait HostError: 'static + Display + Debug + DowncastSync {}
 impl_downcast!(HostError);
+
+#[derive(Debug)]
+pub enum HostErrType {
+    WithReason(String),
+    I32Exit(i32),
+}
+
+impl Display for HostErrType {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            HostErrType::WithReason(r) => f.debug_tuple("HostErrorWithReason").field(r).finish(),
+            HostErrType::I32Exit(i) => f
+                .debug_tuple("HostErrorI32Exit")
+                .field(&format!("{i}"))
+                .finish(),
+        }
+    }
+}
+
+impl HostErrType {
+    pub fn new_with_reason(reason: String) -> Self {
+        Self::WithReason(reason)
+    }
+
+    pub fn new_132_exit(i: i32) -> Self {
+        Self::I32Exit(i)
+    }
+}
+
+impl HostError for HostErrType {}
