@@ -1903,40 +1903,41 @@ impl<'parser> FuncBuilder<'parser> {
         self.translate_conversion(ValueType::F32, ValueType::F64, Instruction::F64PromoteF32)
     }
 
+    /// Translate a Wasm reinterpret instruction.
+    ///
+    /// Since `wasmi` bytecode is untyped those reinterpret
+    /// instructions from Wasm are simply dropped from codegen.
+    ///
+    /// - `i32.reinterpret_f32`
+    /// - `i64.reinterpret_f64`
+    /// - `f32.reinterpret_i32`
+    /// - `f64.reinterpret_i64`
+    pub fn translate_reinterpret(
+        &mut self,
+        _input_type: ValueType,
+        _output_type: ValueType,
+    ) -> Result<(), TranslationError> {
+        Ok(())
+    }
+
     /// Translate a Wasm `i32.reinterpret_f32` instruction.
     pub fn translate_i32_reinterpret_f32(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(
-            ValueType::F32,
-            ValueType::I32,
-            Instruction::I32ReinterpretF32,
-        )
+        self.translate_reinterpret(ValueType::F32, ValueType::I32)
     }
 
     /// Translate a Wasm `i64.reinterpret_f64` instruction.
     pub fn translate_i64_reinterpret_f64(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(
-            ValueType::F64,
-            ValueType::I64,
-            Instruction::I64ReinterpretF64,
-        )
+        self.translate_reinterpret(ValueType::F64, ValueType::I64)
     }
 
     /// Translate a Wasm `f32.reinterpret_i32` instruction.
     pub fn translate_f32_reinterpret_i32(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(
-            ValueType::I32,
-            ValueType::F32,
-            Instruction::F32ReinterpretI32,
-        )
+        self.translate_reinterpret(ValueType::I32, ValueType::F32)
     }
 
     /// Translate a Wasm `f64.reinterpret_i64` instruction.
     pub fn translate_f64_reinterpret_i64(&mut self) -> Result<(), TranslationError> {
-        self.translate_conversion(
-            ValueType::I64,
-            ValueType::F64,
-            Instruction::F64ReinterpretI64,
-        )
+        self.translate_reinterpret(ValueType::I64, ValueType::F64)
     }
 
     /// Translate a Wasm `i32.extend_8s` instruction.
