@@ -241,7 +241,10 @@ fn bench_instantiate_contract(c: &mut Criterion, name: &str, path: &str) {
             )
             .unwrap();
         b.iter(|| {
-            let _instance = linker.instantiate(&mut store, &module).unwrap();
+            let _instance = linker
+                .instantiate(&mut store, &module)
+                .unwrap()
+                .ensure_no_start(&mut store);
         })
     });
 }
