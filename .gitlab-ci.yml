@@ -32,6 +32,10 @@ criterion-benchmark:
     paths:
       - target/ci/
   script:
+    # Show Versions
+    - cargo --version
+    - rustc --version
+
     - git fetch
     # Benchmark Branch: `master`
     - git checkout master
@@ -65,6 +69,10 @@ wasmtime-benchmark:
     paths:
       - target/ci/
   script:
+    # Show Versions
+    - cargo --version
+    - rustc --version
+
     # Install dependencies
     - cargo install cargo-wasi
     - curl https://wasmtime.dev/install.sh -sSf | bash
