@@ -6,6 +6,39 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Additionally we have an `Internal` section for changes that are of interest to developers.
 
+## [0.20.0] - 2022-11-04
+
+### Added
+
+- Contribution documentation about fuzz testing. (https://github.com/paritytech/wasmi/pull/529)
+
+### Removed
+
+- Removed some deprecated functions in the `wasmi_core` crate. (https://github.com/paritytech/wasmi/pull/545)
+
+### Fixed
+
+- Fixed a critical performance regression introduced in Rust 1.65. (https://github.com/paritytech/wasmi/pull/518)
+  - While the PR's main job was to clean up some code it was found out that it
+    also fixes a critical performance regression introduced in Rust 1.65.
+  - You can read more about this performance regression [in this thread](https://github.com/rust-lang/rust/issues/102952).
+
+### Changed
+
+- Fixed handling of edge cases with respect to Wasm linear memory. (https://github.com/paritytech/wasmi/pull/449)
+  - This allows for `wasmi` to properly setup and use linear memory instances of up to 4GB.
+- Optimize and improve Wasm instantiation. (https://github.com/paritytech/wasmi/pull/531)
+- Optimize `global.get` of immutable non-imported globals. (https://github.com/paritytech/wasmi/pull/533)
+  - Also added a benchmark test for this. (https://github.com/paritytech/wasmi/pull/532)
+
+### Internal
+
+- Implemented miscellaneous improvements to our CI system.
+  - https://github.com/paritytech/wasmi/pull/539 (and more)
+- Miscellaneous clean ups in `wasmi_core` and `wasmi`'s executor.
+  - https://github.com/paritytech/wasmi/pull/542 https://github.com/paritytech/wasmi/pull/541
+  https://github.com/paritytech/wasmi/pull/508 https://github.com/paritytech/wasmi/pull/543
+
 ## [0.19.0] - 2022-10-20
 
 ### Fixed
@@ -31,8 +64,8 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 - Added new benchmarks and cleaned up benchmarking code in general.
   - https://github.com/paritytech/wasmi/pull/525
-    https://github.com/paritytech/wasmi/pull/526
-    https://github.com/paritytech/wasmi/pull/521
+  https://github.com/paritytech/wasmi/pull/526
+  https://github.com/paritytech/wasmi/pull/521
 - Add `miri` testing to `wasmi` CI (https://github.com/paritytech/wasmi/pull/523)
 
 ## [0.18.1] - 2022-10-13
