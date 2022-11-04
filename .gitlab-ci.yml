@@ -102,6 +102,8 @@ wasmtime-benchmark:
     - wasmtime run --dir=. ../../target/ci/benches-pr.wasm -- --bench --baseline master-wasm | tee ../../target/ci/wasmtime-pr
     - popd
     - mv ./crates/wasmi/target/criterion ./target/ci/wasmtime-criterion
+  tags:
+    - ci5
 
 # report
 publish-report:
