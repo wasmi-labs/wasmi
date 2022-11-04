@@ -31,7 +31,18 @@ criterion-benchmark:
     expire_in:                     1 days
     paths:
       - target/ci/
+  before_script:
+    - |-
+        timeout=30
+        passed=0
+        echo "Waiting for docker daemon to be fully started"
+        until [ -f "${DOCKER_CERT_PATH}/ca.pem" ] || [ ${timeout} -lt ${passed} ]; do
+          echo -n "."
+          passed=`expr $passed + 1`
+          sleep 1
+        done
   script:
+    - export RUST_BACKTRACE=1
     # Show Versions
     - cargo --version
     - rustc --version
@@ -69,6 +80,7 @@ wasmtime-benchmark:
     paths:
       - target/ci/
   script:
+    - export RUST_BACKTRACE=1
     # Show Versions
     - cargo --version
     - rustc --version
