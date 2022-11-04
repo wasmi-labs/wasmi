@@ -42,9 +42,9 @@ criterion_group!(
         .warm_up_time(Duration::from_millis(1000));
     targets =
         bench_instantiate_wasm_kernel,
-        bench_instantiate_erc20,
-        bench_instantiate_erc721,
-        bench_instantiate_erc1155,
+        // bench_instantiate_erc20,
+        // bench_instantiate_erc721,
+        // bench_instantiate_erc1155,
 );
 criterion_group! {
     name = bench_execute;
@@ -130,6 +130,7 @@ fn bench_instantiate_wasm_kernel(c: &mut Criterion) {
     });
 }
 
+#[allow(dead_code)]
 fn bench_instantiate_contract(c: &mut Criterion, name: &str, path: &str) {
     let bench_id = format!("instantiate/{name}");
     c.bench_function(&bench_id, |b| {
@@ -249,14 +250,17 @@ fn bench_instantiate_contract(c: &mut Criterion, name: &str, path: &str) {
     });
 }
 
+#[allow(dead_code)]
 fn bench_instantiate_erc20(c: &mut Criterion) {
     bench_instantiate_contract(c, "erc20", "benches/wasm/erc20.wasm")
 }
 
+#[allow(dead_code)]
 fn bench_instantiate_erc721(c: &mut Criterion) {
     bench_instantiate_contract(c, "erc721", "benches/wasm/erc721.wasm")
 }
 
+#[allow(dead_code)]
 fn bench_instantiate_erc1155(c: &mut Criterion) {
     bench_instantiate_contract(c, "erc1155", "benches/wasm/erc1155.wasm")
 }
