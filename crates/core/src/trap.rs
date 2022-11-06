@@ -28,6 +28,12 @@ fn trap_size() {
 enum TrapInner {
     /// Traps during Wasm execution.
     Code(TrapCode),
+    /// An `i32` exit code.
+    ///
+    /// # Note
+    ///
+    /// This is useful for some WASI functions.
+    I32Exit(i32),
     /// Traps and errors during host execution.
     Host(Box<dyn HostError>),
 }
@@ -43,6 +49,16 @@ impl TrapInner {
     #[inline]
     pub fn is_code(&self) -> bool {
         matches!(self, TrapInner::Code(_))
+    }
+
+    /// Returns the classic `i32` exit program code of a `Trap` if any.
+    ///
+    /// Otherwise returns `None`.
+    pub fn i32_exit_status(&self) -> Option<i32> {
+        if let Self::I32Exit(status) = self {
+            return Some(*status);
+        }
+        None
     }
 
     /// Returns a shared reference to the [`HostError`] if any.
@@ -91,12 +107,19 @@ impl Trap {
     }
 
     /// Wraps the host error in a [`Trap`].
-    #[cold]
+    #[cold] // traps are exceptional, this helps move handling off the main path
     pub fn host<U>(host_error: U) -> Self
     where
         U: HostError + Sized,
     {
         Self::new(TrapInner::Host(Box::new(host_error)))
+    }
+
+    /// Creates a new `Trap` representing an explicit program exit with a classic `i32`
+    /// exit status value.
+    #[cold] // see Trap::host
+    pub fn i32_exit(status: i32) -> Self {
+        Self::new(TrapInner::I32Exit(status))
     }
 
     /// Returns `true` if `self` trap originating from host code.
@@ -112,15 +135,27 @@ impl Trap {
     }
 
     /// Returns a shared reference to the [`HostError`] if any.
+    ///
+    /// Otherwise returns `None`.
     #[inline]
     pub fn as_host(&self) -> Option<&dyn HostError> {
         self.inner.as_host()
     }
 
     /// Returns an exclusive reference to the [`HostError`] if any.
+    ///
+    /// Otherwise returns `None`.
     #[inline]
     pub fn as_host_mut(&mut self) -> Option<&mut dyn HostError> {
         self.inner.as_host_mut()
+    }
+
+    /// Returns the classic `i32` exit program code of a `Trap` if any.
+    ///
+    /// Otherwise returns `None`.
+    #[inline]
+    pub fn i32_exit_status(&self) -> Option<i32> {
+        self.inner.i32_exit_status()
     }
 
     /// Converts into the [`HostError`] if any.
@@ -157,6 +192,7 @@ impl Display for TrapInner {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Code(trap_code) => Display::fmt(trap_code, f),
+            Self::I32Exit(status) => write!(f, "Exited with i32 exit status {}", status),
             Self::Host(host_error) => Display::fmt(host_error, f),
         }
     }
