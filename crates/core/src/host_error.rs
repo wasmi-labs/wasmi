@@ -16,7 +16,7 @@ use downcast_rs::{impl_downcast, DowncastSync};
 /// use std::fmt;
 /// use wasmi_core::{Trap, HostError};
 ///
-/// #[derive(Debug)]
+/// #[derive(Debug, Copy, Clone)]
 /// struct MyError {
 ///     code: u32,
 /// }
@@ -48,9 +48,9 @@ use downcast_rs::{impl_downcast, DowncastSync};
 /// // get the concrete error itself
 /// match failable_fn() {
 ///     Err(err) => {
-///         let my_error = match err {
-///             trap if trap.is_host() => trap.into_host().unwrap().downcast::<MyError>().unwrap(),
-///             unexpected => panic!("expected host error but found: {}", unexpected),
+///         let my_error = match err.as_host() {
+///             Some(host_error) => host_error.downcast_ref::<MyError>().unwrap().clone(),
+///             None => panic!("expected host error but found: {}", err),
 ///         };
 ///         assert_eq!(my_error.code, 1312);
 ///     }

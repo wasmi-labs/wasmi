@@ -1,5 +1,5 @@
 use crate::HostError;
-use alloc::boxed::Box;
+use alloc::{boxed::Box, sync::Arc};
 use core::fmt::{self, Display};
 
 #[cfg(feature = "std")]
@@ -9,10 +9,10 @@ use std::error::Error as StdError;
 ///
 /// Under some conditions, wasm execution may produce a `Trap`, which immediately aborts execution.
 /// Traps can't be handled by WebAssembly code, but are reported to the embedder.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Trap {
     /// The internal data structure of a [`Trap`].
-    inner: Box<TrapInner>,
+    inner: Arc<TrapInner>,
 }
 
 #[test]
@@ -70,24 +70,6 @@ impl TrapInner {
         None
     }
 
-    /// Returns an exclusive reference to the [`HostError`] if any.
-    #[inline]
-    pub fn as_host_mut(&mut self) -> Option<&mut dyn HostError> {
-        if let Self::Host(host_error) = self {
-            return Some(&mut **host_error);
-        }
-        None
-    }
-
-    /// Converts into the [`HostError`] if any.
-    #[inline]
-    pub fn into_host(self) -> Option<Box<dyn HostError>> {
-        if let Self::Host(host_error) = self {
-            return Some(host_error);
-        }
-        None
-    }
-
     /// Returns the [`TrapCode`] traps originating from Wasm execution.
     #[inline]
     pub fn trap_code(&self) -> Option<TrapCode> {
@@ -102,7 +84,7 @@ impl Trap {
     /// Create a new [`Trap`] from the [`TrapInner`].
     fn new(inner: TrapInner) -> Self {
         Self {
-            inner: Box::new(inner),
+            inner: Arc::new(inner),
         }
     }
 
@@ -142,12 +124,6 @@ impl Trap {
         self.inner.as_host()
     }
 
-    /// Returns an exclusive reference to the [`HostError`] if any.
-    ///
-    /// Otherwise returns `None`.
-    #[inline]
-    pub fn as_host_mut(&mut self) -> Option<&mut dyn HostError> {
-        self.inner.as_host_mut()
     }
 
     /// Returns the classic `i32` exit program code of a `Trap` if any.
@@ -156,12 +132,6 @@ impl Trap {
     #[inline]
     pub fn i32_exit_status(&self) -> Option<i32> {
         self.inner.i32_exit_status()
-    }
-
-    /// Converts into the [`HostError`] if any.
-    #[inline]
-    pub fn into_host(self) -> Option<Box<dyn HostError>> {
-        self.inner.into_host()
     }
 
     /// Returns the [`TrapCode`] traps originating from Wasm execution.
