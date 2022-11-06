@@ -85,13 +85,6 @@ impl Trap {
         Self::new(TrapInner::Host(Box::new(host_error)))
     }
 
-    /// Creates a new `Trap` representing an explicit program exit with a classic `i32`
-    /// exit status value.
-    #[cold] // see Trap::host
-    pub fn i32_exit(status: i32) -> Self {
-        Self::new(TrapInner::I32Exit(status))
-    }
-
     /// Returns a shared reference to the [`HostError`] if any.
     ///
     /// Otherwise returns `None`.
@@ -100,6 +93,11 @@ impl Trap {
         self.inner.as_host()
     }
 
+    /// Creates a new `Trap` representing an explicit program exit with a classic `i32`
+    /// exit status value.
+    #[cold] // see Trap::host
+    pub fn i32_exit(status: i32) -> Self {
+        Self::new(TrapInner::I32Exit(status))
     }
 
     /// Returns the classic `i32` exit program code of a `Trap` if any.
@@ -118,7 +116,7 @@ impl Trap {
 }
 
 impl From<TrapCode> for Trap {
-    #[cold]
+    #[cold] // see Trap::host
     fn from(error: TrapCode) -> Self {
         Self::new(TrapInner::Code(error))
     }
