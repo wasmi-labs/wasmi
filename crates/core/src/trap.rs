@@ -39,18 +39,6 @@ enum TrapInner {
 }
 
 impl TrapInner {
-    /// Returns `true` if `self` trap originating from host code.
-    #[inline]
-    pub fn is_host(&self) -> bool {
-        matches!(self, TrapInner::Host(_))
-    }
-
-    /// Returns `true` if `self` trap originating from Wasm code.
-    #[inline]
-    pub fn is_code(&self) -> bool {
-        matches!(self, TrapInner::Code(_))
-    }
-
     /// Returns the classic `i32` exit program code of a `Trap` if any.
     ///
     /// Otherwise returns `None`.
@@ -102,18 +90,6 @@ impl Trap {
     #[cold] // see Trap::host
     pub fn i32_exit(status: i32) -> Self {
         Self::new(TrapInner::I32Exit(status))
-    }
-
-    /// Returns `true` if `self` trap originating from host code.
-    #[inline]
-    pub fn is_host(&self) -> bool {
-        self.inner.is_host()
-    }
-
-    /// Returns `true` if `self` trap originating from Wasm code.
-    #[inline]
-    pub fn is_code(&self) -> bool {
-        self.inner.is_code()
     }
 
     /// Returns a shared reference to the [`HostError`] if any.

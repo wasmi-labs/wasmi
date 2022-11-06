@@ -37,7 +37,7 @@ use downcast_rs::{impl_downcast, DowncastSync};
 ///
 /// // Get a reference to the concrete error
 /// match failable_fn() {
-///     Err(trap) if trap.is_host() => {
+///     Err(trap) if trap.as_host().is_some() => {
 ///         let host_error = trap.as_host().unwrap();
 ///         let my_error: &MyError = host_error.downcast_ref::<MyError>().unwrap();
 ///         assert_eq!(my_error.code, 1312);
