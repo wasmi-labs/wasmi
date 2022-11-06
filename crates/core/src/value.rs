@@ -844,7 +844,7 @@ macro_rules! impl_integer {
                 }
                 match self.overflowing_div(other) {
                     (result, false) => Ok(result),
-                    (_, true) => Err(TrapCode::IntegerOverflow),
+                    _ => Err(TrapCode::IntegerOverflow),
                 }
             }
             #[inline]
