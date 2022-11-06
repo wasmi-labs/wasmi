@@ -164,16 +164,16 @@ impl StdError for Trap {
 pub enum TrapCode {
     /// Wasm code executed `unreachable` opcode.
     ///
-    /// `unreachable` is a special opcode which always traps upon execution.
+    /// This indicates that unreachable Wasm code was actually reached.
     /// This opcode have a similar purpose as `ud2` in x86.
-    Unreachable,
+    UnreachableCodeReached,
 
     /// Attempt to load or store at the address which
     /// lies outside of bounds of the memory.
     ///
     /// Since addresses are interpreted as unsigned integers, out of bounds access
     /// can't happen with negative addresses (i.e. they will always wrap).
-    MemoryAccessOutOfBounds,
+    MemoryOutOfBounds,
 
     /// Attempt to access table element at index which
     /// lies outside of bounds.
@@ -183,33 +183,30 @@ pub enum TrapCode {
     ///
     /// Since indexes are interpreted as unsigned integers, out of bounds access
     /// can't happen with negative indexes (i.e. they will always wrap).
-    TableAccessOutOfBounds,
+    TableOutOfBounds,
 
-    /// Attempt to access table element which is uninitialized (i.e. `None`).
-    ///
-    /// This typically can happen when `call_indirect` is executed.
-    ElemUninitialized,
+    /// Indicates that a `call_indirect` instruction called a function at
+    /// an uninitialized (i.e. `null`) table index.
+    IndirectCallToNull,
 
     /// Attempt to divide by zero.
     ///
     /// This trap typically can happen if `div` or `rem` is executed with
     /// zero as divider.
-    DivisionByZero,
+    IntegerDivisionByZero,
 
     /// An integer arithmetic operation caused an overflow.
     ///
-    /// This can happen when:
-    ///
-    /// - Trying to do signed division (or get the remainder) -2<sup>N-1</sup> over -1. This is
-    ///   because the result +2<sup>N-1</sup> isn't representable as a N-bit signed integer.
+    /// This can happen when trying to do signed division (or get the remainder)
+    /// -2<sup>N-1</sup> over -1. This is because the result +2<sup>N-1</sup>
+    /// isn't representable as a N-bit signed integer.
     IntegerOverflow,
 
-    /// Attempt to make a conversion to an int failed.
+    /// Attempted to make an invalid conversion to an integer type.
     ///
-    /// This can happen when:
-    ///
-    /// - Trying to truncate NaNs, infinity, or value for which the result is out of range into an integer.
-    InvalidConversionToInt,
+    /// This can for example happen when trying to truncate NaNs,
+    /// infinity, or value for which the result is out of range into an integer.
+    BadConversionToInteger,
 
     /// Stack overflow.
     ///
@@ -219,14 +216,11 @@ pub enum TrapCode {
 
     /// Attempt to invoke a function with mismatching signature.
     ///
-    /// This can happen if a Wasm or host function was invoked
-    /// with mismatching parameters or result values.
-    ///
-    /// This can always happen with indirect calls as they always
+    /// This can happen with indirect calls as they always
     /// specify the expected signature of function. If an indirect call is executed
     /// with an index that points to a function with signature different of what is
     /// expected by this indirect call, this trap is raised.
-    UnexpectedSignature,
+    BadSignature,
 }
 
 impl TrapCode {
@@ -238,15 +232,15 @@ impl TrapCode {
     /// other uses since it avoid heap memory allocation in certain cases.
     pub fn trap_message(&self) -> &'static str {
         match self {
-            Self::Unreachable => "unreachable",
-            Self::MemoryAccessOutOfBounds => "out of bounds memory access",
-            Self::TableAccessOutOfBounds => "undefined element",
-            Self::ElemUninitialized => "uninitialized element",
-            Self::DivisionByZero => "integer divide by zero",
+            Self::UnreachableCodeReached => "unreachable",
+            Self::MemoryOutOfBounds => "out of bounds memory access",
+            Self::TableOutOfBounds => "undefined element",
+            Self::IndirectCallToNull => "uninitialized element",
+            Self::IntegerDivisionByZero => "integer divide by zero",
             Self::IntegerOverflow => "integer overflow",
-            Self::InvalidConversionToInt => "invalid conversion to integer",
+            Self::BadConversionToInteger => "invalid conversion to integer",
             Self::StackOverflow => "call stack exhausted",
-            Self::UnexpectedSignature => "indirect call type mismatch",
+            Self::BadSignature => "indirect call type mismatch",
         }
     }
 }

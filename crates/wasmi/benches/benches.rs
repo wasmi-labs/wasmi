@@ -799,7 +799,7 @@ fn bench_execute_recursive_trap(c: &mut Criterion) {
             match error {
                 wasmi::Error::Trap(trap) => assert_matches::assert_matches!(
                     trap.trap_code(),
-                    Some(TrapCode::Unreachable),
+                    Some(TrapCode::UnreachableCodeReached),
                     "expected unreachable trap",
                 ),
                 _ => panic!("expected unreachable trap"),

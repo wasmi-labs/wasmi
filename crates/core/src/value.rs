@@ -511,7 +511,7 @@ macro_rules! impl_try_truncate_into {
             #[inline]
             fn try_truncate_into(self) -> Result<$into, TrapCode> {
                 if self.is_nan() {
-                    return Err(TrapCode::InvalidConversionToInt);
+                    return Err(TrapCode::BadConversionToInteger);
                 }
                 if self <= $rmin || self >= $rmax {
                     return Err(TrapCode::IntegerOverflow);
@@ -840,7 +840,7 @@ macro_rules! impl_integer {
             #[inline]
             fn div(self, other: $type) -> Result<$type, TrapCode> {
                 if other == 0 {
-                    return Err(TrapCode::DivisionByZero);
+                    return Err(TrapCode::IntegerDivisionByZero);
                 }
                 match self.overflowing_div(other) {
                     (result, false) => Ok(result),
@@ -850,7 +850,7 @@ macro_rules! impl_integer {
             #[inline]
             fn rem(self, other: Self) -> Result<Self, TrapCode> {
                 if other == 0 {
-                    return Err(TrapCode::DivisionByZero);
+                    return Err(TrapCode::IntegerDivisionByZero);
                 }
                 Ok(self.wrapping_rem(other))
             }

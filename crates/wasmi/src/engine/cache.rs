@@ -269,7 +269,7 @@ impl CachedMemoryBytes {
         let slice = self
             .data()
             .get(offset..(offset + len_buffer))
-            .ok_or(TrapCode::MemoryAccessOutOfBounds)?;
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
         buffer.copy_from_slice(slice);
         Ok(())
     }
@@ -286,7 +286,7 @@ impl CachedMemoryBytes {
         let slice = self
             .data_mut()
             .get_mut(offset..(offset + len_buffer))
-            .ok_or(TrapCode::MemoryAccessOutOfBounds)?;
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
         slice.copy_from_slice(buffer);
         Ok(())
     }
