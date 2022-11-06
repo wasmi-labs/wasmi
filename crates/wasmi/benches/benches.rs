@@ -42,6 +42,9 @@ criterion_group!(
         .warm_up_time(Duration::from_millis(1000));
     targets =
         bench_instantiate_wasm_kernel,
+        // bench_instantiate_erc20,
+        // bench_instantiate_erc721,
+        // bench_instantiate_erc1155,
 );
 criterion_group! {
     name = bench_execute;
@@ -125,6 +128,141 @@ fn bench_instantiate_wasm_kernel(c: &mut Criterion) {
             let _instance = linker.instantiate(&mut store, &module).unwrap();
         })
     });
+}
+
+#[allow(dead_code)]
+fn bench_instantiate_contract(c: &mut Criterion, name: &str, path: &str) {
+    let bench_id = format!("instantiate/{name}");
+    c.bench_function(&bench_id, |b| {
+        let module = load_module_from_file(path);
+        let engine = module.engine();
+        let mut store = Store::new(&engine, ());
+        let mut linker = <Linker<()>>::default();
+        linker
+            .define(
+                "env",
+                "memory",
+                wasmi::Memory::new(&mut store, wasmi::MemoryType::new(2, Some(16)).unwrap())
+                    .unwrap(),
+            )
+            .unwrap();
+        linker
+            .define(
+                "__unstable__",
+                "seal_get_storage",
+                Func::wrap(&mut store, |_0: i32, _1: i32, _2: i32, _3: i32| -> i32 {
+                    unimplemented!()
+                }),
+            )
+            .unwrap();
+        linker
+            .define(
+                "seal0",
+                "seal_value_transferred",
+                Func::wrap(&mut store, |_0: i32, _1: i32| unimplemented!()),
+            )
+            .unwrap();
+        linker
+            .define(
+                "seal0",
+                "seal_input",
+                Func::wrap(&mut store, |_0: i32, _1: i32| unimplemented!()),
+            )
+            .unwrap();
+        linker
+            .define(
+                "seal0",
+                "seal_caller",
+                Func::wrap(&mut store, |_0: i32, _1: i32| unimplemented!()),
+            )
+            .unwrap();
+        linker
+            .define(
+                "seal1",
+                "seal_call",
+                Func::wrap(
+                    &mut store,
+                    |_0: i32,
+                     _1: i32,
+                     _2: i64,
+                     _3: i32,
+                     _4: i32,
+                     _5: i32,
+                     _6: i32,
+                     _7: i32|
+                     -> i32 { unimplemented!() },
+                ),
+            )
+            .unwrap();
+        linker
+            .define(
+                "seal0",
+                "seal_deposit_event",
+                Func::wrap(
+                    &mut store,
+                    |_0: i32, _1: i32, _2: i32, _3: i32| unimplemented!(),
+                ),
+            )
+            .unwrap();
+        linker
+            .define(
+                "__unstable__",
+                "seal_set_storage",
+                Func::wrap(&mut store, |_0: i32, _1: i32, _2: i32, _3: i32| -> i32 {
+                    unimplemented!()
+                }),
+            )
+            .unwrap();
+        linker
+            .define(
+                "__unstable__",
+                "seal_clear_storage",
+                Func::wrap(&mut store, |_0: i32, _1: i32| -> i32 { unimplemented!() }),
+            )
+            .unwrap();
+        linker
+            .define(
+                "__unstable__",
+                "seal_contains_storage",
+                Func::wrap(&mut store, |_0: i32, _1: i32| -> i32 { unimplemented!() }),
+            )
+            .unwrap();
+        linker
+            .define(
+                "seal0",
+                "seal_return",
+                Func::wrap(&mut store, |_0: i32, _1: i32, _2: i32| unimplemented!()),
+            )
+            .unwrap();
+        linker
+            .define(
+                "seal0",
+                "seal_hash_blake2_256",
+                Func::wrap(&mut store, |_0: i32, _1: i32, _2: i32| unimplemented!()),
+            )
+            .unwrap();
+        b.iter(|| {
+            let _instance = linker
+                .instantiate(&mut store, &module)
+                .unwrap()
+                .ensure_no_start(&mut store);
+        })
+    });
+}
+
+#[allow(dead_code)]
+fn bench_instantiate_erc20(c: &mut Criterion) {
+    bench_instantiate_contract(c, "erc20", "benches/wasm/erc20.wasm")
+}
+
+#[allow(dead_code)]
+fn bench_instantiate_erc721(c: &mut Criterion) {
+    bench_instantiate_contract(c, "erc721", "benches/wasm/erc721.wasm")
+}
+
+#[allow(dead_code)]
+fn bench_instantiate_erc1155(c: &mut Criterion) {
+    bench_instantiate_contract(c, "erc1155", "benches/wasm/erc1155.wasm")
 }
 
 fn bench_execute_tiny_keccak(c: &mut Criterion) {
