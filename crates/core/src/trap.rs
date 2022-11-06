@@ -90,7 +90,7 @@ impl TrapInner {
 
     /// Returns the [`TrapCode`] traps originating from Wasm execution.
     #[inline]
-    pub fn as_code(&self) -> Option<TrapCode> {
+    pub fn trap_code(&self) -> Option<TrapCode> {
         if let Self::Code(trap_code) = self {
             return Some(*trap_code);
         }
@@ -166,8 +166,8 @@ impl Trap {
 
     /// Returns the [`TrapCode`] traps originating from Wasm execution.
     #[inline]
-    pub fn as_code(&self) -> Option<TrapCode> {
-        self.inner.as_code()
+    pub fn trap_code(&self) -> Option<TrapCode> {
+        self.inner.trap_code()
     }
 }
 
@@ -207,7 +207,7 @@ impl Display for Trap {
 #[cfg(feature = "std")]
 impl StdError for Trap {
     fn description(&self) -> &str {
-        self.as_code().map_or("", |code| code.trap_message())
+        self.trap_code().map_or("", |code| code.trap_message())
     }
 }
 
