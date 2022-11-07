@@ -11,8 +11,8 @@ use std::error::Error as StdError;
 /// Traps can't be handled by WebAssembly code, but are reported to the embedder.
 #[derive(Debug, Clone)]
 pub struct Trap {
-    /// The internal data structure of a [`Trap`].
-    inner: Arc<TrapInner>,
+    /// The cloneable reason of a [`Trap`].
+    reason: Arc<TrapReason>,
 }
 
 #[test]
@@ -23,9 +23,9 @@ fn trap_size() {
     );
 }
 
-/// The internal of a [`Trap`].
+/// The reason of a [`Trap`].
 #[derive(Debug)]
-enum TrapInner {
+enum TrapReason {
     /// Traps during Wasm execution.
     InstructionTrap(TrapCode),
     /// An `i32` exit status code.
@@ -40,7 +40,7 @@ enum TrapInner {
     Host(Box<dyn HostError>),
 }
 
-impl TrapInner {
+impl TrapReason {
     /// Returns the classic `i32` exit program code of a `Trap` if any.
     ///
     /// Otherwise returns `None`.
@@ -71,10 +71,10 @@ impl TrapInner {
 }
 
 impl Trap {
-    /// Create a new [`Trap`] from the [`TrapInner`].
-    fn from_inner(inner: TrapInner) -> Self {
+    /// Create a new [`Trap`] from the [`TrapReason`].
+    fn with_reason(reason: TrapReason) -> Self {
         Self {
-            inner: Arc::new(inner),
+            reason: Arc::new(reason),
         }
     }
 
@@ -84,7 +84,7 @@ impl Trap {
     where
         T: Into<String>,
     {
-        Self::from_inner(TrapInner::Message(message.into().into_boxed_str()))
+        Self::with_reason(TrapReason::Message(message.into().into_boxed_str()))
     }
 
     /// Returns a shared reference to the [`HostError`] if any.
@@ -92,14 +92,14 @@ impl Trap {
     /// Otherwise returns `None`.
     #[inline]
     pub fn as_host(&self) -> Option<&dyn HostError> {
-        self.inner.as_host()
+        self.reason.as_host()
     }
 
     /// Creates a new `Trap` representing an explicit program exit with a classic `i32`
     /// exit status value.
     #[cold] // see Trap::host
     pub fn i32_exit(status: i32) -> Self {
-        Self::from_inner(TrapInner::I32Exit(status))
+        Self::with_reason(TrapReason::I32Exit(status))
     }
 
     /// Returns the classic `i32` exit program code of a `Trap` if any.
@@ -107,13 +107,13 @@ impl Trap {
     /// Otherwise returns `None`.
     #[inline]
     pub fn i32_exit_status(&self) -> Option<i32> {
-        self.inner.i32_exit_status()
+        self.reason.i32_exit_status()
     }
 
     /// Returns the [`TrapCode`] traps originating from Wasm execution.
     #[inline]
     pub fn trap_code(&self) -> Option<TrapCode> {
-        self.inner.trap_code()
+        self.reason.trap_code()
     }
 }
 
@@ -121,7 +121,7 @@ impl From<TrapCode> for Trap {
     #[inline]
     #[cold] // see Trap::host
     fn from(error: TrapCode) -> Self {
-        Self::from_inner(TrapInner::InstructionTrap(error))
+        Self::with_reason(TrapReason::InstructionTrap(error))
     }
 }
 
@@ -132,11 +132,11 @@ where
     #[inline]
     #[cold] // traps are exceptional, this helps move handling off the main path
     fn from(host_error: E) -> Self {
-        Self::from_inner(TrapInner::Host(Box::new(host_error)))
+        Self::with_reason(TrapReason::Host(Box::new(host_error)))
     }
 }
 
-impl Display for TrapInner {
+impl Display for TrapReason {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::InstructionTrap(trap_code) => Display::fmt(trap_code, f),
@@ -149,7 +149,7 @@ impl Display for TrapInner {
 
 impl Display for Trap {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        <TrapInner as Display>::fmt(&self.inner, f)
+        <TrapReason as Display>::fmt(&self.reason, f)
     }
 }
 
