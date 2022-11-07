@@ -28,7 +28,7 @@ fn trap_size() {
 enum TrapInner {
     /// Traps during Wasm execution.
     Code(TrapCode),
-    /// An `i32` exit code.
+    /// An `i32` exit status code.
     ///
     /// # Note
     ///
