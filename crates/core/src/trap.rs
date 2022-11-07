@@ -79,7 +79,7 @@ impl Trap {
     }
 
     /// Creates a new [`Trap`] described by a `message`.
-    #[cold]
+    #[cold] // traps are exceptional, this helps move handling off the main path
     pub fn new<T>(message: T) -> Self
     where
         T: Into<String>,
@@ -97,7 +97,7 @@ impl Trap {
 
     /// Creates a new `Trap` representing an explicit program exit with a classic `i32`
     /// exit status value.
-    #[cold] // see Trap::host
+    #[cold] // see Trap::new
     pub fn i32_exit(status: i32) -> Self {
         Self::with_reason(TrapReason::I32Exit(status))
     }
@@ -119,7 +119,7 @@ impl Trap {
 
 impl From<TrapCode> for Trap {
     #[inline]
-    #[cold] // see Trap::host
+    #[cold] // see Trap::new
     fn from(error: TrapCode) -> Self {
         Self::with_reason(TrapReason::InstructionTrap(error))
     }
@@ -130,7 +130,7 @@ where
     E: HostError + Sized,
 {
     #[inline]
-    #[cold] // traps are exceptional, this helps move handling off the main path
+    #[cold] // see Trap::new
     fn from(host_error: E) -> Self {
         Self::with_reason(TrapReason::Host(Box::new(host_error)))
     }
