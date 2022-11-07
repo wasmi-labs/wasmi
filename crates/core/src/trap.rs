@@ -99,7 +99,7 @@ impl Trap {
     {
         self.reason
             .as_host()
-            .and_then(|reason| reason.downcast_ref::<T>())
+            .and_then(<(dyn HostError + 'static)>::downcast_ref)
     }
 
     /// Creates a new `Trap` representing an explicit program exit with a classic `i32`
