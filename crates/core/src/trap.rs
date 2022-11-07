@@ -125,7 +125,6 @@ impl Trap {
 }
 
 impl From<TrapCode> for Trap {
-    #[inline]
     #[cold] // see Trap::new
     fn from(error: TrapCode) -> Self {
         Self::with_reason(TrapReason::InstructionTrap(error))
