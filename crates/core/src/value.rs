@@ -511,7 +511,7 @@ macro_rules! impl_try_truncate_into {
             #[inline]
             fn try_truncate_into(self) -> Result<$into, TrapCode> {
                 if self.is_nan() {
-                    return Err(TrapCode::InvalidConversionToInt);
+                    return Err(TrapCode::BadConversionToInteger);
                 }
                 if self <= $rmin || self >= $rmax {
                     return Err(TrapCode::IntegerOverflow);
@@ -819,15 +819,15 @@ macro_rules! impl_integer {
         impl Integer<Self> for $type {
             #[inline]
             fn leading_zeros(self) -> Self {
-                self.leading_zeros() as $type
+                self.leading_zeros() as _
             }
             #[inline]
             fn trailing_zeros(self) -> Self {
-                self.trailing_zeros() as $type
+                self.trailing_zeros() as _
             }
             #[inline]
             fn count_ones(self) -> Self {
-                self.count_ones() as $type
+                self.count_ones() as _
             }
             #[inline]
             fn rotl(self, other: Self) -> Self {
@@ -838,19 +838,19 @@ macro_rules! impl_integer {
                 self.rotate_right(other as u32)
             }
             #[inline]
-            fn div(self, other: $type) -> Result<$type, TrapCode> {
+            fn div(self, other: Self) -> Result<Self, TrapCode> {
                 if other == 0 {
-                    return Err(TrapCode::DivisionByZero);
+                    return Err(TrapCode::IntegerDivisionByZero);
                 }
                 match self.overflowing_div(other) {
                     (result, false) => Ok(result),
-                    (_, true) => Err(TrapCode::IntegerOverflow),
+                    _ => Err(TrapCode::IntegerOverflow),
                 }
             }
             #[inline]
             fn rem(self, other: Self) -> Result<Self, TrapCode> {
                 if other == 0 {
-                    return Err(TrapCode::DivisionByZero);
+                    return Err(TrapCode::IntegerDivisionByZero);
                 }
                 Ok(self.wrapping_rem(other))
             }

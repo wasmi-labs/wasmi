@@ -1,18 +1,20 @@
 use crate::HostError;
-use alloc::boxed::Box;
+use alloc::{boxed::Box, string::String, sync::Arc};
 use core::fmt::{self, Display};
 
 #[cfg(feature = "std")]
 use std::error::Error as StdError;
 
-/// Error type which can be thrown by wasm code or by host environment.
+/// Error type which can be returned by Wasm code or by the host environment.
 ///
-/// Under some conditions, wasm execution may produce a `Trap`, which immediately aborts execution.
-/// Traps can't be handled by WebAssembly code, but are reported to the embedder.
-#[derive(Debug)]
+/// Under some conditions, Wasm execution may produce a [`Trap`],
+/// which immediately aborts execution.
+/// Traps cannot be handled by WebAssembly code, but are reported to the
+/// host embedder.
+#[derive(Debug, Clone)]
 pub struct Trap {
-    /// The internal data structure of a [`Trap`].
-    inner: Box<TrapInner>,
+    /// The cloneable reason of a [`Trap`].
+    reason: Arc<TrapReason>,
 }
 
 #[test]
@@ -23,26 +25,32 @@ fn trap_size() {
     );
 }
 
-/// The internal of a [`Trap`].
+/// The reason of a [`Trap`].
 #[derive(Debug)]
-enum TrapInner {
+enum TrapReason {
     /// Traps during Wasm execution.
-    Code(TrapCode),
+    InstructionTrap(TrapCode),
+    /// An `i32` exit status code.
+    ///
+    /// # Note
+    ///
+    /// This is useful for some WASI functions.
+    I32Exit(i32),
+    /// An error decribed by a display message.
+    Message(Box<str>),
     /// Traps and errors during host execution.
     Host(Box<dyn HostError>),
 }
 
-impl TrapInner {
-    /// Returns `true` if `self` trap originating from host code.
-    #[inline]
-    pub fn is_host(&self) -> bool {
-        matches!(self, TrapInner::Host(_))
-    }
-
-    /// Returns `true` if `self` trap originating from Wasm code.
-    #[inline]
-    pub fn is_code(&self) -> bool {
-        matches!(self, TrapInner::Code(_))
+impl TrapReason {
+    /// Returns the classic `i32` exit program code of a `Trap` if any.
+    ///
+    /// Otherwise returns `None`.
+    pub fn i32_exit_status(&self) -> Option<i32> {
+        if let Self::I32Exit(status) = self {
+            return Some(*status);
+        }
+        None
     }
 
     /// Returns a shared reference to the [`HostError`] if any.
@@ -54,28 +62,10 @@ impl TrapInner {
         None
     }
 
-    /// Returns an exclusive reference to the [`HostError`] if any.
-    #[inline]
-    pub fn as_host_mut(&mut self) -> Option<&mut dyn HostError> {
-        if let Self::Host(host_error) = self {
-            return Some(&mut **host_error);
-        }
-        None
-    }
-
-    /// Converts into the [`HostError`] if any.
-    #[inline]
-    pub fn into_host(self) -> Option<Box<dyn HostError>> {
-        if let Self::Host(host_error) = self {
-            return Some(host_error);
-        }
-        None
-    }
-
     /// Returns the [`TrapCode`] traps originating from Wasm execution.
     #[inline]
-    pub fn as_code(&self) -> Option<TrapCode> {
-        if let Self::Code(trap_code) = self {
+    pub fn trap_code(&self) -> Option<TrapCode> {
+        if let Self::InstructionTrap(trap_code) = self {
             return Some(*trap_code);
         }
         None
@@ -83,80 +73,81 @@ impl TrapInner {
 }
 
 impl Trap {
-    /// Create a new [`Trap`] from the [`TrapInner`].
-    fn new(inner: TrapInner) -> Self {
+    /// Create a new [`Trap`] from the [`TrapReason`].
+    fn with_reason(reason: TrapReason) -> Self {
         Self {
-            inner: Box::new(inner),
+            reason: Arc::new(reason),
         }
     }
 
-    /// Wraps the host error in a [`Trap`].
-    #[cold]
-    pub fn host<U>(host_error: U) -> Self
+    /// Creates a new [`Trap`] described by a `message`.
+    #[cold] // traps are exceptional, this helps move handling off the main path
+    pub fn new<T>(message: T) -> Self
     where
-        U: HostError + Sized,
+        T: Into<String>,
     {
-        Self::new(TrapInner::Host(Box::new(host_error)))
+        Self::with_reason(TrapReason::Message(message.into().into_boxed_str()))
     }
 
-    /// Returns `true` if `self` trap originating from host code.
+    /// Downcasts the [`Trap`] into the `T: HostError` if possible.
+    ///
+    /// Returns `None` otherwise.
     #[inline]
-    pub fn is_host(&self) -> bool {
-        self.inner.is_host()
+    pub fn downcast_ref<T>(&self) -> Option<&T>
+    where
+        T: HostError,
+    {
+        self.reason
+            .as_host()
+            .and_then(<(dyn HostError + 'static)>::downcast_ref)
     }
 
-    /// Returns `true` if `self` trap originating from Wasm code.
-    #[inline]
-    pub fn is_code(&self) -> bool {
-        self.inner.is_code()
+    /// Creates a new `Trap` representing an explicit program exit with a classic `i32`
+    /// exit status value.
+    #[cold] // see Trap::new
+    pub fn i32_exit(status: i32) -> Self {
+        Self::with_reason(TrapReason::I32Exit(status))
     }
 
-    /// Returns a shared reference to the [`HostError`] if any.
+    /// Returns the classic `i32` exit program code of a `Trap` if any.
+    ///
+    /// Otherwise returns `None`.
     #[inline]
-    pub fn as_host(&self) -> Option<&dyn HostError> {
-        self.inner.as_host()
-    }
-
-    /// Returns an exclusive reference to the [`HostError`] if any.
-    #[inline]
-    pub fn as_host_mut(&mut self) -> Option<&mut dyn HostError> {
-        self.inner.as_host_mut()
-    }
-
-    /// Converts into the [`HostError`] if any.
-    #[inline]
-    pub fn into_host(self) -> Option<Box<dyn HostError>> {
-        self.inner.into_host()
+    pub fn i32_exit_status(&self) -> Option<i32> {
+        self.reason.i32_exit_status()
     }
 
     /// Returns the [`TrapCode`] traps originating from Wasm execution.
     #[inline]
-    pub fn as_code(&self) -> Option<TrapCode> {
-        self.inner.as_code()
+    pub fn trap_code(&self) -> Option<TrapCode> {
+        self.reason.trap_code()
     }
 }
 
 impl From<TrapCode> for Trap {
-    #[cold]
+    #[cold] // see Trap::new
     fn from(error: TrapCode) -> Self {
-        Self::new(TrapInner::Code(error))
+        Self::with_reason(TrapReason::InstructionTrap(error))
     }
 }
 
-impl<U> From<U> for Trap
+impl<E> From<E> for Trap
 where
-    U: HostError + Sized,
+    E: HostError,
 {
     #[inline]
-    fn from(e: U) -> Self {
-        Self::host(e)
+    #[cold] // see Trap::new
+    fn from(host_error: E) -> Self {
+        Self::with_reason(TrapReason::Host(Box::new(host_error)))
     }
 }
 
-impl Display for TrapInner {
+impl Display for TrapReason {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Code(trap_code) => Display::fmt(trap_code, f),
+            Self::InstructionTrap(trap_code) => Display::fmt(trap_code, f),
+            Self::I32Exit(status) => write!(f, "Exited with i32 exit status {}", status),
+            Self::Message(message) => write!(f, "{message}"),
             Self::Host(host_error) => Display::fmt(host_error, f),
         }
     }
@@ -164,14 +155,14 @@ impl Display for TrapInner {
 
 impl Display for Trap {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        <TrapInner as Display>::fmt(&self.inner, f)
+        <TrapReason as Display>::fmt(&self.reason, f)
     }
 }
 
 #[cfg(feature = "std")]
 impl StdError for Trap {
     fn description(&self) -> &str {
-        self.as_code().map_or("", |code| code.trap_message())
+        self.trap_code().map_or("", |code| code.trap_message())
     }
 }
 
@@ -184,16 +175,16 @@ impl StdError for Trap {
 pub enum TrapCode {
     /// Wasm code executed `unreachable` opcode.
     ///
-    /// `unreachable` is a special opcode which always traps upon execution.
+    /// This indicates that unreachable Wasm code was actually reached.
     /// This opcode have a similar purpose as `ud2` in x86.
-    Unreachable,
+    UnreachableCodeReached,
 
     /// Attempt to load or store at the address which
     /// lies outside of bounds of the memory.
     ///
     /// Since addresses are interpreted as unsigned integers, out of bounds access
     /// can't happen with negative addresses (i.e. they will always wrap).
-    MemoryAccessOutOfBounds,
+    MemoryOutOfBounds,
 
     /// Attempt to access table element at index which
     /// lies outside of bounds.
@@ -203,33 +194,30 @@ pub enum TrapCode {
     ///
     /// Since indexes are interpreted as unsigned integers, out of bounds access
     /// can't happen with negative indexes (i.e. they will always wrap).
-    TableAccessOutOfBounds,
+    TableOutOfBounds,
 
-    /// Attempt to access table element which is uninitialized (i.e. `None`).
-    ///
-    /// This typically can happen when `call_indirect` is executed.
-    ElemUninitialized,
+    /// Indicates that a `call_indirect` instruction called a function at
+    /// an uninitialized (i.e. `null`) table index.
+    IndirectCallToNull,
 
     /// Attempt to divide by zero.
     ///
     /// This trap typically can happen if `div` or `rem` is executed with
     /// zero as divider.
-    DivisionByZero,
+    IntegerDivisionByZero,
 
     /// An integer arithmetic operation caused an overflow.
     ///
-    /// This can happen when:
-    ///
-    /// - Trying to do signed division (or get the remainder) -2<sup>N-1</sup> over -1. This is
-    ///   because the result +2<sup>N-1</sup> isn't representable as a N-bit signed integer.
+    /// This can happen when trying to do signed division (or get the remainder)
+    /// -2<sup>N-1</sup> over -1. This is because the result +2<sup>N-1</sup>
+    /// isn't representable as a N-bit signed integer.
     IntegerOverflow,
 
-    /// Attempt to make a conversion to an int failed.
+    /// Attempted to make an invalid conversion to an integer type.
     ///
-    /// This can happen when:
-    ///
-    /// - Trying to truncate NaNs, infinity, or value for which the result is out of range into an integer.
-    InvalidConversionToInt,
+    /// This can for example happen when trying to truncate NaNs,
+    /// infinity, or value for which the result is out of range into an integer.
+    BadConversionToInteger,
 
     /// Stack overflow.
     ///
@@ -239,14 +227,11 @@ pub enum TrapCode {
 
     /// Attempt to invoke a function with mismatching signature.
     ///
-    /// This can happen if a Wasm or host function was invoked
-    /// with mismatching parameters or result values.
-    ///
-    /// This can always happen with indirect calls as they always
+    /// This can happen with indirect calls as they always
     /// specify the expected signature of function. If an indirect call is executed
     /// with an index that points to a function with signature different of what is
     /// expected by this indirect call, this trap is raised.
-    UnexpectedSignature,
+    BadSignature,
 }
 
 impl TrapCode {
@@ -258,15 +243,15 @@ impl TrapCode {
     /// other uses since it avoid heap memory allocation in certain cases.
     pub fn trap_message(&self) -> &'static str {
         match self {
-            Self::Unreachable => "unreachable",
-            Self::MemoryAccessOutOfBounds => "out of bounds memory access",
-            Self::TableAccessOutOfBounds => "undefined element",
-            Self::ElemUninitialized => "uninitialized element",
-            Self::DivisionByZero => "integer divide by zero",
+            Self::UnreachableCodeReached => "unreachable",
+            Self::MemoryOutOfBounds => "out of bounds memory access",
+            Self::TableOutOfBounds => "undefined element",
+            Self::IndirectCallToNull => "uninitialized element",
+            Self::IntegerDivisionByZero => "integer divide by zero",
             Self::IntegerOverflow => "integer overflow",
-            Self::InvalidConversionToInt => "invalid conversion to integer",
+            Self::BadConversionToInteger => "invalid conversion to integer",
             Self::StackOverflow => "call stack exhausted",
-            Self::UnexpectedSignature => "indirect call type mismatch",
+            Self::BadSignature => "indirect call type mismatch",
         }
     }
 }
