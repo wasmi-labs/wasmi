@@ -27,7 +27,7 @@ fn trap_size() {
 #[derive(Debug)]
 enum TrapInner {
     /// Traps during Wasm execution.
-    Code(TrapCode),
+    InstructionTrap(TrapCode),
     /// An `i32` exit status code.
     ///
     /// # Note
@@ -61,7 +61,7 @@ impl TrapInner {
     /// Returns the [`TrapCode`] traps originating from Wasm execution.
     #[inline]
     pub fn trap_code(&self) -> Option<TrapCode> {
-        if let Self::Code(trap_code) = self {
+        if let Self::InstructionTrap(trap_code) = self {
             return Some(*trap_code);
         }
         None
@@ -119,7 +119,7 @@ impl From<TrapCode> for Trap {
     #[inline]
     #[cold] // see Trap::host
     fn from(error: TrapCode) -> Self {
-        Self::new(TrapInner::Code(error))
+        Self::from_inner(TrapInner::InstructionTrap(error))
     }
 }
 
@@ -136,7 +136,7 @@ where
 impl Display for TrapInner {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Code(trap_code) => Display::fmt(trap_code, f),
+            Self::InstructionTrap(trap_code) => Display::fmt(trap_code, f),
             Self::I32Exit(status) => write!(f, "Exited with i32 exit status {}", status),
             Self::Host(host_error) => Display::fmt(host_error, f),
         }
