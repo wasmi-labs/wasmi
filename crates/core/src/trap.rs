@@ -107,6 +107,17 @@ impl Trap {
         self.reason.as_host()
     }
 
+    /// Downcasts the [`Trap`] into the `T: HostError` if possible.
+    ///
+    /// Returns `None` otherwise.
+    #[inline]
+    pub fn downcast_ref<T>(&self) -> Option<&T>
+    where
+        T: HostError,
+    {
+        self.reason.as_host().and_then(|reason| reason.downcast_ref::<T>())
+    }
+
     /// Creates a new `Trap` representing an explicit program exit with a classic `i32`
     /// exit status value.
     #[cold] // see Trap::new

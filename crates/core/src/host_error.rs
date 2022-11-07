@@ -30,17 +30,16 @@ use downcast_rs::{impl_downcast, DowncastSync};
 /// impl HostError for MyError { }
 ///
 /// fn failable_fn() -> Result<(), Trap> {
-///     let my_error = MyError { code: 1312 };
+///     let my_error = MyError { code: 42 };
 ///     // Note how you can just convert your errors to `wasmi::Error`
 ///     Err(my_error.into())
 /// }
 ///
 /// // Get a reference to the concrete error
 /// match failable_fn() {
-///     Err(trap) if trap.as_host().is_some() => {
-///         let host_error = trap.as_host().unwrap();
-///         let my_error: &MyError = host_error.downcast_ref::<MyError>().unwrap();
-///         assert_eq!(my_error.code, 1312);
+///     Err(trap) => {
+///         let my_error: &MyError = trap.downcast_ref().unwrap();
+///         assert_eq!(my_error.code, 42);
 ///     }
 ///     _ => panic!(),
 /// }
@@ -48,15 +47,14 @@ use downcast_rs::{impl_downcast, DowncastSync};
 /// // get the concrete error itself
 /// match failable_fn() {
 ///     Err(err) => {
-///         let my_error = match err.as_host() {
-///             Some(host_error) => host_error.downcast_ref::<MyError>().unwrap().clone(),
-///             None => panic!("expected host error but found: {}", err),
+///         let my_error = match err.downcast_ref::<MyError>() {
+///             Some(host_error) => host_error.clone(),
+///             None => panic!("expected host error `MyError` but found: {}", err),
 ///         };
-///         assert_eq!(my_error.code, 1312);
+///         assert_eq!(my_error.code, 42);
 ///     }
 ///     _ => panic!(),
 /// }
-///
 /// ```
 pub trait HostError: 'static + Display + Debug + DowncastSync {}
 impl_downcast!(HostError);
