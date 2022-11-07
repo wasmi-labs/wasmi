@@ -1,5 +1,5 @@
 use crate::HostError;
-use alloc::{boxed::Box, sync::Arc};
+use alloc::{boxed::Box, string::String, sync::Arc};
 use core::fmt::{self, Display};
 
 #[cfg(feature = "std")]
