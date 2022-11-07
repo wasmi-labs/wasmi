@@ -153,7 +153,7 @@ impl From<TrapCode> for Trap {
 
 impl<E> From<E> for Trap
 where
-    E: HostError + Sized,
+    E: HostError,
 {
     #[inline]
     #[cold] // see Trap::new
