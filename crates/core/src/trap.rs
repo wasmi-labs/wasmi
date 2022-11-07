@@ -5,10 +5,12 @@ use core::fmt::{self, Display};
 #[cfg(feature = "std")]
 use std::error::Error as StdError;
 
-/// Error type which can be thrown by wasm code or by host environment.
+/// Error type which can be returned by Wasm code or by the host environment.
 ///
-/// Under some conditions, wasm execution may produce a `Trap`, which immediately aborts execution.
-/// Traps can't be handled by WebAssembly code, but are reported to the embedder.
+/// Under some conditions, Wasm execution may produce a [`Trap`],
+/// which immediately aborts execution.
+/// Traps cannot be handled by WebAssembly code, but are reported to the
+/// host embedder.
 #[derive(Debug, Clone)]
 pub struct Trap {
     /// The cloneable reason of a [`Trap`].
