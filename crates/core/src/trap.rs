@@ -116,6 +116,7 @@ impl Trap {
 }
 
 impl From<TrapCode> for Trap {
+    #[inline]
     #[cold] // see Trap::host
     fn from(error: TrapCode) -> Self {
         Self::new(TrapInner::Code(error))
