@@ -99,14 +99,6 @@ impl Trap {
         Self::with_reason(TrapReason::Message(message.into().into_boxed_str()))
     }
 
-    /// Returns a shared reference to the [`HostError`] if any.
-    ///
-    /// Otherwise returns `None`.
-    #[inline]
-    pub fn as_host(&self) -> Option<&dyn HostError> {
-        self.reason.as_host()
-    }
-
     /// Downcasts the [`Trap`] into the `T: HostError` if possible.
     ///
     /// Returns `None` otherwise.
