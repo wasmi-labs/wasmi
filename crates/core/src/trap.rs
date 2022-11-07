@@ -70,6 +70,16 @@ impl TrapReason {
     }
 }
 
+/// A [`Display`] wrapper for a trap reason.
+#[derive(Debug, Copy, Clone)]
+pub struct DisplayTrapReason<'a>(&'a TrapReason);
+
+impl Display for DisplayTrapReason<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        <TrapReason as Display>::fmt(&self.0, f)
+    }
+}
+
 impl Trap {
     /// Create a new [`Trap`] from the [`TrapReason`].
     fn with_reason(reason: TrapReason) -> Self {
@@ -114,6 +124,17 @@ impl Trap {
     #[inline]
     pub fn trap_code(&self) -> Option<TrapCode> {
         self.reason.trap_code()
+    }
+
+    /// Returns a [`Display`] wrapper for the reason of this [`Trap`].
+    ///
+    /// # Note
+    ///
+    /// This is useful for when users are only interested in displaying the
+    /// underlying reason that caused a [`Trap`] without other information that
+    /// could later be added such as backtraces etc.
+    pub fn display_reason(&self) -> DisplayTrapReason {
+        DisplayTrapReason(&self.reason)
     }
 }
 
