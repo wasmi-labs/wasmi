@@ -34,6 +34,8 @@ enum TrapInner {
     ///
     /// This is useful for some WASI functions.
     I32Exit(i32),
+    /// An error decribed by a display message.
+    Message(Box<str>),
     /// Traps and errors during host execution.
     Host(Box<dyn HostError>),
 }
@@ -70,19 +72,19 @@ impl TrapInner {
 
 impl Trap {
     /// Create a new [`Trap`] from the [`TrapInner`].
-    fn new(inner: TrapInner) -> Self {
+    fn from_inner(inner: TrapInner) -> Self {
         Self {
             inner: Arc::new(inner),
         }
     }
 
-    /// Wraps the host error in a [`Trap`].
-    #[cold] // traps are exceptional, this helps move handling off the main path
-    pub fn host<U>(host_error: U) -> Self
+    /// Creates a new [`Trap`] described by a `message`.
+    #[cold]
+    pub fn new<T>(message: T) -> Self
     where
-        U: HostError + Sized,
+        T: Into<String>,
     {
-        Self::new(TrapInner::Host(Box::new(host_error)))
+        Self::from_inner(TrapInner::Message(message.into().into_boxed_str()))
     }
 
     /// Returns a shared reference to the [`HostError`] if any.
@@ -97,7 +99,7 @@ impl Trap {
     /// exit status value.
     #[cold] // see Trap::host
     pub fn i32_exit(status: i32) -> Self {
-        Self::new(TrapInner::I32Exit(status))
+        Self::from_inner(TrapInner::I32Exit(status))
     }
 
     /// Returns the classic `i32` exit program code of a `Trap` if any.
@@ -123,13 +125,14 @@ impl From<TrapCode> for Trap {
     }
 }
 
-impl<U> From<U> for Trap
+impl<E> From<E> for Trap
 where
-    U: HostError + Sized,
+    E: HostError + Sized,
 {
     #[inline]
-    fn from(e: U) -> Self {
-        Self::host(e)
+    #[cold] // traps are exceptional, this helps move handling off the main path
+    fn from(host_error: E) -> Self {
+        Self::from_inner(TrapInner::Host(Box::new(host_error)))
     }
 }
 
@@ -138,6 +141,7 @@ impl Display for TrapInner {
         match self {
             Self::InstructionTrap(trap_code) => Display::fmt(trap_code, f),
             Self::I32Exit(status) => write!(f, "Exited with i32 exit status {}", status),
+            Self::Message(message) => write!(f, "{message}"),
             Self::Host(host_error) => Display::fmt(host_error, f),
         }
     }
