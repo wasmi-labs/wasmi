@@ -120,7 +120,7 @@ impl Module {
             };
             match (import.item_type(), external) {
                 (ModuleImportType::Func(expected_signature), Extern::Func(func)) => {
-                    let actual_signature = func.signature(context.as_context());
+                    let actual_signature = func.dedup_func_type(context.as_context());
                     // Note: We can compare function signatures without resolving them because
                     //       we deduplicate them before registering. Therefore two equal instances of
                     //       [`SignatureEntity`] will be associated to the same [`Signature`].

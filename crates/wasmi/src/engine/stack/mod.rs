@@ -220,7 +220,7 @@ impl Stack {
     {
         // The host function signature is required for properly
         // adjusting, inspecting and manipulating the value stack.
-        let (input_types, output_types) = func_types[host_func.signature()].params_results();
+        let (input_types, output_types) = func_types[host_func.func_type()].params_results();
         // In case the host function returns more values than it takes
         // we are required to extend the value stack.
         let len_inputs = input_types.len();

@@ -89,10 +89,10 @@ impl<T> FuncEntity<T> {
     }
 
     /// Returns the signature of the Wasm function.
-    pub fn signature(&self) -> DedupFuncType {
+    pub fn func_type(&self) -> DedupFuncType {
         match self.as_internal() {
-            FuncEntityInternal::Wasm(func) => func.signature(),
-            FuncEntityInternal::Host(func) => func.signature(),
+            FuncEntityInternal::Wasm(func) => func.func_type(),
+            FuncEntityInternal::Host(func) => func.func_type(),
         }
     }
 }
@@ -136,7 +136,7 @@ impl WasmFuncEntity {
     }
 
     /// Returns the signature of the Wasm function.
-    pub fn signature(&self) -> DedupFuncType {
+    pub fn func_type(&self) -> DedupFuncType {
         self.signature
     }
 
@@ -214,7 +214,7 @@ impl<T> HostFuncEntity<T> {
     }
 
     /// Returns the signature of the host function.
-    pub fn signature(&self) -> DedupFuncType {
+    pub fn func_type(&self) -> DedupFuncType {
         self.signature
     }
 
@@ -258,15 +258,15 @@ impl Func {
     }
 
     /// Returns the signature of the function.
-    pub(crate) fn signature(&self, ctx: impl AsContext) -> DedupFuncType {
-        ctx.as_context().store.resolve_func(*self).signature()
+    pub(crate) fn dedup_func_type(&self, ctx: impl AsContext) -> DedupFuncType {
+        ctx.as_context().store.resolve_func(*self).func_type()
     }
 
     /// Returns the function type of the [`Func`].
     pub fn func_type(&self, ctx: impl AsContext) -> FuncType {
         ctx.as_context()
             .store
-            .resolve_func_type(self.signature(&ctx))
+            .resolve_func_type(self.dedup_func_type(&ctx))
     }
 
     /// Calls the Wasm or host function with the given inputs.

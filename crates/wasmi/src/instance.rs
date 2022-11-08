@@ -410,7 +410,7 @@ impl Instance {
     /// # Panics
     ///
     /// Panics if `store` does not own this [`Instance`].
-    pub(crate) fn get_signature(&self, store: impl AsContext, index: u32) -> Option<DedupFuncType> {
+    pub(crate) fn get_func_type(&self, store: impl AsContext, index: u32) -> Option<DedupFuncType> {
         store
             .as_context()
             .store

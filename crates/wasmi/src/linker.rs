@@ -382,7 +382,7 @@ impl<T> Linker<T> {
         match import.item_type() {
             ModuleImportType::Func(expected_func_type) => {
                 let func = resolved.and_then(Extern::into_func).ok_or_else(make_err)?;
-                let actual_func_type = func.signature(&context);
+                let actual_func_type = func.dedup_func_type(&context);
                 if &actual_func_type != expected_func_type {
                     return Err(LinkerError::FuncTypeMismatch {
                         name: import.name().clone(),

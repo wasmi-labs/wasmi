@@ -588,11 +588,11 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
             .get(self.ctx.as_context(), func_index as usize)
             .map_err(|_| TrapCode::TableOutOfBounds)?
             .ok_or(TrapCode::IndirectCallToNull)?;
-        let actual_signature = func.signature(self.ctx.as_context());
+        let actual_signature = func.dedup_func_type(self.ctx.as_context());
         let expected_signature = self
             .frame
             .instance()
-            .get_signature(self.ctx.as_context(), signature_index.into_inner())
+            .get_func_type(self.ctx.as_context(), signature_index.into_inner())
             .unwrap_or_else(|| {
                 panic!(
                     "missing signature for call_indirect at index: {:?}",
