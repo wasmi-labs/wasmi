@@ -1,5 +1,6 @@
 use super::{EngineIdx, Guarded};
 use crate::{FuncType, Store};
+use core::ops;
 use wasmi_arena::{DedupArena, GuardedEntity, Index};
 use wasmi_core::ValueType;
 
@@ -113,8 +114,8 @@ impl FuncTypeRegistry {
         })
     }
 
-    /// Allocates a new function type to the engine.
-    pub(crate) fn alloc_func_type(&mut self, func_type: FuncType) -> DedupFuncType {
+    /// Inserts a new function type into the engine.
+    pub fn insert(&mut self, func_type: FuncType) -> DedupFuncType {
         DedupFuncType::from_inner(Guarded::new(
             self.engine_idx,
             self.func_types.alloc(func_type),
@@ -127,10 +128,19 @@ impl FuncTypeRegistry {
     ///
     /// - If the deduplicated function type is not owned by the engine.
     /// - If the deduplicated function type cannot be resolved to its entity.
-    pub(crate) fn resolve_func_type(&self, func_type: DedupFuncType) -> &FuncType {
-        let entity_index = self.unwrap_index(func_type.into_inner());
+    #[inline]
+    pub fn get(&self, func_type: DedupFuncType) -> Option<&FuncType> {
         self.func_types
-            .get(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored function type: {entity_index:?}"))
+            .get(self.unwrap_index(func_type.into_inner()))
+    }
+}
+
+impl ops::Index<DedupFuncType> for FuncTypeRegistry {
+    type Output = FuncType;
+
+    #[inline]
+    fn index(&self, index: DedupFuncType) -> &Self::Output {
+        self.get(index)
+            .unwrap_or_else(|| panic!("failed to resolve deduplicated function type: {index:?}"))
     }
 }

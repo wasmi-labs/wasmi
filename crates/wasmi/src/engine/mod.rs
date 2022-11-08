@@ -128,7 +128,7 @@ impl Engine {
 
     /// Allocates a new function type to the engine.
     pub(super) fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
-        self.inner.lock().func_types.alloc_func_type(func_type)
+        self.inner.lock().func_types.insert(func_type)
     }
 
     /// Resolves a deduplicated function type into a [`FuncType`] entity.
@@ -142,7 +142,7 @@ impl Engine {
         F: FnOnce(&FuncType) -> R,
     {
         // Note: The clone operation on FuncType is intentionally cheap.
-        f(self.inner.lock().func_types.resolve_func_type(func_type))
+        f(&self.inner.lock().func_types[func_type])
     }
 
     /// Allocates the instructions of a Wasm function body to the [`Engine`].
