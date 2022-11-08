@@ -1,50 +1,6 @@
-use std::{collections::HashMap, fs};
-
-use wasmi::{Config, Engine, Extern, Instance, Linker, Module, Store};
-use wasmi_core::Value;
+use wasi_cap_std_sync::WasiCtxBuilder;
+use wasmi::{Config, Extern, Instance, Store};
 use wasmi_wasi::{define_wasi, WasiCtx};
-use wasmtime_wasi::WasiCtxBuilder;
-
-// #[derive(Debug)]
-// pub struct TestContext {
-//     /// The `wasmi` engine used for executing functions used during the test.
-//     engine: Engine,
-//     /// The linker for linking together Wasm test modules.
-//     linker: Linker<()>,
-//     /// The store to hold all runtime data during the test.
-//     store: Store<()>,
-//     /// The list of all encountered Wasm modules belonging to the test.
-//     modules: Vec<Module>,
-//     /// The list of all instantiated modules.
-//     instances: HashMap<String, Instance>,
-//     /// Intermediate results buffer that can be reused for calling Wasm functions.
-//     results: Vec<Value>,
-//     /// The descriptor of the test.
-//     file: String,
-// }
-
-// impl TestContext {
-//     pub(crate) fn new(config: &Config, path: &str) -> Self {
-//         let engine = Engine::new(config);
-//         let mut linker = Linker::default();
-//         let mut store = Store::new(&engine, ());
-
-//         Self {
-//             engine,
-//             linker,
-//             store,
-//             modules: Vec::new(),
-//             instances: HashMap::new(),
-//             results: Vec::new(),
-//             file: read_wast(path),
-//         }
-//     }
-// }
-
-fn read_wast(path: &str) -> String {
-    fs::read_to_string(path)
-        .unwrap_or_else(|error| panic!("{path}, failed to read `.wast` test file: {error}"))
-}
 
 pub fn load_instance_from_wat(wat_bytes: &[u8]) -> (wasmi::Store<WasiCtx>, wasmi::Instance) {
     let wasm = wat2wasm(wat_bytes);

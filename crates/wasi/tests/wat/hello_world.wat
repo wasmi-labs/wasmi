@@ -1,4 +1,5 @@
 ;; copied (and slightly adapted) from [wasmtime tutorial](https://github.com/bytecodealliance/wasmtime/blob/main/docs/WASI-tutorial.md)
+
 (module
     ;; Import the required fd_write WASI function which will write the given io vectors to stdout
     ;; The function signature for fd_write is:
