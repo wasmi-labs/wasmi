@@ -124,10 +124,10 @@ impl FuncTypeRegistry {
 
     /// Resolves a deduplicated function type into a [`FuncType`] entity.
     ///
-    /// # Panics
+    /// Returns `None` if
     ///
-    /// - If the deduplicated function type is not owned by the engine.
-    /// - If the deduplicated function type cannot be resolved to its entity.
+    /// - the deduplicated function type is not owned by the engine.
+    /// - the deduplicated function type cannot be resolved to its entity.
     #[inline]
     pub fn get(&self, func_type: DedupFuncType) -> Option<&FuncType> {
         self.func_types
@@ -138,6 +138,12 @@ impl FuncTypeRegistry {
 impl ops::Index<DedupFuncType> for FuncTypeRegistry {
     type Output = FuncType;
 
+    /// Resolves a deduplicated function type into a [`FuncType`] entity.
+    ///
+    /// # Panics
+    ///
+    /// - If the deduplicated function type is not owned by the engine.
+    /// - If the deduplicated function type cannot be resolved to its entity.
     #[inline]
     fn index(&self, index: DedupFuncType) -> &Self::Output {
         self.get(index)
