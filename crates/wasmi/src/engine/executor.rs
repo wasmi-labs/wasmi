@@ -314,7 +314,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
             .into_inner()
             .checked_add(address)
             .map(|address| address as usize)
-            .ok_or(TrapCode::MemoryAccessOutOfBounds)
+            .ok_or(TrapCode::MemoryOutOfBounds)
     }
 
     /// Loads a value of type `T` from the default memory at the given address offset.
@@ -488,7 +488,7 @@ pub enum MaybeReturn {
 
 impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     fn visit_unreachable(&mut self) -> Result<(), TrapCode> {
-        Err(TrapCode::Unreachable).map_err(Into::into)
+        Err(TrapCode::UnreachableCodeReached).map_err(Into::into)
     }
 
     fn visit_br(&mut self, params: BranchParams) {
@@ -586,8 +586,8 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         let table = self.default_table();
         let func = table
             .get(self.ctx.as_context(), func_index as usize)
-            .map_err(|_| TrapCode::TableAccessOutOfBounds)?
-            .ok_or(TrapCode::ElemUninitialized)?;
+            .map_err(|_| TrapCode::TableOutOfBounds)?
+            .ok_or(TrapCode::IndirectCallToNull)?;
         let actual_signature = func.signature(self.ctx.as_context());
         let expected_signature = self
             .frame
@@ -600,7 +600,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
                 )
             });
         if actual_signature != expected_signature {
-            return Err(TrapCode::UnexpectedSignature).map_err(Into::into);
+            return Err(TrapCode::BadSignature).map_err(Into::into);
         }
         self.call_func(func)
     }
