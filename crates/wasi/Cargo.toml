@@ -15,7 +15,3 @@ wasmi_core = { version = "0.5.0", path = "../core"}
 
 [dev-dependencies]
 wat = "1.0.50"
-
-[features]
-default = ["std"]
-std = []

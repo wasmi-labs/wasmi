@@ -43,5 +43,5 @@ fn test_hello_world() {
         .and_then(Extern::into_func)
         .unwrap();
     let mut result = [];
-    f.call(&mut store, &vec![], &mut result).unwrap();
+    f.call(&mut store, &[], &mut result).unwrap();
 }
