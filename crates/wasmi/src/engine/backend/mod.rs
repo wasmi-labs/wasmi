@@ -1,7 +1,11 @@
-use crate::{Func, Engine, AsContextMut};
-use crate::core::Trap;
-use crate::module::{FuncIdx, ModuleResources};
-use crate::engine::{FuncBody, CallParams, CallResults};
+use crate::{
+    core::Trap,
+    engine::{CallParams, CallResults, FuncBody},
+    module::{FuncIdx, ModuleResources},
+    AsContextMut,
+    Engine,
+    Func,
+};
 use core::fmt::{Debug, Display};
 
 /// The used function validator type.
@@ -95,10 +99,18 @@ pub trait TranslateWasmFunc<'parser> {
     fn translate_end(&mut self) -> Result<(), Self::Error>;
     fn translate_br(&mut self, relative_depth: u32) -> Result<(), Self::Error>;
     fn translate_br_if(&mut self, relative_depth: u32) -> Result<(), Self::Error>;
-    fn translate_br_table(&mut self, table: wasmparser::BrTable<'parser>) -> Result<(), Self::Error>;
+    fn translate_br_table(
+        &mut self,
+        table: wasmparser::BrTable<'parser>,
+    ) -> Result<(), Self::Error>;
     fn translate_return(&mut self) -> Result<(), Self::Error>;
     fn translate_call(&mut self, func_idx: u32) -> Result<(), Self::Error>;
-    fn translate_call_indirect(&mut self, index: u32, table_index: u32, _table_byte: u8) -> Result<(), Self::Error>;
+    fn translate_call_indirect(
+        &mut self,
+        index: u32,
+        table_index: u32,
+        _table_byte: u8,
+    ) -> Result<(), Self::Error>;
     fn translate_drop(&mut self) -> Result<(), Self::Error>;
     fn translate_select(&mut self) -> Result<(), Self::Error>;
     fn translate_local_get(&mut self, local_idx: u32) -> Result<(), Self::Error>;
