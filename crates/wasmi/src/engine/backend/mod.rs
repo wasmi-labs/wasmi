@@ -34,7 +34,7 @@ pub trait ExecuteWasmFunc {
 /// A type that can translate Wasm function into its own IR.
 pub trait TranslateWasmFunc<'parser> {
     /// An engine specific translation error.
-    type Error: Debug + Display + Send + Sync;
+    type Error: Debug + Display + Send;
 
     /// Reusable allocations of a Wasm function translator.
     ///
