@@ -1,6 +1,7 @@
 //! The `wasmi` interpreter.
 
 pub mod bytecode;
+mod backend;
 mod cache;
 pub mod code_map;
 mod config;

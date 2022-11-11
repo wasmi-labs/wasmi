@@ -1,7 +1,17 @@
+use crate::{Func, Engine, AsContextMut};
+use crate::core::Trap;
+use crate::module::{FuncIdx, ModuleResources};
+use crate::engine::{FuncBody, CallParams, CallResults};
+use core::fmt::{Debug, Display};
+
+/// The used function validator type.
+#[allow(dead_code)] // TODO: remove
+type FuncValidator = wasmparser::FuncValidator<wasmparser::ValidatorResources>;
+
 /// A `wasmi` engine backend.
 pub trait EngineBackend {
     /// The WebAssembly function translator of the backend.
-    type Translator: TranslateWasmFunc;
+    type Translator<'parser>: TranslateWasmFunc<'parser>;
 }
 
 /// A type that can execute a compiled Wasm function.
@@ -22,7 +32,7 @@ pub trait ExecuteWasmFunc {
 }
 
 /// A type that can translate Wasm function into its own IR.
-pub trait TranslateWasmFunc {
+pub trait TranslateWasmFunc<'parser> {
     /// An engine specific translation error.
     type Error: Debug + Display + Send + Sync;
 
@@ -48,7 +58,7 @@ pub trait TranslateWasmFunc {
         func: FuncIdx,
         res: ModuleResources<'parser>,
         validator: FuncValidator,
-        mut allocations: Self::Allocations,
+        allocations: Self::Allocations,
     ) -> Self;
 
     /// Registers the Wasm local variables for the translated function.
@@ -85,7 +95,7 @@ pub trait TranslateWasmFunc {
     fn translate_end(&mut self) -> Result<(), Self::Error>;
     fn translate_br(&mut self, relative_depth: u32) -> Result<(), Self::Error>;
     fn translate_br_if(&mut self, relative_depth: u32) -> Result<(), Self::Error>;
-    fn translate_br_table(&mut self, table: wasmparser::BrTable<'_>) -> Result<(), Self::Error>;
+    fn translate_br_table(&mut self, table: wasmparser::BrTable<'parser>) -> Result<(), Self::Error>;
     fn translate_return(&mut self) -> Result<(), Self::Error>;
     fn translate_call(&mut self, func_idx: u32) -> Result<(), Self::Error>;
     fn translate_call_indirect(&mut self, index: u32, table_index: u32, _table_byte: u8) -> Result<(), Self::Error>;
