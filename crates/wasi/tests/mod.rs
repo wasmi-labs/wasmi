@@ -1,0 +1,1 @@
+mod wasi_wat;
