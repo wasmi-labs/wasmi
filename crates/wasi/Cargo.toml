@@ -11,7 +11,6 @@ wasi-common = "2.0.1"
 wasi-cap-std-sync = "2.0.1"
 wiggle = "2.0.0"
 wasmi = { version = "0.20.0", path = "../wasmi" }
-wasmi_core = { version = "0.5.0", path = "../core"}
 
 [dev-dependencies]
 wat = "1.0.50"
