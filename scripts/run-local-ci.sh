@@ -6,7 +6,7 @@ cargo +nightly fmt &&
 echo "    Building ..." &&
 cargo +stable build --workspace &&
 echo "    Building no_std ..." &&
-cargo +stable build --workspace --exclude wasmi_cli --no-default-features --target thumbv7em-none-eabi &&
+cargo +stable build --workspace --exclude wasmi_cli --exclude wasmi_wasi --no-default-features --target thumbv7em-none-eabi &&
 echo "    Clippy ..." &&
 cargo +stable clippy --workspace -- -D warnings &&
 echo "    Docs ..." &&
