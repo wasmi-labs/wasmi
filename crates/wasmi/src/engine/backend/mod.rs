@@ -8,10 +8,6 @@ use crate::{
 };
 use core::fmt::{Debug, Display};
 
-/// The used function validator type.
-#[allow(dead_code)] // TODO: remove
-type FuncValidator = wasmparser::FuncValidator<wasmparser::ValidatorResources>;
-
 /// A `wasmi` engine backend.
 pub trait EngineBackend {
     /// The WebAssembly function translator of the backend.
@@ -20,7 +16,7 @@ pub trait EngineBackend {
 
 /// A type that can execute a compiled Wasm function.
 pub trait ExecuteWasmFunc {
-    /// Executes the Wasm function `func` given the `params`.
+    /// Executes the Wasm or host function `func` given the `params`.
     ///
     /// Stores the results back into `results` or returns a [`Trap`].
     fn execute_func<Params, Results>(
@@ -61,7 +57,6 @@ pub trait TranslateWasmFunc<'parser> {
         engine: &Engine,
         func: FuncIdx,
         res: ModuleResources<'parser>,
-        validator: FuncValidator,
         allocations: Self::Allocations,
     ) -> Self;
 
