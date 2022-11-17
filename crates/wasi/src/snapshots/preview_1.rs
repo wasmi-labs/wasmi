@@ -1,3 +1,4 @@
+use crate::WasmiGuestMemory;
 use std::{
     pin::Pin,
     task::{Context, RawWaker, RawWakerVTable, Waker},
@@ -64,7 +65,7 @@ macro_rules! impl_add_to_linker_for_funcs {
                             };
                             let(mem, ctx) = mem.data_and_store_mut(&mut caller);
                             let ctx = wasi_ctx(ctx);
-                            let mem = wiggle::wasmtime::WasmtimeGuestMemory::new(mem);
+                            let mem = WasmiGuestMemory::new(mem);
 
                             match wasi_common::snapshots::preview_1::wasi_snapshot_preview1::$fname(ctx, &mem, $($arg,)*).await {
                                 Ok(r) => Ok(<$ret>::from(r)),
