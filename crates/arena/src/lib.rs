@@ -55,16 +55,10 @@ pub struct Arena<Idx, T> {
 }
 
 /// `Arena` does not store `Idx` therefore it is `Send` without its bound.
-unsafe impl<Idx, T> Send for Arena<Idx, T>
-where
-    T: Send,
-{}
+unsafe impl<Idx, T> Send for Arena<Idx, T> where T: Send {}
 
 /// `Arena` does not store `Idx` therefore it is `Sync` without its bound.
-unsafe impl<Idx, T> Sync for Arena<Idx, T>
-where
-    T: Send,
-{}
+unsafe impl<Idx, T> Sync for Arena<Idx, T> where T: Send {}
 
 impl<Idx, T> Default for Arena<Idx, T> {
     fn default() -> Self {
