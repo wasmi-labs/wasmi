@@ -15,7 +15,7 @@ pub trait EngineBackend {
 }
 
 /// A type that can execute a compiled Wasm function.
-pub trait ExecuteWasmFunc {
+pub trait ExecuteWasmFunc: Sized {
     /// Executes the Wasm or host function `func` given the `params`.
     ///
     /// Stores the results back into `results` or returns a [`Trap`].
@@ -32,7 +32,7 @@ pub trait ExecuteWasmFunc {
 }
 
 /// A type that can translate Wasm function into its own IR.
-pub trait TranslateWasmFunc<'parser> {
+pub trait TranslateWasmFunc<'parser>: Sized {
     /// An engine specific translation error.
     type Error: Debug + Display + Send;
 
