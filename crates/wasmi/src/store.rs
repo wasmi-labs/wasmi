@@ -80,6 +80,16 @@ pub struct Store<T> {
     user_state: T,
 }
 
+#[test]
+fn test_store_is_send_sync() {
+    const _: () = {
+        fn assert_send<T: Send>() {}
+        fn assert_sync<T: Sync>() {}
+        let _ = assert_send::<Store<()>>;
+        let _ = assert_sync::<Store<()>>;
+    };
+}
+
 impl<T> Store<T> {
     /// Creates a new store.
     pub fn new(engine: &Engine, user_state: T) -> Self {
