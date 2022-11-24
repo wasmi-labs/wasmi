@@ -178,7 +178,7 @@ impl Module {
     }
 
     /// Returns an iterator over the imports of the [`Module`].
-    pub(crate) fn imports(&self) -> ModuleImportsIter {
+    pub fn imports(&self) -> ModuleImportsIter {
         let len_imported_funcs = self.imports.len_funcs;
         let len_imported_globals = self.imports.len_globals;
         ModuleImportsIter {
@@ -293,7 +293,7 @@ pub struct ModuleImport<'a> {
 
 impl<'a> ModuleImport<'a> {
     /// Creates a new [`ModuleImport`].
-    pub fn new<T>(name: &'a ImportName, ty: T) -> Self
+    pub(crate) fn new<T>(name: &'a ImportName, ty: T) -> Self
     where
         T: Into<ModuleImportType>,
     {
@@ -304,7 +304,7 @@ impl<'a> ModuleImport<'a> {
     }
 
     /// Returns the import name.
-    pub fn name(&self) -> &ImportName {
+    pub(crate) fn name(&self) -> &ImportName {
         self.name
     }
 
@@ -340,6 +340,8 @@ pub enum ModuleImportType {
     /// [`Memory`]: [`crate::Memory`]
     Memory(MemoryType),
     /// An imported [`Global`].
+    ///
+    /// [`Global`]: [`crate::Global`]
     Global(GlobalType),
 }
 
