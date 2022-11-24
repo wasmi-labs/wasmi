@@ -137,6 +137,7 @@ pub use self::{
         Module,
         ModuleError,
         ModuleExportsIter,
+        ModuleImportsIter,
         Read,
     },
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
