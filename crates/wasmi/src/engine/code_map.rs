@@ -139,6 +139,16 @@ pub struct InstructionPtr {
     ptr: *const Instruction,
 }
 
+/// It is safe to send an [`InstructionPtr`] to another thread.
+///
+/// The access to the pointed-to [`Instruction`] is read-only and
+/// [`Instruction`] itself is [`Send`].
+///
+/// However, it is not safe to share an [`InstructionPtr`] between threads
+/// due to their [`InstructionPtr::offset`] method which relinks the
+/// internal pointer and is not synchronized.
+unsafe impl Send for InstructionPtr {}
+
 impl InstructionPtr {
     /// Creates a new [`InstructionPtr`] for `instr`.
     #[inline]
