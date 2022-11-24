@@ -178,7 +178,7 @@ impl Module {
     }
 
     /// Returns an iterator over the imports of the [`Module`].
-    pub(crate) fn imports(&self) -> ModuleImportsIter {
+    pub fn imports(&self) -> ModuleImportsIter {
         let len_imported_funcs = self.imports.len_funcs;
         let len_imported_globals = self.imports.len_globals;
         ModuleImportsIter {
