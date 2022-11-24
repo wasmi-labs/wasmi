@@ -224,8 +224,8 @@ impl StringInterner {
 struct ImportKey {
     /// The name of the module for the definition.
     module: Symbol,
-    /// The optional name of the definition within the module scope.
-    name: Option<Symbol>,
+    /// The name of the definition within the module scope.
+    name: Symbol,
 }
 
 /// A linker used to define module imports and instantiate module instances.
@@ -283,27 +283,23 @@ impl<T> Linker<T> {
         name: &str,
         item: impl Into<Extern>,
     ) -> Result<&mut Self, LinkerError> {
-        let key = self.import_key(module, Some(name));
+        let key = self.import_key(module, name);
         self.insert(key, item.into())?;
         Ok(self)
     }
 
-    /// Returns the import key for the module name and optional item name.
-    fn import_key(&mut self, module: &str, name: Option<&str>) -> ImportKey {
+    /// Returns the import key for the module name and item name.
+    fn import_key(&mut self, module: &str, name: &str) -> ImportKey {
         ImportKey {
             module: self.strings.get_or_intern(module),
-            name: name.map(|name| self.strings.get_or_intern(name)),
+            name: self.strings.get_or_intern(name),
         }
     }
 
     /// Resolves the module and item name of the import key if any.
-    fn resolve_import_key(&self, key: ImportKey) -> Option<(&str, Option<&str>)> {
+    fn resolve_import_key(&self, key: ImportKey) -> Option<(&str, &str)> {
         let module_name = self.strings.resolve(key.module)?;
-        let item_name = if let Some(item_symbol) = key.name {
-            Some(self.strings.resolve(item_symbol)?)
-        } else {
-            None
-        };
+        let item_name = self.strings.resolve(key.name)?;
         Some((module_name, item_name))
     }
 
@@ -335,13 +331,10 @@ impl<T> Linker<T> {
     ///
     /// Returns `None` if this name was not previously defined in this
     /// [`Linker`].
-    pub fn resolve(&self, module: &str, name: Option<&str>) -> Option<Extern> {
+    pub fn resolve(&self, module: &str, name: &str) -> Option<Extern> {
         let key = ImportKey {
             module: self.strings.get(module)?,
-            name: match name {
-                Some(name) => Some(self.strings.get(name)?),
-                None => None,
-            },
+            name: self.strings.get(name)?,
         };
         self.definitions.get(&key).copied()
     }

@@ -314,7 +314,7 @@ impl<'a> ModuleImport<'a> {
     }
 
     /// Returns the field import name.
-    pub fn field(&self) -> Option<&str> {
+    pub fn field(&self) -> &str {
         self.name.field()
     }
 

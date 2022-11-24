@@ -21,29 +21,26 @@ pub struct ImportName {
     ///
     /// [`Module`]: [`super::Module`]
     module: Box<str>,
-    /// The optional name of the imported item within the [`Module`] namespace.
+    /// The name of the imported item within the [`Module`] namespace.
     ///
     /// [`Module`]: [`super::Module`]
-    field: Option<Box<str>>,
+    field: Box<str>,
 }
 
 impl Display for ImportName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let module_name = &*self.module;
-        if let Some(field_name) = self.field.as_deref() {
-            write!(f, "{module_name}::{field_name}")
-        } else {
-            write!(f, "{module_name}")
-        }
+        let field_name = &*self.field;
+        write!(f, "{module_name}::{field_name}")
     }
 }
 
 impl ImportName {
     /// Creates a new [`Import`] item.
-    pub fn new(module: &str, field: Option<&str>) -> Self {
+    pub fn new(module: &str, field: &str) -> Self {
         Self {
             module: module.into(),
-            field: field.map(Into::into),
+            field: field.into(),
         }
     }
 
@@ -54,11 +51,11 @@ impl ImportName {
         &self.module
     }
 
-    /// Returns the optional name of the imported item within the [`Module`] namespace.
+    /// Returns the name of the imported item within the [`Module`] namespace.
     ///
     /// [`Module`]: [`super::Module`]
-    pub fn field(&self) -> Option<&str> {
-        self.field.as_deref()
+    pub fn field(&self) -> &str {
+        &self.field
     }
 }
 
@@ -73,13 +70,13 @@ impl TryFrom<wasmparser::Import<'_>> for Import {
             TypeRef::Global(global_type) => global_type.try_into().map(ImportKind::Global),
             TypeRef::Tag(_) => Err(ModuleError::unsupported(import)),
         }?;
-        Ok(Self::new(import.module, Some(import.name), kind)) // TODO: remove Some
+        Ok(Self::new(import.module, import.name, kind))
     }
 }
 
 impl Import {
     /// Creates a new [`Import`] item.
-    pub fn new(module: &str, field: Option<&str>, kind: ImportKind) -> Self {
+    pub fn new(module: &str, field: &str, kind: ImportKind) -> Self {
         Self {
             name: ImportName::new(module, field),
             kind,
