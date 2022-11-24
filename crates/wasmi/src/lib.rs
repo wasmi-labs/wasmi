@@ -137,6 +137,8 @@ pub use self::{
         Module,
         ModuleError,
         ModuleExportsIter,
+        ModuleImport,
+        ModuleImportType,
         ModuleImportsIter,
         Read,
     },
