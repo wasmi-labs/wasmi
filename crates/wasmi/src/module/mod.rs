@@ -293,7 +293,7 @@ pub struct ModuleImport<'a> {
 
 impl<'a> ModuleImport<'a> {
     /// Creates a new [`ModuleImport`].
-    pub fn new<T>(name: &'a ImportName, ty: T) -> Self
+    pub(crate) fn new<T>(name: &'a ImportName, ty: T) -> Self
     where
         T: Into<ModuleImportType>,
     {
@@ -304,7 +304,7 @@ impl<'a> ModuleImport<'a> {
     }
 
     /// Returns the import name.
-    pub fn name(&self) -> &ImportName {
+    pub(crate) fn name(&self) -> &ImportName {
         self.name
     }
 
