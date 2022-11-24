@@ -135,11 +135,11 @@ impl Stack {
     }
 
     /// Prepares the [`Stack`] for the given Wasm function call.
-    pub(crate) fn call_wasm<'engine>(
+    pub(crate) fn call_wasm(
         &mut self,
         caller: &FuncFrame,
         wasm_func: &WasmFuncEntity,
-        code_map: &'engine CodeMap,
+        code_map: &CodeMap,
     ) -> Result<FuncFrame, TrapCode> {
         let ip = self.call_wasm_impl(wasm_func, code_map)?;
         self.frames.push(*caller)?;
@@ -149,10 +149,10 @@ impl Stack {
     }
 
     /// Prepares the [`Stack`] for execution of the given Wasm [`FuncFrame`].
-    pub(crate) fn call_wasm_impl<'engine>(
+    pub(crate) fn call_wasm_impl(
         &mut self,
         wasm_func: &WasmFuncEntity,
-        code_map: &'engine CodeMap,
+        code_map: &CodeMap,
     ) -> Result<InstructionPtr, TrapCode> {
         let header = code_map.header(wasm_func.func_body());
         let max_stack_height = header.max_stack_height();
