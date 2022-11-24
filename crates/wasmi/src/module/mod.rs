@@ -340,6 +340,8 @@ pub enum ModuleImportType {
     /// [`Memory`]: [`crate::Memory`]
     Memory(MemoryType),
     /// An imported [`Global`].
+    ///
+    /// [`Global`]: [`crate::Global`]
     Global(GlobalType),
 }
 
