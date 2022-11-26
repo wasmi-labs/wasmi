@@ -910,13 +910,13 @@ impl Interpreter {
                             let signature: specs::host_function::Signature =
                                 desc.signature.clone().into();
                             let params = signature.params.clone();
+
                             for i in 0..params_len {
                                 args.push(from_value_internal_to_u64_with_typ(
                                     (params[i]).into(),
-                                    *self.value_stack.pick(1 + i),
+                                    *self.value_stack.pick(params_len - i),
                                 ));
                             }
-
                             StepInfo::CallHost {
                                 plugin: *plugin,
                                 host_function_idx: *host_function_idx,
