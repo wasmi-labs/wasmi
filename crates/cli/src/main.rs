@@ -19,8 +19,11 @@ struct Args {
     wasm_file: String,
 
     /// The exported name of the Wasm function to call.
+    ///
+    /// If this argument is missing the wasmi CLI will print out all
+    /// exported functions and their parameters of the given Wasm module.
     #[clap(value_parser)]
-    func_name: String,
+    func_name: Option<String>,
 
     /// The arguments provided to the called function.
     #[clap(value_parser)]
@@ -31,11 +34,11 @@ fn main() -> Result<()> {
     let args = Args::parse();
 
     let wasm_file = args.wasm_file;
-    let func_name = args.func_name;
+    let module = load_wasm_module(&wasm_file)?;
+    let func_name = extract_wasm_func(&wasm_file, &module, args.func_name)?;
     let func_args = args.func_args;
 
-    let wasm_bytes = read_wasm_or_wat(&wasm_file)?;
-    let (func, mut store) = load_wasm_func(&wasm_file, &wasm_bytes, &func_name)?;
+    let (func, func_name, mut store) = load_wasm_func(&wasm_file, &module, &func_name)?;
     let func_type = func.func_type(&store);
     let func_args = type_check_arguments(&func_name, &func_type, &func_args)?;
     let mut results = prepare_results_buffer(&func_type);
@@ -59,7 +62,8 @@ fn wat2wasm(wat: &str) -> Result<Vec<u8>, wat::Error> {
 ///
 /// # Errors
 ///
-/// If `wasm_file` is not a valid `.wasm` or `.wat` file.
+/// If the Wasm file `wasm_file` does not exist.
+/// If the Wasm file `wasm_file` is not a valid `.wasm` or `.wat` format.
 fn read_wasm_or_wat(wasm_file: &str) -> Result<Vec<u8>> {
     let mut file_contents =
         fs::read(wasm_file).map_err(|_| anyhow!("failed to read Wasm file {wasm_file}"))?;
@@ -72,42 +76,77 @@ fn read_wasm_or_wat(wasm_file: &str) -> Result<Vec<u8>> {
     Ok(file_contents)
 }
 
+/// Returns the contents of the given `.wasm` or `.wat` file.
+///
+/// # Errors
+///
+/// If the Wasm module fails to parse or validate.
+fn load_wasm_module(wasm_file: &str) -> Result<wasmi::Module> {
+    let wasm_bytes = read_wasm_or_wat(wasm_file)?;
+    let engine = wasmi::Engine::default();
+    let module = wasmi::Module::new(&engine, &mut &wasm_bytes[..]).map_err(|error| {
+        anyhow!("failed to parse and validate Wasm module {wasm_file}: {error}")
+    })?;
+    Ok(module)
+}
+
+/// Returns the given `func_name` if some.
+///
+/// # Errors
+///
+/// If the given `func_name` is none and also displays the
+/// list of exported functions from the Wasm module.
+fn extract_wasm_func(
+    wasm_file: &str,
+    module: &wasmi::Module,
+    func_name: Option<String>,
+) -> Result<String> {
+    match func_name {
+        Some(func_name) => Ok(func_name),
+        None => {
+            let exported_funcs = display_exported_funcs(module);
+            bail!(
+                "missing function name argument for {wasm_file}\n\n\
+                    The Wasm module exports the following functions:\n\n\
+                    {exported_funcs}"
+            )
+        }
+    }
+}
+
 /// Loads the Wasm [`Func`] from the given `wasm_bytes`.
 ///
 /// Returns the [`Func`] together with its [`Store`] for further processing.
 ///
 /// # Errors
 ///
-/// - If the Wasm module fails to parse or validate.
+/// - If the function name argument `func_name` is missing.
 /// - If the Wasm module fails to instantiate or start.
 /// - If the Wasm module does not have an exported function `func_name`.
 fn load_wasm_func(
     wasm_file: &str,
-    wasm_bytes: &[u8],
+    module: &wasmi::Module,
     func_name: &str,
-) -> Result<(Func, Store<()>)> {
-    let engine = wasmi::Engine::default();
-    let mut store = wasmi::Store::new(&engine, ());
-    let module = wasmi::Module::new(&engine, &mut &wasm_bytes[..]).map_err(|error| {
-        anyhow!("failed to parse and validate Wasm module {wasm_file}: {error}")
-    })?;
+) -> Result<(Func, String, Store<()>)> {
+    let engine = module.engine();
     let linker = <wasmi::Linker<()>>::new();
+    let mut store = wasmi::Store::new(engine, ());
     let instance = linker
-        .instantiate(&mut store, &module)
+        .instantiate(&mut store, module)
         .and_then(|pre| pre.start(&mut store))
         .map_err(|error| anyhow!("failed to instantiate and start the Wasm module: {error}"))?;
     let func = instance
         .get_export(&store, func_name)
         .and_then(|ext| ext.into_func())
         .ok_or_else(|| {
-            let exported_funcs = display_exported_funcs(&module);
+            let exported_funcs = display_exported_funcs(module);
             anyhow!(
                 "could not find function \"{func_name}\" in {wasm_file}\n\n\
                     The Wasm module exports the following functions:\n\n\
                     {exported_funcs}"
             )
         })?;
-    Ok((func, store))
+    Ok((func, func_name.into(), store))
 }
 
 /// Returns a [`Vec`] of `(&str, FuncType)` describing the exported functions of the [`Module`].
