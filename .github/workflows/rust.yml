@@ -41,7 +41,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --workspace --no-default-features --target wasm32-unknown-unknown --exclude wasmi_wasi
+          args: --workspace --no-default-features --target wasm32-unknown-unknown --exclude wasmi_cli --exclude wasmi_wasi
 
   test:
     name: Test
