@@ -40,6 +40,9 @@ impl Display for ModuleError {
     }
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for ModuleError {}
+
 impl From<ReadError> for ModuleError {
     fn from(error: ReadError) -> Self {
         Self::Read(error)

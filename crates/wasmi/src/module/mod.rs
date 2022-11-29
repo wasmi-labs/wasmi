@@ -38,7 +38,6 @@ pub use self::{
 use crate::{
     engine::{DedupFuncType, FuncBody},
     Engine,
-    Error,
     GlobalType,
     MemoryType,
     TableType,
@@ -132,8 +131,8 @@ impl Module {
     ///
     /// - If the `stream` cannot be decoded into a valid Wasm module.
     /// - If unsupported Wasm proposals are encountered.
-    pub fn new(engine: &Engine, stream: impl Read) -> Result<Self, Error> {
-        parse(engine, stream).map_err(Into::into)
+    pub fn new(engine: &Engine, stream: impl Read) -> Result<Self, ModuleError> {
+        parse(engine, stream)
     }
 
     /// Returns the [`Engine`] used during creation of the [`Module`].
