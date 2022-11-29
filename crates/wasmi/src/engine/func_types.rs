@@ -1,7 +1,6 @@
 use super::{EngineIdx, Guarded};
-use crate::{FuncType, Store};
+use crate::FuncType;
 use wasmi_arena::{DedupArena, GuardedEntity, Index};
-use wasmi_core::ValueType;
 
 /// A raw index to a function signature entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -48,15 +47,6 @@ impl DedupFuncType {
     /// Returns the underlying stored representation.
     pub(super) fn into_inner(self) -> GuardedEntity<EngineIdx, DedupFuncTypeIdx> {
         self.0
-    }
-
-    /// Creates a new function signature to the store.
-    pub fn new<T, I, O>(ctx: &mut Store<T>, inputs: I, outputs: O) -> Self
-    where
-        I: IntoIterator<Item = ValueType>,
-        O: IntoIterator<Item = ValueType>,
-    {
-        ctx.alloc_func_type(FuncType::new(inputs, outputs))
     }
 }
 

@@ -10,6 +10,7 @@ use crate::{
     Error,
     Extern,
     FuncEntity,
+    FuncType,
     Global,
     Instance,
     InstanceEntity,
@@ -121,6 +122,9 @@ impl Module {
             match (import.item_type(), external) {
                 (ModuleImportType::Func(expected_signature), Extern::Func(func)) => {
                     let actual_signature = func.signature(context.as_context());
+                    let actual_signature = self
+                        .engine
+                        .resolve_func_type(actual_signature, FuncType::clone);
                     // Note: We can compare function signatures without resolving them because
                     //       we deduplicate them before registering. Therefore two equal instances of
                     //       [`SignatureEntity`] will be associated to the same [`Signature`].
@@ -128,7 +132,7 @@ impl Module {
                         // Note: In case of error we could resolve the signatures for better error readability.
                         return Err(InstantiationError::SignatureMismatch {
                             actual: actual_signature,
-                            expected: *expected_signature,
+                            expected: expected_signature.clone(),
                         });
                     }
                     builder.push_func(func);
