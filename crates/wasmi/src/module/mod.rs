@@ -39,6 +39,7 @@ use crate::{
     engine::{DedupFuncType, FuncBody},
     Engine,
     Error,
+    FuncType,
     GlobalType,
     MemoryType,
     TableType,
@@ -182,6 +183,7 @@ impl Module {
         let len_imported_funcs = self.imports.len_funcs;
         let len_imported_globals = self.imports.len_globals;
         ModuleImportsIter {
+            engine: &self.engine,
             names: self.imports.items.iter(),
             funcs: self.funcs[..len_imported_funcs].iter(),
             tables: self.tables.iter(),
@@ -228,6 +230,7 @@ impl Module {
 /// An iterator over the imports of a [`Module`].
 #[derive(Debug)]
 pub struct ModuleImportsIter<'a> {
+    engine: &'a Engine,
     names: SliceIter<'a, Imported>,
     funcs: SliceIter<'a, DedupFuncType>,
     tables: SliceIter<'a, TableType>,
@@ -246,7 +249,8 @@ impl<'a> Iterator for ModuleImportsIter<'a> {
                     let func_type = self.funcs.next().unwrap_or_else(|| {
                         panic!("unexpected missing imported function for {name:?}")
                     });
-                    ModuleImport::new(name, *func_type)
+                    let func_type = self.engine.resolve_func_type(*func_type, FuncType::clone);
+                    ModuleImport::new(name, func_type)
                 }
                 Imported::Table(name) => {
                     let table_type = self.tables.next().unwrap_or_else(|| {
@@ -330,7 +334,7 @@ pub enum ModuleImportType {
     /// An imported [`Func`].
     ///
     /// [`Func`]: [`crate::Func`]
-    Func(DedupFuncType),
+    Func(FuncType),
     /// An imported [`Table`].
     ///
     /// [`Table`]: [`crate::Table`]
@@ -345,8 +349,8 @@ pub enum ModuleImportType {
     Global(GlobalType),
 }
 
-impl From<DedupFuncType> for ModuleImportType {
-    fn from(func_type: DedupFuncType) -> Self {
+impl From<FuncType> for ModuleImportType {
+    fn from(func_type: FuncType) -> Self {
         Self::Func(func_type)
     }
 }

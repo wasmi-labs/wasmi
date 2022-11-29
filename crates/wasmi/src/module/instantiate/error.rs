@@ -1,9 +1,9 @@
 use super::ModuleImportType;
 use crate::{
-    engine::DedupFuncType,
     errors::{MemoryError, TableError},
     global::GlobalError,
     Extern,
+    FuncType,
     Table,
 };
 use core::{fmt, fmt::Display};
@@ -25,9 +25,9 @@ pub enum InstantiationError {
     /// Caused when a function has a mismatching signature.
     SignatureMismatch {
         /// The expected function signature for the function import.
-        expected: DedupFuncType,
+        expected: FuncType,
         /// The actual function signature for the function import.
-        actual: DedupFuncType,
+        actual: FuncType,
     },
     /// Occurs when an imported table does not satisfy the required table type.
     Table(TableError),

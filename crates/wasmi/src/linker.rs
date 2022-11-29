@@ -376,11 +376,12 @@ impl<T> Linker<T> {
             ModuleImportType::Func(expected_func_type) => {
                 let func = resolved.and_then(Extern::into_func).ok_or_else(make_err)?;
                 let actual_func_type = func.signature(&context);
+                let actual_func_type = context.store.resolve_func_type(actual_func_type);
                 if &actual_func_type != expected_func_type {
                     return Err(LinkerError::FuncTypeMismatch {
                         name: import.name().clone(),
-                        expected: context.store.resolve_func_type(*expected_func_type),
-                        actual: context.store.resolve_func_type(actual_func_type),
+                        expected: expected_func_type.clone(),
+                        actual: actual_func_type,
                     })
                     .map_err(Into::into);
                 }
