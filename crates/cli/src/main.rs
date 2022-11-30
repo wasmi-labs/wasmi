@@ -277,10 +277,7 @@ fn print_execution_start(wasm_file: &str, func_name: &str, func_args: &[Value]) 
 
 /// Prints the results of the Wasm computation in a human readable form.
 fn print_pretty_results(results: &[Value]) {
-    let pretty_results = results
-        .iter()
-        .map(Value::to_string)
-        .collect::<Vec<_>>();
+    let pretty_results = results.iter().map(Value::to_string).collect::<Vec<_>>();
     match pretty_results.len() {
         1 => {
             println!("{}", pretty_results[0]);
