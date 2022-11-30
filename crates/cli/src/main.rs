@@ -279,7 +279,7 @@ fn print_execution_start(wasm_file: &str, func_name: &str, func_args: &[Value]) 
 fn print_pretty_results(results: &[Value]) {
     let pretty_results = results
         .iter()
-        .map(|value| value.to_string())
+        .map(Value::to_string)
         .collect::<Vec<_>>();
     match pretty_results.len() {
         1 => {
