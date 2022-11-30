@@ -227,27 +227,31 @@ fn type_check_arguments(
         .iter()
         .zip(func_args)
         .enumerate()
-        .map(|(n, (param_type, arg))| match param_type {
-            ValueType::I32 => arg.parse::<i32>().map(Value::from).map_err(|error| {
-                anyhow!("failed to parse argument {arg} at index {n} as {param_type}: {error}")
-            }),
-            ValueType::I64 => arg.parse::<i64>().map(Value::from).map_err(|error| {
-                anyhow!("failed to parse argument {arg} at index {n} as {param_type}: {error}")
-            }),
-            ValueType::F32 => arg
-                .parse::<f32>()
-                .map(F32::from)
-                .map(Value::from)
-                .map_err(|error| {
-                    anyhow!("failed to parse argument {arg} at index {n} as {param_type}: {error}")
-                }),
-            ValueType::F64 => arg
-                .parse::<f64>()
-                .map(F64::from)
-                .map(Value::from)
-                .map_err(|error| {
-                    anyhow!("failed to parse argument {arg} at index {n} as {param_type}: {error}")
-                }),
+        .map(|(n, (param_type, arg))| {
+            macro_rules! make_err {
+                () => {
+                    |_| {
+                        anyhow!(
+                            "failed to parse function argument \
+                            {arg} at index {n} as {param_type}"
+                        )
+                    }
+                };
+            }
+            match param_type {
+                ValueType::I32 => arg.parse::<i32>().map(Value::from).map_err(make_err!()),
+                ValueType::I64 => arg.parse::<i64>().map(Value::from).map_err(make_err!()),
+                ValueType::F32 => arg
+                    .parse::<f32>()
+                    .map(F32::from)
+                    .map(Value::from)
+                    .map_err(make_err!()),
+                ValueType::F64 => arg
+                    .parse::<f64>()
+                    .map(F64::from)
+                    .map(Value::from)
+                    .map_err(make_err!()),
+            }
         })
         .collect::<Result<Vec<_>, _>>()?;
     Ok(func_args)
