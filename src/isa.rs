@@ -513,7 +513,10 @@ impl<'a> Instruction<'a> {
                 class: RelOp::Ne,
                 vtype: VarType::I32,
             },
-            Instruction::I32LtS => todo!(),
+            Instruction::I32LtS => Opcode::Rel {
+                class: RelOp::SignedLt,
+                vtype: VarType::I32,
+            },
             Instruction::I32LtU => Opcode::Rel {
                 class: RelOp::UnsignedLt,
                 vtype: VarType::I32,
@@ -526,7 +529,10 @@ impl<'a> Instruction<'a> {
                 class: RelOp::UnsignedGt,
                 vtype: VarType::I32,
             },
-            Instruction::I32LeS => todo!(),
+            Instruction::I32LeS => Opcode::Rel {
+                class: RelOp::SignedLe,
+                vtype: VarType::I32,
+            },
             Instruction::I32LeU => Opcode::Rel {
                 class: RelOp::UnsignedLe,
                 vtype: VarType::I32,
@@ -548,7 +554,10 @@ impl<'a> Instruction<'a> {
                 class: RelOp::Ne,
                 vtype: VarType::I64,
             },
-            Instruction::I64LtS => todo!(),
+            Instruction::I64LtS => Opcode::Rel {
+                class: RelOp::SignedLt,
+                vtype: VarType::I64,
+            },
             Instruction::I64LtU => Opcode::Rel {
                 class: RelOp::UnsignedLt,
                 vtype: VarType::I64,
@@ -561,7 +570,10 @@ impl<'a> Instruction<'a> {
                 class: RelOp::UnsignedGt,
                 vtype: VarType::I64,
             },
-            Instruction::I64LeS => todo!(),
+            Instruction::I64LeS => Opcode::Rel {
+                class: RelOp::SignedLe,
+                vtype: VarType::I64,
+            },
             Instruction::I64LeU => Opcode::Rel {
                 class: RelOp::UnsignedLe,
                 vtype: VarType::I64,

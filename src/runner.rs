@@ -622,7 +622,9 @@ impl Interpreter {
             | isa::Instruction::I32GeS
             | isa::Instruction::I32GeU
             | isa::Instruction::I32LtU
-            | isa::Instruction::I32LeU => Some(RunInstructionTracePre::I32Comp {
+            | isa::Instruction::I32LeU
+            | isa::Instruction::I32LtS
+            | isa::Instruction::I32LeS => Some(RunInstructionTracePre::I32Comp {
                 left: <_>::from_value_internal(*self.value_stack.pick(2)),
                 right: <_>::from_value_internal(*self.value_stack.pick(1)),
             }),
@@ -634,7 +636,9 @@ impl Interpreter {
             | isa::Instruction::I64GeS
             | isa::Instruction::I64GeU
             | isa::Instruction::I64LtU
-            | isa::Instruction::I64LeU => Some(RunInstructionTracePre::I64Comp {
+            | isa::Instruction::I64LeU
+            | isa::Instruction::I64LtS
+            | isa::Instruction::I64LeS => Some(RunInstructionTracePre::I64Comp {
                 left: <_>::from_value_internal(*self.value_stack.pick(2)),
                 right: <_>::from_value_internal(*self.value_stack.pick(1)),
             }),
@@ -1103,10 +1107,34 @@ impl Interpreter {
                     unreachable!()
                 }
             }
+            isa::Instruction::I32LtS => {
+                if let RunInstructionTracePre::I32Comp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32Comp {
+                        class: RelOp::SignedLt,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
             isa::Instruction::I32LtU => {
                 if let RunInstructionTracePre::I32Comp { left, right } = pre_status.unwrap() {
                     StepInfo::I32Comp {
                         class: RelOp::UnsignedLt,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I32LeS => {
+                if let RunInstructionTracePre::I32Comp { left, right } = pre_status.unwrap() {
+                    StepInfo::I32Comp {
+                        class: RelOp::SignedLe,
                         left,
                         right,
                         value: <_>::from_value_internal(*self.value_stack.top()),
@@ -1188,10 +1216,34 @@ impl Interpreter {
                     unreachable!()
                 }
             }
+            isa::Instruction::I64LtS => {
+                if let RunInstructionTracePre::I64Comp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64Comp {
+                        class: RelOp::SignedLt,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
             isa::Instruction::I64LeU => {
                 if let RunInstructionTracePre::I64Comp { left, right } = pre_status.unwrap() {
                     StepInfo::I64Comp {
                         class: RelOp::UnsignedLe,
+                        left,
+                        right,
+                        value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64LeS => {
+                if let RunInstructionTracePre::I64Comp { left, right } = pre_status.unwrap() {
+                    StepInfo::I64Comp {
+                        class: RelOp::SignedLe,
                         left,
                         right,
                         value: <_>::from_value_internal(*self.value_stack.top()),
