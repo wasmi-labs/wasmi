@@ -1,4 +1,4 @@
-use crate::Index;
+use crate::ArenaIndex;
 use alloc::vec::Vec;
 use core::{marker::PhantomData, mem::replace, ops};
 
@@ -11,7 +11,7 @@ pub struct StashArena<Idx, T> {
 
 impl<Idx, T> StashArena<Idx, T>
 where
-    Idx: Index,
+    Idx: ArenaIndex,
 {
     /// Clears the [`StashArena`].
     pub fn clear(&mut self) {
@@ -53,7 +53,7 @@ where
 
 impl<Idx, T> ops::Index<Idx> for StashArena<Idx, T>
 where
-    Idx: Index,
+    Idx: ArenaIndex,
 {
     type Output = T;
 
@@ -64,7 +64,7 @@ where
 
 impl<Idx, T> ops::IndexMut<Idx> for StashArena<Idx, T>
 where
-    Idx: Index,
+    Idx: ArenaIndex,
 {
     fn index_mut(&mut self, index: Idx) -> &mut Self::Output {
         &mut self.stash[SlotRef(index.into_usize())]

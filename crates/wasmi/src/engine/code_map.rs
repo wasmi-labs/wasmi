@@ -2,13 +2,13 @@
 
 use super::Instruction;
 use alloc::vec::Vec;
-use wasmi_arena::Index;
+use wasmi_arena::ArenaIndex;
 
 /// A reference to a Wasm function body stored in the [`CodeMap`].
 #[derive(Debug, Copy, Clone)]
 pub struct FuncBody(usize);
 
-impl Index for FuncBody {
+impl ArenaIndex for FuncBody {
     fn into_usize(self) -> usize {
         self.0
     }

@@ -18,13 +18,13 @@ use alloc::{
     vec::Vec,
 };
 use core::iter::FusedIterator;
-use wasmi_arena::Index;
+use wasmi_arena::ArenaIndex;
 
 /// A raw index to a module instance entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InstanceIdx(u32);
 
-impl Index for InstanceIdx {
+impl ArenaIndex for InstanceIdx {
     fn into_usize(self) -> usize {
         self.0 as usize
     }

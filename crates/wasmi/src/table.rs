@@ -3,13 +3,13 @@
 use super::{AsContext, AsContextMut, Func, Stored};
 use alloc::vec::Vec;
 use core::{fmt, fmt::Display};
-use wasmi_arena::Index;
+use wasmi_arena::ArenaIndex;
 
 /// A raw index to a table entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TableIdx(u32);
 
-impl Index for TableIdx {
+impl ArenaIndex for TableIdx {
     fn into_usize(self) -> usize {
         self.0 as usize
     }

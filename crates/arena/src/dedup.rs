@@ -1,4 +1,4 @@
-use super::{Arena, Index, Iter, IterMut};
+use super::{Arena, ArenaIndex, Iter, IterMut};
 use alloc::collections::BTreeMap;
 use core::ops;
 
@@ -68,7 +68,7 @@ impl<Idx, T> DedupArena<Idx, T> {
 
 impl<Idx, T> DedupArena<Idx, T>
 where
-    Idx: Index,
+    Idx: ArenaIndex,
     T: Ord + Clone,
 {
     /// Returns the next entity index.
@@ -108,7 +108,7 @@ where
 
 impl<Idx, T> FromIterator<T> for DedupArena<Idx, T>
 where
-    Idx: Index,
+    Idx: ArenaIndex,
     T: Clone + Ord,
 {
     fn from_iter<I>(iter: I) -> Self
@@ -129,7 +129,7 @@ where
 
 impl<'a, Idx, T> IntoIterator for &'a DedupArena<Idx, T>
 where
-    Idx: Index,
+    Idx: ArenaIndex,
 {
     type Item = (Idx, &'a T);
     type IntoIter = Iter<'a, Idx, T>;
@@ -141,7 +141,7 @@ where
 
 impl<'a, Idx, T> IntoIterator for &'a mut DedupArena<Idx, T>
 where
-    Idx: Index,
+    Idx: ArenaIndex,
 {
     type Item = (Idx, &'a mut T);
     type IntoIter = IterMut<'a, Idx, T>;
@@ -153,7 +153,7 @@ where
 
 impl<Idx, T> ops::Index<Idx> for DedupArena<Idx, T>
 where
-    Idx: Index,
+    Idx: ArenaIndex,
 {
     type Output = T;
 
@@ -165,7 +165,7 @@ where
 
 impl<Idx, T> ops::IndexMut<Idx> for DedupArena<Idx, T>
 where
-    Idx: Index,
+    Idx: ArenaIndex,
 {
     #[inline]
     fn index_mut(&mut self, index: Idx) -> &mut Self::Output {
