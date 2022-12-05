@@ -24,11 +24,12 @@ extern crate std as alloc;
 
 mod dedup;
 mod guarded;
+mod stash;
 
 #[cfg(test)]
 mod tests;
 
-pub use self::{dedup::DedupArena, guarded::GuardedEntity};
+pub use self::{dedup::DedupArena, guarded::GuardedEntity, stash::StashArena};
 use alloc::vec::Vec;
 use core::{
     iter::{DoubleEndedIterator, Enumerate, ExactSizeIterator},
