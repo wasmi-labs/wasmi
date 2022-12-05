@@ -29,7 +29,7 @@ where
 
     /// Returns `true` if the [`StashArena`] is empty.
     pub fn is_empty(&self) -> bool {
-        self.len() == 0
+        self.stash.is_empty()
     }
 
     /// Puts the `value` into the [`StashArena`] and returns a reference to it.
