@@ -1,6 +1,6 @@
 use super::{Arena, ArenaIndex, Iter, IterMut};
 use alloc::collections::BTreeMap;
-use core::ops;
+use core::ops::{Index, IndexMut};
 
 /// A deduplicating arena allocator with a given index and entity type.
 ///
@@ -151,7 +151,7 @@ where
     }
 }
 
-impl<Idx, T> ops::Index<Idx> for DedupArena<Idx, T>
+impl<Idx, T> Index<Idx> for DedupArena<Idx, T>
 where
     Idx: ArenaIndex,
 {
@@ -163,7 +163,7 @@ where
     }
 }
 
-impl<Idx, T> ops::IndexMut<Idx> for DedupArena<Idx, T>
+impl<Idx, T> IndexMut<Idx> for DedupArena<Idx, T>
 where
     Idx: ArenaIndex,
 {

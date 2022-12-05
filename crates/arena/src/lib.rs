@@ -34,7 +34,7 @@ use alloc::vec::Vec;
 use core::{
     iter::{DoubleEndedIterator, Enumerate, ExactSizeIterator},
     marker::PhantomData,
-    ops,
+    ops::{Index, IndexMut},
     slice,
 };
 
@@ -289,7 +289,7 @@ impl<Idx, T> Arena<Idx, T> {
     }
 }
 
-impl<Idx, T> ops::Index<Idx> for Arena<Idx, T>
+impl<Idx, T> Index<Idx> for Arena<Idx, T>
 where
     Idx: ArenaIndex,
 {
@@ -302,7 +302,7 @@ where
     }
 }
 
-impl<Idx, T> ops::IndexMut<Idx> for Arena<Idx, T>
+impl<Idx, T> IndexMut<Idx> for Arena<Idx, T>
 where
     Idx: ArenaIndex,
 {

@@ -1,6 +1,10 @@
 use crate::ArenaIndex;
 use alloc::vec::Vec;
-use core::{marker::PhantomData, mem::replace, ops};
+use core::{
+    marker::PhantomData,
+    mem::replace,
+    ops::{Index, IndexMut},
+};
 
 /// A stash arena providing O(1) insertion and indexed deletion.
 #[derive(Debug, Default, Clone)]
@@ -51,7 +55,7 @@ where
     }
 }
 
-impl<Idx, T> ops::Index<Idx> for StashArena<Idx, T>
+impl<Idx, T> Index<Idx> for StashArena<Idx, T>
 where
     Idx: ArenaIndex,
 {
@@ -62,7 +66,7 @@ where
     }
 }
 
-impl<Idx, T> ops::IndexMut<Idx> for StashArena<Idx, T>
+impl<Idx, T> IndexMut<Idx> for StashArena<Idx, T>
 where
     Idx: ArenaIndex,
 {
@@ -215,7 +219,7 @@ impl<T> Stash<T> {
     }
 }
 
-impl<T> ops::Index<SlotRef> for Stash<T> {
+impl<T> Index<SlotRef> for Stash<T> {
     type Output = T;
 
     fn index(&self, index: SlotRef) -> &Self::Output {
@@ -224,7 +228,7 @@ impl<T> ops::Index<SlotRef> for Stash<T> {
     }
 }
 
-impl<T> ops::IndexMut<SlotRef> for Stash<T> {
+impl<T> IndexMut<SlotRef> for Stash<T> {
     fn index_mut(&mut self, index: SlotRef) -> &mut Self::Output {
         self.get_mut(index)
             .unwrap_or_else(|| panic!("unexpected vacant slot at index {}", index.into_index()))
