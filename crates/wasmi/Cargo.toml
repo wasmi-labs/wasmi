@@ -19,6 +19,7 @@ wasmi_arena = { version = "0.1", path = "../arena", default-features = false }
 spin = { version = "0.9", default-features = false, features = [
     "mutex",
     "spin_mutex",
+    "rwlock",
 ] }
 
 [dev-dependencies]

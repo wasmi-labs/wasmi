@@ -45,7 +45,7 @@ use crate::{
 use alloc::sync::Arc;
 use core::sync::atomic::{AtomicU32, Ordering};
 pub use func_types::DedupFuncType;
-use spin::mutex::Mutex;
+use spin::{mutex::Mutex, rwlock::RwLock};
 use wasmi_arena::{ArenaIndex, GuardedEntity};
 
 /// The outcome of a `wasmi` function execution.
@@ -100,7 +100,7 @@ type Guarded<Idx> = GuardedEntity<EngineIdx, Idx>;
 ///   Most of its API has a `&self` receiver, so can be shared easily.
 #[derive(Debug, Clone)]
 pub struct Engine {
-    inner: Arc<Mutex<EngineInner>>,
+    inner: Arc<EngineInner>,
 }
 
 impl Default for Engine {
@@ -117,18 +117,18 @@ impl Engine {
     /// Users should ues [`Engine::default`] to construct a default [`Engine`].
     pub fn new(config: &Config) -> Self {
         Self {
-            inner: Arc::new(Mutex::new(EngineInner::new(config))),
+            inner: Arc::new(EngineInner::new(config)),
         }
     }
 
     /// Returns a shared reference to the [`Config`] of the [`Engine`].
     pub fn config(&self) -> Config {
-        *self.inner.lock().config()
+        self.inner.config()
     }
 
     /// Allocates a new function type to the engine.
     pub(super) fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
-        self.inner.lock().func_types.alloc_func_type(func_type)
+        self.inner.alloc_func_type(func_type)
     }
 
     /// Resolves a deduplicated function type into a [`FuncType`] entity.
@@ -141,8 +141,7 @@ impl Engine {
     where
         F: FnOnce(&FuncType) -> R,
     {
-        // Note: The clone operation on FuncType is intentionally cheap.
-        f(self.inner.lock().func_types.resolve_func_type(func_type))
+        self.inner.resolve_func_type(func_type, f)
     }
 
     /// Allocates the instructions of a Wasm function body to the [`Engine`].
@@ -159,7 +158,6 @@ impl Engine {
         I::IntoIter: ExactSizeIterator,
     {
         self.inner
-            .lock()
             .alloc_func_body(len_locals, max_stack_height, insts)
     }
 
@@ -176,11 +174,7 @@ impl Engine {
     /// If the [`FuncBody`] is invalid for the [`Engine`].
     #[cfg(test)]
     pub(crate) fn resolve_inst(&self, func_body: FuncBody, index: usize) -> Option<Instruction> {
-        self.inner
-            .lock()
-            .code_map
-            .get_instr(func_body, index)
-            .copied()
+        self.inner.resolve_inst(func_body, index)
     }
 
     /// Executes the given [`Func`] using the given arguments `params` and stores the result into `results`.
@@ -211,17 +205,91 @@ impl Engine {
         Params: CallParams,
         Results: CallResults,
     {
-        self.inner.lock().execute_func(ctx, func, params, results)
+        self.inner.execute_func(ctx, func, params, results)
     }
 }
 
 /// The internal state of the `wasmi` engine.
 #[derive(Debug)]
 pub struct EngineInner {
+    /// Engine resources shared across multiple engine executors.
+    res: RwLock<EngineResources>,
+    /// Engine executors for Wasm execution.
+    ///
+    /// There can be more than one engine executor alive at the same time
+    /// to allow for concurrent Wasm function executions.
+    executor: Mutex<EngineExecutor>,
+}
+
+impl EngineInner {
+    /// Creates a new [`EngineInner`] with the given [`Config`].
+    fn new(config: &Config) -> Self {
+        Self {
+            res: RwLock::new(EngineResources::new(config)),
+            executor: Mutex::new(EngineExecutor::new(config.stack_limits())),
+        }
+    }
+
+    fn config(&self) -> Config {
+        self.res.read().config.clone()
+    }
+
+    fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
+        self.res.write().func_types.alloc_func_type(func_type)
+    }
+
+    fn alloc_func_body<I>(&self, len_locals: usize, max_stack_height: usize, insts: I) -> FuncBody
+    where
+        I: IntoIterator<Item = Instruction>,
+        I::IntoIter: ExactSizeIterator,
+    {
+        self.res
+            .write()
+            .code_map
+            .alloc(len_locals, max_stack_height, insts)
+    }
+
+    fn resolve_func_type<F, R>(&self, func_type: DedupFuncType, f: F) -> R
+    where
+        F: FnOnce(&FuncType) -> R,
+    {
+        f(self.res.read().func_types.resolve_func_type(func_type))
+    }
+
+    #[cfg(test)]
+    fn resolve_inst(&self, func_body: FuncBody, index: usize) -> Option<Instruction> {
+        self.res
+            .read()
+            .code_map
+            .get_instr(func_body, index)
+            .copied()
+    }
+
+    fn execute_func<Params, Results>(
+        &self,
+        ctx: impl AsContextMut,
+        func: Func,
+        params: Params,
+        results: Results,
+    ) -> Result<<Results as CallResults>::Results, Trap>
+    where
+        Params: CallParams,
+        Results: CallResults,
+    {
+        let res = self.res.read();
+        self.executor
+            .lock()
+            .execute_func(ctx, &res, func, params, results)
+    }
+}
+
+/// Engine resources that are immutable during function execution.
+///
+/// Can be shared by multiple engine executors.
+#[derive(Debug)]
+pub struct EngineResources {
     /// The configuration with which the [`Engine`] has been created.
     config: Config,
-    /// The value and call stacks.
-    stack: Stack,
     /// Stores all Wasm function bodies that the interpreter is aware of.
     code_map: CodeMap,
     /// Deduplicated function types.
@@ -233,37 +301,31 @@ pub struct EngineInner {
     func_types: FuncTypeRegistry,
 }
 
-impl EngineInner {
-    /// Creates a new [`EngineInner`] with the given [`Config`].
-    pub fn new(config: &Config) -> Self {
+impl EngineResources {
+    /// Creates a new [`EngineResources`] with the given [`Config`].
+    fn new(config: &Config) -> Self {
         let engine_idx = EngineIdx::new();
         Self {
             config: *config,
-            stack: Stack::new(config.stack_limits()),
             code_map: CodeMap::default(),
             func_types: FuncTypeRegistry::new(engine_idx),
         }
     }
+}
 
-    /// Returns a shared reference to the [`Config`] of the [`Engine`].
-    pub fn config(&self) -> &Config {
-        &self.config
-    }
+/// The internal state of the `wasmi` engine.
+#[derive(Debug)]
+pub struct EngineExecutor {
+    /// The value and call stacks.
+    stack: Stack,
+}
 
-    /// Allocates the instructions of a Wasm function body to the [`Engine`].
-    ///
-    /// Returns a [`FuncBody`] reference to the allocated function body.
-    pub fn alloc_func_body<I>(
-        &mut self,
-        len_locals: usize,
-        max_stack_height: usize,
-        insts: I,
-    ) -> FuncBody
-    where
-        I: IntoIterator<Item = Instruction>,
-        I::IntoIter: ExactSizeIterator,
-    {
-        self.code_map.alloc(len_locals, max_stack_height, insts)
+impl EngineExecutor {
+    /// Creates a new [`EngineExecutor`] with the given [`StackLimits`].
+    fn new(limits: StackLimits) -> Self {
+        Self {
+            stack: Stack::new(limits),
+        }
     }
 
     /// Executes the given [`Func`] using the given arguments `args` and stores the result into `results`.
@@ -273,9 +335,10 @@ impl EngineInner {
     /// - If the given arguments `args` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm trap during the execution of `func`.
-    pub fn execute_func<Params, Results>(
+    fn execute_func<Params, Results>(
         &mut self,
         mut ctx: impl AsContextMut,
+        res: &EngineResources,
         func: Func,
         params: Params,
         results: Results,
@@ -287,14 +350,14 @@ impl EngineInner {
         self.initialize_args(params);
         match func.as_internal(ctx.as_context()) {
             FuncEntityInternal::Wasm(wasm_func) => {
-                let mut frame = self.stack.call_wasm_root(wasm_func, &self.code_map)?;
+                let mut frame = self.stack.call_wasm_root(wasm_func, &res.code_map)?;
                 let mut cache = InstanceCache::from(frame.instance());
-                self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
+                self.execute_wasm_func(ctx.as_context_mut(), res, &mut frame, &mut cache)?;
             }
             FuncEntityInternal::Host(host_func) => {
                 let host_func = host_func.clone();
                 self.stack
-                    .call_host_root(ctx.as_context_mut(), host_func, &self.func_types)?;
+                    .call_host_root(ctx.as_context_mut(), host_func, &res.func_types)?;
             }
         };
         let results = self.write_results_back(results);
@@ -335,6 +398,7 @@ impl EngineInner {
     fn execute_wasm_func(
         &mut self,
         mut ctx: impl AsContextMut,
+        res: &EngineResources,
         frame: &mut FuncFrame,
         cache: &mut InstanceCache,
     ) -> Result<(), Trap> {
@@ -350,7 +414,7 @@ impl EngineInner {
                 CallOutcome::NestedCall(called_func) => {
                     match called_func.as_internal(ctx.as_context()) {
                         FuncEntityInternal::Wasm(wasm_func) => {
-                            *frame = self.stack.call_wasm(frame, wasm_func, &self.code_map)?;
+                            *frame = self.stack.call_wasm(frame, wasm_func, &res.code_map)?;
                         }
                         FuncEntityInternal::Host(host_func) => {
                             cache.reset_default_memory_bytes();
@@ -359,7 +423,7 @@ impl EngineInner {
                                 ctx.as_context_mut(),
                                 frame,
                                 host_func,
-                                &self.func_types,
+                                &res.func_types,
                             )?;
                         }
                     }
