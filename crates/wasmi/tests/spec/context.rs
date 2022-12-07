@@ -191,8 +191,8 @@ impl TestContext<'_> {
                 .define(name, field_name, *export)
                 .unwrap_or_else(|error| {
                     panic!(
-                        "failed to define export {}::{}: {:?}: {}",
-                        name, field_name, export, error
+                        "failed to define export {name}::{field_name}: \
+                        {export:?}: {error}",
                     )
                 });
         }

@@ -61,15 +61,15 @@ impl Display for TableError {
             } => {
                 write!(
                     f,
-                    "tried to grow table with size of {} and maximum of {} by {} out of bounds",
-                    current, maximum, grow_by
+                    "tried to grow table with size of {current} and maximum of \
+                    {maximum} by {grow_by} out of bounds",
                 )
             }
             Self::AccessOutOfBounds { current, offset } => {
                 write!(
                     f,
-                    "out of bounds access of table element {} of table with size {}",
-                    offset, current,
+                    "out of bounds access of table element {offset} \
+                    of table with size {current}",
                 )
             }
             Self::UnsatisfyingTableType {
@@ -78,8 +78,8 @@ impl Display for TableError {
             } => {
                 write!(
                     f,
-                    "table type {:?} does not satisfy requirements of {:?}",
-                    unsatisfying, required,
+                    "table type {unsatisfying:?} does not satisfy requirements \
+                    of {required:?}",
                 )
             }
         }

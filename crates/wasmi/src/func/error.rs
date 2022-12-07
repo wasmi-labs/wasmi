@@ -21,13 +21,13 @@ impl Display for FuncError {
         match self {
             FuncError::MismatchingParameters { func } => write!(
                 f,
-                "encountered mismatching function parameter types for TypedFunc: {:?}",
-                func
+                "encountered mismatching function \
+                parameter types for TypedFunc: {func:?}",
             ),
             FuncError::MismatchingResults { func } => write!(
                 f,
-                "encountered mismatching function result types for TypedFunc: {:?}",
-                func
+                "encountered mismatching function \
+                result types for TypedFunc: {func:?}",
             ),
         }
     }
