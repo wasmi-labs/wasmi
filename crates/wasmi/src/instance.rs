@@ -358,7 +358,7 @@ impl Instance {
     /// # Panics
     ///
     /// Panics if `store` does not own this [`Instance`].
-    pub(crate) fn get_memory(&self, store: impl AsContext, index: u32) -> Option<Memory> {
+    pub fn get_memory(&self, store: impl AsContext, index: u32) -> Option<Memory> {
         store
             .as_context()
             .store
