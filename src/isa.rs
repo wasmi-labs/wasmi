@@ -72,7 +72,7 @@ use std::collections::HashMap;
 use alloc::vec::Vec;
 use parity_wasm::elements::ValueType;
 use specs::{
-    itable::{BinOp, BitOp, ConversionOp, Opcode, RelOp, ShiftOp, TestOp},
+    itable::{BinOp, BitOp, ConversionOp, Opcode, RelOp, ShiftOp, TestOp, UnaryOp},
     mtable::{MemoryReadSize, MemoryStoreSize, VarType},
 };
 
@@ -350,6 +350,17 @@ pub enum Instruction<'a> {
     F64ReinterpretI64,
 }
 
+impl<'a> From<Instruction<'a>> for UnaryOp {
+    fn from(value: Instruction<'a>) -> Self {
+        match value {
+            Instruction::I32Clz | Instruction::I64Clz => UnaryOp::Clz,
+            Instruction::I32Ctz | Instruction::I64Ctz => UnaryOp::Ctz,
+            Instruction::I32Popcnt | Instruction::I64Popcnt => UnaryOp::Popcnt,
+            _ => unreachable!(),
+        }
+    }
+}
+
 impl<'a> Instruction<'a> {
     pub(crate) fn into(self, function_mapping: &HashMap<u32, FuncDesc>) -> Opcode {
         match self {
@@ -598,9 +609,18 @@ impl<'a> Instruction<'a> {
             Instruction::F64Gt => todo!(),
             Instruction::F64Le => todo!(),
             Instruction::F64Ge => todo!(),
-            Instruction::I32Clz => todo!(),
-            Instruction::I32Ctz => todo!(),
-            Instruction::I32Popcnt => todo!(),
+            Instruction::I32Clz => Opcode::Unary {
+                class: UnaryOp::Clz,
+                vtype: VarType::I32,
+            },
+            Instruction::I32Ctz => Opcode::Unary {
+                class: UnaryOp::Ctz,
+                vtype: VarType::I32,
+            },
+            Instruction::I32Popcnt => Opcode::Unary {
+                class: UnaryOp::Popcnt,
+                vtype: VarType::I32,
+            },
             Instruction::I32Add => Opcode::Bin {
                 class: BinOp::Add,
                 vtype: VarType::I32,
@@ -661,9 +681,18 @@ impl<'a> Instruction<'a> {
                 class: ShiftOp::Rotr,
                 vtype: VarType::I32,
             },
-            Instruction::I64Clz => todo!(),
-            Instruction::I64Ctz => todo!(),
-            Instruction::I64Popcnt => todo!(),
+            Instruction::I64Clz => Opcode::Unary {
+                class: UnaryOp::Clz,
+                vtype: VarType::I64,
+            },
+            Instruction::I64Ctz => Opcode::Unary {
+                class: UnaryOp::Ctz,
+                vtype: VarType::I64,
+            },
+            Instruction::I64Popcnt => Opcode::Unary {
+                class: UnaryOp::Popcnt,
+                vtype: VarType::I64,
+            },
             Instruction::I64Add => Opcode::Bin {
                 class: BinOp::Add,
                 vtype: VarType::I64,

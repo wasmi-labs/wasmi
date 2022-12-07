@@ -29,7 +29,7 @@ use alloc::{boxed::Box, vec::Vec};
 use core::{cell::RefCell, fmt, ops, u32, usize};
 use parity_wasm::elements::Local;
 use specs::{
-    itable::{BinOp, BitOp, RelOp, ShiftOp},
+    itable::{BinOp, BitOp, RelOp, ShiftOp, UnaryOp},
     mtable::{MemoryReadSize, MemoryStoreSize, VarType},
     step::StepInfo,
 };
@@ -680,6 +680,25 @@ impl Interpreter {
                 left: <_>::from_value_internal(*self.value_stack.pick(2)),
                 right: <_>::from_value_internal(*self.value_stack.pick(1)),
             }),
+
+            isa::Instruction::I32Ctz | isa::Instruction::I32Clz | isa::Instruction::I32Popcnt => {
+                Some(RunInstructionTracePre::UnaryOp {
+                    operand: from_value_internal_to_u64_with_typ(
+                        VarType::I32,
+                        *self.value_stack.pick(1),
+                    ),
+                    vtype: VarType::I32,
+                })
+            }
+            isa::Instruction::I64Ctz | isa::Instruction::I64Clz | isa::Instruction::I64Popcnt => {
+                Some(RunInstructionTracePre::UnaryOp {
+                    operand: from_value_internal_to_u64_with_typ(
+                        VarType::I64,
+                        *self.value_stack.pick(1),
+                    ),
+                    vtype: VarType::I64,
+                })
+            }
 
             isa::Instruction::I32WrapI64 => Some(RunInstructionTracePre::I32WrapI64 {
                 value: <_>::from_value_internal(*self.value_stack.pick(1)),
@@ -1633,6 +1652,24 @@ impl Interpreter {
                         left,
                         right,
                         value: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+
+            isa::Instruction::I32Ctz
+            | isa::Instruction::I32Clz
+            | isa::Instruction::I32Popcnt
+            | isa::Instruction::I64Ctz
+            | isa::Instruction::I64Clz
+            | isa::Instruction::I64Popcnt => {
+                if let RunInstructionTracePre::UnaryOp { operand, vtype } = pre_status.unwrap() {
+                    StepInfo::UnaryOp {
+                        class: UnaryOp::from(instructions.clone()),
+                        vtype,
+                        operand,
+                        result: from_value_internal_to_u64_with_typ(vtype, *self.value_stack.top()),
                     }
                 } else {
                     unreachable!()
