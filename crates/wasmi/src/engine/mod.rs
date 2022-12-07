@@ -46,7 +46,7 @@ use alloc::sync::Arc;
 use core::sync::atomic::{AtomicU32, Ordering};
 pub use func_types::DedupFuncType;
 use spin::mutex::Mutex;
-use wasmi_arena::{GuardedEntity, Index};
+use wasmi_arena::{ArenaIndex, GuardedEntity};
 
 /// The outcome of a `wasmi` function execution.
 #[derive(Debug, Copy, Clone)]
@@ -65,7 +65,7 @@ pub enum CallOutcome {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct EngineIdx(u32);
 
-impl Index for EngineIdx {
+impl ArenaIndex for EngineIdx {
     fn into_usize(self) -> usize {
         self.0 as _
     }
