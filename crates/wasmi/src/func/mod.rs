@@ -24,13 +24,13 @@ use crate::{
 };
 use alloc::sync::Arc;
 use core::{fmt, fmt::Debug};
-use wasmi_arena::Index;
+use wasmi_arena::ArenaIndex;
 
 /// A raw index to a function entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FuncIdx(u32);
 
-impl Index for FuncIdx {
+impl ArenaIndex for FuncIdx {
     fn into_usize(self) -> usize {
         self.0 as usize
     }

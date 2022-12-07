@@ -19,7 +19,7 @@ use super::{
     TableIdx,
 };
 use core::sync::atomic::{AtomicU32, Ordering};
-use wasmi_arena::{Arena, GuardedEntity, Index};
+use wasmi_arena::{Arena, ArenaIndex, GuardedEntity};
 
 /// A unique store index.
 ///
@@ -29,7 +29,7 @@ use wasmi_arena::{Arena, GuardedEntity, Index};
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct StoreIdx(u32);
 
-impl Index for StoreIdx {
+impl ArenaIndex for StoreIdx {
     fn into_usize(self) -> usize {
         self.0 as usize
     }
@@ -199,7 +199,7 @@ impl<T> Store<T> {
     /// If the stored entity does not originate from this store.
     fn unwrap_index<Idx>(&self, stored: Stored<Idx>) -> Idx
     where
-        Idx: Index,
+        Idx: ArenaIndex,
     {
         stored.entity_index(self.store_idx).unwrap_or_else(|| {
             panic!(

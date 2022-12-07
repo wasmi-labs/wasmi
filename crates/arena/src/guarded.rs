@@ -1,4 +1,4 @@
-use crate::Index;
+use crate::ArenaIndex;
 
 /// A guarded entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -19,8 +19,8 @@ impl<GuardIdx, EntityIdx> GuardedEntity<GuardIdx, EntityIdx> {
 
 impl<GuardIdx, EntityIdx> GuardedEntity<GuardIdx, EntityIdx>
 where
-    GuardIdx: Index,
-    EntityIdx: Index,
+    GuardIdx: ArenaIndex,
+    EntityIdx: ArenaIndex,
 {
     /// Returns the entity index of the [`GuardedEntity`].
     ///

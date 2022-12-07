@@ -1,14 +1,14 @@
 use super::{AsContext, AsContextMut, Stored};
 use crate::core::{Value, ValueType};
 use core::{fmt, fmt::Display, ptr::NonNull};
-use wasmi_arena::Index;
+use wasmi_arena::ArenaIndex;
 use wasmi_core::UntypedValue;
 
 /// A raw index to a global variable entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GlobalIdx(u32);
 
-impl Index for GlobalIdx {
+impl ArenaIndex for GlobalIdx {
     fn into_usize(self) -> usize {
         self.0 as usize
     }
