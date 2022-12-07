@@ -231,7 +231,7 @@ impl EngineInner {
     }
 
     fn config(&self) -> Config {
-        self.res.read().config.clone()
+        self.res.read().config
     }
 
     fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
