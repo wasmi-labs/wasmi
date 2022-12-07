@@ -70,9 +70,8 @@ impl ControlFlowStack {
             .nth_back(depth as usize)
             .unwrap_or_else(|| {
                 panic!(
-                    "tried to peek the {}-th control flow frame \
-                    but there are only {} control flow frames",
-                    depth, len
+                    "tried to peek the {depth}-th control flow frame \
+                    but there are only {len} control flow frames",
                 )
             })
     }

@@ -594,10 +594,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
             .instance()
             .get_signature(self.ctx.as_context(), signature_index.into_inner())
             .unwrap_or_else(|| {
-                panic!(
-                    "missing signature for call_indirect at index: {:?}",
-                    signature_index,
-                )
+                panic!("missing signature for call_indirect at index: {signature_index:?}")
             });
         if actual_signature != expected_signature {
             return Err(TrapCode::BadSignature).map_err(Into::into);

@@ -338,10 +338,7 @@ impl<'engine> ModuleBuilder<'engine> {
     /// If this function has already been called on the same [`ModuleBuilder`].
     pub fn set_start(&mut self, start: FuncIdx) {
         if let Some(old_start) = &self.start {
-            panic!(
-                "encountered multiple start functions: {:?}, {:?}",
-                old_start, start
-            )
+            panic!("encountered multiple start functions: {old_start:?}, {start:?}")
         }
         self.start = Some(start);
     }

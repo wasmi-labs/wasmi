@@ -310,8 +310,8 @@ impl InstanceEntityBuilder {
     pub fn push_export(&mut self, name: &str, new_value: Extern) {
         if let Some(old_value) = self.exports.get(name) {
             panic!(
-                "tried to register {:?} for name {} but name is already used by {:?}",
-                new_value, name, old_value,
+                "tried to register {new_value:?} for name {name} \
+                but name is already used by {old_value:?}",
             )
         }
         self.exports.insert(name.into(), new_value);
