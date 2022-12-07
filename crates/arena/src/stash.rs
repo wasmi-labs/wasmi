@@ -295,7 +295,7 @@ mod tests {
             assert_eq!(tmp[slots[i]], values[rev_i]);
         }
         // Remove all but first, then refill in reverse order
-        let mut tmp = stash.clone();
+        let mut tmp = stash;
         for i in 1..values.len() {
             assert_eq!(tmp.take(slots[i]), Some(values[i]));
         }
