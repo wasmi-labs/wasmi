@@ -40,9 +40,9 @@ use core::{
 
 /// Types that can be used as indices for arenas.
 pub trait ArenaIndex: Copy {
-    /// Converts the [`Index`] into the underlying `usize` value.
+    /// Converts the [`ArenaIndex`] into the underlying `usize` value.
     fn into_usize(self) -> usize;
-    /// Converts the `usize` value into the associated [`Index`].
+    /// Converts the `usize` value into the associated [`ArenaIndex`].
     fn from_usize(value: usize) -> Self;
 }
 
