@@ -179,20 +179,15 @@ impl<T> Store<T> {
     pub(super) fn initialize_instance(&mut self, instance: Instance, initialized: InstanceEntity) {
         let entity_index = self.unwrap_index(instance.into_inner());
         let entity = self.instances.get_mut(entity_index).unwrap_or_else(|| {
-            panic!(
-                "the store has no reference to the given instance: {:?}",
-                instance,
-            )
+            panic!("the store has no reference to the given instance: {instance:?}")
         });
         assert!(
             !entity.is_initialized(),
-            "encountered an already initialized instance: {:?}",
-            entity
+            "encountered an already initialized instance: {entity:?}",
         );
         assert!(
             initialized.is_initialized(),
-            "encountered an uninitialized new instance entity: {:?}",
-            initialized,
+            "encountered an uninitialized new instance entity: {initialized:?}",
         );
         *entity = initialized;
     }
@@ -232,12 +227,9 @@ impl<T> Store<T> {
     /// - If the global variable cannot be resolved to its entity.
     pub(super) fn resolve_global(&self, global: Global) -> &GlobalEntity {
         let entity_index = self.unwrap_index(global.into_inner());
-        self.globals.get(entity_index).unwrap_or_else(|| {
-            panic!(
-                "failed to resolve stored global variable: {:?}",
-                entity_index,
-            )
-        })
+        self.globals
+            .get(entity_index)
+            .unwrap_or_else(|| panic!("failed to resolve stored global variable: {entity_index:?}"))
     }
 
     /// Returns an exclusive reference to the associated entity of the global variable.
@@ -248,12 +240,9 @@ impl<T> Store<T> {
     /// - If the global variable cannot be resolved to its entity.
     pub(super) fn resolve_global_mut(&mut self, global: Global) -> &mut GlobalEntity {
         let entity_index = self.unwrap_index(global.into_inner());
-        self.globals.get_mut(entity_index).unwrap_or_else(|| {
-            panic!(
-                "failed to resolve stored global variable: {:?}",
-                entity_index,
-            )
-        })
+        self.globals
+            .get_mut(entity_index)
+            .unwrap_or_else(|| panic!("failed to resolve stored global variable: {entity_index:?}"))
     }
 
     /// Returns a shared reference to the associated entity of the table.
@@ -336,10 +325,7 @@ impl<T> Store<T> {
     pub(super) fn resolve_func(&self, func: Func) -> &FuncEntity<T> {
         let entity_index = self.unwrap_index(func.into_inner());
         self.funcs.get(entity_index).unwrap_or_else(|| {
-            panic!(
-                "failed to resolve stored Wasm or host function: {:?}",
-                entity_index
-            )
+            panic!("failed to resolve stored Wasm or host function: {entity_index:?}")
         })
     }
 
@@ -351,12 +337,9 @@ impl<T> Store<T> {
     /// - If the Wasm or host function cannot be resolved to its entity.
     pub(super) fn resolve_instance(&self, instance: Instance) -> &InstanceEntity {
         let entity_index = self.unwrap_index(instance.into_inner());
-        self.instances.get(entity_index).unwrap_or_else(|| {
-            panic!(
-                "failed to resolve stored module instance: {:?}",
-                entity_index
-            )
-        })
+        self.instances
+            .get(entity_index)
+            .unwrap_or_else(|| panic!("failed to resolve stored module instance: {entity_index:?}"))
     }
 }
 

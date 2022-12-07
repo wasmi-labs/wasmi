@@ -266,8 +266,7 @@ impl ControlFrame {
             Self::Loop(frame) => frame.branch_destination(),
             Self::If(frame) => frame.branch_destination(),
             Self::Unreachable(frame) => panic!(
-                "tried to get `branch_destination` for an unreachable control frame: {:?}",
-                frame,
+                "tried to get `branch_destination` for an unreachable control frame: {frame:?}"
             ),
         }
     }
@@ -281,14 +280,12 @@ impl ControlFrame {
         match self {
             Self::Block(frame) => frame.end_label(),
             Self::If(frame) => frame.end_label(),
-            Self::Loop(frame) => panic!(
-                "tried to get `end_label` for a loop control frame: {:?}",
-                frame
-            ),
-            Self::Unreachable(frame) => panic!(
-                "tried to get `end_label` for an unreachable control frame: {:?}",
-                frame
-            ),
+            Self::Loop(frame) => {
+                panic!("tried to get `end_label` for a loop control frame: {frame:?}")
+            }
+            Self::Unreachable(frame) => {
+                panic!("tried to get `end_label` for an unreachable control frame: {frame:?}")
+            }
         }
     }
 

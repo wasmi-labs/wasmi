@@ -501,8 +501,7 @@ impl<'engine> ModuleParser<'engine> {
         range: Range<usize>,
     ) -> Result<(), ModuleError> {
         Err(ModuleError::unsupported(format!(
-            "encountered unsupported Wasm component model section: {:?}",
-            range
+            "encountered unsupported Wasm component model section: {range:?}",
         )))
     }
 

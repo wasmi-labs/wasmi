@@ -105,16 +105,11 @@ impl Display for LinkerError {
             } => {
                 write!(
                     f,
-                    "encountered duplicate definition `{}` of {:?}",
-                    import_name, import_item
+                    "encountered duplicate definition `{import_name}` of {import_item:?}",
                 )
             }
             Self::CannotFindDefinitionForImport { name, item_type } => {
-                write!(
-                    f,
-                    "cannot find definition for import {}: {:?}",
-                    name, item_type
-                )
+                write!(f, "cannot find definition for import {name}: {item_type:?}",)
             }
             Self::FuncTypeMismatch {
                 name,
@@ -123,8 +118,8 @@ impl Display for LinkerError {
             } => {
                 write!(
                     f,
-                    "function type mismatch for import {}: expected {:?} but found {:?}",
-                    name, expected, actual
+                    "function type mismatch for import {name}: \
+                    expected {expected:?} but found {actual:?}",
                 )
             }
             Self::GlobalTypeMismatch {
@@ -134,8 +129,8 @@ impl Display for LinkerError {
             } => {
                 write!(
                     f,
-                    "global variable type mismatch for import {}: expected {:?} but found {:?}",
-                    name, expected, actual
+                    "global variable type mismatch for import {name}: \
+                    expected {expected:?} but found {actual:?}",
                 )
             }
             Self::Table(error) => Display::fmt(error, f),

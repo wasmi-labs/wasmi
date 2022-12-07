@@ -146,7 +146,7 @@ impl Display for TrapReason {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::InstructionTrap(trap_code) => Display::fmt(trap_code, f),
-            Self::I32Exit(status) => write!(f, "Exited with i32 exit status {}", status),
+            Self::I32Exit(status) => write!(f, "Exited with i32 exit status {status}"),
             Self::Message(message) => write!(f, "{message}"),
             Self::Host(host_error) => Display::fmt(host_error, f),
         }

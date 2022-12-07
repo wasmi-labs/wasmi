@@ -65,8 +65,8 @@ impl Display for MemoryError {
             } => {
                 write!(
                     f,
-                    "memory type {:?} does not satisfy requirements of {:?}",
-                    unsatisfying, required,
+                    "memory type {unsatisfying:?} does not \
+                    satisfy requirements of {required:?}",
                 )
             }
         }

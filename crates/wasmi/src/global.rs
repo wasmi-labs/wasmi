@@ -53,8 +53,8 @@ impl Display for GlobalError {
             } => {
                 write!(
                     f,
-                    "type mismatch upon writing global variable. expected {} but encountered {}.",
-                    expected, encountered,
+                    "type mismatch upon writing global variable. \
+                    expected {expected} but encountered {encountered}.",
                 )
             }
             Self::UnsatisfyingGlobalType {
@@ -63,8 +63,8 @@ impl Display for GlobalError {
             } => {
                 write!(
                     f,
-                    "global type {:?} does not satisfy requirements of {:?}",
-                    unsatisfying, required,
+                    "global type {unsatisfying:?} does not \
+                    satisfy requirements of {required:?}",
                 )
             }
         }

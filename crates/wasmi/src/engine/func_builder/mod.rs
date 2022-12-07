@@ -262,16 +262,14 @@ impl<'parser> FuncBuilder<'parser> {
         let origin_height = frame.stack_height().expect("frame is reachable");
         assert!(
             origin_height <= current_height,
-            "encountered value stack underflow: current height {}, original height {}",
-            current_height,
-            origin_height,
+            "encountered value stack underflow: \
+            current height {current_height}, original height {origin_height}",
         );
         let height_diff = current_height - origin_height;
         assert!(
             keep <= height_diff,
-            "tried to keep {} values while having only {} values available on the frame",
-            keep,
-            height_diff,
+            "tried to keep {keep} values while having \
+            only {height_diff} values available on the frame",
         );
         let drop = height_diff - keep;
         DropKeep::new(drop as usize, keep as usize).map_err(Into::into)
@@ -398,8 +396,7 @@ impl<'parser> FuncBuilder<'parser> {
         stack_height.checked_sub(len_params).unwrap_or_else(|| {
             panic!(
                 "encountered emulated value stack underflow with \
-                 stack height {} and {} block parameters",
-                stack_height, len_params
+                 stack height {stack_height} and {len_params} block parameters",
             )
         })
     }
@@ -500,8 +497,8 @@ impl<'parser> FuncBuilder<'parser> {
                 return Ok(());
             }
             unexpected => panic!(
-                "expected `if` control flow frame on top for `else` but found: {:?}",
-                unexpected,
+                "expected `if` control flow frame on top \
+                for `else` but found: {unexpected:?}",
             ),
         };
         let reachable = self.is_reachable();
@@ -635,7 +632,10 @@ impl<'parser> FuncBuilder<'parser> {
                     AcquiredTarget::Branch(label, drop_keep) => {
                         let base = builder.alloc.inst_builder.current_pc();
                         let instr = offset_instr(base, n + 1);
-                        let offset = builder.alloc.inst_builder.try_resolve_label_for(label, instr);
+                        let offset = builder
+                            .alloc
+                            .inst_builder
+                            .try_resolve_label_for(label, instr);
                         let params = BranchParams::new(offset, drop_keep);
                         Ok(Instruction::Br(params))
                     }
@@ -649,8 +649,8 @@ impl<'parser> FuncBuilder<'parser> {
                 .map(|relative_depth| {
                     relative_depth.unwrap_or_else(|error| {
                         panic!(
-                            "encountered unexpected invalid relative depth for `br_table` target: {}",
-                            error,
+                            "encountered unexpected invalid relative depth \
+                            for `br_table` target: {error}",
                         )
                     })
                 })

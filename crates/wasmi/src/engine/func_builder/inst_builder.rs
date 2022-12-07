@@ -25,10 +25,7 @@ impl Instr {
     /// If the `value` exceeds limitations for [`Instr`].
     pub fn from_usize(value: usize) -> Self {
         let value = value.try_into().unwrap_or_else(|error| {
-            panic!(
-                "invalid index {} for instruction reference: {}",
-                value, error
-            )
+            panic!("invalid index {value} for instruction reference: {error}")
         });
         Self(value)
     }
@@ -193,10 +190,7 @@ impl Instruction {
             Instruction::Br(params)
             | Instruction::BrIfEqz(params)
             | Instruction::BrIfNez(params) => params.init(offset),
-            _ => panic!(
-                "tried to update branch offset of a non-branch instruction: {:?}",
-                self
-            ),
+            _ => panic!("tried to update branch offset of a non-branch instruction: {self:?}"),
         }
     }
 }

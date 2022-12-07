@@ -51,10 +51,7 @@ impl InstancePre {
                 .handle
                 .get_func(&mut context, start_index)
                 .unwrap_or_else(|| {
-                    panic!(
-                        "encountered invalid start function after validation: {}",
-                        start_index
-                    )
+                    panic!("encountered invalid start function after validation: {start_index}")
                 });
             start_func.call(context.as_context_mut(), &[], &mut [])?
         }

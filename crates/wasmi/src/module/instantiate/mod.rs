@@ -209,8 +209,8 @@ impl Module {
             let memory =
                 Memory::new(context.as_context_mut(), memory_type).unwrap_or_else(|error| {
                     panic!(
-                        "encountered unexpected invalid memory type {:?} after Wasm validation: {}",
-                        memory_type, error,
+                        "encountered unexpected invalid memory type \
+                        {memory_type:?} after Wasm validation: {error}",
                     )
                 });
             builder.push_memory(memory);
@@ -306,9 +306,9 @@ impl Module {
                 .try_into::<u32>()
                 .unwrap_or_else(|| {
                     panic!(
-                    "expected offset value of type `i32` due to Wasm validation but found: {:?}",
-                    offset_expr,
-                )
+                        "expected offset value of type `i32` due to \
+                    Wasm validation but found: {offset_expr:?}",
+                    )
                 }) as usize;
             let table = builder.get_table(DEFAULT_TABLE_INDEX);
             // Note: This checks not only that the elements in the element segments properly
@@ -346,9 +346,9 @@ impl Module {
                 .try_into::<u32>()
                 .unwrap_or_else(|| {
                     panic!(
-                    "expected offset value of type `i32` due to Wasm validation but found: {:?}",
-                    offset_expr,
-                )
+                        "expected offset value of type `i32` due to \
+                    Wasm validation but found: {offset_expr:?}",
+                    )
                 }) as usize;
             let memory = builder.get_memory(DEFAULT_MEMORY_INDEX);
             memory.write(context.as_context_mut(), offset, data_segment.data())?;
