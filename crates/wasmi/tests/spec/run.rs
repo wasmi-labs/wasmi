@@ -210,9 +210,8 @@ fn assert_trap(test_context: &TestContext, span: Span, error: TestError, message
         }
         unexpected => panic!(
             "encountered unexpected error: \n\t\
-                found: '{}'\n\t\
-                expected: trap with message '{}'",
-            unexpected, message,
+                found: '{unexpected}'\n\t\
+                expected: trap with message '{message}'",
         ),
     }
 }
