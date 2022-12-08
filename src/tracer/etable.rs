@@ -2,7 +2,7 @@ use parity_wasm::elements::ValueType;
 use specs::{
     etable::EventTableEntry,
     itable::Opcode,
-    mtable::{MemoryReadSize, MemoryStoreSize},
+    mtable::{MemoryReadSize, MemoryStoreSize, VarType},
     step::StepInfo,
 };
 
@@ -81,6 +81,11 @@ pub enum RunInstructionTracePre {
     I64ExtendI32 {
         value: i32,
         sign: bool,
+    },
+
+    UnaryOp {
+        operand: u64,
+        vtype: VarType,
     },
 
     Drop,
