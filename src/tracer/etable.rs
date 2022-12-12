@@ -17,6 +17,9 @@ pub enum RunInstructionTracePre {
     BrIfNez {
         value: i32,
     },
+    BrTable {
+        index: i32,
+    },
 
     Call {
         args: Vec<ValueInternal>,
