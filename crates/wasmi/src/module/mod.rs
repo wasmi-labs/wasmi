@@ -101,6 +101,10 @@ pub struct ModuleImports {
     len_funcs: usize,
     /// The amount of imported [`Global`].
     len_globals: usize,
+    /// The amount of imported [`Memory`].
+    len_memories: usize,
+    /// The amount of imported [`Table`].
+    len_tables: usize,
 }
 
 impl ModuleImports {
@@ -108,6 +112,8 @@ impl ModuleImports {
     fn from_builder(imports: builder::ModuleImports) -> Self {
         let len_funcs = imports.funcs.len();
         let len_globals = imports.globals.len();
+        let len_memories = imports.memories.len();
+        let len_tables = imports.tables.len();
         let funcs = imports.funcs.into_iter().map(Imported::Func);
         let tables = imports.tables.into_iter().map(Imported::Table);
         let memories = imports.memories.into_iter().map(Imported::Memory);
@@ -122,6 +128,8 @@ impl ModuleImports {
             items,
             len_funcs,
             len_globals,
+            len_memories,
+            len_tables,
         }
     }
 }
@@ -206,6 +214,26 @@ impl Module {
         InternalFuncsIter {
             iter: funcs.iter().zip(func_bodies),
         }
+    }
+
+    /// Returns an iterator over the [`MemoryType`] of internal linear memories.
+    fn internal_memories(&self) -> SliceIter<MemoryType> {
+        let len_imported = self.imports.len_memories;
+        // We skip the first `len_imported` elements in `memories`
+        // since they refer to imported and not internally defined
+        // linear memories.
+        let memories = &self.memories[len_imported..];
+        memories.iter()
+    }
+
+    /// Returns an iterator over the [`TableType`] of internal tables.
+    fn internal_tables(&self) -> SliceIter<TableType> {
+        let len_imported = self.imports.len_tables;
+        // We skip the first `len_imported` elements in `memories`
+        // since they refer to imported and not internally defined
+        // linear memories.
+        let tables = &self.tables[len_imported..];
+        tables.iter()
     }
 
     /// Returns an iterator over the internally defined [`Global`].

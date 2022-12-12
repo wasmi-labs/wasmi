@@ -193,7 +193,7 @@ impl Module {
     ///
     /// [`Store`]: struct.Store.html
     fn extract_tables(&self, context: &mut impl AsContextMut, builder: &mut InstanceEntityBuilder) {
-        for table_type in self.tables.iter().copied() {
+        for table_type in self.internal_tables().copied() {
             builder.push_table(Table::new(context.as_context_mut(), table_type));
         }
     }
@@ -208,7 +208,7 @@ impl Module {
         context: &mut impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) {
-        for memory_type in self.memories.iter().copied() {
+        for memory_type in self.internal_memories().copied() {
             let memory =
                 Memory::new(context.as_context_mut(), memory_type).unwrap_or_else(|error| {
                     panic!(
