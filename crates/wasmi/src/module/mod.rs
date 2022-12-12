@@ -102,8 +102,12 @@ pub struct ModuleImports {
     /// The amount of imported [`Global`].
     len_globals: usize,
     /// The amount of imported [`Memory`].
+    ///
+    /// [`Memory`]: [`crate::Memory`]
     len_memories: usize,
     /// The amount of imported [`Table`].
+    ///
+    /// [`Table`]: [`crate::Table`]
     len_tables: usize,
 }
 
