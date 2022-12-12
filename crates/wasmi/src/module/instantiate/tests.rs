@@ -35,8 +35,8 @@ fn instantiate_from_wat(wat: &str) -> (Store<()>, Instance) {
 }
 
 fn assert_no_duplicates(store: &Store<()>, instance: Instance) {
-    assert!(instance.get_memory(&store, 1).is_none());
-    assert!(instance.get_table(&store, 1).is_none());
+    assert!(instance.get_memory(store, 1).is_none());
+    assert!(instance.get_table(store, 1).is_none());
 }
 
 #[test]
