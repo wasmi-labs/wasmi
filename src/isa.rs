@@ -72,7 +72,7 @@ use std::collections::HashMap;
 use alloc::vec::Vec;
 use parity_wasm::elements::ValueType;
 use specs::{
-    itable::{BinOp, BitOp, ConversionOp, Opcode, RelOp, ShiftOp, TestOp, UnaryOp},
+    itable::{BinOp, BitOp, BrTarget, ConversionOp, Opcode, RelOp, ShiftOp, TestOp, UnaryOp},
     mtable::{MemoryReadSize, MemoryStoreSize, VarType},
 };
 
@@ -403,7 +403,28 @@ impl<'a> Instruction<'a> {
                 },
                 dst_pc,
             },
-            Instruction::BrTable(_) => todo!(),
+            Instruction::BrTable(targets) => Opcode::BrTable {
+                targets: targets
+                    .stream
+                    .iter()
+                    .map(|t| {
+                        if let InstructionInternal::BrTableTarget(target) = t {
+                            let keep_type = match target.drop_keep.keep {
+                                Keep::None => vec![],
+                                Keep::Single(t) => vec![t.into()],
+                            };
+
+                            BrTarget {
+                                drop: target.drop_keep.drop,
+                                keep: keep_type,
+                                dst_pc: target.dst_pc,
+                            }
+                        } else {
+                            unreachable!()
+                        }
+                    })
+                    .collect(),
+            },
             Instruction::Unreachable => Opcode::Unreachable,
             Instruction::Return(drop_keep) => Opcode::Return {
                 drop: drop_keep.drop,

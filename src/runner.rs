@@ -456,6 +456,9 @@ impl Interpreter {
             isa::Instruction::BrIfNez(_) => Some(RunInstructionTracePre::BrIfNez {
                 value: <_>::from_value_internal(*self.value_stack.top()),
             }),
+            isa::Instruction::BrTable(_) => Some(RunInstructionTracePre::BrTable {
+                index: <_>::from_value_internal(*self.value_stack.top()),
+            }),
 
             isa::Instruction::Unreachable => None,
             isa::Instruction::Return(..) => None,
@@ -856,6 +859,26 @@ impl Interpreter {
                             vec![]
                         },
                         keep_values: match target.drop_keep.keep {
+                            Keep::Single(_) => vec![(*self.value_stack.top()).0],
+                            Keep::None => vec![],
+                        },
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::BrTable(targets) => {
+                if let RunInstructionTracePre::BrTable { index } = pre_status.unwrap() {
+                    StepInfo::BrTable {
+                        index,
+                        dst_pc: targets.get(index as u32).dst_pc,
+                        drop: targets.get(index as u32).drop_keep.drop,
+                        keep: if let Keep::Single(t) = targets.get(index as u32).drop_keep.keep {
+                            vec![t.into()]
+                        } else {
+                            vec![]
+                        },
+                        keep_values: match targets.get(index as u32).drop_keep.keep {
                             Keep::Single(_) => vec![(*self.value_stack.top()).0],
                             Keep::None => vec![],
                         },
