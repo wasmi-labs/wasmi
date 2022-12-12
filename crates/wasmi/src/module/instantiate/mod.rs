@@ -1,6 +1,9 @@
 mod error;
 mod pre;
 
+#[cfg(test)]
+mod tests;
+
 pub use self::{error::InstantiationError, pre::InstancePre};
 use super::{export, InitExpr, Module, ModuleImportType};
 use crate::{

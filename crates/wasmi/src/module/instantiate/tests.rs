@@ -1,0 +1,104 @@
+//! Regression tests for GitHub issue:
+//! https://github.com/paritytech/wasmi/issues/587
+//!
+//! The problem was that Wasm memories (and tables) were defined twice for a
+//! `wasmi` instance for every imported Wasm memory (or table). Since `wasmi`
+//! does not support the `multi-memory` Wasm proposal this resulted Wasm
+//! instances with more than 1 memory (or table) if the Wasm module imported
+//! those entities.
+
+use crate::{Engine, Error, Instance, Linker, Memory, MemoryType, Module, Store, Table, TableType};
+
+fn try_instantiate_from_wat(wat: &str) -> Result<(Store<()>, Instance), Error> {
+    let wasm = wat::parse_str(wat).unwrap();
+    let engine = Engine::default();
+    let module = Module::new(&engine, &mut &wasm[..])?;
+    let mut store = Store::new(&engine, ());
+    let mut linker = <Linker<()>>::new();
+    // Define one memory that can be used by the tests as import.
+    let memory_type = MemoryType::new(4, None)?;
+    let memory = Memory::new(&mut store, memory_type)?;
+    linker.define("env", "memory", memory)?;
+    // Define one table that can be used by the tests as import.
+    let table_type = TableType::new(4, None);
+    let table = Table::new(&mut store, table_type);
+    linker.define("env", "table", table)?;
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .start(&mut store)?;
+    Ok((store, instance))
+}
+
+fn instantiate_from_wat(wat: &str) -> (Store<()>, Instance) {
+    try_instantiate_from_wat(wat).unwrap()
+}
+
+fn assert_no_duplicates(store: &Store<()>, instance: Instance) {
+    assert!(instance.get_memory(&store, 1).is_none());
+    assert!(instance.get_table(&store, 1).is_none());
+}
+
+#[test]
+fn test_import_memory_and_table() {
+    let wat = r#"
+        (module
+            (import "env" "memory" (memory 4))
+            (import "env" "table" (table 4 funcref))
+        )"#;
+    let (store, instance) = instantiate_from_wat(wat);
+    assert!(instance.get_memory(&store, 0).is_some());
+    assert!(instance.get_table(&store, 0).is_some());
+    assert_no_duplicates(&store, instance);
+}
+
+#[test]
+fn test_import_memory() {
+    let wat = r#"
+        (module
+            (import "env" "memory" (memory 4))
+        )"#;
+    let (store, instance) = instantiate_from_wat(wat);
+    assert!(instance.get_memory(&store, 0).is_some());
+    assert!(instance.get_table(&store, 0).is_none());
+    assert_no_duplicates(&store, instance);
+}
+
+#[test]
+fn test_import_table() {
+    let wat = r#"
+        (module
+            (import "env" "table" (table 4 funcref))
+        )"#;
+    let (store, instance) = instantiate_from_wat(wat);
+    assert!(instance.get_memory(&store, 0).is_none());
+    assert!(instance.get_table(&store, 0).is_some());
+    assert_no_duplicates(&store, instance);
+}
+
+#[test]
+fn test_no_memory_no_table() {
+    let wat = "(module)";
+    let (store, instance) = instantiate_from_wat(wat);
+    assert!(instance.get_memory(&store, 0).is_none());
+    assert!(instance.get_table(&store, 0).is_none());
+    assert_no_duplicates(&store, instance);
+}
+
+#[test]
+fn test_internal_memory() {
+    let wat = "(module (memory 1 10) )";
+    let (store, instance) = instantiate_from_wat(wat);
+    assert!(instance.get_memory(&store, 0).is_some());
+    assert!(instance.get_table(&store, 0).is_none());
+    assert_no_duplicates(&store, instance);
+}
+
+#[test]
+fn test_internal_table() {
+    let wat = "(module (table 4 funcref) )";
+    let (store, instance) = instantiate_from_wat(wat);
+    assert!(instance.get_memory(&store, 0).is_none());
+    assert!(instance.get_table(&store, 0).is_some());
+    assert_no_duplicates(&store, instance);
+}
