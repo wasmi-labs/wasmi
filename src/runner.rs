@@ -487,8 +487,10 @@ impl Interpreter {
             }),
 
             isa::Instruction::I32Load(offset)
+            | isa::Instruction::I32Load8S(offset)
             | isa::Instruction::I32Load8U(offset)
-            | isa::Instruction::I32Load8S(offset) => {
+            | isa::Instruction::I32Load16S(offset)
+            | isa::Instruction::I32Load16U(offset) => {
                 let load_size = match *instructions {
                     isa::Instruction::I32Load(..) => MemoryReadSize::U32,
                     isa::Instruction::I32Load8U(..) => MemoryReadSize::U8,
@@ -515,10 +517,21 @@ impl Interpreter {
                     mmid: mmid as u64,
                 })
             }
-            isa::Instruction::I64Load(offset) | isa::Instruction::I64Load8U(offset) => {
+            isa::Instruction::I64Load(offset)
+            | isa::Instruction::I64Load8S(offset)
+            | isa::Instruction::I64Load8U(offset)
+            | isa::Instruction::I64Load16S(offset)
+            | isa::Instruction::I64Load16U(offset)
+            | isa::Instruction::I64Load32S(offset)
+            | isa::Instruction::I64Load32U(offset) => {
                 let load_size = match *instructions {
                     isa::Instruction::I64Load(..) => MemoryReadSize::I64,
+                    isa::Instruction::I64Load8S(..) => MemoryReadSize::S8,
                     isa::Instruction::I64Load8U(..) => MemoryReadSize::U8,
+                    isa::Instruction::I64Load16S(..) => MemoryReadSize::S16,
+                    isa::Instruction::I64Load16U(..) => MemoryReadSize::U16,
+                    isa::Instruction::I64Load32S(..) => MemoryReadSize::S32,
+                    isa::Instruction::I64Load32U(..) => MemoryReadSize::U32,
                     _ => unreachable!(),
                 };
                 let raw_address = <_>::from_value_internal(*self.value_stack.top());
@@ -982,8 +995,15 @@ impl Interpreter {
             isa::Instruction::I32Load(..)
             | isa::Instruction::I32Load8U(..)
             | isa::Instruction::I32Load8S(..)
+            | isa::Instruction::I32Load16U(..)
+            | isa::Instruction::I32Load16S(..)
             | isa::Instruction::I64Load(..)
-            | isa::Instruction::I64Load8U(..) => {
+            | isa::Instruction::I64Load8U(..)
+            | isa::Instruction::I64Load8S(..)
+            | isa::Instruction::I64Load16U(..)
+            | isa::Instruction::I64Load16S(..)
+            | isa::Instruction::I64Load32U(..)
+            | isa::Instruction::I64Load32S(..) => {
                 if let RunInstructionTracePre::Load {
                     offset,
                     raw_address,
@@ -1499,7 +1519,6 @@ impl Interpreter {
                     unreachable!()
                 }
             }
-
             isa::Instruction::I64Add => {
                 if let RunInstructionTracePre::I64BinOp { left, right } = pre_status.unwrap() {
                     StepInfo::I64BinOp {

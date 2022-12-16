@@ -484,18 +484,46 @@ impl<'a> Instruction<'a> {
                 vtype: VarType::I32,
                 size: MemoryReadSize::U8,
             },
-            Instruction::I32Load16S(_) => todo!(),
-            Instruction::I32Load16U(_) => todo!(),
-            Instruction::I64Load8S(_) => todo!(),
+            Instruction::I32Load16S(offset) => Opcode::Load {
+                offset,
+                vtype: VarType::I32,
+                size: MemoryReadSize::S16,
+            },
+            Instruction::I32Load16U(offset) => Opcode::Load {
+                offset,
+                vtype: VarType::I32,
+                size: MemoryReadSize::U16,
+            },
+            Instruction::I64Load8S(offset) => Opcode::Load {
+                offset,
+                vtype: VarType::I64,
+                size: MemoryReadSize::S8,
+            },
             Instruction::I64Load8U(offset) => Opcode::Load {
                 offset,
                 vtype: VarType::I64,
                 size: MemoryReadSize::U8,
             },
-            Instruction::I64Load16S(_) => todo!(),
-            Instruction::I64Load16U(_) => todo!(),
-            Instruction::I64Load32S(_) => todo!(),
-            Instruction::I64Load32U(_) => todo!(),
+            Instruction::I64Load16S(offset) => Opcode::Load {
+                offset,
+                vtype: VarType::I64,
+                size: MemoryReadSize::S16,
+            },
+            Instruction::I64Load16U(offset) => Opcode::Load {
+                offset,
+                vtype: VarType::I64,
+                size: MemoryReadSize::U16,
+            },
+            Instruction::I64Load32S(offset) => Opcode::Load {
+                offset,
+                vtype: VarType::I64,
+                size: MemoryReadSize::S32,
+            },
+            Instruction::I64Load32U(offset) => Opcode::Load {
+                offset,
+                vtype: VarType::I64,
+                size: MemoryReadSize::U32,
+            },
             Instruction::I32Store(offset) => Opcode::Store {
                 offset,
                 vtype: VarType::I32,
