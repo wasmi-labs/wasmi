@@ -541,14 +541,26 @@ impl<'a> Instruction<'a> {
                 vtype: VarType::I32,
                 size: MemoryStoreSize::Byte8,
             },
-            Instruction::I32Store16(_) => todo!(),
+            Instruction::I32Store16(offset) => Opcode::Store {
+                offset,
+                vtype: VarType::I32,
+                size: MemoryStoreSize::Byte16,
+            },
             Instruction::I64Store8(offset) => Opcode::Store {
                 offset,
                 vtype: VarType::I64,
                 size: MemoryStoreSize::Byte8,
             },
-            Instruction::I64Store16(_) => todo!(),
-            Instruction::I64Store32(_) => todo!(),
+            Instruction::I64Store16(offset) => Opcode::Store {
+                offset,
+                vtype: VarType::I64,
+                size: MemoryStoreSize::Byte16,
+            },
+            Instruction::I64Store32(offset) => Opcode::Store {
+                offset,
+                vtype: VarType::I64,
+                size: MemoryStoreSize::Byte32,
+            },
             Instruction::CurrentMemory => todo!(),
             Instruction::GrowMemory => todo!(),
             Instruction::I32Const(v) => Opcode::Const {

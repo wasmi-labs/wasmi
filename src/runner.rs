@@ -553,9 +553,12 @@ impl Interpreter {
                     mmid: mmid as u64,
                 })
             }
-            isa::Instruction::I32Store(offset) | isa::Instruction::I32Store8(offset) => {
+            isa::Instruction::I32Store(offset)
+            | isa::Instruction::I32Store8(offset)
+            | isa::Instruction::I32Store16(offset) => {
                 let store_size = match *instructions {
                     isa::Instruction::I32Store8(_) => MemoryStoreSize::Byte8,
+                    isa::Instruction::I32Store16(_) => MemoryStoreSize::Byte16,
                     isa::Instruction::I32Store(_) => MemoryStoreSize::Byte32,
                     _ => unreachable!(),
                 };
@@ -588,10 +591,15 @@ impl Interpreter {
                     pre_block_value,
                 })
             }
-            isa::Instruction::I64Store(offset) | isa::Instruction::I64Store8(offset) => {
+            isa::Instruction::I64Store(offset)
+            | isa::Instruction::I64Store8(offset)
+            | isa::Instruction::I64Store16(offset)
+            | isa::Instruction::I64Store32(offset) => {
                 let store_size = match *instructions {
                     isa::Instruction::I64Store(..) => MemoryStoreSize::Byte64,
                     isa::Instruction::I64Store8(..) => MemoryStoreSize::Byte8,
+                    isa::Instruction::I64Store16(..) => MemoryStoreSize::Byte16,
+                    isa::Instruction::I64Store32(..) => MemoryStoreSize::Byte32,
                     _ => unreachable!(),
                 };
 
@@ -1043,8 +1051,11 @@ impl Interpreter {
             }
             isa::Instruction::I32Store(..)
             | isa::Instruction::I32Store8(..)
+            | isa::Instruction::I32Store16(..)
             | isa::Instruction::I64Store(..)
-            | isa::Instruction::I64Store8(..) => {
+            | isa::Instruction::I64Store8(..)
+            | isa::Instruction::I64Store16(..)
+            | isa::Instruction::I64Store32(..) => {
                 if let RunInstructionTracePre::Store {
                     offset,
                     raw_address,
