@@ -1,6 +1,11 @@
 use std::collections::HashMap;
 
-use specs::{host_function::HostFunctionDesc, mtable::VarType, types::FunctionType};
+use specs::{
+    brtable::{ElemEntry, ElemTable},
+    host_function::HostFunctionDesc,
+    mtable::VarType,
+    types::FunctionType,
+};
 
 use crate::{
     runner::{from_value_internal_to_u64_with_typ, ValueInternal},
@@ -37,6 +42,8 @@ pub struct Tracer {
     pub imtable: IMTable,
     pub etable: ETable,
     pub jtable: JTable,
+    pub elem_table: ElemTable,
+    type_of_func_ref: Vec<(FuncRef, u32)>,
     module_instance_lookup: Vec<(ModuleRef, u16)>,
     memory_instance_lookup: Vec<(MemoryRef, u16)>,
     global_instance_lookup: Vec<(GlobalRef, (u16, u16))>,
@@ -56,6 +63,8 @@ impl Tracer {
             etable: ETable::default(),
             last_jump_eid: vec![0],
             jtable: JTable::default(),
+            elem_table: ElemTable::default(),
+            type_of_func_ref: vec![],
             module_instance_lookup: vec![],
             memory_instance_lookup: vec![],
             global_instance_lookup: vec![],
@@ -146,6 +155,21 @@ impl Tracer {
         }
     }
 
+    pub(crate) fn push_elem(&mut self, table_idx: u32, offset: u32, func_idx: u32, type_idx: u32) {
+        self.elem_table.insert(
+            ElemEntry {
+                table_idx,
+                type_idx,
+                offset,
+                func_idx,
+            },
+        )
+    }
+
+    pub(crate) fn push_type_of_func_ref(&mut self, func: FuncRef, type_idx: u32) {
+        self.type_of_func_ref.push((func, type_idx))
+    }
+
     #[allow(dead_code)]
     pub(crate) fn statistics_instructions<'a>(&mut self, module_instance: &ModuleRef) {
         let mut func_index = 0;
@@ -172,6 +196,14 @@ impl Tracer {
         for inst in insts {
             println!("{:?}", inst);
         }
+    }
+
+    pub(crate) fn lookup_type_of_func_ref(&self, func_ref: &FuncRef) -> u32 {
+        self.type_of_func_ref
+            .iter()
+            .find(|&f| f.0 == *func_ref)
+            .unwrap()
+            .1
     }
 
     pub(crate) fn register_module_instance(
