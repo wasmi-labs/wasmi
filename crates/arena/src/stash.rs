@@ -7,10 +7,19 @@ use core::{
 };
 
 /// A stash arena providing O(1) insertion and indexed deletion.
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct StashArena<Idx, T> {
     stash: Stash<T>,
     marker: PhantomData<fn() -> Idx>,
+}
+
+impl<Idx, T> Default for StashArena<Idx, T> {
+    fn default() -> Self {
+        Self {
+            stash: Stash::default(),
+            marker: PhantomData,
+        }
+    }
 }
 
 impl<Idx, T> StashArena<Idx, T>
@@ -76,7 +85,7 @@ where
 }
 
 /// A stash providing O(1) insertion and indexed deletion.
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct Stash<T> {
     /// The slots of the stash potentially holding values.
     slots: Vec<Slot<T>>,
@@ -104,6 +113,16 @@ impl SlotRef {
     /// Returns the `usize` index of the [`SlotRef`].
     fn into_index(self) -> usize {
         self.0
+    }
+}
+
+impl<T> Default for Stash<T> {
+    fn default() -> Self {
+        Self {
+            slots: Vec::new(),
+            first_vacant: None,
+            len_occupied: 0,
+        }
     }
 }
 
