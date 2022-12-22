@@ -47,7 +47,7 @@ use crate::{
 };
 use alloc::{sync::Arc, vec::Vec};
 use core::sync::atomic::{AtomicU32, Ordering};
-use spin::{RwLock, Mutex};
+use spin::{Mutex, RwLock};
 use wasmi_arena::{ArenaIndex, GuardedEntity};
 
 /// The outcome of a `wasmi` function execution.

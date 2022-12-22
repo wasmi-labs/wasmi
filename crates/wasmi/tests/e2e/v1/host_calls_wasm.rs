@@ -37,8 +37,8 @@ fn host_calls_wasm() {
             )
         )
         "#,
-        )
-        .unwrap();
+    )
+    .unwrap();
     let module = Module::new(store.engine(), &mut &wasm[..]).unwrap();
     let instance = linker
         .instantiate(&mut store, &module)
