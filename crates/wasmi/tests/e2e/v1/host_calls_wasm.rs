@@ -22,7 +22,8 @@ fn host_calls_wasm() {
         wasm_fn.call(&mut caller, input + input).unwrap()
     });
     linker.define("env", "host_fn", host_fn).unwrap();
-    let wasm = wat::parse_str(r#"
+    let wasm = wat::parse_str(
+        r#"
         (module
             (import "env" "host_fn" (func $host_fn (param i32) (result i32)))
             (func (export "wasm_fn") (param i32) (result i32)
@@ -35,9 +36,15 @@ fn host_calls_wasm() {
                 )
             )
         )
-    "#).unwrap();
+        "#,
+        )
+        .unwrap();
     let module = Module::new(store.engine(), &mut &wasm[..]).unwrap();
-    let instance = linker.instantiate(&mut store, &module).unwrap().start(&mut store).unwrap();
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .start(&mut store)
+        .unwrap();
     let wasm_fn = instance
         .get_export(&store, "wasm_fn")
         .and_then(Extern::into_func)
@@ -45,7 +52,7 @@ fn host_calls_wasm() {
         .typed::<i32, i32>(&store)
         .unwrap();
     let input = 5;
-    let expected = (input+input) * (input+input);
+    let expected = (input + input) * (input + input);
     let result = wasm_fn.call(&mut store, input).unwrap();
     assert_eq!(result, expected);
 }

@@ -14,14 +14,16 @@ mod traits;
 #[cfg(test)]
 mod tests;
 
-use core::sync::atomic::{AtomicU32, Ordering};
-pub(crate) use self::func_args::{FuncParams, FuncResults};
 pub use self::{
     bytecode::DropKeep,
     code_map::FuncBody,
     config::Config,
     func_builder::{
-        FuncBuilder, FunctionBuilderAllocations, Instr, RelativeDepth, TranslationError,
+        FuncBuilder,
+        FunctionBuilderAllocations,
+        Instr,
+        RelativeDepth,
+        TranslationError,
     },
     stack::StackLimits,
     traits::{CallParams, CallResults},
@@ -31,16 +33,20 @@ use self::{
     cache::InstanceCache,
     code_map::CodeMap,
     executor::execute_frame,
-    func_types::{FuncTypeRegistry},
+    func_types::FuncTypeRegistry,
     stack::{FuncFrame, Stack, ValueStack},
 };
-pub(crate) use self::func_types::DedupFuncType;
+pub(crate) use self::{
+    func_args::{FuncParams, FuncResults},
+    func_types::DedupFuncType,
+};
 use super::{func::FuncEntityInternal, AsContextMut, Func};
 use crate::{
     core::{Trap, TrapCode},
     FuncType,
 };
 use alloc::{sync::Arc, vec::Vec};
+use core::sync::atomic::{AtomicU32, Ordering};
 use spin::{RwLock, Mutex};
 use wasmi_arena::{ArenaIndex, GuardedEntity};
 
