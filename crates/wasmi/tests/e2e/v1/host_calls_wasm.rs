@@ -1,7 +1,7 @@
 //! Test to assert that host functions that call back into
 //! Wasm works correctly.
 
-use wasmi::{Caller, Engine, Module, Func, Linker, Store};
+use wasmi::{Caller, Engine, Module, Func, Linker, Store, Extern};
 
 fn test_setup() -> Store<()> {
     let engine = Engine::default();
@@ -15,8 +15,7 @@ fn host_calls_wasm() {
     let host_fn = Func::wrap(&mut store, |mut caller: Caller<()>, input: i32| -> i32 {
         let wasm_fn = caller
             .get_export("square")
-            .map(|e| e.into_func())
-            .flatten()
+            .and_then(Extern::into_func)
             .unwrap()
             .typed::<i32, i32>(&caller)
             .unwrap();
@@ -41,8 +40,7 @@ fn host_calls_wasm() {
     let instance = linker.instantiate(&mut store, &module).unwrap().start(&mut store).unwrap();
     let wasm_fn = instance
         .get_export(&store, "wasm_fn")
-        .map(|e| e.into_func())
-        .flatten()
+        .and_then(Extern::into_func)
         .unwrap()
         .typed::<i32, i32>(&store)
         .unwrap();
