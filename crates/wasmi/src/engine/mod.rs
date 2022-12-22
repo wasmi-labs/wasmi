@@ -14,6 +14,7 @@ mod traits;
 #[cfg(test)]
 mod tests;
 
+use core::sync::atomic::{AtomicU32, Ordering};
 pub(crate) use self::func_args::{FuncParams, FuncResults};
 pub use self::{
     bytecode::DropKeep,
@@ -30,18 +31,17 @@ use self::{
     cache::InstanceCache,
     code_map::CodeMap,
     executor::execute_frame,
-    func_types::FuncTypeRegistry,
+    func_types::{FuncTypeRegistry},
     stack::{FuncFrame, Stack, ValueStack},
 };
+pub(crate) use self::func_types::DedupFuncType;
 use super::{func::FuncEntityInternal, AsContextMut, Func};
 use crate::{
     core::{Trap, TrapCode},
     FuncType,
 };
-use alloc::sync::Arc;
-use core::sync::atomic::{AtomicU32, Ordering};
-pub use func_types::DedupFuncType;
-use spin::{mutex::Mutex, rwlock::RwLock};
+use alloc::{sync::Arc, vec::Vec};
+use spin::{RwLock, Mutex};
 use wasmi_arena::{ArenaIndex, GuardedEntity};
 
 /// The outcome of a `wasmi` function execution.
