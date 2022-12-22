@@ -20,11 +20,7 @@ pub use self::{
     code_map::FuncBody,
     config::Config,
     func_builder::{
-        FuncBuilder,
-        FunctionBuilderAllocations,
-        Instr,
-        RelativeDepth,
-        TranslationError,
+        FuncBuilder, FunctionBuilderAllocations, Instr, RelativeDepth, TranslationError,
     },
     stack::StackLimits,
     traits::{CallParams, CallResults},
@@ -214,15 +210,16 @@ impl Engine {
 pub struct EngineInner {
     /// Engine resources shared across multiple engine executors.
     res: RwLock<EngineResources>,
-    /// Engine executors for Wasm execution.
+    /// Reusable engine stacks for Wasm execution.
     ///
-    /// There can be more than one engine executor alive at the same time
-    /// to allow for concurrent Wasm function executions.
-    executor: Mutex<EngineExecutor>,
+    /// Concurrently executing Wasm executions each require their own stack to
+    /// operate on. Therefore a Wasm engine is required to provide stacks and
+    /// ideally recycles old ones since creation of a new stack is rather expensive.
+    stacks: Mutex<EngineStacks>,
 }
 
 /// The engine's stacks for reuse.
-/// 
+///
 /// Rquired for efficient concurrent Wasm executions.
 #[derive(Debug)]
 pub struct EngineStacks {
@@ -248,9 +245,7 @@ impl EngineStacks {
     pub fn reuse_or_new(&mut self) -> Stack {
         match self.stacks.pop() {
             Some(stack) => stack,
-            None => {
-                Stack::new(self.limits)
-            }
+            None => Stack::new(self.limits),
         }
     }
 
@@ -267,7 +262,7 @@ impl EngineInner {
     fn new(config: &Config) -> Self {
         Self {
             res: RwLock::new(EngineResources::new(config)),
-            executor: Mutex::new(EngineExecutor::new(config.stack_limits())),
+            stacks: Mutex::new(EngineStacks::new(config)),
         }
     }
 
@@ -318,9 +313,11 @@ impl EngineInner {
         Results: CallResults,
     {
         let res = self.res.read();
-        self.executor
-            .lock()
-            .execute_func(ctx, &res, func, params, results)
+        let mut stack = self.stacks.lock().reuse_or_new();
+        let results =
+            EngineExecutor::new(&mut stack).execute_func(ctx, &res, func, params, results);
+        self.stacks.lock().recycle(stack);
+        results
     }
 }
 
@@ -356,17 +353,15 @@ impl EngineResources {
 
 /// The internal state of the `wasmi` engine.
 #[derive(Debug)]
-pub struct EngineExecutor {
+pub struct EngineExecutor<'stack> {
     /// The value and call stacks.
-    stack: Stack,
+    stack: &'stack mut Stack,
 }
 
-impl EngineExecutor {
+impl<'stack> EngineExecutor<'stack> {
     /// Creates a new [`EngineExecutor`] with the given [`StackLimits`].
-    fn new(limits: StackLimits) -> Self {
-        Self {
-            stack: Stack::new(limits),
-        }
+    fn new(stack: &'stack mut Stack) -> Self {
+        Self { stack }
     }
 
     /// Executes the given [`Func`] using the given arguments `args` and stores the result into `results`.
