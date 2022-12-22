@@ -43,19 +43,24 @@ impl Config {
         self
     }
 
+    /// Returns the [`StackLimits`] of the [`Config`].
+    pub(super) fn stack_limits(&self) -> StackLimits {
+        self.stack_limits
+    }
+
     /// Sets the maximum amount of cached stacks for reuse for the [`Config`].
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// Defaults to 2.
     pub fn set_cached_stacks(&mut self, amount: usize) -> &mut Self {
         self.cached_stacks = amount;
         self
     }
 
-    /// Returns the [`StackLimits`] of the [`Config`].
-    pub(super) fn stack_limits(&self) -> StackLimits {
-        self.stack_limits
+    /// Returns the maximum amount of cached stacks for reuse of the [`Config`].
+    pub(super) fn cached_stacks(&self) -> usize {
+        self.cached_stacks
     }
 
     /// Enable or disable the [`mutable-global`] Wasm proposal for the [`Config`].

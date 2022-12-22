@@ -237,7 +237,7 @@ impl EngineStacks {
         Self {
             stacks: Vec::new(),
             limits: config.stack_limits(),
-            keep: 1,
+            keep: config.cached_stacks(),
         }
     }
 
