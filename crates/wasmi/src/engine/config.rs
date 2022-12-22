@@ -1,6 +1,9 @@
 use super::stack::StackLimits;
 use wasmparser::WasmFeatures;
 
+/// The default amount of stacks kept in the cache at most.
+const DEFAULT_CACHED_STACKS: usize = 2;
+
 /// Configuration for an [`Engine`].
 ///
 /// [`Engine`]: [`crate::Engine`]
@@ -8,6 +11,8 @@ use wasmparser::WasmFeatures;
 pub struct Config {
     /// The limits set on the value stack and call stack.
     stack_limits: StackLimits,
+    /// The amount of Wasm stacks to keep in cache at most.
+    cached_stacks: usize,
     /// Is `true` if the `mutable-global` Wasm proposal is enabled.
     mutable_global: bool,
     /// Is `true` if the `sign-extension` Wasm proposal is enabled.
@@ -22,6 +27,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             stack_limits: StackLimits::default(),
+            cached_stacks: DEFAULT_CACHED_STACKS,
             mutable_global: true,
             sign_extension: true,
             saturating_float_to_int: true,
@@ -34,6 +40,16 @@ impl Config {
     /// Sets the [`StackLimits`] for the [`Config`].
     pub fn set_stack_limits(&mut self, stack_limits: StackLimits) -> &mut Self {
         self.stack_limits = stack_limits;
+        self
+    }
+
+    /// Sets the maximum amount of cached stacks for reuse for the [`Config`].
+    /// 
+    /// # Note
+    /// 
+    /// Defaults to 2.
+    pub fn set_cached_stacks(&mut self, amount: usize) -> &mut Self {
+        self.cached_stacks = amount;
         self
     }
 
