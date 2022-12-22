@@ -221,6 +221,47 @@ pub struct EngineInner {
     executor: Mutex<EngineExecutor>,
 }
 
+/// The engine's stacks for reuse.
+/// 
+/// Rquired for efficient concurrent Wasm executions.
+#[derive(Debug)]
+pub struct EngineStacks {
+    /// Stacks to be (re)used.
+    stacks: Vec<Stack>,
+    /// Stack limits for newly constructed engine stacks.
+    limits: StackLimits,
+    /// How many stacks should be kept for reuse at most.
+    keep: usize,
+}
+
+impl EngineStacks {
+    /// Creates new [`EngineStacks`] with the given [`StackLimits`].
+    pub fn new(config: &Config) -> Self {
+        Self {
+            stacks: Vec::new(),
+            limits: config.stack_limits(),
+            keep: 1,
+        }
+    }
+
+    /// Reuse or create a new [`Stack`] if none was available.
+    pub fn reuse_or_new(&mut self) -> Stack {
+        match self.stacks.pop() {
+            Some(stack) => stack,
+            None => {
+                Stack::new(self.limits)
+            }
+        }
+    }
+
+    /// Disose and recycle the `stack`.
+    pub fn recycle(&mut self, stack: Stack) {
+        if self.stacks.len() < self.keep {
+            self.stacks.push(stack);
+        }
+    }
+}
+
 impl EngineInner {
     /// Creates a new [`EngineInner`] with the given [`Config`].
     fn new(config: &Config) -> Self {
