@@ -1,7 +1,7 @@
 //! Test to assert that host functions that call back into
 //! Wasm works correctly.
 
-use wasmi::{Caller, Engine, Module, Func, Linker, Store, Extern};
+use wasmi::{Caller, Engine, Extern, Func, Linker, Module, Store};
 
 fn test_setup() -> Store<()> {
     let engine = Engine::default();
