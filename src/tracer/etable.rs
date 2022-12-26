@@ -51,7 +51,8 @@ pub enum RunInstructionTracePre {
         vtype: ValueType,
         store_size: MemoryStoreSize,
         mmid: u64,
-        pre_block_value: Option<u64>,
+        pre_block_value1: Option<u64>,
+        pre_block_value2: Option<u64>,
     },
 
     I32BinOp {
