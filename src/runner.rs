@@ -571,7 +571,7 @@ impl Interpreter {
                     effective_address(offset, raw_address).map_or(None, |addr| Some(addr));
                 let mmid = tracer.lookup_memory_instance(&function_context.memory.clone().unwrap());
 
-                let pre_block_value = address.map(|address| {
+                let pre_block_value1 = address.map(|address| {
                     let mut buf = [0u8; 8];
                     function_context
                         .memory
@@ -582,6 +582,23 @@ impl Interpreter {
                     u64::from_le_bytes(buf)
                 });
 
+                let pre_block_value2 = address
+                    .map(|address| {
+                        if store_size.byte_size() as u32 + address % 8 > 8 {
+                            let mut buf = [0u8; 8];
+                            function_context
+                                .memory
+                                .clone()
+                                .unwrap()
+                                .get_into((address / 8 + 1) * 8, &mut buf)
+                                .unwrap();
+                            Some(u64::from_le_bytes(buf))
+                        } else {
+                            None
+                        }
+                    })
+                    .flatten();
+
                 Some(RunInstructionTracePre::Store {
                     offset,
                     raw_address,
@@ -590,7 +607,8 @@ impl Interpreter {
                     vtype: parity_wasm::elements::ValueType::I32,
                     store_size,
                     mmid: mmid as u64,
-                    pre_block_value,
+                    pre_block_value1,
+                    pre_block_value2,
                 })
             }
             isa::Instruction::I64Store(offset)
@@ -611,7 +629,7 @@ impl Interpreter {
                     effective_address(offset, raw_address).map_or(None, |addr| Some(addr));
                 let mmid = tracer.lookup_memory_instance(&function_context.memory.clone().unwrap());
 
-                let pre_block_value = address.map(|address| {
+                let pre_block_value1 = address.map(|address| {
                     let mut buf = [0u8; 8];
                     function_context
                         .memory
@@ -622,6 +640,23 @@ impl Interpreter {
                     u64::from_le_bytes(buf)
                 });
 
+                let pre_block_value2 = address
+                    .map(|address| {
+                        if store_size.byte_size() as u32 + address % 8 > 8 {
+                            let mut buf = [0u8; 8];
+                            function_context
+                                .memory
+                                .clone()
+                                .unwrap()
+                                .get_into((address / 8 + 1) * 8, &mut buf)
+                                .unwrap();
+                            Some(u64::from_le_bytes(buf))
+                        } else {
+                            None
+                        }
+                    })
+                    .flatten();
+
                 Some(RunInstructionTracePre::Store {
                     offset,
                     raw_address,
@@ -630,7 +665,8 @@ impl Interpreter {
                     vtype: parity_wasm::elements::ValueType::I64,
                     store_size,
                     mmid: mmid as u64,
-                    pre_block_value,
+                    pre_block_value1,
+                    pre_block_value2,
                 })
             }
 
@@ -1066,10 +1102,11 @@ impl Interpreter {
                     vtype,
                     store_size,
                     mmid,
-                    pre_block_value,
+                    pre_block_value1,
+                    pre_block_value2,
                 } = pre_status.unwrap()
                 {
-                    let updated_block_value = {
+                    let updated_block_value1 = {
                         let mut buf = [0u8; 8];
                         context
                             .memory
@@ -1080,6 +1117,20 @@ impl Interpreter {
                         u64::from_le_bytes(buf)
                     };
 
+                    let updated_block_value2 =
+                        if effective_address.unwrap() % 8 + store_size.byte_size() as u32 > 8 {
+                            let mut buf = [0u8; 8];
+                            context
+                                .memory
+                                .clone()
+                                .unwrap()
+                                .get_into((effective_address.unwrap() / 8 + 1) * 8, &mut buf)
+                                .unwrap();
+                            u64::from_le_bytes(buf)
+                        } else {
+                            0
+                        };
+
                     StepInfo::Store {
                         vtype: vtype.into(),
                         store_size,
@@ -1088,8 +1139,10 @@ impl Interpreter {
                         effective_address: effective_address.unwrap(),
                         value: value as u64,
                         mmid,
-                        pre_block_value: pre_block_value.unwrap(),
-                        updated_block_value,
+                        pre_block_value1: pre_block_value1.unwrap(),
+                        pre_block_value2: pre_block_value2.unwrap_or(0u64),
+                        updated_block_value1,
+                        updated_block_value2,
                     }
                 } else {
                     unreachable!()
