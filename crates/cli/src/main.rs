@@ -1,7 +1,11 @@
 use anyhow::{anyhow, bail, Result};
 use clap::Parser;
 use core::fmt::Write;
-use std::{fs, path::{PathBuf, Path}};
+use std::{
+    ffi::OsStr,
+    fs,
+    path::{Path, PathBuf},
+};
 use wasmi::{
     core::{Value, ValueType, F32, F64},
     ExportItemKind,
@@ -65,15 +69,15 @@ fn wat2wasm(wat: &str) -> Result<Vec<u8>, wat::Error> {
 /// If the Wasm file `wasm_file` does not exist.
 /// If the Wasm file `wasm_file` is not a valid `.wasm` or `.wat` format.
 fn read_wasm_or_wat(wasm_file: &Path) -> Result<Vec<u8>> {
-    let mut file_contents =
+    let mut wasm_bytes =
         fs::read(wasm_file).map_err(|_| anyhow!("failed to read Wasm file {wasm_file:?}"))?;
-    if wasm_file.ends_with(".wat") {
-        let wat = String::from_utf8(file_contents)
+    if wasm_file.extension().and_then(OsStr::to_str) == Some("wat") {
+        let wat = String::from_utf8(wasm_bytes)
             .map_err(|error| anyhow!("failed to read UTF-8 file {wasm_file:?}: {error}"))?;
-        file_contents = wat2wasm(&wat)
+        wasm_bytes = wat2wasm(&wat)
             .map_err(|error| anyhow!("failed to parse .wat file {wasm_file:?}: {error}"))?;
     }
-    Ok(file_contents)
+    Ok(wasm_bytes)
 }
 
 /// Returns the contents of the given `.wasm` or `.wat` file.
