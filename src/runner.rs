@@ -478,6 +478,16 @@ impl Interpreter {
 
                 Some(RunInstructionTracePre::Call { args })
             }
+            isa::Instruction::CallIndirect(type_idx) => {
+                let table_idx = DEFAULT_TABLE_INDEX;
+                let offset = <_>::from_value_internal(*self.value_stack.top());
+
+                Some(RunInstructionTracePre::CallIndirect {
+                    table_idx,
+                    type_idx,
+                    offset,
+                })
+            }
 
             isa::Instruction::Drop => Some(RunInstructionTracePre::Drop),
             isa::Instruction::Select(vtype) => Some(RunInstructionTracePre::Select {
@@ -882,7 +892,10 @@ impl Interpreter {
                     vec![]
                 },
                 keep_values: match target.drop_keep.keep {
-                    Keep::Single(_) => vec![(*self.value_stack.top()).0],
+                    Keep::Single(t) => vec![from_value_internal_to_u64_with_typ(
+                        t.into(),
+                        *self.value_stack.top(),
+                    )],
                     Keep::None => vec![],
                 },
             },
@@ -898,7 +911,10 @@ impl Interpreter {
                             vec![]
                         },
                         keep_values: match target.drop_keep.keep {
-                            Keep::Single(_) => vec![(*self.value_stack.top()).0],
+                            Keep::Single(t) => vec![from_value_internal_to_u64_with_typ(
+                                t.into(),
+                                *self.value_stack.top(),
+                            )],
                             Keep::None => vec![],
                         },
                     }
@@ -918,7 +934,10 @@ impl Interpreter {
                             vec![]
                         },
                         keep_values: match target.drop_keep.keep {
-                            Keep::Single(_) => vec![(*self.value_stack.top()).0],
+                            Keep::Single(t) => vec![from_value_internal_to_u64_with_typ(
+                                t.into(),
+                                *self.value_stack.top(),
+                            )],
                             Keep::None => vec![],
                         },
                     }
@@ -938,7 +957,10 @@ impl Interpreter {
                             vec![]
                         },
                         keep_values: match targets.get(index as u32).drop_keep.keep {
-                            Keep::Single(_) => vec![(*self.value_stack.top()).0],
+                            Keep::Single(t) => vec![from_value_internal_to_u64_with_typ(
+                                t.into(),
+                                *self.value_stack.top(),
+                            )],
                             Keep::None => vec![],
                         },
                     }
@@ -963,7 +985,10 @@ impl Interpreter {
                     },
                     drop_values: drop_values.iter().map(|v| v.0).collect::<Vec<_>>(),
                     keep_values: match keep {
-                        Keep::Single(_) => vec![(*self.value_stack.top()).0],
+                        Keep::Single(t) => vec![from_value_internal_to_u64_with_typ(
+                            t.into(),
+                            *self.value_stack.top(),
+                        )],
                         Keep::None => vec![],
                     },
                 }
@@ -1032,6 +1057,33 @@ impl Interpreter {
                                 op_index_in_plugin: *op_index_in_plugin,
                             }
                         }
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::CallIndirect(_) => {
+                if let RunInstructionTracePre::CallIndirect {
+                    table_idx,
+                    type_idx,
+                    offset,
+                } = pre_status.unwrap()
+                {
+                    let tracer = self.tracer.clone().unwrap();
+
+                    let table = context
+                        .module()
+                        .table_by_index(DEFAULT_TABLE_INDEX)
+                        .unwrap();
+                    let func_ref = table.get(offset).unwrap().unwrap();
+
+                    let func_idx = tracer.borrow().lookup_function(&func_ref);
+
+                    StepInfo::CallIndirect {
+                        table_index: table_idx,
+                        type_index: type_idx,
+                        offset,
+                        func_index: func_idx,
                     }
                 } else {
                     unreachable!()

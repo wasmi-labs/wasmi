@@ -24,6 +24,11 @@ pub enum RunInstructionTracePre {
     Call {
         args: Vec<ValueInternal>,
     },
+    CallIndirect {
+        table_idx: u32,
+        type_idx: u32,
+        offset: u32,
+    },
 
     SetLocal {
         depth: u32,

@@ -166,7 +166,7 @@ impl ExternVal {
 /// [`invoke_export`]: #method.invoke_export
 #[derive(Debug, PartialEq)]
 pub struct ModuleInstance {
-    signatures: RefCell<Vec<Rc<Signature>>>,
+    pub(crate) signatures: RefCell<Vec<Rc<Signature>>>,
     tables: RefCell<Vec<TableRef>>,
     funcs: RefCell<Vec<FuncRef>>,
     memories: RefCell<Vec<MemoryRef>>,
@@ -239,6 +239,7 @@ impl ModuleInstance {
     fn alloc_module<'i, I: Iterator<Item = &'i ExternVal>>(
         loaded_module: &Module,
         extern_vals: I,
+        tracer: Option<Rc<RefCell<Tracer>>>,
     ) -> Result<ModuleRef, Error> {
         let module = loaded_module.module();
         let instance = ModuleRef(Rc::new(ModuleInstance::default()));
@@ -338,6 +339,13 @@ impl ModuleInstance {
                 };
                 let func_instance =
                     FuncInstance::alloc_internal(Rc::downgrade(&instance.0), signature, func_body);
+
+                if let Some(tracer) = tracer.clone() {
+                    tracer
+                        .borrow_mut()
+                        .push_type_of_func_ref(func_instance.clone(), ty.type_ref())
+                }
+
                 instance.push_func(func_instance);
             }
         }
@@ -422,7 +430,13 @@ impl ModuleInstance {
     ) -> Result<NotStartedModuleRef<'a>, Error> {
         let module = loaded_module.module();
 
-        let module_ref = ModuleInstance::alloc_module(loaded_module, extern_vals)?;
+        let module_ref = ModuleInstance::alloc_module(loaded_module, extern_vals, tracer.clone())?;
+
+        if let Some(tracer) = tracer.clone() {
+            tracer
+                .borrow_mut()
+                .register_module_instance(loaded_module, &module_ref);
+        }
 
         for element_segment in module
             .elements_section()
@@ -457,6 +471,18 @@ impl ModuleInstance {
                     .func_by_index(*func_idx)
                     .expect("Due to validation funcs from element segments should exists");
 
+                if let Some(tracer) = tracer.clone() {
+                    let func_idx = tracer.borrow().lookup_function(&func);
+                    let type_idx = tracer.borrow().lookup_type_of_func_ref(&func);
+
+                    tracer.borrow_mut().push_elem(
+                        DEFAULT_TABLE_INDEX,
+                        offset_val + j as u32,
+                        func_idx as u32,
+                        type_idx as u32,
+                    );
+                }
+
                 table_inst.set(offset_val + j as u32, Some(func))?;
             }
         }
@@ -477,23 +503,20 @@ impl ModuleInstance {
             memory_inst.set(offset_val, data_segment.value())?;
         }
 
-        match &tracer {
-            Some(tracer) => {
-                let current_module_id = { tracer.borrow().next_module_id() };
+        if let Some(tracer) = tracer {
+            let current_module_id = { tracer.borrow().lookup_module_instance(&module_ref) };
 
-                {
-                    let mut tracer = tracer.borrow_mut();
+            {
+                let mut tracer = tracer.borrow_mut();
 
-                    for (globalidx, globalref) in module_ref.globals().iter().enumerate() {
-                        tracer.push_global(current_module_id, globalidx as u32, globalref);
-                    }
+                for (globalidx, globalref) in module_ref.globals().iter().enumerate() {
+                    tracer.push_global(current_module_id, globalidx as u32, globalref);
+                }
 
-                    if let Some(memory_ref) = module_ref.memory_by_index(DEFAULT_MEMORY_INDEX) {
-                        tracer.push_init_memory(memory_ref)
-                    }
+                if let Some(memory_ref) = module_ref.memory_by_index(DEFAULT_MEMORY_INDEX) {
+                    tracer.push_init_memory(memory_ref)
                 }
             }
-            None => (),
         }
 
         Ok(NotStartedModuleRef {
@@ -606,23 +629,6 @@ impl ModuleInstance {
         }
 
         let module_ref = Self::with_externvals(loaded_module, extern_vals.iter(), tracer.clone());
-
-        let _ = module_ref.as_ref().map(|module_ref| {
-            let module = module_ref.loaded_module;
-            match tracer {
-                Some(tracer) => {
-                    /*
-                                        (*tracer)
-                                            .borrow_mut()
-                                            .statistics_instructions(&module_ref.instance);
-                    */
-                    (*tracer)
-                        .borrow_mut()
-                        .register_module_instance(module, &module_ref.instance);
-                }
-                None => (),
-            }
-        });
 
         module_ref
     }

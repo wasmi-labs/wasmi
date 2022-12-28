@@ -457,7 +457,7 @@ impl<'a> Instruction<'a> {
                     },
                 }
             }
-            Instruction::CallIndirect(_) => todo!(),
+            Instruction::CallIndirect(idx) => Opcode::CallIndirect { type_idx: idx },
             Instruction::Drop => Opcode::Drop,
             Instruction::Select(_) => Opcode::Select,
             Instruction::GetGlobal(idx) => Opcode::GlobalGet { idx: idx as u64 },
