@@ -1,7 +1,11 @@
 use anyhow::{anyhow, bail, Result};
 use clap::Parser;
 use core::fmt::Write;
-use std::fs;
+use std::{
+    ffi::OsStr,
+    fs,
+    path::{Path, PathBuf},
+};
 use wasmi::{
     core::{Value, ValueType, F32, F64},
     ExportItemKind,
@@ -15,18 +19,18 @@ use wasmi::{
 #[clap(author, version, about, long_about = None)]
 struct Args {
     /// The WebAssembly file to execute.
-    #[clap(value_parser)]
-    wasm_file: String,
+    #[clap(value_hint = clap::ValueHint::FilePath)]
+    wasm_file: PathBuf,
 
     /// The exported name of the Wasm function to call.
     ///
     /// If this argument is missing the wasmi CLI will print out all
     /// exported functions and their parameters of the given Wasm module.
-    #[clap(value_parser)]
+    #[clap()]
     func_name: Option<String>,
 
     /// The arguments provided to the called function.
-    #[clap(value_parser)]
+    #[clap()]
     func_args: Vec<String>,
 }
 
@@ -64,16 +68,16 @@ fn wat2wasm(wat: &str) -> Result<Vec<u8>, wat::Error> {
 ///
 /// If the Wasm file `wasm_file` does not exist.
 /// If the Wasm file `wasm_file` is not a valid `.wasm` or `.wat` format.
-fn read_wasm_or_wat(wasm_file: &str) -> Result<Vec<u8>> {
-    let mut file_contents =
-        fs::read(wasm_file).map_err(|_| anyhow!("failed to read Wasm file {wasm_file}"))?;
-    if wasm_file.ends_with(".wat") {
-        let wat = String::from_utf8(file_contents)
-            .map_err(|error| anyhow!("failed to read UTF-8 file {wasm_file}: {error}"))?;
-        file_contents = wat2wasm(&wat)
-            .map_err(|error| anyhow!("failed to parse .wat file {wasm_file}: {error}"))?;
+fn read_wasm_or_wat(wasm_file: &Path) -> Result<Vec<u8>> {
+    let mut wasm_bytes =
+        fs::read(wasm_file).map_err(|_| anyhow!("failed to read Wasm file {wasm_file:?}"))?;
+    if wasm_file.extension().and_then(OsStr::to_str) == Some("wat") {
+        let wat = String::from_utf8(wasm_bytes)
+            .map_err(|error| anyhow!("failed to read UTF-8 file {wasm_file:?}: {error}"))?;
+        wasm_bytes = wat2wasm(&wat)
+            .map_err(|error| anyhow!("failed to parse .wat file {wasm_file:?}: {error}"))?;
     }
-    Ok(file_contents)
+    Ok(wasm_bytes)
 }
 
 /// Returns the contents of the given `.wasm` or `.wat` file.
@@ -81,11 +85,11 @@ fn read_wasm_or_wat(wasm_file: &str) -> Result<Vec<u8>> {
 /// # Errors
 ///
 /// If the Wasm module fails to parse or validate.
-fn load_wasm_module(wasm_file: &str) -> Result<wasmi::Module> {
+fn load_wasm_module(wasm_file: &Path) -> Result<wasmi::Module> {
     let wasm_bytes = read_wasm_or_wat(wasm_file)?;
     let engine = wasmi::Engine::default();
     let module = wasmi::Module::new(&engine, &mut &wasm_bytes[..]).map_err(|error| {
-        anyhow!("failed to parse and validate Wasm module {wasm_file}: {error}")
+        anyhow!("failed to parse and validate Wasm module {wasm_file:?}: {error}")
     })?;
     Ok(module)
 }
@@ -97,7 +101,7 @@ fn load_wasm_module(wasm_file: &str) -> Result<wasmi::Module> {
 /// If the given `func_name` is none and also displays the
 /// list of exported functions from the Wasm module.
 fn extract_wasm_func(
-    wasm_file: &str,
+    wasm_file: &Path,
     module: &wasmi::Module,
     func_name: Option<String>,
 ) -> Result<String> {
@@ -105,7 +109,7 @@ fn extract_wasm_func(
         Some(func_name) => Ok(func_name),
         None => {
             let exported_funcs = display_exported_funcs(module);
-            bail!("missing function name argument for {wasm_file}\n\n{exported_funcs}")
+            bail!("missing function name argument for {wasm_file:?}\n\n{exported_funcs}")
         }
     }
 }
@@ -120,7 +124,7 @@ fn extract_wasm_func(
 /// - If the Wasm module fails to instantiate or start.
 /// - If the Wasm module does not have an exported function `func_name`.
 fn load_wasm_func(
-    wasm_file: &str,
+    wasm_file: &Path,
     module: &wasmi::Module,
     func_name: &str,
 ) -> Result<(Func, String, Store<()>)> {
@@ -136,7 +140,7 @@ fn load_wasm_func(
         .and_then(|ext| ext.into_func())
         .ok_or_else(|| {
             let exported_funcs = display_exported_funcs(module);
-            anyhow!("could not find function \"{func_name}\" in {wasm_file}\n\n{exported_funcs}")
+            anyhow!("could not find function \"{func_name}\" in {wasm_file:?}\n\n{exported_funcs}")
         })?;
     Ok((func, func_name.into(), store))
 }
@@ -268,8 +272,8 @@ fn prepare_results_buffer(func_type: &FuncType) -> Vec<Value> {
 }
 
 /// Prints a signalling text that Wasm execution has started.
-fn print_execution_start(wasm_file: &str, func_name: &str, func_args: &[Value]) {
-    print!("executing {wasm_file}::{func_name}(");
+fn print_execution_start(wasm_file: &Path, func_name: &str, func_args: &[Value]) {
+    print!("executing {wasm_file:?}::{func_name}(");
     if let Some((first_arg, rest_args)) = func_args.split_first() {
         print!("{first_arg}");
         for arg in rest_args {
