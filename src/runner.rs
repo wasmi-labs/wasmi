@@ -1111,7 +1111,7 @@ impl Interpreter {
                     mmid,
                 } = pre_status.unwrap()
                 {
-                    let block_value = {
+                    let block_value1 = {
                         let mut buf = [0u8; 8];
                         context
                             .memory
@@ -1121,6 +1121,20 @@ impl Interpreter {
                             .unwrap();
                         u64::from_le_bytes(buf)
                     };
+
+                    let block_value2 =
+                        if effective_address.unwrap() % 8 + load_size.byte_size() as u32 > 8 {
+                            let mut buf = [0u8; 8];
+                            context
+                                .memory
+                                .clone()
+                                .unwrap()
+                                .get_into((effective_address.unwrap() / 8 + 1) * 8, &mut buf)
+                                .unwrap();
+                            u64::from_le_bytes(buf)
+                        } else {
+                            0
+                        };
 
                     StepInfo::Load {
                         vtype: vtype.into(),
@@ -1132,7 +1146,8 @@ impl Interpreter {
                             vtype.into(),
                             *self.value_stack.top(),
                         ),
-                        block_value,
+                        block_value1,
+                        block_value2,
                         mmid,
                     }
                 } else {
