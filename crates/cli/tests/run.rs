@@ -40,7 +40,7 @@ fn get_bin_path(name: &str) -> PathBuf {
     let mut path = PathBuf::new();
     path.push("tests");
     path.push("wats");
-    path.push(&format!("{name}.wat"));
+    path.push(format!("{name}.wat"));
     path
 }
 
