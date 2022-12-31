@@ -142,7 +142,7 @@ impl ResumableInvocation {
     ///   the errorneous host function.
     /// - If the number of output values does not match the expected number of
     ///   outputs required by the called function.
-    pub fn call_resumable<T>(
+    pub fn resume<T>(
         self,
         _ctx: impl AsContextMut<UserState = T>,
         _inputs: &[Value],
