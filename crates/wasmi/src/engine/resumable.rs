@@ -1,7 +1,7 @@
 use super::Func;
-use crate::{engine::Stack, AsContext, AsContextMut, Engine, Error, FuncType};
+use crate::{engine::Stack, AsContextMut, Engine, Error};
 use core::mem::replace;
-use wasmi_core::{Value, ValueType, Trap};
+use wasmi_core::{Trap, Value};
 
 /// Returned by calling a function in a resumable way.
 #[derive(Debug)]
@@ -49,16 +49,6 @@ pub struct ResumableInvocation {
     /// actual host error. This is therefore guaranteed to never
     /// be a Wasm trap.
     host_error: Trap,
-    /// The function type of the host function that returned the host error.
-    ///
-    /// # Note
-    ///
-    /// - This mainly exists so that we can provide a user friendly API for
-    ///   `resume_types` and return a slice of [`ValueType`] directly to the
-    ///   caller.
-    /// - This is wrapped in an `Option` so that we can make computation of
-    ///   the function type lazy.
-    host_func_type: Option<FuncType>,
     /// The value and call stack in use by the [`ResumableInvocation`].
     ///
     /// # Note
@@ -73,13 +63,18 @@ pub struct ResumableInvocation {
 
 impl ResumableInvocation {
     /// Creates a new [`ResumableInvocation`].
-    pub(super) fn new(engine: &Engine, func: Func, host_func: Func, host_error: Trap, stack: Stack) -> Self {
+    pub(super) fn new(
+        engine: &Engine,
+        func: Func,
+        host_func: Func,
+        host_error: Trap,
+        stack: Stack,
+    ) -> Self {
         Self {
             engine: engine.clone(),
             func,
             host_func,
             host_error,
-            host_func_type: None,
             stack,
         }
     }
@@ -88,7 +83,6 @@ impl ResumableInvocation {
     pub(super) fn update(&mut self, host_func: Func, host_error: Trap) {
         self.host_func = host_func;
         self.host_error = host_error;
-        self.host_func_type = None;
     }
 }
 
@@ -100,20 +94,16 @@ impl Drop for ResumableInvocation {
 }
 
 impl ResumableInvocation {
-    /// Returns value types of the values that are required to resume the function invocation.
+    /// Returns the host [`Func`] that returned the host error.
     ///
     /// # Note
     ///
-    /// The returned value types are the types of the values that the user needs to
-    /// provide as the `inputs` argument to the `call_resume` method upon resuming the
-    /// call.
-    pub fn resumable_types(&mut self, ctx: impl AsContext) -> &[ValueType] {
-        self.host_func_type
-            .get_or_insert_with(|| {
-                self.engine
-                    .resolve_func_type(self.host_func.signature(ctx), FuncType::clone)
-            })
-            .results()
+    /// When using [`ResumableInvocation::resume`] the `inputs`
+    /// need to match the results of this host function so that
+    /// the function invocation can properly resume. For that
+    /// number and types of the values provided must match.
+    pub fn host_func(&self) -> Func {
+        self.host_func
     }
 
     /// Returns a shared reference to the encountered host error.
