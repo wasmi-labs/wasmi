@@ -36,12 +36,11 @@ use self::{
     code_map::CodeMap,
     executor::execute_frame,
     func_types::FuncTypeRegistry,
-    stack::{FuncFrame, ValueStack},
+    stack::{FuncFrame, ValueStack, Stack},
 };
 pub(crate) use self::{
     func_args::{FuncParams, FuncResults},
     func_types::DedupFuncType,
-    stack::Stack,
 };
 use super::{func::FuncEntityInternal, AsContextMut, Func};
 use crate::{
