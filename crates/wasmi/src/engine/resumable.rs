@@ -59,7 +59,7 @@ pub struct ResumableInvocation {
     /// - This is wrapped in an `Option` so that we can make computation of
     ///   the function type lazy.
     host_func_type: Option<FuncType>,
-    /// The value and call stack in use by the running [`ResumableFunc`].
+    /// The value and call stack in use by the [`ResumableInvocation`].
     ///
     /// # Note
     ///
