@@ -42,9 +42,9 @@ pub struct ResumableInvocation {
     host_func: Func,
     /// The host error that was returned by the `host_func` which
     /// caused the resumable function invocation to break.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This might be useful to users of this API to inspect the
     /// actual host error. This is therefore guaranteed to never
     /// be a Wasm trap.
@@ -107,9 +107,9 @@ impl ResumableInvocation {
     }
 
     /// Returns a shared reference to the encountered host error.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This is guaranteed to never be a Wasm trap.
     pub fn host_error(&self) -> &Trap {
         &self.host_error
