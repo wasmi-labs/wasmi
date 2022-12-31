@@ -8,6 +8,7 @@ pub mod executor;
 mod func_args;
 mod func_builder;
 mod func_types;
+mod resumable;
 pub mod stack;
 mod traits;
 
@@ -25,6 +26,7 @@ pub use self::{
         RelativeDepth,
         TranslationError,
     },
+    resumable::{ResumableCall, ResumableInvocation},
     stack::StackLimits,
     traits::{CallParams, CallResults},
 };
@@ -34,11 +36,12 @@ use self::{
     code_map::CodeMap,
     executor::execute_frame,
     func_types::FuncTypeRegistry,
-    stack::{FuncFrame, Stack, ValueStack},
+    stack::{FuncFrame, ValueStack},
 };
 pub(crate) use self::{
     func_args::{FuncParams, FuncResults},
     func_types::DedupFuncType,
+    stack::Stack,
 };
 use super::{func::FuncEntityInternal, AsContextMut, Func};
 use crate::{
@@ -209,6 +212,42 @@ impl Engine {
     {
         self.inner.execute_func(ctx, func, params, results)
     }
+
+    /// Executes the given [`Func`] using the given arguments `params` and stores the result into `results`.
+    ///
+    /// # Note
+    ///
+    /// This API assumes that the `params` and `results` are well typed and
+    /// therefore won't perform type checks.
+    /// Those checks are usually done at the [`Func::call`] API or when creating
+    /// a new [`TypedFunc`] instance via [`Func::typed`].
+    ///
+    /// # Errors
+    ///
+    /// - If the given `func` is not a Wasm function, e.g. if it is a host function.
+    /// - If the given arguments `params` do not match the expected parameters of `func`.
+    /// - If the given `results` do not match the the length of the expected results of `func`.
+    /// - When encountering a Wasm trap during the execution of `func`.
+    ///
+    /// [`TypedFunc`]: [`crate::TypedFunc`]
+    pub(crate) fn execute_func_resumable<Params, Results>(
+        &mut self,
+        _ctx: impl AsContextMut,
+        _func: Func,
+        _params: Params,
+        _results: Results,
+    ) -> Result<ResumableCall<<Results as CallResults>::Results>, Trap>
+    where
+        Params: CallParams,
+        Results: CallResults,
+    {
+        todo!()
+    }
+
+    /// Recycles the given [`Stack`] for reuse in the [`Engine`].
+    pub(crate) fn recycle_stack(&self, stack: Stack) {
+        self.inner.recycle_stack(stack)
+    }
 }
 
 /// The internal state of the `wasmi` engine.
@@ -324,6 +363,10 @@ impl EngineInner {
             EngineExecutor::new(&mut stack).execute_func(ctx, &res, func, params, results);
         self.stacks.lock().recycle(stack);
         results
+    }
+
+    fn recycle_stack(&self, stack: Stack) {
+        self.stacks.lock().recycle(stack);
     }
 }
 

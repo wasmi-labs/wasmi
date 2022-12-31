@@ -123,6 +123,18 @@ impl Stack {
         Self { values, frames }
     }
 
+    /// Create an empty [`Stack`].
+    ///
+    /// # Note
+    ///
+    /// Empty stacks require no heap allocations and are cheap to construct.
+    pub(crate) fn empty() -> Self {
+        Self {
+            values: ValueStack::new(0, 0),
+            frames: CallStack::default(),
+        }
+    }
+
     /// Initializes the [`Stack`] for the given Wasm root function call.
     pub(crate) fn call_wasm_root(
         &mut self,
