@@ -64,14 +64,14 @@ pub struct ResumableInvocation {
 impl ResumableInvocation {
     /// Creates a new [`ResumableInvocation`].
     pub(super) fn new(
-        engine: &Engine,
+        engine: Engine,
         func: Func,
         host_func: Func,
         host_error: Trap,
         stack: Stack,
     ) -> Self {
         Self {
-            engine: engine.clone(),
+            engine,
             func,
             host_func,
             host_error,

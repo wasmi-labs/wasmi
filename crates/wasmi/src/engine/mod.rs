@@ -36,7 +36,7 @@ use self::{
     code_map::CodeMap,
     executor::execute_frame,
     func_types::FuncTypeRegistry,
-    stack::{FuncFrame, ValueStack, Stack},
+    stack::{FuncFrame, Stack, ValueStack},
 };
 pub(crate) use self::{
     func_args::{FuncParams, FuncResults},
@@ -212,35 +212,20 @@ impl Engine {
         self.inner.execute_func(ctx, func, params, results)
     }
 
-    /// Executes the given [`Func`] using the given arguments `params` and stores the result into `results`.
-    ///
-    /// # Note
-    ///
-    /// This API assumes that the `params` and `results` are well typed and
-    /// therefore won't perform type checks.
-    /// Those checks are usually done at the [`Func::call`] API or when creating
-    /// a new [`TypedFunc`] instance via [`Func::typed`].
-    ///
-    /// # Errors
-    ///
-    /// - If the given `func` is not a Wasm function, e.g. if it is a host function.
-    /// - If the given arguments `params` do not match the expected parameters of `func`.
-    /// - If the given `results` do not match the the length of the expected results of `func`.
-    /// - When encountering a Wasm trap during the execution of `func`.
-    ///
-    /// [`TypedFunc`]: [`crate::TypedFunc`]
+    // TODO: docs
     pub(crate) fn execute_func_resumable<Params, Results>(
         &mut self,
-        _ctx: impl AsContextMut,
-        _func: Func,
-        _params: Params,
-        _results: Results,
+        ctx: impl AsContextMut,
+        func: Func,
+        params: Params,
+        results: Results,
     ) -> Result<ResumableCall<<Results as CallResults>::Results>, Trap>
     where
         Params: CallParams,
         Results: CallResults,
     {
-        todo!()
+        self.inner
+            .execute_func_resumable(ctx, func, params, results, || self.clone())
     }
 
     /// Recycles the given [`Stack`] for reuse in the [`Engine`].
@@ -359,9 +344,48 @@ impl EngineInner {
         let res = self.res.read();
         let mut stack = self.stacks.lock().reuse_or_new();
         let results =
-            EngineExecutor::new(&mut stack).execute_func(ctx, &res, func, params, results);
+            EngineExecutor::new(&res, &mut stack).execute_func(ctx, func, params, results);
         self.stacks.lock().recycle(stack);
         results
+    }
+
+    // TODO: docs
+    fn execute_func_resumable<Params, Results>(
+        &self,
+        ctx: impl AsContextMut,
+        func: Func,
+        params: Params,
+        results: Results,
+        get_engine: impl FnOnce() -> Engine,
+    ) -> Result<ResumableCall<<Results as CallResults>::Results>, Trap>
+    where
+        Params: CallParams,
+        Results: CallResults,
+    {
+        let res = self.res.read();
+        let mut stack = self.stacks.lock().reuse_or_new();
+        let results = EngineExecutor::new(&res, &mut stack)
+            .execute_func_resumable(ctx, func, params, results);
+        match results {
+            Ok(results) => {
+                self.stacks.lock().recycle(stack);
+                Ok(ResumableCall::Finished(results))
+            }
+            Err(ResumableTrap::Wasm(trap)) => {
+                self.stacks.lock().recycle(stack);
+                Err(trap)
+            }
+            Err(ResumableTrap::Host {
+                host_func,
+                host_trap,
+            }) => Ok(ResumableCall::Resumable(ResumableInvocation::new(
+                get_engine(),
+                func,
+                host_func,
+                host_trap,
+                stack,
+            ))),
+        }
     }
 
     fn recycle_stack(&self, stack: Stack) {
@@ -399,17 +423,49 @@ impl EngineResources {
     }
 }
 
-/// The internal state of the `wasmi` engine.
+/// Either a Wasm trap or a host trap with its originating host [`Func`].
 #[derive(Debug)]
-pub struct EngineExecutor<'stack> {
-    /// The value and call stacks.
-    stack: &'stack mut Stack,
+enum ResumableTrap {
+    /// The trap is originating from Wasm.
+    Wasm(Trap),
+    /// The trap is originating from a host function.
+    Host { host_func: Func, host_trap: Trap },
 }
 
-impl<'stack> EngineExecutor<'stack> {
+impl ResumableTrap {
+    pub fn host(host_func: Func, host_trap: Trap) -> Self {
+        Self::Host {
+            host_func,
+            host_trap,
+        }
+    }
+}
+
+impl From<Trap> for ResumableTrap {
+    fn from(trap: Trap) -> Self {
+        Self::Wasm(trap)
+    }
+}
+
+impl From<TrapCode> for ResumableTrap {
+    fn from(trap_code: TrapCode) -> Self {
+        Self::Wasm(trap_code.into())
+    }
+}
+
+/// The internal state of the `wasmi` engine.
+#[derive(Debug)]
+pub struct EngineExecutor<'engine> {
+    /// Shared and reusable generic engine resources.
+    res: &'engine EngineResources,
+    /// The value and call stacks.
+    stack: &'engine mut Stack,
+}
+
+impl<'engine> EngineExecutor<'engine> {
     /// Creates a new [`EngineExecutor`] with the given [`StackLimits`].
-    fn new(stack: &'stack mut Stack) -> Self {
-        Self { stack }
+    fn new(res: &'engine EngineResources, stack: &'engine mut Stack) -> Self {
+        Self { res, stack }
     }
 
     /// Executes the given [`Func`] using the given arguments `args` and stores the result into `results`.
@@ -422,7 +478,6 @@ impl<'stack> EngineExecutor<'stack> {
     fn execute_func<Params, Results>(
         &mut self,
         mut ctx: impl AsContextMut,
-        res: &EngineResources,
         func: Func,
         params: Params,
         results: Results,
@@ -434,14 +489,48 @@ impl<'stack> EngineExecutor<'stack> {
         self.initialize_args(params);
         match func.as_internal(ctx.as_context()) {
             FuncEntityInternal::Wasm(wasm_func) => {
-                let mut frame = self.stack.call_wasm_root(wasm_func, &res.code_map)?;
+                let mut frame = self.stack.call_wasm_root(wasm_func, &self.res.code_map)?;
                 let mut cache = InstanceCache::from(frame.instance());
-                self.execute_wasm_func(ctx.as_context_mut(), res, &mut frame, &mut cache)?;
+                self.execute_wasm_func(ctx.as_context_mut(), self.res, &mut frame, &mut cache)?;
             }
             FuncEntityInternal::Host(host_func) => {
                 let host_func = host_func.clone();
                 self.stack
-                    .call_host_root(ctx.as_context_mut(), host_func, &res.func_types)?;
+                    .call_host_root(ctx.as_context_mut(), host_func, &self.res.func_types)?;
+            }
+        };
+        let results = self.write_results_back(results);
+        Ok(results)
+    }
+
+    // TODO: docs
+    fn execute_func_resumable<Params, Results>(
+        &mut self,
+        mut ctx: impl AsContextMut,
+        func: Func,
+        params: Params,
+        results: Results,
+    ) -> Result<<Results as CallResults>::Results, ResumableTrap>
+    where
+        Params: CallParams,
+        Results: CallResults,
+    {
+        self.initialize_args(params);
+        match func.as_internal(ctx.as_context()) {
+            FuncEntityInternal::Wasm(wasm_func) => {
+                let mut frame = self.stack.call_wasm_root(wasm_func, &self.res.code_map)?;
+                let mut cache = InstanceCache::from(frame.instance());
+                self.execute_wasm_func_resumable(
+                    ctx.as_context_mut(),
+                    self.res,
+                    &mut frame,
+                    &mut cache,
+                )?;
+            }
+            FuncEntityInternal::Host(host_func) => {
+                let host_func = host_func.clone();
+                self.stack
+                    .call_host_root(ctx.as_context_mut(), host_func, &self.res.func_types)?;
             }
         };
         let results = self.write_results_back(results);
@@ -509,6 +598,41 @@ impl<'stack> EngineExecutor<'stack> {
                                 host_func,
                                 &res.func_types,
                             )?;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // TODO: docs
+    fn execute_wasm_func_resumable(
+        &mut self,
+        mut ctx: impl AsContextMut,
+        res: &EngineResources,
+        frame: &mut FuncFrame,
+        cache: &mut InstanceCache,
+    ) -> Result<(), ResumableTrap> {
+        'outer: loop {
+            match self.execute_frame(ctx.as_context_mut(), frame, cache)? {
+                CallOutcome::Return => match self.stack.return_wasm() {
+                    Some(caller) => {
+                        *frame = caller;
+                        continue 'outer;
+                    }
+                    None => return Ok(()),
+                },
+                CallOutcome::NestedCall(called_func) => {
+                    match called_func.as_internal(ctx.as_context()) {
+                        FuncEntityInternal::Wasm(wasm_func) => {
+                            *frame = self.stack.call_wasm(frame, wasm_func, &res.code_map)?;
+                        }
+                        FuncEntityInternal::Host(host_func) => {
+                            cache.reset_default_memory_bytes();
+                            let host_func = host_func.clone();
+                            self.stack
+                                .call_host(ctx.as_context_mut(), frame, host_func, &res.func_types)
+                                .map_err(|trap| ResumableTrap::host(called_func, trap))?;
                         }
                     }
                 }
