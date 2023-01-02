@@ -199,7 +199,7 @@ impl Engine {
     ///
     /// [`TypedFunc`]: [`crate::TypedFunc`]
     pub(crate) fn execute_func<Params, Results>(
-        &mut self,
+        &self,
         ctx: impl AsContextMut,
         func: Func,
         params: Params,
@@ -214,7 +214,7 @@ impl Engine {
 
     // TODO: docs
     pub(crate) fn execute_func_resumable<Params, Results>(
-        &mut self,
+        &self,
         ctx: impl AsContextMut,
         func: Func,
         params: Params,
@@ -226,6 +226,21 @@ impl Engine {
     {
         self.inner
             .execute_func_resumable(ctx, func, params, results, || self.clone())
+    }
+
+    // TODO: docs
+    pub(crate) fn resume_func<Params, Results>(
+        &self,
+        ctx: impl AsContextMut,
+        invocation: ResumableInvocation,
+        params: Params,
+        results: Results,
+    ) -> Result<ResumableCall<<Results as CallResults>::Results>, Trap>
+    where
+        Params: CallParams,
+        Results: CallResults,
+    {
+        self.inner.resume_func(ctx, invocation, params, results)
     }
 
     /// Recycles the given [`Stack`] for reuse in the [`Engine`].
@@ -388,6 +403,40 @@ impl EngineInner {
         }
     }
 
+    // TODO: docs
+    pub(crate) fn resume_func<Params, Results>(
+        &self,
+        ctx: impl AsContextMut,
+        mut invocation: ResumableInvocation,
+        params: Params,
+        results: Results,
+    ) -> Result<ResumableCall<<Results as CallResults>::Results>, Trap>
+    where
+        Params: CallParams,
+        Results: CallResults,
+    {
+        let res = self.res.read();
+        let results =
+            EngineExecutor::new(&res, &mut invocation.stack).resume_func(ctx, params, results);
+        match results {
+            Ok(results) => {
+                self.stacks.lock().recycle(invocation.take_stack());
+                Ok(ResumableCall::Finished(results))
+            }
+            Err(ResumableTrap::Wasm(trap)) => {
+                self.stacks.lock().recycle(invocation.take_stack());
+                Err(trap)
+            }
+            Err(ResumableTrap::Host {
+                host_func,
+                host_trap,
+            }) => {
+                invocation.update(host_func, host_trap);
+                Ok(ResumableCall::Resumable(invocation))
+            }
+        }
+    }
+
     fn recycle_stack(&self, stack: Stack) {
         self.stacks.lock().recycle(stack);
     }
@@ -535,6 +584,20 @@ impl<'engine> EngineExecutor<'engine> {
         };
         let results = self.write_results_back(results);
         Ok(results)
+    }
+
+    // TODO: docs
+    fn resume_func<Params, Results>(
+        &mut self,
+        _ctx: impl AsContextMut,
+        _params: Params,
+        _results: Results,
+    ) -> Result<<Results as CallResults>::Results, ResumableTrap>
+    where
+        Params: CallParams,
+        Results: CallResults,
+    {
+        todo!()
     }
 
     /// Initializes the value stack with the given arguments `params`.

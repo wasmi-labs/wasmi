@@ -58,7 +58,7 @@ pub struct ResumableInvocation {
     /// - This stack is borrowed from the engine and needs to be given
     ///   back to the engine when the [`ResumableInvocation`] goes out
     ///   of scope.
-    stack: Stack,
+    pub(super) stack: Stack,
 }
 
 impl ResumableInvocation {
@@ -130,19 +130,30 @@ impl ResumableInvocation {
     ///
     /// # Errors
     ///
-    /// - If the function returned a Wasm [`Trap`].
-    /// - If the types of the `inputs` do not match the result types of
-    ///   the errorneous host function.
-    /// - If the number of input values does not match the results of
-    ///   the errorneous host function.
+    /// - If the function resumption returned a Wasm [`Trap`].
+    /// - If the types or the number of values in `inputs` does not match
+    ///   the types and number of result values of the errorneous host function.
     /// - If the number of output values does not match the expected number of
     ///   outputs required by the called function.
     pub fn resume<T>(
         self,
-        _ctx: impl AsContextMut<UserState = T>,
-        _inputs: &[Value],
-        _outputs: &mut [Value],
+        mut ctx: impl AsContextMut<UserState = T>,
+        inputs: &[Value],
+        outputs: &mut [Value],
     ) -> Result<ResumableCall<()>, Error> {
-        todo!()
+        self.engine
+            .resolve_func_type(self.host_func().signature(ctx.as_context()), |func_type| {
+                func_type.match_results(inputs, true)
+            })?;
+        self.engine
+            .resolve_func_type(self.func.signature(ctx.as_context()), |func_type| {
+                func_type.match_results(outputs, false)?;
+                func_type.prepare_outputs(outputs);
+                <Result<(), Error>>::Ok(()) // TODO: why do we need types here?
+            })?;
+        self.engine
+            .clone()
+            .resume_func(ctx.as_context_mut(), self, inputs, outputs)
+            .map_err(Into::into)
     }
 }
