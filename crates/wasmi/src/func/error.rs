@@ -1,6 +1,6 @@
 use core::{fmt, fmt::Display};
 
-/// Errors that can occur upon operating with [`Func`] instances.
+/// Errors that can occur upon type checking function signatures.
 #[derive(Debug)]
 pub enum FuncError {
     /// A function parameter did not match the required type.
