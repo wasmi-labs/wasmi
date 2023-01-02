@@ -79,6 +79,11 @@ impl ResumableInvocation {
         }
     }
 
+    /// Replaces the internal stack with an empty one that has no heap allocations.
+    pub(super) fn take_stack(&mut self) -> Stack {
+        replace(&mut self.stack, Stack::empty())
+    }
+
     /// Updates the [`ResumableInvocation`] with the new `host_func` and a `host_error`.
     pub(super) fn update(&mut self, host_func: Func, host_error: Trap) {
         self.host_func = host_func;
@@ -88,8 +93,8 @@ impl ResumableInvocation {
 
 impl Drop for ResumableInvocation {
     fn drop(&mut self) {
-        self.engine
-            .recycle_stack(replace(&mut self.stack, Stack::empty()));
+        let stack = self.take_stack();
+        self.engine.recycle_stack(stack);
     }
 }
 
