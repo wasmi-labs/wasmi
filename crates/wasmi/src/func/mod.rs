@@ -356,20 +356,9 @@ impl Func {
         ctx.as_context()
             .store
             .resolve_func_type_with(fn_type, |func_type| {
-                let (expected_inputs, expected_outputs) = func_type.params_results();
-                let actual_inputs = inputs.iter().map(Value::value_type);
-                if expected_inputs.iter().copied().ne(actual_inputs) {
-                    return Err(FuncError::MismatchingParameters { func: *self })
-                        .map_err(Into::into);
-                }
-                if expected_outputs.len() != outputs.len() {
-                    return Err(FuncError::MismatchingResults { func: *self }).map_err(Into::into);
-                }
-                // Now we prepare the `outputs` to match the type of the function outputs.
-                outputs
-                    .iter_mut()
-                    .zip(expected_outputs.iter().copied().map(Value::default))
-                    .for_each(|(output, expected_output)| *output = expected_output);
+                func_type.match_params(inputs)?;
+                func_type.match_results(outputs, false)?;
+                func_type.prepare_outputs(outputs);
                 Ok(())
             })
     }
