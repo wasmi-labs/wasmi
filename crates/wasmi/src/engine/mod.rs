@@ -45,7 +45,6 @@ pub(crate) use self::{
 use super::{func::FuncEntityInternal, AsContextMut, Func};
 use crate::{
     core::{Trap, TrapCode},
-    ext::ErrAndThen as _,
     FuncType,
 };
 use alloc::{sync::Arc, vec::Vec};
@@ -701,7 +700,7 @@ impl<'engine> EngineExecutor<'engine> {
                             let host_func = host_func.clone();
                             self.stack
                                 .call_host(ctx.as_context_mut(), frame, host_func, &res.func_types)
-                                .err_and_then(|trap| {
+                                .or_else(|trap| {
                                     // Push the calling function onto the Stack to make it possible to resume execution.
                                     self.stack.push_frame(*frame)?;
                                     Err(ResumableTrap::host(called_func, trap))
