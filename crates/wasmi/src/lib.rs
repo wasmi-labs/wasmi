@@ -93,6 +93,7 @@ mod foreach_tuple;
 
 mod engine;
 mod error;
+mod ext;
 mod external;
 mod func;
 mod func_type;

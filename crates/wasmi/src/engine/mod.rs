@@ -45,6 +45,7 @@ pub(crate) use self::{
 use super::{func::FuncEntityInternal, AsContextMut, Func};
 use crate::{
     core::{Trap, TrapCode},
+    ext::ErrAndThen as _,
     FuncType,
 };
 use alloc::{sync::Arc, vec::Vec};
@@ -669,6 +670,11 @@ impl<'engine> EngineExecutor<'engine> {
     }
 
     // TODO: docs
+    //
+    // TODO: this method superseedes the non-resumable `execute_wasm_func` method and
+    //       could be used instead in its place if there are no performance regressions.
+    //       -> needs benchmarking
+    //       (codedup)
     fn execute_wasm_func_resumable(
         &mut self,
         mut ctx: impl AsContextMut,
@@ -695,7 +701,11 @@ impl<'engine> EngineExecutor<'engine> {
                             let host_func = host_func.clone();
                             self.stack
                                 .call_host(ctx.as_context_mut(), frame, host_func, &res.func_types)
-                                .map_err(|trap| ResumableTrap::host(called_func, trap))?;
+                                .err_and_then(|trap| {
+                                    // Push the calling function onto the Stack to make it possible to resume execution.
+                                    self.stack.push_frame(*frame)?;
+                                    Err(ResumableTrap::host(called_func, trap))
+                                })?;
                         }
                     }
                 }

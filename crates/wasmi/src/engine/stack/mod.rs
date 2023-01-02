@@ -135,6 +135,18 @@ impl Stack {
         }
     }
 
+    /// Push the given `frame` onto the call stack.
+    ///
+    /// # Note
+    ///
+    /// This API is required for resumable function calls so that the currently
+    /// active function frame can be pushed back onto the stack before returning
+    /// in a resumable state. Upon resumption the function frame can be popped
+    /// from the stack again.
+    pub(super) fn push_frame(&mut self, frame: FuncFrame) -> Result<(), TrapCode> {
+        self.frames.push(frame)
+    }
+
     /// Initializes the [`Stack`] for the given Wasm root function call.
     pub(crate) fn call_wasm_root(
         &mut self,
