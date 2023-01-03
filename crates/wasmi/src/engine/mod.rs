@@ -197,7 +197,7 @@ impl Engine {
     ///
     /// [`TypedFunc`]: [`crate::TypedFunc`]
     pub(crate) fn execute_func<Params, Results>(
-        &mut self,
+        &self,
         ctx: impl AsContextMut,
         func: Func,
         params: Params,
