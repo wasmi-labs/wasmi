@@ -156,6 +156,8 @@ impl Stack {
     /// pop of the Wasm function that was called just before the
     /// errorneous host function invocation that caused the resumable
     /// function invocation to pause.
+    /// 
+    /// [`push_frame`]: [`Stack::push_frame`]
     pub(super) fn pop_frame(&mut self) -> Option<FuncFrame> {
         self.frames.pop()
     }
