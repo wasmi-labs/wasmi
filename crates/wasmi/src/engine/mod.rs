@@ -354,8 +354,9 @@ impl EngineInner {
     {
         let res = self.res.read();
         let mut stack = self.stacks.lock().reuse_or_new();
-        let results =
-            EngineExecutor::new(&res, &mut stack).execute_func(ctx, func, params, results);
+        let results = EngineExecutor::new(&res, &mut stack)
+            .execute_func_resumable(ctx, func, params, results)
+            .map_err(ResumableTrap::into_trap);
         self.stacks.lock().recycle(stack);
         results
     }
@@ -484,6 +485,14 @@ impl ResumableTrap {
             host_trap,
         }
     }
+
+    /// Returns the [`Trap`] of the [`ResumableTrap`].
+    pub fn into_trap(self) -> Trap {
+        match self {
+            ResumableTrap::Wasm(trap) => trap,
+            ResumableTrap::Host { host_trap, .. } => host_trap,
+        }
+    }
 }
 
 impl From<Trap> for ResumableTrap {
@@ -511,40 +520,6 @@ impl<'engine> EngineExecutor<'engine> {
     /// Creates a new [`EngineExecutor`] with the given [`StackLimits`].
     fn new(res: &'engine EngineResources, stack: &'engine mut Stack) -> Self {
         Self { res, stack }
-    }
-
-    /// Executes the given [`Func`] using the given arguments `args` and stores the result into `results`.
-    ///
-    /// # Errors
-    ///
-    /// - If the given arguments `args` do not match the expected parameters of `func`.
-    /// - If the given `results` do not match the the length of the expected results of `func`.
-    /// - When encountering a Wasm trap during the execution of `func`.
-    fn execute_func<Results>(
-        &mut self,
-        mut ctx: impl AsContextMut,
-        func: Func,
-        params: impl CallParams,
-        results: Results,
-    ) -> Result<<Results as CallResults>::Results, Trap>
-    where
-        Results: CallResults,
-    {
-        self.initialize_args(params);
-        match func.as_internal(ctx.as_context()) {
-            FuncEntityInternal::Wasm(wasm_func) => {
-                let mut frame = self.stack.call_wasm_root(wasm_func, &self.res.code_map)?;
-                let mut cache = InstanceCache::from(frame.instance());
-                self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
-            }
-            FuncEntityInternal::Host(host_func) => {
-                let host_func = host_func.clone();
-                self.stack
-                    .call_host_root(ctx.as_context_mut(), host_func, &self.res.func_types)?;
-            }
-        };
-        let results = self.write_results_back(results);
-        Ok(results)
     }
 
     // TODO: docs
@@ -608,48 +583,6 @@ impl<'engine> EngineExecutor<'engine> {
         Results: CallResults,
     {
         results.call_results(self.stack.values.drain())
-    }
-
-    /// Executes the top most Wasm function on the [`Stack`] until the [`Stack`] is empty.
-    ///
-    /// # Errors
-    ///
-    /// - When encountering a Wasm trap during the execution of `func`.
-    /// - When a called host function trapped.
-    fn execute_wasm_func(
-        &mut self,
-        mut ctx: impl AsContextMut,
-        frame: &mut FuncFrame,
-        cache: &mut InstanceCache,
-    ) -> Result<(), Trap> {
-        'outer: loop {
-            match self.execute_frame(ctx.as_context_mut(), frame, cache)? {
-                CallOutcome::Return => match self.stack.return_wasm() {
-                    Some(caller) => {
-                        *frame = caller;
-                        continue 'outer;
-                    }
-                    None => return Ok(()),
-                },
-                CallOutcome::NestedCall(called_func) => {
-                    match called_func.as_internal(ctx.as_context()) {
-                        FuncEntityInternal::Wasm(wasm_func) => {
-                            *frame = self.stack.call_wasm(frame, wasm_func, &self.res.code_map)?;
-                        }
-                        FuncEntityInternal::Host(host_func) => {
-                            cache.reset_default_memory_bytes();
-                            let host_func = host_func.clone();
-                            self.stack.call_host(
-                                ctx.as_context_mut(),
-                                frame,
-                                host_func,
-                                &self.res.func_types,
-                            )?;
-                        }
-                    }
-                }
-            }
-        }
     }
 
     // TODO: docs
