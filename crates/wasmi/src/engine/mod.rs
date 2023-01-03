@@ -319,7 +319,7 @@ impl EngineInner {
         let res = self.res.read();
         let mut stack = self.stacks.lock().reuse_or_new();
         let results =
-            EngineExecutor::new(&mut stack).execute_func(ctx, &res, func, params, results);
+            EngineExecutor::new(&res, &mut stack).execute_func(ctx, func, params, results);
         self.stacks.lock().recycle(stack);
         results
     }
@@ -357,15 +357,17 @@ impl EngineResources {
 
 /// The internal state of the `wasmi` engine.
 #[derive(Debug)]
-pub struct EngineExecutor<'stack> {
+pub struct EngineExecutor<'engine> {
+    /// Shared and reusable generic engine resources.
+    res: &'engine EngineResources,
     /// The value and call stacks.
-    stack: &'stack mut Stack,
+    stack: &'engine mut Stack,
 }
 
-impl<'stack> EngineExecutor<'stack> {
+impl<'engine> EngineExecutor<'engine> {
     /// Creates a new [`EngineExecutor`] with the given [`StackLimits`].
-    fn new(stack: &'stack mut Stack) -> Self {
-        Self { stack }
+    fn new(res: &'engine EngineResources, stack: &'engine mut Stack) -> Self {
+        Self { res, stack }
     }
 
     /// Executes the given [`Func`] using the given arguments `args` and stores the result into `results`.
@@ -378,7 +380,6 @@ impl<'stack> EngineExecutor<'stack> {
     fn execute_func<Results>(
         &mut self,
         mut ctx: impl AsContextMut,
-        res: &EngineResources,
         func: Func,
         params: impl CallParams,
         results: Results,
@@ -389,14 +390,14 @@ impl<'stack> EngineExecutor<'stack> {
         self.initialize_args(params);
         match func.as_internal(ctx.as_context()) {
             FuncEntityInternal::Wasm(wasm_func) => {
-                let mut frame = self.stack.call_wasm_root(wasm_func, &res.code_map)?;
+                let mut frame = self.stack.call_wasm_root(wasm_func, &self.res.code_map)?;
                 let mut cache = InstanceCache::from(frame.instance());
-                self.execute_wasm_func(ctx.as_context_mut(), res, &mut frame, &mut cache)?;
+                self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
             }
             FuncEntityInternal::Host(host_func) => {
                 let host_func = host_func.clone();
                 self.stack
-                    .call_host_root(ctx.as_context_mut(), host_func, &res.func_types)?;
+                    .call_host_root(ctx.as_context_mut(), host_func, &self.res.func_types)?;
             }
         };
         let results = self.write_results_back(results);
@@ -434,7 +435,6 @@ impl<'stack> EngineExecutor<'stack> {
     fn execute_wasm_func(
         &mut self,
         mut ctx: impl AsContextMut,
-        res: &EngineResources,
         frame: &mut FuncFrame,
         cache: &mut InstanceCache,
     ) -> Result<(), Trap> {
@@ -450,7 +450,7 @@ impl<'stack> EngineExecutor<'stack> {
                 CallOutcome::NestedCall(called_func) => {
                     match called_func.as_internal(ctx.as_context()) {
                         FuncEntityInternal::Wasm(wasm_func) => {
-                            *frame = self.stack.call_wasm(frame, wasm_func, &res.code_map)?;
+                            *frame = self.stack.call_wasm(frame, wasm_func, &self.res.code_map)?;
                         }
                         FuncEntityInternal::Host(host_func) => {
                             cache.reset_default_memory_bytes();
@@ -459,7 +459,7 @@ impl<'stack> EngineExecutor<'stack> {
                                 ctx.as_context_mut(),
                                 frame,
                                 host_func,
-                                &res.func_types,
+                                &self.res.func_types,
                             )?;
                         }
                     }
