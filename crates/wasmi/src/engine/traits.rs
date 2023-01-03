@@ -81,6 +81,6 @@ impl<'a> CallResults for &'a mut [Value] {
         assert_eq!(self.len(), results.len());
         self.iter_mut().zip(results).for_each(|(dst, src)| {
             *dst = src.with_type(dst.value_type());
-        });
+        })
     }
 }
