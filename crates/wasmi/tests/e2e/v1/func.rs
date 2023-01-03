@@ -335,7 +335,7 @@ fn dynamic_type_check_works() {
     // Case: Too few inputs given to function.
     assert_matches!(
         identity.call(&mut store, &[], core::slice::from_mut(&mut result)),
-        Err(Error::Func(FuncError::MismatchingParameters { .. }))
+        Err(Error::Func(FuncError::MismatchingParameterLen))
     );
     // Case: Too many inputs given to function.
     assert_matches!(
@@ -344,12 +344,12 @@ fn dynamic_type_check_works() {
             &[Value::I32(0), Value::I32(1)],
             core::slice::from_mut(&mut result)
         ),
-        Err(Error::Func(FuncError::MismatchingParameters { .. }))
+        Err(Error::Func(FuncError::MismatchingParameterLen))
     );
     // Case: Too few outputs given to function.
     assert_matches!(
         identity.call(&mut store, &[Value::I32(0)], &mut [],),
-        Err(Error::Func(FuncError::MismatchingResults { .. }))
+        Err(Error::Func(FuncError::MismatchingResultLen))
     );
     // Case: Too many outputs given to function.
     assert_matches!(
@@ -358,7 +358,7 @@ fn dynamic_type_check_works() {
             &[Value::I32(0)],
             &mut [Value::I32(0), Value::I32(1)],
         ),
-        Err(Error::Func(FuncError::MismatchingResults { .. }))
+        Err(Error::Func(FuncError::MismatchingResultLen))
     );
     // Case: Mismatching type given as input to function.
     for input in &[
@@ -372,7 +372,7 @@ fn dynamic_type_check_works() {
                 core::slice::from_ref(input),
                 core::slice::from_mut(&mut result)
             ),
-            Err(Error::Func(FuncError::MismatchingParameters { .. }))
+            Err(Error::Func(FuncError::MismatchingParameterType))
         );
     }
     // Case: Allow for incorrect result type.
@@ -391,31 +391,31 @@ fn static_type_check_works() {
     // Case: Too few inputs given to function.
     assert_matches!(
         identity.typed::<(), i32>(&mut store),
-        Err(Error::Func(FuncError::MismatchingParameters { .. }))
+        Err(Error::Func(FuncError::MismatchingParameterLen))
     );
     // Case: Too many inputs given to function.
     assert_matches!(
         identity.typed::<(i32, i32), i32>(&mut store),
-        Err(Error::Func(FuncError::MismatchingParameters { .. }))
+        Err(Error::Func(FuncError::MismatchingParameterLen))
     );
     // Case: Too few results given to function.
     assert_matches!(
         identity.typed::<i32, ()>(&mut store),
-        Err(Error::Func(FuncError::MismatchingResults { .. }))
+        Err(Error::Func(FuncError::MismatchingResultLen))
     );
     // Case: Too many results given to function.
     assert_matches!(
         identity.typed::<i32, (i32, i32)>(&mut store),
-        Err(Error::Func(FuncError::MismatchingResults { .. }))
+        Err(Error::Func(FuncError::MismatchingResultLen))
     );
     // Case: Mismatching type given as input to function.
     assert_matches!(
         identity.typed::<i64, i32>(&mut store),
-        Err(Error::Func(FuncError::MismatchingParameters { .. }))
+        Err(Error::Func(FuncError::MismatchingParameterType))
     );
     // Case: Mismatching type given as output of function.
     assert_matches!(
         identity.typed::<i32, i64>(&mut store),
-        Err(Error::Func(FuncError::MismatchingResults { .. }))
+        Err(Error::Func(FuncError::MismatchingResultType))
     );
 }

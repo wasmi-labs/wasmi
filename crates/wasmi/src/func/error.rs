@@ -1,34 +1,33 @@
-use super::Func;
 use core::{fmt, fmt::Display};
 
-/// Errors that can occur upon operating with [`Func`] instances.
+/// Errors that can occur upon type checking function signatures.
 #[derive(Debug)]
 pub enum FuncError {
-    /// Encountered when trying to create a [`TypedFunc`]
-    /// with mismatching function parameter types.
-    ///
-    /// [`TypedFunc`]: [`super::TypedFunc`]
-    MismatchingParameters { func: Func },
-    /// Encountered when trying to create a [`TypedFunc`]
-    /// with mismatching function results types.
-    ///
-    /// [`TypedFunc`]: [`super::TypedFunc`]
-    MismatchingResults { func: Func },
+    /// A function parameter did not match the required type.
+    MismatchingParameterType,
+    /// Specified an incorrect number of parameters.
+    MismatchingParameterLen,
+    /// A function result did not match the required type.
+    MismatchingResultType,
+    /// Specified an incorrect number of results.
+    MismatchingResultLen,
 }
 
 impl Display for FuncError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            FuncError::MismatchingParameters { func } => write!(
-                f,
-                "encountered mismatching function \
-                parameter types for TypedFunc: {func:?}",
-            ),
-            FuncError::MismatchingResults { func } => write!(
-                f,
-                "encountered mismatching function \
-                result types for TypedFunc: {func:?}",
-            ),
+            FuncError::MismatchingParameterType => {
+                write!(f, "encountered incorrect function parameter type")
+            }
+            FuncError::MismatchingParameterLen => {
+                write!(f, "encountered an incorrect number of parameters")
+            }
+            FuncError::MismatchingResultType => {
+                write!(f, "encountered incorrect function result type")
+            }
+            FuncError::MismatchingResultLen => {
+                write!(f, "encountered an incorrect number of results")
+            }
         }
     }
 }

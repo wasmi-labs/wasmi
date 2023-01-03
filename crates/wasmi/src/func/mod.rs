@@ -288,24 +288,7 @@ impl Func {
         inputs: &[Value],
         outputs: &mut [Value],
     ) -> Result<(), Error> {
-        // Since [`Func`] is a dynamically typed function instance there is
-        // a need to verify that the given input parameters match the required
-        // types and that the given output slice matches the expected length.
-        //
-        // These checks can be avoided using the [`TypedFunc`] API.
-        let func_type = self.func_type(&ctx);
-        let (expected_inputs, expected_outputs) = func_type.params_results();
-        let actual_inputs = inputs.iter().map(Value::value_type);
-        if expected_inputs.iter().copied().ne(actual_inputs) {
-            return Err(FuncError::MismatchingParameters { func: *self }).map_err(Into::into);
-        }
-        if expected_outputs.len() != outputs.len() {
-            return Err(FuncError::MismatchingResults { func: *self }).map_err(Into::into);
-        }
-        outputs
-            .iter_mut()
-            .zip(expected_outputs.iter().copied().map(Value::default))
-            .for_each(|(output, expected_output)| *output = expected_output);
+        self.verify_and_prepare_inputs_outputs(ctx.as_context(), inputs, outputs)?;
         // Note: Cloning an [`Engine`] is intentionally a cheap operation.
         ctx.as_context().store.engine().clone().execute_func(
             ctx.as_context_mut(),
@@ -314,6 +297,36 @@ impl Func {
             outputs,
         )?;
         Ok(())
+    }
+
+    /// Verify that the `inputs` and `outputs` value types match the function signature.
+    ///
+    /// Since [`Func`] is a dynamically typed function instance there is
+    /// a need to verify that the given input parameters match the required
+    /// types and that the given output slice matches the expected length.
+    ///
+    /// These checks can be avoided using the [`TypedFunc`] API.
+    ///
+    /// # Errors
+    ///
+    /// - If the `inputs` value types do not match the function input types.
+    /// - If the number of `inputs` do not match the function input types.
+    /// - If the number of `outputs` do not match the function output types.
+    fn verify_and_prepare_inputs_outputs(
+        &self,
+        ctx: impl AsContext,
+        inputs: &[Value],
+        outputs: &mut [Value],
+    ) -> Result<(), FuncError> {
+        let fn_type = self.signature(ctx.as_context());
+        ctx.as_context()
+            .store
+            .resolve_func_type_with(fn_type, |func_type| {
+                func_type.match_params(inputs)?;
+                func_type.match_results(outputs, false)?;
+                func_type.prepare_outputs(outputs);
+                Ok(())
+            })
     }
 
     /// Creates a new [`TypedFunc`] from this [`Func`].
