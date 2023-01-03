@@ -1,4 +1,4 @@
-use super::{into_func::WasmTypeList, Func, FuncError};
+use super::{into_func::WasmTypeList, Func};
 use crate::{
     engine::{CallParams, CallResults},
     AsContext,
@@ -66,17 +66,12 @@ where
     /// and result types of `func` mismatch the signature of `func`.
     pub(crate) fn new(ctx: impl AsContext, func: Func) -> Result<Self, Error> {
         let func_type = func.func_type(&ctx);
-        let (expected_params, expected_results) = func_type.params_results();
         let (actual_params, actual_results) = (
             <Params as WasmTypeList>::types(),
             <Results as WasmTypeList>::types(),
         );
-        if actual_params.as_ref() != expected_params {
-            return Err(Error::Func(FuncError::MismatchingParameters { func }));
-        }
-        if actual_results.as_ref() != expected_results {
-            return Err(Error::Func(FuncError::MismatchingResults { func }));
-        }
+        func_type.match_params(actual_params.as_ref())?;
+        func_type.match_results(actual_results.as_ref(), true)?;
         Ok(Self {
             signature: PhantomData,
             func,

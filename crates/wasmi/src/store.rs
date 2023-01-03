@@ -216,7 +216,21 @@ impl<T> Store<T> {
     /// - If the deduplicated function type does not originate from this store.
     /// - If the deduplicated function type cannot be resolved to its entity.
     pub(super) fn resolve_func_type(&self, func_type: DedupFuncType) -> FuncType {
-        self.engine.resolve_func_type(func_type, Clone::clone)
+        self.resolve_func_type_with(func_type, FuncType::clone)
+    }
+
+    /// Returns a shared reference to the associated entity of the signature.
+    ///
+    /// # Panics
+    ///
+    /// - If the deduplicated function type does not originate from this store.
+    /// - If the deduplicated function type cannot be resolved to its entity.
+    pub(super) fn resolve_func_type_with<R>(
+        &self,
+        func_type: DedupFuncType,
+        f: impl FnOnce(&FuncType) -> R,
+    ) -> R {
+        self.engine.resolve_func_type(func_type, f)
     }
 
     /// Returns a shared reference to the associated entity of the global variable.
