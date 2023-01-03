@@ -75,13 +75,12 @@ pub trait CallResults {
 }
 
 impl<'a> CallResults for &'a mut [Value] {
-    type Results = Self;
+    type Results = ();
 
     fn call_results(self, results: &[UntypedValue]) -> Self::Results {
         assert_eq!(self.len(), results.len());
         self.iter_mut().zip(results).for_each(|(dst, src)| {
             *dst = src.with_type(dst.value_type());
-        });
-        self
+        })
     }
 }
