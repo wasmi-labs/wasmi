@@ -553,14 +553,22 @@ impl<'engine> EngineExecutor<'engine> {
     // TODO: docs
     fn resume_func<Results>(
         &mut self,
-        _ctx: impl AsContextMut,
-        _params: impl CallParams,
-        _results: Results,
+        mut ctx: impl AsContextMut,
+        params: impl CallParams,
+        results: Results,
     ) -> Result<<Results as CallResults>::Results, ResumableTrap>
     where
         Results: CallResults,
     {
-        todo!()
+        self.stack.values.extend(params.call_params());
+        let mut frame = self
+            .stack
+            .pop_frame()
+            .expect("a frame must be on the call stack upon resumption");
+        let mut cache = InstanceCache::from(frame.instance());
+        self.execute_wasm_func_resumable(ctx.as_context_mut(), &mut frame, &mut cache)?;
+        let results = self.write_results_back(results);
+        Ok(results)
     }
 
     /// Initializes the value stack with the given arguments `params`.

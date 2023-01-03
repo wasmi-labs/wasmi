@@ -147,6 +147,19 @@ impl Stack {
         self.frames.push(frame)
     }
 
+    /// Pops the top most [`FuncFrame`] if any.
+    ///
+    /// # Note
+    ///
+    /// This is the counterpart method oo [`push_frame`] and also
+    /// required when resuming a resumable function execution to
+    /// pop of the Wasm function that was called just before the
+    /// errorneous host function invocation that caused the resumable
+    /// function invocation to pause.
+    pub(super) fn pop_frame(&mut self) -> Option<FuncFrame> {
+        self.frames.pop()
+    }
+
     /// Initializes the [`Stack`] for the given Wasm root function call.
     pub(crate) fn call_wasm_root(
         &mut self,
