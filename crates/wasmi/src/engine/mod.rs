@@ -198,30 +198,28 @@ impl Engine {
     /// - When encountering a Wasm trap during the execution of `func`.
     ///
     /// [`TypedFunc`]: [`crate::TypedFunc`]
-    pub(crate) fn execute_func<Params, Results>(
+    pub(crate) fn execute_func<Results>(
         &self,
         ctx: impl AsContextMut,
         func: Func,
-        params: Params,
+        params: impl CallParams,
         results: Results,
     ) -> Result<<Results as CallResults>::Results, Trap>
     where
-        Params: CallParams,
         Results: CallResults,
     {
         self.inner.execute_func(ctx, func, params, results)
     }
 
     // TODO: docs
-    pub(crate) fn execute_func_resumable<Params, Results>(
+    pub(crate) fn execute_func_resumable<Results>(
         &self,
         ctx: impl AsContextMut,
         func: Func,
-        params: Params,
+        params: impl CallParams,
         results: Results,
     ) -> Result<ResumableCall<<Results as CallResults>::Results>, Trap>
     where
-        Params: CallParams,
         Results: CallResults,
     {
         self.inner
@@ -229,15 +227,14 @@ impl Engine {
     }
 
     // TODO: docs
-    pub(crate) fn resume_func<Params, Results>(
+    pub(crate) fn resume_func<Results>(
         &self,
         ctx: impl AsContextMut,
         invocation: ResumableInvocation,
-        params: Params,
+        params: impl CallParams,
         results: Results,
     ) -> Result<ResumableCall<<Results as CallResults>::Results>, Trap>
     where
-        Params: CallParams,
         Results: CallResults,
     {
         self.inner.resume_func(ctx, invocation, params, results)
@@ -345,15 +342,14 @@ impl EngineInner {
             .copied()
     }
 
-    fn execute_func<Params, Results>(
+    fn execute_func<Results>(
         &self,
         ctx: impl AsContextMut,
         func: Func,
-        params: Params,
+        params: impl CallParams,
         results: Results,
     ) -> Result<<Results as CallResults>::Results, Trap>
     where
-        Params: CallParams,
         Results: CallResults,
     {
         let res = self.res.read();
@@ -365,16 +361,15 @@ impl EngineInner {
     }
 
     // TODO: docs
-    fn execute_func_resumable<Params, Results>(
+    fn execute_func_resumable<Results>(
         &self,
         ctx: impl AsContextMut,
         func: Func,
-        params: Params,
+        params: impl CallParams,
         results: Results,
         get_engine: impl FnOnce() -> Engine,
     ) -> Result<ResumableCall<<Results as CallResults>::Results>, Trap>
     where
-        Params: CallParams,
         Results: CallResults,
     {
         let res = self.res.read();
@@ -404,15 +399,14 @@ impl EngineInner {
     }
 
     // TODO: docs
-    pub(crate) fn resume_func<Params, Results>(
+    pub(crate) fn resume_func<Results>(
         &self,
         ctx: impl AsContextMut,
         mut invocation: ResumableInvocation,
-        params: Params,
+        params: impl CallParams,
         results: Results,
     ) -> Result<ResumableCall<<Results as CallResults>::Results>, Trap>
     where
-        Params: CallParams,
         Results: CallResults,
     {
         let res = self.res.read();
@@ -524,15 +518,14 @@ impl<'engine> EngineExecutor<'engine> {
     /// - If the given arguments `args` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm trap during the execution of `func`.
-    fn execute_func<Params, Results>(
+    fn execute_func<Results>(
         &mut self,
         mut ctx: impl AsContextMut,
         func: Func,
-        params: Params,
+        params: impl CallParams,
         results: Results,
     ) -> Result<<Results as CallResults>::Results, Trap>
     where
-        Params: CallParams,
         Results: CallResults,
     {
         self.initialize_args(params);
@@ -553,15 +546,14 @@ impl<'engine> EngineExecutor<'engine> {
     }
 
     // TODO: docs
-    fn execute_func_resumable<Params, Results>(
+    fn execute_func_resumable<Results>(
         &mut self,
         mut ctx: impl AsContextMut,
         func: Func,
-        params: Params,
+        params: impl CallParams,
         results: Results,
     ) -> Result<<Results as CallResults>::Results, ResumableTrap>
     where
-        Params: CallParams,
         Results: CallResults,
     {
         self.initialize_args(params);
@@ -582,24 +574,20 @@ impl<'engine> EngineExecutor<'engine> {
     }
 
     // TODO: docs
-    fn resume_func<Params, Results>(
+    fn resume_func<Results>(
         &mut self,
         _ctx: impl AsContextMut,
-        _params: Params,
+        _params: impl CallParams,
         _results: Results,
     ) -> Result<<Results as CallResults>::Results, ResumableTrap>
     where
-        Params: CallParams,
         Results: CallResults,
     {
         todo!()
     }
 
     /// Initializes the value stack with the given arguments `params`.
-    fn initialize_args<Params>(&mut self, params: Params)
-    where
-        Params: CallParams,
-    {
+    fn initialize_args(&mut self, params: impl CallParams) {
         self.stack.clear();
         self.stack.values.extend(params.call_params());
     }
