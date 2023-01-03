@@ -540,7 +540,7 @@ impl<'engine> EngineExecutor<'engine> {
             FuncEntityInternal::Wasm(wasm_func) => {
                 let mut frame = self.stack.call_wasm_root(wasm_func, &self.res.code_map)?;
                 let mut cache = InstanceCache::from(frame.instance());
-                self.execute_wasm_func(ctx.as_context_mut(), self.res, &mut frame, &mut cache)?;
+                self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
             }
             FuncEntityInternal::Host(host_func) => {
                 let host_func = host_func.clone();
@@ -571,7 +571,6 @@ impl<'engine> EngineExecutor<'engine> {
                 let mut cache = InstanceCache::from(frame.instance());
                 self.execute_wasm_func_resumable(
                     ctx.as_context_mut(),
-                    self.res,
                     &mut frame,
                     &mut cache,
                 )?;
@@ -634,7 +633,6 @@ impl<'engine> EngineExecutor<'engine> {
     fn execute_wasm_func(
         &mut self,
         mut ctx: impl AsContextMut,
-        res: &EngineResources,
         frame: &mut FuncFrame,
         cache: &mut InstanceCache,
     ) -> Result<(), Trap> {
@@ -650,7 +648,7 @@ impl<'engine> EngineExecutor<'engine> {
                 CallOutcome::NestedCall(called_func) => {
                     match called_func.as_internal(ctx.as_context()) {
                         FuncEntityInternal::Wasm(wasm_func) => {
-                            *frame = self.stack.call_wasm(frame, wasm_func, &res.code_map)?;
+                            *frame = self.stack.call_wasm(frame, wasm_func, &self.res.code_map)?;
                         }
                         FuncEntityInternal::Host(host_func) => {
                             cache.reset_default_memory_bytes();
@@ -659,7 +657,7 @@ impl<'engine> EngineExecutor<'engine> {
                                 ctx.as_context_mut(),
                                 frame,
                                 host_func,
-                                &res.func_types,
+                                &self.res.func_types,
                             )?;
                         }
                     }
@@ -677,7 +675,6 @@ impl<'engine> EngineExecutor<'engine> {
     fn execute_wasm_func_resumable(
         &mut self,
         mut ctx: impl AsContextMut,
-        res: &EngineResources,
         frame: &mut FuncFrame,
         cache: &mut InstanceCache,
     ) -> Result<(), ResumableTrap> {
@@ -693,13 +690,13 @@ impl<'engine> EngineExecutor<'engine> {
                 CallOutcome::NestedCall(called_func) => {
                     match called_func.as_internal(ctx.as_context()) {
                         FuncEntityInternal::Wasm(wasm_func) => {
-                            *frame = self.stack.call_wasm(frame, wasm_func, &res.code_map)?;
+                            *frame = self.stack.call_wasm(frame, wasm_func, &self.res.code_map)?;
                         }
                         FuncEntityInternal::Host(host_func) => {
                             cache.reset_default_memory_bytes();
                             let host_func = host_func.clone();
                             self.stack
-                                .call_host(ctx.as_context_mut(), frame, host_func, &res.func_types)
+                                .call_host(ctx.as_context_mut(), frame, host_func, &self.res.func_types)
                                 .or_else(|trap| {
                                     // Push the calling function onto the Stack to make it possible to resume execution.
                                     self.stack.push_frame(*frame)?;
