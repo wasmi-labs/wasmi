@@ -1,7 +1,7 @@
 //! Test to assert that resumable call feature works as intended.
 
-use wasmi::{Engine, Extern, Func, Linker, Module, ResumableCall, Store};
-use wasmi_core::{Trap, Value, ValueType};
+use wasmi::{Engine, Error, Extern, Func, Linker, Module, ResumableCall, Store};
+use wasmi_core::{Trap, TrapCode, Value, ValueType};
 
 fn test_setup() -> Store<()> {
     let engine = Engine::default();
@@ -52,9 +52,18 @@ fn resumable_call() {
         .and_then(Extern::into_func)
         .unwrap();
 
+    run_test(wasm_fn, &mut store, false);
+    run_test(wasm_fn, &mut store, true);
+}
+
+fn run_test(wasm_fn: Func, mut store: &mut Store<()>, wasm_trap: bool) {
     let mut results = [Value::I32(0)];
     let invocation = match wasm_fn
-        .call_resumable(&mut store, &[Value::I32(0)], &mut results[..])
+        .call_resumable(
+            &mut store,
+            &[Value::I32(wasm_trap as i32)],
+            &mut results[..],
+        )
         .unwrap()
     {
         ResumableCall::Resumable(invocation) => {
@@ -81,13 +90,28 @@ fn resumable_call() {
         }
         ResumableCall::Finished(_) => panic!("expected host function trap with exit code 20"),
     };
-    match invocation
-        .resume(&mut store, &[Value::I32(3)], &mut results[..])
-        .unwrap()
-    {
-        ResumableCall::Resumable(_) => panic!("expected resumed function to finish"),
-        ResumableCall::Finished(()) => {
-            assert_eq!(results, [Value::I32(4)]);
+    let result = invocation.resume(&mut store, &[Value::I32(3)], &mut results[..]);
+    if wasm_trap {
+        match result {
+            Ok(_) => panic!("expected resumed function to trap in Wasm"),
+            Err(trap) => match trap {
+                Error::Trap(trap) => {
+                    assert!(matches!(
+                        trap.trap_code(),
+                        Some(TrapCode::UnreachableCodeReached)
+                    ));
+                }
+                _ => panic!("expected Wasm trap"),
+            },
+        }
+    } else {
+        match result {
+            Ok(ResumableCall::Resumable(_)) | Err(_) => {
+                panic!("expected resumed function to finish")
+            }
+            Ok(ResumableCall::Finished(())) => {
+                assert_eq!(results, [Value::I32(4)]);
+            }
         }
     }
 }
