@@ -9,6 +9,26 @@ fn test_setup() -> Store<()> {
 }
 
 #[test]
+fn resumable_call_host() {
+    let mut store = test_setup();
+    let host_fn = Func::wrap(&mut store, || -> Result<(), Trap> {
+        Err(Trap::i32_exit(100))
+    });
+    // Even though the called host function traps we expect a normal error
+    // since the host function is the root function of the call and therefore
+    // it would not make sense to resume it.
+    match host_fn.call_resumable(&mut store, &[], &mut []) {
+        Ok(_) => panic!("expected an error since the called host function is root"),
+        Err(trap) => match trap {
+            Error::Trap(trap) => {
+                assert_eq!(trap.i32_exit_status(), Some(100));
+            }
+            _ => panic!("expected Wasm trap"),
+        },
+    }
+}
+
+#[test]
 fn resumable_call() {
     let mut store = test_setup();
     let mut linker = <Linker<()>>::new();
