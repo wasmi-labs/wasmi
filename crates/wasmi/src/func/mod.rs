@@ -307,6 +307,12 @@ impl Func {
     /// Returns a resumable handle to the function invocation upon
     /// enountering host errors with which it is possible to handle
     /// the error and continue the execution as if no error occured.
+    /// 
+    /// # Note
+    /// 
+    /// This is a non-standard WebAssembly API and might not be available
+    /// at other WebAssembly engines. Please be aware that depending on this
+    /// feature might mean a lock-in to `wasmi` for users.
     ///
     /// # Errors
     ///
