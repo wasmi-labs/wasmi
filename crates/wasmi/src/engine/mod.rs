@@ -523,7 +523,7 @@ enum TaggedTrap {
 }
 
 impl TaggedTrap {
-    /// Creates a [`ResumableTrap`] from a host error.
+    /// Creates a [`TaggedTrap`] from a host error.
     pub fn host(host_func: Func, host_trap: Trap) -> Self {
         debug_assert!(host_trap.trap_code().is_none());
         Self::Host {
@@ -532,7 +532,7 @@ impl TaggedTrap {
         }
     }
 
-    /// Returns the [`Trap`] of the [`ResumableTrap`].
+    /// Returns the [`Trap`] of the [`TaggedTrap`].
     pub fn into_trap(self) -> Trap {
         match self {
             TaggedTrap::Wasm(trap) => trap,
