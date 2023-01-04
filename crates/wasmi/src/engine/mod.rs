@@ -400,7 +400,7 @@ impl EngineInner {
         let mut stack = self.stacks.lock().reuse_or_new();
         let results = EngineExecutor::new(&res, &mut stack)
             .execute_func(ctx, func, params, results)
-            .map_err(ResumableTrap::into_trap);
+            .map_err(TaggedTrap::into_trap);
         self.stacks.lock().recycle(stack);
         results
     }
@@ -428,11 +428,11 @@ impl EngineInner {
                 self.stacks.lock().recycle(stack);
                 Ok(ResumableCall::Finished(results))
             }
-            Err(ResumableTrap::Wasm(trap)) => {
+            Err(TaggedTrap::Wasm(trap)) => {
                 self.stacks.lock().recycle(stack);
                 Err(trap)
             }
-            Err(ResumableTrap::Host {
+            Err(TaggedTrap::Host {
                 host_func,
                 host_trap,
             }) => Ok(ResumableCall::Resumable(ResumableInvocation::new(
@@ -464,11 +464,11 @@ impl EngineInner {
                 self.stacks.lock().recycle(invocation.take_stack());
                 Ok(ResumableCall::Finished(results))
             }
-            Err(ResumableTrap::Wasm(trap)) => {
+            Err(TaggedTrap::Wasm(trap)) => {
                 self.stacks.lock().recycle(invocation.take_stack());
                 Err(trap)
             }
-            Err(ResumableTrap::Host {
+            Err(TaggedTrap::Host {
                 host_func,
                 host_trap,
             }) => {
@@ -515,14 +515,14 @@ impl EngineResources {
 
 /// Either a Wasm trap or a host trap with its originating host [`Func`].
 #[derive(Debug)]
-enum ResumableTrap {
+enum TaggedTrap {
     /// The trap is originating from Wasm.
     Wasm(Trap),
     /// The trap is originating from a host function.
     Host { host_func: Func, host_trap: Trap },
 }
 
-impl ResumableTrap {
+impl TaggedTrap {
     /// Creates a [`ResumableTrap`] from a host error.
     pub fn host(host_func: Func, host_trap: Trap) -> Self {
         debug_assert!(host_trap.trap_code().is_none());
@@ -535,19 +535,19 @@ impl ResumableTrap {
     /// Returns the [`Trap`] of the [`ResumableTrap`].
     pub fn into_trap(self) -> Trap {
         match self {
-            ResumableTrap::Wasm(trap) => trap,
-            ResumableTrap::Host { host_trap, .. } => host_trap,
+            TaggedTrap::Wasm(trap) => trap,
+            TaggedTrap::Host { host_trap, .. } => host_trap,
         }
     }
 }
 
-impl From<Trap> for ResumableTrap {
+impl From<Trap> for TaggedTrap {
     fn from(trap: Trap) -> Self {
         Self::Wasm(trap)
     }
 }
 
-impl From<TrapCode> for ResumableTrap {
+impl From<TrapCode> for TaggedTrap {
     fn from(trap_code: TrapCode) -> Self {
         Self::Wasm(trap_code.into())
     }
@@ -583,7 +583,7 @@ impl<'engine> EngineExecutor<'engine> {
         func: Func,
         params: impl CallParams,
         results: Results,
-    ) -> Result<<Results as CallResults>::Results, ResumableTrap>
+    ) -> Result<<Results as CallResults>::Results, TaggedTrap>
     where
         Results: CallResults,
     {
@@ -619,7 +619,7 @@ impl<'engine> EngineExecutor<'engine> {
         host_func: Func,
         params: impl CallParams,
         results: Results,
-    ) -> Result<<Results as CallResults>::Results, ResumableTrap>
+    ) -> Result<<Results as CallResults>::Results, TaggedTrap>
     where
         Results: CallResults,
     {
@@ -669,7 +669,7 @@ impl<'engine> EngineExecutor<'engine> {
         mut ctx: impl AsContextMut,
         frame: &mut FuncFrame,
         cache: &mut InstanceCache,
-    ) -> Result<(), ResumableTrap> {
+    ) -> Result<(), TaggedTrap> {
         'outer: loop {
             match self.execute_frame(ctx.as_context_mut(), frame, cache)? {
                 CallOutcome::Return => match self.stack.return_wasm() {
@@ -697,7 +697,7 @@ impl<'engine> EngineExecutor<'engine> {
                                 .or_else(|trap| {
                                     // Push the calling function onto the Stack to make it possible to resume execution.
                                     self.stack.push_frame(*frame)?;
-                                    Err(ResumableTrap::host(called_func, trap))
+                                    Err(TaggedTrap::host(called_func, trap))
                                 })?;
                         }
                     }
