@@ -181,21 +181,23 @@ impl Engine {
         self.inner.resolve_inst(func_body, index)
     }
 
-    /// Executes the given [`Func`] using the given arguments `params` and stores the result into `results`.
+    /// Executes the given [`Func`] with parameters `params`.
+    ///
+    /// Stores the execution result into `results` upon a successful execution.
     ///
     /// # Note
     ///
-    /// This API assumes that the `params` and `results` are well typed and
-    /// therefore won't perform type checks.
-    /// Those checks are usually done at the [`Func::call`] API or when creating
-    /// a new [`TypedFunc`] instance via [`Func::typed`].
+    /// - Assumes that the `params` and `results` are well typed.
+    ///   Type checks are done at the [`Func::call`] API or when creating
+    ///   a new [`TypedFunc`] instance via [`Func::typed`].
+    /// - The `params` out parameter is in a valid but unspecified state if this
+    ///   function returns with an error.
     ///
     /// # Errors
     ///
-    /// - If the given `func` is not a Wasm function, e.g. if it is a host function.
-    /// - If the given arguments `params` do not match the expected parameters of `func`.
+    /// - If `params` are overflowing or underflowing the expected amount of parameters.
     /// - If the given `results` do not match the the length of the expected results of `func`.
-    /// - When encountering a Wasm trap during the execution of `func`.
+    /// - When encountering a Wasm or host trap during the execution of `func`.
     ///
     /// [`TypedFunc`]: [`crate::TypedFunc`]
     pub(crate) fn execute_func<Results>(
@@ -211,7 +213,28 @@ impl Engine {
         self.inner.execute_func(ctx, func, params, results)
     }
 
-    // TODO: docs
+    /// Executes the given [`Func`] resumably with parameters `params` and returns.
+    ///
+    /// Stores the execution result into `results` upon a successful execution.
+    /// If the execution encounters a host trap it will return a handle to the user
+    /// that allows to resume the execution at that point.
+    ///
+    /// # Note
+    ///
+    /// - Assumes that the `params` and `results` are well typed.
+    ///   Type checks are done at the [`Func::call`] API or when creating
+    ///   a new [`TypedFunc`] instance via [`Func::typed`].
+    /// - The `params` out parameter is in a valid but unspecified state if this
+    ///   function returns with an error.
+    ///
+    /// # Errors
+    ///
+    /// - If `params` are overflowing or underflowing the expected amount of parameters.
+    /// - If the given `results` do not match the the length of the expected results of `func`.
+    /// - When encountering a Wasm trap during the execution of `func`.
+    /// - When `func` is a host function that traps.
+    ///
+    /// [`TypedFunc`]: [`crate::TypedFunc`]
     pub(crate) fn execute_func_resumable<Results>(
         &self,
         ctx: impl AsContextMut,
@@ -226,7 +249,28 @@ impl Engine {
             .execute_func_resumable(ctx, func, params, results)
     }
 
-    // TODO: docs
+    /// Resumes the given `invocation` given the `params`.
+    ///
+    /// Stores the execution result into `results` upon a successful execution.
+    /// If the execution encounters a host trap it will return a handle to the user
+    /// that allows to resume the execution at that point.
+    ///
+    /// # Note
+    ///
+    /// - Assumes that the `params` and `results` are well typed.
+    ///   Type checks are done at the [`Func::call`] API or when creating
+    ///   a new [`TypedFunc`] instance via [`Func::typed`].
+    /// - The `params` out parameter is in a valid but unspecified state if this
+    ///   function returns with an error.
+    ///
+    /// # Errors
+    ///
+    /// - If `params` are overflowing or underflowing the expected amount of parameters.
+    /// - If the given `results` do not match the the length of the expected results of `func`.
+    /// - When encountering a Wasm trap during the execution of `func`.
+    /// - When `func` is a host function that traps.
+    ///
+    /// [`TypedFunc`]: [`crate::TypedFunc`]
     pub(crate) fn resume_func<Results>(
         &self,
         ctx: impl AsContextMut,
@@ -524,7 +568,15 @@ impl<'engine> EngineExecutor<'engine> {
         Self { res, stack }
     }
 
-    // TODO: docs
+    /// Executes the given [`Func`] using the given `params`.
+    ///
+    /// Stores the execution result into `results` upon a successful execution.
+    ///
+    /// # Errors
+    ///
+    /// - If the given `params` do not match the expected parameters of `func`.
+    /// - If the given `results` do not match the the length of the expected results of `func`.
+    /// - When encountering a Wasm or host trap during the execution of `func`.
     fn execute_func<Results>(
         &mut self,
         mut ctx: impl AsContextMut,
@@ -552,7 +604,15 @@ impl<'engine> EngineExecutor<'engine> {
         Ok(results)
     }
 
-    // TODO: docs
+    /// Resumes the execution of the given [`Func`] using `params`.
+    ///
+    /// Stores the execution result into `results` upon a successful execution.
+    ///
+    /// # Errors
+    ///
+    /// - If the given `params` do not match the expected parameters of `func`.
+    /// - If the given `results` do not match the the length of the expected results of `func`.
+    /// - When encountering a Wasm or host trap during the execution of `func`.
     fn resume_func<Results>(
         &mut self,
         mut ctx: impl AsContextMut,
@@ -599,12 +659,11 @@ impl<'engine> EngineExecutor<'engine> {
         results.call_results(self.stack.values.drain())
     }
 
-    // TODO: docs
-    //
-    // TODO: this method superseedes the non-resumable `execute_wasm_func` method and
-    //       could be used instead in its place if there are no performance regressions.
-    //       -> needs benchmarking
-    //       (codedup)
+    /// Executes the top most Wasm function on the [`Stack`] until the [`Stack`] is empty.
+    ///
+    /// # Errors
+    ///
+    /// When encountering a Wasm or host trap during the execution of `func`.
     fn execute_wasm_func(
         &mut self,
         mut ctx: impl AsContextMut,
