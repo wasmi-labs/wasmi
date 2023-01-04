@@ -130,7 +130,7 @@ impl Stack {
     /// Empty stacks require no heap allocations and are cheap to construct.
     pub(crate) fn empty() -> Self {
         Self {
-            values: ValueStack::new(0, 0),
+            values: ValueStack::empty(),
             frames: CallStack::default(),
         }
     }
