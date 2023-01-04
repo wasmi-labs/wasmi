@@ -223,7 +223,7 @@ impl Engine {
         Results: CallResults,
     {
         self.inner
-            .execute_func_resumable(ctx, func, params, results, || self.clone())
+            .execute_func_resumable(ctx, func, params, results)
     }
 
     // TODO: docs
@@ -363,19 +363,22 @@ impl EngineInner {
 
     fn execute_func_resumable<Results>(
         &self,
-        ctx: impl AsContextMut,
+        mut ctx: impl AsContextMut,
         func: Func,
         params: impl CallParams,
         results: Results,
-        get_engine: impl FnOnce() -> Engine,
     ) -> Result<ResumableCall<<Results as CallResults>::Results>, Trap>
     where
         Results: CallResults,
     {
         let res = self.res.read();
         let mut stack = self.stacks.lock().reuse_or_new();
-        let results = EngineExecutor::new(&res, &mut stack)
-            .execute_func_resumable(ctx, func, params, results);
+        let results = EngineExecutor::new(&res, &mut stack).execute_func_resumable(
+            ctx.as_context_mut(),
+            func,
+            params,
+            results,
+        );
         match results {
             Ok(results) => {
                 self.stacks.lock().recycle(stack);
@@ -389,7 +392,7 @@ impl EngineInner {
                 host_func,
                 host_trap,
             }) => Ok(ResumableCall::Resumable(ResumableInvocation::new(
-                get_engine(),
+                ctx.as_context().store.engine().clone(),
                 func,
                 host_func,
                 host_trap,
