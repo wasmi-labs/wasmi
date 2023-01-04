@@ -27,7 +27,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Changed
 
-- Trap is now more similar to Wasmtime's `Trap` type. (https://github.com/paritytech/wasmi/pull/559)
+- The `wasmi::Trap` type is now more similar to Wasmtime's `Trap` type. (https://github.com/paritytech/wasmi/pull/559)
 - The `wasmi::Store` type is now `Send` and `Sync` as intended. (https://github.com/paritytech/wasmi/pull/566)
 - The `wasmi` CLI now prints exported functions names if the function name CLI argument is missing. (https://github.com/paritytech/wasmi/pull/579)
 - Improve feedback when running a Wasm module without exported function using `wasmi` CLI. (https://github.com/paritytech/wasmi/pull/584)
