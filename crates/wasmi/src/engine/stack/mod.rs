@@ -123,6 +123,54 @@ impl Stack {
         Self { values, frames }
     }
 
+    /// Create an empty [`Stack`].
+    ///
+    /// # Note
+    ///
+    /// Empty stacks require no heap allocations and are cheap to construct.
+    pub(crate) fn empty() -> Self {
+        Self {
+            values: ValueStack::empty(),
+            frames: CallStack::default(),
+        }
+    }
+
+    /// Returns `true` if the [`Stack`] is empty.
+    ///
+    /// # Note
+    ///
+    /// Empty [`Stack`] instances are usually non-usable dummy instances.
+    pub(crate) fn is_empty(&self) -> bool {
+        self.values.is_empty()
+    }
+
+    /// Push the given `frame` onto the call stack.
+    ///
+    /// # Note
+    ///
+    /// This API is required for resumable function calls so that the currently
+    /// active function frame can be pushed back onto the stack before returning
+    /// in a resumable state. Upon resumption the function frame can be popped
+    /// from the stack again.
+    pub(super) fn push_frame(&mut self, frame: FuncFrame) -> Result<(), TrapCode> {
+        self.frames.push(frame)
+    }
+
+    /// Pops the top most [`FuncFrame`] if any.
+    ///
+    /// # Note
+    ///
+    /// This is the counterpart method oo [`push_frame`] and also
+    /// required when resuming a resumable function execution to
+    /// pop of the Wasm function that was called just before the
+    /// errorneous host function invocation that caused the resumable
+    /// function invocation to pause.
+    ///
+    /// [`push_frame`]: [`Stack::push_frame`]
+    pub(super) fn pop_frame(&mut self) -> Option<FuncFrame> {
+        self.frames.pop()
+    }
+
     /// Initializes the [`Stack`] for the given Wasm root function call.
     pub(crate) fn call_wasm_root(
         &mut self,

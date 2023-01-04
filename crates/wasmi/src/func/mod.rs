@@ -19,6 +19,7 @@ use super::{
 };
 use crate::{
     core::{Trap, Value},
+    engine::ResumableCall,
     Error,
     FuncType,
 };
@@ -297,6 +298,45 @@ impl Func {
             outputs,
         )?;
         Ok(())
+    }
+
+    /// Calls the Wasm or host function with the given inputs.
+    ///
+    /// The result is written back into the `outputs` buffer.
+    ///
+    /// Returns a resumable handle to the function invocation upon
+    /// enountering host errors with which it is possible to handle
+    /// the error and continue the execution as if no error occured.
+    ///
+    /// # Note
+    ///
+    /// This is a non-standard WebAssembly API and might not be available
+    /// at other WebAssembly engines. Please be aware that depending on this
+    /// feature might mean a lock-in to `wasmi` for users.
+    ///
+    /// # Errors
+    ///
+    /// - If the function returned a Wasm [`Trap`].
+    /// - If the types of the `inputs` do not match the expected types for the
+    ///   function signature of `self`.
+    /// - If the number of input values does not match the expected number of
+    ///   inputs required by the function signature of `self`.
+    /// - If the number of output values does not match the expected number of
+    ///   outputs required by the function signature of `self`.
+    pub fn call_resumable<T>(
+        &self,
+        mut ctx: impl AsContextMut<UserState = T>,
+        inputs: &[Value],
+        outputs: &mut [Value],
+    ) -> Result<ResumableCall<()>, Error> {
+        self.verify_and_prepare_inputs_outputs(ctx.as_context(), inputs, outputs)?;
+        // Note: Cloning an [`Engine`] is intentionally a cheap operation.
+        ctx.as_context()
+            .store
+            .engine()
+            .clone()
+            .execute_func_resumable(ctx.as_context_mut(), *self, inputs, outputs)
+            .map_err(Into::into)
     }
 
     /// Verify that the `inputs` and `outputs` value types match the function signature.

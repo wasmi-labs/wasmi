@@ -8,6 +8,7 @@ pub mod executor;
 mod func_args;
 mod func_builder;
 mod func_types;
+mod resumable;
 pub mod stack;
 mod traits;
 
@@ -25,6 +26,7 @@ pub use self::{
         RelativeDepth,
         TranslationError,
     },
+    resumable::{ResumableCall, ResumableInvocation},
     stack::StackLimits,
     traits::{CallParams, CallResults},
 };
@@ -179,21 +181,23 @@ impl Engine {
         self.inner.resolve_inst(func_body, index)
     }
 
-    /// Executes the given [`Func`] using the given arguments `params` and stores the result into `results`.
+    /// Executes the given [`Func`] with parameters `params`.
+    ///
+    /// Stores the execution result into `results` upon a successful execution.
     ///
     /// # Note
     ///
-    /// This API assumes that the `params` and `results` are well typed and
-    /// therefore won't perform type checks.
-    /// Those checks are usually done at the [`Func::call`] API or when creating
-    /// a new [`TypedFunc`] instance via [`Func::typed`].
+    /// - Assumes that the `params` and `results` are well typed.
+    ///   Type checks are done at the [`Func::call`] API or when creating
+    ///   a new [`TypedFunc`] instance via [`Func::typed`].
+    /// - The `params` out parameter is in a valid but unspecified state if this
+    ///   function returns with an error.
     ///
     /// # Errors
     ///
-    /// - If the given `func` is not a Wasm function, e.g. if it is a host function.
-    /// - If the given arguments `params` do not match the expected parameters of `func`.
+    /// - If `params` are overflowing or underflowing the expected amount of parameters.
     /// - If the given `results` do not match the the length of the expected results of `func`.
-    /// - When encountering a Wasm trap during the execution of `func`.
+    /// - When encountering a Wasm or host trap during the execution of `func`.
     ///
     /// [`TypedFunc`]: [`crate::TypedFunc`]
     pub(crate) fn execute_func<Results>(
@@ -207,6 +211,82 @@ impl Engine {
         Results: CallResults,
     {
         self.inner.execute_func(ctx, func, params, results)
+    }
+
+    /// Executes the given [`Func`] resumably with parameters `params` and returns.
+    ///
+    /// Stores the execution result into `results` upon a successful execution.
+    /// If the execution encounters a host trap it will return a handle to the user
+    /// that allows to resume the execution at that point.
+    ///
+    /// # Note
+    ///
+    /// - Assumes that the `params` and `results` are well typed.
+    ///   Type checks are done at the [`Func::call`] API or when creating
+    ///   a new [`TypedFunc`] instance via [`Func::typed`].
+    /// - The `params` out parameter is in a valid but unspecified state if this
+    ///   function returns with an error.
+    ///
+    /// # Errors
+    ///
+    /// - If `params` are overflowing or underflowing the expected amount of parameters.
+    /// - If the given `results` do not match the the length of the expected results of `func`.
+    /// - When encountering a Wasm trap during the execution of `func`.
+    /// - When `func` is a host function that traps.
+    ///
+    /// [`TypedFunc`]: [`crate::TypedFunc`]
+    pub(crate) fn execute_func_resumable<Results>(
+        &self,
+        ctx: impl AsContextMut,
+        func: Func,
+        params: impl CallParams,
+        results: Results,
+    ) -> Result<ResumableCall<<Results as CallResults>::Results>, Trap>
+    where
+        Results: CallResults,
+    {
+        self.inner
+            .execute_func_resumable(ctx, func, params, results)
+    }
+
+    /// Resumes the given `invocation` given the `params`.
+    ///
+    /// Stores the execution result into `results` upon a successful execution.
+    /// If the execution encounters a host trap it will return a handle to the user
+    /// that allows to resume the execution at that point.
+    ///
+    /// # Note
+    ///
+    /// - Assumes that the `params` and `results` are well typed.
+    ///   Type checks are done at the [`Func::call`] API or when creating
+    ///   a new [`TypedFunc`] instance via [`Func::typed`].
+    /// - The `params` out parameter is in a valid but unspecified state if this
+    ///   function returns with an error.
+    ///
+    /// # Errors
+    ///
+    /// - If `params` are overflowing or underflowing the expected amount of parameters.
+    /// - If the given `results` do not match the the length of the expected results of `func`.
+    /// - When encountering a Wasm trap during the execution of `func`.
+    /// - When `func` is a host function that traps.
+    ///
+    /// [`TypedFunc`]: [`crate::TypedFunc`]
+    pub(crate) fn resume_func<Results>(
+        &self,
+        ctx: impl AsContextMut,
+        invocation: ResumableInvocation,
+        params: impl CallParams,
+        results: Results,
+    ) -> Result<ResumableCall<<Results as CallResults>::Results>, Trap>
+    where
+        Results: CallResults,
+    {
+        self.inner.resume_func(ctx, invocation, params, results)
+    }
+
+    /// Recycles the given [`Stack`] for reuse in the [`Engine`].
+    pub(crate) fn recycle_stack(&self, stack: Stack) {
+        self.inner.recycle_stack(stack)
     }
 }
 
@@ -256,7 +336,7 @@ impl EngineStacks {
 
     /// Disose and recycle the `stack`.
     pub fn recycle(&mut self, stack: Stack) {
-        if self.stacks.len() < self.keep {
+        if !stack.is_empty() && self.stacks.len() < self.keep {
             self.stacks.push(stack);
         }
     }
@@ -318,10 +398,88 @@ impl EngineInner {
     {
         let res = self.res.read();
         let mut stack = self.stacks.lock().reuse_or_new();
-        let results =
-            EngineExecutor::new(&res, &mut stack).execute_func(ctx, func, params, results);
+        let results = EngineExecutor::new(&res, &mut stack)
+            .execute_func(ctx, func, params, results)
+            .map_err(TaggedTrap::into_trap);
         self.stacks.lock().recycle(stack);
         results
+    }
+
+    fn execute_func_resumable<Results>(
+        &self,
+        mut ctx: impl AsContextMut,
+        func: Func,
+        params: impl CallParams,
+        results: Results,
+    ) -> Result<ResumableCall<<Results as CallResults>::Results>, Trap>
+    where
+        Results: CallResults,
+    {
+        let res = self.res.read();
+        let mut stack = self.stacks.lock().reuse_or_new();
+        let results = EngineExecutor::new(&res, &mut stack).execute_func(
+            ctx.as_context_mut(),
+            func,
+            params,
+            results,
+        );
+        match results {
+            Ok(results) => {
+                self.stacks.lock().recycle(stack);
+                Ok(ResumableCall::Finished(results))
+            }
+            Err(TaggedTrap::Wasm(trap)) => {
+                self.stacks.lock().recycle(stack);
+                Err(trap)
+            }
+            Err(TaggedTrap::Host {
+                host_func,
+                host_trap,
+            }) => Ok(ResumableCall::Resumable(ResumableInvocation::new(
+                ctx.as_context().store.engine().clone(),
+                func,
+                host_func,
+                host_trap,
+                stack,
+            ))),
+        }
+    }
+
+    pub(crate) fn resume_func<Results>(
+        &self,
+        ctx: impl AsContextMut,
+        mut invocation: ResumableInvocation,
+        params: impl CallParams,
+        results: Results,
+    ) -> Result<ResumableCall<<Results as CallResults>::Results>, Trap>
+    where
+        Results: CallResults,
+    {
+        let res = self.res.read();
+        let host_func = invocation.host_func();
+        let results = EngineExecutor::new(&res, &mut invocation.stack)
+            .resume_func(ctx, host_func, params, results);
+        match results {
+            Ok(results) => {
+                self.stacks.lock().recycle(invocation.take_stack());
+                Ok(ResumableCall::Finished(results))
+            }
+            Err(TaggedTrap::Wasm(trap)) => {
+                self.stacks.lock().recycle(invocation.take_stack());
+                Err(trap)
+            }
+            Err(TaggedTrap::Host {
+                host_func,
+                host_trap,
+            }) => {
+                invocation.update(host_func, host_trap);
+                Ok(ResumableCall::Resumable(invocation))
+            }
+        }
+    }
+
+    fn recycle_stack(&self, stack: Stack) {
+        self.stacks.lock().recycle(stack);
     }
 }
 
@@ -355,6 +513,45 @@ impl EngineResources {
     }
 }
 
+/// Either a Wasm trap or a host trap with its originating host [`Func`].
+#[derive(Debug)]
+enum TaggedTrap {
+    /// The trap is originating from Wasm.
+    Wasm(Trap),
+    /// The trap is originating from a host function.
+    Host { host_func: Func, host_trap: Trap },
+}
+
+impl TaggedTrap {
+    /// Creates a [`TaggedTrap`] from a host error.
+    pub fn host(host_func: Func, host_trap: Trap) -> Self {
+        Self::Host {
+            host_func,
+            host_trap,
+        }
+    }
+
+    /// Returns the [`Trap`] of the [`TaggedTrap`].
+    pub fn into_trap(self) -> Trap {
+        match self {
+            TaggedTrap::Wasm(trap) => trap,
+            TaggedTrap::Host { host_trap, .. } => host_trap,
+        }
+    }
+}
+
+impl From<Trap> for TaggedTrap {
+    fn from(trap: Trap) -> Self {
+        Self::Wasm(trap)
+    }
+}
+
+impl From<TrapCode> for TaggedTrap {
+    fn from(trap_code: TrapCode) -> Self {
+        Self::Wasm(trap_code.into())
+    }
+}
+
 /// The internal state of the `wasmi` engine.
 #[derive(Debug)]
 pub struct EngineExecutor<'engine> {
@@ -370,20 +567,22 @@ impl<'engine> EngineExecutor<'engine> {
         Self { res, stack }
     }
 
-    /// Executes the given [`Func`] using the given arguments `args` and stores the result into `results`.
+    /// Executes the given [`Func`] using the given `params`.
+    ///
+    /// Stores the execution result into `results` upon a successful execution.
     ///
     /// # Errors
     ///
-    /// - If the given arguments `args` do not match the expected parameters of `func`.
+    /// - If the given `params` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the the length of the expected results of `func`.
-    /// - When encountering a Wasm trap during the execution of `func`.
+    /// - When encountering a Wasm or host trap during the execution of `func`.
     fn execute_func<Results>(
         &mut self,
         mut ctx: impl AsContextMut,
         func: Func,
         params: impl CallParams,
         results: Results,
-    ) -> Result<<Results as CallResults>::Results, Trap>
+    ) -> Result<<Results as CallResults>::Results, TaggedTrap>
     where
         Results: CallResults,
     {
@@ -400,6 +599,39 @@ impl<'engine> EngineExecutor<'engine> {
                     .call_host_root(ctx.as_context_mut(), host_func, &self.res.func_types)?;
             }
         };
+        let results = self.write_results_back(results);
+        Ok(results)
+    }
+
+    /// Resumes the execution of the given [`Func`] using `params`.
+    ///
+    /// Stores the execution result into `results` upon a successful execution.
+    ///
+    /// # Errors
+    ///
+    /// - If the given `params` do not match the expected parameters of `func`.
+    /// - If the given `results` do not match the the length of the expected results of `func`.
+    /// - When encountering a Wasm or host trap during the execution of `func`.
+    fn resume_func<Results>(
+        &mut self,
+        mut ctx: impl AsContextMut,
+        host_func: Func,
+        params: impl CallParams,
+        results: Results,
+    ) -> Result<<Results as CallResults>::Results, TaggedTrap>
+    where
+        Results: CallResults,
+    {
+        self.stack
+            .values
+            .drop(host_func.func_type(ctx.as_context()).params().len());
+        self.stack.values.extend(params.call_params());
+        let mut frame = self
+            .stack
+            .pop_frame()
+            .expect("a frame must be on the call stack upon resumption");
+        let mut cache = InstanceCache::from(frame.instance());
+        self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
         let results = self.write_results_back(results);
         Ok(results)
     }
@@ -430,14 +662,13 @@ impl<'engine> EngineExecutor<'engine> {
     ///
     /// # Errors
     ///
-    /// - When encountering a Wasm trap during the execution of `func`.
-    /// - When a called host function trapped.
+    /// When encountering a Wasm or host trap during the execution of `func`.
     fn execute_wasm_func(
         &mut self,
         mut ctx: impl AsContextMut,
         frame: &mut FuncFrame,
         cache: &mut InstanceCache,
-    ) -> Result<(), Trap> {
+    ) -> Result<(), TaggedTrap> {
         'outer: loop {
             match self.execute_frame(ctx.as_context_mut(), frame, cache)? {
                 CallOutcome::Return => match self.stack.return_wasm() {
@@ -455,12 +686,18 @@ impl<'engine> EngineExecutor<'engine> {
                         FuncEntityInternal::Host(host_func) => {
                             cache.reset_default_memory_bytes();
                             let host_func = host_func.clone();
-                            self.stack.call_host(
-                                ctx.as_context_mut(),
-                                frame,
-                                host_func,
-                                &self.res.func_types,
-                            )?;
+                            self.stack
+                                .call_host(
+                                    ctx.as_context_mut(),
+                                    frame,
+                                    host_func,
+                                    &self.res.func_types,
+                                )
+                                .or_else(|trap| {
+                                    // Push the calling function onto the Stack to make it possible to resume execution.
+                                    self.stack.push_frame(*frame)?;
+                                    Err(TaggedTrap::host(called_func, trap))
+                                })?;
                         }
                     }
                 }
