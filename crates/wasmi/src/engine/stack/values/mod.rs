@@ -98,6 +98,11 @@ impl ValueStack {
         }
     }
 
+    /// Returns `true` if the [`ValueStack`] is empty.
+    pub fn is_empty(&self) -> bool {
+        self.entries.capacity() == 0
+    }
+
     /// Creates a new empty [`ValueStack`].
     ///
     /// # Panics

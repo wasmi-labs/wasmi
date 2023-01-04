@@ -135,6 +135,15 @@ impl Stack {
         }
     }
 
+    /// Returns `true` if the [`Stack`] is empty.
+    ///
+    /// # Note
+    ///
+    /// Empty [`Stack`] instances are usually non-usable dummy instances.
+    pub(crate) fn is_empty(&self) -> bool {
+        self.values.is_empty()
+    }
+
     /// Push the given `frame` onto the call stack.
     ///
     /// # Note

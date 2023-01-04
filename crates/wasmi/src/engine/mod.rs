@@ -292,7 +292,7 @@ impl EngineStacks {
 
     /// Disose and recycle the `stack`.
     pub fn recycle(&mut self, stack: Stack) {
-        if self.stacks.len() < self.keep {
+        if !stack.is_empty() && self.stacks.len() < self.keep {
             self.stacks.push(stack);
         }
     }
