@@ -361,7 +361,6 @@ impl EngineInner {
         results
     }
 
-    // TODO: docs
     fn execute_func_resumable<Results>(
         &self,
         ctx: impl AsContextMut,
@@ -399,7 +398,6 @@ impl EngineInner {
         }
     }
 
-    // TODO: docs
     pub(crate) fn resume_func<Results>(
         &self,
         ctx: impl AsContextMut,
