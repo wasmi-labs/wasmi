@@ -6,6 +6,32 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Additionally we have an `Internal` section for changes that are of interest to developers.
 
+Dates in this file are formattes as `YYYY-MM-DD`.
+
+## [0.21.0] - 2023-01-04
+
+### Added
+
+- Add support for resumable function calls. (https://github.com/paritytech/wasmi/pull/598)
+  - This feature allows to resume a function call upon encountering a host trap.
+- Add support for concurrently running function executions using a single `wasmi` engine.
+  - This feature also allows to call Wasm functions from host functions. (https://github.com/paritytech/wasmi/pull/590)
+- Add initial naive WASI support for `wasmi` using the new `wasmi_wasi` crate. (https://github.com/paritytech/wasmi/pull/557)
+  - Improvement PRs: https://github.com/paritytech/wasmi/pull/592, https://github.com/paritytech/wasmi/pull/571, https://github.com/paritytech/wasmi/pull/568
+- Add `Module::imports` that allows to query Wasm module imports. (https://github.com/paritytech/wasmi/pull/573, https://github.com/paritytech/wasmi/pull/583)
+
+### Fixed
+
+- Fix a bug that imported linear memories and tables were initialized twice upon instantiation. (https://github.com/paritytech/wasmi/pull/593)
+- The `wasmi` CLI now properly hints for file path arguments. (https://github.com/paritytech/wasmi/pull/596)
+
+### Changed
+
+- Trap is now more similar to Wasmtime's `Trap` type. (https://github.com/paritytech/wasmi/pull/559)
+- The `wasmi::Store` type is now `Send` and `Sync` as intended. (https://github.com/paritytech/wasmi/pull/566)
+- The `wasmi` CLI now prints exported functions names if the function name CLI argument is missing. (https://github.com/paritytech/wasmi/pull/579)
+- Improve feedback when running a Wasm module without exported function using `wasmi` CLI. (https://github.com/paritytech/wasmi/pull/584)
+
 ## [0.20.0] - 2022-11-04
 
 ### Added
