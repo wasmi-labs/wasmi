@@ -53,7 +53,6 @@ fn resumable_call() {
         .unwrap();
 
     let mut results = [Value::I32(0)];
-    println!("execute_resumable");
     let invocation = match wasm_fn
         .call_resumable(&mut store, &[Value::I32(0)], &mut results[..])
         .unwrap()
@@ -68,7 +67,6 @@ fn resumable_call() {
         }
         ResumableCall::Finished(_) => panic!("expected host function trap with exit code 10"),
     };
-    println!("resume");
     let invocation = match invocation
         .resume(&mut store, &[Value::I32(2)], &mut results[..])
         .unwrap()
@@ -83,7 +81,6 @@ fn resumable_call() {
         }
         ResumableCall::Finished(_) => panic!("expected host function trap with exit code 20"),
     };
-    println!("resume");
     match invocation
         .resume(&mut store, &[Value::I32(3)], &mut results[..])
         .unwrap()
@@ -93,5 +90,4 @@ fn resumable_call() {
             assert_eq!(results, [Value::I32(4)]);
         }
     }
-    println!("finish");
 }
