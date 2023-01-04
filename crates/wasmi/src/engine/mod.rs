@@ -409,8 +409,9 @@ impl EngineInner {
         Results: CallResults,
     {
         let res = self.res.read();
-        let results =
-            EngineExecutor::new(&res, &mut invocation.stack).resume_func(ctx, params, results);
+        let host_func = invocation.host_func();
+        let results = EngineExecutor::new(&res, &mut invocation.stack)
+            .resume_func(ctx, host_func, params, results);
         match results {
             Ok(results) => {
                 self.stacks.lock().recycle(invocation.take_stack());
@@ -552,12 +553,16 @@ impl<'engine> EngineExecutor<'engine> {
     fn resume_func<Results>(
         &mut self,
         mut ctx: impl AsContextMut,
+        host_func: Func,
         params: impl CallParams,
         results: Results,
     ) -> Result<<Results as CallResults>::Results, ResumableTrap>
     where
         Results: CallResults,
     {
+        self.stack
+            .values
+            .drop(host_func.func_type(ctx.as_context()).params().len());
         self.stack.values.extend(params.call_params());
         let mut frame = self
             .stack
