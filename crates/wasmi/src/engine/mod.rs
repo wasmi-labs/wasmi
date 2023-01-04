@@ -540,7 +540,7 @@ impl<'engine> EngineExecutor<'engine> {
             FuncEntityInternal::Wasm(wasm_func) => {
                 let mut frame = self.stack.call_wasm_root(wasm_func, &self.res.code_map)?;
                 let mut cache = InstanceCache::from(frame.instance());
-                self.execute_wasm_func_resumable(ctx.as_context_mut(), &mut frame, &mut cache)?;
+                self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
             }
             FuncEntityInternal::Host(host_func) => {
                 let host_func = host_func.clone();
@@ -572,7 +572,7 @@ impl<'engine> EngineExecutor<'engine> {
             .pop_frame()
             .expect("a frame must be on the call stack upon resumption");
         let mut cache = InstanceCache::from(frame.instance());
-        self.execute_wasm_func_resumable(ctx.as_context_mut(), &mut frame, &mut cache)?;
+        self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
         let results = self.write_results_back(results);
         Ok(results)
     }
@@ -605,7 +605,7 @@ impl<'engine> EngineExecutor<'engine> {
     //       could be used instead in its place if there are no performance regressions.
     //       -> needs benchmarking
     //       (codedup)
-    fn execute_wasm_func_resumable(
+    fn execute_wasm_func(
         &mut self,
         mut ctx: impl AsContextMut,
         frame: &mut FuncFrame,
