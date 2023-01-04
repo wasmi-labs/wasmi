@@ -17,7 +17,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Add support for concurrently running function executions using a single `wasmi` engine.
   - This feature also allows to call Wasm functions from host functions. (https://github.com/paritytech/wasmi/pull/590)
 - Add initial naive WASI support for `wasmi` using the new `wasmi_wasi` crate. (https://github.com/paritytech/wasmi/pull/557)
-  - Special thanks to https://github.com/OLUWAMUYIWA for carrying the WASI support efforts!
+  - Special thanks to [Onigbinde Oluwamuyiwa Elijah](https://github.com/OLUWAMUYIWA) for carrying the WASI support efforts!
   - Improvement PRs: https://github.com/paritytech/wasmi/pull/592, https://github.com/paritytech/wasmi/pull/571, https://github.com/paritytech/wasmi/pull/568
 - Add `Module::imports` that allows to query Wasm module imports. (https://github.com/paritytech/wasmi/pull/573, https://github.com/paritytech/wasmi/pull/583)
 
