@@ -18,8 +18,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - This feature also allows to call Wasm functions from host functions. (https://github.com/paritytech/wasmi/pull/590)
 - Add initial naive WASI support for `wasmi` using the new `wasmi_wasi` crate. (https://github.com/paritytech/wasmi/pull/557)
   - Special thanks to [Onigbinde Oluwamuyiwa Elijah](https://github.com/OLUWAMUYIWA) for carrying the WASI support efforts!
-  - Also thanks to [Yuyi Wang](https://github.com/Berrysoft) for testing and improving initial WASI support.
-  - Improvement PRs: https://github.com/paritytech/wasmi/pull/592, https://github.com/paritytech/wasmi/pull/571, https://github.com/paritytech/wasmi/pull/568
+  - Also thanks to [Yuyi Wang](https://github.com/Berrysoft) for testing and improving initial WASI support. (https://github.com/paritytech/wasmi/pull/592, https://github.com/paritytech/wasmi/pull/571, https://github.com/paritytech/wasmi/pull/568)
   - **Note:** There is ongoing work to integrate WASI support in `wasmi_cli` so that the `wasmi` CLI will then
               be able to execute arbitrary `wasm-wasi` files out of the box in the future.
 - Add `Module::imports` that allows to query Wasm module imports. (https://github.com/paritytech/wasmi/pull/573, https://github.com/paritytech/wasmi/pull/583)
