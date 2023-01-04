@@ -60,6 +60,8 @@ pub enum RunInstructionTracePre {
         pre_block_value2: Option<u64>,
     },
 
+    GrowMemory(i32),
+
     I32BinOp {
         left: i32,
         right: i32,
@@ -109,6 +111,7 @@ pub enum RunInstructionTracePre {
 pub struct EEntry {
     pub id: u64,
     pub sp: u64,
+    pub memory_size: usize,
     pub last_jump_eid: u64,
     pub inst: IEntry,
     pub step: StepInfo,
@@ -126,6 +129,7 @@ impl Into<EventTableEntry> for EEntry {
             last_jump_eid: self.last_jump_eid,
             inst: self.inst.into(),
             step_info: self.step.clone(),
+            allocated_memory_pages: self.memory_size,
         }
     }
 }
@@ -165,6 +169,7 @@ impl ETable {
         module_instance_index: u16,
         func_index: u16,
         sp: u64,
+        memory_size: usize,
         pc: u32,
         last_jump_eid: u64,
         opcode: Opcode,
@@ -173,6 +178,7 @@ impl ETable {
         let eentry = EEntry {
             id: self.allocate_eid(),
             sp,
+            memory_size,
             last_jump_eid,
             inst: IEntry {
                 module_instance_index: module_instance_index as u16,

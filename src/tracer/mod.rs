@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use specs::{
     brtable::{ElemEntry, ElemTable},
+    configure_table::ConfigureTable,
     host_function::HostFunctionDesc,
     mtable::VarType,
     types::FunctionType,
@@ -43,6 +44,7 @@ pub struct Tracer {
     pub etable: ETable,
     pub jtable: JTable,
     pub elem_table: ElemTable,
+    pub configure_table: ConfigureTable,
     type_of_func_ref: Vec<(FuncRef, u32)>,
     module_instance_lookup: Vec<(ModuleRef, u16)>,
     memory_instance_lookup: Vec<(MemoryRef, u16)>,
@@ -64,6 +66,7 @@ impl Tracer {
             last_jump_eid: vec![0],
             jtable: JTable::default(),
             elem_table: ElemTable::default(),
+            configure_table: ConfigureTable::default(),
             type_of_func_ref: vec![],
             module_instance_lookup: vec![],
             memory_instance_lookup: vec![],
@@ -156,14 +159,12 @@ impl Tracer {
     }
 
     pub(crate) fn push_elem(&mut self, table_idx: u32, offset: u32, func_idx: u32, type_idx: u32) {
-        self.elem_table.insert(
-            ElemEntry {
-                table_idx,
-                type_idx,
-                offset,
-                func_idx,
-            },
-        )
+        self.elem_table.insert(ElemEntry {
+            table_idx,
+            type_idx,
+            offset,
+            func_idx,
+        })
     }
 
     pub(crate) fn push_type_of_func_ref(&mut self, func: FuncRef, type_idx: u32) {

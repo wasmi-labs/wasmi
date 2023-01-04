@@ -561,8 +561,8 @@ impl<'a> Instruction<'a> {
                 vtype: VarType::I64,
                 size: MemoryStoreSize::Byte32,
             },
-            Instruction::CurrentMemory => todo!(),
-            Instruction::GrowMemory => todo!(),
+            Instruction::CurrentMemory => Opcode::MemorySize,
+            Instruction::GrowMemory => Opcode::MemoryGrow,
             Instruction::I32Const(v) => Opcode::Const {
                 vtype: VarType::I32,
                 value: v as u32 as u64,

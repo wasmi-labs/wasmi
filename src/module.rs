@@ -30,6 +30,7 @@ use core::{
     fmt,
 };
 use parity_wasm::elements::{External, InitExpr, Instruction, Internal, ResizableLimits, Type};
+use specs::configure_table::ConfigureTable;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 
 /// Reference to a [`ModuleInstance`].
@@ -367,6 +368,15 @@ impl ModuleInstance {
             let memory = MemoryInstance::alloc(initial, maximum)
                 .expect("Due to validation `initial` and `maximum` should be valid");
             instance.push_memory(memory);
+
+            if let Some(tracer) = tracer.clone() {
+                let mut tracer = tracer.borrow_mut();
+
+                tracer.configure_table = ConfigureTable {
+                    init_memory_pages: memory_type.limits().initial() as usize,
+                    maximal_memory_pages: memory_type.limits().maximum().unwrap_or(65536) as usize,
+                };
+            }
         }
 
         for global_entry in module
