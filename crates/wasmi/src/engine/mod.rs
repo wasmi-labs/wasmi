@@ -355,7 +355,7 @@ impl EngineInner {
         let res = self.res.read();
         let mut stack = self.stacks.lock().reuse_or_new();
         let results = EngineExecutor::new(&res, &mut stack)
-            .execute_func_resumable(ctx, func, params, results)
+            .execute_func(ctx, func, params, results)
             .map_err(ResumableTrap::into_trap);
         self.stacks.lock().recycle(stack);
         results
@@ -373,7 +373,7 @@ impl EngineInner {
     {
         let res = self.res.read();
         let mut stack = self.stacks.lock().reuse_or_new();
-        let results = EngineExecutor::new(&res, &mut stack).execute_func_resumable(
+        let results = EngineExecutor::new(&res, &mut stack).execute_func(
             ctx.as_context_mut(),
             func,
             params,
@@ -525,7 +525,7 @@ impl<'engine> EngineExecutor<'engine> {
     }
 
     // TODO: docs
-    fn execute_func_resumable<Results>(
+    fn execute_func<Results>(
         &mut self,
         mut ctx: impl AsContextMut,
         func: Func,
