@@ -124,7 +124,7 @@ impl AssertResumable for ResumableCall {
             Self::Resumable(invocation) => {
                 assert_eq!(invocation.host_error().i32_exit_status(), Some(exit_status));
                 assert_eq!(
-                    invocation.host_func().func_type(&store).results(),
+                    invocation.host_func().func_type(store).results(),
                     host_results,
                 );
                 invocation
@@ -150,11 +150,11 @@ fn run_test(wasm_fn: Func, mut store: &mut Store<()>, wasm_trap: bool) {
             &mut results[..],
         )
         .unwrap()
-        .assert_resumable(&store, 10, &[ValueType::I32]);
+        .assert_resumable(store, 10, &[ValueType::I32]);
     let invocation = invocation
         .resume(&mut store, &[Value::I32(2)], &mut results[..])
         .unwrap()
-        .assert_resumable(&store, 20, &[ValueType::I32]);
+        .assert_resumable(store, 20, &[ValueType::I32]);
     let call = invocation.resume(&mut store, &[Value::I32(3)], &mut results[..]);
     if wasm_trap {
         match call.unwrap_err() {
@@ -186,7 +186,7 @@ impl<Results> AssertResumable for TypedResumableCall<Results> {
             Self::Resumable(invocation) => {
                 assert_eq!(invocation.host_error().i32_exit_status(), Some(exit_status));
                 assert_eq!(
-                    invocation.host_func().func_type(&store).results(),
+                    invocation.host_func().func_type(store).results(),
                     host_results,
                 );
                 invocation
@@ -209,11 +209,11 @@ fn run_test_typed(wasm_fn: Func, mut store: &mut Store<()>, wasm_trap: bool) {
         .unwrap()
         .call_resumable(&mut store, wasm_trap as i32)
         .unwrap()
-        .assert_resumable(&store, 10, &[ValueType::I32]);
+        .assert_resumable(store, 10, &[ValueType::I32]);
     let invocation = invocation
         .resume(&mut store, &[Value::I32(2)])
         .unwrap()
-        .assert_resumable(&store, 20, &[ValueType::I32]);
+        .assert_resumable(store, 20, &[ValueType::I32]);
     let call = invocation.resume(&mut store, &[Value::I32(3)]);
     if wasm_trap {
         match call.unwrap_err() {
