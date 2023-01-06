@@ -94,7 +94,7 @@ fn run_test(wasm_fn: Func, mut store: &mut Store<()>, wasm_trap: bool) {
             );
             invocation
         }
-        ResumableCall::Finished(_) => panic!("expected host function trap with exit code 10"),
+        ResumableCall::Finished => panic!("expected host function trap with exit code 10"),
     };
     let invocation = match invocation
         .resume(&mut store, &[Value::I32(2)], &mut results[..])
@@ -108,7 +108,7 @@ fn run_test(wasm_fn: Func, mut store: &mut Store<()>, wasm_trap: bool) {
             );
             invocation
         }
-        ResumableCall::Finished(_) => panic!("expected host function trap with exit code 20"),
+        ResumableCall::Finished => panic!("expected host function trap with exit code 20"),
     };
     let result = invocation.resume(&mut store, &[Value::I32(3)], &mut results[..]);
     if wasm_trap {
@@ -129,7 +129,7 @@ fn run_test(wasm_fn: Func, mut store: &mut Store<()>, wasm_trap: bool) {
             Ok(ResumableCall::Resumable(_)) | Err(_) => {
                 panic!("expected resumed function to finish")
             }
-            Ok(ResumableCall::Finished(())) => {
+            Ok(ResumableCall::Finished) => {
                 assert_eq!(results, [Value::I32(4)]);
             }
         }

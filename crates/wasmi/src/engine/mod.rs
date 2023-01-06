@@ -26,7 +26,7 @@ pub use self::{
         RelativeDepth,
         TranslationError,
     },
-    resumable::{ResumableCall, ResumableInvocation},
+    resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
     stack::StackLimits,
     traits::{CallParams, CallResults},
 };
@@ -36,6 +36,7 @@ use self::{
     code_map::CodeMap,
     executor::execute_frame,
     func_types::FuncTypeRegistry,
+    resumable::ResumableCallBase,
     stack::{FuncFrame, Stack, ValueStack},
 };
 pub(crate) use self::{
@@ -241,7 +242,7 @@ impl Engine {
         func: Func,
         params: impl CallParams,
         results: Results,
-    ) -> Result<ResumableCall<<Results as CallResults>::Results>, Trap>
+    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
     where
         Results: CallResults,
     {
@@ -277,7 +278,7 @@ impl Engine {
         invocation: ResumableInvocation,
         params: impl CallParams,
         results: Results,
-    ) -> Result<ResumableCall<<Results as CallResults>::Results>, Trap>
+    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
     where
         Results: CallResults,
     {
@@ -411,7 +412,7 @@ impl EngineInner {
         func: Func,
         params: impl CallParams,
         results: Results,
-    ) -> Result<ResumableCall<<Results as CallResults>::Results>, Trap>
+    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
     where
         Results: CallResults,
     {
@@ -426,7 +427,7 @@ impl EngineInner {
         match results {
             Ok(results) => {
                 self.stacks.lock().recycle(stack);
-                Ok(ResumableCall::Finished(results))
+                Ok(ResumableCallBase::Finished(results))
             }
             Err(TaggedTrap::Wasm(trap)) => {
                 self.stacks.lock().recycle(stack);
@@ -435,7 +436,7 @@ impl EngineInner {
             Err(TaggedTrap::Host {
                 host_func,
                 host_trap,
-            }) => Ok(ResumableCall::Resumable(ResumableInvocation::new(
+            }) => Ok(ResumableCallBase::Resumable(ResumableInvocation::new(
                 ctx.as_context().store.engine().clone(),
                 func,
                 host_func,
@@ -451,7 +452,7 @@ impl EngineInner {
         mut invocation: ResumableInvocation,
         params: impl CallParams,
         results: Results,
-    ) -> Result<ResumableCall<<Results as CallResults>::Results>, Trap>
+    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
     where
         Results: CallResults,
     {
@@ -462,7 +463,7 @@ impl EngineInner {
         match results {
             Ok(results) => {
                 self.stacks.lock().recycle(invocation.take_stack());
-                Ok(ResumableCall::Finished(results))
+                Ok(ResumableCallBase::Finished(results))
             }
             Err(TaggedTrap::Wasm(trap)) => {
                 self.stacks.lock().recycle(invocation.take_stack());
@@ -473,7 +474,7 @@ impl EngineInner {
                 host_trap,
             }) => {
                 invocation.update(host_func, host_trap);
-                Ok(ResumableCall::Resumable(invocation))
+                Ok(ResumableCallBase::Resumable(invocation))
             }
         }
     }
