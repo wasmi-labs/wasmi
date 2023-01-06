@@ -1,6 +1,16 @@
 //! Test to assert that resumable call feature works as intended.
 
-use wasmi::{Engine, Error, Extern, Func, Linker, Module, ResumableCall, Store};
+use wasmi::{
+    Engine,
+    Error,
+    Extern,
+    Func,
+    Linker,
+    Module,
+    ResumableCall,
+    Store,
+    TypedResumableCall,
+};
 use wasmi_core::{Trap, TrapCode, Value, ValueType};
 
 fn test_setup() -> Store<()> {
@@ -25,6 +35,17 @@ fn resumable_call_host() {
             }
             _ => panic!("expected Wasm trap"),
         },
+    }
+    // The same test for `TypedFunc`:
+    match host_fn
+        .typed::<(), ()>(&store)
+        .unwrap()
+        .call_resumable(&mut store, ())
+    {
+        Ok(_) => panic!("expected an error since the called host function is root"),
+        Err(trap) => {
+            assert_eq!(trap.i32_exit_status(), Some(100));
+        }
     }
 }
 
@@ -74,6 +95,8 @@ fn resumable_call() {
 
     run_test(wasm_fn, &mut store, false);
     run_test(wasm_fn, &mut store, true);
+    run_test_typed(wasm_fn, &mut store, false);
+    run_test_typed(wasm_fn, &mut store, true);
 }
 
 fn run_test(wasm_fn: Func, mut store: &mut Store<()>, wasm_trap: bool) {
@@ -94,7 +117,7 @@ fn run_test(wasm_fn: Func, mut store: &mut Store<()>, wasm_trap: bool) {
             );
             invocation
         }
-        ResumableCall::Finished(_) => panic!("expected host function trap with exit code 10"),
+        ResumableCall::Finished => panic!("expected host function trap with exit code 10"),
     };
     let invocation = match invocation
         .resume(&mut store, &[Value::I32(2)], &mut results[..])
@@ -108,7 +131,7 @@ fn run_test(wasm_fn: Func, mut store: &mut Store<()>, wasm_trap: bool) {
             );
             invocation
         }
-        ResumableCall::Finished(_) => panic!("expected host function trap with exit code 20"),
+        ResumableCall::Finished => panic!("expected host function trap with exit code 20"),
     };
     let result = invocation.resume(&mut store, &[Value::I32(3)], &mut results[..]);
     if wasm_trap {
@@ -129,8 +152,62 @@ fn run_test(wasm_fn: Func, mut store: &mut Store<()>, wasm_trap: bool) {
             Ok(ResumableCall::Resumable(_)) | Err(_) => {
                 panic!("expected resumed function to finish")
             }
-            Ok(ResumableCall::Finished(())) => {
+            Ok(ResumableCall::Finished) => {
                 assert_eq!(results, [Value::I32(4)]);
+            }
+        }
+    }
+}
+
+fn run_test_typed(wasm_fn: Func, mut store: &mut Store<()>, wasm_trap: bool) {
+    let invocation = match wasm_fn
+        .typed::<i32, i32>(&store)
+        .unwrap()
+        .call_resumable(&mut store, wasm_trap as i32)
+        .unwrap()
+    {
+        TypedResumableCall::Resumable(invocation) => {
+            assert_eq!(invocation.host_error().i32_exit_status(), Some(10));
+            assert_eq!(
+                invocation.host_func().func_type(&store).results(),
+                &[ValueType::I32]
+            );
+            invocation
+        }
+        TypedResumableCall::Finished(_) => panic!("expected host function trap with exit code 10"),
+    };
+    let invocation = match invocation.resume(&mut store, &[Value::I32(2)]).unwrap() {
+        TypedResumableCall::Resumable(invocation) => {
+            assert_eq!(invocation.host_error().i32_exit_status(), Some(20));
+            assert_eq!(
+                invocation.host_func().func_type(&store).results(),
+                &[ValueType::I32]
+            );
+            invocation
+        }
+        TypedResumableCall::Finished(_) => panic!("expected host function trap with exit code 20"),
+    };
+    let result = invocation.resume(&mut store, &[Value::I32(3)]);
+    if wasm_trap {
+        match result {
+            Ok(_) => panic!("expected resumed function to trap in Wasm"),
+            Err(trap) => match trap {
+                Error::Trap(trap) => {
+                    assert!(matches!(
+                        trap.trap_code(),
+                        Some(TrapCode::UnreachableCodeReached)
+                    ));
+                }
+                _ => panic!("expected Wasm trap"),
+            },
+        }
+    } else {
+        match result {
+            Ok(TypedResumableCall::Resumable(_)) | Err(_) => {
+                panic!("expected resumed function to finish")
+            }
+            Ok(TypedResumableCall::Finished(result)) => {
+                assert_eq!(result, 4);
             }
         }
     }

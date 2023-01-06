@@ -3,6 +3,7 @@ mod error;
 mod into_func;
 mod typed_func;
 
+pub(crate) use self::typed_func::CallResultsTuple;
 pub use self::{
     caller::Caller,
     error::FuncError,
@@ -328,7 +329,7 @@ impl Func {
         mut ctx: impl AsContextMut<UserState = T>,
         inputs: &[Value],
         outputs: &mut [Value],
-    ) -> Result<ResumableCall<()>, Error> {
+    ) -> Result<ResumableCall, Error> {
         self.verify_and_prepare_inputs_outputs(ctx.as_context(), inputs, outputs)?;
         // Note: Cloning an [`Engine`] is intentionally a cheap operation.
         ctx.as_context()
@@ -337,6 +338,7 @@ impl Func {
             .clone()
             .execute_func_resumable(ctx.as_context_mut(), *self, inputs, outputs)
             .map_err(Into::into)
+            .map(ResumableCall::new)
     }
 
     /// Verify that the `inputs` and `outputs` value types match the function signature.

@@ -121,7 +121,15 @@ pub mod errors {
 }
 
 pub use self::{
-    engine::{Config, Engine, ResumableCall, ResumableInvocation, StackLimits},
+    engine::{
+        Config,
+        Engine,
+        ResumableCall,
+        ResumableInvocation,
+        StackLimits,
+        TypedResumableCall,
+        TypedResumableInvocation,
+    },
     error::Error,
     external::Extern,
     func::{Caller, Func, IntoFunc, TypedFunc, WasmParams, WasmResults, WasmRet, WasmType},

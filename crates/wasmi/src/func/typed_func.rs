@@ -4,6 +4,7 @@ use crate::{
     AsContext,
     AsContextMut,
     Error,
+    TypedResumableCall,
 };
 use core::{fmt, fmt::Debug, marker::PhantomData};
 use wasmi_core::{Trap, UntypedValue};
@@ -78,7 +79,7 @@ where
         })
     }
 
-    /// Invokes this Wasm or host function with the specified parameters.
+    /// Calls this Wasm or host function with the specified parameters.
     ///
     /// Returns either the results of the call, or a [`Trap`] if one happened.
     ///
@@ -100,6 +101,40 @@ where
             params,
             <CallResultsTuple<Results>>::default(),
         )
+    }
+
+    /// Calls this Wasm or host function with the specified parameters.
+    ///
+    /// Returns a resumable handle to the function invocation upon
+    /// enountering host errors with which it is possible to handle
+    /// the error and continue the execution as if no error occured.
+    ///
+    /// # Note
+    ///
+    /// This is a non-standard WebAssembly API and might not be available
+    /// at other WebAssembly engines. Please be aware that depending on this
+    /// feature might mean a lock-in to `wasmi` for users.
+    ///
+    /// # Errors
+    ///
+    /// If the function returned a [`Trap`] originating from WebAssembly.
+    pub fn call_resumable(
+        &self,
+        mut ctx: impl AsContextMut,
+        params: Params,
+    ) -> Result<TypedResumableCall<Results>, Trap> {
+        // Note: Cloning an [`Engine`] is intentionally a cheap operation.
+        ctx.as_context()
+            .store
+            .engine()
+            .clone()
+            .execute_func_resumable(
+                ctx.as_context_mut(),
+                self.func,
+                params,
+                <CallResultsTuple<Results>>::default(),
+            )
+            .map(TypedResumableCall::new)
     }
 }
 
