@@ -34,7 +34,6 @@ pub use self::{
         ArithmeticOps,
         ExtendInto,
         Float,
-        FromValue,
         Integer,
         LittleEndianConvert,
         SignExtendFrom,
