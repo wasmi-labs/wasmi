@@ -3,7 +3,7 @@ use super::{
     HostFuncTrampoline,
 };
 use crate::{
-    core::{FromValue, Trap, Value, ValueType, F32, F64},
+    core::{Trap, ValueType, F32, F64},
     foreach_tuple::for_each_tuple,
     Caller,
     FuncType,
@@ -154,7 +154,7 @@ macro_rules! impl_wasm_return_type {
 for_each_tuple!(impl_wasm_return_type);
 
 /// Types that can be used as parameters or results of host functions.
-pub trait WasmType: FromValue + Into<Value> + From<UntypedValue> + Into<UntypedValue> {
+pub trait WasmType: From<UntypedValue> + Into<UntypedValue> {
     /// Returns the value type of the Wasm type.
     fn value_type() -> ValueType;
 }
@@ -211,6 +211,8 @@ pub trait WasmTypeList: DecodeUntypedSlice + EncodeUntypedSlice + Sized {
         + Clone;
 
     /// The iterator type of the sequence of [`Value`].
+    ///
+    /// [`Value`]: [`crate::core::Value`]
     type ValuesIter: ExactSizeIterator<Item = UntypedValue> + DoubleEndedIterator + FusedIterator;
 
     /// Returns an array representing the [`ValueType`] sequence of `Self`.
