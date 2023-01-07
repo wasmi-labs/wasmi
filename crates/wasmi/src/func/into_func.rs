@@ -211,6 +211,8 @@ pub trait WasmTypeList: DecodeUntypedSlice + EncodeUntypedSlice + Sized {
         + Clone;
 
     /// The iterator type of the sequence of [`Value`].
+    /// 
+    /// [`Value`]: [`crate::core::Value`]
     type ValuesIter: ExactSizeIterator<Item = UntypedValue> + DoubleEndedIterator + FusedIterator;
 
     /// Returns an array representing the [`ValueType`] sequence of `Self`.
