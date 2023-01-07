@@ -310,7 +310,7 @@ impl Module {
                 .unwrap_or_else(|| {
                     panic!(
                         "expected offset value of type `i32` due to \
-                    Wasm validation but found: {offset_expr:?}",
+                         Wasm validation but found: {offset_expr:?}",
                     )
                 }) as usize;
             let table = builder.get_table(DEFAULT_TABLE_INDEX);
