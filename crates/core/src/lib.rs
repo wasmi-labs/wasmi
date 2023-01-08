@@ -26,11 +26,14 @@ extern crate std as alloc;
 
 use self::value::{
     ArithmeticOps,
+    ExtendInto,
     Float,
     Integer,
+    LittleEndianConvert,
     SignExtendFrom,
     TruncateSaturateInto,
     TryTruncateInto,
+    WrapInto,
 };
 pub use self::{
     host_error::HostError,
@@ -38,5 +41,5 @@ pub use self::{
     trap::{Trap, TrapCode},
     units::Pages,
     untyped::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedError, UntypedValue},
-    value::{ExtendInto, LittleEndianConvert, TryFromValueError, Value, ValueType, WrapInto},
+    value::{TryFromValueError, Value, ValueType},
 };
