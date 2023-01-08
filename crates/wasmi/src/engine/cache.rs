@@ -1,6 +1,11 @@
 use crate::{
     module::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
-    AsContext, AsContextMut, Func, Instance, Memory, Table,
+    AsContext,
+    AsContextMut,
+    Func,
+    Instance,
+    Memory,
+    Table,
 };
 use core::ptr::NonNull;
 use wasmi_core::UntypedValue;
