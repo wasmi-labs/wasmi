@@ -10,14 +10,9 @@ use super::{
     FuncFrame,
     ValueStack,
 };
-use crate::{
-    core::{TrapCode, F32, F64},
-    AsContext,
-    Func,
-    StoreContextMut,
-};
+use crate::{core::TrapCode, AsContext, Func, StoreContextMut};
 use core::cmp;
-use wasmi_core::{ExtendInto, LittleEndianConvert, Pages, UntypedValue, WrapInto};
+use wasmi_core::{Pages, UntypedValue};
 
 /// Executes the given function `frame`.
 ///
@@ -38,6 +33,18 @@ pub fn execute_frame<'engine>(
 ) -> Result<CallOutcome, TrapCode> {
     Executor::new(value_stack, ctx.as_context_mut(), cache, frame).execute()
 }
+
+/// The function signature of Wasm load operations.
+type WasmLoadOp =
+    fn(memory: &[u8], address: UntypedValue, offset: u32) -> Result<UntypedValue, TrapCode>;
+
+/// The function signature of Wasm store operations.
+type WasmStoreOp = fn(
+    memory: &mut [u8],
+    address: UntypedValue,
+    offset: u32,
+    value: UntypedValue,
+) -> Result<(), TrapCode>;
 
 /// An execution context for executing a `wasmi` function frame.
 #[derive(Debug)]
@@ -304,112 +311,57 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
             .get_global(self.ctx.as_context_mut(), global_index.into_inner())
     }
 
-    /// Calculates the effective address of a linear memory access.
-    ///
-    /// # Errors
-    ///
-    /// If the resulting effective address overflows.
-    fn effective_address(offset: Offset, address: u32) -> Result<usize, TrapCode> {
-        offset
-            .into_inner()
-            .checked_add(address)
-            .map(|address| address as usize)
-            .ok_or(TrapCode::MemoryOutOfBounds)
-    }
-
-    /// Loads a value of type `T` from the default memory at the given address offset.
+    /// Executes a generic Wasm `store[N_{s|u}]` operation.
     ///
     /// # Note
     ///
     /// This can be used to emulate the following Wasm operands:
     ///
-    /// - `i32.load`
-    /// - `i64.load`
-    /// - `f32.load`
-    /// - `f64.load`
-    fn execute_load<T>(&mut self, offset: Offset) -> Result<(), TrapCode>
-    where
-        T: ExtendInto<T> + LittleEndianConvert,
-        UntypedValue: From<T>,
-    {
-        self.execute_load_extend::<T, T>(offset)
-    }
-
-    /// Loads a value of type `U` from the default memory at the given address offset and extends it into `T`.
-    ///
-    /// # Note
-    ///
-    /// This can be used to emulate the following Wasm operands:
-    ///
-    /// - `i32.load_8s`
-    /// - `i32.load_8u`
-    /// - `i32.load_16s`
-    /// - `i32.load_16u`
-    /// - `i64.load_8s`
-    /// - `i64.load_8u`
-    /// - `i64.load_16s`
-    /// - `i64.load_16u`
-    /// - `i64.load_32s`
-    /// - `i64.load_32u`
-    fn execute_load_extend<T, U>(&mut self, offset: Offset) -> Result<(), TrapCode>
-    where
-        T: ExtendInto<U> + LittleEndianConvert,
-        UntypedValue: From<U>,
-    {
+    /// - `{i32, i64, f32, f64}.load`
+    /// - `{i32, i64}.load8_s`
+    /// - `{i32, i64}.load8_u`
+    /// - `{i32, i64}.load16_s`
+    /// - `{i32, i64}.load16_u`
+    /// - `i64.load32_s`
+    /// - `i64.load32_u`
+    fn execute_load_extend(
+        &mut self,
+        offset: Offset,
+        load_extend: WasmLoadOp,
+    ) -> Result<(), TrapCode> {
         self.value_stack.try_eval_top(|address| {
-            let raw_address = u32::from(address);
-            let address = Self::effective_address(offset, raw_address)?;
-            let mut bytes = <<T as LittleEndianConvert>::Bytes as Default>::default();
-            self.cache
+            let memory = self
+                .cache
                 .default_memory_bytes(self.ctx.as_context_mut())
-                .read(address, bytes.as_mut())?;
-            let value = <T as LittleEndianConvert>::from_le_bytes(bytes).extend_into();
-            Ok(value.into())
+                .data();
+            let value = load_extend(memory, address, offset.into_inner())?;
+            Ok(value)
         })?;
         self.next_instr();
         Ok(())
     }
 
-    /// Stores a value of type `T` into the default memory at the given address offset.
+    /// Executes a generic Wasm `store[N]` operation.
     ///
     /// # Note
     ///
     /// This can be used to emulate the following Wasm operands:
     ///
-    /// - `i32.store`
-    /// - `i64.store`
-    /// - `f32.store`
-    /// - `f64.store`
-    fn execute_store<T>(&mut self, offset: Offset) -> Result<(), TrapCode>
-    where
-        T: WrapInto<T> + LittleEndianConvert + From<UntypedValue>,
-    {
-        self.execute_store_wrap::<T, T>(offset)
-    }
-
-    /// Stores a value of type `T` wrapped to type `U` into the default memory at the given address offset.
-    ///
-    /// # Note
-    ///
-    /// This can be used to emulate the following Wasm operands:
-    ///
-    /// - `i32.store8`
-    /// - `i32.store16`
-    /// - `i64.store8`
-    /// - `i64.store16`
+    /// - `{i32, i64, f32, f64}.store`
+    /// - `{i32, i64}.store8`
+    /// - `{i32, i64}.store16`
     /// - `i64.store32`
-    fn execute_store_wrap<T, U>(&mut self, offset: Offset) -> Result<(), TrapCode>
-    where
-        T: WrapInto<U> + From<UntypedValue>,
-        U: LittleEndianConvert,
-    {
+    fn execute_store_wrap(
+        &mut self,
+        offset: Offset,
+        store_wrap: WasmStoreOp,
+    ) -> Result<(), TrapCode> {
         let (address, value) = self.value_stack.pop2();
-        let wrapped_value = T::from(value).wrap_into();
-        let address = Self::effective_address(offset, u32::from(address))?;
-        let bytes = <U as LittleEndianConvert>::into_le_bytes(wrapped_value);
-        self.cache
+        let memory = self
+            .cache
             .default_memory_bytes(self.ctx.as_context_mut())
-            .write(address, bytes.as_ref())?;
+            .data_mut();
+        store_wrap(memory, address, offset.into_inner(), value)?;
         self.next_instr();
         Ok(())
     }
@@ -651,95 +603,95 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     }
 
     fn visit_i32_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load::<i32>(offset)
+        self.execute_load_extend(offset, UntypedValue::i32_load)
     }
 
     fn visit_i64_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load::<i64>(offset)
+        self.execute_load_extend(offset, UntypedValue::i64_load)
     }
 
     fn visit_f32_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load::<F32>(offset)
+        self.execute_load_extend(offset, UntypedValue::f32_load)
     }
 
     fn visit_f64_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load::<F64>(offset)
+        self.execute_load_extend(offset, UntypedValue::f64_load)
     }
 
     fn visit_i32_load_i8(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend::<i8, i32>(offset)
+        self.execute_load_extend(offset, UntypedValue::i32_load8_s)
     }
 
     fn visit_i32_load_u8(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend::<u8, i32>(offset)
+        self.execute_load_extend(offset, UntypedValue::i32_load8_u)
     }
 
     fn visit_i32_load_i16(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend::<i16, i32>(offset)
+        self.execute_load_extend(offset, UntypedValue::i32_load16_s)
     }
 
     fn visit_i32_load_u16(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend::<u16, i32>(offset)
+        self.execute_load_extend(offset, UntypedValue::i32_load16_u)
     }
 
     fn visit_i64_load_i8(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend::<i8, i64>(offset)
+        self.execute_load_extend(offset, UntypedValue::i64_load8_s)
     }
 
     fn visit_i64_load_u8(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend::<u8, i64>(offset)
+        self.execute_load_extend(offset, UntypedValue::i64_load8_u)
     }
 
     fn visit_i64_load_i16(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend::<i16, i64>(offset)
+        self.execute_load_extend(offset, UntypedValue::i64_load16_s)
     }
 
     fn visit_i64_load_u16(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend::<u16, i64>(offset)
+        self.execute_load_extend(offset, UntypedValue::i64_load16_u)
     }
 
     fn visit_i64_load_i32(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend::<i32, i64>(offset)
+        self.execute_load_extend(offset, UntypedValue::i64_load32_s)
     }
 
     fn visit_i64_load_u32(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend::<u32, i64>(offset)
+        self.execute_load_extend(offset, UntypedValue::i64_load32_u)
     }
 
     fn visit_i32_store(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store::<i32>(offset)
+        self.execute_store_wrap(offset, UntypedValue::i32_store)
     }
 
     fn visit_i64_store(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store::<i64>(offset)
+        self.execute_store_wrap(offset, UntypedValue::i64_store)
     }
 
     fn visit_f32_store(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store::<F32>(offset)
+        self.execute_store_wrap(offset, UntypedValue::f32_store)
     }
 
     fn visit_f64_store(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store::<F64>(offset)
+        self.execute_store_wrap(offset, UntypedValue::f64_store)
     }
 
     fn visit_i32_store_8(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap::<i32, i8>(offset)
+        self.execute_store_wrap(offset, UntypedValue::i32_store8)
     }
 
     fn visit_i32_store_16(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap::<i32, i16>(offset)
+        self.execute_store_wrap(offset, UntypedValue::i32_store16)
     }
 
     fn visit_i64_store_8(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap::<i64, i8>(offset)
+        self.execute_store_wrap(offset, UntypedValue::i64_store8)
     }
 
     fn visit_i64_store_16(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap::<i64, i16>(offset)
+        self.execute_store_wrap(offset, UntypedValue::i64_store16)
     }
 
     fn visit_i64_store_32(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap::<i64, i32>(offset)
+        self.execute_store_wrap(offset, UntypedValue::i64_store32)
     }
 
     fn visit_i32_eqz(&mut self) {
