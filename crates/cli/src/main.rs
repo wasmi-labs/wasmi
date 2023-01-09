@@ -1,5 +1,5 @@
 use anyhow::{anyhow, bail, Context, Result};
-use clap::Parser;
+use clap::{error::ErrorKind, Parser};
 use core::fmt::Write;
 use std::{
     ffi::OsStr,
@@ -36,19 +36,128 @@ fn parse_env(s: &str) -> Result<KeyValue> {
         value: s[pos + 1..].to_string(),
     })
 }
+
 /// Optional Function name and possibly zero list of args.
-#[derive(Debug, clap::Args)]
+#[derive(Debug)]
 struct InvokeArgs {
     /// The exported name of the Wasm function to call.
     /// If this argument is missing, the wasmi CLI will try to invoke `""` or `"_start"`
     /// If those two are not defined in the module, it prints out all(if any) exported functions
     /// in the module and ends with an error
-    #[clap(long = "invoke", value_parser)]
     func_name: Option<String>,
 
     /// The arguments provided to the called function.
-    #[clap()]
     func_args: Vec<String>,
+}
+
+impl clap::FromArgMatches for InvokeArgs {
+    fn from_arg_matches(matches: &clap::ArgMatches) -> Result<Self, clap::Error> {
+        Self::from_arg_matches_mut(&mut matches.clone())
+    }
+
+    fn from_arg_matches_mut(matches: &mut clap::ArgMatches) -> Result<Self, clap::Error> {
+        let func_name = matches.remove_one::<String>("func_name");
+
+        let func_args = matches.remove_many::<String>("func_args");
+        // if `func_name` is not provided, `func_args` should be rejected
+        if func_name.is_none() && func_args.is_some() {
+            return Err(clap::Error::raw(
+                ErrorKind::ArgumentConflict,
+                "Func args are only allowed when there is a func name to invoke",
+            ));
+        }
+        let func_args = func_args.map(|v| v.collect::<Vec<_>>()).unwrap_or_default();
+
+        Ok(InvokeArgs {
+            func_name,
+            func_args,
+        })
+    }
+
+    fn update_from_arg_matches(&mut self, matches: &clap::ArgMatches) -> Result<(), clap::Error> {
+        self.update_from_arg_matches_mut(&mut matches.clone())
+    }
+
+    fn update_from_arg_matches_mut(
+        &mut self,
+        matches: &mut clap::ArgMatches,
+    ) -> Result<(), clap::Error> {
+        if !matches.contains_id("func_name") && matches.contains_id("func_args") {
+            return Err(clap::Error::new(ErrorKind::ArgumentConflict));
+        }
+
+        if matches.contains_id("func_name") {
+            let func_name = &mut self.func_name;
+            *func_name = matches.remove_one::<String>("func_name")
+        }
+
+        if matches.contains_id("func_args") {
+            let func_args = &mut self.func_args;
+            *func_args = matches
+                .remove_many::<String>("func_args")
+                .map(|v| v.collect::<Vec<_>>())
+                .unwrap_or_default();
+        }
+        Ok(())
+    }
+}
+
+impl clap::Args for InvokeArgs {
+    fn augment_args(cmd: clap::Command) -> clap::Command {
+        let cmd = cmd.group(clap::ArgGroup::new("InvokeArgs").multiple(true).args({
+            let members: [clap::Id; 2usize] =
+                [clap::Id::from("func_name"), clap::Id::from("func_args")];
+            members
+        }));
+        let cmd = cmd.arg({
+            let arg = clap::Arg::new("func_name").value_name("FUNC_NAME").value_parser(clap::value_parser!(String)).action(clap::ArgAction::Set);
+            arg.help(
+                r#"The exported name of the Wasm function to call. 
+                If this argument is missing, the wasmi CLI will try to invoke `""` or `"_start"` 
+                If those two are not defined in the module, it prints out all(if any) exported functions in the module and ends with an error"#)
+                .long_help(None)
+                .long("invoke")
+        });
+        let cmd = cmd.arg({
+            let arg = clap::Arg::new("func_args")
+                .value_name("FUNC_ARGS")
+                .num_args(1..)
+                .value_parser(clap::value_parser!(String))
+                .action(clap::ArgAction::Append);
+            arg.help("The arguments provided to the called function")
+                .long_help(None)
+        });
+        cmd.about("Optional Function name and possibly zero list of args")
+            .long_about(None)
+    }
+
+    fn augment_args_for_update(cmd: clap::Command) -> clap::Command {
+        let cmd = cmd.group(clap::ArgGroup::new("InvokeArgs").multiple(true).args({
+            let members: [clap::Id; 2usize] =
+                [clap::Id::from("func_name"), clap::Id::from("func_args")];
+            members
+        }));
+        let cmd = cmd.arg({
+        let arg = clap::Arg::new("func_name").value_name("FUNC_NAME").value_parser(clap::value_parser!(String)).action(clap::ArgAction::Set);
+        arg.help(
+            r#"The exported name of the Wasm function to call. 
+            If this argument is missing, the wasmi CLI will try to invoke `""` or `"_start"` 
+            If those two are not defined in the module, it prints out all(if any) exported functions in the module and ends with an error"#)
+            .long_help(None)
+            .long("invoke")
+        });
+        let cmd = cmd.arg({
+            let arg = clap::Arg::new("func_args")
+                .value_name("FUNC_ARGS")
+                .num_args(1..)
+                .value_parser(clap::value_parser!(String))
+                .action(clap::ArgAction::Append);
+            arg.help("The arguments provided to the called function")
+                .long_help(None)
+        });
+        cmd.about("Optional Function name and possibly zero list of args")
+            .long_about(None)
+    }
 }
 
 /// Simple program to greet a person
