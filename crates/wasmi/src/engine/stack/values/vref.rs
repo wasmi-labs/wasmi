@@ -3,16 +3,22 @@ use crate::{
     core::{TrapCode, UntypedValue},
     engine::DropKeep,
 };
+use core::fmt;
 
 /// A mutable view over the [`ValueStack`].
 ///
 /// This allows for a more efficient access to the [`ValueStack`] during execution.
-#[derive(Debug)]
 pub struct ValueStackRef<'a> {
     pub(super) stack_ptr: usize,
     pub(super) values: &'a mut [UntypedValue],
     /// The original stack pointer required to keep in sync.
     orig_sp: &'a mut usize,
+}
+
+impl<'a> fmt::Debug for ValueStackRef<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", &self.values[0..self.stack_ptr])
+    }
 }
 
 impl<'a> ValueStackRef<'a> {

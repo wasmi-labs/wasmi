@@ -43,6 +43,7 @@ The following list states some of the distinct features of `wasmi`.
 - Low-overhead and cross-platform WebAssembly runtime.
 - Loosely mirrors the [Wasmtime API](https://docs.rs/wasmtime/)
   to act as a drop-in solution.
+- Supports resumable function calls.
 
 ## WebAssembly Proposals
 

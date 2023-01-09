@@ -1,6 +1,7 @@
-use crate::core::ValueType;
+use crate::{core::ValueType, func::FuncError};
 use alloc::{sync::Arc, vec::Vec};
 use core::fmt::{self, Display};
+use wasmi_core::Value;
 
 /// A function type representing a function's parameter and result types.
 ///
@@ -89,6 +90,104 @@ impl FuncType {
     /// Returns the pair of parameter and result types of the function type.
     pub(crate) fn params_results(&self) -> (&[ValueType], &[ValueType]) {
         self.params_results.split_at(self.len_params)
+    }
+
+    /// Returns `Ok` if the number and types of items in `params` matches as expected by the [`FuncType`].
+    ///
+    /// # Errors
+    ///
+    /// - If the number of items in `params` does not match the number of parameters of the function type.
+    /// - If any type of an item in `params` does not match the expected type of the function type.
+    pub(crate) fn match_params<T>(&self, params: &[T]) -> Result<(), FuncError>
+    where
+        T: Ty,
+    {
+        if self.params().len() != params.len() {
+            return Err(FuncError::MismatchingParameterLen).map_err(Into::into);
+        }
+        if self
+            .params()
+            .iter()
+            .copied()
+            .ne(params.iter().map(<T as Ty>::ty))
+        {
+            return Err(FuncError::MismatchingParameterType).map_err(Into::into);
+        }
+        Ok(())
+    }
+
+    /// Returns `Ok` if the number and types of items in `results` matches as expected by the [`FuncType`].
+    ///
+    /// # Note
+    ///
+    /// Only checks types if `check_type` is set to `true`.
+    ///
+    /// # Errors
+    ///
+    /// - If the number of items in `results` does not match the number of results of the function type.
+    /// - If any type of an item in `results` does not match the expected type of the function type.
+    pub(crate) fn match_results<T>(&self, results: &[T], check_type: bool) -> Result<(), FuncError>
+    where
+        T: Ty,
+    {
+        if self.results().len() != results.len() {
+            return Err(FuncError::MismatchingResultLen).map_err(Into::into);
+        }
+        if check_type
+            && self
+                .results()
+                .iter()
+                .copied()
+                .ne(results.iter().map(<T as Ty>::ty))
+        {
+            return Err(FuncError::MismatchingResultType).map_err(Into::into);
+        }
+        Ok(())
+    }
+
+    /// Initializes the values in `outputs` to match the types expected by the [`FuncType`].
+    ///
+    /// # Note
+    ///
+    /// This is required by an implementation detail of how function result passing is current
+    /// implemented in the `wasmi` execution engine and might change in the future.
+    ///
+    /// # Panics
+    ///
+    /// If the number of items in `outputs` does not match the number of results of the [`FuncType`].
+    pub(crate) fn prepare_outputs(&self, outputs: &mut [Value]) {
+        assert_eq!(
+            self.results().len(),
+            outputs.len(),
+            "must have the same number of items in outputs as results of the function type"
+        );
+        let init_values = self.results().iter().copied().map(Value::default);
+        outputs
+            .iter_mut()
+            .zip(init_values)
+            .for_each(|(output, init)| *output = init);
+    }
+}
+
+/// Types that have a [`ValueType`].
+///
+/// # Note
+///
+/// Primarily used to allow `match_params` and `match_results`
+/// to be called with both [`Value`] and [`ValueType`] parameters.
+pub(crate) trait Ty {
+    fn ty(&self) -> ValueType;
+}
+
+impl Ty for ValueType {
+    fn ty(&self) -> ValueType {
+        *self
+    }
+}
+
+impl Ty for Value {
+    fn ty(&self) -> ValueType {
+        self.value_type()
     }
 }
 

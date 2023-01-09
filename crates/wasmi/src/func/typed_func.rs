@@ -1,9 +1,10 @@
-use super::{into_func::WasmTypeList, Func, FuncError};
+use super::{into_func::WasmTypeList, Func};
 use crate::{
     engine::{CallParams, CallResults},
     AsContext,
     AsContextMut,
     Error,
+    TypedResumableCall,
 };
 use core::{fmt, fmt::Debug, marker::PhantomData};
 use wasmi_core::{Trap, UntypedValue};
@@ -66,24 +67,19 @@ where
     /// and result types of `func` mismatch the signature of `func`.
     pub(crate) fn new(ctx: impl AsContext, func: Func) -> Result<Self, Error> {
         let func_type = func.func_type(&ctx);
-        let (expected_params, expected_results) = func_type.params_results();
         let (actual_params, actual_results) = (
             <Params as WasmTypeList>::types(),
             <Results as WasmTypeList>::types(),
         );
-        if actual_params.as_ref() != expected_params {
-            return Err(Error::Func(FuncError::MismatchingParameters { func }));
-        }
-        if actual_results.as_ref() != expected_results {
-            return Err(Error::Func(FuncError::MismatchingResults { func }));
-        }
+        func_type.match_params(actual_params.as_ref())?;
+        func_type.match_results(actual_results.as_ref(), true)?;
         Ok(Self {
             signature: PhantomData,
             func,
         })
     }
 
-    /// Invokes this Wasm or host function with the specified parameters.
+    /// Calls this Wasm or host function with the specified parameters.
     ///
     /// Returns either the results of the call, or a [`Trap`] if one happened.
     ///
@@ -105,6 +101,40 @@ where
             params,
             <CallResultsTuple<Results>>::default(),
         )
+    }
+
+    /// Calls this Wasm or host function with the specified parameters.
+    ///
+    /// Returns a resumable handle to the function invocation upon
+    /// enountering host errors with which it is possible to handle
+    /// the error and continue the execution as if no error occured.
+    ///
+    /// # Note
+    ///
+    /// This is a non-standard WebAssembly API and might not be available
+    /// at other WebAssembly engines. Please be aware that depending on this
+    /// feature might mean a lock-in to `wasmi` for users.
+    ///
+    /// # Errors
+    ///
+    /// If the function returned a [`Trap`] originating from WebAssembly.
+    pub fn call_resumable(
+        &self,
+        mut ctx: impl AsContextMut,
+        params: Params,
+    ) -> Result<TypedResumableCall<Results>, Trap> {
+        // Note: Cloning an [`Engine`] is intentionally a cheap operation.
+        ctx.as_context()
+            .store
+            .engine()
+            .clone()
+            .execute_func_resumable(
+                ctx.as_context_mut(),
+                self.func,
+                params,
+                <CallResultsTuple<Results>>::default(),
+            )
+            .map(TypedResumableCall::new)
     }
 }
 

@@ -24,25 +24,22 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std as alloc;
 
+use self::value::{
+    ArithmeticOps,
+    ExtendInto,
+    Float,
+    Integer,
+    LittleEndianConvert,
+    SignExtendFrom,
+    TruncateSaturateInto,
+    TryTruncateInto,
+    WrapInto,
+};
 pub use self::{
     host_error::HostError,
     nan_preserving_float::{F32, F64},
     trap::{Trap, TrapCode},
     units::Pages,
     untyped::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedError, UntypedValue},
-    value::{
-        ArithmeticOps,
-        ExtendInto,
-        Float,
-        FromValue,
-        Integer,
-        LittleEndianConvert,
-        SignExtendFrom,
-        TransmuteInto,
-        TruncateSaturateInto,
-        TryTruncateInto,
-        Value,
-        ValueType,
-        WrapInto,
-    },
+    value::{TryFromValueError, Value, ValueType},
 };

@@ -8,7 +8,7 @@ use crate::{
     Table,
 };
 use core::ptr::NonNull;
-use wasmi_core::{TrapCode, UntypedValue};
+use wasmi_core::UntypedValue;
 
 /// A cache for frequently used entities of an [`Instance`].
 #[derive(Debug)]
@@ -247,47 +247,13 @@ impl CachedMemoryBytes {
 
     /// Returns an exclusive reference to the underlying byte slices.
     #[inline]
-    fn data(&self) -> &[u8] {
+    pub fn data(&self) -> &[u8] {
         unsafe { self.data.as_ref() }
     }
 
     /// Returns an exclusive reference to the underlying byte slices.
     #[inline]
-    fn data_mut(&mut self) -> &mut [u8] {
+    pub fn data_mut(&mut self) -> &mut [u8] {
         unsafe { self.data.as_mut() }
-    }
-
-    /// Reads `n` bytes from `memory[offset..offset+n]` into `buffer`
-    /// where `n` is the length of `buffer`.
-    ///
-    /// # Errors
-    ///
-    /// If this operation accesses out of bounds linear memory.
-    #[inline]
-    pub fn read(&self, offset: usize, buffer: &mut [u8]) -> Result<(), TrapCode> {
-        let len_buffer = buffer.len();
-        let slice = self
-            .data()
-            .get(offset..(offset + len_buffer))
-            .ok_or(TrapCode::MemoryOutOfBounds)?;
-        buffer.copy_from_slice(slice);
-        Ok(())
-    }
-
-    /// Writes `n` bytes to `memory[offset..offset+n]` from `buffer`
-    /// where `n` if the length of `buffer`.
-    ///
-    /// # Errors
-    ///
-    /// If this operation accesses out of bounds linear memory.
-    #[inline]
-    pub fn write(&mut self, offset: usize, buffer: &[u8]) -> Result<(), TrapCode> {
-        let len_buffer = buffer.len();
-        let slice = self
-            .data_mut()
-            .get_mut(offset..(offset + len_buffer))
-            .ok_or(TrapCode::MemoryOutOfBounds)?;
-        slice.copy_from_slice(buffer);
-        Ok(())
     }
 }

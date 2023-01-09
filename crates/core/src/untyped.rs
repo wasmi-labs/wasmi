@@ -3,6 +3,7 @@ use crate::{
     ExtendInto,
     Float,
     Integer,
+    LittleEndianConvert,
     SignExtendFrom,
     TrapCode,
     TruncateSaturateInto,
@@ -145,7 +146,406 @@ macro_rules! op {
     }};
 }
 
+/// Calculates the effective address of a linear memory access.
+///
+/// # Errors
+///
+/// If the resulting effective address overflows.
+fn effective_address(address: u32, offset: u32) -> Result<usize, TrapCode> {
+    offset
+        .checked_add(address)
+        .map(|address| address as usize)
+        .ok_or(TrapCode::MemoryOutOfBounds)
+}
+
 impl UntypedValue {
+    /// Loads the memory at `memory[address+offset..]` into `buffer`.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` loads out of bounds from `memory`.
+    fn load_into(
+        memory: &[u8],
+        buffer: &mut [u8],
+        address: Self,
+        offset: u32,
+    ) -> Result<(), TrapCode> {
+        let raw_address = u32::from(address);
+        let address = effective_address(raw_address, offset)?;
+        let len_buffer = buffer.len();
+        let slice = memory
+            .get(address..)
+            .and_then(|slice| slice.get(..len_buffer))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        buffer.copy_from_slice(slice);
+        Ok(())
+    }
+
+    /// Executes a generic `T.loadN_[s|u]` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` loads out of bounds from `memory`.
+    fn load_extend<T, U>(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode>
+    where
+        T: Into<Self>,
+        U: LittleEndianConvert + ExtendInto<T>,
+    {
+        let mut buffer = <<U as LittleEndianConvert>::Bytes as Default>::default();
+        Self::load_into(memory, buffer.as_mut(), address, offset)?;
+        let value: Self = <U as LittleEndianConvert>::from_le_bytes(buffer)
+            .extend_into()
+            .into();
+        Ok(value)
+    }
+
+    /// Executes a generic `T.load` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` loads out of bounds from `memory`.
+    fn load<T>(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode>
+    where
+        T: LittleEndianConvert + ExtendInto<T> + Into<Self>,
+    {
+        Self::load_extend::<T, T>(memory, address, offset)
+    }
+
+    /// Executes the `i32.load` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` loads out of bounds from `memory`.
+    pub fn i32_load(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
+        Self::load::<i32>(memory, address, offset)
+    }
+
+    /// Executes the `i64.load` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` loads out of bounds from `memory`.
+    pub fn i64_load(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
+        Self::load::<i64>(memory, address, offset)
+    }
+
+    /// Executes the `f32.load` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` loads out of bounds from `memory`.
+    pub fn f32_load(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
+        Self::load::<F32>(memory, address, offset)
+    }
+
+    /// Executes the `f64.load` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` loads out of bounds from `memory`.
+    pub fn f64_load(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
+        Self::load::<F64>(memory, address, offset)
+    }
+
+    /// Executes the `i32.load8_s` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` loads out of bounds from `memory`.
+    pub fn i32_load8_s(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
+        Self::load_extend::<i32, i8>(memory, address, offset)
+    }
+
+    /// Executes the `i32.load8_u` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` loads out of bounds from `memory`.
+    pub fn i32_load8_u(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
+        Self::load_extend::<i32, u8>(memory, address, offset)
+    }
+
+    /// Executes the `i32.load16_s` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` loads out of bounds from `memory`.
+    pub fn i32_load16_s(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
+        Self::load_extend::<i32, i16>(memory, address, offset)
+    }
+
+    /// Executes the `i32.load16_u` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` loads out of bounds from `memory`.
+    pub fn i32_load16_u(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
+        Self::load_extend::<i32, u16>(memory, address, offset)
+    }
+
+    /// Executes the `i64.load8_s` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` loads out of bounds from `memory`.
+    pub fn i64_load8_s(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
+        Self::load_extend::<i64, i8>(memory, address, offset)
+    }
+
+    /// Executes the `i64.load8_u` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` loads out of bounds from `memory`.
+    pub fn i64_load8_u(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
+        Self::load_extend::<i64, u8>(memory, address, offset)
+    }
+
+    /// Executes the `i64.load16_s` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` loads out of bounds from `memory`.
+    pub fn i64_load16_s(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
+        Self::load_extend::<i64, i16>(memory, address, offset)
+    }
+
+    /// Executes the `i64.load16_u` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` loads out of bounds from `memory`.
+    pub fn i64_load16_u(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
+        Self::load_extend::<i64, u16>(memory, address, offset)
+    }
+
+    /// Executes the `i64.load32_s` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` loads out of bounds from `memory`.
+    pub fn i64_load32_s(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
+        Self::load_extend::<i64, i32>(memory, address, offset)
+    }
+
+    /// Executes the `i64.load32_u` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` loads out of bounds from `memory`.
+    pub fn i64_load32_u(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
+        Self::load_extend::<i64, u32>(memory, address, offset)
+    }
+
+    /// Stores the `buffer` contents at `memory[address+offset..]`.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` stores out of bounds from `memory`.
+    fn store_from(
+        memory: &mut [u8],
+        address: Self,
+        offset: u32,
+        buffer: &[u8],
+    ) -> Result<(), TrapCode> {
+        let raw_address = u32::from(address);
+        let address = effective_address(raw_address, offset)?;
+        let len_buffer = buffer.len();
+        let slice = memory
+            .get_mut(address..)
+            .and_then(|slice| slice.get_mut(..len_buffer))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        slice.copy_from_slice(buffer);
+        Ok(())
+    }
+
+    /// Executes a generic `T.store[N]` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` stores out of bounds from `memory`.
+    fn store_wrap<T, U>(
+        memory: &mut [u8],
+        address: Self,
+        offset: u32,
+        value: Self,
+    ) -> Result<(), TrapCode>
+    where
+        T: From<Self> + WrapInto<U>,
+        U: LittleEndianConvert,
+    {
+        let wrapped = T::from(value).wrap_into();
+        let buffer = <U as LittleEndianConvert>::into_le_bytes(wrapped);
+        Self::store_from(memory, address, offset, buffer.as_ref())
+    }
+
+    /// Executes a generic `T.store` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` stores out of bounds from `memory`.
+    fn store<T>(memory: &mut [u8], address: Self, offset: u32, value: Self) -> Result<(), TrapCode>
+    where
+        T: From<Self> + WrapInto<T> + LittleEndianConvert,
+    {
+        Self::store_wrap::<T, T>(memory, address, offset, value)
+    }
+
+    /// Executes the `i32.store` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` stores out of bounds from `memory`.
+    pub fn i32_store(
+        memory: &mut [u8],
+        address: Self,
+        offset: u32,
+        value: Self,
+    ) -> Result<(), TrapCode> {
+        Self::store::<i32>(memory, address, offset, value)
+    }
+
+    /// Executes the `i64.store` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` stores out of bounds from `memory`.
+    pub fn i64_store(
+        memory: &mut [u8],
+        address: Self,
+        offset: u32,
+        value: Self,
+    ) -> Result<(), TrapCode> {
+        Self::store::<i64>(memory, address, offset, value)
+    }
+
+    /// Executes the `f32.store` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` stores out of bounds from `memory`.
+    pub fn f32_store(
+        memory: &mut [u8],
+        address: Self,
+        offset: u32,
+        value: Self,
+    ) -> Result<(), TrapCode> {
+        Self::store::<F32>(memory, address, offset, value)
+    }
+
+    /// Executes the `f64.store` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` stores out of bounds from `memory`.
+    pub fn f64_store(
+        memory: &mut [u8],
+        address: Self,
+        offset: u32,
+        value: Self,
+    ) -> Result<(), TrapCode> {
+        Self::store::<F64>(memory, address, offset, value)
+    }
+
+    /// Executes the `i32.store8` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` stores out of bounds from `memory`.
+    pub fn i32_store8(
+        memory: &mut [u8],
+        address: Self,
+        offset: u32,
+        value: Self,
+    ) -> Result<(), TrapCode> {
+        Self::store_wrap::<i32, i8>(memory, address, offset, value)
+    }
+
+    /// Executes the `i32.store16` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` stores out of bounds from `memory`.
+    pub fn i32_store16(
+        memory: &mut [u8],
+        address: Self,
+        offset: u32,
+        value: Self,
+    ) -> Result<(), TrapCode> {
+        Self::store_wrap::<i32, i16>(memory, address, offset, value)
+    }
+
+    /// Executes the `i64.store8` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` stores out of bounds from `memory`.
+    pub fn i64_store8(
+        memory: &mut [u8],
+        address: Self,
+        offset: u32,
+        value: Self,
+    ) -> Result<(), TrapCode> {
+        Self::store_wrap::<i64, i8>(memory, address, offset, value)
+    }
+
+    /// Executes the `i64.store16` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` stores out of bounds from `memory`.
+    pub fn i64_store16(
+        memory: &mut [u8],
+        address: Self,
+        offset: u32,
+        value: Self,
+    ) -> Result<(), TrapCode> {
+        Self::store_wrap::<i64, i16>(memory, address, offset, value)
+    }
+
+    /// Executes the `i64.store32` Wasm operation.
+    ///
+    /// # Errors
+    ///
+    /// - If `address + offset` overflows.
+    /// - If `address + offset` stores out of bounds from `memory`.
+    pub fn i64_store32(
+        memory: &mut [u8],
+        address: Self,
+        offset: u32,
+        value: Self,
+    ) -> Result<(), TrapCode> {
+        Self::store_wrap::<i64, i32>(memory, address, offset, value)
+    }
+
     /// Execute an infallible generic operation on `T` that returns an `R`.
     fn execute_unary<T, R>(self, op: fn(T) -> R) -> Self
     where

@@ -84,6 +84,25 @@ impl FromIterator<UntypedValue> for ValueStack {
 }
 
 impl ValueStack {
+    /// Creates an empty [`ValueStack`] that does not allocate heap memor.
+    ///
+    /// # Note
+    ///
+    /// This is required for resumable functions in order to replace their
+    /// proper stack with a cheap dummy one.
+    pub fn empty() -> Self {
+        Self {
+            entries: Vec::new(),
+            stack_ptr: 0,
+            maximum_len: 0,
+        }
+    }
+
+    /// Returns `true` if the [`ValueStack`] is empty.
+    pub fn is_empty(&self) -> bool {
+        self.entries.capacity() == 0
+    }
+
     /// Creates a new empty [`ValueStack`].
     ///
     /// # Panics
