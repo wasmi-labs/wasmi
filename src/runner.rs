@@ -680,6 +680,11 @@ impl Interpreter {
                 })
             }
 
+            isa::Instruction::CurrentMemory => None,
+            isa::Instruction::GrowMemory => Some(RunInstructionTracePre::GrowMemory(
+                <_>::from_value_internal(*self.value_stack.pick(1)),
+            )),
+
             isa::Instruction::I32Const(_) => None,
             isa::Instruction::I64Const(_) => None,
 
@@ -1210,6 +1215,18 @@ impl Interpreter {
                         pre_block_value2: pre_block_value2.unwrap_or(0u64),
                         updated_block_value1,
                         updated_block_value2,
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+
+            isa::Instruction::CurrentMemory => StepInfo::MemorySize,
+            isa::Instruction::GrowMemory => {
+                if let RunInstructionTracePre::GrowMemory(grow_size) = pre_status.unwrap() {
+                    StepInfo::MemoryGrow {
+                        grow_size,
+                        result: <_>::from_value_internal(*self.value_stack.top()),
                     }
                 } else {
                     unreachable!()
@@ -1907,6 +1924,12 @@ impl Interpreter {
                 None
             };
 
+            let current_memory = {
+                function_context
+                    .memory()
+                    .map_or(0usize, |m| m.current_size().0)
+            };
+
             macro_rules! trace_post {
                 () => {
                     if let Some(tracer) = self.tracer.clone() {
@@ -1928,6 +1951,7 @@ impl Interpreter {
                             module_instance,
                             function,
                             sp as u64,
+                            current_memory,
                             pc,
                             last_jump_eid,
                             instruction,
