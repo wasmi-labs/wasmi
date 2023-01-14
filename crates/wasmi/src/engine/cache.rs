@@ -1,9 +1,9 @@
 use crate::{
     module::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
-    store::StoreInner,
     Func,
     Instance,
     Memory,
+    StoreInner,
     Table,
 };
 use core::ptr::NonNull;
