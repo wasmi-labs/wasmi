@@ -4,7 +4,6 @@ use super::{
     cache::InstanceCache,
     code_map::InstructionPtr,
     stack::ValueStackRef,
-    AsContextMut,
     CallOutcome,
     DropKeep,
     FuncFrame,
@@ -26,18 +25,12 @@ use wasmi_core::{Pages, UntypedValue};
 /// - If the execution of the function `frame` trapped.
 #[inline(always)]
 pub fn execute_frame<'engine>(
-    mut ctx: impl AsContextMut,
+    ctx: &mut StoreInner,
     value_stack: &'engine mut ValueStack,
     cache: &'engine mut InstanceCache,
     frame: &mut FuncFrame,
 ) -> Result<CallOutcome, TrapCode> {
-    Executor::new(
-        value_stack,
-        &mut ctx.as_context_mut().store.inner,
-        cache,
-        frame,
-    )
-    .execute()
+    Executor::new(value_stack, ctx, cache, frame).execute()
 }
 
 /// The function signature of Wasm load operations.
