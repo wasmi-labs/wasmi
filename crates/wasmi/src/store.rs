@@ -18,7 +18,10 @@ use super::{
     TableEntity,
     TableIdx,
 };
-use core::sync::atomic::{AtomicU32, Ordering};
+use core::{
+    ops::{Deref, DerefMut},
+    sync::atomic::{AtomicU32, Ordering},
+};
 use wasmi_arena::{Arena, ArenaIndex, GuardedEntity};
 
 /// A unique store index.
@@ -58,6 +61,31 @@ pub type Stored<Idx> = GuardedEntity<StoreIdx, Idx>;
 /// The store that owns all data associated to Wasm modules.
 #[derive(Debug)]
 pub struct Store<T> {
+    /// All data that is not associated to `T`.
+    inner: StoreInner,
+    /// Stored Wasm or host functions.
+    funcs: Arena<FuncIdx, FuncEntity<T>>,
+    /// User provided state.
+    user_state: T,
+}
+
+impl<T> Deref for Store<T> {
+    type Target = StoreInner;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl<T> DerefMut for Store<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
+    }
+}
+
+/// The inner store that owns all data not associated to the host state.
+#[derive(Debug)]
+pub struct StoreInner {
     /// The unique store index.
     ///
     /// Used to protect against invalid entity indices.
@@ -68,16 +96,12 @@ pub struct Store<T> {
     tables: Arena<TableIdx, TableEntity>,
     /// Stored global variables.
     globals: Arena<GlobalIdx, GlobalEntity>,
-    /// Stored Wasm or host functions.
-    funcs: Arena<FuncIdx, FuncEntity<T>>,
     /// Stored module instances.
     instances: Arena<InstanceIdx, InstanceEntity>,
     /// The [`Engine`] in use by the [`Store`].
     ///
     /// Amongst others the [`Engine`] stores the Wasm function definitions.
     engine: Engine,
-    /// User provided state.
-    user_state: T,
 }
 
 #[test]
@@ -94,13 +118,15 @@ impl<T> Store<T> {
     /// Creates a new store.
     pub fn new(engine: &Engine, user_state: T) -> Self {
         Self {
-            store_idx: StoreIdx::new(),
-            memories: Arena::new(),
-            tables: Arena::new(),
-            globals: Arena::new(),
+            inner: StoreInner {
+                store_idx: StoreIdx::new(),
+                memories: Arena::new(),
+                tables: Arena::new(),
+                globals: Arena::new(),
+                instances: Arena::new(),
+                engine: engine.clone(),
+            },
             funcs: Arena::new(),
-            instances: Arena::new(),
-            engine: engine.clone(),
             user_state,
         }
     }
@@ -324,6 +350,7 @@ impl<T> Store<T> {
     ) -> (&mut MemoryEntity, &mut T) {
         let entity_index = self.unwrap_index(memory.into_inner());
         let memory_entity = self
+            .inner
             .memories
             .get_mut(entity_index)
             .unwrap_or_else(|| panic!("failed to resolve stored linear memory: {entity_index:?}"));
