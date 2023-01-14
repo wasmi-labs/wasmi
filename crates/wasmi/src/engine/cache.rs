@@ -1,7 +1,6 @@
 use crate::{
     module::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
-    AsContext,
-    AsContextMut,
+    store::StoreInner,
     Func,
     Instance,
     Memory,
@@ -69,10 +68,10 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a default linear memory.
-    fn load_default_memory(&mut self, ctx: impl AsContext) -> Memory {
-        let default_memory = self
-            .instance()
-            .get_memory(ctx.as_context(), DEFAULT_MEMORY_INDEX)
+    fn load_default_memory(&mut self, ctx: &StoreInner) -> Memory {
+        let default_memory = ctx
+            .resolve_instance(self.instance())
+            .get_memory(DEFAULT_MEMORY_INDEX)
             .unwrap_or_else(|| {
                 panic!(
                     "missing default linear memory for instance: {:?}",
@@ -88,10 +87,10 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a default table.
-    fn load_default_table(&mut self, ctx: impl AsContext) -> Table {
-        let default_table = self
-            .instance()
-            .get_table(ctx.as_context(), DEFAULT_TABLE_INDEX)
+    fn load_default_table(&mut self, ctx: &StoreInner) -> Table {
+        let default_table = ctx
+            .resolve_instance(self.instance())
+            .get_table(DEFAULT_TABLE_INDEX)
             .unwrap_or_else(|| panic!("missing default table for instance: {:?}", self.instance));
         self.default_table = Some(default_table);
         default_table
@@ -102,7 +101,7 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a default linear memory.
-    pub fn default_memory(&mut self, ctx: impl AsContext) -> Memory {
+    pub fn default_memory(&mut self, ctx: &StoreInner) -> Memory {
         match self.default_memory {
             Some(default_memory) => default_memory,
             None => self.load_default_memory(ctx),
@@ -114,7 +113,7 @@ impl InstanceCache {
     /// # Note
     ///
     /// This avoids one indirection compared to using the `default_memory`.
-    pub fn default_memory_bytes(&mut self, ctx: impl AsContextMut) -> &mut CachedMemoryBytes {
+    pub fn default_memory_bytes(&mut self, ctx: &mut StoreInner) -> &mut CachedMemoryBytes {
         match self.default_memory_bytes {
             Some(ref mut cached) => cached,
             None => self.load_default_memory_bytes(ctx),
@@ -124,8 +123,8 @@ impl InstanceCache {
     /// Loads and populates the cached default memory instance.
     ///
     /// Returns an exclusive reference to the cached default memory.
-    fn load_default_memory_bytes(&mut self, ctx: impl AsContextMut) -> &mut CachedMemoryBytes {
-        let memory = self.default_memory(&ctx);
+    fn load_default_memory_bytes(&mut self, ctx: &mut StoreInner) -> &mut CachedMemoryBytes {
+        let memory = self.default_memory(ctx);
         self.default_memory_bytes = Some(CachedMemoryBytes::new(ctx, memory));
         self.default_memory_bytes
             .as_mut()
@@ -150,7 +149,7 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a default table.
-    pub fn default_table(&mut self, ctx: impl AsContext) -> Table {
+    pub fn default_table(&mut self, ctx: &StoreInner) -> Table {
         match self.default_table {
             Some(default_table) => default_table,
             None => self.load_default_table(ctx),
@@ -162,10 +161,10 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a default table.
-    fn load_func_at(&mut self, ctx: impl AsContext, index: u32) -> Func {
-        let func = self
-            .instance()
-            .get_func(ctx.as_context(), index)
+    fn load_func_at(&mut self, ctx: &StoreInner, index: u32) -> Func {
+        let func = ctx
+            .resolve_instance(self.instance())
+            .get_func(index)
             .unwrap_or_else(|| {
                 panic!(
                     "missing func at index {index} for instance: {:?}",
@@ -181,7 +180,7 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a [`Func`] at the index.
-    pub fn get_func(&mut self, ctx: impl AsContext, func_idx: u32) -> Func {
+    pub fn get_func(&mut self, ctx: &StoreInner, func_idx: u32) -> Func {
         match self.last_func {
             Some((index, func)) if index == func_idx => func,
             _ => self.load_func_at(ctx, func_idx),
@@ -194,19 +193,17 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a default table.
-    fn load_global_at(&mut self, ctx: impl AsContextMut, index: u32) -> NonNull<UntypedValue> {
-        let global = self
-            .instance()
-            .get_global(ctx.as_context(), index)
-            .map_or_else(
-                || {
-                    panic!(
-                        "missing global variable at index {index} for instance: {:?}",
-                        self.instance
-                    )
-                },
-                |g| g.get_untyped_ptr(ctx),
-            );
+    fn load_global_at(&mut self, ctx: &mut StoreInner, index: u32) -> NonNull<UntypedValue> {
+        let global = ctx
+            .resolve_instance(self.instance())
+            .get_global(index)
+            .map(|global| ctx.resolve_global_mut(global).get_untyped_ptr())
+            .unwrap_or_else(|| {
+                panic!(
+                    "missing global variable at index {index} for instance: {:?}",
+                    self.instance
+                )
+            });
         self.last_global = Some((index, global));
         global
     }
@@ -217,7 +214,7 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a [`Func`] at the index.
-    pub fn get_global(&mut self, ctx: impl AsContextMut, global_idx: u32) -> &mut UntypedValue {
+    pub fn get_global(&mut self, ctx: &mut StoreInner, global_idx: u32) -> &mut UntypedValue {
         let mut ptr = match self.last_global {
             Some((index, global)) if index == global_idx => global,
             _ => self.load_global_at(ctx, global_idx),
@@ -239,9 +236,9 @@ pub struct CachedMemoryBytes {
 impl CachedMemoryBytes {
     /// Creates a new [`CachedMemoryBytes`] from the given [`Memory`].
     #[inline]
-    pub fn new(mut ctx: impl AsContextMut, memory: Memory) -> Self {
+    pub fn new(ctx: &mut StoreInner, memory: Memory) -> Self {
         Self {
-            data: memory.data_mut(&mut ctx).into(),
+            data: ctx.resolve_memory_mut(memory).data().into(),
         }
     }
 

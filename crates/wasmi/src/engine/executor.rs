@@ -288,7 +288,8 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     /// If there exists is no linear memory for the instance.
     #[inline]
     fn default_memory(&mut self) -> Memory {
-        self.cache.default_memory(self.ctx.as_context())
+        self.cache
+            .default_memory(&self.ctx.as_context().store.inner)
     }
 
     /// Returns the default table.
@@ -298,7 +299,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     /// If there exists is no table for the instance.
     #[inline]
     fn default_table(&mut self) -> Table {
-        self.cache.default_table(self.ctx.as_context())
+        self.cache.default_table(&self.ctx.as_context().store.inner)
     }
 
     /// Returns the global variable at the given index.
@@ -307,8 +308,10 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     ///
     /// If there is no global variable at the given index.
     fn global(&mut self, global_index: GlobalIdx) -> &mut UntypedValue {
-        self.cache
-            .get_global(self.ctx.as_context_mut(), global_index.into_inner())
+        self.cache.get_global(
+            &mut self.ctx.as_context_mut().store.inner,
+            global_index.into_inner(),
+        )
     }
 
     /// Executes a generic Wasm `store[N_{s|u}]` operation.
@@ -332,7 +335,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.value_stack.try_eval_top(|address| {
             let memory = self
                 .cache
-                .default_memory_bytes(self.ctx.as_context_mut())
+                .default_memory_bytes(&mut self.ctx.as_context_mut().store.inner)
                 .data();
             let value = load_extend(memory, address, offset.into_inner())?;
             Ok(value)
@@ -359,7 +362,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         let (address, value) = self.value_stack.pop2();
         let memory = self
             .cache
-            .default_memory_bytes(self.ctx.as_context_mut())
+            .default_memory_bytes(&mut self.ctx.as_context_mut().store.inner)
             .data_mut();
         store_wrap(memory, address, offset.into_inner(), value)?;
         self.next_instr();
@@ -526,7 +529,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
         let callee = self
             .cache
-            .get_func(self.ctx.as_context_mut(), func_index.into_inner());
+            .get_func(&self.ctx.as_context().store.inner, func_index.into_inner());
         self.call_func(callee)
     }
 

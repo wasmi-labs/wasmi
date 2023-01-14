@@ -62,9 +62,9 @@ pub type Stored<Idx> = GuardedEntity<StoreIdx, Idx>;
 #[derive(Debug)]
 pub struct Store<T> {
     /// All data that is not associated to `T`.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This is re-exported to the rest of the crate since
     /// it is used directly by the engine's executor.
     pub(crate) inner: StoreInner,
