@@ -1,4 +1,5 @@
 use crate::ArenaIndex;
+use alloc::vec::Vec;
 use core::{
     fmt::{self, Debug},
     marker::PhantomData,
