@@ -366,19 +366,6 @@ impl Instance {
             .get_func(index)
     }
 
-    /// Returns the signature at the `index` if any.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `store` does not own this [`Instance`].
-    pub(crate) fn get_signature(&self, store: impl AsContext, index: u32) -> Option<DedupFuncType> {
-        store
-            .as_context()
-            .store
-            .resolve_instance(*self)
-            .get_signature(index)
-    }
-
     /// Returns the value exported to the given `name` if any.
     ///
     /// # Panics
