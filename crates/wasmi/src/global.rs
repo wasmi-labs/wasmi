@@ -292,12 +292,4 @@ impl Global {
     pub fn get(&self, ctx: impl AsContext) -> Value {
         ctx.as_context().store.resolve_global(*self).get()
     }
-
-    /// Returns a pointer to the untyped value of the global variable.
-    pub(crate) fn get_untyped_ptr(&self, mut ctx: impl AsContextMut) -> NonNull<UntypedValue> {
-        ctx.as_context_mut()
-            .store
-            .resolve_global_mut(*self)
-            .get_untyped_ptr()
-    }
 }

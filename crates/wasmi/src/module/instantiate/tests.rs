@@ -35,8 +35,8 @@ fn instantiate_from_wat(wat: &str) -> (Store<()>, Instance) {
 }
 
 fn assert_no_duplicates(store: &Store<()>, instance: Instance) {
-    assert!(instance.get_memory(store, 1).is_none());
-    assert!(instance.get_table(store, 1).is_none());
+    assert!(store.resolve_instance(instance).get_memory(1).is_none());
+    assert!(store.resolve_instance(instance).get_table(1).is_none());
 }
 
 #[test]
@@ -47,8 +47,8 @@ fn test_import_memory_and_table() {
             (import "env" "table" (table 4 funcref))
         )"#;
     let (store, instance) = instantiate_from_wat(wat);
-    assert!(instance.get_memory(&store, 0).is_some());
-    assert!(instance.get_table(&store, 0).is_some());
+    assert!(store.resolve_instance(instance).get_memory(0).is_some());
+    assert!(store.resolve_instance(instance).get_table(0).is_some());
     assert_no_duplicates(&store, instance);
 }
 
@@ -59,8 +59,8 @@ fn test_import_memory() {
             (import "env" "memory" (memory 4))
         )"#;
     let (store, instance) = instantiate_from_wat(wat);
-    assert!(instance.get_memory(&store, 0).is_some());
-    assert!(instance.get_table(&store, 0).is_none());
+    assert!(store.resolve_instance(instance).get_memory(0).is_some());
+    assert!(store.resolve_instance(instance).get_table(0).is_none());
     assert_no_duplicates(&store, instance);
 }
 
@@ -71,8 +71,8 @@ fn test_import_table() {
             (import "env" "table" (table 4 funcref))
         )"#;
     let (store, instance) = instantiate_from_wat(wat);
-    assert!(instance.get_memory(&store, 0).is_none());
-    assert!(instance.get_table(&store, 0).is_some());
+    assert!(store.resolve_instance(instance).get_memory(0).is_none());
+    assert!(store.resolve_instance(instance).get_table(0).is_some());
     assert_no_duplicates(&store, instance);
 }
 
@@ -80,8 +80,8 @@ fn test_import_table() {
 fn test_no_memory_no_table() {
     let wat = "(module)";
     let (store, instance) = instantiate_from_wat(wat);
-    assert!(instance.get_memory(&store, 0).is_none());
-    assert!(instance.get_table(&store, 0).is_none());
+    assert!(store.resolve_instance(instance).get_memory(0).is_none());
+    assert!(store.resolve_instance(instance).get_table(0).is_none());
     assert_no_duplicates(&store, instance);
 }
 
@@ -89,8 +89,8 @@ fn test_no_memory_no_table() {
 fn test_internal_memory() {
     let wat = "(module (memory 1 10) )";
     let (store, instance) = instantiate_from_wat(wat);
-    assert!(instance.get_memory(&store, 0).is_some());
-    assert!(instance.get_table(&store, 0).is_none());
+    assert!(store.resolve_instance(instance).get_memory(0).is_some());
+    assert!(store.resolve_instance(instance).get_table(0).is_none());
     assert_no_duplicates(&store, instance);
 }
 
@@ -98,7 +98,7 @@ fn test_internal_memory() {
 fn test_internal_table() {
     let wat = "(module (table 4 funcref) )";
     let (store, instance) = instantiate_from_wat(wat);
-    assert!(instance.get_memory(&store, 0).is_none());
-    assert!(instance.get_table(&store, 0).is_some());
+    assert!(store.resolve_instance(instance).get_memory(0).is_none());
+    assert!(store.resolve_instance(instance).get_table(0).is_some());
     assert_no_duplicates(&store, instance);
 }

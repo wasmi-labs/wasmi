@@ -353,45 +353,6 @@ impl Instance {
         self.0
     }
 
-    /// Returns the linear memory at the `index` if any.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `store` does not own this [`Instance`].
-    pub(crate) fn get_memory(&self, store: impl AsContext, index: u32) -> Option<Memory> {
-        store
-            .as_context()
-            .store
-            .resolve_instance(*self)
-            .get_memory(index)
-    }
-
-    /// Returns the table at the `index` if any.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `store` does not own this [`Instance`].
-    pub(crate) fn get_table(&self, store: impl AsContext, index: u32) -> Option<Table> {
-        store
-            .as_context()
-            .store
-            .resolve_instance(*self)
-            .get_table(index)
-    }
-
-    /// Returns the global variable at the `index` if any.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `store` does not own this [`Instance`].
-    pub(crate) fn get_global(&self, store: impl AsContext, index: u32) -> Option<Global> {
-        store
-            .as_context()
-            .store
-            .resolve_instance(*self)
-            .get_global(index)
-    }
-
     /// Returns the function at the `index` if any.
     ///
     /// # Panics
