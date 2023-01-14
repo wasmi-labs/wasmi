@@ -189,7 +189,7 @@ impl StoreInner {
         self.func_types
             .get(idx)
             .copied()
-            .unwrap_or_else(|| panic!("missing function type for func: {:?}", func))
+            .unwrap_or_else(|| panic!("missing function type for func: {func:?}"))
     }
 
     /// Allocates a new [`GlobalEntity`] and returns a [`Global`] reference to it.
