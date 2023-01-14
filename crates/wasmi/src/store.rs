@@ -19,7 +19,7 @@ use super::{
     TableIdx,
 };
 use core::{
-    ops::{Deref, DerefMut},
+    fmt::Debug,
     sync::atomic::{AtomicU32, Ordering},
 };
 use wasmi_arena::{Arena, ArenaIndex, GuardedEntity};
@@ -69,20 +69,6 @@ pub struct Store<T> {
     user_state: T,
 }
 
-impl<T> Deref for Store<T> {
-    type Target = StoreInner;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
-impl<T> DerefMut for Store<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
-    }
-}
-
 /// The inner store that owns all data not associated to the host state.
 #[derive(Debug)]
 pub struct StoreInner {
@@ -114,18 +100,263 @@ fn test_store_is_send_sync() {
     };
 }
 
+impl StoreInner {
+    /// Creates a new [`StoreInner`] for the given [`Engine`].
+    pub fn new(engine: &Engine) -> Self {
+        StoreInner {
+            engine: engine.clone(),
+            store_idx: StoreIdx::new(),
+            memories: Arena::new(),
+            tables: Arena::new(),
+            globals: Arena::new(),
+            instances: Arena::new(),
+        }
+    }
+
+    /// Returns the [`Engine`] that this store is associated with.
+    pub fn engine(&self) -> &Engine {
+        &self.engine
+    }
+
+    /// Allocates a new [`FuncType`] and returns a [`DedupFuncType`] reference to it.
+    ///
+    /// # Note
+    ///
+    /// This deduplicates [`FuncType`] instances that compare as equal.
+    pub fn alloc_func_type(&mut self, func_type: FuncType) -> DedupFuncType {
+        self.engine.alloc_func_type(func_type)
+    }
+
+    /// Wraps an entitiy `Idx` (index type) as a [`Stored<Idx>`] type.
+    ///
+    /// # Note
+    ///
+    /// [`Stored<Idx>`] associates an `Idx` type with the internal store index.
+    /// This way wrapped indices cannot be misused with incorrect [`Store`] instances.
+    fn wrap_stored<Idx>(&self, entity_idx: Idx) -> Stored<Idx> {
+        Stored::new(self.store_idx, entity_idx)
+    }
+
+    /// Unwraps the given [`Stored<Idx>`] reference and returns the `Idx`.
+    ///
+    /// # Panics
+    ///
+    /// If the [`Stored<Idx>`] does not originate from this [`Store`].
+    fn unwrap_stored<Idx>(&self, stored: Stored<Idx>) -> Idx
+    where
+        Idx: ArenaIndex + Debug,
+    {
+        stored.entity_index(self.store_idx).unwrap_or_else(|| {
+            panic!(
+                "entity reference ({:?}) does not belong to store {:?}",
+                stored, self.store_idx,
+            )
+        })
+    }
+
+    /// Allocates a new [`GlobalEntity`] and returns a [`Global`] reference to it.
+    pub fn alloc_global(&mut self, global: GlobalEntity) -> Global {
+        let global = self.globals.alloc(global);
+        Global::from_inner(self.wrap_stored(global))
+    }
+
+    /// Allocates a new [`TableEntity`] and returns a [`Table`] reference to it.
+    pub fn alloc_table(&mut self, table: TableEntity) -> Table {
+        let table = self.tables.alloc(table);
+        Table::from_inner(self.wrap_stored(table))
+    }
+
+    /// Allocates a new [`MemoryEntity`] and returns a [`Memory`] reference to it.
+    pub fn alloc_memory(&mut self, memory: MemoryEntity) -> Memory {
+        let memory = self.memories.alloc(memory);
+        Memory::from_inner(self.wrap_stored(memory))
+    }
+
+    /// Allocates a new uninitialized [`InstanceEntity`] and returns an [`Instance`] reference to it.
+    ///
+    /// # Note
+    ///
+    /// - This will create an uninitialized dummy [`InstanceEntity`] as a place holder
+    ///   for the returned [`Instance`]. Using this uninitialized [`Instance`] will result
+    ///   in a runtime panic.
+    /// - The returned [`Instance`] must later be initialized via the [`Store::initialize_instance`]
+    ///   method. Afterwards the [`Instance`] may be used.
+    pub fn alloc_instance(&mut self) -> Instance {
+        let instance = self.instances.alloc(InstanceEntity::uninitialized());
+        Instance::from_inner(self.wrap_stored(instance))
+    }
+
+    /// Initializes the [`Instance`] using the given [`InstanceEntity`].
+    ///
+    /// # Note
+    ///
+    /// After this operation the [`Instance`] is initialized and can be used.
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Instance`] does not belong to the [`Store`].
+    /// - If the [`Instance`] is unknown to the [`Store`].
+    /// - If the [`Instance`] has already been initialized.
+    /// - If the given [`InstanceEntity`] is itself not initialized, yet.
+    pub fn initialize_instance(&mut self, instance: Instance, init: InstanceEntity) {
+        assert!(
+            init.is_initialized(),
+            "encountered an uninitialized new instance entity: {init:?}",
+        );
+        let idx = self.unwrap_stored(instance.into_inner());
+        let uninit = self
+            .instances
+            .get_mut(idx)
+            .unwrap_or_else(|| panic!("missing entity for the given instance: {instance:?}"));
+        assert!(
+            !uninit.is_initialized(),
+            "encountered an already initialized instance: {uninit:?}",
+        );
+        *uninit = init;
+    }
+
+    /// Returns a shared reference to the entity indexed by the given `idx`.
+    ///
+    /// # Panics
+    ///
+    /// - If the indexed entity does not originate from this [`Store`].
+    /// - If the entity index cannot be resolved to its entity.
+    fn resolve<'a, Idx, Entity>(
+        &self,
+        idx: Stored<Idx>,
+        entities: &'a Arena<Idx, Entity>,
+    ) -> &'a Entity
+    where
+        Idx: ArenaIndex + Debug,
+    {
+        let idx = self.unwrap_stored(idx);
+        entities
+            .get(idx)
+            .unwrap_or_else(|| panic!("failed to resolve stored entity: {idx:?}"))
+    }
+
+    /// Returns an exclusive reference to the entity indexed by the given `idx`.
+    ///
+    /// # Note
+    ///
+    /// Due to borrow checking issues this method takes an already unwrapped
+    /// `Idx` unlike the [`StoreInner::resolve`] method.
+    ///
+    /// # Panics
+    ///
+    /// - If the entity index cannot be resolved to its entity.
+    fn resolve_mut<Idx, Entity>(idx: Idx, entities: &mut Arena<Idx, Entity>) -> &mut Entity
+    where
+        Idx: ArenaIndex + Debug,
+    {
+        entities
+            .get_mut(idx)
+            .unwrap_or_else(|| panic!("failed to resolve stored entity: {idx:?}"))
+    }
+
+    /// Returns the [`FuncType`] associated to the given [`DedupFuncType`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`DedupFuncType`] does not originate from this [`Store`].
+    /// - If the [`DedupFuncType`] cannot be resolved to its entity.
+    pub fn resolve_func_type(&self, func_type: DedupFuncType) -> FuncType {
+        self.resolve_func_type_with(func_type, FuncType::clone)
+    }
+
+    /// Calls `f` on the [`FuncType`] associated to the given [`DedupFuncType`] and returns the result.
+    ///
+    /// # Panics
+    ///
+    /// - If the [`DedupFuncType`] does not originate from this [`Store`].
+    /// - If the [`DedupFuncType`] cannot be resolved to its entity.
+    pub fn resolve_func_type_with<R>(
+        &self,
+        func_type: DedupFuncType,
+        f: impl FnOnce(&FuncType) -> R,
+    ) -> R {
+        self.engine.resolve_func_type(func_type, f)
+    }
+
+    /// Returns a shared reference to the [`GlobalEntity`] associated to the given [`Global`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Global`] does not originate from this [`Store`].
+    /// - If the [`Global`] cannot be resolved to its entity.
+    pub fn resolve_global(&self, global: Global) -> &GlobalEntity {
+        self.resolve(global.into_inner(), &self.globals)
+    }
+
+    /// Returns an exclusive reference to the [`GlobalEntity`] associated to the given [`Global`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Global`] does not originate from this [`Store`].
+    /// - If the [`Global`] cannot be resolved to its entity.
+    pub fn resolve_global_mut(&mut self, global: Global) -> &mut GlobalEntity {
+        let idx = self.unwrap_stored(global.into_inner());
+        Self::resolve_mut(idx, &mut self.globals)
+    }
+
+    /// Returns a shared reference to the [`TableEntity`] associated to the given [`Table`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Table`] does not originate from this [`Store`].
+    /// - If the [`Table`] cannot be resolved to its entity.
+    pub fn resolve_table(&self, table: Table) -> &TableEntity {
+        self.resolve(table.into_inner(), &self.tables)
+    }
+
+    /// Returns an exclusive reference to the [`TableEntity`] associated to the given [`Table`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Table`] does not originate from this [`Store`].
+    /// - If the [`Table`] cannot be resolved to its entity.
+    pub fn resolve_table_mut(&mut self, table: Table) -> &mut TableEntity {
+        let idx = self.unwrap_stored(table.into_inner());
+        Self::resolve_mut(idx, &mut self.tables)
+    }
+
+    /// Returns a shared reference to the [`MemoryEntity`] associated to the given [`Memory`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Memory`] does not originate from this [`Store`].
+    /// - If the [`Memory`] cannot be resolved to its entity.
+    pub fn resolve_memory(&self, memory: Memory) -> &MemoryEntity {
+        self.resolve(memory.into_inner(), &self.memories)
+    }
+
+    /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Memory`] does not originate from this [`Store`].
+    /// - If the [`Memory`] cannot be resolved to its entity.
+    pub fn resolve_memory_mut(&mut self, memory: Memory) -> &mut MemoryEntity {
+        let idx = self.unwrap_stored(memory.into_inner());
+        Self::resolve_mut(idx, &mut self.memories)
+    }
+
+    /// Returns a shared reference to the [`InstanceEntity`] associated to the given [`Instance`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Instance`] does not originate from this [`Store`].
+    /// - If the [`Instance`] cannot be resolved to its entity.
+    pub fn resolve_instance(&self, instance: Instance) -> &InstanceEntity {
+        self.resolve(instance.into_inner(), &self.instances)
+    }
+}
+
 impl<T> Store<T> {
     /// Creates a new store.
     pub fn new(engine: &Engine, user_state: T) -> Self {
         Self {
-            inner: StoreInner {
-                store_idx: StoreIdx::new(),
-                memories: Arena::new(),
-                tables: Arena::new(),
-                globals: Arena::new(),
-                instances: Arena::new(),
-                engine: engine.clone(),
-            },
+            inner: StoreInner::new(engine),
             funcs: Arena::new(),
             user_state,
         }
@@ -133,7 +364,7 @@ impl<T> Store<T> {
 
     /// Returns the [`Engine`] that this store is associated with.
     pub fn engine(&self) -> &Engine {
-        &self.engine
+        self.inner.engine()
     }
 
     /// Returns a shared reference to the user provided state.
@@ -151,220 +382,193 @@ impl<T> Store<T> {
         self.user_state
     }
 
-    /// Allocates a new function type to the store.
+    /// Wraps an entitiy `Idx` (index type) as a [`Stored<Idx>`] type.
+    ///
+    /// # Note
+    ///
+    /// [`Stored<Idx>`] associates an `Idx` type with the internal store index.
+    /// This way wrapped indices cannot be misused with incorrect [`Store`] instances.
+    fn wrap_stored<Idx>(&self, entity_idx: Idx) -> Stored<Idx> {
+        self.inner.wrap_stored(entity_idx)
+    }
+
+    /// Unwraps the given [`Stored<Idx>`] reference and returns the `Idx`.
+    ///
+    /// # Panics
+    ///
+    /// If the [`Stored<Idx>`] does not originate from this [`Store`].
+    fn unwrap_stored<Idx>(&self, stored: Stored<Idx>) -> Idx
+    where
+        Idx: ArenaIndex + Debug,
+    {
+        self.inner.unwrap_stored(stored)
+    }
+
+    /// Allocates a new [`FuncType`] and returns a [`DedupFuncType`] reference to it.
+    ///
+    /// # Note
+    ///
+    /// This deduplicates [`FuncType`] instances that compare as equal.
     pub(super) fn alloc_func_type(&mut self, func_type: FuncType) -> DedupFuncType {
-        self.engine.alloc_func_type(func_type)
+        self.inner.alloc_func_type(func_type)
     }
 
-    /// Allocates a new global variable to the store.
+    /// Allocates a new [`GlobalEntity`] and returns a [`Global`] reference to it.
     pub(super) fn alloc_global(&mut self, global: GlobalEntity) -> Global {
-        Global::from_inner(Stored::new(self.store_idx, self.globals.alloc(global)))
+        self.inner.alloc_global(global)
     }
 
-    /// Allocates a new table to the store.
+    /// Allocates a new [`TableEntity`] and returns a [`Table`] reference to it.
     pub(super) fn alloc_table(&mut self, table: TableEntity) -> Table {
-        Table::from_inner(Stored::new(self.store_idx, self.tables.alloc(table)))
+        self.inner.alloc_table(table)
     }
 
-    /// Allocates a new linear memory to the store.
+    /// Allocates a new [`MemoryEntity`] and returns a [`Memory`] reference to it.
     pub(super) fn alloc_memory(&mut self, memory: MemoryEntity) -> Memory {
-        Memory::from_inner(Stored::new(self.store_idx, self.memories.alloc(memory)))
+        self.inner.alloc_memory(memory)
     }
 
-    /// Allocates a new Wasm or host function to the store.
+    /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.
     pub(super) fn alloc_func(&mut self, func: FuncEntity<T>) -> Func {
-        Func::from_inner(Stored::new(self.store_idx, self.funcs.alloc(func)))
+        let func = self.funcs.alloc(func);
+        Func::from_inner(self.wrap_stored(func))
     }
 
-    /// Allocates a new [`Instance`] to the store.
+    /// Allocates a new uninitialized [`InstanceEntity`] and returns an [`Instance`] reference to it.
     ///
     /// # Note
     ///
-    /// The resulting uninitialized [`Instance`] can be used to initialize [`Instance`] entities
-    /// that require an [`Instance`] handle upon construction such as [`Func`].
-    /// Using the [`Instance`] before fully initializing it using [`Store::initialize_instance`]
-    /// will cause an execution panic.
+    /// - This will create an uninitialized dummy [`InstanceEntity`] as a place holder
+    ///   for the returned [`Instance`]. Using this uninitialized [`Instance`] will result
+    ///   in a runtime panic.
+    /// - The returned [`Instance`] must later be initialized via the [`Store::initialize_instance`]
+    ///   method. Afterwards the [`Instance`] may be used.
     pub(super) fn alloc_instance(&mut self) -> Instance {
-        Instance::from_inner(Stored::new(
-            self.store_idx,
-            self.instances.alloc(InstanceEntity::uninitialized()),
-        ))
+        self.inner.alloc_instance()
     }
 
-    /// Fully initializes the [`Instance`].
+    /// Initializes the [`Instance`] using the given [`InstanceEntity`].
     ///
     /// # Note
     ///
-    /// After this operation the [`Instance`] can be used.
+    /// After this operation the [`Instance`] is initialized and can be used.
     ///
     /// # Panics
     ///
     /// - If the [`Instance`] does not belong to the [`Store`].
     /// - If the [`Instance`] is unknown to the [`Store`].
-    /// - If the [`Instance`] already has been fully initialized.
-    pub(super) fn initialize_instance(&mut self, instance: Instance, initialized: InstanceEntity) {
-        let entity_index = self.unwrap_index(instance.into_inner());
-        let entity = self.instances.get_mut(entity_index).unwrap_or_else(|| {
-            panic!("the store has no reference to the given instance: {instance:?}")
-        });
-        assert!(
-            !entity.is_initialized(),
-            "encountered an already initialized instance: {entity:?}",
-        );
-        assert!(
-            initialized.is_initialized(),
-            "encountered an uninitialized new instance entity: {initialized:?}",
-        );
-        *entity = initialized;
+    /// - If the [`Instance`] has already been initialized.
+    /// - If the given [`InstanceEntity`] is itself not initialized, yet.
+    pub(super) fn initialize_instance(&mut self, instance: Instance, init: InstanceEntity) {
+        self.inner.initialize_instance(instance, init)
     }
 
-    /// Unpacks and checks the stored entity index.
+    /// Returns the [`FuncType`] associated to the given [`DedupFuncType`].
     ///
     /// # Panics
     ///
-    /// If the stored entity does not originate from this store.
-    fn unwrap_index<Idx>(&self, stored: Stored<Idx>) -> Idx
-    where
-        Idx: ArenaIndex,
-    {
-        stored.entity_index(self.store_idx).unwrap_or_else(|| {
-            panic!(
-                "encountered foreign entity in store: {}",
-                self.store_idx.into_usize()
-            )
-        })
-    }
-
-    /// Returns a shared reference to the associated entity of the signature.
-    ///
-    /// # Panics
-    ///
-    /// - If the deduplicated function type does not originate from this store.
-    /// - If the deduplicated function type cannot be resolved to its entity.
+    /// - If the [`DedupFuncType`] does not originate from this [`Store`].
+    /// - If the [`DedupFuncType`] cannot be resolved to its entity.
     pub(super) fn resolve_func_type(&self, func_type: DedupFuncType) -> FuncType {
-        self.resolve_func_type_with(func_type, FuncType::clone)
+        self.inner.resolve_func_type(func_type)
     }
 
-    /// Returns a shared reference to the associated entity of the signature.
+    /// Calls `f` on the [`FuncType`] associated to the given [`DedupFuncType`] and returns the result.
     ///
     /// # Panics
     ///
-    /// - If the deduplicated function type does not originate from this store.
-    /// - If the deduplicated function type cannot be resolved to its entity.
+    /// - If the [`DedupFuncType`] does not originate from this [`Store`].
+    /// - If the [`DedupFuncType`] cannot be resolved to its entity.
     pub(super) fn resolve_func_type_with<R>(
         &self,
         func_type: DedupFuncType,
         f: impl FnOnce(&FuncType) -> R,
     ) -> R {
-        self.engine.resolve_func_type(func_type, f)
+        self.inner.resolve_func_type_with(func_type, f)
     }
 
-    /// Returns a shared reference to the associated entity of the global variable.
+    /// Returns a shared reference to the [`GlobalEntity`] associated to the given [`Global`].
     ///
     /// # Panics
     ///
-    /// - If the global variable does not originate from this store.
-    /// - If the global variable cannot be resolved to its entity.
+    /// - If the [`Global`] does not originate from this [`Store`].
+    /// - If the [`Global`] cannot be resolved to its entity.
     pub(super) fn resolve_global(&self, global: Global) -> &GlobalEntity {
-        let entity_index = self.unwrap_index(global.into_inner());
-        self.globals
-            .get(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored global variable: {entity_index:?}"))
+        self.inner.resolve_global(global)
     }
 
-    /// Returns an exclusive reference to the associated entity of the global variable.
+    /// Returns an exclusive reference to the [`GlobalEntity`] associated to the given [`Global`].
     ///
     /// # Panics
     ///
-    /// - If the global variable does not originate from this store.
-    /// - If the global variable cannot be resolved to its entity.
+    /// - If the [`Global`] does not originate from this [`Store`].
+    /// - If the [`Global`] cannot be resolved to its entity.
     pub(super) fn resolve_global_mut(&mut self, global: Global) -> &mut GlobalEntity {
-        let entity_index = self.unwrap_index(global.into_inner());
-        self.globals
-            .get_mut(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored global variable: {entity_index:?}"))
+        self.inner.resolve_global_mut(global)
     }
 
-    /// Returns a shared reference to the associated entity of the table.
+    /// Returns a shared reference to the [`TableEntity`] associated to the given [`Table`].
     ///
     /// # Panics
     ///
-    /// - If the table does not originate from this store.
-    /// - If the table cannot be resolved to its entity.
+    /// - If the [`Table`] does not originate from this [`Store`].
+    /// - If the [`Table`] cannot be resolved to its entity.
     pub(super) fn resolve_table(&self, table: Table) -> &TableEntity {
-        let entity_index = self.unwrap_index(table.into_inner());
-        self.tables
-            .get(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored table: {entity_index:?}"))
+        self.inner.resolve_table(table)
     }
 
-    /// Returns an exclusive reference to the associated entity of the table.
+    /// Returns an exclusive reference to the [`TableEntity`] associated to the given [`Table`].
     ///
     /// # Panics
     ///
-    /// - If the table does not originate from this store.
-    /// - If the table cannot be resolved to its entity.
+    /// - If the [`Table`] does not originate from this [`Store`].
+    /// - If the [`Table`] cannot be resolved to its entity.
     pub(super) fn resolve_table_mut(&mut self, table: Table) -> &mut TableEntity {
-        let entity_index = self.unwrap_index(table.into_inner());
-        self.tables
-            .get_mut(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored table: {entity_index:?}"))
+        self.inner.resolve_table_mut(table)
     }
 
-    /// Returns a shared reference to the associated entity of the linear memory.
+    /// Returns a shared reference to the [`MemoryEntity`] associated to the given [`Memory`].
     ///
     /// # Panics
     ///
-    /// - If the linear memory does not originate from this store.
-    /// - If the linear memory cannot be resolved to its entity.
+    /// - If the [`Memory`] does not originate from this [`Store`].
+    /// - If the [`Memory`] cannot be resolved to its entity.
     pub(super) fn resolve_memory(&self, memory: Memory) -> &MemoryEntity {
-        let entity_index = self.unwrap_index(memory.into_inner());
-        self.memories
-            .get(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored linear memory: {entity_index:?}"))
+        self.inner.resolve_memory(memory)
     }
 
-    /// Returns an exclusive reference to the associated entity of the linear memory.
+    /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
     ///
     /// # Panics
     ///
-    /// - If the linear memory does not originate from this store.
-    /// - If the linear memory cannot be resolved to its entity.
+    /// - If the [`Memory`] does not originate from this [`Store`].
+    /// - If the [`Memory`] cannot be resolved to its entity.
     pub(super) fn resolve_memory_mut(&mut self, memory: Memory) -> &mut MemoryEntity {
-        let entity_index = self.unwrap_index(memory.into_inner());
-        self.memories
-            .get_mut(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored linear memory: {entity_index:?}"))
+        self.inner.resolve_memory_mut(memory)
     }
 
-    /// Returns an exclusive reference to the associated entity of the linear memory and an
-    /// exclusive reference to the user provided state.
+    /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`]
+    /// and an exclusive reference to the user provided host state.
     ///
     /// # Panics
     ///
-    /// - If the linear memory does not originate from this store.
-    /// - If the linear memory cannot be resolved to its entity.
+    /// - If the [`Memory`] does not originate from this [`Store`].
+    /// - If the [`Memory`] cannot be resolved to its entity.
     pub(super) fn resolve_memory_and_state_mut(
         &mut self,
         memory: Memory,
     ) -> (&mut MemoryEntity, &mut T) {
-        let entity_index = self.unwrap_index(memory.into_inner());
-        let memory_entity = self
-            .inner
-            .memories
-            .get_mut(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored linear memory: {entity_index:?}"));
-        (memory_entity, &mut self.user_state)
+        (self.inner.resolve_memory_mut(memory), &mut self.user_state)
     }
 
     /// Returns a shared reference to the associated entity of the Wasm or host function.
     ///
     /// # Panics
     ///
-    /// - If the Wasm or host function does not originate from this store.
-    /// - If the Wasm or host function cannot be resolved to its entity.
+    /// - If the [`Func`] does not originate from this [`Store`].
+    /// - If the [`Func`] cannot be resolved to its entity.
     pub(super) fn resolve_func(&self, func: Func) -> &FuncEntity<T> {
-        let entity_index = self.unwrap_index(func.into_inner());
+        let entity_index = self.unwrap_stored(func.into_inner());
         self.funcs.get(entity_index).unwrap_or_else(|| {
             panic!("failed to resolve stored Wasm or host function: {entity_index:?}")
         })
@@ -374,13 +578,10 @@ impl<T> Store<T> {
     ///
     /// # Panics
     ///
-    /// - If the Wasm or host function does not originate from this store.
-    /// - If the Wasm or host function cannot be resolved to its entity.
+    /// - If the [`Instance`] does not originate from this [`Store`].
+    /// - If the [`Instance`] cannot be resolved to its entity.
     pub(super) fn resolve_instance(&self, instance: Instance) -> &InstanceEntity {
-        let entity_index = self.unwrap_index(instance.into_inner());
-        self.instances
-            .get(entity_index)
-            .unwrap_or_else(|| panic!("failed to resolve stored module instance: {entity_index:?}"))
+        self.inner.resolve_instance(instance)
     }
 }
 
