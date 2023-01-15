@@ -25,7 +25,6 @@ where
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ComponentVec")
             .field("components", &DebugComponents(&self.components))
-            .field("marker", &self.marker)
             .finish()
     }
 }
@@ -148,5 +147,78 @@ where
     fn index_mut(&mut self, index: Idx) -> &mut Self::Output {
         self.get_mut(index)
             .unwrap_or_else(|| panic!("missing component at index: {}", index.into_usize()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Add `n` components and perform checks along the way.
+    fn add_components(vec: &mut ComponentVec<usize, String>, n: usize) {
+        for i in 0..n {
+            let mut str = format!("{i}");
+            assert!(vec.get(i).is_none());
+            assert!(vec.get_mut(i).is_none());
+            assert!(vec.set(i, str.clone()).is_none());
+            assert_eq!(vec.get(i), Some(&str));
+            assert_eq!(vec.get_mut(i), Some(&mut str));
+            assert_eq!(&vec[i], &str);
+            assert_eq!(&mut vec[i], &mut str);
+        }
+    }
+
+    #[test]
+    fn it_works() {
+        let mut vec = <ComponentVec<usize, String>>::new();
+        let n = 10;
+        add_components(&mut vec, n);
+        // Remove components in reverse order for fun.
+        // Check if components have been removed properly.
+        for i in (0..n).rev() {
+            let str = format!("{i}");
+            assert_eq!(vec.unset(i), Some(str));
+            assert!(vec.get(i).is_none());
+            assert!(vec.get_mut(i).is_none());
+        }
+    }
+
+    #[test]
+    fn clear_works() {
+        let mut vec = <ComponentVec<usize, String>>::new();
+        let n = 10;
+        add_components(&mut vec, n);
+        // Clear component vec and check if components have been removed properly.
+        vec.clear();
+        for i in 0..n {
+            assert!(vec.get(i).is_none());
+            assert!(vec.get_mut(i).is_none());
+        }
+    }
+
+    #[test]
+    fn debug_works() {
+        let mut vec = <ComponentVec<usize, String>>::new();
+        add_components(&mut vec, 4);
+        {
+            let debug_str = format!("{vec:?}");
+            let expected_str = "\
+                ComponentVec { components: {0: \"0\", 1: \"1\", 2: \"2\", 3: \"3\"} }\
+            ";
+            assert_eq!(debug_str, expected_str);
+        }
+        {
+            let debug_str = format!("{vec:#?}");
+            let expected_str = "\
+                ComponentVec {\n    \
+                    components: {\n        \
+                        0: \"0\",\n        \
+                        1: \"1\",\n        \
+                        2: \"2\",\n        \
+                        3: \"3\",\n    \
+                    },\n}\
+            ";
+            assert_eq!(debug_str, expected_str);
+        }
     }
 }
