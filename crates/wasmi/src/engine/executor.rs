@@ -4,13 +4,12 @@ use super::{
     cache::InstanceCache,
     code_map::InstructionPtr,
     stack::ValueStackRef,
-    AsContextMut,
     CallOutcome,
     DropKeep,
     FuncFrame,
     ValueStack,
 };
-use crate::{core::TrapCode, AsContext, Func, StoreContextMut};
+use crate::{core::TrapCode, Func, StoreInner};
 use core::cmp;
 use wasmi_core::{Pages, UntypedValue};
 
@@ -26,12 +25,12 @@ use wasmi_core::{Pages, UntypedValue};
 /// - If the execution of the function `frame` trapped.
 #[inline(always)]
 pub fn execute_frame<'engine>(
-    mut ctx: impl AsContextMut,
+    ctx: &mut StoreInner,
     value_stack: &'engine mut ValueStack,
     cache: &'engine mut InstanceCache,
     frame: &mut FuncFrame,
 ) -> Result<CallOutcome, TrapCode> {
-    Executor::new(value_stack, ctx.as_context_mut(), cache, frame).execute()
+    Executor::new(value_stack, ctx, cache, frame).execute()
 }
 
 /// The function signature of Wasm load operations.
@@ -48,27 +47,27 @@ type WasmStoreOp = fn(
 
 /// An execution context for executing a `wasmi` function frame.
 #[derive(Debug)]
-struct Executor<'ctx, 'engine, 'func, HostData> {
+struct Executor<'ctx, 'engine, 'func> {
     /// The pointer to the currently executed instruction.
     ip: InstructionPtr,
     /// Stores the value stack of live values on the Wasm stack.
     value_stack: ValueStackRef<'engine>,
-    /// A mutable [`Store`] context.
+    /// A mutable [`StoreInner`] context.
     ///
-    /// [`Store`]: [`crate::Store`]
-    ctx: StoreContextMut<'ctx, HostData>,
+    /// [`StoreInner`]: [`crate::StoreInner`]
+    ctx: &'ctx mut StoreInner,
     /// Stores frequently used instance related data.
     cache: &'engine mut InstanceCache,
     /// The function frame that is being executed.
     frame: &'func mut FuncFrame,
 }
 
-impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
+impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// Creates a new [`Executor`] for executing a `wasmi` function frame.
     #[inline(always)]
     pub fn new(
         value_stack: &'engine mut ValueStack,
-        ctx: StoreContextMut<'ctx, HostData>,
+        ctx: &'ctx mut StoreInner,
         cache: &'engine mut InstanceCache,
         frame: &'func mut FuncFrame,
     ) -> Self {
@@ -288,7 +287,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     /// If there exists is no linear memory for the instance.
     #[inline]
     fn default_memory(&mut self) -> Memory {
-        self.cache.default_memory(self.ctx.as_context())
+        self.cache.default_memory(self.ctx)
     }
 
     /// Returns the default table.
@@ -298,7 +297,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     /// If there exists is no table for the instance.
     #[inline]
     fn default_table(&mut self) -> Table {
-        self.cache.default_table(self.ctx.as_context())
+        self.cache.default_table(self.ctx)
     }
 
     /// Returns the global variable at the given index.
@@ -307,8 +306,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     ///
     /// If there is no global variable at the given index.
     fn global(&mut self, global_index: GlobalIdx) -> &mut UntypedValue {
-        self.cache
-            .get_global(self.ctx.as_context_mut(), global_index.into_inner())
+        self.cache.get_global(self.ctx, global_index.into_inner())
     }
 
     /// Executes a generic Wasm `store[N_{s|u}]` operation.
@@ -330,10 +328,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         load_extend: WasmLoadOp,
     ) -> Result<(), TrapCode> {
         self.value_stack.try_eval_top(|address| {
-            let memory = self
-                .cache
-                .default_memory_bytes(self.ctx.as_context_mut())
-                .data();
+            let memory = self.cache.default_memory_bytes(self.ctx).data();
             let value = load_extend(memory, address, offset.into_inner())?;
             Ok(value)
         })?;
@@ -357,10 +352,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         store_wrap: WasmStoreOp,
     ) -> Result<(), TrapCode> {
         let (address, value) = self.value_stack.pop2();
-        let memory = self
-            .cache
-            .default_memory_bytes(self.ctx.as_context_mut())
-            .data_mut();
+        let memory = self.cache.default_memory_bytes(self.ctx).data_mut();
         store_wrap(memory, address, offset.into_inner(), value)?;
         self.next_instr();
         Ok(())
@@ -438,7 +430,7 @@ pub enum MaybeReturn {
     Continue,
 }
 
-impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
+impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     fn visit_unreachable(&mut self) -> Result<(), TrapCode> {
         Err(TrapCode::UnreachableCodeReached).map_err(Into::into)
     }
@@ -524,9 +516,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     }
 
     fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
-        let callee = self
-            .cache
-            .get_func(self.ctx.as_context_mut(), func_index.into_inner());
+        let callee = self.cache.get_func(self.ctx, func_index.into_inner());
         self.call_func(callee)
     }
 
@@ -536,15 +526,17 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     ) -> Result<CallOutcome, TrapCode> {
         let func_index: u32 = self.value_stack.pop_as();
         let table = self.default_table();
-        let func = table
-            .get(self.ctx.as_context(), func_index as usize)
+        let func = self
+            .ctx
+            .resolve_table(table)
+            .get(func_index as usize)
             .map_err(|_| TrapCode::TableOutOfBounds)?
             .ok_or(TrapCode::IndirectCallToNull)?;
-        let actual_signature = func.signature(self.ctx.as_context());
+        let actual_signature = self.ctx.get_func_type(func);
         let expected_signature = self
-            .frame
-            .instance()
-            .get_signature(self.ctx.as_context(), signature_index.into_inner())
+            .ctx
+            .resolve_instance(self.frame.instance())
+            .get_signature(signature_index.into_inner())
             .unwrap_or_else(|| {
                 panic!("missing signature for call_indirect at index: {signature_index:?}")
             });
@@ -578,7 +570,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
 
     fn visit_current_memory(&mut self) {
         let memory = self.default_memory();
-        let result: u32 = memory.current_pages(self.ctx.as_context()).into();
+        let result: u32 = self.ctx.resolve_memory(memory).current_pages().into();
         self.value_stack.push(result);
         self.next_instr()
     }
@@ -589,8 +581,9 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         const ERR_VALUE: u32 = u32::MAX;
         let memory = self.default_memory();
         let result = Pages::new(self.value_stack.pop_as()).map_or(ERR_VALUE, |additional| {
-            memory
-                .grow(self.ctx.as_context_mut(), additional)
+            self.ctx
+                .resolve_memory_mut(memory)
+                .grow(additional)
                 .map(u32::from)
                 .unwrap_or(ERR_VALUE)
         });

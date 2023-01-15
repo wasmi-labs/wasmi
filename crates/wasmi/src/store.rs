@@ -22,7 +22,7 @@ use core::{
     fmt::Debug,
     sync::atomic::{AtomicU32, Ordering},
 };
-use wasmi_arena::{Arena, ArenaIndex, GuardedEntity};
+use wasmi_arena::{Arena, ArenaIndex, ComponentVec, GuardedEntity};
 
 /// A unique store index.
 ///
@@ -62,7 +62,12 @@ pub type Stored<Idx> = GuardedEntity<StoreIdx, Idx>;
 #[derive(Debug)]
 pub struct Store<T> {
     /// All data that is not associated to `T`.
-    inner: StoreInner,
+    ///
+    /// # Note
+    ///
+    /// This is re-exported to the rest of the crate since
+    /// it is used directly by the engine's executor.
+    pub(crate) inner: StoreInner,
     /// Stored Wasm or host functions.
     funcs: Arena<FuncIdx, FuncEntity<T>>,
     /// User provided state.
@@ -76,6 +81,13 @@ pub struct StoreInner {
     ///
     /// Used to protect against invalid entity indices.
     store_idx: StoreIdx,
+    /// Stores the function type for each function.
+    ///
+    /// # Note
+    ///
+    /// This is required so that the [`Engine`] can work entirely
+    /// with a `&mut StoreInner` reference.
+    func_types: ComponentVec<FuncIdx, DedupFuncType>,
     /// Stored linear memories.
     memories: Arena<MemoryIdx, MemoryEntity>,
     /// Stored tables.
@@ -106,6 +118,7 @@ impl StoreInner {
         StoreInner {
             engine: engine.clone(),
             store_idx: StoreIdx::new(),
+            func_types: ComponentVec::new(),
             memories: Arena::new(),
             tables: Arena::new(),
             globals: Arena::new(),
@@ -152,6 +165,31 @@ impl StoreInner {
                 stored, self.store_idx,
             )
         })
+    }
+
+    /// Registers the `func_type` for the given `func`.
+    ///
+    /// # Note
+    ///
+    /// This is required so that the [`Engine`] can work entirely
+    /// with a `&mut StoreInner` reference.
+    pub fn register_func_type(&mut self, func: Func, func_type: DedupFuncType) {
+        let idx = self.unwrap_stored(func.into_inner());
+        let previous = self.func_types.set(idx, func_type);
+        debug_assert!(previous.is_none());
+    }
+
+    /// Returns the [`DedupFuncType`] for the given [`Func`].
+    ///
+    /// # Note
+    ///
+    /// Panics if no [`DedupFuncType`] for the given [`Func`] was registered.
+    pub fn get_func_type(&self, func: Func) -> DedupFuncType {
+        let idx = self.unwrap_stored(func.into_inner());
+        self.func_types
+            .get(idx)
+            .copied()
+            .unwrap_or_else(|| panic!("missing function type for func: {func:?}"))
     }
 
     /// Allocates a new [`GlobalEntity`] and returns a [`Global`] reference to it.
@@ -430,8 +468,11 @@ impl<T> Store<T> {
 
     /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.
     pub(super) fn alloc_func(&mut self, func: FuncEntity<T>) -> Func {
-        let func = self.funcs.alloc(func);
-        Func::from_inner(self.wrap_stored(func))
+        let func_type = func.signature();
+        let idx = self.funcs.alloc(func);
+        let func = Func::from_inner(self.wrap_stored(idx));
+        self.inner.register_func_type(func, func_type);
+        func
     }
 
     /// Allocates a new uninitialized [`InstanceEntity`] and returns an [`Instance`] reference to it.

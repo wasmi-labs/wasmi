@@ -714,7 +714,7 @@ impl<'engine> EngineExecutor<'engine> {
     #[inline(always)]
     fn execute_frame(
         &mut self,
-        ctx: impl AsContextMut,
+        mut ctx: impl AsContextMut,
         frame: &mut FuncFrame,
         cache: &mut InstanceCache,
     ) -> Result<CallOutcome, Trap> {
@@ -729,6 +729,12 @@ impl<'engine> EngineExecutor<'engine> {
         }
 
         let value_stack = &mut self.stack.values;
-        execute_frame(ctx, value_stack, cache, frame).map_err(make_trap)
+        execute_frame(
+            &mut ctx.as_context_mut().store.inner,
+            value_stack,
+            cache,
+            frame,
+        )
+        .map_err(make_trap)
     }
 }

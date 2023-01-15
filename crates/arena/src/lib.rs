@@ -22,13 +22,14 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std as alloc;
 
+mod component_vec;
 mod dedup;
 mod guarded;
 
 #[cfg(test)]
 mod tests;
 
-pub use self::{dedup::DedupArena, guarded::GuardedEntity};
+pub use self::{component_vec::ComponentVec, dedup::DedupArena, guarded::GuardedEntity};
 use alloc::vec::Vec;
 use core::{
     iter::{DoubleEndedIterator, Enumerate, ExactSizeIterator},

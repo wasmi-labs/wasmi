@@ -1,0 +1,152 @@
+use crate::ArenaIndex;
+use alloc::vec::Vec;
+use core::{
+    fmt::{self, Debug},
+    marker::PhantomData,
+    ops::{Index, IndexMut},
+};
+
+/// Stores components for entities backed by a [`Vec`].
+pub struct ComponentVec<Idx, T> {
+    components: Vec<Option<T>>,
+    marker: PhantomData<fn() -> Idx>,
+}
+
+/// [`ComponentVec`] does not store `Idx` therefore it is `Send` without its bound.
+unsafe impl<Idx, T> Send for ComponentVec<Idx, T> where T: Send {}
+
+/// [`ComponentVec`] does not store `Idx` therefore it is `Sync` without its bound.
+unsafe impl<Idx, T> Sync for ComponentVec<Idx, T> where T: Send {}
+
+impl<Idx, T> Debug for ComponentVec<Idx, T>
+where
+    T: Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ComponentVec")
+            .field("components", &DebugComponents(&self.components))
+            .field("marker", &self.marker)
+            .finish()
+    }
+}
+
+struct DebugComponents<'a, T>(&'a [Option<T>]);
+
+impl<'a, T> Debug for DebugComponents<'a, T>
+where
+    T: Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut map = f.debug_map();
+        let components = self
+            .0
+            .iter()
+            .enumerate()
+            .filter_map(|(n, component)| component.as_ref().map(|c| (n, c)));
+        for (idx, component) in components {
+            map.entry(&idx, component);
+        }
+        map.finish()
+    }
+}
+
+impl<Idx, T> Default for ComponentVec<Idx, T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<Idx, T> PartialEq for ComponentVec<Idx, T>
+where
+    T: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.components.eq(&other.components)
+    }
+}
+
+impl<Idx, T> Eq for ComponentVec<Idx, T> where T: Eq {}
+
+impl<Idx, T> ComponentVec<Idx, T> {
+    /// Creates a new empty [`ComponentVec`].
+    pub fn new() -> Self {
+        Self {
+            components: Vec::new(),
+            marker: PhantomData,
+        }
+    }
+
+    /// Clears all components from the [`ComponentVec`].
+    pub fn clear(&mut self) {
+        self.components.clear();
+    }
+}
+
+impl<Idx, T> ComponentVec<Idx, T>
+where
+    Idx: ArenaIndex,
+{
+    /// Sets the `component` for the entity at `index`.
+    ///
+    /// Returns the old component of the same entity if any.
+    pub fn set(&mut self, index: Idx, component: T) -> Option<T> {
+        let index = index.into_usize();
+        if index >= self.components.len() {
+            // The underlying vector does not have enough capacity
+            // and is required to be enlarged.
+            self.components.resize_with(index + 1, || None);
+        }
+        self.components[index].replace(component)
+    }
+
+    /// Unsets the component for the entity at `index` and returns it if any.
+    pub fn unset(&mut self, index: Idx) -> Option<T> {
+        self.components
+            .get_mut(index.into_usize())
+            .and_then(Option::take)
+    }
+
+    /// Returns a shared reference to the component at the `index` if any.
+    ///
+    /// Returns `None` if no component is stored under the `index`.
+    #[inline]
+    pub fn get(&self, index: Idx) -> Option<&T> {
+        self.components
+            .get(index.into_usize())
+            .and_then(Option::as_ref)
+    }
+
+    /// Returns an exclusive reference to the component at the `index` if any.
+    ///
+    /// Returns `None` if no component is stored under the `index`.
+    #[inline]
+    pub fn get_mut(&mut self, index: Idx) -> Option<&mut T> {
+        self.components
+            .get_mut(index.into_usize())
+            .and_then(Option::as_mut)
+    }
+}
+
+impl<Idx, T> Index<Idx> for ComponentVec<Idx, T>
+where
+    Idx: ArenaIndex,
+{
+    type Output = T;
+
+    #[inline]
+    fn index(&self, index: Idx) -> &Self::Output {
+        self.get(index)
+            .unwrap_or_else(|| panic!("missing component at index: {}", index.into_usize()))
+    }
+}
+
+impl<Idx, T> IndexMut<Idx> for ComponentVec<Idx, T>
+where
+    Idx: ArenaIndex,
+{
+    #[inline]
+    fn index_mut(&mut self, index: Idx) -> &mut Self::Output {
+        self.get_mut(index)
+            .unwrap_or_else(|| panic!("missing component at index: {}", index.into_usize()))
+    }
+}

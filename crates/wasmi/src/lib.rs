@@ -158,6 +158,6 @@ use self::{
     global::{GlobalEntity, GlobalIdx},
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
     memory::{MemoryEntity, MemoryIdx},
-    store::Stored,
+    store::{StoreInner, Stored},
     table::{TableEntity, TableIdx},
 };
