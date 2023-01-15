@@ -101,6 +101,7 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a default linear memory.
+    #[inline]
     pub fn default_memory(&mut self, ctx: &StoreInner) -> Memory {
         match self.default_memory {
             Some(default_memory) => default_memory,
@@ -113,6 +114,7 @@ impl InstanceCache {
     /// # Note
     ///
     /// This avoids one indirection compared to using the `default_memory`.
+    #[inline]
     pub fn default_memory_bytes(&mut self, ctx: &mut StoreInner) -> &mut CachedMemoryBytes {
         match self.default_memory_bytes {
             Some(ref mut cached) => cached,
@@ -140,6 +142,7 @@ impl InstanceCache {
     /// - Conservatively it is also recommended to reset default memory bytes
     ///   when calling a host function since that might invalidate linear memory
     ///   without the Wasm engine knowing.
+    #[inline]
     pub fn reset_default_memory_bytes(&mut self) {
         self.default_memory_bytes = None;
     }
@@ -149,6 +152,7 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a default table.
+    #[inline]
     pub fn default_table(&mut self, ctx: &StoreInner) -> Table {
         match self.default_table {
             Some(default_table) => default_table,
@@ -180,6 +184,7 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a [`Func`] at the index.
+    #[inline]
     pub fn get_func(&mut self, ctx: &StoreInner, func_idx: u32) -> Func {
         match self.last_func {
             Some((index, func)) if index == func_idx => func,
@@ -214,6 +219,7 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a [`Func`] at the index.
+    #[inline]
     pub fn get_global(&mut self, ctx: &mut StoreInner, global_idx: u32) -> &mut UntypedValue {
         let mut ptr = match self.last_global {
             Some((index, global)) if index == global_idx => global,
