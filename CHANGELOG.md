@@ -8,6 +8,40 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.22.0`] - 2023-01-16
+
+### Added
+
+- Add missing `TypedFunc::call_resumable` API. (https://github.com/paritytech/wasmi/pull/605)
+  - So far resumable calls were only available for the `Func` type.
+    However, there was no technical reason why it was not implemented
+    for `TypedFunc` so this mirrored API now exists.
+  - This also cleans up rough edges with the `Func::call_resumable` API.
+
+### Fixed
+
+### Changed
+
+- Clean up the `wasmi_core` crate API.
+  - This removes plenty of traits from the public interface of the crate
+    which greatly simplifies the API surface for users.
+  - The `UntypedValue` type gained some new methods to replace functionality
+    that was provided in parts by the removed traits.
+  - The following PRs have been implemented for this work item:
+      - https://github.com/paritytech/wasmi/pull/607,\
+      - https://github.com/paritytech/wasmi/pull/609,\
+      - https://github.com/paritytech/wasmi/pull/609
+- The `wasmi` crate now follows the Wasmtime API a bit more closely. (https://github.com/paritytech/wasmi/pull/613)
+
+### Internal
+
+- The `Store` and `Engine` types are better decoupled from their generic parts.
+  - This might reduce binary bloat and may has positive effects on the performance.
+    In fact we measured significant performance improvements on the Wasm target.
+  - The following PRs have been implemented for this work item:
+    - https://github.com/paritytech/wasmi/pull/610
+    - https://github.com/paritytech/wasmi/pull/611
+
 ## [0.21.0] - 2023-01-04
 
 ### Added
