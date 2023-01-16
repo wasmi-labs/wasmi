@@ -1,6 +1,6 @@
 [package]
 name = "wasmi_arena"
-version = "0.2.0"
+version = "0.3.0"
 documentation = "https://docs.rs/wasmi_arena/"
 description = "Entity arena data structures for wasmi"
 exclude = ["tests/*", "benches/*"]
