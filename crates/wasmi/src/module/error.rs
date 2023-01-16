@@ -7,6 +7,7 @@ use core::{
 };
 use wasmparser::BinaryReaderError as ParserError;
 
+/// Errors that may occur upon reading, parsing and translating Wasm modules.
 #[derive(Debug)]
 pub enum ModuleError {
     /// Encountered when there is a problem with the Wasm input stream.
