@@ -415,8 +415,8 @@ impl<T> Store<T> {
         &mut self.data
     }
 
-    /// Consumes `self` and returns its user provided state.
-    pub fn into_state(self) -> T {
+    /// Consumes `self` and returns its user provided data.
+    pub fn into_data(self) -> T {
         self.data
     }
 
