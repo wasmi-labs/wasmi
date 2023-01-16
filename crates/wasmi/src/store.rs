@@ -70,8 +70,8 @@ pub struct Store<T> {
     pub(crate) inner: StoreInner,
     /// Stored Wasm or host functions.
     funcs: Arena<FuncIdx, FuncEntity<T>>,
-    /// User provided state.
-    user_state: T,
+    /// User provided host data owned by the [`Store`].
+    data: T,
 }
 
 /// The inner store that owns all data not associated to the host state.
@@ -392,11 +392,11 @@ impl StoreInner {
 
 impl<T> Store<T> {
     /// Creates a new store.
-    pub fn new(engine: &Engine, user_state: T) -> Self {
+    pub fn new(engine: &Engine, data: T) -> Self {
         Self {
             inner: StoreInner::new(engine),
             funcs: Arena::new(),
-            user_state,
+            data,
         }
     }
 
@@ -405,19 +405,19 @@ impl<T> Store<T> {
         self.inner.engine()
     }
 
-    /// Returns a shared reference to the user provided state.
-    pub fn state(&self) -> &T {
-        &self.user_state
+    /// Returns a shared reference to the user provided data owned by this [`Store`].
+    pub fn data(&self) -> &T {
+        &self.data
     }
 
-    /// Returns a shared reference to the user provided state.
-    pub fn state_mut(&mut self) -> &mut T {
-        &mut self.user_state
+    /// Returns an exclusive reference to the user provided data owned by this [`Store`].
+    pub fn data_mut(&mut self) -> &mut T {
+        &mut self.data
     }
 
-    /// Consumes `self` and returns its user provided state.
-    pub fn into_state(self) -> T {
-        self.user_state
+    /// Consumes `self` and returns its user provided data.
+    pub fn into_data(self) -> T {
+        self.data
     }
 
     /// Wraps an entitiy `Idx` (index type) as a [`Stored<Idx>`] type.
@@ -599,7 +599,7 @@ impl<T> Store<T> {
         &mut self,
         memory: Memory,
     ) -> (&mut MemoryEntity, &mut T) {
-        (self.inner.resolve_memory_mut(memory), &mut self.user_state)
+        (self.inner.resolve_memory_mut(memory), &mut self.data)
     }
 
     /// Returns a shared reference to the associated entity of the Wasm or host function.
@@ -641,7 +641,7 @@ pub trait AsContextMut: AsContext {
     fn as_context_mut(&mut self) -> StoreContextMut<Self::UserState>;
 }
 
-/// A temporary handle to a `&Store<T>`.
+/// A temporary handle to a [`&Store<T>`][`Store`].
 ///
 /// This type is suitable for [`AsContext`] trait bounds on methods if desired.
 /// For more information, see [`Store`].
@@ -649,6 +649,20 @@ pub trait AsContextMut: AsContext {
 #[repr(transparent)]
 pub struct StoreContext<'a, T> {
     pub(super) store: &'a Store<T>,
+}
+
+impl<'a, T> StoreContext<'a, T> {
+    /// Returns the underlying [`Engine`] this store is connected to.
+    pub fn engine(&self) -> &Engine {
+        self.store.engine()
+    }
+
+    /// Access the underlying data owned by this store.
+    ///
+    /// Same as [`Store::data`].    
+    pub fn data(&self) -> &T {
+        self.store.data()
+    }
 }
 
 impl<'a, T: AsContext> From<&'a T> for StoreContext<'a, T::UserState> {
@@ -672,7 +686,7 @@ impl<'a, T: AsContextMut> From<&'a mut T> for StoreContextMut<'a, T::UserState> 
     }
 }
 
-/// A temporary handle to a `&mut Store<T>`.
+/// A temporary handle to a [`&mut Store<T>`][`Store`].
 ///
 /// This type is suitable for [`AsContextMut`] or [`AsContext`] trait bounds on methods if desired.
 /// For more information, see [`Store`].
@@ -680,6 +694,27 @@ impl<'a, T: AsContextMut> From<&'a mut T> for StoreContextMut<'a, T::UserState> 
 #[repr(transparent)]
 pub struct StoreContextMut<'a, T> {
     pub(super) store: &'a mut Store<T>,
+}
+
+impl<'a, T> StoreContextMut<'a, T> {
+    /// Returns the underlying [`Engine`] this store is connected to.
+    pub fn engine(&self) -> &Engine {
+        self.store.engine()
+    }
+
+    /// Access the underlying data owned by this store.
+    ///
+    /// Same as [`Store::data`].    
+    pub fn data(&self) -> &T {
+        self.store.data()
+    }
+
+    /// Access the underlying data owned by this store.
+    ///
+    /// Same as [`Store::data_mut`].    
+    pub fn data_mut(&mut self) -> &mut T {
+        self.store.data_mut()
+    }
 }
 
 impl<T> AsContext for &'_ T

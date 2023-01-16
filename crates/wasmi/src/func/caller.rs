@@ -36,12 +36,12 @@ impl<'a, T> Caller<'a, T> {
 
     /// Returns a shared reference to the host provided data.
     pub fn host_data(&self) -> &T {
-        self.store.store.state()
+        self.store.store.data()
     }
 
     /// Returns an exclusive reference to the host provided data.
     pub fn host_data_mut(&mut self) -> &mut T {
-        self.store.store.state_mut()
+        self.store.store.data_mut()
     }
 
     /// Returns a shared reference to the used [`Engine`].
