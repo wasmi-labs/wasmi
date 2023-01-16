@@ -20,25 +20,18 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Changed
 
-- Clean up the `wasmi_core` crate API.
+- Clean up the `wasmi_core` crate API. (https://github.com/paritytech/wasmi/pull/607, https://github.com/paritytech/wasmi/pull/608, https://github.com/paritytech/wasmi/pull/609)
   - This removes plenty of traits from the public interface of the crate
     which greatly simplifies the API surface for users.
   - The `UntypedValue` type gained some new methods to replace functionality
     that was provided in parts by the removed traits.
-  - The following PRs have been implemented for this work item:
-      - https://github.com/paritytech/wasmi/pull/607,\
-      - https://github.com/paritytech/wasmi/pull/609,\
-      - https://github.com/paritytech/wasmi/pull/609
 - The `wasmi` crate now follows the Wasmtime API a bit more closely. (https://github.com/paritytech/wasmi/pull/613)
 
 ### Internal
 
-- The `Store` and `Engine` types are better decoupled from their generic parts.
-  - This might reduce binary bloat and may has positive effects on the performance.
+- The `Store` and `Engine` types are better decoupled from their generic parts. (https://github.com/paritytech/wasmi/pull/610, https://github.com/paritytech/wasmi/pull/611)
+  - This might reduce binary bloat and may have positive effects on the performance.
     In fact we measured significant performance improvements on the Wasm target.
-  - The following PRs have been implemented for this work item:
-    - https://github.com/paritytech/wasmi/pull/610
-    - https://github.com/paritytech/wasmi/pull/611
 
 ## [`0.21.0`] - 2023-01-04
 
