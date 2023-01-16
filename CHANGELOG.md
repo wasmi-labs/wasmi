@@ -42,7 +42,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     - https://github.com/paritytech/wasmi/pull/610
     - https://github.com/paritytech/wasmi/pull/611
 
-## [0.21.0] - 2023-01-04
+## [`0.21.0`] - 2023-01-04
 
 ### Added
 
@@ -69,7 +69,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - The `wasmi` CLI now prints exported functions names if the function name CLI argument is missing. (https://github.com/paritytech/wasmi/pull/579)
 - Improve feedback when running a Wasm module without exported function using `wasmi` CLI. (https://github.com/paritytech/wasmi/pull/584)
 
-## [0.20.0] - 2022-11-04
+## [`0.20.0`] - 2022-11-04
 
 ### Added
 
@@ -102,7 +102,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - https://github.com/paritytech/wasmi/pull/542 https://github.com/paritytech/wasmi/pull/541
   https://github.com/paritytech/wasmi/pull/508 https://github.com/paritytech/wasmi/pull/543
 
-## [0.19.0] - 2022-10-20
+## [`0.19.0`] - 2022-10-20
 
 ### Fixed
 
@@ -131,7 +131,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   https://github.com/paritytech/wasmi/pull/521
 - Add `miri` testing to `wasmi` CI (https://github.com/paritytech/wasmi/pull/523)
 
-## [0.18.1] - 2022-10-13
+## [`0.18.1`] - 2022-10-13
 
 ### Changed
 
@@ -155,7 +155,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   (https://github.com/paritytech/wasmi/pull/494, https://github.com/paritytech/wasmi/pull/501,
   https://github.com/paritytech/wasmi/pull/506, https://github.com/paritytech/wasmi/pull/509)
 
-## [0.18.0] - 2022-10-02
+## [`0.18.0`] - 2022-10-02
 
 ### Added
 
@@ -176,7 +176,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   (https://github.com/paritytech/wasmi/pull/483, https://github.com/paritytech/wasmi/pull/487)
   - This allows us to optimize `wasmi` towards Wasm performance more easily in the future.
 
-## [0.17.0] - 2022-09-23
+## [`0.17.0`] - 2022-09-23
 
 ### Added
 
@@ -208,7 +208,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Enabled more useful `clippy` lints for `wasmi` and `wasmi_core`. (https://github.com/paritytech/wasmi/pull/438)
 - Reorganized the `wasmi` workspace. (https://github.com/paritytech/wasmi/pull/466)
 
-## [0.16.0] - 2022-08-30
+## [`0.16.0`] - 2022-08-30
 
 ### Changed
 
@@ -225,7 +225,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
       Wasm to `wasmi` bytecode translation performance by avoiding many
       unnecessary unpredictable branches in the process.
 
-## [0.15.0] - 2022-08-22
+## [`0.15.0`] - 2022-08-22
 
 ### Fixed
 
@@ -273,7 +273,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   `wasmi` bytecode translation.
   [**Link**](https://github.com/paritytech/wasmi/commit/4d1f2ad6cbf07e61656185101bbd0bd5a941335f)
 
-## [0.14.0] - 2022-07-26
+## [`0.14.0`] - 2022-07-26
 
 ### Added
 
@@ -322,17 +322,17 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   free to [open an issue](https://github.com/paritytech/wasmi/issues)
   and provide us with your use case.
 
-## [0.13.2] - 2022-09-20
+## [`0.13.2`] - 2022-09-20
 
 ### Fixed
 
 - Support allocating 4GB of memory (https://github.com/paritytech/wasmi/pull/452)
 
-## [0.13.1] - 2022-09-20
+## [`0.13.1`] - 2022-09-20
 
 **Note:** Yanked because of missing `wasmi_core` bump.
 
-## [0.13.0] - 2022-07-25
+## [`0.13.0`] - 2022-07-25
 
 **Note:** This is the last major release of the legacy `wasmi` engine.
           Future releases are using the new Wasm execution engines
@@ -344,7 +344,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 - Update dependency: `wasmi-validation v0.4.2 -> v0.5.0`
 
-## [0.12.0] - 2022-07-24
+## [`0.12.0`] - 2022-07-24
 
 ### Changed
 
@@ -369,7 +369,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     - `rand 0.4.2 -> 0.8.2`
 - Fix some `clippy` warnings.
 
-## [0.11.0] - 2022-01-06
+## [`0.11.0`] - 2022-01-06
 
 ### Fixed
 
@@ -392,7 +392,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Improve Rust code formatting of imports.
 - Improve debug impl of `ValueStack` so that only the live parts are printed.
 
-## [0.10.0] - 2021-12-14
+## [`0.10.0`] - 2021-12-14
 
 ### Added
 
@@ -429,7 +429,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     - Check Wasm builds.
     - File test coverage reports to codecov.io.
 
-## [0.9.1] - 2021-09-23
+## [`0.9.1`] - 2021-09-23
 
 ### Changed
 
@@ -441,7 +441,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Fixed some warnings associated to Rust edition 2021.
     - Note: The crate itself remains in Rust edition 2018.
 
-## [0.9.0] - 2021-05-27
+## [`0.9.0`] - 2021-05-27
 
 ### Changed
 
