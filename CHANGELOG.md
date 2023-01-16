@@ -18,8 +18,6 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     for `TypedFunc` so this mirrored API now exists.
   - This also cleans up rough edges with the `Func::call_resumable` API.
 
-### Fixed
-
 ### Changed
 
 - Clean up the `wasmi_core` crate API.
