@@ -641,7 +641,7 @@ pub trait AsContextMut: AsContext {
     fn as_context_mut(&mut self) -> StoreContextMut<Self::UserState>;
 }
 
-/// A temporary handle to a `&Store<T>`.
+/// A temporary handle to a [`&Store<T>`][`Store`].
 ///
 /// This type is suitable for [`AsContext`] trait bounds on methods if desired.
 /// For more information, see [`Store`].
@@ -649,6 +649,20 @@ pub trait AsContextMut: AsContext {
 #[repr(transparent)]
 pub struct StoreContext<'a, T> {
     pub(super) store: &'a Store<T>,
+}
+
+impl<'a, T> StoreContext<'a, T> {
+    /// Returns the underlying [`Engine`] this store is connected to.
+    pub fn engine(&self) -> &Engine {
+        self.store.engine()
+    }
+
+    /// Access the underlying data owned by this store.
+    ///
+    /// Same as [`Store::data`].    
+    pub fn data(&self) -> &T {
+        self.store.state()
+    }
 }
 
 impl<'a, T: AsContext> From<&'a T> for StoreContext<'a, T::UserState> {
@@ -672,7 +686,7 @@ impl<'a, T: AsContextMut> From<&'a mut T> for StoreContextMut<'a, T::UserState> 
     }
 }
 
-/// A temporary handle to a `&mut Store<T>`.
+/// A temporary handle to a [`&mut Store<T>`][`Store`].
 ///
 /// This type is suitable for [`AsContextMut`] or [`AsContext`] trait bounds on methods if desired.
 /// For more information, see [`Store`].
@@ -680,6 +694,27 @@ impl<'a, T: AsContextMut> From<&'a mut T> for StoreContextMut<'a, T::UserState> 
 #[repr(transparent)]
 pub struct StoreContextMut<'a, T> {
     pub(super) store: &'a mut Store<T>,
+}
+
+impl<'a, T> StoreContextMut<'a, T> {
+    /// Returns the underlying [`Engine`] this store is connected to.
+    pub fn engine(&self) -> &Engine {
+        self.store.engine()
+    }
+
+    /// Access the underlying data owned by this store.
+    ///
+    /// Same as [`Store::data`].    
+    pub fn data(&self) -> &T {
+        self.store.state()
+    }
+
+    /// Access the underlying data owned by this store.
+    ///
+    /// Same as [`Store::data_mut`].    
+    pub fn data_mut(&mut self) -> &mut T {
+        self.store.state_mut()
+    }
 }
 
 impl<T> AsContext for &'_ T
