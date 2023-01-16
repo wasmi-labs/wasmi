@@ -70,8 +70,8 @@ pub struct Store<T> {
     pub(crate) inner: StoreInner,
     /// Stored Wasm or host functions.
     funcs: Arena<FuncIdx, FuncEntity<T>>,
-    /// User provided state.
-    user_state: T,
+    /// User provided host data owned by the [`Store`].
+    data: T,
 }
 
 /// The inner store that owns all data not associated to the host state.
@@ -392,11 +392,11 @@ impl StoreInner {
 
 impl<T> Store<T> {
     /// Creates a new store.
-    pub fn new(engine: &Engine, user_state: T) -> Self {
+    pub fn new(engine: &Engine, data: T) -> Self {
         Self {
             inner: StoreInner::new(engine),
             funcs: Arena::new(),
-            user_state,
+            data,
         }
     }
 
@@ -405,19 +405,19 @@ impl<T> Store<T> {
         self.inner.engine()
     }
 
-    /// Returns a shared reference to the user provided state.
-    pub fn state(&self) -> &T {
-        &self.user_state
+    /// Returns a shared reference to the user provided data owned by this [`Store`].
+    pub fn data(&self) -> &T {
+        &self.data
     }
 
-    /// Returns a shared reference to the user provided state.
-    pub fn state_mut(&mut self) -> &mut T {
-        &mut self.user_state
+    /// Returns an exclusive reference to the user provided data owned by this [`Store`].
+    pub fn data_mut(&mut self) -> &mut T {
+        &mut self.data
     }
 
     /// Consumes `self` and returns its user provided state.
     pub fn into_state(self) -> T {
-        self.user_state
+        self.data
     }
 
     /// Wraps an entitiy `Idx` (index type) as a [`Stored<Idx>`] type.
@@ -599,7 +599,7 @@ impl<T> Store<T> {
         &mut self,
         memory: Memory,
     ) -> (&mut MemoryEntity, &mut T) {
-        (self.inner.resolve_memory_mut(memory), &mut self.user_state)
+        (self.inner.resolve_memory_mut(memory), &mut self.data)
     }
 
     /// Returns a shared reference to the associated entity of the Wasm or host function.
@@ -661,7 +661,7 @@ impl<'a, T> StoreContext<'a, T> {
     ///
     /// Same as [`Store::data`].    
     pub fn data(&self) -> &T {
-        self.store.state()
+        self.store.data()
     }
 }
 
@@ -706,14 +706,14 @@ impl<'a, T> StoreContextMut<'a, T> {
     ///
     /// Same as [`Store::data`].    
     pub fn data(&self) -> &T {
-        self.store.state()
+        self.store.data()
     }
 
     /// Access the underlying data owned by this store.
     ///
     /// Same as [`Store::data_mut`].    
     pub fn data_mut(&mut self) -> &mut T {
-        self.store.state_mut()
+        self.store.data_mut()
     }
 }
 
