@@ -76,7 +76,7 @@ impl LinkerError {
     /// Creates a new [`LinkerError`] for when an imported definition was not found.
     pub fn cannot_find_definition_of_import(import: &ImportType) -> Self {
         Self::CannotFindDefinitionForImport {
-            name: import.name().clone(),
+            name: import.import_name().clone(),
             item_type: import.ty().clone(),
         }
     }
@@ -365,7 +365,7 @@ impl<T> Linker<T> {
     ) -> Result<Extern, Error> {
         let make_err = || LinkerError::cannot_find_definition_of_import(&import);
         let module_name = import.module();
-        let field_name = import.field();
+        let field_name = import.name();
         let resolved = self.resolve(module_name, field_name);
         let context = context.as_context();
         match import.ty() {
@@ -375,7 +375,7 @@ impl<T> Linker<T> {
                 let actual_func_type = context.store.resolve_func_type(actual_func_type);
                 if &actual_func_type != expected_func_type {
                     return Err(LinkerError::FuncTypeMismatch {
-                        name: import.name().clone(),
+                        name: import.import_name().clone(),
                         expected: expected_func_type.clone(),
                         actual: actual_func_type,
                     })
@@ -404,7 +404,7 @@ impl<T> Linker<T> {
                 let actual_global_type = global.global_type(context);
                 if &actual_global_type != expected_global_type {
                     return Err(LinkerError::GlobalTypeMismatch {
-                        name: import.name().clone(),
+                        name: import.import_name().clone(),
                         expected: *expected_global_type,
                         actual: actual_global_type,
                     })

@@ -345,7 +345,7 @@ impl<'module> ImportType<'module> {
     }
 
     /// Returns the import name.
-    pub(crate) fn name(&self) -> &ImportName {
+    pub(crate) fn import_name(&self) -> &ImportName {
         self.name
     }
 
@@ -355,7 +355,7 @@ impl<'module> ImportType<'module> {
     }
 
     /// Returns the field import name.
-    pub fn field(&self) -> &'module str {
+    pub fn name(&self) -> &'module str {
         self.name.name()
     }
 
