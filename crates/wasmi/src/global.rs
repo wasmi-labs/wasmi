@@ -97,6 +97,7 @@ pub struct GlobalType {
 }
 
 impl GlobalType {
+    /// Creates a new [`GlobalType`] from the given [`ValueType`] and [`Mutability`].
     pub fn new(value_type: ValueType, mutability: Mutability) -> Self {
         Self {
             value_type,
