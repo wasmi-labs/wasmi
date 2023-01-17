@@ -1,12 +1,6 @@
 use super::GlobalIdx;
 use crate::{
-    engine::DedupFuncType,
-    Engine,
-    ExternType,
-    GlobalType,
-    MemoryType,
-    Module,
-    ModuleError,
+    engine::DedupFuncType, Engine, ExternType, GlobalType, MemoryType, Module, ModuleError,
     TableType,
 };
 use alloc::boxed::Box;
@@ -141,13 +135,13 @@ pub struct ModuleExportsIter<'module> {
 
 /// An item exported from a [`Module`].
 #[derive(Debug)]
-pub struct ExportItem<'module> {
+pub struct ExportType<'module> {
     name: &'module str,
     ty: ExternType,
 }
 
-impl<'module> ExportItem<'module> {
-    /// Returns the name of the exported item.
+impl<'module> ExportType<'module> {
+    /// Returns the name by which the export is known.
     pub fn name(&self) -> &'module str {
         self.name
     }
@@ -173,7 +167,7 @@ impl<'module> ModuleExportsIter<'module> {
 }
 
 impl<'module> Iterator for ModuleExportsIter<'module> {
-    type Item = ExportItem<'module>;
+    type Item = ExportType<'module>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.exports.next().map(|export| {
@@ -197,7 +191,7 @@ impl<'module> Iterator for ModuleExportsIter<'module> {
                     ExternType::Global(global_type)
                 }
             };
-            ExportItem { name, ty }
+            ExportType { name, ty }
         })
     }
 }

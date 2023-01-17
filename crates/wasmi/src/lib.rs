@@ -139,7 +139,7 @@ pub use self::{
     linker::Linker,
     memory::{Memory, MemoryType},
     module::{
-        ExportItem,
+        ExportType,
         InstancePre,
         Module,
         ModuleError,
