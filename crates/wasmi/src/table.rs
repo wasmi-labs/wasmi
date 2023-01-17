@@ -29,18 +29,18 @@ pub enum TableError {
     /// Occurs when growing a table out of its set bounds.
     GrowOutOfBounds {
         /// The maximum allowed table size.
-        maximum: usize,
+        maximum: u32,
         /// The current table size before the growth operation.
-        current: usize,
+        current: u32,
         /// The amount of requested invalid growth.
-        grow_by: usize,
+        delta: u32,
     },
     /// Occurs when accessing the table out of bounds.
     AccessOutOfBounds {
         /// The current size of the table.
-        current: usize,
+        current: u32,
         /// The accessed index that is out of bounds.
-        offset: usize,
+        offset: u32,
     },
     /// Occurs when a table type does not satisfy the constraints of another.
     UnsatisfyingTableType {
@@ -57,12 +57,12 @@ impl Display for TableError {
             Self::GrowOutOfBounds {
                 maximum,
                 current,
-                grow_by,
+                delta,
             } => {
                 write!(
                     f,
                     "tried to grow table with size of {current} and maximum of \
-                    {maximum} by {grow_by} out of bounds",
+                    {maximum} by {delta} out of bounds",
                 )
             }
             Self::AccessOutOfBounds { current, offset } => {
@@ -90,11 +90,11 @@ impl Display for TableError {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct TableType {
     /// The minimum number of elements the [`Table`] must have.
-    min: usize,
+    min: u32,
     /// The optional maximum number of elements the [`Table`] can have.
     ///
     /// If this is `None` then the [`Table`] is not limited in size.
-    max: Option<usize>,
+    max: Option<u32>,
 }
 
 impl TableType {
@@ -103,7 +103,7 @@ impl TableType {
     /// # Panics
     ///
     /// If `min` is greater than `max`.
-    pub fn new(min: usize, max: Option<usize>) -> Self {
+    pub fn new(min: u32, max: Option<u32>) -> Self {
         if let Some(max) = max {
             assert!(min <= max);
         }
@@ -111,14 +111,14 @@ impl TableType {
     }
 
     /// Returns minimum number of elements the [`Table`] must have.
-    pub fn minimum(self) -> usize {
+    pub fn minimum(self) -> u32 {
         self.min
     }
 
     /// The optional maximum number of elements the [`Table`] can have.
     ///
     /// If this returns `None` then the [`Table`] is not limited in size.
-    pub fn maximum(self) -> Option<usize> {
+    pub fn maximum(self) -> Option<u32> {
         self.max
     }
 
@@ -160,7 +160,7 @@ impl TableEntity {
     /// Creates a new table entity with the given resizable limits.
     pub fn new(ty: TableType) -> Self {
         Self {
-            elements: vec![None; ty.minimum()],
+            elements: vec![None; ty.minimum() as usize],
             ty,
         }
     }
@@ -171,8 +171,8 @@ impl TableEntity {
     }
 
     /// Returns the current size of the [`Table`].
-    pub fn size(&self) -> usize {
-        self.elements.len()
+    pub fn size(&self) -> u32 {
+        self.elements.len() as u32
     }
 
     /// Grows the table by the given amount of elements.
@@ -184,50 +184,51 @@ impl TableEntity {
     /// # Errors
     ///
     /// If the table is grown beyond its maximum limits.
-    pub fn grow(&mut self, grow_by: usize) -> Result<(), TableError> {
-        let maximum = self.ty.maximum().unwrap_or(u32::MAX as usize);
+    pub fn grow(&mut self, delta: u32) -> Result<(), TableError> {
+        let maximum = self.ty.maximum().unwrap_or(u32::MAX);
         let current = self.size();
         let new_len = current
-            .checked_add(grow_by)
+            .checked_add(delta)
             .filter(|&new_len| new_len <= maximum)
             .ok_or(TableError::GrowOutOfBounds {
                 maximum,
                 current,
-                grow_by,
-            })?;
+                delta,
+            })? as usize;
         self.elements.resize(new_len, None);
         Ok(())
     }
 
-    /// Returns the element at the given offset if any.
+    /// Returns the [`Table`] element value at `index`.
     ///
     /// # Errors
     ///
-    /// If the accesses element is out of bounds of the table.
-    pub fn get(&self, offset: usize) -> Result<Option<Func>, TableError> {
-        let element =
-            self.elements
-                .get(offset)
-                .copied()
-                .ok_or_else(|| TableError::AccessOutOfBounds {
-                    current: self.size(),
-                    offset,
-                })?;
+    /// If `index` is out of bounds.
+    pub fn get(&self, index: u32) -> Result<Option<Func>, TableError> {
+        let element = self.elements.get(index as usize).copied().ok_or_else(|| {
+            TableError::AccessOutOfBounds {
+                current: self.size(),
+                offset: index,
+            }
+        })?;
         Ok(element)
     }
 
-    /// Sets a new value to the table element at the given offset.
+    /// Writes the `value` provided into `index` within this [`Table`].
     ///
     /// # Errors
     ///
-    /// If the accesses element is out of bounds of the table.
-    pub fn set(&mut self, offset: usize, new_value: Option<Func>) -> Result<(), TableError> {
+    /// If `index` is out of bounds.
+    pub fn set(&mut self, index: u32, value: Option<Func>) -> Result<(), TableError> {
         let current = self.size();
-        let element = self
-            .elements
-            .get_mut(offset)
-            .ok_or(TableError::AccessOutOfBounds { current, offset })?;
-        *element = new_value;
+        let element =
+            self.elements
+                .get_mut(index as usize)
+                .ok_or(TableError::AccessOutOfBounds {
+                    current,
+                    offset: index,
+                })?;
+        *element = value;
         Ok(())
     }
 }
@@ -267,7 +268,7 @@ impl Table {
     /// # Panics
     ///
     /// If `ctx` does not own this [`Table`].
-    pub fn size(&self, ctx: impl AsContext) -> usize {
+    pub fn size(&self, ctx: impl AsContext) -> u32 {
         ctx.as_context().store.resolve_table(*self).size()
     }
 
@@ -284,31 +285,31 @@ impl Table {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Table`].
-    pub fn grow(&self, mut ctx: impl AsContextMut, grow_by: usize) -> Result<(), TableError> {
+    pub fn grow(&self, mut ctx: impl AsContextMut, delta: u32) -> Result<(), TableError> {
         ctx.as_context_mut()
             .store
             .resolve_table_mut(*self)
-            .grow(grow_by)
+            .grow(delta)
     }
 
-    /// Returns the element at the given offset if any.
+    /// Returns the [`Table`] element value at `index`.
     ///
     /// # Errors
     ///
-    /// If the accesses element is out of bounds of the table.
+    /// If `index` is out of bounds.
     ///
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Table`].
-    pub fn get(&self, ctx: impl AsContext, offset: usize) -> Result<Option<Func>, TableError> {
-        ctx.as_context().store.resolve_table(*self).get(offset)
+    pub fn get(&self, ctx: impl AsContext, index: u32) -> Result<Option<Func>, TableError> {
+        ctx.as_context().store.resolve_table(*self).get(index)
     }
 
-    /// Sets a new value to the table element at the given offset.
+    /// Writes the `value` provided into `index` within this [`Table`].
     ///
     /// # Errors
     ///
-    /// If the accesses element is out of bounds of the table.
+    /// If `index` is out of bounds.
     ///
     /// # Panics
     ///
@@ -316,12 +317,12 @@ impl Table {
     pub fn set(
         &self,
         mut ctx: impl AsContextMut,
-        offset: usize,
-        new_value: Option<Func>,
+        index: u32,
+        value: Option<Func>,
     ) -> Result<(), TableError> {
         ctx.as_context_mut()
             .store
             .resolve_table_mut(*self)
-            .set(offset, new_value)
+            .set(index, value)
     }
 }

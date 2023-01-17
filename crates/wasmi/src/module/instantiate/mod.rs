@@ -313,26 +313,26 @@ impl Module {
                         "expected offset value of type `i32` due to \
                          Wasm validation but found: {offset_expr:?}",
                     )
-                }) as usize;
+                });
             let table = builder.get_table(DEFAULT_TABLE_INDEX);
             // Note: This checks not only that the elements in the element segments properly
             //       fit into the table at the given offset but also that the element segment
             //       consists of at least 1 element member.
             let len_table = table.size(&context);
-            let len_items = element_segment.items().len();
-            if offset + len_items > len_table {
-                return Err(InstantiationError::ElementSegmentDoesNotFit {
+            let len_items = element_segment.items().len() as u32;
+            len_items
+                .checked_add(offset)
+                .filter(|&req| req <= len_table)
+                .ok_or_else(|| InstantiationError::ElementSegmentDoesNotFit {
                     table,
                     offset,
                     amount: len_items,
-                })
-                .map_err(Into::into);
-            }
+                })?;
             // Finally do the actual initialization of the table elements.
             for (i, func_index) in element_segment.items().iter().enumerate() {
                 let func_index = func_index.into_u32();
                 let func = builder.get_func(func_index);
-                table.set(context.as_context_mut(), offset + i, Some(func))?;
+                table.set(context.as_context_mut(), offset + i as u32, Some(func))?;
             }
         }
         Ok(())

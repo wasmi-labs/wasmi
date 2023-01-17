@@ -40,9 +40,9 @@ pub enum InstantiationError {
         /// The table of the element segment.
         table: Table,
         /// The offset to store the `amount` of elements into the table.
-        offset: usize,
+        offset: u32,
         /// The amount of elements with which the table is initialized at the `offset`.
-        amount: usize,
+        amount: u32,
     },
     /// Caused when the `start` function was unexpectedly found in the instantiated module.
     FoundStartFn {
