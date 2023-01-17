@@ -170,13 +170,8 @@ impl TableEntity {
         self.ty
     }
 
-    /// Returns the current length of the table.
-    ///
-    /// # Note
-    ///
-    /// The returned length must be valid within the
-    /// resizable limits of the table entity.
-    pub fn len(&self) -> usize {
+    /// Returns the current size of the [`Table`].
+    pub fn size(&self) -> usize {
         self.elements.len()
     }
 
@@ -191,7 +186,7 @@ impl TableEntity {
     /// If the table is grown beyond its maximum limits.
     pub fn grow(&mut self, grow_by: usize) -> Result<(), TableError> {
         let maximum = self.ty.maximum().unwrap_or(u32::MAX as usize);
-        let current = self.len();
+        let current = self.size();
         let new_len = current
             .checked_add(grow_by)
             .filter(|&new_len| new_len <= maximum)
@@ -215,7 +210,7 @@ impl TableEntity {
                 .get(offset)
                 .copied()
                 .ok_or_else(|| TableError::AccessOutOfBounds {
-                    current: self.len(),
+                    current: self.size(),
                     offset,
                 })?;
         Ok(element)
@@ -227,7 +222,7 @@ impl TableEntity {
     ///
     /// If the accesses element is out of bounds of the table.
     pub fn set(&mut self, offset: usize, new_value: Option<Func>) -> Result<(), TableError> {
-        let current = self.len();
+        let current = self.size();
         let element = self
             .elements
             .get_mut(offset)
@@ -267,18 +262,13 @@ impl Table {
         ctx.as_context().store.resolve_table(*self).ty()
     }
 
-    /// Returns the current length of the table.
-    ///
-    /// # Note
-    ///
-    /// The returned length must be valid within the
-    /// resizable limits of the table entity.
+    /// Returns the current size of the [`Table`].
     ///
     /// # Panics
-    ///
-    /// Panics if `ctx` does not own this [`Table`].
-    pub fn len(&self, ctx: impl AsContext) -> usize {
-        ctx.as_context().store.resolve_table(*self).len()
+    /// 
+    /// If `ctx` does not own this [`Table`].
+    pub fn size(&self, ctx: impl AsContext) -> usize {
+        ctx.as_context().store.resolve_table(*self).size()
     }
 
     /// Grows the table by the given amount of elements.

@@ -318,7 +318,7 @@ impl Module {
             // Note: This checks not only that the elements in the element segments properly
             //       fit into the table at the given offset but also that the element segment
             //       consists of at least 1 element member.
-            let len_table = table.len(&context);
+            let len_table = table.size(&context);
             let len_items = element_segment.items().len();
             if offset + len_items > len_table {
                 return Err(InstantiationError::ElementSegmentDoesNotFit {
