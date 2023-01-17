@@ -169,11 +169,11 @@ impl ResumableInvocation {
         outputs: &mut [Value],
     ) -> Result<ResumableCall, Error> {
         self.engine
-            .resolve_func_type(self.host_func().signature(ctx.as_context()), |func_type| {
+            .resolve_func_type(self.host_func().ty_dedup(ctx.as_context()), |func_type| {
                 func_type.match_results(inputs, true)
             })?;
         self.engine
-            .resolve_func_type(self.func.signature(ctx.as_context()), |func_type| {
+            .resolve_func_type(self.func.ty_dedup(ctx.as_context()), |func_type| {
                 func_type.match_results(outputs, false)?;
                 func_type.prepare_outputs(outputs);
                 <Result<(), Error>>::Ok(()) // TODO: why do we need types here?
@@ -249,7 +249,7 @@ impl<Results> TypedResumableInvocation<Results> {
         Results: WasmResults,
     {
         self.engine
-            .resolve_func_type(self.host_func().signature(ctx.as_context()), |func_type| {
+            .resolve_func_type(self.host_func().ty_dedup(ctx.as_context()), |func_type| {
                 func_type.match_results(inputs, true)
             })?;
         self.engine

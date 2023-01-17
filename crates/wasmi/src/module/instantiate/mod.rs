@@ -125,7 +125,7 @@ impl Module {
             };
             match (import.ty(), external) {
                 (ExternType::Func(expected_signature), Extern::Func(func)) => {
-                    let actual_signature = func.signature(context.as_context());
+                    let actual_signature = func.ty_dedup(context.as_context());
                     let actual_signature = self
                         .engine
                         .resolve_func_type(actual_signature, FuncType::clone);
