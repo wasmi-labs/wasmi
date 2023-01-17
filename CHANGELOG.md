@@ -16,7 +16,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Changed
 
-- Removed `ModuleError` export from crate root.
+- Removed `ModuleError` export from crate root. (https://github.com/paritytech/wasmi/pull/618)
   - Now `ModuleError` is exported from `crate::errors` just like all the other error types.
 - Mirror Wasmtime API more closely. (https://github.com/paritytech/wasmi/pull/615, https://github.com/paritytech/wasmi/pull/616)
   - Renamed `Caller::host_data` method to `Caller::data`.
