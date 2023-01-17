@@ -398,14 +398,14 @@ impl InstanceEntityBuilder {
 }
 
 /// An instantiated WebAssembly [`Module`].
-/// 
+///
 /// This type represents an instantiation of a [`Module`].
 /// It primarily allows to access its [`exports`](Instance::exports)
 /// to call functions, get or set globals, read or write memory, etc.
-/// 
+///
 /// When interacting with any Wasm code you will want to create an
 /// [`Instance`] in order to execute anything.
-/// 
+///
 /// Instances are owned by a [`Store`](crate::Store).
 /// Create new instances using [`Linker::instantiate`](crate::Linker::instantiate).
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
