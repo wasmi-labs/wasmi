@@ -333,7 +333,7 @@ pub struct ImportType<'module> {
 }
 
 impl<'module> ImportType<'module> {
-    /// Creates a new [`ModuleImport`].
+    /// Creates a new [`ImportType`].
     pub(crate) fn new<T>(name: &'module ImportName, ty: T) -> Self
     where
         T: Into<ExternType>,
