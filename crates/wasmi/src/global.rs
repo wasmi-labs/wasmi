@@ -142,10 +142,8 @@ impl GlobalType {
 pub struct GlobalEntity {
     /// The current value of the global variable.
     value: UntypedValue,
-    /// The value type of the global variable.
-    value_type: ValueType,
-    /// The mutability of the global variable.
-    mutability: Mutability,
+    /// The type of the global variable.
+    ty: GlobalType,
 }
 
 impl GlobalEntity {
@@ -153,24 +151,23 @@ impl GlobalEntity {
     pub fn new(initial_value: Value, mutability: Mutability) -> Self {
         Self {
             value: initial_value.into(),
-            value_type: initial_value.value_type(),
-            mutability,
+            ty: GlobalType::new(initial_value.value_type(), mutability),
         }
     }
 
     /// Returns `true` if the global variable is mutable.
     pub fn is_mutable(&self) -> bool {
-        matches!(self.mutability, Mutability::Var)
+        matches!(self.ty().mutability(), Mutability::Var)
     }
 
     /// Returns the type of the global variable value.
     pub fn value_type(&self) -> ValueType {
-        self.value_type
+        self.ty().content()
     }
 
     /// Returns the [`GlobalType`] of the global variable.
     pub fn ty(&self) -> GlobalType {
-        GlobalType::new(self.value_type(), self.mutability)
+        self.ty
     }
 
     /// Sets a new value to the global variable.
@@ -207,7 +204,7 @@ impl GlobalEntity {
 
     /// Returns the current value of the global variable.
     pub fn get(&self) -> Value {
-        self.get_untyped().with_type(self.value_type)
+        self.get_untyped().with_type(self.value_type())
     }
 
     /// Returns the current untyped value of the global variable.
