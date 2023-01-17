@@ -321,16 +321,16 @@ impl<'a> ExactSizeIterator for ModuleImportsIter<'a> {
 
 /// A [`Module`] import item.
 #[derive(Debug)]
-pub struct ImportType<'a> {
+pub struct ImportType<'module> {
     /// The name of the imported item.
-    name: &'a ImportName,
+    name: &'module ImportName,
     /// The external item type.
     ty: ExternType,
 }
 
-impl<'a> ImportType<'a> {
+impl<'module> ImportType<'module> {
     /// Creates a new [`ModuleImport`].
-    pub(crate) fn new<T>(name: &'a ImportName, ty: T) -> Self
+    pub(crate) fn new<T>(name: &'module ImportName, ty: T) -> Self
     where
         T: Into<ExternType>,
     {
@@ -346,12 +346,12 @@ impl<'a> ImportType<'a> {
     }
 
     /// Returns the module import name.
-    pub fn module(&self) -> &str {
+    pub fn module(&self) -> &'module str {
         self.name.module()
     }
 
     /// Returns the field import name.
-    pub fn field(&self) -> &str {
+    pub fn field(&self) -> &'module str {
         self.name.field()
     }
 
