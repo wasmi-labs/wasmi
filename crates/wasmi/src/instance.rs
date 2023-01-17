@@ -416,7 +416,7 @@ impl Instance {
     /// # Panics
     ///
     /// Panics if `store` does not own this [`Instance`].
-    pub(crate) fn get_func(&self, store: impl AsContext, index: u32) -> Option<Func> {
+    pub(crate) fn get_func_by_index(&self, store: impl AsContext, index: u32) -> Option<Func> {
         store
             .as_context()
             .store
