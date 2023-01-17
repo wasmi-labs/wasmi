@@ -12,7 +12,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Changed
 
-- Mirror Wasmtime API more closely:
+- Mirror Wasmtime API more closely. (https://github.com/paritytech/wasmi/pull/615)
   - Renamed `Caller::host_data` method to `Caller::data`.
   - Renamed `Caller::host_data_mut` method to `Caller::data_mut`.
   - Add `Extern::ty` method and the `ExternType` type.
@@ -31,6 +31,16 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     - `Instance::get_global`
     - `Instance::get_table`
     - `Instance::get_memory`
+  - Rename getters for querying types of runtime objects:
+    - `Func::func_type` => `Func::ty`
+    - `Global::global_type` => `Global::ty`
+    - `Table::table_type` => `Table::ty`
+    - `Memory::memory_type` => `Memory::ty`
+    - `Value::value_type` => `Value::ty`
+  - Remove `Global::value_type` getter.
+    - Use `global.ty().content()` instead.
+  - Remove `Global::is_mutable` getter.
+    - Use `global.ty().mutability().is_mut()` instead.
 
 ## [`0.22.0`] - 2023-01-16
 
