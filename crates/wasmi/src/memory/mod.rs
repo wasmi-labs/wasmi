@@ -167,7 +167,7 @@ impl MemoryEntity {
     }
 
     /// Returns the memory type of the linear memory.
-    pub fn memory_type(&self) -> MemoryType {
+    pub fn ty(&self) -> MemoryType {
         self.memory_type
     }
 
@@ -190,10 +190,7 @@ impl MemoryEntity {
             // Nothing to do in this case. Bail out early.
             return Ok(current_pages);
         }
-        let maximum_pages = self
-            .memory_type()
-            .maximum_pages()
-            .unwrap_or_else(Pages::max);
+        let maximum_pages = self.ty().maximum_pages().unwrap_or_else(Pages::max);
         let new_pages = current_pages
             .checked_add(additional)
             .filter(|&new_pages| new_pages <= maximum_pages)
@@ -272,8 +269,8 @@ impl Memory {
     /// # Errors
     ///
     /// If more than [`u32::MAX`] much linear memory is allocated.
-    pub fn new(mut ctx: impl AsContextMut, memory_type: MemoryType) -> Result<Self, MemoryError> {
-        let entity = MemoryEntity::new(memory_type)?;
+    pub fn new(mut ctx: impl AsContextMut, ty: MemoryType) -> Result<Self, MemoryError> {
+        let entity = MemoryEntity::new(ty)?;
         let memory = ctx.as_context_mut().store.alloc_memory(entity);
         Ok(memory)
     }
@@ -283,8 +280,8 @@ impl Memory {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Memory`].
-    pub fn memory_type(&self, ctx: impl AsContext) -> MemoryType {
-        ctx.as_context().store.resolve_memory(*self).memory_type()
+    pub fn ty(&self, ctx: impl AsContext) -> MemoryType {
+        ctx.as_context().store.resolve_memory(*self).ty()
     }
 
     /// Returns the amount of pages in use by the linear memory.

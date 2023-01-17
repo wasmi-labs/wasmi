@@ -393,7 +393,7 @@ impl<T> Linker<T> {
                 let memory = resolved
                     .and_then(Extern::into_memory)
                     .ok_or_else(make_err)?;
-                let actual_memory_type = memory.memory_type(context);
+                let actual_memory_type = memory.ty(context);
                 actual_memory_type.satisfies(expected_memory_type)?;
                 Ok(Extern::Memory(memory))
             }
