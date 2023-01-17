@@ -41,7 +41,7 @@
 //!     let mut store = Store::new(&engine, 42);
 //!     let host_hello = Func::wrap(&mut store, |caller: Caller<'_, HostState>, param: i32| {
 //!         println!("Got {param} from WebAssembly");
-//!         println!("My host state is: {}", caller.host_data());
+//!         println!("My host state is: {}", caller.data());
 //!     });
 //!
 //!     // In order to create Wasm module instances and link their imports

@@ -34,13 +34,13 @@ impl<'a, T> Caller<'a, T> {
             .and_then(|instance| instance.get_export(self, name))
     }
 
-    /// Returns a shared reference to the host provided data.
-    pub fn host_data(&self) -> &T {
+    /// Returns a shared reference to the user provided host data.
+    pub fn data(&self) -> &T {
         self.store.store.data()
     }
 
-    /// Returns an exclusive reference to the host provided data.
-    pub fn host_data_mut(&mut self) -> &mut T {
+    /// Returns an exclusive reference to the user provided host data.
+    pub fn data_mut(&mut self) -> &mut T {
         self.store.store.data_mut()
     }
 

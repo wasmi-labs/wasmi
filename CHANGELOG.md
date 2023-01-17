@@ -8,6 +8,14 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`x.y.z`] - UNRELEASED
+
+### Changed
+
+- Mirror Wasmtime API more closely:
+  - Renamed `Caller::host_data` method to `Caller::data`.
+  - Renamed `Caller::host_data_mut` method to `Caller::data_mut`.
+
 ## [`0.22.0`] - 2023-01-16
 
 ### Added
