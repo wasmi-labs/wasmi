@@ -77,13 +77,18 @@ pub enum Mutability {
     /// The value of the global variable is a constant.
     Const,
     /// The value of the global variable is mutable.
-    Mutable,
+    Var,
 }
 
 impl Mutability {
-    /// Returns `true` if this mutability is constant.
+    /// Returns `true` if this mutability is [`Mutability::Const`].
     pub fn is_const(&self) -> bool {
         matches!(self, Self::Const)
+    }
+
+    /// Returns `true` if this mutability is [`Mutability::Var`].
+    pub fn is_mut(&self) -> bool {
+        matches!(self, Self::Var)
     }
 }
 
@@ -91,23 +96,23 @@ impl Mutability {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct GlobalType {
     /// The value type of the global variable.
-    value_type: ValueType,
+    content: ValueType,
     /// The mutability of the global variable.
     mutability: Mutability,
 }
 
 impl GlobalType {
     /// Creates a new [`GlobalType`] from the given [`ValueType`] and [`Mutability`].
-    pub fn new(value_type: ValueType, mutability: Mutability) -> Self {
+    pub fn new(content: ValueType, mutability: Mutability) -> Self {
         Self {
-            value_type,
+            content,
             mutability,
         }
     }
 
     /// Returns the [`ValueType`] of the global variable.
-    pub fn value_type(&self) -> ValueType {
-        self.value_type
+    pub fn content(&self) -> ValueType {
+        self.content
     }
 
     /// Returns the [`Mutability`] of the global variable.
@@ -155,7 +160,7 @@ impl GlobalEntity {
 
     /// Returns `true` if the global variable is mutable.
     pub fn is_mutable(&self) -> bool {
-        matches!(self.mutability, Mutability::Mutable)
+        matches!(self.mutability, Mutability::Var)
     }
 
     /// Returns the type of the global variable value.

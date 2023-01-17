@@ -40,7 +40,7 @@ impl TryFrom<wasmparser::GlobalType> for GlobalType {
     fn try_from(global_type: wasmparser::GlobalType) -> Result<Self, Self::Error> {
         let value_type = value_type_try_from_wasmparser(global_type.content_type)?;
         let mutability = match global_type.mutable {
-            true => Mutability::Mutable,
+            true => Mutability::Var,
             false => Mutability::Const,
         };
         Ok(GlobalType::new(value_type, mutability))
