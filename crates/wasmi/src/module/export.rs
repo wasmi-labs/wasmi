@@ -58,7 +58,7 @@ pub struct Export {
     /// The name under which the export definition is exported.
     field: Box<str>,
     /// The external item of the export definition.
-    external: External,
+    external: ExternIdx,
 }
 
 impl TryFrom<wasmparser::Export<'_>> for Export {
@@ -77,17 +77,17 @@ impl Export {
         &self.field
     }
 
-    /// Returns the [`External`] item of the [`Export`].
-    pub fn external(&self) -> External {
+    /// Returns the [`ExternIdx`] item of the [`Export`].
+    pub fn idx(&self) -> ExternIdx {
         self.external
     }
 }
 
-/// An external item of an [`Export`] definition within a [`Module`].
+/// An external item of an [`ExportType`] definition within a [`Module`].
 ///
-/// [`Module`]: [`super::Module`]
+/// [`Module`]: [`crate::Module`]
 #[derive(Debug, Copy, Clone)]
-pub enum External {
+pub enum ExternIdx {
     /// An exported function and its index within the [`Module`].
     ///
     /// [`Module`]: [`super::Module`]
@@ -106,15 +106,15 @@ pub enum External {
     Global(GlobalIdx),
 }
 
-impl TryFrom<(wasmparser::ExternalKind, u32)> for External {
+impl TryFrom<(wasmparser::ExternalKind, u32)> for ExternIdx {
     type Error = ModuleError;
 
     fn try_from((kind, index): (wasmparser::ExternalKind, u32)) -> Result<Self, Self::Error> {
         match kind {
-            wasmparser::ExternalKind::Func => Ok(External::Func(FuncIdx(index))),
-            wasmparser::ExternalKind::Table => Ok(External::Table(TableIdx(index))),
-            wasmparser::ExternalKind::Memory => Ok(External::Memory(MemoryIdx(index))),
-            wasmparser::ExternalKind::Global => Ok(External::Global(GlobalIdx(index))),
+            wasmparser::ExternalKind::Func => Ok(ExternIdx::Func(FuncIdx(index))),
+            wasmparser::ExternalKind::Table => Ok(ExternIdx::Table(TableIdx(index))),
+            wasmparser::ExternalKind::Memory => Ok(ExternIdx::Memory(MemoryIdx(index))),
+            wasmparser::ExternalKind::Global => Ok(ExternIdx::Global(GlobalIdx(index))),
             wasmparser::ExternalKind::Tag => Err(ModuleError::unsupported(kind)),
         }
     }
@@ -175,21 +175,21 @@ impl<'module> Iterator for ModuleExportsIter<'module> {
     fn next(&mut self) -> Option<Self::Item> {
         self.exports.next().map(|export| {
             let name = export.field();
-            let ty = match export.external() {
-                External::Func(index) => {
+            let ty = match export.idx() {
+                ExternIdx::Func(index) => {
                     let dedup = self.funcs[index.into_usize()];
                     let func_type = self.engine.resolve_func_type(dedup, Clone::clone);
                     ExternType::Func(func_type)
                 }
-                External::Table(index) => {
+                ExternIdx::Table(index) => {
                     let table_type = self.tables[index.into_u32() as usize];
                     ExternType::Table(table_type)
                 }
-                External::Memory(index) => {
+                ExternIdx::Memory(index) => {
                     let memory_type = self.memories[index.into_u32() as usize];
                     ExternType::Memory(memory_type)
                 }
-                External::Global(index) => {
+                ExternIdx::Global(index) => {
                     let global_type = self.globals[index.into_usize()];
                     ExternType::Global(global_type)
                 }

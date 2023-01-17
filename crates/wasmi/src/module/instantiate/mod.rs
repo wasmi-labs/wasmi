@@ -264,23 +264,23 @@ impl Module {
     fn extract_exports(&self, builder: &mut InstanceEntityBuilder) {
         for export in &self.exports[..] {
             let field = export.field();
-            let external = match export.external() {
-                export::External::Func(func_index) => {
+            let external = match export.idx() {
+                export::ExternIdx::Func(func_index) => {
                     let func_index = func_index.into_u32();
                     let func = builder.get_func(func_index);
                     Extern::Func(func)
                 }
-                export::External::Table(table_index) => {
+                export::ExternIdx::Table(table_index) => {
                     let table_index = table_index.into_u32();
                     let table = builder.get_table(table_index);
                     Extern::Table(table)
                 }
-                export::External::Memory(memory_index) => {
+                export::ExternIdx::Memory(memory_index) => {
                     let memory_index = memory_index.into_u32();
                     let memory = builder.get_memory(memory_index);
                     Extern::Memory(memory)
                 }
-                export::External::Global(global_index) => {
+                export::ExternIdx::Global(global_index) => {
                     let global_index = global_index.into_u32();
                     let global = builder.get_global(global_index);
                     Extern::Global(global)
