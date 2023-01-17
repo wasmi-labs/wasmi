@@ -2,7 +2,7 @@ use super::GlobalIdx;
 use crate::{
     engine::DedupFuncType,
     Engine,
-    FuncType,
+    ExternType,
     GlobalType,
     MemoryType,
     Module,
@@ -143,7 +143,7 @@ pub struct ModuleExportsIter<'module> {
 #[derive(Debug)]
 pub struct ExportItem<'module> {
     name: &'module str,
-    kind: ExportItemKind,
+    ty: ExternType,
 }
 
 impl<'module> ExportItem<'module> {
@@ -152,23 +152,10 @@ impl<'module> ExportItem<'module> {
         self.name
     }
 
-    /// Returns the kind of the exported item.
-    pub fn kind(&self) -> &ExportItemKind {
-        &self.kind
+    /// Returns the type of the exported item.
+    pub fn ty(&self) -> &ExternType {
+        &self.ty
     }
-}
-
-/// The kind of an item exported from a [`Module`].
-#[derive(Debug, Clone)]
-pub enum ExportItemKind {
-    /// An exported function of a [`Module`].
-    Func(FuncType),
-    /// An exported table of a [`Module`].
-    Table(TableType),
-    /// An exported linear memory of a [`Module`].
-    Memory(MemoryType),
-    /// An exported global variable of a [`Module`].
-    Global(GlobalType),
 }
 
 impl<'module> ModuleExportsIter<'module> {
@@ -191,26 +178,26 @@ impl<'module> Iterator for ModuleExportsIter<'module> {
     fn next(&mut self) -> Option<Self::Item> {
         self.exports.next().map(|export| {
             let name = export.field();
-            let kind = match export.external() {
+            let ty = match export.external() {
                 External::Func(index) => {
                     let dedup = self.funcs[index.into_usize()];
                     let func_type = self.engine.resolve_func_type(dedup, Clone::clone);
-                    ExportItemKind::Func(func_type)
+                    ExternType::Func(func_type)
                 }
                 External::Table(index) => {
                     let table_type = self.tables[index.into_u32() as usize];
-                    ExportItemKind::Table(table_type)
+                    ExternType::Table(table_type)
                 }
                 External::Memory(index) => {
                     let memory_type = self.memories[index.into_u32() as usize];
-                    ExportItemKind::Memory(memory_type)
+                    ExternType::Memory(memory_type)
                 }
                 External::Global(index) => {
                     let global_type = self.globals[index.into_usize()];
-                    ExportItemKind::Global(global_type)
+                    ExternType::Global(global_type)
                 }
             };
-            ExportItem { name, kind }
+            ExportItem { name, ty }
         })
     }
 }

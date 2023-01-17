@@ -27,7 +27,7 @@ pub use self::{
     builder::ModuleResources,
     compile::BlockType,
     error::ModuleError,
-    export::{ExportItem, ExportItemKind, FuncIdx, MemoryIdx, ModuleExportsIter, TableIdx},
+    export::{ExportItem, FuncIdx, MemoryIdx, ModuleExportsIter, TableIdx},
     global::GlobalIdx,
     import::{FuncTypeIdx, ImportName},
     instantiate::{InstancePre, InstantiationError},

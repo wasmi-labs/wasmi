@@ -8,7 +8,7 @@ use std::{
 };
 use wasmi::{
     core::{Value, ValueType, F32, F64},
-    ExportItemKind,
+    ExternType,
     Func,
     FuncType,
     Store,
@@ -153,8 +153,8 @@ fn exported_funcs(module: &wasmi::Module) -> Vec<(&str, FuncType)> {
         .exports()
         .filter_map(|export| {
             let name = export.name();
-            match export.kind().clone() {
-                ExportItemKind::Func(func_type) => Some((name, func_type)),
+            match export.ty() {
+                ExternType::Func(func_type) => Some((name, func_type.clone())),
                 _ => None,
             }
         })

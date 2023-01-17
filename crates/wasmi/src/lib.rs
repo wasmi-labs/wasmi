@@ -140,7 +140,6 @@ pub use self::{
     memory::{Memory, MemoryType},
     module::{
         ExportItem,
-        ExportItemKind,
         InstancePre,
         Module,
         ModuleError,
