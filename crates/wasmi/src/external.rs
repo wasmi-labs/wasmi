@@ -91,7 +91,7 @@ impl Extern {
     pub fn ty(&self, ctx: impl AsContext) -> ExternType {
         match self {
             Extern::Global(global) => global.ty(ctx).into(),
-            Extern::Table(table) => table.table_type(ctx).into(),
+            Extern::Table(table) => table.ty(ctx).into(),
             Extern::Memory(memory) => memory.memory_type(ctx).into(),
             Extern::Func(func) => func.ty(ctx).into(),
         }

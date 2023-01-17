@@ -162,7 +162,7 @@ impl TableEntity {
     }
 
     /// Returns the resizable limits of the table.
-    pub fn table_type(&self) -> TableType {
+    pub fn ty(&self) -> TableType {
         self.table_type
     }
 
@@ -250,10 +250,8 @@ impl Table {
     }
 
     /// Creates a new table to the store.
-    pub fn new(mut ctx: impl AsContextMut, table_type: TableType) -> Self {
-        ctx.as_context_mut()
-            .store
-            .alloc_table(TableEntity::new(table_type))
+    pub fn new(mut ctx: impl AsContextMut, ty: TableType) -> Self {
+        ctx.as_context_mut().store.alloc_table(TableEntity::new(ty))
     }
 
     /// Returns the type and limits of the table.
@@ -261,8 +259,8 @@ impl Table {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Table`].
-    pub fn table_type(&self, ctx: impl AsContext) -> TableType {
-        ctx.as_context().store.resolve_table(*self).table_type()
+    pub fn ty(&self, ctx: impl AsContext) -> TableType {
+        ctx.as_context().store.resolve_table(*self).ty()
     }
 
     /// Returns the current length of the table.

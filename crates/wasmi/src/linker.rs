@@ -385,7 +385,7 @@ impl<T> Linker<T> {
             }
             ExternType::Table(expected_table_type) => {
                 let table = resolved.and_then(Extern::into_table).ok_or_else(make_err)?;
-                let actual_table_type = table.table_type(context);
+                let actual_table_type = table.ty(context);
                 actual_table_type.satisfies(expected_table_type)?;
                 Ok(Extern::Table(table))
             }

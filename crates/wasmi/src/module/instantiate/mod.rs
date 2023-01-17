@@ -142,7 +142,7 @@ impl Module {
                     builder.push_func(func);
                 }
                 (ExternType::Table(required), Extern::Table(table)) => {
-                    let imported = table.table_type(context.as_context());
+                    let imported = table.ty(context.as_context());
                     imported.satisfies(required)?;
                     builder.push_table(table);
                 }
