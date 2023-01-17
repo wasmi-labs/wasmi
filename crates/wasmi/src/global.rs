@@ -155,11 +155,6 @@ impl GlobalEntity {
         }
     }
 
-    /// Returns `true` if the global variable is mutable.
-    pub fn is_mutable(&self) -> bool {
-        matches!(self.ty().mutability(), Mutability::Var)
-    }
-
     /// Returns the [`GlobalType`] of the global variable.
     pub fn ty(&self) -> GlobalType {
         self.ty
@@ -172,7 +167,7 @@ impl GlobalEntity {
     /// - If the global variable is immutable.
     /// - If there is a type mismatch between the global variable and the new value.
     pub fn set(&mut self, new_value: Value) -> Result<(), GlobalError> {
-        if !self.is_mutable() {
+        if !self.ty().mutability().is_mut() {
             return Err(GlobalError::ImmutableWrite);
         }
         if self.ty().content() != new_value.value_type() {
@@ -240,15 +235,6 @@ impl Global {
         ctx.as_context_mut()
             .store
             .alloc_global(GlobalEntity::new(initial_value, mutability))
-    }
-
-    /// Returns `true` if the global variable is mutable.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `ctx` does not own this [`Global`].
-    pub fn is_mutable(&self, ctx: impl AsContext) -> bool {
-        ctx.as_context().store.resolve_global(*self).is_mutable()
     }
 
     /// Returns the [`GlobalType`] of the global variable.
