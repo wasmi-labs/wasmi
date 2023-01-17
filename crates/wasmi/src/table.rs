@@ -89,10 +89,12 @@ impl Display for TableError {
 /// A descriptor for a [`Table`] instance.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct TableType {
-    /// The initial size of the [`Table`].
-    initial: usize,
-    /// The optional maximum size fo the [`Table`].
-    maximum: Option<usize>,
+    /// The minimum number of elements the [`Table`] must have.
+    min: usize,
+    /// The optional maximum number of elements the [`Table`] can have.
+    ///
+    /// If this is `None` then the [`Table`] is not limited in size.
+    max: Option<usize>,
 }
 
 impl TableType {
@@ -100,22 +102,24 @@ impl TableType {
     ///
     /// # Panics
     ///
-    /// - If the `initial` limit is greater than the `maximum` limit if any.
-    pub fn new(initial: usize, maximum: Option<usize>) -> Self {
-        if let Some(maximum) = maximum {
-            assert!(initial <= maximum);
+    /// If `min` is greater than `max`.
+    pub fn new(min: usize, max: Option<usize>) -> Self {
+        if let Some(max) = max {
+            assert!(min <= max);
         }
-        Self { initial, maximum }
+        Self { min, max }
     }
 
-    /// Returns the initial size.
-    pub fn initial(self) -> usize {
-        self.initial
+    /// Returns minimum number of elements the [`Table`] must have.
+    pub fn minimum(self) -> usize {
+        self.min
     }
 
-    /// Returns the maximum size if any.
+    /// The optional maximum number of elements the [`Table`] can have.
+    ///
+    /// If this returns `None` then the [`Table`] is not limited in size.
     pub fn maximum(self) -> Option<usize> {
-        self.maximum
+        self.max
     }
 
     /// Checks if `self` satisfies the given `TableType`.
@@ -125,7 +129,7 @@ impl TableType {
     /// - If the initial limits of the `required` [`TableType`] are greater than `self`.
     /// - If the maximum limits of the `required` [`TableType`] are greater than `self`.
     pub(crate) fn satisfies(&self, required: &TableType) -> Result<(), TableError> {
-        if required.initial() > self.initial() {
+        if required.minimum() > self.minimum() {
             return Err(TableError::UnsatisfyingTableType {
                 unsatisfying: *self,
                 required: *required,
@@ -156,7 +160,7 @@ impl TableEntity {
     /// Creates a new table entity with the given resizable limits.
     pub fn new(table_type: TableType) -> Self {
         Self {
-            elements: vec![None; table_type.initial()],
+            elements: vec![None; table_type.minimum()],
             table_type,
         }
     }
