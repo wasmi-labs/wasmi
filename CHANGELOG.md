@@ -19,6 +19,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - Rename `ExportItem` to `ExportType`:
     - Rename the `ExportItem::kind` method to `ty` and return `ExternType` instead of `ExportItemKind`.
     - Remove the no longer used `ExportItemKind` entirely.
+  - The `ExportsIter` now yields items of the new type `Export` instead of pairs of `(&str, Extern)`.
 
 ## [`0.22.0`] - 2023-01-16
 

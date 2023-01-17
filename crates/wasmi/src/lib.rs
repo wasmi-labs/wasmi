@@ -135,7 +135,7 @@ pub use self::{
     func::{Caller, Func, IntoFunc, TypedFunc, WasmParams, WasmResults, WasmRet, WasmType},
     func_type::FuncType,
     global::{Global, GlobalType, Mutability},
-    instance::{ExportsIter, Instance},
+    instance::{Export, ExportsIter, Instance},
     linker::Linker,
     memory::{Memory, MemoryType},
     module::{

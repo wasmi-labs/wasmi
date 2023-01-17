@@ -147,8 +147,9 @@ impl TestContext<'_> {
         self.modules.push(module);
         if let Some(module_name) = module_name {
             self.instances.insert(module_name.to_string(), instance);
-            for (field_name, export) in instance.exports(&self.store) {
-                self.linker.define(module_name, field_name, *export)?;
+            for export in instance.exports(&self.store) {
+                self.linker
+                    .define(module_name, export.name(), export.into_extern())?;
             }
         }
         self.last_instance = Some(instance);
@@ -186,10 +187,12 @@ impl TestContext<'_> {
             return;
         }
         self.instances.insert(name.to_string(), instance);
-        for (field_name, export) in instance.exports(&self.store) {
+        for export in instance.exports(&self.store) {
             self.linker
-                .define(name, field_name, *export)
+                .define(name, export.name(), export.clone().into_extern())
                 .unwrap_or_else(|error| {
+                    let field_name = export.name();
+                    let export = export.clone().into_extern();
                     panic!(
                         "failed to define export {name}::{field_name}: \
                         {export:?}: {error}",
