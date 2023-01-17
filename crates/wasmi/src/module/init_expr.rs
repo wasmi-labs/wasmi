@@ -1,5 +1,5 @@
 use super::GlobalIdx;
-use crate::ModuleError;
+use crate::errors::ModuleError;
 use wasmi_core::{Value, F32, F64};
 
 /// An initializer expression.

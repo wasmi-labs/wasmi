@@ -2,8 +2,8 @@ pub use self::block_type::BlockType;
 use super::{parser::ReusableAllocations, FuncIdx, ModuleResources};
 use crate::{
     engine::{FuncBody, FuncBuilder, FunctionBuilderAllocations},
+    errors::ModuleError,
     Engine,
-    ModuleError,
 };
 use wasmparser::{FuncValidator, FunctionBody, ValidatorResources};
 

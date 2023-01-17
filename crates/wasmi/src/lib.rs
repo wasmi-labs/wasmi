@@ -139,7 +139,6 @@ pub use self::{
         ImportType,
         InstancePre,
         Module,
-        ModuleError,
         ModuleExportsIter,
         ModuleImportsIter,
         Read,

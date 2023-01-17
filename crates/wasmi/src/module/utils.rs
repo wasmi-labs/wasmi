@@ -1,4 +1,4 @@
-use crate::{FuncType, GlobalType, MemoryType, ModuleError, Mutability, TableType};
+use crate::{errors::ModuleError, FuncType, GlobalType, MemoryType, Mutability, TableType};
 use wasmi_core::ValueType;
 
 impl TryFrom<wasmparser::TableType> for TableType {
