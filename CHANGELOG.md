@@ -26,7 +26,16 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - The `UntypedValue` type gained some new methods to replace functionality
     that was provided in parts by the removed traits.
 - The `wasmi` crate now follows the Wasmtime API a bit more closely. (https://github.com/paritytech/wasmi/pull/613)
-
+  - `StoreContext` new methods:
+    - `fn engine(&self) -> &Engine`
+    - `fn data(&self) -> &T` 
+  - `StoreContextMut` new methods:
+    - `fn engine(&self) -> &Engine`
+    - `fn data(&self) -> &T` 
+    - `fn data_mut(&mut self) -> &mut T`
+  - Renamed `Store::state` method to `Store::data`.
+  - Renamed `Store::state_mut` method to `Store::data_mut`.
+  - Renamed `Store::into_state` method to `Store::into_data`.
 ### Internal
 
 - The `Store` and `Engine` types are better decoupled from their generic parts. (https://github.com/paritytech/wasmi/pull/610, https://github.com/paritytech/wasmi/pull/611)
