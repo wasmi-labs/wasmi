@@ -272,7 +272,7 @@ pub struct ModuleImportsIter<'a> {
 }
 
 impl<'a> Iterator for ModuleImportsIter<'a> {
-    type Item = ModuleImport<'a>;
+    type Item = ImportType<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let import = match self.names.next() {
@@ -283,25 +283,25 @@ impl<'a> Iterator for ModuleImportsIter<'a> {
                         panic!("unexpected missing imported function for {name:?}")
                     });
                     let func_type = self.engine.resolve_func_type(*func_type, FuncType::clone);
-                    ModuleImport::new(name, func_type)
+                    ImportType::new(name, func_type)
                 }
                 Imported::Table(name) => {
                     let table_type = self.tables.next().unwrap_or_else(|| {
                         panic!("unexpected missing imported table for {name:?}")
                     });
-                    ModuleImport::new(name, *table_type)
+                    ImportType::new(name, *table_type)
                 }
                 Imported::Memory(name) => {
                     let memory_type = self.memories.next().unwrap_or_else(|| {
                         panic!("unexpected missing imported linear memory for {name:?}")
                     });
-                    ModuleImport::new(name, *memory_type)
+                    ImportType::new(name, *memory_type)
                 }
                 Imported::Global(name) => {
                     let global_type = self.globals.next().unwrap_or_else(|| {
                         panic!("unexpected missing imported global variable for {name:?}")
                     });
-                    ModuleImport::new(name, *global_type)
+                    ImportType::new(name, *global_type)
                 }
             },
         };
@@ -321,14 +321,14 @@ impl<'a> ExactSizeIterator for ModuleImportsIter<'a> {
 
 /// A [`Module`] import item.
 #[derive(Debug)]
-pub struct ModuleImport<'a> {
+pub struct ImportType<'a> {
     /// The name of the imported item.
     name: &'a ImportName,
     /// The external item type.
     item_type: ExternType,
 }
 
-impl<'a> ModuleImport<'a> {
+impl<'a> ImportType<'a> {
     /// Creates a new [`ModuleImport`].
     pub(crate) fn new<T>(name: &'a ImportName, ty: T) -> Self
     where

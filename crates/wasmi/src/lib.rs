@@ -144,7 +144,7 @@ pub use self::{
         Module,
         ModuleError,
         ModuleExportsIter,
-        ModuleImport,
+        ImportType,
         ModuleImportsIter,
         Read,
     },

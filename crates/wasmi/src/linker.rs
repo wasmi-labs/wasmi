@@ -7,7 +7,7 @@ use super::{
     Module,
 };
 use crate::{
-    module::{ImportName, ModuleImport},
+    module::{ImportName, ImportType},
     ExternType,
     FuncType,
     GlobalType,
@@ -74,7 +74,7 @@ pub enum LinkerError {
 
 impl LinkerError {
     /// Creates a new [`LinkerError`] for when an imported definition was not found.
-    pub fn cannot_find_definition_of_import(import: &ModuleImport) -> Self {
+    pub fn cannot_find_definition_of_import(import: &ImportType) -> Self {
         Self::CannotFindDefinitionForImport {
             name: import.name().clone(),
             item_type: import.item_type().clone(),
@@ -361,7 +361,7 @@ impl<T> Linker<T> {
     fn process_import(
         &self,
         context: impl AsContextMut,
-        import: ModuleImport,
+        import: ImportType,
     ) -> Result<Extern, Error> {
         let make_err = || LinkerError::cannot_find_definition_of_import(&import);
         let module_name = import.module();
