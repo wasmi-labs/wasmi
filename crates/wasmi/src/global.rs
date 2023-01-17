@@ -253,15 +253,6 @@ impl Global {
         ctx.as_context().store.resolve_global(*self).is_mutable()
     }
 
-    /// Returns the type of the global variable value.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `ctx` does not own this [`Global`].
-    pub fn value_type(&self, ctx: impl AsContext) -> ValueType {
-        ctx.as_context().store.resolve_global(*self).value_type()
-    }
-
     /// Returns the [`GlobalType`] of the global variable.
     pub fn global_type(&self, ctx: impl AsContext) -> GlobalType {
         ctx.as_context().store.resolve_global(*self).global_type()
