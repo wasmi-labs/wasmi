@@ -5,13 +5,14 @@ mod pre;
 mod tests;
 
 pub use self::{error::InstantiationError, pre::InstancePre};
-use super::{export, InitExpr, Module, ModuleImportType};
+use super::{export, InitExpr, Module};
 use crate::{
     module::{init_expr::InitExprOperand, DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
     AsContext,
     AsContextMut,
     Error,
     Extern,
+    ExternType,
     FuncEntity,
     FuncType,
     Global,
@@ -123,7 +124,7 @@ impl Module {
                 }
             };
             match (import.item_type(), external) {
-                (ModuleImportType::Func(expected_signature), Extern::Func(func)) => {
+                (ExternType::Func(expected_signature), Extern::Func(func)) => {
                     let actual_signature = func.signature(context.as_context());
                     let actual_signature = self
                         .engine
@@ -140,17 +141,17 @@ impl Module {
                     }
                     builder.push_func(func);
                 }
-                (ModuleImportType::Table(required), Extern::Table(table)) => {
+                (ExternType::Table(required), Extern::Table(table)) => {
                     let imported = table.table_type(context.as_context());
                     imported.satisfies(required)?;
                     builder.push_table(table);
                 }
-                (ModuleImportType::Memory(required), Extern::Memory(memory)) => {
+                (ExternType::Memory(required), Extern::Memory(memory)) => {
                     let imported = memory.memory_type(context.as_context());
                     imported.satisfies(required)?;
                     builder.push_memory(memory);
                 }
-                (ModuleImportType::Global(required), Extern::Global(global)) => {
+                (ExternType::Global(required), Extern::Global(global)) => {
                     let imported = global.global_type(context.as_context());
                     imported.satisfies(required)?;
                     builder.push_global(global);

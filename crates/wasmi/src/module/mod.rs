@@ -39,6 +39,7 @@ use crate::{
     engine::{DedupFuncType, FuncBody},
     Engine,
     Error,
+    ExternType,
     FuncType,
     GlobalType,
     MemoryType,
@@ -324,14 +325,14 @@ pub struct ModuleImport<'a> {
     /// The name of the imported item.
     name: &'a ImportName,
     /// The external item type.
-    item_type: ModuleImportType,
+    item_type: ExternType,
 }
 
 impl<'a> ModuleImport<'a> {
     /// Creates a new [`ModuleImport`].
     pub(crate) fn new<T>(name: &'a ImportName, ty: T) -> Self
     where
-        T: Into<ModuleImportType>,
+        T: Into<ExternType>,
     {
         Self {
             name,
@@ -355,53 +356,8 @@ impl<'a> ModuleImport<'a> {
     }
 
     /// Returns the import item type.
-    pub fn item_type(&self) -> &ModuleImportType {
+    pub fn item_type(&self) -> &ExternType {
         &self.item_type
-    }
-}
-
-/// The type of the imported module item.
-#[derive(Debug, Clone)]
-pub enum ModuleImportType {
-    /// An imported [`Func`].
-    ///
-    /// [`Func`]: [`crate::Func`]
-    Func(FuncType),
-    /// An imported [`Table`].
-    ///
-    /// [`Table`]: [`crate::Table`]
-    Table(TableType),
-    /// An imported [`Memory`].
-    ///
-    /// [`Memory`]: [`crate::Memory`]
-    Memory(MemoryType),
-    /// An imported [`Global`].
-    ///
-    /// [`Global`]: [`crate::Global`]
-    Global(GlobalType),
-}
-
-impl From<FuncType> for ModuleImportType {
-    fn from(func_type: FuncType) -> Self {
-        Self::Func(func_type)
-    }
-}
-
-impl From<TableType> for ModuleImportType {
-    fn from(table_type: TableType) -> Self {
-        Self::Table(table_type)
-    }
-}
-
-impl From<MemoryType> for ModuleImportType {
-    fn from(memory_type: MemoryType) -> Self {
-        Self::Memory(memory_type)
-    }
-}
-
-impl From<GlobalType> for ModuleImportType {
-    fn from(global_type: GlobalType) -> Self {
-        Self::Global(global_type)
     }
 }
 

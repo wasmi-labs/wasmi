@@ -1,8 +1,8 @@
-use super::ModuleImportType;
 use crate::{
     errors::{MemoryError, TableError},
     global::GlobalError,
     Extern,
+    ExternType,
     FuncType,
     Table,
 };
@@ -18,7 +18,7 @@ pub enum InstantiationError {
     /// type of the required import for module instantiation.
     ImportsExternalsMismatch {
         /// The expected external value for the module import.
-        expected: ModuleImportType,
+        expected: ExternType,
         /// The actually found external value for the module import.
         actual: Extern,
     },

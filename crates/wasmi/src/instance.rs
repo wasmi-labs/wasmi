@@ -10,10 +10,7 @@ use super::{
     Stored,
     Table,
 };
-use crate::{
-    module::{FuncIdx, ModuleImportType},
-    ExternType,
-};
+use crate::{module::FuncIdx, ExternType};
 use alloc::{
     boxed::Box,
     collections::{btree_map, BTreeMap},
@@ -243,16 +240,16 @@ impl InstanceEntityBuilder {
         let mut len_memories = module.len_memories();
         for import in module.imports() {
             match import.item_type() {
-                ModuleImportType::Func(_) => {
+                ExternType::Func(_) => {
                     len_funcs += 1;
                 }
-                ModuleImportType::Table(_) => {
+                ExternType::Table(_) => {
                     len_tables += 1;
                 }
-                ModuleImportType::Memory(_) => {
+                ExternType::Memory(_) => {
                     len_memories += 1;
                 }
-                ModuleImportType::Global(_) => {
+                ExternType::Global(_) => {
                     len_globals += 1;
                 }
             }

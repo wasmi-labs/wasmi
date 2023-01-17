@@ -7,7 +7,8 @@ use super::{
     Module,
 };
 use crate::{
-    module::{ImportName, ModuleImport, ModuleImportType},
+    module::{ImportName, ModuleImport},
+    ExternType,
     FuncType,
     GlobalType,
 };
@@ -45,7 +46,7 @@ pub enum LinkerError {
         // /// The field name of the import for which no definition has been found.
         // field_name: Option<String>,
         /// The type of the import for which no definition has been found.
-        item_type: ModuleImportType,
+        item_type: ExternType,
     },
     /// Encountered when a function signature does not match the expected signature.
     FuncTypeMismatch {
@@ -368,7 +369,7 @@ impl<T> Linker<T> {
         let resolved = self.resolve(module_name, field_name);
         let context = context.as_context();
         match import.item_type() {
-            ModuleImportType::Func(expected_func_type) => {
+            ExternType::Func(expected_func_type) => {
                 let func = resolved.and_then(Extern::into_func).ok_or_else(make_err)?;
                 let actual_func_type = func.signature(&context);
                 let actual_func_type = context.store.resolve_func_type(actual_func_type);
@@ -382,13 +383,13 @@ impl<T> Linker<T> {
                 }
                 Ok(Extern::Func(func))
             }
-            ModuleImportType::Table(expected_table_type) => {
+            ExternType::Table(expected_table_type) => {
                 let table = resolved.and_then(Extern::into_table).ok_or_else(make_err)?;
                 let actual_table_type = table.table_type(context);
                 actual_table_type.satisfies(expected_table_type)?;
                 Ok(Extern::Table(table))
             }
-            ModuleImportType::Memory(expected_memory_type) => {
+            ExternType::Memory(expected_memory_type) => {
                 let memory = resolved
                     .and_then(Extern::into_memory)
                     .ok_or_else(make_err)?;
@@ -396,7 +397,7 @@ impl<T> Linker<T> {
                 actual_memory_type.satisfies(expected_memory_type)?;
                 Ok(Extern::Memory(memory))
             }
-            ModuleImportType::Global(expected_global_type) => {
+            ExternType::Global(expected_global_type) => {
                 let global = resolved
                     .and_then(Extern::into_global)
                     .ok_or_else(make_err)?;
