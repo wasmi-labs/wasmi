@@ -323,7 +323,7 @@ impl Module {
             len_items
                 .checked_add(offset)
                 .filter(|&req| req <= len_table)
-                .ok_or_else(|| InstantiationError::ElementSegmentDoesNotFit {
+                .ok_or(InstantiationError::ElementSegmentDoesNotFit {
                     table,
                     offset,
                     amount: len_items,
