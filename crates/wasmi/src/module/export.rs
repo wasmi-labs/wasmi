@@ -1,6 +1,6 @@
 use super::GlobalIdx;
 use crate::{ExternType, Module, ModuleError};
-use alloc::collections::btree_map::Iter as BTreeIter;
+use alloc::{boxed::Box, collections::btree_map::Iter as BTreeIter};
 
 /// The index of a function declaration within a [`Module`].
 ///
