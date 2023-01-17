@@ -103,6 +103,7 @@ impl Extern {
 /// A list of all possible types which can be externally referenced from a WebAssembly module.
 ///
 /// This list can be found in ImportType or ExportType, so these types can either be imported or exported.
+#[derive(Debug, Clone)]
 pub enum ExternType {
     /// The type of an [`Extern::Global`].
     Global(GlobalType),
