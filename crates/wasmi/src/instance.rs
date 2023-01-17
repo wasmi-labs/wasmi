@@ -239,7 +239,7 @@ impl InstanceEntityBuilder {
         let mut len_tables = module.len_tables();
         let mut len_memories = module.len_memories();
         for import in module.imports() {
-            match import.item_type() {
+            match import.ty() {
                 ExternType::Func(_) => {
                     len_funcs += 1;
                 }

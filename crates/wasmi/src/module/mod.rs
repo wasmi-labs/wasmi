@@ -325,7 +325,7 @@ pub struct ImportType<'a> {
     /// The name of the imported item.
     name: &'a ImportName,
     /// The external item type.
-    item_type: ExternType,
+    ty: ExternType,
 }
 
 impl<'a> ImportType<'a> {
@@ -336,7 +336,7 @@ impl<'a> ImportType<'a> {
     {
         Self {
             name,
-            item_type: ty.into(),
+            ty: ty.into(),
         }
     }
 
@@ -356,8 +356,8 @@ impl<'a> ImportType<'a> {
     }
 
     /// Returns the import item type.
-    pub fn item_type(&self) -> &ExternType {
-        &self.item_type
+    pub fn ty(&self) -> &ExternType {
+        &self.ty
     }
 }
 

@@ -77,7 +77,7 @@ impl LinkerError {
     pub fn cannot_find_definition_of_import(import: &ImportType) -> Self {
         Self::CannotFindDefinitionForImport {
             name: import.name().clone(),
-            item_type: import.item_type().clone(),
+            item_type: import.ty().clone(),
         }
     }
 }
@@ -368,7 +368,7 @@ impl<T> Linker<T> {
         let field_name = import.field();
         let resolved = self.resolve(module_name, field_name);
         let context = context.as_context();
-        match import.item_type() {
+        match import.ty() {
             ExternType::Func(expected_func_type) => {
                 let func = resolved.and_then(Extern::into_func).ok_or_else(make_err)?;
                 let actual_func_type = func.signature(&context);
