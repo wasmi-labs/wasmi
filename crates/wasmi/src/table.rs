@@ -265,7 +265,7 @@ impl Table {
     /// Returns the current size of the [`Table`].
     ///
     /// # Panics
-    /// 
+    ///
     /// If `ctx` does not own this [`Table`].
     pub fn size(&self, ctx: impl AsContext) -> usize {
         ctx.as_context().store.resolve_table(*self).size()
