@@ -133,7 +133,10 @@ pub struct ModuleExportsIter<'module> {
     globals: &'module [GlobalType],
 }
 
-/// An item exported from a [`Module`].
+/// A descriptor for an exported WebAssembly value of a [`Module`].
+/// 
+/// This type is primarily accessed from the [`Module::exports`] method and describes
+/// what names are exported from a Wasm [`Module`] and the type of the item that is exported.
 #[derive(Debug)]
 pub struct ExportType<'module> {
     name: &'module str,
