@@ -256,7 +256,7 @@ impl Value {
 
     /// Get variable type for this value.
     #[inline]
-    pub fn value_type(&self) -> ValueType {
+    pub fn ty(&self) -> ValueType {
         match *self {
             Value::I32(_) => ValueType::I32,
             Value::I64(_) => ValueType::I64,

@@ -151,7 +151,7 @@ impl GlobalEntity {
     pub fn new(initial_value: Value, mutability: Mutability) -> Self {
         Self {
             value: initial_value.into(),
-            ty: GlobalType::new(initial_value.value_type(), mutability),
+            ty: GlobalType::new(initial_value.ty(), mutability),
         }
     }
 
@@ -170,10 +170,10 @@ impl GlobalEntity {
         if !self.ty().mutability().is_mut() {
             return Err(GlobalError::ImmutableWrite);
         }
-        if self.ty().content() != new_value.value_type() {
+        if self.ty().content() != new_value.ty() {
             return Err(GlobalError::TypeMismatch {
                 expected: self.ty().content(),
-                encountered: new_value.value_type(),
+                encountered: new_value.ty(),
             });
         }
         self.set_untyped(new_value.into());
