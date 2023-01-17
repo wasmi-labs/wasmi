@@ -21,7 +21,7 @@ use crate::{
     ModuleError,
     TableType,
 };
-use alloc::{collections::BTreeMap, vec::Vec};
+use alloc::{boxed::Box, collections::BTreeMap, vec::Vec};
 
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug)]
