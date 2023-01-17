@@ -131,7 +131,7 @@ pub use self::{
         TypedResumableInvocation,
     },
     error::Error,
-    external::Extern,
+    external::{Extern, ExternType},
     func::{Caller, Func, IntoFunc, TypedFunc, WasmParams, WasmResults, WasmRet, WasmType},
     func_type::FuncType,
     global::{Global, GlobalType, Mutability},

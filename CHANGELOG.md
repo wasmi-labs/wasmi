@@ -15,6 +15,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Mirror Wasmtime API more closely:
   - Renamed `Caller::host_data` method to `Caller::data`.
   - Renamed `Caller::host_data_mut` method to `Caller::data_mut`.
+  - Add `Extern::ty` method and the `ExternType` type.
 
 ## [`0.22.0`] - 2023-01-16
 
