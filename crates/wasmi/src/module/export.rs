@@ -1,14 +1,5 @@
 use super::GlobalIdx;
-use crate::{
-    engine::DedupFuncType,
-    Engine,
-    ExternType,
-    GlobalType,
-    MemoryType,
-    Module,
-    ModuleError,
-    TableType,
-};
+use crate::{ExternType, Module, ModuleError};
 use alloc::collections::btree_map::Iter as BTreeIter;
 
 /// The index of a function declaration within a [`Module`].
@@ -101,11 +92,7 @@ impl ExternIdx {
 #[derive(Debug)]
 pub struct ModuleExportsIter<'module> {
     exports: BTreeIter<'module, Box<str>, ExternIdx>,
-    engine: &'module Engine,
-    funcs: &'module [DedupFuncType],
-    tables: &'module [TableType],
-    memories: &'module [MemoryType],
-    globals: &'module [GlobalType],
+    module: &'module Module,
 }
 
 /// A descriptor for an exported WebAssembly value of a [`Module`].
@@ -135,11 +122,7 @@ impl<'module> ModuleExportsIter<'module> {
     pub(super) fn new(module: &'module Module) -> Self {
         Self {
             exports: module.exports.iter(),
-            engine: &module.engine,
-            funcs: &module.funcs,
-            tables: &module.tables,
-            memories: &module.memories,
-            globals: &module.globals,
+            module,
         }
     }
 }
@@ -149,25 +132,7 @@ impl<'module> Iterator for ModuleExportsIter<'module> {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.exports.next().map(|(name, idx)| {
-            let ty = match idx {
-                ExternIdx::Func(index) => {
-                    let dedup = self.funcs[index.into_usize()];
-                    let func_type = self.engine.resolve_func_type(dedup, Clone::clone);
-                    ExternType::Func(func_type)
-                }
-                ExternIdx::Table(index) => {
-                    let table_type = self.tables[index.into_u32() as usize];
-                    ExternType::Table(table_type)
-                }
-                ExternIdx::Memory(index) => {
-                    let memory_type = self.memories[index.into_u32() as usize];
-                    ExternType::Memory(memory_type)
-                }
-                ExternIdx::Global(index) => {
-                    let global_type = self.globals[index.into_usize()];
-                    ExternType::Global(global_type)
-                }
-            };
+            let ty = self.module.get_extern_type(*idx);
             ExportType { name, ty }
         })
     }
