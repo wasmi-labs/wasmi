@@ -46,6 +46,8 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     - While this API is not included in Wasmtime it is a useful convenience method.
   - Rename `TableType::initial` method to `minimum`.
   - Rename `Table::len` method to `size`.
+  - `Table` and `TableType` now operate on `u32` instead of `usize` just like in Wasmtime.
+    - This affects `Table::{new, size, set, get, grow}` methods and `TableType::{new, minimum, maximum}` methods and their users.
 
 ## [`0.22.0`] - 2023-01-16
 
