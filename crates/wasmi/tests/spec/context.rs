@@ -229,7 +229,7 @@ impl TestContext<'_> {
                 module_name: module_name.map(|name| name.to_string()),
                 func_name: func_name.to_string(),
             })?;
-        let len_results = func.func_type(&self.store).results().len();
+        let len_results = func.ty(&self.store).results().len();
         self.results.clear();
         self.results.resize(len_results, Value::I32(0));
         func.call(&mut self.store, args, &mut self.results)?;

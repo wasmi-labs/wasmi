@@ -265,7 +265,7 @@ impl Func {
     }
 
     /// Returns the function type of the [`Func`].
-    pub fn func_type(&self, ctx: impl AsContext) -> FuncType {
+    pub fn ty(&self, ctx: impl AsContext) -> FuncType {
         ctx.as_context()
             .store
             .resolve_func_type(self.ty_dedup(&ctx))

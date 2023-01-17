@@ -93,7 +93,7 @@ impl Extern {
             Extern::Global(global) => global.global_type(ctx).into(),
             Extern::Table(table) => table.table_type(ctx).into(),
             Extern::Memory(memory) => memory.memory_type(ctx).into(),
-            Extern::Func(func) => func.func_type(ctx).into(),
+            Extern::Func(func) => func.ty(ctx).into(),
         }
     }
 }

@@ -43,7 +43,7 @@ fn main() -> Result<()> {
     let func_args = args.func_args;
 
     let (func, func_name, mut store) = load_wasm_func(&wasm_file, &module, &func_name)?;
-    let func_type = func.func_type(&store);
+    let func_type = func.ty(&store);
     let func_args = type_check_arguments(&func_name, &func_type, &func_args)?;
     let mut results = prepare_results_buffer(&func_type);
 
