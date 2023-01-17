@@ -352,7 +352,7 @@ impl<'module> ImportType<'module> {
 
     /// Returns the field import name.
     pub fn field(&self) -> &'module str {
-        self.name.field()
+        self.name.name()
     }
 
     /// Returns the import item type.

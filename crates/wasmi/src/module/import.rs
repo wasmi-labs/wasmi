@@ -54,7 +54,7 @@ impl ImportName {
     /// Returns the name of the imported item within the [`Module`] namespace.
     ///
     /// [`Module`]: [`super::Module`]
-    pub fn field(&self) -> &str {
+    pub fn name(&self) -> &str {
         &self.field
     }
 }
