@@ -41,6 +41,9 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     - Use `global.ty().content()` instead.
   - Remove `Global::is_mutable` getter.
     - Use `global.ty().mutability().is_mut()` instead.
+  - Rename `Mutability::Mutable` to `Var`.
+  - Add `Mutability::is_mut` getter.
+    - While this API is not included in Wasmtime it is a useful convenience method.
 
 ## [`0.22.0`] - 2023-01-16
 
