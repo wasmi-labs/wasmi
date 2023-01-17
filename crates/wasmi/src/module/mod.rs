@@ -17,7 +17,7 @@ use self::{
     builder::ModuleBuilder,
     data::DataSegment,
     element::ElementSegment,
-    export::ModuleExport,
+    export::ExternIdx,
     global::Global,
     import::{ExternTypeIdx, Import},
     parser::parse,
@@ -45,7 +45,7 @@ use crate::{
     MemoryType,
     TableType,
 };
-use alloc::{boxed::Box, sync::Arc, vec::Vec};
+use alloc::{boxed::Box, collections::BTreeMap, sync::Arc, vec::Vec};
 use core::{iter, slice::Iter as SliceIter};
 
 /// A parsed and validated WebAssembly module.
@@ -59,7 +59,7 @@ pub struct Module {
     memories: Box<[MemoryType]>,
     globals: Box<[GlobalType]>,
     globals_init: Box<[InitExpr]>,
-    exports: Box<[ModuleExport]>,
+    exports: BTreeMap<Box<str>, ExternIdx>,
     start: Option<FuncIdx>,
     func_bodies: Box<[FuncBody]>,
     element_segments: Box<[ElementSegment]>,
@@ -166,7 +166,7 @@ impl Module {
             memories: builder.memories.into(),
             globals: builder.globals.into(),
             globals_init: builder.globals_init.into(),
-            exports: builder.exports.into(),
+            exports: builder.exports,
             start: builder.start,
             func_bodies: builder.func_bodies.into(),
             element_segments: builder.element_segments.into(),
@@ -257,6 +257,46 @@ impl Module {
     /// Returns an iterator over the exports of the [`Module`].
     pub fn exports(&self) -> ModuleExportsIter {
         ModuleExportsIter::new(self)
+    }
+
+    /// Looks up an export in this [`Module`] by its `name`.
+    ///
+    /// Returns `None` if no export with the name was found.
+    ///
+    /// # Note
+    ///
+    /// This function will return the type of an export with the given `name`.
+    pub fn get_export(&self, name: &str) -> Option<ExternType> {
+        let idx = self.exports.get(name).copied()?;
+        let ty = self.get_extern_type(idx);
+        Some(ty)
+    }
+
+    /// Returns the [`ExternType`] for a given [`ExternIdx`].
+    ///
+    /// # Note
+    ///
+    /// This function assumes that the given [`ExternType`] is valid.
+    fn get_extern_type(&self, idx: ExternIdx) -> ExternType {
+        match idx {
+            ExternIdx::Func(index) => {
+                let dedup = self.funcs[index.into_usize()];
+                let func_type = self.engine.resolve_func_type(dedup, Clone::clone);
+                ExternType::Func(func_type)
+            }
+            ExternIdx::Table(index) => {
+                let table_type = self.tables[index.into_u32() as usize];
+                ExternType::Table(table_type)
+            }
+            ExternIdx::Memory(index) => {
+                let memory_type = self.memories[index.into_u32() as usize];
+                ExternType::Memory(memory_type)
+            }
+            ExternIdx::Global(index) => {
+                let global_type = self.globals[index.into_usize()];
+                ExternType::Global(global_type)
+            }
+        }
     }
 }
 

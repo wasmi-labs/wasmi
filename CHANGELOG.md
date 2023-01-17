@@ -12,6 +12,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Changed
 
+- Add `Module::get_export` method. (https://github.com/paritytech/wasmi/pull/617)
 - Mirror Wasmtime API more closely. (https://github.com/paritytech/wasmi/pull/615, https://github.com/paritytech/wasmi/pull/616)
   - Renamed `Caller::host_data` method to `Caller::data`.
   - Renamed `Caller::host_data_mut` method to `Caller::data_mut`.

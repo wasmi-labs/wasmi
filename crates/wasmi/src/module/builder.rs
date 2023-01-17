@@ -1,4 +1,5 @@
 use super::{
+    export::ExternIdx,
     import::FuncTypeIdx,
     DataSegment,
     ElementSegment,
@@ -10,7 +11,6 @@ use super::{
     ImportName,
     InitExpr,
     Module,
-    ModuleExport,
 };
 use crate::{
     engine::{DedupFuncType, FuncBody},
@@ -21,7 +21,7 @@ use crate::{
     ModuleError,
     TableType,
 };
-use alloc::vec::Vec;
+use alloc::{boxed::Box, collections::BTreeMap, vec::Vec};
 
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug)]
@@ -34,7 +34,7 @@ pub struct ModuleBuilder<'engine> {
     pub(super) memories: Vec<MemoryType>,
     pub(super) globals: Vec<GlobalType>,
     pub(super) globals_init: Vec<InitExpr>,
-    pub(super) exports: Vec<ModuleExport>,
+    pub(super) exports: BTreeMap<Box<str>, ExternIdx>,
     pub(super) start: Option<FuncIdx>,
     pub(super) func_bodies: Vec<FuncBody>,
     pub(super) element_segments: Vec<ElementSegment>,
@@ -111,7 +111,7 @@ impl<'engine> ModuleBuilder<'engine> {
             memories: Vec::new(),
             globals: Vec::new(),
             globals_init: Vec::new(),
-            exports: Vec::new(),
+            exports: BTreeMap::new(),
             start: None,
             func_bodies: Vec::new(),
             element_segments: Vec::new(),
@@ -320,14 +320,14 @@ impl<'engine> ModuleBuilder<'engine> {
     /// If this function has already been called on the same [`ModuleBuilder`].
     pub fn push_exports<T>(&mut self, exports: T) -> Result<(), ModuleError>
     where
-        T: IntoIterator<Item = Result<ModuleExport, ModuleError>>,
+        T: IntoIterator<Item = Result<(Box<str>, ExternIdx), ModuleError>>,
         T::IntoIter: ExactSizeIterator,
     {
         assert!(
             self.exports.is_empty(),
             "tried to initialize module export declarations twice"
         );
-        self.exports = exports.into_iter().collect::<Result<Vec<_>, _>>()?;
+        self.exports = exports.into_iter().collect::<Result<BTreeMap<_, _>, _>>()?;
         Ok(())
     }
 

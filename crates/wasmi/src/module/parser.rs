@@ -5,6 +5,7 @@ use core::{
 
 use super::{
     compile::translate,
+    export::ExternIdx,
     import::FuncTypeIdx,
     FuncIdx,
     Module,
@@ -372,7 +373,12 @@ impl<'engine> ModuleParser<'engine> {
     fn process_exports(&mut self, mut section: ExportSectionReader) -> Result<(), ModuleError> {
         self.validator.export_section(&section)?;
         let len_exports = section.get_count();
-        let exports = (0..len_exports).map(|_| section.read()?.try_into());
+        let exports = (0..len_exports).map(|_| {
+            let export = section.read()?;
+            let field = export.name.into();
+            let idx = ExternIdx::new(export.kind, export.index)?;
+            Ok((field, idx))
+        });
         self.builder.push_exports(exports)?;
         Ok(())
     }
