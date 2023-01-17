@@ -140,11 +140,11 @@ pub use self::{
     memory::{Memory, MemoryType},
     module::{
         ExportType,
+        ImportType,
         InstancePre,
         Module,
         ModuleError,
         ModuleExportsIter,
-        ImportType,
         ModuleImportsIter,
         Read,
     },
