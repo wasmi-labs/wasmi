@@ -50,34 +50,34 @@ impl MemoryIdx {
     }
 }
 
-/// An export definition within a [`Module`].
+/// A descriptor of a [`Module`] export definition.
 ///
-/// [`Module`]: [`super::Module`]
+/// [`Module`]: [`crate::Module`]
 #[derive(Debug)]
-pub struct Export {
+pub struct ModuleExport {
     /// The name under which the export definition is exported.
     field: Box<str>,
     /// The external item of the export definition.
     external: ExternIdx,
 }
 
-impl TryFrom<wasmparser::Export<'_>> for Export {
+impl TryFrom<wasmparser::Export<'_>> for ModuleExport {
     type Error = ModuleError;
 
     fn try_from(export: wasmparser::Export<'_>) -> Result<Self, Self::Error> {
         let field = export.name.into();
         let external = (export.kind, export.index).try_into()?;
-        Ok(Export { field, external })
+        Ok(ModuleExport { field, external })
     }
 }
 
-impl Export {
-    /// Returns the field name of the [`Export`].
+impl ModuleExport {
+    /// Returns the field name of the [`ModuleExport`].
     pub fn field(&self) -> &str {
         &self.field
     }
 
-    /// Returns the [`ExternIdx`] item of the [`Export`].
+    /// Returns the [`ExternIdx`] item of the [`ModuleExport`].
     pub fn idx(&self) -> ExternIdx {
         self.external
     }
@@ -125,7 +125,7 @@ impl TryFrom<(wasmparser::ExternalKind, u32)> for ExternIdx {
 /// [`Module`]: [`super::Module`]
 #[derive(Debug)]
 pub struct ModuleExportsIter<'module> {
-    exports: SliceIter<'module, Export>,
+    exports: SliceIter<'module, ModuleExport>,
     engine: &'module Engine,
     funcs: &'module [DedupFuncType],
     tables: &'module [TableType],

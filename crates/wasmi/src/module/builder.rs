@@ -2,7 +2,7 @@ use super::{
     import::FuncTypeIdx,
     DataSegment,
     ElementSegment,
-    Export,
+    ModuleExport,
     FuncIdx,
     Global,
     GlobalIdx,
@@ -34,7 +34,7 @@ pub struct ModuleBuilder<'engine> {
     pub(super) memories: Vec<MemoryType>,
     pub(super) globals: Vec<GlobalType>,
     pub(super) globals_init: Vec<InitExpr>,
-    pub(super) exports: Vec<Export>,
+    pub(super) exports: Vec<ModuleExport>,
     pub(super) start: Option<FuncIdx>,
     pub(super) func_bodies: Vec<FuncBody>,
     pub(super) element_segments: Vec<ElementSegment>,
@@ -320,7 +320,7 @@ impl<'engine> ModuleBuilder<'engine> {
     /// If this function has already been called on the same [`ModuleBuilder`].
     pub fn push_exports<T>(&mut self, exports: T) -> Result<(), ModuleError>
     where
-        T: IntoIterator<Item = Result<Export, ModuleError>>,
+        T: IntoIterator<Item = Result<ModuleExport, ModuleError>>,
         T::IntoIter: ExactSizeIterator,
     {
         assert!(
