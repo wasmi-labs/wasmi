@@ -56,11 +56,7 @@
 //!     let instance = linker
 //!         .instantiate(&mut store, &module)?
 //!         .start(&mut store)?;
-//!     let hello = instance
-//!         .get_export(&store, "hello")
-//!         .and_then(Extern::into_func)
-//!         .ok_or_else(|| anyhow!("could not find function \"hello\""))?
-//!         .typed::<(), ()>(&mut store)?;
+//!     let hello = instance.get_typed_func::<(), ()>(&store, "hello")?;
 //!
 //!     // And finally we can call the wasm!
 //!     hello.call(&mut store, ())?;

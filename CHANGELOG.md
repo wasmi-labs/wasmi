@@ -25,6 +25,12 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     - Rename `ImportType::field` to `name`.
     - Properly forward `&str` lifetimes in `ImportType::{module, name}`.
     - Replace `ModuleImportType` by `ExternType`.
+  - Add new convenience methods to `Instance`:
+    - `Instance::get_func`
+    - `Instance::get_typed_func`
+    - `Instance::get_global`
+    - `Instance::get_table`
+    - `Instance::get_memory`
 
 ## [`0.22.0`] - 2023-01-16
 

@@ -10,7 +10,15 @@ use super::{
     Stored,
     Table,
 };
-use crate::{module::FuncIdx, ExternType};
+use crate::{
+    func::FuncError,
+    module::FuncIdx,
+    Error,
+    ExternType,
+    TypedFunc,
+    WasmParams,
+    WasmResults,
+};
 use alloc::{
     boxed::Box,
     collections::{btree_map, BTreeMap},
@@ -435,6 +443,83 @@ impl Instance {
             .store
             .resolve_instance(*self)
             .get_export(name)
+    }
+
+    /// Looks up an exported [`Func`] value by `name`.
+    ///
+    /// Returns `None` if there was no export named `name`,
+    /// or if there was but it wasn’t a function.
+    ///
+    /// # Panics
+    ///
+    /// If `store` does not own this [`Instance`].
+    pub fn get_func(&self, store: impl AsContext, name: &str) -> Option<Func> {
+        self.get_export(store, name)?.into_func()
+    }
+
+    /// Looks up an exported [`Func`] value by `name`.
+    ///
+    /// Returns `None` if there was no export named `name`,
+    /// or if there was but it wasn’t a function.
+    ///
+    /// # Errors
+    ///
+    /// - If there is no export named `name`.
+    /// - If there is no exported function named `name`.
+    /// - If `Params` or `Results` do not match the exported function type.
+    ///
+    /// # Panics
+    ///
+    /// If `store` does not own this [`Instance`].
+    pub fn get_typed_func<Params, Results>(
+        &self,
+        store: impl AsContext,
+        name: &str,
+    ) -> Result<TypedFunc<Params, Results>, Error>
+    where
+        Params: WasmParams,
+        Results: WasmResults,
+    {
+        self.get_export(&store, name)
+            .and_then(Extern::into_func)
+            .ok_or_else(|| Error::Func(FuncError::ExportedFuncNotFound))?
+            .typed::<Params, Results>(store)
+    }
+
+    /// Looks up an exported [`Global`] value by `name`.
+    ///
+    /// Returns `None` if there was no export named `name`,
+    /// or if there was but it wasn’t a global variable.
+    ///
+    /// # Panics
+    ///
+    /// If `store` does not own this [`Instance`].
+    pub fn get_global(&self, store: impl AsContext, name: &str) -> Option<Global> {
+        self.get_export(store, name)?.into_global()
+    }
+
+    /// Looks up an exported [`Table`] value by `name`.
+    ///
+    /// Returns `None` if there was no export named `name`,
+    /// or if there was but it wasn’t a table.
+    ///
+    /// # Panics
+    ///
+    /// If `store` does not own this [`Instance`].
+    pub fn get_table(&self, store: impl AsContext, name: &str) -> Option<Table> {
+        self.get_export(store, name)?.into_table()
+    }
+
+    /// Looks up an exported [`Memory`] value by `name`.
+    ///
+    /// Returns `None` if there was no export named `name`,
+    /// or if there was but it wasn’t a table.
+    ///
+    /// # Panics
+    ///
+    /// If `store` does not own this [`Instance`].
+    pub fn get_memory(&self, store: impl AsContext, name: &str) -> Option<Memory> {
+        self.get_export(store, name)?.into_memory()
     }
 
     /// Returns an iterator over the exports of the [`Instance`].
