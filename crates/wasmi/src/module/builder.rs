@@ -2,15 +2,15 @@ use super::{
     import::FuncTypeIdx,
     DataSegment,
     ElementSegment,
-    Export,
+    ExternTypeIdx,
     FuncIdx,
     Global,
     GlobalIdx,
     Import,
-    ImportKind,
     ImportName,
     InitExpr,
     Module,
+    ModuleExport,
 };
 use crate::{
     engine::{DedupFuncType, FuncBody},
@@ -34,7 +34,7 @@ pub struct ModuleBuilder<'engine> {
     pub(super) memories: Vec<MemoryType>,
     pub(super) globals: Vec<GlobalType>,
     pub(super) globals_init: Vec<InitExpr>,
-    pub(super) exports: Vec<Export>,
+    pub(super) exports: Vec<ModuleExport>,
     pub(super) start: Option<FuncIdx>,
     pub(super) func_bodies: Vec<FuncBody>,
     pub(super) element_segments: Vec<ElementSegment>,
@@ -168,22 +168,22 @@ impl<'engine> ModuleBuilder<'engine> {
     {
         for import in imports {
             let import = import?;
-            let (name, kind) = import.into_name_and_kind();
+            let (name, kind) = import.into_name_and_type();
             match kind {
-                ImportKind::Func(func_type_idx) => {
+                ExternTypeIdx::Func(func_type_idx) => {
                     self.imports.funcs.push(name);
                     let func_type = self.func_types[func_type_idx.into_usize()];
                     self.funcs.push(func_type);
                 }
-                ImportKind::Table(table_type) => {
+                ExternTypeIdx::Table(table_type) => {
                     self.imports.tables.push(name);
                     self.tables.push(table_type);
                 }
-                ImportKind::Memory(memory_type) => {
+                ExternTypeIdx::Memory(memory_type) => {
                     self.imports.memories.push(name);
                     self.memories.push(memory_type);
                 }
-                ImportKind::Global(global_type) => {
+                ExternTypeIdx::Global(global_type) => {
                     self.imports.globals.push(name);
                     self.globals.push(global_type);
                 }
@@ -320,7 +320,7 @@ impl<'engine> ModuleBuilder<'engine> {
     /// If this function has already been called on the same [`ModuleBuilder`].
     pub fn push_exports<T>(&mut self, exports: T) -> Result<(), ModuleError>
     where
-        T: IntoIterator<Item = Result<Export, ModuleError>>,
+        T: IntoIterator<Item = Result<ModuleExport, ModuleError>>,
         T::IntoIter: ExactSizeIterator,
     {
         assert!(

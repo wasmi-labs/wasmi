@@ -5,13 +5,14 @@ mod pre;
 mod tests;
 
 pub use self::{error::InstantiationError, pre::InstancePre};
-use super::{export, InitExpr, Module, ModuleImportType};
+use super::{export, InitExpr, Module};
 use crate::{
     module::{init_expr::InitExprOperand, DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
     AsContext,
     AsContextMut,
     Error,
     Extern,
+    ExternType,
     FuncEntity,
     FuncType,
     Global,
@@ -122,8 +123,8 @@ impl Module {
                     return Err(InstantiationError::ImportsExternalsLenMismatch)
                 }
             };
-            match (import.item_type(), external) {
-                (ModuleImportType::Func(expected_signature), Extern::Func(func)) => {
+            match (import.ty(), external) {
+                (ExternType::Func(expected_signature), Extern::Func(func)) => {
                     let actual_signature = func.signature(context.as_context());
                     let actual_signature = self
                         .engine
@@ -140,17 +141,17 @@ impl Module {
                     }
                     builder.push_func(func);
                 }
-                (ModuleImportType::Table(required), Extern::Table(table)) => {
+                (ExternType::Table(required), Extern::Table(table)) => {
                     let imported = table.table_type(context.as_context());
                     imported.satisfies(required)?;
                     builder.push_table(table);
                 }
-                (ModuleImportType::Memory(required), Extern::Memory(memory)) => {
+                (ExternType::Memory(required), Extern::Memory(memory)) => {
                     let imported = memory.memory_type(context.as_context());
                     imported.satisfies(required)?;
                     builder.push_memory(memory);
                 }
-                (ModuleImportType::Global(required), Extern::Global(global)) => {
+                (ExternType::Global(required), Extern::Global(global)) => {
                     let imported = global.global_type(context.as_context());
                     imported.satisfies(required)?;
                     builder.push_global(global);
@@ -264,23 +265,23 @@ impl Module {
     fn extract_exports(&self, builder: &mut InstanceEntityBuilder) {
         for export in &self.exports[..] {
             let field = export.field();
-            let external = match export.external() {
-                export::External::Func(func_index) => {
+            let external = match export.idx() {
+                export::ExternIdx::Func(func_index) => {
                     let func_index = func_index.into_u32();
                     let func = builder.get_func(func_index);
                     Extern::Func(func)
                 }
-                export::External::Table(table_index) => {
+                export::ExternIdx::Table(table_index) => {
                     let table_index = table_index.into_u32();
                     let table = builder.get_table(table_index);
                     Extern::Table(table)
                 }
-                export::External::Memory(memory_index) => {
+                export::ExternIdx::Memory(memory_index) => {
                     let memory_index = memory_index.into_u32();
                     let memory = builder.get_memory(memory_index);
                     Extern::Memory(memory)
                 }
-                export::External::Global(global_index) => {
+                export::ExternIdx::Global(global_index) => {
                     let global_index = global_index.into_u32();
                     let global = builder.get_global(global_index);
                     Extern::Global(global)

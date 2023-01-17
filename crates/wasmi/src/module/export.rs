@@ -2,7 +2,7 @@ use super::GlobalIdx;
 use crate::{
     engine::DedupFuncType,
     Engine,
-    FuncType,
+    ExternType,
     GlobalType,
     MemoryType,
     Module,
@@ -56,44 +56,44 @@ impl MemoryIdx {
     }
 }
 
-/// An export definition within a [`Module`].
+/// A descriptor of a [`Module`] export definition.
 ///
-/// [`Module`]: [`super::Module`]
+/// [`Module`]: [`crate::Module`]
 #[derive(Debug)]
-pub struct Export {
+pub struct ModuleExport {
     /// The name under which the export definition is exported.
     field: Box<str>,
     /// The external item of the export definition.
-    external: External,
+    external: ExternIdx,
 }
 
-impl TryFrom<wasmparser::Export<'_>> for Export {
+impl TryFrom<wasmparser::Export<'_>> for ModuleExport {
     type Error = ModuleError;
 
     fn try_from(export: wasmparser::Export<'_>) -> Result<Self, Self::Error> {
         let field = export.name.into();
         let external = (export.kind, export.index).try_into()?;
-        Ok(Export { field, external })
+        Ok(ModuleExport { field, external })
     }
 }
 
-impl Export {
-    /// Returns the field name of the [`Export`].
+impl ModuleExport {
+    /// Returns the field name of the [`ModuleExport`].
     pub fn field(&self) -> &str {
         &self.field
     }
 
-    /// Returns the [`External`] item of the [`Export`].
-    pub fn external(&self) -> External {
+    /// Returns the [`ExternIdx`] item of the [`ModuleExport`].
+    pub fn idx(&self) -> ExternIdx {
         self.external
     }
 }
 
-/// An external item of an [`Export`] definition within a [`Module`].
+/// An external item of an [`ExportType`] definition within a [`Module`].
 ///
-/// [`Module`]: [`super::Module`]
+/// [`Module`]: [`crate::Module`]
 #[derive(Debug, Copy, Clone)]
-pub enum External {
+pub enum ExternIdx {
     /// An exported function and its index within the [`Module`].
     ///
     /// [`Module`]: [`super::Module`]
@@ -112,15 +112,15 @@ pub enum External {
     Global(GlobalIdx),
 }
 
-impl TryFrom<(wasmparser::ExternalKind, u32)> for External {
+impl TryFrom<(wasmparser::ExternalKind, u32)> for ExternIdx {
     type Error = ModuleError;
 
     fn try_from((kind, index): (wasmparser::ExternalKind, u32)) -> Result<Self, Self::Error> {
         match kind {
-            wasmparser::ExternalKind::Func => Ok(External::Func(FuncIdx(index))),
-            wasmparser::ExternalKind::Table => Ok(External::Table(TableIdx(index))),
-            wasmparser::ExternalKind::Memory => Ok(External::Memory(MemoryIdx(index))),
-            wasmparser::ExternalKind::Global => Ok(External::Global(GlobalIdx(index))),
+            wasmparser::ExternalKind::Func => Ok(ExternIdx::Func(FuncIdx(index))),
+            wasmparser::ExternalKind::Table => Ok(ExternIdx::Table(TableIdx(index))),
+            wasmparser::ExternalKind::Memory => Ok(ExternIdx::Memory(MemoryIdx(index))),
+            wasmparser::ExternalKind::Global => Ok(ExternIdx::Global(GlobalIdx(index))),
             wasmparser::ExternalKind::Tag => Err(ModuleError::unsupported(kind)),
         }
     }
@@ -131,7 +131,7 @@ impl TryFrom<(wasmparser::ExternalKind, u32)> for External {
 /// [`Module`]: [`super::Module`]
 #[derive(Debug)]
 pub struct ModuleExportsIter<'module> {
-    exports: SliceIter<'module, Export>,
+    exports: SliceIter<'module, ModuleExport>,
     engine: &'module Engine,
     funcs: &'module [DedupFuncType],
     tables: &'module [TableType],
@@ -139,36 +139,26 @@ pub struct ModuleExportsIter<'module> {
     globals: &'module [GlobalType],
 }
 
-/// An item exported from a [`Module`].
+/// A descriptor for an exported WebAssembly value of a [`Module`].
+///
+/// This type is primarily accessed from the [`Module::exports`] method and describes
+/// what names are exported from a Wasm [`Module`] and the type of the item that is exported.
 #[derive(Debug)]
-pub struct ExportItem<'module> {
+pub struct ExportType<'module> {
     name: &'module str,
-    kind: ExportItemKind,
+    ty: ExternType,
 }
 
-impl<'module> ExportItem<'module> {
-    /// Returns the name of the exported item.
+impl<'module> ExportType<'module> {
+    /// Returns the name by which the export is known.
     pub fn name(&self) -> &'module str {
         self.name
     }
 
-    /// Returns the kind of the exported item.
-    pub fn kind(&self) -> &ExportItemKind {
-        &self.kind
+    /// Returns the type of the exported item.
+    pub fn ty(&self) -> &ExternType {
+        &self.ty
     }
-}
-
-/// The kind of an item exported from a [`Module`].
-#[derive(Debug, Clone)]
-pub enum ExportItemKind {
-    /// An exported function of a [`Module`].
-    Func(FuncType),
-    /// An exported table of a [`Module`].
-    Table(TableType),
-    /// An exported linear memory of a [`Module`].
-    Memory(MemoryType),
-    /// An exported global variable of a [`Module`].
-    Global(GlobalType),
 }
 
 impl<'module> ModuleExportsIter<'module> {
@@ -186,31 +176,31 @@ impl<'module> ModuleExportsIter<'module> {
 }
 
 impl<'module> Iterator for ModuleExportsIter<'module> {
-    type Item = ExportItem<'module>;
+    type Item = ExportType<'module>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.exports.next().map(|export| {
             let name = export.field();
-            let kind = match export.external() {
-                External::Func(index) => {
+            let ty = match export.idx() {
+                ExternIdx::Func(index) => {
                     let dedup = self.funcs[index.into_usize()];
                     let func_type = self.engine.resolve_func_type(dedup, Clone::clone);
-                    ExportItemKind::Func(func_type)
+                    ExternType::Func(func_type)
                 }
-                External::Table(index) => {
+                ExternIdx::Table(index) => {
                     let table_type = self.tables[index.into_u32() as usize];
-                    ExportItemKind::Table(table_type)
+                    ExternType::Table(table_type)
                 }
-                External::Memory(index) => {
+                ExternIdx::Memory(index) => {
                     let memory_type = self.memories[index.into_u32() as usize];
-                    ExportItemKind::Memory(memory_type)
+                    ExternType::Memory(memory_type)
                 }
-                External::Global(index) => {
+                ExternIdx::Global(index) => {
                     let global_type = self.globals[index.into_usize()];
-                    ExportItemKind::Global(global_type)
+                    ExternType::Global(global_type)
                 }
             };
-            ExportItem { name, kind }
+            ExportType { name, ty }
         })
     }
 }

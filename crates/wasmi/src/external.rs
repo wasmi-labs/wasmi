@@ -1,15 +1,20 @@
 use super::{Func, Global, Memory, Table};
+use crate::{AsContext, FuncType, GlobalType, MemoryType, TableType};
 
-/// An external reference.
+/// An external item to a WebAssembly module.
+///
+/// This is returned from [`Instance::exports`](crate::Instance::exports).
 #[derive(Debug, Copy, Clone)]
 pub enum Extern {
-    /// An externally defined global variable.
+    /// A WebAssembly global which acts like a [`Cell<T>`] of sorts, supporting `get` and `set` operations.
+    ///
+    /// [`Cell<T>`]: https://doc.rust-lang.org/core/cell/struct.Cell.html
     Global(Global),
-    /// An externally defined table.
+    /// A WebAssembly table which is an array of funtion references.
     Table(Table),
-    /// An externally defined linear memory.
+    /// A WebAssembly linear memory.
     Memory(Memory),
-    /// An externally defined Wasm or host function.
+    /// A WebAssembly function which can be called.
     Func(Func),
 }
 
@@ -76,5 +81,92 @@ impl Extern {
             return Some(func);
         }
         None
+    }
+
+    /// Returns the type associated with this [`Extern`].
+    ///
+    /// # Panics
+    ///
+    /// If this item does not belong to the `store` provided.
+    pub fn ty(&self, ctx: impl AsContext) -> ExternType {
+        match self {
+            Extern::Global(global) => global.global_type(ctx).into(),
+            Extern::Table(table) => table.table_type(ctx).into(),
+            Extern::Memory(memory) => memory.memory_type(ctx).into(),
+            Extern::Func(func) => func.func_type(ctx).into(),
+        }
+    }
+}
+
+/// The type of an [`Extern`] item.
+///
+/// A list of all possible types which can be externally referenced from a WebAssembly module.
+#[derive(Debug, Clone)]
+pub enum ExternType {
+    /// The type of an [`Extern::Global`].
+    Global(GlobalType),
+    /// The type of an [`Extern::Table`].
+    Table(TableType),
+    /// The type of an [`Extern::Memory`].
+    Memory(MemoryType),
+    /// The type of an [`Extern::Func`].
+    Func(FuncType),
+}
+
+impl From<GlobalType> for ExternType {
+    fn from(global: GlobalType) -> Self {
+        Self::Global(global)
+    }
+}
+
+impl From<TableType> for ExternType {
+    fn from(table: TableType) -> Self {
+        Self::Table(table)
+    }
+}
+
+impl From<MemoryType> for ExternType {
+    fn from(memory: MemoryType) -> Self {
+        Self::Memory(memory)
+    }
+}
+
+impl From<FuncType> for ExternType {
+    fn from(func: FuncType) -> Self {
+        Self::Func(func)
+    }
+}
+
+impl ExternType {
+    /// Returns the underlying [`GlobalType`] or `None` if it is of a different type.
+    pub fn global(&self) -> Option<&GlobalType> {
+        match self {
+            Self::Global(ty) => Some(ty),
+            _ => None,
+        }
+    }
+
+    /// Returns the underlying [`TableType`] or `None` if it is of a different type.
+    pub fn table(&self) -> Option<&TableType> {
+        match self {
+            Self::Table(ty) => Some(ty),
+            _ => None,
+        }
+    }
+
+    /// Returns the underlying [`MemoryType`] or `None` if it is of a different type.
+    pub fn memory(&self) -> Option<&MemoryType> {
+        match self {
+            Self::Memory(ty) => Some(ty),
+            _ => None,
+        }
+    }
+
+    /// Returns the underlying [`FuncType`] or `None` if it is of a different type.
+    pub fn func(&self) -> Option<&FuncType> {
+        match self {
+            Self::Func(ty) => Some(ty),
+            _ => None,
+        }
     }
 }

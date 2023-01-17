@@ -8,6 +8,30 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`x.y.z`] - UNRELEASED
+
+### Changed
+
+- Mirror Wasmtime API more closely:
+  - Renamed `Caller::host_data` method to `Caller::data`.
+  - Renamed `Caller::host_data_mut` method to `Caller::data_mut`.
+  - Add `Extern::ty` method and the `ExternType` type.
+  - Rename `ExportItem` to `ExportType`:
+    - Rename the `ExportItem::kind` method to `ty` and return `ExternType` instead of `ExportItemKind`.
+    - Remove the no longer used `ExportItemKind` entirely.
+  - The `ExportsIter` now yields items of the new type `Export` instead of pairs of `(&str, Extern)`.
+  - Rename `ModuleImport` to `ImportType`.
+    - Rename `ImportType::item_type` to `ty`.
+    - Rename `ImportType::field` to `name`.
+    - Properly forward `&str` lifetimes in `ImportType::{module, name}`.
+    - Replace `ModuleImportType` by `ExternType`.
+  - Add new convenience methods to `Instance`:
+    - `Instance::get_func`
+    - `Instance::get_typed_func`
+    - `Instance::get_global`
+    - `Instance::get_table`
+    - `Instance::get_memory`
+
 ## [`0.22.0`] - 2023-01-16
 
 ### Added
@@ -26,7 +50,16 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - The `UntypedValue` type gained some new methods to replace functionality
     that was provided in parts by the removed traits.
 - The `wasmi` crate now follows the Wasmtime API a bit more closely. (https://github.com/paritytech/wasmi/pull/613)
-
+  - `StoreContext` new methods:
+    - `fn engine(&self) -> &Engine`
+    - `fn data(&self) -> &T` 
+  - `StoreContextMut` new methods:
+    - `fn engine(&self) -> &Engine`
+    - `fn data(&self) -> &T` 
+    - `fn data_mut(&mut self) -> &mut T`
+  - Renamed `Store::state` method to `Store::data`.
+  - Renamed `Store::state_mut` method to `Store::data_mut`.
+  - Renamed `Store::into_state` method to `Store::into_data`.
 ### Internal
 
 - The `Store` and `Engine` types are better decoupled from their generic parts. (https://github.com/paritytech/wasmi/pull/610, https://github.com/paritytech/wasmi/pull/611)

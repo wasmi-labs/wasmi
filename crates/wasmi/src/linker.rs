@@ -7,7 +7,8 @@ use super::{
     Module,
 };
 use crate::{
-    module::{ImportName, ModuleImport, ModuleImportType},
+    module::{ImportName, ImportType},
+    ExternType,
     FuncType,
     GlobalType,
 };
@@ -45,7 +46,7 @@ pub enum LinkerError {
         // /// The field name of the import for which no definition has been found.
         // field_name: Option<String>,
         /// The type of the import for which no definition has been found.
-        item_type: ModuleImportType,
+        item_type: ExternType,
     },
     /// Encountered when a function signature does not match the expected signature.
     FuncTypeMismatch {
@@ -73,10 +74,10 @@ pub enum LinkerError {
 
 impl LinkerError {
     /// Creates a new [`LinkerError`] for when an imported definition was not found.
-    pub fn cannot_find_definition_of_import(import: &ModuleImport) -> Self {
+    pub fn cannot_find_definition_of_import(import: &ImportType) -> Self {
         Self::CannotFindDefinitionForImport {
-            name: import.name().clone(),
-            item_type: import.item_type().clone(),
+            name: import.import_name().clone(),
+            item_type: import.ty().clone(),
         }
     }
 }
@@ -360,21 +361,21 @@ impl<T> Linker<T> {
     fn process_import(
         &self,
         context: impl AsContextMut,
-        import: ModuleImport,
+        import: ImportType,
     ) -> Result<Extern, Error> {
         let make_err = || LinkerError::cannot_find_definition_of_import(&import);
         let module_name = import.module();
-        let field_name = import.field();
+        let field_name = import.name();
         let resolved = self.resolve(module_name, field_name);
         let context = context.as_context();
-        match import.item_type() {
-            ModuleImportType::Func(expected_func_type) => {
+        match import.ty() {
+            ExternType::Func(expected_func_type) => {
                 let func = resolved.and_then(Extern::into_func).ok_or_else(make_err)?;
                 let actual_func_type = func.signature(&context);
                 let actual_func_type = context.store.resolve_func_type(actual_func_type);
                 if &actual_func_type != expected_func_type {
                     return Err(LinkerError::FuncTypeMismatch {
-                        name: import.name().clone(),
+                        name: import.import_name().clone(),
                         expected: expected_func_type.clone(),
                         actual: actual_func_type,
                     })
@@ -382,13 +383,13 @@ impl<T> Linker<T> {
                 }
                 Ok(Extern::Func(func))
             }
-            ModuleImportType::Table(expected_table_type) => {
+            ExternType::Table(expected_table_type) => {
                 let table = resolved.and_then(Extern::into_table).ok_or_else(make_err)?;
                 let actual_table_type = table.table_type(context);
                 actual_table_type.satisfies(expected_table_type)?;
                 Ok(Extern::Table(table))
             }
-            ModuleImportType::Memory(expected_memory_type) => {
+            ExternType::Memory(expected_memory_type) => {
                 let memory = resolved
                     .and_then(Extern::into_memory)
                     .ok_or_else(make_err)?;
@@ -396,14 +397,14 @@ impl<T> Linker<T> {
                 actual_memory_type.satisfies(expected_memory_type)?;
                 Ok(Extern::Memory(memory))
             }
-            ModuleImportType::Global(expected_global_type) => {
+            ExternType::Global(expected_global_type) => {
                 let global = resolved
                     .and_then(Extern::into_global)
                     .ok_or_else(make_err)?;
                 let actual_global_type = global.global_type(context);
                 if &actual_global_type != expected_global_type {
                     return Err(LinkerError::GlobalTypeMismatch {
-                        name: import.name().clone(),
+                        name: import.import_name().clone(),
                         expected: *expected_global_type,
                         actual: actual_global_type,
                     })
