@@ -2,11 +2,11 @@ use super::{
     import::FuncTypeIdx,
     DataSegment,
     ElementSegment,
+    ExternTypeIdx,
     FuncIdx,
     Global,
     GlobalIdx,
     Import,
-    ImportKind,
     ImportName,
     InitExpr,
     Module,
@@ -168,22 +168,22 @@ impl<'engine> ModuleBuilder<'engine> {
     {
         for import in imports {
             let import = import?;
-            let (name, kind) = import.into_name_and_kind();
+            let (name, kind) = import.into_name_and_type();
             match kind {
-                ImportKind::Func(func_type_idx) => {
+                ExternTypeIdx::Func(func_type_idx) => {
                     self.imports.funcs.push(name);
                     let func_type = self.func_types[func_type_idx.into_usize()];
                     self.funcs.push(func_type);
                 }
-                ImportKind::Table(table_type) => {
+                ExternTypeIdx::Table(table_type) => {
                     self.imports.tables.push(name);
                     self.tables.push(table_type);
                 }
-                ImportKind::Memory(memory_type) => {
+                ExternTypeIdx::Memory(memory_type) => {
                     self.imports.memories.push(name);
                     self.memories.push(memory_type);
                 }
-                ImportKind::Global(global_type) => {
+                ExternTypeIdx::Global(global_type) => {
                     self.imports.globals.push(name);
                     self.globals.push(global_type);
                 }

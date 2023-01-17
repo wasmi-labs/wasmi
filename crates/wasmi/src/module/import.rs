@@ -10,8 +10,8 @@ use wasmparser::TypeRef;
 pub struct Import {
     /// The name of the imported item.
     name: ImportName,
-    /// The kind of the imported item.
-    kind: ImportKind,
+    /// The type of the imported item.
+    kind: ExternTypeIdx,
 }
 
 /// The name or namespace of an imported item.
@@ -64,10 +64,10 @@ impl TryFrom<wasmparser::Import<'_>> for Import {
 
     fn try_from(import: wasmparser::Import) -> Result<Self, Self::Error> {
         let kind = match import.ty {
-            TypeRef::Func(func_type) => Ok(ImportKind::Func(FuncTypeIdx(func_type))),
-            TypeRef::Table(table_type) => table_type.try_into().map(ImportKind::Table),
-            TypeRef::Memory(memory_type) => memory_type.try_into().map(ImportKind::Memory),
-            TypeRef::Global(global_type) => global_type.try_into().map(ImportKind::Global),
+            TypeRef::Func(func_type) => Ok(ExternTypeIdx::Func(FuncTypeIdx(func_type))),
+            TypeRef::Table(table_type) => table_type.try_into().map(ExternTypeIdx::Table),
+            TypeRef::Memory(memory_type) => memory_type.try_into().map(ExternTypeIdx::Memory),
+            TypeRef::Global(global_type) => global_type.try_into().map(ExternTypeIdx::Global),
             TypeRef::Tag(_) => Err(ModuleError::unsupported(import)),
         }?;
         Ok(Self::new(import.module, import.name, kind))
@@ -76,7 +76,7 @@ impl TryFrom<wasmparser::Import<'_>> for Import {
 
 impl Import {
     /// Creates a new [`Import`] item.
-    pub fn new(module: &str, field: &str, kind: ImportKind) -> Self {
+    pub fn new(module: &str, field: &str, kind: ExternTypeIdx) -> Self {
         Self {
             name: ImportName::new(module, field),
             kind,
@@ -88,7 +88,7 @@ impl Import {
     /// # Note
     ///
     /// This allows to reuse some allocations in certain cases.
-    pub fn into_name_and_kind(self) -> (ImportName, ImportKind) {
+    pub fn into_name_and_type(self) -> (ImportName, ExternTypeIdx) {
         (self.name, self.kind)
     }
 }
@@ -97,7 +97,7 @@ impl Import {
 ///
 /// [`Module`]: [`super::Module`]
 #[derive(Debug)]
-pub enum ImportKind {
+pub enum ExternTypeIdx {
     /// An imported function.
     Func(FuncTypeIdx),
     /// An imported table.

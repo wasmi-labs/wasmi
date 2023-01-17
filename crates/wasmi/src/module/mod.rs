@@ -19,7 +19,7 @@ use self::{
     element::ElementSegment,
     export::ModuleExport,
     global::Global,
-    import::{Import, ImportKind},
+    import::{ExternTypeIdx, Import},
     parser::parse,
     read::ReadError,
 };
@@ -320,7 +320,7 @@ impl<'a> ExactSizeIterator for ModuleImportsIter<'a> {
 }
 
 /// A descriptor for an imported value into a Wasm [`Module`].
-/// 
+///
 /// This type is primarily accessed from the [`Module::imports`] method.
 /// Each [`ImportType`] describes an import into the Wasm module with the `module/name`
 /// that it is imported from as well as the type of item that is being imported.
