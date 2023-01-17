@@ -160,11 +160,6 @@ impl GlobalEntity {
         matches!(self.ty().mutability(), Mutability::Var)
     }
 
-    /// Returns the type of the global variable value.
-    pub fn value_type(&self) -> ValueType {
-        self.ty().content()
-    }
-
     /// Returns the [`GlobalType`] of the global variable.
     pub fn ty(&self) -> GlobalType {
         self.ty
@@ -180,9 +175,9 @@ impl GlobalEntity {
         if !self.is_mutable() {
             return Err(GlobalError::ImmutableWrite);
         }
-        if self.value_type() != new_value.value_type() {
+        if self.ty().content() != new_value.value_type() {
             return Err(GlobalError::TypeMismatch {
-                expected: self.value_type(),
+                expected: self.ty().content(),
                 encountered: new_value.value_type(),
             });
         }
@@ -204,7 +199,7 @@ impl GlobalEntity {
 
     /// Returns the current value of the global variable.
     pub fn get(&self) -> Value {
-        self.get_untyped().with_type(self.value_type())
+        self.get_untyped().with_type(self.ty().content())
     }
 
     /// Returns the current untyped value of the global variable.
