@@ -90,7 +90,7 @@ impl Extern {
     /// If this item does not belong to the `store` provided.
     pub fn ty(&self, ctx: impl AsContext) -> ExternType {
         match self {
-            Extern::Global(global) => global.global_type(ctx).into(),
+            Extern::Global(global) => global.ty(ctx).into(),
             Extern::Table(table) => table.table_type(ctx).into(),
             Extern::Memory(memory) => memory.memory_type(ctx).into(),
             Extern::Func(func) => func.ty(ctx).into(),

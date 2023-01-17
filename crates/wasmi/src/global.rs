@@ -163,7 +163,7 @@ impl GlobalEntity {
     }
 
     /// Returns the [`GlobalType`] of the global variable.
-    pub fn global_type(&self) -> GlobalType {
+    pub fn ty(&self) -> GlobalType {
         GlobalType::new(self.value_type(), self.mutability)
     }
 
@@ -254,8 +254,8 @@ impl Global {
     }
 
     /// Returns the [`GlobalType`] of the global variable.
-    pub fn global_type(&self, ctx: impl AsContext) -> GlobalType {
-        ctx.as_context().store.resolve_global(*self).global_type()
+    pub fn ty(&self, ctx: impl AsContext) -> GlobalType {
+        ctx.as_context().store.resolve_global(*self).ty()
     }
 
     /// Sets a new value to the global variable.

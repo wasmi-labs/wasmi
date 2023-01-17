@@ -152,7 +152,7 @@ impl Module {
                     builder.push_memory(memory);
                 }
                 (ExternType::Global(required), Extern::Global(global)) => {
-                    let imported = global.global_type(context.as_context());
+                    let imported = global.ty(context.as_context());
                     imported.satisfies(required)?;
                     builder.push_global(global);
                 }

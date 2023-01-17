@@ -401,7 +401,7 @@ impl<T> Linker<T> {
                 let global = resolved
                     .and_then(Extern::into_global)
                     .ok_or_else(make_err)?;
-                let actual_global_type = global.global_type(context);
+                let actual_global_type = global.ty(context);
                 if &actual_global_type != expected_global_type {
                     return Err(LinkerError::GlobalTypeMismatch {
                         name: import.import_name().clone(),
