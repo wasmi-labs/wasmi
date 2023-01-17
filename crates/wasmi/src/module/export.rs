@@ -1,6 +1,12 @@
 use super::GlobalIdx;
 use crate::{
-    engine::DedupFuncType, Engine, ExternType, GlobalType, MemoryType, Module, ModuleError,
+    engine::DedupFuncType,
+    Engine,
+    ExternType,
+    GlobalType,
+    MemoryType,
+    Module,
+    ModuleError,
     TableType,
 };
 use alloc::boxed::Box;
@@ -134,7 +140,7 @@ pub struct ModuleExportsIter<'module> {
 }
 
 /// A descriptor for an exported WebAssembly value of a [`Module`].
-/// 
+///
 /// This type is primarily accessed from the [`Module::exports`] method and describes
 /// what names are exported from a Wasm [`Module`] and the type of the item that is exported.
 #[derive(Debug)]

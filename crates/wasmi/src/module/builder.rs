@@ -2,7 +2,6 @@ use super::{
     import::FuncTypeIdx,
     DataSegment,
     ElementSegment,
-    ModuleExport,
     FuncIdx,
     Global,
     GlobalIdx,
@@ -11,6 +10,7 @@ use super::{
     ImportName,
     InitExpr,
     Module,
+    ModuleExport,
 };
 use crate::{
     engine::{DedupFuncType, FuncBody},
