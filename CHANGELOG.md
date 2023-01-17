@@ -44,6 +44,8 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - Rename `Mutability::Mutable` to `Var`.
   - Add `Mutability::is_mut` getter.
     - While this API is not included in Wasmtime it is a useful convenience method.
+  - Rename `TableType::initial` method to `minimum`.
+  - Rename `Table::len` method to `size`.
 
 ## [`0.22.0`] - 2023-01-16
 
