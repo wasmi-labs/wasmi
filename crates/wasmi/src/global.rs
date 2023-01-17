@@ -77,13 +77,18 @@ pub enum Mutability {
     /// The value of the global variable is a constant.
     Const,
     /// The value of the global variable is mutable.
-    Mutable,
+    Var,
 }
 
 impl Mutability {
-    /// Returns `true` if this mutability is constant.
+    /// Returns `true` if this mutability is [`Mutability::Const`].
     pub fn is_const(&self) -> bool {
         matches!(self, Self::Const)
+    }
+
+    /// Returns `true` if this mutability is [`Mutability::Var`].
+    pub fn is_mut(&self) -> bool {
+        matches!(self, Self::Var)
     }
 }
 
@@ -91,22 +96,23 @@ impl Mutability {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct GlobalType {
     /// The value type of the global variable.
-    value_type: ValueType,
+    content: ValueType,
     /// The mutability of the global variable.
     mutability: Mutability,
 }
 
 impl GlobalType {
-    pub fn new(value_type: ValueType, mutability: Mutability) -> Self {
+    /// Creates a new [`GlobalType`] from the given [`ValueType`] and [`Mutability`].
+    pub fn new(content: ValueType, mutability: Mutability) -> Self {
         Self {
-            value_type,
+            content,
             mutability,
         }
     }
 
     /// Returns the [`ValueType`] of the global variable.
-    pub fn value_type(&self) -> ValueType {
-        self.value_type
+    pub fn content(&self) -> ValueType {
+        self.content
     }
 
     /// Returns the [`Mutability`] of the global variable.
@@ -136,10 +142,8 @@ impl GlobalType {
 pub struct GlobalEntity {
     /// The current value of the global variable.
     value: UntypedValue,
-    /// The value type of the global variable.
-    value_type: ValueType,
-    /// The mutability of the global variable.
-    mutability: Mutability,
+    /// The type of the global variable.
+    ty: GlobalType,
 }
 
 impl GlobalEntity {
@@ -147,24 +151,13 @@ impl GlobalEntity {
     pub fn new(initial_value: Value, mutability: Mutability) -> Self {
         Self {
             value: initial_value.into(),
-            value_type: initial_value.value_type(),
-            mutability,
+            ty: GlobalType::new(initial_value.ty(), mutability),
         }
     }
 
-    /// Returns `true` if the global variable is mutable.
-    pub fn is_mutable(&self) -> bool {
-        matches!(self.mutability, Mutability::Mutable)
-    }
-
-    /// Returns the type of the global variable value.
-    pub fn value_type(&self) -> ValueType {
-        self.value_type
-    }
-
     /// Returns the [`GlobalType`] of the global variable.
-    pub fn global_type(&self) -> GlobalType {
-        GlobalType::new(self.value_type(), self.mutability)
+    pub fn ty(&self) -> GlobalType {
+        self.ty
     }
 
     /// Sets a new value to the global variable.
@@ -174,13 +167,13 @@ impl GlobalEntity {
     /// - If the global variable is immutable.
     /// - If there is a type mismatch between the global variable and the new value.
     pub fn set(&mut self, new_value: Value) -> Result<(), GlobalError> {
-        if !self.is_mutable() {
+        if !self.ty().mutability().is_mut() {
             return Err(GlobalError::ImmutableWrite);
         }
-        if self.value_type() != new_value.value_type() {
+        if self.ty().content() != new_value.ty() {
             return Err(GlobalError::TypeMismatch {
-                expected: self.value_type(),
-                encountered: new_value.value_type(),
+                expected: self.ty().content(),
+                encountered: new_value.ty(),
             });
         }
         self.set_untyped(new_value.into());
@@ -201,7 +194,7 @@ impl GlobalEntity {
 
     /// Returns the current value of the global variable.
     pub fn get(&self) -> Value {
-        self.get_untyped().with_type(self.value_type)
+        self.get_untyped().with_type(self.ty().content())
     }
 
     /// Returns the current untyped value of the global variable.
@@ -244,27 +237,9 @@ impl Global {
             .alloc_global(GlobalEntity::new(initial_value, mutability))
     }
 
-    /// Returns `true` if the global variable is mutable.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `ctx` does not own this [`Global`].
-    pub fn is_mutable(&self, ctx: impl AsContext) -> bool {
-        ctx.as_context().store.resolve_global(*self).is_mutable()
-    }
-
-    /// Returns the type of the global variable value.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `ctx` does not own this [`Global`].
-    pub fn value_type(&self, ctx: impl AsContext) -> ValueType {
-        ctx.as_context().store.resolve_global(*self).value_type()
-    }
-
     /// Returns the [`GlobalType`] of the global variable.
-    pub fn global_type(&self, ctx: impl AsContext) -> GlobalType {
-        ctx.as_context().store.resolve_global(*self).global_type()
+    pub fn ty(&self, ctx: impl AsContext) -> GlobalType {
+        ctx.as_context().store.resolve_global(*self).ty()
     }
 
     /// Sets a new value to the global variable.

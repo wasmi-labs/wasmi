@@ -8,9 +8,9 @@ impl TryFrom<wasmparser::TableType> for TableType {
         if table_type.element_type != wasmparser::ValType::FuncRef {
             return Err(ModuleError::unsupported(table_type));
         }
-        let initial = table_type.initial as usize;
-        let maximum = table_type.maximum.map(|value| value as usize);
-        Ok(TableType::new(initial, maximum))
+        let minimum = table_type.initial;
+        let maximum = table_type.maximum;
+        Ok(TableType::new(minimum, maximum))
     }
 }
 
@@ -40,7 +40,7 @@ impl TryFrom<wasmparser::GlobalType> for GlobalType {
     fn try_from(global_type: wasmparser::GlobalType) -> Result<Self, Self::Error> {
         let value_type = value_type_try_from_wasmparser(global_type.content_type)?;
         let mutability = match global_type.mutable {
-            true => Mutability::Mutable,
+            true => Mutability::Var,
             false => Mutability::Const,
         };
         Ok(GlobalType::new(value_type, mutability))

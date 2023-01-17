@@ -91,10 +91,10 @@ impl<T> FuncEntity<T> {
     }
 
     /// Returns the signature of the Wasm function.
-    pub fn signature(&self) -> DedupFuncType {
+    pub fn ty_dedup(&self) -> DedupFuncType {
         match self.as_internal() {
-            FuncEntityInternal::Wasm(func) => func.signature(),
-            FuncEntityInternal::Host(func) => func.signature(),
+            FuncEntityInternal::Wasm(func) => func.ty_dedup(),
+            FuncEntityInternal::Host(func) => func.ty_dedup(),
         }
     }
 }
@@ -138,7 +138,7 @@ impl WasmFuncEntity {
     }
 
     /// Returns the signature of the Wasm function.
-    pub fn signature(&self) -> DedupFuncType {
+    pub fn ty_dedup(&self) -> DedupFuncType {
         self.signature
     }
 
@@ -216,7 +216,7 @@ impl<T> HostFuncEntity<T> {
     }
 
     /// Returns the signature of the host function.
-    pub fn signature(&self) -> DedupFuncType {
+    pub fn ty_dedup(&self) -> DedupFuncType {
         self.signature
     }
 
@@ -260,15 +260,15 @@ impl Func {
     }
 
     /// Returns the signature of the function.
-    pub(crate) fn signature(&self, ctx: impl AsContext) -> DedupFuncType {
-        ctx.as_context().store.resolve_func(*self).signature()
+    pub(crate) fn ty_dedup(&self, ctx: impl AsContext) -> DedupFuncType {
+        ctx.as_context().store.resolve_func(*self).ty_dedup()
     }
 
     /// Returns the function type of the [`Func`].
-    pub fn func_type(&self, ctx: impl AsContext) -> FuncType {
+    pub fn ty(&self, ctx: impl AsContext) -> FuncType {
         ctx.as_context()
             .store
-            .resolve_func_type(self.signature(&ctx))
+            .resolve_func_type(self.ty_dedup(&ctx))
     }
 
     /// Calls the Wasm or host function with the given inputs.
@@ -360,7 +360,7 @@ impl Func {
         inputs: &[Value],
         outputs: &mut [Value],
     ) -> Result<(), FuncError> {
-        let fn_type = self.signature(ctx.as_context());
+        let fn_type = self.ty_dedup(ctx.as_context());
         ctx.as_context()
             .store
             .resolve_func_type_with(fn_type, |func_type| {

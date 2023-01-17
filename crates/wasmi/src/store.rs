@@ -468,7 +468,7 @@ impl<T> Store<T> {
 
     /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.
     pub(super) fn alloc_func(&mut self, func: FuncEntity<T>) -> Func {
-        let func_type = func.signature();
+        let func_type = func.ty_dedup();
         let idx = self.funcs.alloc(func);
         let func = Func::from_inner(self.wrap_stored(idx));
         self.inner.register_func_type(func, func_type);

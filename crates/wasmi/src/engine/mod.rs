@@ -625,7 +625,7 @@ impl<'engine> EngineExecutor<'engine> {
     {
         self.stack
             .values
-            .drop(host_func.func_type(ctx.as_context()).params().len());
+            .drop(host_func.ty(ctx.as_context()).params().len());
         self.stack.values.extend(params.call_params());
         let mut frame = self
             .stack

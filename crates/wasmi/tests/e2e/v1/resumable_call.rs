@@ -123,10 +123,7 @@ impl AssertResumable for ResumableCall {
         match self {
             Self::Resumable(invocation) => {
                 assert_eq!(invocation.host_error().i32_exit_status(), Some(exit_status));
-                assert_eq!(
-                    invocation.host_func().func_type(store).results(),
-                    host_results,
-                );
+                assert_eq!(invocation.host_func().ty(store).results(), host_results,);
                 invocation
             }
             Self::Finished => panic!("expected host function trap with exit code 10"),
@@ -185,10 +182,7 @@ impl<Results> AssertResumable for TypedResumableCall<Results> {
         match self {
             Self::Resumable(invocation) => {
                 assert_eq!(invocation.host_error().i32_exit_status(), Some(exit_status));
-                assert_eq!(
-                    invocation.host_func().func_type(store).results(),
-                    host_results,
-                );
+                assert_eq!(invocation.host_func().ty(store).results(), host_results,);
                 invocation
             }
             Self::Finished(_) => panic!("expected host function trap with exit code 10"),

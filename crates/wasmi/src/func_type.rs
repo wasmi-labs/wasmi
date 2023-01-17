@@ -187,7 +187,7 @@ impl Ty for ValueType {
 
 impl Ty for Value {
     fn ty(&self) -> ValueType {
-        self.value_type()
+        self.ty()
     }
 }
 

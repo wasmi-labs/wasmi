@@ -125,7 +125,7 @@ impl Module {
             };
             match (import.ty(), external) {
                 (ExternType::Func(expected_signature), Extern::Func(func)) => {
-                    let actual_signature = func.signature(context.as_context());
+                    let actual_signature = func.ty_dedup(context.as_context());
                     let actual_signature = self
                         .engine
                         .resolve_func_type(actual_signature, FuncType::clone);
@@ -142,17 +142,17 @@ impl Module {
                     builder.push_func(func);
                 }
                 (ExternType::Table(required), Extern::Table(table)) => {
-                    let imported = table.table_type(context.as_context());
+                    let imported = table.ty(context.as_context());
                     imported.satisfies(required)?;
                     builder.push_table(table);
                 }
                 (ExternType::Memory(required), Extern::Memory(memory)) => {
-                    let imported = memory.memory_type(context.as_context());
+                    let imported = memory.ty(context.as_context());
                     imported.satisfies(required)?;
                     builder.push_memory(memory);
                 }
                 (ExternType::Global(required), Extern::Global(global)) => {
-                    let imported = global.global_type(context.as_context());
+                    let imported = global.ty(context.as_context());
                     imported.satisfies(required)?;
                     builder.push_global(global);
                 }
@@ -313,26 +313,26 @@ impl Module {
                         "expected offset value of type `i32` due to \
                          Wasm validation but found: {offset_expr:?}",
                     )
-                }) as usize;
+                });
             let table = builder.get_table(DEFAULT_TABLE_INDEX);
             // Note: This checks not only that the elements in the element segments properly
             //       fit into the table at the given offset but also that the element segment
             //       consists of at least 1 element member.
-            let len_table = table.len(&context);
-            let len_items = element_segment.items().len();
-            if offset + len_items > len_table {
-                return Err(InstantiationError::ElementSegmentDoesNotFit {
+            let len_table = table.size(&context);
+            let len_items = element_segment.items().len() as u32;
+            len_items
+                .checked_add(offset)
+                .filter(|&req| req <= len_table)
+                .ok_or(InstantiationError::ElementSegmentDoesNotFit {
                     table,
                     offset,
                     amount: len_items,
-                })
-                .map_err(Into::into);
-            }
+                })?;
             // Finally do the actual initialization of the table elements.
             for (i, func_index) in element_segment.items().iter().enumerate() {
                 let func_index = func_index.into_u32();
                 let func = builder.get_func(func_index);
-                table.set(context.as_context_mut(), offset + i, Some(func))?;
+                table.set(context.as_context_mut(), offset + i as u32, Some(func))?;
             }
         }
         Ok(())

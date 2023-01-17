@@ -371,7 +371,7 @@ impl<T> Linker<T> {
         match import.ty() {
             ExternType::Func(expected_func_type) => {
                 let func = resolved.and_then(Extern::into_func).ok_or_else(make_err)?;
-                let actual_func_type = func.signature(&context);
+                let actual_func_type = func.ty_dedup(&context);
                 let actual_func_type = context.store.resolve_func_type(actual_func_type);
                 if &actual_func_type != expected_func_type {
                     return Err(LinkerError::FuncTypeMismatch {
@@ -385,7 +385,7 @@ impl<T> Linker<T> {
             }
             ExternType::Table(expected_table_type) => {
                 let table = resolved.and_then(Extern::into_table).ok_or_else(make_err)?;
-                let actual_table_type = table.table_type(context);
+                let actual_table_type = table.ty(context);
                 actual_table_type.satisfies(expected_table_type)?;
                 Ok(Extern::Table(table))
             }
@@ -393,7 +393,7 @@ impl<T> Linker<T> {
                 let memory = resolved
                     .and_then(Extern::into_memory)
                     .ok_or_else(make_err)?;
-                let actual_memory_type = memory.memory_type(context);
+                let actual_memory_type = memory.ty(context);
                 actual_memory_type.satisfies(expected_memory_type)?;
                 Ok(Extern::Memory(memory))
             }
@@ -401,7 +401,7 @@ impl<T> Linker<T> {
                 let global = resolved
                     .and_then(Extern::into_global)
                     .ok_or_else(make_err)?;
-                let actual_global_type = global.global_type(context);
+                let actual_global_type = global.ty(context);
                 if &actual_global_type != expected_global_type {
                     return Err(LinkerError::GlobalTypeMismatch {
                         name: import.import_name().clone(),

@@ -815,7 +815,7 @@ impl<'parser> FuncBuilder<'parser> {
         self.translate_if_reachable(|builder| {
             let global_idx = GlobalIdx(global_idx);
             let global_type = builder.res.get_type_of_global(global_idx);
-            debug_assert_eq!(global_type.mutability(), Mutability::Mutable);
+            debug_assert_eq!(global_type.mutability(), Mutability::Var);
             builder.stack_height.pop1();
             let global_idx = global_idx.into_u32().into();
             builder
