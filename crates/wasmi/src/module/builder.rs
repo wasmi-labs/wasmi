@@ -14,11 +14,11 @@ use super::{
 };
 use crate::{
     engine::{DedupFuncType, FuncBody},
+    errors::ModuleError,
     Engine,
     FuncType,
     GlobalType,
     MemoryType,
-    ModuleError,
     TableType,
 };
 use alloc::{boxed::Box, collections::BTreeMap, vec::Vec};

@@ -1,7 +1,6 @@
-use crate::ModuleError;
-use alloc::{boxed::Box, vec::Vec};
-
 use super::{FuncIdx, InitExpr, TableIdx};
+use crate::errors::ModuleError;
+use alloc::{boxed::Box, vec::Vec};
 
 /// A table element segment within a [`Module`].
 ///

@@ -1,4 +1,4 @@
-use crate::{GlobalType, MemoryType, ModuleError, TableType};
+use crate::{errors::ModuleError, GlobalType, MemoryType, TableType};
 use alloc::boxed::Box;
 use core::fmt::{self, Display};
 use wasmparser::TypeRef;

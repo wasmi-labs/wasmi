@@ -1,5 +1,5 @@
 use super::InitExpr;
-use crate::{GlobalType, ModuleError};
+use crate::{errors::ModuleError, GlobalType};
 
 /// The index of a global variable within a [`Module`].
 ///

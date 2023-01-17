@@ -1,4 +1,5 @@
-use super::{InitExpr, MemoryIdx, ModuleError};
+use super::{InitExpr, MemoryIdx};
+use crate::errors::ModuleError;
 use alloc::boxed::Box;
 
 /// A linear memory data segment within a [`Module`].
