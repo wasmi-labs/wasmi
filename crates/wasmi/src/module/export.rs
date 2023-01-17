@@ -9,8 +9,7 @@ use crate::{
     ModuleError,
     TableType,
 };
-use alloc::boxed::Box;
-use core::slice::Iter as SliceIter;
+use alloc::collections::btree_map::Iter as BTreeIter;
 
 /// The index of a function declaration within a [`Module`].
 ///
@@ -56,39 +55,6 @@ impl MemoryIdx {
     }
 }
 
-/// A descriptor of a [`Module`] export definition.
-///
-/// [`Module`]: [`crate::Module`]
-#[derive(Debug)]
-pub struct ModuleExport {
-    /// The name under which the export definition is exported.
-    field: Box<str>,
-    /// The external item of the export definition.
-    external: ExternIdx,
-}
-
-impl TryFrom<wasmparser::Export<'_>> for ModuleExport {
-    type Error = ModuleError;
-
-    fn try_from(export: wasmparser::Export<'_>) -> Result<Self, Self::Error> {
-        let field = export.name.into();
-        let external = (export.kind, export.index).try_into()?;
-        Ok(ModuleExport { field, external })
-    }
-}
-
-impl ModuleExport {
-    /// Returns the field name of the [`ModuleExport`].
-    pub fn field(&self) -> &str {
-        &self.field
-    }
-
-    /// Returns the [`ExternIdx`] item of the [`ModuleExport`].
-    pub fn idx(&self) -> ExternIdx {
-        self.external
-    }
-}
-
 /// An external item of an [`ExportType`] definition within a [`Module`].
 ///
 /// [`Module`]: [`crate::Module`]
@@ -112,10 +78,13 @@ pub enum ExternIdx {
     Global(GlobalIdx),
 }
 
-impl TryFrom<(wasmparser::ExternalKind, u32)> for ExternIdx {
-    type Error = ModuleError;
-
-    fn try_from((kind, index): (wasmparser::ExternalKind, u32)) -> Result<Self, Self::Error> {
+impl ExternIdx {
+    /// Create a new [`ExternIdx`] from the given [`wasmparser::ExternalKind`] and `index`.
+    ///
+    /// # Errors
+    ///
+    /// If an unsupported external definition is encountered.
+    pub fn new(kind: wasmparser::ExternalKind, index: u32) -> Result<Self, ModuleError> {
         match kind {
             wasmparser::ExternalKind::Func => Ok(ExternIdx::Func(FuncIdx(index))),
             wasmparser::ExternalKind::Table => Ok(ExternIdx::Table(TableIdx(index))),
@@ -131,7 +100,7 @@ impl TryFrom<(wasmparser::ExternalKind, u32)> for ExternIdx {
 /// [`Module`]: [`super::Module`]
 #[derive(Debug)]
 pub struct ModuleExportsIter<'module> {
-    exports: SliceIter<'module, ModuleExport>,
+    exports: BTreeIter<'module, Box<str>, ExternIdx>,
     engine: &'module Engine,
     funcs: &'module [DedupFuncType],
     tables: &'module [TableType],
@@ -179,9 +148,8 @@ impl<'module> Iterator for ModuleExportsIter<'module> {
     type Item = ExportType<'module>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.exports.next().map(|export| {
-            let name = export.field();
-            let ty = match export.idx() {
+        self.exports.next().map(|(name, idx)| {
+            let ty = match idx {
                 ExternIdx::Func(index) => {
                     let dedup = self.funcs[index.into_usize()];
                     let func_type = self.engine.resolve_func_type(dedup, Clone::clone);

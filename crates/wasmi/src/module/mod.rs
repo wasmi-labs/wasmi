@@ -17,7 +17,7 @@ use self::{
     builder::ModuleBuilder,
     data::DataSegment,
     element::ElementSegment,
-    export::ModuleExport,
+    export::ExternIdx,
     global::Global,
     import::{ExternTypeIdx, Import},
     parser::parse,
@@ -45,7 +45,7 @@ use crate::{
     MemoryType,
     TableType,
 };
-use alloc::{boxed::Box, sync::Arc, vec::Vec};
+use alloc::{boxed::Box, collections::BTreeMap, sync::Arc, vec::Vec};
 use core::{iter, slice::Iter as SliceIter};
 
 /// A parsed and validated WebAssembly module.
@@ -59,7 +59,7 @@ pub struct Module {
     memories: Box<[MemoryType]>,
     globals: Box<[GlobalType]>,
     globals_init: Box<[InitExpr]>,
-    exports: Box<[ModuleExport]>,
+    exports: BTreeMap<Box<str>, ExternIdx>,
     start: Option<FuncIdx>,
     func_bodies: Box<[FuncBody]>,
     element_segments: Box<[ElementSegment]>,

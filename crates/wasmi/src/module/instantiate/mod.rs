@@ -263,9 +263,8 @@ impl Module {
 
     /// Extracts the Wasm exports from the module and registers them into the [`Instance`].
     fn extract_exports(&self, builder: &mut InstanceEntityBuilder) {
-        for export in &self.exports[..] {
-            let field = export.field();
-            let external = match export.idx() {
+        for (field, idx) in &self.exports {
+            let external = match idx {
                 export::ExternIdx::Func(func_index) => {
                     let func_index = func_index.into_u32();
                     let func = builder.get_func(func_index);
