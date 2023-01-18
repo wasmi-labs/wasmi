@@ -1479,6 +1479,7 @@ impl<T1> DecodeUntypedSlice for T1
 where
     T1: From<UntypedValue>,
 {
+    #[inline]
     fn decode_untyped_slice(results: &[UntypedValue]) -> Result<Self, UntypedError> {
         <(T1,) as DecodeUntypedSlice>::decode_untyped_slice(results).map(|t| t.0)
     }
@@ -1493,6 +1494,7 @@ macro_rules! impl_decode_untyped_slice {
             ),*
         {
             #[allow(non_snake_case)]
+            #[inline]
             fn decode_untyped_slice(results: &[UntypedValue]) -> Result<Self, UntypedError> {
                 match results {
                     &[ $($tuple),* ] => Ok((
@@ -1527,6 +1529,7 @@ impl<T1> EncodeUntypedSlice for T1
 where
     T1: Into<UntypedValue>,
 {
+    #[inline]
     fn encode_untyped_slice(self, results: &mut [UntypedValue]) -> Result<(), UntypedError> {
         <(T1,) as EncodeUntypedSlice>::encode_untyped_slice((self,), results)
     }
@@ -1542,6 +1545,7 @@ macro_rules! impl_encode_untyped_slice {
                 ),*
             {
                 #[allow(non_snake_case)]
+                #[inline]
                 fn encode_untyped_slice(self, results: &mut [UntypedValue]) -> Result<(), UntypedError> {
                     match results {
                         [ $( [< _results_ $tuple >] ,)* ] => {
