@@ -1548,7 +1548,6 @@ where
             }
             _ => Err(UntypedError::invalid_len(1, results.len())),
         }
-        Ok(())
     }
 }
 
