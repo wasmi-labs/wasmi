@@ -156,7 +156,7 @@ for_each_tuple!(impl_wasm_return_type);
 /// Types that can be used as parameters or results of host functions.
 pub trait WasmType: From<UntypedValue> + Into<UntypedValue> {
     /// Returns the value type of the Wasm type.
-    fn value_type() -> ValueType;
+    fn ty() -> ValueType;
 }
 
 macro_rules! impl_wasm_type {
@@ -164,7 +164,7 @@ macro_rules! impl_wasm_type {
         $(
             impl WasmType for $rust_type {
                 #[inline]
-                fn value_type() -> ValueType {
+                fn ty() -> ValueType {
                     ValueType::$wasmi_type
                 }
             }
@@ -240,7 +240,7 @@ where
 
     #[inline]
     fn types() -> Self::Types {
-        [<T1 as WasmType>::value_type()]
+        [<T1 as WasmType>::ty()]
     }
 
     #[inline]
@@ -275,7 +275,7 @@ macro_rules! impl_wasm_type_list {
             #[inline]
             fn types() -> Self::Types {
                 [$(
-                    <$tuple as WasmType>::value_type()
+                    <$tuple as WasmType>::ty()
                 ),*]
             }
 
