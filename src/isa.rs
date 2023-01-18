@@ -617,7 +617,10 @@ impl<'a> Instruction<'a> {
                 class: RelOp::UnsignedGe,
                 vtype: VarType::I32,
             },
-            Instruction::I64Eqz => todo!(),
+            Instruction::I64Eqz => Opcode::Test {
+                class: TestOp::Eqz,
+                vtype: VarType::I64,
+            },
             Instruction::I64Eq => Opcode::Rel {
                 class: RelOp::Eq,
                 vtype: VarType::I64,

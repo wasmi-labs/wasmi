@@ -691,6 +691,9 @@ impl Interpreter {
             isa::Instruction::I32Eqz => Some(RunInstructionTracePre::I32Single(
                 <_>::from_value_internal(*self.value_stack.pick(1)),
             )),
+            isa::Instruction::I64Eqz => Some(RunInstructionTracePre::I64Single(
+                <_>::from_value_internal(*self.value_stack.pick(1)),
+            )),
 
             isa::Instruction::I32Eq
             | isa::Instruction::I32Ne
@@ -1368,6 +1371,17 @@ impl Interpreter {
                 }
             }
 
+            isa::Instruction::I64Eqz => {
+                if let RunInstructionTracePre::I64Single(value) = pre_status.unwrap() {
+                    StepInfo::Test {
+                        vtype: VarType::I64,
+                        value: value as u64,
+                        result: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
             isa::Instruction::I64Eq => {
                 if let RunInstructionTracePre::I64Comp { left, right } = pre_status.unwrap() {
                     StepInfo::I64Comp {
