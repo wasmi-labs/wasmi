@@ -154,7 +154,7 @@ macro_rules! impl_wasm_return_type {
 for_each_tuple!(impl_wasm_return_type);
 
 /// Types that can be used as parameters or results of host functions.
-pub trait WasmType: From<UntypedValue> + Into<UntypedValue> {
+pub trait WasmType: From<UntypedValue> + Into<UntypedValue> + Send {
     /// Returns the value type of the Wasm type.
     fn ty() -> ValueType;
 }
@@ -190,7 +190,7 @@ impl_wasm_type! {
 /// - Write host function results into a region of the value stack.
 /// - Iterate over the value types of the Wasm type sequence
 ///     - This is useful to construct host function signatures.
-pub trait WasmTypeList: DecodeUntypedSlice + EncodeUntypedSlice + Sized {
+pub trait WasmTypeList: DecodeUntypedSlice + EncodeUntypedSlice + Sized + Send {
     /// The number of Wasm types in the list.
     const LEN: usize;
 
