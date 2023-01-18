@@ -1488,10 +1488,10 @@ where
     T1: From<UntypedValue>,
 {
     fn decode_untyped_slice(results: &[UntypedValue]) -> Result<Self, UntypedError> {
-        if results.len() != 1 {
-            return Err(UntypedError::invalid_len(1, results.len()));
+        match results {
+            [result] => Ok(<T1 as From<UntypedValue>>::from(*result)),
+            _ => Err(UntypedError::invalid_len(1, results.len())),
         }
-        Ok(<T1 as From<UntypedValue>>::from(results[0]))
     }
 }
 
@@ -1541,10 +1541,13 @@ where
     T1: Into<UntypedValue>,
 {
     fn encode_untyped_slice(self, results: &mut [UntypedValue]) -> Result<(), UntypedError> {
-        if results.len() != 1 {
-            return Err(UntypedError::invalid_len(1, results.len()));
+        match results {
+            [result] => {
+                *result = self.into();
+                Ok(())
+            }
+            _ => Err(UntypedError::invalid_len(1, results.len())),
         }
-        results[0] = self.into();
         Ok(())
     }
 }
