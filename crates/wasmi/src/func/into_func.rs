@@ -204,6 +204,7 @@ pub trait WasmTypeList: DecodeUntypedSlice + EncodeUntypedSlice + Sized {
     /// The iterator type of the sequence of [`ValueType`].
     type TypesIter: ExactSizeIterator<Item = ValueType> + DoubleEndedIterator + FusedIterator;
 
+    /// The [`UntypedValue`] sequence as array.
     type Values: IntoIterator<IntoIter = Self::ValuesIter, Item = UntypedValue>
         + AsRef<[UntypedValue]>
         + AsMut<[UntypedValue]>
