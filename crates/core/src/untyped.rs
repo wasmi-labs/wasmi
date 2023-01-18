@@ -18,6 +18,7 @@ use core::{
     fmt::{self, Display},
     ops::{Neg, Shl, Shr},
 };
+use paste::paste;
 
 /// An untyped [`Value`].
 ///
@@ -1401,32 +1402,23 @@ macro_rules! for_each_tuple {
 /// An error that may occur upon encoding or decoding slices of [`UntypedValue`].
 #[derive(Debug, Copy, Clone)]
 pub enum UntypedError {
-    /// The [`UntypedValue`] slice length did not match.
-    InvalidLen {
-        /// Expected number of [`UntypedValue`] elements.
-        expected: usize,
-        /// Found number of [`UntypedValue`] elements.
-        found: usize,
-    },
+    /// The [`UntypedValue`] slice length did not match `Self`.
+    InvalidLen,
 }
 
 impl UntypedError {
     /// Creates a new `InvalidLen` [`UntypedError`].
     #[cold]
-    pub fn invalid_len(expected: usize, found: usize) -> Self {
-        Self::InvalidLen { expected, found }
+    pub fn invalid_len() -> Self {
+        Self::InvalidLen
     }
 }
 
 impl Display for UntypedError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            UntypedError::InvalidLen { expected, found } => {
-                write!(
-                    f,
-                    "encountered invalid length for untyped slice. \
-                     expected: {expected}, found: {found}"
-                )
+            UntypedError::InvalidLen => {
+                write!(f, "mismatched length of the untyped slice",)
             }
         }
     }
@@ -1487,11 +1479,9 @@ impl<T1> DecodeUntypedSlice for T1
 where
     T1: From<UntypedValue>,
 {
+    #[inline]
     fn decode_untyped_slice(results: &[UntypedValue]) -> Result<Self, UntypedError> {
-        if results.len() != 1 {
-            return Err(UntypedError::invalid_len(1, results.len()));
-        }
-        Ok(<T1 as From<UntypedValue>>::from(results[0]))
+        <(T1,) as DecodeUntypedSlice>::decode_untyped_slice(results).map(|t| t.0)
     }
 }
 
@@ -1504,16 +1494,15 @@ macro_rules! impl_decode_untyped_slice {
             ),*
         {
             #[allow(non_snake_case)]
+            #[inline]
             fn decode_untyped_slice(results: &[UntypedValue]) -> Result<Self, UntypedError> {
                 match results {
-                    &[$($tuple),*] => Ok((
+                    &[ $($tuple),* ] => Ok((
                         $(
                             <$tuple as From<UntypedValue>>::from($tuple),
                         )*
                     )),
-                    _unexpected => {
-                        Err(UntypedError::invalid_len($n, results.len()))
-                    }
+                    _ => Err(UntypedError::invalid_len()),
                 }
             }
         }
@@ -1540,36 +1529,35 @@ impl<T1> EncodeUntypedSlice for T1
 where
     T1: Into<UntypedValue>,
 {
+    #[inline]
     fn encode_untyped_slice(self, results: &mut [UntypedValue]) -> Result<(), UntypedError> {
-        if results.len() != 1 {
-            return Err(UntypedError::invalid_len(1, results.len()));
-        }
-        results[0] = self.into();
-        Ok(())
+        <(T1,) as EncodeUntypedSlice>::encode_untyped_slice((self,), results)
     }
 }
 
 macro_rules! impl_encode_untyped_slice {
     ( $n:literal $( $tuple:ident )* ) => {
-        impl<$($tuple),*> EncodeUntypedSlice for ($($tuple,)*)
-        where
-            $(
-                $tuple: Into<UntypedValue>
-            ),*
-        {
-            #[allow(non_snake_case)]
-            fn encode_untyped_slice(self, results: &mut [UntypedValue]) -> Result<(), UntypedError> {
-                if results.len() != $n {
-                    return Err(UntypedError::invalid_len($n, results.len()))
+        paste! {
+            impl<$($tuple),*> EncodeUntypedSlice for ($($tuple,)*)
+            where
+                $(
+                    $tuple: Into<UntypedValue>
+                ),*
+            {
+                #[allow(non_snake_case)]
+                #[inline]
+                fn encode_untyped_slice(self, results: &mut [UntypedValue]) -> Result<(), UntypedError> {
+                    match results {
+                        [ $( [< _results_ $tuple >] ,)* ] => {
+                            let ( $( [< _self_ $tuple >] ,)* ) = self;
+                            $(
+                                *[< _results_ $tuple >] = <$tuple as Into<UntypedValue>>::into([< _self_ $tuple >]);
+                            )*
+                            Ok(())
+                        }
+                        _ => Err(UntypedError::invalid_len())
+                    }
                 }
-                let ($($tuple,)*) = self;
-                let converted: [UntypedValue; $n] = [
-                    $(
-                        <$tuple as Into<UntypedValue>>::into($tuple)
-                    ),*
-                ];
-                results.copy_from_slice(&converted);
-                Ok(())
             }
         }
     };
