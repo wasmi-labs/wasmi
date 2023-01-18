@@ -1402,32 +1402,23 @@ macro_rules! for_each_tuple {
 /// An error that may occur upon encoding or decoding slices of [`UntypedValue`].
 #[derive(Debug, Copy, Clone)]
 pub enum UntypedError {
-    /// The [`UntypedValue`] slice length did not match.
-    InvalidLen {
-        /// Expected number of [`UntypedValue`] elements.
-        expected: usize,
-        /// Found number of [`UntypedValue`] elements.
-        found: usize,
-    },
+    /// The [`UntypedValue`] slice length did not match `Self`.
+    InvalidLen,
 }
 
 impl UntypedError {
     /// Creates a new `InvalidLen` [`UntypedError`].
     #[cold]
-    pub fn invalid_len(expected: usize, found: usize) -> Self {
-        Self::InvalidLen { expected, found }
+    pub fn invalid_len() -> Self {
+        Self::InvalidLen
     }
 }
 
 impl Display for UntypedError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            UntypedError::InvalidLen { expected, found } => {
-                write!(
-                    f,
-                    "encountered invalid length for untyped slice. \
-                     expected: {expected}, found: {found}"
-                )
+            UntypedError::InvalidLen => {
+                write!(f, "mismatched length of the untyped slice",)
             }
         }
     }
@@ -1489,10 +1480,7 @@ where
     T1: From<UntypedValue>,
 {
     fn decode_untyped_slice(results: &[UntypedValue]) -> Result<Self, UntypedError> {
-        match results {
-            [result] => Ok(<T1 as From<UntypedValue>>::from(*result)),
-            _ => Err(UntypedError::invalid_len(1, results.len())),
-        }
+        <(T1,) as DecodeUntypedSlice>::decode_untyped_slice(results).map(|t| t.0)
     }
 }
 
@@ -1512,7 +1500,7 @@ macro_rules! impl_decode_untyped_slice {
                             <$tuple as From<UntypedValue>>::from($tuple),
                         )*
                     )),
-                    _ => Err(UntypedError::invalid_len($n, results.len())),
+                    _ => Err(UntypedError::invalid_len()),
                 }
             }
         }
@@ -1540,13 +1528,7 @@ where
     T1: Into<UntypedValue>,
 {
     fn encode_untyped_slice(self, results: &mut [UntypedValue]) -> Result<(), UntypedError> {
-        match results {
-            [result] => {
-                *result = self.into();
-                Ok(())
-            }
-            _ => Err(UntypedError::invalid_len(1, results.len())),
-        }
+        <(T1,) as EncodeUntypedSlice>::encode_untyped_slice((self,), results)
     }
 }
 
@@ -1569,7 +1551,7 @@ macro_rules! impl_encode_untyped_slice {
                             )*
                             Ok(())
                         }
-                        _ => Err(UntypedError::invalid_len($n, results.len()))
+                        _ => Err(UntypedError::invalid_len())
                     }
                 }
             }
