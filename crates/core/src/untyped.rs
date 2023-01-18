@@ -1507,14 +1507,12 @@ macro_rules! impl_decode_untyped_slice {
             #[allow(non_snake_case)]
             fn decode_untyped_slice(results: &[UntypedValue]) -> Result<Self, UntypedError> {
                 match results {
-                    &[$($tuple),*] => Ok((
+                    &[ $($tuple),* ] => Ok((
                         $(
                             <$tuple as From<UntypedValue>>::from($tuple),
                         )*
                     )),
-                    _unexpected => {
-                        Err(UntypedError::invalid_len($n, results.len()))
-                    }
+                    _ => Err(UntypedError::invalid_len($n, results.len())),
                 }
             }
         }
@@ -1554,7 +1552,6 @@ where
 
 macro_rules! impl_encode_untyped_slice {
     ( $n:literal $( $tuple:ident )* ) => {
-
         paste! {
             impl<$($tuple),*> EncodeUntypedSlice for ($($tuple,)*)
             where
@@ -1566,7 +1563,7 @@ macro_rules! impl_encode_untyped_slice {
                 fn encode_untyped_slice(self, results: &mut [UntypedValue]) -> Result<(), UntypedError> {
                     match results {
                         [ $( [< _results_ $tuple >] ,)* ] => {
-                            let ($( [< _self_ $tuple >] ,)*) = self;
+                            let ( $( [< _self_ $tuple >] ,)* ) = self;
                             $(
                                 *[< _results_ $tuple >] = <$tuple as Into<UntypedValue>>::into([< _self_ $tuple >]);
                             )*
