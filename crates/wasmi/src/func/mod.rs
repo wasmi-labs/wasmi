@@ -7,7 +7,7 @@ pub(crate) use self::typed_func::CallResultsTuple;
 pub use self::{
     caller::Caller,
     error::FuncError,
-    into_func::{IntoFunc, WasmRet, WasmType},
+    into_func::{IntoFunc, WasmRet, WasmType, WasmTypeList},
     typed_func::{TypedFunc, WasmParams, WasmResults},
 };
 use super::{
