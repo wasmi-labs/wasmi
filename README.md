@@ -69,6 +69,19 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 [`simd` ]: https://github.com/webassembly/simd
 [`tail-calls`]: https://github.com/WebAssembly/tail-call
 
+## Usage
+
+The `wasmi` interpreter can be used in two different ways:
+
+1) As a Rust library by depending on the [`wasmi`](https://crates.io/crates/wasmi) crate.
+
+    Refer to the [`wasmi` crate docs](https://docs.rs/wasmi) to learn how to use the `wasmi` crate as library.
+
+2) As CLI application by installing the `wasmi_cli` Rust binary: `cargo install wasmi_cli`
+
+    Use `wasmi_cli --help` to find out how to use the `wasmi` CLI application.  
+    **Note:** As of version `v0.23.0` the `wasmi_cli` application does not yet support WASI.
+
 ## Building
 
 Clone `wasmi` from our official repository and then build using the standard `cargo` procedure:
