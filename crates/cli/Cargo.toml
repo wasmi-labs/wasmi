@@ -1,6 +1,6 @@
 [package]
 name = "wasmi_cli"
-version = "0.23.0"
+version = "0.23.1"
 documentation = "https://docs.rs/wasmi/"
 description = "WebAssembly interpreter"
 publish = true
@@ -17,3 +17,9 @@ clap = { version = "4", features = ["derive"] }
 wasmi = { path = "../wasmi", version = "0.23.0" }
 wat = "1"
 anyhow = "1"
+
+# We need to put this [profile.release] section due to this bug in Cargo:
+# https://github.com/rust-lang/cargo/issues/8264
+# [profile.release]
+# lto = "fat"
+# codegen-units = 1
