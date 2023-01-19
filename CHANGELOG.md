@@ -18,6 +18,8 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 - Removed `ModuleError` export from crate root. (https://github.com/paritytech/wasmi/pull/618)
   - Now `ModuleError` is exported from `crate::errors` just like all the other error types.
+- Refactor and cleanup traits underlying to `IntoFunc`. (https://github.com/paritytech/wasmi/pull/620)
+  - This is only the first step in moving closer to the Wasmtime API traits.
 - Mirror Wasmtime API more closely. (https://github.com/paritytech/wasmi/pull/615, https://github.com/paritytech/wasmi/pull/616)
   - Renamed `Caller::host_data` method to `Caller::data`.
   - Renamed `Caller::host_data_mut` method to `Caller::data_mut`.
