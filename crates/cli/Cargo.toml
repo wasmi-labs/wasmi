@@ -1,9 +1,9 @@
 [package]
 name = "wasmi_cli"
-version = "0.11.0"
+version = "0.23.0"
 documentation = "https://docs.rs/wasmi/"
 description = "WebAssembly interpreter"
-publish = false                          # We might want to publish this crate when dust has settled.
+publish = true
 authors.workspace = true
 repository.workspace = true
 edition.workspace = true
@@ -14,6 +14,6 @@ categories.workspace = true
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
-wasmi = { path = "../wasmi" }
+wasmi = { path = "../wasmi", version = "0.23.0" }
 wat = "1"
 anyhow = "1"
