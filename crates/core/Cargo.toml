@@ -1,6 +1,6 @@
 [package]
 name = "wasmi_core"
-version = "0.7.0"
+version = "0.8.0"
 documentation = "https://docs.rs/wasmi_core"
 description = "Core primitives for the wasmi WebAssembly interpreter"
 authors.workspace = true

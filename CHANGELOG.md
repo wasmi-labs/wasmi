@@ -8,7 +8,9 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
-## [`x.y.z`] - UNRELEASED
+## [`0.23.0`] - 2023-01-19
+
+> **Note:** This is the Wasmtime API Compatibility update.
 
 ### Added
 
