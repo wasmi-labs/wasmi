@@ -20,6 +20,7 @@ anyhow = "1"
 
 # We need to put this [profile.release] section due to this bug in Cargo:
 # https://github.com/rust-lang/cargo/issues/8264
+# Uncomment the lines below before publishing a new `wasmi_cli` release to crates.io.
 # [profile.release]
 # lto = "fat"
 # codegen-units = 1
