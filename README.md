@@ -79,18 +79,27 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 
 ## Usage
 
-The `wasmi` interpreter can be used in two different ways:
+### As CLI Application
 
-1) As a Rust library by depending on the [`wasmi`](https://crates.io/crates/wasmi) crate.
+Install the newest `wasmi` CLI version via:
+```
+cargo install wasmi_cli
+```
+Then run arbitrary `wasm32-unknown-unknown` Wasm blobs via:
+```
+wasmi_cli <WASM_FILE> <FUNC_NAME> [<FUNC_ARGS>]*
+```
+**Note:** As of version `v0.23.1` the `wasmi_cli` application does not yet support WASI out of the box.
 
-    Refer to the [`wasmi` crate docs](https://docs.rs/wasmi) to learn how to use the `wasmi` crate as library.
+### As Rust Library
 
-2) As CLI application by installing the `wasmi_cli` Rust binary: `cargo install wasmi_cli`
+Any Rust crate can depend on the [`wasmi` crate](https://crates.io/crates/wasmi)
+in order to integrate a WebAssembly intepreter into their stack.
+Refer to the [`wasmi` crate docs](https://docs.rs/wasmi) to learn how to use the `wasmi` crate as library.
 
-    Use `wasmi_cli --help` to find out how to use the `wasmi` CLI application.  
-    **Note:** As of version `v0.23.0` the `wasmi_cli` application does not yet support WASI.
+## Development
 
-## Building
+### Building
 
 Clone `wasmi` from our official repository and then build using the standard `cargo` procedure:
 
@@ -100,7 +109,7 @@ cd wasmi
 cargo build
 ```
 
-## Testing
+### Testing
 
 In order to test `wasmi` you need to initialize and update the Git submodules using:
 
@@ -120,15 +129,19 @@ After Git submodules have been initialized and updated you can test using:
 cargo test --workspace
 ```
 
-## Development
+### Benchmarks
 
-Before pushing a PR to our repository we would like you to execute the
-`scripts/run-local-ci.sh` script that can be found in the repository's root folder.
+In order to benchmark `wasmi` use the following command:
+
+```
+cargo bench
+```
 
 ## Supported Platforms
 
-Supported platforms are primarily Linux, MacOS, Windows and WebAssembly.
+Supported platforms are primarily Linux, MacOS, Windows and WebAssembly.  
 Other platforms might be working but are not guaranteed to be so by the `wasmi` maintainers.
+
 Use the following command in order to produce a WebAssembly build:
 
 ```
@@ -153,15 +166,7 @@ slightly smaller Wasm binaries.
 
 [Binaryen]: https://github.com/WebAssembly/binaryen
 
-## Benchmarks
-
-In order to benchmark `wasmi` use the following command:
-
-```
-cargo bench
-```
-
-**Note:** Benchmarks can be filtered by `compile_and_validate`,
+**Note:** Benchmarks can be filtered by `translate`,
 `instantiate` and `execute` flags given to `cargo bench`.
 For example `cargo bench execute` will only execute the benchmark
 tests that test the performance of WebAssembly execution.
