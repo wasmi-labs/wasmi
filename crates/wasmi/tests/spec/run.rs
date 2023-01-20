@@ -201,6 +201,21 @@ fn assert_trap(test_context: &TestContext, span: Span, error: TestError, message
     match error {
         TestError::Wasmi(WasmiError::Trap(trap)) if trap.trap_code().is_some() => {
             let code = trap.trap_code().unwrap();
+            if code.trap_message() == "uninitialized element" && message == "uninitialized"
+            {
+                // Fixes inconsistencies in the official Wasm spec test suite.
+                return;
+            }
+            if code.trap_message() == "undefined element" && message == "undefined"
+            {
+                // Fixes inconsistencies in the official Wasm spec test suite.
+                return;
+            }
+            if code.trap_message() == "indirect call type mismatch" && message == "indirect call"
+            {
+                // Fixes inconsistencies in the official Wasm spec test suite.
+                return;
+            }
             assert_eq!(
                 code.trap_message(),
                 message,

@@ -128,6 +128,28 @@ mod multi_value {
     }
 }
 
+mod mutable_global {
+    use super::mvp_config;
+
+    /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
+    fn run_wasm_spec_test(file_name: &str) {
+        let mut config = mvp_config();
+        config.wasm_mutable_global(true);
+        super::run::run_wasm_spec_test(file_name, config)
+    }
+
+    define_spec_tests! {
+        fn wasm_globals("proposals/mutable-global/globals");
+        // We ignore this test case temporarily because `wasmi` already implements
+        // the intended behavior using the semantics introduced in the `bulk-memory`
+        // Wasm proposal withot having `bulk-memory` Wasm proposal support:
+        // https://github.com/WebAssembly/bulk-memory-operations/blob/master/proposals/bulk-memory-operations/Overview.md#segment-initialization
+        //
+        // Unignore the test case and remove this comment once `bulk-memory` has been implemented.
+        #[ignore] fn wasm_linking("proposals/mutable-global/linking");
+    }
+}
+
 define_spec_tests! {
     fn wasm_address("address");
     fn wasm_align("align");
@@ -173,6 +195,12 @@ define_spec_tests! {
     fn wasm_int_literals("int_literals");
     fn wasm_labels("labels");
     fn wasm_left_to_right("left-to-right");
+    // We ignore this test case temporarily because `wasmi` already implements
+    // the intended behavior using the semantics introduced in the `bulk-memory`
+    // Wasm proposal withot having `bulk-memory` Wasm proposal support:
+    // https://github.com/WebAssembly/bulk-memory-operations/blob/master/proposals/bulk-memory-operations/Overview.md#segment-initialization
+    //
+    // Unignore the test case and remove this comment once `bulk-memory` has been implemented.
     #[ignore] fn wasm_linking("linking");
     fn wasm_loop("loop");
     fn wasm_load("load");
