@@ -207,7 +207,7 @@ fn assert_trap(test_context: &TestContext, span: Span, error: TestError, message
                     encountered: {}",
                 test_context.spanned(span),
                 message,
-                error.to_string(),
+                error,
             );
         }
         unexpected => panic!(
