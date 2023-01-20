@@ -138,6 +138,16 @@ In order to benchmark `wasmi` use the following command:
 cargo bench
 ```
 
+You can filter which set of benchmarks to run:
+- `cargo bench translate`
+  - Only runs benchmarks concerned with WebAssembly module translation.
+
+- `cargo bench instantiate`
+  - Only runs benchmarks concerned with WebAssembly module instantiation.
+
+- `cargo bench execute`
+  - Only runs benchmarks concerned with executing WebAssembly functions.
+
 ## Supported Platforms
 
 Supported platforms are primarily Linux, MacOS, Windows and WebAssembly.  
@@ -166,11 +176,6 @@ When compiling for the WebAssembly target we highly recommend to post-optimize
 slightly smaller Wasm binaries.
 
 [Binaryen]: https://github.com/WebAssembly/binaryen
-
-**Note:** Benchmarks can be filtered by `translate`,
-`instantiate` and `execute` flags given to `cargo bench`.
-For example `cargo bench execute` will only execute the benchmark
-tests that test the performance of WebAssembly execution.
 
 ## License
 
