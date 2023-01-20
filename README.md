@@ -1,16 +1,16 @@
 
 | Continuous Integration |     Test Coverage    |  Documentation   |      Crates.io       |
 |:----------------------:|:--------------------:|:----------------:|:--------------------:|
-| [![ci][1]][2]          | [![codecov][5]][6]   | [![docs][9]][10] | [![crates][11]][12]  |
+| [![ci][1]][2]          | [![codecov][3]][4]   | [![docs][5]][6] | [![crates][7]][8]  |
 
 [1]: https://github.com/paritytech/wasmi/workflows/Rust%20-%20Continuous%20Integration/badge.svg?branch=master
 [2]: https://github.com/paritytech/wasmi/actions?query=workflow%3A%22Rust+-+Continuous+Integration%22+branch%3Amaster
-[5]: https://codecov.io/gh/paritytech/wasmi/branch/master/graph/badge.svg
-[6]: https://codecov.io/gh/paritytech/wasmi/branch/master
-[9]: https://docs.rs/wasmi/badge.svg
-[10]: https://docs.rs/wasmi
-[11]: https://img.shields.io/crates/v/wasmi.svg
-[12]: https://crates.io/crates/wasmi
+[3]: https://codecov.io/gh/paritytech/wasmi/branch/master/graph/badge.svg
+[4]: https://codecov.io/gh/paritytech/wasmi/branch/master
+[5]: https://docs.rs/wasmi/badge.svg
+[6]: https://docs.rs/wasmi
+[7]: https://img.shields.io/crates/v/wasmi.svg
+[8]: https://crates.io/crates/wasmi
 
 [license-mit-badge]: https://img.shields.io/badge/license-MIT-blue.svg
 [license-apache-badge]: https://img.shields.io/badge/license-APACHE-orange.svg
@@ -55,10 +55,12 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 | [`saturating-float-to-int`] | ✅ | |
 | [`sign-extension`] | ✅ | |
 | [`multi-value`] | ✅ | |
-| [`reference-types`] | ⌛ | Planned but not yet implemented. Low priority. |
-| [`bulk-memory`] | ⌛ | Planned but not yet implemented. Low priority. |
-| [`simd`] | ❌ | No support is planned for `wasmi`. |
-| [`tail-calls`] | ⌛ | Not yet part of the Wasm standard but support in `wasmi` is planned. Low priority. |
+| [`bulk-memory`] | ⌛ | Support is planned. [(#364)] |
+| [`reference-types`] | ⌛ | Support is planned. [(#496)] |
+| [`simd`] | ❌ | Unlikely to be supported. |
+| [`tail-calls`] | ⌛ | Support is planned. [(#363)] |
+| | |
+| [WASI] | 🟡 | Experimental support via the `wasmi_wasi` crate. |
 
 [`mutable-global`]: https://github.com/WebAssembly/mutable-global
 [`saturating-float-to-int`]: https://github.com/WebAssembly/nontrapping-float-to-int-conversions
@@ -69,20 +71,36 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 [`simd` ]: https://github.com/webassembly/simd
 [`tail-calls`]: https://github.com/WebAssembly/tail-call
 
+[WASI]: https://github.com/WebAssembly/WASI
+
+[(#363)]: https://github.com/paritytech/wasmi/issues/363
+[(#364)]: https://github.com/paritytech/wasmi/issues/364
+[(#496)]: https://github.com/paritytech/wasmi/issues/496
+
 ## Usage
 
-The `wasmi` interpreter can be used in two different ways:
+### As CLI Application
 
-1) As a Rust library by depending on the [`wasmi`](https://crates.io/crates/wasmi) crate.
+Install the newest `wasmi` CLI version via:
+```
+cargo install wasmi_cli
+```
+Then run arbitrary `wasm32-unknown-unknown` Wasm blobs via:
+```
+wasmi_cli <WASM_FILE> <FUNC_NAME> [<FUNC_ARGS>]*
+```
+**Note:** As of version `v0.23.1` the `wasmi_cli` application does not yet support WASI out of the box.
 
-    Refer to the [`wasmi` crate docs](https://docs.rs/wasmi) to learn how to use the `wasmi` crate as library.
+### As Rust Library
 
-2) As CLI application by installing the `wasmi_cli` Rust binary: `cargo install wasmi_cli`
+Any Rust crate can depend on the [`wasmi` crate](https://crates.io/crates/wasmi)
+in order to integrate a WebAssembly intepreter into their stack.
 
-    Use `wasmi_cli --help` to find out how to use the `wasmi` CLI application.  
-    **Note:** As of version `v0.23.0` the `wasmi_cli` application does not yet support WASI.
+Refer to the [`wasmi` crate docs](https://docs.rs/wasmi) to learn how to use the `wasmi` crate as library.
 
-## Building
+## Development
+
+### Building
 
 Clone `wasmi` from our official repository and then build using the standard `cargo` procedure:
 
@@ -92,7 +110,7 @@ cd wasmi
 cargo build
 ```
 
-## Testing
+### Testing
 
 In order to test `wasmi` you need to initialize and update the Git submodules using:
 
@@ -112,14 +130,18 @@ After Git submodules have been initialized and updated you can test using:
 cargo test --workspace
 ```
 
-## Development
+### Benchmarks
 
-Before pushing a PR to our repository we would like you to execute the
-`scripts/run-local-ci.sh` script that can be found in the repository's root folder.
+In order to benchmark `wasmi` use the following command:
+
+```
+cargo bench
+```
 
 ## Supported Platforms
 
-Supported platforms are primarily Linux, MacOS, Windows and WebAssembly.
+Supported platforms are primarily Linux, MacOS, Windows and WebAssembly.  
+Other platforms might be working but are not guaranteed to be so by the `wasmi` maintainers.
 
 Use the following command in order to produce a WebAssembly build:
 
@@ -145,15 +167,7 @@ slightly smaller Wasm binaries.
 
 [Binaryen]: https://github.com/WebAssembly/binaryen
 
-## Benchmarks
-
-In order to benchmark `wasmi` use the following command:
-
-```
-cargo bench
-```
-
-**Note:** Benchmarks can be filtered by `compile_and_validate`,
+**Note:** Benchmarks can be filtered by `translate`,
 `instantiate` and `execute` flags given to `cargo bench`.
 For example `cargo bench execute` will only execute the benchmark
 tests that test the performance of WebAssembly execution.
