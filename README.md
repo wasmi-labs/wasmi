@@ -82,12 +82,12 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 ### As CLI Application
 
 Install the newest `wasmi` CLI version via:
-```
-cargo install wasmi_cli
+```console
+> cargo install wasmi_cli
 ```
 Then run arbitrary `wasm32-unknown-unknown` Wasm blobs via:
-```
-wasmi_cli <WASM_FILE> <FUNC_NAME> [<FUNC_ARGS>]*
+```console
+> wasmi_cli <WASM_FILE> <FUNC_NAME> [<FUNC_ARGS>]*
 ```
 **Note:** As of version `v0.23.1` the `wasmi_cli` application does not yet support WASI out of the box.
 
@@ -104,38 +104,38 @@ Refer to the [`wasmi` crate docs](https://docs.rs/wasmi) to learn how to use the
 
 Clone `wasmi` from our official repository and then build using the standard `cargo` procedure:
 
-```
-git clone https://github.com/paritytech/wasmi.git
-cd wasmi
-cargo build
+```console
+> git clone https://github.com/paritytech/wasmi.git
+> cd wasmi
+> cargo build
 ```
 
 ### Testing
 
 In order to test `wasmi` you need to initialize and update the Git submodules using:
 
-```
-git submodule update --init --recursive
+```console
+> git submodule update --init --recursive
 ```
 
 Alternatively you can provide `--recursive` flag to `git clone` command while cloning the repository:
 
-```
-git clone https://github.com/paritytech/wasmi.git ---recursive
+```console
+> git clone https://github.com/paritytech/wasmi.git --recursive
 ```
 
 After Git submodules have been initialized and updated you can test using:
 
-```
-cargo test --workspace
+```console
+> cargo test --workspace
 ```
 
 ### Benchmarks
 
 In order to benchmark `wasmi` use the following command:
 
-```
-cargo bench
+```console
+> cargo bench
 ```
 
 You can filter which set of benchmarks to run:
@@ -155,8 +155,8 @@ Other platforms might be working but are not guaranteed to be so by the `wasmi` 
 
 Use the following command in order to produce a WebAssembly build:
 
-```
-cargo build --no-default-features --target wasm32-unknown-unknown
+```console
+> cargo build --no-default-features --target wasm32-unknown-unknown
 ```
 
 ## Production Builds
