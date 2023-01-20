@@ -249,7 +249,7 @@ define_spec_tests! {
     fn wasm_unreachable("unreachable");
     // I do not remember why we ignored this test but it might either be
     // due to some updated semantics in Wasm proposals that we already
-    // implement or due to actual bugs in `wasmi`. Need to
+    // implement or due to actual bugs in `wasmi`. Need to investigate.
     #[ignore] fn wasm_unreached_invalid("unreached-invalid");
     fn wasm_unwind("unwind");
     fn wasm_utf8_custom_section_id("utf8-custom-section-id");
