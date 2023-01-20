@@ -83,11 +83,11 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 
 Install the newest `wasmi` CLI version via:
 ```console
-> cargo install wasmi_cli
+cargo install wasmi_cli
 ```
 Then run arbitrary `wasm32-unknown-unknown` Wasm blobs via:
 ```console
-> wasmi_cli <WASM_FILE> <FUNC_NAME> [<FUNC_ARGS>]*
+wasmi_cli <WASM_FILE> <FUNC_NAME> [<FUNC_ARGS>]*
 ```
 **Note:** As of version `v0.23.1` the `wasmi_cli` application does not yet support WASI out of the box.
 
@@ -105,9 +105,9 @@ Refer to the [`wasmi` crate docs](https://docs.rs/wasmi) to learn how to use the
 Clone `wasmi` from our official repository and then build using the standard `cargo` procedure:
 
 ```console
-> git clone https://github.com/paritytech/wasmi.git
-> cd wasmi
-> cargo build
+git clone https://github.com/paritytech/wasmi.git
+cd wasmi
+cargo build
 ```
 
 ### Testing
@@ -115,19 +115,19 @@ Clone `wasmi` from our official repository and then build using the standard `ca
 In order to test `wasmi` you need to initialize and update the Git submodules using:
 
 ```console
-> git submodule update --init --recursive
+git submodule update --init --recursive
 ```
 
 Alternatively you can provide `--recursive` flag to `git clone` command while cloning the repository:
 
 ```console
-> git clone https://github.com/paritytech/wasmi.git --recursive
+git clone https://github.com/paritytech/wasmi.git --recursive
 ```
 
 After Git submodules have been initialized and updated you can test using:
 
 ```console
-> cargo test --workspace
+cargo test --workspace
 ```
 
 ### Benchmarks
@@ -135,7 +135,7 @@ After Git submodules have been initialized and updated you can test using:
 In order to benchmark `wasmi` use the following command:
 
 ```console
-> cargo bench
+cargo bench
 ```
 
 You can filter which set of benchmarks to run:
@@ -156,7 +156,7 @@ Other platforms might be working but are not guaranteed to be so by the `wasmi` 
 Use the following command in order to produce a WebAssembly build:
 
 ```console
-> cargo build --no-default-features --target wasm32-unknown-unknown
+cargo build --no-default-features --target wasm32-unknown-unknown
 ```
 
 ## Production Builds
