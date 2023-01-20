@@ -1,16 +1,16 @@
 
 | Continuous Integration |     Test Coverage    |  Documentation   |      Crates.io       |
 |:----------------------:|:--------------------:|:----------------:|:--------------------:|
-| [![ci][1]][2]          | [![codecov][5]][6]   | [![docs][9]][10] | [![crates][11]][12]  |
+| [![ci][1]][2]          | [![codecov][3]][4]   | [![docs][5]][6] | [![crates][7]][8]  |
 
 [1]: https://github.com/paritytech/wasmi/workflows/Rust%20-%20Continuous%20Integration/badge.svg?branch=master
 [2]: https://github.com/paritytech/wasmi/actions?query=workflow%3A%22Rust+-+Continuous+Integration%22+branch%3Amaster
-[5]: https://codecov.io/gh/paritytech/wasmi/branch/master/graph/badge.svg
-[6]: https://codecov.io/gh/paritytech/wasmi/branch/master
-[9]: https://docs.rs/wasmi/badge.svg
-[10]: https://docs.rs/wasmi
-[11]: https://img.shields.io/crates/v/wasmi.svg
-[12]: https://crates.io/crates/wasmi
+[3]: https://codecov.io/gh/paritytech/wasmi/branch/master/graph/badge.svg
+[4]: https://codecov.io/gh/paritytech/wasmi/branch/master
+[5]: https://docs.rs/wasmi/badge.svg
+[6]: https://docs.rs/wasmi
+[7]: https://img.shields.io/crates/v/wasmi.svg
+[8]: https://crates.io/crates/wasmi
 
 [license-mit-badge]: https://img.shields.io/badge/license-MIT-blue.svg
 [license-apache-badge]: https://img.shields.io/badge/license-APACHE-orange.svg
@@ -55,10 +55,12 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 | [`saturating-float-to-int`] | ✅ | |
 | [`sign-extension`] | ✅ | |
 | [`multi-value`] | ✅ | |
-| [`reference-types`] | ⌛ | Planned but not yet implemented. Low priority. |
-| [`bulk-memory`] | ⌛ | Planned but not yet implemented. Low priority. |
-| [`simd`] | ❌ | No support is planned for `wasmi`. |
-| [`tail-calls`] | ⌛ | Not yet part of the Wasm standard but support in `wasmi` is planned. Low priority. |
+| [`bulk-memory`] | ⌛ | Support is planned. [(#364)] |
+| [`reference-types`] | ⌛ | Support is planned. [(#496)] |
+| [`simd`] | ❌ | Unlikely to be supported. |
+| [`tail-calls`] | ⌛ | Support is planned. [(#363)] |
+| | |
+| [WASI] | 🟡 | Experimental support via the `wasmi_wasi` crate. |
 
 [`mutable-global`]: https://github.com/WebAssembly/mutable-global
 [`saturating-float-to-int`]: https://github.com/WebAssembly/nontrapping-float-to-int-conversions
@@ -68,6 +70,12 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 [`bulk-memory`]: https://github.com/WebAssembly/bulk-memory-operations
 [`simd` ]: https://github.com/webassembly/simd
 [`tail-calls`]: https://github.com/WebAssembly/tail-call
+
+[WASI]: https://github.com/WebAssembly/WASI
+
+[(#363)]: https://github.com/paritytech/wasmi/issues/363
+[(#364)]: https://github.com/paritytech/wasmi/issues/364
+[(#496)]: https://github.com/paritytech/wasmi/issues/496
 
 ## Usage
 
@@ -120,7 +128,7 @@ Before pushing a PR to our repository we would like you to execute the
 ## Supported Platforms
 
 Supported platforms are primarily Linux, MacOS, Windows and WebAssembly.
-
+Other platforms might be working but are not guaranteed to be so by the `wasmi` maintainers.
 Use the following command in order to produce a WebAssembly build:
 
 ```
