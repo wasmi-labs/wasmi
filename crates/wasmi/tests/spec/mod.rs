@@ -128,6 +128,48 @@ mod multi_value {
     }
 }
 
+mod mutable_global {
+    use super::mvp_config;
+
+    /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
+    fn run_wasm_spec_test(file_name: &str) {
+        let mut config = mvp_config();
+        config.wasm_mutable_global(true);
+        super::run::run_wasm_spec_test(file_name, config)
+    }
+
+    define_spec_tests! {
+        fn wasm_globals("proposals/mutable-global/globals");
+        // We expect failure for this test case temporarily because `wasmi` already implements
+        // the intended behavior using the semantics introduced in the `bulk-memory`
+        // Wasm proposal withot having `bulk-memory` Wasm proposal support:
+        // https://github.com/WebAssembly/bulk-memory-operations/blob/master/proposals/bulk-memory-operations/Overview.md#segment-initialization
+        //
+        // Unignore the test case and remove this comment once `bulk-memory` has been implemented.
+        #[should_panic] fn wasm_linking("proposals/mutable-global/linking");
+    }
+}
+
+mod bulk_memory {
+    use super::mvp_config;
+
+    /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
+    fn run_wasm_spec_test(file_name: &str) {
+        let mut config = mvp_config();
+        config.wasm_mutable_global(true);
+        super::run::run_wasm_spec_test(file_name, config)
+    }
+
+    define_spec_tests! {
+        // Even though `wasmi` does not implement the `bulk-memory` Wasm proposal
+        // at the time of this writing we run this specific test from its test suite
+        // because `wasmi` already uses the changed semantics for segment instantiation
+        // coming from the `bulk-memory` Wasm proposal.
+        // This is why the other `linking` tests are expected to fail.
+        fn wasm_linking("proposals/bulk-memory-operations/linking");
+    }
+}
+
 define_spec_tests! {
     fn wasm_address("address");
     fn wasm_align("align");
@@ -173,7 +215,13 @@ define_spec_tests! {
     fn wasm_int_literals("int_literals");
     fn wasm_labels("labels");
     fn wasm_left_to_right("left-to-right");
-    #[ignore] fn wasm_linking("linking");
+    // We expect failure for this test case temporarily because `wasmi` already implements
+    // the intended behavior using the semantics introduced in the `bulk-memory`
+    // Wasm proposal withot having `bulk-memory` Wasm proposal support:
+    // https://github.com/WebAssembly/bulk-memory-operations/blob/master/proposals/bulk-memory-operations/Overview.md#segment-initialization
+    //
+    // Unignore the test case and remove this comment once `bulk-memory` has been implemented.
+    #[should_panic] fn wasm_linking("linking");
     fn wasm_loop("loop");
     fn wasm_load("load");
     fn wasm_local_get("local_get");
@@ -199,6 +247,9 @@ define_spec_tests! {
     fn wasm_type("type");
     fn wasm_typecheck("typecheck");
     fn wasm_unreachable("unreachable");
+    // I do not remember why we ignored this test but it might either be
+    // due to some updated semantics in Wasm proposals that we already
+    // implement or due to actual bugs in `wasmi`. Need to investigate.
     #[ignore] fn wasm_unreached_invalid("unreached-invalid");
     fn wasm_unwind("unwind");
     fn wasm_utf8_custom_section_id("utf8-custom-section-id");

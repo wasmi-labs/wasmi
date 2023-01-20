@@ -1,6 +1,6 @@
 use super::{error::TestError, TestContext, TestDescriptor};
 use anyhow::Result;
-use wasmi::{Config, Error as WasmiError};
+use wasmi::Config;
 use wasmi_core::{Value, F32, F64};
 use wast::{
     lexer::Lexer,
@@ -199,13 +199,15 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
 /// - If the trap message of the `error` is not as expected.
 fn assert_trap(test_context: &TestContext, span: Span, error: TestError, message: &str) {
     match error {
-        TestError::Wasmi(WasmiError::Trap(trap)) if trap.trap_code().is_some() => {
-            let code = trap.trap_code().unwrap();
-            assert_eq!(
-                code.trap_message(),
-                message,
-                "{}: the directive trapped as expected but with an unexpected message",
+        TestError::Wasmi(error) => {
+            assert!(
+                error.to_string().starts_with(message),
+                "{}: the directive trapped as expected but with an unexpected message\n\
+                    expected: {},\n\
+                    encountered: {}",
                 test_context.spanned(span),
+                message,
+                error,
             );
         }
         unexpected => panic!(
