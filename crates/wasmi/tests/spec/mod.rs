@@ -161,7 +161,11 @@ mod bulk_memory {
     }
 
     define_spec_tests! {
-        // TODO: comment
+        // Even though `wasmi` does not implement the `bulk-memory` Wasm proposal
+        // at the time of this writing we run this specific test from its test suite
+        // because `wasmi` already uses the changed semantics for segment instantiation
+        // coming from the `bulk-memory` Wasm proposal.
+        // This is why the other `linking` tests are expected to fail.
         fn wasm_linking("proposals/bulk-memory-operations/linking");
     }
 }
