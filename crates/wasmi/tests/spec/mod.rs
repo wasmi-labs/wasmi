@@ -222,6 +222,9 @@ mod bulk_memory {
 /// The Wasm MVP has no Wasm proposals enabled.
 fn make_config() -> wasmi::Config {
     let mut config = mvp_config();
+    // We have to enable the `mutable-global` Wasm proposal because
+    // it seems that the entire Wasm spec test suite is already built
+    // on the basis of its semantics.
     config.wasm_mutable_global(true);
     config
 }
