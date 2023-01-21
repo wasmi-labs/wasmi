@@ -12,7 +12,7 @@ use super::{
 };
 use crate::{
     func::FuncError,
-    module::FuncIdx,
+    module::{FuncIdx, InstanceDataSegment},
     Error,
     ExternType,
     TypedFunc,
@@ -55,6 +55,7 @@ pub struct InstanceEntity {
     memories: Box<[Memory]>,
     globals: Box<[Global]>,
     exports: BTreeMap<Box<str>, Extern>,
+    data_segments: Box<[InstanceDataSegment]>,
 }
 
 impl InstanceEntity {
@@ -68,6 +69,7 @@ impl InstanceEntity {
             memories: [].into(),
             globals: [].into(),
             exports: BTreeMap::new(),
+            data_segments: [].into(),
         }
     }
 
@@ -104,6 +106,11 @@ impl InstanceEntity {
     /// Returns the signature at the `index` if any.
     pub(crate) fn get_signature(&self, index: u32) -> Option<DedupFuncType> {
         self.func_types.get(index as usize).copied()
+    }
+
+    /// Returns the data segment at the `index` if any.
+    pub(crate) fn get_data_segment(&self, index: u32) -> Option<&InstanceDataSegment> {
+        self.data_segments.get(index as usize)
     }
 
     /// Returns the value exported to the given `name` if any.
@@ -232,6 +239,7 @@ pub struct InstanceEntityBuilder {
     globals: Vec<Global>,
     start_fn: Option<FuncIdx>,
     exports: BTreeMap<Box<str>, Extern>,
+    data_segments: Vec<InstanceDataSegment>,
 }
 
 impl InstanceEntityBuilder {
@@ -270,6 +278,7 @@ impl InstanceEntityBuilder {
             globals: vec_with_capacity_exact(len_globals),
             start_fn: None,
             exports: BTreeMap::default(),
+            data_segments: Vec::new(),
         }
     }
 
@@ -383,6 +392,11 @@ impl InstanceEntityBuilder {
         self.exports.insert(name.into(), new_value);
     }
 
+    /// Pushes the [`InstanceDataSegment`] to the [`InstanceEntity`] under construction.
+    pub fn push_data_segment(&mut self, segment: InstanceDataSegment) {
+        self.data_segments.push(segment);
+    }
+
     /// Finishes constructing the [`InstanceEntity`].
     pub fn finish(self) -> InstanceEntity {
         InstanceEntity {
@@ -393,6 +407,7 @@ impl InstanceEntityBuilder {
             memories: self.memories.into(),
             globals: self.globals.into(),
             exports: self.exports,
+            data_segments: self.data_segments.into(),
         }
     }
 }

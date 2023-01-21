@@ -26,6 +26,7 @@ use self::{
 pub use self::{
     builder::ModuleResources,
     compile::BlockType,
+    data::InstanceDataSegment,
     error::ModuleError,
     export::{ExportType, FuncIdx, MemoryIdx, ModuleExportsIter, TableIdx},
     global::GlobalIdx,

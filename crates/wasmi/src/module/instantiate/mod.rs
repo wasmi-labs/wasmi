@@ -5,7 +5,14 @@ mod pre;
 mod tests;
 
 pub use self::{error::InstantiationError, pre::InstancePre};
-use super::{element::ElementSegmentKind, export, DataSegmentKind, InitExpr, Module};
+use super::{
+    element::ElementSegmentKind,
+    export,
+    DataSegmentKind,
+    InitExpr,
+    InstanceDataSegment,
+    Module,
+};
 use crate::{
     AsContext,
     AsContextMut,
@@ -341,26 +348,20 @@ impl Module {
     ) -> Result<(), Error> {
         for segment in &self.data_segments[..] {
             let bytes = segment.bytes();
-            match segment.kind() {
-                DataSegmentKind::Passive => {
-                    // TODO: With bulk-memory we need to register passive elements
-                    //       for the created instance.
-                    todo!()
-                }
-                DataSegmentKind::Active(segment) => {
-                    let offset_expr = segment.offset();
-                    let offset = Self::eval_init_expr(&mut *context, builder, offset_expr)
-                        .try_into::<u32>()
-                        .unwrap_or_else(|| {
-                            panic!(
-                                "expected offset value of type `i32` due to \
-                                    Wasm validation but found: {offset_expr:?}",
-                            )
-                        }) as usize;
-                    let memory = builder.get_memory(segment.memory_index().into_u32());
-                    memory.write(&mut *context, offset, bytes)?;
-                }
+            if let DataSegmentKind::Active(segment) = segment.kind() {
+                let offset_expr = segment.offset();
+                let offset = Self::eval_init_expr(&mut *context, builder, offset_expr)
+                    .try_into::<u32>()
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "expected offset value of type `i32` due to \
+                                Wasm validation but found: {offset_expr:?}",
+                        )
+                    }) as usize;
+                let memory = builder.get_memory(segment.memory_index().into_u32());
+                memory.write(&mut *context, offset, bytes)?;
             }
+            builder.push_data_segment(InstanceDataSegment::from(segment));
         }
         Ok(())
     }
