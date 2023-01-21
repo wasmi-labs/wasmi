@@ -161,12 +161,23 @@ mod bulk_memory {
     }
 
     define_spec_tests! {
+        fn wasm_binary("proposals/bulk-memory-operations/binary");
+        fn wasm_bulk("proposals/bulk-memory-operations/bulk");
+        fn wasm_custom("proposals/bulk-memory-operations/custom");
+        fn wasm_data("proposals/bulk-memory-operations/data");
+        fn wasm_elem("proposals/bulk-memory-operations/elem");
+        fn wasm_imports("proposals/bulk-memory-operations/imports");
         // Even though `wasmi` does not implement the `bulk-memory` Wasm proposal
         // at the time of this writing we run this specific test from its test suite
         // because `wasmi` already uses the changed semantics for segment instantiation
         // coming from the `bulk-memory` Wasm proposal.
         // This is why the other `linking` tests are expected to fail.
         fn wasm_linking("proposals/bulk-memory-operations/linking");
+        fn wasm_memory_copy("proposals/bulk-memory-operations/memory_copy");
+        fn wasm_memory_fill("proposals/bulk-memory-operations/memory_fill");
+        fn wasm_memory_init("proposals/bulk-memory-operations/memory_init");
+        fn wasm_table_copy("proposals/bulk-memory-operations/table_copy");
+        fn wasm_table_init("proposals/bulk-memory-operations/table_init");
     }
 }
 
