@@ -5,9 +5,9 @@ mod pre;
 mod tests;
 
 pub use self::{error::InstantiationError, pre::InstancePre};
-use super::{export, InitExpr, Module};
+use super::{data::DataSegmentKind, export, InitExpr, Module};
 use crate::{
-    module::{init_expr::InitExprOperand, DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
+    module::{init_expr::InitExprOperand, DEFAULT_TABLE_INDEX},
     AsContext,
     AsContextMut,
     Error,
@@ -343,18 +343,28 @@ impl Module {
         context: &mut impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), Error> {
-        for data_segment in &self.data_segments[..] {
-            let offset_expr = data_segment.offset();
-            let offset = Self::eval_init_expr(context.as_context_mut(), builder, offset_expr)
-                .try_into::<u32>()
-                .unwrap_or_else(|| {
-                    panic!(
-                        "expected offset value of type `i32` due to \
-                    Wasm validation but found: {offset_expr:?}",
-                    )
-                }) as usize;
-            let memory = builder.get_memory(DEFAULT_MEMORY_INDEX);
-            memory.write(context.as_context_mut(), offset, data_segment.data())?;
+        for segment in &self.data_segments[..] {
+            let bytes = segment.bytes();
+            match segment.kind() {
+                DataSegmentKind::Passive => {
+                    // TODO: With bulk-memory we need to register passive elements
+                    //       for the created instance.
+                    todo!()
+                }
+                DataSegmentKind::Active(segment) => {
+                    let offset_expr = segment.offset();
+                    let offset = Self::eval_init_expr(&mut *context, builder, offset_expr)
+                        .try_into::<u32>()
+                        .unwrap_or_else(|| {
+                            panic!(
+                                "expected offset value of type `i32` due to \
+                                    Wasm validation but found: {offset_expr:?}",
+                            )
+                        }) as usize;
+                    let memory = builder.get_memory(segment.memory_index().into_u32());
+                    memory.write(&mut *context, offset, bytes)?;
+                }
+            }
         }
         Ok(())
     }
