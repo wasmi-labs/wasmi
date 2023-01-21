@@ -156,7 +156,10 @@ mod bulk_memory {
     /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
     fn run_wasm_spec_test(file_name: &str) {
         let mut config = mvp_config();
+        // For some reason we need to enable `mutable-global` Wasm proposal
+        // to properly pass all the `bulk-memory` Wasm spec tests.
         config.wasm_mutable_global(true);
+        config.wasm_bulk_memory(true);
         super::run::run_wasm_spec_test(file_name, config)
     }
 
