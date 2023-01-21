@@ -23,38 +23,30 @@ fn mvp_config() -> Config {
     config
 }
 
-/// Run Wasm spec test suite using MVP `wasmi` configuration.
-///
-/// # Note
-///
-/// The Wasm MVP has no Wasm proposals enabled.
-fn run_wasm_spec_test(file_name: &str) {
-    let mut config = mvp_config();
-    config.wasm_mutable_global(true);
-    self::run::run_wasm_spec_test(file_name, config)
-}
-
 macro_rules! define_local_tests {
-    ( $( $(#[$attr:meta])* fn $test_name:ident($file_name:expr); )* ) => {
+    (
+        let config = $get_config:expr;
+        let runner = $runner_fn:path;
+
+        $( $(#[$attr:meta])* fn $test_name:ident($file_name:expr); )*
+    ) => {
         $(
             #[test]
             $( #[$attr] )*
             fn $test_name() {
-                run_wasm_spec_test(&format!("local/{}", $file_name))
+                $runner_fn(&format!("local/{}", $file_name), $get_config)
             }
         )*
     };
 }
 
 mod missing_features {
-    use super::mvp_config;
-
-    /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
-    fn run_wasm_spec_test(file_name: &str) {
-        super::run::run_wasm_spec_test(file_name, mvp_config())
-    }
+    use super::{mvp_config, run::run_wasm_spec_test};
 
     define_local_tests! {
+        let config = mvp_config();
+        let runner = run_wasm_spec_test;
+
         fn wasm_mutable_global("missing-features/mutable-global-disabled");
         fn wasm_sign_extension("missing-features/sign-extension-disabled");
         fn wasm_saturating_float_to_int("missing-features/saturating-float-to-int-disabled");
@@ -62,59 +54,70 @@ mod missing_features {
 }
 
 macro_rules! define_spec_tests {
-    ( $( $(#[$attr:meta])* fn $test_name:ident($file_name:expr); )* ) => {
+    (
+        let config = $get_config:expr;
+        let runner = $runner_fn:path;
+
+        $( $(#[$attr:meta])* fn $test_name:ident($file_name:expr); )*
+    ) => {
         $(
             #[test]
             $( #[$attr] )*
             fn $test_name() {
-                run_wasm_spec_test(&format!("testsuite/{}", $file_name))
+                $runner_fn(&format!("testsuite/{}", $file_name), $get_config)
             }
         )*
     };
 }
 
 mod saturating_float_to_int {
-    use super::mvp_config;
+    use super::{mvp_config, run::run_wasm_spec_test};
 
-    /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
-    fn run_wasm_spec_test(file_name: &str) {
+    fn make_config() -> wasmi::Config {
         let mut config = mvp_config();
         config.wasm_saturating_float_to_int(true);
-        super::run::run_wasm_spec_test(file_name, config)
+        config
     }
 
     define_spec_tests! {
+        let config = make_config();
+        let runner = run_wasm_spec_test;
+
         fn wasm_conversions("proposals/nontrapping-float-to-int-conversions/conversions");
     }
 }
 
 mod sign_extension_ops {
-    use super::mvp_config;
+    use super::{mvp_config, run::run_wasm_spec_test};
 
-    /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
-    fn run_wasm_spec_test(file_name: &str) {
+    fn make_config() -> wasmi::Config {
         let mut config = mvp_config();
         config.wasm_sign_extension(true);
-        super::run::run_wasm_spec_test(file_name, config)
+        config
     }
 
     define_spec_tests! {
+        let config = make_config();
+        let runner = run_wasm_spec_test;
+
         fn wasm_i32("proposals/sign-extension-ops/i32");
         fn wasm_i64("proposals/sign-extension-ops/i64");
     }
 }
 
 mod multi_value {
-    use super::mvp_config;
+    use super::{mvp_config, run::run_wasm_spec_test};
 
-    /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
-    fn run_wasm_spec_test(file_name: &str) {
+    fn make_config() -> wasmi::Config {
         let mut config = mvp_config();
         config.wasm_multi_value(true);
-        super::run::run_wasm_spec_test(file_name, config)
+        config
     }
 
     define_spec_tests! {
+        let config = make_config();
+        let runner = run_wasm_spec_test;
+
         fn wasm_binary("proposals/multi-value/binary");
         fn wasm_block("proposals/multi-value/block");
         fn wasm_br("proposals/multi-value/br");
@@ -129,16 +132,18 @@ mod multi_value {
 }
 
 mod mutable_global {
-    use super::mvp_config;
+    use super::{mvp_config, run::run_wasm_spec_test};
 
-    /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
-    fn run_wasm_spec_test(file_name: &str) {
+    fn make_config() -> wasmi::Config {
         let mut config = mvp_config();
         config.wasm_mutable_global(true);
-        super::run::run_wasm_spec_test(file_name, config)
+        config
     }
 
     define_spec_tests! {
+        let config = make_config();
+        let runner = run_wasm_spec_test;
+
         fn wasm_globals("proposals/mutable-global/globals");
         // We expect failure for this test case temporarily because `wasmi` already implements
         // the intended behavior using the semantics introduced in the `bulk-memory`
@@ -151,19 +156,21 @@ mod mutable_global {
 }
 
 mod bulk_memory {
-    use super::mvp_config;
+    use super::{mvp_config, run::run_wasm_spec_test};
 
-    /// Run Wasm spec test suite using `multi-value` Wasm proposal enabled.
-    fn run_wasm_spec_test(file_name: &str) {
+    fn make_config() -> wasmi::Config {
         let mut config = mvp_config();
         // For some reason we need to enable `mutable-global` Wasm proposal
         // to properly pass all the `bulk-memory` Wasm spec tests.
         config.wasm_mutable_global(true);
         config.wasm_bulk_memory(true);
-        super::run::run_wasm_spec_test(file_name, config)
+        config
     }
 
     define_spec_tests! {
+        let config = make_config();
+        let runner = run_wasm_spec_test;
+
         fn wasm_binary("proposals/bulk-memory-operations/binary");
         fn wasm_bulk("proposals/bulk-memory-operations/bulk");
         fn wasm_custom("proposals/bulk-memory-operations/custom");
@@ -184,7 +191,21 @@ mod bulk_memory {
     }
 }
 
+/// Run Wasm spec test suite using MVP `wasmi` configuration.
+///
+/// # Note
+///
+/// The Wasm MVP has no Wasm proposals enabled.
+fn make_config() -> wasmi::Config {
+    let mut config = mvp_config();
+    config.wasm_mutable_global(true);
+    config
+}
+
 define_spec_tests! {
+    let config = make_config();
+    let runner = run::run_wasm_spec_test;
+
     fn wasm_address("address");
     fn wasm_align("align");
     fn wasm_binary("binary");
