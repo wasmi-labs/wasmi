@@ -38,7 +38,7 @@ impl TryFrom<wasmparser::MemoryType> for MemoryType {
             .transpose()
             .expect("wasm32 memories must have a valid u32 maximum size if any");
         Ok(MemoryType::new(initial, maximum)
-            .expect("valid wasmparser::MemoryType after validation"))
+            .expect("encountered invalid wasmparser::MemoryType after validation"))
     }
 }
 
@@ -46,7 +46,7 @@ impl TryFrom<wasmparser::GlobalType> for GlobalType {
     type Error = ModuleError;
 
     fn try_from(global_type: wasmparser::GlobalType) -> Result<Self, Self::Error> {
-        let value_type = value_type_from_wasmparser(global_type.content_type);
+        let value_type = WasmiValueType::from(global_type.content_type).into_inner();
         let mutability = match global_type.mutable {
             true => Mutability::Var,
             false => Mutability::Const,
@@ -65,7 +65,7 @@ impl TryFrom<wasmparser::FuncType> for FuncType {
         ///
         /// If the [`wasmparser::Type`] is not supported by `wasmi`.
         fn extract_value_type(value_type: &wasmparser::ValType) -> ValueType {
-            value_type_from_wasmparser(*value_type)
+            WasmiValueType::from(*value_type).into_inner()
         }
         let params = func_type.params().iter().map(extract_value_type);
         let results = func_type.results().iter().map(extract_value_type);
@@ -74,31 +74,39 @@ impl TryFrom<wasmparser::FuncType> for FuncType {
     }
 }
 
-/// Creates a [`ValueType`] from the given [`wasmparser::ValType`].
+/// A `wasmi` [`ValueType`].
 ///
-/// Returns `None` if the given [`wasmparser::ValType`] is not supported by `wasmi`.
-pub fn value_type_try_from_wasmparser(value_type: wasmparser::ValType) -> Option<ValueType> {
-    match value_type {
-        wasmparser::ValType::I32 => Some(ValueType::I32),
-        wasmparser::ValType::I64 => Some(ValueType::I64),
-        wasmparser::ValType::F32 => Some(ValueType::F32),
-        wasmparser::ValType::F64 => Some(ValueType::F64),
-        wasmparser::ValType::V128
-        | wasmparser::ValType::FuncRef
-        | wasmparser::ValType::ExternRef => None,
+/// # Note
+///
+/// This new-type wrapper exists so that we can implement the `From` trait.
+pub struct WasmiValueType {
+    inner: ValueType,
+}
+
+impl WasmiValueType {
+    /// Returns the inner [`ValueType`].
+    pub fn into_inner(self) -> ValueType {
+        self.inner
     }
 }
 
-/// Creates a [`ValueType`] from the given [`wasmparser::ValType`].
-///
-/// # Errors
-///
-/// If the given [`wasmparser::ValType`] is not supported by `wasmi`.
-pub fn value_type_from_wasmparser(value_type: wasmparser::ValType) -> ValueType {
-    value_type_try_from_wasmparser(value_type).unwrap_or_else(|| {
-        panic!(
-            "encountered unsupported wasmparser::ValType: {:?}",
-            value_type
-        )
-    })
+impl From<ValueType> for WasmiValueType {
+    fn from(value: ValueType) -> Self {
+        Self { inner: value }
+    }
+}
+
+impl From<wasmparser::ValType> for WasmiValueType {
+    fn from(value_type: wasmparser::ValType) -> Self {
+        match value_type {
+            wasmparser::ValType::I32 => Self::from(ValueType::I32),
+            wasmparser::ValType::I64 => Self::from(ValueType::I64),
+            wasmparser::ValType::F32 => Self::from(ValueType::F32),
+            wasmparser::ValType::F64 => Self::from(ValueType::F64),
+            wasmparser::ValType::V128 => panic!("wasmi does not support the `simd` Wasm proposal"),
+            wasmparser::ValType::FuncRef | wasmparser::ValType::ExternRef => {
+                panic!("wasmi does not support the `reference-types` Wasm proposal")
+            }
+        }
+    }
 }
