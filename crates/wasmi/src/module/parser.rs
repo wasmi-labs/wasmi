@@ -506,9 +506,7 @@ impl<'engine> ModuleParser<'engine> {
         &mut self,
         range: Range<usize>,
     ) -> Result<(), ModuleError> {
-        Err(ModuleError::unsupported(format!(
-            "encountered unsupported Wasm component model section: {range:?}",
-        )))
+        panic!("wasmi does not support the `component-model` Wasm proposal: bytes[{range:?}]")
     }
 
     /// Process an unknown Wasm module section.

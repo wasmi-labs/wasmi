@@ -16,9 +16,11 @@ impl TryFrom<wasmparser::Element<'_>> for ElementSegment {
     type Error = ModuleError;
 
     fn try_from(element: wasmparser::Element<'_>) -> Result<Self, Self::Error> {
-        if !matches!(element.ty, wasmparser::ValType::FuncRef) {
-            return Err(ModuleError::unsupported(element.ty));
-        }
+        assert_eq!(
+            element.ty,
+            wasmparser::ValType::FuncRef,
+            "wasmi does not support the `reference-types` Wasm proposal"
+        );
         let (table_index, offset) = match element.kind {
             wasmparser::ElementKind::Active {
                 table_index,
@@ -28,10 +30,12 @@ impl TryFrom<wasmparser::Element<'_>> for ElementSegment {
                 let offset = InitExpr::try_from(offset_expr)?;
                 (table_index, offset)
             }
-            wasmparser::ElementKind::Passive | wasmparser::ElementKind::Declared => {
-                return Err(ModuleError::unsupported(
-                    "encountered unsupported passive or declared element segment",
-                ))
+            wasmparser::ElementKind::Passive => {
+                // TODO: implement `bulk-memory` Wasm proposal
+                panic!("wasmi does not support the `bulk-memory` Wasm proposal but found passive element segment")
+            }
+            wasmparser::ElementKind::Declared => {
+                panic!("wasmi does not support the `reference-types` Wasm proposal but found declared element segment")
             }
         };
         let items = element
@@ -40,8 +44,9 @@ impl TryFrom<wasmparser::Element<'_>> for ElementSegment {
             .into_iter()
             .map(|item| match item? {
                 wasmparser::ElementItem::Func(func_idx) => Ok(FuncIdx(func_idx)),
-                wasmparser::ElementItem::Expr(_) => {
-                    unreachable!("encountered unexpected init expression for element item")
+                wasmparser::ElementItem::Expr(expr) => {
+                    // TODO: implement `bulk-memory` Wasm proposal
+                    panic!("wasmi does not support the `bulk-memory` Wasm proposal but found an expression item: {expr:?}")
                 }
             })
             .collect::<Result<Vec<_>, ModuleError>>()?
