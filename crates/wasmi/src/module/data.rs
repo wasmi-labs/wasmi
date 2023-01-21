@@ -26,9 +26,7 @@ impl TryFrom<wasmparser::Data<'_>> for DataSegment {
                 (memory_index, offset)
             }
             wasmparser::DataKind::Passive => {
-                return Err(ModuleError::unsupported(
-                    "encountered unsupported passive data segment",
-                ))
+                panic!("wasmi does not support the `bulk-memory` Wasm proposal")
             }
         };
         let data = data.data.into();

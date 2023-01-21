@@ -1,4 +1,4 @@
-use super::super::{utils::value_type_try_from_wasmparser, FuncTypeIdx, ModuleResources};
+use super::super::{utils::WasmiValueType, FuncTypeIdx, ModuleResources};
 use crate::{
     core::ValueType,
     engine::{DedupFuncType, TranslationError},
@@ -35,8 +35,7 @@ impl BlockType {
         let block_type = match block_type {
             wasmparser::BlockType::Empty => Self::empty(),
             wasmparser::BlockType::Type(return_type) => {
-                let return_type = value_type_try_from_wasmparser(return_type)
-                    .map_err(|_| TranslationError::unsupported_block_type(block_type))?;
+                let return_type = WasmiValueType::from(return_type).into_inner();
                 Self::returns(return_type)
             }
             wasmparser::BlockType::FuncType(func_type_idx) => {

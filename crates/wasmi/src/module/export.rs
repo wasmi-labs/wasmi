@@ -81,7 +81,9 @@ impl ExternIdx {
             wasmparser::ExternalKind::Table => Ok(ExternIdx::Table(TableIdx(index))),
             wasmparser::ExternalKind::Memory => Ok(ExternIdx::Memory(MemoryIdx(index))),
             wasmparser::ExternalKind::Global => Ok(ExternIdx::Global(GlobalIdx(index))),
-            wasmparser::ExternalKind::Tag => Err(ModuleError::unsupported(kind)),
+            wasmparser::ExternalKind::Tag => {
+                panic!("wasmi does not support the `exception-handling` Wasm proposal")
+            }
         }
     }
 }

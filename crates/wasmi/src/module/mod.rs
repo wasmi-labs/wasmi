@@ -33,7 +33,6 @@ pub use self::{
     instantiate::{InstancePre, InstantiationError},
     parser::ReusableAllocations,
     read::Read,
-    utils::value_type_from_wasmparser,
 };
 use crate::{
     engine::{DedupFuncType, FuncBody},
