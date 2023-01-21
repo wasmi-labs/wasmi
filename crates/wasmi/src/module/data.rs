@@ -54,12 +54,12 @@ impl TryFrom<wasmparser::DataKind<'_>> for DataSegmentKind {
             } => {
                 let memory_index = MemoryIdx(memory_index);
                 let offset = InitExpr::try_from(offset_expr)?;
-                Ok(DataSegmentKind::Active(ActiveDataSegment {
+                Ok(Self::Active(ActiveDataSegment {
                     memory_index,
                     offset,
                 }))
             }
-            wasmparser::DataKind::Passive => Ok(DataSegmentKind::Passive),
+            wasmparser::DataKind::Passive => Ok(Self::Passive),
         }
     }
 }
