@@ -31,7 +31,6 @@ impl TryFrom<wasmparser::Element<'_>> for ElementSegment {
                 (table_index, offset)
             }
             wasmparser::ElementKind::Passive => {
-                // TODO: implement `bulk-memory` Wasm proposal
                 panic!("wasmi does not support the `bulk-memory` Wasm proposal but found passive element segment")
             }
             wasmparser::ElementKind::Declared => {
@@ -45,7 +44,6 @@ impl TryFrom<wasmparser::Element<'_>> for ElementSegment {
             .map(|item| match item? {
                 wasmparser::ElementItem::Func(func_idx) => Ok(FuncIdx(func_idx)),
                 wasmparser::ElementItem::Expr(expr) => {
-                    // TODO: implement `bulk-memory` Wasm proposal
                     panic!("wasmi does not support the `bulk-memory` Wasm proposal but found an expression item: {expr:?}")
                 }
             })
