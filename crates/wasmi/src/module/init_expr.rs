@@ -40,12 +40,7 @@ impl TryFrom<wasmparser::ConstExpr<'_>> for InitExpr {
 }
 
 impl InitExpr {
-    /// Returns a slice over the operators of the [`InitExpr`].
-    pub fn operators(&self) -> &[InitExprOperand] {
-        core::slice::from_ref(&self.op)
-    }
-
-    /// Evaluates the given constant [`InitExpr`] if possible.
+    /// Evaluates the [`InitExpr`] in a constant context if possible.
     ///
     /// Returns `None` if it is not possible to constant evaluate `expr`.
     pub fn eval_const(&self) -> Option<Value> {
@@ -58,6 +53,14 @@ impl InitExpr {
                 //       known post-instantiation time.
                 None
             }
+        }
+    }
+
+    /// Evaluates the [`InitExpr`] given the context for global variables.
+    pub fn eval(&self, global_get: impl Fn(u32) -> Value) -> Value {
+        match self.op {
+            InitExprOperand::Const(value) => value,
+            InitExprOperand::GlobalGet(index) => global_get(index.into_u32()),
         }
     }
 }
@@ -108,7 +111,7 @@ impl TryFrom<wasmparser::Operator<'_>> for InitExprOperand {
                 Ok(InitExprOperand::GlobalGet(GlobalIdx(global_index)))
             }
             operator => {
-                panic!("encountered unsupported operator: {operator:?}")
+                panic!("encountered unsupported const expression operator: {operator:?}")
             }
         }
     }

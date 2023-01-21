@@ -7,7 +7,6 @@ mod tests;
 pub use self::{error::InstantiationError, pre::InstancePre};
 use super::{element::ElementSegmentKind, export, DataSegmentKind, InitExpr, Module};
 use crate::{
-    module::init_expr::InitExprOperand,
     AsContext,
     AsContextMut,
     Error,
@@ -245,20 +244,7 @@ impl Module {
         builder: &InstanceEntityBuilder,
         init_expr: &InitExpr,
     ) -> Value {
-        let operands = init_expr.operators();
-        debug_assert_eq!(
-            operands.len(),
-            1,
-            "in Wasm MVP code length of initializer expressions must be 1 but found {} operands",
-            operands.len(),
-        );
-        match operands[0] {
-            InitExprOperand::Const(value) => value,
-            InitExprOperand::GlobalGet(global_index) => {
-                let global = builder.get_global(global_index.into_u32());
-                global.get(context)
-            }
-        }
+        init_expr.eval(|global_index| builder.get_global(global_index).get(&context))
     }
 
     /// Extracts the Wasm exports from the module and registers them into the [`Instance`].
