@@ -5,7 +5,7 @@ mod pre;
 mod tests;
 
 pub use self::{error::InstantiationError, pre::InstancePre};
-use super::{data::DataSegmentKind, export, InitExpr, Module};
+use super::{DataSegmentKind, export, InitExpr, Module};
 use crate::{
     module::{init_expr::InitExprOperand, DEFAULT_TABLE_INDEX},
     AsContext,

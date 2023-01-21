@@ -15,7 +15,7 @@ mod utils;
 pub(crate) use self::init_expr::InitExpr;
 use self::{
     builder::ModuleBuilder,
-    data::DataSegment,
+    data::{DataSegment, DataSegmentKind},
     element::ElementSegment,
     export::ExternIdx,
     global::Global,
