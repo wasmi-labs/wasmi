@@ -29,8 +29,7 @@ impl TryFrom<wasmparser::ConstExpr<'_>> for InitExpr {
         let end_op = reader.read()?;
         assert!(
             matches!(end_op, wasmparser::Operator::End),
-            "expected the Wasm end operator but found {:?}",
-            end_op
+            "expected the Wasm end operator but found {end_op:?}",
         );
         assert!(
             reader.ensure_end().is_ok(),
