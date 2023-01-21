@@ -26,9 +26,14 @@ impl TryFrom<wasmparser::ConstExpr<'_>> for InitExpr {
     fn try_from(init_expr: wasmparser::ConstExpr<'_>) -> Result<Self, Self::Error> {
         let mut reader = init_expr.get_operators_reader();
         let op = reader.read()?.try_into()?;
-        if !matches!(reader.read()?, wasmparser::Operator::End) {
-            return Err(ModuleError::unsupported(init_expr));
-        }
+        assert!(
+            matches!(reader.read()?, wasmparser::Operator::End),
+            "expected the wasmparser::ConstExpr to End here"
+        );
+        assert!(
+            reader.ensure_end().is_ok(),
+            "expected the wasmparser::ConstExpr to End here"
+        );
         Ok(InitExpr { op })
     }
 }
@@ -101,7 +106,9 @@ impl TryFrom<wasmparser::Operator<'_>> for InitExprOperand {
             wasmparser::Operator::GlobalGet { global_index } => {
                 Ok(InitExprOperand::GlobalGet(GlobalIdx(global_index)))
             }
-            unsupported => Err(ModuleError::unsupported(unsupported)),
+            operator => {
+                panic!("encountered unsupported operator for wasmparser::InitExpr: {operator:?}")
+            }
         }
     }
 }

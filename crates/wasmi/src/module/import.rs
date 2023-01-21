@@ -68,7 +68,9 @@ impl TryFrom<wasmparser::Import<'_>> for Import {
             TypeRef::Table(table_type) => table_type.try_into().map(ExternTypeIdx::Table),
             TypeRef::Memory(memory_type) => memory_type.try_into().map(ExternTypeIdx::Memory),
             TypeRef::Global(global_type) => global_type.try_into().map(ExternTypeIdx::Global),
-            TypeRef::Tag(_) => Err(ModuleError::unsupported(import)),
+            TypeRef::Tag(tag) => panic!(
+                "wasmi does not support the `exception-handling` Wasm proposal but found: {tag:?}"
+            ),
         }?;
         Ok(Self::new(import.module, import.name, kind))
     }
