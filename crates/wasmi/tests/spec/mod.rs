@@ -23,8 +23,9 @@ fn mvp_config() -> Config {
     config
 }
 
-macro_rules! define_local_tests {
+macro_rules! define_tests {
     (
+        let folder = $test_folder:literal;
         let config = $get_config:expr;
         let runner = $runner_fn:path;
 
@@ -34,9 +35,29 @@ macro_rules! define_local_tests {
             #[test]
             $( #[$attr] )*
             fn $test_name() {
-                $runner_fn(&format!("local/{}", $file_name), $get_config)
+                $runner_fn(&format!("{}/{}", $test_folder, $file_name), $get_config)
             }
         )*
+    };
+}
+
+macro_rules! define_local_tests {
+    (
+        let config = $get_config:expr;
+        let runner = $runner_fn:path;
+
+        $( $(#[$attr:meta])* fn $test_name:ident($file_name:expr); )*
+    ) => {
+        define_tests! {
+            let folder = "local";
+            let config = $get_config;
+            let runner = $runner_fn;
+
+            $(
+                $( #[$attr] )*
+                fn $test_name($file_name);
+            )*
+        }
     };
 }
 
@@ -60,13 +81,16 @@ macro_rules! define_spec_tests {
 
         $( $(#[$attr:meta])* fn $test_name:ident($file_name:expr); )*
     ) => {
-        $(
-            #[test]
-            $( #[$attr] )*
-            fn $test_name() {
-                $runner_fn(&format!("testsuite/{}", $file_name), $get_config)
-            }
-        )*
+        define_tests! {
+            let folder = "testsuite";
+            let config = $get_config;
+            let runner = $runner_fn;
+
+            $(
+                $( #[$attr] )*
+                fn $test_name($file_name);
+            )*
+        }
     };
 }
 
