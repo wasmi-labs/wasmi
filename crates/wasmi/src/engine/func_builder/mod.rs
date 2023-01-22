@@ -801,7 +801,7 @@ impl<'parser> FuncBuilder<'parser> {
             let global_idx = GlobalIdx(global_idx);
             builder.stack_height.push();
             let (global_type, init_value) = builder.res.get_global(global_idx);
-            let instr = match init_value.and_then(InitExpr::eval_const) {
+            let instr = match init_value.and_then(InitExpr::into_const) {
                 Some(value) if global_type.mutability().is_const() => Instruction::constant(value),
                 _ => Instruction::GlobalGet(global_idx.into_u32().into()),
             };

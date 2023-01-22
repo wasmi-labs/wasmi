@@ -1,6 +1,6 @@
 use super::{FuncIdx, InitExpr, TableIdx};
 use crate::errors::ModuleError;
-use alloc::boxed::Box;
+use alloc::sync::Arc;
 
 /// A table element segment within a [`Module`].
 ///
@@ -10,7 +10,7 @@ pub struct ElementSegment {
     /// The kind of the [`ElementSegment`].
     kind: ElementSegmentKind,
     /// The items of the [`ElementSegment`].
-    items: Box<[FuncIdx]>,
+    items: Arc<[FuncIdx]>,
 }
 
 /// The kind of a Wasm [`ElementSegment`].
@@ -53,7 +53,7 @@ impl TryFrom<wasmparser::ElementKind<'_>> for ElementSegmentKind {
                 offset_expr,
             } => {
                 let table_index = TableIdx(table_index);
-                let offset = InitExpr::try_from(offset_expr)?;
+                let offset = InitExpr::new(offset_expr)?;
                 Ok(Self::Active(ActiveElementSegment {
                     table_index,
                     offset,
@@ -83,12 +83,11 @@ impl TryFrom<wasmparser::Element<'_>> for ElementSegment {
             .into_iter()
             .map(|item| match item? {
                 wasmparser::ElementItem::Func(func_idx) => Ok(FuncIdx(func_idx)),
-                wasmparser::ElementItem::Expr(expr) => {
-                    // TODO: properly implement decoding of element item expressions.
-                    panic!("wasmi does not support the `bulk-memory` Wasm proposal but found an expression item: {expr:?}")
-                }
+                wasmparser::ElementItem::Expr(expr) => InitExpr::new(expr)?
+                    .into_elemexpr()
+                    .ok_or_else(|| panic!("encountered invalid elemexpr")),
             })
-            .collect::<Result<Box<[_]>, ModuleError>>()?;
+            .collect::<Result<Arc<[_]>, ModuleError>>()?;
         Ok(ElementSegment { kind, items })
     }
 }
@@ -102,5 +101,10 @@ impl ElementSegment {
     /// Returns the element items of the [`ElementSegment`].
     pub fn items(&self) -> &[FuncIdx] {
         &self.items[..]
+    }
+
+    /// Clone the underlying items of the [`ElementSegment`].
+    pub fn clone_items(&self) -> Arc<[FuncIdx]> {
+        self.items.clone()
     }
 }

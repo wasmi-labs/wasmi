@@ -245,7 +245,8 @@ impl Module {
         builder: &InstanceEntityBuilder,
         init_expr: &InitExpr,
     ) -> Value {
-        init_expr.eval(|global_index| builder.get_global(global_index).get(&context))
+        init_expr
+            .into_const_with_context(|global_index| builder.get_global(global_index).get(&context))
     }
 
     /// Extracts the Wasm exports from the module and registers them into the [`Instance`].
