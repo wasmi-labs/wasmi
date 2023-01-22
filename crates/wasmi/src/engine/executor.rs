@@ -621,6 +621,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             .and_then(|memory| memory.get_mut(..n))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
         memory.fill(byte);
+        self.next_instr();
         Ok(())
     }
 
@@ -639,6 +640,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             .and_then(|memory| memory.get(..n))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
         data.copy_within(src_offset..src_offset.wrapping_add(n), dst_offset);
+        self.next_instr();
         Ok(())
     }
 
@@ -660,6 +662,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             .and_then(|memory| memory.get(..n))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
         memory.copy_from_slice(data);
+        self.next_instr();
         Ok(())
     }
 
@@ -668,6 +671,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             .cache
             .get_data_segment(self.ctx, segment_index.into_inner());
         self.ctx.resolve_data_segment_mut(segment).drop_bytes();
+        self.next_instr();
     }
 
     fn visit_i32_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
