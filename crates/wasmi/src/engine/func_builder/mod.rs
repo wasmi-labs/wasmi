@@ -1136,25 +1136,6 @@ impl<'parser> FuncBuilder<'parser> {
         })
     }
 
-    pub fn translate_memory_copy(
-        &mut self,
-        _dst_mem: u32,
-        _src_mem: u32,
-    ) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|_builder| {
-            // debug_assert_eq!(dst_mem, DEFAULT_MEMORY_INDEX);
-            // debug_assert_eq!(src_mem, DEFAULT_MEMORY_INDEX);
-            // let dst_mem = MemoryIdx(dst_mem);
-            // let src_mem = MemoryIdx(src_mem);
-            // builder.stack_height.pop3();
-            // builder
-            //     .alloc
-            //     .inst_builder
-            //     .push_inst(Instruction::MemoryCopy { dst_mem, src_mem });
-            todo!()
-        })
-    }
-
     /// Translate a Wasm `memory.fill` instruction.
     pub fn translate_memory_fill(&mut self, memory_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
@@ -1164,6 +1145,24 @@ impl<'parser> FuncBuilder<'parser> {
                 .alloc
                 .inst_builder
                 .push_inst(Instruction::MemoryFill);
+            Ok(())
+        })
+    }
+
+    /// Translate a Wasm `memory.copy` instruction.
+    pub fn translate_memory_copy(
+        &mut self,
+        dst_mem: u32,
+        src_mem: u32,
+    ) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            debug_assert_eq!(dst_mem, DEFAULT_MEMORY_INDEX);
+            debug_assert_eq!(src_mem, DEFAULT_MEMORY_INDEX);
+            builder.stack_height.pop3();
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::MemoryCopy);
             Ok(())
         })
     }

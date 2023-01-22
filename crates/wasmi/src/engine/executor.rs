@@ -144,6 +144,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 Instr::MemorySize => self.visit_memory_size(),
                 Instr::MemoryGrow => self.visit_memory_grow(),
                 Instr::MemoryFill => self.visit_memory_fill()?,
+                Instr::MemoryCopy => self.visit_memory_copy()?,
                 Instr::MemoryInit(segment) => self.visit_memory_init(segment)?,
                 Instr::DataDrop(segment) => self.visit_data_drop(segment),
                 Instr::Const(bytes) => self.visit_const(bytes),
@@ -623,6 +624,24 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         Ok(())
     }
 
+    fn visit_memory_copy(&mut self) -> Result<(), TrapCode> {
+        let bytes = self.cache.default_memory_bytes(self.ctx);
+        // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
+        let (n, s, d) = self.value_stack.pop3();
+        let n = i32::from(n) as usize;
+        let src_offset = i32::from(s) as usize;
+        let dst_offset = i32::from(d) as usize;
+        let data = bytes.data_mut();
+        data.get(src_offset..)
+            .and_then(|memory| memory.get(..n))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        data.get(dst_offset..)
+            .and_then(|memory| memory.get(..n))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        data.copy_within(src_offset..src_offset.wrapping_add(n), dst_offset);
+        Ok(())
+    }
+
     fn visit_memory_init(&mut self, segment: DataSegmentIdx) -> Result<(), TrapCode> {
         let (memory, data) = self
             .cache
@@ -630,14 +649,14 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
         let (n, s, d) = self.value_stack.pop3();
         let n = i32::from(n) as usize;
-        let memory_offset = i32::from(s) as usize;
-        let data_offset = i32::from(d) as usize;
+        let src_offset = i32::from(s) as usize;
+        let dst_offset = i32::from(d) as usize;
         let memory = memory
-            .get_mut(memory_offset..)
+            .get_mut(dst_offset..)
             .and_then(|memory| memory.get_mut(..n))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
         let data = data
-            .get(data_offset..)
+            .get(src_offset..)
             .and_then(|memory| memory.get(..n))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
         memory.copy_from_slice(data);

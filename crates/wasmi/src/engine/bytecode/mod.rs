@@ -72,6 +72,7 @@ pub enum Instruction {
     MemorySize,
     MemoryGrow,
     MemoryFill,
+    MemoryCopy,
     MemoryInit(DataSegmentIdx),
     DataDrop(DataSegmentIdx),
     Const(UntypedValue),
