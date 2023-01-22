@@ -426,6 +426,7 @@ impl StoreInner {
     ///
     /// - If the [`DataSegment`] does not originate from this [`Store`].
     /// - If the [`DataSegment`] cannot be resolved to its entity.
+    #[allow(unused)] // Note: We allow this unused API to exist to uphold code symmetry.
     pub fn resolve_data_segment(&self, segment: DataSegment) -> &DataSegmentEntity {
         self.resolve(segment.into_inner(), &self.datas)
     }
@@ -672,29 +673,6 @@ impl<T> Store<T> {
         memory: Memory,
     ) -> (&mut MemoryEntity, &mut T) {
         (self.inner.resolve_memory_mut(memory), &mut self.data)
-    }
-
-    /// Returns a shared reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
-    ///
-    /// # Panics
-    ///
-    /// - If the [`DataSegment`] does not originate from this [`Store`].
-    /// - If the [`DataSegment`] cannot be resolved to its entity.
-    pub(super) fn resolve_data_segment(&self, segment: DataSegment) -> &DataSegmentEntity {
-        self.inner.resolve_data_segment(segment)
-    }
-
-    /// Returns an exclusive reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
-    ///
-    /// # Panics
-    ///
-    /// - If the [`DataSegment`] does not originate from this [`Store`].
-    /// - If the [`DataSegment`] cannot be resolved to its entity.
-    pub(super) fn resolve_data_segment_mut(
-        &mut self,
-        segment: DataSegment,
-    ) -> &mut DataSegmentEntity {
-        self.inner.resolve_data_segment_mut(segment)
     }
 
     /// Returns a shared reference to the associated entity of the Wasm or host function.

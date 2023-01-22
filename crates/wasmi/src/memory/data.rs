@@ -1,4 +1,4 @@
-use crate::{module, module::DataSegmentKind, store::Stored, AsContextMut, StoreContext};
+use crate::{module, module::DataSegmentKind, store::Stored, AsContextMut};
 use alloc::sync::Arc;
 use wasmi_arena::ArenaIndex;
 
@@ -43,19 +43,6 @@ impl DataSegment {
     pub fn new(mut ctx: impl AsContextMut, segment: &module::DataSegment) -> Self {
         let entity = DataSegmentEntity::from(segment);
         ctx.as_context_mut().store.alloc_data_segment(entity)
-    }
-
-    /// Returns the bytes of the [`DataSegment`].
-    pub fn bytes<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a [u8] {
-        ctx.into().store.resolve_data_segment(*self).bytes()
-    }
-
-    /// Drops the bytes of the [`DataSegment`].
-    pub fn drop_bytes(&self, mut ctx: impl AsContextMut) {
-        ctx.as_context_mut()
-            .store
-            .resolve_data_segment_mut(*self)
-            .drop_bytes()
     }
 }
 

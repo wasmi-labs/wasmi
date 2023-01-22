@@ -625,13 +625,13 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_memory_copy(&mut self) -> Result<(), TrapCode> {
-        let bytes = self.cache.default_memory_bytes(self.ctx);
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
         let (n, s, d) = self.value_stack.pop3();
         let n = i32::from(n) as usize;
         let src_offset = i32::from(s) as usize;
         let dst_offset = i32::from(d) as usize;
-        let data = bytes.data_mut();
+        let data = self.cache.default_memory_bytes(self.ctx).data_mut();
+        // These accesses just perform the bounds checks required by the Wasm spec.
         data.get(src_offset..)
             .and_then(|memory| memory.get(..n))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
