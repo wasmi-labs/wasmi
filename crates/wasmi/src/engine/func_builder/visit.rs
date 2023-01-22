@@ -67,6 +67,18 @@ macro_rules! for_each_supported_operator {
             fn visit_i64_store32(memarg: wasmparser::MemArg) => fn translate_i64_store32
             fn visit_memory_size(mem: u32, mem_byte: u8) => fn translate_memory_size
             fn visit_memory_grow(mem: u32, mem_byte: u8) => fn translate_memory_grow
+            fn visit_memory_copy(dst_mem: u32, src_mem: u32) => fn translate_memory_copy
+            fn visit_memory_fill(mem: u32) => fn translate_memory_fill
+            fn visit_memory_init(seg: u32, mem: u32) => fn translate_memory_init
+            fn visit_data_drop(seg: u32) => fn translate_data_drop
+            fn visit_table_size(table: u32) => fn translate_table_size
+            fn visit_table_grow(table: u32) => fn translate_table_grow
+            fn visit_table_copy(dst_table: u32, src_table: u32) => fn translate_table_copy
+            fn visit_table_fill(table: u32) => fn translate_table_fill
+            fn visit_table_get(table: u32) => fn translate_table_get
+            fn visit_table_set(table: u32) => fn translate_table_set
+            fn visit_table_init(seg: u32, table: u32) => fn translate_table_init
+            fn visit_elem_drop(seg: u32) => fn translate_elem_drop
             fn visit_i32_const(value: i32) => fn translate_i32_const
             fn visit_i64_const(value: i64) => fn translate_i64_const
             fn visit_f32_const(value: wasmparser::Ieee32) => fn translate_f32_const
@@ -253,6 +265,10 @@ macro_rules! define_unsupported_visit_operator {
         define_unsupported_visit_operator!($($rest)*);
     };
     ( @non_trapping_f2i_conversions $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
+        // Supported operators are handled by `define_supported_visit_operator`.
+        define_unsupported_visit_operator!($($rest)*);
+    };
+    ( @bulk_memory $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
         // Supported operators are handled by `define_supported_visit_operator`.
         define_unsupported_visit_operator!($($rest)*);
     };

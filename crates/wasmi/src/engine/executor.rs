@@ -1,6 +1,15 @@
 use super::{
     super::{Memory, Table},
-    bytecode::{BranchParams, FuncIdx, GlobalIdx, Instruction, LocalDepth, Offset, SignatureIdx},
+    bytecode::{
+        BranchParams,
+        DataSegmentIdx,
+        FuncIdx,
+        GlobalIdx,
+        Instruction,
+        LocalDepth,
+        Offset,
+        SignatureIdx,
+    },
     cache::InstanceCache,
     code_map::InstructionPtr,
     stack::ValueStackRef,
@@ -132,8 +141,9 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 Instr::I64Store8(offset) => self.visit_i64_store_8(offset)?,
                 Instr::I64Store16(offset) => self.visit_i64_store_16(offset)?,
                 Instr::I64Store32(offset) => self.visit_i64_store_32(offset)?,
-                Instr::MemorySize => self.visit_current_memory(),
-                Instr::MemoryGrow => self.visit_grow_memory(),
+                Instr::MemorySize => self.visit_memory_size(),
+                Instr::MemoryGrow => self.visit_memory_grow(),
+                Instr::MemoryInit(segment) => self.visit_memory_init(segment)?,
                 Instr::Const(bytes) => self.visit_const(bytes),
                 Instr::I32Eqz => self.visit_i32_eqz(),
                 Instr::I32Eq => self.visit_i32_eq(),
@@ -568,14 +578,14 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.next_instr()
     }
 
-    fn visit_current_memory(&mut self) {
+    fn visit_memory_size(&mut self) {
         let memory = self.default_memory();
         let result: u32 = self.ctx.resolve_memory(memory).current_pages().into();
         self.value_stack.push(result);
         self.next_instr()
     }
 
-    fn visit_grow_memory(&mut self) {
+    fn visit_memory_grow(&mut self) {
         /// The WebAssembly spec demands to return `0xFFFF_FFFF`
         /// in case of failure for the `memory.grow` instruction.
         const ERR_VALUE: u32 = u32::MAX;
@@ -593,6 +603,26 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.cache.reset_default_memory_bytes();
         self.value_stack.push(result);
         self.next_instr()
+    }
+
+    fn visit_memory_init(&mut self, segment: DataSegmentIdx) -> Result<(), TrapCode> {
+        let (memory, data) = self
+            .cache
+            .get_default_memory_and_data_segment(self.ctx, segment.into_inner());
+        let (n, s, d) = self.value_stack.pop3();
+        let n = i32::from(n) as usize;
+        let memory_offset = i32::from(s) as usize;
+        let data_offset = i32::from(d) as usize;
+        let memory = memory
+            .get_mut(memory_offset..)
+            .and_then(|memory| memory.get_mut(..n))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        let data = data
+            .get(data_offset..)
+            .and_then(|memory| memory.get(..n))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        memory.copy_from_slice(data);
+        Ok(())
     }
 
     fn visit_i32_load(&mut self, offset: Offset) -> Result<(), TrapCode> {

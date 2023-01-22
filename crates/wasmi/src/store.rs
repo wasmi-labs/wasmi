@@ -392,6 +392,34 @@ impl StoreInner {
         Self::resolve_mut(idx, &mut self.memories)
     }
 
+    /// Returns a pair of:
+    ///
+    /// - An exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
+    /// - A shared reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
+    ///
+    /// # Note
+    ///
+    /// This method exists to properly handle use cases where
+    /// otherwise the Rust borrow-checker would not accept.
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Memory`] does not originate from this [`Store`].
+    /// - If the [`Memory`] cannot be resolved to its entity.
+    /// - If the [`DataSegment`] does not originate from this [`Store`].
+    /// - If the [`DataSegment`] cannot be resolved to its entity.
+    pub(super) fn resolve_memory_mut_and_data_segment(
+        &mut self,
+        memory: Memory,
+        segment: DataSegment,
+    ) -> (&mut MemoryEntity, &DataSegmentEntity) {
+        let mem_idx = self.unwrap_stored(memory.into_inner());
+        let data_idx = segment.into_inner();
+        let data = self.resolve(data_idx, &self.datas);
+        let mem = Self::resolve_mut(mem_idx, &mut self.memories);
+        (mem, data)
+    }
+
     /// Returns a shared reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
     ///
     /// # Panics
@@ -629,6 +657,11 @@ impl<T> Store<T> {
 
     /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`]
     /// and an exclusive reference to the user provided host state.
+    ///
+    /// # Note
+    ///
+    /// This method exists to properly handle use cases where
+    /// otherwise the Rust borrow-checker would not accept.
     ///
     /// # Panics
     ///

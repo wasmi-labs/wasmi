@@ -8,6 +8,7 @@ mod tests;
 pub use self::utils::{
     BranchOffset,
     BranchParams,
+    DataSegmentIdx,
     DropKeep,
     DropKeepError,
     FuncIdx,
@@ -70,6 +71,7 @@ pub enum Instruction {
     I64Store32(Offset),
     MemorySize,
     MemoryGrow,
+    MemoryInit(DataSegmentIdx),
     Const(UntypedValue),
     I32Eqz,
     I32Eq,

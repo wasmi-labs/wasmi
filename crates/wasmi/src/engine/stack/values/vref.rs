@@ -217,6 +217,24 @@ impl<'a> ValueStackRef<'a> {
         )
     }
 
+    /// Pops the last triple of [`UntypedValue`] from the [`ValueStack`].
+    ///
+    /// # Note
+    ///
+    /// - This operation is slightly more efficient than using
+    ///   [`ValueStackRef::pop`] trice.
+    /// - This operation heavily relies on the prior validation of
+    ///   the executed WebAssembly bytecode for correctness.
+    #[inline]
+    pub fn pop3(&mut self) -> (UntypedValue, UntypedValue, UntypedValue) {
+        self.stack_ptr -= 3;
+        (
+            self.get_release_unchecked(self.stack_ptr),
+            self.get_release_unchecked(self.stack_ptr + 1),
+            self.get_release_unchecked(self.stack_ptr + 2),
+        )
+    }
+
     /// Evaluates the given closure `f` for the 3 top most stack values.
     #[inline]
     pub fn eval_top3<F>(&mut self, f: F)
