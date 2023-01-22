@@ -160,7 +160,7 @@ use self::{
     func::{FuncEntity, FuncIdx},
     global::{GlobalEntity, GlobalIdx},
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
-    memory::{MemoryEntity, MemoryIdx},
+    memory::{DataSegmentEntity, DataSegmentIdx, MemoryEntity, MemoryIdx},
     store::{StoreInner, Stored},
     table::{TableEntity, TableIdx},
 };

@@ -84,48 +84,9 @@ impl DataSegment {
     pub fn bytes(&self) -> &[u8] {
         &self.bytes[..]
     }
-}
 
-/// An instantiated [`InstanceDataSegment`].
-///
-/// # Note
-///
-/// With the `bulk-memory` Wasm proposal it is possible to interact
-/// with data segments at runtime. Therefore Wasm instances now have
-/// a need to have an instantiated representation of data segments.
-#[derive(Debug)]
-pub struct InstanceDataSegment {
-    /// The underlying bytes of the instance data segment.
-    ///
-    /// # Note
-    ///
-    /// These bytes are just readable after instantiation.
-    /// Using Wasm `data.drop` simply replaces the instance
-    /// with an empty one.
-    bytes: Arc<[u8]>,
-}
-
-impl From<&'_ DataSegment> for InstanceDataSegment {
-    fn from(segment: &'_ DataSegment) -> Self {
-        match segment.kind() {
-            DataSegmentKind::Passive => Self {
-                bytes: segment.bytes.clone(),
-            },
-            DataSegmentKind::Active(_) => Self::empty(),
-        }
-    }
-}
-
-impl InstanceDataSegment {
-    /// Create an empty [`InstanceData`] representing dropped data segments.
-    fn empty() -> Self {
-        Self {
-            bytes: Arc::from([]),
-        }
-    }
-
-    /// Returns the bytes of the [`InstanceData`].
-    pub fn bytes(&self) -> &[u8] {
-        &self.bytes[..]
+    /// Clone the underlying bytes of the [`DataSegment`].
+    pub fn clone_bytes(&self) -> Arc<[u8]> {
+        self.bytes.clone()
     }
 }

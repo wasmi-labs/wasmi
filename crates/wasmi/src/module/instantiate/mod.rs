@@ -5,15 +5,9 @@ mod pre;
 mod tests;
 
 pub use self::{error::InstantiationError, pre::InstancePre};
-use super::{
-    element::ElementSegmentKind,
-    export,
-    DataSegmentKind,
-    InitExpr,
-    InstanceDataSegment,
-    Module,
-};
+use super::{element::ElementSegmentKind, export, DataSegmentKind, InitExpr, Module};
 use crate::{
+    memory::DataSegment,
     AsContext,
     AsContextMut,
     Error,
@@ -361,7 +355,7 @@ impl Module {
                 let memory = builder.get_memory(segment.memory_index().into_u32());
                 memory.write(&mut *context, offset, bytes)?;
             }
-            builder.push_data_segment(InstanceDataSegment::from(segment));
+            builder.push_data_segment(DataSegment::new(context.as_context_mut(), segment));
         }
         Ok(())
     }

@@ -1,6 +1,8 @@
 mod byte_buffer;
+mod data;
 
 use self::byte_buffer::ByteBuffer;
+pub use self::data::{DataSegment, DataSegmentEntity, DataSegmentIdx};
 use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
 use core::{fmt, fmt::Display};
 use wasmi_arena::ArenaIndex;

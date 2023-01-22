@@ -12,7 +12,8 @@ use super::{
 };
 use crate::{
     func::FuncError,
-    module::{FuncIdx, InstanceDataSegment},
+    memory::DataSegment,
+    module::FuncIdx,
     Error,
     ExternType,
     TypedFunc,
@@ -55,7 +56,7 @@ pub struct InstanceEntity {
     memories: Box<[Memory]>,
     globals: Box<[Global]>,
     exports: BTreeMap<Box<str>, Extern>,
-    data_segments: Box<[InstanceDataSegment]>,
+    data_segments: Box<[DataSegment]>,
 }
 
 impl InstanceEntity {
@@ -109,8 +110,8 @@ impl InstanceEntity {
     }
 
     /// Returns the data segment at the `index` if any.
-    pub(crate) fn get_data_segment(&self, index: u32) -> Option<&InstanceDataSegment> {
-        self.data_segments.get(index as usize)
+    pub(crate) fn get_data_segment(&self, index: u32) -> Option<DataSegment> {
+        self.data_segments.get(index as usize).copied()
     }
 
     /// Returns the value exported to the given `name` if any.
@@ -239,7 +240,7 @@ pub struct InstanceEntityBuilder {
     globals: Vec<Global>,
     start_fn: Option<FuncIdx>,
     exports: BTreeMap<Box<str>, Extern>,
-    data_segments: Vec<InstanceDataSegment>,
+    data_segments: Vec<DataSegment>,
 }
 
 impl InstanceEntityBuilder {
@@ -393,7 +394,7 @@ impl InstanceEntityBuilder {
     }
 
     /// Pushes the [`InstanceDataSegment`] to the [`InstanceEntity`] under construction.
-    pub fn push_data_segment(&mut self, segment: InstanceDataSegment) {
+    pub fn push_data_segment(&mut self, segment: DataSegment) {
         self.data_segments.push(segment);
     }
 

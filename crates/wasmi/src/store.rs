@@ -1,5 +1,9 @@
+use crate::memory::DataSegment;
+
 use super::{
     engine::DedupFuncType,
+    DataSegmentEntity,
+    DataSegmentIdx,
     Engine,
     Func,
     FuncEntity,
@@ -96,6 +100,8 @@ pub struct StoreInner {
     globals: Arena<GlobalIdx, GlobalEntity>,
     /// Stored module instances.
     instances: Arena<InstanceIdx, InstanceEntity>,
+    /// Stored data segments.
+    datas: Arena<DataSegmentIdx, DataSegmentEntity>,
     /// The [`Engine`] in use by the [`Store`].
     ///
     /// Amongst others the [`Engine`] stores the Wasm function definitions.
@@ -123,6 +129,7 @@ impl StoreInner {
             tables: Arena::new(),
             globals: Arena::new(),
             instances: Arena::new(),
+            datas: Arena::new(),
         }
     }
 
@@ -208,6 +215,12 @@ impl StoreInner {
     pub fn alloc_memory(&mut self, memory: MemoryEntity) -> Memory {
         let memory = self.memories.alloc(memory);
         Memory::from_inner(self.wrap_stored(memory))
+    }
+
+    /// Allocates a new [`DataSegmentEntity`] and returns a [`DataSegment`] reference to it.
+    pub fn alloc_data_segment(&mut self, segment: DataSegmentEntity) -> DataSegment {
+        let segment = self.datas.alloc(segment);
+        DataSegment::from_inner(self.wrap_stored(segment))
     }
 
     /// Allocates a new uninitialized [`InstanceEntity`] and returns an [`Instance`] reference to it.
@@ -379,6 +392,27 @@ impl StoreInner {
         Self::resolve_mut(idx, &mut self.memories)
     }
 
+    /// Returns a shared reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`DataSegment`] does not originate from this [`Store`].
+    /// - If the [`DataSegment`] cannot be resolved to its entity.
+    pub fn resolve_data_segment(&self, segment: DataSegment) -> &DataSegmentEntity {
+        self.resolve(segment.into_inner(), &self.datas)
+    }
+
+    /// Returns an exclusive reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`DataSegment`] does not originate from this [`Store`].
+    /// - If the [`DataSegment`] cannot be resolved to its entity.
+    pub fn resolve_data_segment_mut(&mut self, segment: DataSegment) -> &mut DataSegmentEntity {
+        let idx = self.unwrap_stored(segment.into_inner());
+        Self::resolve_mut(idx, &mut self.datas)
+    }
+
     /// Returns a shared reference to the [`InstanceEntity`] associated to the given [`Instance`].
     ///
     /// # Panics
@@ -464,6 +498,11 @@ impl<T> Store<T> {
     /// Allocates a new [`MemoryEntity`] and returns a [`Memory`] reference to it.
     pub(super) fn alloc_memory(&mut self, memory: MemoryEntity) -> Memory {
         self.inner.alloc_memory(memory)
+    }
+
+    /// Allocates a new [`DataSegmentEntity`] and returns a [`DataSegment`] reference to it.
+    pub(super) fn alloc_data_segment(&mut self, segment: DataSegmentEntity) -> DataSegment {
+        self.inner.alloc_data_segment(segment)
     }
 
     /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.
@@ -600,6 +639,26 @@ impl<T> Store<T> {
         memory: Memory,
     ) -> (&mut MemoryEntity, &mut T) {
         (self.inner.resolve_memory_mut(memory), &mut self.data)
+    }
+
+    /// Returns a shared reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`DataSegment`] does not originate from this [`Store`].
+    /// - If the [`DataSegment`] cannot be resolved to its entity.
+    pub fn resolve_data_segment(&self, segment: DataSegment) -> &DataSegmentEntity {
+        self.inner.resolve_data_segment(segment)
+    }
+
+    /// Returns an exclusive reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`DataSegment`] does not originate from this [`Store`].
+    /// - If the [`DataSegment`] cannot be resolved to its entity.
+    pub fn resolve_data_segment_mut(&mut self, segment: DataSegment) -> &mut DataSegmentEntity {
+        self.inner.resolve_data_segment_mut(segment)
     }
 
     /// Returns a shared reference to the associated entity of the Wasm or host function.
