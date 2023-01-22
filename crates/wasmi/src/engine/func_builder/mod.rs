@@ -1127,7 +1127,6 @@ impl<'parser> FuncBuilder<'parser> {
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             debug_assert_eq!(memory_index, DEFAULT_MEMORY_INDEX);
-            // let memory_index = MemoryIdx(memory_index);
             builder.stack_height.pop3();
             builder
                 .alloc
