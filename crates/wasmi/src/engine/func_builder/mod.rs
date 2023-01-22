@@ -1191,7 +1191,7 @@ impl<'parser> FuncBuilder<'parser> {
             //     .inst_builder
             //     .push_inst(Instruction::TableSize);
             // Ok(())
-            todo!()
+            unimplemented!("wasmi does not yet support the `reference-types` Wasm proposal")
         })
     }
 
@@ -1205,7 +1205,7 @@ impl<'parser> FuncBuilder<'parser> {
             //     .inst_builder
             //     .push_inst(Instruction::TableGrow);
             // Ok(())
-            todo!()
+            unimplemented!("wasmi does not yet support the `reference-types` Wasm proposal")
         })
     }
 
