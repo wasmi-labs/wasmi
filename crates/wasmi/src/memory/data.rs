@@ -35,7 +35,7 @@ impl DataSegment {
         self.0
     }
 
-    /// Creates a new data segment to the store.
+    /// Allocates a new [`DataSegment`] on the store.
     ///
     /// # Errors
     ///
@@ -45,12 +45,12 @@ impl DataSegment {
         ctx.as_context_mut().store.alloc_data_segment(entity)
     }
 
-    /// Returns the bytes of the [`InstanceData`].
+    /// Returns the bytes of the [`DataSegment`].
     pub fn bytes<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a [u8] {
         ctx.into().store.resolve_data_segment(*self).bytes()
     }
 
-    /// Drops the bytes of the [`InstanceData`].
+    /// Drops the bytes of the [`DataSegment`].
     pub fn drop_bytes(&self, mut ctx: impl AsContextMut) {
         ctx.as_context_mut()
             .store
@@ -90,12 +90,12 @@ impl From<&'_ module::DataSegment> for DataSegmentEntity {
 }
 
 impl DataSegmentEntity {
-    /// Create an empty [`InstanceData`] representing dropped data segments.
+    /// Create an empty [`DataSegmentEntity`] representing dropped data segments.
     fn empty() -> Self {
         Self { bytes: None }
     }
 
-    /// Returns the bytes of the [`InstanceData`].
+    /// Returns the bytes of the [`DataSegmentEntity`].
     pub fn bytes(&self) -> &[u8] {
         self.bytes
             .as_ref()
@@ -103,7 +103,7 @@ impl DataSegmentEntity {
             .unwrap_or_else(|| &[])
     }
 
-    /// Drops the bytes of the [`InstanceData`].
+    /// Drops the bytes of the [`DataSegmentEntity`].
     pub fn drop_bytes(&mut self) {
         self.bytes = None;
     }

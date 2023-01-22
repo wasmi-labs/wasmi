@@ -393,7 +393,7 @@ impl InstanceEntityBuilder {
         self.exports.insert(name.into(), new_value);
     }
 
-    /// Pushes the [`InstanceDataSegment`] to the [`InstanceEntity`] under construction.
+    /// Pushes the [`DataSegment`] to the [`InstanceEntity`] under construction.
     pub fn push_data_segment(&mut self, segment: DataSegment) {
         self.data_segments.push(segment);
     }

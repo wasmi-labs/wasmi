@@ -13,7 +13,7 @@ pub struct DataSegment {
     bytes: Arc<[u8]>,
 }
 
-/// The kind of a Wasm [`Module`] data segment.
+/// The kind of a Wasm module [`DataSegment`].
 #[derive(Debug)]
 pub enum DataSegmentKind {
     /// A passive data segment from the `bulk-memory` Wasm proposal.
