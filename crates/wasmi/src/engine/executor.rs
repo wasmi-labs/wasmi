@@ -143,6 +143,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 Instr::I64Store32(offset) => self.visit_i64_store_32(offset)?,
                 Instr::MemorySize => self.visit_memory_size(),
                 Instr::MemoryGrow => self.visit_memory_grow(),
+                Instr::MemoryFill => self.visit_memory_fill()?,
                 Instr::MemoryInit(segment) => self.visit_memory_init(segment)?,
                 Instr::DataDrop(segment) => self.visit_data_drop(segment),
                 Instr::Const(bytes) => self.visit_const(bytes),
@@ -606,10 +607,27 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.next_instr()
     }
 
+    fn visit_memory_fill(&mut self) -> Result<(), TrapCode> {
+        let bytes = self.cache.default_memory_bytes(self.ctx);
+        // The `n`, `val` and `d` variable bindings are extracted from the Wasm specification.
+        let (n, val, d) = self.value_stack.pop3();
+        let n = i32::from(n) as usize;
+        let offset = i32::from(d) as usize;
+        let byte = u8::from(val);
+        let memory = bytes
+            .data_mut()
+            .get_mut(offset..)
+            .and_then(|memory| memory.get_mut(..n))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        memory.fill(byte);
+        Ok(())
+    }
+
     fn visit_memory_init(&mut self, segment: DataSegmentIdx) -> Result<(), TrapCode> {
         let (memory, data) = self
             .cache
             .get_default_memory_and_data_segment(self.ctx, segment.into_inner());
+        // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
         let (n, s, d) = self.value_stack.pop3();
         let n = i32::from(n) as usize;
         let memory_offset = i32::from(s) as usize;

@@ -71,6 +71,7 @@ pub enum Instruction {
     I64Store32(Offset),
     MemorySize,
     MemoryGrow,
+    MemoryFill,
     MemoryInit(DataSegmentIdx),
     DataDrop(DataSegmentIdx),
     Const(UntypedValue),

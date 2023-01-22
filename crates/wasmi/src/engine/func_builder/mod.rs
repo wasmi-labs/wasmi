@@ -1155,16 +1155,16 @@ impl<'parser> FuncBuilder<'parser> {
         })
     }
 
-    pub fn translate_memory_fill(&mut self, _memory_index: u32) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|_builder| {
-            // debug_assert_eq!(memory_index, DEFAULT_MEMORY_INDEX);
-            // let memory_index = MemoryIdx(memory_index);
-            // builder.stack_height.pop3();
-            // builder
-            //     .alloc
-            //     .inst_builder
-            //     .push_inst(Instruction::MemoryFill { memory_index });
-            todo!()
+    /// Translate a Wasm `memory.fill` instruction.
+    pub fn translate_memory_fill(&mut self, memory_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            debug_assert_eq!(memory_index, DEFAULT_MEMORY_INDEX);
+            builder.stack_height.pop3();
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::MemoryFill);
+            Ok(())
         })
     }
 
