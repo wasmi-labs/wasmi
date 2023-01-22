@@ -645,14 +645,14 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_memory_init(&mut self, segment: DataSegmentIdx) -> Result<(), TrapCode> {
-        let (memory, data) = self
-            .cache
-            .get_default_memory_and_data_segment(self.ctx, segment.into_inner());
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
         let (n, s, d) = self.value_stack.pop3();
         let n = i32::from(n) as usize;
         let src_offset = i32::from(s) as usize;
         let dst_offset = i32::from(d) as usize;
+        let (memory, data) = self
+            .cache
+            .get_default_memory_and_data_segment(self.ctx, segment.into_inner());
         let memory = memory
             .get_mut(dst_offset..)
             .and_then(|memory| memory.get_mut(..n))
