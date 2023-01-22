@@ -690,7 +690,10 @@ impl<T> Store<T> {
     ///
     /// - If the [`DataSegment`] does not originate from this [`Store`].
     /// - If the [`DataSegment`] cannot be resolved to its entity.
-    pub(super) fn resolve_data_segment_mut(&mut self, segment: DataSegment) -> &mut DataSegmentEntity {
+    pub(super) fn resolve_data_segment_mut(
+        &mut self,
+        segment: DataSegment,
+    ) -> &mut DataSegmentEntity {
         self.inner.resolve_data_segment_mut(segment)
     }
 

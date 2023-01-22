@@ -1169,14 +1169,14 @@ impl<'parser> FuncBuilder<'parser> {
         })
     }
 
-    pub fn translate_data_drop(&mut self, _segment_index: u32) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|_builder| {
-            // let memory_index = DataSegmentIdx::from(segment_index);
-            // builder
-            //     .alloc
-            //     .inst_builder
-            //     .push_inst(Instruction::DataDrop { segment_index });
-            todo!()
+    pub fn translate_data_drop(&mut self, segment_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            let segment_index = DataSegmentIdx::from(segment_index);
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::DataDrop(segment_index));
+            Ok(())
         })
     }
 

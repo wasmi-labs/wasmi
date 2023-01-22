@@ -72,6 +72,7 @@ pub enum Instruction {
     MemorySize,
     MemoryGrow,
     MemoryInit(DataSegmentIdx),
+    DataDrop(DataSegmentIdx),
     Const(UntypedValue),
     I32Eqz,
     I32Eq,

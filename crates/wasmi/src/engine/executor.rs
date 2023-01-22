@@ -144,6 +144,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 Instr::MemorySize => self.visit_memory_size(),
                 Instr::MemoryGrow => self.visit_memory_grow(),
                 Instr::MemoryInit(segment) => self.visit_memory_init(segment)?,
+                Instr::DataDrop(segment) => self.visit_data_drop(segment),
                 Instr::Const(bytes) => self.visit_const(bytes),
                 Instr::I32Eqz => self.visit_i32_eqz(),
                 Instr::I32Eq => self.visit_i32_eq(),
@@ -623,6 +624,13 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             .ok_or(TrapCode::MemoryOutOfBounds)?;
         memory.copy_from_slice(data);
         Ok(())
+    }
+
+    fn visit_data_drop(&mut self, segment_index: DataSegmentIdx) {
+        let segment = self
+            .cache
+            .get_data_segment(self.ctx, segment_index.into_inner());
+        self.ctx.resolve_data_segment_mut(segment).drop_bytes();
     }
 
     fn visit_i32_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
