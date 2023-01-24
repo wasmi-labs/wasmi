@@ -385,8 +385,9 @@ impl StoreInner {
         Self::resolve_mut(idx, &mut self.tables)
     }
 
-    /// Returns a pair of:
+    /// Returns a triple of:
     ///
+    /// - A shared reference to the [`InstanceEntity`] associated to the given [`Instance`].
     /// - An exclusive reference to the [`TableEntity`] associated to the given [`Table`].
     /// - A shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
     ///
@@ -397,20 +398,25 @@ impl StoreInner {
     ///
     /// # Panics
     ///
+    /// - If the [`Instance`] does not originate from this [`Store`].
+    /// - If the [`Instance`] cannot be resolved to its entity.
     /// - If the [`Table`] does not originate from this [`Store`].
     /// - If the [`Table`] cannot be resolved to its entity.
     /// - If the [`ElementSegment`] does not originate from this [`Store`].
     /// - If the [`ElementSegment`] cannot be resolved to its entity.
-    pub(super) fn resolve_table_mut_and_element_segment(
+    pub(super) fn resolve_instance_table_element(
         &mut self,
+        instance: Instance,
         memory: Table,
         segment: ElementSegment,
-    ) -> (&mut TableEntity, &ElementSegmentEntity) {
+    ) -> (&InstanceEntity, &mut TableEntity, &ElementSegmentEntity) {
         let mem_idx = self.unwrap_stored(memory.into_inner());
         let data_idx = segment.into_inner();
+        let instance_idx = instance.into_inner();
+        let instance = self.resolve(instance_idx, &self.instances);
         let data = self.resolve(data_idx, &self.elems);
         let mem = Self::resolve_mut(mem_idx, &mut self.tables);
-        (mem, data)
+        (instance, mem, data)
     }
 
     /// Returns a shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].

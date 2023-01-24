@@ -27,7 +27,7 @@ pub use self::{
 };
 use super::{DropKeep, FuncBody, Instruction};
 use crate::{
-    engine::bytecode::{BranchParams, DataSegmentIdx, Offset},
+    engine::bytecode::{BranchParams, DataSegmentIdx, ElementSegmentIdx, Offset},
     module::{
         BlockType,
         FuncIdx,
@@ -801,7 +801,7 @@ impl<'parser> FuncBuilder<'parser> {
             let global_idx = GlobalIdx(global_idx);
             builder.stack_height.push();
             let (global_type, init_value) = builder.res.get_global(global_idx);
-            let instr = match init_value.and_then(InitExpr::into_const) {
+            let instr = match init_value.and_then(InitExpr::to_const) {
                 Some(value) if global_type.mutability().is_const() => Instruction::constant(value),
                 _ => Instruction::GlobalGet(global_idx.into_u32().into()),
             };
@@ -1265,31 +1265,35 @@ impl<'parser> FuncBuilder<'parser> {
         })
     }
 
+    /// Translate a Wasm `table.init` instruction.
     pub fn translate_table_init(
         &mut self,
-        _segment_index: u32,
-        _table_index: u32,
+        segment_index: u32,
+        table_index: u32,
     ) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|_builder| {
-            // debug_assert_eq!(table_index, DEFAULT_MEMORY_INDEX);
-            // let memory_index = TableIdx(table_index);
-            // builder.stack_height.pop3();
-            // builder
-            //     .alloc
-            //     .inst_builder
-            //     .push_inst(Instruction::TableInit(ElementSegmentIdx::from(segment_index)));
-            todo!()
+        self.translate_if_reachable(|builder| {
+            debug_assert_eq!(table_index, DEFAULT_MEMORY_INDEX);
+            builder.stack_height.pop3();
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::TableInit(ElementSegmentIdx::from(
+                    segment_index,
+                )));
+            Ok(())
         })
     }
 
-    pub fn translate_elem_drop(&mut self, _segment_index: u32) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|_builder| {
-            // let segment_index = ElementSegmentIdx::from(segment_index);
-            // builder
-            //     .alloc
-            //     .inst_builder
-            //     .push_inst(Instruction::ElemDrop { segment_index });
-            todo!()
+    /// Translate a Wasm `elem.drop` instruction.
+    pub fn translate_elem_drop(&mut self, segment_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::ElemDrop(ElementSegmentIdx::from(
+                    segment_index,
+                )));
+            Ok(())
         })
     }
 

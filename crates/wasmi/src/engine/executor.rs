@@ -3,6 +3,7 @@ use super::{
     bytecode::{
         BranchParams,
         DataSegmentIdx,
+        ElementSegmentIdx,
         FuncIdx,
         GlobalIdx,
         Instruction,
@@ -147,6 +148,8 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 Instr::MemoryCopy => self.visit_memory_copy()?,
                 Instr::MemoryInit(segment) => self.visit_memory_init(segment)?,
                 Instr::DataDrop(segment) => self.visit_data_drop(segment),
+                Instr::TableInit(segment) => self.visit_table_init(segment)?,
+                Instr::ElemDrop(segment) => self.visit_element_drop(segment),
                 Instr::Const(bytes) => self.visit_const(bytes),
                 Instr::I32Eqz => self.visit_i32_eqz(),
                 Instr::I32Eq => self.visit_i32_eq(),
@@ -659,7 +662,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             .ok_or(TrapCode::MemoryOutOfBounds)?;
         let data = data
             .get(src_offset..)
-            .and_then(|memory| memory.get(..n))
+            .and_then(|data| data.get(..n))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
         memory.copy_from_slice(data);
         self.next_instr();
@@ -671,6 +674,43 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             .cache
             .get_data_segment(self.ctx, segment_index.into_inner());
         self.ctx.resolve_data_segment_mut(segment).drop_bytes();
+        self.next_instr();
+    }
+
+    fn visit_table_init(&mut self, segment: ElementSegmentIdx) -> Result<(), TrapCode> {
+        // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
+        let (d, s, n) = self.value_stack.pop3();
+        let n = u32::from(n);
+        let src_offset = u32::from(s);
+        let dst_offset = u32::from(d);
+        let (instance, table, element) = self
+            .cache
+            .get_default_table_and_element_segment(self.ctx, segment.into_inner());
+        // These accesses just perform the bounds checks required by the Wasm spec.
+        dst_offset
+            .checked_add(n)
+            .filter(|&offset| offset < table.size())
+            .ok_or(TrapCode::TableOutOfBounds)?;
+        let element = element
+            .get(src_offset as usize..)
+            .and_then(|element| element.get(..n as usize))
+            .ok_or(TrapCode::TableOutOfBounds)?;
+        for (i, func_idx) in (dst_offset..).zip(element) {
+            let funcref = func_idx.and_then(|index| instance.get_func(index.into_u32()));
+            table.set(i, funcref).unwrap_or_else(|_error| {
+                // Note: We panic here since we already performed the bounds check.
+                panic!("unexpected out of bounds at {i} for table: {table:?}")
+            });
+        }
+        self.next_instr();
+        Ok(())
+    }
+
+    fn visit_element_drop(&mut self, segment_index: ElementSegmentIdx) {
+        let segment = self
+            .cache
+            .get_element_segment(self.ctx, segment_index.into_inner());
+        self.ctx.resolve_element_segment_mut(segment).drop_items();
         self.next_instr();
     }
 

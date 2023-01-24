@@ -84,7 +84,7 @@ impl TryFrom<wasmparser::Element<'_>> for ElementSegment {
             .map(|item| {
                 let func_ref = match item? {
                     wasmparser::ElementItem::Func(func_idx) => Some(FuncIdx(func_idx)),
-                    wasmparser::ElementItem::Expr(expr) => InitExpr::new(expr).into_elemexpr(),
+                    wasmparser::ElementItem::Expr(expr) => InitExpr::new(expr).to_elemexpr(),
                 };
                 <Result<_, ModuleError>>::Ok(func_ref)
             })

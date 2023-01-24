@@ -47,7 +47,7 @@ impl InitExpr {
     /// # Panics
     ///
     /// If a non Wasm `elemexpr` operand is encountered.
-    pub fn into_elemexpr(&self) -> Option<FuncIdx> {
+    pub fn to_elemexpr(&self) -> Option<FuncIdx> {
         match self.op {
             InitExprOperand::RefNull => None,
             InitExprOperand::FuncRef(func_index) => Some(FuncIdx(func_index)),
@@ -64,7 +64,7 @@ impl InitExpr {
     /// # Panics
     ///
     /// If a non-const expression operand is encountered.
-    pub fn into_const(&self) -> Option<Value> {
+    pub fn to_const(&self) -> Option<Value> {
         match self.op {
             InitExprOperand::Const(value) => Some(value),
             // Note: We do not need to handle `global.get` since
@@ -82,7 +82,7 @@ impl InitExpr {
     /// # Panics
     ///
     /// If a non-const expression operand is encountered.
-    pub fn into_const_with_context(&self, global_get: impl Fn(u32) -> Value) -> Value {
+    pub fn to_const_with_context(&self, global_get: impl Fn(u32) -> Value) -> Value {
         match self.op {
             InitExprOperand::Const(value) => value,
             InitExprOperand::GlobalGet(index) => global_get(index.into_u32()),

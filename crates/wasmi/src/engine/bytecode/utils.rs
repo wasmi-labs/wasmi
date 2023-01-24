@@ -172,6 +172,30 @@ impl DataSegmentIdx {
     }
 }
 
+/// An element segment index.
+///
+/// # Note
+///
+/// Refers to a data segment of a [`Store`].
+///
+/// [`Store`]: [`crate::Store`]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct ElementSegmentIdx(u32);
+
+impl From<u32> for ElementSegmentIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
+
+impl ElementSegmentIdx {
+    /// Returns the inner `u32` index.
+    pub fn into_inner(self) -> u32 {
+        self.0
+    }
+}
+
 /// A linear memory access offset.
 ///
 /// # Note
