@@ -12,17 +12,6 @@ use self::{
 };
 use wasmi::Config;
 
-/// Creates the proper [`Config`] for testing.
-fn mvp_config() -> Config {
-    let mut config = Config::default();
-    config
-        .wasm_mutable_global(false)
-        .wasm_saturating_float_to_int(false)
-        .wasm_sign_extension(false)
-        .wasm_multi_value(false);
-    config
-}
-
 macro_rules! define_tests {
     (
         let folder = $test_folder:literal;
@@ -61,12 +50,23 @@ macro_rules! define_spec_tests {
     };
 }
 
-/// Run Wasm spec test suite using MVP `wasmi` configuration.
+/// Create a [`Config`] for the Wasm MVP feature set.
+fn mvp_config() -> Config {
+    let mut config = Config::default();
+    config
+        .wasm_mutable_global(false)
+        .wasm_saturating_float_to_int(false)
+        .wasm_sign_extension(false)
+        .wasm_multi_value(false);
+    config
+}
+
+/// Create a [`Config`] with all Wasm feature supported by `wasmi` enabled.
 ///
 /// # Note
 ///
 /// The Wasm MVP has no Wasm proposals enabled.
-fn make_config() -> wasmi::Config {
+fn make_config() -> Config {
     let mut config = mvp_config();
     // We have to enable the `mutable-global` Wasm proposal because
     // it seems that the entire Wasm spec test suite is already built
