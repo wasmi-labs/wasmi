@@ -126,7 +126,7 @@ define_spec_tests! {
     fn wasm_int_literals("int_literals");
     fn wasm_labels("labels");
     fn wasm_left("left-to-right");
-    fn wasm_linking("sm_linking");
+    fn wasm_linking("linking");
     fn wasm_load("load");
     fn wasm_local_get("local_get");
     fn wasm_local_set("local_set");
