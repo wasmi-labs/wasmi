@@ -25,7 +25,7 @@ spin = { version = "0.9", default-features = false, features = [
 [dev-dependencies]
 wat = "1"
 assert_matches = "1.5"
-wast = "46.0"
+wast = "52.0"
 anyhow = "1.0"
 criterion = { version = "0.4", default-features = false }
 
