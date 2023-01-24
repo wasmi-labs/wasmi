@@ -3,16 +3,16 @@ use anyhow::Result;
 use wasmi::Config;
 use wasmi_core::{Value, F32, F64};
 use wast::{
+    core::{NanPattern, WastRetCore},
     lexer::Lexer,
     parser::ParseBuffer,
     token::Span,
-    AssertExpression,
-    NanPattern,
     QuoteWat,
     Wast,
     WastDirective,
     WastExecute,
     WastInvoke,
+    WastRet,
     Wat,
 };
 
@@ -219,22 +219,23 @@ fn assert_trap(test_context: &TestContext, span: Span, error: TestError, message
 }
 
 /// Asserts that `results` match the `expected` values.
-fn assert_results(
-    context: &TestContext,
-    span: Span,
-    results: &[Value],
-    expected: &[AssertExpression],
-) {
+fn assert_results(context: &TestContext, span: Span, results: &[Value], expected: &[WastRet]) {
     assert_eq!(results.len(), expected.len());
+    let expected = expected.iter().map(|expected| match expected {
+        WastRet::Core(expected) => expected,
+        WastRet::Component(expected) => panic!(
+            "`wasmi` does not support the Wasm `component-model` proposal but found {expected:?}"
+        ),
+    });
     for (result, expected) in results.iter().zip(expected) {
         match (result, expected) {
-            (Value::I32(result), AssertExpression::I32(expected)) => {
+            (Value::I32(result), WastRetCore::I32(expected)) => {
                 assert_eq!(result, expected, "in {}", context.spanned(span))
             }
-            (Value::I64(result), AssertExpression::I64(expected)) => {
+            (Value::I64(result), WastRetCore::I64(expected)) => {
                 assert_eq!(result, expected, "in {}", context.spanned(span))
             }
-            (Value::F32(result), AssertExpression::F32(expected)) => match expected {
+            (Value::F32(result), WastRetCore::F32(expected)) => match expected {
                 NanPattern::CanonicalNan | NanPattern::ArithmeticNan => assert!(result.is_nan()),
                 NanPattern::Value(expected) => {
                     assert_eq!(
@@ -245,13 +246,7 @@ fn assert_results(
                     );
                 }
             },
-            (Value::F32(result), AssertExpression::LegacyArithmeticNaN) => {
-                assert!(result.is_nan(), "in {}", context.spanned(span))
-            }
-            (Value::F32(result), AssertExpression::LegacyCanonicalNaN) => {
-                assert!(result.is_nan(), "in {}", context.spanned(span))
-            }
-            (Value::F64(result), AssertExpression::F64(expected)) => match expected {
+            (Value::F64(result), WastRetCore::F64(expected)) => match expected {
                 NanPattern::CanonicalNan | NanPattern::ArithmeticNan => {
                     assert!(result.is_nan(), "in {}", context.spanned(span))
                 }
@@ -264,12 +259,6 @@ fn assert_results(
                     );
                 }
             },
-            (Value::F64(result), AssertExpression::LegacyArithmeticNaN) => {
-                assert!(result.is_nan(), "in {}", context.spanned(span))
-            }
-            (Value::F64(result), AssertExpression::LegacyCanonicalNaN) => {
-                assert!(result.is_nan(), "in {}", context.spanned(span))
-            }
             (result, expected) => panic!(
                 "{}: encountered mismatch in evaluation. expected {:?} but found {:?}",
                 context.spanned(span),
@@ -342,25 +331,21 @@ fn execute_wast_invoke(
     let field_name = invoke.name;
     let mut args = <Vec<Value>>::new();
     for arg in invoke.args {
-        assert_eq!(
-            arg.instrs.len(),
-            1,
-            "{}: only single invoke instructions are supported as invoke arguments but found: {:?}",
-            context.spanned(span),
-            arg.instrs
-        );
-        let arg = match &arg.instrs[0] {
-            wast::core::Instruction::I32Const(value) => Value::I32(*value),
-            wast::core::Instruction::I64Const(value) => Value::I64(*value),
-            wast::core::Instruction::F32Const(value) => Value::F32(F32::from_bits(value.bits)),
-            wast::core::Instruction::F64Const(value) => Value::F64(F64::from_bits(value.bits)),
-            unsupported => panic!(
-                "{}: encountered unsupported invoke instruction: {:?}",
-                context.spanned(span),
-                unsupported
-            ),
+        let value = match arg {
+            wast::WastArg::Core(arg) => {
+                match arg {
+                    wast::core::WastArgCore::I32(arg) => Value::I32(arg),
+                    wast::core::WastArgCore::I64(arg) => Value::I64(arg),
+                    wast::core::WastArgCore::F32(arg) => Value::F32(F32::from_bits(arg.bits)),
+                    wast::core::WastArgCore::F64(arg) => Value::F64(F64::from_bits(arg.bits)),
+                    wast::core::WastArgCore::V128(arg) => panic!("{span:?}: `wasmi` does not support the `simd` Wasm proposal but found: {arg:?}"),
+                    wast::core::WastArgCore::RefNull(_) |
+                    wast::core::WastArgCore::RefExtern(_) => panic!("{span:?}: `wasmi` does not support the `reference-types` Wasm proposal but found {arg:?}"),
+                }
+            }
+            wast::WastArg::Component(arg) => panic!("{span:?}: `wasmi` does not support the Wasm `component-model` but found {arg:?}"),
         };
-        args.push(arg);
+        args.push(value);
     }
     context
         .invoke(module_name, field_name, &args)
