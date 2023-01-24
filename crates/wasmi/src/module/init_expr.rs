@@ -22,19 +22,22 @@ pub struct InitExpr {
 
 impl InitExpr {
     /// Creates a new [`InitExpr`] from the given Wasm constant expression.
-    pub fn new(expr: wasmparser::ConstExpr<'_>) -> Result<Self, ModuleError> {
+    pub fn new(expr: wasmparser::ConstExpr<'_>) -> Self {
         let mut reader = expr.get_operators_reader();
-        let op = reader.read()?.try_into()?;
-        let end_op = reader.read()?;
+        let wasm_op = reader.read().unwrap_or_else(|error| {
+            panic!("expected valid Wasm const expression operand: {error}")
+        });
+        let op = InitExprOperand::new(wasm_op);
+        let end_op = reader.read();
         assert!(
-            matches!(end_op, wasmparser::Operator::End),
+            matches!(end_op, Ok(wasmparser::Operator::End)),
             "expected the Wasm end operator but found {end_op:?}",
         );
         assert!(
             reader.ensure_end().is_ok(),
             "expected no more Wasm operands"
         );
-        Ok(InitExpr { op })
+        Self { op }
     }
 
     /// Convert the [`InitExpr`] into the underlying Wasm `elemexpr` if possible.
@@ -114,6 +117,28 @@ pub enum InitExprOperand {
 }
 
 impl InitExprOperand {
+    /// Creates a new [`InitExprOperand`] from the given Wasm operator.
+    ///
+    /// # Panics
+    ///
+    /// If the Wasm operator is not a valid [`InitExprOperand`].
+    fn new(operator: wasmparser::Operator<'_>) -> Self {
+        match operator {
+            wasmparser::Operator::I32Const { value } => Self::constant(value),
+            wasmparser::Operator::I64Const { value } => Self::constant(value),
+            wasmparser::Operator::F32Const { value } => Self::constant(F32::from(value.bits())),
+            wasmparser::Operator::F64Const { value } => Self::constant(F64::from(value.bits())),
+            wasmparser::Operator::GlobalGet { global_index } => {
+                Self::GlobalGet(GlobalIdx(global_index))
+            }
+            wasmparser::Operator::RefNull { .. } => Self::RefNull,
+            wasmparser::Operator::RefFunc { function_index } => Self::FuncRef(function_index),
+            operator => {
+                panic!("encountered unsupported const expression operator: {operator:?}")
+            }
+        }
+    }
+
     /// Creates a new constant [`InitExprOperand`].
     fn constant<T>(value: T) -> Self
     where
