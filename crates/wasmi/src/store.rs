@@ -380,9 +380,27 @@ impl StoreInner {
     ///
     /// - If the [`Table`] does not originate from this [`Store`].
     /// - If the [`Table`] cannot be resolved to its entity.
-    pub fn resolve_table_mut(&mut self, table: Table) -> &mut TableEntity {
+    pub fn resolve_table_mut(&mut self, table: &Table) -> &mut TableEntity {
         let idx = self.unwrap_stored(table.into_inner());
         Self::resolve_mut(idx, &mut self.tables)
+    }
+
+    /// Returns an exclusive reference to the [`TableEntity`] associated to the given [`Table`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Table`] does not originate from this [`Store`].
+    /// - If the [`Table`] cannot be resolved to its entity.
+    pub fn resolve_table_pair_mut(
+        &mut self,
+        fst: &Table,
+        snd: &Table,
+    ) -> (&mut TableEntity, &mut TableEntity) {
+        let fst = self.unwrap_stored(fst.into_inner());
+        let snd = self.unwrap_stored(snd.into_inner());
+        self.tables.get_pair_mut(fst, snd).unwrap_or_else(|| {
+            panic!("failed to resolve stored pair of entities: {fst:?} and {snd:?}")
+        })
     }
 
     /// Returns a triple of:
@@ -713,7 +731,7 @@ impl<T> Store<T> {
     ///
     /// - If the [`Table`] does not originate from this [`Store`].
     /// - If the [`Table`] cannot be resolved to its entity.
-    pub(super) fn resolve_table_mut(&mut self, table: Table) -> &mut TableEntity {
+    pub(super) fn resolve_table_mut(&mut self, table: &Table) -> &mut TableEntity {
         self.inner.resolve_table_mut(table)
     }
 

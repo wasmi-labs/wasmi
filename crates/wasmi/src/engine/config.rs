@@ -135,7 +135,7 @@ impl Config {
             saturating_float_to_int: self.saturating_float_to_int,
             sign_extension: self.sign_extension,
             bulk_memory: self.bulk_memory,
-            reference_types: self.bulk_memory,
+            reference_types: false,
             component_model: false,
             simd: false,
             relaxed_simd: false,

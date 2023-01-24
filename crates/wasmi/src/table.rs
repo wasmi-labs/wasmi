@@ -400,7 +400,7 @@ impl Table {
     pub fn grow(&self, mut ctx: impl AsContextMut, delta: u32) -> Result<(), TableError> {
         ctx.as_context_mut()
             .store
-            .resolve_table_mut(*self)
+            .resolve_table_mut(self)
             .grow(delta)
     }
 
@@ -434,7 +434,49 @@ impl Table {
     ) -> Result<(), TableError> {
         ctx.as_context_mut()
             .store
-            .resolve_table_mut(*self)
+            .resolve_table_mut(self)
             .set(index, value)
+    }
+
+    /// Copy `len` elements from `src_table[src_index..]` into
+    /// `dst_table[dst_index..]`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the range is out of bounds of either the source or
+    /// destination tables.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `store` does not own either `dst_table` or `src_table`.
+    pub fn copy(
+        mut store: impl AsContextMut,
+        dst_table: &Table,
+        dst_index: u32,
+        src_table: &Table,
+        src_index: u32,
+        len: u32,
+    ) -> Result<(), TrapCode> {
+        let dst_id = dst_table.into_inner();
+        let src_id = src_table.into_inner();
+        if dst_id == src_id {
+            // The `dst_table` and `src_table` are the same table
+            // therefore we have to copy within the same table.
+            let table = store
+                .as_context_mut()
+                .store
+                .inner
+                .resolve_table_mut(dst_table);
+            table.copy_within(dst_index, src_index, len)
+        } else {
+            // The `dst_table` and `src_table` are different entities
+            // therefore we have to copy from one table to the other.
+            let (dst_table, src_table) = store
+                .as_context_mut()
+                .store
+                .inner
+                .resolve_table_pair_mut(dst_table, src_table);
+            TableEntity::copy(dst_table, dst_index, src_table, src_index, len)
+        }
     }
 }

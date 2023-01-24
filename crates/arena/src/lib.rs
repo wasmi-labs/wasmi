@@ -32,6 +32,7 @@ mod tests;
 pub use self::{component_vec::ComponentVec, dedup::DedupArena, guarded::GuardedEntity};
 use alloc::vec::Vec;
 use core::{
+    cmp::max,
     iter::{DoubleEndedIterator, Enumerate, ExactSizeIterator},
     marker::PhantomData,
     ops::{Index, IndexMut},
@@ -148,6 +149,21 @@ where
     #[inline]
     pub fn get_mut(&mut self, index: Idx) -> Option<&mut T> {
         self.entities.get_mut(index.into_usize())
+    }
+
+    /// Returns an exclusive reference to the pair of entities at the given indices if any.
+    ///
+    /// Returns `None` if `fst` and `snd` refer to the same entity.
+    /// Returns `None` if either `fst` or `snd` is invalid for this [`Arena`].
+    #[inline]
+    pub fn get_pair_mut(&mut self, fst: Idx, snd: Idx) -> Option<(&mut T, &mut T)> {
+        let fst_index = fst.into_usize();
+        let snd_index = snd.into_usize();
+        let max_index = max(fst_index, snd_index);
+        let (fst_set, snd_set) = self.entities.split_at_mut(max_index);
+        let fst = fst_set.get_mut(fst_index)?;
+        let snd = snd_set.get_mut(0)?;
+        Some((fst, snd))
     }
 }
 

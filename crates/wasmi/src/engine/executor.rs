@@ -686,7 +686,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let dst_index = u32::from(d);
         let table = self
             .ctx
-            .resolve_table_mut(self.cache.default_table(self.ctx));
+            .resolve_table_mut(&self.cache.default_table(self.ctx));
         // Now copy table elements within.
         table.copy_within(dst_index, src_index, len)?;
         self.next_instr();
