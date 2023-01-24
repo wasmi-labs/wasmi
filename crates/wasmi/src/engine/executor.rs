@@ -20,7 +20,7 @@ use super::{
     ValueStack,
 };
 use crate::{core::TrapCode, Func, StoreInner};
-use core::cmp;
+use core::cmp::{self};
 use wasmi_core::{Pages, UntypedValue};
 
 /// Executes the given function `frame`.
@@ -148,6 +148,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 Instr::MemoryCopy => self.visit_memory_copy()?,
                 Instr::MemoryInit(segment) => self.visit_memory_init(segment)?,
                 Instr::DataDrop(segment) => self.visit_data_drop(segment),
+                Instr::TableCopy => self.visit_table_copy()?,
                 Instr::TableInit(segment) => self.visit_table_init(segment)?,
                 Instr::ElemDrop(segment) => self.visit_element_drop(segment),
                 Instr::Const(bytes) => self.visit_const(bytes),
@@ -655,7 +656,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let dst_offset = i32::from(d) as usize;
         let (memory, data) = self
             .cache
-            .get_default_memory_and_data_segment(self.ctx, segment.into_inner());
+            .get_default_memory_and_data_segment(self.ctx, segment);
         let memory = memory
             .get_mut(dst_offset..)
             .and_then(|memory| memory.get_mut(..n))
@@ -677,39 +678,37 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.next_instr();
     }
 
+    fn visit_table_copy(&mut self) -> Result<(), TrapCode> {
+        // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
+        let (d, s, n) = self.value_stack.pop3();
+        let len = u32::from(n);
+        let src_index = u32::from(s);
+        let dst_index = u32::from(d);
+        let table = self
+            .ctx
+            .resolve_table_mut(self.cache.default_table(self.ctx));
+        // Now copy table elements within.
+        table.copy_within(dst_index, src_index, len)?;
+        self.next_instr();
+        Ok(())
+    }
+
     fn visit_table_init(&mut self, segment: ElementSegmentIdx) -> Result<(), TrapCode> {
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
         let (d, s, n) = self.value_stack.pop3();
-        let n = u32::from(n);
-        let src_offset = u32::from(s);
-        let dst_offset = u32::from(d);
+        let len = u32::from(n);
+        let src_index = u32::from(s);
+        let dst_index = u32::from(d);
         let (instance, table, element) = self
             .cache
-            .get_default_table_and_element_segment(self.ctx, segment.into_inner());
-        // These accesses just perform the bounds checks required by the Wasm spec.
-        dst_offset
-            .checked_add(n)
-            .filter(|&offset| offset < table.size())
-            .ok_or(TrapCode::TableOutOfBounds)?;
-        let element = element
-            .get(src_offset as usize..)
-            .and_then(|element| element.get(..n as usize))
-            .ok_or(TrapCode::TableOutOfBounds)?;
-        for (i, func_idx) in (dst_offset..).zip(element) {
-            let funcref = func_idx.and_then(|index| instance.get_func(index.into_u32()));
-            table.set(i, funcref).unwrap_or_else(|_error| {
-                // Note: We panic here since we already performed the bounds check.
-                panic!("unexpected out of bounds at {i} for table: {table:?}")
-            });
-        }
+            .get_default_table_and_element_segment(self.ctx, segment);
+        table.init(instance, dst_index, element, src_index, len)?;
         self.next_instr();
         Ok(())
     }
 
     fn visit_element_drop(&mut self, segment_index: ElementSegmentIdx) {
-        let segment = self
-            .cache
-            .get_element_segment(self.ctx, segment_index.into_inner());
+        let segment = self.cache.get_element_segment(self.ctx, segment_index);
         self.ctx.resolve_element_segment_mut(segment).drop_items();
         self.next_instr();
     }

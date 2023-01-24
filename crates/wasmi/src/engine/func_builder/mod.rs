@@ -1213,17 +1213,14 @@ impl<'parser> FuncBuilder<'parser> {
         _dst_table: u32,
         _src_table: u32,
     ) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|_builder| {
+        self.translate_if_reachable(|builder| {
             // debug_assert_eq!(dst_table, DEFAULT_TABLE_INDEX);
             // debug_assert_eq!(src_table, DEFAULT_TABLE_INDEX);
             // let dst_table = TableIdx(dst_table);
             // let src_table = TableIdx(src_table);
-            // builder.stack_height.pop3();
-            // builder
-            //     .alloc
-            //     .inst_builder
-            //     .push_inst(Instruction::TableCopy { dst_table, src_table });
-            todo!()
+            builder.stack_height.pop3();
+            builder.alloc.inst_builder.push_inst(Instruction::TableCopy);
+            Ok(())
         })
     }
 

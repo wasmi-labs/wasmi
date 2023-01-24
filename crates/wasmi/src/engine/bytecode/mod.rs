@@ -76,6 +76,7 @@ pub enum Instruction {
     MemoryCopy,
     MemoryInit(DataSegmentIdx),
     DataDrop(DataSegmentIdx),
+    TableCopy,
     TableInit(ElementSegmentIdx),
     ElemDrop(ElementSegmentIdx),
     Const(UntypedValue),

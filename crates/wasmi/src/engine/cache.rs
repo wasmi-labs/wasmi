@@ -1,8 +1,8 @@
 use crate::{
-    element::ElementSegment,
+    element::{ElementSegment, ElementSegmentEntity},
     instance::InstanceEntity,
     memory::DataSegment,
-    module::{FuncIdx, DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
+    module::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
     table::TableEntity,
     Func,
     Instance,
@@ -12,6 +12,8 @@ use crate::{
 };
 use core::ptr::NonNull;
 use wasmi_core::UntypedValue;
+
+use super::bytecode::{DataSegmentIdx, ElementSegmentIdx};
 
 /// A cache for frequently used entities of an [`Instance`].
 #[derive(Debug)]
@@ -88,10 +90,14 @@ impl InstanceCache {
     ///
     /// If there is no [`ElementSegment`] for the [`Instance`] at the `index`.
     #[inline]
-    pub fn get_element_segment(&mut self, ctx: &mut StoreInner, index: u32) -> ElementSegment {
+    pub fn get_element_segment(
+        &mut self,
+        ctx: &mut StoreInner,
+        index: ElementSegmentIdx,
+    ) -> ElementSegment {
         let instance = self.instance();
         ctx.resolve_instance(self.instance())
-            .get_element_segment(index)
+            .get_element_segment(index.into_inner())
             .unwrap_or_else(|| {
                 panic!("missing element segment ({index:?}) for instance: {instance:?}",)
             })
@@ -106,10 +112,10 @@ impl InstanceCache {
     pub fn get_default_memory_and_data_segment<'a>(
         &mut self,
         ctx: &'a mut StoreInner,
-        segment: u32,
+        segment: DataSegmentIdx,
     ) -> (&'a mut [u8], &'a [u8]) {
         let mem = self.default_memory(ctx);
-        let seg = self.get_data_segment(ctx, segment);
+        let seg = self.get_data_segment(ctx, segment.into_inner());
         let (memory, segment) = ctx.resolve_memory_mut_and_data_segment(mem, seg);
         (memory.data_mut(), segment.bytes())
     }
@@ -123,17 +129,16 @@ impl InstanceCache {
     pub fn get_default_table_and_element_segment<'a>(
         &mut self,
         ctx: &'a mut StoreInner,
-        segment: u32,
+        segment: ElementSegmentIdx,
     ) -> (
         &'a InstanceEntity,
         &'a mut TableEntity,
-        &'a [Option<FuncIdx>],
+        &'a ElementSegmentEntity,
     ) {
         let inst = self.instance();
         let tab = self.default_table(ctx);
         let seg = self.get_element_segment(ctx, segment);
-        let (instance, table, segment) = ctx.resolve_instance_table_element(inst, tab, seg);
-        (instance, table, segment.items())
+        ctx.resolve_instance_table_element(inst, tab, seg)
     }
 
     /// Loads the default [`Memory`] of the currently used [`Instance`].
