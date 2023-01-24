@@ -10,7 +10,7 @@ pub struct ElementSegment {
     /// The kind of the [`ElementSegment`].
     kind: ElementSegmentKind,
     /// The items of the [`ElementSegment`].
-    items: Arc<[FuncIdx]>,
+    items: Arc<[Option<FuncIdx>]>,
 }
 
 /// The kind of a Wasm [`ElementSegment`].
@@ -53,7 +53,7 @@ impl TryFrom<wasmparser::ElementKind<'_>> for ElementSegmentKind {
                 offset_expr,
             } => {
                 let table_index = TableIdx(table_index);
-                let offset = InitExpr::new(offset_expr)?;
+                let offset = InitExpr::new(offset_expr);
                 Ok(Self::Active(ActiveElementSegment {
                     table_index,
                     offset,
@@ -81,13 +81,14 @@ impl TryFrom<wasmparser::Element<'_>> for ElementSegment {
             .items
             .get_items_reader()?
             .into_iter()
-            .map(|item| match item? {
-                wasmparser::ElementItem::Func(func_idx) => Ok(FuncIdx(func_idx)),
-                wasmparser::ElementItem::Expr(expr) => InitExpr::new(expr)?
-                    .into_elemexpr()
-                    .ok_or_else(|| panic!("encountered invalid elemexpr")),
+            .map(|item| {
+                let func_ref = match item? {
+                    wasmparser::ElementItem::Func(func_idx) => Some(FuncIdx(func_idx)),
+                    wasmparser::ElementItem::Expr(expr) => InitExpr::new(expr).into_elemexpr(),
+                };
+                <Result<_, ModuleError>>::Ok(func_ref)
             })
-            .collect::<Result<Arc<[_]>, ModuleError>>()?;
+            .collect::<Result<Arc<[_]>, _>>()?;
         Ok(ElementSegment { kind, items })
     }
 }
@@ -99,12 +100,12 @@ impl ElementSegment {
     }
 
     /// Returns the element items of the [`ElementSegment`].
-    pub fn items(&self) -> &[FuncIdx] {
+    pub fn items(&self) -> &[Option<FuncIdx>] {
         &self.items[..]
     }
 
     /// Clone the underlying items of the [`ElementSegment`].
-    pub fn clone_items(&self) -> Arc<[FuncIdx]> {
+    pub fn clone_items(&self) -> Arc<[Option<FuncIdx>]> {
         self.items.clone()
     }
 }

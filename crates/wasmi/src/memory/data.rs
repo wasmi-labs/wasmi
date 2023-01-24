@@ -1,4 +1,4 @@
-use crate::{module, module::DataSegmentKind, store::Stored, AsContextMut};
+use crate::{module, store::Stored, AsContextMut};
 use alloc::sync::Arc;
 use wasmi_arena::ArenaIndex;
 
@@ -68,10 +68,10 @@ pub struct DataSegmentEntity {
 impl From<&'_ module::DataSegment> for DataSegmentEntity {
     fn from(segment: &'_ module::DataSegment) -> Self {
         match segment.kind() {
-            DataSegmentKind::Passive => Self {
+            module::DataSegmentKind::Passive => Self {
                 bytes: Some(segment.clone_bytes()),
             },
-            DataSegmentKind::Active(_) => Self::empty(),
+            module::DataSegmentKind::Active(_) => Self::empty(),
         }
     }
 }

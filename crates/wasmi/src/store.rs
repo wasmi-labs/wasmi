@@ -1,9 +1,10 @@
-use crate::memory::DataSegment;
-
 use super::{
     engine::DedupFuncType,
     DataSegmentEntity,
     DataSegmentIdx,
+    ElementSegment,
+    ElementSegmentEntity,
+    ElementSegmentIdx,
     Engine,
     Func,
     FuncEntity,
@@ -22,6 +23,7 @@ use super::{
     TableEntity,
     TableIdx,
 };
+use crate::memory::DataSegment;
 use core::{
     fmt::Debug,
     sync::atomic::{AtomicU32, Ordering},
@@ -102,6 +104,8 @@ pub struct StoreInner {
     instances: Arena<InstanceIdx, InstanceEntity>,
     /// Stored data segments.
     datas: Arena<DataSegmentIdx, DataSegmentEntity>,
+    /// Stored data segments.
+    elems: Arena<ElementSegmentIdx, ElementSegmentEntity>,
     /// The [`Engine`] in use by the [`Store`].
     ///
     /// Amongst others the [`Engine`] stores the Wasm function definitions.
@@ -130,6 +134,7 @@ impl StoreInner {
             globals: Arena::new(),
             instances: Arena::new(),
             datas: Arena::new(),
+            elems: Arena::new(),
         }
     }
 
@@ -221,6 +226,15 @@ impl StoreInner {
     pub fn alloc_data_segment(&mut self, segment: DataSegmentEntity) -> DataSegment {
         let segment = self.datas.alloc(segment);
         DataSegment::from_inner(self.wrap_stored(segment))
+    }
+
+    /// Allocates a new [`ElementSegmentEntity`] and returns a [`ElementSegment`] reference to it.
+    pub(super) fn alloc_element_segment(
+        &mut self,
+        segment: ElementSegmentEntity,
+    ) -> ElementSegment {
+        let segment = self.elems.alloc(segment);
+        ElementSegment::from_inner(self.wrap_stored(segment))
     }
 
     /// Allocates a new uninitialized [`InstanceEntity`] and returns an [`Instance`] reference to it.
@@ -369,6 +383,59 @@ impl StoreInner {
     pub fn resolve_table_mut(&mut self, table: Table) -> &mut TableEntity {
         let idx = self.unwrap_stored(table.into_inner());
         Self::resolve_mut(idx, &mut self.tables)
+    }
+
+    /// Returns a pair of:
+    ///
+    /// - An exclusive reference to the [`TableEntity`] associated to the given [`Table`].
+    /// - A shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
+    ///
+    /// # Note
+    ///
+    /// This method exists to properly handle use cases where
+    /// otherwise the Rust borrow-checker would not accept.
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Table`] does not originate from this [`Store`].
+    /// - If the [`Table`] cannot be resolved to its entity.
+    /// - If the [`ElementSegment`] does not originate from this [`Store`].
+    /// - If the [`ElementSegment`] cannot be resolved to its entity.
+    pub(super) fn resolve_table_mut_and_element_segment(
+        &mut self,
+        memory: Table,
+        segment: ElementSegment,
+    ) -> (&mut TableEntity, &ElementSegmentEntity) {
+        let mem_idx = self.unwrap_stored(memory.into_inner());
+        let data_idx = segment.into_inner();
+        let data = self.resolve(data_idx, &self.elems);
+        let mem = Self::resolve_mut(mem_idx, &mut self.tables);
+        (mem, data)
+    }
+
+    /// Returns a shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`ElementSegment`] does not originate from this [`Store`].
+    /// - If the [`ElementSegment`] cannot be resolved to its entity.
+    #[allow(unused)] // Note: We allow this unused API to exist to uphold code symmetry.
+    pub fn resolve_element_segment(&self, segment: ElementSegment) -> &ElementSegmentEntity {
+        self.resolve(segment.into_inner(), &self.elems)
+    }
+
+    /// Returns an exclusive reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`ElementSegment`] does not originate from this [`Store`].
+    /// - If the [`ElementSegment`] cannot be resolved to its entity.
+    pub fn resolve_element_segment_mut(
+        &mut self,
+        segment: ElementSegment,
+    ) -> &mut ElementSegmentEntity {
+        let idx = self.unwrap_stored(segment.into_inner());
+        Self::resolve_mut(idx, &mut self.elems)
     }
 
     /// Returns a shared reference to the [`MemoryEntity`] associated to the given [`Memory`].
@@ -532,6 +599,14 @@ impl<T> Store<T> {
     /// Allocates a new [`DataSegmentEntity`] and returns a [`DataSegment`] reference to it.
     pub(super) fn alloc_data_segment(&mut self, segment: DataSegmentEntity) -> DataSegment {
         self.inner.alloc_data_segment(segment)
+    }
+
+    /// Allocates a new [`ElementSegmentEntity`] and returns a [`ElementSegment`] reference to it.
+    pub(super) fn alloc_element_segment(
+        &mut self,
+        segment: ElementSegmentEntity,
+    ) -> ElementSegment {
+        self.inner.alloc_element_segment(segment)
     }
 
     /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.

@@ -14,7 +14,6 @@ mod utils;
 
 use self::{
     builder::ModuleBuilder,
-    element::ElementSegment,
     export::ExternIdx,
     global::Global,
     import::{ExternTypeIdx, Import},
@@ -34,6 +33,7 @@ pub use self::{
 };
 pub(crate) use self::{
     data::{DataSegment, DataSegmentKind},
+    element::{ElementSegment, ElementSegmentKind},
     init_expr::InitExpr,
 };
 use crate::{

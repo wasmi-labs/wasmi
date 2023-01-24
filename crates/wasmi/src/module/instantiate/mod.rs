@@ -325,9 +325,8 @@ impl Module {
                         })?;
                     // Finally do the actual initialization of the table elements.
                     for (i, func_index) in items.iter().enumerate() {
-                        let func_index = func_index.into_u32();
-                        let func = builder.get_func(func_index);
-                        table.set(&mut *context, offset + i as u32, Some(func))?;
+                        let func = func_index.map(|index| builder.get_func(index.into_u32()));
+                        table.set(&mut *context, offset + i as u32, func)?;
                     }
                 }
             }
