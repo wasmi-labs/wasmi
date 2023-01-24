@@ -50,13 +50,13 @@ impl Display for MemoryError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::OutOfBoundsAllocation => {
-                write!(f, "out of bounds linear memory allocation")
+                write!(f, "out of bounds memory allocation")
             }
             Self::OutOfBoundsGrowth => {
-                write!(f, "out fo bounds linear memory growth")
+                write!(f, "out fo bounds memory growth")
             }
             Self::OutOfBoundsAccess => {
-                write!(f, "out of bounds linear memory access")
+                write!(f, "out of bounds memory access")
             }
             Self::InvalidMemoryType => {
                 write!(f, "tried to create an invalid virtual memory type")
