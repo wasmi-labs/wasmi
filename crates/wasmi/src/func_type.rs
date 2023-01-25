@@ -1,7 +1,6 @@
-use crate::{core::ValueType, func::FuncError};
+use crate::{core::ValueType, func::FuncError, Value};
 use alloc::{sync::Arc, vec::Vec};
 use core::fmt::{self, Display};
-use wasmi_core::Value;
 
 /// A function type representing a function's parameter and result types.
 ///

@@ -43,9 +43,10 @@ use crate::{
     Engine,
     FuncType,
     Mutability,
+    Value,
 };
 use alloc::vec::Vec;
-use wasmi_core::{Value, ValueType, F32, F64};
+use wasmi_core::{ValueType, F32, F64};
 
 /// The used function validator type.
 type FuncValidator = wasmparser::FuncValidator<wasmparser::ValidatorResources>;

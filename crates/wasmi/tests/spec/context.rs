@@ -16,8 +16,9 @@ use wasmi::{
     Store,
     Table,
     TableType,
+    Value,
 };
-use wasmi_core::{Value, F32, F64};
+use wasmi_core::{F32, F64};
 use wast::token::{Id, Span};
 
 /// The context of a single Wasm test spec suite run.

@@ -1,4 +1,4 @@
-use crate::core::Value;
+use crate::{value::WithType, Value};
 use core::{iter, slice};
 use wasmi_core::UntypedValue;
 

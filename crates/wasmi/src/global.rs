@@ -1,5 +1,5 @@
 use super::{AsContext, AsContextMut, Stored};
-use crate::core::{Value, ValueType};
+use crate::{core::ValueType, value::WithType, Value};
 use core::{fmt, fmt::Display, ptr::NonNull};
 use wasmi_arena::ArenaIndex;
 use wasmi_core::UntypedValue;

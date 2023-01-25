@@ -9,16 +9,7 @@ use self::bench::{
 };
 use criterion::{criterion_group, criterion_main, Bencher, Criterion};
 use std::{slice, time::Duration};
-use wasmi::{
-    core::{TrapCode, Value},
-    Engine,
-    Extern,
-    Func,
-    Linker,
-    Memory,
-    Module,
-    Store,
-};
+use wasmi::{core::TrapCode, Engine, Extern, Func, Linker, Memory, Module, Store, Value};
 use wasmi_core::{Pages, ValueType, F32, F64};
 
 criterion_group!(
