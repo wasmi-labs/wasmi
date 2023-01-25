@@ -244,7 +244,7 @@ impl StoreInner {
     /// - This will create an uninitialized dummy [`InstanceEntity`] as a place holder
     ///   for the returned [`Instance`]. Using this uninitialized [`Instance`] will result
     ///   in a runtime panic.
-    /// - The returned [`Instance`] must later be initialized via the [`Store::initialize_instance`]
+    /// - The returned [`Instance`] must later be initialized via the [`StoreInner::initialize_instance`]
     ///   method. Afterwards the [`Instance`] may be used.
     pub fn alloc_instance(&mut self) -> Instance {
         let instance = self.instances.alloc(InstanceEntity::uninitialized());
@@ -574,43 +574,6 @@ impl<T> Store<T> {
         self.data
     }
 
-    /// Allocates a new [`FuncType`] and returns a [`DedupFuncType`] reference to it.
-    ///
-    /// # Note
-    ///
-    /// This deduplicates [`FuncType`] instances that compare as equal.
-    pub(super) fn alloc_func_type(&mut self, func_type: FuncType) -> DedupFuncType {
-        self.inner.alloc_func_type(func_type)
-    }
-
-    /// Allocates a new [`GlobalEntity`] and returns a [`Global`] reference to it.
-    pub(super) fn alloc_global(&mut self, global: GlobalEntity) -> Global {
-        self.inner.alloc_global(global)
-    }
-
-    /// Allocates a new [`TableEntity`] and returns a [`Table`] reference to it.
-    pub(super) fn alloc_table(&mut self, table: TableEntity) -> Table {
-        self.inner.alloc_table(table)
-    }
-
-    /// Allocates a new [`MemoryEntity`] and returns a [`Memory`] reference to it.
-    pub(super) fn alloc_memory(&mut self, memory: MemoryEntity) -> Memory {
-        self.inner.alloc_memory(memory)
-    }
-
-    /// Allocates a new [`DataSegmentEntity`] and returns a [`DataSegment`] reference to it.
-    pub(super) fn alloc_data_segment(&mut self, segment: DataSegmentEntity) -> DataSegment {
-        self.inner.alloc_data_segment(segment)
-    }
-
-    /// Allocates a new [`ElementSegmentEntity`] and returns a [`ElementSegment`] reference to it.
-    pub(super) fn alloc_element_segment(
-        &mut self,
-        segment: ElementSegmentEntity,
-    ) -> ElementSegment {
-        self.inner.alloc_element_segment(segment)
-    }
-
     /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.
     pub(super) fn alloc_func(&mut self, func: FuncEntity<T>) -> Func {
         let func_type = func.ty_dedup();
@@ -618,119 +581,6 @@ impl<T> Store<T> {
         let func = Func::from_inner(self.inner.wrap_stored(idx));
         self.inner.register_func_type(func, func_type);
         func
-    }
-
-    /// Allocates a new uninitialized [`InstanceEntity`] and returns an [`Instance`] reference to it.
-    ///
-    /// # Note
-    ///
-    /// - This will create an uninitialized dummy [`InstanceEntity`] as a place holder
-    ///   for the returned [`Instance`]. Using this uninitialized [`Instance`] will result
-    ///   in a runtime panic.
-    /// - The returned [`Instance`] must later be initialized via the [`Store::initialize_instance`]
-    ///   method. Afterwards the [`Instance`] may be used.
-    pub(super) fn alloc_instance(&mut self) -> Instance {
-        self.inner.alloc_instance()
-    }
-
-    /// Initializes the [`Instance`] using the given [`InstanceEntity`].
-    ///
-    /// # Note
-    ///
-    /// After this operation the [`Instance`] is initialized and can be used.
-    ///
-    /// # Panics
-    ///
-    /// - If the [`Instance`] does not belong to the [`Store`].
-    /// - If the [`Instance`] is unknown to the [`Store`].
-    /// - If the [`Instance`] has already been initialized.
-    /// - If the given [`InstanceEntity`] is itself not initialized, yet.
-    pub(super) fn initialize_instance(&mut self, instance: Instance, init: InstanceEntity) {
-        self.inner.initialize_instance(instance, init)
-    }
-
-    /// Returns the [`FuncType`] associated to the given [`DedupFuncType`].
-    ///
-    /// # Panics
-    ///
-    /// - If the [`DedupFuncType`] does not originate from this [`Store`].
-    /// - If the [`DedupFuncType`] cannot be resolved to its entity.
-    pub(super) fn resolve_func_type(&self, func_type: DedupFuncType) -> FuncType {
-        self.inner.resolve_func_type(func_type)
-    }
-
-    /// Calls `f` on the [`FuncType`] associated to the given [`DedupFuncType`] and returns the result.
-    ///
-    /// # Panics
-    ///
-    /// - If the [`DedupFuncType`] does not originate from this [`Store`].
-    /// - If the [`DedupFuncType`] cannot be resolved to its entity.
-    pub(super) fn resolve_func_type_with<R>(
-        &self,
-        func_type: DedupFuncType,
-        f: impl FnOnce(&FuncType) -> R,
-    ) -> R {
-        self.inner.resolve_func_type_with(func_type, f)
-    }
-
-    /// Returns a shared reference to the [`GlobalEntity`] associated to the given [`Global`].
-    ///
-    /// # Panics
-    ///
-    /// - If the [`Global`] does not originate from this [`Store`].
-    /// - If the [`Global`] cannot be resolved to its entity.
-    pub(super) fn resolve_global(&self, global: Global) -> &GlobalEntity {
-        self.inner.resolve_global(global)
-    }
-
-    /// Returns an exclusive reference to the [`GlobalEntity`] associated to the given [`Global`].
-    ///
-    /// # Panics
-    ///
-    /// - If the [`Global`] does not originate from this [`Store`].
-    /// - If the [`Global`] cannot be resolved to its entity.
-    pub(super) fn resolve_global_mut(&mut self, global: Global) -> &mut GlobalEntity {
-        self.inner.resolve_global_mut(global)
-    }
-
-    /// Returns a shared reference to the [`TableEntity`] associated to the given [`Table`].
-    ///
-    /// # Panics
-    ///
-    /// - If the [`Table`] does not originate from this [`Store`].
-    /// - If the [`Table`] cannot be resolved to its entity.
-    pub(super) fn resolve_table(&self, table: Table) -> &TableEntity {
-        self.inner.resolve_table(table)
-    }
-
-    /// Returns an exclusive reference to the [`TableEntity`] associated to the given [`Table`].
-    ///
-    /// # Panics
-    ///
-    /// - If the [`Table`] does not originate from this [`Store`].
-    /// - If the [`Table`] cannot be resolved to its entity.
-    pub(super) fn resolve_table_mut(&mut self, table: &Table) -> &mut TableEntity {
-        self.inner.resolve_table_mut(table)
-    }
-
-    /// Returns a shared reference to the [`MemoryEntity`] associated to the given [`Memory`].
-    ///
-    /// # Panics
-    ///
-    /// - If the [`Memory`] does not originate from this [`Store`].
-    /// - If the [`Memory`] cannot be resolved to its entity.
-    pub(super) fn resolve_memory(&self, memory: Memory) -> &MemoryEntity {
-        self.inner.resolve_memory(memory)
-    }
-
-    /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
-    ///
-    /// # Panics
-    ///
-    /// - If the [`Memory`] does not originate from this [`Store`].
-    /// - If the [`Memory`] cannot be resolved to its entity.
-    pub(super) fn resolve_memory_mut(&mut self, memory: Memory) -> &mut MemoryEntity {
-        self.inner.resolve_memory_mut(memory)
     }
 
     /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`]
@@ -763,16 +613,6 @@ impl<T> Store<T> {
         self.funcs.get(entity_index).unwrap_or_else(|| {
             panic!("failed to resolve stored Wasm or host function: {entity_index:?}")
         })
-    }
-
-    /// Returns a shared reference to the associated entity of the [`Instance`].
-    ///
-    /// # Panics
-    ///
-    /// - If the [`Instance`] does not originate from this [`Store`].
-    /// - If the [`Instance`] cannot be resolved to its entity.
-    pub(super) fn resolve_instance(&self, instance: Instance) -> &InstanceEntity {
-        self.inner.resolve_instance(instance)
     }
 }
 
