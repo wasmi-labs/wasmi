@@ -217,7 +217,7 @@ impl StoreInner {
     /// - This will create an uninitialized dummy [`InstanceEntity`] as a place holder
     ///   for the returned [`Instance`]. Using this uninitialized [`Instance`] will result
     ///   in a runtime panic.
-    /// - The returned [`Instance`] must later be initialized via the [`Store::initialize_instance`]
+    /// - The returned [`Instance`] must later be initialized via the [`StoreInner::initialize_instance`]
     ///   method. Afterwards the [`Instance`] may be used.
     pub fn alloc_instance(&mut self) -> Instance {
         let instance = self.instances.alloc(InstanceEntity::uninitialized());
