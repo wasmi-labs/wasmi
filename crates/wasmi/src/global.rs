@@ -226,8 +226,8 @@ impl Global {
     }
 
     /// Returns the underlying stored representation.
-    pub(super) fn into_inner(self) -> Stored<GlobalIdx> {
-        self.0
+    pub(super) fn as_inner(&self) -> &Stored<GlobalIdx> {
+        &self.0
     }
 
     /// Creates a new global variable to the store.
@@ -240,7 +240,7 @@ impl Global {
 
     /// Returns the [`GlobalType`] of the global variable.
     pub fn ty(&self, ctx: impl AsContext) -> GlobalType {
-        ctx.as_context().store.inner.resolve_global(*self).ty()
+        ctx.as_context().store.inner.resolve_global(self).ty()
     }
 
     /// Sets a new value to the global variable.
@@ -257,7 +257,7 @@ impl Global {
         ctx.as_context_mut()
             .store
             .inner
-            .resolve_global_mut(*self)
+            .resolve_global_mut(self)
             .set(new_value)
     }
 
@@ -267,6 +267,6 @@ impl Global {
     ///
     /// Panics if `ctx` does not own this [`Global`].
     pub fn get(&self, ctx: impl AsContext) -> Value {
-        ctx.as_context().store.inner.resolve_global(*self).get()
+        ctx.as_context().store.inner.resolve_global(self).get()
     }
 }

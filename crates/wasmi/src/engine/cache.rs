@@ -26,10 +26,10 @@ pub struct InstanceCache {
     default_memory_bytes: Option<CachedMemoryBytes>,
 }
 
-impl From<Instance> for InstanceCache {
-    fn from(instance: Instance) -> Self {
+impl From<&'_ Instance> for InstanceCache {
+    fn from(instance: &Instance) -> Self {
         Self {
-            instance,
+            instance: *instance,
             default_memory: None,
             default_table: None,
             last_func: None,
@@ -41,13 +41,13 @@ impl From<Instance> for InstanceCache {
 
 impl InstanceCache {
     /// Resolves the instances.
-    fn instance(&self) -> Instance {
-        self.instance
+    fn instance(&self) -> &Instance {
+        &self.instance
     }
 
     /// Updates the cached [`Instance`].
-    fn set_instance(&mut self, instance: Instance) {
-        self.instance = instance;
+    fn set_instance(&mut self, instance: &Instance) {
+        self.instance = *instance;
         self.default_memory = None;
         self.default_table = None;
         self.last_func = None;
@@ -56,7 +56,7 @@ impl InstanceCache {
     }
 
     /// Updates the currently used instance resetting all cached entities.
-    pub fn update_instance(&mut self, instance: Instance) {
+    pub fn update_instance(&mut self, instance: &Instance) {
         if instance == self.instance() {
             return;
         }
@@ -127,7 +127,7 @@ impl InstanceCache {
     /// Returns an exclusive reference to the cached default memory.
     fn load_default_memory_bytes(&mut self, ctx: &mut StoreInner) -> &mut CachedMemoryBytes {
         let memory = self.default_memory(ctx);
-        self.default_memory_bytes = Some(CachedMemoryBytes::new(ctx, memory));
+        self.default_memory_bytes = Some(CachedMemoryBytes::new(ctx, &memory));
         self.default_memory_bytes
             .as_mut()
             .expect("cached_memory was just set to Some")
@@ -202,6 +202,7 @@ impl InstanceCache {
         let global = ctx
             .resolve_instance(self.instance())
             .get_global(index)
+            .as_ref()
             .map(|global| ctx.resolve_global_mut(global).get_untyped_ptr())
             .unwrap_or_else(|| {
                 panic!(
@@ -242,7 +243,7 @@ pub struct CachedMemoryBytes {
 impl CachedMemoryBytes {
     /// Creates a new [`CachedMemoryBytes`] from the given [`Memory`].
     #[inline]
-    pub fn new(ctx: &mut StoreInner, memory: Memory) -> Self {
+    pub fn new(ctx: &mut StoreInner, memory: &Memory) -> Self {
         Self {
             data: ctx.resolve_memory_mut(memory).data().into(),
         }

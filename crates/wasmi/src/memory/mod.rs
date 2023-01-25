@@ -260,8 +260,8 @@ impl Memory {
     }
 
     /// Returns the underlying stored representation.
-    pub(super) fn into_inner(self) -> Stored<MemoryIdx> {
-        self.0
+    pub(super) fn as_inner(&self) -> &Stored<MemoryIdx> {
+        &self.0
     }
 
     /// Creates a new linear memory to the store.
@@ -281,7 +281,7 @@ impl Memory {
     ///
     /// Panics if `ctx` does not own this [`Memory`].
     pub fn ty(&self, ctx: impl AsContext) -> MemoryType {
-        ctx.as_context().store.inner.resolve_memory(*self).ty()
+        ctx.as_context().store.inner.resolve_memory(self).ty()
     }
 
     /// Returns the amount of pages in use by the linear memory.
@@ -293,7 +293,7 @@ impl Memory {
         ctx.as_context()
             .store
             .inner
-            .resolve_memory(*self)
+            .resolve_memory(self)
             .current_pages()
     }
 
@@ -317,7 +317,7 @@ impl Memory {
         ctx.as_context_mut()
             .store
             .inner
-            .resolve_memory_mut(*self)
+            .resolve_memory_mut(self)
             .grow(additional)
     }
 
@@ -327,7 +327,7 @@ impl Memory {
     ///
     /// Panics if `ctx` does not own this [`Memory`].
     pub fn data<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a [u8] {
-        ctx.into().store.inner.resolve_memory(*self).data()
+        ctx.into().store.inner.resolve_memory(self).data()
     }
 
     /// Returns an exclusive slice to the bytes underlying the [`Memory`].
@@ -336,7 +336,7 @@ impl Memory {
     ///
     /// Panics if `ctx` does not own this [`Memory`].
     pub fn data_mut<'a, T: 'a>(&self, ctx: impl Into<StoreContextMut<'a, T>>) -> &'a mut [u8] {
-        ctx.into().store.inner.resolve_memory_mut(*self).data_mut()
+        ctx.into().store.inner.resolve_memory_mut(self).data_mut()
     }
 
     /// Returns an exclusive slice to the bytes underlying the [`Memory`], and an exclusive
@@ -349,7 +349,7 @@ impl Memory {
         &self,
         ctx: impl Into<StoreContextMut<'a, T>>,
     ) -> (&'a mut [u8], &'a mut T) {
-        let (memory, store) = ctx.into().store.resolve_memory_and_state_mut(*self);
+        let (memory, store) = ctx.into().store.resolve_memory_and_state_mut(self);
         (memory.data_mut(), store)
     }
 
@@ -372,7 +372,7 @@ impl Memory {
         ctx.as_context()
             .store
             .inner
-            .resolve_memory(*self)
+            .resolve_memory(self)
             .read(offset, buffer)
     }
 
@@ -395,7 +395,7 @@ impl Memory {
         ctx.as_context_mut()
             .store
             .inner
-            .resolve_memory_mut(*self)
+            .resolve_memory_mut(self)
             .write(offset, buffer)
     }
 }
