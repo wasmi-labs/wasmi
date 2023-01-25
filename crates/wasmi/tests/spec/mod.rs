@@ -121,11 +121,11 @@ define_spec_tests! {
     fn wasm_i64("i64");
     fn wasm_if("if");
     fn wasm_imports("imports");
-    fn wasm_inline("inline-module");
+    fn wasm_inline_module("inline-module");
     fn wasm_int_exprs("int_exprs");
     fn wasm_int_literals("int_literals");
     fn wasm_labels("labels");
-    fn wasm_left("left-to-right");
+    fn wasm_left_to_right("left-to-right");
     fn wasm_linking("linking");
     fn wasm_load("load");
     fn wasm_local_get("local_get");
@@ -147,7 +147,7 @@ define_spec_tests! {
     fn wasm_ref_null("ref_null");
     fn wasm_return("return");
     fn wasm_select("select");
-    fn wasm_skip("skip-stack-guard-page");
+    fn wasm_skip_stack_guard_page("skip-stack-guard-page");
     fn wasm_stack("stack");
     fn wasm_start("start");
     fn wasm_store("store");
