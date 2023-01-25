@@ -22,8 +22,8 @@ use crate::{
     InstanceEntityBuilder,
     Memory,
     Table,
+    Value,
 };
-use wasmi_core::Value;
 
 impl Module {
     /// Instantiates a new [`Instance`] from the given compiled [`Module`].

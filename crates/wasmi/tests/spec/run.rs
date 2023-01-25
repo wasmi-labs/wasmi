@@ -1,7 +1,7 @@
 use super::{error::TestError, TestContext, TestDescriptor};
 use anyhow::Result;
-use wasmi::Config;
-use wasmi_core::{Value, F32, F64};
+use wasmi::{Config, Value};
+use wasmi_core::{F32, F64};
 use wast::{
     core::{NanPattern, WastRetCore},
     lexer::Lexer,

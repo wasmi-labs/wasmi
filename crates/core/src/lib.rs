@@ -41,5 +41,5 @@ pub use self::{
     trap::{Trap, TrapCode},
     units::Pages,
     untyped::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedError, UntypedValue},
-    value::{TryFromValueError, Value, ValueType},
+    value::ValueType,
 };

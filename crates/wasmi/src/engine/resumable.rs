@@ -1,7 +1,15 @@
 use super::Func;
-use crate::{engine::Stack, func::CallResultsTuple, AsContextMut, Engine, Error, WasmResults};
+use crate::{
+    engine::Stack,
+    func::CallResultsTuple,
+    AsContextMut,
+    Engine,
+    Error,
+    Value,
+    WasmResults,
+};
 use core::{fmt, marker::PhantomData, mem::replace, ops::Deref};
-use wasmi_core::{Trap, Value};
+use wasmi_core::Trap;
 
 /// Returned by [`Engine`] methods for calling a function in a resumable way.
 ///

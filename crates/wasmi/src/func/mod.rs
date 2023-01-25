@@ -18,12 +18,7 @@ use super::{
     StoreContext,
     Stored,
 };
-use crate::{
-    core::{Trap, Value},
-    engine::ResumableCall,
-    Error,
-    FuncType,
-};
+use crate::{core::Trap, engine::ResumableCall, Error, FuncType, Value};
 use alloc::sync::Arc;
 use core::{fmt, fmt::Debug};
 use wasmi_arena::ArenaIndex;

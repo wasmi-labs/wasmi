@@ -100,6 +100,7 @@ mod memory;
 mod module;
 mod store;
 mod table;
+mod value;
 
 /// Definitions from the `wasmi_core` crate.
 #[doc(inline)]
@@ -165,4 +166,5 @@ pub use self::{
     },
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
+    value::Value,
 };
