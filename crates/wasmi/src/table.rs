@@ -442,6 +442,17 @@ impl Table {
             .set(index, value)
     }
 
+    /// Returns `true` if `lhs` and `rhs` [`Table`] refer to the same entity.
+    ///
+    /// # Note
+    ///
+    /// We do not implement `Eq` and `PartialEq` and
+    /// intentionally keep this API hidden from users.
+    #[inline]
+    pub(crate) fn eq(lhs: &Self, rhs: &Self) -> bool {
+        lhs.as_inner() == rhs.as_inner()
+    }
+
     /// Copy `len` elements from `src_table[src_index..]` into
     /// `dst_table[dst_index..]`.
     ///
@@ -461,9 +472,7 @@ impl Table {
         src_index: u32,
         len: u32,
     ) -> Result<(), TrapCode> {
-        let dst_id = dst_table.as_inner();
-        let src_id = src_table.as_inner();
-        if dst_id == src_id {
+        if Self::eq(dst_table, src_table) {
             // The `dst_table` and `src_table` are the same table
             // therefore we have to copy within the same table.
             let table = store

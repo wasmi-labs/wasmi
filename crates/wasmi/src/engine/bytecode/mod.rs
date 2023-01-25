@@ -17,6 +17,7 @@ pub use self::utils::{
     LocalDepth,
     Offset,
     SignatureIdx,
+    TableIdx,
 };
 use core::fmt::Debug;
 use wasmi_core::UntypedValue;
@@ -31,13 +32,21 @@ use wasmi_core::UntypedValue;
 /// each representing either the `BrTable` head or one of its branching targets.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Instruction {
-    LocalGet { local_depth: LocalDepth },
-    LocalSet { local_depth: LocalDepth },
-    LocalTee { local_depth: LocalDepth },
+    LocalGet {
+        local_depth: LocalDepth,
+    },
+    LocalSet {
+        local_depth: LocalDepth,
+    },
+    LocalTee {
+        local_depth: LocalDepth,
+    },
     Br(BranchParams),
     BrIfEqz(BranchParams),
     BrIfNez(BranchParams),
-    BrTable { len_targets: usize },
+    BrTable {
+        len_targets: usize,
+    },
     Unreachable,
     Return(DropKeep),
     ReturnIfNez(DropKeep),
@@ -76,8 +85,14 @@ pub enum Instruction {
     MemoryCopy,
     MemoryInit(DataSegmentIdx),
     DataDrop(DataSegmentIdx),
-    TableCopy,
-    TableInit(ElementSegmentIdx),
+    TableCopy {
+        dst: TableIdx,
+        src: TableIdx,
+    },
+    TableInit {
+        table: TableIdx,
+        elem: ElementSegmentIdx,
+    },
     ElemDrop(ElementSegmentIdx),
     Const(UntypedValue),
     I32Eqz,

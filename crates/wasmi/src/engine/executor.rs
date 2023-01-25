@@ -10,6 +10,7 @@ use super::{
         LocalDepth,
         Offset,
         SignatureIdx,
+        TableIdx,
     },
     cache::InstanceCache,
     code_map::InstructionPtr,
@@ -19,7 +20,7 @@ use super::{
     FuncFrame,
     ValueStack,
 };
-use crate::{core::TrapCode, Func, StoreInner};
+use crate::{core::TrapCode, table::TableEntity, Func, StoreInner};
 use core::cmp::{self};
 use wasmi_core::{Pages, UntypedValue};
 
@@ -148,8 +149,8 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 Instr::MemoryCopy => self.visit_memory_copy()?,
                 Instr::MemoryInit(segment) => self.visit_memory_init(segment)?,
                 Instr::DataDrop(segment) => self.visit_data_drop(segment),
-                Instr::TableCopy => self.visit_table_copy()?,
-                Instr::TableInit(segment) => self.visit_table_init(segment)?,
+                Instr::TableCopy { dst, src } => self.visit_table_copy(dst, src)?,
+                Instr::TableInit { table, elem } => self.visit_table_init(table, elem)?,
                 Instr::ElemDrop(segment) => self.visit_element_drop(segment),
                 Instr::Const(bytes) => self.visit_const(bytes),
                 Instr::I32Eqz => self.visit_i32_eqz(),
@@ -314,7 +315,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// If there exists is no table for the instance.
     #[inline]
     fn default_table(&mut self) -> Table {
-        self.cache.default_table(self.ctx)
+        self.cache.get_table(self.ctx, TableIdx::default())
     }
 
     /// Returns the global variable at the given index.
@@ -678,22 +679,35 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.next_instr();
     }
 
-    fn visit_table_copy(&mut self) -> Result<(), TrapCode> {
+    fn visit_table_copy(&mut self, dst: TableIdx, src: TableIdx) -> Result<(), TrapCode> {
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
         let (d, s, n) = self.value_stack.pop3();
         let len = u32::from(n);
         let src_index = u32::from(s);
         let dst_index = u32::from(d);
-        let table = self
-            .ctx
-            .resolve_table_mut(&self.cache.default_table(self.ctx));
-        // Now copy table elements within.
-        table.copy_within(dst_index, src_index, len)?;
+        // Query both tables and check if they are the same:
+        let dst = self.cache.get_table(self.ctx, dst);
+        let src = self.cache.get_table(self.ctx, src);
+        if Table::eq(&dst, &src) {
+            // Copy within the same table:
+            let table = self
+                .ctx
+                .resolve_table_mut(&self.cache.get_table(self.ctx, TableIdx::default()));
+            table.copy_within(dst_index, src_index, len)?;
+        } else {
+            // Copy from one table to another table:
+            let (dst, src) = self.ctx.resolve_table_pair_mut(&dst, &src);
+            TableEntity::copy(dst, dst_index, src, src_index, len)?;
+        }
         self.next_instr();
         Ok(())
     }
 
-    fn visit_table_init(&mut self, segment: ElementSegmentIdx) -> Result<(), TrapCode> {
+    fn visit_table_init(
+        &mut self,
+        table: TableIdx,
+        elem: ElementSegmentIdx,
+    ) -> Result<(), TrapCode> {
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
         let (d, s, n) = self.value_stack.pop3();
         let len = u32::from(n);
@@ -701,7 +715,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let dst_index = u32::from(d);
         let (instance, table, element) = self
             .cache
-            .get_default_table_and_element_segment(self.ctx, segment);
+            .get_table_and_element_segment(self.ctx, table, elem);
         table.init(instance, dst_index, element, src_index, len)?;
         self.next_instr();
         Ok(())

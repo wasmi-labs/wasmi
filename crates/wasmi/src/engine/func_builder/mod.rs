@@ -27,7 +27,7 @@ pub use self::{
 };
 use super::{DropKeep, FuncBody, Instruction};
 use crate::{
-    engine::bytecode::{BranchParams, DataSegmentIdx, ElementSegmentIdx, Offset},
+    engine::bytecode::{BranchParams, DataSegmentIdx, ElementSegmentIdx, Offset, TableIdx},
     module::{
         BlockType,
         FuncIdx,
@@ -37,7 +37,6 @@ use crate::{
         MemoryIdx,
         ModuleResources,
         ReusableAllocations,
-        TableIdx,
         DEFAULT_MEMORY_INDEX,
     },
     Engine,
@@ -724,8 +723,8 @@ impl<'parser> FuncBuilder<'parser> {
             /// The default Wasm MVP table index.
             const DEFAULT_TABLE_INDEX: u32 = 0;
             let func_type_idx = FuncTypeIdx(index);
-            let table_idx = TableIdx(table_index);
-            assert_eq!(table_idx.into_u32(), DEFAULT_TABLE_INDEX);
+            let table_idx = TableIdx::from(table_index);
+            assert_eq!(table_idx.into_inner(), DEFAULT_TABLE_INDEX);
             builder.stack_height.pop1();
             let func_type = builder.func_type_at(func_type_idx);
             builder.adjust_value_stack_for_call(&func_type);
@@ -1210,16 +1209,17 @@ impl<'parser> FuncBuilder<'parser> {
 
     pub fn translate_table_copy(
         &mut self,
-        _dst_table: u32,
-        _src_table: u32,
+        dst_table: u32,
+        src_table: u32,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            // debug_assert_eq!(dst_table, DEFAULT_TABLE_INDEX);
-            // debug_assert_eq!(src_table, DEFAULT_TABLE_INDEX);
-            // let dst_table = TableIdx(dst_table);
-            // let src_table = TableIdx(src_table);
+            let dst = TableIdx::from(dst_table);
+            let src = TableIdx::from(src_table);
             builder.stack_height.pop3();
-            builder.alloc.inst_builder.push_inst(Instruction::TableCopy);
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::TableCopy { dst, src });
             Ok(())
         })
     }
@@ -1269,14 +1269,13 @@ impl<'parser> FuncBuilder<'parser> {
         table_index: u32,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            debug_assert_eq!(table_index, DEFAULT_MEMORY_INDEX);
             builder.stack_height.pop3();
+            let table = TableIdx::from(table_index);
+            let elem = ElementSegmentIdx::from(segment_index);
             builder
                 .alloc
                 .inst_builder
-                .push_inst(Instruction::TableInit(ElementSegmentIdx::from(
-                    segment_index,
-                )));
+                .push_inst(Instruction::TableInit { table, elem });
             Ok(())
         })
     }
