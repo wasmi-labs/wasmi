@@ -76,6 +76,7 @@ fn make_config() -> Config {
     config.wasm_sign_extension(true);
     config.wasm_multi_value(true);
     config.wasm_bulk_memory(true);
+    config.wasm_reference_types(true);
     config
 }
 
