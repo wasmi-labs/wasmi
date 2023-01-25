@@ -372,7 +372,7 @@ impl<T> Linker<T> {
             ExternType::Func(expected_func_type) => {
                 let func = resolved.and_then(Extern::into_func).ok_or_else(make_err)?;
                 let actual_func_type = func.ty_dedup(&context);
-                let actual_func_type = context.store.resolve_func_type(actual_func_type);
+                let actual_func_type = context.store.inner.resolve_func_type(actual_func_type);
                 if &actual_func_type != expected_func_type {
                     return Err(LinkerError::FuncTypeMismatch {
                         name: import.import_name().clone(),

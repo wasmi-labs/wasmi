@@ -271,7 +271,7 @@ impl Memory {
     /// If more than [`u32::MAX`] much linear memory is allocated.
     pub fn new(mut ctx: impl AsContextMut, ty: MemoryType) -> Result<Self, MemoryError> {
         let entity = MemoryEntity::new(ty)?;
-        let memory = ctx.as_context_mut().store.alloc_memory(entity);
+        let memory = ctx.as_context_mut().store.inner.alloc_memory(entity);
         Ok(memory)
     }
 
@@ -281,7 +281,7 @@ impl Memory {
     ///
     /// Panics if `ctx` does not own this [`Memory`].
     pub fn ty(&self, ctx: impl AsContext) -> MemoryType {
-        ctx.as_context().store.resolve_memory(*self).ty()
+        ctx.as_context().store.inner.resolve_memory(*self).ty()
     }
 
     /// Returns the amount of pages in use by the linear memory.
@@ -290,7 +290,11 @@ impl Memory {
     ///
     /// Panics if `ctx` does not own this [`Memory`].
     pub fn current_pages(&self, ctx: impl AsContext) -> Pages {
-        ctx.as_context().store.resolve_memory(*self).current_pages()
+        ctx.as_context()
+            .store
+            .inner
+            .resolve_memory(*self)
+            .current_pages()
     }
 
     /// Grows the linear memory by the given amount of new pages.
@@ -312,6 +316,7 @@ impl Memory {
     ) -> Result<Pages, MemoryError> {
         ctx.as_context_mut()
             .store
+            .inner
             .resolve_memory_mut(*self)
             .grow(additional)
     }
@@ -322,7 +327,7 @@ impl Memory {
     ///
     /// Panics if `ctx` does not own this [`Memory`].
     pub fn data<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a [u8] {
-        ctx.into().store.resolve_memory(*self).data()
+        ctx.into().store.inner.resolve_memory(*self).data()
     }
 
     /// Returns an exclusive slice to the bytes underlying the [`Memory`].
@@ -331,7 +336,7 @@ impl Memory {
     ///
     /// Panics if `ctx` does not own this [`Memory`].
     pub fn data_mut<'a, T: 'a>(&self, ctx: impl Into<StoreContextMut<'a, T>>) -> &'a mut [u8] {
-        ctx.into().store.resolve_memory_mut(*self).data_mut()
+        ctx.into().store.inner.resolve_memory_mut(*self).data_mut()
     }
 
     /// Returns an exclusive slice to the bytes underlying the [`Memory`], and an exclusive
@@ -366,6 +371,7 @@ impl Memory {
     ) -> Result<(), MemoryError> {
         ctx.as_context()
             .store
+            .inner
             .resolve_memory(*self)
             .read(offset, buffer)
     }
@@ -388,6 +394,7 @@ impl Memory {
     ) -> Result<(), MemoryError> {
         ctx.as_context_mut()
             .store
+            .inner
             .resolve_memory_mut(*self)
             .write(offset, buffer)
     }

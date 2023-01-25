@@ -251,7 +251,10 @@ impl Table {
 
     /// Creates a new table to the store.
     pub fn new(mut ctx: impl AsContextMut, ty: TableType) -> Self {
-        ctx.as_context_mut().store.alloc_table(TableEntity::new(ty))
+        ctx.as_context_mut()
+            .store
+            .inner
+            .alloc_table(TableEntity::new(ty))
     }
 
     /// Returns the type and limits of the table.
@@ -260,7 +263,7 @@ impl Table {
     ///
     /// Panics if `ctx` does not own this [`Table`].
     pub fn ty(&self, ctx: impl AsContext) -> TableType {
-        ctx.as_context().store.resolve_table(*self).ty()
+        ctx.as_context().store.inner.resolve_table(*self).ty()
     }
 
     /// Returns the current size of the [`Table`].
@@ -269,7 +272,7 @@ impl Table {
     ///
     /// If `ctx` does not own this [`Table`].
     pub fn size(&self, ctx: impl AsContext) -> u32 {
-        ctx.as_context().store.resolve_table(*self).size()
+        ctx.as_context().store.inner.resolve_table(*self).size()
     }
 
     /// Grows the table by the given amount of elements.
@@ -288,6 +291,7 @@ impl Table {
     pub fn grow(&self, mut ctx: impl AsContextMut, delta: u32) -> Result<(), TableError> {
         ctx.as_context_mut()
             .store
+            .inner
             .resolve_table_mut(*self)
             .grow(delta)
     }
@@ -302,7 +306,7 @@ impl Table {
     ///
     /// Panics if `ctx` does not own this [`Table`].
     pub fn get(&self, ctx: impl AsContext, index: u32) -> Result<Option<Func>, TableError> {
-        ctx.as_context().store.resolve_table(*self).get(index)
+        ctx.as_context().store.inner.resolve_table(*self).get(index)
     }
 
     /// Writes the `value` provided into `index` within this [`Table`].
@@ -322,6 +326,7 @@ impl Table {
     ) -> Result<(), TableError> {
         ctx.as_context_mut()
             .store
+            .inner
             .resolve_table_mut(*self)
             .set(index, value)
     }

@@ -7,7 +7,19 @@
 //! instances with more than 1 memory (or table) if the Wasm module imported
 //! those entities.
 
-use crate::{Engine, Error, Instance, Linker, Memory, MemoryType, Module, Store, Table, TableType};
+use crate::{
+    instance::InstanceEntity,
+    Engine,
+    Error,
+    Instance,
+    Linker,
+    Memory,
+    MemoryType,
+    Module,
+    Store,
+    Table,
+    TableType,
+};
 
 fn try_instantiate_from_wat(wat: &str) -> Result<(Store<()>, Instance), Error> {
     let wasm = wat::parse_str(wat).unwrap();
@@ -34,9 +46,13 @@ fn instantiate_from_wat(wat: &str) -> (Store<()>, Instance) {
     try_instantiate_from_wat(wat).unwrap()
 }
 
+fn resolve_instance(store: &Store<()>, instance: Instance) -> &InstanceEntity {
+    store.inner.resolve_instance(instance)
+}
+
 fn assert_no_duplicates(store: &Store<()>, instance: Instance) {
-    assert!(store.resolve_instance(instance).get_memory(1).is_none());
-    assert!(store.resolve_instance(instance).get_table(1).is_none());
+    assert!(resolve_instance(store, instance).get_memory(1).is_none());
+    assert!(resolve_instance(store, instance).get_table(1).is_none());
 }
 
 #[test]
@@ -47,8 +63,8 @@ fn test_import_memory_and_table() {
             (import "env" "table" (table 4 funcref))
         )"#;
     let (store, instance) = instantiate_from_wat(wat);
-    assert!(store.resolve_instance(instance).get_memory(0).is_some());
-    assert!(store.resolve_instance(instance).get_table(0).is_some());
+    assert!(resolve_instance(&store, instance).get_memory(0).is_some());
+    assert!(resolve_instance(&store, instance).get_table(0).is_some());
     assert_no_duplicates(&store, instance);
 }
 
@@ -59,8 +75,8 @@ fn test_import_memory() {
             (import "env" "memory" (memory 4))
         )"#;
     let (store, instance) = instantiate_from_wat(wat);
-    assert!(store.resolve_instance(instance).get_memory(0).is_some());
-    assert!(store.resolve_instance(instance).get_table(0).is_none());
+    assert!(resolve_instance(&store, instance).get_memory(0).is_some());
+    assert!(resolve_instance(&store, instance).get_table(0).is_none());
     assert_no_duplicates(&store, instance);
 }
 
@@ -71,8 +87,8 @@ fn test_import_table() {
             (import "env" "table" (table 4 funcref))
         )"#;
     let (store, instance) = instantiate_from_wat(wat);
-    assert!(store.resolve_instance(instance).get_memory(0).is_none());
-    assert!(store.resolve_instance(instance).get_table(0).is_some());
+    assert!(resolve_instance(&store, instance).get_memory(0).is_none());
+    assert!(resolve_instance(&store, instance).get_table(0).is_some());
     assert_no_duplicates(&store, instance);
 }
 
@@ -80,8 +96,8 @@ fn test_import_table() {
 fn test_no_memory_no_table() {
     let wat = "(module)";
     let (store, instance) = instantiate_from_wat(wat);
-    assert!(store.resolve_instance(instance).get_memory(0).is_none());
-    assert!(store.resolve_instance(instance).get_table(0).is_none());
+    assert!(resolve_instance(&store, instance).get_memory(0).is_none());
+    assert!(resolve_instance(&store, instance).get_table(0).is_none());
     assert_no_duplicates(&store, instance);
 }
 
@@ -89,8 +105,8 @@ fn test_no_memory_no_table() {
 fn test_internal_memory() {
     let wat = "(module (memory 1 10) )";
     let (store, instance) = instantiate_from_wat(wat);
-    assert!(store.resolve_instance(instance).get_memory(0).is_some());
-    assert!(store.resolve_instance(instance).get_table(0).is_none());
+    assert!(resolve_instance(&store, instance).get_memory(0).is_some());
+    assert!(resolve_instance(&store, instance).get_table(0).is_none());
     assert_no_duplicates(&store, instance);
 }
 
@@ -98,7 +114,7 @@ fn test_internal_memory() {
 fn test_internal_table() {
     let wat = "(module (table 4 funcref) )";
     let (store, instance) = instantiate_from_wat(wat);
-    assert!(store.resolve_instance(instance).get_memory(0).is_none());
-    assert!(store.resolve_instance(instance).get_table(0).is_some());
+    assert!(resolve_instance(&store, instance).get_memory(0).is_none());
+    assert!(resolve_instance(&store, instance).get_table(0).is_some());
     assert_no_duplicates(&store, instance);
 }
