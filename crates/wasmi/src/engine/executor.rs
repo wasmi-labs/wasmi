@@ -115,7 +115,9 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                     }
                 }
                 Instr::Call(func) => return self.visit_call(func),
-                Instr::CallIndirect(signature) => return self.visit_call_indirect(signature),
+                Instr::CallIndirect { table, func_type } => {
+                    return self.visit_call_indirect(table, func_type)
+                }
                 Instr::Drop => self.visit_drop(),
                 Instr::Select => self.visit_select(),
                 Instr::GlobalGet(global_idx) => self.visit_global_get(global_idx),
@@ -306,16 +308,6 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     #[inline]
     fn default_memory(&mut self) -> Memory {
         self.cache.default_memory(self.ctx)
-    }
-
-    /// Returns the default table.
-    ///
-    /// # Panics
-    ///
-    /// If there exists is no table for the instance.
-    #[inline]
-    fn default_table(&mut self) -> Table {
-        self.cache.get_table(self.ctx, TableIdx::default())
     }
 
     /// Returns the global variable at the given index.
@@ -540,10 +532,11 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
 
     fn visit_call_indirect(
         &mut self,
-        signature_index: SignatureIdx,
+        table: TableIdx,
+        func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
         let func_index: u32 = self.value_stack.pop_as();
-        let table = self.default_table();
+        let table = self.cache.get_table(self.ctx, table);
         let func = self
             .ctx
             .resolve_table(&table)
@@ -554,9 +547,9 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let expected_signature = self
             .ctx
             .resolve_instance(self.frame.instance())
-            .get_signature(signature_index.into_inner())
+            .get_signature(func_type.into_inner())
             .unwrap_or_else(|| {
-                panic!("missing signature for call_indirect at index: {signature_index:?}")
+                panic!("missing signature for call_indirect at index: {func_type:?}")
             });
         if actual_signature != expected_signature {
             return Err(TrapCode::BadSignature).map_err(Into::into);

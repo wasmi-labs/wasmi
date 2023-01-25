@@ -51,7 +51,10 @@ pub enum Instruction {
     Return(DropKeep),
     ReturnIfNez(DropKeep),
     Call(FuncIdx),
-    CallIndirect(SignatureIdx),
+    CallIndirect {
+        table: TableIdx,
+        func_type: SignatureIdx,
+    },
     Drop,
     Select,
     GlobalGet(GlobalIdx),

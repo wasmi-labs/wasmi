@@ -27,7 +27,14 @@ pub use self::{
 };
 use super::{DropKeep, FuncBody, Instruction};
 use crate::{
-    engine::bytecode::{BranchParams, DataSegmentIdx, ElementSegmentIdx, Offset, TableIdx},
+    engine::bytecode::{
+        BranchParams,
+        DataSegmentIdx,
+        ElementSegmentIdx,
+        Offset,
+        SignatureIdx,
+        TableIdx,
+    },
     module::{
         BlockType,
         FuncIdx,
@@ -137,7 +144,8 @@ impl<'parser> FuncBuilder<'parser> {
     }
 
     /// Resolves the [`FuncType`] of the given [`FuncTypeIdx`].
-    fn func_type_at(&self, func_type_index: FuncTypeIdx) -> FuncType {
+    fn func_type_at(&self, func_type_index: SignatureIdx) -> FuncType {
+        let func_type_index = FuncTypeIdx(func_type_index.into_inner()); // TODO: use the same type
         let dedup_func_type = self.res.get_func_type(func_type_index);
         self.res
             .engine()
@@ -715,24 +723,23 @@ impl<'parser> FuncBuilder<'parser> {
     /// Translates a Wasm `call_indirect` instruction.
     pub fn translate_call_indirect(
         &mut self,
-        index: u32,
+        func_type_index: u32,
         table_index: u32,
         _table_byte: u8,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            /// The default Wasm MVP table index.
-            const DEFAULT_TABLE_INDEX: u32 = 0;
-            let func_type_idx = FuncTypeIdx(index);
-            let table_idx = TableIdx::from(table_index);
-            assert_eq!(table_idx.into_inner(), DEFAULT_TABLE_INDEX);
+            let func_type_index = SignatureIdx::from(func_type_index);
+            let table = TableIdx::from(table_index);
             builder.stack_height.pop1();
-            let func_type = builder.func_type_at(func_type_idx);
+            let func_type = builder.func_type_at(func_type_index);
             builder.adjust_value_stack_for_call(&func_type);
-            let func_type_idx = func_type_idx.into_u32().into();
             builder
                 .alloc
                 .inst_builder
-                .push_inst(Instruction::CallIndirect(func_type_idx));
+                .push_inst(Instruction::CallIndirect {
+                    table,
+                    func_type: func_type_index,
+                });
             Ok(())
         })
     }
