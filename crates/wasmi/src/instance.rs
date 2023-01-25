@@ -11,7 +11,9 @@ use super::{
     Table,
 };
 use crate::{
+    element::ElementSegment,
     func::FuncError,
+    memory::DataSegment,
     module::FuncIdx,
     Error,
     ExternType,
@@ -55,6 +57,8 @@ pub struct InstanceEntity {
     memories: Box<[Memory]>,
     globals: Box<[Global]>,
     exports: BTreeMap<Box<str>, Extern>,
+    data_segments: Box<[DataSegment]>,
+    elem_segments: Box<[ElementSegment]>,
 }
 
 impl InstanceEntity {
@@ -68,6 +72,8 @@ impl InstanceEntity {
             memories: [].into(),
             globals: [].into(),
             exports: BTreeMap::new(),
+            data_segments: [].into(),
+            elem_segments: [].into(),
         }
     }
 
@@ -104,6 +110,16 @@ impl InstanceEntity {
     /// Returns the signature at the `index` if any.
     pub(crate) fn get_signature(&self, index: u32) -> Option<DedupFuncType> {
         self.func_types.get(index as usize).copied()
+    }
+
+    /// Returns the [`DataSegment`] at the `index` if any.
+    pub(crate) fn get_data_segment(&self, index: u32) -> Option<DataSegment> {
+        self.data_segments.get(index as usize).copied()
+    }
+
+    /// Returns the [`ElementSegment`] at the `index` if any.
+    pub(crate) fn get_element_segment(&self, index: u32) -> Option<ElementSegment> {
+        self.elem_segments.get(index as usize).copied()
     }
 
     /// Returns the value exported to the given `name` if any.
@@ -232,6 +248,8 @@ pub struct InstanceEntityBuilder {
     globals: Vec<Global>,
     start_fn: Option<FuncIdx>,
     exports: BTreeMap<Box<str>, Extern>,
+    data_segments: Vec<DataSegment>,
+    elem_segments: Vec<ElementSegment>,
 }
 
 impl InstanceEntityBuilder {
@@ -270,6 +288,8 @@ impl InstanceEntityBuilder {
             globals: vec_with_capacity_exact(len_globals),
             start_fn: None,
             exports: BTreeMap::default(),
+            data_segments: Vec::new(),
+            elem_segments: Vec::new(),
         }
     }
 
@@ -383,6 +403,16 @@ impl InstanceEntityBuilder {
         self.exports.insert(name.into(), new_value);
     }
 
+    /// Pushes the [`DataSegment`] to the [`InstanceEntity`] under construction.
+    pub fn push_data_segment(&mut self, segment: DataSegment) {
+        self.data_segments.push(segment);
+    }
+
+    /// Pushes the [`ElementSegment`] to the [`InstanceEntity`] under construction.
+    pub fn push_element_segment(&mut self, segment: ElementSegment) {
+        self.elem_segments.push(segment);
+    }
+
     /// Finishes constructing the [`InstanceEntity`].
     pub fn finish(self) -> InstanceEntity {
         InstanceEntity {
@@ -393,6 +423,8 @@ impl InstanceEntityBuilder {
             memories: self.memories.into(),
             globals: self.globals.into(),
             exports: self.exports,
+            data_segments: self.data_segments.into(),
+            elem_segments: self.elem_segments.into(),
         }
     }
 }

@@ -1,9 +1,11 @@
 #![allow(clippy::len_without_is_empty)]
 
 use super::{AsContext, AsContextMut, Func, Stored};
+use crate::{element::ElementSegmentEntity, instance::InstanceEntity};
 use alloc::vec::Vec;
-use core::{fmt, fmt::Display};
+use core::{cmp::max, fmt, fmt::Display};
 use wasmi_arena::ArenaIndex;
+use wasmi_core::TrapCode;
 
 /// A raw index to a table entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -231,6 +233,115 @@ impl TableEntity {
         *element = value;
         Ok(())
     }
+
+    /// Initialize `len` elements from `src_element[src_index..]` into
+    /// `dst_table[dst_index..]`.
+    ///
+    /// Uses the `instance` to resolve function indices of the element to [`Func`].
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the range is out of bounds of either the source or
+    /// destination tables.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the `instance` cannot resolve all the `element` func indices.
+    pub fn init(
+        &mut self,
+        instance: &InstanceEntity,
+        dst_index: u32,
+        element: &ElementSegmentEntity,
+        src_index: u32,
+        len: u32,
+    ) -> Result<(), TrapCode> {
+        // Turn parameters into proper slice indices.
+        let src_index = src_index as usize;
+        let dst_index = dst_index as usize;
+        let len = len as usize;
+        // Perform bounds check before anything else.
+        let dst_items = self
+            .elements
+            .get_mut(dst_index..)
+            .and_then(|items| items.get_mut(..len))
+            .ok_or(TrapCode::TableOutOfBounds)?;
+        let src_items = element
+            .items()
+            .get(src_index..)
+            .and_then(|items| items.get(..len))
+            .ok_or(TrapCode::TableOutOfBounds)?;
+        // Perform the initialization by copying from `src` to `dst`:
+        for (dst, src) in dst_items.iter_mut().zip(src_items) {
+            *dst = src.map(|src| {
+                let src_index = src.into_u32();
+                instance.get_func(src_index).unwrap_or_else(|| {
+                    panic!("missing function at index {src_index} in instance {instance:?}")
+                })
+            });
+        }
+        Ok(())
+    }
+
+    /// Copy `len` elements from `src_table[src_index..]` into
+    /// `dst_table[dst_index..]`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the range is out of bounds of either the source or
+    /// destination tables.
+    pub fn copy(
+        dst_table: &mut Self,
+        dst_index: u32,
+        src_table: &Self,
+        src_index: u32,
+        len: u32,
+    ) -> Result<(), TrapCode> {
+        // Turn parameters into proper slice indices.
+        let src_index = src_index as usize;
+        let dst_index = dst_index as usize;
+        let len = len as usize;
+        // Perform bounds check before anything else.
+        let dst_items = dst_table
+            .elements
+            .get_mut(dst_index..)
+            .and_then(|items| items.get_mut(..len))
+            .ok_or(TrapCode::TableOutOfBounds)?;
+        let src_items = src_table
+            .elements
+            .get(src_index..)
+            .and_then(|items| items.get(..len))
+            .ok_or(TrapCode::TableOutOfBounds)?;
+        // Finally, copy elements in-place for the table.
+        dst_items.copy_from_slice(src_items);
+        Ok(())
+    }
+
+    /// Copy `len` elements from `self[src_index..]` into `self[dst_index..]`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the range is out of bounds of the table.
+    pub fn copy_within(
+        &mut self,
+        dst_index: u32,
+        src_index: u32,
+        len: u32,
+    ) -> Result<(), TrapCode> {
+        // These accesses just perform the bounds checks required by the Wasm spec.
+        let max_offset = max(dst_index, src_index);
+        max_offset
+            .checked_add(len)
+            .filter(|&offset| offset < self.size())
+            .ok_or(TrapCode::TableOutOfBounds)?;
+        // Turn parameters into proper indices.
+        let src_index = src_index as usize;
+        let dst_index = dst_index as usize;
+        let len = len as usize;
+        // Finally, copy elements in-place for the table.
+        self.elements
+            .copy_within(src_index..src_index.wrapping_add(len), dst_index);
+        Ok(())
+    }
 }
 
 /// A Wasm table reference.
@@ -329,5 +440,47 @@ impl Table {
             .inner
             .resolve_table_mut(self)
             .set(index, value)
+    }
+
+    /// Copy `len` elements from `src_table[src_index..]` into
+    /// `dst_table[dst_index..]`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the range is out of bounds of either the source or
+    /// destination tables.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `store` does not own either `dst_table` or `src_table`.
+    pub fn copy(
+        mut store: impl AsContextMut,
+        dst_table: &Table,
+        dst_index: u32,
+        src_table: &Table,
+        src_index: u32,
+        len: u32,
+    ) -> Result<(), TrapCode> {
+        let dst_id = dst_table.as_inner();
+        let src_id = src_table.as_inner();
+        if dst_id == src_id {
+            // The `dst_table` and `src_table` are the same table
+            // therefore we have to copy within the same table.
+            let table = store
+                .as_context_mut()
+                .store
+                .inner
+                .resolve_table_mut(dst_table);
+            table.copy_within(dst_index, src_index, len)
+        } else {
+            // The `dst_table` and `src_table` are different entities
+            // therefore we have to copy from one table to the other.
+            let (dst_table, src_table) = store
+                .as_context_mut()
+                .store
+                .inner
+                .resolve_table_pair_mut(dst_table, src_table);
+            TableEntity::copy(dst_table, dst_index, src_table, src_index, len)
+        }
     }
 }

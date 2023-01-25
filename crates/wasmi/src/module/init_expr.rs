@@ -1,4 +1,4 @@
-use super::GlobalIdx;
+use super::{FuncIdx, GlobalIdx};
 use crate::errors::ModuleError;
 use wasmi_core::{Value, F32, F64};
 
@@ -20,43 +20,74 @@ pub struct InitExpr {
     op: InitExprOperand,
 }
 
-impl TryFrom<wasmparser::ConstExpr<'_>> for InitExpr {
-    type Error = ModuleError;
-
-    fn try_from(init_expr: wasmparser::ConstExpr<'_>) -> Result<Self, Self::Error> {
-        let mut reader = init_expr.get_operators_reader();
-        let op = reader.read()?.try_into()?;
-        let end_op = reader.read()?;
+impl InitExpr {
+    /// Creates a new [`InitExpr`] from the given Wasm constant expression.
+    pub fn new(expr: wasmparser::ConstExpr<'_>) -> Self {
+        let mut reader = expr.get_operators_reader();
+        let wasm_op = reader.read().unwrap_or_else(|error| {
+            panic!("expected valid Wasm const expression operand: {error}")
+        });
+        let op = InitExprOperand::new(wasm_op);
+        let end_op = reader.read();
         assert!(
-            matches!(end_op, wasmparser::Operator::End),
+            matches!(end_op, Ok(wasmparser::Operator::End)),
             "expected the Wasm end operator but found {end_op:?}",
         );
         assert!(
             reader.ensure_end().is_ok(),
             "expected no more Wasm operands"
         );
-        Ok(InitExpr { op })
-    }
-}
-
-impl InitExpr {
-    /// Returns a slice over the operators of the [`InitExpr`].
-    pub fn operators(&self) -> &[InitExprOperand] {
-        core::slice::from_ref(&self.op)
+        Self { op }
     }
 
-    /// Evaluates the given constant [`InitExpr`] if possible.
+    /// Convert the [`InitExpr`] into the underlying Wasm `elemexpr` if possible.
     ///
-    /// Returns `None` if it is not possible to constant evaluate `expr`.
-    pub fn eval_const(&self) -> Option<Value> {
+    /// Returns `None` if the function reference is `null`.
+    ///
+    /// # Panics
+    ///
+    /// If a non Wasm `elemexpr` operand is encountered.
+    pub fn to_elemexpr(&self) -> Option<FuncIdx> {
+        match self.op {
+            InitExprOperand::RefNull => None,
+            InitExprOperand::FuncRef(func_index) => Some(FuncIdx(func_index)),
+            InitExprOperand::Const(_) | InitExprOperand::GlobalGet(_) => {
+                panic!("encountered an unexpected Wasm elemexpr {:?}", self.op)
+            }
+        }
+    }
+
+    /// Return the `Const` [`InitExpr`] if any.
+    ///
+    /// Returns `None` if the underlying operand is not `Const`.
+    ///
+    /// # Panics
+    ///
+    /// If a non-const expression operand is encountered.
+    pub fn to_const(&self) -> Option<Value> {
         match self.op {
             InitExprOperand::Const(value) => Some(value),
-            InitExprOperand::GlobalGet(_) => {
-                // Note: We do not need to handle `global.get` since
-                //       that is only allowed for imported non-mutable
-                //       global variables which have a value that is only
-                //       known post-instantiation time.
-                None
+            // Note: We do not need to handle `global.get` since
+            //       that is only allowed for imported non-mutable
+            //       global variables which have a value that is only
+            //       known post-instantiation time.
+            InitExprOperand::GlobalGet(_)
+            | InitExprOperand::RefNull
+            | InitExprOperand::FuncRef(_) => None,
+        }
+    }
+
+    /// Evaluates the [`InitExpr`] given the context for global variables.
+    ///
+    /// # Panics
+    ///
+    /// If a non-const expression operand is encountered.
+    pub fn to_const_with_context(&self, global_get: impl Fn(u32) -> Value) -> Value {
+        match self.op {
+            InitExprOperand::Const(value) => value,
+            InitExprOperand::GlobalGet(index) => global_get(index.into_u32()),
+            ref error @ (InitExprOperand::FuncRef(_) | InitExprOperand::RefNull) => {
+                panic!("encountered non-const expression operand: {error:?}")
             }
         }
     }
@@ -79,9 +110,35 @@ pub enum InitExprOperand {
     ///
     /// In the Wasm MVP only immutable globals are allowed to be evaluated.
     GlobalGet(GlobalIdx),
+    /// A Wasm `ref.null` value.
+    RefNull,
+    /// A Wasm `ref.func index` value.
+    FuncRef(u32),
 }
 
 impl InitExprOperand {
+    /// Creates a new [`InitExprOperand`] from the given Wasm operator.
+    ///
+    /// # Panics
+    ///
+    /// If the Wasm operator is not a valid [`InitExprOperand`].
+    fn new(operator: wasmparser::Operator<'_>) -> Self {
+        match operator {
+            wasmparser::Operator::I32Const { value } => Self::constant(value),
+            wasmparser::Operator::I64Const { value } => Self::constant(value),
+            wasmparser::Operator::F32Const { value } => Self::constant(F32::from(value.bits())),
+            wasmparser::Operator::F64Const { value } => Self::constant(F64::from(value.bits())),
+            wasmparser::Operator::GlobalGet { global_index } => {
+                Self::GlobalGet(GlobalIdx(global_index))
+            }
+            wasmparser::Operator::RefNull { .. } => Self::RefNull,
+            wasmparser::Operator::RefFunc { function_index } => Self::FuncRef(function_index),
+            operator => {
+                panic!("encountered unsupported const expression operator: {operator:?}")
+            }
+        }
+    }
+
     /// Creates a new constant [`InitExprOperand`].
     fn constant<T>(value: T) -> Self
     where
@@ -107,8 +164,12 @@ impl TryFrom<wasmparser::Operator<'_>> for InitExprOperand {
             wasmparser::Operator::GlobalGet { global_index } => {
                 Ok(InitExprOperand::GlobalGet(GlobalIdx(global_index)))
             }
+            wasmparser::Operator::RefNull { .. } => Ok(InitExprOperand::RefNull),
+            wasmparser::Operator::RefFunc { function_index } => {
+                Ok(InitExprOperand::FuncRef(function_index))
+            }
             operator => {
-                panic!("encountered unsupported operator: {operator:?}")
+                panic!("encountered unsupported const expression operator: {operator:?}")
             }
         }
     }

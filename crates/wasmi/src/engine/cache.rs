@@ -1,5 +1,9 @@
 use crate::{
+    element::{ElementSegment, ElementSegmentEntity},
+    instance::InstanceEntity,
+    memory::DataSegment,
     module::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
+    table::TableEntity,
     Func,
     Instance,
     Memory,
@@ -8,6 +12,8 @@ use crate::{
 };
 use core::ptr::NonNull;
 use wasmi_core::UntypedValue;
+
+use super::bytecode::{DataSegmentIdx, ElementSegmentIdx};
 
 /// A cache for frequently used entities of an [`Instance`].
 #[derive(Debug)]
@@ -63,21 +69,89 @@ impl InstanceCache {
         self.set_instance(instance);
     }
 
+    /// Loads the [`DataSegment`] at `index` of the currently used [`Instance`].
+    ///
+    /// # Panics
+    ///
+    /// If there is no [`DataSegment`] for the [`Instance`] at the `index`.
+    #[inline]
+    pub fn get_data_segment(&mut self, ctx: &mut StoreInner, index: u32) -> DataSegment {
+        let instance = self.instance();
+        ctx.resolve_instance(self.instance())
+            .get_data_segment(index)
+            .unwrap_or_else(|| {
+                panic!("missing data segment ({index:?}) for instance: {instance:?}",)
+            })
+    }
+
+    /// Loads the [`ElementSegment`] at `index` of the currently used [`Instance`].
+    ///
+    /// # Panics
+    ///
+    /// If there is no [`ElementSegment`] for the [`Instance`] at the `index`.
+    #[inline]
+    pub fn get_element_segment(
+        &mut self,
+        ctx: &mut StoreInner,
+        index: ElementSegmentIdx,
+    ) -> ElementSegment {
+        let instance = self.instance();
+        ctx.resolve_instance(self.instance())
+            .get_element_segment(index.into_inner())
+            .unwrap_or_else(|| {
+                panic!("missing element segment ({index:?}) for instance: {instance:?}",)
+            })
+    }
+
+    /// Loads the [`DataSegment`] at `index` of the currently used [`Instance`].
+    ///
+    /// # Panics
+    ///
+    /// If there is no [`DataSegment`] for the [`Instance`] at the `index`.
+    #[inline]
+    pub fn get_default_memory_and_data_segment<'a>(
+        &mut self,
+        ctx: &'a mut StoreInner,
+        segment: DataSegmentIdx,
+    ) -> (&'a mut [u8], &'a [u8]) {
+        let mem = self.default_memory(ctx);
+        let seg = self.get_data_segment(ctx, segment.into_inner());
+        let (memory, segment) = ctx.resolve_memory_mut_and_data_segment(&mem, &seg);
+        (memory.data_mut(), segment.bytes())
+    }
+
+    /// Loads the [`ElementSegment`] at `index` of the currently used [`Instance`].
+    ///
+    /// # Panics
+    ///
+    /// If there is no [`ElementSegment`] for the [`Instance`] at the `index`.
+    #[inline]
+    pub fn get_default_table_and_element_segment<'a>(
+        &mut self,
+        ctx: &'a mut StoreInner,
+        segment: ElementSegmentIdx,
+    ) -> (
+        &'a InstanceEntity,
+        &'a mut TableEntity,
+        &'a ElementSegmentEntity,
+    ) {
+        let tab = self.default_table(ctx);
+        let seg = self.get_element_segment(ctx, segment);
+        let inst = self.instance();
+        ctx.resolve_instance_table_element(inst, &tab, &seg)
+    }
+
     /// Loads the default [`Memory`] of the currently used [`Instance`].
     ///
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a default linear memory.
     fn load_default_memory(&mut self, ctx: &StoreInner) -> Memory {
+        let instance = self.instance();
         let default_memory = ctx
-            .resolve_instance(self.instance())
+            .resolve_instance(instance)
             .get_memory(DEFAULT_MEMORY_INDEX)
-            .unwrap_or_else(|| {
-                panic!(
-                    "missing default linear memory for instance: {:?}",
-                    self.instance
-                )
-            });
+            .unwrap_or_else(|| panic!("missing default linear memory for instance: {instance:?}",));
         self.default_memory = Some(default_memory);
         default_memory
     }
@@ -88,10 +162,11 @@ impl InstanceCache {
     ///
     /// If the currently used [`Instance`] does not have a default table.
     fn load_default_table(&mut self, ctx: &StoreInner) -> Table {
+        let instance = self.instance();
         let default_table = ctx
-            .resolve_instance(self.instance())
+            .resolve_instance(instance)
             .get_table(DEFAULT_TABLE_INDEX)
-            .unwrap_or_else(|| panic!("missing default table for instance: {:?}", self.instance));
+            .unwrap_or_else(|| panic!("missing default table for instance: {instance:?}"));
         self.default_table = Some(default_table);
         default_table
     }

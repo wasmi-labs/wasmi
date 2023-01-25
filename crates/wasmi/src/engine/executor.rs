@@ -1,6 +1,16 @@
 use super::{
     super::{Memory, Table},
-    bytecode::{BranchParams, FuncIdx, GlobalIdx, Instruction, LocalDepth, Offset, SignatureIdx},
+    bytecode::{
+        BranchParams,
+        DataSegmentIdx,
+        ElementSegmentIdx,
+        FuncIdx,
+        GlobalIdx,
+        Instruction,
+        LocalDepth,
+        Offset,
+        SignatureIdx,
+    },
     cache::InstanceCache,
     code_map::InstructionPtr,
     stack::ValueStackRef,
@@ -10,7 +20,7 @@ use super::{
     ValueStack,
 };
 use crate::{core::TrapCode, Func, StoreInner};
-use core::cmp;
+use core::cmp::{self};
 use wasmi_core::{Pages, UntypedValue};
 
 /// Executes the given function `frame`.
@@ -132,8 +142,15 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 Instr::I64Store8(offset) => self.visit_i64_store_8(offset)?,
                 Instr::I64Store16(offset) => self.visit_i64_store_16(offset)?,
                 Instr::I64Store32(offset) => self.visit_i64_store_32(offset)?,
-                Instr::MemorySize => self.visit_current_memory(),
-                Instr::MemoryGrow => self.visit_grow_memory(),
+                Instr::MemorySize => self.visit_memory_size(),
+                Instr::MemoryGrow => self.visit_memory_grow(),
+                Instr::MemoryFill => self.visit_memory_fill()?,
+                Instr::MemoryCopy => self.visit_memory_copy()?,
+                Instr::MemoryInit(segment) => self.visit_memory_init(segment)?,
+                Instr::DataDrop(segment) => self.visit_data_drop(segment),
+                Instr::TableCopy => self.visit_table_copy()?,
+                Instr::TableInit(segment) => self.visit_table_init(segment)?,
+                Instr::ElemDrop(segment) => self.visit_element_drop(segment),
                 Instr::Const(bytes) => self.visit_const(bytes),
                 Instr::I32Eqz => self.visit_i32_eqz(),
                 Instr::I32Eq => self.visit_i32_eq(),
@@ -568,14 +585,14 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.next_instr()
     }
 
-    fn visit_current_memory(&mut self) {
+    fn visit_memory_size(&mut self) {
         let memory = self.default_memory();
         let result: u32 = self.ctx.resolve_memory(&memory).current_pages().into();
         self.value_stack.push(result);
         self.next_instr()
     }
 
-    fn visit_grow_memory(&mut self) {
+    fn visit_memory_grow(&mut self) {
         /// The WebAssembly spec demands to return `0xFFFF_FFFF`
         /// in case of failure for the `memory.grow` instruction.
         const ERR_VALUE: u32 = u32::MAX;
@@ -593,6 +610,107 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.cache.reset_default_memory_bytes();
         self.value_stack.push(result);
         self.next_instr()
+    }
+
+    fn visit_memory_fill(&mut self) -> Result<(), TrapCode> {
+        let bytes = self.cache.default_memory_bytes(self.ctx);
+        // The `n`, `val` and `d` variable bindings are extracted from the Wasm specification.
+        let (d, val, n) = self.value_stack.pop3();
+        let n = i32::from(n) as usize;
+        let offset = i32::from(d) as usize;
+        let byte = u8::from(val);
+        let memory = bytes
+            .data_mut()
+            .get_mut(offset..)
+            .and_then(|memory| memory.get_mut(..n))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        memory.fill(byte);
+        self.next_instr();
+        Ok(())
+    }
+
+    fn visit_memory_copy(&mut self) -> Result<(), TrapCode> {
+        // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
+        let (d, s, n) = self.value_stack.pop3();
+        let n = i32::from(n) as usize;
+        let src_offset = i32::from(s) as usize;
+        let dst_offset = i32::from(d) as usize;
+        let data = self.cache.default_memory_bytes(self.ctx).data_mut();
+        // These accesses just perform the bounds checks required by the Wasm spec.
+        data.get(src_offset..)
+            .and_then(|memory| memory.get(..n))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        data.get(dst_offset..)
+            .and_then(|memory| memory.get(..n))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        data.copy_within(src_offset..src_offset.wrapping_add(n), dst_offset);
+        self.next_instr();
+        Ok(())
+    }
+
+    fn visit_memory_init(&mut self, segment: DataSegmentIdx) -> Result<(), TrapCode> {
+        // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
+        let (d, s, n) = self.value_stack.pop3();
+        let n = i32::from(n) as usize;
+        let src_offset = i32::from(s) as usize;
+        let dst_offset = i32::from(d) as usize;
+        let (memory, data) = self
+            .cache
+            .get_default_memory_and_data_segment(self.ctx, segment);
+        let memory = memory
+            .get_mut(dst_offset..)
+            .and_then(|memory| memory.get_mut(..n))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        let data = data
+            .get(src_offset..)
+            .and_then(|data| data.get(..n))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        memory.copy_from_slice(data);
+        self.next_instr();
+        Ok(())
+    }
+
+    fn visit_data_drop(&mut self, segment_index: DataSegmentIdx) {
+        let segment = self
+            .cache
+            .get_data_segment(self.ctx, segment_index.into_inner());
+        self.ctx.resolve_data_segment_mut(&segment).drop_bytes();
+        self.next_instr();
+    }
+
+    fn visit_table_copy(&mut self) -> Result<(), TrapCode> {
+        // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
+        let (d, s, n) = self.value_stack.pop3();
+        let len = u32::from(n);
+        let src_index = u32::from(s);
+        let dst_index = u32::from(d);
+        let table = self
+            .ctx
+            .resolve_table_mut(&self.cache.default_table(self.ctx));
+        // Now copy table elements within.
+        table.copy_within(dst_index, src_index, len)?;
+        self.next_instr();
+        Ok(())
+    }
+
+    fn visit_table_init(&mut self, segment: ElementSegmentIdx) -> Result<(), TrapCode> {
+        // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
+        let (d, s, n) = self.value_stack.pop3();
+        let len = u32::from(n);
+        let src_index = u32::from(s);
+        let dst_index = u32::from(d);
+        let (instance, table, element) = self
+            .cache
+            .get_default_table_and_element_segment(self.ctx, segment);
+        table.init(instance, dst_index, element, src_index, len)?;
+        self.next_instr();
+        Ok(())
+    }
+
+    fn visit_element_drop(&mut self, segment_index: ElementSegmentIdx) {
+        let segment = self.cache.get_element_segment(self.ctx, segment_index);
+        self.ctx.resolve_element_segment_mut(&segment).drop_items();
+        self.next_instr();
     }
 
     fn visit_i32_load(&mut self, offset: Offset) -> Result<(), TrapCode> {

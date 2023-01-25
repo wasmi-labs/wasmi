@@ -21,6 +21,8 @@ pub struct Config {
     saturating_float_to_int: bool,
     /// Is `true` if the [`multi-value`] Wasm proposal is enabled.
     multi_value: bool,
+    /// Is `true` if the [`bulk-memory`] Wasm proposal is enabled.
+    bulk_memory: bool,
 }
 
 impl Default for Config {
@@ -32,6 +34,7 @@ impl Default for Config {
             sign_extension: true,
             saturating_float_to_int: true,
             multi_value: true,
+            bulk_memory: true,
         }
     }
 }
@@ -112,6 +115,18 @@ impl Config {
         self
     }
 
+    /// Enable or disable the [`bulk-memory`] Wasm proposal for the [`Config`].
+    ///
+    /// # Note
+    ///
+    /// Enabled by default.
+    ///
+    /// [`multi-value`]: https://github.com/WebAssembly/bulk-memory-operations
+    pub fn wasm_bulk_memory(&mut self, enable: bool) -> &mut Self {
+        self.bulk_memory = enable;
+        self
+    }
+
     /// Returns the [`WasmFeatures`] represented by the [`Config`].
     pub fn wasm_features(&self) -> WasmFeatures {
         WasmFeatures {
@@ -119,8 +134,8 @@ impl Config {
             mutable_global: self.mutable_global,
             saturating_float_to_int: self.saturating_float_to_int,
             sign_extension: self.sign_extension,
+            bulk_memory: self.bulk_memory,
             reference_types: false,
-            bulk_memory: false,
             component_model: false,
             simd: false,
             relaxed_simd: false,

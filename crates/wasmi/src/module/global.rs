@@ -40,7 +40,7 @@ impl TryFrom<wasmparser::Global<'_>> for Global {
 
     fn try_from(global: wasmparser::Global<'_>) -> Result<Self, Self::Error> {
         let global_type = global.ty.try_into()?;
-        let init_expr = global.init_expr.try_into()?;
+        let init_expr = InitExpr::new(global.init_expr);
         Ok(Global {
             global_type,
             init_expr,

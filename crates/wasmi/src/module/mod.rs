@@ -12,11 +12,8 @@ mod parser;
 mod read;
 mod utils;
 
-pub(crate) use self::init_expr::InitExpr;
 use self::{
     builder::ModuleBuilder,
-    data::DataSegment,
-    element::ElementSegment,
     export::ExternIdx,
     global::Global,
     import::{ExternTypeIdx, Import},
@@ -33,6 +30,11 @@ pub use self::{
     instantiate::{InstancePre, InstantiationError},
     parser::ReusableAllocations,
     read::Read,
+};
+pub(crate) use self::{
+    data::{DataSegment, DataSegmentKind},
+    element::{ElementSegment, ElementSegmentKind},
+    init_expr::InitExpr,
 };
 use crate::{
     engine::{DedupFuncType, FuncBody},

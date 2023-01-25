@@ -1,5 +1,10 @@
 use super::{
     engine::DedupFuncType,
+    DataSegmentEntity,
+    DataSegmentIdx,
+    ElementSegment,
+    ElementSegmentEntity,
+    ElementSegmentIdx,
     Engine,
     Func,
     FuncEntity,
@@ -18,6 +23,7 @@ use super::{
     TableEntity,
     TableIdx,
 };
+use crate::memory::DataSegment;
 use core::{
     fmt::Debug,
     sync::atomic::{AtomicU32, Ordering},
@@ -96,6 +102,10 @@ pub struct StoreInner {
     globals: Arena<GlobalIdx, GlobalEntity>,
     /// Stored module instances.
     instances: Arena<InstanceIdx, InstanceEntity>,
+    /// Stored data segments.
+    datas: Arena<DataSegmentIdx, DataSegmentEntity>,
+    /// Stored data segments.
+    elems: Arena<ElementSegmentIdx, ElementSegmentEntity>,
     /// The [`Engine`] in use by the [`Store`].
     ///
     /// Amongst others the [`Engine`] stores the Wasm function definitions.
@@ -123,6 +133,8 @@ impl StoreInner {
             tables: Arena::new(),
             globals: Arena::new(),
             instances: Arena::new(),
+            datas: Arena::new(),
+            elems: Arena::new(),
         }
     }
 
@@ -208,6 +220,21 @@ impl StoreInner {
     pub fn alloc_memory(&mut self, memory: MemoryEntity) -> Memory {
         let memory = self.memories.alloc(memory);
         Memory::from_inner(self.wrap_stored(memory))
+    }
+
+    /// Allocates a new [`DataSegmentEntity`] and returns a [`DataSegment`] reference to it.
+    pub fn alloc_data_segment(&mut self, segment: DataSegmentEntity) -> DataSegment {
+        let segment = self.datas.alloc(segment);
+        DataSegment::from_inner(self.wrap_stored(segment))
+    }
+
+    /// Allocates a new [`ElementSegmentEntity`] and returns a [`ElementSegment`] reference to it.
+    pub(super) fn alloc_element_segment(
+        &mut self,
+        segment: ElementSegmentEntity,
+    ) -> ElementSegment {
+        let segment = self.elems.alloc(segment);
+        ElementSegment::from_inner(self.wrap_stored(segment))
     }
 
     /// Allocates a new uninitialized [`InstanceEntity`] and returns an [`Instance`] reference to it.
@@ -358,6 +385,83 @@ impl StoreInner {
         Self::resolve_mut(idx, &mut self.tables)
     }
 
+    /// Returns an exclusive reference to the [`TableEntity`] associated to the given [`Table`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Table`] does not originate from this [`Store`].
+    /// - If the [`Table`] cannot be resolved to its entity.
+    pub fn resolve_table_pair_mut(
+        &mut self,
+        fst: &Table,
+        snd: &Table,
+    ) -> (&mut TableEntity, &mut TableEntity) {
+        let fst = self.unwrap_stored(fst.as_inner());
+        let snd = self.unwrap_stored(snd.as_inner());
+        self.tables.get_pair_mut(fst, snd).unwrap_or_else(|| {
+            panic!("failed to resolve stored pair of entities: {fst:?} and {snd:?}")
+        })
+    }
+
+    /// Returns a triple of:
+    ///
+    /// - A shared reference to the [`InstanceEntity`] associated to the given [`Instance`].
+    /// - An exclusive reference to the [`TableEntity`] associated to the given [`Table`].
+    /// - A shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
+    ///
+    /// # Note
+    ///
+    /// This method exists to properly handle use cases where
+    /// otherwise the Rust borrow-checker would not accept.
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Instance`] does not originate from this [`Store`].
+    /// - If the [`Instance`] cannot be resolved to its entity.
+    /// - If the [`Table`] does not originate from this [`Store`].
+    /// - If the [`Table`] cannot be resolved to its entity.
+    /// - If the [`ElementSegment`] does not originate from this [`Store`].
+    /// - If the [`ElementSegment`] cannot be resolved to its entity.
+    pub(super) fn resolve_instance_table_element(
+        &mut self,
+        instance: &Instance,
+        memory: &Table,
+        segment: &ElementSegment,
+    ) -> (&InstanceEntity, &mut TableEntity, &ElementSegmentEntity) {
+        let mem_idx = self.unwrap_stored(memory.as_inner());
+        let data_idx = segment.as_inner();
+        let instance_idx = instance.as_inner();
+        let instance = self.resolve(instance_idx, &self.instances);
+        let data = self.resolve(data_idx, &self.elems);
+        let mem = Self::resolve_mut(mem_idx, &mut self.tables);
+        (instance, mem, data)
+    }
+
+    /// Returns a shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`ElementSegment`] does not originate from this [`Store`].
+    /// - If the [`ElementSegment`] cannot be resolved to its entity.
+    #[allow(unused)] // Note: We allow this unused API to exist to uphold code symmetry.
+    pub fn resolve_element_segment(&self, segment: &ElementSegment) -> &ElementSegmentEntity {
+        self.resolve(segment.as_inner(), &self.elems)
+    }
+
+    /// Returns an exclusive reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`ElementSegment`] does not originate from this [`Store`].
+    /// - If the [`ElementSegment`] cannot be resolved to its entity.
+    pub fn resolve_element_segment_mut(
+        &mut self,
+        segment: &ElementSegment,
+    ) -> &mut ElementSegmentEntity {
+        let idx = self.unwrap_stored(segment.as_inner());
+        Self::resolve_mut(idx, &mut self.elems)
+    }
+
     /// Returns a shared reference to the [`MemoryEntity`] associated to the given [`Memory`].
     ///
     /// # Panics
@@ -377,6 +481,56 @@ impl StoreInner {
     pub fn resolve_memory_mut(&mut self, memory: &Memory) -> &mut MemoryEntity {
         let idx = self.unwrap_stored(memory.as_inner());
         Self::resolve_mut(idx, &mut self.memories)
+    }
+
+    /// Returns a pair of:
+    ///
+    /// - An exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
+    /// - A shared reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
+    ///
+    /// # Note
+    ///
+    /// This method exists to properly handle use cases where
+    /// otherwise the Rust borrow-checker would not accept.
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Memory`] does not originate from this [`Store`].
+    /// - If the [`Memory`] cannot be resolved to its entity.
+    /// - If the [`DataSegment`] does not originate from this [`Store`].
+    /// - If the [`DataSegment`] cannot be resolved to its entity.
+    pub(super) fn resolve_memory_mut_and_data_segment(
+        &mut self,
+        memory: &Memory,
+        segment: &DataSegment,
+    ) -> (&mut MemoryEntity, &DataSegmentEntity) {
+        let mem_idx = self.unwrap_stored(memory.as_inner());
+        let data_idx = segment.as_inner();
+        let data = self.resolve(data_idx, &self.datas);
+        let mem = Self::resolve_mut(mem_idx, &mut self.memories);
+        (mem, data)
+    }
+
+    /// Returns a shared reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`DataSegment`] does not originate from this [`Store`].
+    /// - If the [`DataSegment`] cannot be resolved to its entity.
+    #[allow(unused)] // Note: We allow this unused API to exist to uphold code symmetry.
+    pub fn resolve_data_segment(&self, segment: &DataSegment) -> &DataSegmentEntity {
+        self.resolve(segment.as_inner(), &self.datas)
+    }
+
+    /// Returns an exclusive reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`DataSegment`] does not originate from this [`Store`].
+    /// - If the [`DataSegment`] cannot be resolved to its entity.
+    pub fn resolve_data_segment_mut(&mut self, segment: &DataSegment) -> &mut DataSegmentEntity {
+        let idx = self.unwrap_stored(segment.as_inner());
+        Self::resolve_mut(idx, &mut self.datas)
     }
 
     /// Returns a shared reference to the [`InstanceEntity`] associated to the given [`Instance`].
@@ -431,6 +585,11 @@ impl<T> Store<T> {
 
     /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`]
     /// and an exclusive reference to the user provided host state.
+    ///
+    /// # Note
+    ///
+    /// This method exists to properly handle use cases where
+    /// otherwise the Rust borrow-checker would not accept.
     ///
     /// # Panics
     ///

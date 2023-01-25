@@ -27,7 +27,7 @@ pub use self::{
 };
 use super::{DropKeep, FuncBody, Instruction};
 use crate::{
-    engine::bytecode::{BranchParams, Offset},
+    engine::bytecode::{BranchParams, DataSegmentIdx, ElementSegmentIdx, Offset},
     module::{
         BlockType,
         FuncIdx,
@@ -801,7 +801,7 @@ impl<'parser> FuncBuilder<'parser> {
             let global_idx = GlobalIdx(global_idx);
             builder.stack_height.push();
             let (global_type, init_value) = builder.res.get_global(global_idx);
-            let instr = match init_value.and_then(InitExpr::eval_const) {
+            let instr = match init_value.and_then(InitExpr::to_const) {
                 Some(value) if global_type.mutability().is_const() => Instruction::constant(value),
                 _ => Instruction::GlobalGet(global_idx.into_u32().into()),
             };
@@ -1106,16 +1106,190 @@ impl<'parser> FuncBuilder<'parser> {
     /// Translate a Wasm `memory.grow` instruction.
     pub fn translate_memory_grow(
         &mut self,
-        memory_idx: u32,
+        memory_index: u32,
         _mem_byte: u8,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let memory_idx = MemoryIdx(memory_idx);
-            debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
+            debug_assert_eq!(memory_index, DEFAULT_MEMORY_INDEX);
             builder
                 .alloc
                 .inst_builder
                 .push_inst(Instruction::MemoryGrow);
+            Ok(())
+        })
+    }
+
+    /// Translate a Wasm `memory.init` instruction.
+    pub fn translate_memory_init(
+        &mut self,
+        segment_index: u32,
+        memory_index: u32,
+    ) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            debug_assert_eq!(memory_index, DEFAULT_MEMORY_INDEX);
+            builder.stack_height.pop3();
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::MemoryInit(DataSegmentIdx::from(segment_index)));
+            Ok(())
+        })
+    }
+
+    /// Translate a Wasm `memory.fill` instruction.
+    pub fn translate_memory_fill(&mut self, memory_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            debug_assert_eq!(memory_index, DEFAULT_MEMORY_INDEX);
+            builder.stack_height.pop3();
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::MemoryFill);
+            Ok(())
+        })
+    }
+
+    /// Translate a Wasm `memory.copy` instruction.
+    pub fn translate_memory_copy(
+        &mut self,
+        dst_mem: u32,
+        src_mem: u32,
+    ) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            debug_assert_eq!(dst_mem, DEFAULT_MEMORY_INDEX);
+            debug_assert_eq!(src_mem, DEFAULT_MEMORY_INDEX);
+            builder.stack_height.pop3();
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::MemoryCopy);
+            Ok(())
+        })
+    }
+
+    /// Translate a Wasm `data.drop` instruction.
+    pub fn translate_data_drop(&mut self, segment_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            let segment_index = DataSegmentIdx::from(segment_index);
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::DataDrop(segment_index));
+            Ok(())
+        })
+    }
+
+    /// Translate a Wasm `table.size` instruction.
+    pub fn translate_table_size(&mut self, _table_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|_builder| {
+            // debug_assert_eq!(table_index, DEFAULT_TABLE_INDEX);
+            // let table_index = MemoryIdx(table_index);
+            // builder.stack_height.push();
+            // builder
+            //     .alloc
+            //     .inst_builder
+            //     .push_inst(Instruction::TableSize);
+            // Ok(())
+            unimplemented!("wasmi does not yet support the `reference-types` Wasm proposal")
+        })
+    }
+
+    /// Translate a Wasm `table.grow` instruction.
+    pub fn translate_table_grow(&mut self, _table_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|_builder| {
+            // debug_assert_eq!(table_index, DEFAULT_TABLE_INDEX);
+            // let table_index = MemoryIdx(table_index);
+            // builder
+            //     .alloc
+            //     .inst_builder
+            //     .push_inst(Instruction::TableGrow);
+            // Ok(())
+            unimplemented!("wasmi does not yet support the `reference-types` Wasm proposal")
+        })
+    }
+
+    pub fn translate_table_copy(
+        &mut self,
+        _dst_table: u32,
+        _src_table: u32,
+    ) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            // debug_assert_eq!(dst_table, DEFAULT_TABLE_INDEX);
+            // debug_assert_eq!(src_table, DEFAULT_TABLE_INDEX);
+            // let dst_table = TableIdx(dst_table);
+            // let src_table = TableIdx(src_table);
+            builder.stack_height.pop3();
+            builder.alloc.inst_builder.push_inst(Instruction::TableCopy);
+            Ok(())
+        })
+    }
+
+    pub fn translate_table_fill(&mut self, _table_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|_builder| {
+            // debug_assert_eq!(table_index, DEFAULT_TABLE_INDEX);
+            // let memory_index = TableIdx(table_index);
+            // builder.stack_height.pop3();
+            // builder
+            //     .alloc
+            //     .inst_builder
+            //     .push_inst(Instruction::MemoryFill { table_index });
+            unimplemented!("wasmi does not yet support the `reference-types` Wasm proposal")
+        })
+    }
+
+    pub fn translate_table_get(&mut self, _table_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|_builder| {
+            // debug_assert_eq!(table_index, DEFAULT_TABLE_INDEX);
+            // let memory_index = TableIdx(table_index);
+            // builder
+            //     .alloc
+            //     .inst_builder
+            //     .push_inst(Instruction::TableGet { table_index });
+            unimplemented!("wasmi does not yet support the `reference-types` Wasm proposal")
+        })
+    }
+
+    pub fn translate_table_set(&mut self, _table_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|_builder| {
+            // debug_assert_eq!(table_index, DEFAULT_TABLE_INDEX);
+            // let memory_index = TableIdx(table_index);
+            // builder.stack_height.pop1();
+            // builder
+            //     .alloc
+            //     .inst_builder
+            //     .push_inst(Instruction::TableSet { table_index });
+            unimplemented!("wasmi does not yet support the `reference-types` Wasm proposal")
+        })
+    }
+
+    /// Translate a Wasm `table.init` instruction.
+    pub fn translate_table_init(
+        &mut self,
+        segment_index: u32,
+        table_index: u32,
+    ) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            debug_assert_eq!(table_index, DEFAULT_MEMORY_INDEX);
+            builder.stack_height.pop3();
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::TableInit(ElementSegmentIdx::from(
+                    segment_index,
+                )));
+            Ok(())
+        })
+    }
+
+    /// Translate a Wasm `elem.drop` instruction.
+    pub fn translate_elem_drop(&mut self, segment_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::ElemDrop(ElementSegmentIdx::from(
+                    segment_index,
+                )));
             Ok(())
         })
     }
