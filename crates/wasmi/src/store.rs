@@ -174,7 +174,7 @@ impl StoreInner {
     /// This is required so that the [`Engine`] can work entirely
     /// with a `&mut StoreInner` reference.
     pub fn register_func_type(&mut self, func: Func, func_type: &DedupFuncType) {
-        let idx = self.unwrap_stored(func.to_inner());
+        let idx = self.unwrap_stored(func.as_inner());
         let previous = self.func_types.set(idx, *func_type);
         debug_assert!(previous.is_none());
     }
@@ -185,7 +185,7 @@ impl StoreInner {
     ///
     /// Panics if no [`DedupFuncType`] for the given [`Func`] was registered.
     pub fn get_func_type(&self, func: Func) -> DedupFuncType {
-        let idx = self.unwrap_stored(func.to_inner());
+        let idx = self.unwrap_stored(func.as_inner());
         self.func_types
             .get(idx)
             .copied()
@@ -241,7 +241,7 @@ impl StoreInner {
             init.is_initialized(),
             "encountered an uninitialized new instance entity: {init:?}",
         );
-        let idx = self.unwrap_stored(instance.to_inner());
+        let idx = self.unwrap_stored(instance.as_inner());
         let uninit = self
             .instances
             .get_mut(idx)
@@ -323,7 +323,7 @@ impl StoreInner {
     /// - If the [`Global`] does not originate from this [`Store`].
     /// - If the [`Global`] cannot be resolved to its entity.
     pub fn resolve_global(&self, global: &Global) -> &GlobalEntity {
-        self.resolve(global.to_inner(), &self.globals)
+        self.resolve(global.as_inner(), &self.globals)
     }
 
     /// Returns an exclusive reference to the [`GlobalEntity`] associated to the given [`Global`].
@@ -333,7 +333,7 @@ impl StoreInner {
     /// - If the [`Global`] does not originate from this [`Store`].
     /// - If the [`Global`] cannot be resolved to its entity.
     pub fn resolve_global_mut(&mut self, global: &Global) -> &mut GlobalEntity {
-        let idx = self.unwrap_stored(global.to_inner());
+        let idx = self.unwrap_stored(global.as_inner());
         Self::resolve_mut(idx, &mut self.globals)
     }
 
@@ -344,7 +344,7 @@ impl StoreInner {
     /// - If the [`Table`] does not originate from this [`Store`].
     /// - If the [`Table`] cannot be resolved to its entity.
     pub fn resolve_table(&self, table: &Table) -> &TableEntity {
-        self.resolve(table.to_inner(), &self.tables)
+        self.resolve(table.as_inner(), &self.tables)
     }
 
     /// Returns an exclusive reference to the [`TableEntity`] associated to the given [`Table`].
@@ -354,7 +354,7 @@ impl StoreInner {
     /// - If the [`Table`] does not originate from this [`Store`].
     /// - If the [`Table`] cannot be resolved to its entity.
     pub fn resolve_table_mut(&mut self, table: &Table) -> &mut TableEntity {
-        let idx = self.unwrap_stored(table.to_inner());
+        let idx = self.unwrap_stored(table.as_inner());
         Self::resolve_mut(idx, &mut self.tables)
     }
 
@@ -365,7 +365,7 @@ impl StoreInner {
     /// - If the [`Memory`] does not originate from this [`Store`].
     /// - If the [`Memory`] cannot be resolved to its entity.
     pub fn resolve_memory(&self, memory: &Memory) -> &MemoryEntity {
-        self.resolve(memory.to_inner(), &self.memories)
+        self.resolve(memory.as_inner(), &self.memories)
     }
 
     /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
@@ -375,7 +375,7 @@ impl StoreInner {
     /// - If the [`Memory`] does not originate from this [`Store`].
     /// - If the [`Memory`] cannot be resolved to its entity.
     pub fn resolve_memory_mut(&mut self, memory: &Memory) -> &mut MemoryEntity {
-        let idx = self.unwrap_stored(memory.to_inner());
+        let idx = self.unwrap_stored(memory.as_inner());
         Self::resolve_mut(idx, &mut self.memories)
     }
 
@@ -386,7 +386,7 @@ impl StoreInner {
     /// - If the [`Instance`] does not originate from this [`Store`].
     /// - If the [`Instance`] cannot be resolved to its entity.
     pub fn resolve_instance(&self, instance: &Instance) -> &InstanceEntity {
-        self.resolve(instance.to_inner(), &self.instances)
+        self.resolve(instance.as_inner(), &self.instances)
     }
 }
 
@@ -450,7 +450,7 @@ impl<T> Store<T> {
     /// - If the [`Func`] does not originate from this [`Store`].
     /// - If the [`Func`] cannot be resolved to its entity.
     pub(super) fn resolve_func(&self, func: &Func) -> &FuncEntity<T> {
-        let entity_index = self.inner.unwrap_stored(func.to_inner());
+        let entity_index = self.inner.unwrap_stored(func.as_inner());
         self.funcs.get(entity_index).unwrap_or_else(|| {
             panic!("failed to resolve stored Wasm or host function: {entity_index:?}")
         })

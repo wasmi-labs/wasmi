@@ -245,7 +245,7 @@ impl Table {
     }
 
     /// Returns the underlying stored representation.
-    pub(super) fn to_inner(&self) -> &Stored<TableIdx> {
+    pub(super) fn as_inner(&self) -> &Stored<TableIdx> {
         &self.0
     }
 

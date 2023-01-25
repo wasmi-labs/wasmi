@@ -425,7 +425,7 @@ impl Instance {
     }
 
     /// Returns the underlying stored representation.
-    pub(super) fn to_inner(&self) -> &Stored<InstanceIdx> {
+    pub(super) fn as_inner(&self) -> &Stored<InstanceIdx> {
         &self.0
     }
 

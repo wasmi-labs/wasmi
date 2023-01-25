@@ -226,7 +226,7 @@ impl Global {
     }
 
     /// Returns the underlying stored representation.
-    pub(super) fn to_inner(&self) -> &Stored<GlobalIdx> {
+    pub(super) fn as_inner(&self) -> &Stored<GlobalIdx> {
         &self.0
     }
 

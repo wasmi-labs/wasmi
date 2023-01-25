@@ -246,7 +246,7 @@ impl Func {
     }
 
     /// Returns the underlying stored representation.
-    pub(super) fn to_inner(&self) -> &Stored<FuncIdx> {
+    pub(super) fn as_inner(&self) -> &Stored<FuncIdx> {
         &self.0
     }
 

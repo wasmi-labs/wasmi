@@ -260,7 +260,7 @@ impl Memory {
     }
 
     /// Returns the underlying stored representation.
-    pub(super) fn to_inner(&self) -> &Stored<MemoryIdx> {
+    pub(super) fn as_inner(&self) -> &Stored<MemoryIdx> {
         &self.0
     }
 
