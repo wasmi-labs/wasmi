@@ -117,7 +117,7 @@ impl FuncTypeRegistry {
     ///
     /// - If the deduplicated function type is not owned by the engine.
     /// - If the deduplicated function type cannot be resolved to its entity.
-    pub(crate) fn resolve_func_type(&self, func_type: DedupFuncType) -> &FuncType {
+    pub(crate) fn resolve_func_type(&self, func_type: &DedupFuncType) -> &FuncType {
         let entity_index = self.unwrap_index(func_type.into_inner());
         self.func_types
             .get(entity_index)

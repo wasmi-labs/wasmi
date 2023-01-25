@@ -528,7 +528,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let table = self.default_table();
         let func = self
             .ctx
-            .resolve_table(table)
+            .resolve_table(&table)
             .get(func_index)
             .map_err(|_| TrapCode::TableOutOfBounds)?
             .ok_or(TrapCode::IndirectCallToNull)?;
@@ -570,7 +570,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
 
     fn visit_current_memory(&mut self) {
         let memory = self.default_memory();
-        let result: u32 = self.ctx.resolve_memory(memory).current_pages().into();
+        let result: u32 = self.ctx.resolve_memory(&memory).current_pages().into();
         self.value_stack.push(result);
         self.next_instr()
     }
@@ -582,7 +582,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let memory = self.default_memory();
         let result = Pages::new(self.value_stack.pop_as()).map_or(ERR_VALUE, |additional| {
             self.ctx
-                .resolve_memory_mut(memory)
+                .resolve_memory_mut(&memory)
                 .grow(additional)
                 .map(u32::from)
                 .unwrap_or(ERR_VALUE)

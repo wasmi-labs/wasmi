@@ -245,8 +245,8 @@ impl Table {
     }
 
     /// Returns the underlying stored representation.
-    pub(super) fn into_inner(self) -> Stored<TableIdx> {
-        self.0
+    pub(super) fn to_inner(&self) -> &Stored<TableIdx> {
+        &self.0
     }
 
     /// Creates a new table to the store.
@@ -263,7 +263,7 @@ impl Table {
     ///
     /// Panics if `ctx` does not own this [`Table`].
     pub fn ty(&self, ctx: impl AsContext) -> TableType {
-        ctx.as_context().store.inner.resolve_table(*self).ty()
+        ctx.as_context().store.inner.resolve_table(self).ty()
     }
 
     /// Returns the current size of the [`Table`].
@@ -272,7 +272,7 @@ impl Table {
     ///
     /// If `ctx` does not own this [`Table`].
     pub fn size(&self, ctx: impl AsContext) -> u32 {
-        ctx.as_context().store.inner.resolve_table(*self).size()
+        ctx.as_context().store.inner.resolve_table(self).size()
     }
 
     /// Grows the table by the given amount of elements.
@@ -292,7 +292,7 @@ impl Table {
         ctx.as_context_mut()
             .store
             .inner
-            .resolve_table_mut(*self)
+            .resolve_table_mut(self)
             .grow(delta)
     }
 
@@ -306,7 +306,7 @@ impl Table {
     ///
     /// Panics if `ctx` does not own this [`Table`].
     pub fn get(&self, ctx: impl AsContext, index: u32) -> Result<Option<Func>, TableError> {
-        ctx.as_context().store.inner.resolve_table(*self).get(index)
+        ctx.as_context().store.inner.resolve_table(self).get(index)
     }
 
     /// Writes the `value` provided into `index` within this [`Table`].
@@ -327,7 +327,7 @@ impl Table {
         ctx.as_context_mut()
             .store
             .inner
-            .resolve_table_mut(*self)
+            .resolve_table_mut(self)
             .set(index, value)
     }
 }

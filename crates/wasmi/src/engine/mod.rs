@@ -142,7 +142,7 @@ impl Engine {
     ///
     /// - If the deduplicated function type is not owned by the engine.
     /// - If the deduplicated function type cannot be resolved to its entity.
-    pub(super) fn resolve_func_type<F, R>(&self, func_type: DedupFuncType, f: F) -> R
+    pub(super) fn resolve_func_type<F, R>(&self, func_type: &DedupFuncType, f: F) -> R
     where
         F: FnOnce(&FuncType) -> R,
     {
@@ -371,7 +371,7 @@ impl EngineInner {
             .alloc(len_locals, max_stack_height, insts)
     }
 
-    fn resolve_func_type<F, R>(&self, func_type: DedupFuncType, f: F) -> R
+    fn resolve_func_type<F, R>(&self, func_type: &DedupFuncType, f: F) -> R
     where
         F: FnOnce(&FuncType) -> R,
     {

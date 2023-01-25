@@ -91,7 +91,7 @@ impl<T> FuncEntity<T> {
     }
 
     /// Returns the signature of the Wasm function.
-    pub fn ty_dedup(&self) -> DedupFuncType {
+    pub fn ty_dedup(&self) -> &DedupFuncType {
         match self.as_internal() {
             FuncEntityInternal::Wasm(func) => func.ty_dedup(),
             FuncEntityInternal::Host(func) => func.ty_dedup(),
@@ -138,8 +138,8 @@ impl WasmFuncEntity {
     }
 
     /// Returns the signature of the Wasm function.
-    pub fn ty_dedup(&self) -> DedupFuncType {
-        self.signature
+    pub fn ty_dedup(&self) -> &DedupFuncType {
+        &self.signature
     }
 
     /// Returns the instance where the [`Func`] belong to.
@@ -216,8 +216,8 @@ impl<T> HostFuncEntity<T> {
     }
 
     /// Returns the signature of the host function.
-    pub fn ty_dedup(&self) -> DedupFuncType {
-        self.signature
+    pub fn ty_dedup(&self) -> &DedupFuncType {
+        &self.signature
     }
 
     /// Calls the host function with the given inputs.
@@ -226,7 +226,7 @@ impl<T> HostFuncEntity<T> {
     pub fn call(
         &self,
         mut ctx: impl AsContextMut<UserState = T>,
-        instance: Option<Instance>,
+        instance: Option<&Instance>,
         params: FuncParams,
     ) -> Result<FuncResults, Trap> {
         let caller = <Caller<T>>::new(&mut ctx, instance);
@@ -246,8 +246,8 @@ impl Func {
     }
 
     /// Returns the underlying stored representation.
-    pub(super) fn into_inner(self) -> Stored<FuncIdx> {
-        self.0
+    pub(super) fn to_inner(&self) -> &Stored<FuncIdx> {
+        &self.0
     }
 
     /// Creates a new host function from the given closure.
@@ -260,8 +260,11 @@ impl Func {
     }
 
     /// Returns the signature of the function.
-    pub(crate) fn ty_dedup(&self, ctx: impl AsContext) -> DedupFuncType {
-        ctx.as_context().store.resolve_func(*self).ty_dedup()
+    pub(crate) fn ty_dedup<'a, T: 'a>(
+        &self,
+        ctx: impl Into<StoreContext<'a, T>>,
+    ) -> &'a DedupFuncType {
+        ctx.into().store.resolve_func(self).ty_dedup()
     }
 
     /// Returns the function type of the [`Func`].
@@ -406,6 +409,6 @@ impl Func {
         &self,
         ctx: impl Into<StoreContext<'a, T>>,
     ) -> &'a FuncEntityInternal<T> {
-        ctx.into().store.resolve_func(*self).as_internal()
+        ctx.into().store.resolve_func(self).as_internal()
     }
 }
