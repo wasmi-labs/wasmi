@@ -461,8 +461,8 @@ impl Table {
         src_index: u32,
         len: u32,
     ) -> Result<(), TrapCode> {
-        let dst_id = dst_table.into_inner();
-        let src_id = src_table.into_inner();
+        let dst_id = dst_table.as_inner();
+        let src_id = src_table.as_inner();
         if dst_id == src_id {
             // The `dst_table` and `src_table` are the same table
             // therefore we have to copy within the same table.

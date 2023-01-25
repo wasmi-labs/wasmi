@@ -31,8 +31,8 @@ impl ElementSegment {
     }
 
     /// Returns the underlying stored representation.
-    pub fn into_inner(self) -> Stored<ElementSegmentIdx> {
-        self.0
+    pub fn as_inner(&self) -> &Stored<ElementSegmentIdx> {
+        &self.0
     }
 
     /// Allocates a new [`DataSegment`] on the store.

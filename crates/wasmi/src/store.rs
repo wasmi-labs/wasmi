@@ -424,9 +424,9 @@ impl StoreInner {
     /// - If the [`ElementSegment`] cannot be resolved to its entity.
     pub(super) fn resolve_instance_table_element(
         &mut self,
-        instance: Instance,
-        memory: Table,
-        segment: ElementSegment,
+        instance: &Instance,
+        memory: &Table,
+        segment: &ElementSegment,
     ) -> (&InstanceEntity, &mut TableEntity, &ElementSegmentEntity) {
         let mem_idx = self.unwrap_stored(memory.as_inner());
         let data_idx = segment.as_inner();
@@ -444,7 +444,7 @@ impl StoreInner {
     /// - If the [`ElementSegment`] does not originate from this [`Store`].
     /// - If the [`ElementSegment`] cannot be resolved to its entity.
     #[allow(unused)] // Note: We allow this unused API to exist to uphold code symmetry.
-    pub fn resolve_element_segment(&self, segment: ElementSegment) -> &ElementSegmentEntity {
+    pub fn resolve_element_segment(&self, segment: &ElementSegment) -> &ElementSegmentEntity {
         self.resolve(segment.as_inner(), &self.elems)
     }
 
@@ -456,7 +456,7 @@ impl StoreInner {
     /// - If the [`ElementSegment`] cannot be resolved to its entity.
     pub fn resolve_element_segment_mut(
         &mut self,
-        segment: ElementSegment,
+        segment: &ElementSegment,
     ) -> &mut ElementSegmentEntity {
         let idx = self.unwrap_stored(segment.as_inner());
         Self::resolve_mut(idx, &mut self.elems)
@@ -501,8 +501,8 @@ impl StoreInner {
     /// - If the [`DataSegment`] cannot be resolved to its entity.
     pub(super) fn resolve_memory_mut_and_data_segment(
         &mut self,
-        memory: Memory,
-        segment: DataSegment,
+        memory: &Memory,
+        segment: &DataSegment,
     ) -> (&mut MemoryEntity, &DataSegmentEntity) {
         let mem_idx = self.unwrap_stored(memory.as_inner());
         let data_idx = segment.as_inner();
@@ -518,7 +518,7 @@ impl StoreInner {
     /// - If the [`DataSegment`] does not originate from this [`Store`].
     /// - If the [`DataSegment`] cannot be resolved to its entity.
     #[allow(unused)] // Note: We allow this unused API to exist to uphold code symmetry.
-    pub fn resolve_data_segment(&self, segment: DataSegment) -> &DataSegmentEntity {
+    pub fn resolve_data_segment(&self, segment: &DataSegment) -> &DataSegmentEntity {
         self.resolve(segment.as_inner(), &self.datas)
     }
 
@@ -528,7 +528,7 @@ impl StoreInner {
     ///
     /// - If the [`DataSegment`] does not originate from this [`Store`].
     /// - If the [`DataSegment`] cannot be resolved to its entity.
-    pub fn resolve_data_segment_mut(&mut self, segment: DataSegment) -> &mut DataSegmentEntity {
+    pub fn resolve_data_segment_mut(&mut self, segment: &DataSegment) -> &mut DataSegmentEntity {
         let idx = self.unwrap_stored(segment.as_inner());
         Self::resolve_mut(idx, &mut self.datas)
     }

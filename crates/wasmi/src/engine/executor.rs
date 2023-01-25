@@ -674,7 +674,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let segment = self
             .cache
             .get_data_segment(self.ctx, segment_index.into_inner());
-        self.ctx.resolve_data_segment_mut(segment).drop_bytes();
+        self.ctx.resolve_data_segment_mut(&segment).drop_bytes();
         self.next_instr();
     }
 
@@ -709,7 +709,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
 
     fn visit_element_drop(&mut self, segment_index: ElementSegmentIdx) {
         let segment = self.cache.get_element_segment(self.ctx, segment_index);
-        self.ctx.resolve_element_segment_mut(segment).drop_items();
+        self.ctx.resolve_element_segment_mut(&segment).drop_items();
         self.next_instr();
     }
 

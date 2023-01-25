@@ -116,7 +116,7 @@ impl InstanceCache {
     ) -> (&'a mut [u8], &'a [u8]) {
         let mem = self.default_memory(ctx);
         let seg = self.get_data_segment(ctx, segment.into_inner());
-        let (memory, segment) = ctx.resolve_memory_mut_and_data_segment(mem, seg);
+        let (memory, segment) = ctx.resolve_memory_mut_and_data_segment(&mem, &seg);
         (memory.data_mut(), segment.bytes())
     }
 
@@ -135,10 +135,10 @@ impl InstanceCache {
         &'a mut TableEntity,
         &'a ElementSegmentEntity,
     ) {
-        let inst = self.instance();
         let tab = self.default_table(ctx);
         let seg = self.get_element_segment(ctx, segment);
-        ctx.resolve_instance_table_element(inst, tab, seg)
+        let inst = self.instance();
+        ctx.resolve_instance_table_element(inst, &tab, &seg)
     }
 
     /// Loads the default [`Memory`] of the currently used [`Instance`].
