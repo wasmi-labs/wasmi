@@ -35,7 +35,7 @@ impl ElementSegment {
         &self.0
     }
 
-    /// Allocates a new [`DataSegment`] on the store.
+    /// Allocates a new [`ElementSegment`] on the store.
     ///
     /// # Errors
     ///
