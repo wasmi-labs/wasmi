@@ -1,6 +1,6 @@
 use super::{FuncIdx, GlobalIdx};
-use crate::errors::ModuleError;
-use wasmi_core::{Value, F32, F64};
+use crate::{errors::ModuleError, Value};
+use wasmi_core::{F32, F64};
 
 /// An initializer expression.
 ///

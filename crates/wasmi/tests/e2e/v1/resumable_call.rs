@@ -12,8 +12,9 @@ use wasmi::{
     Store,
     TypedResumableCall,
     TypedResumableInvocation,
+    Value,
 };
-use wasmi_core::{Trap, TrapCode, Value, ValueType};
+use wasmi_core::{Trap, TrapCode, ValueType};
 
 fn test_setup() -> Store<()> {
     let engine = Engine::default();

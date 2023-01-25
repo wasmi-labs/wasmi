@@ -7,11 +7,12 @@ use std::{
     path::{Path, PathBuf},
 };
 use wasmi::{
-    core::{Value, ValueType, F32, F64},
+    core::{ValueType, F32, F64},
     ExternType,
     Func,
     FuncType,
     Store,
+    Value,
 };
 
 /// Simple program to greet a person

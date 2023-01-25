@@ -8,8 +8,6 @@ use crate::{
     TrapCode,
     TruncateSaturateInto,
     TryTruncateInto,
-    Value,
-    ValueType,
     WrapInto,
     F32,
     F64,
@@ -20,7 +18,7 @@ use core::{
 };
 use paste::paste;
 
-/// An untyped [`Value`].
+/// An untyped value.
 ///
 /// Provides a dense and simple interface to all functional Wasm operations.
 #[derive(Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
@@ -35,16 +33,6 @@ impl UntypedValue {
     /// Returns the underlying bits of the [`UntypedValue`].
     pub fn to_bits(self) -> u64 {
         self.bits
-    }
-
-    /// Converts the [`UntypedValue`] into a [`Value`].
-    pub fn with_type(self, value_type: ValueType) -> Value {
-        match value_type {
-            ValueType::I32 => Value::I32(<_>::from(self)),
-            ValueType::I64 => Value::I64(<_>::from(self)),
-            ValueType::F32 => Value::F32(<_>::from(self)),
-            ValueType::F64 => Value::F64(<_>::from(self)),
-        }
     }
 }
 
@@ -77,17 +65,6 @@ impl_from_untyped_for_float!(f32, f64, F32, F64);
 impl From<UntypedValue> for bool {
     fn from(untyped: UntypedValue) -> Self {
         untyped.to_bits() != 0
-    }
-}
-
-impl From<Value> for UntypedValue {
-    fn from(value: Value) -> Self {
-        match value {
-            Value::I32(value) => value.into(),
-            Value::I64(value) => value.into(),
-            Value::F32(value) => value.into(),
-            Value::F64(value) => value.into(),
-        }
     }
 }
 
