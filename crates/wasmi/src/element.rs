@@ -42,7 +42,10 @@ impl ElementSegment {
     /// If more than [`u32::MAX`] much linear memory is allocated.
     pub fn new(mut ctx: impl AsContextMut, segment: &module::ElementSegment) -> Self {
         let entity = ElementSegmentEntity::from(segment);
-        ctx.as_context_mut().store.alloc_element_segment(entity)
+        ctx.as_context_mut()
+            .store
+            .inner
+            .alloc_element_segment(entity)
     }
 }
 
