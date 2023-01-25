@@ -438,6 +438,7 @@ impl Instance {
         store
             .as_context()
             .store
+            .inner
             .resolve_instance(*self)
             .get_func(index)
     }
@@ -451,6 +452,7 @@ impl Instance {
         store
             .as_context()
             .store
+            .inner
             .resolve_instance(*self)
             .get_export(name)
     }
@@ -543,6 +545,6 @@ impl Instance {
         &self,
         store: impl Into<StoreContext<'ctx, T>>,
     ) -> ExportsIter<'ctx> {
-        store.into().store.resolve_instance(*self).exports()
+        store.into().store.inner.resolve_instance(*self).exports()
     }
 }

@@ -50,7 +50,7 @@ impl Module {
     where
         I: IntoIterator<Item = Extern>,
     {
-        let handle = context.as_context_mut().store.alloc_instance();
+        let handle = context.as_context_mut().store.inner.alloc_instance();
         let mut builder = InstanceEntity::build(self);
 
         self.extract_func_types(&mut context, &mut builder);
