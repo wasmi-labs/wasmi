@@ -8,7 +8,6 @@ use crate::{
     TrapCode,
     TruncateSaturateInto,
     TryTruncateInto,
-    // ValueType,
     WrapInto,
     F32,
     F64,
@@ -19,7 +18,7 @@ use core::{
 };
 use paste::paste;
 
-/// An untyped [`Value`].
+/// An untyped value.
 ///
 /// Provides a dense and simple interface to all functional Wasm operations.
 #[derive(Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
