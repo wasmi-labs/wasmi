@@ -574,28 +574,6 @@ impl<T> Store<T> {
         self.data
     }
 
-    /// Wraps an entitiy `Idx` (index type) as a [`Stored<Idx>`] type.
-    ///
-    /// # Note
-    ///
-    /// [`Stored<Idx>`] associates an `Idx` type with the internal store index.
-    /// This way wrapped indices cannot be misused with incorrect [`Store`] instances.
-    fn wrap_stored<Idx>(&self, entity_idx: Idx) -> Stored<Idx> {
-        self.inner.wrap_stored(entity_idx)
-    }
-
-    /// Unwraps the given [`Stored<Idx>`] reference and returns the `Idx`.
-    ///
-    /// # Panics
-    ///
-    /// If the [`Stored<Idx>`] does not originate from this [`Store`].
-    fn unwrap_stored<Idx>(&self, stored: Stored<Idx>) -> Idx
-    where
-        Idx: ArenaIndex + Debug,
-    {
-        self.inner.unwrap_stored(stored)
-    }
-
     /// Allocates a new [`FuncType`] and returns a [`DedupFuncType`] reference to it.
     ///
     /// # Note
@@ -637,7 +615,7 @@ impl<T> Store<T> {
     pub(super) fn alloc_func(&mut self, func: FuncEntity<T>) -> Func {
         let func_type = func.ty_dedup();
         let idx = self.funcs.alloc(func);
-        let func = Func::from_inner(self.wrap_stored(idx));
+        let func = Func::from_inner(self.inner.wrap_stored(idx));
         self.inner.register_func_type(func, func_type);
         func
     }
@@ -781,7 +759,7 @@ impl<T> Store<T> {
     /// - If the [`Func`] does not originate from this [`Store`].
     /// - If the [`Func`] cannot be resolved to its entity.
     pub(super) fn resolve_func(&self, func: Func) -> &FuncEntity<T> {
-        let entity_index = self.unwrap_stored(func.into_inner());
+        let entity_index = self.inner.unwrap_stored(func.into_inner());
         self.funcs.get(entity_index).unwrap_or_else(|| {
             panic!("failed to resolve stored Wasm or host function: {entity_index:?}")
         })
