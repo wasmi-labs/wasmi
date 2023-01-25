@@ -260,7 +260,7 @@ impl Stack {
         &mut self,
         mut ctx: C,
         host_func: HostFuncEntity<<C as AsContext>::UserState>,
-        instance: Option<Instance>,
+        instance: Option<&Instance>,
         func_types: &FuncTypeRegistry,
     ) -> Result<(), Trap>
     where

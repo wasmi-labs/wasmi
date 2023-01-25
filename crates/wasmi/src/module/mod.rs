@@ -281,7 +281,7 @@ impl Module {
     fn get_extern_type(&self, idx: ExternIdx) -> ExternType {
         match idx {
             ExternIdx::Func(index) => {
-                let dedup = self.funcs[index.into_usize()];
+                let dedup = &self.funcs[index.into_usize()];
                 let func_type = self.engine.resolve_func_type(dedup, Clone::clone);
                 ExternType::Func(func_type)
             }
@@ -323,7 +323,7 @@ impl<'a> Iterator for ModuleImportsIter<'a> {
                     let func_type = self.funcs.next().unwrap_or_else(|| {
                         panic!("unexpected missing imported function for {name:?}")
                     });
-                    let func_type = self.engine.resolve_func_type(*func_type, FuncType::clone);
+                    let func_type = self.engine.resolve_func_type(func_type, FuncType::clone);
                     ImportType::new(name, func_type)
                 }
                 Imported::Table(name) => {

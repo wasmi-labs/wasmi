@@ -457,8 +457,8 @@ impl Instance {
     }
 
     /// Returns the underlying stored representation.
-    pub(super) fn into_inner(self) -> Stored<InstanceIdx> {
-        self.0
+    pub(super) fn as_inner(&self) -> &Stored<InstanceIdx> {
+        &self.0
     }
 
     /// Returns the function at the `index` if any.
@@ -471,7 +471,7 @@ impl Instance {
             .as_context()
             .store
             .inner
-            .resolve_instance(*self)
+            .resolve_instance(self)
             .get_func(index)
     }
 
@@ -485,7 +485,7 @@ impl Instance {
             .as_context()
             .store
             .inner
-            .resolve_instance(*self)
+            .resolve_instance(self)
             .get_export(name)
     }
 
@@ -577,6 +577,6 @@ impl Instance {
         &self,
         store: impl Into<StoreContext<'ctx, T>>,
     ) -> ExportsIter<'ctx> {
-        store.into().store.inner.resolve_instance(*self).exports()
+        store.into().store.inner.resolve_instance(self).exports()
     }
 }
