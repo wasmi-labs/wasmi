@@ -100,20 +100,6 @@ impl Value {
     }
 }
 
-impl From<i8> for Value {
-    #[inline]
-    fn from(val: i8) -> Self {
-        Value::I32(val.into())
-    }
-}
-
-impl From<i16> for Value {
-    #[inline]
-    fn from(val: i16) -> Self {
-        Value::I32(val.into())
-    }
-}
-
 impl From<i32> for Value {
     #[inline]
     fn from(val: i32) -> Self {
@@ -125,20 +111,6 @@ impl From<i64> for Value {
     #[inline]
     fn from(val: i64) -> Self {
         Value::I64(val)
-    }
-}
-
-impl From<u8> for Value {
-    #[inline]
-    fn from(val: u8) -> Self {
-        Value::I32(val.into())
-    }
-}
-
-impl From<u16> for Value {
-    #[inline]
-    fn from(val: u16) -> Self {
-        Value::I32(val.into())
     }
 }
 
