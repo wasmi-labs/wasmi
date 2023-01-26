@@ -45,6 +45,8 @@ impl ArenaIndex for FuncIdx {
 
 #[test]
 fn option_func_sizeof() {
+    // These assertions are important in order to convert `FuncRef`
+    // from and to 64-bit `UntypedValue` instances.
     use core::mem::size_of;
     assert_eq!(size_of::<Func>(), size_of::<u64>());
     assert_eq!(size_of::<Func>(), size_of::<Option<Func>>());
