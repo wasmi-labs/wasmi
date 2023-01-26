@@ -1,5 +1,7 @@
 //! Tests for the `Func` type in `wasmi`.
 
+use core::slice;
+
 use assert_matches::assert_matches;
 use wasmi::{errors::FuncError, Engine, Error, Func, Store, Value};
 use wasmi_core::{F32, F64};
@@ -33,10 +35,14 @@ fn setup_add2() -> (Store<()>, Func) {
 fn dynamic_add2_works() {
     let (mut store, add2) = setup_add2();
     let result_add2 = {
-        let mut result = [Value::I32(0)];
-        add2.call(&mut store, &[Value::I32(1), Value::I32(2)], &mut result)
-            .unwrap();
-        result[0]
+        let mut result = Value::I32(0);
+        add2.call(
+            &mut store,
+            &[Value::I32(1), Value::I32(2)],
+            slice::from_mut(&mut result),
+        )
+        .unwrap();
+        result
     };
     assert_eq!(result_add2, Value::I32(3));
 }
@@ -60,14 +66,14 @@ fn setup_add3() -> (Store<()>, Func) {
 fn dynamic_add3_works() {
     let (mut store, add3) = setup_add3();
     let result_add3 = {
-        let mut result = [Value::I32(0)];
+        let mut result = Value::I32(0);
         add3.call(
             &mut store,
             &[Value::I32(1), Value::I32(2), Value::I32(3)],
-            &mut result,
+            slice::from_mut(&mut result),
         )
         .unwrap();
-        result[0]
+        result
     };
     assert_eq!(result_add3, Value::I32(6));
 }
@@ -95,7 +101,7 @@ fn dynamic_duplicate_works() {
         duplicate
             .call(&mut store, &[Value::I32(10)], &mut result)
             .unwrap();
-        (result[0], result[1])
+        (result[0].clone(), result[1].clone())
     };
     assert_eq!(result_duplicate, (Value::I32(10), Value::I32(10)));
 }
@@ -206,7 +212,7 @@ fn setup_many_results() -> (Store<()>, Func) {
 #[test]
 fn dynamic_many_results_works() {
     let (mut store, func) = setup_many_results();
-    let mut results = [Value::I32(0); 16];
+    let mut results = [0; 16].map(Value::I32);
     func.call(&mut store, &[], &mut results).unwrap();
     let mut i = 0;
     let expected = [0; 16].map(|_| {
@@ -258,7 +264,7 @@ fn setup_many_params_many_results() -> (Store<()>, Func) {
 #[test]
 fn dynamic_many_params_many_results_works() {
     let (mut store, func) = setup_many_params_many_results();
-    let mut results = [Value::I32(0); 16];
+    let mut results = [0; 16].map(Value::I32);
     let inputs = [
         Value::I32(0),
         Value::I32(1),
@@ -298,7 +304,7 @@ fn dynamic_many_types_works() {
         &mut store,
         |v0: i32, v1: u32, v2: i64, v3: u64, v4: F32, v5: F64| (v0, v1, v2, v3, v4, v5),
     );
-    let mut results = [Value::I32(0); 6];
+    let mut results = [0; 6].map(Value::I32);
     let inputs = [
         Value::I32(0),
         Value::I32(1),

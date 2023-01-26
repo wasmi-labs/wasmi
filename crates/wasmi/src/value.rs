@@ -37,6 +37,18 @@ impl From<Value> for UntypedValue {
     }
 }
 
+impl From<&'_ Value> for UntypedValue {
+    fn from(value: &Value) -> Self {
+        match value {
+            Value::I32(value) => (*value).into(),
+            Value::I64(value) => (*value).into(),
+            Value::F32(value) => (*value).into(),
+            Value::F64(value) => (*value).into(),
+            Value::FuncRef(value) => (*value).into(),
+        }
+    }
+}
+
 /// Runtime representation of a value.
 ///
 /// Wasm code manipulate values of the four basic value types:
@@ -44,7 +56,7 @@ impl From<Value> for UntypedValue {
 ///
 /// There is no distinction between signed and unsigned integer types. Instead, integers are
 /// interpreted by respective operations as either unsigned or signed in two’s complement representation.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     /// Value of 32-bit signed or unsigned integer.
     I32(i32),

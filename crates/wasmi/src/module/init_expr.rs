@@ -64,8 +64,8 @@ impl InitExpr {
     /// # Panics
     ///
     /// If a non-const expression operand is encountered.
-    pub fn to_const(&self) -> Option<Value> {
-        match self.op {
+    pub fn to_const(&self) -> Option<&Value> {
+        match &self.op {
             InitExprOperand::Const(value) => Some(value),
             // Note: We do not need to handle `global.get` since
             //       that is only allowed for imported non-mutable
@@ -83,8 +83,8 @@ impl InitExpr {
     ///
     /// If a non-const expression operand is encountered.
     pub fn to_const_with_context(&self, global_get: impl Fn(u32) -> Value) -> Value {
-        match self.op {
-            InitExprOperand::Const(value) => value,
+        match &self.op {
+            InitExprOperand::Const(value) => value.clone(),
             InitExprOperand::GlobalGet(index) => global_get(index.into_u32()),
             ref error @ (InitExprOperand::FuncRef(_) | InitExprOperand::RefNull) => {
                 panic!("encountered non-const expression operand: {error:?}")
