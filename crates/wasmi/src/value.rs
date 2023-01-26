@@ -1,3 +1,4 @@
+use crate::FuncRef;
 use core::{fmt, fmt::Display};
 use wasmi_core::{UntypedValue, ValueType, F32, F64};
 
@@ -19,6 +20,7 @@ impl WithType for UntypedValue {
             ValueType::I64 => Value::I64(self.into()),
             ValueType::F32 => Value::F32(self.into()),
             ValueType::F64 => Value::F64(self.into()),
+            ValueType::FuncRef => Value::FuncRef(self.into()),
         }
     }
 }
@@ -30,6 +32,7 @@ impl From<Value> for UntypedValue {
             Value::I64(value) => value.into(),
             Value::F32(value) => value.into(),
             Value::F64(value) => value.into(),
+            Value::FuncRef(value) => value.into(),
         }
     }
 }
@@ -51,6 +54,10 @@ pub enum Value {
     F32(F32),
     /// Value of 64-bit IEEE 754-2008 floating point number.
     F64(F64),
+    /// A nullable [`Func`] reference.
+    ///
+    /// [`Func`]: [`crate::Func`]
+    FuncRef(FuncRef),
 }
 
 impl Display for Value {
@@ -60,6 +67,7 @@ impl Display for Value {
             Self::I64(value) => write!(f, "{value}"),
             Self::F32(value) => write!(f, "{}", f32::from(*value)),
             Self::F64(value) => write!(f, "{}", f64::from(*value)),
+            Self::FuncRef(value) => write!(f, "{value}"),
         }
     }
 }
@@ -73,6 +81,7 @@ impl Value {
             ValueType::I64 => Value::I64(0),
             ValueType::F32 => Value::F32(0f32.into()),
             ValueType::F64 => Value::F64(0f64.into()),
+            ValueType::FuncRef => Value::FuncRef(FuncRef::null()),
         }
     }
 
@@ -84,6 +93,7 @@ impl Value {
             Value::I64(_) => ValueType::I64,
             Value::F32(_) => ValueType::F32,
             Value::F64(_) => ValueType::F64,
+            Value::FuncRef(_) => ValueType::FuncRef,
         }
     }
 

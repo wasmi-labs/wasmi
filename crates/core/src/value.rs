@@ -19,6 +19,8 @@ pub enum ValueType {
     F32,
     /// 64-bit IEEE 754-2008 floating point number.
     F64,
+    /// A nullable function reference.
+    FuncRef,
 }
 
 impl Display for ValueType {
@@ -28,6 +30,7 @@ impl Display for ValueType {
             Self::I64 => write!(f, "i64"),
             Self::F32 => write!(f, "f32"),
             Self::F64 => write!(f, "f64"),
+            Self::FuncRef => write!(f, "funcref"),
         }
     }
 }

@@ -256,6 +256,9 @@ fn type_check_arguments(
                     .map(F64::from)
                     .map(Value::from)
                     .map_err(make_err!()),
+                ValueType::FuncRef => {
+                    bail!("cannot call functions that take a parameter of type FuncRef")
+                }
             }
         })
         .collect::<Result<Vec<_>, _>>()?;

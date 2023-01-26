@@ -418,9 +418,24 @@ pub struct FuncRef {
     inner: Option<Func>,
 }
 
+impl PartialEq for FuncRef {
+    fn eq(&self, other: &Self) -> bool {
+        UntypedValue::from(*self) == UntypedValue::from(*other)
+    }
+}
+
 impl From<Func> for FuncRef {
     fn from(func: Func) -> Self {
         Self::new(func)
+    }
+}
+
+impl fmt::Display for FuncRef {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.inner {
+            Some(func) => func.fmt(f),
+            None => write!(f, "null"),
+        }
     }
 }
 
