@@ -46,7 +46,9 @@ impl ArenaIndex for FuncIdx {
 #[test]
 fn option_func_sizeof() {
     use core::mem::size_of;
+    assert_eq!(size_of::<Func>(), size_of::<u64>());
     assert_eq!(size_of::<Func>(), size_of::<Option<Func>>());
+    assert_eq!(size_of::<Func>(), size_of::<FuncRef>());
 }
 
 /// A function instance.
