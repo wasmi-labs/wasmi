@@ -22,6 +22,7 @@ use crate::{core::Trap, engine::ResumableCall, Error, FuncType, Value};
 use alloc::sync::Arc;
 use core::{fmt, fmt::Debug, num::NonZeroU32};
 use wasmi_arena::ArenaIndex;
+use wasmi_core::UntypedValue;
 
 /// A raw index to a function entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -41,16 +42,6 @@ impl ArenaIndex for FuncIdx {
             .map(Self)
             .unwrap_or_else(|| panic!("out of bounds func index {index}"))
     }
-}
-
-#[test]
-fn option_func_sizeof() {
-    // These assertions are important in order to convert `FuncRef`
-    // from and to 64-bit `UntypedValue` instances.
-    use core::mem::size_of;
-    assert_eq!(size_of::<Func>(), size_of::<u64>());
-    assert_eq!(size_of::<Func>(), size_of::<Option<Func>>());
-    assert_eq!(size_of::<Func>(), size_of::<FuncRef>());
 }
 
 /// A function instance.
@@ -421,7 +412,7 @@ impl Func {
     }
 }
 
-/// A nullable function reference.
+/// A nullable [`Func`] reference.
 #[derive(Debug, Default, Copy, Clone)]
 pub struct FuncRef {
     inner: Option<Func>,
@@ -433,6 +424,46 @@ impl From<Func> for FuncRef {
     }
 }
 
+/// Type used to convert between [`FuncRef`] and [`UntypedValue`].
+union Transposer {
+    funcref: FuncRef,
+    untyped: UntypedValue,
+}
+
+#[test]
+fn funcref_sizeof() {
+    // These assertions are important in order to convert `FuncRef`
+    // from and to 64-bit `UntypedValue` instances.
+    //
+    // The following equation must be true:
+    //     size_of(Func) == size_of(UntypedValue) == size_of(FuncRef)
+    use core::mem::size_of;
+    assert_eq!(size_of::<Func>(), size_of::<UntypedValue>());
+    assert_eq!(size_of::<Func>(), size_of::<FuncRef>());
+}
+
+impl From<UntypedValue> for FuncRef {
+    fn from(untyped: UntypedValue) -> Self {
+        // Safety: This operation is safe since there are no invalid
+        //         bit patterns for [`FuncRef`] instances. Therefore
+        //         this operation cannot produce invalid [`FuncRef`]
+        //         instances even though the input [`UntypedValue`]
+        //         was modified arbitrarily.
+        unsafe { Transposer { untyped }.funcref }
+    }
+}
+
+impl From<FuncRef> for UntypedValue {
+    fn from(funcref: FuncRef) -> Self {
+        // Safety: This operation is safe since there are no invalid
+        //         bit patterns for [`UntypedValue`] instances. Therefore
+        //         this operation cannot produce invalid [`UntypedValue`]
+        //         instances even if it was possible to arbitrarily modify
+        //         the input [`FuncRef`] instance.
+        unsafe { Transposer { funcref }.untyped }
+    }
+}
+
 impl FuncRef {
     /// Returns `true` if [`FuncRef`] is `null`.
     pub fn is_null(&self) -> bool {
@@ -440,9 +471,9 @@ impl FuncRef {
     }
 
     /// Creates a new [`FuncRef`].
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```rust
     /// # use wasmi::{Func, FuncRef, Store, Engine};
     /// # let engine = Engine::default();
@@ -451,11 +482,13 @@ impl FuncRef {
     /// assert!(FuncRef::new(Func::wrap(&mut store, |x: i32| x)).func().is_some());
     /// ```
     pub fn new(nullable_func: impl Into<Option<Func>>) -> Self {
-        Self { inner: nullable_func.into() }
+        Self {
+            inner: nullable_func.into(),
+        }
     }
 
     /// Returns the inner [`Func`] if [`FuncRef`] is not `null`.
-    /// 
+    ///
     /// Otherwise returns `None`.
     pub fn func(&self) -> Option<&Func> {
         self.inner.as_ref()
