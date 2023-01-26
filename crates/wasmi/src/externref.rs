@@ -45,7 +45,7 @@ impl ExternRef {
 }
 
 impl fmt::Pointer for ExternRef {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Pointer::fmt(&self.inner, f)
     }
 }
