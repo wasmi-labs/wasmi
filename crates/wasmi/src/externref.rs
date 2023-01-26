@@ -1,4 +1,4 @@
-use alloc::sync::Arc;
+use alloc::{boxed::Box, sync::Arc};
 use core::{any::Any, fmt};
 
 /// Represents a nullable opaque reference to any data within WebAssembly.
