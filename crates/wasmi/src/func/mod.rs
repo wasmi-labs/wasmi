@@ -20,24 +20,33 @@ use super::{
 };
 use crate::{core::Trap, engine::ResumableCall, Error, FuncType, Value};
 use alloc::sync::Arc;
-use core::{fmt, fmt::Debug};
+use core::{fmt, fmt::Debug, num::NonZeroU32};
 use wasmi_arena::ArenaIndex;
 
 /// A raw index to a function entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct FuncIdx(u32);
+pub struct FuncIdx(NonZeroU32);
 
 impl ArenaIndex for FuncIdx {
     fn into_usize(self) -> usize {
-        self.0 as usize
+        self.0.get().wrapping_sub(1) as usize
     }
 
-    fn from_usize(value: usize) -> Self {
-        let value = value.try_into().unwrap_or_else(|error| {
-            panic!("index {value} is out of bounds as func index: {error}")
-        });
-        Self(value)
+    fn from_usize(index: usize) -> Self {
+        index
+            .try_into()
+            .ok()
+            .map(|index: u32| index.wrapping_add(1))
+            .and_then(NonZeroU32::new)
+            .map(Self)
+            .unwrap_or_else(|| panic!("out of bounds func index {index}"))
     }
+}
+
+#[test]
+fn option_func_sizeof() {
+    use core::mem::size_of;
+    assert_eq!(size_of::<Func>(), size_of::<Option<Func>>());
 }
 
 /// A function instance.
