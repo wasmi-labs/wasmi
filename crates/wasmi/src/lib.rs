@@ -142,6 +142,7 @@ pub use self::{
     func::{
         Caller,
         Func,
+        FuncRef,
         IntoFunc,
         TypedFunc,
         WasmParams,

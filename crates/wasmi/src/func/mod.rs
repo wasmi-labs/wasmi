@@ -416,3 +416,49 @@ impl Func {
         ctx.into().store.resolve_func(self).as_internal()
     }
 }
+
+/// A nullable function reference.
+#[derive(Debug, Default, Copy, Clone)]
+pub struct FuncRef {
+    inner: Option<Func>,
+}
+
+impl From<Func> for FuncRef {
+    fn from(func: Func) -> Self {
+        Self::new(func)
+    }
+}
+
+impl FuncRef {
+    /// Returns `true` if [`FuncRef`] is `null`.
+    pub fn is_null(&self) -> bool {
+        self.inner.is_none()
+    }
+
+    /// Creates a new [`FuncRef`].
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// # use wasmi::{Func, FuncRef, Store, Engine};
+    /// # let engine = Engine::default();
+    /// # let mut store = <Store<()>>::new(&engine, ());
+    /// assert!(FuncRef::new(None).is_null());
+    /// assert!(FuncRef::new(Func::wrap(&mut store, |x: i32| x)).func().is_some());
+    /// ```
+    pub fn new(nullable_func: impl Into<Option<Func>>) -> Self {
+        Self { inner: nullable_func.into() }
+    }
+
+    /// Returns the inner [`Func`] if [`FuncRef`] is not `null`.
+    /// 
+    /// Otherwise returns `None`.
+    pub fn func(&self) -> Option<&Func> {
+        self.inner.as_ref()
+    }
+
+    /// Creates a `null` [`FuncRef`].
+    pub fn null() -> Self {
+        Self::new(None)
+    }
+}
