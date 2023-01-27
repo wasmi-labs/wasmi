@@ -93,7 +93,7 @@ pub struct ExternRef {
 
 /// Type used to convert between [`ExternRef`] and [`UntypedValue`].
 union Transposer {
-    funcref: ExternRef,
+    externref: ExternRef,
     untyped: UntypedValue,
 }
 
@@ -109,6 +109,12 @@ fn externref_sizeof() {
     assert_eq!(size_of::<ExternRef>(), size_of::<ExternObject>());
 }
 
+#[test]
+fn externref_null_to_zero() {
+    assert_eq!(UntypedValue::from(ExternRef::null()), UntypedValue::from(0));
+    assert!(ExternRef::from(UntypedValue::from(0)).is_null());
+}
+
 impl From<UntypedValue> for ExternRef {
     fn from(untyped: UntypedValue) -> Self {
         // Safety: This operation is safe since there are no invalid
@@ -116,18 +122,22 @@ impl From<UntypedValue> for ExternRef {
         //         this operation cannot produce invalid [`ExternRef`]
         //         instances even though the input [`UntypedValue`]
         //         was modified arbitrarily.
-        unsafe { Transposer { untyped }.funcref }
+        unsafe { Transposer { untyped }.externref }
     }
 }
 
 impl From<ExternRef> for UntypedValue {
-    fn from(funcref: ExternRef) -> Self {
+    fn from(externref: ExternRef) -> Self {
+        if externref.is_null() {
+            // This early return is important to fix conversion bugs with `null`.
+            return UntypedValue::from(0u64)
+        }
         // Safety: This operation is safe since there are no invalid
         //         bit patterns for [`UntypedValue`] instances. Therefore
         //         this operation cannot produce invalid [`UntypedValue`]
         //         instances even if it was possible to arbitrarily modify
         //         the input [`ExternRef`] instance.
-        unsafe { Transposer { funcref }.untyped }
+        unsafe { Transposer { externref }.untyped }
     }
 }
 

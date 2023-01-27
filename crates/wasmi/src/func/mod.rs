@@ -442,6 +442,12 @@ fn funcref_sizeof() {
     assert_eq!(size_of::<Func>(), size_of::<FuncRef>());
 }
 
+#[test]
+fn funcref_null_to_zero() {
+    assert_eq!(UntypedValue::from(FuncRef::null()), UntypedValue::from(0));
+    assert!(FuncRef::from(UntypedValue::from(0)).is_null());
+}
+
 impl From<UntypedValue> for FuncRef {
     fn from(untyped: UntypedValue) -> Self {
         // Safety: This operation is safe since there are no invalid
@@ -455,6 +461,10 @@ impl From<UntypedValue> for FuncRef {
 
 impl From<FuncRef> for UntypedValue {
     fn from(funcref: FuncRef) -> Self {
+        if funcref.is_null() {
+            // This early return is important to fix conversion bugs with `null`.
+            return Self::from(0u64)
+        }
         // Safety: This operation is safe since there are no invalid
         //         bit patterns for [`UntypedValue`] instances. Therefore
         //         this operation cannot produce invalid [`UntypedValue`]
