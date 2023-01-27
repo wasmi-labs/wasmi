@@ -221,8 +221,9 @@ fn type_check_arguments(
 ) -> Result<Vec<Value>> {
     if func_type.params().len() != func_args.len() {
         bail!(
-            "invalid number of arguments given for {func_name} of type {func_type}. \
+            "invalid number of arguments given for {func_name} of type {}. \
             expected {} argument but got {}",
+            DisplayFuncType(func_type),
             func_type.params().len(),
             func_args.len()
         );
@@ -329,5 +330,135 @@ fn print_pretty_results(results: &[Value]) {
             }
             println!("]");
         }
+    }
+}
+
+/// Wrapper type around [`FuncType`] that implements `Display` for it.
+struct DisplayFuncType<'a>(&'a FuncType);
+
+impl fmt::Display for DisplayFuncType<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "fn(")?;
+        let params = self.0.params();
+        let results = self.0.results();
+        write_slice(f, params, ",")?;
+        write!(f, ")")?;
+        if let Some((first, rest)) = results.split_first() {
+            write!(f, " -> ")?;
+            if !rest.is_empty() {
+                write!(f, "(")?;
+            }
+            write!(f, "{first}")?;
+            for result in rest {
+                write!(f, ", {result}")?;
+            }
+            if !rest.is_empty() {
+                write!(f, ")")?;
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Writes the elements of a `slice` separated by the `separator`.
+fn write_slice<T>(f: &mut fmt::Formatter, slice: &[T], separator: &str) -> fmt::Result
+where
+    T: fmt::Display,
+{
+    if let Some((first, rest)) = slice.split_first() {
+        write!(f, "{first}")?;
+        for param in rest {
+            write!(f, "{separator} {param}")?;
+        }
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use core::borrow::Borrow;
+
+    fn assert_display(func_type: impl Borrow<FuncType>, expected: &str) {
+        assert_eq!(
+            format!("{}", DisplayFuncType(func_type.borrow())),
+            String::from(expected),
+        );
+    }
+
+    #[test]
+    fn display_0in_0out() {
+        assert_display(FuncType::new([], []), "fn()");
+    }
+
+    #[test]
+    fn display_1in_0out() {
+        assert_display(FuncType::new([ValueType::I32], []), "fn(i32)");
+    }
+
+    #[test]
+    fn display_0in_1out() {
+        assert_display(FuncType::new([], [ValueType::I32]), "fn() -> i32");
+    }
+
+    #[test]
+    fn display_1in_1out() {
+        assert_display(
+            FuncType::new([ValueType::I32], [ValueType::I32]),
+            "fn(i32) -> i32",
+        );
+    }
+
+    #[test]
+    fn display_4in_0out() {
+        assert_display(
+            FuncType::new(
+                [
+                    ValueType::I32,
+                    ValueType::I64,
+                    ValueType::F32,
+                    ValueType::F64,
+                ],
+                [],
+            ),
+            "fn(i32, i64, f32, f64)",
+        );
+    }
+
+    #[test]
+    fn display_0in_4out() {
+        assert_display(
+            FuncType::new(
+                [],
+                [
+                    ValueType::I32,
+                    ValueType::I64,
+                    ValueType::F32,
+                    ValueType::F64,
+                ],
+            ),
+            "fn() -> (i32, i64, f32, f64)",
+        );
+    }
+
+    #[test]
+    fn display_4in_4out() {
+        assert_display(
+            FuncType::new(
+                [
+                    ValueType::I32,
+                    ValueType::I64,
+                    ValueType::F32,
+                    ValueType::F64,
+                ],
+                [
+                    ValueType::I32,
+                    ValueType::I64,
+                    ValueType::F32,
+                    ValueType::F64,
+                ],
+            ),
+            "fn(i32, i64, f32, f64) -> (i32, i64, f32, f64)",
+        );
     }
 }
