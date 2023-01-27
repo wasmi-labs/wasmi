@@ -418,12 +418,6 @@ pub struct FuncRef {
     inner: Option<Func>,
 }
 
-impl PartialEq for FuncRef {
-    fn eq(&self, other: &Self) -> bool {
-        UntypedValue::from(*self) == UntypedValue::from(*other)
-    }
-}
-
 impl From<Func> for FuncRef {
     fn from(func: Func) -> Self {
         Self::new(func)
