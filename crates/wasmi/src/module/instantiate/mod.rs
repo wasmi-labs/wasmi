@@ -297,13 +297,13 @@ impl Module {
             if let ElementSegmentKind::Active(segment) = segment.kind() {
                 let offset_expr = segment.offset();
                 let offset = Self::eval_init_expr(&mut *context, builder, offset_expr)
-                    .try_into::<u32>()
+                    .i32()
                     .unwrap_or_else(|| {
                         panic!(
                             "expected offset value of type `i32` due to \
                              Wasm validation but found: {offset_expr:?}",
                         )
-                    });
+                    }) as u32;
                 let table = builder.get_table(segment.table_index().into_u32());
                 // Note: This checks not only that the elements in the element segments properly
                 //       fit into the table at the given offset but also that the element segment
@@ -340,13 +340,13 @@ impl Module {
             if let DataSegmentKind::Active(segment) = segment.kind() {
                 let offset_expr = segment.offset();
                 let offset = Self::eval_init_expr(&mut *context, builder, offset_expr)
-                    .try_into::<u32>()
+                    .i32()
                     .unwrap_or_else(|| {
                         panic!(
                             "expected offset value of type `i32` due to \
                                 Wasm validation but found: {offset_expr:?}",
                         )
-                    }) as usize;
+                    }) as u32 as usize;
                 let memory = builder.get_memory(segment.memory_index().into_u32());
                 memory.write(&mut *context, offset, bytes)?;
             }

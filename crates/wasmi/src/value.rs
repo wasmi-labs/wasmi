@@ -1,5 +1,4 @@
 use crate::{ExternRef, FuncRef};
-use core::{fmt, fmt::Display};
 use wasmi_core::{UntypedValue, ValueType, F32, F64};
 
 /// Untyped instances that allow to be typed.
@@ -164,20 +163,6 @@ impl From<i64> for Value {
     }
 }
 
-impl From<u32> for Value {
-    #[inline]
-    fn from(val: u32) -> Self {
-        Value::I32(val as _)
-    }
-}
-
-impl From<u64> for Value {
-    #[inline]
-    fn from(val: u64) -> Self {
-        Value::I64(val as _)
-    }
-}
-
 impl From<F32> for Value {
     #[inline]
     fn from(val: F32) -> Self {
@@ -189,133 +174,5 @@ impl From<F64> for Value {
     #[inline]
     fn from(val: F64) -> Self {
         Value::F64(val)
-    }
-}
-
-macro_rules! impl_from_value {
-    ($expected_rt_ty: ident, $into: ty) => {
-        impl TryFrom<Value> for $into {
-            type Error = TryFromValueError;
-
-            #[inline]
-            fn try_from(val: Value) -> Result<Self, Self::Error> {
-                match val {
-                    Value::$expected_rt_ty(val) => Ok(val as _),
-                    _ => Err(Self::Error::TypeMismatch),
-                }
-            }
-        }
-    };
-}
-impl_from_value!(I32, i32);
-impl_from_value!(I64, i64);
-impl_from_value!(F32, F32);
-impl_from_value!(F64, F64);
-impl_from_value!(I32, u32);
-impl_from_value!(I64, u64);
-
-/// Errors that may occur upon converting a [`Value`] to a primitive type.
-#[derive(Debug, Copy, Clone)]
-pub enum TryFromValueError {
-    /// The type does not match the expected type.
-    TypeMismatch,
-    /// The value is out of bounds for the expected type.
-    OutOfBounds,
-}
-
-impl Display for TryFromValueError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            TryFromValueError::TypeMismatch => write!(f, "encountered type mismatch"),
-            TryFromValueError::OutOfBounds => write!(f, "value out of bounds"),
-        }
-    }
-}
-
-/// This conversion assumes that boolean values are represented by
-/// [`I32`] type.
-///
-/// [`I32`]: enum.Value.html#variant.I32
-impl TryFrom<Value> for bool {
-    type Error = TryFromValueError;
-
-    #[inline]
-    fn try_from(val: Value) -> Result<Self, Self::Error> {
-        match val {
-            Value::I32(val) => Ok(val != 0),
-            _ => Err(Self::Error::TypeMismatch),
-        }
-    }
-}
-
-///  This conversion assumes that `i8` is represented as an [`I32`].
-///
-/// [`I32`]: enum.Value.html#variant.I32
-impl TryFrom<Value> for i8 {
-    type Error = TryFromValueError;
-
-    #[inline]
-    fn try_from(val: Value) -> Result<Self, Self::Error> {
-        let min = i32::from(i8::MIN);
-        let max = i32::from(i8::MAX);
-        match val {
-            Value::I32(val) if min <= val && val <= max => Ok(val as i8),
-            Value::I32(_) => Err(Self::Error::OutOfBounds),
-            _ => Err(Self::Error::TypeMismatch),
-        }
-    }
-}
-
-///  This conversion assumes that `i16` is represented as an [`I32`].
-///
-/// [`I32`]: enum.Value.html#variant.I32
-impl TryFrom<Value> for i16 {
-    type Error = TryFromValueError;
-
-    #[inline]
-    fn try_from(val: Value) -> Result<Self, Self::Error> {
-        let min = i32::from(i16::MIN);
-        let max = i32::from(i16::MAX);
-        match val {
-            Value::I32(val) if min <= val && val <= max => Ok(val as i16),
-            Value::I32(_) => Err(Self::Error::OutOfBounds),
-            _ => Err(Self::Error::TypeMismatch),
-        }
-    }
-}
-
-///  This conversion assumes that `u8` is represented as an [`I32`].
-///
-/// [`I32`]: enum.Value.html#variant.I32
-impl TryFrom<Value> for u8 {
-    type Error = TryFromValueError;
-
-    #[inline]
-    fn try_from(val: Value) -> Result<Self, Self::Error> {
-        let min = i32::from(u8::MIN);
-        let max = i32::from(u8::MAX);
-        match val {
-            Value::I32(val) if min <= val && val <= max => Ok(val as u8),
-            Value::I32(_) => Err(Self::Error::OutOfBounds),
-            _ => Err(Self::Error::TypeMismatch),
-        }
-    }
-}
-
-///  This conversion assumes that `u16` is represented as an [`I32`].
-///
-/// [`I32`]: enum.Value.html#variant.I32
-impl TryFrom<Value> for u16 {
-    type Error = TryFromValueError;
-
-    #[inline]
-    fn try_from(val: Value) -> Result<Self, Self::Error> {
-        let min = i32::from(u16::MIN);
-        let max = i32::from(u16::MAX);
-        match val {
-            Value::I32(val) if min <= val && val <= max => Ok(val as u16),
-            Value::I32(_) => Err(Self::Error::OutOfBounds),
-            _ => Err(Self::Error::TypeMismatch),
-        }
     }
 }
