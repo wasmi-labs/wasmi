@@ -21,6 +21,8 @@ pub enum ValueType {
     F64,
     /// A nullable function reference.
     FuncRef,
+    /// A nullable external reference.
+    ExternRef,
 }
 
 impl Display for ValueType {
@@ -31,6 +33,7 @@ impl Display for ValueType {
             Self::F32 => write!(f, "f32"),
             Self::F64 => write!(f, "f64"),
             Self::FuncRef => write!(f, "funcref"),
+            Self::ExternRef => write!(f, "externref"),
         }
     }
 }

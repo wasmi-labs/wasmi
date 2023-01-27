@@ -430,15 +430,6 @@ impl From<Func> for FuncRef {
     }
 }
 
-impl fmt::Display for FuncRef {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.inner {
-            Some(func) => func.fmt(f),
-            None => write!(f, "null"),
-        }
-    }
-}
-
 /// Type used to convert between [`FuncRef`] and [`UntypedValue`].
 union Transposer {
     funcref: FuncRef,

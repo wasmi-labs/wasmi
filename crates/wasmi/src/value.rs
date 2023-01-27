@@ -1,4 +1,4 @@
-use crate::FuncRef;
+use crate::{ExternRef, FuncRef};
 use core::{fmt, fmt::Display};
 use wasmi_core::{UntypedValue, ValueType, F32, F64};
 
@@ -21,6 +21,7 @@ impl WithType for UntypedValue {
             ValueType::F32 => Value::F32(self.into()),
             ValueType::F64 => Value::F64(self.into()),
             ValueType::FuncRef => Value::FuncRef(self.into()),
+            ValueType::ExternRef => Value::ExternRef(self.into()),
         }
     }
 }
@@ -33,6 +34,7 @@ impl From<Value> for UntypedValue {
             Value::F32(value) => value.into(),
             Value::F64(value) => value.into(),
             Value::FuncRef(value) => value.into(),
+            Value::ExternRef(value) => value.into(),
         }
     }
 }
@@ -56,18 +58,8 @@ pub enum Value {
     F64(F64),
     /// A nullable [`Func`][`crate::Func`] reference, a.k.a. [`FuncRef`].
     FuncRef(FuncRef),
-}
-
-impl Display for Value {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::I32(value) => write!(f, "{value}"),
-            Self::I64(value) => write!(f, "{value}"),
-            Self::F32(value) => write!(f, "{}", f32::from(*value)),
-            Self::F64(value) => write!(f, "{}", f64::from(*value)),
-            Self::FuncRef(value) => write!(f, "{value}"),
-        }
-    }
+    /// A nullable external object reference, a.k.a. [`ExternRef`].
+    ExternRef(ExternRef),
 }
 
 impl Value {
@@ -80,6 +72,7 @@ impl Value {
             ValueType::F32 => Value::F32(0f32.into()),
             ValueType::F64 => Value::F64(0f64.into()),
             ValueType::FuncRef => Value::FuncRef(FuncRef::null()),
+            ValueType::ExternRef => Value::ExternRef(ExternRef::null()),
         }
     }
 
@@ -87,11 +80,12 @@ impl Value {
     #[inline]
     pub fn ty(&self) -> ValueType {
         match *self {
-            Value::I32(_) => ValueType::I32,
-            Value::I64(_) => ValueType::I64,
-            Value::F32(_) => ValueType::F32,
-            Value::F64(_) => ValueType::F64,
-            Value::FuncRef(_) => ValueType::FuncRef,
+            Self::I32(_) => ValueType::I32,
+            Self::I64(_) => ValueType::I64,
+            Self::F32(_) => ValueType::F32,
+            Self::F64(_) => ValueType::F64,
+            Self::FuncRef(_) => ValueType::FuncRef,
+            Self::ExternRef(_) => ValueType::ExternRef,
         }
     }
 
@@ -131,6 +125,14 @@ impl Value {
     pub fn funcref(&self) -> Option<&FuncRef> {
         match self {
             Self::FuncRef(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// Returns the underlying `externref` if the type matches otherwise returns `None`.
+    pub fn externref(&self) -> Option<&ExternRef> {
+        match self {
+            Self::ExternRef(value) => Some(value),
             _ => None,
         }
     }

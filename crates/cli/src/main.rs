@@ -1,8 +1,8 @@
 use anyhow::{anyhow, bail, Result};
 use clap::Parser;
-use core::fmt::Write;
 use std::{
     ffi::OsStr,
+    fmt::{self, Write},
     fs,
     path::{Path, PathBuf},
 };
@@ -257,7 +257,10 @@ fn type_check_arguments(
                     .map(Value::from)
                     .map_err(make_err!()),
                 ValueType::FuncRef => {
-                    bail!("cannot call functions that take a parameter of type FuncRef")
+                    bail!("the wasmi CLI cannot take arguments of type funcref")
+                }
+                ValueType::ExternRef => {
+                    bail!("the wasmi CLI cannot take arguments of type externref")
                 }
             }
         })
@@ -279,17 +282,39 @@ fn prepare_results_buffer(func_type: &FuncType) -> Vec<Value> {
 fn print_execution_start(wasm_file: &Path, func_name: &str, func_args: &[Value]) {
     print!("executing {wasm_file:?}::{func_name}(");
     if let Some((first_arg, rest_args)) = func_args.split_first() {
-        print!("{first_arg}");
-        for arg in rest_args {
+        print!("{}", DisplayValue(first_arg));
+        for arg in rest_args.iter().map(DisplayValue) {
             print!(", {arg}");
         }
     }
     println!(") ...");
 }
 
+/// Wrapper type that implements `Display` for [`Value`].
+struct DisplayValue<'a>(&'a Value);
+
+impl<'a> fmt::Display for DisplayValue<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self.0 {
+            Value::I32(value) => write!(f, "{value}"),
+            Value::I64(value) => write!(f, "{value}"),
+            Value::F32(value) => write!(f, "{value}"),
+            Value::F64(value) => write!(f, "{value}"),
+            Value::FuncRef(value) => panic!("cannot display funcref values but found {value:?}"),
+            Value::ExternRef(value) => {
+                panic!("cannot display externref values but found {value:?}")
+            }
+        }
+    }
+}
+
 /// Prints the results of the Wasm computation in a human readable form.
 fn print_pretty_results(results: &[Value]) {
-    let pretty_results = results.iter().map(Value::to_string).collect::<Vec<_>>();
+    let pretty_results = results
+        .iter()
+        .map(DisplayValue)
+        .map(|v| v.to_string())
+        .collect::<Vec<_>>();
     match pretty_results.len() {
         1 => {
             println!("{}", pretty_results[0]);
