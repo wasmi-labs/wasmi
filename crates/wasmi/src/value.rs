@@ -54,9 +54,7 @@ pub enum Value {
     F32(F32),
     /// Value of 64-bit IEEE 754-2008 floating point number.
     F64(F64),
-    /// A nullable [`Func`] reference.
-    ///
-    /// [`Func`]: [`crate::Func`]
+    /// A nullable [`Func`][`crate::Func`] reference, a.k.a. [`FuncRef`].
     FuncRef(FuncRef),
 }
 
