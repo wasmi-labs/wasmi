@@ -691,13 +691,17 @@ fn bench_execute_global_bump(c: &mut Criterion) {
             .get_export(&store, "bump")
             .and_then(Extern::into_func)
             .unwrap();
-        let mut result = [Value::I32(0)];
+        let mut result = Value::I32(0);
 
         b.iter(|| {
             count_until
-                .call(&mut store, &[Value::I32(BUMP_AMOUNT)], &mut result)
+                .call(
+                    &mut store,
+                    &[Value::I32(BUMP_AMOUNT)],
+                    slice::from_mut(&mut result),
+                )
                 .unwrap();
-            assert_eq!(result, [Value::I32(BUMP_AMOUNT)]);
+            assert_eq!(result.i32(), Some(BUMP_AMOUNT));
         })
     });
 }
@@ -710,13 +714,17 @@ fn bench_execute_global_const(c: &mut Criterion) {
             .get_export(&store, "call")
             .and_then(Extern::into_func)
             .unwrap();
-        let mut result = [Value::I32(0)];
+        let mut result = Value::I32(0);
 
         b.iter(|| {
             count_until
-                .call(&mut store, &[Value::I32(LIMIT)], &mut result)
+                .call(
+                    &mut store,
+                    &[Value::I32(LIMIT)],
+                    slice::from_mut(&mut result),
+                )
                 .unwrap();
-            assert_eq!(result, [Value::I32(LIMIT)]);
+            assert_eq!(result.i32(), Some(LIMIT));
         })
     });
 }
@@ -753,13 +761,17 @@ fn bench_execute_recursive_ok(c: &mut Criterion) {
             .get_export(&store, "call")
             .and_then(Extern::into_func)
             .unwrap();
-        let mut result = [Value::I32(0)];
+        let mut result = Value::I32(0);
 
         b.iter(|| {
             bench_call
-                .call(&mut store, &[Value::I32(RECURSIVE_DEPTH)], &mut result)
+                .call(
+                    &mut store,
+                    &[Value::I32(RECURSIVE_DEPTH)],
+                    slice::from_mut(&mut result),
+                )
                 .unwrap();
-            assert_eq!(result, [Value::I32(0)]);
+            assert_eq!(result.i32(), Some(0));
         })
     });
 }
@@ -775,13 +787,17 @@ fn bench_execute_recursive_scan(c: &mut Criterion) {
             .get_export(&store, "func")
             .and_then(Extern::into_func)
             .unwrap();
-        let mut result = [Value::I32(0)];
+        let mut result = Value::I32(0);
 
         b.iter(|| {
             bench_call
-                .call(&mut store, &[Value::I32(RECURSIVE_SCAN_DEPTH)], &mut result)
+                .call(
+                    &mut store,
+                    &[Value::I32(RECURSIVE_SCAN_DEPTH)],
+                    slice::from_mut(&mut result),
+                )
                 .unwrap();
-            assert_eq!(result, [Value::I32(RECURSIVE_SCAN_EXPECTED)]);
+            assert_eq!(result.i32(), Some(RECURSIVE_SCAN_EXPECTED));
         })
     });
 }
@@ -818,15 +834,18 @@ fn bench_execute_recursive_is_even(c: &mut Criterion) {
             .get_export(&store, "is_even")
             .and_then(Extern::into_func)
             .unwrap();
-        let mut result = [Value::I32(0)];
+        let mut result = Value::I32(0);
 
         b.iter(|| {
             bench_call
-                .call(&mut store, &[Value::I32(50_000)], &mut result)
+                .call(
+                    &mut store,
+                    &[Value::I32(50_000)],
+                    slice::from_mut(&mut result),
+                )
                 .unwrap();
         });
-
-        assert_eq!(result, [Value::I32(1)]);
+        assert_eq!(result.i32(), Some(1));
     });
 }
 
@@ -851,16 +870,16 @@ fn bench_execute_host_calls(c: &mut Criterion) {
             .get_export(&store, "call")
             .and_then(Extern::into_func)
             .unwrap();
-        let mut result = [Value::I64(0)];
+        let mut result = Value::I64(0);
 
         b.iter(|| {
             call.call(
                 &mut store,
                 &[Value::I64(HOST_CALLS_REPETITIONS)],
-                &mut result,
+                slice::from_mut(&mut result),
             )
             .unwrap();
-            assert_eq!(result, [Value::I64(0)]);
+            assert_eq!(result.i64(), Some(0));
         })
     });
 }
@@ -933,12 +952,16 @@ fn bench_execute_memory_sum(c: &mut Criterion) {
             *byte = new_byte;
             expected_sum += new_byte as u64 as i64;
         }
-        let mut result = [Value::I32(0)];
+        let mut result = Value::I64(0);
         b.iter(|| {
-            sum.call(&mut store, &[Value::I32(len as i32)], &mut result)
-                .unwrap();
+            sum.call(
+                &mut store,
+                &[Value::I32(len as i32)],
+                slice::from_mut(&mut result),
+            )
+            .unwrap();
         });
-        assert_eq!(result, [Value::I64(expected_sum)]);
+        assert_eq!(result.i64(), Some(expected_sum));
     });
 }
 

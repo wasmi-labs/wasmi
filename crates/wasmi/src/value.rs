@@ -44,7 +44,7 @@ impl From<Value> for UntypedValue {
 ///
 /// There is no distinction between signed and unsigned integer types. Instead, integers are
 /// interpreted by respective operations as either unsigned or signed in two’s complement representation.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum Value {
     /// Value of 32-bit signed or unsigned integer.
     I32(i32),
