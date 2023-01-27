@@ -23,7 +23,10 @@ use super::{
     TableEntity,
     TableIdx,
 };
-use crate::memory::DataSegment;
+use crate::{
+    externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
+    memory::DataSegment,
+};
 use core::{
     fmt::Debug,
     sync::atomic::{AtomicU32, Ordering},
@@ -106,6 +109,10 @@ pub struct StoreInner {
     datas: Arena<DataSegmentIdx, DataSegmentEntity>,
     /// Stored data segments.
     elems: Arena<ElementSegmentIdx, ElementSegmentEntity>,
+    /// Stored external objects for [`ExternRef`] types.
+    ///
+    /// [`ExternRef`]: [`crate::ExternRef`]
+    extern_objects: Arena<ExternObjectIdx, ExternObjectEntity>,
     /// The [`Engine`] in use by the [`Store`].
     ///
     /// Amongst others the [`Engine`] stores the Wasm function definitions.
@@ -135,6 +142,7 @@ impl StoreInner {
             instances: Arena::new(),
             datas: Arena::new(),
             elems: Arena::new(),
+            extern_objects: Arena::new(),
         }
     }
 
@@ -235,6 +243,12 @@ impl StoreInner {
     ) -> ElementSegment {
         let segment = self.elems.alloc(segment);
         ElementSegment::from_inner(self.wrap_stored(segment))
+    }
+
+    /// Allocates a new [`ExternObjectEntity`] and returns a [`ExternObject`] reference to it.
+    pub(super) fn alloc_extern_object(&mut self, object: ExternObjectEntity) -> ExternObject {
+        let object = self.extern_objects.alloc(object);
+        ExternObject::from_inner(self.wrap_stored(object))
     }
 
     /// Allocates a new uninitialized [`InstanceEntity`] and returns an [`Instance`] reference to it.
@@ -541,6 +555,16 @@ impl StoreInner {
     /// - If the [`Instance`] cannot be resolved to its entity.
     pub fn resolve_instance(&self, instance: &Instance) -> &InstanceEntity {
         self.resolve(instance.as_inner(), &self.instances)
+    }
+
+    /// Returns a shared reference to the [`ExternObjectEntity`] associated to the given [`ExternalObject`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`ExternObject`] does not originate from this [`Store`].
+    /// - If the [`ExternObject`] cannot be resolved to its entity.
+    pub fn resolve_external_object(&self, object: &ExternObject) -> &ExternObjectEntity {
+        self.resolve(object.as_inner(), &self.extern_objects)
     }
 }
 
