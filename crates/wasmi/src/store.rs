@@ -204,7 +204,7 @@ impl StoreInner {
     /// # Note
     ///
     /// Panics if no [`DedupFuncType`] for the given [`Func`] was registered.
-    pub fn get_func_type(&self, func: Func) -> DedupFuncType {
+    pub fn get_func_type(&self, func: &Func) -> DedupFuncType {
         let idx = self.unwrap_stored(func.as_inner());
         self.func_types
             .get(idx)

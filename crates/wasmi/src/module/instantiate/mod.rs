@@ -15,6 +15,7 @@ use crate::{
     Extern,
     ExternType,
     FuncEntity,
+    FuncRef,
     FuncType,
     Global,
     Instance,
@@ -57,7 +58,7 @@ impl Module {
         self.extract_func_types(&mut context, &mut builder);
         self.extract_imports(&mut context, &mut builder, externals)?;
         self.extract_functions(&mut context, &mut builder, handle);
-        self.extract_tables(&mut context, &mut builder);
+        self.extract_tables(&mut context, &mut builder)?;
         self.extract_memories(&mut context, &mut builder);
         self.extract_globals(&mut context, &mut builder);
         self.extract_exports(&mut builder);
@@ -194,10 +195,17 @@ impl Module {
     /// This also stores [`Table`] references into the [`Instance`] under construction.
     ///
     /// [`Store`]: struct.Store.html
-    fn extract_tables(&self, context: &mut impl AsContextMut, builder: &mut InstanceEntityBuilder) {
+    fn extract_tables(
+        &self,
+        context: &mut impl AsContextMut,
+        builder: &mut InstanceEntityBuilder,
+    ) -> Result<(), InstantiationError> {
         for table_type in self.internal_tables().copied() {
-            builder.push_table(Table::new(context.as_context_mut(), table_type));
+            let init = Value::default(table_type.element());
+            let table = Table::new(context.as_context_mut(), table_type, init)?;
+            builder.push_table(table);
         }
+        Ok(())
     }
 
     /// Extracts the Wasm linear memories from the module and stores them into the [`Store`].
@@ -321,7 +329,7 @@ impl Module {
                 // Finally do the actual initialization of the table elements.
                 for (i, func_index) in items.iter().enumerate() {
                     let func = func_index.map(|index| builder.get_func(index.into_u32()));
-                    table.set(&mut *context, offset + i as u32, func)?;
+                    table.set(&mut *context, offset + i as u32, FuncRef::new(func).into())?;
                 }
             }
             builder.push_element_segment(ElementSegment::new(context.as_context_mut(), segment));

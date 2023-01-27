@@ -1,6 +1,7 @@
 use crate::{module, module::FuncIdx, store::Stored, AsContextMut};
 use alloc::sync::Arc;
 use wasmi_arena::ArenaIndex;
+use wasmi_core::ValueType;
 
 /// A raw index to a element segment entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -58,6 +59,8 @@ impl ElementSegment {
 /// a need to have an instantiated representation of data segments.
 #[derive(Debug)]
 pub struct ElementSegmentEntity {
+    /// The [`ValueType`] of elements of this [`ElementSegmentEntity`].
+    ty: ValueType,
     /// The underlying items of the instance element segment.
     ///
     /// # Note
@@ -70,19 +73,26 @@ pub struct ElementSegmentEntity {
 
 impl From<&'_ module::ElementSegment> for ElementSegmentEntity {
     fn from(segment: &'_ module::ElementSegment) -> Self {
+        let ty = segment.ty();
         match segment.kind() {
             module::ElementSegmentKind::Passive => Self {
+                ty,
                 items: Some(segment.clone_items()),
             },
-            module::ElementSegmentKind::Active(_) => Self::empty(),
+            module::ElementSegmentKind::Active(_) => Self::empty(ty),
         }
     }
 }
 
 impl ElementSegmentEntity {
     /// Create an empty [`ElementSegmentEntity`] representing dropped element segments.
-    fn empty() -> Self {
-        Self { items: None }
+    fn empty(ty: ValueType) -> Self {
+        Self { ty, items: None }
+    }
+
+    /// Returns the [`ValueType`] of elements in the [`ElementSegmentEntity`].
+    pub fn ty(&self) -> ValueType {
+        self.ty
     }
 
     /// Returns the items of the [`ElementSegmentEntity`].

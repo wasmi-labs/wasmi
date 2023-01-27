@@ -1,6 +1,7 @@
 use super::{FuncIdx, InitExpr, TableIdx};
-use crate::errors::ModuleError;
+use crate::{errors::ModuleError, module::utils::WasmiValueType};
 use alloc::sync::Arc;
+use wasmi_core::ValueType;
 
 /// A table element segment within a [`Module`].
 ///
@@ -9,6 +10,8 @@ use alloc::sync::Arc;
 pub struct ElementSegment {
     /// The kind of the [`ElementSegment`].
     kind: ElementSegmentKind,
+    /// The type of elements of the [`ElementSegment`].
+    ty: ValueType,
     /// The items of the [`ElementSegment`].
     items: Arc<[Option<FuncIdx>]>,
 }
@@ -77,6 +80,7 @@ impl TryFrom<wasmparser::Element<'_>> for ElementSegment {
             "wasmi does not support the `reference-types` Wasm proposal"
         );
         let kind = ElementSegmentKind::try_from(element.kind)?;
+        let ty = WasmiValueType::from(element.ty).into_inner();
         let items = element
             .items
             .get_items_reader()?
@@ -89,7 +93,7 @@ impl TryFrom<wasmparser::Element<'_>> for ElementSegment {
                 <Result<_, ModuleError>>::Ok(func_ref)
             })
             .collect::<Result<Arc<[_]>, _>>()?;
-        Ok(ElementSegment { kind, items })
+        Ok(ElementSegment { kind, ty, items })
     }
 }
 
@@ -97,6 +101,11 @@ impl ElementSegment {
     /// Returns the offset expression of the [`ElementSegment`].
     pub fn kind(&self) -> &ElementSegmentKind {
         &self.kind
+    }
+
+    /// Returns the [`ValueType`] of the [`ElementSegment`].
+    pub fn ty(&self) -> ValueType {
+        self.ty
     }
 
     /// Returns the element items of the [`ElementSegment`].

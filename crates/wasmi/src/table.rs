@@ -1,11 +1,17 @@
 #![allow(clippy::len_without_is_empty)]
 
-use super::{AsContext, AsContextMut, Func, Stored};
-use crate::{element::ElementSegmentEntity, instance::InstanceEntity};
+use super::{AsContext, AsContextMut, Stored};
+use crate::{
+    element::ElementSegmentEntity,
+    instance::InstanceEntity,
+    value::WithType,
+    FuncRef,
+    Value,
+};
 use alloc::vec::Vec;
 use core::{cmp::max, fmt, fmt::Display};
 use wasmi_arena::ArenaIndex;
-use wasmi_core::{TrapCode, ValueType};
+use wasmi_core::{TrapCode, UntypedValue, ValueType};
 
 /// A raw index to a table entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -37,6 +43,13 @@ pub enum TableError {
         /// The amount of requested invalid growth.
         delta: u32,
     },
+    /// Occurs when operating with a [`Table`] and mismatching element types.
+    ElementTypeMismatch {
+        /// Expected element type for the [`Table`].
+        expected: ValueType,
+        /// Encountered element type.
+        actual: ValueType,
+    },
     /// Occurs when accessing the table out of bounds.
     AccessOutOfBounds {
         /// The current size of the table.
@@ -66,6 +79,9 @@ impl Display for TableError {
                     "tried to grow table with size of {current} and maximum of \
                     {maximum} by {delta} out of bounds",
                 )
+            }
+            Self::ElementTypeMismatch { expected, actual } => {
+                write!(f, "encountered mismatching table element type, expected {expected:?} but found {actual:?}")
             }
             Self::AccessOutOfBounds { current, offset } => {
                 write!(
@@ -131,6 +147,16 @@ impl TableType {
         self.max
     }
 
+    /// Returns a [`TableError`] if `ty` does not match the [`Table`] element [`ValueType`].
+    fn matches_element_type(&self, ty: ValueType) -> Result<(), TableError> {
+        let expected = self.element();
+        let actual = ty;
+        if actual != expected {
+            return Err(TableError::ElementTypeMismatch { expected, actual });
+        }
+        Ok(())
+    }
+
     /// Checks if `self` satisfies the given `TableType`.
     ///
     /// # Errors
@@ -162,16 +188,19 @@ impl TableType {
 #[derive(Debug)]
 pub struct TableEntity {
     ty: TableType,
-    elements: Vec<Option<Func>>,
+    elements: Vec<UntypedValue>,
 }
 
 impl TableEntity {
     /// Creates a new table entity with the given resizable limits.
-    pub fn new(ty: TableType) -> Self {
-        Self {
-            elements: vec![None; ty.minimum() as usize],
-            ty,
-        }
+    ///
+    /// # Errors
+    ///
+    /// If `init` does not match the [`TableType`] element type.
+    pub fn new(ty: TableType, init: Value) -> Result<Self, TableError> {
+        ty.matches_element_type(init.ty())?;
+        let elements = vec![init.into(); ty.minimum() as usize];
+        Ok(Self { ty, elements })
     }
 
     /// Returns the resizable limits of the table.
@@ -188,12 +217,14 @@ impl TableEntity {
     ///
     /// # Note
     ///
-    /// The newly added elements are initialized to `None`.
+    /// The newly added elements are initialized to the `init` [`Value`].
     ///
     /// # Errors
     ///
-    /// If the table is grown beyond its maximum limits.
-    pub fn grow(&mut self, delta: u32) -> Result<(), TableError> {
+    /// - If the table is grown beyond its maximum limits.
+    /// - If `value` does not match the [`Table`] element type.
+    pub fn grow(&mut self, delta: u32, init: Value) -> Result<(), TableError> {
+        self.ty().matches_element_type(init.ty())?;
         let maximum = self.ty.maximum().unwrap_or(u32::MAX);
         let current = self.size();
         let new_len = current
@@ -204,8 +235,13 @@ impl TableEntity {
                 current,
                 delta,
             })? as usize;
-        self.elements.resize(new_len, None);
+        self.elements.resize(new_len, init.into());
         Ok(())
+    }
+
+    /// Converts the internal [`UntypedValue`] into a [`Value`] for this [`Table`] element type.
+    fn make_typed(&self, untyped: UntypedValue) -> Value {
+        untyped.with_type(self.ty().element())
     }
 
     /// Returns the [`Table`] element value at `index`.
@@ -213,31 +249,57 @@ impl TableEntity {
     /// # Errors
     ///
     /// If `index` is out of bounds.
-    pub fn get(&self, index: u32) -> Result<Option<Func>, TableError> {
-        let element = self.elements.get(index as usize).copied().ok_or_else(|| {
-            TableError::AccessOutOfBounds {
-                current: self.size(),
-                offset: index,
-            }
-        })?;
-        Ok(element)
+    pub fn get(&self, index: u32) -> Result<Value, TableError> {
+        let element = self.get_untyped(index)?;
+        let value = self.make_typed(element);
+        Ok(value)
     }
 
-    /// Writes the `value` provided into `index` within this [`Table`].
+    /// Returns the untyped [`Table`] element value at `index`.
+    ///
+    /// # Note
+    ///
+    /// This is a more efficient version of [`Table::get`] for
+    /// internal use only.
     ///
     /// # Errors
     ///
     /// If `index` is out of bounds.
-    pub fn set(&mut self, index: u32, value: Option<Func>) -> Result<(), TableError> {
+    pub fn get_untyped(&self, index: u32) -> Result<UntypedValue, TableError> {
+        self.elements
+            .get(index as usize)
+            .copied()
+            .ok_or_else(|| TableError::AccessOutOfBounds {
+                current: self.size(),
+                offset: index,
+            })
+    }
+
+    /// Sets the [`Value`] of this [`Table`] at `index`.
+    ///
+    /// # Errors
+    ///
+    /// - If `index` is out of bounds.
+    /// - If `value` does not match the [`Table`] element type.
+    pub fn set(&mut self, index: u32, value: Value) -> Result<(), TableError> {
+        self.set_untyped(index, value.into())
+    }
+
+    /// Returns the [`UntypedValue`] of the [`Table`] at `index`.
+    ///
+    /// # Errors
+    ///
+    /// If `index` is out of bounds.
+    pub fn set_untyped(&mut self, index: u32, value: UntypedValue) -> Result<(), TableError> {
         let current = self.size();
-        let element =
+        let untyped =
             self.elements
                 .get_mut(index as usize)
                 .ok_or(TableError::AccessOutOfBounds {
                     current,
                     offset: index,
                 })?;
-        *element = value;
+        *untyped = value;
         Ok(())
     }
 
@@ -248,12 +310,14 @@ impl TableEntity {
     ///
     /// # Errors
     ///
-    /// Returns an error if the range is out of bounds of either the source or
-    /// destination tables.
+    /// Returns an error if the range is out of bounds
+    /// of either the source or destination tables.
     ///
     /// # Panics
     ///
-    /// Panics if the `instance` cannot resolve all the `element` func indices.
+    /// - Panics if the `instance` cannot resolve all the `element` func indices.
+    /// - If the [`ElementSegmentEntity`] element type does not match the [`Table`] element type.
+    ///   Note: This is a panic instead of an error since it is asserted at Wasm validation time.
     pub fn init(
         &mut self,
         instance: &InstanceEntity,
@@ -262,6 +326,9 @@ impl TableEntity {
         src_index: u32,
         len: u32,
     ) -> Result<(), TrapCode> {
+        self.ty()
+            .matches_element_type(element.ty())
+            .map_err(|_| TrapCode::BadSignature)?;
         // Turn parameters into proper slice indices.
         let src_index = src_index as usize;
         let dst_index = dst_index as usize;
@@ -279,12 +346,13 @@ impl TableEntity {
             .ok_or(TrapCode::TableOutOfBounds)?;
         // Perform the initialization by copying from `src` to `dst`:
         for (dst, src) in dst_items.iter_mut().zip(src_items) {
-            *dst = src.map(|src| {
+            let funcref = src.map(|src| {
                 let src_index = src.into_u32();
                 instance.get_func(src_index).unwrap_or_else(|| {
                     panic!("missing function at index {src_index} in instance {instance:?}")
                 })
             });
+            *dst = FuncRef::new(funcref).into();
         }
         Ok(())
     }
@@ -368,11 +436,14 @@ impl Table {
     }
 
     /// Creates a new table to the store.
-    pub fn new(mut ctx: impl AsContextMut, ty: TableType) -> Self {
-        ctx.as_context_mut()
-            .store
-            .inner
-            .alloc_table(TableEntity::new(ty))
+    ///
+    /// # Errors
+    ///
+    /// If `init` does not match the [`TableType`] element type.
+    pub fn new(mut ctx: impl AsContextMut, ty: TableType, init: Value) -> Result<Self, TableError> {
+        let entity = TableEntity::new(ty, init)?;
+        let table = ctx.as_context_mut().store.inner.alloc_table(entity);
+        Ok(table)
     }
 
     /// Returns the type and limits of the table.
@@ -397,21 +468,27 @@ impl Table {
     ///
     /// # Note
     ///
-    /// The newly added elements are initialized to `None`.
+    /// The newly added elements are initialized to the `init` [`Value`].
     ///
     /// # Errors
     ///
-    /// If the table is grown beyond its maximum limits.
+    /// - If the table is grown beyond its maximum limits.
+    /// - If `value` does not match the [`Table`] element type.
     ///
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Table`].
-    pub fn grow(&self, mut ctx: impl AsContextMut, delta: u32) -> Result<(), TableError> {
+    pub fn grow(
+        &self,
+        mut ctx: impl AsContextMut,
+        delta: u32,
+        init: Value,
+    ) -> Result<(), TableError> {
         ctx.as_context_mut()
             .store
             .inner
             .resolve_table_mut(self)
-            .grow(delta)
+            .grow(delta, init)
     }
 
     /// Returns the [`Table`] element value at `index`.
@@ -423,15 +500,16 @@ impl Table {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Table`].
-    pub fn get(&self, ctx: impl AsContext, index: u32) -> Result<Option<Func>, TableError> {
+    pub fn get(&self, ctx: impl AsContext, index: u32) -> Result<Value, TableError> {
         ctx.as_context().store.inner.resolve_table(self).get(index)
     }
 
-    /// Writes the `value` provided into `index` within this [`Table`].
+    /// Sets the [`Value`] of this [`Table`] at `index`.
     ///
     /// # Errors
     ///
-    /// If `index` is out of bounds.
+    /// - If `index` is out of bounds.
+    /// - If `value` does not match the [`Table`] element type.
     ///
     /// # Panics
     ///
@@ -440,7 +518,7 @@ impl Table {
         &self,
         mut ctx: impl AsContextMut,
         index: u32,
-        value: Option<Func>,
+        value: Value,
     ) -> Result<(), TableError> {
         ctx.as_context_mut()
             .store

@@ -20,7 +20,7 @@ use super::{
     FuncFrame,
     ValueStack,
 };
-use crate::{core::TrapCode, table::TableEntity, Func, StoreInner};
+use crate::{core::TrapCode, table::TableEntity, Func, FuncRef, StoreInner};
 use core::cmp::{self};
 use wasmi_core::{Pages, UntypedValue};
 
@@ -421,11 +421,11 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.value_stack.sync();
     }
 
-    fn call_func(&mut self, func: Func) -> Result<CallOutcome, TrapCode> {
+    fn call_func(&mut self, func: &Func) -> Result<CallOutcome, TrapCode> {
         self.next_instr();
         self.frame.update_ip(self.ip);
         self.sync_stack_ptr();
-        Ok(CallOutcome::NestedCall(func))
+        Ok(CallOutcome::NestedCall(*func))
     }
 
     fn ret(&mut self, drop_keep: DropKeep) {
@@ -527,7 +527,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
 
     fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
         let callee = self.cache.get_func(self.ctx, func_index.into_inner());
-        self.call_func(callee)
+        self.call_func(&callee)
     }
 
     fn visit_call_indirect(
@@ -537,12 +537,13 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     ) -> Result<CallOutcome, TrapCode> {
         let func_index: u32 = self.value_stack.pop_as();
         let table = self.cache.get_table(self.ctx, table);
-        let func = self
+        let funcref = self
             .ctx
             .resolve_table(&table)
-            .get(func_index)
-            .map_err(|_| TrapCode::TableOutOfBounds)?
-            .ok_or(TrapCode::IndirectCallToNull)?;
+            .get_untyped(func_index)
+            .map(FuncRef::from)
+            .map_err(|_| TrapCode::TableOutOfBounds)?;
+        let func = funcref.func().ok_or(TrapCode::IndirectCallToNull)?;
         let actual_signature = self.ctx.get_func_type(func);
         let expected_signature = self
             .ctx
