@@ -140,27 +140,41 @@ impl Value {
 impl From<i32> for Value {
     #[inline]
     fn from(val: i32) -> Self {
-        Value::I32(val)
+        Self::I32(val)
     }
 }
 
 impl From<i64> for Value {
     #[inline]
     fn from(val: i64) -> Self {
-        Value::I64(val)
+        Self::I64(val)
     }
 }
 
 impl From<F32> for Value {
     #[inline]
     fn from(val: F32) -> Self {
-        Value::F32(val)
+        Self::F32(val)
     }
 }
 
 impl From<F64> for Value {
     #[inline]
     fn from(val: F64) -> Self {
-        Value::F64(val)
+        Self::F64(val)
+    }
+}
+
+impl From<FuncRef> for Value {
+    #[inline]
+    fn from(funcref: FuncRef) -> Self {
+        Self::FuncRef(funcref)
+    }
+}
+
+impl From<ExternRef> for Value {
+    #[inline]
+    fn from(externref: ExternRef) -> Self {
+        Self::ExternRef(externref)
     }
 }
