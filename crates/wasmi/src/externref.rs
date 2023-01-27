@@ -85,7 +85,7 @@ impl ExternObject {
 }
 
 /// Represents a nullable opaque reference to any data within WebAssembly.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 #[repr(transparent)]
 pub struct ExternRef {
     inner: Option<ExternObject>,
