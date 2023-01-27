@@ -120,7 +120,7 @@ impl From<UntypedValue> for ExternRef {
         if untyped == UntypedValue::from(0u64) {
             // Not sure if this early return and check
             // is needed but better safe than sorry!
-            return Self::null()
+            return Self::null();
         }
         // Safety: This operation is safe since there are no invalid
         //         bit patterns for [`ExternRef`] instances. Therefore
