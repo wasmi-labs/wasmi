@@ -32,7 +32,7 @@ mod tests;
 pub use self::{component_vec::ComponentVec, dedup::DedupArena, guarded::GuardedEntity};
 use alloc::vec::Vec;
 use core::{
-    cmp::max,
+    cmp::{max, min},
     iter::{DoubleEndedIterator, Enumerate, ExactSizeIterator},
     marker::PhantomData,
     ops::{Index, IndexMut},
@@ -159,9 +159,10 @@ where
     pub fn get_pair_mut(&mut self, fst: Idx, snd: Idx) -> Option<(&mut T, &mut T)> {
         let fst_index = fst.into_usize();
         let snd_index = snd.into_usize();
+        let min_index = min(fst_index, snd_index);
         let max_index = max(fst_index, snd_index);
         let (fst_set, snd_set) = self.entities.split_at_mut(max_index);
-        let fst = fst_set.get_mut(fst_index)?;
+        let fst = fst_set.get_mut(min_index)?;
         let snd = snd_set.get_mut(0)?;
         Some((fst, snd))
     }
