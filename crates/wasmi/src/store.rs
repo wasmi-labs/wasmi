@@ -557,7 +557,7 @@ impl StoreInner {
         self.resolve(instance.as_inner(), &self.instances)
     }
 
-    /// Returns a shared reference to the [`ExternObjectEntity`] associated to the given [`ExternalObject`].
+    /// Returns a shared reference to the [`ExternObjectEntity`] associated to the given [`ExternObject`].
     ///
     /// # Panics
     ///
