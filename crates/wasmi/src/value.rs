@@ -135,18 +135,6 @@ impl Value {
             _ => None,
         }
     }
-
-    /// Returns `T` if this particular [`Value`] contains
-    /// appropriate type.
-    ///
-    /// See [`FromValue`] for details.
-    ///
-    /// [`FromValue`]: trait.FromValue.html
-    /// [`Value`]: enum.Value.html
-    #[inline]
-    pub fn try_into<T: TryFrom<Value>>(self) -> Option<T> {
-        <T as TryFrom<Value>>::try_from(self).ok()
-    }
 }
 
 impl From<i32> for Value {
