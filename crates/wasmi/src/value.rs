@@ -97,6 +97,46 @@ impl Value {
         }
     }
 
+    /// Returns the underlying `i32` if the type matches otherwise returns `None`.
+    pub fn i32(&self) -> Option<i32> {
+        match self {
+            Self::I32(value) => Some(*value),
+            _ => None,
+        }
+    }
+
+    /// Returns the underlying `i64` if the type matches otherwise returns `None`.
+    pub fn i64(&self) -> Option<i64> {
+        match self {
+            Self::I64(value) => Some(*value),
+            _ => None,
+        }
+    }
+
+    /// Returns the underlying `f32` if the type matches otherwise returns `None`.
+    pub fn f32(&self) -> Option<F32> {
+        match self {
+            Self::F32(value) => Some(*value),
+            _ => None,
+        }
+    }
+
+    /// Returns the underlying `f64` if the type matches otherwise returns `None`.
+    pub fn f64(&self) -> Option<F64> {
+        match self {
+            Self::F64(value) => Some(*value),
+            _ => None,
+        }
+    }
+
+    /// Returns the underlying `funcref` if the type matches otherwise returns `None`.
+    pub fn funcref(&self) -> Option<&FuncRef> {
+        match self {
+            Self::FuncRef(value) => Some(value),
+            _ => None,
+        }
+    }
+
     /// Returns `T` if this particular [`Value`] contains
     /// appropriate type.
     ///
