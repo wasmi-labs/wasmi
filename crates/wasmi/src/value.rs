@@ -37,18 +37,6 @@ impl From<Value> for UntypedValue {
     }
 }
 
-impl From<&'_ Value> for UntypedValue {
-    fn from(value: &Value) -> Self {
-        match value {
-            Value::I32(value) => (*value).into(),
-            Value::I64(value) => (*value).into(),
-            Value::F32(value) => (*value).into(),
-            Value::F64(value) => (*value).into(),
-            Value::FuncRef(value) => (*value).into(),
-        }
-    }
-}
-
 /// Runtime representation of a value.
 ///
 /// Wasm code manipulate values of the four basic value types:
