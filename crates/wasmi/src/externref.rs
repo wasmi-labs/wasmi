@@ -141,7 +141,7 @@ impl ExternRef {
             .into()
             .map(|object| ExternObject::new(ctx, object))
             .map(Self::from_object)
-            .unwrap_or(Self::null())
+            .unwrap_or_else(Self::null)
     }
 
     /// Creates a new [`ExternRef`] to the given [`ExternObject`].
