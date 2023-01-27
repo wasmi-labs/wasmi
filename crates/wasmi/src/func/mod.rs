@@ -463,7 +463,7 @@ impl From<FuncRef> for UntypedValue {
     fn from(funcref: FuncRef) -> Self {
         if funcref.is_null() {
             // This early return is important to fix conversion bugs with `null`.
-            return Self::from(0u64)
+            return Self::from(0u64);
         }
         // Safety: This operation is safe since there are no invalid
         //         bit patterns for [`UntypedValue`] instances. Therefore
