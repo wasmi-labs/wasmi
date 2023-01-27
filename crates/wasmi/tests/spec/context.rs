@@ -18,7 +18,7 @@ use wasmi::{
     TableType,
     Value,
 };
-use wasmi_core::{F32, F64};
+use wasmi_core::{ValueType, F32, F64};
 use wast::token::{Id, Span};
 
 /// The context of a single Wasm test spec suite run.
@@ -53,7 +53,8 @@ impl<'a> TestContext<'a> {
         let mut linker = Linker::default();
         let mut store = Store::new(&engine, ());
         let default_memory = Memory::new(&mut store, MemoryType::new(1, Some(2)).unwrap()).unwrap();
-        let default_table = Table::new(&mut store, TableType::new(10, Some(20)));
+        let default_table =
+            Table::new(&mut store, TableType::new(ValueType::FuncRef, 10, Some(20)));
         let global_i32 = Global::new(&mut store, Value::I32(666), Mutability::Const);
         let global_f32 = Global::new(&mut store, Value::F32(666.0.into()), Mutability::Const);
         let global_f64 = Global::new(&mut store, Value::F64(666.0.into()), Mutability::Const);

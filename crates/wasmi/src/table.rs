@@ -5,7 +5,7 @@ use crate::{element::ElementSegmentEntity, instance::InstanceEntity};
 use alloc::vec::Vec;
 use core::{cmp::max, fmt, fmt::Display};
 use wasmi_arena::ArenaIndex;
-use wasmi_core::TrapCode;
+use wasmi_core::{TrapCode, ValueType};
 
 /// A raw index to a table entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -91,6 +91,8 @@ impl Display for TableError {
 /// A descriptor for a [`Table`] instance.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct TableType {
+    /// The type of values stored in the [`Table`].
+    element: ValueType,
     /// The minimum number of elements the [`Table`] must have.
     min: u32,
     /// The optional maximum number of elements the [`Table`] can have.
@@ -105,22 +107,27 @@ impl TableType {
     /// # Panics
     ///
     /// If `min` is greater than `max`.
-    pub fn new(min: u32, max: Option<u32>) -> Self {
+    pub fn new(element: ValueType, min: u32, max: Option<u32>) -> Self {
         if let Some(max) = max {
             assert!(min <= max);
         }
-        Self { min, max }
+        Self { element, min, max }
+    }
+
+    /// Returns the [`ValueType`] of elements stored in the [`Table`].
+    pub fn element(&self) -> ValueType {
+        self.element
     }
 
     /// Returns minimum number of elements the [`Table`] must have.
-    pub fn minimum(self) -> u32 {
+    pub fn minimum(&self) -> u32 {
         self.min
     }
 
     /// The optional maximum number of elements the [`Table`] can have.
     ///
     /// If this returns `None` then the [`Table`] is not limited in size.
-    pub fn maximum(self) -> Option<u32> {
+    pub fn maximum(&self) -> Option<u32> {
         self.max
     }
 
