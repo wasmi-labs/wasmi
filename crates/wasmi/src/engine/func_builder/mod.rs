@@ -764,6 +764,41 @@ impl<'parser> FuncBuilder<'parser> {
         })
     }
 
+    // fn visit_typed_select(ty: wasmparser::ValType) => fn translate_typed_select
+    // fn visit_ref_null(ty: wasmparser::ValType) => fn translate_ref_null
+    // fn visit_ref_is_null() => fn translate_ref_is_null
+    // fn visit_ref_func(func_index: u32) => fn translate_ref_func
+
+    pub fn translate_typed_select(
+        &mut self,
+        _ty: wasmparser::ValType,
+    ) -> Result<(), TranslationError> {
+        // The `ty` parameter is only important for Wasm validation.
+        // Since `wasmi` bytecode is untyped we are not interested in this additional information.
+        self.translate_select()
+    }
+
+    /// Translate a Wasm `ref.null` instruction.
+    pub fn translate_ref_null(&mut self, _ty: wasmparser::ValType) -> Result<(), TranslationError> {
+        // Since `wasmi` bytecode is untyped we have no special `null` instructions
+        // but simply reuse the `constant` instruction with an immediate value of 0.
+        // Note that `FuncRef` and `ExternRef` are encoded as 64-bit values in `wasmi`.
+        self.translate_const(0i64)
+    }
+
+    /// Translate a Wasm `ref.is_null` instruction.
+    pub fn translate_ref_is_null(&mut self) -> Result<(), TranslationError> {
+        // Since `wasmi` bytecode is untyped we have no special `null` instructions
+        // but simply reuse the `i64.eqz` instruction with an immediate value of 0.
+        // Note that `FuncRef` and `ExternRef` are encoded as 64-bit values in `wasmi`.
+        self.translate_i64_eqz()
+    }
+
+    /// Translate a Wasm `ref.func` instruction.
+    pub fn translate_ref_func(&mut self, _func_index: u32) -> Result<(), TranslationError> {
+        panic!("the reference-types Wasm proposal allows the ref.func operand only in constant expressions")
+    }
+
     /// Translate a Wasm `local.get` instruction.
     pub fn translate_local_get(&mut self, local_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
