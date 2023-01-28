@@ -1247,6 +1247,7 @@ impl<'parser> FuncBuilder<'parser> {
         })
     }
 
+    /// Translate a Wasm `table.get` instruction.
     pub fn translate_table_get(&mut self, table_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let table = TableIdx::from(table_index);
@@ -1258,6 +1259,7 @@ impl<'parser> FuncBuilder<'parser> {
         })
     }
 
+    /// Translate a Wasm `table.set` instruction.
     pub fn translate_table_set(&mut self, table_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let table = TableIdx::from(table_index);
