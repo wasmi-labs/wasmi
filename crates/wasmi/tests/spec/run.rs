@@ -1,9 +1,9 @@
 use super::{error::TestError, TestContext, TestDescriptor};
 use anyhow::Result;
-use wasmi::{Config, Value};
+use wasmi::{Config, ExternRef, FuncRef, Value};
 use wasmi_core::{F32, F64};
 use wast::{
-    core::{NanPattern, WastRetCore},
+    core::{HeapType, NanPattern, WastRetCore},
     lexer::Lexer,
     parser::ParseBuffer,
     token::Span,
@@ -259,6 +259,18 @@ fn assert_results(context: &TestContext, span: Span, results: &[Value], expected
                     );
                 }
             },
+            (Value::FuncRef(funcref), WastRetCore::RefNull(Some(HeapType::Func))) => {
+                assert!(funcref.is_null());
+            }
+            (Value::FuncRef(_funcref), WastRetCore::RefFunc(_x)) => {
+                todo!()
+            }
+            (Value::ExternRef(externref), WastRetCore::RefNull(Some(HeapType::Extern))) => {
+                assert!(externref.is_null());
+            }
+            (Value::ExternRef(_externref), WastRetCore::RefExtern(_x)) => {
+                todo!()
+            }
             (result, expected) => panic!(
                 "{}: encountered mismatch in evaluation. expected {:?} but found {:?}",
                 context.spanned(span),
@@ -338,9 +350,13 @@ fn execute_wast_invoke(
                     wast::core::WastArgCore::I64(arg) => Value::I64(arg),
                     wast::core::WastArgCore::F32(arg) => Value::F32(F32::from_bits(arg.bits)),
                     wast::core::WastArgCore::F64(arg) => Value::F64(F64::from_bits(arg.bits)),
-                    wast::core::WastArgCore::V128(arg) => panic!("{span:?}: `wasmi` does not support the `simd` Wasm proposal but found: {arg:?}"),
-                    wast::core::WastArgCore::RefNull(_) |
-                    wast::core::WastArgCore::RefExtern(_) => panic!("{span:?}: `wasmi` does not support the `reference-types` Wasm proposal but found {arg:?}"),
+                    wast::core::WastArgCore::V128(_) => panic!("{span:?}: `wasmi` does not support the `simd` Wasm proposal but found: {arg:?}"),
+                    wast::core::WastArgCore::RefNull(heap_type) => match heap_type {
+                        wast::core::HeapType::Func => Value::FuncRef(FuncRef::null()),
+                        wast::core::HeapType::Extern => Value::ExternRef(ExternRef::null()),
+                        _ => panic!("encountered unsupport `wast::HeapType`: {heap_type:?}"),
+                    },
+                    wast::core::WastArgCore::RefExtern(_index) => panic!("{span:?}: `wasmi` does not support the `reference-types` Wasm proposal but found {arg:?}"),
                 }
             }
             wast::WastArg::Component(arg) => panic!("{span:?}: `wasmi` does not support the Wasm `component-model` but found {arg:?}"),
