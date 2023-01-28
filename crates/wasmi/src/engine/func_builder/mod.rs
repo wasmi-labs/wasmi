@@ -1202,16 +1202,14 @@ impl<'parser> FuncBuilder<'parser> {
     }
 
     /// Translate a Wasm `table.grow` instruction.
-    pub fn translate_table_grow(&mut self, _table_index: u32) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|_builder| {
-            // debug_assert_eq!(table_index, DEFAULT_TABLE_INDEX);
-            // let table_index = MemoryIdx(table_index);
-            // builder
-            //     .alloc
-            //     .inst_builder
-            //     .push_inst(Instruction::TableGrow);
-            // Ok(())
-            unimplemented!("wasmi does not yet support the `reference-types` Wasm proposal")
+    pub fn translate_table_grow(&mut self, table_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            let table = TableIdx::from(table_index);
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::TableGrow { table });
+            Ok(())
         })
     }
 

@@ -152,6 +152,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 Instr::MemoryInit(segment) => self.visit_memory_init(segment)?,
                 Instr::DataDrop(segment) => self.visit_data_drop(segment),
                 Instr::TableSize { table } => self.visit_table_size(table),
+                Instr::TableGrow { table } => self.visit_table_grow(table),
                 Instr::TableGet { table } => self.visit_table_get(table)?,
                 Instr::TableSet { table } => self.visit_table_set(table)?,
                 Instr::TableCopy { dst, src } => self.visit_table_copy(dst, src)?,
@@ -680,6 +681,22 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let table = self.cache.get_table(self.ctx, table_index);
         let size = self.ctx.resolve_table(&table).size();
         self.value_stack.push(size);
+        self.next_instr()
+    }
+
+    fn visit_table_grow(&mut self, table_index: TableIdx) {
+        // As demanded by the Wasm specification this value is returned
+        // by `table.grow` if the growth operation was unsuccessful.
+        const ERROR_CODE: u32 = u32::MAX;
+        let (init, delta) = self.value_stack.pop2();
+        let delta: u32 = delta.into();
+        let table = self.cache.get_table(self.ctx, table_index);
+        let result = self
+            .ctx
+            .resolve_table_mut(&table)
+            .grow_untyped(delta, init)
+            .unwrap_or(ERROR_CODE);
+        self.value_stack.push(result);
         self.next_instr()
     }
 

@@ -215,6 +215,8 @@ impl TableEntity {
 
     /// Grows the table by the given amount of elements.
     ///
+    /// Returns the old size of the [`Table`] upon success.
+    ///
     /// # Note
     ///
     /// The newly added elements are initialized to the `init` [`Value`].
@@ -223,8 +225,12 @@ impl TableEntity {
     ///
     /// - If the table is grown beyond its maximum limits.
     /// - If `value` does not match the [`Table`] element type.
-    pub fn grow(&mut self, delta: u32, init: Value) -> Result<(), TableError> {
+    pub fn grow(&mut self, delta: u32, init: Value) -> Result<u32, TableError> {
         self.ty().matches_element_type(init.ty())?;
+        self.grow_untyped(delta, init.into())
+    }
+
+    pub fn grow_untyped(&mut self, delta: u32, init: UntypedValue) -> Result<u32, TableError> {
         let maximum = self.ty.maximum().unwrap_or(u32::MAX);
         let current = self.size();
         let new_len = current
@@ -235,8 +241,9 @@ impl TableEntity {
                 current,
                 delta,
             })? as usize;
-        self.elements.resize(new_len, init.into());
-        Ok(())
+        let old_size = self.size();
+        self.elements.resize(new_len, init);
+        Ok(old_size)
     }
 
     /// Converts the internal [`UntypedValue`] into a [`Value`] for this [`Table`] element type.
@@ -459,6 +466,8 @@ impl Table {
 
     /// Grows the table by the given amount of elements.
     ///
+    /// Returns the old size of the [`Table`] upon success.
+    ///
     /// # Note
     ///
     /// The newly added elements are initialized to the `init` [`Value`].
@@ -476,7 +485,7 @@ impl Table {
         mut ctx: impl AsContextMut,
         delta: u32,
         init: Value,
-    ) -> Result<(), TableError> {
+    ) -> Result<u32, TableError> {
         ctx.as_context_mut()
             .store
             .inner
