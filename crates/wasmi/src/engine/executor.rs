@@ -153,6 +153,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 Instr::DataDrop(segment) => self.visit_data_drop(segment),
                 Instr::TableSize { table } => self.visit_table_size(table),
                 Instr::TableGrow { table } => self.visit_table_grow(table),
+                Instr::TableFill { table } => self.visit_table_fill(table)?,
                 Instr::TableGet { table } => self.visit_table_get(table)?,
                 Instr::TableSet { table } => self.visit_table_set(table)?,
                 Instr::TableCopy { dst, src } => self.visit_table_copy(dst, src)?,
@@ -698,6 +699,19 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             .unwrap_or(ERROR_CODE);
         self.value_stack.push(result);
         self.next_instr()
+    }
+
+    fn visit_table_fill(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
+        // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
+        let (i, val, n) = self.value_stack.pop3();
+        let dst: u32 = i.into();
+        let len: u32 = n.into();
+        let table = self.cache.get_table(self.ctx, table_index);
+        self.ctx
+            .resolve_table_mut(&table)
+            .fill_untyped(dst, val, len)?;
+        self.next_instr();
+        Ok(())
     }
 
     fn visit_table_get(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {

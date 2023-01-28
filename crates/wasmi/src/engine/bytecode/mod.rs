@@ -94,6 +94,9 @@ pub enum Instruction {
     TableGrow {
         table: TableIdx,
     },
+    TableFill {
+        table: TableIdx,
+    },
     TableGet {
         table: TableIdx,
     },
