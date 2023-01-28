@@ -74,10 +74,13 @@ impl TryFrom<wasmparser::Element<'_>> for ElementSegment {
     type Error = ModuleError;
 
     fn try_from(element: wasmparser::Element<'_>) -> Result<Self, Self::Error> {
-        assert_eq!(
-            element.ty,
-            wasmparser::ValType::FuncRef,
-            "wasmi does not support the `reference-types` Wasm proposal"
+        assert!(
+            matches!(
+                element.ty,
+                wasmparser::ValType::FuncRef | wasmparser::ValType::ExternRef
+            ),
+            "only reftypes are allowed as element types but found: {:?}",
+            element.ty
         );
         let kind = ElementSegmentKind::try_from(element.kind)?;
         let ty = WasmiValueType::from(element.ty).into_inner();
