@@ -249,10 +249,9 @@ impl TableEntity {
     /// # Errors
     ///
     /// If `index` is out of bounds.
-    pub fn get(&self, index: u32) -> Result<Value, TableError> {
-        let element = self.get_untyped(index)?;
-        let value = self.make_typed(element);
-        Ok(value)
+    pub fn get(&self, index: u32) -> Option<Value> {
+        self.get_untyped(index)
+            .map(|untyped| self.make_typed(untyped))
     }
 
     /// Returns the untyped [`Table`] element value at `index`.
@@ -265,14 +264,8 @@ impl TableEntity {
     /// # Errors
     ///
     /// If `index` is out of bounds.
-    pub fn get_untyped(&self, index: u32) -> Result<UntypedValue, TableError> {
-        self.elements
-            .get(index as usize)
-            .copied()
-            .ok_or_else(|| TableError::AccessOutOfBounds {
-                current: self.size(),
-                offset: index,
-            })
+    pub fn get_untyped(&self, index: u32) -> Option<UntypedValue> {
+        self.elements.get(index as usize).copied()
     }
 
     /// Sets the [`Value`] of this [`Table`] at `index`.
@@ -500,7 +493,7 @@ impl Table {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Table`].
-    pub fn get(&self, ctx: impl AsContext, index: u32) -> Result<Value, TableError> {
+    pub fn get(&self, ctx: impl AsContext, index: u32) -> Option<Value> {
         ctx.as_context().store.inner.resolve_table(self).get(index)
     }
 

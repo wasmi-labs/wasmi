@@ -542,7 +542,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             .resolve_table(&table)
             .get_untyped(func_index)
             .map(FuncRef::from)
-            .map_err(|_| TrapCode::TableOutOfBounds)?;
+            .ok_or(TrapCode::TableOutOfBounds)?;
         let func = funcref.func().ok_or(TrapCode::IndirectCallToNull)?;
         let actual_signature = self.ctx.get_func_type(func);
         let expected_signature = self
