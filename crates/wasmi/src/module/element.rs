@@ -75,10 +75,7 @@ impl TryFrom<wasmparser::Element<'_>> for ElementSegment {
 
     fn try_from(element: wasmparser::Element<'_>) -> Result<Self, Self::Error> {
         assert!(
-            matches!(
-                element.ty,
-                wasmparser::ValType::FuncRef | wasmparser::ValType::ExternRef
-            ),
+            element.ty.is_reference_type(),
             "only reftypes are allowed as element types but found: {:?}",
             element.ty
         );
