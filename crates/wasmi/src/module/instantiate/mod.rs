@@ -254,8 +254,10 @@ impl Module {
         builder: &InstanceEntityBuilder,
         init_expr: &InitExpr,
     ) -> Value {
-        init_expr
-            .to_const_with_context(|global_index| builder.get_global(global_index).get(&context))
+        init_expr.to_const_with_context(
+            |global_index| builder.get_global(global_index).get(&context),
+            |func_index| Value::from(FuncRef::new(builder.get_func(func_index))),
+        )
     }
 
     /// Extracts the Wasm exports from the module and registers them into the [`Instance`].

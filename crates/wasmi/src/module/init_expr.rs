@@ -1,5 +1,5 @@
 use super::{FuncIdx, GlobalIdx};
-use crate::{errors::ModuleError, Value};
+use crate::{errors::ModuleError, ExternRef, Value};
 use wasmi_core::{F32, F64};
 
 /// An initializer expression.
@@ -82,13 +82,16 @@ impl InitExpr {
     /// # Panics
     ///
     /// If a non-const expression operand is encountered.
-    pub fn to_const_with_context(&self, global_get: impl Fn(u32) -> Value) -> Value {
+    pub fn to_const_with_context(
+        &self,
+        global_get: impl Fn(u32) -> Value,
+        func_get: impl Fn(u32) -> Value,
+    ) -> Value {
         match &self.op {
             InitExprOperand::Const(value) => value.clone(),
             InitExprOperand::GlobalGet(index) => global_get(index.into_u32()),
-            ref error @ (InitExprOperand::FuncRef(_) | InitExprOperand::RefNull) => {
-                panic!("encountered non-const expression operand: {error:?}")
-            }
+            InitExprOperand::RefNull => Value::from(ExternRef::null()),
+            InitExprOperand::FuncRef(index) => func_get(*index),
         }
     }
 }
