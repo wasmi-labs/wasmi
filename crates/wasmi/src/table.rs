@@ -237,7 +237,7 @@ impl TableEntity {
     /// # Note
     ///
     /// This is an internal API that exists for efficiency purposes.
-    /// 
+    ///
     /// The newly added elements are initialized to the `init` [`Value`].
     ///
     /// # Errors
@@ -295,6 +295,7 @@ impl TableEntity {
     /// - If `index` is out of bounds.
     /// - If `value` does not match the [`Table`] element type.
     pub fn set(&mut self, index: u32, value: Value) -> Result<(), TableError> {
+        self.ty().matches_element_type(value.ty())?;
         self.set_untyped(index, value.into())
     }
 
@@ -428,6 +429,53 @@ impl TableEntity {
         // Finally, copy elements in-place for the table.
         self.elements
             .copy_within(src_index..src_index.wrapping_add(len), dst_index);
+        Ok(())
+    }
+
+    /// Fill `table[dst..(dst + len)]` with the given value.
+    ///
+    /// # Errors
+    ///
+    /// - If `val` has a type mismatch with the element type of the [`Table`].
+    /// - If the region to be filled is out of bounds for the [`Table`].
+    /// - If `val` originates from a different [`Store`] than the [`Table`].
+    ///
+    /// # Panics
+    ///
+    /// If `ctx` does not own `dst_table` or `src_table`.
+    ///
+    /// [`Store`]: [`crate::Store`]
+    pub fn fill(&mut self, dst: u32, val: Value, len: u32) -> Result<(), TrapCode> {
+        self.ty()
+            .matches_element_type(val.ty())
+            .map_err(|_| TrapCode::BadSignature)?;
+        self.fill_untyped(dst, val.into(), len)
+    }
+
+    /// Fill `table[dst..(dst + len)]` with the given value.
+    ///
+    /// # Note
+    ///
+    /// This is an API for internal use only and exists for efficiency reasons.
+    ///
+    /// # Errors
+    ///
+    /// - If the region to be filled is out of bounds for the [`Table`].
+    ///
+    /// # Panics
+    ///
+    /// If `ctx` does not own `dst_table` or `src_table`.
+    ///
+    /// [`Store`]: [`crate::Store`]
+    pub fn fill_untyped(&mut self, dst: u32, val: UntypedValue, len: u32) -> Result<(), TrapCode> {
+        let dst_index = dst as usize;
+        let len = len as usize;
+        let dst = self
+            .elements
+            .get_mut(dst_index..)
+            .and_then(|elements| elements.get_mut(..len))
+            .ok_or(TrapCode::TableOutOfBounds)?;
+        dst.fill(val);
         Ok(())
     }
 }
@@ -591,5 +639,32 @@ impl Table {
                 .resolve_table_pair_mut(dst_table, src_table);
             TableEntity::copy(dst_table, dst_index, src_table, src_index, len)
         }
+    }
+
+    /// Fill `table[dst..(dst + len)]` with the given value.
+    ///
+    /// # Errors
+    ///
+    /// - If `val` has a type mismatch with the element type of the [`Table`].
+    /// - If the region to be filled is out of bounds for the [`Table`].
+    /// - If `val` originates from a different [`Store`] than the [`Table`].
+    ///
+    /// # Panics
+    ///
+    /// If `ctx` does not own `dst_table` or `src_table`.
+    ///
+    /// [`Store`]: [`crate::Store`]
+    pub fn fill(
+        &self,
+        mut ctx: impl AsContextMut,
+        dst: u32,
+        val: Value,
+        len: u32,
+    ) -> Result<(), TrapCode> {
+        ctx.as_context_mut()
+            .store
+            .inner
+            .resolve_table_mut(self)
+            .fill(dst, val, len)
     }
 }
