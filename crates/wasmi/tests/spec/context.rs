@@ -60,6 +60,7 @@ impl<'a> TestContext<'a> {
         )
         .unwrap();
         let global_i32 = Global::new(&mut store, Value::I32(666), Mutability::Const);
+        let global_i64 = Global::new(&mut store, Value::I64(666), Mutability::Const);
         let global_f32 = Global::new(&mut store, Value::F32(666.0.into()), Mutability::Const);
         let global_f64 = Global::new(&mut store, Value::F64(666.0.into()), Mutability::Const);
         let print = Func::wrap(&mut store, || {
@@ -83,6 +84,7 @@ impl<'a> TestContext<'a> {
         linker.define("spectest", "memory", default_memory).unwrap();
         linker.define("spectest", "table", default_table).unwrap();
         linker.define("spectest", "global_i32", global_i32).unwrap();
+        linker.define("spectest", "global_i64", global_i64).unwrap();
         linker.define("spectest", "global_f32", global_f32).unwrap();
         linker.define("spectest", "global_f64", global_f64).unwrap();
         linker.define("spectest", "print", print).unwrap();
