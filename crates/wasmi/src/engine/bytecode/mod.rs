@@ -88,6 +88,9 @@ pub enum Instruction {
     MemoryCopy,
     MemoryInit(DataSegmentIdx),
     DataDrop(DataSegmentIdx),
+    TableSize {
+        table: TableIdx,
+    },
     TableGet {
         table: TableIdx,
     },

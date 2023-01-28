@@ -151,6 +151,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 Instr::MemoryCopy => self.visit_memory_copy()?,
                 Instr::MemoryInit(segment) => self.visit_memory_init(segment)?,
                 Instr::DataDrop(segment) => self.visit_data_drop(segment),
+                Instr::TableSize { table } => self.visit_table_size(table),
                 Instr::TableGet { table } => self.visit_table_get(table)?,
                 Instr::TableSet { table } => self.visit_table_set(table)?,
                 Instr::TableCopy { dst, src } => self.visit_table_copy(dst, src)?,
@@ -673,6 +674,13 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             .get_data_segment(self.ctx, segment_index.into_inner());
         self.ctx.resolve_data_segment_mut(&segment).drop_bytes();
         self.next_instr();
+    }
+
+    fn visit_table_size(&mut self, table_index: TableIdx) {
+        let table = self.cache.get_table(self.ctx, table_index);
+        let size = self.ctx.resolve_table(&table).size();
+        self.value_stack.push(size);
+        self.next_instr()
     }
 
     fn visit_table_get(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {

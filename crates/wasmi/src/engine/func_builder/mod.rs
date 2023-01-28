@@ -1189,17 +1189,15 @@ impl<'parser> FuncBuilder<'parser> {
     }
 
     /// Translate a Wasm `table.size` instruction.
-    pub fn translate_table_size(&mut self, _table_index: u32) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|_builder| {
-            // debug_assert_eq!(table_index, DEFAULT_TABLE_INDEX);
-            // let table_index = MemoryIdx(table_index);
-            // builder.stack_height.push();
-            // builder
-            //     .alloc
-            //     .inst_builder
-            //     .push_inst(Instruction::TableSize);
-            // Ok(())
-            unimplemented!("wasmi does not yet support the `reference-types` Wasm proposal")
+    pub fn translate_table_size(&mut self, table_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            let table = TableIdx::from(table_index);
+            builder.stack_height.push();
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::TableSize { table });
+            Ok(())
         })
     }
 
