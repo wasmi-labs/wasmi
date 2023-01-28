@@ -1247,28 +1247,26 @@ impl<'parser> FuncBuilder<'parser> {
         })
     }
 
-    pub fn translate_table_get(&mut self, _table_index: u32) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|_builder| {
-            // debug_assert_eq!(table_index, DEFAULT_TABLE_INDEX);
-            // let memory_index = TableIdx(table_index);
-            // builder
-            //     .alloc
-            //     .inst_builder
-            //     .push_inst(Instruction::TableGet { table_index });
-            unimplemented!("wasmi does not yet support the `reference-types` Wasm proposal")
+    pub fn translate_table_get(&mut self, table_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            let table = TableIdx::from(table_index);
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::TableGet { table });
+            Ok(())
         })
     }
 
-    pub fn translate_table_set(&mut self, _table_index: u32) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|_builder| {
-            // debug_assert_eq!(table_index, DEFAULT_TABLE_INDEX);
-            // let memory_index = TableIdx(table_index);
-            // builder.stack_height.pop1();
-            // builder
-            //     .alloc
-            //     .inst_builder
-            //     .push_inst(Instruction::TableSet { table_index });
-            unimplemented!("wasmi does not yet support the `reference-types` Wasm proposal")
+    pub fn translate_table_set(&mut self, table_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            let table = TableIdx::from(table_index);
+            builder.stack_height.pop1();
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::TableSet { table });
+            Ok(())
         })
     }
 

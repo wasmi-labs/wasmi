@@ -151,6 +151,8 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 Instr::MemoryCopy => self.visit_memory_copy()?,
                 Instr::MemoryInit(segment) => self.visit_memory_init(segment)?,
                 Instr::DataDrop(segment) => self.visit_data_drop(segment),
+                Instr::TableGet { table } => self.visit_table_get(table)?,
+                Instr::TableSet { table } => self.visit_table_set(table)?,
                 Instr::TableCopy { dst, src } => self.visit_table_copy(dst, src)?,
                 Instr::TableInit { table, elem } => self.visit_table_init(table, elem)?,
                 Instr::ElemDrop(segment) => self.visit_element_drop(segment),
@@ -671,6 +673,31 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             .get_data_segment(self.ctx, segment_index.into_inner());
         self.ctx.resolve_data_segment_mut(&segment).drop_bytes();
         self.next_instr();
+    }
+
+    fn visit_table_get(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
+        self.value_stack.try_eval_top(|index| {
+            let index: u32 = index.into();
+            let table = self.cache.get_table(self.ctx, table_index);
+            self.ctx
+                .resolve_table(&table)
+                .get_untyped(index)
+                .ok_or(TrapCode::TableOutOfBounds)
+        })?;
+        self.next_instr();
+        Ok(())
+    }
+
+    fn visit_table_set(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
+        let (index, value) = self.value_stack.pop2();
+        let index: u32 = index.into();
+        let table = self.cache.get_table(self.ctx, table_index);
+        self.ctx
+            .resolve_table_mut(&table)
+            .set_untyped(index, value)
+            .map_err(|_| TrapCode::TableOutOfBounds)?;
+        self.next_instr();
+        Ok(())
     }
 
     fn visit_table_copy(&mut self, dst: TableIdx, src: TableIdx) -> Result<(), TrapCode> {
