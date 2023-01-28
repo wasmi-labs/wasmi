@@ -1240,6 +1240,7 @@ impl<'parser> FuncBuilder<'parser> {
     pub fn translate_table_grow(&mut self, table_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let table = TableIdx::from(table_index);
+            builder.stack_height.pop1();
             builder
                 .alloc
                 .inst_builder
@@ -1295,7 +1296,7 @@ impl<'parser> FuncBuilder<'parser> {
     pub fn translate_table_set(&mut self, table_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let table = TableIdx::from(table_index);
-            builder.stack_height.pop1();
+            builder.stack_height.pop2();
             builder
                 .alloc
                 .inst_builder
