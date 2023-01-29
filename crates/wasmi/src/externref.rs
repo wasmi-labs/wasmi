@@ -189,7 +189,7 @@ impl ExternRef {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Store, Engine};
+    use crate::{Engine, Store};
 
     #[test]
     fn it_works() {
@@ -197,9 +197,6 @@ mod tests {
         let mut store = <Store<()>>::new(&engine, ());
         let value = 42_i32;
         let obj = ExternObject::new::<i32>(&mut store, value);
-        assert_eq!(
-            obj.data(&store).downcast_ref::<i32>(),
-            Some(&value),
-        );
+        assert_eq!(obj.data(&store).downcast_ref::<i32>(), Some(&value),);
     }
 }
