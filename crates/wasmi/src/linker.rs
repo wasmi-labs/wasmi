@@ -30,14 +30,23 @@ pub enum LinkerError {
         /// The duplicated imported item.
         ///
         /// This refers to the second inserted item.
-        import_item: Extern,
+        duplicate: Extern,
     },
     /// Encountered when no definition for an import is found.
-    CannotFindDefinitionForImport {
+    MissingDefinition {
         /// The name of the import for which no definition was found.
         name: ImportName,
         /// The type of the import for which no definition has been found.
-        item_type: ExternType,
+        ty: ExternType,
+    },
+    /// Encountered when a definition with invalid type is found.
+    InvalidTypeDefinition {
+        /// The name of the import for which no definition was found.
+        name: ImportName,
+        /// The expected import type.
+        expected: ExternType,
+        /// The found definition type.
+        found: ExternType,
     },
     /// Encountered when a [`FuncType`] does not match the expected [`FuncType`].
     FuncTypeMismatch {
@@ -79,10 +88,19 @@ pub enum LinkerError {
 
 impl LinkerError {
     /// Creates a new [`LinkerError`] for when an imported definition was not found.
-    fn cannot_find_definition_of_import(import: &ImportType) -> Self {
-        Self::CannotFindDefinitionForImport {
+    fn missing_definition(import: &ImportType) -> Self {
+        Self::MissingDefinition {
             name: import.import_name().clone(),
-            item_type: import.ty().clone(),
+            ty: import.ty().clone(),
+        }
+    }
+
+    /// Creates a new [`LinkerError`] for when an imported definition has an invalid type.
+    fn invalid_type_definition(import: &ImportType, found: &ExternType) -> Self {
+        Self::InvalidTypeDefinition {
+            name: import.import_name().clone(),
+            expected: import.ty().clone(),
+            found: found.clone(),
         }
     }
 
@@ -131,15 +149,25 @@ impl Display for LinkerError {
         match self {
             Self::DuplicateDefinition {
                 import_name,
-                import_item,
+                duplicate,
             } => {
                 write!(
                     f,
-                    "encountered duplicate definition `{import_name}` of {import_item:?}",
+                    "encountered duplicate definition `{import_name}` of {duplicate:?}",
                 )
             }
-            Self::CannotFindDefinitionForImport { name, item_type } => {
-                write!(f, "cannot find definition for import {name}: {item_type:?}",)
+            Self::MissingDefinition { name, ty } => {
+                write!(
+                    f,
+                    "cannot find definition for import {name} with type {ty:?}",
+                )
+            }
+            Self::InvalidTypeDefinition {
+                name,
+                expected,
+                found,
+            } => {
+                write!(f, "found definition for import {name} with type {expected:?} but found type {found:?}")
             }
             Self::FuncTypeMismatch {
                 name,
@@ -362,7 +390,7 @@ impl<T> Linker<T> {
                 let import_name = ImportName::new(module_name, field_name);
                 return Err(LinkerError::DuplicateDefinition {
                     import_name,
-                    import_item: item,
+                    duplicate: item,
                 });
             }
             Entry::Vacant(v) => {
@@ -412,15 +440,16 @@ impl<T> Linker<T> {
         context: impl AsContextMut,
         import: ImportType,
     ) -> Result<Extern, Error> {
-        let make_err = || LinkerError::cannot_find_definition_of_import(&import);
         let import_name = import.import_name();
         let module_name = import.module();
         let field_name = import.name();
-        let resolved = self.resolve(module_name, field_name).ok_or_else(make_err)?;
-        let context = context.as_context();
+        let resolved = self
+            .resolve(module_name, field_name)
+            .ok_or_else(|| LinkerError::missing_definition(&import))?;
+        let invalid_type = || LinkerError::invalid_type_definition(&import, &resolved.ty(&context));
         match import.ty() {
             ExternType::Func(expected_type) => {
-                let func = resolved.into_func().ok_or_else(make_err)?;
+                let func = resolved.into_func().ok_or_else(invalid_type)?;
                 let found_type = func.ty(&context);
                 if &found_type != expected_type {
                     return Err(LinkerError::func_type_mismatch(
@@ -433,7 +462,7 @@ impl<T> Linker<T> {
                 Ok(Extern::Func(func))
             }
             ExternType::Table(expected_type) => {
-                let table = resolved.into_table().ok_or_else(make_err)?;
+                let table = resolved.into_table().ok_or_else(invalid_type)?;
                 let found_type = table.ty(context);
                 if found_type.satisfies(expected_type).is_err() {
                     return Err(LinkerError::table_type_mismatch(
@@ -446,7 +475,7 @@ impl<T> Linker<T> {
                 Ok(Extern::Table(table))
             }
             ExternType::Memory(expected_type) => {
-                let memory = resolved.into_memory().ok_or_else(make_err)?;
+                let memory = resolved.into_memory().ok_or_else(invalid_type)?;
                 let found_type = memory.ty(context);
                 if found_type.satisfies(expected_type).is_err() {
                     return Err(LinkerError::memory_type_mismatch(
@@ -459,7 +488,7 @@ impl<T> Linker<T> {
                 Ok(Extern::Memory(memory))
             }
             ExternType::Global(expected_type) => {
-                let global = resolved.into_global().ok_or_else(make_err)?;
+                let global = resolved.into_global().ok_or_else(invalid_type)?;
                 let found_type = global.ty(context);
                 if &found_type != expected_type {
                     return Err(LinkerError::global_type_mismatch(
