@@ -269,7 +269,6 @@ fn assert_results(context: &TestContext, span: Span, results: &[Value], expected
                 assert!(externref.is_null());
             }
             (Value::ExternRef(externref), WastRetCore::RefExtern(expected)) => {
-                println!("expected: {expected:?}");
                 let value = externref
                     .data(context.store())
                     .expect("unexpected null element")
