@@ -23,6 +23,8 @@ pub enum ElementSegmentKind {
     Passive,
     /// An active [`ElementSegment`].
     Active(ActiveElementSegment),
+    /// A declared [`ElementSegment`] from the `reference-types` Wasm proposal.
+    Declared,
 }
 
 /// An active Wasm element segment.
@@ -63,9 +65,7 @@ impl TryFrom<wasmparser::ElementKind<'_>> for ElementSegmentKind {
                 }))
             }
             wasmparser::ElementKind::Passive => Ok(Self::Passive),
-            wasmparser::ElementKind::Declared => {
-                panic!("wasmi does not support the `reference-types` Wasm proposal but found declared element segment")
-            }
+            wasmparser::ElementKind::Declared => Ok(Self::Declared),
         }
     }
 }

@@ -80,6 +80,7 @@ impl From<&'_ module::ElementSegment> for ElementSegmentEntity {
                 items: Some(segment.clone_items()),
             },
             module::ElementSegmentKind::Active(_) => Self::empty(ty),
+            module::ElementSegmentKind::Declared => Self::empty(ty),
         }
     }
 }
