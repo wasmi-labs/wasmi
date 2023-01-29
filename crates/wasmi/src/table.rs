@@ -185,8 +185,8 @@ impl TableType {
             });
         }
         match (self.maximum(), required.maximum()) {
-            (_, None) => (),
-            (Some(max), Some(max_required)) if max <= max_required => (),
+            (_, None) => Ok(()),
+            (Some(max), Some(max_required)) if max <= max_required => Ok(()),
             _ => {
                 return Err(TableError::UnsatisfyingTableType {
                     unsatisfying: *self,
@@ -194,7 +194,6 @@ impl TableType {
                 });
             }
         }
-        Ok(())
     }
 }
 
@@ -680,5 +679,35 @@ impl Table {
             .inner
             .resolve_table_mut(self)
             .fill(dst, val, len)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn table_type(element: ValueType, minimum: u32, maximum: impl Into<Option<u32>>) -> TableType {
+        TableType::new(element, minimum, maximum.into())
+    }
+
+    impl TableType {
+        /// Returns `true` if `self` is a subtype of `other`.
+        fn is_subtype_of(&self, other: &TableType) -> bool {
+            self.check_subtype(other).is_ok()
+        }
+    }
+
+    use ValueType::{F64, I32};
+
+    #[test]
+    fn subtyping_works() {
+        assert!(!table_type(I32, 0, 1).is_subtype_of(&table_type(F64, 0, 1)));
+        assert!(table_type(I32, 0, 1).is_subtype_of(&table_type(I32, 0, 1)));
+        assert!(table_type(I32, 0, 1).is_subtype_of(&table_type(I32, 0, 2)));
+        assert!(!table_type(I32, 0, 2).is_subtype_of(&table_type(I32, 0, 1)));
+        assert!(table_type(I32, 2, None).is_subtype_of(&table_type(I32, 1, None)));
+        assert!(table_type(I32, 0, None).is_subtype_of(&table_type(I32, 0, None)));
+        assert!(table_type(I32, 0, 1).is_subtype_of(&table_type(I32, 0, None)));
+        assert!(!table_type(I32, 0, None).is_subtype_of(&table_type(I32, 0, 1)));
     }
 }

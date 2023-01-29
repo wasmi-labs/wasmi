@@ -146,17 +146,17 @@ impl Module {
                 }
                 (ExternType::Table(required), Extern::Table(table)) => {
                     let imported = table.ty(context.as_context());
-                    imported.check_subtype(required)?;
+                    imported.check_subtype(&required)?;
                     builder.push_table(table);
                 }
                 (ExternType::Memory(required), Extern::Memory(memory)) => {
                     let imported = memory.ty(context.as_context());
-                    imported.check_subtype(required)?;
+                    imported.check_subtype(&required)?;
                     builder.push_memory(memory);
                 }
                 (ExternType::Global(required), Extern::Global(global)) => {
                     let imported = global.ty(context.as_context());
-                    imported.satisfies(required)?;
+                    required.satisfies(&imported)?;
                     builder.push_global(global);
                 }
                 (expected_import, actual_extern_val) => {

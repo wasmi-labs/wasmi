@@ -132,15 +132,15 @@ impl MemoryType {
     /// - If the `minimum` size of `self` is less than or equal to the `minimum` size of `required`.
     /// - If the `maximum` size of `self` is greater than the `maximum` size of `required`.
     pub(crate) fn check_subtype(&self, required: &MemoryType) -> Result<(), MemoryError> {
-        if required.initial_pages() > self.initial_pages() {
+        if self.initial_pages() < required.initial_pages() {
             return Err(MemoryError::UnsatisfyingMemoryType {
                 unsatisfying: *self,
                 required: *required,
             });
         }
-        match (required.maximum_pages(), self.maximum_pages()) {
-            (None, _) => (),
-            (Some(max_required), Some(max)) if max_required >= max => (),
+        match (self.maximum_pages(), required.maximum_pages()) {
+            (_, None) => Ok(()),
+            (Some(max), Some(max_required)) if max <= max_required => Ok(()),
             _ => {
                 return Err(MemoryError::UnsatisfyingMemoryType {
                     unsatisfying: *self,
@@ -148,7 +148,6 @@ impl MemoryType {
                 });
             }
         }
-        Ok(())
     }
 }
 
@@ -406,5 +405,32 @@ impl Memory {
             .inner
             .resolve_memory_mut(self)
             .write(offset, buffer)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn memory_type(minimum: u32, maximum: impl Into<Option<u32>>) -> MemoryType {
+        MemoryType::new(minimum, maximum.into()).unwrap()
+    }
+
+    impl MemoryType {
+        /// Returns `true` if `self` is a subtype of `other`.
+        fn is_subtype_of(&self, other: &MemoryType) -> bool {
+            self.check_subtype(other).is_ok()
+        }
+    }
+
+    #[test]
+    fn subtyping_works() {
+        assert!(memory_type(0, 1).is_subtype_of(&memory_type(0, 1)));
+        assert!(memory_type(0, 1).is_subtype_of(&memory_type(0, 2)));
+        assert!(!memory_type(0, 2).is_subtype_of(&memory_type(0, 1)));
+        assert!(memory_type(2, None).is_subtype_of(&memory_type(1, None)));
+        assert!(memory_type(0, None).is_subtype_of(&memory_type(0, None)));
+        assert!(memory_type(0, 1).is_subtype_of(&memory_type(0, None)));
+        assert!(!memory_type(0, None).is_subtype_of(&memory_type(0, 1)));
     }
 }
