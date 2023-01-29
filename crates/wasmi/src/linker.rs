@@ -1,16 +1,11 @@
-use super::{
-    errors::{MemoryError, TableError},
-    AsContextMut,
-    Error,
-    Extern,
-    InstancePre,
-    Module,
-};
+use super::{AsContextMut, Error, Extern, InstancePre, Module};
 use crate::{
     module::{ImportName, ImportType},
     ExternType,
     FuncType,
     GlobalType,
+    MemoryType,
+    TableType,
 };
 use alloc::{
     collections::{btree_map::Entry, BTreeMap},
@@ -44,27 +39,41 @@ pub enum LinkerError {
         /// The type of the import for which no definition has been found.
         item_type: ExternType,
     },
-    /// Encountered when a function signature does not match the expected signature.
+    /// Encountered when a [`FuncType`] does not match the expected [`FuncType`].
     FuncTypeMismatch {
         /// The name of the import with the mismatched type.
         name: ImportName,
-        /// The expected function type.
+        /// The expected [`FuncType`].
         expected: FuncType,
-        /// The mismatching function type found.
+        /// The mismatching [`FuncType`] found.
         found: FuncType,
     },
-    /// Occurs when an imported table does not satisfy the required table type.
-    Table(TableError),
-    /// Occurs when an imported memory does not satisfy the required memory type.
-    Memory(MemoryError),
-    /// Encountered when an imported global variable has a mismatching global variable type.
+    /// Encountered when a [`TableType`] does not match the expected [`TableType`].
+    TableTypeMismatch {
+        /// The name of the import with the mismatched type.
+        name: ImportName,
+        /// The expected [`TableType`].
+        expected: TableType,
+        /// The mismatching [`TableType`] found.
+        found: TableType,
+    },
+    /// Encountered when a [`MemoryType`] does not match the expected [`MemoryType`].
+    MemoryTypeMismatch {
+        /// The name of the import with the mismatched type.
+        name: ImportName,
+        /// The expected [`MemoryType`].
+        expected: MemoryType,
+        /// The mismatching [`MemoryType`] found.
+        found: MemoryType,
+    },
+    /// Encountered when a [`GlobalType`] does not match the expected [`GlobalType`].
     GlobalTypeMismatch {
         /// The name of the import with the mismatched type.
         name: ImportName,
-        /// The expected global variable type.
+        /// The expected [`GlobalType`].
         expected: GlobalType,
-        /// The actual global variable type found.
-        actual: GlobalType,
+        /// The mismatching [`GlobalType`] found.
+        found: GlobalType,
     },
 }
 
@@ -77,7 +86,7 @@ impl LinkerError {
         }
     }
 
-    /// Create a new [`LinkerError`] for when a function type mismatched.
+    /// Create a new [`LinkerError`] for when a [`FuncType`] mismatched.
     fn func_type_mismatch(name: &ImportName, expected: &FuncType, found: &FuncType) -> Self {
         Self::FuncTypeMismatch {
             name: name.clone(),
@@ -85,17 +94,32 @@ impl LinkerError {
             found: found.clone(),
         }
     }
-}
 
-impl From<TableError> for LinkerError {
-    fn from(error: TableError) -> Self {
-        Self::Table(error)
+    /// Create a new [`LinkerError`] for when a [`TableType`] mismatched.
+    fn table_type_mismatch(name: &ImportName, expected: &TableType, found: &TableType) -> Self {
+        Self::TableTypeMismatch {
+            name: name.clone(),
+            expected: *expected,
+            found: *found,
+        }
     }
-}
 
-impl From<MemoryError> for LinkerError {
-    fn from(error: MemoryError) -> Self {
-        Self::Memory(error)
+    /// Create a new [`LinkerError`] for when a [`MemoryType`] mismatched.
+    fn memory_type_mismatch(name: &ImportName, expected: &MemoryType, found: &MemoryType) -> Self {
+        Self::MemoryTypeMismatch {
+            name: name.clone(),
+            expected: *expected,
+            found: *found,
+        }
+    }
+
+    /// Create a new [`LinkerError`] for when a [`GlobalType`] mismatched.
+    fn global_type_mismatch(name: &ImportName, expected: &GlobalType, found: &GlobalType) -> Self {
+        Self::GlobalTypeMismatch {
+            name: name.clone(),
+            expected: *expected,
+            found: *found,
+        }
     }
 }
 
@@ -128,19 +152,39 @@ impl Display for LinkerError {
                     expected {expected:?} but found {found:?}",
                 )
             }
+            Self::TableTypeMismatch {
+                name,
+                expected,
+                found,
+            } => {
+                write!(
+                    f,
+                    "table type mismatch for import {name}: \
+                    expected {expected:?} but found {found:?}",
+                )
+            }
+            Self::MemoryTypeMismatch {
+                name,
+                expected,
+                found,
+            } => {
+                write!(
+                    f,
+                    "memory type mismatch for import {name}: \
+                    expected {expected:?} but found {found:?}",
+                )
+            }
             Self::GlobalTypeMismatch {
                 name,
                 expected,
-                actual,
+                found,
             } => {
                 write!(
                     f,
                     "global variable type mismatch for import {name}: \
-                    expected {expected:?} but found {actual:?}",
+                    expected {expected:?} but found {found:?}",
                 )
             }
-            Self::Table(error) => Display::fmt(error, f),
-            Self::Memory(error) => Display::fmt(error, f),
         }
     }
 }
@@ -390,25 +434,39 @@ impl<T> Linker<T> {
             }
             ExternType::Table(expected_type) => {
                 let table = resolved.into_table().ok_or_else(make_err)?;
-                let actual_type = table.ty(context);
-                actual_type.satisfies(expected_type)?;
+                let found_type = table.ty(context);
+                if found_type.satisfies(expected_type).is_err() {
+                    return Err(LinkerError::table_type_mismatch(
+                        import_name,
+                        expected_type,
+                        &found_type,
+                    ))
+                    .map_err(Into::into);
+                }
                 Ok(Extern::Table(table))
             }
             ExternType::Memory(expected_type) => {
                 let memory = resolved.into_memory().ok_or_else(make_err)?;
-                let actual_type = memory.ty(context);
-                actual_type.satisfies(expected_type)?;
+                let found_type = memory.ty(context);
+                if found_type.satisfies(expected_type).is_err() {
+                    return Err(LinkerError::memory_type_mismatch(
+                        import_name,
+                        expected_type,
+                        &found_type,
+                    ))
+                    .map_err(Into::into);
+                }
                 Ok(Extern::Memory(memory))
             }
             ExternType::Global(expected_type) => {
                 let global = resolved.into_global().ok_or_else(make_err)?;
-                let actual_type = global.ty(context);
-                if &actual_type != expected_type {
-                    return Err(LinkerError::GlobalTypeMismatch {
-                        name: import.import_name().clone(),
-                        expected: *expected_type,
-                        actual: actual_type,
-                    })
+                let found_type = global.ty(context);
+                if &found_type != expected_type {
+                    return Err(LinkerError::global_type_mismatch(
+                        import_name,
+                        expected_type,
+                        &found_type,
+                    ))
                     .map_err(Into::into);
                 }
                 Ok(Extern::Global(global))
