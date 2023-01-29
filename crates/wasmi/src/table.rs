@@ -276,9 +276,7 @@ impl TableEntity {
 
     /// Returns the [`Table`] element value at `index`.
     ///
-    /// # Errors
-    ///
-    /// If `index` is out of bounds.
+    /// Returns `None` if `index` is out of bounds.
     pub fn get(&self, index: u32) -> Option<Value> {
         self.get_untyped(index)
             .map(|untyped| self.make_typed(untyped))
@@ -286,14 +284,12 @@ impl TableEntity {
 
     /// Returns the untyped [`Table`] element value at `index`.
     ///
+    /// Returns `None` if `index` is out of bounds.
+    ///
     /// # Note
     ///
     /// This is a more efficient version of [`Table::get`] for
     /// internal use only.
-    ///
-    /// # Errors
-    ///
-    /// If `index` is out of bounds.
     pub fn get_untyped(&self, index: u32) -> Option<UntypedValue> {
         self.elements.get(index as usize).copied()
     }
@@ -566,9 +562,7 @@ impl Table {
 
     /// Returns the [`Table`] element value at `index`.
     ///
-    /// # Errors
-    ///
-    /// If `index` is out of bounds.
+    /// Returns `None` if `index` is out of bounds.
     ///
     /// # Panics
     ///
