@@ -262,9 +262,6 @@ fn assert_results(context: &TestContext, span: Span, results: &[Value], expected
             (Value::FuncRef(funcref), WastRetCore::RefNull(Some(HeapType::Func))) => {
                 assert!(funcref.is_null());
             }
-            (Value::FuncRef(_funcref), WastRetCore::RefFunc(_x)) => {
-                todo!()
-            }
             (Value::ExternRef(externref), WastRetCore::RefNull(Some(HeapType::Extern))) => {
                 assert!(externref.is_null());
             }
