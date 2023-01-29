@@ -1,6 +1,6 @@
 use super::{FuncIdx, GlobalIdx};
-use crate::{errors::ModuleError, ExternRef, Value};
-use wasmi_core::{F32, F64};
+use crate::{errors::ModuleError, ExternRef, FuncRef, Value};
+use wasmi_core::{ValueType, F32, F64};
 
 /// An initializer expression.
 ///
@@ -84,15 +84,22 @@ impl InitExpr {
     /// If a non-const expression operand is encountered.
     pub fn to_const_with_context(
         &self,
+        value_type: ValueType,
         global_get: impl Fn(u32) -> Value,
         func_get: impl Fn(u32) -> Value,
     ) -> Value {
-        match &self.op {
+        let value = match &self.op {
             InitExprOperand::Const(value) => value.clone(),
             InitExprOperand::GlobalGet(index) => global_get(index.into_u32()),
-            InitExprOperand::RefNull => Value::from(ExternRef::null()),
+            InitExprOperand::RefNull => match value_type {
+                ValueType::FuncRef => Value::from(FuncRef::null()),
+                ValueType::ExternRef => Value::from(ExternRef::null()),
+                _ => panic!("expected reftype for InitExpr but found {:?}", value_type),
+            },
             InitExprOperand::FuncRef(index) => func_get(*index),
-        }
+        };
+        assert_eq!(value.ty(), value_type);
+        value
     }
 }
 

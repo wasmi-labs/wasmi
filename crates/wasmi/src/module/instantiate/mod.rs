@@ -4,6 +4,8 @@ mod pre;
 #[cfg(test)]
 mod tests;
 
+use wasmi_core::ValueType;
+
 pub use self::{error::InstantiationError, pre::InstancePre};
 use super::{element::ElementSegmentKind, export, DataSegmentKind, InitExpr, Module};
 use crate::{
@@ -241,7 +243,9 @@ impl Module {
         builder: &mut InstanceEntityBuilder,
     ) {
         for (global_type, global_init) in self.internal_globals() {
-            let init_value = Self::eval_init_expr(context.as_context_mut(), builder, global_init);
+            let value_type = global_type.content();
+            let init_value =
+                Self::eval_init_expr(context.as_context_mut(), builder, value_type, global_init);
             let mutability = global_type.mutability();
             let global = Global::new(context.as_context_mut(), init_value, mutability);
             builder.push_global(global);
@@ -252,9 +256,11 @@ impl Module {
     fn eval_init_expr(
         context: impl AsContext,
         builder: &InstanceEntityBuilder,
+        value_type: ValueType,
         init_expr: &InitExpr,
     ) -> Value {
         init_expr.to_const_with_context(
+            value_type,
             |global_index| builder.get_global(global_index).get(&context),
             |func_index| Value::from(FuncRef::new(builder.get_func(func_index))),
         )
@@ -306,14 +312,15 @@ impl Module {
             let items = segment.items();
             if let ElementSegmentKind::Active(segment) = segment.kind() {
                 let offset_expr = segment.offset();
-                let offset = Self::eval_init_expr(&mut *context, builder, offset_expr)
-                    .i32()
-                    .unwrap_or_else(|| {
-                        panic!(
-                            "expected offset value of type `i32` due to \
+                let offset =
+                    Self::eval_init_expr(&mut *context, builder, ValueType::I32, offset_expr)
+                        .i32()
+                        .unwrap_or_else(|| {
+                            panic!(
+                                "expected offset value of type `i32` due to \
                              Wasm validation but found: {offset_expr:?}",
-                        )
-                    }) as u32;
+                            )
+                        }) as u32;
                 let table = builder.get_table(segment.table_index().into_u32());
                 // Note: This checks not only that the elements in the element segments properly
                 //       fit into the table at the given offset but also that the element segment
@@ -349,14 +356,15 @@ impl Module {
             let bytes = segment.bytes();
             if let DataSegmentKind::Active(segment) = segment.kind() {
                 let offset_expr = segment.offset();
-                let offset = Self::eval_init_expr(&mut *context, builder, offset_expr)
-                    .i32()
-                    .unwrap_or_else(|| {
-                        panic!(
-                            "expected offset value of type `i32` due to \
+                let offset =
+                    Self::eval_init_expr(&mut *context, builder, ValueType::I32, offset_expr)
+                        .i32()
+                        .unwrap_or_else(|| {
+                            panic!(
+                                "expected offset value of type `i32` due to \
                                 Wasm validation but found: {offset_expr:?}",
-                        )
-                    }) as u32 as usize;
+                            )
+                        }) as u32 as usize;
                 let memory = builder.get_memory(segment.memory_index().into_u32());
                 memory.write(&mut *context, offset, bytes)?;
             }
