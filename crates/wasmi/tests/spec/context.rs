@@ -69,6 +69,9 @@ impl<'a> TestContext<'a> {
         let print_i32 = Func::wrap(&mut store, |value: i32| {
             println!("print: {value}");
         });
+        let print_i64 = Func::wrap(&mut store, |value: i64| {
+            println!("print: {value}");
+        });
         let print_f32 = Func::wrap(&mut store, |value: F32| {
             println!("print: {value:?}");
         });
@@ -89,6 +92,7 @@ impl<'a> TestContext<'a> {
         linker.define("spectest", "global_f64", global_f64).unwrap();
         linker.define("spectest", "print", print).unwrap();
         linker.define("spectest", "print_i32", print_i32).unwrap();
+        linker.define("spectest", "print_i64", print_i64).unwrap();
         linker.define("spectest", "print_f32", print_f32).unwrap();
         linker.define("spectest", "print_f64", print_f64).unwrap();
         linker
