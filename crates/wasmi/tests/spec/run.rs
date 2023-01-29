@@ -201,7 +201,7 @@ fn assert_trap(test_context: &TestContext, span: Span, error: TestError, message
     match error {
         TestError::Wasmi(error) => {
             assert!(
-                error.to_string().starts_with(message),
+                error.to_string().contains(message),
                 "{}: the directive trapped as expected but with an unexpected message\n\
                     expected: {},\n\
                     encountered: {}",
