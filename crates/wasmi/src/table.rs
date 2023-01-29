@@ -157,12 +157,20 @@ impl TableType {
         Ok(())
     }
 
-    /// Checks if `self` satisfies the given `TableType`.
+    /// Checks if `self` satisfies the given `required` [`TableType`].
+    ///
+    /// # Note
+    ///
+    /// This implements the [import subtyping] according to the WebAssembly spec.
+    ///
+    /// [import subtyping]:
+    /// https://webassembly.github.io/spec/core/valid/types.html#import-subtyping
     ///
     /// # Errors
     ///
-    /// - If the initial limits of the `required` [`TableType`] are greater than `self`.
-    /// - If the maximum limits of the `required` [`TableType`] are greater than `self`.
+    /// - If the `element` type of `self` does not match the `element` type of `required`.
+    /// - If the `minimum` size of `self` is less than or equal to the `minimum` size of `required`.
+    /// - If the `maximum` size of `self` is greater than the `maximum` size of `required`.
     pub(crate) fn satisfies(&self, required: &TableType) -> Result<(), TableError> {
         if self.element() != required.element() {
             return Err(TableError::ElementTypeMismatch {
@@ -170,15 +178,15 @@ impl TableType {
                 actual: self.element(),
             });
         }
-        if required.minimum() > self.minimum() {
+        if self.minimum() < required.minimum() {
             return Err(TableError::UnsatisfyingTableType {
                 unsatisfying: *self,
                 required: *required,
             });
         }
-        match (required.maximum(), self.maximum()) {
-            (None, _) => (),
-            (Some(max_required), Some(max)) if max_required >= max => (),
+        match (self.maximum(), required.maximum()) {
+            (_, None) => (),
+            (Some(max), Some(max_required)) if max <= max_required => (),
             _ => {
                 return Err(TableError::UnsatisfyingTableType {
                     unsatisfying: *self,
