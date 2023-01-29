@@ -177,12 +177,7 @@ impl TableType {
     /// - If the `minimum` size of `self` is less than or equal to the `minimum` size of `required`.
     /// - If the `maximum` size of `self` is greater than the `maximum` size of `required`.
     pub(crate) fn check_subtype(&self, required: &TableType) -> Result<(), TableError> {
-        if self.element() != required.element() {
-            return Err(TableError::ElementTypeMismatch {
-                expected: required.element(),
-                actual: self.element(),
-            });
-        }
+        self.matches_element_type(required.element())?;
         if self.minimum() < required.minimum() {
             return Err(TableError::UnsatisfyingTableType {
                 unsatisfying: *self,
@@ -643,14 +638,9 @@ impl Table {
         } else {
             // The `dst_table` and `src_table` are different entities
             // therefore we have to copy from one table to the other.
-            let dst_ty = dst_table.ty(&store).element();
+            let dst_ty = dst_table.ty(&store);
             let src_ty = src_table.ty(&store).element();
-            if dst_ty != src_ty {
-                return Err(TableError::ElementTypeMismatch {
-                    expected: dst_ty,
-                    actual: src_ty,
-                });
-            }
+            dst_ty.matches_element_type(src_ty)?;
             let (dst_table, src_table) = store
                 .as_context_mut()
                 .store
