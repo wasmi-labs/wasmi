@@ -94,7 +94,7 @@ impl InitExpr {
             InitExprOperand::RefNull => match value_type {
                 ValueType::FuncRef => Value::from(FuncRef::null()),
                 ValueType::ExternRef => Value::from(ExternRef::null()),
-                _ => panic!("expected reftype for InitExpr but found {:?}", value_type),
+                _ => panic!("expected reftype for InitExpr but found {value_type:?}"),
             },
             InitExprOperand::FuncRef(index) => func_get(*index),
         };
