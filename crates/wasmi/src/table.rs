@@ -164,6 +164,12 @@ impl TableType {
     /// - If the initial limits of the `required` [`TableType`] are greater than `self`.
     /// - If the maximum limits of the `required` [`TableType`] are greater than `self`.
     pub(crate) fn satisfies(&self, required: &TableType) -> Result<(), TableError> {
+        if self.element() != required.element() {
+            return Err(TableError::ElementTypeMismatch {
+                expected: required.element(),
+                actual: self.element(),
+            });
+        }
         if required.minimum() > self.minimum() {
             return Err(TableError::UnsatisfyingTableType {
                 unsatisfying: *self,
