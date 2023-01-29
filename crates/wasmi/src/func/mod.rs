@@ -414,6 +414,7 @@ impl Func {
 
 /// A nullable [`Func`] reference.
 #[derive(Debug, Default, Copy, Clone)]
+#[repr(transparent)]
 pub struct FuncRef {
     inner: Option<Func>,
 }
