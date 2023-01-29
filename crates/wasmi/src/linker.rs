@@ -41,10 +41,6 @@ pub enum LinkerError {
     CannotFindDefinitionForImport {
         /// The name of the import for which no definition was found.
         name: ImportName,
-        // /// The module name of the import for which no definition has been found.
-        // module_name: String,
-        // /// The field name of the import for which no definition has been found.
-        // field_name: Option<String>,
         /// The type of the import for which no definition has been found.
         item_type: ExternType,
     },
@@ -366,11 +362,11 @@ impl<T> Linker<T> {
         let make_err = || LinkerError::cannot_find_definition_of_import(&import);
         let module_name = import.module();
         let field_name = import.name();
-        let resolved = self.resolve(module_name, field_name);
+        let resolved = self.resolve(module_name, field_name).ok_or_else(make_err)?;
         let context = context.as_context();
         match import.ty() {
             ExternType::Func(expected_func_type) => {
-                let func = resolved.and_then(Extern::into_func).ok_or_else(make_err)?;
+                let func = resolved.into_func().ok_or_else(make_err)?;
                 let actual_func_type = func.ty_dedup(&context);
                 let actual_func_type = context.store.inner.resolve_func_type(actual_func_type);
                 if &actual_func_type != expected_func_type {
@@ -384,23 +380,19 @@ impl<T> Linker<T> {
                 Ok(Extern::Func(func))
             }
             ExternType::Table(expected_table_type) => {
-                let table = resolved.and_then(Extern::into_table).ok_or_else(make_err)?;
+                let table = resolved.into_table().ok_or_else(make_err)?;
                 let actual_table_type = table.ty(context);
                 actual_table_type.satisfies(expected_table_type)?;
                 Ok(Extern::Table(table))
             }
             ExternType::Memory(expected_memory_type) => {
-                let memory = resolved
-                    .and_then(Extern::into_memory)
-                    .ok_or_else(make_err)?;
+                let memory = resolved.into_memory().ok_or_else(make_err)?;
                 let actual_memory_type = memory.ty(context);
                 actual_memory_type.satisfies(expected_memory_type)?;
                 Ok(Extern::Memory(memory))
             }
             ExternType::Global(expected_global_type) => {
-                let global = resolved
-                    .and_then(Extern::into_global)
-                    .ok_or_else(make_err)?;
+                let global = resolved.into_global().ok_or_else(make_err)?;
                 let actual_global_type = global.ty(context);
                 if &actual_global_type != expected_global_type {
                     return Err(LinkerError::GlobalTypeMismatch {
