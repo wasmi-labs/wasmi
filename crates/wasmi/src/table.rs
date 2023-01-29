@@ -57,6 +57,8 @@ pub enum TableError {
         /// The accessed index that is out of bounds.
         offset: u32,
     },
+    /// Occur when coping elements of tables out of bounds.
+    CopyOutOfBounds,
     /// Occurs when a table type does not satisfy the constraints of another.
     UnsatisfyingTableType {
         /// The unsatisfying [`TableType`].
@@ -89,6 +91,9 @@ impl Display for TableError {
                     "out of bounds access of table element {offset} \
                     of table with size {current}",
                 )
+            }
+            Self::CopyOutOfBounds => {
+                write!(f, "out of bounds access of table elements while copying")
             }
             Self::UnsatisfyingTableType {
                 unsatisfying,
@@ -623,7 +628,7 @@ impl Table {
         src_table: &Table,
         src_index: u32,
         len: u32,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), TableError> {
         if Self::eq(dst_table, src_table) {
             // The `dst_table` and `src_table` are the same table
             // therefore we have to copy within the same table.
@@ -632,8 +637,18 @@ impl Table {
                 .store
                 .inner
                 .resolve_table_mut(dst_table);
-            table.copy_within(dst_index, src_index, len)
+            table
+                .copy_within(dst_index, src_index, len)
+                .map_err(|_| TableError::CopyOutOfBounds)
         } else {
+            let dst_ty = dst_table.ty(&store).element();
+            let src_ty = src_table.ty(&store).element();
+            if dst_ty != src_ty {
+                return Err(TableError::ElementTypeMismatch {
+                    expected: dst_ty,
+                    actual: src_ty,
+                });
+            }
             // The `dst_table` and `src_table` are different entities
             // therefore we have to copy from one table to the other.
             let (dst_table, src_table) = store
@@ -642,6 +657,7 @@ impl Table {
                 .inner
                 .resolve_table_pair_mut(dst_table, src_table);
             TableEntity::copy(dst_table, dst_index, src_table, src_index, len)
+                .map_err(|_| TableError::CopyOutOfBounds)
         }
     }
 
