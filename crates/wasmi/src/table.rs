@@ -641,6 +641,8 @@ impl Table {
                 .copy_within(dst_index, src_index, len)
                 .map_err(|_| TableError::CopyOutOfBounds)
         } else {
+            // The `dst_table` and `src_table` are different entities
+            // therefore we have to copy from one table to the other.
             let dst_ty = dst_table.ty(&store).element();
             let src_ty = src_table.ty(&store).element();
             if dst_ty != src_ty {
@@ -649,8 +651,6 @@ impl Table {
                     actual: src_ty,
                 });
             }
-            // The `dst_table` and `src_table` are different entities
-            // therefore we have to copy from one table to the other.
             let (dst_table, src_table) = store
                 .as_context_mut()
                 .store
