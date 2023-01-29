@@ -127,6 +127,11 @@ impl TestContext<'_> {
         &self.engine
     }
 
+    /// Returns a shared reference to the underlying [`Store`].
+    pub fn store(&self) -> &Store<()> {
+        &self.store
+    }
+
     /// Returns an exclusive reference to the underlying [`Store`].
     pub fn store_mut(&mut self) -> &mut Store<()> {
         &mut self.store
