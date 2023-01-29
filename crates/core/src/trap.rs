@@ -243,7 +243,7 @@ impl TrapCode {
     /// other uses since it avoid heap memory allocation in certain cases.
     pub fn trap_message(&self) -> &'static str {
         match self {
-            Self::UnreachableCodeReached => "unreachable",
+            Self::UnreachableCodeReached => "wasm `unreachable` instruction executed",
             Self::MemoryOutOfBounds => "out of bounds memory access",
             Self::TableOutOfBounds => "undefined element: out of bounds table access",
             Self::IndirectCallToNull => "uninitialized element",
