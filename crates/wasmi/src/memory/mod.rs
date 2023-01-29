@@ -118,11 +118,11 @@ impl MemoryType {
         self.maximum_pages
     }
 
-    /// Checks if `self` satisfies the given `required` [`MemoryType`].
+    /// Checks if `self` is a subtype of `required`.
     ///
     /// # Note
     ///
-    /// This implements the [import subtyping] according to the WebAssembly spec.
+    /// This implements the [subtyping rules] according to the WebAssembly spec.
     ///
     /// [import subtyping]:
     /// https://webassembly.github.io/spec/core/valid/types.html#import-subtyping

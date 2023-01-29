@@ -157,7 +157,7 @@ impl TableType {
         Ok(())
     }
 
-    /// Checks if `self` satisfies the given `required` [`TableType`].
+    /// Checks if `self` is a subtype of `required`.
     ///
     /// # Note
     ///
