@@ -66,12 +66,12 @@ impl Value {
     #[inline]
     pub fn default(value_type: ValueType) -> Self {
         match value_type {
-            ValueType::I32 => Value::I32(0),
-            ValueType::I64 => Value::I64(0),
-            ValueType::F32 => Value::F32(0f32.into()),
-            ValueType::F64 => Value::F64(0f64.into()),
-            ValueType::FuncRef => Value::FuncRef(FuncRef::null()),
-            ValueType::ExternRef => Value::ExternRef(ExternRef::null()),
+            ValueType::I32 => Self::I32(0),
+            ValueType::I64 => Self::I64(0),
+            ValueType::F32 => Self::F32(0f32.into()),
+            ValueType::F64 => Self::F64(0f64.into()),
+            ValueType::FuncRef => Self::from(FuncRef::null()),
+            ValueType::ExternRef => Self::from(ExternRef::null()),
         }
     }
 

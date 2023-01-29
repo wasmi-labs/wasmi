@@ -68,8 +68,8 @@ impl InitExpr {
         match &self.op {
             InitExprOperand::Const(value) => Some(value.clone()),
             InitExprOperand::RefNull => match ty {
-                ValueType::FuncRef => Some(Value::FuncRef(FuncRef::null())),
-                ValueType::ExternRef => Some(Value::ExternRef(ExternRef::null())),
+                ValueType::FuncRef => Some(Value::from(FuncRef::null())),
+                ValueType::ExternRef => Some(Value::from(ExternRef::null())),
                 _ => panic!("cannot have null reference for non-reftype but found {ty:?}"),
             },
             InitExprOperand::GlobalGet(_) => {
