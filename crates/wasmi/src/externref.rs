@@ -43,7 +43,7 @@ impl ExternObjectEntity {
 
     /// Returns a shared reference to the external object.
     pub fn data(&self) -> &dyn Any {
-        &self.inner
+        &*self.inner
     }
 }
 
@@ -183,5 +183,23 @@ impl ExternRef {
     /// Panics if `ctx` does not own this [`ExternRef`].
     pub fn data<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> Option<&'a dyn Any> {
         self.inner.map(|object| object.data(ctx))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{Store, Engine};
+
+    #[test]
+    fn it_works() {
+        let engine = Engine::default();
+        let mut store = <Store<()>>::new(&engine, ());
+        let value = 42_i32;
+        let obj = ExternObject::new::<i32>(&mut store, value);
+        assert_eq!(
+            obj.data(&store).downcast_ref::<i32>(),
+            Some(&value),
+        );
     }
 }
