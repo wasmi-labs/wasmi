@@ -265,9 +265,8 @@ impl TableEntity {
                 current,
                 delta,
             })? as usize;
-        let old_size = self.size();
         self.elements.resize(new_len, init);
-        Ok(old_size)
+        Ok(current)
     }
 
     /// Converts the internal [`UntypedValue`] into a [`Value`] for this [`Table`] element type.
