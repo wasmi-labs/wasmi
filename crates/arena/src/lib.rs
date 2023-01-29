@@ -32,7 +32,6 @@ mod tests;
 pub use self::{component_vec::ComponentVec, dedup::DedupArena, guarded::GuardedEntity};
 use alloc::vec::Vec;
 use core::{
-    cmp::{max, min},
     iter::{DoubleEndedIterator, Enumerate, ExactSizeIterator},
     marker::PhantomData,
     ops::{Index, IndexMut},
@@ -166,10 +165,9 @@ where
             let (fst, snd) = self.get_pair_mut(snd, fst)?;
             return Some((snd, fst));
         }
-        let min_index = min(fst_index, snd_index);
-        let max_index = max(fst_index, snd_index);
-        let (fst_set, snd_set) = self.entities.split_at_mut(max_index);
-        let fst = fst_set.get_mut(min_index)?;
+        // At this point we know that fst_index < snd_index.
+        let (fst_set, snd_set) = self.entities.split_at_mut(snd_index);
+        let fst = fst_set.get_mut(fst_index)?;
         let snd = snd_set.get_mut(0)?;
         Some((fst, snd))
     }
