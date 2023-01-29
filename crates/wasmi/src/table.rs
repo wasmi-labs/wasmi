@@ -430,7 +430,7 @@ impl TableEntity {
         let max_offset = max(dst_index, src_index);
         max_offset
             .checked_add(len)
-            .filter(|&offset| offset < self.size())
+            .filter(|&offset| offset <= self.size())
             .ok_or(TrapCode::TableOutOfBounds)?;
         // Turn parameters into proper indices.
         let src_index = src_index as usize;
