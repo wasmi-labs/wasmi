@@ -356,12 +356,10 @@ fn execute_wast_invoke(
                     wast::core::WastArgCore::F32(arg) => Value::F32(F32::from_bits(arg.bits)),
                     wast::core::WastArgCore::F64(arg) => Value::F64(F64::from_bits(arg.bits)),
                     wast::core::WastArgCore::V128(_) => panic!("{span:?}: `wasmi` does not support the `simd` Wasm proposal but found: {arg:?}"),
-                    wast::core::WastArgCore::RefNull(heap_type) => match heap_type {
-                        wast::core::HeapType::Func => Value::FuncRef(FuncRef::null()),
-                        wast::core::HeapType::Extern => Value::ExternRef(ExternRef::null()),
-                        _ => panic!("encountered unsupport `wast::HeapType`: {heap_type:?}"),
-                    },
+                    wast::core::WastArgCore::RefNull(HeapType::Func) => Value::FuncRef(FuncRef::null()),
+                    wast::core::WastArgCore::RefNull(HeapType::Extern) => Value::ExternRef(ExternRef::null()),
                     wast::core::WastArgCore::RefExtern(value) => Value::ExternRef(ExternRef::new(context.store_mut(), value)),
+                    _ => panic!("encountered invalid Wast argument: {arg:?}"),
                 }
             }
             wast::WastArg::Component(arg) => panic!("{span:?}: `wasmi` does not support the Wasm `component-model` but found {arg:?}"),
