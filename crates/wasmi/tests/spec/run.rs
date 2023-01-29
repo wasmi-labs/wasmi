@@ -356,7 +356,7 @@ fn execute_wast_invoke(
                         wast::core::HeapType::Extern => Value::ExternRef(ExternRef::null()),
                         _ => panic!("encountered unsupport `wast::HeapType`: {heap_type:?}"),
                     },
-                    wast::core::WastArgCore::RefExtern(_index) => panic!("{span:?}: `wasmi` does not support the `reference-types` Wasm proposal but found {arg:?}"),
+                    wast::core::WastArgCore::RefExtern(value) => Value::ExternRef(ExternRef::new(context.store_mut(), value)),
                 }
             }
             wast::WastArg::Component(arg) => panic!("{span:?}: `wasmi` does not support the Wasm `component-model` but found {arg:?}"),

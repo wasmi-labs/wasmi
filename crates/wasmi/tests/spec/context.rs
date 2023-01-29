@@ -127,6 +127,11 @@ impl TestContext<'_> {
         &self.engine
     }
 
+    /// Returns an exclusive reference to the underlying [`Store`].
+    pub fn store_mut(&mut self) -> &mut Store<()> {
+        &mut self.store
+    }
+
     /// Returns an exclusive reference to the test profile.
     pub fn profile(&mut self) -> &mut TestProfile {
         &mut self.profile
