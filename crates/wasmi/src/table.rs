@@ -161,7 +161,7 @@ impl TableType {
     ///
     /// # Note
     ///
-    /// This implements the [import subtyping] according to the WebAssembly spec.
+    /// This implements the [subtyping rules] according to the WebAssembly spec.
     ///
     /// [import subtyping]:
     /// https://webassembly.github.io/spec/core/valid/types.html#import-subtyping
@@ -171,7 +171,7 @@ impl TableType {
     /// - If the `element` type of `self` does not match the `element` type of `required`.
     /// - If the `minimum` size of `self` is less than or equal to the `minimum` size of `required`.
     /// - If the `maximum` size of `self` is greater than the `maximum` size of `required`.
-    pub(crate) fn satisfies(&self, required: &TableType) -> Result<(), TableError> {
+    pub(crate) fn check_subtype(&self, required: &TableType) -> Result<(), TableError> {
         if self.element() != required.element() {
             return Err(TableError::ElementTypeMismatch {
                 expected: required.element(),

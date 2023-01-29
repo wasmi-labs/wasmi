@@ -131,7 +131,7 @@ impl MemoryType {
     ///
     /// - If the `minimum` size of `self` is less than or equal to the `minimum` size of `required`.
     /// - If the `maximum` size of `self` is greater than the `maximum` size of `required`.
-    pub(crate) fn satisfies(&self, required: &MemoryType) -> Result<(), MemoryError> {
+    pub(crate) fn check_subtype(&self, required: &MemoryType) -> Result<(), MemoryError> {
         if required.initial_pages() > self.initial_pages() {
             return Err(MemoryError::UnsatisfyingMemoryType {
                 unsatisfying: *self,
