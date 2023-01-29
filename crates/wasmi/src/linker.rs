@@ -464,7 +464,7 @@ impl<T> Linker<T> {
             ExternType::Table(expected_type) => {
                 let table = resolved.into_table().ok_or_else(invalid_type)?;
                 let found_type = table.ty(context);
-                found_type.check_subtype(&expected_type).map_err(|_| {
+                found_type.check_subtype(expected_type).map_err(|_| {
                     LinkerError::table_type_mismatch(import_name, expected_type, &found_type)
                 })?;
                 Ok(Extern::Table(table))
@@ -472,7 +472,7 @@ impl<T> Linker<T> {
             ExternType::Memory(expected_type) => {
                 let memory = resolved.into_memory().ok_or_else(invalid_type)?;
                 let found_type = memory.ty(context);
-                found_type.check_subtype(&expected_type).map_err(|_| {
+                found_type.check_subtype(expected_type).map_err(|_| {
                     LinkerError::memory_type_mismatch(import_name, expected_type, &found_type)
                 })?;
                 Ok(Extern::Memory(memory))

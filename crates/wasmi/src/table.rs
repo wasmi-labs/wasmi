@@ -187,12 +187,10 @@ impl TableType {
         match (self.maximum(), required.maximum()) {
             (_, None) => Ok(()),
             (Some(max), Some(max_required)) if max <= max_required => Ok(()),
-            _ => {
-                return Err(TableError::UnsatisfyingTableType {
-                    unsatisfying: *self,
-                    required: *required,
-                });
-            }
+            _ => Err(TableError::UnsatisfyingTableType {
+                unsatisfying: *self,
+                required: *required,
+            }),
         }
     }
 }

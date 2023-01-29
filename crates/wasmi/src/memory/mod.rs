@@ -141,12 +141,10 @@ impl MemoryType {
         match (self.maximum_pages(), required.maximum_pages()) {
             (_, None) => Ok(()),
             (Some(max), Some(max_required)) if max <= max_required => Ok(()),
-            _ => {
-                return Err(MemoryError::UnsatisfyingMemoryType {
-                    unsatisfying: *self,
-                    required: *required,
-                });
-            }
+            _ => Err(MemoryError::UnsatisfyingMemoryType {
+                unsatisfying: *self,
+                required: *required,
+            }),
         }
     }
 }
