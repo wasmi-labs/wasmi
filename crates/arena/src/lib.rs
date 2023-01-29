@@ -159,6 +159,13 @@ where
     pub fn get_pair_mut(&mut self, fst: Idx, snd: Idx) -> Option<(&mut T, &mut T)> {
         let fst_index = fst.into_usize();
         let snd_index = snd.into_usize();
+        if fst_index == snd_index {
+            return None;
+        }
+        if fst_index > snd_index {
+            let (fst, snd) = self.get_pair_mut(snd, fst)?;
+            return Some((snd, fst));
+        }
         let min_index = min(fst_index, snd_index);
         let max_index = max(fst_index, snd_index);
         let (fst_set, snd_set) = self.entities.split_at_mut(max_index);
