@@ -334,7 +334,7 @@ impl TableEntity {
     /// Initialize `len` elements from `src_element[src_index..]` into
     /// `dst_table[dst_index..]`.
     ///
-    /// Uses the `instance` to resolve function indices of the element to [`Func`].
+    /// Uses the `instance` to resolve function indices of the element to [`Func`][`crate::Func`].
     ///
     /// # Errors
     ///
