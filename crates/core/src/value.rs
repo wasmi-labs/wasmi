@@ -31,20 +31,14 @@ impl ValueType {
     /// This is `true` for [`ValueType::I32`], [`ValueType::I64`],
     /// [`ValueType::F32`] and [`ValueType::F64`].
     pub fn is_num(&self) -> bool {
-        match self {
-            Self::I32 | Self::I64 | Self::F32 | Self::F64 => true,
-            _ => false,
-        }
+        matches!(self, Self::I32 | Self::I64 | Self::F32 | Self::F64)
     }
 
     /// Returns `true` if [`ValueType`] is a Wasm reference type.
     ///
     /// This is `true` for [`ValueType::FuncRef`] and [`ValueType::ExternRef`].
     pub fn is_ref(&self) -> bool {
-        match self {
-            Self::ExternRef | Self::FuncRef => true,
-            _ => false,
-        }
+        matches!(self, Self::ExternRef | Self::FuncRef)
     }
 }
 
