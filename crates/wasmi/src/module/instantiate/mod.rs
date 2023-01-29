@@ -4,8 +4,6 @@ mod pre;
 #[cfg(test)]
 mod tests;
 
-use wasmi_core::ValueType;
-
 pub use self::{error::InstantiationError, pre::InstancePre};
 use super::{element::ElementSegmentKind, export, DataSegmentKind, InitExpr, Module};
 use crate::{
@@ -27,6 +25,7 @@ use crate::{
     Table,
     Value,
 };
+use wasmi_core::ValueType;
 
 impl Module {
     /// Instantiates a new [`Instance`] from the given compiled [`Module`].
