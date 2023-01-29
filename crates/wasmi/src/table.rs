@@ -363,17 +363,22 @@ impl TableEntity {
             .items()
             .get(src_index..)
             .and_then(|items| items.get(..len))
-            .ok_or(TrapCode::TableOutOfBounds)?;
-        // Perform the initialization by copying from `src` to `dst`:
-        for (dst, src) in dst_items.iter_mut().zip(src_items) {
-            let funcref = src.map(|src| {
-                let src_index = src.into_u32();
-                instance.get_func(src_index).unwrap_or_else(|| {
-                    panic!("missing function at index {src_index} in instance {instance:?}")
-                })
+            .ok_or(TrapCode::TableOutOfBounds)?
+            .iter()
+            .map(|src| {
+                let func_or_none = src.map(|src| {
+                    let src_index = src.into_u32();
+                    instance.get_func(src_index).unwrap_or_else(|| {
+                        panic!("missing function at index {src_index} in instance {instance:?}")
+                    })
+                });
+                let funcref = FuncRef::new(func_or_none);
+                UntypedValue::from(funcref)
             });
-            *dst = FuncRef::new(funcref).into();
-        }
+        // Perform the initialization by copying from `src` to `dst`:
+        dst_items.iter_mut().zip(src_items).for_each(|(dst, src)| {
+            *dst = src;
+        });
         Ok(())
     }
 
