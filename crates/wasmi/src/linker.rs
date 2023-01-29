@@ -50,8 +50,8 @@ pub enum LinkerError {
         name: ImportName,
         /// The expected function type.
         expected: FuncType,
-        /// The actual function signature found.
-        actual: FuncType,
+        /// The mismatching function type found.
+        found: FuncType,
     },
     /// Occurs when an imported table does not satisfy the required table type.
     Table(TableError),
@@ -70,10 +70,19 @@ pub enum LinkerError {
 
 impl LinkerError {
     /// Creates a new [`LinkerError`] for when an imported definition was not found.
-    pub fn cannot_find_definition_of_import(import: &ImportType) -> Self {
+    fn cannot_find_definition_of_import(import: &ImportType) -> Self {
         Self::CannotFindDefinitionForImport {
             name: import.import_name().clone(),
             item_type: import.ty().clone(),
+        }
+    }
+
+    /// Create a new [`LinkerError`] for when a function type mismatched.
+    fn func_type_mismatch(name: &ImportName, expected: &FuncType, found: &FuncType) -> Self {
+        Self::FuncTypeMismatch {
+            name: name.clone(),
+            expected: expected.clone(),
+            found: found.clone(),
         }
     }
 }
@@ -111,12 +120,12 @@ impl Display for LinkerError {
             Self::FuncTypeMismatch {
                 name,
                 expected,
-                actual,
+                found,
             } => {
                 write!(
                     f,
                     "function type mismatch for import {name}: \
-                    expected {expected:?} but found {actual:?}",
+                    expected {expected:?} but found {found:?}",
                 )
             }
             Self::GlobalTypeMismatch {
@@ -360,6 +369,7 @@ impl<T> Linker<T> {
         import: ImportType,
     ) -> Result<Extern, Error> {
         let make_err = || LinkerError::cannot_find_definition_of_import(&import);
+        let import_name = import.import_name();
         let module_name = import.module();
         let field_name = import.name();
         let resolved = self.resolve(module_name, field_name).ok_or_else(make_err)?;
@@ -367,13 +377,13 @@ impl<T> Linker<T> {
         match import.ty() {
             ExternType::Func(expected_type) => {
                 let func = resolved.into_func().ok_or_else(make_err)?;
-                let actual_type = func.ty(&context);
-                if &actual_type != expected_type {
-                    return Err(LinkerError::FuncTypeMismatch {
-                        name: import.import_name().clone(),
-                        expected: expected_type.clone(),
-                        actual: actual_type,
-                    })
+                let found_type = func.ty(&context);
+                if &found_type != expected_type {
+                    return Err(LinkerError::func_type_mismatch(
+                        import_name,
+                        expected_type,
+                        &found_type,
+                    ))
                     .map_err(Into::into);
                 }
                 Ok(Extern::Func(func))
