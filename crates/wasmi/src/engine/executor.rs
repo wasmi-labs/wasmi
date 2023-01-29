@@ -159,6 +159,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 Instr::TableCopy { dst, src } => self.visit_table_copy(dst, src)?,
                 Instr::TableInit { table, elem } => self.visit_table_init(table, elem)?,
                 Instr::ElemDrop(segment) => self.visit_element_drop(segment),
+                Instr::RefFunc { func_index } => self.visit_ref_func(func_index),
                 Instr::Const(bytes) => self.visit_const(bytes),
                 Instr::I32Eqz => self.visit_i32_eqz(),
                 Instr::I32Eq => self.visit_i32_eq(),
@@ -784,6 +785,13 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     fn visit_element_drop(&mut self, segment_index: ElementSegmentIdx) {
         let segment = self.cache.get_element_segment(self.ctx, segment_index);
         self.ctx.resolve_element_segment_mut(&segment).drop_items();
+        self.next_instr();
+    }
+
+    fn visit_ref_func(&mut self, func_index: FuncIdx) {
+        let func = self.cache.get_func(self.ctx, func_index.into_inner());
+        let funcref = FuncRef::new(func);
+        self.value_stack.push(funcref);
         self.next_instr();
     }
 

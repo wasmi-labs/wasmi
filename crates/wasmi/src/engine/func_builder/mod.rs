@@ -25,7 +25,7 @@ pub use self::{
     error::TranslationError,
     inst_builder::{Instr, InstructionsBuilder, RelativeDepth},
 };
-use super::{DropKeep, FuncBody, Instruction};
+use super::{bytecode, DropKeep, FuncBody, Instruction};
 use crate::{
     engine::bytecode::{
         BranchParams,
@@ -764,11 +764,6 @@ impl<'parser> FuncBuilder<'parser> {
         })
     }
 
-    // fn visit_typed_select(ty: wasmparser::ValType) => fn translate_typed_select
-    // fn visit_ref_null(ty: wasmparser::ValType) => fn translate_ref_null
-    // fn visit_ref_is_null() => fn translate_ref_is_null
-    // fn visit_ref_func(func_index: u32) => fn translate_ref_func
-
     pub fn translate_typed_select(
         &mut self,
         _ty: wasmparser::ValType,
@@ -795,8 +790,16 @@ impl<'parser> FuncBuilder<'parser> {
     }
 
     /// Translate a Wasm `ref.func` instruction.
-    pub fn translate_ref_func(&mut self, _func_index: u32) -> Result<(), TranslationError> {
-        panic!("the reference-types Wasm proposal allows the ref.func operand only in constant expressions")
+    pub fn translate_ref_func(&mut self, func_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            let func_index = bytecode::FuncIdx::from(func_index);
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::RefFunc { func_index });
+            builder.stack_height.push();
+            Ok(())
+        })
     }
 
     /// Translate a Wasm `local.get` instruction.

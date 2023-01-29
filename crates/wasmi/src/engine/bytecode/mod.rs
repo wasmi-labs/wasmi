@@ -112,6 +112,9 @@ pub enum Instruction {
         elem: ElementSegmentIdx,
     },
     ElemDrop(ElementSegmentIdx),
+    RefFunc {
+        func_index: FuncIdx,
+    },
     Const(UntypedValue),
     I32Eqz,
     I32Eq,
