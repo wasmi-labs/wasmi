@@ -64,17 +64,41 @@ impl InitExpr {
     /// # Panics
     ///
     /// If a non-const expression operand is encountered.
-    pub fn to_const(&self) -> Option<&Value> {
+    pub fn to_const(&self, ty: ValueType) -> Option<Value> {
         match &self.op {
-            InitExprOperand::Const(value) => Some(value),
-            // Note: We do not need to handle `global.get` since
-            //       that is only allowed for imported non-mutable
-            //       global variables which have a value that is only
-            //       known post-instantiation time.
-            InitExprOperand::GlobalGet(_)
-            | InitExprOperand::RefNull
-            | InitExprOperand::FuncRef(_) => None,
+            InitExprOperand::Const(value) => Some(value.clone()),
+            InitExprOperand::RefNull => match ty {
+                ValueType::FuncRef => Some(Value::FuncRef(FuncRef::null())),
+                ValueType::ExternRef => Some(Value::ExternRef(ExternRef::null())),
+                _ => panic!("cannot have null reference for non-reftype but found {ty:?}"),
+            },
+            InitExprOperand::GlobalGet(_) => {
+                // Note: We do not need to handle `global.get` since
+                //       that is only allowed for imported non-mutable
+                //       global variables which have a value that is only
+                //       known post-instantiation time.
+                None
+            }
+            InitExprOperand::FuncRef(_) => {
+                // Note: We do not need to handle `global.get` here
+                //       since we can do this somewhere else where we
+                //       can properly handle the constant `func.ref`.
+                //       In the function builder we want to replace
+                //       `global.get` of constant `FuncRef(x)` with
+                //       the Wasm `ref.func x` instruction.
+                None
+            }
         }
+    }
+
+    /// Returns `Some(index)` if the [`InitExpr`] is a `FuncRef(index)`.
+    ///
+    /// Otherwise returns `None`.
+    pub fn func_ref(&self) -> Option<FuncIdx> {
+        if let InitExprOperand::FuncRef(index) = self.op {
+            return Some(FuncIdx(index));
+        }
+        None
     }
 
     /// Evaluates the [`InitExpr`] given the context for global variables.

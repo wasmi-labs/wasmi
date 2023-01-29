@@ -48,6 +48,7 @@ use crate::{
     },
     Engine,
     FuncType,
+    GlobalType,
     Mutability,
     Value,
 };
@@ -846,15 +847,38 @@ impl<'parser> FuncBuilder<'parser> {
             let global_idx = GlobalIdx(global_idx);
             builder.stack_height.push();
             let (global_type, init_value) = builder.res.get_global(global_idx);
-            let instr = match init_value.and_then(InitExpr::to_const) {
-                Some(value) if global_type.mutability().is_const() => {
-                    Instruction::constant(value.clone())
-                }
-                _ => Instruction::GlobalGet(global_idx.into_u32().into()),
-            };
+            let instr = Self::optimize_global_get(&global_type, init_value).unwrap_or_else(|| {
+                // No optimization took place in this case.
+                Instruction::GlobalGet(global_idx.into_u32().into())
+            });
             builder.alloc.inst_builder.push_inst(instr);
             Ok(())
         })
+    }
+
+    /// Returns `Some` equivalent instruction if the `global.get` can be optimzied.
+    ///
+    /// # Note
+    ///
+    /// Only internal (non-imported) and constant (non-mutable) globals
+    /// have a chance to be optimized to more efficient instructions.
+    fn optimize_global_get(
+        global_type: &GlobalType,
+        init_value: Option<&InitExpr>,
+    ) -> Option<Instruction> {
+        let content_type = global_type.content();
+        if let (Mutability::Const, Some(init_expr)) = (global_type.mutability(), init_value) {
+            if let Some(value) = init_expr.to_const(content_type) {
+                // We can optimize `global.get` to the constant value.
+                return Some(Instruction::constant(value));
+            }
+            if let Some(func_index) = init_expr.func_ref() {
+                // We can optimize `global.get` to the equivalent `ref.func x` instruction.
+                let func_index = bytecode::FuncIdx::from(func_index.into_u32());
+                return Some(Instruction::RefFunc { func_index });
+            }
+        }
+        None
     }
 
     /// Translate a Wasm `global.set` instruction.
