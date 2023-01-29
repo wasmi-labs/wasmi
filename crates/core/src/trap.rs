@@ -246,7 +246,7 @@ impl TrapCode {
             Self::UnreachableCodeReached => "unreachable",
             Self::MemoryOutOfBounds => "out of bounds memory access",
             Self::TableOutOfBounds => "undefined element: out of bounds table access",
-            Self::IndirectCallToNull => "undefined element",
+            Self::IndirectCallToNull => "uninitialized element",
             Self::IntegerDivisionByZero => "integer divide by zero",
             Self::IntegerOverflow => "integer overflow",
             Self::BadConversionToInteger => "invalid conversion to integer",
