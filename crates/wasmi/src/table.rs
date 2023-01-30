@@ -389,7 +389,7 @@ impl TableEntity {
             // Bail out early if nothing needs to be initialized.
             // The Wasm spec demands to still perform the bounds check
             // so we cannot bail out earlier.
-            return Ok(())
+            return Ok(());
         }
         // Perform the actual table initialization.
         match table_type.element() {
