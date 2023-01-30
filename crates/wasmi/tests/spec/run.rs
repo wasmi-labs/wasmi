@@ -1,6 +1,6 @@
 use super::{error::TestError, TestContext, TestDescriptor};
 use anyhow::Result;
-use wasmi::{Config, ExternRef, FuncRef, Value};
+use wasmi::{Config, ExternRef, FuncRef, Value, Instance};
 use wasmi_core::{F32, F64};
 use wast::{
     core::{HeapType, NanPattern, WastRetCore},
@@ -53,10 +53,11 @@ pub fn run_wasm_spec_test(name: &str, config: Config) {
 
 fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> {
     'outer: for directive in wast.directives {
+        let span = directive.span();
         test_context.profile().bump_directives();
         match directive {
             WastDirective::Wat(QuoteWat::Wat(Wat::Module(module))) => {
-                test_context.compile_and_instantiate(module)?;
+                module_compilation_succeeds(test_context, span, module);
                 test_context.profile().bump_module();
             }
             WastDirective::Wat(_) => {
@@ -298,6 +299,17 @@ fn extract_module(quote_wat: QuoteWat) -> Option<wast::core::Module> {
             // Wasm modules.
             None
         }
+    }
+}
+
+fn module_compilation_succeeds(
+    context: &mut TestContext,
+    span: Span,
+    module: wast::core::Module,
+) -> Instance {
+    match context.compile_and_instantiate(module) {
+        Ok(instance) => instance,
+        Err(error) => panic!("{}: failed to instantiate module but should have suceeded: {}", context.spanned(span), error),
     }
 }
 
