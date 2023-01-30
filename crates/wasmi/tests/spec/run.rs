@@ -1,6 +1,6 @@
 use super::{error::TestError, TestContext, TestDescriptor};
 use anyhow::Result;
-use wasmi::{Config, ExternRef, FuncRef, Value, Instance};
+use wasmi::{Config, ExternRef, FuncRef, Instance, Value};
 use wasmi_core::{F32, F64};
 use wast::{
     core::{HeapType, NanPattern, WastRetCore},
@@ -309,7 +309,11 @@ fn module_compilation_succeeds(
 ) -> Instance {
     match context.compile_and_instantiate(module) {
         Ok(instance) => instance,
-        Err(error) => panic!("{}: failed to instantiate module but should have suceeded: {}", context.spanned(span), error),
+        Err(error) => panic!(
+            "{}: failed to instantiate module but should have suceeded: {}",
+            context.spanned(span),
+            error
+        ),
     }
 }
 
