@@ -37,12 +37,12 @@ pub enum MemoryError {
     OutOfBoundsAccess,
     /// Tried to create an invalid linear memory type.
     InvalidMemoryType,
-    /// Occurs when a memory type does not satisfy the constraints of another.
-    UnsatisfyingMemoryType {
-        /// The unsatisfying [`MemoryType`].
-        unsatisfying: MemoryType,
-        /// The required [`MemoryType`].
-        required: MemoryType,
+    /// Occurs when `ty` is not a subtype of `other`.
+    InvalidSubtype {
+        /// The [`MemoryType`] which is not a subtype of `other`.
+        ty: MemoryType,
+        /// The [`MemoryType`] which is supposed to be a supertype of `ty`.
+        other: MemoryType,
     },
 }
 
@@ -61,15 +61,8 @@ impl Display for MemoryError {
             Self::InvalidMemoryType => {
                 write!(f, "tried to create an invalid virtual memory type")
             }
-            Self::UnsatisfyingMemoryType {
-                unsatisfying,
-                required,
-            } => {
-                write!(
-                    f,
-                    "memory type {unsatisfying:?} does not \
-                    satisfy requirements of {required:?}",
-                )
+            Self::InvalidSubtype { ty, other } => {
+                write!(f, "memory type {ty:?} is not a subtype of {other:?}",)
             }
         }
     }
@@ -134,9 +127,9 @@ impl MemoryType {
     pub(crate) fn is_subtype_or_err(&self, other: &MemoryType) -> Result<(), MemoryError> {
         match self.is_subtype_of(other) {
             true => Ok(()),
-            false => Err(MemoryError::UnsatisfyingMemoryType {
-                unsatisfying: *self,
-                required: *other,
+            false => Err(MemoryError::InvalidSubtype {
+                ty: *self,
+                other: *other,
             }),
         }
     }

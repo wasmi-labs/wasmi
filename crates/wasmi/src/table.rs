@@ -60,12 +60,12 @@ pub enum TableError {
     },
     /// Occur when coping elements of tables out of bounds.
     CopyOutOfBounds,
-    /// Occurs when a table type does not satisfy the constraints of another.
-    UnsatisfyingTableType {
-        /// The unsatisfying [`TableType`].
-        unsatisfying: TableType,
-        /// The required [`TableType`].
-        required: TableType,
+    /// Occurs when `ty` is not a subtype of `other`.
+    InvalidSubtype {
+        /// The [`TableType`] which is not a subtype of `other`.
+        ty: TableType,
+        /// The [`TableType`] which is supposed to be a supertype of `ty`.
+        other: TableType,
     },
 }
 
@@ -96,15 +96,8 @@ impl Display for TableError {
             Self::CopyOutOfBounds => {
                 write!(f, "out of bounds access of table elements while copying")
             }
-            Self::UnsatisfyingTableType {
-                unsatisfying,
-                required,
-            } => {
-                write!(
-                    f,
-                    "table type {unsatisfying:?} does not satisfy requirements \
-                    of {required:?}",
-                )
+            Self::InvalidSubtype { ty, other } => {
+                write!(f, "table type {ty:?} is not a subtype of {other:?}",)
             }
         }
     }
@@ -180,9 +173,9 @@ impl TableType {
     pub(crate) fn is_subtype_or_err(&self, other: &TableType) -> Result<(), TableError> {
         match self.is_subtype_of(other) {
             true => Ok(()),
-            false => Err(TableError::UnsatisfyingTableType {
-                unsatisfying: *self,
-                required: *other,
+            false => Err(TableError::InvalidSubtype {
+                ty: *self,
+                other: *other,
             }),
         }
     }
