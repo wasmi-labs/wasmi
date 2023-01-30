@@ -182,6 +182,19 @@ impl MemoryEntity {
         self.memory_type
     }
 
+    /// The current [`MemoryType`] of the linear memory.
+    ///
+    /// # Note
+    ///
+    /// This respects the current size of the [`Memory`] as its minimum size
+    /// and is useful for import subtyping checks.
+    pub fn import_ty(&self) -> MemoryType {
+        let current_pages = self.current_pages().into();
+        let maximum_pages = self.ty().maximum_pages().map(Into::into);
+        MemoryType::new(current_pages, maximum_pages)
+            .unwrap_or_else(|_| panic!("must result in valid memory type due to invariants"))
+    }
+
     /// Returns the amount of pages in use by the linear memory.
     pub fn current_pages(&self) -> Pages {
         self.current_pages
@@ -293,6 +306,24 @@ impl Memory {
     /// Panics if `ctx` does not own this [`Memory`].
     pub fn ty(&self, ctx: impl AsContext) -> MemoryType {
         ctx.as_context().store.inner.resolve_memory(self).ty()
+    }
+
+    /// The current [`MemoryType`] of the linear memory.
+    ///
+    /// # Note
+    ///
+    /// This respects the current size of the [`Memory`] as its minimum size
+    /// and is useful for import subtyping checks.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Memory`].
+    pub(crate) fn import_ty(&self, ctx: impl AsContext) -> MemoryType {
+        ctx.as_context()
+            .store
+            .inner
+            .resolve_memory(self)
+            .import_ty()
     }
 
     /// Returns the amount of pages in use by the linear memory.

@@ -150,7 +150,7 @@ impl Module {
                     builder.push_table(table);
                 }
                 (ExternType::Memory(required), Extern::Memory(memory)) => {
-                    let imported = memory.ty(context.as_context());
+                    let imported = memory.import_ty(context.as_context());
                     imported.is_subtype_or_err(required)?;
                     builder.push_memory(memory);
                 }
