@@ -145,7 +145,7 @@ impl Module {
                     builder.push_func(func);
                 }
                 (ExternType::Table(required), Extern::Table(table)) => {
-                    let imported = table.ty(context.as_context());
+                    let imported = table.import_ty(context.as_context());
                     imported.is_subtype_or_err(required)?;
                     builder.push_table(table);
                 }

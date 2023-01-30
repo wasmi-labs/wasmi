@@ -227,6 +227,16 @@ impl TableEntity {
         self.ty
     }
 
+    /// The current [`TableType`] of the [`Table`].
+    ///
+    /// # Note
+    ///
+    /// This respects the current size of the [`Table`] as its minimum size
+    /// and is useful for import subtyping checks.
+    pub fn import_ty(&self) -> TableType {
+        TableType::new(self.ty().element(), self.size(), self.ty().maximum())
+    }
+
     /// Returns the current size of the [`Table`].
     pub fn size(&self) -> u32 {
         self.elements.len() as u32
@@ -540,6 +550,20 @@ impl Table {
     /// Panics if `ctx` does not own this [`Table`].
     pub fn ty(&self, ctx: impl AsContext) -> TableType {
         ctx.as_context().store.inner.resolve_table(self).ty()
+    }
+
+    /// The current [`TableType`] of the [`Table`].
+    ///
+    /// # Note
+    ///
+    /// This respects the current size of the [`Table`] as its minimum size
+    /// and is useful for import subtyping checks.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Table`].
+    pub fn import_ty(&self, ctx: impl AsContext) -> TableType {
+        ctx.as_context().store.inner.resolve_table(self).import_ty()
     }
 
     /// Returns the current size of the [`Table`].
