@@ -385,6 +385,12 @@ impl TableEntity {
             .get(src_index..)
             .and_then(|items| items.get(..len))
             .ok_or(TrapCode::TableOutOfBounds)?;
+        if len == 0 {
+            // Bail out early if nothing needs to be initialized.
+            // The Wasm spec demands to still perform the bounds check
+            // so we cannot bail out earlier.
+            return Ok(())
+        }
         // Perform the actual table initialization.
         match table_type.element() {
             ValueType::FuncRef => {
