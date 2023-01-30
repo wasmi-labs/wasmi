@@ -163,7 +163,7 @@ impl TableType {
         Ok(())
     }
 
-    /// Checks if `self` is a subtype of `required`.
+    /// Checks if `self` is a subtype of `other`.
     ///
     /// # Note
     ///
@@ -174,24 +174,38 @@ impl TableType {
     ///
     /// # Errors
     ///
-    /// - If the `element` type of `self` does not match the `element` type of `required`.
-    /// - If the `minimum` size of `self` is less than or equal to the `minimum` size of `required`.
-    /// - If the `maximum` size of `self` is greater than the `maximum` size of `required`.
-    pub(crate) fn check_subtype(&self, required: &TableType) -> Result<(), TableError> {
-        self.matches_element_type(required.element())?;
-        if self.minimum() < required.minimum() {
-            return Err(TableError::UnsatisfyingTableType {
+    /// - If the `element` type of `self` does not match the `element` type of `other`.
+    /// - If the `minimum` size of `self` is less than or equal to the `minimum` size of `other`.
+    /// - If the `maximum` size of `self` is greater than the `maximum` size of `other`.
+    pub(crate) fn check_subtype(&self, other: &TableType) -> Result<(), TableError> {
+        match self.is_subtype_of(other) {
+            true => Ok(()),
+            false => Err(TableError::UnsatisfyingTableType {
                 unsatisfying: *self,
-                required: *required,
-            });
-        }
-        match (self.maximum(), required.maximum()) {
-            (_, None) => Ok(()),
-            (Some(max), Some(max_required)) if max <= max_required => Ok(()),
-            _ => Err(TableError::UnsatisfyingTableType {
-                unsatisfying: *self,
-                required: *required,
+                required: *other,
             }),
+        }
+    }
+
+    /// Returns `true` if the [`TableType`] is a subtype of the `other` [`TableType`].
+    ///
+    /// # Note
+    ///
+    /// This implements the [subtyping rules] according to the WebAssembly spec.
+    ///
+    /// [import subtyping]:
+    /// https://webassembly.github.io/spec/core/valid/types.html#import-subtyping
+    pub(crate) fn is_subtype_of(&self, other: &Self) -> bool {
+        if self.matches_element_type(other.element()).is_err() {
+            return false;
+        }
+        if self.minimum() < other.minimum() {
+            return false;
+        }
+        match (self.maximum(), other.maximum()) {
+            (_, None) => true,
+            (None, Some(_)) => false,
+            (Some(max), Some(other_max)) => max <= other_max,
         }
     }
 }
@@ -698,13 +712,6 @@ mod tests {
 
     fn table_type(element: ValueType, minimum: u32, maximum: impl Into<Option<u32>>) -> TableType {
         TableType::new(element, minimum, maximum.into())
-    }
-
-    impl TableType {
-        /// Returns `true` if `self` is a subtype of `other`.
-        fn is_subtype_of(&self, other: &TableType) -> bool {
-            self.check_subtype(other).is_ok()
-        }
     }
 
     use ValueType::{F64, I32};

@@ -129,8 +129,8 @@ impl MemoryType {
     ///
     /// # Errors
     ///
-    /// - If the `minimum` size of `self` is less than or equal to the `minimum` size of `required`.
-    /// - If the `maximum` size of `self` is greater than the `maximum` size of `required`.
+    /// - If the `minimum` size of `self` is less than or equal to the `minimum` size of `other`.
+    /// - If the `maximum` size of `self` is greater than the `maximum` size of `other`.
     pub(crate) fn is_subtype_or_err(&self, other: &MemoryType) -> Result<(), MemoryError> {
         match self.is_subtype_of(other) {
             true => Ok(()),
