@@ -8,7 +8,10 @@ use crate::{
     memory_units::Pages,
     module::ModuleRef,
     nan_preserving_float::{F32, F64},
-    tracer::{etable::RunInstructionTracePre, Tracer},
+    tracer::{
+        etable::{ETable, RunInstructionTracePre},
+        Tracer,
+    },
     value::{
         ArithmeticOps,
         ExtendInto,
@@ -29,7 +32,8 @@ use alloc::{boxed::Box, vec::Vec};
 use core::{cell::RefCell, fmt, ops, u32, usize};
 use parity_wasm::elements::Local;
 use specs::{
-    itable::{BinOp, BitOp, RelOp, ShiftOp, UnaryOp},
+    itable::{BinOp, BitOp, InstructionTableEntry, RelOp, ShiftOp, UnaryOp},
+    jtable::JumpTableEntry,
     mtable::{MemoryReadSize, MemoryStoreSize, VarType},
     step::StepInfo,
 };
@@ -334,7 +338,11 @@ impl Interpreter {
                                     function_context.position,
                                 );
 
-                                tracer.jtable.push(eid, last_jump_eid, &inst);
+                                tracer.jtable.push(JumpTableEntry {
+                                    eid,
+                                    last_jump_eid,
+                                    inst: Box::new(inst.into()),
+                                });
 
                                 tracer.push_frame();
                             }
@@ -384,9 +392,9 @@ impl Interpreter {
                                 if let Some(tracer) = self.tracer.clone() {
                                     let mut tracer = (*tracer).borrow_mut();
 
-                                    let entry = tracer.etable.entries.last_mut().unwrap();
+                                    let entry = tracer.etable.get_last_entry_mut().unwrap();
 
-                                    match &entry.step {
+                                    match &entry.step_info {
                                         StepInfo::CallHost {
                                             plugin,
                                             host_function_idx,
@@ -397,7 +405,7 @@ impl Interpreter {
                                             op_index_in_plugin,
                                         } => {
                                             assert!(ret_val.is_none());
-                                            entry.step = StepInfo::CallHost {
+                                            entry.step_info = StepInfo::CallHost {
                                                 plugin: *plugin,
                                                 host_function_idx: *host_function_idx,
                                                 function_name: function_name.clone(),
@@ -1961,14 +1969,19 @@ impl Interpreter {
 
                         let last_jump_eid = tracer.last_jump_eid();
 
+                        let inst_entry = InstructionTableEntry {
+                            moid: module_instance,
+                            mmid: module_instance,
+                            fid: function,
+                            iid: pc as u16,
+                            opcode: instruction,
+                        };
+
                         tracer.etable.push(
-                            module_instance,
-                            function,
+                            inst_entry,
                             sp as u64,
                             current_memory,
-                            pc,
                             last_jump_eid,
-                            instruction,
                             post_status,
                         );
                     }

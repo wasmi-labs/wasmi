@@ -1,5 +1,5 @@
 use specs::{
-    imtable::InitMemoryTableEntry,
+    imtable::{InitMemoryTable, InitMemoryTableEntry},
     mtable::{LocationType, VarType},
 };
 
@@ -31,10 +31,10 @@ impl Into<InitMemoryTableEntry> for IMEntry {
 }
 
 #[derive(Debug, Default)]
-pub struct IMTable(pub Vec<IMEntry>);
+pub struct IMTable(Vec<InitMemoryTableEntry>);
 
 impl IMTable {
-    pub(crate) fn push(
+    pub fn push(
         &mut self,
         is_global: bool,
         is_mutable: bool,
@@ -43,13 +43,21 @@ impl IMTable {
         vtype: VarType,
         value: u64,
     ) {
-        self.0.push(IMEntry {
+        self.0.push(InitMemoryTableEntry {
             is_mutable,
-            is_global,
-            module_instance_index,
-            offset,
+            ltype: if is_global {
+                LocationType::Global
+            } else {
+                LocationType::Heap
+            },
+            mmid: module_instance_index as u64,
+            offset: offset as u64,
             vtype,
             value,
         })
+    }
+
+    pub fn finalized(&self) -> InitMemoryTable {
+        InitMemoryTable::new(self.0.clone())
     }
 }

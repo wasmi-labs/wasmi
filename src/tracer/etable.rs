@@ -1,14 +1,12 @@
 use parity_wasm::elements::ValueType;
 use specs::{
-    etable::EventTableEntry,
-    itable::Opcode,
+    etable::{EventTable, EventTableEntry},
+    itable::InstructionTableEntry,
     mtable::{MemoryReadSize, MemoryStoreSize, VarType},
     step::StepInfo,
 };
 
 use crate::{runner::ValueInternal, DEFAULT_VALUE_STACK_LIMIT};
-
-use super::itable::IEntry;
 
 pub enum RunInstructionTracePre {
     BrIfEqz {
@@ -108,89 +106,54 @@ pub enum RunInstructionTracePre {
     },
 }
 
-#[derive(Debug, Clone)]
-pub struct EEntry {
-    pub id: u64,
-    pub sp: u64,
-    pub memory_size: usize,
-    pub last_jump_eid: u64,
-    pub inst: IEntry,
-    pub step: StepInfo,
-}
+pub(crate) trait ETable {
+    fn get_latest_eid(&self) -> u64;
 
-impl Into<EventTableEntry> for EEntry {
-    fn into(self) -> EventTableEntry {
-        EventTableEntry {
-            eid: self.id,
-            sp: (DEFAULT_VALUE_STACK_LIMIT as u64)
-                .checked_sub(self.sp)
-                .unwrap()
-                .checked_sub(1)
-                .unwrap(),
-            last_jump_eid: self.last_jump_eid,
-            inst: self.inst.into(),
-            step_info: self.step.clone(),
-            allocated_memory_pages: self.memory_size,
-        }
-    }
-}
+    fn get_last_entry_mut(&mut self) -> Option<&mut EventTableEntry>;
 
-#[derive(Debug)]
-pub struct ETable {
-    eid: u64,
-    pub(crate) entries: Vec<EEntry>,
-}
-
-impl Default for ETable {
-    fn default() -> Self {
-        Self {
-            eid: 1,
-            entries: vec![],
-        }
-    }
-}
-
-impl ETable {
-    pub fn get_latest_eid(&self) -> u64 {
-        self.entries.last().unwrap().id
-    }
-
-    pub fn get_entries(&self) -> &Vec<EEntry> {
-        &self.entries
-    }
-
-    fn allocate_eid(&mut self) -> u64 {
-        let r = self.eid;
-        self.eid = r + 1;
-        return r;
-    }
-
-    pub fn push(
+    fn push(
         &mut self,
-        module_instance_index: u16,
-        func_index: u16,
+        inst: InstructionTableEntry,
         sp: u64,
-        memory_size: usize,
-        pc: u32,
+        allocated_memory_pages: usize,
         last_jump_eid: u64,
-        opcode: Opcode,
-        step: StepInfo,
-    ) -> EEntry {
-        let eentry = EEntry {
-            id: self.allocate_eid(),
+        step_info: StepInfo,
+    ) -> EventTableEntry;
+}
+
+impl ETable for EventTable {
+    fn get_latest_eid(&self) -> u64 {
+        self.entries().last().unwrap().eid
+    }
+
+    fn get_last_entry_mut(&mut self) -> Option<&mut EventTableEntry> {
+        self.entries_mut().last_mut()
+    }
+
+    fn push(
+        &mut self,
+        inst: InstructionTableEntry,
+        sp: u64,
+        allocated_memory_pages: usize,
+        last_jump_eid: u64,
+        step_info: StepInfo,
+    ) -> EventTableEntry {
+        let sp = (DEFAULT_VALUE_STACK_LIMIT as u64)
+            .checked_sub(sp)
+            .unwrap()
+            .checked_sub(1)
+            .unwrap();
+
+        let eentry = EventTableEntry {
+            eid: self.entries().len() as u64 + 1,
             sp,
-            memory_size,
+            allocated_memory_pages,
             last_jump_eid,
-            inst: IEntry {
-                module_instance_index: module_instance_index as u16,
-                func_index,
-                pc: pc as u16,
-                opcode,
-            },
-            step,
+            inst,
+            step_info,
         };
 
-        self.entries.push(eentry.clone());
+        self.entries_mut().push(eentry.clone());
 
         eentry
     }

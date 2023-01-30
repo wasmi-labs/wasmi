@@ -3,7 +3,10 @@ use std::collections::HashMap;
 use specs::{
     brtable::{ElemEntry, ElemTable},
     configure_table::ConfigureTable,
+    etable::EventTable,
     host_function::HostFunctionDesc,
+    itable::{InstructionTable, InstructionTableEntry},
+    jtable::JumpTable,
     mtable::VarType,
     types::FunctionType,
 };
@@ -18,17 +21,10 @@ use crate::{
     Signature,
 };
 
-use self::{
-    etable::ETable,
-    imtable::IMTable,
-    itable::{IEntry, ITable},
-    jtable::JTable,
-};
+use self::{etable::ETable, imtable::IMTable};
 
 pub mod etable;
 pub mod imtable;
-pub mod itable;
-pub mod jtable;
 
 #[derive(Debug)]
 pub struct FuncDesc {
@@ -39,10 +35,10 @@ pub struct FuncDesc {
 
 #[derive(Debug)]
 pub struct Tracer {
-    pub itable: ITable,
+    pub itable: InstructionTable,
     pub imtable: IMTable,
-    pub etable: ETable,
-    pub jtable: JTable,
+    pub etable: EventTable,
+    pub jtable: JumpTable,
     pub elem_table: ElemTable,
     pub configure_table: ConfigureTable,
     type_of_func_ref: Vec<(FuncRef, u32)>,
@@ -60,11 +56,11 @@ impl Tracer {
     /// Create an empty tracer
     pub fn new(host_plugin_lookup: HashMap<usize, HostFunctionDesc>) -> Self {
         Tracer {
-            itable: ITable::default(),
+            itable: InstructionTable::default(),
             imtable: IMTable::default(),
-            etable: ETable::default(),
+            etable: EventTable::default(),
             last_jump_eid: vec![0],
-            jtable: JTable::default(),
+            jtable: JumpTable::default(),
             elem_table: ElemTable::default(),
             configure_table: ConfigureTable::default(),
             type_of_func_ref: vec![],
@@ -274,9 +270,9 @@ impl Tracer {
                             let pc = iter.position();
                             if let Some(instruction) = iter.next() {
                                 let _ = self.itable.push(
-                                    self.next_module_id() as u32,
+                                    self.next_module_id(),
                                     funcdesc.index_within_jtable,
-                                    pc,
+                                    pc as u16,
                                     instruction.into(&self.function_index_translation),
                                 );
                             } else {
@@ -335,11 +331,11 @@ impl Tracer {
         self.function_lookup.get(pos).unwrap().1
     }
 
-    pub fn lookup_ientry(&self, function: &FuncRef, pos: u32) -> IEntry {
+    pub fn lookup_ientry(&self, function: &FuncRef, pos: u32) -> InstructionTableEntry {
         let function_idx = self.lookup_function(function);
 
-        for ientry in &self.itable.0 {
-            if ientry.func_index as u16 == function_idx && ientry.pc as u32 == pos {
+        for ientry in self.itable.entries() {
+            if ientry.fid as u16 == function_idx && ientry.iid as u32 == pos {
                 return ientry.clone();
             }
         }
@@ -347,11 +343,11 @@ impl Tracer {
         unreachable!()
     }
 
-    pub fn lookup_first_inst(&self, function: &FuncRef) -> IEntry {
+    pub fn lookup_first_inst(&self, function: &FuncRef) -> InstructionTableEntry {
         let function_idx = self.lookup_function(function);
 
-        for ientry in &self.itable.0 {
-            if ientry.func_index as u16 == function_idx {
+        for ientry in self.itable.entries() {
+            if ientry.fid as u16 == function_idx {
                 return ientry.clone();
             }
         }
