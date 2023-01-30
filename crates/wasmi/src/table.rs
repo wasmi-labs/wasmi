@@ -562,7 +562,7 @@ impl Table {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Table`].
-    pub fn import_ty(&self, ctx: impl AsContext) -> TableType {
+    pub(crate) fn import_ty(&self, ctx: impl AsContext) -> TableType {
         ctx.as_context().store.inner.resolve_table(self).import_ty()
     }
 
