@@ -118,7 +118,7 @@ impl MemoryType {
         self.maximum_pages
     }
 
-    /// Checks if `self` is a subtype of `required`.
+    /// Checks if `self` is a subtype of `other`.
     ///
     /// # Note
     ///
@@ -131,20 +131,32 @@ impl MemoryType {
     ///
     /// - If the `minimum` size of `self` is less than or equal to the `minimum` size of `required`.
     /// - If the `maximum` size of `self` is greater than the `maximum` size of `required`.
-    pub(crate) fn check_subtype(&self, required: &MemoryType) -> Result<(), MemoryError> {
-        if self.initial_pages() < required.initial_pages() {
-            return Err(MemoryError::UnsatisfyingMemoryType {
+    pub(crate) fn is_subtype_or_err(&self, other: &MemoryType) -> Result<(), MemoryError> {
+        match self.is_subtype_of(other) {
+            true => Ok(()),
+            false => Err(MemoryError::UnsatisfyingMemoryType {
                 unsatisfying: *self,
-                required: *required,
-            });
-        }
-        match (self.maximum_pages(), required.maximum_pages()) {
-            (_, None) => Ok(()),
-            (Some(max), Some(max_required)) if max <= max_required => Ok(()),
-            _ => Err(MemoryError::UnsatisfyingMemoryType {
-                unsatisfying: *self,
-                required: *required,
+                required: *other,
             }),
+        }
+    }
+
+    /// Returns `true` if the [`MemoryType`] is a subtype of the `other` [`MemoryType`].
+    ///
+    /// # Note
+    ///
+    /// This implements the [subtyping rules] according to the WebAssembly spec.
+    ///
+    /// [import subtyping]:
+    /// https://webassembly.github.io/spec/core/valid/types.html#import-subtyping
+    pub(crate) fn is_subtype_of(&self, other: &MemoryType) -> bool {
+        if self.initial_pages() < other.initial_pages() {
+            return false;
+        }
+        match (self.maximum_pages(), other.maximum_pages()) {
+            (_, None) => true,
+            (None, Some(_)) => false,
+            (Some(max), Some(other_max)) => max <= other_max,
         }
     }
 }
@@ -412,13 +424,6 @@ mod tests {
 
     fn memory_type(minimum: u32, maximum: impl Into<Option<u32>>) -> MemoryType {
         MemoryType::new(minimum, maximum.into()).unwrap()
-    }
-
-    impl MemoryType {
-        /// Returns `true` if `self` is a subtype of `other`.
-        fn is_subtype_of(&self, other: &MemoryType) -> bool {
-            self.check_subtype(other).is_ok()
-        }
     }
 
     #[test]

@@ -472,7 +472,7 @@ impl<T> Linker<T> {
             ExternType::Memory(expected_type) => {
                 let memory = resolved.into_memory().ok_or_else(invalid_type)?;
                 let found_type = memory.ty(context);
-                found_type.check_subtype(expected_type).map_err(|_| {
+                found_type.is_subtype_or_err(expected_type).map_err(|_| {
                     LinkerError::memory_type_mismatch(import_name, expected_type, &found_type)
                 })?;
                 Ok(Extern::Memory(memory))
