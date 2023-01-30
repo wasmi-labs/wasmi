@@ -211,9 +211,10 @@ fn assert_trap(test_context: &TestContext, span: Span, error: TestError, message
             );
         }
         unexpected => panic!(
-            "encountered unexpected error: \n\t\
+            "{}: encountered unexpected error: \n\t\
                 found: '{unexpected}'\n\t\
                 expected: trap with message '{message}'",
+            test_context.spanned(span),
         ),
     }
 }
@@ -224,7 +225,8 @@ fn assert_results(context: &TestContext, span: Span, results: &[Value], expected
     let expected = expected.iter().map(|expected| match expected {
         WastRet::Core(expected) => expected,
         WastRet::Component(expected) => panic!(
-            "`wasmi` does not support the Wasm `component-model` proposal but found {expected:?}"
+            "{:?}: `wasmi` does not support the Wasm `component-model` proposal but found {expected:?}",
+            context.spanned(span),
         ),
     });
     for (result, expected) in results.iter().zip(expected) {
@@ -346,24 +348,34 @@ fn execute_wast_invoke(
     let mut args = <Vec<Value>>::new();
     for arg in invoke.args {
         let value = match arg {
-            wast::WastArg::Core(arg) => {
-                match arg {
-                    wast::core::WastArgCore::I32(arg) => Value::I32(arg),
-                    wast::core::WastArgCore::I64(arg) => Value::I64(arg),
-                    wast::core::WastArgCore::F32(arg) => Value::F32(F32::from_bits(arg.bits)),
-                    wast::core::WastArgCore::F64(arg) => Value::F64(F64::from_bits(arg.bits)),
-                    wast::core::WastArgCore::V128(_) => panic!("{span:?}: `wasmi` does not support the `simd` Wasm proposal but found: {arg:?}"),
-                    wast::core::WastArgCore::RefNull(HeapType::Func) => Value::FuncRef(FuncRef::null()),
-                    wast::core::WastArgCore::RefNull(HeapType::Extern) => Value::ExternRef(ExternRef::null()),
-                    wast::core::WastArgCore::RefExtern(value) => Value::ExternRef(ExternRef::new(context.store_mut(), value)),
-                    _ => panic!("encountered invalid Wast argument: {arg:?}"),
-                }
-            }
-            wast::WastArg::Component(arg) => panic!("{span:?}: `wasmi` does not support the Wasm `component-model` but found {arg:?}"),
+            wast::WastArg::Core(arg) => value(context.store_mut(), &arg).unwrap_or_else(|| {
+                panic!(
+                    "{}: encountered unsupported WastArgCore argument: {arg:?}",
+                    context.spanned(span)
+                )
+            }),
+            wast::WastArg::Component(arg) => panic!(
+                "{}: `wasmi` does not support the Wasm `component-model` but found {arg:?}",
+                context.spanned(span)
+            ),
         };
         args.push(value);
     }
     context
         .invoke(module_name, field_name, &args)
         .map(|results| results.to_vec())
+}
+
+/// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Value`] if possible.
+fn value(ctx: &mut wasmi::Store<()>, value: &wast::core::WastArgCore) -> Option<Value> {
+    Some(match value {
+        wast::core::WastArgCore::I32(arg) => Value::I32(*arg),
+        wast::core::WastArgCore::I64(arg) => Value::I64(*arg),
+        wast::core::WastArgCore::F32(arg) => Value::F32(F32::from_bits(arg.bits)),
+        wast::core::WastArgCore::F64(arg) => Value::F64(F64::from_bits(arg.bits)),
+        wast::core::WastArgCore::RefNull(HeapType::Func) => Value::FuncRef(FuncRef::null()),
+        wast::core::WastArgCore::RefNull(HeapType::Extern) => Value::ExternRef(ExternRef::null()),
+        wast::core::WastArgCore::RefExtern(value) => Value::ExternRef(ExternRef::new(ctx, *value)),
+        _ => return None,
+    })
 }
