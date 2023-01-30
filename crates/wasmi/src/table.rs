@@ -227,13 +227,13 @@ impl TableEntity {
         self.ty
     }
 
-    /// The current [`TableType`] of the [`Table`].
+    /// Returns the dynamic [`TableType`] of the [`TableEntity`].
     ///
     /// # Note
     ///
-    /// This respects the current size of the [`Table`] as its minimum size
-    /// and is useful for import subtyping checks.
-    pub fn import_ty(&self) -> TableType {
+    /// This respects the current size of the [`TableEntity`]
+    /// as its minimum size and is useful for import subtyping checks.
+    pub fn dynamic_ty(&self) -> TableType {
         TableType::new(self.ty().element(), self.size(), self.ty().maximum())
     }
 
@@ -552,18 +552,22 @@ impl Table {
         ctx.as_context().store.inner.resolve_table(self).ty()
     }
 
-    /// The current [`TableType`] of the [`Table`].
+    /// Returns the dynamic [`TableType`] of the [`Table`].
     ///
     /// # Note
     ///
-    /// This respects the current size of the [`Table`] as its minimum size
-    /// and is useful for import subtyping checks.
+    /// This respects the current size of the [`Table`] as
+    /// its minimum size and is useful for import subtyping checks.
     ///
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Table`].
-    pub(crate) fn import_ty(&self, ctx: impl AsContext) -> TableType {
-        ctx.as_context().store.inner.resolve_table(self).import_ty()
+    pub(crate) fn dynamic_ty(&self, ctx: impl AsContext) -> TableType {
+        ctx.as_context()
+            .store
+            .inner
+            .resolve_table(self)
+            .dynamic_ty()
     }
 
     /// Returns the current size of the [`Table`].

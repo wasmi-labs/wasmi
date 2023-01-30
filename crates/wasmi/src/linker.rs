@@ -453,7 +453,7 @@ impl<T> Linker<T> {
             }
             ExternType::Table(expected_type) => {
                 let table = resolved.into_table().ok_or_else(invalid_type)?;
-                let found_type = table.import_ty(context);
+                let found_type = table.dynamic_ty(context);
                 found_type.is_subtype_or_err(expected_type).map_err(|_| {
                     LinkerError::table_type_mismatch(import_name, expected_type, &found_type)
                 })?;
