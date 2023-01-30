@@ -204,8 +204,8 @@ impl TableType {
         }
         match (self.maximum(), other.maximum()) {
             (_, None) => true,
-            (None, Some(_)) => false,
             (Some(max), Some(other_max)) => max <= other_max,
+            _ => false,
         }
     }
 }

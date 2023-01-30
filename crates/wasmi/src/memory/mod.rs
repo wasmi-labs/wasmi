@@ -155,8 +155,8 @@ impl MemoryType {
         }
         match (self.maximum_pages(), other.maximum_pages()) {
             (_, None) => true,
-            (None, Some(_)) => false,
             (Some(max), Some(other_max)) => max <= other_max,
+            _ => false,
         }
     }
 }
