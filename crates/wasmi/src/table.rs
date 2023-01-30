@@ -177,7 +177,7 @@ impl TableType {
     /// - If the `element` type of `self` does not match the `element` type of `other`.
     /// - If the `minimum` size of `self` is less than or equal to the `minimum` size of `other`.
     /// - If the `maximum` size of `self` is greater than the `maximum` size of `other`.
-    pub(crate) fn check_subtype(&self, other: &TableType) -> Result<(), TableError> {
+    pub(crate) fn is_subtype_or_err(&self, other: &TableType) -> Result<(), TableError> {
         match self.is_subtype_of(other) {
             true => Ok(()),
             false => Err(TableError::UnsatisfyingTableType {
