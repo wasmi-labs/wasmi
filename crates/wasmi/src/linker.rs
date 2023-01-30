@@ -58,22 +58,22 @@ pub enum LinkerError {
         found: FuncType,
     },
     /// Encountered when a [`TableType`] does not match the expected [`TableType`].
-    TableTypeMismatch {
-        /// The name of the import with the mismatched type.
+    InvalidTableSubtype {
+        /// The name of the import with the invalid [`TableType`].
         name: ImportName,
-        /// The expected [`TableType`].
-        expected: TableType,
-        /// The mismatching [`TableType`] found.
-        found: TableType,
+        /// The [`TableType`] that is supposed to be a subtype of `other`.
+        ty: TableType,
+        /// The [`TableType`] this is supposed to be a supertype of `ty`.
+        other: TableType,
     },
     /// Encountered when a [`MemoryType`] does not match the expected [`MemoryType`].
-    MemoryTypeMismatch {
-        /// The name of the import with the mismatched type.
+    InvalidMemorySubtype {
+        /// The name of the import with the invalid [`MemoryType`].
         name: ImportName,
-        /// The expected [`MemoryType`].
-        expected: MemoryType,
-        /// The mismatching [`MemoryType`] found.
-        found: MemoryType,
+        /// The [`MemoryType`] that is supposed to be a subtype of `other`.
+        ty: MemoryType,
+        /// The [`MemoryType`] this is supposed to be a supertype of `ty`.
+        other: MemoryType,
     },
     /// Encountered when a [`GlobalType`] does not match the expected [`GlobalType`].
     GlobalTypeMismatch {
@@ -113,21 +113,21 @@ impl LinkerError {
         }
     }
 
-    /// Create a new [`LinkerError`] for when a [`TableType`] mismatched.
-    fn table_type_mismatch(name: &ImportName, expected: &TableType, found: &TableType) -> Self {
-        Self::TableTypeMismatch {
+    /// Create a new [`LinkerError`] for when a [`TableType`] `ty` unexpectedly is not a subtype of `other`.
+    fn table_type_mismatch(name: &ImportName, ty: &TableType, other: &TableType) -> Self {
+        Self::InvalidTableSubtype {
             name: name.clone(),
-            expected: *expected,
-            found: *found,
+            ty: *ty,
+            other: *other,
         }
     }
 
-    /// Create a new [`LinkerError`] for when a [`MemoryType`] mismatched.
-    fn memory_type_mismatch(name: &ImportName, expected: &MemoryType, found: &MemoryType) -> Self {
-        Self::MemoryTypeMismatch {
+    /// Create a new [`LinkerError`] for when a [`MemoryType`] `ty` unexpectedly is not a subtype of `other`.
+    fn invalid_memory_subtype(name: &ImportName, ty: &MemoryType, other: &MemoryType) -> Self {
+        Self::InvalidMemorySubtype {
             name: name.clone(),
-            expected: *expected,
-            found: *found,
+            ty: *ty,
+            other: *other,
         }
     }
 
@@ -180,26 +180,16 @@ impl Display for LinkerError {
                     expected {expected:?} but found {found:?}",
                 )
             }
-            Self::TableTypeMismatch {
-                name,
-                expected,
-                found,
-            } => {
+            Self::InvalidTableSubtype { name, ty, other } => {
                 write!(
                     f,
-                    "table type mismatch for import {name}: \
-                    expected {expected:?} but found {found:?}",
+                    "import {name}: table type {ty:?} is not a subtype of {other:?}"
                 )
             }
-            Self::MemoryTypeMismatch {
-                name,
-                expected,
-                found,
-            } => {
+            Self::InvalidMemorySubtype { name, ty, other } => {
                 write!(
                     f,
-                    "memory type mismatch for import {name}: \
-                    expected {expected:?} but found {found:?}",
+                    "import {name}: memory type {ty:?} is not a subtype of {other:?}"
                 )
             }
             Self::GlobalTypeMismatch {
@@ -473,7 +463,7 @@ impl<T> Linker<T> {
                 let memory = resolved.into_memory().ok_or_else(invalid_type)?;
                 let found_type = memory.ty(context);
                 found_type.is_subtype_or_err(expected_type).map_err(|_| {
-                    LinkerError::memory_type_mismatch(import_name, expected_type, &found_type)
+                    LinkerError::invalid_memory_subtype(import_name, expected_type, &found_type)
                 })?;
                 Ok(Extern::Memory(memory))
             }
