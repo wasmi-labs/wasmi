@@ -25,7 +25,7 @@ use crate::{
     Table,
     Value,
 };
-use wasmi_core::ValueType;
+use wasmi_core::{Trap, ValueType};
 
 impl Module {
     /// Instantiates a new [`Instance`] from the given compiled [`Module`].
@@ -304,43 +304,53 @@ impl Module {
     /// Initializes the [`Instance`] tables with the Wasm element segments of the [`Module`].
     fn initialize_table_elements(
         &self,
-        context: &mut impl AsContextMut,
+        mut context: &mut impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), Error> {
         for segment in &self.element_segments[..] {
-            let items = segment.items();
-            if let ElementSegmentKind::Active(segment) = segment.kind() {
-                let offset_expr = segment.offset();
-                let offset =
-                    Self::eval_init_expr(&mut *context, builder, ValueType::I32, offset_expr)
+            let element = ElementSegment::new(context.as_context_mut(), segment);
+            if let ElementSegmentKind::Active(active) = segment.kind() {
+                let dst_index =
+                    Self::eval_init_expr(&mut *context, builder, ValueType::I32, active.offset())
                         .i32()
                         .unwrap_or_else(|| {
                             panic!(
                                 "expected offset value of type `i32` due to \
-                             Wasm validation but found: {offset_expr:?}",
+                                 Wasm validation but found: {:?}",
+                                active.offset(),
                             )
                         }) as u32;
-                let table = builder.get_table(segment.table_index().into_u32());
+                let table = builder.get_table(active.table_index().into_u32());
                 // Note: This checks not only that the elements in the element segments properly
                 //       fit into the table at the given offset but also that the element segment
                 //       consists of at least 1 element member.
                 let len_table = table.size(&context);
-                let len_items = items.len() as u32;
-                len_items
-                    .checked_add(offset)
-                    .filter(|&req| req <= len_table)
+                let len_items = element.size(&context);
+                dst_index
+                    .checked_add(len_items)
+                    .filter(|&max_index| max_index <= len_table)
                     .ok_or(InstantiationError::ElementSegmentDoesNotFit {
                         table,
-                        offset,
+                        offset: dst_index,
                         amount: len_items,
                     })?;
                 // Finally do the actual initialization of the table elements.
-                for (i, func_index) in items.iter().enumerate() {
-                    let func = func_index.map(|index| builder.get_func(index.into_u32()));
-                    table.set(&mut *context, offset + i as u32, FuncRef::new(func).into())?;
+                {
+                    let (table, element) = context
+                        .as_context_mut()
+                        .store
+                        .inner
+                        .resolve_table_element(&table, &element);
+                    table
+                        .init(dst_index, element, 0, len_items, |func_index| {
+                            builder.get_func(func_index)
+                        })
+                        .map_err(Trap::from)?;
                 }
+                // Now drop the active element segment as commanded by the Wasm spec.
+                element.drop_items(&mut context);
             }
-            builder.push_element_segment(ElementSegment::new(context.as_context_mut(), segment));
+            builder.push_element_segment(element);
         }
         Ok(())
     }

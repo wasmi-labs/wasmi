@@ -1,4 +1,4 @@
-use super::{FuncIdx, InitExpr, TableIdx};
+use super::{InitExpr, TableIdx};
 use crate::{errors::ModuleError, module::utils::WasmiValueType};
 use alloc::sync::Arc;
 use wasmi_core::ValueType;
@@ -13,7 +13,43 @@ pub struct ElementSegment {
     /// The type of elements of the [`ElementSegment`].
     ty: ValueType,
     /// The items of the [`ElementSegment`].
-    items: Arc<[Option<FuncIdx>]>,
+    items: ElementSegmentItems,
+}
+
+/// The items of an [`ElementSegment`].
+#[derive(Debug, Clone)]
+pub struct ElementSegmentItems {
+    exprs: Arc<[InitExpr]>,
+}
+
+impl ElementSegmentItems {
+    /// Creates new [`ElementSegmentItems`] from the given [`wasmparser::ElementItems`].
+    ///
+    /// # Panics
+    ///
+    /// If the given [`wasmparser::ElementItem`] is invalid.
+    fn new(items: &wasmparser::ElementItems) -> Self {
+        let exprs = items
+            .get_items_reader()
+            .unwrap_or_else(|error| panic!("failed to parse element items: {error}"))
+            .into_iter()
+            .map(|item| {
+                let item = item.as_ref().unwrap_or_else(|error| {
+                    panic!("failed to parse element item {item:?}: {error}")
+                });
+                match item {
+                    wasmparser::ElementItem::Func(func_index) => InitExpr::new_funcref(*func_index),
+                    wasmparser::ElementItem::Expr(expr) => InitExpr::new(*expr),
+                }
+            })
+            .collect::<Arc<[_]>>();
+        Self { exprs }
+    }
+
+    /// Returns a shared reference to the items of the [`ElementSegmentItems`].
+    pub fn items(&self) -> &[InitExpr] {
+        &self.exprs
+    }
 }
 
 /// The kind of a Wasm [`ElementSegment`].
@@ -81,18 +117,7 @@ impl TryFrom<wasmparser::Element<'_>> for ElementSegment {
         );
         let kind = ElementSegmentKind::try_from(element.kind)?;
         let ty = WasmiValueType::from(element.ty).into_inner();
-        let items = element
-            .items
-            .get_items_reader()?
-            .into_iter()
-            .map(|item| {
-                let func_ref = match item? {
-                    wasmparser::ElementItem::Func(func_idx) => Some(FuncIdx(func_idx)),
-                    wasmparser::ElementItem::Expr(expr) => InitExpr::new(expr).to_elemexpr(),
-                };
-                <Result<_, ModuleError>>::Ok(func_ref)
-            })
-            .collect::<Result<Arc<[_]>, _>>()?;
+        let items = ElementSegmentItems::new(&element.items);
         Ok(ElementSegment { kind, ty, items })
     }
 }
@@ -109,12 +134,7 @@ impl ElementSegment {
     }
 
     /// Returns the element items of the [`ElementSegment`].
-    pub fn items(&self) -> &[Option<FuncIdx>] {
-        &self.items[..]
-    }
-
-    /// Clone the underlying items of the [`ElementSegment`].
-    pub fn clone_items(&self) -> Arc<[Option<FuncIdx>]> {
+    pub fn items_cloned(&self) -> ElementSegmentItems {
         self.items.clone()
     }
 }

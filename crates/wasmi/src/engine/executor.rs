@@ -777,7 +777,11 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let (instance, table, element) = self
             .cache
             .get_table_and_element_segment(self.ctx, table, elem);
-        table.init(instance, dst_index, element, src_index, len)?;
+        table.init(dst_index, element, src_index, len, |func_index| {
+            instance
+                .get_func(func_index)
+                .unwrap_or_else(|| panic!("missing function at index {func_index}"))
+        })?;
         self.next_instr();
         Ok(())
     }

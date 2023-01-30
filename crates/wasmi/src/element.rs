@@ -1,5 +1,10 @@
-use crate::{module, module::FuncIdx, store::Stored, AsContextMut};
-use alloc::sync::Arc;
+use crate::{
+    module,
+    module::{ElementSegmentItems, InitExpr},
+    store::Stored,
+    AsContext,
+    AsContextMut,
+};
 use wasmi_arena::ArenaIndex;
 use wasmi_core::ValueType;
 
@@ -48,6 +53,24 @@ impl ElementSegment {
             .inner
             .alloc_element_segment(entity)
     }
+
+    /// Returns the number of items in the [`ElementSegment`].
+    pub fn size(&self, ctx: impl AsContext) -> u32 {
+        ctx.as_context()
+            .store
+            .inner
+            .resolve_element_segment(self)
+            .size()
+    }
+
+    /// Drops the items of the [`ElementSegment`].
+    pub fn drop_items(&self, mut ctx: impl AsContextMut) {
+        ctx.as_context_mut()
+            .store
+            .inner
+            .resolve_element_segment_mut(self)
+            .drop_items()
+    }
 }
 
 /// An instantiated [`ElementSegmentEntity`].
@@ -68,18 +91,17 @@ pub struct ElementSegmentEntity {
     /// These items are just readable after instantiation.
     /// Using Wasm `elem.drop` simply replaces the instance
     /// with an empty one.
-    items: Option<Arc<[Option<FuncIdx>]>>,
+    items: Option<ElementSegmentItems>,
 }
 
 impl From<&'_ module::ElementSegment> for ElementSegmentEntity {
     fn from(segment: &'_ module::ElementSegment) -> Self {
         let ty = segment.ty();
         match segment.kind() {
-            module::ElementSegmentKind::Passive => Self {
+            module::ElementSegmentKind::Passive | module::ElementSegmentKind::Active(_) => Self {
                 ty,
-                items: Some(segment.clone_items()),
+                items: Some(segment.items_cloned()),
             },
-            module::ElementSegmentKind::Active(_) => Self::empty(ty),
             module::ElementSegmentKind::Declared => Self::empty(ty),
         }
     }
@@ -96,12 +118,17 @@ impl ElementSegmentEntity {
         self.ty
     }
 
+    /// Returns the number of items in the [`ElementSegment`].
+    pub fn size(&self) -> u32 {
+        self.items().len() as u32
+    }
+
     /// Returns the items of the [`ElementSegmentEntity`].
-    pub fn items(&self) -> &[Option<FuncIdx>] {
+    pub fn items(&self) -> &[InitExpr] {
         self.items
             .as_ref()
-            .map(|items| &items[..])
-            .unwrap_or_else(|| &[])
+            .map(ElementSegmentItems::items)
+            .unwrap_or(&[])
     }
 
     /// Drops the items of the [`ElementSegmentEntity`].

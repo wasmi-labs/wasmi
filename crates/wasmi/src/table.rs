@@ -3,8 +3,9 @@
 use super::{AsContext, AsContextMut, Stored};
 use crate::{
     element::ElementSegmentEntity,
-    instance::InstanceEntity,
+    module::FuncIdx,
     value::WithType,
+    Func,
     FuncRef,
     Value,
 };
@@ -340,18 +341,23 @@ impl TableEntity {
     ///   Note: This is a panic instead of an error since it is asserted at Wasm validation time.
     pub fn init(
         &mut self,
-        instance: &InstanceEntity,
         dst_index: u32,
         element: &ElementSegmentEntity,
         src_index: u32,
         len: u32,
+        get_func: impl Fn(u32) -> Func,
     ) -> Result<(), TrapCode> {
-        self.ty()
+        let table_type = self.ty();
+        assert!(
+            table_type.element().is_ref(),
+            "table.init currently only works on reftypes"
+        );
+        table_type
             .matches_element_type(element.ty())
             .map_err(|_| TrapCode::BadSignature)?;
-        // Turn parameters into proper slice indices.
-        let src_index = src_index as usize;
+        // Convert parameters to indices.
         let dst_index = dst_index as usize;
+        let src_index = src_index as usize;
         let len = len as usize;
         // Perform bounds check before anything else.
         let dst_items = self
@@ -363,22 +369,24 @@ impl TableEntity {
             .items()
             .get(src_index..)
             .and_then(|items| items.get(..len))
-            .ok_or(TrapCode::TableOutOfBounds)?
-            .iter()
-            .map(|src| {
-                let func_or_none = src.map(|src| {
-                    let src_index = src.into_u32();
-                    instance.get_func(src_index).unwrap_or_else(|| {
-                        panic!("missing function at index {src_index} in instance {instance:?}")
-                    })
+            .ok_or(TrapCode::TableOutOfBounds)?;
+        // Perform the actual table initialization.
+        match table_type.element() {
+            ValueType::FuncRef => {
+                // Initialize element interpreted as Wasm `funrefs`.
+                dst_items.iter_mut().zip(src_items).for_each(|(dst, src)| {
+                    let func_or_null = src.as_funcref().map(FuncIdx::into_u32).map(&get_func);
+                    *dst = FuncRef::new(func_or_null).into();
                 });
-                let funcref = FuncRef::new(func_or_none);
-                UntypedValue::from(funcref)
-            });
-        // Perform the initialization by copying from `src` to `dst`:
-        dst_items.iter_mut().zip(src_items).for_each(|(dst, src)| {
-            *dst = src;
-        });
+            }
+            ValueType::ExternRef => {
+                // Initialize element interpreted as Wasm `externrefs`.
+                dst_items.iter_mut().zip(src_items).for_each(|(dst, src)| {
+                    *dst = UntypedValue::from(src.as_externref());
+                });
+            }
+            _ => panic!("table.init currently only works on reftypes"),
+        };
         Ok(())
     }
 

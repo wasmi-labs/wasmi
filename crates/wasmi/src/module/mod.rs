@@ -33,7 +33,7 @@ pub use self::{
 };
 pub(crate) use self::{
     data::{DataSegment, DataSegmentKind},
-    element::{ElementSegment, ElementSegmentKind},
+    element::{ElementSegment, ElementSegmentItems, ElementSegmentKind},
     init_expr::InitExpr,
 };
 use crate::{

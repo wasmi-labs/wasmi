@@ -40,20 +40,39 @@ impl InitExpr {
         Self { op }
     }
 
-    /// Convert the [`InitExpr`] into the underlying Wasm `elemexpr` if possible.
+    /// Create a new `ref.func x` [`InitExpr`].
+    pub fn new_funcref(func_index: u32) -> Self {
+        Self {
+            op: InitExprOperand::FuncRef(func_index),
+        }
+    }
+
+    /// Convert the [`InitExpr`] into a Wasm `funcexpr` index if possible.
     ///
     /// Returns `None` if the function reference is `null`.
     ///
     /// # Panics
     ///
-    /// If a non Wasm `elemexpr` operand is encountered.
-    pub fn to_elemexpr(&self) -> Option<FuncIdx> {
+    /// If the [`InitExpr`] cannot be interpreted as `funcref` index.
+    pub fn as_funcref(&self) -> Option<FuncIdx> {
         match self.op {
             InitExprOperand::RefNull => None,
             InitExprOperand::FuncRef(func_index) => Some(FuncIdx(func_index)),
             InitExprOperand::Const(_) | InitExprOperand::GlobalGet(_) => {
-                panic!("encountered an unexpected Wasm elemexpr {:?}", self.op)
+                panic!("encountered non-funcref Wasm expression {:?}", self.op)
             }
+        }
+    }
+
+    /// Converts the [`InitExpr`] into an `externref`.
+    ///
+    /// # Panics
+    ///
+    /// If the [`InitExpr`] cannot be interpreted as `externref`.
+    pub fn as_externref(&self) -> ExternRef {
+        match self.op {
+            InitExprOperand::RefNull => ExternRef::null(),
+            _ => panic!("encountered non-externref Wasm expression: {:?}", self.op),
         }
     }
 

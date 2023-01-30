@@ -1,4 +1,4 @@
-use crate::{ExternRef, FuncRef};
+use crate::{ExternRef, Func, FuncRef};
 use wasmi_core::{UntypedValue, ValueType, F32, F64};
 
 /// Untyped instances that allow to be typed.
@@ -169,6 +169,13 @@ impl From<FuncRef> for Value {
     #[inline]
     fn from(funcref: FuncRef) -> Self {
         Self::FuncRef(funcref)
+    }
+}
+
+impl From<Func> for Value {
+    #[inline]
+    fn from(func: Func) -> Self {
+        Self::FuncRef(FuncRef::new(func))
     }
 }
 
