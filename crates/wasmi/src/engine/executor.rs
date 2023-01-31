@@ -751,9 +751,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let src = self.cache.get_table(self.ctx, src);
         if Table::eq(&dst, &src) {
             // Copy within the same table:
-            let table = self
-                .ctx
-                .resolve_table_mut(&self.cache.get_table(self.ctx, TableIdx::default()));
+            let table = self.ctx.resolve_table_mut(&dst);
             table.copy_within(dst_index, src_index, len)?;
         } else {
             // Copy from one table to another table:
