@@ -462,12 +462,12 @@ impl From<UntypedValue> for FuncRef {
 
 impl From<FuncRef> for UntypedValue {
     fn from(funcref: FuncRef) -> Self {
+        let funcref = funcref.canonicalize();
         // Safety: This operation is safe since there are no invalid
         //         bit patterns for [`UntypedValue`] instances. Therefore
         //         this operation cannot produce invalid [`UntypedValue`]
         //         instances even if it was possible to arbitrarily modify
         //         the input [`FuncRef`] instance.
-        let funcref = funcref.canonicalize();
         unsafe { Transposer { funcref }.untyped }
     }
 }
