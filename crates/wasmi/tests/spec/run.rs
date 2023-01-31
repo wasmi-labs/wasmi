@@ -1,9 +1,9 @@
 use super::{error::TestError, TestContext, TestDescriptor};
 use anyhow::Result;
-use wasmi::{Config, Value};
+use wasmi::{Config, ExternRef, FuncRef, Instance, Value};
 use wasmi_core::{F32, F64};
 use wast::{
-    core::{NanPattern, WastRetCore},
+    core::{HeapType, NanPattern, WastRetCore},
     lexer::Lexer,
     parser::ParseBuffer,
     token::Span,
@@ -53,10 +53,11 @@ pub fn run_wasm_spec_test(name: &str, config: Config) {
 
 fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> {
     'outer: for directive in wast.directives {
+        let span = directive.span();
         test_context.profile().bump_directives();
         match directive {
             WastDirective::Wat(QuoteWat::Wat(Wat::Module(module))) => {
-                test_context.compile_and_instantiate(module)?;
+                module_compilation_succeeds(test_context, span, module);
                 test_context.profile().bump_module();
             }
             WastDirective::Wat(_) => {
@@ -201,7 +202,7 @@ fn assert_trap(test_context: &TestContext, span: Span, error: TestError, message
     match error {
         TestError::Wasmi(error) => {
             assert!(
-                error.to_string().starts_with(message),
+                error.to_string().contains(message),
                 "{}: the directive trapped as expected but with an unexpected message\n\
                     expected: {},\n\
                     encountered: {}",
@@ -211,9 +212,10 @@ fn assert_trap(test_context: &TestContext, span: Span, error: TestError, message
             );
         }
         unexpected => panic!(
-            "encountered unexpected error: \n\t\
+            "{}: encountered unexpected error: \n\t\
                 found: '{unexpected}'\n\t\
                 expected: trap with message '{message}'",
+            test_context.spanned(span),
         ),
     }
 }
@@ -224,7 +226,8 @@ fn assert_results(context: &TestContext, span: Span, results: &[Value], expected
     let expected = expected.iter().map(|expected| match expected {
         WastRet::Core(expected) => expected,
         WastRet::Component(expected) => panic!(
-            "`wasmi` does not support the Wasm `component-model` proposal but found {expected:?}"
+            "{:?}: `wasmi` does not support the Wasm `component-model` proposal but found {expected:?}",
+            context.spanned(span),
         ),
     });
     for (result, expected) in results.iter().zip(expected) {
@@ -259,6 +262,20 @@ fn assert_results(context: &TestContext, span: Span, results: &[Value], expected
                     );
                 }
             },
+            (Value::FuncRef(funcref), WastRetCore::RefNull(Some(HeapType::Func))) => {
+                assert!(funcref.is_null());
+            }
+            (Value::ExternRef(externref), WastRetCore::RefNull(Some(HeapType::Extern))) => {
+                assert!(externref.is_null());
+            }
+            (Value::ExternRef(externref), WastRetCore::RefExtern(expected)) => {
+                let value = externref
+                    .data(context.store())
+                    .expect("unexpected null element")
+                    .downcast_ref::<u32>()
+                    .expect("unexpected non-u32 data");
+                assert_eq!(value, expected);
+            }
             (result, expected) => panic!(
                 "{}: encountered mismatch in evaluation. expected {:?} but found {:?}",
                 context.spanned(span),
@@ -282,6 +299,21 @@ fn extract_module(quote_wat: QuoteWat) -> Option<wast::core::Module> {
             // Wasm modules.
             None
         }
+    }
+}
+
+fn module_compilation_succeeds(
+    context: &mut TestContext,
+    span: Span,
+    module: wast::core::Module,
+) -> Instance {
+    match context.compile_and_instantiate(module) {
+        Ok(instance) => instance,
+        Err(error) => panic!(
+            "{}: failed to instantiate module but should have suceeded: {}",
+            context.spanned(span),
+            error
+        ),
     }
 }
 
@@ -332,22 +364,34 @@ fn execute_wast_invoke(
     let mut args = <Vec<Value>>::new();
     for arg in invoke.args {
         let value = match arg {
-            wast::WastArg::Core(arg) => {
-                match arg {
-                    wast::core::WastArgCore::I32(arg) => Value::I32(arg),
-                    wast::core::WastArgCore::I64(arg) => Value::I64(arg),
-                    wast::core::WastArgCore::F32(arg) => Value::F32(F32::from_bits(arg.bits)),
-                    wast::core::WastArgCore::F64(arg) => Value::F64(F64::from_bits(arg.bits)),
-                    wast::core::WastArgCore::V128(arg) => panic!("{span:?}: `wasmi` does not support the `simd` Wasm proposal but found: {arg:?}"),
-                    wast::core::WastArgCore::RefNull(_) |
-                    wast::core::WastArgCore::RefExtern(_) => panic!("{span:?}: `wasmi` does not support the `reference-types` Wasm proposal but found {arg:?}"),
-                }
-            }
-            wast::WastArg::Component(arg) => panic!("{span:?}: `wasmi` does not support the Wasm `component-model` but found {arg:?}"),
+            wast::WastArg::Core(arg) => value(context.store_mut(), &arg).unwrap_or_else(|| {
+                panic!(
+                    "{}: encountered unsupported WastArgCore argument: {arg:?}",
+                    context.spanned(span)
+                )
+            }),
+            wast::WastArg::Component(arg) => panic!(
+                "{}: `wasmi` does not support the Wasm `component-model` but found {arg:?}",
+                context.spanned(span)
+            ),
         };
         args.push(value);
     }
     context
         .invoke(module_name, field_name, &args)
         .map(|results| results.to_vec())
+}
+
+/// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Value`] if possible.
+fn value(ctx: &mut wasmi::Store<()>, value: &wast::core::WastArgCore) -> Option<Value> {
+    Some(match value {
+        wast::core::WastArgCore::I32(arg) => Value::I32(*arg),
+        wast::core::WastArgCore::I64(arg) => Value::I64(*arg),
+        wast::core::WastArgCore::F32(arg) => Value::F32(F32::from_bits(arg.bits)),
+        wast::core::WastArgCore::F64(arg) => Value::F64(F64::from_bits(arg.bits)),
+        wast::core::WastArgCore::RefNull(HeapType::Func) => Value::FuncRef(FuncRef::null()),
+        wast::core::WastArgCore::RefNull(HeapType::Extern) => Value::ExternRef(ExternRef::null()),
+        wast::core::WastArgCore::RefExtern(value) => Value::ExternRef(ExternRef::new(ctx, *value)),
+        _ => return None,
+    })
 }

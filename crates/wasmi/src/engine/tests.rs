@@ -57,7 +57,7 @@ fn assert_func_body<E>(
         assert_eq!(
             actual,
             expected,
-            "encountered instruction mismatch for {} at position {index}",
+            "encountered instruction mismatch for {:?} at position {index}",
             engine.resolve_func_type(&func_type, Clone::clone),
         );
     }

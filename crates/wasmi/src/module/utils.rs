@@ -5,14 +5,10 @@ impl TryFrom<wasmparser::TableType> for TableType {
     type Error = ModuleError;
 
     fn try_from(table_type: wasmparser::TableType) -> Result<Self, Self::Error> {
-        assert_eq!(
-            table_type.element_type,
-            wasmparser::ValType::FuncRef,
-            "wasmi does not support the `reference-types` Wasm proposal"
-        );
+        let element = WasmiValueType::from(table_type.element_type).into_inner();
         let minimum = table_type.initial;
         let maximum = table_type.maximum;
-        Ok(TableType::new(minimum, maximum))
+        Ok(TableType::new(element, minimum, maximum))
     }
 }
 
@@ -104,9 +100,8 @@ impl From<wasmparser::ValType> for WasmiValueType {
             wasmparser::ValType::F32 => Self::from(ValueType::F32),
             wasmparser::ValType::F64 => Self::from(ValueType::F64),
             wasmparser::ValType::V128 => panic!("wasmi does not support the `simd` Wasm proposal"),
-            wasmparser::ValType::FuncRef | wasmparser::ValType::ExternRef => {
-                panic!("wasmi does not support the `reference-types` Wasm proposal")
-            }
+            wasmparser::ValType::FuncRef => Self::from(ValueType::FuncRef),
+            wasmparser::ValType::ExternRef => Self::from(ValueType::ExternRef),
         }
     }
 }

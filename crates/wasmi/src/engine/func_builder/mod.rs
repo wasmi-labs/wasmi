@@ -25,9 +25,16 @@ pub use self::{
     error::TranslationError,
     inst_builder::{Instr, InstructionsBuilder, RelativeDepth},
 };
-use super::{DropKeep, FuncBody, Instruction};
+use super::{bytecode, DropKeep, FuncBody, Instruction};
 use crate::{
-    engine::bytecode::{BranchParams, DataSegmentIdx, ElementSegmentIdx, Offset},
+    engine::bytecode::{
+        BranchParams,
+        DataSegmentIdx,
+        ElementSegmentIdx,
+        Offset,
+        SignatureIdx,
+        TableIdx,
+    },
     module::{
         BlockType,
         FuncIdx,
@@ -37,11 +44,11 @@ use crate::{
         MemoryIdx,
         ModuleResources,
         ReusableAllocations,
-        TableIdx,
         DEFAULT_MEMORY_INDEX,
     },
     Engine,
     FuncType,
+    GlobalType,
     Mutability,
     Value,
 };
@@ -139,7 +146,8 @@ impl<'parser> FuncBuilder<'parser> {
     }
 
     /// Resolves the [`FuncType`] of the given [`FuncTypeIdx`].
-    fn func_type_at(&self, func_type_index: FuncTypeIdx) -> FuncType {
+    fn func_type_at(&self, func_type_index: SignatureIdx) -> FuncType {
+        let func_type_index = FuncTypeIdx(func_type_index.into_inner()); // TODO: use the same type
         let dedup_func_type = self.res.get_func_type(func_type_index);
         self.res
             .engine()
@@ -717,24 +725,23 @@ impl<'parser> FuncBuilder<'parser> {
     /// Translates a Wasm `call_indirect` instruction.
     pub fn translate_call_indirect(
         &mut self,
-        index: u32,
+        func_type_index: u32,
         table_index: u32,
         _table_byte: u8,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            /// The default Wasm MVP table index.
-            const DEFAULT_TABLE_INDEX: u32 = 0;
-            let func_type_idx = FuncTypeIdx(index);
-            let table_idx = TableIdx(table_index);
-            assert_eq!(table_idx.into_u32(), DEFAULT_TABLE_INDEX);
+            let func_type_index = SignatureIdx::from(func_type_index);
+            let table = TableIdx::from(table_index);
             builder.stack_height.pop1();
-            let func_type = builder.func_type_at(func_type_idx);
+            let func_type = builder.func_type_at(func_type_index);
             builder.adjust_value_stack_for_call(&func_type);
-            let func_type_idx = func_type_idx.into_u32().into();
             builder
                 .alloc
                 .inst_builder
-                .push_inst(Instruction::CallIndirect(func_type_idx));
+                .push_inst(Instruction::CallIndirect {
+                    table,
+                    func_type: func_type_index,
+                });
             Ok(())
         })
     }
@@ -754,6 +761,44 @@ impl<'parser> FuncBuilder<'parser> {
             builder.stack_height.pop3();
             builder.stack_height.push();
             builder.alloc.inst_builder.push_inst(Instruction::Select);
+            Ok(())
+        })
+    }
+
+    pub fn translate_typed_select(
+        &mut self,
+        _ty: wasmparser::ValType,
+    ) -> Result<(), TranslationError> {
+        // The `ty` parameter is only important for Wasm validation.
+        // Since `wasmi` bytecode is untyped we are not interested in this additional information.
+        self.translate_select()
+    }
+
+    /// Translate a Wasm `ref.null` instruction.
+    pub fn translate_ref_null(&mut self, _ty: wasmparser::ValType) -> Result<(), TranslationError> {
+        // Since `wasmi` bytecode is untyped we have no special `null` instructions
+        // but simply reuse the `constant` instruction with an immediate value of 0.
+        // Note that `FuncRef` and `ExternRef` are encoded as 64-bit values in `wasmi`.
+        self.translate_const(0i64)
+    }
+
+    /// Translate a Wasm `ref.is_null` instruction.
+    pub fn translate_ref_is_null(&mut self) -> Result<(), TranslationError> {
+        // Since `wasmi` bytecode is untyped we have no special `null` instructions
+        // but simply reuse the `i64.eqz` instruction with an immediate value of 0.
+        // Note that `FuncRef` and `ExternRef` are encoded as 64-bit values in `wasmi`.
+        self.translate_i64_eqz()
+    }
+
+    /// Translate a Wasm `ref.func` instruction.
+    pub fn translate_ref_func(&mut self, func_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            let func_index = bytecode::FuncIdx::from(func_index);
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::RefFunc { func_index });
+            builder.stack_height.push();
             Ok(())
         })
     }
@@ -802,13 +847,38 @@ impl<'parser> FuncBuilder<'parser> {
             let global_idx = GlobalIdx(global_idx);
             builder.stack_height.push();
             let (global_type, init_value) = builder.res.get_global(global_idx);
-            let instr = match init_value.and_then(InitExpr::to_const) {
-                Some(value) if global_type.mutability().is_const() => Instruction::constant(value),
-                _ => Instruction::GlobalGet(global_idx.into_u32().into()),
-            };
+            let instr = Self::optimize_global_get(&global_type, init_value).unwrap_or_else(|| {
+                // No optimization took place in this case.
+                Instruction::GlobalGet(global_idx.into_u32().into())
+            });
             builder.alloc.inst_builder.push_inst(instr);
             Ok(())
         })
+    }
+
+    /// Returns `Some` equivalent instruction if the `global.get` can be optimzied.
+    ///
+    /// # Note
+    ///
+    /// Only internal (non-imported) and constant (non-mutable) globals
+    /// have a chance to be optimized to more efficient instructions.
+    fn optimize_global_get(
+        global_type: &GlobalType,
+        init_value: Option<&InitExpr>,
+    ) -> Option<Instruction> {
+        let content_type = global_type.content();
+        if let (Mutability::Const, Some(init_expr)) = (global_type.mutability(), init_value) {
+            if let Some(value) = init_expr.to_const(content_type) {
+                // We can optimize `global.get` to the constant value.
+                return Some(Instruction::constant(value));
+            }
+            if let Some(func_index) = init_expr.func_ref() {
+                // We can optimize `global.get` to the equivalent `ref.func x` instruction.
+                let func_index = bytecode::FuncIdx::from(func_index.into_u32());
+                return Some(Instruction::RefFunc { func_index });
+            }
+        }
+        None
     }
 
     /// Translate a Wasm `global.set` instruction.
@@ -1181,85 +1251,84 @@ impl<'parser> FuncBuilder<'parser> {
     }
 
     /// Translate a Wasm `table.size` instruction.
-    pub fn translate_table_size(&mut self, _table_index: u32) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|_builder| {
-            // debug_assert_eq!(table_index, DEFAULT_TABLE_INDEX);
-            // let table_index = MemoryIdx(table_index);
-            // builder.stack_height.push();
-            // builder
-            //     .alloc
-            //     .inst_builder
-            //     .push_inst(Instruction::TableSize);
-            // Ok(())
-            unimplemented!("wasmi does not yet support the `reference-types` Wasm proposal")
-        })
-    }
-
-    /// Translate a Wasm `table.grow` instruction.
-    pub fn translate_table_grow(&mut self, _table_index: u32) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|_builder| {
-            // debug_assert_eq!(table_index, DEFAULT_TABLE_INDEX);
-            // let table_index = MemoryIdx(table_index);
-            // builder
-            //     .alloc
-            //     .inst_builder
-            //     .push_inst(Instruction::TableGrow);
-            // Ok(())
-            unimplemented!("wasmi does not yet support the `reference-types` Wasm proposal")
-        })
-    }
-
-    pub fn translate_table_copy(
-        &mut self,
-        _dst_table: u32,
-        _src_table: u32,
-    ) -> Result<(), TranslationError> {
+    pub fn translate_table_size(&mut self, table_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            // debug_assert_eq!(dst_table, DEFAULT_TABLE_INDEX);
-            // debug_assert_eq!(src_table, DEFAULT_TABLE_INDEX);
-            // let dst_table = TableIdx(dst_table);
-            // let src_table = TableIdx(src_table);
-            builder.stack_height.pop3();
-            builder.alloc.inst_builder.push_inst(Instruction::TableCopy);
+            let table = TableIdx::from(table_index);
+            builder.stack_height.push();
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::TableSize { table });
             Ok(())
         })
     }
 
-    pub fn translate_table_fill(&mut self, _table_index: u32) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|_builder| {
-            // debug_assert_eq!(table_index, DEFAULT_TABLE_INDEX);
-            // let memory_index = TableIdx(table_index);
-            // builder.stack_height.pop3();
-            // builder
-            //     .alloc
-            //     .inst_builder
-            //     .push_inst(Instruction::MemoryFill { table_index });
-            unimplemented!("wasmi does not yet support the `reference-types` Wasm proposal")
+    /// Translate a Wasm `table.grow` instruction.
+    pub fn translate_table_grow(&mut self, table_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            let table = TableIdx::from(table_index);
+            builder.stack_height.pop1();
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::TableGrow { table });
+            Ok(())
         })
     }
 
-    pub fn translate_table_get(&mut self, _table_index: u32) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|_builder| {
-            // debug_assert_eq!(table_index, DEFAULT_TABLE_INDEX);
-            // let memory_index = TableIdx(table_index);
-            // builder
-            //     .alloc
-            //     .inst_builder
-            //     .push_inst(Instruction::TableGet { table_index });
-            unimplemented!("wasmi does not yet support the `reference-types` Wasm proposal")
+    /// Translate a Wasm `table.copy` instruction.
+    pub fn translate_table_copy(
+        &mut self,
+        dst_table: u32,
+        src_table: u32,
+    ) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            let dst = TableIdx::from(dst_table);
+            let src = TableIdx::from(src_table);
+            builder.stack_height.pop3();
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::TableCopy { dst, src });
+            Ok(())
         })
     }
 
-    pub fn translate_table_set(&mut self, _table_index: u32) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|_builder| {
-            // debug_assert_eq!(table_index, DEFAULT_TABLE_INDEX);
-            // let memory_index = TableIdx(table_index);
-            // builder.stack_height.pop1();
-            // builder
-            //     .alloc
-            //     .inst_builder
-            //     .push_inst(Instruction::TableSet { table_index });
-            unimplemented!("wasmi does not yet support the `reference-types` Wasm proposal")
+    /// Translate a Wasm `table.fill` instruction.
+    pub fn translate_table_fill(&mut self, table_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            let table = TableIdx::from(table_index);
+            builder.stack_height.pop3();
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::TableFill { table });
+            Ok(())
+        })
+    }
+
+    /// Translate a Wasm `table.get` instruction.
+    pub fn translate_table_get(&mut self, table_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            let table = TableIdx::from(table_index);
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::TableGet { table });
+            Ok(())
+        })
+    }
+
+    /// Translate a Wasm `table.set` instruction.
+    pub fn translate_table_set(&mut self, table_index: u32) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            let table = TableIdx::from(table_index);
+            builder.stack_height.pop2();
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::TableSet { table });
+            Ok(())
         })
     }
 
@@ -1270,14 +1339,13 @@ impl<'parser> FuncBuilder<'parser> {
         table_index: u32,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            debug_assert_eq!(table_index, DEFAULT_MEMORY_INDEX);
             builder.stack_height.pop3();
+            let table = TableIdx::from(table_index);
+            let elem = ElementSegmentIdx::from(segment_index);
             builder
                 .alloc
                 .inst_builder
-                .push_inst(Instruction::TableInit(ElementSegmentIdx::from(
-                    segment_index,
-                )));
+                .push_inst(Instruction::TableInit { table, elem });
             Ok(())
         })
     }

@@ -123,15 +123,6 @@ pub enum ExternTypeIdx {
 pub struct FuncTypeIdx(pub(crate) u32);
 
 impl FuncTypeIdx {
-    /// Returns the [`FuncTypeIdx`] as `u32`.
-    ///
-    /// # Note
-    ///
-    /// This is mostly useful for indexing into buffers.
-    pub fn into_u32(self) -> u32 {
-        self.0
-    }
-
     /// Returns the [`FuncTypeIdx`] as `usize`.
     ///
     /// # Note

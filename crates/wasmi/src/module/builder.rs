@@ -92,10 +92,16 @@ impl<'a> ModuleResources<'a> {
     /// Returns the global variable type and optional initial value.
     pub fn get_global(&self, global_idx: GlobalIdx) -> (GlobalType, Option<&InitExpr>) {
         let index = global_idx.into_u32() as usize;
-        let offset = self.res.imports.len_globals();
-        let global_type = self.res.globals[index];
-        let init_expr = self.res.globals_init.get(index + offset);
-        (global_type, init_expr)
+        let len_imports = self.res.imports.len_globals();
+        let global_type = self.get_type_of_global(global_idx);
+        if index < len_imports {
+            // The index refers to an imported global without init value.
+            (global_type, None)
+        } else {
+            // The index refers to an internal global with init value.
+            let init_expr = &self.res.globals_init[index - len_imports];
+            (global_type, Some(init_expr))
+        }
     }
 }
 

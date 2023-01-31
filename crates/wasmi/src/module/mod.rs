@@ -33,7 +33,7 @@ pub use self::{
 };
 pub(crate) use self::{
     data::{DataSegment, DataSegmentKind},
-    element::{ElementSegment, ElementSegmentKind},
+    element::{ElementSegment, ElementSegmentItems, ElementSegmentKind},
     init_expr::InitExpr,
 };
 use crate::{
@@ -69,9 +69,6 @@ pub struct Module {
 
 /// The index of the default Wasm linear memory.
 pub(crate) const DEFAULT_MEMORY_INDEX: u32 = 0;
-
-/// The index of the default Wasm table.
-pub(crate) const DEFAULT_TABLE_INDEX: u32 = 0;
 
 /// An imported item declaration in the [`Module`].
 #[derive(Debug)]

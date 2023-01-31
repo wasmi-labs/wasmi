@@ -2,7 +2,7 @@ use crate::{
     element::{ElementSegment, ElementSegmentEntity},
     instance::InstanceEntity,
     memory::DataSegment,
-    module::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
+    module::DEFAULT_MEMORY_INDEX,
     table::TableEntity,
     Func,
     Instance,
@@ -13,7 +13,7 @@ use crate::{
 use core::ptr::NonNull;
 use wasmi_core::UntypedValue;
 
-use super::bytecode::{DataSegmentIdx, ElementSegmentIdx};
+use super::bytecode::{DataSegmentIdx, ElementSegmentIdx, TableIdx};
 
 /// A cache for frequently used entities of an [`Instance`].
 #[derive(Debug)]
@@ -22,8 +22,8 @@ pub struct InstanceCache {
     instance: Instance,
     /// The default linear memory of the currently used [`Instance`].
     default_memory: Option<Memory>,
-    /// The default table of the currently used [`Instance`].
-    default_table: Option<Table>,
+    /// The last accessed table of the currently used [`Instance`].
+    last_table: Option<(u32, Table)>,
     /// The last accessed function of the currently used [`Instance`].
     last_func: Option<(u32, Func)>,
     /// The last accessed global variable value of the currently used [`Instance`].
@@ -37,7 +37,7 @@ impl From<&'_ Instance> for InstanceCache {
         Self {
             instance: *instance,
             default_memory: None,
-            default_table: None,
+            last_table: None,
             last_func: None,
             last_global: None,
             default_memory_bytes: None,
@@ -55,7 +55,7 @@ impl InstanceCache {
     fn set_instance(&mut self, instance: &Instance) {
         self.instance = *instance;
         self.default_memory = None;
-        self.default_table = None;
+        self.last_table = None;
         self.last_func = None;
         self.last_global = None;
         self.default_memory_bytes = None;
@@ -126,16 +126,17 @@ impl InstanceCache {
     ///
     /// If there is no [`ElementSegment`] for the [`Instance`] at the `index`.
     #[inline]
-    pub fn get_default_table_and_element_segment<'a>(
+    pub fn get_table_and_element_segment<'a>(
         &mut self,
         ctx: &'a mut StoreInner,
+        table: TableIdx,
         segment: ElementSegmentIdx,
     ) -> (
         &'a InstanceEntity,
         &'a mut TableEntity,
         &'a ElementSegmentEntity,
     ) {
-        let tab = self.default_table(ctx);
+        let tab = self.get_table(ctx, table);
         let seg = self.get_element_segment(ctx, segment);
         let inst = self.instance();
         ctx.resolve_instance_table_element(inst, &tab, &seg)
@@ -154,21 +155,6 @@ impl InstanceCache {
             .unwrap_or_else(|| panic!("missing default linear memory for instance: {instance:?}",));
         self.default_memory = Some(default_memory);
         default_memory
-    }
-
-    /// Loads the default [`Table`] of the currently used [`Instance`].
-    ///
-    /// # Panics
-    ///
-    /// If the currently used [`Instance`] does not have a default table.
-    fn load_default_table(&mut self, ctx: &StoreInner) -> Table {
-        let instance = self.instance();
-        let default_table = ctx
-            .resolve_instance(instance)
-            .get_table(DEFAULT_TABLE_INDEX)
-            .unwrap_or_else(|| panic!("missing default table for instance: {instance:?}"));
-        self.default_table = Some(default_table);
-        default_table
     }
 
     /// Returns the default [`Memory`] of the currently used [`Instance`].
@@ -222,24 +208,44 @@ impl InstanceCache {
         self.default_memory_bytes = None;
     }
 
-    /// Returns the default [`Table`] of the currently used [`Instance`].
+    /// Returns the [`Table`] at the `index` of the currently used [`Instance`].
     ///
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a default table.
     #[inline]
-    pub fn default_table(&mut self, ctx: &StoreInner) -> Table {
-        match self.default_table {
-            Some(default_table) => default_table,
-            None => self.load_default_table(ctx),
+    pub fn get_table(&mut self, ctx: &StoreInner, index: TableIdx) -> Table {
+        let index = index.into_inner();
+        match self.last_table {
+            Some((table_index, table)) if index == table_index => table,
+            _ => self.load_table_at(ctx, index),
         }
+    }
+
+    /// Loads the [`Table`] at `index` of the currently used [`Instance`].
+    ///
+    /// # Panics
+    ///
+    /// If the currently used [`Instance`] does not have the table.
+    fn load_table_at(&mut self, ctx: &StoreInner, index: u32) -> Table {
+        let table = ctx
+            .resolve_instance(self.instance())
+            .get_table(index)
+            .unwrap_or_else(|| {
+                panic!(
+                    "missing table at index {index} for instance: {:?}",
+                    self.instance
+                )
+            });
+        self.last_table = Some((index, table));
+        table
     }
 
     /// Loads the [`Func`] at `index` of the currently used [`Instance`].
     ///
     /// # Panics
     ///
-    /// If the currently used [`Instance`] does not have a default table.
+    /// If the currently used [`Instance`] does not have the function.
     fn load_func_at(&mut self, ctx: &StoreInner, index: u32) -> Func {
         let func = ctx
             .resolve_instance(self.instance())

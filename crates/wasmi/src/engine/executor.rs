@@ -10,6 +10,7 @@ use super::{
         LocalDepth,
         Offset,
         SignatureIdx,
+        TableIdx,
     },
     cache::InstanceCache,
     code_map::InstructionPtr,
@@ -19,7 +20,7 @@ use super::{
     FuncFrame,
     ValueStack,
 };
-use crate::{core::TrapCode, Func, StoreInner};
+use crate::{core::TrapCode, table::TableEntity, Func, FuncRef, StoreInner};
 use core::cmp::{self};
 use wasmi_core::{Pages, UntypedValue};
 
@@ -114,7 +115,9 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                     }
                 }
                 Instr::Call(func) => return self.visit_call(func),
-                Instr::CallIndirect(signature) => return self.visit_call_indirect(signature),
+                Instr::CallIndirect { table, func_type } => {
+                    return self.visit_call_indirect(table, func_type)
+                }
                 Instr::Drop => self.visit_drop(),
                 Instr::Select => self.visit_select(),
                 Instr::GlobalGet(global_idx) => self.visit_global_get(global_idx),
@@ -148,9 +151,15 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 Instr::MemoryCopy => self.visit_memory_copy()?,
                 Instr::MemoryInit(segment) => self.visit_memory_init(segment)?,
                 Instr::DataDrop(segment) => self.visit_data_drop(segment),
-                Instr::TableCopy => self.visit_table_copy()?,
-                Instr::TableInit(segment) => self.visit_table_init(segment)?,
+                Instr::TableSize { table } => self.visit_table_size(table),
+                Instr::TableGrow { table } => self.visit_table_grow(table),
+                Instr::TableFill { table } => self.visit_table_fill(table)?,
+                Instr::TableGet { table } => self.visit_table_get(table)?,
+                Instr::TableSet { table } => self.visit_table_set(table)?,
+                Instr::TableCopy { dst, src } => self.visit_table_copy(dst, src)?,
+                Instr::TableInit { table, elem } => self.visit_table_init(table, elem)?,
                 Instr::ElemDrop(segment) => self.visit_element_drop(segment),
+                Instr::RefFunc { func_index } => self.visit_ref_func(func_index),
                 Instr::Const(bytes) => self.visit_const(bytes),
                 Instr::I32Eqz => self.visit_i32_eqz(),
                 Instr::I32Eq => self.visit_i32_eq(),
@@ -307,16 +316,6 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.cache.default_memory(self.ctx)
     }
 
-    /// Returns the default table.
-    ///
-    /// # Panics
-    ///
-    /// If there exists is no table for the instance.
-    #[inline]
-    fn default_table(&mut self) -> Table {
-        self.cache.default_table(self.ctx)
-    }
-
     /// Returns the global variable at the given index.
     ///
     /// # Panics
@@ -428,11 +427,11 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.value_stack.sync();
     }
 
-    fn call_func(&mut self, func: Func) -> Result<CallOutcome, TrapCode> {
+    fn call_func(&mut self, func: &Func) -> Result<CallOutcome, TrapCode> {
         self.next_instr();
         self.frame.update_ip(self.ip);
         self.sync_stack_ptr();
-        Ok(CallOutcome::NestedCall(func))
+        Ok(CallOutcome::NestedCall(*func))
     }
 
     fn ret(&mut self, drop_keep: DropKeep) {
@@ -534,28 +533,30 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
 
     fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
         let callee = self.cache.get_func(self.ctx, func_index.into_inner());
-        self.call_func(callee)
+        self.call_func(&callee)
     }
 
     fn visit_call_indirect(
         &mut self,
-        signature_index: SignatureIdx,
+        table: TableIdx,
+        func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
         let func_index: u32 = self.value_stack.pop_as();
-        let table = self.default_table();
-        let func = self
+        let table = self.cache.get_table(self.ctx, table);
+        let funcref = self
             .ctx
             .resolve_table(&table)
-            .get(func_index)
-            .map_err(|_| TrapCode::TableOutOfBounds)?
-            .ok_or(TrapCode::IndirectCallToNull)?;
+            .get_untyped(func_index)
+            .map(FuncRef::from)
+            .ok_or(TrapCode::TableOutOfBounds)?;
+        let func = funcref.func().ok_or(TrapCode::IndirectCallToNull)?;
         let actual_signature = self.ctx.get_func_type(func);
         let expected_signature = self
             .ctx
             .resolve_instance(self.frame.instance())
-            .get_signature(signature_index.into_inner())
+            .get_signature(func_type.into_inner())
             .unwrap_or_else(|| {
-                panic!("missing signature for call_indirect at index: {signature_index:?}")
+                panic!("missing signature for call_indirect at index: {func_type:?}")
             });
         if actual_signature != expected_signature {
             return Err(TrapCode::BadSignature).map_err(Into::into);
@@ -678,22 +679,94 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.next_instr();
     }
 
-    fn visit_table_copy(&mut self) -> Result<(), TrapCode> {
+    fn visit_table_size(&mut self, table_index: TableIdx) {
+        let table = self.cache.get_table(self.ctx, table_index);
+        let size = self.ctx.resolve_table(&table).size();
+        self.value_stack.push(size);
+        self.next_instr()
+    }
+
+    fn visit_table_grow(&mut self, table_index: TableIdx) {
+        // As demanded by the Wasm specification this value is returned
+        // by `table.grow` if the growth operation was unsuccessful.
+        const ERROR_CODE: u32 = u32::MAX;
+        let (init, delta) = self.value_stack.pop2();
+        let delta: u32 = delta.into();
+        let table = self.cache.get_table(self.ctx, table_index);
+        let result = self
+            .ctx
+            .resolve_table_mut(&table)
+            .grow_untyped(delta, init)
+            .unwrap_or(ERROR_CODE);
+        self.value_stack.push(result);
+        self.next_instr()
+    }
+
+    fn visit_table_fill(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
+        // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
+        let (i, val, n) = self.value_stack.pop3();
+        let dst: u32 = i.into();
+        let len: u32 = n.into();
+        let table = self.cache.get_table(self.ctx, table_index);
+        self.ctx
+            .resolve_table_mut(&table)
+            .fill_untyped(dst, val, len)?;
+        self.next_instr();
+        Ok(())
+    }
+
+    fn visit_table_get(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
+        self.value_stack.try_eval_top(|index| {
+            let index: u32 = index.into();
+            let table = self.cache.get_table(self.ctx, table_index);
+            self.ctx
+                .resolve_table(&table)
+                .get_untyped(index)
+                .ok_or(TrapCode::TableOutOfBounds)
+        })?;
+        self.next_instr();
+        Ok(())
+    }
+
+    fn visit_table_set(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
+        let (index, value) = self.value_stack.pop2();
+        let index: u32 = index.into();
+        let table = self.cache.get_table(self.ctx, table_index);
+        self.ctx
+            .resolve_table_mut(&table)
+            .set_untyped(index, value)
+            .map_err(|_| TrapCode::TableOutOfBounds)?;
+        self.next_instr();
+        Ok(())
+    }
+
+    fn visit_table_copy(&mut self, dst: TableIdx, src: TableIdx) -> Result<(), TrapCode> {
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
         let (d, s, n) = self.value_stack.pop3();
         let len = u32::from(n);
         let src_index = u32::from(s);
         let dst_index = u32::from(d);
-        let table = self
-            .ctx
-            .resolve_table_mut(&self.cache.default_table(self.ctx));
-        // Now copy table elements within.
-        table.copy_within(dst_index, src_index, len)?;
+        // Query both tables and check if they are the same:
+        let dst = self.cache.get_table(self.ctx, dst);
+        let src = self.cache.get_table(self.ctx, src);
+        if Table::eq(&dst, &src) {
+            // Copy within the same table:
+            let table = self.ctx.resolve_table_mut(&dst);
+            table.copy_within(dst_index, src_index, len)?;
+        } else {
+            // Copy from one table to another table:
+            let (dst, src) = self.ctx.resolve_table_pair_mut(&dst, &src);
+            TableEntity::copy(dst, dst_index, src, src_index, len)?;
+        }
         self.next_instr();
         Ok(())
     }
 
-    fn visit_table_init(&mut self, segment: ElementSegmentIdx) -> Result<(), TrapCode> {
+    fn visit_table_init(
+        &mut self,
+        table: TableIdx,
+        elem: ElementSegmentIdx,
+    ) -> Result<(), TrapCode> {
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
         let (d, s, n) = self.value_stack.pop3();
         let len = u32::from(n);
@@ -701,8 +774,12 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let dst_index = u32::from(d);
         let (instance, table, element) = self
             .cache
-            .get_default_table_and_element_segment(self.ctx, segment);
-        table.init(instance, dst_index, element, src_index, len)?;
+            .get_table_and_element_segment(self.ctx, table, elem);
+        table.init(dst_index, element, src_index, len, |func_index| {
+            instance
+                .get_func(func_index)
+                .unwrap_or_else(|| panic!("missing function at index {func_index}"))
+        })?;
         self.next_instr();
         Ok(())
     }
@@ -710,6 +787,13 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     fn visit_element_drop(&mut self, segment_index: ElementSegmentIdx) {
         let segment = self.cache.get_element_segment(self.ctx, segment_index);
         self.ctx.resolve_element_segment_mut(&segment).drop_items();
+        self.next_instr();
+    }
+
+    fn visit_ref_func(&mut self, func_index: FuncIdx) {
+        let func = self.cache.get_func(self.ctx, func_index.into_inner());
+        let funcref = FuncRef::new(func);
+        self.value_stack.push(funcref);
         self.next_instr();
     }
 

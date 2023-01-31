@@ -18,7 +18,7 @@ use wasmi::{
     TableType,
     Value,
 };
-use wasmi_core::{F32, F64};
+use wasmi_core::{ValueType, F32, F64};
 use wast::token::{Id, Span};
 
 /// The context of a single Wasm test spec suite run.
@@ -53,14 +53,23 @@ impl<'a> TestContext<'a> {
         let mut linker = Linker::default();
         let mut store = Store::new(&engine, ());
         let default_memory = Memory::new(&mut store, MemoryType::new(1, Some(2)).unwrap()).unwrap();
-        let default_table = Table::new(&mut store, TableType::new(10, Some(20)));
+        let default_table = Table::new(
+            &mut store,
+            TableType::new(ValueType::FuncRef, 10, Some(20)),
+            Value::default(ValueType::FuncRef),
+        )
+        .unwrap();
         let global_i32 = Global::new(&mut store, Value::I32(666), Mutability::Const);
+        let global_i64 = Global::new(&mut store, Value::I64(666), Mutability::Const);
         let global_f32 = Global::new(&mut store, Value::F32(666.0.into()), Mutability::Const);
         let global_f64 = Global::new(&mut store, Value::F64(666.0.into()), Mutability::Const);
         let print = Func::wrap(&mut store, || {
             println!("print");
         });
         let print_i32 = Func::wrap(&mut store, |value: i32| {
+            println!("print: {value}");
+        });
+        let print_i64 = Func::wrap(&mut store, |value: i64| {
             println!("print: {value}");
         });
         let print_f32 = Func::wrap(&mut store, |value: F32| {
@@ -78,10 +87,12 @@ impl<'a> TestContext<'a> {
         linker.define("spectest", "memory", default_memory).unwrap();
         linker.define("spectest", "table", default_table).unwrap();
         linker.define("spectest", "global_i32", global_i32).unwrap();
+        linker.define("spectest", "global_i64", global_i64).unwrap();
         linker.define("spectest", "global_f32", global_f32).unwrap();
         linker.define("spectest", "global_f64", global_f64).unwrap();
         linker.define("spectest", "print", print).unwrap();
         linker.define("spectest", "print_i32", print_i32).unwrap();
+        linker.define("spectest", "print_i64", print_i64).unwrap();
         linker.define("spectest", "print_f32", print_f32).unwrap();
         linker.define("spectest", "print_f64", print_f64).unwrap();
         linker
@@ -118,6 +129,16 @@ impl TestContext<'_> {
     /// Returns the [`Engine`] of the [`TestContext`].
     fn engine(&self) -> &Engine {
         &self.engine
+    }
+
+    /// Returns a shared reference to the underlying [`Store`].
+    pub fn store(&self) -> &Store<()> {
+        &self.store
+    }
+
+    /// Returns an exclusive reference to the underlying [`Store`].
+    pub fn store_mut(&mut self) -> &mut Store<()> {
+        &mut self.store
     }
 
     /// Returns an exclusive reference to the test profile.

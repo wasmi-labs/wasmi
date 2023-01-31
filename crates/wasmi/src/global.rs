@@ -150,8 +150,8 @@ impl GlobalEntity {
     /// Creates a new global entity with the given initial value and mutability.
     pub fn new(initial_value: Value, mutability: Mutability) -> Self {
         Self {
-            value: initial_value.into(),
             ty: GlobalType::new(initial_value.ty(), mutability),
+            value: initial_value.into(),
         }
     }
 

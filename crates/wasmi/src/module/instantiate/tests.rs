@@ -7,6 +7,8 @@
 //! instances with more than 1 memory (or table) if the Wasm module imported
 //! those entities.
 
+use wasmi_core::ValueType;
+
 use crate::{
     instance::InstanceEntity,
     Engine,
@@ -19,6 +21,7 @@ use crate::{
     Store,
     Table,
     TableType,
+    Value,
 };
 
 fn try_instantiate_from_wat(wat: &str) -> Result<(Store<()>, Instance), Error> {
@@ -32,8 +35,9 @@ fn try_instantiate_from_wat(wat: &str) -> Result<(Store<()>, Instance), Error> {
     let memory = Memory::new(&mut store, memory_type)?;
     linker.define("env", "memory", memory)?;
     // Define one table that can be used by the tests as import.
-    let table_type = TableType::new(4, None);
-    let table = Table::new(&mut store, table_type);
+    let table_type = TableType::new(ValueType::FuncRef, 4, None);
+    let init = Value::default(table_type.element());
+    let table = Table::new(&mut store, table_type, init)?;
     linker.define("env", "table", table)?;
     let instance = linker
         .instantiate(&mut store, &module)

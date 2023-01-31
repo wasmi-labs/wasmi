@@ -25,7 +25,7 @@ impl<'a> CallParams for &'a [Value] {
     #[inline]
     fn call_params(self) -> Self::Params {
         CallParamsValueIter {
-            iter: self.iter().copied(),
+            iter: self.iter().cloned(),
         }
     }
 }
@@ -33,7 +33,7 @@ impl<'a> CallParams for &'a [Value] {
 /// An iterator over the [`UntypedValue`] call parameters.
 #[derive(Debug)]
 pub struct CallParamsValueIter<'a> {
-    iter: iter::Copied<slice::Iter<'a, Value>>,
+    iter: iter::Cloned<slice::Iter<'a, Value>>,
 }
 
 impl<'a> Iterator for CallParamsValueIter<'a> {

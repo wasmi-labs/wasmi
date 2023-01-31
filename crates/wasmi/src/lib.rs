@@ -91,6 +91,7 @@ mod element;
 mod engine;
 mod error;
 mod external;
+mod externref;
 mod func;
 mod func_type;
 mod global;
@@ -139,9 +140,11 @@ pub use self::{
     },
     error::Error,
     external::{Extern, ExternType},
+    externref::ExternRef,
     func::{
         Caller,
         Func,
+        FuncRef,
         IntoFunc,
         TypedFunc,
         WasmParams,

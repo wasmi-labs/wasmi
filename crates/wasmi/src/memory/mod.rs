@@ -37,12 +37,12 @@ pub enum MemoryError {
     OutOfBoundsAccess,
     /// Tried to create an invalid linear memory type.
     InvalidMemoryType,
-    /// Occurs when a memory type does not satisfy the constraints of another.
-    UnsatisfyingMemoryType {
-        /// The unsatisfying [`MemoryType`].
-        unsatisfying: MemoryType,
-        /// The required [`MemoryType`].
-        required: MemoryType,
+    /// Occurs when `ty` is not a subtype of `other`.
+    InvalidSubtype {
+        /// The [`MemoryType`] which is not a subtype of `other`.
+        ty: MemoryType,
+        /// The [`MemoryType`] which is supposed to be a supertype of `ty`.
+        other: MemoryType,
     },
 }
 
@@ -61,15 +61,8 @@ impl Display for MemoryError {
             Self::InvalidMemoryType => {
                 write!(f, "tried to create an invalid virtual memory type")
             }
-            Self::UnsatisfyingMemoryType {
-                unsatisfying,
-                required,
-            } => {
-                write!(
-                    f,
-                    "memory type {unsatisfying:?} does not \
-                    satisfy requirements of {required:?}",
-                )
+            Self::InvalidSubtype { ty, other } => {
+                write!(f, "memory type {ty:?} is not a subtype of {other:?}",)
             }
         }
     }
@@ -118,30 +111,46 @@ impl MemoryType {
         self.maximum_pages
     }
 
-    /// Checks if `self` satisfies the given `MemoryType`.
+    /// Checks if `self` is a subtype of `other`.
+    ///
+    /// # Note
+    ///
+    /// This implements the [subtyping rules] according to the WebAssembly spec.
+    ///
+    /// [import subtyping]:
+    /// https://webassembly.github.io/spec/core/valid/types.html#import-subtyping
     ///
     /// # Errors
     ///
-    /// - If the initial limits of the `required` [`MemoryType`] are greater than `self`.
-    /// - If the maximum limits of the `required` [`MemoryType`] are greater than `self`.
-    pub(crate) fn satisfies(&self, required: &MemoryType) -> Result<(), MemoryError> {
-        if required.initial_pages() > self.initial_pages() {
-            return Err(MemoryError::UnsatisfyingMemoryType {
-                unsatisfying: *self,
-                required: *required,
-            });
+    /// - If the `minimum` size of `self` is less than or equal to the `minimum` size of `other`.
+    /// - If the `maximum` size of `self` is greater than the `maximum` size of `other`.
+    pub(crate) fn is_subtype_or_err(&self, other: &MemoryType) -> Result<(), MemoryError> {
+        match self.is_subtype_of(other) {
+            true => Ok(()),
+            false => Err(MemoryError::InvalidSubtype {
+                ty: *self,
+                other: *other,
+            }),
         }
-        match (required.maximum_pages(), self.maximum_pages()) {
-            (None, _) => (),
-            (Some(max_required), Some(max)) if max_required >= max => (),
-            _ => {
-                return Err(MemoryError::UnsatisfyingMemoryType {
-                    unsatisfying: *self,
-                    required: *required,
-                });
-            }
+    }
+
+    /// Returns `true` if the [`MemoryType`] is a subtype of the `other` [`MemoryType`].
+    ///
+    /// # Note
+    ///
+    /// This implements the [subtyping rules] according to the WebAssembly spec.
+    ///
+    /// [import subtyping]:
+    /// https://webassembly.github.io/spec/core/valid/types.html#import-subtyping
+    pub(crate) fn is_subtype_of(&self, other: &MemoryType) -> bool {
+        if self.initial_pages() < other.initial_pages() {
+            return false;
         }
-        Ok(())
+        match (self.maximum_pages(), other.maximum_pages()) {
+            (_, None) => true,
+            (Some(max), Some(other_max)) => max <= other_max,
+            _ => false,
+        }
     }
 }
 
@@ -171,6 +180,19 @@ impl MemoryEntity {
     /// Returns the memory type of the linear memory.
     pub fn ty(&self) -> MemoryType {
         self.memory_type
+    }
+
+    /// The current [`MemoryType`] of the linear memory.
+    ///
+    /// # Note
+    ///
+    /// This respects the current size of the [`Memory`] as its minimum size
+    /// and is useful for import subtyping checks.
+    pub fn import_ty(&self) -> MemoryType {
+        let current_pages = self.current_pages().into();
+        let maximum_pages = self.ty().maximum_pages().map(Into::into);
+        MemoryType::new(current_pages, maximum_pages)
+            .unwrap_or_else(|_| panic!("must result in valid memory type due to invariants"))
     }
 
     /// Returns the amount of pages in use by the linear memory.
@@ -286,6 +308,24 @@ impl Memory {
         ctx.as_context().store.inner.resolve_memory(self).ty()
     }
 
+    /// The current [`MemoryType`] of the linear memory.
+    ///
+    /// # Note
+    ///
+    /// This respects the current size of the [`Memory`] as its minimum size
+    /// and is useful for import subtyping checks.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Memory`].
+    pub(crate) fn import_ty(&self, ctx: impl AsContext) -> MemoryType {
+        ctx.as_context()
+            .store
+            .inner
+            .resolve_memory(self)
+            .import_ty()
+    }
+
     /// Returns the amount of pages in use by the linear memory.
     ///
     /// # Panics
@@ -399,5 +439,25 @@ impl Memory {
             .inner
             .resolve_memory_mut(self)
             .write(offset, buffer)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn memory_type(minimum: u32, maximum: impl Into<Option<u32>>) -> MemoryType {
+        MemoryType::new(minimum, maximum.into()).unwrap()
+    }
+
+    #[test]
+    fn subtyping_works() {
+        assert!(memory_type(0, 1).is_subtype_of(&memory_type(0, 1)));
+        assert!(memory_type(0, 1).is_subtype_of(&memory_type(0, 2)));
+        assert!(!memory_type(0, 2).is_subtype_of(&memory_type(0, 1)));
+        assert!(memory_type(2, None).is_subtype_of(&memory_type(1, None)));
+        assert!(memory_type(0, None).is_subtype_of(&memory_type(0, None)));
+        assert!(memory_type(0, 1).is_subtype_of(&memory_type(0, None)));
+        assert!(!memory_type(0, None).is_subtype_of(&memory_type(0, 1)));
     }
 }

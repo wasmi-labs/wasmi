@@ -77,7 +77,7 @@ impl Display for InstantiationError {
                 amount,
             } => write!(
                 f,
-                "out of bounds: table {table:?} does not fit {amount} elements starting from offset {offset}",
+                "out of bounds table access: {table:?} does not fit {amount} elements starting from offset {offset}",
             ),
             Self::FoundStartFn { index } => {
                 write!(f, "found an unexpected start function with index {index}")

@@ -1,6 +1,7 @@
-use super::{FuncIdx, InitExpr, TableIdx};
-use crate::errors::ModuleError;
+use super::{InitExpr, TableIdx};
+use crate::{errors::ModuleError, module::utils::WasmiValueType};
 use alloc::sync::Arc;
+use wasmi_core::ValueType;
 
 /// A table element segment within a [`Module`].
 ///
@@ -9,8 +10,46 @@ use alloc::sync::Arc;
 pub struct ElementSegment {
     /// The kind of the [`ElementSegment`].
     kind: ElementSegmentKind,
+    /// The type of elements of the [`ElementSegment`].
+    ty: ValueType,
     /// The items of the [`ElementSegment`].
-    items: Arc<[Option<FuncIdx>]>,
+    items: ElementSegmentItems,
+}
+
+/// The items of an [`ElementSegment`].
+#[derive(Debug, Clone)]
+pub struct ElementSegmentItems {
+    exprs: Arc<[InitExpr]>,
+}
+
+impl ElementSegmentItems {
+    /// Creates new [`ElementSegmentItems`] from the given [`wasmparser::ElementItems`].
+    ///
+    /// # Panics
+    ///
+    /// If the given [`wasmparser::ElementItem`] is invalid.
+    fn new(items: &wasmparser::ElementItems) -> Self {
+        let exprs = items
+            .get_items_reader()
+            .unwrap_or_else(|error| panic!("failed to parse element items: {error}"))
+            .into_iter()
+            .map(|item| {
+                let item = item.as_ref().unwrap_or_else(|error| {
+                    panic!("failed to parse element item {item:?}: {error}")
+                });
+                match item {
+                    wasmparser::ElementItem::Func(func_index) => InitExpr::new_funcref(*func_index),
+                    wasmparser::ElementItem::Expr(expr) => InitExpr::new(*expr),
+                }
+            })
+            .collect::<Arc<[_]>>();
+        Self { exprs }
+    }
+
+    /// Returns a shared reference to the items of the [`ElementSegmentItems`].
+    pub fn items(&self) -> &[InitExpr] {
+        &self.exprs
+    }
 }
 
 /// The kind of a Wasm [`ElementSegment`].
@@ -20,6 +59,8 @@ pub enum ElementSegmentKind {
     Passive,
     /// An active [`ElementSegment`].
     Active(ActiveElementSegment),
+    /// A declared [`ElementSegment`] from the `reference-types` Wasm proposal.
+    Declared,
 }
 
 /// An active Wasm element segment.
@@ -60,9 +101,7 @@ impl TryFrom<wasmparser::ElementKind<'_>> for ElementSegmentKind {
                 }))
             }
             wasmparser::ElementKind::Passive => Ok(Self::Passive),
-            wasmparser::ElementKind::Declared => {
-                panic!("wasmi does not support the `reference-types` Wasm proposal but found declared element segment")
-            }
+            wasmparser::ElementKind::Declared => Ok(Self::Declared),
         }
     }
 }
@@ -71,25 +110,15 @@ impl TryFrom<wasmparser::Element<'_>> for ElementSegment {
     type Error = ModuleError;
 
     fn try_from(element: wasmparser::Element<'_>) -> Result<Self, Self::Error> {
-        assert_eq!(
-            element.ty,
-            wasmparser::ValType::FuncRef,
-            "wasmi does not support the `reference-types` Wasm proposal"
+        assert!(
+            element.ty.is_reference_type(),
+            "only reftypes are allowed as element types but found: {:?}",
+            element.ty
         );
         let kind = ElementSegmentKind::try_from(element.kind)?;
-        let items = element
-            .items
-            .get_items_reader()?
-            .into_iter()
-            .map(|item| {
-                let func_ref = match item? {
-                    wasmparser::ElementItem::Func(func_idx) => Some(FuncIdx(func_idx)),
-                    wasmparser::ElementItem::Expr(expr) => InitExpr::new(expr).to_elemexpr(),
-                };
-                <Result<_, ModuleError>>::Ok(func_ref)
-            })
-            .collect::<Result<Arc<[_]>, _>>()?;
-        Ok(ElementSegment { kind, items })
+        let ty = WasmiValueType::from(element.ty).into_inner();
+        let items = ElementSegmentItems::new(&element.items);
+        Ok(ElementSegment { kind, ty, items })
     }
 }
 
@@ -99,13 +128,13 @@ impl ElementSegment {
         &self.kind
     }
 
-    /// Returns the element items of the [`ElementSegment`].
-    pub fn items(&self) -> &[Option<FuncIdx>] {
-        &self.items[..]
+    /// Returns the [`ValueType`] of the [`ElementSegment`].
+    pub fn ty(&self) -> ValueType {
+        self.ty
     }
 
-    /// Clone the underlying items of the [`ElementSegment`].
-    pub fn clone_items(&self) -> Arc<[Option<FuncIdx>]> {
+    /// Returns the element items of the [`ElementSegment`].
+    pub fn items_cloned(&self) -> ElementSegmentItems {
         self.items.clone()
     }
 }

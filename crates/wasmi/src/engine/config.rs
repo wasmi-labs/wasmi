@@ -23,6 +23,8 @@ pub struct Config {
     multi_value: bool,
     /// Is `true` if the [`bulk-memory`] Wasm proposal is enabled.
     bulk_memory: bool,
+    /// Is `true` if the [`reference-types`] Wasm proposal is enabled.
+    reference_types: bool,
 }
 
 impl Default for Config {
@@ -35,6 +37,7 @@ impl Default for Config {
             saturating_float_to_int: true,
             multi_value: true,
             bulk_memory: true,
+            reference_types: true,
         }
     }
 }
@@ -127,6 +130,18 @@ impl Config {
         self
     }
 
+    /// Enable or disable the [`reference-types`] Wasm proposal for the [`Config`].
+    ///
+    /// # Note
+    ///
+    /// Enabled by default.
+    ///
+    /// [`multi-value`]: https://github.com/WebAssembly/reference-types
+    pub fn wasm_reference_types(&mut self, enable: bool) -> &mut Self {
+        self.reference_types = enable;
+        self
+    }
+
     /// Returns the [`WasmFeatures`] represented by the [`Config`].
     pub fn wasm_features(&self) -> WasmFeatures {
         WasmFeatures {
@@ -135,7 +150,7 @@ impl Config {
             saturating_float_to_int: self.saturating_float_to_int,
             sign_extension: self.sign_extension,
             bulk_memory: self.bulk_memory,
-            reference_types: false,
+            reference_types: self.reference_types,
             component_model: false,
             simd: false,
             relaxed_simd: false,

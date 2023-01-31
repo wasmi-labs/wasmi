@@ -37,6 +37,10 @@ macro_rules! for_each_supported_operator {
             fn visit_call_indirect(index: u32, table_index: u32, table_byte: u8) => fn translate_call_indirect
             fn visit_drop() => fn translate_drop
             fn visit_select() => fn translate_select
+            fn visit_typed_select(ty: wasmparser::ValType) => fn translate_typed_select
+            fn visit_ref_null(ty: wasmparser::ValType) => fn translate_ref_null
+            fn visit_ref_is_null() => fn translate_ref_is_null
+            fn visit_ref_func(func_index: u32) => fn translate_ref_func
             fn visit_local_get(local_index: u32) => fn translate_local_get
             fn visit_local_set(local_index: u32) => fn translate_local_set
             fn visit_local_tee(local_index: u32) => fn translate_local_tee
@@ -269,6 +273,10 @@ macro_rules! define_unsupported_visit_operator {
         define_unsupported_visit_operator!($($rest)*);
     };
     ( @bulk_memory $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
+        // Supported operators are handled by `define_supported_visit_operator`.
+        define_unsupported_visit_operator!($($rest)*);
+    };
+    ( @reference_types $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
         // Supported operators are handled by `define_supported_visit_operator`.
         define_unsupported_visit_operator!($($rest)*);
     };

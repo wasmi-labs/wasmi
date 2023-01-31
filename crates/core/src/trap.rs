@@ -243,10 +243,10 @@ impl TrapCode {
     /// other uses since it avoid heap memory allocation in certain cases.
     pub fn trap_message(&self) -> &'static str {
         match self {
-            Self::UnreachableCodeReached => "unreachable",
+            Self::UnreachableCodeReached => "wasm `unreachable` instruction executed",
             Self::MemoryOutOfBounds => "out of bounds memory access",
-            Self::TableOutOfBounds => "undefined element",
-            Self::IndirectCallToNull => "uninitialized element",
+            Self::TableOutOfBounds => "undefined element: out of bounds table access",
+            Self::IndirectCallToNull => "uninitialized element 2", // TODO: fixme, remove the trailing " 2" again
             Self::IntegerDivisionByZero => "integer divide by zero",
             Self::IntegerOverflow => "integer overflow",
             Self::BadConversionToInteger => "invalid conversion to integer",

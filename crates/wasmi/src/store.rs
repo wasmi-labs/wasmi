@@ -23,7 +23,10 @@ use super::{
     TableEntity,
     TableIdx,
 };
-use crate::memory::DataSegment;
+use crate::{
+    externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
+    memory::DataSegment,
+};
 use core::{
     fmt::Debug,
     sync::atomic::{AtomicU32, Ordering},
@@ -106,6 +109,10 @@ pub struct StoreInner {
     datas: Arena<DataSegmentIdx, DataSegmentEntity>,
     /// Stored data segments.
     elems: Arena<ElementSegmentIdx, ElementSegmentEntity>,
+    /// Stored external objects for [`ExternRef`] types.
+    ///
+    /// [`ExternRef`]: [`crate::ExternRef`]
+    extern_objects: Arena<ExternObjectIdx, ExternObjectEntity>,
     /// The [`Engine`] in use by the [`Store`].
     ///
     /// Amongst others the [`Engine`] stores the Wasm function definitions.
@@ -135,6 +142,7 @@ impl StoreInner {
             instances: Arena::new(),
             datas: Arena::new(),
             elems: Arena::new(),
+            extern_objects: Arena::new(),
         }
     }
 
@@ -196,7 +204,7 @@ impl StoreInner {
     /// # Note
     ///
     /// Panics if no [`DedupFuncType`] for the given [`Func`] was registered.
-    pub fn get_func_type(&self, func: Func) -> DedupFuncType {
+    pub fn get_func_type(&self, func: &Func) -> DedupFuncType {
         let idx = self.unwrap_stored(func.as_inner());
         self.func_types
             .get(idx)
@@ -235,6 +243,12 @@ impl StoreInner {
     ) -> ElementSegment {
         let segment = self.elems.alloc(segment);
         ElementSegment::from_inner(self.wrap_stored(segment))
+    }
+
+    /// Allocates a new [`ExternObjectEntity`] and returns a [`ExternObject`] reference to it.
+    pub(super) fn alloc_extern_object(&mut self, object: ExternObjectEntity) -> ExternObject {
+        let object = self.extern_objects.alloc(object);
+        ExternObject::from_inner(self.wrap_stored(object))
     }
 
     /// Allocates a new uninitialized [`InstanceEntity`] and returns an [`Instance`] reference to it.
@@ -405,6 +419,34 @@ impl StoreInner {
 
     /// Returns a triple of:
     ///
+    /// - An exclusive reference to the [`TableEntity`] associated to the given [`Table`].
+    /// - A shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
+    ///
+    /// # Note
+    ///
+    /// This method exists to properly handle use cases where
+    /// otherwise the Rust borrow-checker would not accept.
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Table`] does not originate from this [`Store`].
+    /// - If the [`Table`] cannot be resolved to its entity.
+    /// - If the [`ElementSegment`] does not originate from this [`Store`].
+    /// - If the [`ElementSegment`] cannot be resolved to its entity.
+    pub(super) fn resolve_table_element(
+        &mut self,
+        table: &Table,
+        segment: &ElementSegment,
+    ) -> (&mut TableEntity, &ElementSegmentEntity) {
+        let table_idx = self.unwrap_stored(table.as_inner());
+        let elem_idx = segment.as_inner();
+        let elem = self.resolve(elem_idx, &self.elems);
+        let table = Self::resolve_mut(table_idx, &mut self.tables);
+        (table, elem)
+    }
+
+    /// Returns a triple of:
+    ///
     /// - A shared reference to the [`InstanceEntity`] associated to the given [`Instance`].
     /// - An exclusive reference to the [`TableEntity`] associated to the given [`Table`].
     /// - A shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
@@ -425,10 +467,10 @@ impl StoreInner {
     pub(super) fn resolve_instance_table_element(
         &mut self,
         instance: &Instance,
-        memory: &Table,
+        table: &Table,
         segment: &ElementSegment,
     ) -> (&InstanceEntity, &mut TableEntity, &ElementSegmentEntity) {
-        let mem_idx = self.unwrap_stored(memory.as_inner());
+        let mem_idx = self.unwrap_stored(table.as_inner());
         let data_idx = segment.as_inner();
         let instance_idx = instance.as_inner();
         let instance = self.resolve(instance_idx, &self.instances);
@@ -541,6 +583,16 @@ impl StoreInner {
     /// - If the [`Instance`] cannot be resolved to its entity.
     pub fn resolve_instance(&self, instance: &Instance) -> &InstanceEntity {
         self.resolve(instance.as_inner(), &self.instances)
+    }
+
+    /// Returns a shared reference to the [`ExternObjectEntity`] associated to the given [`ExternObject`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`ExternObject`] does not originate from this [`Store`].
+    /// - If the [`ExternObject`] cannot be resolved to its entity.
+    pub fn resolve_external_object(&self, object: &ExternObject) -> &ExternObjectEntity {
+        self.resolve(object.as_inner(), &self.extern_objects)
     }
 }
 

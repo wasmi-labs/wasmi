@@ -1,6 +1,6 @@
 use super::{FuncIdx, GlobalIdx};
-use crate::{errors::ModuleError, Value};
-use wasmi_core::{F32, F64};
+use crate::{errors::ModuleError, ExternRef, FuncRef, Value};
+use wasmi_core::{ValueType, F32, F64};
 
 /// An initializer expression.
 ///
@@ -40,20 +40,39 @@ impl InitExpr {
         Self { op }
     }
 
-    /// Convert the [`InitExpr`] into the underlying Wasm `elemexpr` if possible.
+    /// Create a new `ref.func x` [`InitExpr`].
+    pub fn new_funcref(func_index: u32) -> Self {
+        Self {
+            op: InitExprOperand::FuncRef(func_index),
+        }
+    }
+
+    /// Convert the [`InitExpr`] into a Wasm `funcexpr` index if possible.
     ///
     /// Returns `None` if the function reference is `null`.
     ///
     /// # Panics
     ///
-    /// If a non Wasm `elemexpr` operand is encountered.
-    pub fn to_elemexpr(&self) -> Option<FuncIdx> {
+    /// If the [`InitExpr`] cannot be interpreted as `funcref` index.
+    pub fn as_funcref(&self) -> Option<FuncIdx> {
         match self.op {
             InitExprOperand::RefNull => None,
             InitExprOperand::FuncRef(func_index) => Some(FuncIdx(func_index)),
             InitExprOperand::Const(_) | InitExprOperand::GlobalGet(_) => {
-                panic!("encountered an unexpected Wasm elemexpr {:?}", self.op)
+                panic!("encountered non-funcref Wasm expression {:?}", self.op)
             }
+        }
+    }
+
+    /// Converts the [`InitExpr`] into an `externref`.
+    ///
+    /// # Panics
+    ///
+    /// If the [`InitExpr`] cannot be interpreted as `externref`.
+    pub fn as_externref(&self) -> ExternRef {
+        match self.op {
+            InitExprOperand::RefNull => ExternRef::null(),
+            _ => panic!("encountered non-externref Wasm expression: {:?}", self.op),
         }
     }
 
@@ -64,17 +83,41 @@ impl InitExpr {
     /// # Panics
     ///
     /// If a non-const expression operand is encountered.
-    pub fn to_const(&self) -> Option<Value> {
-        match self.op {
-            InitExprOperand::Const(value) => Some(value),
-            // Note: We do not need to handle `global.get` since
-            //       that is only allowed for imported non-mutable
-            //       global variables which have a value that is only
-            //       known post-instantiation time.
-            InitExprOperand::GlobalGet(_)
-            | InitExprOperand::RefNull
-            | InitExprOperand::FuncRef(_) => None,
+    pub fn to_const(&self, ty: ValueType) -> Option<Value> {
+        match &self.op {
+            InitExprOperand::Const(value) => Some(value.clone()),
+            InitExprOperand::RefNull => match ty {
+                ValueType::FuncRef => Some(Value::from(FuncRef::null())),
+                ValueType::ExternRef => Some(Value::from(ExternRef::null())),
+                _ => panic!("cannot have null reference for non-reftype but found {ty:?}"),
+            },
+            InitExprOperand::GlobalGet(_) => {
+                // Note: We do not need to handle `global.get` since
+                //       that is only allowed for imported non-mutable
+                //       global variables which have a value that is only
+                //       known post-instantiation time.
+                None
+            }
+            InitExprOperand::FuncRef(_) => {
+                // Note: We do not need to handle `global.get` here
+                //       since we can do this somewhere else where we
+                //       can properly handle the constant `func.ref`.
+                //       In the function builder we want to replace
+                //       `global.get` of constant `FuncRef(x)` with
+                //       the Wasm `ref.func x` instruction.
+                None
+            }
         }
+    }
+
+    /// Returns `Some(index)` if the [`InitExpr`] is a `FuncRef(index)`.
+    ///
+    /// Otherwise returns `None`.
+    pub fn func_ref(&self) -> Option<FuncIdx> {
+        if let InitExprOperand::FuncRef(index) = self.op {
+            return Some(FuncIdx(index));
+        }
+        None
     }
 
     /// Evaluates the [`InitExpr`] given the context for global variables.
@@ -82,14 +125,24 @@ impl InitExpr {
     /// # Panics
     ///
     /// If a non-const expression operand is encountered.
-    pub fn to_const_with_context(&self, global_get: impl Fn(u32) -> Value) -> Value {
-        match self.op {
-            InitExprOperand::Const(value) => value,
+    pub fn to_const_with_context(
+        &self,
+        value_type: ValueType,
+        global_get: impl Fn(u32) -> Value,
+        func_get: impl Fn(u32) -> Value,
+    ) -> Value {
+        let value = match &self.op {
+            InitExprOperand::Const(value) => value.clone(),
             InitExprOperand::GlobalGet(index) => global_get(index.into_u32()),
-            ref error @ (InitExprOperand::FuncRef(_) | InitExprOperand::RefNull) => {
-                panic!("encountered non-const expression operand: {error:?}")
-            }
-        }
+            InitExprOperand::RefNull => match value_type {
+                ValueType::FuncRef => Value::from(FuncRef::null()),
+                ValueType::ExternRef => Value::from(ExternRef::null()),
+                _ => panic!("expected reftype for InitExpr but found {value_type:?}"),
+            },
+            InitExprOperand::FuncRef(index) => func_get(*index),
+        };
+        assert_eq!(value.ty(), value_type);
+        value
     }
 }
 

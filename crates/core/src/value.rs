@@ -19,6 +19,27 @@ pub enum ValueType {
     F32,
     /// 64-bit IEEE 754-2008 floating point number.
     F64,
+    /// A nullable function reference.
+    FuncRef,
+    /// A nullable external reference.
+    ExternRef,
+}
+
+impl ValueType {
+    /// Returns `true` if [`ValueType`] is a Wasm numeric type.
+    ///
+    /// This is `true` for [`ValueType::I32`], [`ValueType::I64`],
+    /// [`ValueType::F32`] and [`ValueType::F64`].
+    pub fn is_num(&self) -> bool {
+        matches!(self, Self::I32 | Self::I64 | Self::F32 | Self::F64)
+    }
+
+    /// Returns `true` if [`ValueType`] is a Wasm reference type.
+    ///
+    /// This is `true` for [`ValueType::FuncRef`] and [`ValueType::ExternRef`].
+    pub fn is_ref(&self) -> bool {
+        matches!(self, Self::ExternRef | Self::FuncRef)
+    }
 }
 
 impl Display for ValueType {
@@ -28,6 +49,8 @@ impl Display for ValueType {
             Self::I64 => write!(f, "i64"),
             Self::F32 => write!(f, "f32"),
             Self::F64 => write!(f, "f64"),
+            Self::FuncRef => write!(f, "funcref"),
+            Self::ExternRef => write!(f, "externref"),
         }
     }
 }
