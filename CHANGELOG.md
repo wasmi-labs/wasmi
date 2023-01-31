@@ -8,6 +8,46 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.24.0`] - 2023-01-31
+
+### Added
+
+- Added support for the [`bulk-memory`] Wasm proposal. (https://github.com/paritytech/wasmi/pull/628)
+- Added support for the [`reference-types`] Wasm proposal. (https://github.com/paritytech/wasmi/pull/635)
+- Added `ValueType::{is_ref, is_num`} methods. (https://github.com/paritytech/wasmi/pull/635)
+- Added `Value::{i32, i64, f32, f64, externref, funcref}` accessor methods to `Value`.
+
+[`bulk-memory`]: https://github.com/WebAssembly/bulk-memory-operations
+[`reference-types`]: https://github.com/WebAssembly/reference-types
+
+### Fixed
+
+- Fix a bug with `Table` and `Memory` imports not respecting the current size. (https://github.com/paritytech/wasmi/pull/635)
+  - This sometimes led to the problem that valid `Table` and `Memory` imports
+    could incorrectly be rejected for having an invalid size for the subtype check.
+  - This has been fixed as part of the [`reference-types`] Wasm proposal implementation.
+
+### Changed
+
+- Use more references in places to provide the compiler with more optimization opportunities. (https://github.com/paritytech/wasmi/pull/634)
+  - This led to a speed-up across the board for Wasm targets of about 15-20%.
+- Move the `Value` type from `wasmi_core` to `wasmi`. (https://github.com/paritytech/wasmi/pull/636)
+  - This change was necessary in order to support the [`reference-types`] Wasm proposal.
+- There has been some consequences from implementing the [`reference-types`] Wasm proposal which are listed below:
+  - The `Value` type no longer implements `Copy` and `PartialEq`.
+  - The `From<&Value> for UntypedValue` impl has been removed.
+  - Remove some `From` impls for `Value`.
+  - Moved some `Display` impls for types like `FuncType` and `Value` to the `wasmi_cli` crate.
+  - Remove the `try_into` API from the `Value` type.
+    - Users should use the new accessor methods as in the Wasmtime API.
+
+### Internal
+
+- Update `wast` dependency from version `0.44` to `0.52`. (https://github.com/paritytech/wasmi/pull/632)
+- Update the Wasm spec testsuite to the most recent commit: `3a04b2cf9`
+- Improve error reporting for the internal Wasm spec testsuite runner.
+  - It will now show proper span information in many more cases.
+
 ## [`0.23.0`] - 2023-01-19
 
 > **Note:** This is the Wasmtime API Compatibility update.
