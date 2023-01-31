@@ -478,7 +478,7 @@ impl FuncRef {
         self.inner.is_none()
     }
 
-    /// Canonicalize `self` so that all `null` values have the same repsentation.
+    /// Canonicalize `self` so that all `null` values have the same representation.
     ///
     /// # Note
     ///
