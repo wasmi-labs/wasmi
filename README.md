@@ -51,12 +51,12 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 
 | WebAssembly Proposal | Status | Comment |
 |:--|:--:|:--|
-| [`mutable-global`] | ✅ | |
-| [`saturating-float-to-int`] | ✅ | |
-| [`sign-extension`] | ✅ | |
-| [`multi-value`] | ✅ | |
-| [`bulk-memory`] | ⌛ | Support is planned. [(#364)] |
-| [`reference-types`] | ⌛ | Support is planned. [(#496)] |
+| [`mutable-global`] | ✅ | Since version `0.14.0`. |
+| [`saturating-float-to-int`] | ✅ | Since version `0.14.0`. |
+| [`sign-extension`] | ✅ | Since version `0.14.0`. |
+| [`multi-value`] | ✅ | Since version `0.14.0`. |
+| [`bulk-memory`] | ✅ | Since version `0.24.0`. [(#628)] |
+| [`reference-types`] | ✅ | Since version `0.24.0`. [(#635)] |
 | [`simd`] | ❌ | Unlikely to be supported. |
 | [`tail-calls`] | ⌛ | Support is planned. [(#363)] |
 | | |
@@ -76,6 +76,8 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 [(#363)]: https://github.com/paritytech/wasmi/issues/363
 [(#364)]: https://github.com/paritytech/wasmi/issues/364
 [(#496)]: https://github.com/paritytech/wasmi/issues/496
+[(#628)]: https://github.com/paritytech/wasmi/pull/628
+[(#635)]: https://github.com/paritytech/wasmi/pull/635
 
 ## Usage
 
