@@ -451,31 +451,23 @@ fn funcref_null_to_zero() {
 
 impl From<UntypedValue> for FuncRef {
     fn from(untyped: UntypedValue) -> Self {
-        if untyped == UntypedValue::from(0u64) {
-            // Not sure if this early return and check
-            // is needed but better safe than sorry!
-            return Self::null();
-        }
         // Safety: This operation is safe since there are no invalid
         //         bit patterns for [`FuncRef`] instances. Therefore
         //         this operation cannot produce invalid [`FuncRef`]
         //         instances even though the input [`UntypedValue`]
         //         was modified arbitrarily.
-        unsafe { Transposer { untyped }.funcref }
+        unsafe { Transposer { untyped }.funcref }.canonicalize()
     }
 }
 
 impl From<FuncRef> for UntypedValue {
     fn from(funcref: FuncRef) -> Self {
-        if funcref.is_null() {
-            // This early return is important to fix conversion bugs with `null`.
-            return Self::from(0u64);
-        }
         // Safety: This operation is safe since there are no invalid
         //         bit patterns for [`UntypedValue`] instances. Therefore
         //         this operation cannot produce invalid [`UntypedValue`]
         //         instances even if it was possible to arbitrarily modify
         //         the input [`FuncRef`] instance.
+        let funcref = funcref.canonicalize();
         unsafe { Transposer { funcref }.untyped }
     }
 }
@@ -484,6 +476,29 @@ impl FuncRef {
     /// Returns `true` if [`FuncRef`] is `null`.
     pub fn is_null(&self) -> bool {
         self.inner.is_none()
+    }
+
+    /// Canonicalize `self` so that all `null` values have the same repsentation.
+    ///
+    /// # Note
+    ///
+    /// The underlying issue is that `FuncRef` has many possible values for the
+    /// `null` value. However, to simplify operating on encoded `FuncRef` instances
+    /// (encoded as `UntypedValue`) we want it to encode to exactly one `null`
+    /// value. The most trivial of all possible `null` values is `0_u64`, therefore
+    /// we canonicalize all `null` values to be represented by `0_u64`.
+    fn canonicalize(self) -> Self {
+        if self.is_null() {
+            // Safety: This is safe since `0u64` can be bit
+            //         interpreted as a valid `FuncRef` value.
+            return unsafe {
+                Transposer {
+                    untyped: UntypedValue::from(0u64),
+                }
+                .funcref
+            };
+        }
+        self
     }
 
     /// Creates a new [`FuncRef`].
@@ -501,6 +516,7 @@ impl FuncRef {
         Self {
             inner: nullable_func.into(),
         }
+        .canonicalize()
     }
 
     /// Returns the inner [`Func`] if [`FuncRef`] is not `null`.
@@ -512,6 +528,6 @@ impl FuncRef {
 
     /// Creates a `null` [`FuncRef`].
     pub fn null() -> Self {
-        Self::new(None)
+        Self::new(None).canonicalize()
     }
 }
