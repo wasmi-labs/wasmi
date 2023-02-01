@@ -59,6 +59,7 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 | [`reference-types`] | ✅ | Since version `0.24.0`. [(#635)] |
 | [`simd`] | ❌ | Unlikely to be supported. |
 | [`tail-calls`] | ⌛ | Support is planned. [(#363)] |
+| [`extended-const`] | ⌛ | Support is planned. [(#638)] |
 | | |
 | [WASI] | 🟡 | Experimental support via the [`wasmi_wasi` crate]. |
 
@@ -70,6 +71,7 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 [`bulk-memory`]: https://github.com/WebAssembly/bulk-memory-operations
 [`simd` ]: https://github.com/webassembly/simd
 [`tail-calls`]: https://github.com/WebAssembly/tail-call
+[`extended-const`]: https://github.com/WebAssembly/extended-const
 
 [WASI]: https://github.com/WebAssembly/WASI
 [`wasmi_wasi` crate]: ./crates/wasi
