@@ -59,8 +59,9 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 | [`reference-types`] | ✅ | Since version `0.24.0`. [(#635)] |
 | [`simd`] | ❌ | Unlikely to be supported. |
 | [`tail-calls`] | ⌛ | Support is planned. [(#363)] |
+| [`extended-const`] | ⌛ | Support is planned. [(#638)] |
 | | |
-| [WASI] | 🟡 | Experimental support via the `wasmi_wasi` crate. |
+| [WASI] | 🟡 | Experimental support via the [`wasmi_wasi` crate]. |
 
 [`mutable-global`]: https://github.com/WebAssembly/mutable-global
 [`saturating-float-to-int`]: https://github.com/WebAssembly/nontrapping-float-to-int-conversions
@@ -70,14 +71,17 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 [`bulk-memory`]: https://github.com/WebAssembly/bulk-memory-operations
 [`simd` ]: https://github.com/webassembly/simd
 [`tail-calls`]: https://github.com/WebAssembly/tail-call
+[`extended-const`]: https://github.com/WebAssembly/extended-const
 
 [WASI]: https://github.com/WebAssembly/WASI
+[`wasmi_wasi` crate]: ./crates/wasi
 
 [(#363)]: https://github.com/paritytech/wasmi/issues/363
 [(#364)]: https://github.com/paritytech/wasmi/issues/364
 [(#496)]: https://github.com/paritytech/wasmi/issues/496
 [(#628)]: https://github.com/paritytech/wasmi/pull/628
 [(#635)]: https://github.com/paritytech/wasmi/pull/635
+[(#638)]: https://github.com/paritytech/wasmi/pull/638
 
 ## Usage
 
