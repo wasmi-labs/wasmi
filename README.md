@@ -60,7 +60,7 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 | [`simd`] | ❌ | Unlikely to be supported. |
 | [`tail-calls`] | ⌛ | Support is planned. [(#363)] |
 | | |
-| [WASI] | 🟡 | Experimental support via the `wasmi_wasi` crate. |
+| [WASI] | 🟡 | Experimental support via the [`wasmi_wasi` crate]. |
 
 [`mutable-global`]: https://github.com/WebAssembly/mutable-global
 [`saturating-float-to-int`]: https://github.com/WebAssembly/nontrapping-float-to-int-conversions
@@ -72,6 +72,7 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 [`tail-calls`]: https://github.com/WebAssembly/tail-call
 
 [WASI]: https://github.com/WebAssembly/WASI
+[`wasmi_wasi` crate]: ./crates/wasi
 
 [(#363)]: https://github.com/paritytech/wasmi/issues/363
 [(#364)]: https://github.com/paritytech/wasmi/issues/364
