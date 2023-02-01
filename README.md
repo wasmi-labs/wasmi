@@ -81,6 +81,7 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 [(#496)]: https://github.com/paritytech/wasmi/issues/496
 [(#628)]: https://github.com/paritytech/wasmi/pull/628
 [(#635)]: https://github.com/paritytech/wasmi/pull/635
+[(#638)]: https://github.com/paritytech/wasmi/pull/638
 
 ## Usage
 
