@@ -1,4 +1,4 @@
-use crate::{errors::ModuleError, GlobalType, MemoryType, TableType};
+use crate::{GlobalType, MemoryType, TableType};
 use alloc::boxed::Box;
 use core::fmt::{self, Display};
 use wasmparser::TypeRef;
@@ -59,20 +59,18 @@ impl ImportName {
     }
 }
 
-impl TryFrom<wasmparser::Import<'_>> for Import {
-    type Error = ModuleError;
-
-    fn try_from(import: wasmparser::Import) -> Result<Self, Self::Error> {
+impl From<wasmparser::Import<'_>> for Import {
+    fn from(import: wasmparser::Import) -> Self {
         let kind = match import.ty {
-            TypeRef::Func(func_type) => Ok(ExternTypeIdx::Func(FuncTypeIdx(func_type))),
-            TypeRef::Table(table_type) => table_type.try_into().map(ExternTypeIdx::Table),
-            TypeRef::Memory(memory_type) => memory_type.try_into().map(ExternTypeIdx::Memory),
-            TypeRef::Global(global_type) => global_type.try_into().map(ExternTypeIdx::Global),
+            TypeRef::Func(ty) => ExternTypeIdx::Func(ty.into()),
+            TypeRef::Table(ty) => ExternTypeIdx::Table(ty.into()),
+            TypeRef::Memory(ty) => ExternTypeIdx::Memory(ty.into()),
+            TypeRef::Global(ty) => ExternTypeIdx::Global(ty.into()),
             TypeRef::Tag(tag) => panic!(
                 "wasmi does not support the `exception-handling` Wasm proposal but found: {tag:?}"
             ),
-        }?;
-        Ok(Self::new(import.module, import.name, kind))
+        };
+        Self::new(import.module, import.name, kind)
     }
 }
 
@@ -121,6 +119,12 @@ pub enum ExternTypeIdx {
 /// [`FuncType`]: [`crate::FuncType`]
 #[derive(Debug, Copy, Clone)]
 pub struct FuncTypeIdx(pub(crate) u32);
+
+impl From<u32> for FuncTypeIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
 
 impl FuncTypeIdx {
     /// Returns the [`FuncTypeIdx`] as `usize`.

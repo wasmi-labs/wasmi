@@ -1,5 +1,4 @@
 use super::{InitExpr, MemoryIdx};
-use crate::errors::ModuleError;
 use alloc::sync::Arc;
 
 /// A Wasm [`Module`] data segment.
@@ -43,10 +42,8 @@ impl ActiveDataSegment {
     }
 }
 
-impl TryFrom<wasmparser::DataKind<'_>> for DataSegmentKind {
-    type Error = ModuleError;
-
-    fn try_from(data_kind: wasmparser::DataKind<'_>) -> Result<Self, Self::Error> {
+impl From<wasmparser::DataKind<'_>> for DataSegmentKind {
+    fn from(data_kind: wasmparser::DataKind<'_>) -> Self {
         match data_kind {
             wasmparser::DataKind::Active {
                 memory_index,
@@ -54,23 +51,21 @@ impl TryFrom<wasmparser::DataKind<'_>> for DataSegmentKind {
             } => {
                 let memory_index = MemoryIdx(memory_index);
                 let offset = InitExpr::new(offset_expr);
-                Ok(Self::Active(ActiveDataSegment {
+                Self::Active(ActiveDataSegment {
                     memory_index,
                     offset,
-                }))
+                })
             }
-            wasmparser::DataKind::Passive => Ok(Self::Passive),
+            wasmparser::DataKind::Passive => Self::Passive,
         }
     }
 }
 
-impl TryFrom<wasmparser::Data<'_>> for DataSegment {
-    type Error = ModuleError;
-
-    fn try_from(data: wasmparser::Data<'_>) -> Result<Self, Self::Error> {
-        let kind = DataSegmentKind::try_from(data.kind)?;
+impl From<wasmparser::Data<'_>> for DataSegment {
+    fn from(data: wasmparser::Data<'_>) -> Self {
+        let kind = DataSegmentKind::from(data.kind);
         let bytes = data.data.into();
-        Ok(DataSegment { kind, bytes })
+        Self { kind, bytes }
     }
 }
 

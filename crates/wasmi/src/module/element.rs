@@ -1,5 +1,5 @@
 use super::{InitExpr, TableIdx};
-use crate::{errors::ModuleError, module::utils::WasmiValueType};
+use crate::module::utils::WasmiValueType;
 use alloc::sync::Arc;
 use wasmi_core::ValueType;
 
@@ -88,10 +88,8 @@ impl ActiveElementSegment {
     }
 }
 
-impl TryFrom<wasmparser::ElementKind<'_>> for ElementSegmentKind {
-    type Error = ModuleError;
-
-    fn try_from(element_kind: wasmparser::ElementKind<'_>) -> Result<Self, Self::Error> {
+impl From<wasmparser::ElementKind<'_>> for ElementSegmentKind {
+    fn from(element_kind: wasmparser::ElementKind<'_>) -> Self {
         match element_kind {
             wasmparser::ElementKind::Active {
                 table_index,
@@ -99,30 +97,28 @@ impl TryFrom<wasmparser::ElementKind<'_>> for ElementSegmentKind {
             } => {
                 let table_index = TableIdx(table_index);
                 let offset = InitExpr::new(offset_expr);
-                Ok(Self::Active(ActiveElementSegment {
+                Self::Active(ActiveElementSegment {
                     table_index,
                     offset,
-                }))
+                })
             }
-            wasmparser::ElementKind::Passive => Ok(Self::Passive),
-            wasmparser::ElementKind::Declared => Ok(Self::Declared),
+            wasmparser::ElementKind::Passive => Self::Passive,
+            wasmparser::ElementKind::Declared => Self::Declared,
         }
     }
 }
 
-impl TryFrom<wasmparser::Element<'_>> for ElementSegment {
-    type Error = ModuleError;
-
-    fn try_from(element: wasmparser::Element<'_>) -> Result<Self, Self::Error> {
+impl From<wasmparser::Element<'_>> for ElementSegment {
+    fn from(element: wasmparser::Element<'_>) -> Self {
         assert!(
             element.ty.is_reference_type(),
             "only reftypes are allowed as element types but found: {:?}",
             element.ty
         );
-        let kind = ElementSegmentKind::try_from(element.kind)?;
+        let kind = ElementSegmentKind::from(element.kind);
         let ty = WasmiValueType::from(element.ty).into_inner();
         let items = ElementSegmentItems::new(&element.items);
-        Ok(ElementSegment { kind, ty, items })
+        Self { kind, ty, items }
     }
 }
 
