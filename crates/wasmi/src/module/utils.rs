@@ -51,10 +51,8 @@ impl TryFrom<wasmparser::GlobalType> for GlobalType {
     }
 }
 
-impl TryFrom<wasmparser::FuncType> for FuncType {
-    type Error = ModuleError;
-
-    fn try_from(func_type: wasmparser::FuncType) -> Result<Self, Self::Error> {
+impl From<wasmparser::FuncType> for FuncType {
+    fn from(func_type: wasmparser::FuncType) -> Self {
         /// Returns the [`ValueType`] from the given [`wasmparser::Type`].
         ///
         /// # Panics
@@ -65,8 +63,7 @@ impl TryFrom<wasmparser::FuncType> for FuncType {
         }
         let params = func_type.params().iter().map(extract_value_type);
         let results = func_type.results().iter().map(extract_value_type);
-        let func_type = FuncType::new(params, results);
-        Ok(func_type)
+        FuncType::new(params, results)
     }
 }
 

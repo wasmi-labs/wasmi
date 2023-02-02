@@ -244,9 +244,9 @@ impl<'engine> ModuleParser<'engine> {
     fn process_types(&mut self, section: TypeSectionReader) -> Result<(), ModuleError> {
         self.validator.type_section(&section)?;
         let func_types = section
-            .into_iter_with_offsets()
+            .into_iter()
             .map(|result| match result? {
-                (_offset, wasmparser::Type::Func(ty)) => FuncType::try_from(ty),
+                wasmparser::Type::Func(ty) => Ok(FuncType::from(ty)),
             });
         self.builder.push_func_types(func_types)?;
         Ok(())
