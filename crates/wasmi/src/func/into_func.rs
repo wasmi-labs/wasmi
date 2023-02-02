@@ -6,6 +6,8 @@ use crate::{
     core::{Trap, ValueType, F32, F64},
     foreach_tuple::for_each_tuple,
     Caller,
+    ExternRef,
+    FuncRef,
     FuncType,
 };
 use core::{array, iter::FusedIterator};
@@ -179,6 +181,8 @@ impl_wasm_type! {
     type i64 = I64;
     type F32 = F32;
     type F64 = F64;
+    type FuncRef = FuncRef;
+    type ExternRef = ExternRef;
 }
 
 /// A list of [`WasmType`] types.
