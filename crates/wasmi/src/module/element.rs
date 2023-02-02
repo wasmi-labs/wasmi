@@ -27,7 +27,7 @@ impl ElementSegmentItems {
     ///
     /// # Panics
     ///
-    /// If the given [`wasmparser::ElementItem`] is invalid.
+    /// If the given [`wasmparser::ElementItems`] is invalid.
     fn new(items: &wasmparser::ElementItems) -> Self {
         let exprs = match items {
             wasmparser::ElementItems::Functions(items) => items
