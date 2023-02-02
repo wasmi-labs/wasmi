@@ -76,7 +76,7 @@
     clippy::default_trait_access,
     clippy::items_after_statements
 )]
-#![recursion_limit = "550"]
+#![recursion_limit = "750"]
 
 #[cfg(not(feature = "std"))]
 #[macro_use]
