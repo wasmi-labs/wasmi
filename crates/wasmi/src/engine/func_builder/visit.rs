@@ -247,9 +247,10 @@ impl<'parser> FuncBuilder<'parser> {
 macro_rules! define_supported_visit_operator {
     ($( fn $visit:ident $(( $($arg:ident: $argty:ty),* ))? => fn $translate:ident)*) => {
         $(
-            fn $visit(&mut self, offset: usize $($(,$arg: $argty)*)?) -> Self::Output {
+            fn $visit(&mut self $($(,$arg: $argty)*)?) -> Self::Output {
+                let offset = self.current_pos();
                 self.validate_then_translate(
-                    |v| v.$visit(offset $($(,$arg)*)?),
+                    |v| v.visitor(offset).$visit($($($arg),*)?),
                     |this| {
                         this.$translate($($($arg),*)?)
                     },
@@ -264,11 +265,11 @@ macro_rules! define_unsupported_visit_operator {
         // Supported operators are handled by `define_supported_visit_operator`.
         define_unsupported_visit_operator!($($rest)*);
     };
-    ( @sign_ext_ops $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
+    ( @sign_extension $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
         // Supported operators are handled by `define_supported_visit_operator`.
         define_unsupported_visit_operator!($($rest)*);
     };
-    ( @non_trapping_f2i_conversions $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
+    ( @saturating_float_to_int $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
         // Supported operators are handled by `define_supported_visit_operator`.
         define_unsupported_visit_operator!($($rest)*);
     };
@@ -281,8 +282,9 @@ macro_rules! define_unsupported_visit_operator {
         define_unsupported_visit_operator!($($rest)*);
     };
     ( @$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
-        fn $visit(&mut self, offset: usize $($(,$arg: $argty)*)?) -> Self::Output {
-            self.validator.$visit(offset $($(,$arg)*)?).map_err(::core::convert::Into::into)
+        fn $visit(&mut self $($(, $arg: $argty)*)?) -> Self::Output {
+            let offset = self.current_pos();
+            self.validator.visitor(offset).$visit($($($arg),*)?).map_err(::core::convert::Into::into)
         }
         define_unsupported_visit_operator!($($rest)*);
     };
@@ -295,10 +297,11 @@ impl<'a> VisitOperator<'a> for FuncBuilder<'a> {
     for_each_supported_operator!(define_supported_visit_operator);
     wasmparser::for_each_operator!(define_unsupported_visit_operator);
 
-    fn visit_br_table(&mut self, offset: usize, table: wasmparser::BrTable<'a>) -> Self::Output {
+    fn visit_br_table(&mut self, table: wasmparser::BrTable<'a>) -> Self::Output {
+        let offset = self.current_pos();
         let table_cloned = table.clone();
         self.validate_then_translate(
-            |v| v.visit_br_table(offset, table_cloned),
+            |v| v.visitor(offset).visit_br_table(table_cloned),
             |this| this.translate_br_table(table),
         )
     }

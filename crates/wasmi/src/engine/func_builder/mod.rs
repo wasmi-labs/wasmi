@@ -84,6 +84,8 @@ pub struct FuncBuilder<'parser> {
     locals: LocalsRegistry,
     /// The reusable data structures of the [`FuncBuilder`].
     alloc: FunctionBuilderAllocations,
+    /// The current position in the Wasm binary while parsing operators.
+    pos: usize,
 }
 
 /// Reusable allocations of a [`FuncBuilder`].
@@ -136,7 +138,18 @@ impl<'parser> FuncBuilder<'parser> {
             stack_height: ValueStackHeight::default(),
             locals,
             alloc: allocations,
+            pos: 0,
         }
+    }
+
+    /// Updates the current position within the Wasm binary while parsing operators.
+    pub fn update_pos(&mut self, pos: usize) {
+        self.pos = pos;
+    }
+
+    /// Returns the current position within the Wasm binary while parsing operators.
+    pub fn current_pos(&self) -> usize {
+        self.pos
     }
 
     /// Returns the [`FuncType`] of the function that is currently translated.
