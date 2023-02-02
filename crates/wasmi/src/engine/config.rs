@@ -25,6 +25,8 @@ pub struct Config {
     bulk_memory: bool,
     /// Is `true` if the [`reference-types`] Wasm proposal is enabled.
     reference_types: bool,
+    /// Is `true` if Wasm instructions on `f32` and `f64` types are allowed.
+    floats: bool,
 }
 
 impl Default for Config {
@@ -38,6 +40,7 @@ impl Default for Config {
             multi_value: true,
             bulk_memory: true,
             reference_types: true,
+            floats: true,
         }
     }
 }
@@ -142,6 +145,19 @@ impl Config {
         self
     }
 
+    /// Enable or disable Wasm instructions on `f32` and `f64` types.
+    ///
+    /// # Note
+    ///
+    /// This can be used to disallow floating-point operators.
+    /// Note that disabling this does not disable the `f32` and `f64` Wasm types, only the operators that work on them.
+    ///
+    /// Enabled by default.
+    pub fn floats(&mut self, enable: bool) -> &mut Self {
+        self.reference_types = enable;
+        self
+    }
+
     /// Returns the [`WasmFeatures`] represented by the [`Config`].
     pub fn wasm_features(&self) -> WasmFeatures {
         WasmFeatures {
@@ -151,16 +167,17 @@ impl Config {
             sign_extension: self.sign_extension,
             bulk_memory: self.bulk_memory,
             reference_types: self.reference_types,
+            floats: self.floats,
             component_model: false,
             simd: false,
             relaxed_simd: false,
             threads: false,
             tail_call: false,
-            deterministic_only: true,
             multi_memory: false,
             exceptions: false,
             memory64: false,
             extended_const: false,
+            memory_control: false,
         }
     }
 }

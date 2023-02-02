@@ -13,7 +13,7 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-wasmparser = { version = "0.91", package = "wasmparser-nostd", default-features = false }
+wasmparser = { version = "0.99", package = "wasmparser-nostd", default-features = false }
 wasmi_core = { version = "0.9", path = "../core", default-features = false }
 wasmi_arena = { version = "0.4", path = "../arena", default-features = false }
 spin = { version = "0.9", default-features = false, features = [

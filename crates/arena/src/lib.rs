@@ -17,7 +17,6 @@
     clippy::items_after_statements
 )]
 #[cfg(not(feature = "std"))]
-#[macro_use]
 extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std as alloc;

@@ -27,22 +27,26 @@ impl ElementSegmentItems {
     ///
     /// # Panics
     ///
-    /// If the given [`wasmparser::ElementItem`] is invalid.
+    /// If the given [`wasmparser::ElementItems`] is invalid.
     fn new(items: &wasmparser::ElementItems) -> Self {
-        let exprs = items
-            .get_items_reader()
-            .unwrap_or_else(|error| panic!("failed to parse element items: {error}"))
-            .into_iter()
-            .map(|item| {
-                let item = item.as_ref().unwrap_or_else(|error| {
-                    panic!("failed to parse element item {item:?}: {error}")
-                });
-                match item {
-                    wasmparser::ElementItem::Func(func_index) => InitExpr::new_funcref(*func_index),
-                    wasmparser::ElementItem::Expr(expr) => InitExpr::new(*expr),
-                }
-            })
-            .collect::<Arc<[_]>>();
+        let exprs = match items {
+            wasmparser::ElementItems::Functions(items) => items
+                .clone()
+                .into_iter()
+                .map(|item| {
+                    item.unwrap_or_else(|error| panic!("failed to parse element item: {error}"))
+                })
+                .map(InitExpr::new_funcref)
+                .collect::<Arc<[_]>>(),
+            wasmparser::ElementItems::Expressions(items) => items
+                .clone()
+                .into_iter()
+                .map(|item| {
+                    item.unwrap_or_else(|error| panic!("failed to parse element item: {error}"))
+                })
+                .map(InitExpr::new)
+                .collect::<Arc<[_]>>(),
+        };
         Self { exprs }
     }
 
