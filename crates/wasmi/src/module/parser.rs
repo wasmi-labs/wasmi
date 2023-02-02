@@ -243,11 +243,9 @@ impl<'engine> ModuleParser<'engine> {
     /// If an unsupported function type is encountered.
     fn process_types(&mut self, section: TypeSectionReader) -> Result<(), ModuleError> {
         self.validator.type_section(&section)?;
-        let func_types = section
-            .into_iter_with_offsets()
-            .map(|result| match result? {
-                (_offset, wasmparser::Type::Func(ty)) => FuncType::try_from(ty),
-            });
+        let func_types = section.into_iter().map(|result| match result? {
+            wasmparser::Type::Func(ty) => Ok(FuncType::from(ty)),
+        });
         self.builder.push_func_types(func_types)?;
         Ok(())
     }
@@ -264,10 +262,9 @@ impl<'engine> ModuleParser<'engine> {
     /// - If an unsupported import declaration is encountered.
     fn process_imports(&mut self, section: ImportSectionReader) -> Result<(), ModuleError> {
         self.validator.import_section(&section)?;
-        let imports = section.into_iter_with_offsets().map(|result| {
-            let (_offset, import) = result?;
-            Import::try_from(import)
-        });
+        let imports = section
+            .into_iter()
+            .map(|import| import.map(Import::from).map_err(ModuleError::from));
         self.builder.push_imports(imports)?;
         Ok(())
     }
@@ -298,10 +295,9 @@ impl<'engine> ModuleParser<'engine> {
     /// If a function declaration fails to validate.
     fn process_functions(&mut self, section: FunctionSectionReader) -> Result<(), ModuleError> {
         self.validator.function_section(&section)?;
-        let funcs = section.into_iter_with_offsets().map(|result| {
-            let (_offset, func_index) = result?;
-            Ok(FuncTypeIdx(func_index))
-        });
+        let funcs = section
+            .into_iter()
+            .map(|func| func.map(FuncTypeIdx::from).map_err(ModuleError::from));
         self.builder.push_funcs(funcs)?;
         Ok(())
     }
@@ -317,10 +313,9 @@ impl<'engine> ModuleParser<'engine> {
     /// If a table declaration fails to validate.
     fn process_tables(&mut self, section: TableSectionReader) -> Result<(), ModuleError> {
         self.validator.table_section(&section)?;
-        let tables = section.into_iter_with_offsets().map(|result| {
-            let (_offset, ty) = result?;
-            TableType::try_from(ty)
-        });
+        let tables = section
+            .into_iter()
+            .map(|table| table.map(TableType::from).map_err(ModuleError::from));
         self.builder.push_tables(tables)?;
         Ok(())
     }
@@ -336,10 +331,9 @@ impl<'engine> ModuleParser<'engine> {
     /// If a linear memory declaration fails to validate.
     fn process_memories(&mut self, section: MemorySectionReader) -> Result<(), ModuleError> {
         self.validator.memory_section(&section)?;
-        let memories = section.into_iter_with_offsets().map(|result| {
-            let (_offset, ty) = result?;
-            MemoryType::try_from(ty)
-        });
+        let memories = section
+            .into_iter()
+            .map(|memory| memory.map(MemoryType::from).map_err(ModuleError::from));
         self.builder.push_memories(memories)?;
         Ok(())
     }
@@ -365,10 +359,9 @@ impl<'engine> ModuleParser<'engine> {
     /// If a global variable declaration fails to validate.
     fn process_globals(&mut self, section: GlobalSectionReader) -> Result<(), ModuleError> {
         self.validator.global_section(&section)?;
-        let globals = section.into_iter_with_offsets().map(|result| {
-            let (_offset, global) = result?;
-            Global::try_from(global)
-        });
+        let globals = section
+            .into_iter()
+            .map(|global| global.map(Global::from).map_err(ModuleError::from));
         self.builder.push_globals(globals)?;
         Ok(())
     }
@@ -384,8 +377,8 @@ impl<'engine> ModuleParser<'engine> {
     /// If an export declaration fails to validate.
     fn process_exports(&mut self, section: ExportSectionReader) -> Result<(), ModuleError> {
         self.validator.export_section(&section)?;
-        let exports = section.into_iter().map(|result| {
-            let export = result?;
+        let exports = section.into_iter().map(|export| {
+            let export = export?;
             let field: Box<str> = export.name.into();
             let idx = ExternIdx::new(export.kind, export.index)?;
             Ok((field, idx))
@@ -420,10 +413,9 @@ impl<'engine> ModuleParser<'engine> {
     /// If any of the table element segments fail to validate.
     fn process_element(&mut self, section: ElementSectionReader) -> Result<(), ModuleError> {
         self.validator.element_section(&section)?;
-        let segments = section.into_iter_with_offsets().map(|result| {
-            let (_offset, segment) = result?;
-            ElementSegment::try_from(segment)
-        });
+        let segments = section
+            .into_iter()
+            .map(|segment| segment.map(ElementSegment::from).map_err(ModuleError::from));
         self.builder.push_element_segments(segments)?;
         Ok(())
     }
@@ -451,10 +443,9 @@ impl<'engine> ModuleParser<'engine> {
     /// If any of the table elements fail to validate.
     fn process_data(&mut self, section: DataSectionReader) -> Result<(), ModuleError> {
         self.validator.data_section(&section)?;
-        let segments = section.into_iter_with_offsets().map(|result| {
-            let (_offset, segment) = result?;
-            DataSegment::try_from(segment)
-        });
+        let segments = section
+            .into_iter()
+            .map(|segment| segment.map(DataSegment::from).map_err(ModuleError::from));
         self.builder.push_data_segments(segments)?;
         Ok(())
     }

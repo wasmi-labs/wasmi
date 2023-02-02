@@ -1,5 +1,5 @@
 use super::InitExpr;
-use crate::{errors::ModuleError, GlobalType};
+use crate::GlobalType;
 
 /// The index of a global variable within a [`Module`].
 ///
@@ -35,16 +35,14 @@ pub struct Global {
     init_expr: InitExpr,
 }
 
-impl TryFrom<wasmparser::Global<'_>> for Global {
-    type Error = ModuleError;
-
-    fn try_from(global: wasmparser::Global<'_>) -> Result<Self, Self::Error> {
-        let global_type = global.ty.try_into()?;
+impl From<wasmparser::Global<'_>> for Global {
+    fn from(global: wasmparser::Global<'_>) -> Self {
+        let global_type = global.ty.into();
         let init_expr = InitExpr::new(global.init_expr);
-        Ok(Global {
+        Self {
             global_type,
             init_expr,
-        })
+        }
     }
 }
 

@@ -1,21 +1,17 @@
-use crate::{errors::ModuleError, FuncType, GlobalType, MemoryType, Mutability, TableType};
+use crate::{FuncType, GlobalType, MemoryType, Mutability, TableType};
 use wasmi_core::ValueType;
 
-impl TryFrom<wasmparser::TableType> for TableType {
-    type Error = ModuleError;
-
-    fn try_from(table_type: wasmparser::TableType) -> Result<Self, Self::Error> {
+impl From<wasmparser::TableType> for TableType {
+    fn from(table_type: wasmparser::TableType) -> Self {
         let element = WasmiValueType::from(table_type.element_type).into_inner();
         let minimum = table_type.initial;
         let maximum = table_type.maximum;
-        Ok(TableType::new(element, minimum, maximum))
+        Self::new(element, minimum, maximum)
     }
 }
 
-impl TryFrom<wasmparser::MemoryType> for MemoryType {
-    type Error = ModuleError;
-
-    fn try_from(memory_type: wasmparser::MemoryType) -> Result<Self, Self::Error> {
+impl From<wasmparser::MemoryType> for MemoryType {
+    fn from(memory_type: wasmparser::MemoryType) -> Self {
         assert!(
             !memory_type.memory64,
             "wasmi does not support the `memory64` Wasm proposal"
@@ -33,28 +29,24 @@ impl TryFrom<wasmparser::MemoryType> for MemoryType {
             .map(TryInto::try_into)
             .transpose()
             .expect("wasm32 memories must have a valid u32 maximum size if any");
-        Ok(MemoryType::new(initial, maximum)
-            .expect("encountered invalid wasmparser::MemoryType after validation"))
+        Self::new(initial, maximum)
+            .expect("encountered invalid wasmparser::MemoryType after validation")
     }
 }
 
-impl TryFrom<wasmparser::GlobalType> for GlobalType {
-    type Error = ModuleError;
-
-    fn try_from(global_type: wasmparser::GlobalType) -> Result<Self, Self::Error> {
+impl From<wasmparser::GlobalType> for GlobalType {
+    fn from(global_type: wasmparser::GlobalType) -> Self {
         let value_type = WasmiValueType::from(global_type.content_type).into_inner();
         let mutability = match global_type.mutable {
             true => Mutability::Var,
             false => Mutability::Const,
         };
-        Ok(GlobalType::new(value_type, mutability))
+        Self::new(value_type, mutability)
     }
 }
 
-impl TryFrom<wasmparser::FuncType> for FuncType {
-    type Error = ModuleError;
-
-    fn try_from(func_type: wasmparser::FuncType) -> Result<Self, Self::Error> {
+impl From<wasmparser::FuncType> for FuncType {
+    fn from(func_type: wasmparser::FuncType) -> Self {
         /// Returns the [`ValueType`] from the given [`wasmparser::Type`].
         ///
         /// # Panics
@@ -65,8 +57,7 @@ impl TryFrom<wasmparser::FuncType> for FuncType {
         }
         let params = func_type.params().iter().map(extract_value_type);
         let results = func_type.results().iter().map(extract_value_type);
-        let func_type = FuncType::new(params, results);
-        Ok(func_type)
+        Self::new(params, results)
     }
 }
 
