@@ -13,7 +13,7 @@ use super::{
     Read,
 };
 use crate::{engine::FunctionBuilderAllocations, Engine, FuncType, MemoryType, TableType};
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 use core::{
     mem::{replace, take},
     ops::Range,
