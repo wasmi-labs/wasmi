@@ -581,7 +581,7 @@ impl<'parser> FuncBuilder<'parser> {
     /// - `{f32, f64}.trunc`
     /// - `{f32, f64}.nearest`
     /// - `{f32, f64}.sqrt`
-    pub fn visit_unary_operation(
+    fn translate_unary_operation(
         &mut self,
         _value_type: ValueType,
         inst: Instruction,
@@ -613,7 +613,7 @@ impl<'parser> FuncBuilder<'parser> {
     /// - `{f32, f64}.min`
     /// - `{f32, f64}.max`
     /// - `{f32, f64}.copysign`
-    pub fn visit_binary_operation(
+    fn translate_binary_operation(
         &mut self,
         _value_type: ValueType,
         inst: Instruction,
@@ -642,7 +642,7 @@ impl<'parser> FuncBuilder<'parser> {
     /// - `i64.reinterpret_f64`
     /// - `f32.reinterpret_i32`
     /// - `f64.reinterpret_i64`
-    pub fn visit_conversion(
+    fn translate_conversion(
         &mut self,
         _input_type: ValueType,
         _output_type: ValueType,
@@ -1694,427 +1694,427 @@ impl<'parser> FuncBuilder<'parser> {
 
     /// Translate a Wasm `i32.clz` instruction.
     pub fn visit_i32_clz(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::I32, Instruction::I32Clz)
+        self.translate_unary_operation(ValueType::I32, Instruction::I32Clz)
     }
 
     /// Translate a Wasm `i32.ctz` instruction.
     pub fn visit_i32_ctz(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::I32, Instruction::I32Ctz)
+        self.translate_unary_operation(ValueType::I32, Instruction::I32Ctz)
     }
 
     /// Translate a Wasm `i32.popcnt` instruction.
     pub fn visit_i32_popcnt(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::I32, Instruction::I32Popcnt)
+        self.translate_unary_operation(ValueType::I32, Instruction::I32Popcnt)
     }
 
     /// Translate a Wasm `i32.add` instruction.
     pub fn visit_i32_add(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I32, Instruction::I32Add)
+        self.translate_binary_operation(ValueType::I32, Instruction::I32Add)
     }
 
     /// Translate a Wasm `i32.sub` instruction.
     pub fn visit_i32_sub(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I32, Instruction::I32Sub)
+        self.translate_binary_operation(ValueType::I32, Instruction::I32Sub)
     }
 
     /// Translate a Wasm `i32.mul` instruction.
     pub fn visit_i32_mul(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I32, Instruction::I32Mul)
+        self.translate_binary_operation(ValueType::I32, Instruction::I32Mul)
     }
 
     /// Translate a Wasm `i32.div` instruction.
     pub fn visit_i32_div_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I32, Instruction::I32DivS)
+        self.translate_binary_operation(ValueType::I32, Instruction::I32DivS)
     }
 
     /// Translate a Wasm `u32.div` instruction.
     pub fn visit_i32_div_u(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I32, Instruction::I32DivU)
+        self.translate_binary_operation(ValueType::I32, Instruction::I32DivU)
     }
 
     /// Translate a Wasm `i32.rem` instruction.
     pub fn visit_i32_rem_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I32, Instruction::I32RemS)
+        self.translate_binary_operation(ValueType::I32, Instruction::I32RemS)
     }
 
     /// Translate a Wasm `u32.rem` instruction.
     pub fn visit_i32_rem_u(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I32, Instruction::I32RemU)
+        self.translate_binary_operation(ValueType::I32, Instruction::I32RemU)
     }
 
     /// Translate a Wasm `i32.and` instruction.
     pub fn visit_i32_and(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I32, Instruction::I32And)
+        self.translate_binary_operation(ValueType::I32, Instruction::I32And)
     }
 
     /// Translate a Wasm `i32.or` instruction.
     pub fn visit_i32_or(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I32, Instruction::I32Or)
+        self.translate_binary_operation(ValueType::I32, Instruction::I32Or)
     }
 
     /// Translate a Wasm `i32.xor` instruction.
     pub fn visit_i32_xor(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I32, Instruction::I32Xor)
+        self.translate_binary_operation(ValueType::I32, Instruction::I32Xor)
     }
 
     /// Translate a Wasm `i32.shl` instruction.
     pub fn visit_i32_shl(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I32, Instruction::I32Shl)
+        self.translate_binary_operation(ValueType::I32, Instruction::I32Shl)
     }
 
     /// Translate a Wasm `i32.shr` instruction.
     pub fn visit_i32_shr_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I32, Instruction::I32ShrS)
+        self.translate_binary_operation(ValueType::I32, Instruction::I32ShrS)
     }
 
     /// Translate a Wasm `u32.shr` instruction.
     pub fn visit_i32_shr_u(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I32, Instruction::I32ShrU)
+        self.translate_binary_operation(ValueType::I32, Instruction::I32ShrU)
     }
 
     /// Translate a Wasm `i32.rotl` instruction.
     pub fn visit_i32_rotl(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I32, Instruction::I32Rotl)
+        self.translate_binary_operation(ValueType::I32, Instruction::I32Rotl)
     }
 
     /// Translate a Wasm `i32.rotr` instruction.
     pub fn visit_i32_rotr(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I32, Instruction::I32Rotr)
+        self.translate_binary_operation(ValueType::I32, Instruction::I32Rotr)
     }
 
     /// Translate a Wasm `i64.clz` instruction.
     pub fn visit_i64_clz(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::I64, Instruction::I64Clz)
+        self.translate_unary_operation(ValueType::I64, Instruction::I64Clz)
     }
 
     /// Translate a Wasm `i64.ctz` instruction.
     pub fn visit_i64_ctz(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::I64, Instruction::I64Ctz)
+        self.translate_unary_operation(ValueType::I64, Instruction::I64Ctz)
     }
 
     /// Translate a Wasm `i64.popcnt` instruction.
     pub fn visit_i64_popcnt(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::I64, Instruction::I64Popcnt)
+        self.translate_unary_operation(ValueType::I64, Instruction::I64Popcnt)
     }
 
     /// Translate a Wasm `i64.add` instruction.
     pub fn visit_i64_add(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I64, Instruction::I64Add)
+        self.translate_binary_operation(ValueType::I64, Instruction::I64Add)
     }
 
     /// Translate a Wasm `i64.sub` instruction.
     pub fn visit_i64_sub(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I64, Instruction::I64Sub)
+        self.translate_binary_operation(ValueType::I64, Instruction::I64Sub)
     }
 
     /// Translate a Wasm `i64.mul` instruction.
     pub fn visit_i64_mul(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I64, Instruction::I64Mul)
+        self.translate_binary_operation(ValueType::I64, Instruction::I64Mul)
     }
 
     /// Translate a Wasm `i64.div` instruction.
     pub fn visit_i64_div_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I64, Instruction::I64DivS)
+        self.translate_binary_operation(ValueType::I64, Instruction::I64DivS)
     }
 
     /// Translate a Wasm `u64.div` instruction.
     pub fn visit_i64_div_u(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I64, Instruction::I64DivU)
+        self.translate_binary_operation(ValueType::I64, Instruction::I64DivU)
     }
 
     /// Translate a Wasm `i64.rem` instruction.
     pub fn visit_i64_rem_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I64, Instruction::I64RemS)
+        self.translate_binary_operation(ValueType::I64, Instruction::I64RemS)
     }
 
     /// Translate a Wasm `u64.rem` instruction.
     pub fn visit_i64_rem_u(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I64, Instruction::I64RemU)
+        self.translate_binary_operation(ValueType::I64, Instruction::I64RemU)
     }
 
     /// Translate a Wasm `i64.and` instruction.
     pub fn visit_i64_and(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I64, Instruction::I64And)
+        self.translate_binary_operation(ValueType::I64, Instruction::I64And)
     }
 
     /// Translate a Wasm `i64.or` instruction.
     pub fn visit_i64_or(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I64, Instruction::I64Or)
+        self.translate_binary_operation(ValueType::I64, Instruction::I64Or)
     }
 
     /// Translate a Wasm `i64.xor` instruction.
     pub fn visit_i64_xor(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I64, Instruction::I64Xor)
+        self.translate_binary_operation(ValueType::I64, Instruction::I64Xor)
     }
 
     /// Translate a Wasm `i64.shl` instruction.
     pub fn visit_i64_shl(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I64, Instruction::I64Shl)
+        self.translate_binary_operation(ValueType::I64, Instruction::I64Shl)
     }
 
     /// Translate a Wasm `i64.shr` instruction.
     pub fn visit_i64_shr_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I64, Instruction::I64ShrS)
+        self.translate_binary_operation(ValueType::I64, Instruction::I64ShrS)
     }
 
     /// Translate a Wasm `u64.shr` instruction.
     pub fn visit_i64_shr_u(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I64, Instruction::I64ShrU)
+        self.translate_binary_operation(ValueType::I64, Instruction::I64ShrU)
     }
 
     /// Translate a Wasm `i64.rotl` instruction.
     pub fn visit_i64_rotl(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I64, Instruction::I64Rotl)
+        self.translate_binary_operation(ValueType::I64, Instruction::I64Rotl)
     }
 
     /// Translate a Wasm `i64.rotr` instruction.
     pub fn visit_i64_rotr(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::I64, Instruction::I64Rotr)
+        self.translate_binary_operation(ValueType::I64, Instruction::I64Rotr)
     }
 
     /// Translate a Wasm `f32.abs` instruction.
     pub fn visit_f32_abs(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::F32, Instruction::F32Abs)
+        self.translate_unary_operation(ValueType::F32, Instruction::F32Abs)
     }
 
     /// Translate a Wasm `f32.neg` instruction.
     pub fn visit_f32_neg(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::F32, Instruction::F32Neg)
+        self.translate_unary_operation(ValueType::F32, Instruction::F32Neg)
     }
 
     /// Translate a Wasm `f32.ceil` instruction.
     pub fn visit_f32_ceil(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::F32, Instruction::F32Ceil)
+        self.translate_unary_operation(ValueType::F32, Instruction::F32Ceil)
     }
 
     /// Translate a Wasm `f32.floor` instruction.
     pub fn visit_f32_floor(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::F32, Instruction::F32Floor)
+        self.translate_unary_operation(ValueType::F32, Instruction::F32Floor)
     }
 
     /// Translate a Wasm `f32.trunc` instruction.
     pub fn visit_f32_trunc(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::F32, Instruction::F32Trunc)
+        self.translate_unary_operation(ValueType::F32, Instruction::F32Trunc)
     }
 
     /// Translate a Wasm `f32.nearest` instruction.
     pub fn visit_f32_nearest(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::F32, Instruction::F32Nearest)
+        self.translate_unary_operation(ValueType::F32, Instruction::F32Nearest)
     }
 
     /// Translate a Wasm `f32.sqrt` instruction.
     pub fn visit_f32_sqrt(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::F32, Instruction::F32Sqrt)
+        self.translate_unary_operation(ValueType::F32, Instruction::F32Sqrt)
     }
 
     /// Translate a Wasm `f32.add` instruction.
     pub fn visit_f32_add(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::F32, Instruction::F32Add)
+        self.translate_binary_operation(ValueType::F32, Instruction::F32Add)
     }
 
     /// Translate a Wasm `f32.sub` instruction.
     pub fn visit_f32_sub(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::F32, Instruction::F32Sub)
+        self.translate_binary_operation(ValueType::F32, Instruction::F32Sub)
     }
 
     /// Translate a Wasm `f32.mul` instruction.
     pub fn visit_f32_mul(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::F32, Instruction::F32Mul)
+        self.translate_binary_operation(ValueType::F32, Instruction::F32Mul)
     }
 
     /// Translate a Wasm `f32.div` instruction.
     pub fn visit_f32_div(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::F32, Instruction::F32Div)
+        self.translate_binary_operation(ValueType::F32, Instruction::F32Div)
     }
 
     /// Translate a Wasm `f32.min` instruction.
     pub fn visit_f32_min(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::F32, Instruction::F32Min)
+        self.translate_binary_operation(ValueType::F32, Instruction::F32Min)
     }
 
     /// Translate a Wasm `f32.max` instruction.
     pub fn visit_f32_max(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::F32, Instruction::F32Max)
+        self.translate_binary_operation(ValueType::F32, Instruction::F32Max)
     }
 
     /// Translate a Wasm `f32.copysign` instruction.
     pub fn visit_f32_copysign(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::F32, Instruction::F32Copysign)
+        self.translate_binary_operation(ValueType::F32, Instruction::F32Copysign)
     }
 
     /// Translate a Wasm `f64.abs` instruction.
     pub fn visit_f64_abs(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::F64, Instruction::F64Abs)
+        self.translate_unary_operation(ValueType::F64, Instruction::F64Abs)
     }
 
     /// Translate a Wasm `f64.neg` instruction.
     pub fn visit_f64_neg(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::F64, Instruction::F64Neg)
+        self.translate_unary_operation(ValueType::F64, Instruction::F64Neg)
     }
 
     /// Translate a Wasm `f64.ceil` instruction.
     pub fn visit_f64_ceil(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::F64, Instruction::F64Ceil)
+        self.translate_unary_operation(ValueType::F64, Instruction::F64Ceil)
     }
 
     /// Translate a Wasm `f64.floor` instruction.
     pub fn visit_f64_floor(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::F64, Instruction::F64Floor)
+        self.translate_unary_operation(ValueType::F64, Instruction::F64Floor)
     }
 
     /// Translate a Wasm `f64.trunc` instruction.
     pub fn visit_f64_trunc(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::F64, Instruction::F64Trunc)
+        self.translate_unary_operation(ValueType::F64, Instruction::F64Trunc)
     }
 
     /// Translate a Wasm `f64.nearest` instruction.
     pub fn visit_f64_nearest(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::F64, Instruction::F64Nearest)
+        self.translate_unary_operation(ValueType::F64, Instruction::F64Nearest)
     }
 
     /// Translate a Wasm `f64.sqrt` instruction.
     pub fn visit_f64_sqrt(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::F64, Instruction::F64Sqrt)
+        self.translate_unary_operation(ValueType::F64, Instruction::F64Sqrt)
     }
 
     /// Translate a Wasm `f64.add` instruction.
     pub fn visit_f64_add(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::F64, Instruction::F64Add)
+        self.translate_binary_operation(ValueType::F64, Instruction::F64Add)
     }
 
     /// Translate a Wasm `f64.sub` instruction.
     pub fn visit_f64_sub(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::F64, Instruction::F64Sub)
+        self.translate_binary_operation(ValueType::F64, Instruction::F64Sub)
     }
 
     /// Translate a Wasm `f64.mul` instruction.
     pub fn visit_f64_mul(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::F64, Instruction::F64Mul)
+        self.translate_binary_operation(ValueType::F64, Instruction::F64Mul)
     }
 
     /// Translate a Wasm `f64.div` instruction.
     pub fn visit_f64_div(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::F64, Instruction::F64Div)
+        self.translate_binary_operation(ValueType::F64, Instruction::F64Div)
     }
 
     /// Translate a Wasm `f64.min` instruction.
     pub fn visit_f64_min(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::F64, Instruction::F64Min)
+        self.translate_binary_operation(ValueType::F64, Instruction::F64Min)
     }
 
     /// Translate a Wasm `f64.max` instruction.
     pub fn visit_f64_max(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::F64, Instruction::F64Max)
+        self.translate_binary_operation(ValueType::F64, Instruction::F64Max)
     }
 
     /// Translate a Wasm `f64.copysign` instruction.
     pub fn visit_f64_copysign(&mut self) -> Result<(), TranslationError> {
-        self.visit_binary_operation(ValueType::F64, Instruction::F64Copysign)
+        self.translate_binary_operation(ValueType::F64, Instruction::F64Copysign)
     }
 
     /// Translate a Wasm `i32.wrap_i64` instruction.
     pub fn visit_i32_wrap_i64(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::I64, ValueType::I32, Instruction::I32WrapI64)
+        self.translate_conversion(ValueType::I64, ValueType::I32, Instruction::I32WrapI64)
     }
 
     /// Translate a Wasm `i32.trunc_f32` instruction.
     pub fn visit_i32_trunc_f32_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncF32S)
+        self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncF32S)
     }
 
     /// Translate a Wasm `u32.trunc_f32` instruction.
     pub fn visit_i32_trunc_f32_u(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncF32U)
+        self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncF32U)
     }
 
     /// Translate a Wasm `i32.trunc_f64` instruction.
     pub fn visit_i32_trunc_f64_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncF64S)
+        self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncF64S)
     }
 
     /// Translate a Wasm `u32.trunc_f64` instruction.
     pub fn visit_i32_trunc_f64_u(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncF64U)
+        self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncF64U)
     }
 
     /// Translate a Wasm `i64.extend_i32` instruction.
     pub fn visit_i64_extend_i32_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::I32, ValueType::I64, Instruction::I64ExtendI32S)
+        self.translate_conversion(ValueType::I32, ValueType::I64, Instruction::I64ExtendI32S)
     }
 
     /// Translate a Wasm `u64.extend_i32` instruction.
     pub fn visit_i64_extend_i32_u(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::I32, ValueType::I64, Instruction::I64ExtendI32U)
+        self.translate_conversion(ValueType::I32, ValueType::I64, Instruction::I64ExtendI32U)
     }
 
     /// Translate a Wasm `i64.trunc_f32` instruction.
     pub fn visit_i64_trunc_f32_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncF32S)
+        self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncF32S)
     }
 
     /// Translate a Wasm `u64.trunc_f32` instruction.
     pub fn visit_i64_trunc_f32_u(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncF32U)
+        self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncF32U)
     }
 
     /// Translate a Wasm `i64.trunc_f64` instruction.
     pub fn visit_i64_trunc_f64_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncF64S)
+        self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncF64S)
     }
 
     /// Translate a Wasm `u64.trunc_f64` instruction.
     pub fn visit_i64_trunc_f64_u(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncF64U)
+        self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncF64U)
     }
 
     /// Translate a Wasm `f32.convert_i32` instruction.
     pub fn visit_f32_convert_i32_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::I32, ValueType::F32, Instruction::F32ConvertI32S)
+        self.translate_conversion(ValueType::I32, ValueType::F32, Instruction::F32ConvertI32S)
     }
 
     /// Translate a Wasm `f32.convert_u32` instruction.
     pub fn visit_f32_convert_i32_u(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::I32, ValueType::F32, Instruction::F32ConvertI32U)
+        self.translate_conversion(ValueType::I32, ValueType::F32, Instruction::F32ConvertI32U)
     }
 
     /// Translate a Wasm `f32.convert_i64` instruction.
     pub fn visit_f32_convert_i64_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::I64, ValueType::F32, Instruction::F32ConvertI64S)
+        self.translate_conversion(ValueType::I64, ValueType::F32, Instruction::F32ConvertI64S)
     }
 
     /// Translate a Wasm `f32.convert_u64` instruction.
     pub fn visit_f32_convert_i64_u(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::I64, ValueType::F32, Instruction::F32ConvertI64U)
+        self.translate_conversion(ValueType::I64, ValueType::F32, Instruction::F32ConvertI64U)
     }
 
     /// Translate a Wasm `f32.demote_f64` instruction.
     pub fn visit_f32_demote_f64(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::F64, ValueType::F32, Instruction::F32DemoteF64)
+        self.translate_conversion(ValueType::F64, ValueType::F32, Instruction::F32DemoteF64)
     }
 
     /// Translate a Wasm `f64.convert_i32` instruction.
     pub fn visit_f64_convert_i32_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::I32, ValueType::F64, Instruction::F64ConvertI32S)
+        self.translate_conversion(ValueType::I32, ValueType::F64, Instruction::F64ConvertI32S)
     }
 
     /// Translate a Wasm `f64.convert_u32` instruction.
     pub fn visit_f64_convert_i32_u(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::I32, ValueType::F64, Instruction::F64ConvertI32U)
+        self.translate_conversion(ValueType::I32, ValueType::F64, Instruction::F64ConvertI32U)
     }
 
     /// Translate a Wasm `f64.convert_i64` instruction.
     pub fn visit_f64_convert_i64_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::I64, ValueType::F64, Instruction::F64ConvertI64S)
+        self.translate_conversion(ValueType::I64, ValueType::F64, Instruction::F64ConvertI64S)
     }
 
     /// Translate a Wasm `f64.convert_u64` instruction.
     pub fn visit_f64_convert_i64_u(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::I64, ValueType::F64, Instruction::F64ConvertI64U)
+        self.translate_conversion(ValueType::I64, ValueType::F64, Instruction::F64ConvertI64U)
     }
 
     /// Translate a Wasm `f64.promote_f32` instruction.
     pub fn visit_f64_promote_f32(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::F32, ValueType::F64, Instruction::F64PromoteF32)
+        self.translate_conversion(ValueType::F32, ValueType::F64, Instruction::F64PromoteF32)
     }
 
     /// Translate a Wasm reinterpret instruction.
@@ -2156,66 +2156,66 @@ impl<'parser> FuncBuilder<'parser> {
 
     /// Translate a Wasm `i32.extend_8s` instruction.
     pub fn visit_i32_extend8_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::I32, Instruction::I32Extend8S)
+        self.translate_unary_operation(ValueType::I32, Instruction::I32Extend8S)
     }
 
     /// Translate a Wasm `i32.extend_16s` instruction.
     pub fn visit_i32_extend16_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::I32, Instruction::I32Extend16S)
+        self.translate_unary_operation(ValueType::I32, Instruction::I32Extend16S)
     }
 
     /// Translate a Wasm `i64.extend_8s` instruction.
     pub fn visit_i64_extend8_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::I64, Instruction::I64Extend8S)
+        self.translate_unary_operation(ValueType::I64, Instruction::I64Extend8S)
     }
 
     /// Translate a Wasm `i64.extend_16s` instruction.
     pub fn visit_i64_extend16_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::I64, Instruction::I64Extend16S)
+        self.translate_unary_operation(ValueType::I64, Instruction::I64Extend16S)
     }
 
     /// Translate a Wasm `i64.extend_32s` instruction.
     pub fn visit_i64_extend32_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_unary_operation(ValueType::I64, Instruction::I64Extend32S)
+        self.translate_unary_operation(ValueType::I64, Instruction::I64Extend32S)
     }
 
     /// Translate a Wasm `i32.trunc_sat_f32` instruction.
     pub fn visit_i32_trunc_sat_f32_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncSatF32S)
+        self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncSatF32S)
     }
 
     /// Translate a Wasm `u32.trunc_sat_f32` instruction.
     pub fn visit_i32_trunc_sat_f32_u(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncSatF32U)
+        self.translate_conversion(ValueType::F32, ValueType::I32, Instruction::I32TruncSatF32U)
     }
 
     /// Translate a Wasm `i32.trunc_sat_f64` instruction.
     pub fn visit_i32_trunc_sat_f64_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncSatF64S)
+        self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncSatF64S)
     }
 
     /// Translate a Wasm `u32.trunc_sat_f64` instruction.
     pub fn visit_i32_trunc_sat_f64_u(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncSatF64U)
+        self.translate_conversion(ValueType::F64, ValueType::I32, Instruction::I32TruncSatF64U)
     }
 
     /// Translate a Wasm `i64.trunc_sat_f32` instruction.
     pub fn visit_i64_trunc_sat_f32_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncSatF32S)
+        self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncSatF32S)
     }
 
     /// Translate a Wasm `u64.trunc_sat_f32` instruction.
     pub fn visit_i64_trunc_sat_f32_u(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncSatF32U)
+        self.translate_conversion(ValueType::F32, ValueType::I64, Instruction::I64TruncSatF32U)
     }
 
     /// Translate a Wasm `i64.trunc_sat_f64` instruction.
     pub fn visit_i64_trunc_sat_f64_s(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncSatF64S)
+        self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncSatF64S)
     }
 
     /// Translate a Wasm `u64.trunc_sat_f64` instruction.
     pub fn visit_i64_trunc_sat_f64_u(&mut self) -> Result<(), TranslationError> {
-        self.visit_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncSatF64U)
+        self.translate_conversion(ValueType::F64, ValueType::I64, Instruction::I64TruncSatF64U)
     }
 }
