@@ -12,6 +12,9 @@ use wasmi_core::{TrapCode, UntypedValue, ValueType};
 mod element;
 mod error;
 
+#[cfg(test)]
+mod tests;
+
 /// A raw index to a table entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TableIdx(u32);
@@ -656,28 +659,5 @@ impl Table {
             .inner
             .resolve_table_mut(self)
             .fill(dst, val, len)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn table_type(element: ValueType, minimum: u32, maximum: impl Into<Option<u32>>) -> TableType {
-        TableType::new(element, minimum, maximum.into())
-    }
-
-    use ValueType::{F64, I32};
-
-    #[test]
-    fn subtyping_works() {
-        assert!(!table_type(I32, 0, 1).is_subtype_of(&table_type(F64, 0, 1)));
-        assert!(table_type(I32, 0, 1).is_subtype_of(&table_type(I32, 0, 1)));
-        assert!(table_type(I32, 0, 1).is_subtype_of(&table_type(I32, 0, 2)));
-        assert!(!table_type(I32, 0, 2).is_subtype_of(&table_type(I32, 0, 1)));
-        assert!(table_type(I32, 2, None).is_subtype_of(&table_type(I32, 1, None)));
-        assert!(table_type(I32, 0, None).is_subtype_of(&table_type(I32, 0, None)));
-        assert!(table_type(I32, 0, 1).is_subtype_of(&table_type(I32, 0, None)));
-        assert!(!table_type(I32, 0, None).is_subtype_of(&table_type(I32, 0, 1)));
     }
 }
