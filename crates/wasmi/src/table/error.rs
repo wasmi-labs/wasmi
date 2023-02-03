@@ -15,9 +15,9 @@ pub enum TableError {
         /// The amount of requested invalid growth.
         delta: u32,
     },
-    /// Occurs when operating with a [`Table`] and mismatching element types.
+    /// Occurs when operating with a [`Table`](crate::Table) and mismatching element types.
     ElementTypeMismatch {
-        /// Expected element type for the [`Table`].
+        /// Expected element type for the [`Table`](crate::Table).
         expected: ValueType,
         /// Encountered element type.
         actual: ValueType,
