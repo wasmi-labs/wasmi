@@ -46,7 +46,7 @@ use crate::{
     MemoryType,
     TableType,
 };
-use alloc::{boxed::Box, collections::BTreeMap, sync::Arc, vec::Vec};
+use alloc::{boxed::Box, collections::BTreeMap, sync::Arc};
 use core::{iter, slice::Iter as SliceIter};
 
 /// A parsed and validated WebAssembly module.
@@ -125,8 +125,7 @@ impl ModuleImports {
             .chain(tables)
             .chain(memories)
             .chain(globals)
-            .collect::<Vec<_>>()
-            .into();
+            .collect::<Box<[_]>>();
         Self {
             items,
             len_funcs,
