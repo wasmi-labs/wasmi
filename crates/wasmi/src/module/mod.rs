@@ -156,7 +156,7 @@ impl Module {
     /// Creates a new [`Module`] from the [`ModuleBuilder`].
     fn from_builder(builder: ModuleBuilder) -> Self {
         Self {
-            engine: builder.engine.clone(),
+            engine: builder.engine().clone(),
             func_types: builder.func_types.into(),
             imports: ModuleImports::from_builder(builder.imports),
             funcs: builder.funcs.into(),
