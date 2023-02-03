@@ -95,7 +95,7 @@ impl From<wasmparser::ElementKind<'_>> for ElementSegmentKind {
                 table_index,
                 offset_expr,
             } => {
-                let table_index = TableIdx(table_index);
+                let table_index = TableIdx::from(table_index);
                 let offset = InitExpr::new(offset_expr);
                 Self::Active(ActiveElementSegment {
                     table_index,

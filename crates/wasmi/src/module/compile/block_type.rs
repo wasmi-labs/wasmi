@@ -39,7 +39,7 @@ impl BlockType {
                 Self::returns(return_type)
             }
             wasmparser::BlockType::FuncType(func_type_idx) => {
-                let dedup_func_type = res.get_func_type(FuncTypeIdx(func_type_idx));
+                let dedup_func_type = res.get_func_type(FuncTypeIdx::from(func_type_idx));
                 Self::func_type(dedup_func_type)
             }
         };

@@ -57,7 +57,7 @@ impl InitExpr {
     pub fn as_funcref(&self) -> Option<FuncIdx> {
         match self.op {
             InitExprOperand::RefNull { .. } => None,
-            InitExprOperand::FuncRef(func_index) => Some(FuncIdx(func_index)),
+            InitExprOperand::FuncRef(func_index) => Some(FuncIdx::from(func_index)),
             InitExprOperand::Const(_) | InitExprOperand::GlobalGet(_) => {
                 panic!("encountered non-funcref Wasm expression {:?}", self.op)
             }
@@ -117,7 +117,7 @@ impl InitExpr {
     /// Otherwise returns `None`.
     pub fn func_ref(&self) -> Option<FuncIdx> {
         if let InitExprOperand::FuncRef(index) = self.op {
-            return Some(FuncIdx(index));
+            return Some(FuncIdx::from(index));
         }
         None
     }
@@ -181,7 +181,7 @@ impl InitExprOperand {
             wasmparser::Operator::F32Const { value } => Self::constant(F32::from(value.bits())),
             wasmparser::Operator::F64Const { value } => Self::constant(F64::from(value.bits())),
             wasmparser::Operator::GlobalGet { global_index } => {
-                Self::GlobalGet(GlobalIdx(global_index))
+                Self::GlobalGet(GlobalIdx::from(global_index))
             }
             wasmparser::Operator::RefNull { ty } => Self::RefNull {
                 ty: WasmiValueType::from(ty).into_inner(),

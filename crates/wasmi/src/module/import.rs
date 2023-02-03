@@ -118,7 +118,7 @@ pub enum ExternTypeIdx {
 /// [`Module`]: [`super::Module`]
 /// [`FuncType`]: [`crate::FuncType`]
 #[derive(Debug, Copy, Clone)]
-pub struct FuncTypeIdx(pub(crate) u32);
+pub struct FuncTypeIdx(u32);
 
 impl From<u32> for FuncTypeIdx {
     fn from(index: u32) -> Self {
@@ -127,12 +127,8 @@ impl From<u32> for FuncTypeIdx {
 }
 
 impl FuncTypeIdx {
-    /// Returns the [`FuncTypeIdx`] as `usize`.
-    ///
-    /// # Note
-    ///
-    /// This is mostly useful for indexing into buffers.
-    pub fn into_usize(self) -> usize {
-        self.0 as usize
+    /// Returns the inner `u32` index of the [`FuncTypeIdx`].
+    pub fn into_u32(self) -> u32 {
+        self.0
     }
 }

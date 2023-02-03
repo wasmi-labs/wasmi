@@ -277,7 +277,7 @@ impl Module {
     fn get_extern_type(&self, idx: ExternIdx) -> ExternType {
         match idx {
             ExternIdx::Func(index) => {
-                let dedup = &self.funcs[index.into_usize()];
+                let dedup = &self.funcs[index.into_u32() as usize];
                 let func_type = self.engine.resolve_func_type(dedup, Clone::clone);
                 ExternType::Func(func_type)
             }
@@ -290,7 +290,7 @@ impl Module {
                 ExternType::Memory(memory_type)
             }
             ExternIdx::Global(index) => {
-                let global_type = self.globals[index.into_usize()];
+                let global_type = self.globals[index.into_u32() as usize];
                 ExternType::Global(global_type)
             }
         }

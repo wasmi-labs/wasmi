@@ -6,17 +6,18 @@ use alloc::{boxed::Box, collections::btree_map::Iter as BTreeIter};
 ///
 /// [`Module`]: [`super::Module`]
 #[derive(Debug, Copy, Clone)]
-pub struct FuncIdx(pub(crate) u32);
+pub struct FuncIdx(u32);
+
+impl From<u32> for FuncIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
 
 impl FuncIdx {
     /// Returns the [`FuncIdx`] as `u32`.
     pub fn into_u32(self) -> u32 {
         self.0
-    }
-
-    /// Returns the [`FuncIdx`] as `usize`.
-    pub fn into_usize(self) -> usize {
-        self.0 as usize
     }
 }
 
@@ -24,7 +25,13 @@ impl FuncIdx {
 ///
 /// [`Module`]: [`super::Module`]
 #[derive(Debug, Copy, Clone)]
-pub struct TableIdx(pub(crate) u32);
+pub struct TableIdx(u32);
+
+impl From<u32> for TableIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
 
 impl TableIdx {
     /// Returns the [`TableIdx`] as `u32`.
@@ -37,7 +44,13 @@ impl TableIdx {
 ///
 /// [`Module`]: [`super::Module`]
 #[derive(Debug, Copy, Clone)]
-pub struct MemoryIdx(pub(crate) u32);
+pub struct MemoryIdx(u32);
+
+impl From<u32> for MemoryIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
 
 impl MemoryIdx {
     /// Returns the [`MemoryIdx`] as `u32`.
@@ -80,7 +93,7 @@ impl ExternIdx {
             wasmparser::ExternalKind::Func => Ok(ExternIdx::Func(FuncIdx(index))),
             wasmparser::ExternalKind::Table => Ok(ExternIdx::Table(TableIdx(index))),
             wasmparser::ExternalKind::Memory => Ok(ExternIdx::Memory(MemoryIdx(index))),
-            wasmparser::ExternalKind::Global => Ok(ExternIdx::Global(GlobalIdx(index))),
+            wasmparser::ExternalKind::Global => Ok(ExternIdx::Global(GlobalIdx::from(index))),
             wasmparser::ExternalKind::Tag => {
                 panic!("wasmi does not support the `exception-handling` Wasm proposal")
             }

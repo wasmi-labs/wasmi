@@ -5,17 +5,18 @@ use crate::GlobalType;
 ///
 /// [`Module`]: [`super::Module`]
 #[derive(Debug, Copy, Clone)]
-pub struct GlobalIdx(pub(crate) u32);
+pub struct GlobalIdx(u32);
+
+impl From<u32> for GlobalIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
 
 impl GlobalIdx {
     /// Returns the [`GlobalIdx`] as `u32`.
     pub fn into_u32(self) -> u32 {
         self.0
-    }
-
-    /// Returns the [`GlobalIdx`] as `usize`.
-    pub fn into_usize(self) -> usize {
-        self.0 as usize
     }
 }
 

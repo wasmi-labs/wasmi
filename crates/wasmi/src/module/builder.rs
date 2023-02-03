@@ -76,17 +76,17 @@ impl<'a> ModuleResources<'a> {
 
     /// Returns the [`FuncType`] at the given index.
     pub fn get_func_type(&self, func_type_idx: FuncTypeIdx) -> &DedupFuncType {
-        &self.res.func_types[func_type_idx.into_usize()]
+        &self.res.func_types[func_type_idx.into_u32() as usize]
     }
 
     /// Returns the [`FuncType`] of the indexed function.
     pub fn get_type_of_func(&self, func_idx: FuncIdx) -> &DedupFuncType {
-        &self.res.funcs[func_idx.into_usize()]
+        &self.res.funcs[func_idx.into_u32() as usize]
     }
 
     /// Returns the [`GlobalType`] the the indexed global variable.
     pub fn get_type_of_global(&self, global_idx: GlobalIdx) -> GlobalType {
-        self.res.globals[global_idx.into_usize()]
+        self.res.globals[global_idx.into_u32() as usize]
     }
 
     /// Returns the global variable type and optional initial value.
@@ -174,7 +174,7 @@ impl<'engine> ModuleBuilder<'engine> {
             match kind {
                 ExternTypeIdx::Func(func_type_idx) => {
                     self.imports.funcs.push(name);
-                    let func_type = self.func_types[func_type_idx.into_usize()];
+                    let func_type = self.func_types[func_type_idx.into_u32() as usize];
                     self.funcs.push(func_type);
                 }
                 ExternTypeIdx::Table(table_type) => {
@@ -214,7 +214,7 @@ impl<'engine> ModuleBuilder<'engine> {
         );
         for func in funcs {
             let func_type_idx = func?;
-            let func_type = self.func_types[func_type_idx.into_usize()];
+            let func_type = self.func_types[func_type_idx.into_u32() as usize];
             self.funcs.push(func_type);
         }
         Ok(())
