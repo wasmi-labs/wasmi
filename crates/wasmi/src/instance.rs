@@ -302,16 +302,16 @@ impl InstanceEntityBuilder {
         }
     }
 
-    /// Returns the optional start function index.
+    /// Returns the start function index if any.
     pub fn get_start(&self) -> Option<FuncIdx> {
         self.start_fn
     }
 
-    /// Returns the linear memory at the `index`.
+    /// Returns the [`Memory`] at the `index`.
     ///
     /// # Panics
     ///
-    /// If there is no linear memory at the given `index.
+    /// If there is no [`Memory`] at the given `index.
     pub fn get_memory(&self, index: u32) -> Memory {
         self.memories
             .get(index as usize)
@@ -319,11 +319,11 @@ impl InstanceEntityBuilder {
             .unwrap_or_else(|| panic!("missing `Memory` at index: {index}"))
     }
 
-    /// Returns the table at the `index`.
+    /// Returns the [`Table`] at the `index`.
     ///
     /// # Panics
     ///
-    /// If there is no table at the given `index.
+    /// If there is no [`Table`] at the given `index.
     pub fn get_table(&self, index: u32) -> Table {
         self.tables
             .get(index as usize)
@@ -331,11 +331,11 @@ impl InstanceEntityBuilder {
             .unwrap_or_else(|| panic!("missing `Table` at index: {index}"))
     }
 
-    /// Returns the global variable at the `index`.
+    /// Returns the [`Global`] at the `index`.
     ///
     /// # Panics
     ///
-    /// If there is no global variable at the given `index.
+    /// If there is no [`Global`] at the given `index.
     pub fn get_global(&self, index: u32) -> Global {
         self.globals
             .get(index as usize)
