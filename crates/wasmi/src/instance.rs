@@ -63,7 +63,7 @@ pub struct InstanceEntity {
 
 impl InstanceEntity {
     /// Creates an uninitialized [`InstanceEntity`].
-    pub(crate) fn uninitialized() -> InstanceEntity {
+    pub fn uninitialized() -> InstanceEntity {
         Self {
             initialized: false,
             func_types: Arc::new([]),
@@ -78,52 +78,52 @@ impl InstanceEntity {
     }
 
     /// Creates a new [`InstanceEntityBuilder`].
-    pub(crate) fn build(module: &Module) -> InstanceEntityBuilder {
+    pub fn build(module: &Module) -> InstanceEntityBuilder {
         InstanceEntityBuilder::new(module)
     }
 
     /// Returns `true` if the [`InstanceEntity`] has been fully initialized.
-    pub(crate) fn is_initialized(&self) -> bool {
+    pub fn is_initialized(&self) -> bool {
         self.initialized
     }
 
     /// Returns the linear memory at the `index` if any.
-    pub(crate) fn get_memory(&self, index: u32) -> Option<Memory> {
+    pub fn get_memory(&self, index: u32) -> Option<Memory> {
         self.memories.get(index as usize).copied()
     }
 
     /// Returns the table at the `index` if any.
-    pub(crate) fn get_table(&self, index: u32) -> Option<Table> {
+    pub fn get_table(&self, index: u32) -> Option<Table> {
         self.tables.get(index as usize).copied()
     }
 
     /// Returns the global variable at the `index` if any.
-    pub(crate) fn get_global(&self, index: u32) -> Option<Global> {
+    pub fn get_global(&self, index: u32) -> Option<Global> {
         self.globals.get(index as usize).copied()
     }
 
     /// Returns the function at the `index` if any.
-    pub(crate) fn get_func(&self, index: u32) -> Option<Func> {
+    pub fn get_func(&self, index: u32) -> Option<Func> {
         self.funcs.get(index as usize).copied()
     }
 
     /// Returns the signature at the `index` if any.
-    pub(crate) fn get_signature(&self, index: u32) -> Option<DedupFuncType> {
+    pub fn get_signature(&self, index: u32) -> Option<DedupFuncType> {
         self.func_types.get(index as usize).copied()
     }
 
     /// Returns the [`DataSegment`] at the `index` if any.
-    pub(crate) fn get_data_segment(&self, index: u32) -> Option<DataSegment> {
+    pub fn get_data_segment(&self, index: u32) -> Option<DataSegment> {
         self.data_segments.get(index as usize).copied()
     }
 
     /// Returns the [`ElementSegment`] at the `index` if any.
-    pub(crate) fn get_element_segment(&self, index: u32) -> Option<ElementSegment> {
+    pub fn get_element_segment(&self, index: u32) -> Option<ElementSegment> {
         self.elem_segments.get(index as usize).copied()
     }
 
     /// Returns the value exported to the given `name` if any.
-    pub(crate) fn get_export(&self, name: &str) -> Option<Extern> {
+    pub fn get_export(&self, name: &str) -> Option<Extern> {
         self.exports.get(name).copied()
     }
 
