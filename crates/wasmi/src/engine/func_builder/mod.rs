@@ -336,28 +336,6 @@ impl<'parser> FuncBuilder<'parser> {
             .unwrap_or_else(|| panic!("cannot convert local index into local depth: {local_idx}"))
     }
 
-    /// Returns the target at the given `depth` together with its [`DropKeep`].
-    ///
-    /// # Panics
-    ///
-    /// - If the `depth` is greater than the current height of the control frame stack.
-    /// - If the value stack underflowed.
-    fn acquire_target(&self, relative_depth: u32) -> Result<AcquiredTarget, TranslationError> {
-        debug_assert!(self.is_reachable());
-        if self.alloc.control_frames.is_root(relative_depth) {
-            let drop_keep = self.drop_keep_return()?;
-            Ok(AcquiredTarget::Return(drop_keep))
-        } else {
-            let label = self
-                .alloc
-                .control_frames
-                .nth_back(relative_depth)
-                .branch_destination();
-            let drop_keep = self.compute_drop_keep(relative_depth)?;
-            Ok(AcquiredTarget::Branch(label, drop_keep))
-        }
-    }
-
     /// Creates [`BranchParams`] to `target` using `drop_keep` for the current instruction.
     fn branch_params(&mut self, target: LabelRef, drop_keep: DropKeep) -> BranchParams {
         BranchParams::new(self.alloc.inst_builder.try_resolve_label(target), drop_keep)
@@ -654,6 +632,28 @@ impl<'parser> FuncBuilder<'parser> {
             builder.alloc.inst_builder.push_inst(inst);
             Ok(())
         })
+    }
+
+    /// Returns the target at the given `depth` together with its [`DropKeep`].
+    ///
+    /// # Panics
+    ///
+    /// - If the `depth` is greater than the current height of the control frame stack.
+    /// - If the value stack underflowed.
+    fn acquire_target(&self, relative_depth: u32) -> Result<AcquiredTarget, TranslationError> {
+        debug_assert!(self.is_reachable());
+        if self.alloc.control_frames.is_root(relative_depth) {
+            let drop_keep = self.drop_keep_return()?;
+            Ok(AcquiredTarget::Return(drop_keep))
+        } else {
+            let label = self
+                .alloc
+                .control_frames
+                .nth_back(relative_depth)
+                .branch_destination();
+            let drop_keep = self.compute_drop_keep(relative_depth)?;
+            Ok(AcquiredTarget::Branch(label, drop_keep))
+        }
     }
 }
 
