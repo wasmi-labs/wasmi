@@ -322,9 +322,8 @@ impl<'parser> FuncTranslator<'parser> {
         global_type: &GlobalType,
         init_value: Option<&InitExpr>,
     ) -> Option<Instruction> {
-        let content_type = global_type.content();
         if let (Mutability::Const, Some(init_expr)) = (global_type.mutability(), init_value) {
-            if let Some(value) = init_expr.to_const(content_type) {
+            if let Some(value) = init_expr.to_const() {
                 // We can optimize `global.get` to the constant value.
                 return Some(Instruction::constant(value));
             }
