@@ -362,6 +362,299 @@ impl<'parser> FuncBuilder<'parser> {
     fn branch_params(&mut self, target: LabelRef, drop_keep: DropKeep) -> BranchParams {
         BranchParams::new(self.alloc.inst_builder.try_resolve_label(target), drop_keep)
     }
+
+    /// Calculates the stack height upon entering a control flow frame.
+    ///
+    /// # Note
+    ///
+    /// This does not include the parameters of the control flow frame
+    /// so that when shrinking the emulated value stack to the control flow
+    /// frame's original stack height the control flow frame parameters are
+    /// no longer on the emulated value stack.
+    ///
+    /// # Panics
+    ///
+    /// When the emulated value stack underflows. This should not happen
+    /// since we have already validated the input Wasm prior.
+    fn frame_stack_height(&self, block_type: BlockType) -> u32 {
+        let len_params = block_type.len_params(&self.engine);
+        let stack_height = self.stack_height.height();
+        stack_height.checked_sub(len_params).unwrap_or_else(|| {
+            panic!(
+                "encountered emulated value stack underflow with \
+                 stack height {stack_height} and {len_params} block parameters",
+            )
+        })
+    }
+
+    /// Adjusts the emulated value stack given the [`FuncType`] of the call.
+    fn adjust_value_stack_for_call(&mut self, func_type: &FuncType) {
+        let (params, results) = func_type.params_results();
+        self.stack_height.pop_n(params.len() as u32);
+        self.stack_height.push_n(results.len() as u32);
+    }
+
+    /// Returns `Some` equivalent instruction if the `global.get` can be optimzied.
+    ///
+    /// # Note
+    ///
+    /// Only internal (non-imported) and constant (non-mutable) globals
+    /// have a chance to be optimized to more efficient instructions.
+    fn optimize_global_get(
+        global_type: &GlobalType,
+        init_value: Option<&InitExpr>,
+    ) -> Option<Instruction> {
+        let content_type = global_type.content();
+        if let (Mutability::Const, Some(init_expr)) = (global_type.mutability(), init_value) {
+            if let Some(value) = init_expr.to_const(content_type) {
+                // We can optimize `global.get` to the constant value.
+                return Some(Instruction::constant(value));
+            }
+            if let Some(func_index) = init_expr.func_ref() {
+                // We can optimize `global.get` to the equivalent `ref.func x` instruction.
+                let func_index = bytecode::FuncIdx::from(func_index.into_u32());
+                return Some(Instruction::RefFunc { func_index });
+            }
+        }
+        None
+    }
+
+    /// Decompose a [`wasmparser::MemArg`] into its raw parts.
+    fn decompose_memarg(memarg: wasmparser::MemArg) -> (MemoryIdx, u32) {
+        let memory_idx = MemoryIdx(memarg.memory);
+        let offset = memarg.offset as u32;
+        (memory_idx, offset)
+    }
+
+    /// Translate a Wasm `<ty>.load` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is used as the translation backend of the following Wasm instructions:
+    ///
+    /// - `i32.load`
+    /// - `i64.load`
+    /// - `f32.load`
+    /// - `f64.load`
+    /// - `i32.load_i8`
+    /// - `i32.load_u8`
+    /// - `i32.load_i16`
+    /// - `i32.load_u16`
+    /// - `i64.load_i8`
+    /// - `i64.load_u8`
+    /// - `i64.load_i16`
+    /// - `i64.load_u16`
+    /// - `i64.load_i32`
+    /// - `i64.load_u32`
+    fn translate_load(
+        &mut self,
+        memarg: wasmparser::MemArg,
+        _loaded_type: ValueType,
+        make_inst: fn(Offset) -> Instruction,
+    ) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            let (memory_idx, offset) = Self::decompose_memarg(memarg);
+            debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
+            builder.stack_height.pop1();
+            builder.stack_height.push();
+            let offset = Offset::from(offset);
+            builder.alloc.inst_builder.push_inst(make_inst(offset));
+            Ok(())
+        })
+    }
+
+    /// Translate a Wasm `<ty>.store` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is used as the translation backend of the following Wasm instructions:
+    ///
+    /// - `i32.store`
+    /// - `i64.store`
+    /// - `f32.store`
+    /// - `f64.store`
+    /// - `i32.store_i8`
+    /// - `i32.store_i16`
+    /// - `i64.store_i8`
+    /// - `i64.store_i16`
+    /// - `i64.store_i32`
+    fn translate_store(
+        &mut self,
+        memarg: wasmparser::MemArg,
+        _stored_value: ValueType,
+        make_inst: fn(Offset) -> Instruction,
+    ) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            let (memory_idx, offset) = Self::decompose_memarg(memarg);
+            debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
+            builder.stack_height.pop2();
+            let offset = Offset::from(offset);
+            builder.alloc.inst_builder.push_inst(make_inst(offset));
+            Ok(())
+        })
+    }
+
+    /// Translate a Wasm `<ty>.const` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is used as the translation backend of the following Wasm instructions:
+    ///
+    /// - `i32.const`
+    /// - `i64.const`
+    /// - `f32.const`
+    /// - `f64.const`
+    fn translate_const<T>(&mut self, value: T) -> Result<(), TranslationError>
+    where
+        T: Into<Value>,
+    {
+        self.translate_if_reachable(|builder| {
+            let value = value.into();
+            builder.stack_height.push();
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::constant(value));
+            Ok(())
+        })
+    }
+
+    /// Translate a Wasm unary comparison instruction.
+    ///
+    /// # Note
+    ///
+    /// This is used to translate the following Wasm instructions:
+    ///
+    /// - `i32.eqz`
+    /// - `i64.eqz`
+    fn translate_unary_cmp(
+        &mut self,
+        _input_type: ValueType,
+        inst: Instruction,
+    ) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            builder.stack_height.pop1();
+            builder.stack_height.push();
+            builder.alloc.inst_builder.push_inst(inst);
+            Ok(())
+        })
+    }
+
+    /// Translate a Wasm binary comparison instruction.
+    ///
+    /// # Note
+    ///
+    /// This is used to translate the following Wasm instructions:
+    ///
+    /// - `{i32, i64, f32, f64}.eq`
+    /// - `{i32, i64, f32, f64}.ne`
+    /// - `{i32, u32, i64, u64, f32, f64}.lt`
+    /// - `{i32, u32, i64, u64, f32, f64}.le`
+    /// - `{i32, u32, i64, u64, f32, f64}.gt`
+    /// - `{i32, u32, i64, u64, f32, f64}.ge`
+    fn translate_binary_cmp(
+        &mut self,
+        _input_type: ValueType,
+        inst: Instruction,
+    ) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            builder.stack_height.pop2();
+            builder.stack_height.push();
+            builder.alloc.inst_builder.push_inst(inst);
+            Ok(())
+        })
+    }
+
+    /// Translate a unary Wasm instruction.
+    ///
+    /// # Note
+    ///
+    /// This is used to translate the following Wasm instructions:
+    ///
+    /// - `i32.clz`
+    /// - `i32.ctz`
+    /// - `i32.popcnt`
+    /// - `{f32, f64}.abs`
+    /// - `{f32, f64}.neg`
+    /// - `{f32, f64}.ceil`
+    /// - `{f32, f64}.floor`
+    /// - `{f32, f64}.trunc`
+    /// - `{f32, f64}.nearest`
+    /// - `{f32, f64}.sqrt`
+    pub fn visit_unary_operation(
+        &mut self,
+        _value_type: ValueType,
+        inst: Instruction,
+    ) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            builder.alloc.inst_builder.push_inst(inst);
+            Ok(())
+        })
+    }
+
+    /// Translate a binary Wasm instruction.
+    ///
+    /// - `{i32, i64}.add`
+    /// - `{i32, i64}.sub`
+    /// - `{i32, i64}.mul`
+    /// - `{i32, u32, i64, u64}.div`
+    /// - `{i32, u32, i64, u64}.rem`
+    /// - `{i32, i64}.and`
+    /// - `{i32, i64}.or`
+    /// - `{i32, i64}.xor`
+    /// - `{i32, i64}.shl`
+    /// - `{i32, u32, i64, u64}.shr`
+    /// - `{i32, i64}.rotl`
+    /// - `{i32, i64}.rotr`
+    /// - `{f32, f64}.add`
+    /// - `{f32, f64}.sub`
+    /// - `{f32, f64}.mul`
+    /// - `{f32, f64}.div`
+    /// - `{f32, f64}.min`
+    /// - `{f32, f64}.max`
+    /// - `{f32, f64}.copysign`
+    pub fn visit_binary_operation(
+        &mut self,
+        _value_type: ValueType,
+        inst: Instruction,
+    ) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            builder.stack_height.pop2();
+            builder.stack_height.push();
+            builder.alloc.inst_builder.push_inst(inst);
+            Ok(())
+        })
+    }
+
+    /// Translate a Wasm conversion instruction.
+    ///
+    /// - `i32.wrap_i64`
+    /// - `{i32, u32}.trunc_f32
+    /// - `{i32, u32}.trunc_f64`
+    /// - `{i64, u64}.extend_i32`
+    /// - `{i64, u64}.trunc_f32`
+    /// - `{i64, u64}.trunc_f64`
+    /// - `f32.convert_{i32, u32, i64, u64}`
+    /// - `f32.demote_f64`
+    /// - `f64.convert_{i32, u32, i64, u64}`
+    /// - `f64.promote_f32`
+    /// - `i32.reinterpret_f32`
+    /// - `i64.reinterpret_f64`
+    /// - `f32.reinterpret_i32`
+    /// - `f64.reinterpret_i64`
+    pub fn visit_conversion(
+        &mut self,
+        _input_type: ValueType,
+        _output_type: ValueType,
+        inst: Instruction,
+    ) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            builder.stack_height.pop1();
+            builder.stack_height.push();
+            builder.alloc.inst_builder.push_inst(inst);
+            Ok(())
+        })
+    }
 }
 
 /// An acquired target.
@@ -396,30 +689,6 @@ impl<'parser> FuncBuilder<'parser> {
                 .push_inst(Instruction::Unreachable);
             builder.reachable = false;
             Ok(())
-        })
-    }
-
-    /// Calculates the stack height upon entering a control flow frame.
-    ///
-    /// # Note
-    ///
-    /// This does not include the parameters of the control flow frame
-    /// so that when shrinking the emulated value stack to the control flow
-    /// frame's original stack height the control flow frame parameters are
-    /// no longer on the emulated value stack.
-    ///
-    /// # Panics
-    ///
-    /// When the emulated value stack underflows. This should not happen
-    /// since we have already validated the input Wasm prior.
-    fn frame_stack_height(&self, block_type: BlockType) -> u32 {
-        let len_params = block_type.len_params(&self.engine);
-        let stack_height = self.stack_height.height();
-        stack_height.checked_sub(len_params).unwrap_or_else(|| {
-            panic!(
-                "encountered emulated value stack underflow with \
-                 stack height {stack_height} and {len_params} block parameters",
-            )
         })
     }
 
@@ -710,13 +979,6 @@ impl<'parser> FuncBuilder<'parser> {
         })
     }
 
-    /// Adjusts the emulated value stack given the [`FuncType`] of the call.
-    fn adjust_value_stack_for_call(&mut self, func_type: &FuncType) {
-        let (params, results) = func_type.params_results();
-        self.stack_height.pop_n(params.len() as u32);
-        self.stack_height.push_n(results.len() as u32);
-    }
-
     /// Translates a Wasm `call` instruction.
     pub fn visit_call(&mut self, func_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
@@ -863,31 +1125,6 @@ impl<'parser> FuncBuilder<'parser> {
         })
     }
 
-    /// Returns `Some` equivalent instruction if the `global.get` can be optimzied.
-    ///
-    /// # Note
-    ///
-    /// Only internal (non-imported) and constant (non-mutable) globals
-    /// have a chance to be optimized to more efficient instructions.
-    fn optimize_global_get(
-        global_type: &GlobalType,
-        init_value: Option<&InitExpr>,
-    ) -> Option<Instruction> {
-        let content_type = global_type.content();
-        if let (Mutability::Const, Some(init_expr)) = (global_type.mutability(), init_value) {
-            if let Some(value) = init_expr.to_const(content_type) {
-                // We can optimize `global.get` to the constant value.
-                return Some(Instruction::constant(value));
-            }
-            if let Some(func_index) = init_expr.func_ref() {
-                // We can optimize `global.get` to the equivalent `ref.func x` instruction.
-                let func_index = bytecode::FuncIdx::from(func_index.into_u32());
-                return Some(Instruction::RefFunc { func_index });
-            }
-        }
-        None
-    }
-
     /// Translate a Wasm `global.set` instruction.
     pub fn visit_global_set(&mut self, global_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
@@ -900,50 +1137,6 @@ impl<'parser> FuncBuilder<'parser> {
                 .alloc
                 .inst_builder
                 .push_inst(Instruction::GlobalSet(global_idx));
-            Ok(())
-        })
-    }
-
-    /// Decompose a [`wasmparser::MemArg`] into its raw parts.
-    fn decompose_memarg(memarg: wasmparser::MemArg) -> (MemoryIdx, u32) {
-        let memory_idx = MemoryIdx(memarg.memory);
-        let offset = memarg.offset as u32;
-        (memory_idx, offset)
-    }
-
-    /// Translate a Wasm `<ty>.load` instruction.
-    ///
-    /// # Note
-    ///
-    /// This is used as the translation backend of the following Wasm instructions:
-    ///
-    /// - `i32.load`
-    /// - `i64.load`
-    /// - `f32.load`
-    /// - `f64.load`
-    /// - `i32.load_i8`
-    /// - `i32.load_u8`
-    /// - `i32.load_i16`
-    /// - `i32.load_u16`
-    /// - `i64.load_i8`
-    /// - `i64.load_u8`
-    /// - `i64.load_i16`
-    /// - `i64.load_u16`
-    /// - `i64.load_i32`
-    /// - `i64.load_u32`
-    fn translate_load(
-        &mut self,
-        memarg: wasmparser::MemArg,
-        _loaded_type: ValueType,
-        make_inst: fn(Offset) -> Instruction,
-    ) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|builder| {
-            let (memory_idx, offset) = Self::decompose_memarg(memarg);
-            debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
-            builder.stack_height.pop1();
-            builder.stack_height.push();
-            let offset = Offset::from(offset);
-            builder.alloc.inst_builder.push_inst(make_inst(offset));
             Ok(())
         })
     }
@@ -1046,37 +1239,6 @@ impl<'parser> FuncBuilder<'parser> {
         memarg: wasmparser::MemArg,
     ) -> Result<(), TranslationError> {
         self.translate_load(memarg, ValueType::I64, Instruction::I64Load32U)
-    }
-
-    /// Translate a Wasm `<ty>.store` instruction.
-    ///
-    /// # Note
-    ///
-    /// This is used as the translation backend of the following Wasm instructions:
-    ///
-    /// - `i32.store`
-    /// - `i64.store`
-    /// - `f32.store`
-    /// - `f64.store`
-    /// - `i32.store_i8`
-    /// - `i32.store_i16`
-    /// - `i64.store_i8`
-    /// - `i64.store_i16`
-    /// - `i64.store_i32`
-    fn translate_store(
-        &mut self,
-        memarg: wasmparser::MemArg,
-        _stored_value: ValueType,
-        make_inst: fn(Offset) -> Instruction,
-    ) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|builder| {
-            let (memory_idx, offset) = Self::decompose_memarg(memarg);
-            debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
-            builder.stack_height.pop2();
-            let offset = Offset::from(offset);
-            builder.alloc.inst_builder.push_inst(make_inst(offset));
-            Ok(())
-        })
     }
 
     /// Translate a Wasm `i32.store` instruction.
@@ -1340,31 +1502,6 @@ impl<'parser> FuncBuilder<'parser> {
         })
     }
 
-    /// Translate a Wasm `<ty>.const` instruction.
-    ///
-    /// # Note
-    ///
-    /// This is used as the translation backend of the following Wasm instructions:
-    ///
-    /// - `i32.const`
-    /// - `i64.const`
-    /// - `f32.const`
-    /// - `f64.const`
-    fn translate_const<T>(&mut self, value: T) -> Result<(), TranslationError>
-    where
-        T: Into<Value>,
-    {
-        self.translate_if_reachable(|builder| {
-            let value = value.into();
-            builder.stack_height.push();
-            builder
-                .alloc
-                .inst_builder
-                .push_inst(Instruction::constant(value));
-            Ok(())
-        })
-    }
-
     /// Translate a Wasm `i32.const` instruction.
     pub fn visit_i32_const(&mut self, value: i32) -> Result<(), TranslationError> {
         self.translate_const(value)
@@ -1385,55 +1522,9 @@ impl<'parser> FuncBuilder<'parser> {
         self.translate_const(F64::from_bits(value.bits()))
     }
 
-    /// Translate a Wasm unary comparison instruction.
-    ///
-    /// # Note
-    ///
-    /// This is used to translate the following Wasm instructions:
-    ///
-    /// - `i32.eqz`
-    /// - `i64.eqz`
-    fn translate_unary_cmp(
-        &mut self,
-        _input_type: ValueType,
-        inst: Instruction,
-    ) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|builder| {
-            builder.stack_height.pop1();
-            builder.stack_height.push();
-            builder.alloc.inst_builder.push_inst(inst);
-            Ok(())
-        })
-    }
-
     /// Translate a Wasm `i32.eqz` instruction.
     pub fn visit_i32_eqz(&mut self) -> Result<(), TranslationError> {
         self.translate_unary_cmp(ValueType::I32, Instruction::I32Eqz)
-    }
-
-    /// Translate a Wasm binary comparison instruction.
-    ///
-    /// # Note
-    ///
-    /// This is used to translate the following Wasm instructions:
-    ///
-    /// - `{i32, i64, f32, f64}.eq`
-    /// - `{i32, i64, f32, f64}.ne`
-    /// - `{i32, u32, i64, u64, f32, f64}.lt`
-    /// - `{i32, u32, i64, u64, f32, f64}.le`
-    /// - `{i32, u32, i64, u64, f32, f64}.gt`
-    /// - `{i32, u32, i64, u64, f32, f64}.ge`
-    fn translate_binary_cmp(
-        &mut self,
-        _input_type: ValueType,
-        inst: Instruction,
-    ) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|builder| {
-            builder.stack_height.pop2();
-            builder.stack_height.push();
-            builder.alloc.inst_builder.push_inst(inst);
-            Ok(())
-        })
     }
 
     /// Translate a Wasm `i32.eq` instruction.
@@ -1601,33 +1692,6 @@ impl<'parser> FuncBuilder<'parser> {
         self.translate_binary_cmp(ValueType::F64, Instruction::F64Ge)
     }
 
-    /// Translate a unary Wasm instruction.
-    ///
-    /// # Note
-    ///
-    /// This is used to translate the following Wasm instructions:
-    ///
-    /// - `i32.clz`
-    /// - `i32.ctz`
-    /// - `i32.popcnt`
-    /// - `{f32, f64}.abs`
-    /// - `{f32, f64}.neg`
-    /// - `{f32, f64}.ceil`
-    /// - `{f32, f64}.floor`
-    /// - `{f32, f64}.trunc`
-    /// - `{f32, f64}.nearest`
-    /// - `{f32, f64}.sqrt`
-    pub fn visit_unary_operation(
-        &mut self,
-        _value_type: ValueType,
-        inst: Instruction,
-    ) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|builder| {
-            builder.alloc.inst_builder.push_inst(inst);
-            Ok(())
-        })
-    }
-
     /// Translate a Wasm `i32.clz` instruction.
     pub fn visit_i32_clz(&mut self) -> Result<(), TranslationError> {
         self.visit_unary_operation(ValueType::I32, Instruction::I32Clz)
@@ -1641,40 +1705,6 @@ impl<'parser> FuncBuilder<'parser> {
     /// Translate a Wasm `i32.popcnt` instruction.
     pub fn visit_i32_popcnt(&mut self) -> Result<(), TranslationError> {
         self.visit_unary_operation(ValueType::I32, Instruction::I32Popcnt)
-    }
-
-    /// Translate a binary Wasm instruction.
-    ///
-    /// - `{i32, i64}.add`
-    /// - `{i32, i64}.sub`
-    /// - `{i32, i64}.mul`
-    /// - `{i32, u32, i64, u64}.div`
-    /// - `{i32, u32, i64, u64}.rem`
-    /// - `{i32, i64}.and`
-    /// - `{i32, i64}.or`
-    /// - `{i32, i64}.xor`
-    /// - `{i32, i64}.shl`
-    /// - `{i32, u32, i64, u64}.shr`
-    /// - `{i32, i64}.rotl`
-    /// - `{i32, i64}.rotr`
-    /// - `{f32, f64}.add`
-    /// - `{f32, f64}.sub`
-    /// - `{f32, f64}.mul`
-    /// - `{f32, f64}.div`
-    /// - `{f32, f64}.min`
-    /// - `{f32, f64}.max`
-    /// - `{f32, f64}.copysign`
-    pub fn visit_binary_operation(
-        &mut self,
-        _value_type: ValueType,
-        inst: Instruction,
-    ) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|builder| {
-            builder.stack_height.pop2();
-            builder.stack_height.push();
-            builder.alloc.inst_builder.push_inst(inst);
-            Ok(())
-        })
     }
 
     /// Translate a Wasm `i32.add` instruction.
@@ -1980,36 +2010,6 @@ impl<'parser> FuncBuilder<'parser> {
     /// Translate a Wasm `f64.copysign` instruction.
     pub fn visit_f64_copysign(&mut self) -> Result<(), TranslationError> {
         self.visit_binary_operation(ValueType::F64, Instruction::F64Copysign)
-    }
-
-    /// Translate a Wasm conversion instruction.
-    ///
-    /// - `i32.wrap_i64`
-    /// - `{i32, u32}.trunc_f32
-    /// - `{i32, u32}.trunc_f64`
-    /// - `{i64, u64}.extend_i32`
-    /// - `{i64, u64}.trunc_f32`
-    /// - `{i64, u64}.trunc_f64`
-    /// - `f32.convert_{i32, u32, i64, u64}`
-    /// - `f32.demote_f64`
-    /// - `f64.convert_{i32, u32, i64, u64}`
-    /// - `f64.promote_f32`
-    /// - `i32.reinterpret_f32`
-    /// - `i64.reinterpret_f64`
-    /// - `f32.reinterpret_i32`
-    /// - `f64.reinterpret_i64`
-    pub fn visit_conversion(
-        &mut self,
-        _input_type: ValueType,
-        _output_type: ValueType,
-        inst: Instruction,
-    ) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|builder| {
-            builder.stack_height.pop1();
-            builder.stack_height.push();
-            builder.alloc.inst_builder.push_inst(inst);
-            Ok(())
-        })
     }
 
     /// Translate a Wasm `i32.wrap_i64` instruction.
