@@ -244,7 +244,7 @@ impl<'engine> ModuleParser<'engine> {
     fn process_types(&mut self, section: TypeSectionReader) -> Result<(), ModuleError> {
         self.validator.type_section(&section)?;
         let func_types = section.into_iter().map(|result| match result? {
-            wasmparser::Type::Func(ty) => Ok(FuncType::from(ty)),
+            wasmparser::Type::Func(ty) => Ok(FuncType::from_wasmparser(ty)),
         });
         self.builder.push_func_types(func_types)?;
         Ok(())
@@ -313,9 +313,11 @@ impl<'engine> ModuleParser<'engine> {
     /// If a table declaration fails to validate.
     fn process_tables(&mut self, section: TableSectionReader) -> Result<(), ModuleError> {
         self.validator.table_section(&section)?;
-        let tables = section
-            .into_iter()
-            .map(|table| table.map(TableType::from).map_err(ModuleError::from));
+        let tables = section.into_iter().map(|table| {
+            table
+                .map(TableType::from_wasmparser)
+                .map_err(ModuleError::from)
+        });
         self.builder.push_tables(tables)?;
         Ok(())
     }
@@ -331,9 +333,11 @@ impl<'engine> ModuleParser<'engine> {
     /// If a linear memory declaration fails to validate.
     fn process_memories(&mut self, section: MemorySectionReader) -> Result<(), ModuleError> {
         self.validator.memory_section(&section)?;
-        let memories = section
-            .into_iter()
-            .map(|memory| memory.map(MemoryType::from).map_err(ModuleError::from));
+        let memories = section.into_iter().map(|memory| {
+            memory
+                .map(MemoryType::from_wasmparser)
+                .map_err(ModuleError::from)
+        });
         self.builder.push_memories(memories)?;
         Ok(())
     }

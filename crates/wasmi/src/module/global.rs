@@ -37,7 +37,7 @@ pub struct Global {
 
 impl From<wasmparser::Global<'_>> for Global {
     fn from(global: wasmparser::Global<'_>) -> Self {
-        let global_type = global.ty.into();
+        let global_type = GlobalType::from_wasmparser(global.ty);
         let init_expr = InitExpr::new(global.init_expr);
         Self {
             global_type,

@@ -1,8 +1,14 @@
 use crate::{FuncType, GlobalType, MemoryType, Mutability, TableType};
 use wasmi_core::ValueType;
 
-impl From<wasmparser::TableType> for TableType {
-    fn from(table_type: wasmparser::TableType) -> Self {
+impl TableType {
+    /// Creates a new [`TableType`] from the given `wasmparser` primitive.
+    ///
+    /// # Dev. Note
+    ///
+    /// We do not use the `From` trait here so that this conversion
+    /// routine does not become part of the public API of [`TableType`].
+    pub(crate) fn from_wasmparser(table_type: wasmparser::TableType) -> Self {
         let element = WasmiValueType::from(table_type.element_type).into_inner();
         let minimum = table_type.initial;
         let maximum = table_type.maximum;
@@ -10,8 +16,14 @@ impl From<wasmparser::TableType> for TableType {
     }
 }
 
-impl From<wasmparser::MemoryType> for MemoryType {
-    fn from(memory_type: wasmparser::MemoryType) -> Self {
+impl MemoryType {
+    /// Creates a new [`MemoryType`] from the given `wasmparser` primitive.
+    ///
+    /// # Dev. Note
+    ///
+    /// We do not use the `From` trait here so that this conversion
+    /// routine does not become part of the public API of [`MemoryType`].
+    pub(crate) fn from_wasmparser(memory_type: wasmparser::MemoryType) -> Self {
         assert!(
             !memory_type.memory64,
             "wasmi does not support the `memory64` Wasm proposal"
@@ -34,8 +46,14 @@ impl From<wasmparser::MemoryType> for MemoryType {
     }
 }
 
-impl From<wasmparser::GlobalType> for GlobalType {
-    fn from(global_type: wasmparser::GlobalType) -> Self {
+impl GlobalType {
+    /// Creates a new [`GlobalType`] from the given `wasmparser` primitive.
+    ///
+    /// # Dev. Note
+    ///
+    /// We do not use the `From` trait here so that this conversion
+    /// routine does not become part of the public API of [`GlobalType`].
+    pub(crate) fn from_wasmparser(global_type: wasmparser::GlobalType) -> Self {
         let value_type = WasmiValueType::from(global_type.content_type).into_inner();
         let mutability = match global_type.mutable {
             true => Mutability::Var,
@@ -45,8 +63,14 @@ impl From<wasmparser::GlobalType> for GlobalType {
     }
 }
 
-impl From<wasmparser::FuncType> for FuncType {
-    fn from(func_type: wasmparser::FuncType) -> Self {
+impl FuncType {
+    /// Creates a new [`FuncType`] from the given `wasmparser` primitive.
+    ///
+    /// # Dev. Note
+    ///
+    /// We do not use the `From` trait here so that this conversion
+    /// routine does not become part of the public API of [`FuncType`].
+    pub(crate) fn from_wasmparser(func_type: wasmparser::FuncType) -> Self {
         /// Returns the [`ValueType`] from the given [`wasmparser::Type`].
         ///
         /// # Panics
