@@ -230,12 +230,7 @@ impl DoubleEndedIterator for ExportsIter<'_> {
     }
 }
 
-impl ExactSizeIterator for ExportsIter<'_> {
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
+impl ExactSizeIterator for ExportsIter<'_> {}
 impl FusedIterator for ExportsIter<'_> {}
 
 /// A module instance entity builder.
