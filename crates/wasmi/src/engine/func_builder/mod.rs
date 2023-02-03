@@ -159,17 +159,17 @@ impl<'parser> FuncBuilder<'parser> {
     }
 
     /// Translates into `wasmi` bytecode if the current code path is reachable.
-    fn validate_then_translate<V, F>(
+    fn validate_then_translate<V, T>(
         &mut self,
         validate: V,
-        translator: F,
+        translate: T,
     ) -> Result<(), TranslationError>
     where
         V: FnOnce(&mut FuncValidator) -> Result<(), BinaryReaderError>,
-        F: FnOnce(&mut Self) -> Result<(), TranslationError>,
+        T: FnOnce(&mut FuncTranslator<'parser>) -> Result<(), TranslationError>,
     {
         validate(&mut self.validator)?;
-        translator(self)?;
+        translate(&mut self.translator)?;
         Ok(())
     }
 }
@@ -183,8 +183,8 @@ macro_rules! impl_visit_operator {
             let offset = self.current_pos();
             let arg_cloned = $arg.clone();
             self.validate_then_translate(
-                |v| v.visitor(offset).$visit(arg_cloned),
-                |this| this.translator.$visit($arg),
+                |validator| validator.visitor(offset).$visit(arg_cloned),
+                |translator| translator.$visit($arg),
             )
         }
         impl_visit_operator!($($rest)*);
@@ -209,9 +209,7 @@ macro_rules! impl_visit_operator {
             let offset = self.current_pos();
             self.validate_then_translate(
                 |v| v.visitor(offset).$visit($($($arg),*)?),
-                |this| {
-                    this.translator.$visit($($($arg),*)?)
-                },
+                |t| t.$visit($($($arg),*)?),
             )
         }
         impl_visit_operator!($($rest)*);
