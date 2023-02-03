@@ -87,10 +87,8 @@ extern crate std as alloc;
 #[macro_use]
 mod foreach_tuple;
 
-mod element;
 mod engine;
 mod error;
-mod external;
 mod externref;
 mod func;
 mod global;
@@ -118,15 +116,6 @@ pub mod errors {
     };
 }
 
-use self::{
-    element::{ElementSegment, ElementSegmentEntity, ElementSegmentIdx},
-    func::{FuncEntity, FuncIdx},
-    global::{GlobalEntity, GlobalIdx},
-    instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
-    memory::{DataSegmentEntity, DataSegmentIdx, MemoryEntity, MemoryIdx},
-    store::{StoreInner, Stored},
-    table::{TableEntity, TableIdx},
-};
 pub use self::{
     engine::{
         Config,
@@ -138,7 +127,6 @@ pub use self::{
         TypedResumableInvocation,
     },
     error::Error,
-    external::{Extern, ExternType},
     externref::ExternRef,
     func::{
         Caller,
@@ -154,7 +142,7 @@ pub use self::{
         WasmTypeList,
     },
     global::{Global, GlobalType, Mutability},
-    instance::{Export, ExportsIter, Instance},
+    instance::{Export, ExportsIter, Extern, ExternType, Instance},
     linker::Linker,
     memory::{Memory, MemoryType},
     module::{
@@ -169,4 +157,12 @@ pub use self::{
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
     value::Value,
+};
+use self::{
+    func::{FuncEntity, FuncIdx},
+    global::{GlobalEntity, GlobalIdx},
+    instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
+    memory::{DataSegmentEntity, DataSegmentIdx, MemoryEntity, MemoryIdx},
+    store::{StoreInner, Stored},
+    table::{ElementSegment, ElementSegmentEntity, ElementSegmentIdx, TableEntity, TableIdx},
 };

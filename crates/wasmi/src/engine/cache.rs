@@ -1,9 +1,10 @@
 use crate::{
-    element::{ElementSegment, ElementSegmentEntity},
     instance::InstanceEntity,
     memory::DataSegment,
     module::DEFAULT_MEMORY_INDEX,
     table::TableEntity,
+    ElementSegment,
+    ElementSegmentEntity,
     Func,
     Instance,
     Memory,

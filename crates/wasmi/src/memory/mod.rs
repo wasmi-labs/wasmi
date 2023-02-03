@@ -1,10 +1,16 @@
-mod byte_buffer;
+mod buffer;
 mod data;
+mod error;
 
-use self::byte_buffer::ByteBuffer;
-pub use self::data::{DataSegment, DataSegmentEntity, DataSegmentIdx};
+#[cfg(test)]
+mod tests;
+
+use self::buffer::ByteBuffer;
+pub use self::{
+    data::{DataSegment, DataSegmentEntity, DataSegmentIdx},
+    error::MemoryError,
+};
 use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
-use core::{fmt, fmt::Display};
 use wasmi_arena::ArenaIndex;
 use wasmi_core::Pages;
 
@@ -22,49 +28,6 @@ impl ArenaIndex for MemoryIdx {
             panic!("index {value} is out of bounds as memory index: {error}")
         });
         Self(value)
-    }
-}
-
-/// An error that may occur upon operating with virtual or linear memory.
-#[derive(Debug)]
-#[non_exhaustive]
-pub enum MemoryError {
-    /// Tried to allocate more virtual memory than technically possible.
-    OutOfBoundsAllocation,
-    /// Tried to grow linear memory out of its set bounds.
-    OutOfBoundsGrowth,
-    /// Tried to access linear memory out of bounds.
-    OutOfBoundsAccess,
-    /// Tried to create an invalid linear memory type.
-    InvalidMemoryType,
-    /// Occurs when `ty` is not a subtype of `other`.
-    InvalidSubtype {
-        /// The [`MemoryType`] which is not a subtype of `other`.
-        ty: MemoryType,
-        /// The [`MemoryType`] which is supposed to be a supertype of `ty`.
-        other: MemoryType,
-    },
-}
-
-impl Display for MemoryError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::OutOfBoundsAllocation => {
-                write!(f, "out of bounds memory allocation")
-            }
-            Self::OutOfBoundsGrowth => {
-                write!(f, "out fo bounds memory growth")
-            }
-            Self::OutOfBoundsAccess => {
-                write!(f, "out of bounds memory access")
-            }
-            Self::InvalidMemoryType => {
-                write!(f, "tried to create an invalid virtual memory type")
-            }
-            Self::InvalidSubtype { ty, other } => {
-                write!(f, "memory type {ty:?} is not a subtype of {other:?}",)
-            }
-        }
     }
 }
 
@@ -439,25 +402,5 @@ impl Memory {
             .inner
             .resolve_memory_mut(self)
             .write(offset, buffer)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn memory_type(minimum: u32, maximum: impl Into<Option<u32>>) -> MemoryType {
-        MemoryType::new(minimum, maximum.into()).unwrap()
-    }
-
-    #[test]
-    fn subtyping_works() {
-        assert!(memory_type(0, 1).is_subtype_of(&memory_type(0, 1)));
-        assert!(memory_type(0, 1).is_subtype_of(&memory_type(0, 2)));
-        assert!(!memory_type(0, 2).is_subtype_of(&memory_type(0, 1)));
-        assert!(memory_type(2, None).is_subtype_of(&memory_type(1, None)));
-        assert!(memory_type(0, None).is_subtype_of(&memory_type(0, None)));
-        assert!(memory_type(0, 1).is_subtype_of(&memory_type(0, None)));
-        assert!(!memory_type(0, None).is_subtype_of(&memory_type(0, 1)));
     }
 }

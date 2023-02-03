@@ -7,10 +7,10 @@ mod tests;
 pub use self::{error::InstantiationError, pre::InstancePre};
 use super::{element::ElementSegmentKind, export, DataSegmentKind, InitExpr, Module};
 use crate::{
-    element::ElementSegment,
     memory::DataSegment,
     AsContext,
     AsContextMut,
+    ElementSegment,
     Error,
     Extern,
     ExternType,
@@ -56,7 +56,6 @@ impl Module {
         let handle = context.as_context_mut().store.inner.alloc_instance();
         let mut builder = InstanceEntity::build(self);
 
-        self.extract_func_types(&mut context, &mut builder);
         self.extract_imports(&mut context, &mut builder, externals)?;
         self.extract_functions(&mut context, &mut builder, handle);
         self.extract_tables(&mut context, &mut builder)?;
@@ -71,22 +70,6 @@ impl Module {
         // At this point the module instantiation is nearly done.
         // The only thing that is missing is to run the `start` function.
         Ok(InstancePre::new(handle, builder))
-    }
-
-    /// Extracts the Wasm function signatures from the
-    /// module and stores them into the [`Store`].
-    ///
-    /// This also stores deduplicated [`FuncType`] references into the
-    /// [`Instance`] under construction.
-    ///
-    /// [`Store`]: struct.Store.html
-    /// [`FuncType`]: struct.FuncType.html
-    fn extract_func_types(
-        &self,
-        _context: &mut impl AsContextMut,
-        builder: &mut InstanceEntityBuilder,
-    ) {
-        builder.set_func_types(&self.func_types);
     }
 
     /// Extract the Wasm imports from the module and zips them with the given external values.
