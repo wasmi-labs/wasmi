@@ -295,7 +295,7 @@ impl InstanceEntityBuilder {
     /// If the start function has already been set.
     pub fn set_start(&mut self, start_fn: FuncIdx) {
         match &mut self.start_fn {
-            Some(_) => panic!("already set start function"),
+            Some(index) => panic!("already set start function {index:?}"),
             None => {
                 self.start_fn = Some(start_fn);
             }
