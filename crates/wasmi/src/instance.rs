@@ -276,7 +276,7 @@ impl InstanceEntityBuilder {
             }
         }
         Self {
-            func_types: Arc::new([]),
+            func_types: module.func_types_cloned(),
             tables: vec_with_capacity_exact(len_tables),
             funcs: vec_with_capacity_exact(len_funcs),
             memories: vec_with_capacity_exact(len_memories),
@@ -373,14 +373,6 @@ impl InstanceEntityBuilder {
     /// Pushes a new [`Func`] to the [`InstanceEntity`] under construction.
     pub fn push_func(&mut self, func: Func) {
         self.funcs.push(func);
-    }
-
-    /// Pushes a new deduplicated [`FuncType`] to the [`InstanceEntity`]
-    /// under construction.
-    ///
-    /// [`FuncType`]: [`crate::FuncType`]
-    pub fn set_func_types(&mut self, func_types: &Arc<[DedupFuncType]>) {
-        self.func_types = func_types.clone();
     }
 
     /// Pushes a new [`Extern`] under the given `name` to the [`InstanceEntity`] under construction.

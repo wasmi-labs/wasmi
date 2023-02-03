@@ -188,6 +188,15 @@ impl Module {
         self.memories.len()
     }
 
+    /// Returns a slice to the function types of the [`Module`].
+    ///
+    /// # Note
+    ///
+    /// The slice is stored in a `Arc` so that this operation is very cheap.
+    pub(crate) fn func_types_cloned(&self) -> Arc<[DedupFuncType]> {
+        self.func_types.clone()
+    }
+
     /// Returns an iterator over the imports of the [`Module`].
     pub fn imports(&self) -> ModuleImportsIter {
         let len_imported_funcs = self.imports.len_funcs;
