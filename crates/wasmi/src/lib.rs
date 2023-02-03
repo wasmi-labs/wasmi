@@ -90,7 +90,6 @@ mod foreach_tuple;
 mod element;
 mod engine;
 mod error;
-mod external;
 mod externref;
 mod func;
 mod global;
@@ -138,7 +137,6 @@ pub use self::{
         TypedResumableInvocation,
     },
     error::Error,
-    external::{Extern, ExternType},
     externref::ExternRef,
     func::{
         Caller,
@@ -154,7 +152,7 @@ pub use self::{
         WasmTypeList,
     },
     global::{Global, GlobalType, Mutability},
-    instance::{Export, ExportsIter, Instance},
+    instance::{Export, ExportsIter, Extern, ExternType, Instance},
     linker::Linker,
     memory::{Memory, MemoryType},
     module::{
