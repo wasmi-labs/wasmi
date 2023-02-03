@@ -12,9 +12,9 @@ use super::{
     Table,
 };
 use crate::{
-    element::ElementSegment,
     func::FuncError,
     memory::DataSegment,
+    ElementSegment,
     Error,
     TypedFunc,
     WasmParams,

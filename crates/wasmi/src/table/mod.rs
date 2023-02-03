@@ -1,16 +1,12 @@
+pub use self::element::{ElementSegment, ElementSegmentEntity, ElementSegmentIdx};
 use super::{AsContext, AsContextMut, Stored};
-use crate::{
-    element::ElementSegmentEntity,
-    module::FuncIdx,
-    value::WithType,
-    Func,
-    FuncRef,
-    Value,
-};
+use crate::{module::FuncIdx, value::WithType, Func, FuncRef, Value};
 use alloc::vec::Vec;
 use core::{cmp::max, fmt, fmt::Display};
 use wasmi_arena::ArenaIndex;
 use wasmi_core::{TrapCode, UntypedValue, ValueType};
+
+mod element;
 
 /// A raw index to a table entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

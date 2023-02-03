@@ -1,9 +1,9 @@
 use super::InstanceEntity;
 use crate::{
-    element::ElementSegment,
     engine::DedupFuncType,
     memory::DataSegment,
     module::FuncIdx,
+    ElementSegment,
     Extern,
     ExternType,
     Func,

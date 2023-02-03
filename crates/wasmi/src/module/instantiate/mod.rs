@@ -7,10 +7,10 @@ mod tests;
 pub use self::{error::InstantiationError, pre::InstancePre};
 use super::{element::ElementSegmentKind, export, DataSegmentKind, InitExpr, Module};
 use crate::{
-    element::ElementSegment,
     memory::DataSegment,
     AsContext,
     AsContextMut,
+    ElementSegment,
     Error,
     Extern,
     ExternType,
