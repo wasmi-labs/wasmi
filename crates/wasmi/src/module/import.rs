@@ -63,9 +63,9 @@ impl From<wasmparser::Import<'_>> for Import {
     fn from(import: wasmparser::Import) -> Self {
         let kind = match import.ty {
             TypeRef::Func(ty) => ExternTypeIdx::Func(ty.into()),
-            TypeRef::Table(ty) => ExternTypeIdx::Table(ty.into()),
-            TypeRef::Memory(ty) => ExternTypeIdx::Memory(ty.into()),
-            TypeRef::Global(ty) => ExternTypeIdx::Global(ty.into()),
+            TypeRef::Table(ty) => ExternTypeIdx::Table(TableType::from_wasmparser(ty)),
+            TypeRef::Memory(ty) => ExternTypeIdx::Memory(MemoryType::from_wasmparser(ty)),
+            TypeRef::Global(ty) => ExternTypeIdx::Global(GlobalType::from_wasmparser(ty)),
             TypeRef::Tag(tag) => panic!(
                 "wasmi does not support the `exception-handling` Wasm proposal but found: {tag:?}"
             ),
@@ -118,7 +118,7 @@ pub enum ExternTypeIdx {
 /// [`Module`]: [`super::Module`]
 /// [`FuncType`]: [`crate::FuncType`]
 #[derive(Debug, Copy, Clone)]
-pub struct FuncTypeIdx(pub(crate) u32);
+pub struct FuncTypeIdx(u32);
 
 impl From<u32> for FuncTypeIdx {
     fn from(index: u32) -> Self {
@@ -127,12 +127,8 @@ impl From<u32> for FuncTypeIdx {
 }
 
 impl FuncTypeIdx {
-    /// Returns the [`FuncTypeIdx`] as `usize`.
-    ///
-    /// # Note
-    ///
-    /// This is mostly useful for indexing into buffers.
-    pub fn into_usize(self) -> usize {
-        self.0 as usize
+    /// Returns the inner `u32` index of the [`FuncTypeIdx`].
+    pub fn into_u32(self) -> u32 {
+        self.0
     }
 }

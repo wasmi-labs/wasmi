@@ -1,5 +1,5 @@
-use super::{FuncIdx, GlobalIdx};
-use crate::{errors::ModuleError, ExternRef, FuncRef, Value};
+use super::{utils::WasmiValueType, FuncIdx, GlobalIdx};
+use crate::{ExternRef, FuncRef, Value};
 use wasmi_core::{ValueType, F32, F64};
 
 /// An initializer expression.
@@ -56,8 +56,8 @@ impl InitExpr {
     /// If the [`InitExpr`] cannot be interpreted as `funcref` index.
     pub fn as_funcref(&self) -> Option<FuncIdx> {
         match self.op {
-            InitExprOperand::RefNull => None,
-            InitExprOperand::FuncRef(func_index) => Some(FuncIdx(func_index)),
+            InitExprOperand::RefNull { .. } => None,
+            InitExprOperand::FuncRef(func_index) => Some(FuncIdx::from(func_index)),
             InitExprOperand::Const(_) | InitExprOperand::GlobalGet(_) => {
                 panic!("encountered non-funcref Wasm expression {:?}", self.op)
             }
@@ -71,7 +71,9 @@ impl InitExpr {
     /// If the [`InitExpr`] cannot be interpreted as `externref`.
     pub fn as_externref(&self) -> ExternRef {
         match self.op {
-            InitExprOperand::RefNull => ExternRef::null(),
+            InitExprOperand::RefNull {
+                ty: ValueType::ExternRef,
+            } => ExternRef::null(),
             _ => panic!("encountered non-externref Wasm expression: {:?}", self.op),
         }
     }
@@ -83,10 +85,10 @@ impl InitExpr {
     /// # Panics
     ///
     /// If a non-const expression operand is encountered.
-    pub fn to_const(&self, ty: ValueType) -> Option<Value> {
+    pub fn to_const(&self) -> Option<Value> {
         match &self.op {
             InitExprOperand::Const(value) => Some(value.clone()),
-            InitExprOperand::RefNull => match ty {
+            InitExprOperand::RefNull { ty } => match ty {
                 ValueType::FuncRef => Some(Value::from(FuncRef::null())),
                 ValueType::ExternRef => Some(Value::from(ExternRef::null())),
                 _ => panic!("cannot have null reference for non-reftype but found {ty:?}"),
@@ -115,7 +117,7 @@ impl InitExpr {
     /// Otherwise returns `None`.
     pub fn func_ref(&self) -> Option<FuncIdx> {
         if let InitExprOperand::FuncRef(index) = self.op {
-            return Some(FuncIdx(index));
+            return Some(FuncIdx::from(index));
         }
         None
     }
@@ -127,22 +129,19 @@ impl InitExpr {
     /// If a non-const expression operand is encountered.
     pub fn to_const_with_context(
         &self,
-        value_type: ValueType,
         global_get: impl Fn(u32) -> Value,
         func_get: impl Fn(u32) -> Value,
     ) -> Value {
-        let value = match &self.op {
+        match &self.op {
             InitExprOperand::Const(value) => value.clone(),
             InitExprOperand::GlobalGet(index) => global_get(index.into_u32()),
-            InitExprOperand::RefNull => match value_type {
+            InitExprOperand::RefNull { ty } => match ty {
                 ValueType::FuncRef => Value::from(FuncRef::null()),
                 ValueType::ExternRef => Value::from(ExternRef::null()),
-                _ => panic!("expected reftype for InitExpr but found {value_type:?}"),
+                _ => panic!("expected reftype for InitExpr but found {ty:?}"),
             },
             InitExprOperand::FuncRef(index) => func_get(*index),
-        };
-        assert_eq!(value.ty(), value_type);
-        value
+        }
     }
 }
 
@@ -164,7 +163,7 @@ pub enum InitExprOperand {
     /// In the Wasm MVP only immutable globals are allowed to be evaluated.
     GlobalGet(GlobalIdx),
     /// A Wasm `ref.null` value.
-    RefNull,
+    RefNull { ty: ValueType },
     /// A Wasm `ref.func index` value.
     FuncRef(u32),
 }
@@ -182,9 +181,11 @@ impl InitExprOperand {
             wasmparser::Operator::F32Const { value } => Self::constant(F32::from(value.bits())),
             wasmparser::Operator::F64Const { value } => Self::constant(F64::from(value.bits())),
             wasmparser::Operator::GlobalGet { global_index } => {
-                Self::GlobalGet(GlobalIdx(global_index))
+                Self::GlobalGet(GlobalIdx::from(global_index))
             }
-            wasmparser::Operator::RefNull { .. } => Self::RefNull,
+            wasmparser::Operator::RefNull { ty } => Self::RefNull {
+                ty: WasmiValueType::from(ty).into_inner(),
+            },
             wasmparser::Operator::RefFunc { function_index } => Self::FuncRef(function_index),
             operator => {
                 panic!("encountered unsupported const expression operator: {operator:?}")
@@ -198,32 +199,5 @@ impl InitExprOperand {
         T: Into<Value>,
     {
         Self::Const(value.into())
-    }
-}
-
-impl TryFrom<wasmparser::Operator<'_>> for InitExprOperand {
-    type Error = ModuleError;
-
-    fn try_from(operator: wasmparser::Operator<'_>) -> Result<Self, Self::Error> {
-        match operator {
-            wasmparser::Operator::I32Const { value } => Ok(InitExprOperand::constant(value)),
-            wasmparser::Operator::I64Const { value } => Ok(InitExprOperand::constant(value)),
-            wasmparser::Operator::F32Const { value } => {
-                Ok(InitExprOperand::constant(F32::from(value.bits())))
-            }
-            wasmparser::Operator::F64Const { value } => {
-                Ok(InitExprOperand::constant(F64::from(value.bits())))
-            }
-            wasmparser::Operator::GlobalGet { global_index } => {
-                Ok(InitExprOperand::GlobalGet(GlobalIdx(global_index)))
-            }
-            wasmparser::Operator::RefNull { .. } => Ok(InitExprOperand::RefNull),
-            wasmparser::Operator::RefFunc { function_index } => {
-                Ok(InitExprOperand::FuncRef(function_index))
-            }
-            operator => {
-                panic!("encountered unsupported const expression operator: {operator:?}")
-            }
-        }
     }
 }

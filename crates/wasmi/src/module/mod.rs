@@ -46,7 +46,7 @@ use crate::{
     MemoryType,
     TableType,
 };
-use alloc::{boxed::Box, collections::BTreeMap, sync::Arc, vec::Vec};
+use alloc::{boxed::Box, collections::BTreeMap, sync::Arc};
 use core::{iter, slice::Iter as SliceIter};
 
 /// A parsed and validated WebAssembly module.
@@ -125,8 +125,7 @@ impl ModuleImports {
             .chain(tables)
             .chain(memories)
             .chain(globals)
-            .collect::<Vec<_>>()
-            .into();
+            .collect::<Box<[_]>>();
         Self {
             items,
             len_funcs,
@@ -156,7 +155,7 @@ impl Module {
     /// Creates a new [`Module`] from the [`ModuleBuilder`].
     fn from_builder(builder: ModuleBuilder) -> Self {
         Self {
-            engine: builder.engine.clone(),
+            engine: builder.engine().clone(),
             func_types: builder.func_types.into(),
             imports: ModuleImports::from_builder(builder.imports),
             funcs: builder.funcs.into(),
@@ -278,7 +277,7 @@ impl Module {
     fn get_extern_type(&self, idx: ExternIdx) -> ExternType {
         match idx {
             ExternIdx::Func(index) => {
-                let dedup = &self.funcs[index.into_usize()];
+                let dedup = &self.funcs[index.into_u32() as usize];
                 let func_type = self.engine.resolve_func_type(dedup, Clone::clone);
                 ExternType::Func(func_type)
             }
@@ -291,7 +290,7 @@ impl Module {
                 ExternType::Memory(memory_type)
             }
             ExternIdx::Global(index) => {
-                let global_type = self.globals[index.into_usize()];
+                let global_type = self.globals[index.into_u32() as usize];
                 ExternType::Global(global_type)
             }
         }

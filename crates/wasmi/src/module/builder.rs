@@ -26,28 +26,28 @@ use alloc::{boxed::Box, collections::BTreeMap, vec::Vec};
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug)]
 pub struct ModuleBuilder<'engine> {
-    pub(super) engine: &'engine Engine,
-    pub(super) func_types: Vec<DedupFuncType>,
-    pub(super) imports: ModuleImports,
-    pub(super) funcs: Vec<DedupFuncType>,
-    pub(super) tables: Vec<TableType>,
-    pub(super) memories: Vec<MemoryType>,
-    pub(super) globals: Vec<GlobalType>,
-    pub(super) globals_init: Vec<InitExpr>,
-    pub(super) exports: BTreeMap<Box<str>, ExternIdx>,
-    pub(super) start: Option<FuncIdx>,
-    pub(super) func_bodies: Vec<FuncBody>,
-    pub(super) element_segments: Vec<ElementSegment>,
-    pub(super) data_segments: Vec<DataSegment>,
+    engine: &'engine Engine,
+    pub func_types: Vec<DedupFuncType>,
+    pub imports: ModuleImports,
+    pub funcs: Vec<DedupFuncType>,
+    pub tables: Vec<TableType>,
+    pub memories: Vec<MemoryType>,
+    pub globals: Vec<GlobalType>,
+    pub globals_init: Vec<InitExpr>,
+    pub exports: BTreeMap<Box<str>, ExternIdx>,
+    pub start: Option<FuncIdx>,
+    pub func_bodies: Vec<FuncBody>,
+    pub element_segments: Vec<ElementSegment>,
+    pub data_segments: Vec<DataSegment>,
 }
 
 /// The import names of the [`Module`] imports.
 #[derive(Debug, Default)]
 pub struct ModuleImports {
-    pub(super) funcs: Vec<ImportName>,
-    pub(super) tables: Vec<ImportName>,
-    pub(super) memories: Vec<ImportName>,
-    pub(super) globals: Vec<ImportName>,
+    pub funcs: Vec<ImportName>,
+    pub tables: Vec<ImportName>,
+    pub memories: Vec<ImportName>,
+    pub globals: Vec<ImportName>,
 }
 
 impl ModuleImports {
@@ -76,17 +76,17 @@ impl<'a> ModuleResources<'a> {
 
     /// Returns the [`FuncType`] at the given index.
     pub fn get_func_type(&self, func_type_idx: FuncTypeIdx) -> &DedupFuncType {
-        &self.res.func_types[func_type_idx.into_usize()]
+        &self.res.func_types[func_type_idx.into_u32() as usize]
     }
 
     /// Returns the [`FuncType`] of the indexed function.
     pub fn get_type_of_func(&self, func_idx: FuncIdx) -> &DedupFuncType {
-        &self.res.funcs[func_idx.into_usize()]
+        &self.res.funcs[func_idx.into_u32() as usize]
     }
 
     /// Returns the [`GlobalType`] the the indexed global variable.
     pub fn get_type_of_global(&self, global_idx: GlobalIdx) -> GlobalType {
-        self.res.globals[global_idx.into_usize()]
+        self.res.globals[global_idx.into_u32() as usize]
     }
 
     /// Returns the global variable type and optional initial value.
@@ -147,7 +147,6 @@ impl<'engine> ModuleBuilder<'engine> {
             self.func_types.is_empty(),
             "tried to initialize module function types twice"
         );
-        let func_types = func_types.into_iter();
         for func_type in func_types {
             let func_type = func_type?;
             let dedup = self.engine.alloc_func_type(func_type);
@@ -175,7 +174,7 @@ impl<'engine> ModuleBuilder<'engine> {
             match kind {
                 ExternTypeIdx::Func(func_type_idx) => {
                     self.imports.funcs.push(name);
-                    let func_type = self.func_types[func_type_idx.into_usize()];
+                    let func_type = self.func_types[func_type_idx.into_u32() as usize];
                     self.funcs.push(func_type);
                 }
                 ExternTypeIdx::Table(table_type) => {
@@ -213,10 +212,9 @@ impl<'engine> ModuleBuilder<'engine> {
             self.imports.funcs.len(),
             "tried to initialize module function declarations twice"
         );
-        let funcs = funcs.into_iter();
         for func in funcs {
             let func_type_idx = func?;
-            let func_type = self.func_types[func_type_idx.into_usize()];
+            let func_type = self.func_types[func_type_idx.into_u32() as usize];
             self.funcs.push(func_type);
         }
         Ok(())
@@ -240,7 +238,6 @@ impl<'engine> ModuleBuilder<'engine> {
             self.imports.tables.len(),
             "tried to initialize module table declarations twice"
         );
-        let tables = tables.into_iter();
         for table in tables {
             let table = table?;
             self.tables.push(table);
@@ -266,7 +263,6 @@ impl<'engine> ModuleBuilder<'engine> {
             self.imports.memories.len(),
             "tried to initialize module linear memory declarations twice"
         );
-        let memories = memories.into_iter();
         for memory in memories {
             let memory = memory?;
             self.memories.push(memory);
@@ -292,7 +288,6 @@ impl<'engine> ModuleBuilder<'engine> {
             self.imports.globals.len(),
             "tried to initialize module global variable declarations twice"
         );
-        let globals = globals.into_iter();
         for global in globals {
             let global = global?;
             let (global_decl, global_init) = global.into_type_and_init();

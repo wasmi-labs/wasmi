@@ -81,7 +81,7 @@ impl<'engine> ModuleParser<'engine> {
             builder,
             validator,
             parser,
-            func: FuncIdx(0),
+            func: FuncIdx::from(0),
             allocations: ReusableAllocations::default(),
         }
     }
@@ -244,7 +244,7 @@ impl<'engine> ModuleParser<'engine> {
     fn process_types(&mut self, section: TypeSectionReader) -> Result<(), ModuleError> {
         self.validator.type_section(&section)?;
         let func_types = section.into_iter().map(|result| match result? {
-            wasmparser::Type::Func(ty) => Ok(FuncType::from(ty)),
+            wasmparser::Type::Func(ty) => Ok(FuncType::from_wasmparser(ty)),
         });
         self.builder.push_func_types(func_types)?;
         Ok(())
@@ -313,9 +313,11 @@ impl<'engine> ModuleParser<'engine> {
     /// If a table declaration fails to validate.
     fn process_tables(&mut self, section: TableSectionReader) -> Result<(), ModuleError> {
         self.validator.table_section(&section)?;
-        let tables = section
-            .into_iter()
-            .map(|table| table.map(TableType::from).map_err(ModuleError::from));
+        let tables = section.into_iter().map(|table| {
+            table
+                .map(TableType::from_wasmparser)
+                .map_err(ModuleError::from)
+        });
         self.builder.push_tables(tables)?;
         Ok(())
     }
@@ -331,9 +333,11 @@ impl<'engine> ModuleParser<'engine> {
     /// If a linear memory declaration fails to validate.
     fn process_memories(&mut self, section: MemorySectionReader) -> Result<(), ModuleError> {
         self.validator.memory_section(&section)?;
-        let memories = section
-            .into_iter()
-            .map(|memory| memory.map(MemoryType::from).map_err(ModuleError::from));
+        let memories = section.into_iter().map(|memory| {
+            memory
+                .map(MemoryType::from_wasmparser)
+                .map_err(ModuleError::from)
+        });
         self.builder.push_memories(memories)?;
         Ok(())
     }
@@ -398,7 +402,7 @@ impl<'engine> ModuleParser<'engine> {
     /// If the start function declaration fails to validate.
     fn process_start(&mut self, func: u32, range: Range<usize>) -> Result<(), ModuleError> {
         self.validator.start_section(func, &range)?;
-        self.builder.set_start(FuncIdx(func));
+        self.builder.set_start(FuncIdx::from(func));
         Ok(())
     }
 
@@ -466,15 +470,15 @@ impl<'engine> ModuleParser<'engine> {
         // We have to adjust the initial func reference to the first
         // internal function before we process any of the internal functions.
         let len_func_imports = self.builder.imports.funcs.len() as u32;
-        self.func = FuncIdx(len_func_imports);
+        self.func = FuncIdx::from(len_func_imports);
         Ok(())
     }
 
     /// Returns the next `FuncIdx` for processing of its function body.
     fn next_func(&mut self) -> FuncIdx {
-        let next @ FuncIdx(value) = self.func;
-        self.func = FuncIdx(value + 1);
-        next
+        let old = self.func;
+        self.func = FuncIdx::from(self.func.into_u32() + 1);
+        old
     }
 
     /// Process a single module code section entry.

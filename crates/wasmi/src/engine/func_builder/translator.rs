@@ -130,7 +130,7 @@ impl<'parser> FuncTranslator<'parser> {
 
     /// Resolves the [`FuncType`] of the given [`FuncTypeIdx`].
     fn func_type_at(&self, func_type_index: SignatureIdx) -> FuncType {
-        let func_type_index = FuncTypeIdx(func_type_index.into_inner()); // TODO: use the same type
+        let func_type_index = FuncTypeIdx::from(func_type_index.into_inner()); // TODO: use the same type
         let dedup_func_type = self.res.get_func_type(func_type_index);
         self.res
             .engine()
@@ -322,9 +322,8 @@ impl<'parser> FuncTranslator<'parser> {
         global_type: &GlobalType,
         init_value: Option<&InitExpr>,
     ) -> Option<Instruction> {
-        let content_type = global_type.content();
         if let (Mutability::Const, Some(init_expr)) = (global_type.mutability(), init_value) {
-            if let Some(value) = init_expr.to_const(content_type) {
+            if let Some(value) = init_expr.to_const() {
                 // We can optimize `global.get` to the constant value.
                 return Some(Instruction::constant(value));
             }
@@ -339,7 +338,7 @@ impl<'parser> FuncTranslator<'parser> {
 
     /// Decompose a [`wasmparser::MemArg`] into its raw parts.
     fn decompose_memarg(memarg: wasmparser::MemArg) -> (MemoryIdx, u32) {
-        let memory_idx = MemoryIdx(memarg.memory);
+        let memory_idx = MemoryIdx::from(memarg.memory);
         let offset = memarg.offset as u32;
         (memory_idx, offset)
     }
@@ -961,7 +960,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_call(&mut self, func_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let func_idx = FuncIdx(func_idx);
+            let func_idx = FuncIdx::from(func_idx);
             let func_type = builder.func_type_of(func_idx);
             builder.adjust_value_stack_for_call(&func_type);
             let func_idx = func_idx.into_u32().into();
@@ -1082,7 +1081,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_global_get(&mut self, global_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let global_idx = GlobalIdx(global_idx);
+            let global_idx = GlobalIdx::from(global_idx);
             builder.stack_height.push();
             let (global_type, init_value) = builder.res.get_global(global_idx);
             let instr = Self::optimize_global_get(&global_type, init_value).unwrap_or_else(|| {
@@ -1096,7 +1095,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_global_set(&mut self, global_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let global_idx = GlobalIdx(global_idx);
+            let global_idx = GlobalIdx::from(global_idx);
             let global_type = builder.res.get_type_of_global(global_idx);
             debug_assert_eq!(global_type.mutability(), Mutability::Var);
             builder.stack_height.pop1();
@@ -1207,7 +1206,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         _mem_byte: u8,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let memory_idx = MemoryIdx(memory_idx);
+            let memory_idx = MemoryIdx::from(memory_idx);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
             builder.stack_height.push();
             builder

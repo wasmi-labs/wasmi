@@ -64,7 +64,7 @@ impl FuncType {
         T: Ty,
     {
         if self.params().len() != params.len() {
-            return Err(FuncError::MismatchingParameterLen).map_err(Into::into);
+            return Err(FuncError::MismatchingParameterLen);
         }
         if self
             .params()
@@ -72,7 +72,7 @@ impl FuncType {
             .copied()
             .ne(params.iter().map(<T as Ty>::ty))
         {
-            return Err(FuncError::MismatchingParameterType).map_err(Into::into);
+            return Err(FuncError::MismatchingParameterType);
         }
         Ok(())
     }
@@ -92,7 +92,7 @@ impl FuncType {
         T: Ty,
     {
         if self.results().len() != results.len() {
-            return Err(FuncError::MismatchingResultLen).map_err(Into::into);
+            return Err(FuncError::MismatchingResultLen);
         }
         if check_type
             && self
@@ -101,7 +101,7 @@ impl FuncType {
                 .copied()
                 .ne(results.iter().map(<T as Ty>::ty))
         {
-            return Err(FuncError::MismatchingResultType).map_err(Into::into);
+            return Err(FuncError::MismatchingResultType);
         }
         Ok(())
     }

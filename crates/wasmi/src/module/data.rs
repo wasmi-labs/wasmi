@@ -49,7 +49,7 @@ impl From<wasmparser::DataKind<'_>> for DataSegmentKind {
                 memory_index,
                 offset_expr,
             } => {
-                let memory_index = MemoryIdx(memory_index);
+                let memory_index = MemoryIdx::from(memory_index);
                 let offset = InitExpr::new(offset_expr);
                 Self::Active(ActiveDataSegment {
                     memory_index,
