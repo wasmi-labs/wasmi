@@ -182,13 +182,13 @@ impl MemoryEntity {
         self.memory_type
     }
 
-    /// The current [`MemoryType`] of the linear memory.
+    /// Returns the dynamic [`MemoryType`] of the [`MemoryEntity`].
     ///
     /// # Note
     ///
-    /// This respects the current size of the [`Memory`] as its minimum size
-    /// and is useful for import subtyping checks.
-    pub fn import_ty(&self) -> MemoryType {
+    /// This respects the current size of the [`MemoryEntity`] as
+    /// its minimum size and is useful for import subtyping checks.
+    pub fn dynamic_ty(&self) -> MemoryType {
         let current_pages = self.current_pages().into();
         let maximum_pages = self.ty().maximum_pages().map(Into::into);
         MemoryType::new(current_pages, maximum_pages)
@@ -308,22 +308,22 @@ impl Memory {
         ctx.as_context().store.inner.resolve_memory(self).ty()
     }
 
-    /// The current [`MemoryType`] of the linear memory.
+    /// Returns the dynamic [`MemoryType`] of the [`Memory`].
     ///
     /// # Note
     ///
-    /// This respects the current size of the [`Memory`] as its minimum size
-    /// and is useful for import subtyping checks.
+    /// This respects the current size of the [`Memory`] as
+    /// its minimum size and is useful for import subtyping checks.
     ///
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Memory`].
-    pub(crate) fn import_ty(&self, ctx: impl AsContext) -> MemoryType {
+    pub(crate) fn dynamic_ty(&self, ctx: impl AsContext) -> MemoryType {
         ctx.as_context()
             .store
             .inner
             .resolve_memory(self)
-            .import_ty()
+            .dynamic_ty()
     }
 
     /// Returns the amount of pages in use by the linear memory.
