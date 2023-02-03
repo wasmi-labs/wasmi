@@ -147,7 +147,6 @@ impl<'engine> ModuleBuilder<'engine> {
             self.func_types.is_empty(),
             "tried to initialize module function types twice"
         );
-        let func_types = func_types.into_iter();
         for func_type in func_types {
             let func_type = func_type?;
             let dedup = self.engine.alloc_func_type(func_type);
@@ -213,7 +212,6 @@ impl<'engine> ModuleBuilder<'engine> {
             self.imports.funcs.len(),
             "tried to initialize module function declarations twice"
         );
-        let funcs = funcs.into_iter();
         for func in funcs {
             let func_type_idx = func?;
             let func_type = self.func_types[func_type_idx.into_usize()];
@@ -240,7 +238,6 @@ impl<'engine> ModuleBuilder<'engine> {
             self.imports.tables.len(),
             "tried to initialize module table declarations twice"
         );
-        let tables = tables.into_iter();
         for table in tables {
             let table = table?;
             self.tables.push(table);
@@ -266,7 +263,6 @@ impl<'engine> ModuleBuilder<'engine> {
             self.imports.memories.len(),
             "tried to initialize module linear memory declarations twice"
         );
-        let memories = memories.into_iter();
         for memory in memories {
             let memory = memory?;
             self.memories.push(memory);
@@ -292,7 +288,6 @@ impl<'engine> ModuleBuilder<'engine> {
             self.imports.globals.len(),
             "tried to initialize module global variable declarations twice"
         );
-        let globals = globals.into_iter();
         for global in globals {
             let global = global?;
             let (global_decl, global_init) = global.into_type_and_init();
