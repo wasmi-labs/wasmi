@@ -1,5 +1,6 @@
 mod caller;
 mod error;
+mod func_type;
 mod into_func;
 mod typed_func;
 
@@ -7,6 +8,7 @@ pub(crate) use self::typed_func::CallResultsTuple;
 pub use self::{
     caller::Caller,
     error::FuncError,
+    func_type::FuncType,
     into_func::{IntoFunc, WasmRet, WasmType, WasmTypeList},
     typed_func::{TypedFunc, WasmParams, WasmResults},
 };
@@ -18,7 +20,7 @@ use super::{
     StoreContext,
     Stored,
 };
-use crate::{core::Trap, engine::ResumableCall, Error, FuncType, Value};
+use crate::{core::Trap, engine::ResumableCall, Error, Value};
 use alloc::sync::Arc;
 use core::{fmt, fmt::Debug, num::NonZeroU32};
 use wasmi_arena::ArenaIndex;

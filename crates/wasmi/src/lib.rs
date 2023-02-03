@@ -93,7 +93,6 @@ mod error;
 mod external;
 mod externref;
 mod func;
-mod func_type;
 mod global;
 mod instance;
 mod linker;
@@ -145,6 +144,7 @@ pub use self::{
         Caller,
         Func,
         FuncRef,
+        FuncType,
         IntoFunc,
         TypedFunc,
         WasmParams,
@@ -153,7 +153,6 @@ pub use self::{
         WasmType,
         WasmTypeList,
     },
-    func_type::FuncType,
     global::{Global, GlobalType, Mutability},
     instance::{Export, ExportsIter, Instance},
     linker::Linker,
