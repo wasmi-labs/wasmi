@@ -348,8 +348,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             let value = load_extend(memory, address, offset.into_inner())?;
             Ok(value)
         })?;
-        self.next_instr();
-        Ok(())
+        self.try_next_instr()
     }
 
     /// Executes a generic Wasm `store[N]` operation.
@@ -370,42 +369,55 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let (address, value) = self.value_stack.pop2();
         let memory = self.cache.default_memory_bytes(self.ctx).data_mut();
         store_wrap(memory, address, offset.into_inner(), value)?;
-        self.next_instr();
-        Ok(())
+        self.try_next_instr()
     }
 
+    /// Executes an infallible unary `wasmi` instruction.
     fn execute_unary(&mut self, f: fn(UntypedValue) -> UntypedValue) {
         self.value_stack.eval_top(f);
         self.next_instr()
     }
 
+    /// Executes a fallible unary `wasmi` instruction.
     fn try_execute_unary(
         &mut self,
         f: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), TrapCode> {
         self.value_stack.try_eval_top(f)?;
-        self.next_instr();
-        Ok(())
+        self.try_next_instr()
     }
 
+    /// Executes an infallible binary `wasmi` instruction.
     fn execute_binary(&mut self, f: fn(UntypedValue, UntypedValue) -> UntypedValue) {
         self.value_stack.eval_top2(f);
         self.next_instr()
     }
 
+    /// Executes a fallible binary `wasmi` instruction.
     fn try_execute_binary(
         &mut self,
         f: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), TrapCode> {
         self.value_stack.try_eval_top2(f)?;
-        self.next_instr();
-        Ok(())
+        self.try_next_instr()
     }
 
+    /// Shifts the instruction pointer to the next instruction.
     fn next_instr(&mut self) {
         self.ip_add(1)
     }
 
+    /// Shifts the instruction pointer to the next instruction and returns `Ok(())`.
+    ///
+    /// # Note
+    ///
+    /// This is a convenience function for fallible instructions.
+    fn try_next_instr(&mut self) -> Result<(), TrapCode> {
+        self.next_instr();
+        Ok(())
+    }
+
+    /// Offsets the instruction pointer using the given [`BranchParams`].
     fn branch_to(&mut self, params: BranchParams) {
         self.value_stack.drop_keep(params.drop_keep());
         self.ip_add(params.offset().into_i32() as isize)
@@ -423,10 +435,22 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         }
     }
 
+    /// Synchronizes the current stack pointer with the [`ValueStack`].
+    ///
+    /// # Note
+    ///
+    /// For performance reasons we detach the stack pointer form the [`ValueStack`].
+    /// Therefore it is necessary to synchronize the [`ValueStack`] upon finishing
+    /// execution of a sequence of non control flow instructions.
     fn sync_stack_ptr(&mut self) {
         self.value_stack.sync();
     }
 
+    /// Calls the given [`Func`].
+    ///
+    /// This also prepares the instruction pointer and stack pointer for
+    /// the function call so that the stack and execution state is synchronized
+    /// with the outer structures.
     fn call_func(&mut self, func: &Func) -> Result<CallOutcome, TrapCode> {
         self.next_instr();
         self.frame.update_ip(self.ip);
@@ -434,6 +458,10 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         Ok(CallOutcome::NestedCall(*func))
     }
 
+    /// Returns to the caller.
+    ///
+    /// This also modifies the stack as the caller would expect it
+    /// and synchronizes the execution state with the outer structures.
     fn ret(&mut self, drop_keep: DropKeep) {
         self.value_stack.drop_keep(drop_keep);
         self.sync_stack_ptr();
@@ -626,8 +654,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             .and_then(|memory| memory.get_mut(..n))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
         memory.fill(byte);
-        self.next_instr();
-        Ok(())
+        self.try_next_instr()
     }
 
     fn visit_memory_copy(&mut self) -> Result<(), TrapCode> {
@@ -645,8 +672,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             .and_then(|memory| memory.get(..n))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
         data.copy_within(src_offset..src_offset.wrapping_add(n), dst_offset);
-        self.next_instr();
-        Ok(())
+        self.try_next_instr()
     }
 
     fn visit_memory_init(&mut self, segment: DataSegmentIdx) -> Result<(), TrapCode> {
@@ -667,8 +693,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             .and_then(|data| data.get(..n))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
         memory.copy_from_slice(data);
-        self.next_instr();
-        Ok(())
+        self.try_next_instr()
     }
 
     fn visit_data_drop(&mut self, segment_index: DataSegmentIdx) {
@@ -711,8 +736,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.ctx
             .resolve_table_mut(&table)
             .fill_untyped(dst, val, len)?;
-        self.next_instr();
-        Ok(())
+        self.try_next_instr()
     }
 
     fn visit_table_get(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
@@ -724,8 +748,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 .get_untyped(index)
                 .ok_or(TrapCode::TableOutOfBounds)
         })?;
-        self.next_instr();
-        Ok(())
+        self.try_next_instr()
     }
 
     fn visit_table_set(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
@@ -736,8 +759,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             .resolve_table_mut(&table)
             .set_untyped(index, value)
             .map_err(|_| TrapCode::TableOutOfBounds)?;
-        self.next_instr();
-        Ok(())
+        self.try_next_instr()
     }
 
     fn visit_table_copy(&mut self, dst: TableIdx, src: TableIdx) -> Result<(), TrapCode> {
@@ -758,8 +780,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             let (dst, src) = self.ctx.resolve_table_pair_mut(&dst, &src);
             TableEntity::copy(dst, dst_index, src, src_index, len)?;
         }
-        self.next_instr();
-        Ok(())
+        self.try_next_instr()
     }
 
     fn visit_table_init(
@@ -780,8 +801,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 .get_func(func_index)
                 .unwrap_or_else(|| panic!("missing function at index {func_index}"))
         })?;
-        self.next_instr();
-        Ok(())
+        self.try_next_instr()
     }
 
     fn visit_element_drop(&mut self, segment_index: ElementSegmentIdx) {
