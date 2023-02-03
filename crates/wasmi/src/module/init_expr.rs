@@ -132,7 +132,7 @@ impl InitExpr {
         global_get: impl Fn(u32) -> Value,
         func_get: impl Fn(u32) -> Value,
     ) -> Value {
-        let value = match &self.op {
+        match &self.op {
             InitExprOperand::Const(value) => value.clone(),
             InitExprOperand::GlobalGet(index) => global_get(index.into_u32()),
             InitExprOperand::RefNull { ty } => match ty {
@@ -141,8 +141,7 @@ impl InitExpr {
                 _ => panic!("expected reftype for InitExpr but found {ty:?}"),
             },
             InitExprOperand::FuncRef(index) => func_get(*index),
-        };
-        value
+        }
     }
 }
 
