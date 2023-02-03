@@ -26,28 +26,28 @@ use alloc::{boxed::Box, collections::BTreeMap, vec::Vec};
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug)]
 pub struct ModuleBuilder<'engine> {
-    pub(super) engine: &'engine Engine,
-    pub(super) func_types: Vec<DedupFuncType>,
-    pub(super) imports: ModuleImports,
-    pub(super) funcs: Vec<DedupFuncType>,
-    pub(super) tables: Vec<TableType>,
-    pub(super) memories: Vec<MemoryType>,
-    pub(super) globals: Vec<GlobalType>,
-    pub(super) globals_init: Vec<InitExpr>,
-    pub(super) exports: BTreeMap<Box<str>, ExternIdx>,
-    pub(super) start: Option<FuncIdx>,
-    pub(super) func_bodies: Vec<FuncBody>,
-    pub(super) element_segments: Vec<ElementSegment>,
-    pub(super) data_segments: Vec<DataSegment>,
+    engine: &'engine Engine,
+    pub func_types: Vec<DedupFuncType>,
+    pub imports: ModuleImports,
+    pub funcs: Vec<DedupFuncType>,
+    pub tables: Vec<TableType>,
+    pub memories: Vec<MemoryType>,
+    pub globals: Vec<GlobalType>,
+    pub globals_init: Vec<InitExpr>,
+    pub exports: BTreeMap<Box<str>, ExternIdx>,
+    pub start: Option<FuncIdx>,
+    pub func_bodies: Vec<FuncBody>,
+    pub element_segments: Vec<ElementSegment>,
+    pub data_segments: Vec<DataSegment>,
 }
 
 /// The import names of the [`Module`] imports.
 #[derive(Debug, Default)]
 pub struct ModuleImports {
-    pub(super) funcs: Vec<ImportName>,
-    pub(super) tables: Vec<ImportName>,
-    pub(super) memories: Vec<ImportName>,
-    pub(super) globals: Vec<ImportName>,
+    pub funcs: Vec<ImportName>,
+    pub tables: Vec<ImportName>,
+    pub memories: Vec<ImportName>,
+    pub globals: Vec<ImportName>,
 }
 
 impl ModuleImports {
