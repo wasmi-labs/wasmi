@@ -1,6 +1,6 @@
 [package]
 name = "wasmi"
-version = "0.24.0"
+version = "0.25.0"
 documentation = "https://docs.rs/wasmi/"
 description = "WebAssembly interpreter"
 exclude = ["tests/*", "benches/*"]
@@ -14,7 +14,7 @@ categories.workspace = true
 
 [dependencies]
 wasmparser = { version = "0.99", package = "wasmparser-nostd", default-features = false }
-wasmi_core = { version = "0.9", path = "../core", default-features = false }
+wasmi_core = { version = "0.10", path = "../core", default-features = false }
 wasmi_arena = { version = "0.4", path = "../arena", default-features = false }
 spin = { version = "0.9", default-features = false, features = [
     "mutex",
