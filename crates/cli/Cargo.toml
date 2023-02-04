@@ -1,6 +1,6 @@
 [package]
 name = "wasmi_cli"
-version = "0.24.0"
+version = "0.25.0"
 documentation = "https://docs.rs/wasmi/"
 description = "WebAssembly interpreter"
 publish = true
