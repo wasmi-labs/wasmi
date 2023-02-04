@@ -154,7 +154,7 @@ impl Config {
     ///
     /// Enabled by default.
     pub fn floats(&mut self, enable: bool) -> &mut Self {
-        self.reference_types = enable;
+        self.floats = enable;
         self
     }
 
