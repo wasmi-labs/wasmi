@@ -8,6 +8,31 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.25.0`] - 2023-02-04
+
+### Added
+
+- Added `Config::floats` option to enable or disable Wasm float operators during Wasm validation.
+- `Trap::downcast_mut` and `Trap::downcast` methods. (https://github.com/paritytech/wasmi/pull/650)
+  - This helps users to downcast into `T: HostError`.
+- Added `WasmType` impls for `FuncRef` and `ExternRef` types. (https://github.com/paritytech/wasmi/pull/642)
+  - This allows `FuncRef` and `ExternRef` instances to be used in `TypedFunc` parameters and results.
+
+### Removed
+
+- Removed from `From` impls from `wasmparser-nostd` types to `wasmi` types.
+  - For example `From<wasmparser::FuncType> for wasmi::FuncType` got removed.
+
+### Changed
+
+- Update the `wasmparser-nostd` dependency from version `0.91.0` to `0.99.0`. (https://github.com/paritytech/wasmi/pull/640)
+- The `Trap` type is no longer `Clone`. (https://github.com/paritytech/wasmi/pull/650)
+
+### Internal
+
+- Resolved plenty of technical debt and improved structure of the `wasmi` crate.
+  - PRs: https://github.com/paritytech/wasmi/pull/648, https://github.com/paritytech/wasmi/pull/647, https://github.com/paritytech/wasmi/pull/646, https://github.com/paritytech/wasmi/pull/645, https://github.com/paritytech/wasmi/pull/644, https://github.com/paritytech/wasmi/pull/641
+
 ## [`0.24.0`] - 2023-01-31
 
 ### Added
