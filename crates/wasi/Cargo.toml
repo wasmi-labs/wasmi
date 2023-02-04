@@ -10,7 +10,7 @@ edition = "2021"
 wasi-common = "2.0"
 wasi-cap-std-sync = "2.0"
 wiggle = { version = "2.0", default-features = false, features = ["wiggle_metadata"] }
-wasmi = { version = "0.24.0", path = "../wasmi" }
+wasmi = { version = "0.25.0", path = "../wasmi" }
 
 [dev-dependencies]
 wat = "1.0.50"
