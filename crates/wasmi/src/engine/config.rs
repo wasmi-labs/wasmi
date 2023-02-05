@@ -27,6 +27,8 @@ pub struct Config {
     reference_types: bool,
     /// Is `true` if Wasm instructions on `f32` and `f64` types are allowed.
     floats: bool,
+    /// Is `true` if `wasmi` executions shall consume fuel.
+    consume_fuel: bool,
 }
 
 impl Default for Config {
@@ -41,6 +43,7 @@ impl Default for Config {
             bulk_memory: true,
             reference_types: true,
             floats: true,
+            consume_fuel: false,
         }
     }
 }
@@ -156,6 +159,35 @@ impl Config {
     pub fn floats(&mut self, enable: bool) -> &mut Self {
         self.floats = enable;
         self
+    }
+
+    /// Configures whether `wasmi` will consume fuel during execution to either halt execution as desired.
+    ///
+    /// # Note
+    ///
+    /// This configuration can be used to make `wasmi` instrument its internal bytecode
+    /// so that it consumes fuel as it executes. Once an execution runs out of fuel
+    /// a [`TrapCode::OutOfFuel`](crate::core::TrapCode::OutOfFuel) trap is raised.
+    /// This way users can deterministically halt or yield the execution of WebAssembly code.
+    ///
+    /// - Use [`Store::add_fuel`](crate::Store::add_fuel) to pour some fuel into the [`Store`] before
+    ///   executing some code as the [`Store`] start with no fuel.
+    /// - Use [`Caller::consume_fuel`](crate::Caller::consume_fuel) to charge costs for executed host functions.
+    ///
+    /// Disabled by default.
+    ///
+    /// [`Store`]: crate::Store
+    /// [`Engine`]: crate::Engine
+    pub fn consume_fuel(&mut self, enable: bool) -> &mut Self {
+        self.consume_fuel = enable;
+        self
+    }
+
+    /// Returns `true` if the [`Config`] enables fuel consumption by the [`Engine`].
+    ///
+    /// [`Engine`]: crate::Engine
+    pub(crate) fn get_consume_fuel(&self) -> bool {
+        self.consume_fuel
     }
 
     /// Returns the [`WasmFeatures`] represented by the [`Config`].
