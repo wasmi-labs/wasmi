@@ -5,6 +5,7 @@ use super::errors::{
     LinkerError,
     MemoryError,
     ModuleError,
+    StoreError,
     TableError,
 };
 use crate::core::Trap;
@@ -26,6 +27,8 @@ pub enum Error {
     Instantiation(InstantiationError),
     /// A module compilation, validation and translation error.
     Module(ModuleError),
+    /// A store error.
+    Store(StoreError),
     /// A function error.
     Func(FuncError),
     /// A trap as defined by the WebAssembly specification.
@@ -46,6 +49,7 @@ impl Display for Error {
             Self::Func(error) => Display::fmt(error, f),
             Self::Instantiation(error) => Display::fmt(error, f),
             Self::Module(error) => Display::fmt(error, f),
+            Self::Store(error) => Display::fmt(error, f),
         }
     }
 }
@@ -89,6 +93,12 @@ impl From<InstantiationError> for Error {
 impl From<ModuleError> for Error {
     fn from(error: ModuleError) -> Self {
         Self::Module(error)
+    }
+}
+
+impl From<StoreError> for Error {
+    fn from(error: StoreError) -> Self {
+        Self::Store(error)
     }
 }
 

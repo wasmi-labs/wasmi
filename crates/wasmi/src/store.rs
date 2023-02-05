@@ -28,10 +28,11 @@ use crate::{
     memory::DataSegment,
 };
 use core::{
-    fmt::Debug,
+    fmt::{self, Debug},
     sync::atomic::{AtomicU32, Ordering},
 };
 use wasmi_arena::{Arena, ArenaIndex, ComponentVec, GuardedEntity};
+use wasmi_core::TrapCode;
 
 /// A unique store index.
 ///
@@ -117,6 +118,8 @@ pub struct StoreInner {
     ///
     /// Amongst others the [`Engine`] stores the Wasm function definitions.
     engine: Engine,
+    /// The fuel of the [`Store`].
+    fuel: Fuel,
 }
 
 #[test]
@@ -127,6 +130,100 @@ fn test_store_is_send_sync() {
         let _ = assert_send::<Store<()>>;
         let _ = assert_sync::<Store<()>>;
     };
+}
+
+/// An error that may be encountered when operating on the [`Store`].
+#[derive(Debug, Clone)]
+pub enum StoreError {
+    /// Raised when trying to use any of the `fuel` methods while fuel metering is disabled.
+    FuelMeteringDisabled,
+    /// Raised when trying to consume more fuel than is available in the [`Store`].
+    OutOfFuel,
+}
+
+impl fmt::Display for StoreError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::FuelMeteringDisabled => write!(f, "fuel metering is disabled"),
+            Self::OutOfFuel => write!(f, "all fuel consumed"),
+        }
+    }
+}
+
+impl StoreError {
+    /// Returns an error indicating that fuel metering has been disabled.
+    ///
+    /// # Note
+    ///
+    /// This method exists to indicate that this execution path is cold.
+    #[cold]
+    pub fn fuel_metering_disabled() -> Self {
+        Self::FuelMeteringDisabled
+    }
+
+    /// Returns an error indicating that too much fuel has been consumed.
+    ///
+    /// # Note
+    ///
+    /// This method exists to indicate that this execution path is cold.
+    #[cold]
+    pub fn out_of_fuel() -> Self {
+        Self::OutOfFuel
+    }
+}
+
+/// The remaining and consumed fuel counters.
+#[derive(Debug, Default, Copy, Clone)]
+pub struct Fuel {
+    /// The remaining fuel.
+    remaining: u64,
+    /// The fuel consumed so far.
+    consumed: u64,
+}
+
+impl Fuel {
+    /// Adds `delta` quantity of fuel to the remaining [`Fuel`].
+    ///
+    /// # Panics
+    ///
+    /// If this overflows the [`Fuel`] counter.
+    pub fn add_fuel(&mut self, delta: u64) {
+        self.remaining = self.remaining.checked_add(delta).unwrap_or_else(|| {
+            panic!(
+                "encountered fuel overflow: fuel = {}, delta = {delta}",
+                self.remaining
+            )
+        });
+    }
+
+    /// Returns the amount of [`Fuel`] consumed by executions of the [`Store`] so far.
+    pub fn fuel_consumed(&self) -> u64 {
+        self.consumed
+    }
+
+    /// Synthetically consumes an amount of [`Fuel`] for the [`Store`].
+    ///
+    /// Returns the remaining amount of [`Fuel`] after this operation.
+    pub fn consume_fuel(&mut self, delta: u64) -> Result<u64, TrapCode> {
+        /// Raises an out-of-fuel error and indicates cold execution path.
+        #[cold]
+        fn err_out_of_fuel() -> Result<u64, TrapCode> {
+            Err(TrapCode::OutOfFuel)
+        }
+        match self.remaining.checked_sub(delta) {
+            Some(new_remaining) => {
+                self.remaining = new_remaining;
+                self.consumed = self.consumed.checked_add(delta).unwrap_or_else(|| {
+                    panic!(
+                        "encountered consumed fuel overflow: consumed = {}, delta = {delta}",
+                        self.remaining
+                    )
+                });
+                Ok(new_remaining)
+            }
+            None => err_out_of_fuel(),
+        }
+    }
 }
 
 impl StoreInner {
@@ -143,6 +240,7 @@ impl StoreInner {
             datas: Arena::new(),
             elems: Arena::new(),
             extern_objects: Arena::new(),
+            fuel: Fuel::default(),
         }
     }
 
@@ -624,6 +722,64 @@ impl<T> Store<T> {
     /// Consumes `self` and returns its user provided data.
     pub fn into_data(self) -> T {
         self.data
+    }
+
+    /// Returns `true` if fuel metering has been enabled.
+    fn is_fuel_metering_enabled(&self) -> bool {
+        self.engine().config().get_consume_fuel()
+    }
+
+    /// Returns `Ok` if fuel metering has been enabled.
+    ///
+    /// Otherwise returns the respective [`StoreError`].
+    fn check_fuel_metering_enabled(&self) -> Result<(), StoreError> {
+        if !self.is_fuel_metering_enabled() {
+            return Err(StoreError::fuel_metering_disabled());
+        }
+        Ok(())
+    }
+
+    /// Adds `delta` quantity of fuel to the remaining fuel.
+    ///
+    /// # Panics
+    ///
+    /// If this overflows the remaining fuel counter.
+    ///
+    /// # Errors
+    ///
+    /// If fuel metering is disabled.
+    pub fn add_fuel(&mut self, delta: u64) -> Result<(), StoreError> {
+        self.check_fuel_metering_enabled()?;
+        self.inner.fuel.add_fuel(delta);
+        Ok(())
+    }
+
+    /// Returns the amount of fuel consumed by executions of the [`Store`] so far.
+    ///
+    /// Returns `None` if fuel metering is disabled.
+    pub fn fuel_consumed(&self) -> Option<u64> {
+        self.check_fuel_metering_enabled().ok()?;
+        Some(self.inner.fuel.fuel_consumed())
+    }
+
+    /// Synthetically consumes an amount of fuel for the [`Store`].
+    ///
+    /// Returns the remaining amount of fuel after this operation.
+    ///
+    /// # Panics
+    ///
+    /// If this overflows the consumed fuel counter.
+    ///
+    /// # Errors
+    ///
+    /// - If fuel metering is disabled.
+    /// - If more fuel is consumed than available.
+    pub fn consume_fuel(&mut self, delta: u64) -> Result<u64, StoreError> {
+        self.check_fuel_metering_enabled()?;
+        self.inner
+            .fuel
+            .consume_fuel(delta)
+            .map_err(|_error| StoreError::out_of_fuel())
     }
 
     /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.
