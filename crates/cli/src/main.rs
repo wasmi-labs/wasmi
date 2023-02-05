@@ -1,5 +1,5 @@
 use anyhow::{anyhow, bail, Context, Result};
-use clap::{error::ErrorKind, Parser};
+use clap::Parser;
 use core::fmt::Write;
 use std::{
     ffi::OsStr,
@@ -37,129 +37,6 @@ fn parse_env(s: &str) -> Result<KeyValue> {
     })
 }
 
-/// Optional Function name and possibly zero list of args.
-#[derive(Debug)]
-struct InvokeArgs {
-    /// The exported name of the Wasm function to call.
-    /// If this argument is missing, the wasmi CLI will try to invoke `""` or `"_start"`
-    /// If those two are not defined in the module, it prints out all(if any) exported functions
-    /// in the module and ends with an error
-    func_name: Option<String>,
-
-    /// The arguments provided to the called function.
-    func_args: Vec<String>,
-}
-
-impl clap::FromArgMatches for InvokeArgs {
-    fn from_arg_matches(matches: &clap::ArgMatches) -> Result<Self, clap::Error> {
-        Self::from_arg_matches_mut(&mut matches.clone())
-    }
-
-    fn from_arg_matches_mut(matches: &mut clap::ArgMatches) -> Result<Self, clap::Error> {
-        let func_name = matches.remove_one::<String>("func_name");
-
-        let func_args = matches.remove_many::<String>("func_args");
-        // if `func_name` is not provided, `func_args` should be rejected
-        if func_name.is_none() && func_args.is_some() {
-            return Err(clap::Error::raw(
-                ErrorKind::ArgumentConflict,
-                "Func args are only allowed when there is a func name to invoke",
-            ));
-        }
-        let func_args = func_args.map(|v| v.collect::<Vec<_>>()).unwrap_or_default();
-
-        Ok(InvokeArgs {
-            func_name,
-            func_args,
-        })
-    }
-
-    fn update_from_arg_matches(&mut self, matches: &clap::ArgMatches) -> Result<(), clap::Error> {
-        self.update_from_arg_matches_mut(&mut matches.clone())
-    }
-
-    fn update_from_arg_matches_mut(
-        &mut self,
-        matches: &mut clap::ArgMatches,
-    ) -> Result<(), clap::Error> {
-        if !matches.contains_id("func_name") && matches.contains_id("func_args") {
-            return Err(clap::Error::new(ErrorKind::ArgumentConflict));
-        }
-
-        if matches.contains_id("func_name") {
-            let func_name = &mut self.func_name;
-            *func_name = matches.remove_one::<String>("func_name")
-        }
-
-        if matches.contains_id("func_args") {
-            let func_args = &mut self.func_args;
-            *func_args = matches
-                .remove_many::<String>("func_args")
-                .map(|v| v.collect::<Vec<_>>())
-                .unwrap_or_default();
-        }
-        Ok(())
-    }
-}
-
-impl clap::Args for InvokeArgs {
-    fn augment_args(cmd: clap::Command) -> clap::Command {
-        let cmd = cmd.group(clap::ArgGroup::new("InvokeArgs").multiple(true).args({
-            let members: [clap::Id; 2usize] =
-                [clap::Id::from("func_name"), clap::Id::from("func_args")];
-            members
-        }));
-        let cmd = cmd.arg({
-            let arg = clap::Arg::new("func_name").value_name("FUNC_NAME").value_parser(clap::value_parser!(String)).action(clap::ArgAction::Set);
-            arg.help(
-                r#"The exported name of the Wasm function to call. 
-                If this argument is missing, the wasmi CLI will try to invoke `""` or `"_start"` 
-                If those two are not defined in the module, it prints out all(if any) exported functions in the module and ends with an error"#)
-                .long_help(None)
-                .long("invoke")
-        });
-        let cmd = cmd.arg({
-            let arg = clap::Arg::new("func_args")
-                .value_name("FUNC_ARGS")
-                .num_args(1..)
-                .value_parser(clap::value_parser!(String))
-                .action(clap::ArgAction::Append);
-            arg.help("The arguments provided to the called function")
-                .long_help(None)
-        });
-        cmd.about("Optional Function name and possibly zero list of args")
-            .long_about(None)
-    }
-
-    fn augment_args_for_update(cmd: clap::Command) -> clap::Command {
-        let cmd = cmd.group(clap::ArgGroup::new("InvokeArgs").multiple(true).args({
-            let members: [clap::Id; 2usize] =
-                [clap::Id::from("func_name"), clap::Id::from("func_args")];
-            members
-        }));
-        let cmd = cmd.arg({
-        let arg = clap::Arg::new("func_name").value_name("FUNC_NAME").value_parser(clap::value_parser!(String)).action(clap::ArgAction::Set);
-        arg.help(
-            r#"The exported name of the Wasm function to call. 
-            If this argument is missing, the wasmi CLI will try to invoke `""` or `"_start"` 
-            If those two are not defined in the module, it prints out all(if any) exported functions in the module and ends with an error"#)
-            .long_help(None)
-            .long("invoke")
-        });
-        let cmd = cmd.arg({
-            let arg = clap::Arg::new("func_args")
-                .value_name("FUNC_ARGS")
-                .num_args(1..)
-                .value_parser(clap::value_parser!(String))
-                .action(clap::ArgAction::Append);
-            arg.help("The arguments provided to the called function")
-                .long_help(None)
-        });
-        cmd.about("Optional Function name and possibly zero list of args")
-            .long_about(None)
-    }
-}
-
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -180,9 +57,13 @@ struct Args {
     #[clap(value_hint = clap::ValueHint::FilePath)]
     wasm_file: PathBuf,
 
-    /// The function to invoke and a possibly zero list of arguments as positional arguments
-    #[command(flatten)]
-    invoke_args: InvokeArgs,
+    /// The function to invoke
+    #[clap(long = "invoke", value_name = "FUNCTION")]
+    invoke: Option<String>,
+
+    /// Possibly zero list of positional arguments
+    #[clap(value_name = "ARGS")]
+    func_args: Vec<String>,
 }
 
 impl Args {
@@ -217,9 +98,9 @@ impl Args {
     }
 
     /// Computes a vector of args provided to the program
-    /// First arg is the module name
+    /// First arg is always the module name. It's not expected to be provided at the command line
     fn argv(&self) -> Vec<String> {
-        let mut args = Vec::with_capacity(self.invoke_args.func_args.len() + 1);
+        let mut args = Vec::with_capacity(self.func_args.len() + 1);
 
         // wasm filename is the first arg
         // keep in mind that this module name still has it's `.wasm` extension
@@ -231,7 +112,7 @@ impl Args {
             .unwrap_or_else(|| "".to_owned());
 
         args.push(module_name);
-        args.extend(self.invoke_args.func_args.iter().map(|arg| arg.to_string()));
+        args.extend(self.func_args.iter().map(|arg| arg.to_string()));
 
         args
     }
@@ -302,7 +183,7 @@ impl Args {
             .and_then(|pre| pre.start(&mut store))
             .map_err(|error| anyhow!("failed to instantiate and start the Wasm module: {error}"))?;
 
-        if let Some(name) = &self.invoke_args.func_name {
+        if let Some(name) = &self.invoke {
             // if a func name is provided
             let func = instance
                 .get_export(&store, name)
@@ -345,7 +226,7 @@ fn main() -> Result<()> {
     let (func_name, func, mut store) = args.load_wasm_func_with_wasi()?;
     let func_type = func.func_type(&store);
 
-    let func_args = type_check_arguments(&func_name, &func_type, &args.invoke_args)?;
+    let func_args = type_check_arguments(&func_name, &func_type, &args.func_args)?;
     let mut results = prepare_results_buffer(&func_type);
 
     print_execution_start(&args.wasm_file, &func_name, &func_args);
@@ -465,7 +346,7 @@ fn display_exported_func(name: &str, func_type: &FuncType) -> String {
 fn type_check_arguments(
     func_name: &str,
     func_type: &FuncType,
-    invoked: &InvokeArgs,
+    func_args: &Vec<String>,
 ) -> Result<Vec<Value>> {
     // default exports (especially) from WASI programs usually don't take arguments as function arguments.
     // In such a case we would like to defer to the more elaborate check, in which case it would not even iterate at all
@@ -473,15 +354,13 @@ fn type_check_arguments(
     // it type-checked.
 
     // (1) quick check
-    if func_type.params().len() != invoked.func_args.len()
-        && !func_name.is_empty()
-        && func_name != "_start"
+    if func_type.params().len() != func_args.len() && !func_name.is_empty() && func_name != "_start"
     {
         bail!(
             "invalid number of arguments given for {func_name} of type {func_type}. \
             expected {} arguments but got {}",
             func_type.params().len(),
-            invoked.func_args.len()
+            func_args.len()
         );
     }
 
@@ -489,7 +368,7 @@ fn type_check_arguments(
     let func_args = func_type
         .params()
         .iter()
-        .zip(&invoked.func_args)
+        .zip(func_args)
         .enumerate()
         .map(|(n, (param_type, arg))| {
             macro_rules! make_err {
