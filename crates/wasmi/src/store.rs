@@ -249,6 +249,11 @@ impl StoreInner {
         &self.engine
     }
 
+    /// Returns an exclusive reference to the [`Fuel`] counters.
+    pub fn fuel_mut(&mut self) -> &mut Fuel {
+        &mut self.fuel
+    }
+
     /// Allocates a new [`FuncType`] and returns a [`DedupFuncType`] reference to it.
     ///
     /// # Note

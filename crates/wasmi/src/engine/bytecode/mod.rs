@@ -48,6 +48,9 @@ pub enum Instruction {
         len_targets: usize,
     },
     Unreachable,
+    ConsumeFuel {
+        amount: u64,
+    },
     Return(DropKeep),
     ReturnIfNez(DropKeep),
     Call(FuncIdx),

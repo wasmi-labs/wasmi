@@ -108,6 +108,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 Instr::BrIfNez(params) => self.visit_br_if_nez(params),
                 Instr::BrTable { len_targets } => self.visit_br_table(len_targets),
                 Instr::Unreachable => self.visit_unreachable()?,
+                Instr::ConsumeFuel { amount } => self.visit_consume_fuel(amount)?,
                 Instr::Return(drop_keep) => return self.visit_ret(drop_keep),
                 Instr::ReturnIfNez(drop_keep) => {
                     if let MaybeReturn::Return = self.visit_return_if_nez(drop_keep) {
@@ -477,6 +478,11 @@ pub enum MaybeReturn {
 impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     fn visit_unreachable(&mut self) -> Result<(), TrapCode> {
         Err(TrapCode::UnreachableCodeReached).map_err(Into::into)
+    }
+
+    fn visit_consume_fuel(&mut self, amount: u64) -> Result<(), TrapCode> {
+        self.ctx.fuel_mut().consume_fuel(amount)?;
+        self.try_next_instr()
     }
 
     fn visit_br(&mut self, params: BranchParams) {
