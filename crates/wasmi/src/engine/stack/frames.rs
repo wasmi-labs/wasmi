@@ -36,8 +36,8 @@ impl FuncFrame {
     }
 
     /// Returns the instance of the [`FuncFrame`].
-    pub fn instance(&self) -> Instance {
-        self.instance
+    pub fn instance(&self) -> &Instance {
+        &self.instance
     }
 }
 

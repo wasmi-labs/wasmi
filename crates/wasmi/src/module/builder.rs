@@ -1,53 +1,53 @@
 use super::{
+    export::ExternIdx,
     import::FuncTypeIdx,
     DataSegment,
     ElementSegment,
-    Export,
+    ExternTypeIdx,
     FuncIdx,
     Global,
     GlobalIdx,
     Import,
-    ImportKind,
     ImportName,
     InitExpr,
     Module,
 };
 use crate::{
     engine::{DedupFuncType, FuncBody},
+    errors::ModuleError,
     Engine,
     FuncType,
     GlobalType,
     MemoryType,
-    ModuleError,
     TableType,
 };
-use alloc::vec::Vec;
+use alloc::{boxed::Box, collections::BTreeMap, vec::Vec};
 
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug)]
 pub struct ModuleBuilder<'engine> {
-    pub(super) engine: &'engine Engine,
-    pub(super) func_types: Vec<DedupFuncType>,
-    pub(super) imports: ModuleImports,
-    pub(super) funcs: Vec<DedupFuncType>,
-    pub(super) tables: Vec<TableType>,
-    pub(super) memories: Vec<MemoryType>,
-    pub(super) globals: Vec<GlobalType>,
-    pub(super) globals_init: Vec<InitExpr>,
-    pub(super) exports: Vec<Export>,
-    pub(super) start: Option<FuncIdx>,
-    pub(super) func_bodies: Vec<FuncBody>,
-    pub(super) element_segments: Vec<ElementSegment>,
-    pub(super) data_segments: Vec<DataSegment>,
+    engine: &'engine Engine,
+    pub func_types: Vec<DedupFuncType>,
+    pub imports: ModuleImports,
+    pub funcs: Vec<DedupFuncType>,
+    pub tables: Vec<TableType>,
+    pub memories: Vec<MemoryType>,
+    pub globals: Vec<GlobalType>,
+    pub globals_init: Vec<InitExpr>,
+    pub exports: BTreeMap<Box<str>, ExternIdx>,
+    pub start: Option<FuncIdx>,
+    pub func_bodies: Vec<FuncBody>,
+    pub element_segments: Vec<ElementSegment>,
+    pub data_segments: Vec<DataSegment>,
 }
 
 /// The import names of the [`Module`] imports.
 #[derive(Debug, Default)]
 pub struct ModuleImports {
-    pub(super) funcs: Vec<ImportName>,
-    pub(super) tables: Vec<ImportName>,
-    pub(super) memories: Vec<ImportName>,
-    pub(super) globals: Vec<ImportName>,
+    pub funcs: Vec<ImportName>,
+    pub tables: Vec<ImportName>,
+    pub memories: Vec<ImportName>,
+    pub globals: Vec<ImportName>,
 }
 
 impl ModuleImports {
@@ -75,27 +75,33 @@ impl<'a> ModuleResources<'a> {
     }
 
     /// Returns the [`FuncType`] at the given index.
-    pub fn get_func_type(&self, func_type_idx: FuncTypeIdx) -> DedupFuncType {
-        self.res.func_types[func_type_idx.into_usize()]
+    pub fn get_func_type(&self, func_type_idx: FuncTypeIdx) -> &DedupFuncType {
+        &self.res.func_types[func_type_idx.into_u32() as usize]
     }
 
     /// Returns the [`FuncType`] of the indexed function.
-    pub fn get_type_of_func(&self, func_idx: FuncIdx) -> DedupFuncType {
-        self.res.funcs[func_idx.into_usize()]
+    pub fn get_type_of_func(&self, func_idx: FuncIdx) -> &DedupFuncType {
+        &self.res.funcs[func_idx.into_u32() as usize]
     }
 
     /// Returns the [`GlobalType`] the the indexed global variable.
     pub fn get_type_of_global(&self, global_idx: GlobalIdx) -> GlobalType {
-        self.res.globals[global_idx.into_usize()]
+        self.res.globals[global_idx.into_u32() as usize]
     }
 
     /// Returns the global variable type and optional initial value.
     pub fn get_global(&self, global_idx: GlobalIdx) -> (GlobalType, Option<&InitExpr>) {
         let index = global_idx.into_u32() as usize;
-        let offset = self.res.imports.len_globals();
-        let global_type = self.res.globals[index];
-        let init_expr = self.res.globals_init.get(index + offset);
-        (global_type, init_expr)
+        let len_imports = self.res.imports.len_globals();
+        let global_type = self.get_type_of_global(global_idx);
+        if index < len_imports {
+            // The index refers to an imported global without init value.
+            (global_type, None)
+        } else {
+            // The index refers to an internal global with init value.
+            let init_expr = &self.res.globals_init[index - len_imports];
+            (global_type, Some(init_expr))
+        }
     }
 }
 
@@ -111,7 +117,7 @@ impl<'engine> ModuleBuilder<'engine> {
             memories: Vec::new(),
             globals: Vec::new(),
             globals_init: Vec::new(),
-            exports: Vec::new(),
+            exports: BTreeMap::new(),
             start: None,
             func_bodies: Vec::new(),
             element_segments: Vec::new(),
@@ -136,14 +142,11 @@ impl<'engine> ModuleBuilder<'engine> {
     pub fn push_func_types<T>(&mut self, func_types: T) -> Result<(), ModuleError>
     where
         T: IntoIterator<Item = Result<FuncType, ModuleError>>,
-        T::IntoIter: ExactSizeIterator,
     {
         assert!(
             self.func_types.is_empty(),
             "tried to initialize module function types twice"
         );
-        let func_types = func_types.into_iter();
-        self.func_types.reserve_exact(func_types.len());
         for func_type in func_types {
             let func_type = func_type?;
             let dedup = self.engine.alloc_func_type(func_type);
@@ -164,26 +167,25 @@ impl<'engine> ModuleBuilder<'engine> {
     pub fn push_imports<T>(&mut self, imports: T) -> Result<(), ModuleError>
     where
         T: IntoIterator<Item = Result<Import, ModuleError>>,
-        T::IntoIter: ExactSizeIterator,
     {
         for import in imports {
             let import = import?;
-            let (name, kind) = import.into_name_and_kind();
+            let (name, kind) = import.into_name_and_type();
             match kind {
-                ImportKind::Func(func_type_idx) => {
+                ExternTypeIdx::Func(func_type_idx) => {
                     self.imports.funcs.push(name);
-                    let func_type = self.func_types[func_type_idx.into_usize()];
+                    let func_type = self.func_types[func_type_idx.into_u32() as usize];
                     self.funcs.push(func_type);
                 }
-                ImportKind::Table(table_type) => {
+                ExternTypeIdx::Table(table_type) => {
                     self.imports.tables.push(name);
                     self.tables.push(table_type);
                 }
-                ImportKind::Memory(memory_type) => {
+                ExternTypeIdx::Memory(memory_type) => {
                     self.imports.memories.push(name);
                     self.memories.push(memory_type);
                 }
-                ImportKind::Global(global_type) => {
+                ExternTypeIdx::Global(global_type) => {
                     self.imports.globals.push(name);
                     self.globals.push(global_type);
                 }
@@ -204,18 +206,15 @@ impl<'engine> ModuleBuilder<'engine> {
     pub fn push_funcs<T>(&mut self, funcs: T) -> Result<(), ModuleError>
     where
         T: IntoIterator<Item = Result<FuncTypeIdx, ModuleError>>,
-        T::IntoIter: ExactSizeIterator,
     {
         assert_eq!(
             self.funcs.len(),
             self.imports.funcs.len(),
             "tried to initialize module function declarations twice"
         );
-        let funcs = funcs.into_iter();
-        self.funcs.reserve_exact(funcs.len());
         for func in funcs {
             let func_type_idx = func?;
-            let func_type = self.func_types[func_type_idx.into_usize()];
+            let func_type = self.func_types[func_type_idx.into_u32() as usize];
             self.funcs.push(func_type);
         }
         Ok(())
@@ -233,15 +232,12 @@ impl<'engine> ModuleBuilder<'engine> {
     pub fn push_tables<T>(&mut self, tables: T) -> Result<(), ModuleError>
     where
         T: IntoIterator<Item = Result<TableType, ModuleError>>,
-        T::IntoIter: ExactSizeIterator,
     {
         assert_eq!(
             self.tables.len(),
             self.imports.tables.len(),
             "tried to initialize module table declarations twice"
         );
-        let tables = tables.into_iter();
-        self.tables.reserve_exact(tables.len());
         for table in tables {
             let table = table?;
             self.tables.push(table);
@@ -261,15 +257,12 @@ impl<'engine> ModuleBuilder<'engine> {
     pub fn push_memories<T>(&mut self, memories: T) -> Result<(), ModuleError>
     where
         T: IntoIterator<Item = Result<MemoryType, ModuleError>>,
-        T::IntoIter: ExactSizeIterator,
     {
         assert_eq!(
             self.memories.len(),
             self.imports.memories.len(),
             "tried to initialize module linear memory declarations twice"
         );
-        let memories = memories.into_iter();
-        self.memories.reserve_exact(memories.len());
         for memory in memories {
             let memory = memory?;
             self.memories.push(memory);
@@ -289,17 +282,12 @@ impl<'engine> ModuleBuilder<'engine> {
     pub fn push_globals<T>(&mut self, globals: T) -> Result<(), ModuleError>
     where
         T: IntoIterator<Item = Result<Global, ModuleError>>,
-        T::IntoIter: ExactSizeIterator,
     {
         assert_eq!(
             self.globals.len(),
             self.imports.globals.len(),
             "tried to initialize module global variable declarations twice"
         );
-        let globals = globals.into_iter();
-        let len_globals = globals.len();
-        self.globals.reserve_exact(len_globals);
-        self.globals_init.reserve_exact(len_globals);
         for global in globals {
             let global = global?;
             let (global_decl, global_init) = global.into_type_and_init();
@@ -320,14 +308,13 @@ impl<'engine> ModuleBuilder<'engine> {
     /// If this function has already been called on the same [`ModuleBuilder`].
     pub fn push_exports<T>(&mut self, exports: T) -> Result<(), ModuleError>
     where
-        T: IntoIterator<Item = Result<Export, ModuleError>>,
-        T::IntoIter: ExactSizeIterator,
+        T: IntoIterator<Item = Result<(Box<str>, ExternIdx), ModuleError>>,
     {
         assert!(
             self.exports.is_empty(),
             "tried to initialize module export declarations twice"
         );
-        self.exports = exports.into_iter().collect::<Result<Vec<_>, _>>()?;
+        self.exports = exports.into_iter().collect::<Result<BTreeMap<_, _>, _>>()?;
         Ok(())
     }
 
@@ -355,7 +342,6 @@ impl<'engine> ModuleBuilder<'engine> {
     pub fn push_element_segments<T>(&mut self, elements: T) -> Result<(), ModuleError>
     where
         T: IntoIterator<Item = Result<ElementSegment, ModuleError>>,
-        T::IntoIter: ExactSizeIterator,
     {
         assert!(
             self.element_segments.is_empty(),
@@ -377,7 +363,6 @@ impl<'engine> ModuleBuilder<'engine> {
     pub fn push_data_segments<T>(&mut self, data: T) -> Result<(), ModuleError>
     where
         T: IntoIterator<Item = Result<DataSegment, ModuleError>>,
-        T::IntoIter: ExactSizeIterator,
     {
         assert!(
             self.data_segments.is_empty(),

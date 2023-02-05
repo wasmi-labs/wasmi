@@ -1,7 +1,15 @@
 use super::Func;
-use crate::{engine::Stack, func::CallResultsTuple, AsContextMut, Engine, Error, WasmResults};
+use crate::{
+    engine::Stack,
+    func::CallResultsTuple,
+    AsContextMut,
+    Engine,
+    Error,
+    Value,
+    WasmResults,
+};
 use core::{fmt, marker::PhantomData, mem::replace, ops::Deref};
-use wasmi_core::{Trap, Value};
+use wasmi_core::Trap;
 
 /// Returned by [`Engine`] methods for calling a function in a resumable way.
 ///
@@ -169,11 +177,11 @@ impl ResumableInvocation {
         outputs: &mut [Value],
     ) -> Result<ResumableCall, Error> {
         self.engine
-            .resolve_func_type(self.host_func().signature(ctx.as_context()), |func_type| {
+            .resolve_func_type(self.host_func().ty_dedup(ctx.as_context()), |func_type| {
                 func_type.match_results(inputs, true)
             })?;
         self.engine
-            .resolve_func_type(self.func.signature(ctx.as_context()), |func_type| {
+            .resolve_func_type(self.func.ty_dedup(ctx.as_context()), |func_type| {
                 func_type.match_results(outputs, false)?;
                 func_type.prepare_outputs(outputs);
                 <Result<(), Error>>::Ok(()) // TODO: why do we need types here?
@@ -249,7 +257,7 @@ impl<Results> TypedResumableInvocation<Results> {
         Results: WasmResults,
     {
         self.engine
-            .resolve_func_type(self.host_func().signature(ctx.as_context()), |func_type| {
+            .resolve_func_type(self.host_func().ty_dedup(ctx.as_context()), |func_type| {
                 func_type.match_results(inputs, true)
             })?;
         self.engine

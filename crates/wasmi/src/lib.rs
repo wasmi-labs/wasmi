@@ -41,7 +41,7 @@
 //!     let mut store = Store::new(&engine, 42);
 //!     let host_hello = Func::wrap(&mut store, |caller: Caller<'_, HostState>, param: i32| {
 //!         println!("Got {param} from WebAssembly");
-//!         println!("My host state is: {}", caller.host_data());
+//!         println!("My host state is: {}", caller.data());
 //!     });
 //!
 //!     // In order to create Wasm module instances and link their imports
@@ -56,11 +56,7 @@
 //!     let instance = linker
 //!         .instantiate(&mut store, &module)?
 //!         .start(&mut store)?;
-//!     let hello = instance
-//!         .get_export(&store, "hello")
-//!         .and_then(Extern::into_func)
-//!         .ok_or_else(|| anyhow!("could not find function \"hello\""))?
-//!         .typed::<(), ()>(&mut store)?;
+//!     let hello = instance.get_typed_func::<(), ()>(&store, "hello")?;
 //!
 //!     // And finally we can call the wasm!
 //!     hello.call(&mut store, ())?;
@@ -80,7 +76,7 @@
     clippy::default_trait_access,
     clippy::items_after_statements
 )]
-#![recursion_limit = "550"]
+#![recursion_limit = "750"]
 
 #[cfg(not(feature = "std"))]
 #[macro_use]
@@ -93,9 +89,8 @@ mod foreach_tuple;
 
 mod engine;
 mod error;
-mod external;
+mod externref;
 mod func;
-mod func_type;
 mod global;
 mod instance;
 mod linker;
@@ -103,6 +98,7 @@ mod memory;
 mod module;
 mod store;
 mod table;
+mod value;
 
 /// Definitions from the `wasmi_core` crate.
 #[doc(inline)]
@@ -131,33 +127,42 @@ pub use self::{
         TypedResumableInvocation,
     },
     error::Error,
-    external::Extern,
-    func::{Caller, Func, IntoFunc, TypedFunc, WasmParams, WasmResults, WasmRet, WasmType},
-    func_type::FuncType,
+    externref::ExternRef,
+    func::{
+        Caller,
+        Func,
+        FuncRef,
+        FuncType,
+        IntoFunc,
+        TypedFunc,
+        WasmParams,
+        WasmResults,
+        WasmRet,
+        WasmType,
+        WasmTypeList,
+    },
     global::{Global, GlobalType, Mutability},
-    instance::{ExportsIter, Instance},
+    instance::{Export, ExportsIter, Extern, ExternType, Instance},
     linker::Linker,
     memory::{Memory, MemoryType},
     module::{
-        ExportItem,
-        ExportItemKind,
+        ExportType,
+        ImportType,
         InstancePre,
         Module,
-        ModuleError,
         ModuleExportsIter,
-        ModuleImport,
-        ModuleImportType,
         ModuleImportsIter,
         Read,
     },
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
+    value::Value,
 };
 use self::{
     func::{FuncEntity, FuncIdx},
     global::{GlobalEntity, GlobalIdx},
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
-    memory::{MemoryEntity, MemoryIdx},
-    store::Stored,
-    table::{TableEntity, TableIdx},
+    memory::{DataSegmentEntity, DataSegmentIdx, MemoryEntity, MemoryIdx},
+    store::{StoreInner, Stored},
+    table::{ElementSegment, ElementSegmentEntity, ElementSegmentIdx, TableEntity, TableIdx},
 };

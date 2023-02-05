@@ -1,18 +1,18 @@
 use super::{error::TestError, TestContext, TestDescriptor};
 use anyhow::Result;
-use wasmi::{Config, Error as WasmiError};
-use wasmi_core::{Value, F32, F64};
+use wasmi::{Config, ExternRef, FuncRef, Instance, Value};
+use wasmi_core::{F32, F64};
 use wast::{
+    core::{HeapType, NanPattern, WastRetCore},
     lexer::Lexer,
     parser::ParseBuffer,
     token::Span,
-    AssertExpression,
-    NanPattern,
     QuoteWat,
     Wast,
     WastDirective,
     WastExecute,
     WastInvoke,
+    WastRet,
     Wat,
 };
 
@@ -53,10 +53,11 @@ pub fn run_wasm_spec_test(name: &str, config: Config) {
 
 fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> {
     'outer: for directive in wast.directives {
+        let span = directive.span();
         test_context.profile().bump_directives();
         match directive {
             WastDirective::Wat(QuoteWat::Wat(Wat::Module(module))) => {
-                test_context.compile_and_instantiate(module)?;
+                module_compilation_succeeds(test_context, span, module);
                 test_context.profile().bump_module();
             }
             WastDirective::Wat(_) => {
@@ -199,40 +200,45 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
 /// - If the trap message of the `error` is not as expected.
 fn assert_trap(test_context: &TestContext, span: Span, error: TestError, message: &str) {
     match error {
-        TestError::Wasmi(WasmiError::Trap(trap)) if trap.trap_code().is_some() => {
-            let code = trap.trap_code().unwrap();
-            assert_eq!(
-                code.trap_message(),
-                message,
-                "{}: the directive trapped as expected but with an unexpected message",
+        TestError::Wasmi(error) => {
+            assert!(
+                error.to_string().contains(message),
+                "{}: the directive trapped as expected but with an unexpected message\n\
+                    expected: {},\n\
+                    encountered: {}",
                 test_context.spanned(span),
+                message,
+                error,
             );
         }
         unexpected => panic!(
-            "encountered unexpected error: \n\t\
+            "{}: encountered unexpected error: \n\t\
                 found: '{unexpected}'\n\t\
                 expected: trap with message '{message}'",
+            test_context.spanned(span),
         ),
     }
 }
 
 /// Asserts that `results` match the `expected` values.
-fn assert_results(
-    context: &TestContext,
-    span: Span,
-    results: &[Value],
-    expected: &[AssertExpression],
-) {
+fn assert_results(context: &TestContext, span: Span, results: &[Value], expected: &[WastRet]) {
     assert_eq!(results.len(), expected.len());
+    let expected = expected.iter().map(|expected| match expected {
+        WastRet::Core(expected) => expected,
+        WastRet::Component(expected) => panic!(
+            "{:?}: `wasmi` does not support the Wasm `component-model` proposal but found {expected:?}",
+            context.spanned(span),
+        ),
+    });
     for (result, expected) in results.iter().zip(expected) {
         match (result, expected) {
-            (Value::I32(result), AssertExpression::I32(expected)) => {
+            (Value::I32(result), WastRetCore::I32(expected)) => {
                 assert_eq!(result, expected, "in {}", context.spanned(span))
             }
-            (Value::I64(result), AssertExpression::I64(expected)) => {
+            (Value::I64(result), WastRetCore::I64(expected)) => {
                 assert_eq!(result, expected, "in {}", context.spanned(span))
             }
-            (Value::F32(result), AssertExpression::F32(expected)) => match expected {
+            (Value::F32(result), WastRetCore::F32(expected)) => match expected {
                 NanPattern::CanonicalNan | NanPattern::ArithmeticNan => assert!(result.is_nan()),
                 NanPattern::Value(expected) => {
                     assert_eq!(
@@ -243,13 +249,7 @@ fn assert_results(
                     );
                 }
             },
-            (Value::F32(result), AssertExpression::LegacyArithmeticNaN) => {
-                assert!(result.is_nan(), "in {}", context.spanned(span))
-            }
-            (Value::F32(result), AssertExpression::LegacyCanonicalNaN) => {
-                assert!(result.is_nan(), "in {}", context.spanned(span))
-            }
-            (Value::F64(result), AssertExpression::F64(expected)) => match expected {
+            (Value::F64(result), WastRetCore::F64(expected)) => match expected {
                 NanPattern::CanonicalNan | NanPattern::ArithmeticNan => {
                     assert!(result.is_nan(), "in {}", context.spanned(span))
                 }
@@ -262,11 +262,19 @@ fn assert_results(
                     );
                 }
             },
-            (Value::F64(result), AssertExpression::LegacyArithmeticNaN) => {
-                assert!(result.is_nan(), "in {}", context.spanned(span))
+            (Value::FuncRef(funcref), WastRetCore::RefNull(Some(HeapType::Func))) => {
+                assert!(funcref.is_null());
             }
-            (Value::F64(result), AssertExpression::LegacyCanonicalNaN) => {
-                assert!(result.is_nan(), "in {}", context.spanned(span))
+            (Value::ExternRef(externref), WastRetCore::RefNull(Some(HeapType::Extern))) => {
+                assert!(externref.is_null());
+            }
+            (Value::ExternRef(externref), WastRetCore::RefExtern(expected)) => {
+                let value = externref
+                    .data(context.store())
+                    .expect("unexpected null element")
+                    .downcast_ref::<u32>()
+                    .expect("unexpected non-u32 data");
+                assert_eq!(value, expected);
             }
             (result, expected) => panic!(
                 "{}: encountered mismatch in evaluation. expected {:?} but found {:?}",
@@ -291,6 +299,21 @@ fn extract_module(quote_wat: QuoteWat) -> Option<wast::core::Module> {
             // Wasm modules.
             None
         }
+    }
+}
+
+fn module_compilation_succeeds(
+    context: &mut TestContext,
+    span: Span,
+    module: wast::core::Module,
+) -> Instance {
+    match context.compile_and_instantiate(module) {
+        Ok(instance) => instance,
+        Err(error) => panic!(
+            "{}: failed to instantiate module but should have suceeded: {}",
+            context.spanned(span),
+            error
+        ),
     }
 }
 
@@ -340,27 +363,35 @@ fn execute_wast_invoke(
     let field_name = invoke.name;
     let mut args = <Vec<Value>>::new();
     for arg in invoke.args {
-        assert_eq!(
-            arg.instrs.len(),
-            1,
-            "{}: only single invoke instructions are supported as invoke arguments but found: {:?}",
-            context.spanned(span),
-            arg.instrs
-        );
-        let arg = match &arg.instrs[0] {
-            wast::core::Instruction::I32Const(value) => Value::I32(*value),
-            wast::core::Instruction::I64Const(value) => Value::I64(*value),
-            wast::core::Instruction::F32Const(value) => Value::F32(F32::from_bits(value.bits)),
-            wast::core::Instruction::F64Const(value) => Value::F64(F64::from_bits(value.bits)),
-            unsupported => panic!(
-                "{}: encountered unsupported invoke instruction: {:?}",
-                context.spanned(span),
-                unsupported
+        let value = match arg {
+            wast::WastArg::Core(arg) => value(context.store_mut(), &arg).unwrap_or_else(|| {
+                panic!(
+                    "{}: encountered unsupported WastArgCore argument: {arg:?}",
+                    context.spanned(span)
+                )
+            }),
+            wast::WastArg::Component(arg) => panic!(
+                "{}: `wasmi` does not support the Wasm `component-model` but found {arg:?}",
+                context.spanned(span)
             ),
         };
-        args.push(arg);
+        args.push(value);
     }
     context
         .invoke(module_name, field_name, &args)
         .map(|results| results.to_vec())
+}
+
+/// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Value`] if possible.
+fn value(ctx: &mut wasmi::Store<()>, value: &wast::core::WastArgCore) -> Option<Value> {
+    Some(match value {
+        wast::core::WastArgCore::I32(arg) => Value::I32(*arg),
+        wast::core::WastArgCore::I64(arg) => Value::I64(*arg),
+        wast::core::WastArgCore::F32(arg) => Value::F32(F32::from_bits(arg.bits)),
+        wast::core::WastArgCore::F64(arg) => Value::F64(F64::from_bits(arg.bits)),
+        wast::core::WastArgCore::RefNull(HeapType::Func) => Value::FuncRef(FuncRef::null()),
+        wast::core::WastArgCore::RefNull(HeapType::Extern) => Value::ExternRef(ExternRef::null()),
+        wast::core::WastArgCore::RefExtern(value) => Value::ExternRef(ExternRef::new(ctx, *value)),
+        _ => return None,
+    })
 }

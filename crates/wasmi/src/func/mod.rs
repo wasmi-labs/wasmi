@@ -1,5 +1,7 @@
 mod caller;
 mod error;
+mod func_type;
+mod funcref;
 mod into_func;
 mod typed_func;
 
@@ -7,7 +9,9 @@ pub(crate) use self::typed_func::CallResultsTuple;
 pub use self::{
     caller::Caller,
     error::FuncError,
-    into_func::{IntoFunc, WasmRet, WasmType},
+    func_type::FuncType,
+    funcref::FuncRef,
+    into_func::{IntoFunc, WasmRet, WasmType, WasmTypeList},
     typed_func::{TypedFunc, WasmParams, WasmResults},
 };
 use super::{
@@ -18,30 +22,28 @@ use super::{
     StoreContext,
     Stored,
 };
-use crate::{
-    core::{Trap, Value},
-    engine::ResumableCall,
-    Error,
-    FuncType,
-};
+use crate::{core::Trap, engine::ResumableCall, Error, Value};
 use alloc::sync::Arc;
-use core::{fmt, fmt::Debug};
+use core::{fmt, fmt::Debug, num::NonZeroU32};
 use wasmi_arena::ArenaIndex;
 
 /// A raw index to a function entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct FuncIdx(u32);
+pub struct FuncIdx(NonZeroU32);
 
 impl ArenaIndex for FuncIdx {
     fn into_usize(self) -> usize {
-        self.0 as usize
+        self.0.get().wrapping_sub(1) as usize
     }
 
-    fn from_usize(value: usize) -> Self {
-        let value = value.try_into().unwrap_or_else(|error| {
-            panic!("index {value} is out of bounds as func index: {error}")
-        });
-        Self(value)
+    fn from_usize(index: usize) -> Self {
+        index
+            .try_into()
+            .ok()
+            .map(|index: u32| index.wrapping_add(1))
+            .and_then(NonZeroU32::new)
+            .map(Self)
+            .unwrap_or_else(|| panic!("out of bounds func index {index}"))
     }
 }
 
@@ -91,10 +93,10 @@ impl<T> FuncEntity<T> {
     }
 
     /// Returns the signature of the Wasm function.
-    pub fn signature(&self) -> DedupFuncType {
+    pub fn ty_dedup(&self) -> &DedupFuncType {
         match self.as_internal() {
-            FuncEntityInternal::Wasm(func) => func.signature(),
-            FuncEntityInternal::Host(func) => func.signature(),
+            FuncEntityInternal::Wasm(func) => func.ty_dedup(),
+            FuncEntityInternal::Host(func) => func.ty_dedup(),
         }
     }
 }
@@ -138,8 +140,8 @@ impl WasmFuncEntity {
     }
 
     /// Returns the signature of the Wasm function.
-    pub fn signature(&self) -> DedupFuncType {
-        self.signature
+    pub fn ty_dedup(&self) -> &DedupFuncType {
+        &self.signature
     }
 
     /// Returns the instance where the [`Func`] belong to.
@@ -208,7 +210,7 @@ impl<T> HostFuncEntity<T> {
         func: impl IntoFunc<T, Params, Results>,
     ) -> Self {
         let (signature, trampoline) = func.into_func();
-        let signature = ctx.as_context_mut().store.alloc_func_type(signature);
+        let signature = ctx.as_context_mut().store.inner.alloc_func_type(signature);
         Self {
             signature,
             trampoline,
@@ -216,8 +218,8 @@ impl<T> HostFuncEntity<T> {
     }
 
     /// Returns the signature of the host function.
-    pub fn signature(&self) -> DedupFuncType {
-        self.signature
+    pub fn ty_dedup(&self) -> &DedupFuncType {
+        &self.signature
     }
 
     /// Calls the host function with the given inputs.
@@ -226,7 +228,7 @@ impl<T> HostFuncEntity<T> {
     pub fn call(
         &self,
         mut ctx: impl AsContextMut<UserState = T>,
-        instance: Option<Instance>,
+        instance: Option<&Instance>,
         params: FuncParams,
     ) -> Result<FuncResults, Trap> {
         let caller = <Caller<T>>::new(&mut ctx, instance);
@@ -246,8 +248,8 @@ impl Func {
     }
 
     /// Returns the underlying stored representation.
-    pub(super) fn into_inner(self) -> Stored<FuncIdx> {
-        self.0
+    pub(super) fn as_inner(&self) -> &Stored<FuncIdx> {
+        &self.0
     }
 
     /// Creates a new host function from the given closure.
@@ -260,15 +262,19 @@ impl Func {
     }
 
     /// Returns the signature of the function.
-    pub(crate) fn signature(&self, ctx: impl AsContext) -> DedupFuncType {
-        ctx.as_context().store.resolve_func(*self).signature()
+    pub(crate) fn ty_dedup<'a, T: 'a>(
+        &self,
+        ctx: impl Into<StoreContext<'a, T>>,
+    ) -> &'a DedupFuncType {
+        ctx.into().store.resolve_func(self).ty_dedup()
     }
 
     /// Returns the function type of the [`Func`].
-    pub fn func_type(&self, ctx: impl AsContext) -> FuncType {
+    pub fn ty(&self, ctx: impl AsContext) -> FuncType {
         ctx.as_context()
             .store
-            .resolve_func_type(self.signature(&ctx))
+            .inner
+            .resolve_func_type(self.ty_dedup(&ctx))
     }
 
     /// Calls the Wasm or host function with the given inputs.
@@ -360,9 +366,10 @@ impl Func {
         inputs: &[Value],
         outputs: &mut [Value],
     ) -> Result<(), FuncError> {
-        let fn_type = self.signature(ctx.as_context());
+        let fn_type = self.ty_dedup(ctx.as_context());
         ctx.as_context()
             .store
+            .inner
             .resolve_func_type_with(fn_type, |func_type| {
                 func_type.match_params(inputs)?;
                 func_type.match_results(outputs, false)?;
@@ -404,6 +411,6 @@ impl Func {
         &self,
         ctx: impl Into<StoreContext<'a, T>>,
     ) -> &'a FuncEntityInternal<T> {
-        ctx.into().store.resolve_func(*self).as_internal()
+        ctx.into().store.resolve_func(self).as_internal()
     }
 }

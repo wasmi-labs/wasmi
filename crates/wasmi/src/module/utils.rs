@@ -1,104 +1,122 @@
-use crate::{FuncType, GlobalType, MemoryType, ModuleError, Mutability, TableType};
+use crate::{FuncType, GlobalType, MemoryType, Mutability, TableType};
 use wasmi_core::ValueType;
 
-impl TryFrom<wasmparser::TableType> for TableType {
-    type Error = ModuleError;
-
-    fn try_from(table_type: wasmparser::TableType) -> Result<Self, Self::Error> {
-        if table_type.element_type != wasmparser::ValType::FuncRef {
-            return Err(ModuleError::unsupported(table_type));
-        }
-        let initial = table_type.initial as usize;
-        let maximum = table_type.maximum.map(|value| value as usize);
-        Ok(TableType::new(initial, maximum))
+impl TableType {
+    /// Creates a new [`TableType`] from the given `wasmparser` primitive.
+    ///
+    /// # Dev. Note
+    ///
+    /// We do not use the `From` trait here so that this conversion
+    /// routine does not become part of the public API of [`TableType`].
+    pub(crate) fn from_wasmparser(table_type: wasmparser::TableType) -> Self {
+        let element = WasmiValueType::from(table_type.element_type).into_inner();
+        let minimum = table_type.initial;
+        let maximum = table_type.maximum;
+        Self::new(element, minimum, maximum)
     }
 }
 
-impl TryFrom<wasmparser::MemoryType> for MemoryType {
-    type Error = ModuleError;
-
-    fn try_from(memory_type: wasmparser::MemoryType) -> Result<Self, Self::Error> {
-        let make_error = || ModuleError::unsupported(memory_type);
-        let into_error = |_error| make_error();
-        if memory_type.memory64 || memory_type.shared {
-            return Err(make_error());
-        }
-        let initial = memory_type.initial.try_into().map_err(into_error)?;
-        let maximum = memory_type
+impl MemoryType {
+    /// Creates a new [`MemoryType`] from the given `wasmparser` primitive.
+    ///
+    /// # Dev. Note
+    ///
+    /// We do not use the `From` trait here so that this conversion
+    /// routine does not become part of the public API of [`MemoryType`].
+    pub(crate) fn from_wasmparser(memory_type: wasmparser::MemoryType) -> Self {
+        assert!(
+            !memory_type.memory64,
+            "wasmi does not support the `memory64` Wasm proposal"
+        );
+        assert!(
+            !memory_type.shared,
+            "wasmi does not support the `threads` Wasm proposal"
+        );
+        let initial: u32 = memory_type
+            .initial
+            .try_into()
+            .expect("wasm32 memories must have a valid u32 minimum size");
+        let maximum: Option<u32> = memory_type
             .maximum
             .map(TryInto::try_into)
             .transpose()
-            .map_err(into_error)?;
-        Ok(MemoryType::new(initial, maximum)
-            .expect("valid wasmparser MemoryType must be valid in wasmi")) // TODO: better return error
+            .expect("wasm32 memories must have a valid u32 maximum size if any");
+        Self::new(initial, maximum)
+            .expect("encountered invalid wasmparser::MemoryType after validation")
     }
 }
 
-impl TryFrom<wasmparser::GlobalType> for GlobalType {
-    type Error = ModuleError;
-
-    fn try_from(global_type: wasmparser::GlobalType) -> Result<Self, Self::Error> {
-        let value_type = value_type_try_from_wasmparser(global_type.content_type)?;
+impl GlobalType {
+    /// Creates a new [`GlobalType`] from the given `wasmparser` primitive.
+    ///
+    /// # Dev. Note
+    ///
+    /// We do not use the `From` trait here so that this conversion
+    /// routine does not become part of the public API of [`GlobalType`].
+    pub(crate) fn from_wasmparser(global_type: wasmparser::GlobalType) -> Self {
+        let value_type = WasmiValueType::from(global_type.content_type).into_inner();
         let mutability = match global_type.mutable {
-            true => Mutability::Mutable,
+            true => Mutability::Var,
             false => Mutability::Const,
         };
-        Ok(GlobalType::new(value_type, mutability))
+        Self::new(value_type, mutability)
     }
 }
 
-impl TryFrom<wasmparser::FuncType> for FuncType {
-    type Error = ModuleError;
-
-    fn try_from(func_type: wasmparser::FuncType) -> Result<Self, Self::Error> {
-        /// Returns `true` if the given [`wasmparser::Type`] is supported by `wasmi`.
-        fn is_supported_value_type(value_type: &wasmparser::ValType) -> bool {
-            value_type_try_from_wasmparser(*value_type).is_ok()
-        }
+impl FuncType {
+    /// Creates a new [`FuncType`] from the given `wasmparser` primitive.
+    ///
+    /// # Dev. Note
+    ///
+    /// We do not use the `From` trait here so that this conversion
+    /// routine does not become part of the public API of [`FuncType`].
+    pub(crate) fn from_wasmparser(func_type: wasmparser::FuncType) -> Self {
         /// Returns the [`ValueType`] from the given [`wasmparser::Type`].
         ///
         /// # Panics
         ///
         /// If the [`wasmparser::Type`] is not supported by `wasmi`.
         fn extract_value_type(value_type: &wasmparser::ValType) -> ValueType {
-            value_type_from_wasmparser(*value_type)
-                .expect("encountered unexpected invalid value type")
-        }
-        if !func_type.params().iter().all(is_supported_value_type)
-            || !func_type.results().iter().all(is_supported_value_type)
-        {
-            // One of more function parameter or result types are not supported by `wasmi`.
-            return Err(ModuleError::unsupported(func_type));
+            WasmiValueType::from(*value_type).into_inner()
         }
         let params = func_type.params().iter().map(extract_value_type);
         let results = func_type.results().iter().map(extract_value_type);
-        let func_type = FuncType::new(params, results);
-        Ok(func_type)
+        Self::new(params, results)
     }
 }
 
-/// Creates a [`ValueType`] from the given [`wasmparser::ValType`].
+/// A `wasmi` [`ValueType`].
 ///
-/// Returns `None` if the given [`wasmparser::ValType`] is not supported by `wasmi`.
-pub fn value_type_from_wasmparser(value_type: wasmparser::ValType) -> Option<ValueType> {
-    match value_type {
-        wasmparser::ValType::I32 => Some(ValueType::I32),
-        wasmparser::ValType::I64 => Some(ValueType::I64),
-        wasmparser::ValType::F32 => Some(ValueType::F32),
-        wasmparser::ValType::F64 => Some(ValueType::F64),
-        wasmparser::ValType::V128
-        | wasmparser::ValType::FuncRef
-        | wasmparser::ValType::ExternRef => None,
+/// # Note
+///
+/// This new-type wrapper exists so that we can implement the `From` trait.
+pub struct WasmiValueType {
+    inner: ValueType,
+}
+
+impl WasmiValueType {
+    /// Returns the inner [`ValueType`].
+    pub fn into_inner(self) -> ValueType {
+        self.inner
     }
 }
 
-/// Creates a [`ValueType`] from the given [`wasmparser::ValType`].
-///
-/// # Errors
-///
-/// If the given [`wasmparser::ValType`] is not supported by `wasmi`.
-pub fn value_type_try_from_wasmparser(
-    value_type: wasmparser::ValType,
-) -> Result<ValueType, ModuleError> {
-    value_type_from_wasmparser(value_type).ok_or_else(|| ModuleError::unsupported(value_type))
+impl From<ValueType> for WasmiValueType {
+    fn from(value: ValueType) -> Self {
+        Self { inner: value }
+    }
+}
+
+impl From<wasmparser::ValType> for WasmiValueType {
+    fn from(value_type: wasmparser::ValType) -> Self {
+        match value_type {
+            wasmparser::ValType::I32 => Self::from(ValueType::I32),
+            wasmparser::ValType::I64 => Self::from(ValueType::I64),
+            wasmparser::ValType::F32 => Self::from(ValueType::F32),
+            wasmparser::ValType::F64 => Self::from(ValueType::F64),
+            wasmparser::ValType::V128 => panic!("wasmi does not support the `simd` Wasm proposal"),
+            wasmparser::ValType::FuncRef => Self::from(ValueType::FuncRef),
+            wasmparser::ValType::ExternRef => Self::from(ValueType::ExternRef),
+        }
+    }
 }

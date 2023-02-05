@@ -15,13 +15,13 @@ pub struct Caller<'a, T> {
 
 impl<'a, T> Caller<'a, T> {
     /// Creates a new [`Caller`] from the given store context and [`Instance`] handle.
-    pub(crate) fn new<C>(ctx: &'a mut C, instance: Option<Instance>) -> Self
+    pub(crate) fn new<C>(ctx: &'a mut C, instance: Option<&Instance>) -> Self
     where
         C: AsContextMut<UserState = T>,
     {
         Self {
             store: ctx.as_context_mut(),
-            instance,
+            instance: instance.copied(),
         }
     }
 
@@ -34,14 +34,14 @@ impl<'a, T> Caller<'a, T> {
             .and_then(|instance| instance.get_export(self, name))
     }
 
-    /// Returns a shared reference to the host provided data.
-    pub fn host_data(&self) -> &T {
-        self.store.store.state()
+    /// Returns a shared reference to the user provided host data.
+    pub fn data(&self) -> &T {
+        self.store.store.data()
     }
 
-    /// Returns an exclusive reference to the host provided data.
-    pub fn host_data_mut(&mut self) -> &mut T {
-        self.store.store.state_mut()
+    /// Returns an exclusive reference to the user provided host data.
+    pub fn data_mut(&mut self) -> &mut T {
+        self.store.store.data_mut()
     }
 
     /// Returns a shared reference to the used [`Engine`].

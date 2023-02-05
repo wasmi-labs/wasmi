@@ -1,4 +1,4 @@
-use crate::{GlobalType, MemoryType, ModuleError, TableType};
+use crate::{GlobalType, MemoryType, TableType};
 use alloc::boxed::Box;
 use core::fmt::{self, Display};
 use wasmparser::TypeRef;
@@ -10,8 +10,8 @@ use wasmparser::TypeRef;
 pub struct Import {
     /// The name of the imported item.
     name: ImportName,
-    /// The kind of the imported item.
-    kind: ImportKind,
+    /// The type of the imported item.
+    kind: ExternTypeIdx,
 }
 
 /// The name or namespace of an imported item.
@@ -54,29 +54,29 @@ impl ImportName {
     /// Returns the name of the imported item within the [`Module`] namespace.
     ///
     /// [`Module`]: [`super::Module`]
-    pub fn field(&self) -> &str {
+    pub fn name(&self) -> &str {
         &self.field
     }
 }
 
-impl TryFrom<wasmparser::Import<'_>> for Import {
-    type Error = ModuleError;
-
-    fn try_from(import: wasmparser::Import) -> Result<Self, Self::Error> {
+impl From<wasmparser::Import<'_>> for Import {
+    fn from(import: wasmparser::Import) -> Self {
         let kind = match import.ty {
-            TypeRef::Func(func_type) => Ok(ImportKind::Func(FuncTypeIdx(func_type))),
-            TypeRef::Table(table_type) => table_type.try_into().map(ImportKind::Table),
-            TypeRef::Memory(memory_type) => memory_type.try_into().map(ImportKind::Memory),
-            TypeRef::Global(global_type) => global_type.try_into().map(ImportKind::Global),
-            TypeRef::Tag(_) => Err(ModuleError::unsupported(import)),
-        }?;
-        Ok(Self::new(import.module, import.name, kind))
+            TypeRef::Func(ty) => ExternTypeIdx::Func(ty.into()),
+            TypeRef::Table(ty) => ExternTypeIdx::Table(TableType::from_wasmparser(ty)),
+            TypeRef::Memory(ty) => ExternTypeIdx::Memory(MemoryType::from_wasmparser(ty)),
+            TypeRef::Global(ty) => ExternTypeIdx::Global(GlobalType::from_wasmparser(ty)),
+            TypeRef::Tag(tag) => panic!(
+                "wasmi does not support the `exception-handling` Wasm proposal but found: {tag:?}"
+            ),
+        };
+        Self::new(import.module, import.name, kind)
     }
 }
 
 impl Import {
     /// Creates a new [`Import`] item.
-    pub fn new(module: &str, field: &str, kind: ImportKind) -> Self {
+    pub fn new(module: &str, field: &str, kind: ExternTypeIdx) -> Self {
         Self {
             name: ImportName::new(module, field),
             kind,
@@ -88,7 +88,7 @@ impl Import {
     /// # Note
     ///
     /// This allows to reuse some allocations in certain cases.
-    pub fn into_name_and_kind(self) -> (ImportName, ImportKind) {
+    pub fn into_name_and_type(self) -> (ImportName, ExternTypeIdx) {
         (self.name, self.kind)
     }
 }
@@ -97,7 +97,7 @@ impl Import {
 ///
 /// [`Module`]: [`super::Module`]
 #[derive(Debug)]
-pub enum ImportKind {
+pub enum ExternTypeIdx {
     /// An imported function.
     Func(FuncTypeIdx),
     /// An imported table.
@@ -118,24 +118,17 @@ pub enum ImportKind {
 /// [`Module`]: [`super::Module`]
 /// [`FuncType`]: [`crate::FuncType`]
 #[derive(Debug, Copy, Clone)]
-pub struct FuncTypeIdx(pub(crate) u32);
+pub struct FuncTypeIdx(u32);
+
+impl From<u32> for FuncTypeIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
 
 impl FuncTypeIdx {
-    /// Returns the [`FuncTypeIdx`] as `u32`.
-    ///
-    /// # Note
-    ///
-    /// This is mostly useful for indexing into buffers.
+    /// Returns the inner `u32` index of the [`FuncTypeIdx`].
     pub fn into_u32(self) -> u32 {
         self.0
-    }
-
-    /// Returns the [`FuncTypeIdx`] as `usize`.
-    ///
-    /// # Note
-    ///
-    /// This is mostly useful for indexing into buffers.
-    pub fn into_usize(self) -> usize {
-        self.0 as usize
     }
 }

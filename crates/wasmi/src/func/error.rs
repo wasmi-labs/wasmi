@@ -3,6 +3,8 @@ use core::{fmt, fmt::Display};
 /// Errors that can occur upon type checking function signatures.
 #[derive(Debug)]
 pub enum FuncError {
+    /// The exported function could not be found.
+    ExportedFuncNotFound,
     /// A function parameter did not match the required type.
     MismatchingParameterType,
     /// Specified an incorrect number of parameters.
@@ -16,6 +18,9 @@ pub enum FuncError {
 impl Display for FuncError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            FuncError::ExportedFuncNotFound => {
+                write!(f, "could not find exported function")
+            }
             FuncError::MismatchingParameterType => {
                 write!(f, "encountered incorrect function parameter type")
             }

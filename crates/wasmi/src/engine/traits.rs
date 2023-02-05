@@ -1,4 +1,4 @@
-use crate::core::Value;
+use crate::{value::WithType, Value};
 use core::{iter, slice};
 use wasmi_core::UntypedValue;
 
@@ -25,7 +25,7 @@ impl<'a> CallParams for &'a [Value] {
     #[inline]
     fn call_params(self) -> Self::Params {
         CallParamsValueIter {
-            iter: self.iter().copied(),
+            iter: self.iter().cloned(),
         }
     }
 }
@@ -33,7 +33,7 @@ impl<'a> CallParams for &'a [Value] {
 /// An iterator over the [`UntypedValue`] call parameters.
 #[derive(Debug)]
 pub struct CallParamsValueIter<'a> {
-    iter: iter::Copied<slice::Iter<'a, Value>>,
+    iter: iter::Cloned<slice::Iter<'a, Value>>,
 }
 
 impl<'a> Iterator for CallParamsValueIter<'a> {
@@ -80,7 +80,7 @@ impl<'a> CallResults for &'a mut [Value] {
     fn call_results(self, results: &[UntypedValue]) -> Self::Results {
         assert_eq!(self.len(), results.len());
         self.iter_mut().zip(results).for_each(|(dst, src)| {
-            *dst = src.with_type(dst.value_type());
+            *dst = src.with_type(dst.ty());
         })
     }
 }

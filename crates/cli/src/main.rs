@@ -1,8 +1,8 @@
 use anyhow::{anyhow, bail, Context, Result};
 use clap::Parser;
-use core::fmt::Write;
 use std::{
     ffi::OsStr,
+    fmt::{self, Write},
     fs,
     net::SocketAddr,
     path::{Path, PathBuf},
@@ -11,11 +11,13 @@ use wasmi::{
     core::{Value, ValueType, F32, F64},
     Engine,
     ExportItemKind,
+    ExternType,
     Func,
     FuncType,
     Linker,
     Module,
     Store,
+    Value,
 };
 use wasmi_wasi::{ambient_authority, Dir, TcpListener, WasiCtx, WasiCtxBuilder};
 
@@ -224,7 +226,7 @@ fn main() -> Result<()> {
     let args = Args::parse();
 
     let (func_name, func, mut store) = args.load_wasm_func_with_wasi()?;
-    let func_type = func.func_type(&store);
+    let func_type = func.ty(&store);
 
     let func_args = type_check_arguments(&func_name, &func_type, &args.func_args)?;
     let mut results = prepare_results_buffer(&func_type);
@@ -283,8 +285,8 @@ fn exported_funcs(module: &wasmi::Module) -> Vec<(&str, FuncType)> {
         .exports()
         .filter_map(|export| {
             let name = export.name();
-            match export.kind().clone() {
-                ExportItemKind::Func(func_type) => Some((name, func_type)),
+            match export.ty() {
+                ExternType::Func(func_type) => Some((name, func_type.clone())),
                 _ => None,
             }
         })
@@ -357,8 +359,9 @@ fn type_check_arguments(
     if func_type.params().len() != func_args.len() && !func_name.is_empty() && func_name != "_start"
     {
         bail!(
-            "invalid number of arguments given for {func_name} of type {func_type}. \
-            expected {} arguments but got {}",
+            "invalid number of arguments given for {func_name} of type {}. \
+            expected {} argument but got {}",
+            DisplayFuncType(func_type),
             func_type.params().len(),
             func_args.len()
         );
@@ -394,6 +397,12 @@ fn type_check_arguments(
                     .map(F64::from)
                     .map(Value::from)
                     .map_err(make_err!()),
+                ValueType::FuncRef => {
+                    bail!("the wasmi CLI cannot take arguments of type funcref")
+                }
+                ValueType::ExternRef => {
+                    bail!("the wasmi CLI cannot take arguments of type externref")
+                }
             }
         })
         .collect::<Result<Vec<_>, _>>()?;
@@ -414,17 +423,39 @@ fn prepare_results_buffer(func_type: &FuncType) -> Vec<Value> {
 fn print_execution_start(wasm_file: &Path, func_name: &str, func_args: &[Value]) {
     print!("executing {wasm_file:?}::{func_name}(");
     if let Some((first_arg, rest_args)) = func_args.split_first() {
-        print!("{first_arg}");
-        for arg in rest_args {
+        print!("{}", DisplayValue(first_arg));
+        for arg in rest_args.iter().map(DisplayValue) {
             print!(", {arg}");
         }
     }
     println!(") ...");
 }
 
+/// Wrapper type that implements `Display` for [`Value`].
+struct DisplayValue<'a>(&'a Value);
+
+impl<'a> fmt::Display for DisplayValue<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self.0 {
+            Value::I32(value) => write!(f, "{value}"),
+            Value::I64(value) => write!(f, "{value}"),
+            Value::F32(value) => write!(f, "{value}"),
+            Value::F64(value) => write!(f, "{value}"),
+            Value::FuncRef(value) => panic!("cannot display funcref values but found {value:?}"),
+            Value::ExternRef(value) => {
+                panic!("cannot display externref values but found {value:?}")
+            }
+        }
+    }
+}
+
 /// Prints the results of the Wasm computation in a human readable form.
 fn print_pretty_results(results: &[Value]) {
-    let pretty_results = results.iter().map(Value::to_string).collect::<Vec<_>>();
+    let pretty_results = results
+        .iter()
+        .map(DisplayValue)
+        .map(|v| v.to_string())
+        .collect::<Vec<_>>();
     match pretty_results.len() {
         1 => {
             println!("{}", pretty_results[0]);
@@ -439,5 +470,135 @@ fn print_pretty_results(results: &[Value]) {
             }
             println!("]");
         }
+    }
+}
+
+/// Wrapper type around [`FuncType`] that implements `Display` for it.
+struct DisplayFuncType<'a>(&'a FuncType);
+
+impl fmt::Display for DisplayFuncType<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "fn(")?;
+        let params = self.0.params();
+        let results = self.0.results();
+        write_slice(f, params, ",")?;
+        write!(f, ")")?;
+        if let Some((first, rest)) = results.split_first() {
+            write!(f, " -> ")?;
+            if !rest.is_empty() {
+                write!(f, "(")?;
+            }
+            write!(f, "{first}")?;
+            for result in rest {
+                write!(f, ", {result}")?;
+            }
+            if !rest.is_empty() {
+                write!(f, ")")?;
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Writes the elements of a `slice` separated by the `separator`.
+fn write_slice<T>(f: &mut fmt::Formatter, slice: &[T], separator: &str) -> fmt::Result
+where
+    T: fmt::Display,
+{
+    if let Some((first, rest)) = slice.split_first() {
+        write!(f, "{first}")?;
+        for param in rest {
+            write!(f, "{separator} {param}")?;
+        }
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use core::borrow::Borrow;
+
+    fn assert_display(func_type: impl Borrow<FuncType>, expected: &str) {
+        assert_eq!(
+            format!("{}", DisplayFuncType(func_type.borrow())),
+            String::from(expected),
+        );
+    }
+
+    #[test]
+    fn display_0in_0out() {
+        assert_display(FuncType::new([], []), "fn()");
+    }
+
+    #[test]
+    fn display_1in_0out() {
+        assert_display(FuncType::new([ValueType::I32], []), "fn(i32)");
+    }
+
+    #[test]
+    fn display_0in_1out() {
+        assert_display(FuncType::new([], [ValueType::I32]), "fn() -> i32");
+    }
+
+    #[test]
+    fn display_1in_1out() {
+        assert_display(
+            FuncType::new([ValueType::I32], [ValueType::I32]),
+            "fn(i32) -> i32",
+        );
+    }
+
+    #[test]
+    fn display_4in_0out() {
+        assert_display(
+            FuncType::new(
+                [
+                    ValueType::I32,
+                    ValueType::I64,
+                    ValueType::F32,
+                    ValueType::F64,
+                ],
+                [],
+            ),
+            "fn(i32, i64, f32, f64)",
+        );
+    }
+
+    #[test]
+    fn display_0in_4out() {
+        assert_display(
+            FuncType::new(
+                [],
+                [
+                    ValueType::I32,
+                    ValueType::I64,
+                    ValueType::F32,
+                    ValueType::F64,
+                ],
+            ),
+            "fn() -> (i32, i64, f32, f64)",
+        );
+    }
+
+    #[test]
+    fn display_4in_4out() {
+        assert_display(
+            FuncType::new(
+                [
+                    ValueType::I32,
+                    ValueType::I64,
+                    ValueType::F32,
+                    ValueType::F64,
+                ],
+                [
+                    ValueType::I32,
+                    ValueType::I64,
+                    ValueType::F32,
+                    ValueType::F64,
+                ],
+            ),
+            "fn(i32, i64, f32, f64) -> (i32, i64, f32, f64)",
+        );
     }
 }

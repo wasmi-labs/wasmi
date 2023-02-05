@@ -260,7 +260,7 @@ impl Stack {
         &mut self,
         mut ctx: C,
         host_func: HostFuncEntity<<C as AsContext>::UserState>,
-        instance: Option<Instance>,
+        instance: Option<&Instance>,
         func_types: &FuncTypeRegistry,
     ) -> Result<(), Trap>
     where
@@ -269,7 +269,7 @@ impl Stack {
         // The host function signature is required for properly
         // adjusting, inspecting and manipulating the value stack.
         let (input_types, output_types) = func_types
-            .resolve_func_type(host_func.signature())
+            .resolve_func_type(host_func.ty_dedup())
             .params_results();
         // In case the host function returns more values than it takes
         // we are required to extend the value stack.

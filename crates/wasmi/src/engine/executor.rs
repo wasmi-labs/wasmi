@@ -1,17 +1,27 @@
 use super::{
     super::{Memory, Table},
-    bytecode::{BranchParams, FuncIdx, GlobalIdx, Instruction, LocalDepth, Offset, SignatureIdx},
+    bytecode::{
+        BranchParams,
+        DataSegmentIdx,
+        ElementSegmentIdx,
+        FuncIdx,
+        GlobalIdx,
+        Instruction,
+        LocalDepth,
+        Offset,
+        SignatureIdx,
+        TableIdx,
+    },
     cache::InstanceCache,
     code_map::InstructionPtr,
     stack::ValueStackRef,
-    AsContextMut,
     CallOutcome,
     DropKeep,
     FuncFrame,
     ValueStack,
 };
-use crate::{core::TrapCode, AsContext, Func, StoreContextMut};
-use core::cmp;
+use crate::{core::TrapCode, table::TableEntity, Func, FuncRef, StoreInner};
+use core::cmp::{self};
 use wasmi_core::{Pages, UntypedValue};
 
 /// Executes the given function `frame`.
@@ -26,12 +36,12 @@ use wasmi_core::{Pages, UntypedValue};
 /// - If the execution of the function `frame` trapped.
 #[inline(always)]
 pub fn execute_frame<'engine>(
-    mut ctx: impl AsContextMut,
+    ctx: &mut StoreInner,
     value_stack: &'engine mut ValueStack,
     cache: &'engine mut InstanceCache,
     frame: &mut FuncFrame,
 ) -> Result<CallOutcome, TrapCode> {
-    Executor::new(value_stack, ctx.as_context_mut(), cache, frame).execute()
+    Executor::new(value_stack, ctx, cache, frame).execute()
 }
 
 /// The function signature of Wasm load operations.
@@ -48,27 +58,27 @@ type WasmStoreOp = fn(
 
 /// An execution context for executing a `wasmi` function frame.
 #[derive(Debug)]
-struct Executor<'ctx, 'engine, 'func, HostData> {
+struct Executor<'ctx, 'engine, 'func> {
     /// The pointer to the currently executed instruction.
     ip: InstructionPtr,
     /// Stores the value stack of live values on the Wasm stack.
     value_stack: ValueStackRef<'engine>,
-    /// A mutable [`Store`] context.
+    /// A mutable [`StoreInner`] context.
     ///
-    /// [`Store`]: [`crate::Store`]
-    ctx: StoreContextMut<'ctx, HostData>,
+    /// [`StoreInner`]: [`crate::StoreInner`]
+    ctx: &'ctx mut StoreInner,
     /// Stores frequently used instance related data.
     cache: &'engine mut InstanceCache,
     /// The function frame that is being executed.
     frame: &'func mut FuncFrame,
 }
 
-impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
+impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// Creates a new [`Executor`] for executing a `wasmi` function frame.
     #[inline(always)]
     pub fn new(
         value_stack: &'engine mut ValueStack,
-        ctx: StoreContextMut<'ctx, HostData>,
+        ctx: &'ctx mut StoreInner,
         cache: &'engine mut InstanceCache,
         frame: &'func mut FuncFrame,
     ) -> Self {
@@ -105,7 +115,9 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
                     }
                 }
                 Instr::Call(func) => return self.visit_call(func),
-                Instr::CallIndirect(signature) => return self.visit_call_indirect(signature),
+                Instr::CallIndirect { table, func_type } => {
+                    return self.visit_call_indirect(table, func_type)
+                }
                 Instr::Drop => self.visit_drop(),
                 Instr::Select => self.visit_select(),
                 Instr::GlobalGet(global_idx) => self.visit_global_get(global_idx),
@@ -133,8 +145,21 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
                 Instr::I64Store8(offset) => self.visit_i64_store_8(offset)?,
                 Instr::I64Store16(offset) => self.visit_i64_store_16(offset)?,
                 Instr::I64Store32(offset) => self.visit_i64_store_32(offset)?,
-                Instr::MemorySize => self.visit_current_memory(),
-                Instr::MemoryGrow => self.visit_grow_memory(),
+                Instr::MemorySize => self.visit_memory_size(),
+                Instr::MemoryGrow => self.visit_memory_grow(),
+                Instr::MemoryFill => self.visit_memory_fill()?,
+                Instr::MemoryCopy => self.visit_memory_copy()?,
+                Instr::MemoryInit(segment) => self.visit_memory_init(segment)?,
+                Instr::DataDrop(segment) => self.visit_data_drop(segment),
+                Instr::TableSize { table } => self.visit_table_size(table),
+                Instr::TableGrow { table } => self.visit_table_grow(table),
+                Instr::TableFill { table } => self.visit_table_fill(table)?,
+                Instr::TableGet { table } => self.visit_table_get(table)?,
+                Instr::TableSet { table } => self.visit_table_set(table)?,
+                Instr::TableCopy { dst, src } => self.visit_table_copy(dst, src)?,
+                Instr::TableInit { table, elem } => self.visit_table_init(table, elem)?,
+                Instr::ElemDrop(segment) => self.visit_element_drop(segment),
+                Instr::RefFunc { func_index } => self.visit_ref_func(func_index),
                 Instr::Const(bytes) => self.visit_const(bytes),
                 Instr::I32Eqz => self.visit_i32_eqz(),
                 Instr::I32Eq => self.visit_i32_eq(),
@@ -288,17 +313,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     /// If there exists is no linear memory for the instance.
     #[inline]
     fn default_memory(&mut self) -> Memory {
-        self.cache.default_memory(self.ctx.as_context())
-    }
-
-    /// Returns the default table.
-    ///
-    /// # Panics
-    ///
-    /// If there exists is no table for the instance.
-    #[inline]
-    fn default_table(&mut self) -> Table {
-        self.cache.default_table(self.ctx.as_context())
+        self.cache.default_memory(self.ctx)
     }
 
     /// Returns the global variable at the given index.
@@ -307,8 +322,7 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     ///
     /// If there is no global variable at the given index.
     fn global(&mut self, global_index: GlobalIdx) -> &mut UntypedValue {
-        self.cache
-            .get_global(self.ctx.as_context_mut(), global_index.into_inner())
+        self.cache.get_global(self.ctx, global_index.into_inner())
     }
 
     /// Executes a generic Wasm `store[N_{s|u}]` operation.
@@ -330,15 +344,11 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         load_extend: WasmLoadOp,
     ) -> Result<(), TrapCode> {
         self.value_stack.try_eval_top(|address| {
-            let memory = self
-                .cache
-                .default_memory_bytes(self.ctx.as_context_mut())
-                .data();
+            let memory = self.cache.default_memory_bytes(self.ctx).data();
             let value = load_extend(memory, address, offset.into_inner())?;
             Ok(value)
         })?;
-        self.next_instr();
-        Ok(())
+        self.try_next_instr()
     }
 
     /// Executes a generic Wasm `store[N]` operation.
@@ -357,47 +367,57 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         store_wrap: WasmStoreOp,
     ) -> Result<(), TrapCode> {
         let (address, value) = self.value_stack.pop2();
-        let memory = self
-            .cache
-            .default_memory_bytes(self.ctx.as_context_mut())
-            .data_mut();
+        let memory = self.cache.default_memory_bytes(self.ctx).data_mut();
         store_wrap(memory, address, offset.into_inner(), value)?;
-        self.next_instr();
-        Ok(())
+        self.try_next_instr()
     }
 
+    /// Executes an infallible unary `wasmi` instruction.
     fn execute_unary(&mut self, f: fn(UntypedValue) -> UntypedValue) {
         self.value_stack.eval_top(f);
         self.next_instr()
     }
 
+    /// Executes a fallible unary `wasmi` instruction.
     fn try_execute_unary(
         &mut self,
         f: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), TrapCode> {
         self.value_stack.try_eval_top(f)?;
-        self.next_instr();
-        Ok(())
+        self.try_next_instr()
     }
 
+    /// Executes an infallible binary `wasmi` instruction.
     fn execute_binary(&mut self, f: fn(UntypedValue, UntypedValue) -> UntypedValue) {
         self.value_stack.eval_top2(f);
         self.next_instr()
     }
 
+    /// Executes a fallible binary `wasmi` instruction.
     fn try_execute_binary(
         &mut self,
         f: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), TrapCode> {
         self.value_stack.try_eval_top2(f)?;
-        self.next_instr();
-        Ok(())
+        self.try_next_instr()
     }
 
+    /// Shifts the instruction pointer to the next instruction.
     fn next_instr(&mut self) {
         self.ip_add(1)
     }
 
+    /// Shifts the instruction pointer to the next instruction and returns `Ok(())`.
+    ///
+    /// # Note
+    ///
+    /// This is a convenience function for fallible instructions.
+    fn try_next_instr(&mut self) -> Result<(), TrapCode> {
+        self.next_instr();
+        Ok(())
+    }
+
+    /// Offsets the instruction pointer using the given [`BranchParams`].
     fn branch_to(&mut self, params: BranchParams) {
         self.value_stack.drop_keep(params.drop_keep());
         self.ip_add(params.offset().into_i32() as isize)
@@ -415,17 +435,33 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         }
     }
 
+    /// Synchronizes the current stack pointer with the [`ValueStack`].
+    ///
+    /// # Note
+    ///
+    /// For performance reasons we detach the stack pointer form the [`ValueStack`].
+    /// Therefore it is necessary to synchronize the [`ValueStack`] upon finishing
+    /// execution of a sequence of non control flow instructions.
     fn sync_stack_ptr(&mut self) {
         self.value_stack.sync();
     }
 
-    fn call_func(&mut self, func: Func) -> Result<CallOutcome, TrapCode> {
+    /// Calls the given [`Func`].
+    ///
+    /// This also prepares the instruction pointer and stack pointer for
+    /// the function call so that the stack and execution state is synchronized
+    /// with the outer structures.
+    fn call_func(&mut self, func: &Func) -> Result<CallOutcome, TrapCode> {
         self.next_instr();
         self.frame.update_ip(self.ip);
         self.sync_stack_ptr();
-        Ok(CallOutcome::NestedCall(func))
+        Ok(CallOutcome::NestedCall(*func))
     }
 
+    /// Returns to the caller.
+    ///
+    /// This also modifies the stack as the caller would expect it
+    /// and synchronizes the execution state with the outer structures.
     fn ret(&mut self, drop_keep: DropKeep) {
         self.value_stack.drop_keep(drop_keep);
         self.sync_stack_ptr();
@@ -438,7 +474,7 @@ pub enum MaybeReturn {
     Continue,
 }
 
-impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
+impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     fn visit_unreachable(&mut self) -> Result<(), TrapCode> {
         Err(TrapCode::UnreachableCodeReached).map_err(Into::into)
     }
@@ -524,29 +560,31 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
     }
 
     fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
-        let callee = self
-            .cache
-            .get_func(self.ctx.as_context_mut(), func_index.into_inner());
-        self.call_func(callee)
+        let callee = self.cache.get_func(self.ctx, func_index.into_inner());
+        self.call_func(&callee)
     }
 
     fn visit_call_indirect(
         &mut self,
-        signature_index: SignatureIdx,
+        table: TableIdx,
+        func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
         let func_index: u32 = self.value_stack.pop_as();
-        let table = self.default_table();
-        let func = table
-            .get(self.ctx.as_context(), func_index as usize)
-            .map_err(|_| TrapCode::TableOutOfBounds)?
-            .ok_or(TrapCode::IndirectCallToNull)?;
-        let actual_signature = func.signature(self.ctx.as_context());
+        let table = self.cache.get_table(self.ctx, table);
+        let funcref = self
+            .ctx
+            .resolve_table(&table)
+            .get_untyped(func_index)
+            .map(FuncRef::from)
+            .ok_or(TrapCode::TableOutOfBounds)?;
+        let func = funcref.func().ok_or(TrapCode::IndirectCallToNull)?;
+        let actual_signature = self.ctx.get_func_type(func);
         let expected_signature = self
-            .frame
-            .instance()
-            .get_signature(self.ctx.as_context(), signature_index.into_inner())
+            .ctx
+            .resolve_instance(self.frame.instance())
+            .get_signature(func_type.into_inner())
             .unwrap_or_else(|| {
-                panic!("missing signature for call_indirect at index: {signature_index:?}")
+                panic!("missing signature for call_indirect at index: {func_type:?}")
             });
         if actual_signature != expected_signature {
             return Err(TrapCode::BadSignature).map_err(Into::into);
@@ -576,21 +614,22 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.next_instr()
     }
 
-    fn visit_current_memory(&mut self) {
+    fn visit_memory_size(&mut self) {
         let memory = self.default_memory();
-        let result: u32 = memory.current_pages(self.ctx.as_context()).into();
+        let result: u32 = self.ctx.resolve_memory(&memory).current_pages().into();
         self.value_stack.push(result);
         self.next_instr()
     }
 
-    fn visit_grow_memory(&mut self) {
+    fn visit_memory_grow(&mut self) {
         /// The WebAssembly spec demands to return `0xFFFF_FFFF`
         /// in case of failure for the `memory.grow` instruction.
         const ERR_VALUE: u32 = u32::MAX;
         let memory = self.default_memory();
         let result = Pages::new(self.value_stack.pop_as()).map_or(ERR_VALUE, |additional| {
-            memory
-                .grow(self.ctx.as_context_mut(), additional)
+            self.ctx
+                .resolve_memory_mut(&memory)
+                .grow(additional)
                 .map(u32::from)
                 .unwrap_or(ERR_VALUE)
         });
@@ -600,6 +639,182 @@ impl<'ctx, 'engine, 'func, HostData> Executor<'ctx, 'engine, 'func, HostData> {
         self.cache.reset_default_memory_bytes();
         self.value_stack.push(result);
         self.next_instr()
+    }
+
+    fn visit_memory_fill(&mut self) -> Result<(), TrapCode> {
+        let bytes = self.cache.default_memory_bytes(self.ctx);
+        // The `n`, `val` and `d` variable bindings are extracted from the Wasm specification.
+        let (d, val, n) = self.value_stack.pop3();
+        let n = i32::from(n) as usize;
+        let offset = i32::from(d) as usize;
+        let byte = u8::from(val);
+        let memory = bytes
+            .data_mut()
+            .get_mut(offset..)
+            .and_then(|memory| memory.get_mut(..n))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        memory.fill(byte);
+        self.try_next_instr()
+    }
+
+    fn visit_memory_copy(&mut self) -> Result<(), TrapCode> {
+        // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
+        let (d, s, n) = self.value_stack.pop3();
+        let n = i32::from(n) as usize;
+        let src_offset = i32::from(s) as usize;
+        let dst_offset = i32::from(d) as usize;
+        let data = self.cache.default_memory_bytes(self.ctx).data_mut();
+        // These accesses just perform the bounds checks required by the Wasm spec.
+        data.get(src_offset..)
+            .and_then(|memory| memory.get(..n))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        data.get(dst_offset..)
+            .and_then(|memory| memory.get(..n))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        data.copy_within(src_offset..src_offset.wrapping_add(n), dst_offset);
+        self.try_next_instr()
+    }
+
+    fn visit_memory_init(&mut self, segment: DataSegmentIdx) -> Result<(), TrapCode> {
+        // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
+        let (d, s, n) = self.value_stack.pop3();
+        let n = i32::from(n) as usize;
+        let src_offset = i32::from(s) as usize;
+        let dst_offset = i32::from(d) as usize;
+        let (memory, data) = self
+            .cache
+            .get_default_memory_and_data_segment(self.ctx, segment);
+        let memory = memory
+            .get_mut(dst_offset..)
+            .and_then(|memory| memory.get_mut(..n))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        let data = data
+            .get(src_offset..)
+            .and_then(|data| data.get(..n))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        memory.copy_from_slice(data);
+        self.try_next_instr()
+    }
+
+    fn visit_data_drop(&mut self, segment_index: DataSegmentIdx) {
+        let segment = self
+            .cache
+            .get_data_segment(self.ctx, segment_index.into_inner());
+        self.ctx.resolve_data_segment_mut(&segment).drop_bytes();
+        self.next_instr();
+    }
+
+    fn visit_table_size(&mut self, table_index: TableIdx) {
+        let table = self.cache.get_table(self.ctx, table_index);
+        let size = self.ctx.resolve_table(&table).size();
+        self.value_stack.push(size);
+        self.next_instr()
+    }
+
+    fn visit_table_grow(&mut self, table_index: TableIdx) {
+        // As demanded by the Wasm specification this value is returned
+        // by `table.grow` if the growth operation was unsuccessful.
+        const ERROR_CODE: u32 = u32::MAX;
+        let (init, delta) = self.value_stack.pop2();
+        let delta: u32 = delta.into();
+        let table = self.cache.get_table(self.ctx, table_index);
+        let result = self
+            .ctx
+            .resolve_table_mut(&table)
+            .grow_untyped(delta, init)
+            .unwrap_or(ERROR_CODE);
+        self.value_stack.push(result);
+        self.next_instr()
+    }
+
+    fn visit_table_fill(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
+        // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
+        let (i, val, n) = self.value_stack.pop3();
+        let dst: u32 = i.into();
+        let len: u32 = n.into();
+        let table = self.cache.get_table(self.ctx, table_index);
+        self.ctx
+            .resolve_table_mut(&table)
+            .fill_untyped(dst, val, len)?;
+        self.try_next_instr()
+    }
+
+    fn visit_table_get(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
+        self.value_stack.try_eval_top(|index| {
+            let index: u32 = index.into();
+            let table = self.cache.get_table(self.ctx, table_index);
+            self.ctx
+                .resolve_table(&table)
+                .get_untyped(index)
+                .ok_or(TrapCode::TableOutOfBounds)
+        })?;
+        self.try_next_instr()
+    }
+
+    fn visit_table_set(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
+        let (index, value) = self.value_stack.pop2();
+        let index: u32 = index.into();
+        let table = self.cache.get_table(self.ctx, table_index);
+        self.ctx
+            .resolve_table_mut(&table)
+            .set_untyped(index, value)
+            .map_err(|_| TrapCode::TableOutOfBounds)?;
+        self.try_next_instr()
+    }
+
+    fn visit_table_copy(&mut self, dst: TableIdx, src: TableIdx) -> Result<(), TrapCode> {
+        // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
+        let (d, s, n) = self.value_stack.pop3();
+        let len = u32::from(n);
+        let src_index = u32::from(s);
+        let dst_index = u32::from(d);
+        // Query both tables and check if they are the same:
+        let dst = self.cache.get_table(self.ctx, dst);
+        let src = self.cache.get_table(self.ctx, src);
+        if Table::eq(&dst, &src) {
+            // Copy within the same table:
+            let table = self.ctx.resolve_table_mut(&dst);
+            table.copy_within(dst_index, src_index, len)?;
+        } else {
+            // Copy from one table to another table:
+            let (dst, src) = self.ctx.resolve_table_pair_mut(&dst, &src);
+            TableEntity::copy(dst, dst_index, src, src_index, len)?;
+        }
+        self.try_next_instr()
+    }
+
+    fn visit_table_init(
+        &mut self,
+        table: TableIdx,
+        elem: ElementSegmentIdx,
+    ) -> Result<(), TrapCode> {
+        // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
+        let (d, s, n) = self.value_stack.pop3();
+        let len = u32::from(n);
+        let src_index = u32::from(s);
+        let dst_index = u32::from(d);
+        let (instance, table, element) = self
+            .cache
+            .get_table_and_element_segment(self.ctx, table, elem);
+        table.init(dst_index, element, src_index, len, |func_index| {
+            instance
+                .get_func(func_index)
+                .unwrap_or_else(|| panic!("missing function at index {func_index}"))
+        })?;
+        self.try_next_instr()
+    }
+
+    fn visit_element_drop(&mut self, segment_index: ElementSegmentIdx) {
+        let segment = self.cache.get_element_segment(self.ctx, segment_index);
+        self.ctx.resolve_element_segment_mut(&segment).drop_items();
+        self.next_instr();
+    }
+
+    fn visit_ref_func(&mut self, func_index: FuncIdx) {
+        let func = self.cache.get_func(self.ctx, func_index.into_inner());
+        let funcref = FuncRef::new(func);
+        self.value_stack.push(funcref);
+        self.next_instr();
     }
 
     fn visit_i32_load(&mut self, offset: Offset) -> Result<(), TrapCode> {

@@ -1,8 +1,16 @@
-mod byte_buffer;
+mod buffer;
+mod data;
+mod error;
 
-use self::byte_buffer::ByteBuffer;
+#[cfg(test)]
+mod tests;
+
+use self::buffer::ByteBuffer;
+pub use self::{
+    data::{DataSegment, DataSegmentEntity, DataSegmentIdx},
+    error::MemoryError,
+};
 use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
-use core::{fmt, fmt::Display};
 use wasmi_arena::ArenaIndex;
 use wasmi_core::Pages;
 
@@ -20,56 +28,6 @@ impl ArenaIndex for MemoryIdx {
             panic!("index {value} is out of bounds as memory index: {error}")
         });
         Self(value)
-    }
-}
-
-/// An error that may occur upon operating with virtual or linear memory.
-#[derive(Debug)]
-#[non_exhaustive]
-pub enum MemoryError {
-    /// Tried to allocate more virtual memory than technically possible.
-    OutOfBoundsAllocation,
-    /// Tried to grow linear memory out of its set bounds.
-    OutOfBoundsGrowth,
-    /// Tried to access linear memory out of bounds.
-    OutOfBoundsAccess,
-    /// Tried to create an invalid linear memory type.
-    InvalidMemoryType,
-    /// Occurs when a memory type does not satisfy the constraints of another.
-    UnsatisfyingMemoryType {
-        /// The unsatisfying [`MemoryType`].
-        unsatisfying: MemoryType,
-        /// The required [`MemoryType`].
-        required: MemoryType,
-    },
-}
-
-impl Display for MemoryError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::OutOfBoundsAllocation => {
-                write!(f, "tried to allocate too much virtual memory")
-            }
-            Self::OutOfBoundsGrowth => {
-                write!(f, "tried to grow virtual memory out of bounds")
-            }
-            Self::OutOfBoundsAccess => {
-                write!(f, "tried to access virtual memory out of bounds")
-            }
-            Self::InvalidMemoryType => {
-                write!(f, "tried to create an invalid virtual memory type")
-            }
-            Self::UnsatisfyingMemoryType {
-                unsatisfying,
-                required,
-            } => {
-                write!(
-                    f,
-                    "memory type {unsatisfying:?} does not \
-                    satisfy requirements of {required:?}",
-                )
-            }
-        }
     }
 }
 
@@ -116,30 +74,46 @@ impl MemoryType {
         self.maximum_pages
     }
 
-    /// Checks if `self` satisfies the given `MemoryType`.
+    /// Checks if `self` is a subtype of `other`.
+    ///
+    /// # Note
+    ///
+    /// This implements the [subtyping rules] according to the WebAssembly spec.
+    ///
+    /// [import subtyping]:
+    /// https://webassembly.github.io/spec/core/valid/types.html#import-subtyping
     ///
     /// # Errors
     ///
-    /// - If the initial limits of the `required` [`MemoryType`] are greater than `self`.
-    /// - If the maximum limits of the `required` [`MemoryType`] are greater than `self`.
-    pub(crate) fn satisfies(&self, required: &MemoryType) -> Result<(), MemoryError> {
-        if required.initial_pages() > self.initial_pages() {
-            return Err(MemoryError::UnsatisfyingMemoryType {
-                unsatisfying: *self,
-                required: *required,
-            });
+    /// - If the `minimum` size of `self` is less than or equal to the `minimum` size of `other`.
+    /// - If the `maximum` size of `self` is greater than the `maximum` size of `other`.
+    pub(crate) fn is_subtype_or_err(&self, other: &MemoryType) -> Result<(), MemoryError> {
+        match self.is_subtype_of(other) {
+            true => Ok(()),
+            false => Err(MemoryError::InvalidSubtype {
+                ty: *self,
+                other: *other,
+            }),
         }
-        match (required.maximum_pages(), self.maximum_pages()) {
-            (None, _) => (),
-            (Some(max_required), Some(max)) if max_required >= max => (),
-            _ => {
-                return Err(MemoryError::UnsatisfyingMemoryType {
-                    unsatisfying: *self,
-                    required: *required,
-                });
-            }
+    }
+
+    /// Returns `true` if the [`MemoryType`] is a subtype of the `other` [`MemoryType`].
+    ///
+    /// # Note
+    ///
+    /// This implements the [subtyping rules] according to the WebAssembly spec.
+    ///
+    /// [import subtyping]:
+    /// https://webassembly.github.io/spec/core/valid/types.html#import-subtyping
+    pub(crate) fn is_subtype_of(&self, other: &MemoryType) -> bool {
+        if self.initial_pages() < other.initial_pages() {
+            return false;
         }
-        Ok(())
+        match (self.maximum_pages(), other.maximum_pages()) {
+            (_, None) => true,
+            (Some(max), Some(other_max)) => max <= other_max,
+            _ => false,
+        }
     }
 }
 
@@ -167,8 +141,21 @@ impl MemoryEntity {
     }
 
     /// Returns the memory type of the linear memory.
-    pub fn memory_type(&self) -> MemoryType {
+    pub fn ty(&self) -> MemoryType {
         self.memory_type
+    }
+
+    /// Returns the dynamic [`MemoryType`] of the [`MemoryEntity`].
+    ///
+    /// # Note
+    ///
+    /// This respects the current size of the [`MemoryEntity`] as
+    /// its minimum size and is useful for import subtyping checks.
+    pub fn dynamic_ty(&self) -> MemoryType {
+        let current_pages = self.current_pages().into();
+        let maximum_pages = self.ty().maximum_pages().map(Into::into);
+        MemoryType::new(current_pages, maximum_pages)
+            .unwrap_or_else(|_| panic!("must result in valid memory type due to invariants"))
     }
 
     /// Returns the amount of pages in use by the linear memory.
@@ -190,10 +177,7 @@ impl MemoryEntity {
             // Nothing to do in this case. Bail out early.
             return Ok(current_pages);
         }
-        let maximum_pages = self
-            .memory_type()
-            .maximum_pages()
-            .unwrap_or_else(Pages::max);
+        let maximum_pages = self.ty().maximum_pages().unwrap_or_else(Pages::max);
         let new_pages = current_pages
             .checked_add(additional)
             .filter(|&new_pages| new_pages <= maximum_pages)
@@ -263,8 +247,8 @@ impl Memory {
     }
 
     /// Returns the underlying stored representation.
-    pub(super) fn into_inner(self) -> Stored<MemoryIdx> {
-        self.0
+    pub(super) fn as_inner(&self) -> &Stored<MemoryIdx> {
+        &self.0
     }
 
     /// Creates a new linear memory to the store.
@@ -272,9 +256,9 @@ impl Memory {
     /// # Errors
     ///
     /// If more than [`u32::MAX`] much linear memory is allocated.
-    pub fn new(mut ctx: impl AsContextMut, memory_type: MemoryType) -> Result<Self, MemoryError> {
-        let entity = MemoryEntity::new(memory_type)?;
-        let memory = ctx.as_context_mut().store.alloc_memory(entity);
+    pub fn new(mut ctx: impl AsContextMut, ty: MemoryType) -> Result<Self, MemoryError> {
+        let entity = MemoryEntity::new(ty)?;
+        let memory = ctx.as_context_mut().store.inner.alloc_memory(entity);
         Ok(memory)
     }
 
@@ -283,8 +267,26 @@ impl Memory {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Memory`].
-    pub fn memory_type(&self, ctx: impl AsContext) -> MemoryType {
-        ctx.as_context().store.resolve_memory(*self).memory_type()
+    pub fn ty(&self, ctx: impl AsContext) -> MemoryType {
+        ctx.as_context().store.inner.resolve_memory(self).ty()
+    }
+
+    /// Returns the dynamic [`MemoryType`] of the [`Memory`].
+    ///
+    /// # Note
+    ///
+    /// This respects the current size of the [`Memory`] as
+    /// its minimum size and is useful for import subtyping checks.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Memory`].
+    pub(crate) fn dynamic_ty(&self, ctx: impl AsContext) -> MemoryType {
+        ctx.as_context()
+            .store
+            .inner
+            .resolve_memory(self)
+            .dynamic_ty()
     }
 
     /// Returns the amount of pages in use by the linear memory.
@@ -293,7 +295,11 @@ impl Memory {
     ///
     /// Panics if `ctx` does not own this [`Memory`].
     pub fn current_pages(&self, ctx: impl AsContext) -> Pages {
-        ctx.as_context().store.resolve_memory(*self).current_pages()
+        ctx.as_context()
+            .store
+            .inner
+            .resolve_memory(self)
+            .current_pages()
     }
 
     /// Grows the linear memory by the given amount of new pages.
@@ -315,7 +321,8 @@ impl Memory {
     ) -> Result<Pages, MemoryError> {
         ctx.as_context_mut()
             .store
-            .resolve_memory_mut(*self)
+            .inner
+            .resolve_memory_mut(self)
             .grow(additional)
     }
 
@@ -325,7 +332,7 @@ impl Memory {
     ///
     /// Panics if `ctx` does not own this [`Memory`].
     pub fn data<'a, T: 'a>(&self, ctx: impl Into<StoreContext<'a, T>>) -> &'a [u8] {
-        ctx.into().store.resolve_memory(*self).data()
+        ctx.into().store.inner.resolve_memory(self).data()
     }
 
     /// Returns an exclusive slice to the bytes underlying the [`Memory`].
@@ -334,7 +341,7 @@ impl Memory {
     ///
     /// Panics if `ctx` does not own this [`Memory`].
     pub fn data_mut<'a, T: 'a>(&self, ctx: impl Into<StoreContextMut<'a, T>>) -> &'a mut [u8] {
-        ctx.into().store.resolve_memory_mut(*self).data_mut()
+        ctx.into().store.inner.resolve_memory_mut(self).data_mut()
     }
 
     /// Returns an exclusive slice to the bytes underlying the [`Memory`], and an exclusive
@@ -347,7 +354,7 @@ impl Memory {
         &self,
         ctx: impl Into<StoreContextMut<'a, T>>,
     ) -> (&'a mut [u8], &'a mut T) {
-        let (memory, store) = ctx.into().store.resolve_memory_and_state_mut(*self);
+        let (memory, store) = ctx.into().store.resolve_memory_and_state_mut(self);
         (memory.data_mut(), store)
     }
 
@@ -369,7 +376,8 @@ impl Memory {
     ) -> Result<(), MemoryError> {
         ctx.as_context()
             .store
-            .resolve_memory(*self)
+            .inner
+            .resolve_memory(self)
             .read(offset, buffer)
     }
 
@@ -391,7 +399,8 @@ impl Memory {
     ) -> Result<(), MemoryError> {
         ctx.as_context_mut()
             .store
-            .resolve_memory_mut(*self)
+            .inner
+            .resolve_memory_mut(self)
             .write(offset, buffer)
     }
 }

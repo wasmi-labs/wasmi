@@ -5,14 +5,17 @@ mod pre;
 mod tests;
 
 pub use self::{error::InstantiationError, pre::InstancePre};
-use super::{export, InitExpr, Module, ModuleImportType};
+use super::{element::ElementSegmentKind, export, DataSegmentKind, InitExpr, Module};
 use crate::{
-    module::{init_expr::InitExprOperand, DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX},
+    memory::DataSegment,
     AsContext,
     AsContextMut,
+    ElementSegment,
     Error,
     Extern,
+    ExternType,
     FuncEntity,
+    FuncRef,
     FuncType,
     Global,
     Instance,
@@ -20,8 +23,9 @@ use crate::{
     InstanceEntityBuilder,
     Memory,
     Table,
+    Value,
 };
-use wasmi_core::Value;
+use wasmi_core::Trap;
 
 impl Module {
     /// Instantiates a new [`Instance`] from the given compiled [`Module`].
@@ -49,13 +53,12 @@ impl Module {
     where
         I: IntoIterator<Item = Extern>,
     {
-        let handle = context.as_context_mut().store.alloc_instance();
+        let handle = context.as_context_mut().store.inner.alloc_instance();
         let mut builder = InstanceEntity::build(self);
 
-        self.extract_func_types(&mut context, &mut builder);
         self.extract_imports(&mut context, &mut builder, externals)?;
         self.extract_functions(&mut context, &mut builder, handle);
-        self.extract_tables(&mut context, &mut builder);
+        self.extract_tables(&mut context, &mut builder)?;
         self.extract_memories(&mut context, &mut builder);
         self.extract_globals(&mut context, &mut builder);
         self.extract_exports(&mut builder);
@@ -67,22 +70,6 @@ impl Module {
         // At this point the module instantiation is nearly done.
         // The only thing that is missing is to run the `start` function.
         Ok(InstancePre::new(handle, builder))
-    }
-
-    /// Extracts the Wasm function signatures from the
-    /// module and stores them into the [`Store`].
-    ///
-    /// This also stores deduplicated [`FuncType`] references into the
-    /// [`Instance`] under construction.
-    ///
-    /// [`Store`]: struct.Store.html
-    /// [`FuncType`]: struct.FuncType.html
-    fn extract_func_types(
-        &self,
-        _context: &mut impl AsContextMut,
-        builder: &mut InstanceEntityBuilder,
-    ) {
-        builder.set_func_types(&self.func_types);
     }
 
     /// Extract the Wasm imports from the module and zips them with the given external values.
@@ -122,9 +109,9 @@ impl Module {
                     return Err(InstantiationError::ImportsExternalsLenMismatch)
                 }
             };
-            match (import.item_type(), external) {
-                (ModuleImportType::Func(expected_signature), Extern::Func(func)) => {
-                    let actual_signature = func.signature(context.as_context());
+            match (import.ty(), external) {
+                (ExternType::Func(expected_signature), Extern::Func(func)) => {
+                    let actual_signature = func.ty_dedup(context.as_context());
                     let actual_signature = self
                         .engine
                         .resolve_func_type(actual_signature, FuncType::clone);
@@ -140,19 +127,19 @@ impl Module {
                     }
                     builder.push_func(func);
                 }
-                (ModuleImportType::Table(required), Extern::Table(table)) => {
-                    let imported = table.table_type(context.as_context());
-                    imported.satisfies(required)?;
+                (ExternType::Table(required), Extern::Table(table)) => {
+                    let imported = table.dynamic_ty(context.as_context());
+                    imported.is_subtype_or_err(required)?;
                     builder.push_table(table);
                 }
-                (ModuleImportType::Memory(required), Extern::Memory(memory)) => {
-                    let imported = memory.memory_type(context.as_context());
-                    imported.satisfies(required)?;
+                (ExternType::Memory(required), Extern::Memory(memory)) => {
+                    let imported = memory.dynamic_ty(context.as_context());
+                    imported.is_subtype_or_err(required)?;
                     builder.push_memory(memory);
                 }
-                (ModuleImportType::Global(required), Extern::Global(global)) => {
-                    let imported = global.global_type(context.as_context());
-                    imported.satisfies(required)?;
+                (ExternType::Global(required), Extern::Global(global)) => {
+                    let imported = global.ty(context.as_context());
+                    required.satisfies(&imported)?;
                     builder.push_global(global);
                 }
                 (expected_import, actual_extern_val) => {
@@ -192,10 +179,17 @@ impl Module {
     /// This also stores [`Table`] references into the [`Instance`] under construction.
     ///
     /// [`Store`]: struct.Store.html
-    fn extract_tables(&self, context: &mut impl AsContextMut, builder: &mut InstanceEntityBuilder) {
+    fn extract_tables(
+        &self,
+        context: &mut impl AsContextMut,
+        builder: &mut InstanceEntityBuilder,
+    ) -> Result<(), InstantiationError> {
         for table_type in self.internal_tables().copied() {
-            builder.push_table(Table::new(context.as_context_mut(), table_type));
+            let init = Value::default(table_type.element());
+            let table = Table::new(context.as_context_mut(), table_type, init)?;
+            builder.push_table(table);
         }
+        Ok(())
     }
 
     /// Extracts the Wasm linear memories from the module and stores them into the [`Store`].
@@ -244,43 +238,32 @@ impl Module {
         builder: &InstanceEntityBuilder,
         init_expr: &InitExpr,
     ) -> Value {
-        let operands = init_expr.operators();
-        debug_assert_eq!(
-            operands.len(),
-            1,
-            "in Wasm MVP code length of initializer expressions must be 1 but found {} operands",
-            operands.len(),
-        );
-        match operands[0] {
-            InitExprOperand::Const(value) => value,
-            InitExprOperand::GlobalGet(global_index) => {
-                let global = builder.get_global(global_index.into_u32());
-                global.get(context)
-            }
-        }
+        init_expr.to_const_with_context(
+            |global_index| builder.get_global(global_index).get(&context),
+            |func_index| Value::from(FuncRef::new(builder.get_func(func_index))),
+        )
     }
 
     /// Extracts the Wasm exports from the module and registers them into the [`Instance`].
     fn extract_exports(&self, builder: &mut InstanceEntityBuilder) {
-        for export in &self.exports[..] {
-            let field = export.field();
-            let external = match export.external() {
-                export::External::Func(func_index) => {
+        for (field, idx) in &self.exports {
+            let external = match idx {
+                export::ExternIdx::Func(func_index) => {
                     let func_index = func_index.into_u32();
                     let func = builder.get_func(func_index);
                     Extern::Func(func)
                 }
-                export::External::Table(table_index) => {
+                export::ExternIdx::Table(table_index) => {
                     let table_index = table_index.into_u32();
                     let table = builder.get_table(table_index);
                     Extern::Table(table)
                 }
-                export::External::Memory(memory_index) => {
+                export::ExternIdx::Memory(memory_index) => {
                     let memory_index = memory_index.into_u32();
                     let memory = builder.get_memory(memory_index);
                     Extern::Memory(memory)
                 }
-                export::External::Global(global_index) => {
+                export::ExternIdx::Global(global_index) => {
                     let global_index = global_index.into_u32();
                     let global = builder.get_global(global_index);
                     Extern::Global(global)
@@ -300,39 +283,52 @@ impl Module {
     /// Initializes the [`Instance`] tables with the Wasm element segments of the [`Module`].
     fn initialize_table_elements(
         &self,
-        context: &mut impl AsContextMut,
+        mut context: &mut impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), Error> {
-        for element_segment in &self.element_segments[..] {
-            let offset_expr = element_segment.offset();
-            let offset = Self::eval_init_expr(context.as_context_mut(), builder, offset_expr)
-                .try_into::<u32>()
-                .unwrap_or_else(|| {
-                    panic!(
-                        "expected offset value of type `i32` due to \
-                         Wasm validation but found: {offset_expr:?}",
-                    )
-                }) as usize;
-            let table = builder.get_table(DEFAULT_TABLE_INDEX);
-            // Note: This checks not only that the elements in the element segments properly
-            //       fit into the table at the given offset but also that the element segment
-            //       consists of at least 1 element member.
-            let len_table = table.len(&context);
-            let len_items = element_segment.items().len();
-            if offset + len_items > len_table {
-                return Err(InstantiationError::ElementSegmentDoesNotFit {
-                    table,
-                    offset,
-                    amount: len_items,
-                })
-                .map_err(Into::into);
+        for segment in &self.element_segments[..] {
+            let element = ElementSegment::new(context.as_context_mut(), segment);
+            if let ElementSegmentKind::Active(active) = segment.kind() {
+                let dst_index = Self::eval_init_expr(&mut *context, builder, active.offset())
+                    .i32()
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "expected offset value of type `i32` due to \
+                                 Wasm validation but found: {:?}",
+                            active.offset(),
+                        )
+                    }) as u32;
+                let table = builder.get_table(active.table_index().into_u32());
+                // Note: This checks not only that the elements in the element segments properly
+                //       fit into the table at the given offset but also that the element segment
+                //       consists of at least 1 element member.
+                let len_table = table.size(&context);
+                let len_items = element.size(&context);
+                dst_index
+                    .checked_add(len_items)
+                    .filter(|&max_index| max_index <= len_table)
+                    .ok_or(InstantiationError::ElementSegmentDoesNotFit {
+                        table,
+                        offset: dst_index,
+                        amount: len_items,
+                    })?;
+                // Finally do the actual initialization of the table elements.
+                {
+                    let (table, element) = context
+                        .as_context_mut()
+                        .store
+                        .inner
+                        .resolve_table_element(&table, &element);
+                    table
+                        .init(dst_index, element, 0, len_items, |func_index| {
+                            builder.get_func(func_index)
+                        })
+                        .map_err(Trap::from)?;
+                }
+                // Now drop the active element segment as commanded by the Wasm spec.
+                element.drop_items(&mut context);
             }
-            // Finally do the actual initialization of the table elements.
-            for (i, func_index) in element_segment.items().iter().enumerate() {
-                let func_index = func_index.into_u32();
-                let func = builder.get_func(func_index);
-                table.set(context.as_context_mut(), offset + i, Some(func))?;
-            }
+            builder.push_element_segment(element);
         }
         Ok(())
     }
@@ -343,18 +339,22 @@ impl Module {
         context: &mut impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), Error> {
-        for data_segment in &self.data_segments[..] {
-            let offset_expr = data_segment.offset();
-            let offset = Self::eval_init_expr(context.as_context_mut(), builder, offset_expr)
-                .try_into::<u32>()
-                .unwrap_or_else(|| {
-                    panic!(
-                        "expected offset value of type `i32` due to \
-                    Wasm validation but found: {offset_expr:?}",
-                    )
-                }) as usize;
-            let memory = builder.get_memory(DEFAULT_MEMORY_INDEX);
-            memory.write(context.as_context_mut(), offset, data_segment.data())?;
+        for segment in &self.data_segments[..] {
+            let bytes = segment.bytes();
+            if let DataSegmentKind::Active(segment) = segment.kind() {
+                let offset_expr = segment.offset();
+                let offset = Self::eval_init_expr(&mut *context, builder, offset_expr)
+                    .i32()
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "expected offset value of type `i32` due to \
+                                Wasm validation but found: {offset_expr:?}",
+                        )
+                    }) as u32 as usize;
+                let memory = builder.get_memory(segment.memory_index().into_u32());
+                memory.write(&mut *context, offset, bytes)?;
+            }
+            builder.push_data_segment(DataSegment::new(context.as_context_mut(), segment));
         }
         Ok(())
     }

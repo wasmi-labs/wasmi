@@ -1,52 +1,87 @@
-use super::{InitExpr, MemoryIdx, ModuleError};
-use alloc::boxed::Box;
+use super::{InitExpr, MemoryIdx};
+use alloc::sync::Arc;
 
-/// A linear memory data segment within a [`Module`].
+/// A Wasm [`Module`] data segment.
 ///
 /// [`Module`]: [`super::Module`]
 #[derive(Debug)]
 pub struct DataSegment {
-    _memory_index: MemoryIdx,
-    offset: InitExpr,
-    data: Box<[u8]>,
+    /// The kind of the data segment.
+    kind: DataSegmentKind,
+    /// The bytes of the data segment.
+    bytes: Arc<[u8]>,
 }
 
-impl TryFrom<wasmparser::Data<'_>> for DataSegment {
-    type Error = ModuleError;
+/// The kind of a Wasm module [`DataSegment`].
+#[derive(Debug)]
+pub enum DataSegmentKind {
+    /// A passive data segment from the `bulk-memory` Wasm proposal.
+    Passive,
+    /// An active data segment that is initialized upon module instantiation.
+    Active(ActiveDataSegment),
+}
 
-    fn try_from(data: wasmparser::Data<'_>) -> Result<Self, Self::Error> {
-        let (memory_index, offset) = match data.kind {
+/// An active data segment.
+#[derive(Debug)]
+pub struct ActiveDataSegment {
+    /// The linear memory that is to be initialized with this active segment.
+    memory_index: MemoryIdx,
+    /// The offset at which the data segment is initialized.
+    offset: InitExpr,
+}
+
+impl ActiveDataSegment {
+    /// Returns the Wasm module memory index that is to be initialized.
+    pub fn memory_index(&self) -> MemoryIdx {
+        self.memory_index
+    }
+
+    /// Returns the offset expression of the [`ActiveDataSegment`].
+    pub fn offset(&self) -> &InitExpr {
+        &self.offset
+    }
+}
+
+impl From<wasmparser::DataKind<'_>> for DataSegmentKind {
+    fn from(data_kind: wasmparser::DataKind<'_>) -> Self {
+        match data_kind {
             wasmparser::DataKind::Active {
                 memory_index,
                 offset_expr,
             } => {
-                let memory_index = MemoryIdx(memory_index);
-                let offset = InitExpr::try_from(offset_expr)?;
-                (memory_index, offset)
+                let memory_index = MemoryIdx::from(memory_index);
+                let offset = InitExpr::new(offset_expr);
+                Self::Active(ActiveDataSegment {
+                    memory_index,
+                    offset,
+                })
             }
-            wasmparser::DataKind::Passive => {
-                return Err(ModuleError::unsupported(
-                    "encountered unsupported passive data segment",
-                ))
-            }
-        };
-        let data = data.data.into();
-        Ok(DataSegment {
-            _memory_index: memory_index,
-            offset,
-            data,
-        })
+            wasmparser::DataKind::Passive => Self::Passive,
+        }
+    }
+}
+
+impl From<wasmparser::Data<'_>> for DataSegment {
+    fn from(data: wasmparser::Data<'_>) -> Self {
+        let kind = DataSegmentKind::from(data.kind);
+        let bytes = data.data.into();
+        Self { kind, bytes }
     }
 }
 
 impl DataSegment {
-    /// Returns the offset expression of the [`DataSegment`].
-    pub fn offset(&self) -> &InitExpr {
-        &self.offset
+    /// Returns the [`DataSegmentKind`] of the [`DataSegment`].
+    pub fn kind(&self) -> &DataSegmentKind {
+        &self.kind
     }
 
-    /// Returns the element items of the [`DataSegment`].
-    pub fn data(&self) -> &[u8] {
-        &self.data[..]
+    /// Returns the bytes of the [`DataSegment`].
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes[..]
+    }
+
+    /// Clone the underlying bytes of the [`DataSegment`].
+    pub fn clone_bytes(&self) -> Arc<[u8]> {
+        self.bytes.clone()
     }
 }

@@ -6,6 +6,8 @@ use crate::{
     core::{Trap, ValueType, F32, F64},
     foreach_tuple::for_each_tuple,
     Caller,
+    ExternRef,
+    FuncRef,
     FuncType,
 };
 use core::{array, iter::FusedIterator};
@@ -154,9 +156,10 @@ macro_rules! impl_wasm_return_type {
 for_each_tuple!(impl_wasm_return_type);
 
 /// Types that can be used as parameters or results of host functions.
-pub trait WasmType: From<UntypedValue> + Into<UntypedValue> {
+pub trait WasmType: From<UntypedValue> + Into<UntypedValue> + Send {
     /// Returns the value type of the Wasm type.
-    fn value_type() -> ValueType;
+    #[doc(hidden)]
+    fn ty() -> ValueType;
 }
 
 macro_rules! impl_wasm_type {
@@ -164,7 +167,7 @@ macro_rules! impl_wasm_type {
         $(
             impl WasmType for $rust_type {
                 #[inline]
-                fn value_type() -> ValueType {
+                fn ty() -> ValueType {
                     ValueType::$wasmi_type
                 }
             }
@@ -178,6 +181,8 @@ impl_wasm_type! {
     type i64 = I64;
     type F32 = F32;
     type F64 = F64;
+    type FuncRef = FuncRef;
+    type ExternRef = ExternRef;
 }
 
 /// A list of [`WasmType`] types.
@@ -190,11 +195,13 @@ impl_wasm_type! {
 /// - Write host function results into a region of the value stack.
 /// - Iterate over the value types of the Wasm type sequence
 ///     - This is useful to construct host function signatures.
-pub trait WasmTypeList: DecodeUntypedSlice + EncodeUntypedSlice + Sized {
+pub trait WasmTypeList: DecodeUntypedSlice + EncodeUntypedSlice + Sized + Send {
     /// The number of Wasm types in the list.
+    #[doc(hidden)]
     const LEN: usize;
 
     /// The [`ValueType`] sequence as array.
+    #[doc(hidden)]
     type Types: IntoIterator<IntoIter = Self::TypesIter, Item = ValueType>
         + AsRef<[ValueType]>
         + AsMut<[ValueType]>
@@ -202,8 +209,11 @@ pub trait WasmTypeList: DecodeUntypedSlice + EncodeUntypedSlice + Sized {
         + Clone;
 
     /// The iterator type of the sequence of [`ValueType`].
+    #[doc(hidden)]
     type TypesIter: ExactSizeIterator<Item = ValueType> + DoubleEndedIterator + FusedIterator;
 
+    /// The [`UntypedValue`] sequence as array.
+    #[doc(hidden)]
     type Values: IntoIterator<IntoIter = Self::ValuesIter, Item = UntypedValue>
         + AsRef<[UntypedValue]>
         + AsMut<[UntypedValue]>
@@ -213,17 +223,21 @@ pub trait WasmTypeList: DecodeUntypedSlice + EncodeUntypedSlice + Sized {
     /// The iterator type of the sequence of [`Value`].
     ///
     /// [`Value`]: [`crate::core::Value`]
+    #[doc(hidden)]
     type ValuesIter: ExactSizeIterator<Item = UntypedValue> + DoubleEndedIterator + FusedIterator;
 
     /// Returns an array representing the [`ValueType`] sequence of `Self`.
+    #[doc(hidden)]
     fn types() -> Self::Types;
 
     /// Returns an array representing the [`UntypedValue`] sequence of `self`.
+    #[doc(hidden)]
     fn values(self) -> Self::Values;
 
     /// Consumes the [`UntypedValue`] iterator and creates `Self` if possible.
     ///
     /// Returns `None` if construction of `Self` is impossible.
+    #[doc(hidden)]
     fn from_values(values: &[UntypedValue]) -> Option<Self>;
 }
 
@@ -240,7 +254,7 @@ where
 
     #[inline]
     fn types() -> Self::Types {
-        [<T1 as WasmType>::value_type()]
+        [<T1 as WasmType>::ty()]
     }
 
     #[inline]
@@ -275,7 +289,7 @@ macro_rules! impl_wasm_type_list {
             #[inline]
             fn types() -> Self::Types {
                 [$(
-                    <$tuple as WasmType>::value_type()
+                    <$tuple as WasmType>::ty()
                 ),*]
             }
 

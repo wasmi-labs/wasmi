@@ -1,4 +1,4 @@
-use super::super::{utils::value_type_try_from_wasmparser, FuncTypeIdx, ModuleResources};
+use super::super::{utils::WasmiValueType, FuncTypeIdx, ModuleResources};
 use crate::{
     core::ValueType,
     engine::{DedupFuncType, TranslationError},
@@ -35,12 +35,11 @@ impl BlockType {
         let block_type = match block_type {
             wasmparser::BlockType::Empty => Self::empty(),
             wasmparser::BlockType::Type(return_type) => {
-                let return_type = value_type_try_from_wasmparser(return_type)
-                    .map_err(|_| TranslationError::unsupported_block_type(block_type))?;
+                let return_type = WasmiValueType::from(return_type).into_inner();
                 Self::returns(return_type)
             }
             wasmparser::BlockType::FuncType(func_type_idx) => {
-                let dedup_func_type = res.get_func_type(FuncTypeIdx(func_type_idx));
+                let dedup_func_type = res.get_func_type(FuncTypeIdx::from(func_type_idx));
                 Self::func_type(dedup_func_type)
             }
         };
@@ -63,8 +62,8 @@ impl BlockType {
     }
 
     /// Creates a [`BlockType`] with parameters and results.
-    pub(crate) fn func_type(func_type: DedupFuncType) -> Self {
-        Self::from_inner(BlockTypeInner::FuncType(func_type))
+    pub(crate) fn func_type(func_type: &DedupFuncType) -> Self {
+        Self::from_inner(BlockTypeInner::FuncType(*func_type))
     }
 
     /// Returns the number of parameters of the [`BlockType`].
@@ -72,7 +71,7 @@ impl BlockType {
         match &self.inner {
             BlockTypeInner::Empty | BlockTypeInner::Returns(_) => 0,
             BlockTypeInner::FuncType(func_type) => {
-                engine.resolve_func_type(*func_type, |func_type| func_type.params().len() as u32)
+                engine.resolve_func_type(func_type, |func_type| func_type.params().len() as u32)
             }
         }
     }
@@ -83,7 +82,7 @@ impl BlockType {
             BlockTypeInner::Empty => 0,
             BlockTypeInner::Returns(_) => 1,
             BlockTypeInner::FuncType(func_type) => {
-                engine.resolve_func_type(*func_type, |func_type| func_type.results().len() as u32)
+                engine.resolve_func_type(func_type, |func_type| func_type.results().len() as u32)
             }
         }
     }
@@ -96,7 +95,7 @@ impl BlockType {
         match &self.inner {
             BlockTypeInner::Empty | BlockTypeInner::Returns(_) => (),
             BlockTypeInner::FuncType(func_type) => {
-                engine.resolve_func_type(*func_type, |func_type| {
+                engine.resolve_func_type(func_type, |func_type| {
                     for param in func_type.params() {
                         f(*param);
                     }
@@ -116,7 +115,7 @@ impl BlockType {
                 f(*result);
             }
             BlockTypeInner::FuncType(func_type) => {
-                engine.resolve_func_type(*func_type, |func_type| {
+                engine.resolve_func_type(func_type, |func_type| {
                     for result in func_type.results() {
                         f(*result);
                     }

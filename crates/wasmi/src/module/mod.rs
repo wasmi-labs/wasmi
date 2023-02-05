@@ -12,14 +12,11 @@ mod parser;
 mod read;
 mod utils;
 
-pub(crate) use self::init_expr::InitExpr;
 use self::{
     builder::ModuleBuilder,
-    data::DataSegment,
-    element::ElementSegment,
-    export::Export,
+    export::ExternIdx,
     global::Global,
-    import::{Import, ImportKind},
+    import::{ExternTypeIdx, Import},
     parser::parse,
     read::ReadError,
 };
@@ -27,24 +24,29 @@ pub use self::{
     builder::ModuleResources,
     compile::BlockType,
     error::ModuleError,
-    export::{ExportItem, ExportItemKind, FuncIdx, MemoryIdx, ModuleExportsIter, TableIdx},
+    export::{ExportType, FuncIdx, MemoryIdx, ModuleExportsIter, TableIdx},
     global::GlobalIdx,
     import::{FuncTypeIdx, ImportName},
     instantiate::{InstancePre, InstantiationError},
     parser::ReusableAllocations,
     read::Read,
-    utils::value_type_from_wasmparser,
+};
+pub(crate) use self::{
+    data::{DataSegment, DataSegmentKind},
+    element::{ElementSegment, ElementSegmentItems, ElementSegmentKind},
+    init_expr::InitExpr,
 };
 use crate::{
     engine::{DedupFuncType, FuncBody},
     Engine,
     Error,
+    ExternType,
     FuncType,
     GlobalType,
     MemoryType,
     TableType,
 };
-use alloc::{boxed::Box, sync::Arc, vec::Vec};
+use alloc::{boxed::Box, collections::BTreeMap, sync::Arc};
 use core::{iter, slice::Iter as SliceIter};
 
 /// A parsed and validated WebAssembly module.
@@ -58,7 +60,7 @@ pub struct Module {
     memories: Box<[MemoryType]>,
     globals: Box<[GlobalType]>,
     globals_init: Box<[InitExpr]>,
-    exports: Box<[Export]>,
+    exports: BTreeMap<Box<str>, ExternIdx>,
     start: Option<FuncIdx>,
     func_bodies: Box<[FuncBody]>,
     element_segments: Box<[ElementSegment]>,
@@ -67,9 +69,6 @@ pub struct Module {
 
 /// The index of the default Wasm linear memory.
 pub(crate) const DEFAULT_MEMORY_INDEX: u32 = 0;
-
-/// The index of the default Wasm table.
-pub(crate) const DEFAULT_TABLE_INDEX: u32 = 0;
 
 /// An imported item declaration in the [`Module`].
 #[derive(Debug)]
@@ -126,8 +125,7 @@ impl ModuleImports {
             .chain(tables)
             .chain(memories)
             .chain(globals)
-            .collect::<Vec<_>>()
-            .into();
+            .collect::<Box<[_]>>();
         Self {
             items,
             len_funcs,
@@ -157,7 +155,7 @@ impl Module {
     /// Creates a new [`Module`] from the [`ModuleBuilder`].
     fn from_builder(builder: ModuleBuilder) -> Self {
         Self {
-            engine: builder.engine.clone(),
+            engine: builder.engine().clone(),
             func_types: builder.func_types.into(),
             imports: ModuleImports::from_builder(builder.imports),
             funcs: builder.funcs.into(),
@@ -165,7 +163,7 @@ impl Module {
             memories: builder.memories.into(),
             globals: builder.globals.into(),
             globals_init: builder.globals_init.into(),
-            exports: builder.exports.into(),
+            exports: builder.exports,
             start: builder.start,
             func_bodies: builder.func_bodies.into(),
             element_segments: builder.element_segments.into(),
@@ -188,6 +186,15 @@ impl Module {
     /// Returns the number of non-imported global variables of the [`Module`].
     pub(crate) fn len_globals(&self) -> usize {
         self.memories.len()
+    }
+
+    /// Returns a slice to the function types of the [`Module`].
+    ///
+    /// # Note
+    ///
+    /// The slice is stored in a `Arc` so that this operation is very cheap.
+    pub(crate) fn func_types_cloned(&self) -> Arc<[DedupFuncType]> {
+        self.func_types.clone()
     }
 
     /// Returns an iterator over the imports of the [`Module`].
@@ -257,6 +264,46 @@ impl Module {
     pub fn exports(&self) -> ModuleExportsIter {
         ModuleExportsIter::new(self)
     }
+
+    /// Looks up an export in this [`Module`] by its `name`.
+    ///
+    /// Returns `None` if no export with the name was found.
+    ///
+    /// # Note
+    ///
+    /// This function will return the type of an export with the given `name`.
+    pub fn get_export(&self, name: &str) -> Option<ExternType> {
+        let idx = self.exports.get(name).copied()?;
+        let ty = self.get_extern_type(idx);
+        Some(ty)
+    }
+
+    /// Returns the [`ExternType`] for a given [`ExternIdx`].
+    ///
+    /// # Note
+    ///
+    /// This function assumes that the given [`ExternType`] is valid.
+    fn get_extern_type(&self, idx: ExternIdx) -> ExternType {
+        match idx {
+            ExternIdx::Func(index) => {
+                let dedup = &self.funcs[index.into_u32() as usize];
+                let func_type = self.engine.resolve_func_type(dedup, Clone::clone);
+                ExternType::Func(func_type)
+            }
+            ExternIdx::Table(index) => {
+                let table_type = self.tables[index.into_u32() as usize];
+                ExternType::Table(table_type)
+            }
+            ExternIdx::Memory(index) => {
+                let memory_type = self.memories[index.into_u32() as usize];
+                ExternType::Memory(memory_type)
+            }
+            ExternIdx::Global(index) => {
+                let global_type = self.globals[index.into_u32() as usize];
+                ExternType::Global(global_type)
+            }
+        }
+    }
 }
 
 /// An iterator over the imports of a [`Module`].
@@ -271,7 +318,7 @@ pub struct ModuleImportsIter<'a> {
 }
 
 impl<'a> Iterator for ModuleImportsIter<'a> {
-    type Item = ModuleImport<'a>;
+    type Item = ImportType<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let import = match self.names.next() {
@@ -281,26 +328,26 @@ impl<'a> Iterator for ModuleImportsIter<'a> {
                     let func_type = self.funcs.next().unwrap_or_else(|| {
                         panic!("unexpected missing imported function for {name:?}")
                     });
-                    let func_type = self.engine.resolve_func_type(*func_type, FuncType::clone);
-                    ModuleImport::new(name, func_type)
+                    let func_type = self.engine.resolve_func_type(func_type, FuncType::clone);
+                    ImportType::new(name, func_type)
                 }
                 Imported::Table(name) => {
                     let table_type = self.tables.next().unwrap_or_else(|| {
                         panic!("unexpected missing imported table for {name:?}")
                     });
-                    ModuleImport::new(name, *table_type)
+                    ImportType::new(name, *table_type)
                 }
                 Imported::Memory(name) => {
                     let memory_type = self.memories.next().unwrap_or_else(|| {
                         panic!("unexpected missing imported linear memory for {name:?}")
                     });
-                    ModuleImport::new(name, *memory_type)
+                    ImportType::new(name, *memory_type)
                 }
                 Imported::Global(name) => {
                     let global_type = self.globals.next().unwrap_or_else(|| {
                         panic!("unexpected missing imported global variable for {name:?}")
                     });
-                    ModuleImport::new(name, *global_type)
+                    ImportType::new(name, *global_type)
                 }
             },
         };
@@ -318,90 +365,49 @@ impl<'a> ExactSizeIterator for ModuleImportsIter<'a> {
     }
 }
 
-/// A [`Module`] import item.
+/// A descriptor for an imported value into a Wasm [`Module`].
+///
+/// This type is primarily accessed from the [`Module::imports`] method.
+/// Each [`ImportType`] describes an import into the Wasm module with the `module/name`
+/// that it is imported from as well as the type of item that is being imported.
 #[derive(Debug)]
-pub struct ModuleImport<'a> {
+pub struct ImportType<'module> {
     /// The name of the imported item.
-    name: &'a ImportName,
+    name: &'module ImportName,
     /// The external item type.
-    item_type: ModuleImportType,
+    ty: ExternType,
 }
 
-impl<'a> ModuleImport<'a> {
-    /// Creates a new [`ModuleImport`].
-    pub(crate) fn new<T>(name: &'a ImportName, ty: T) -> Self
+impl<'module> ImportType<'module> {
+    /// Creates a new [`ImportType`].
+    pub(crate) fn new<T>(name: &'module ImportName, ty: T) -> Self
     where
-        T: Into<ModuleImportType>,
+        T: Into<ExternType>,
     {
         Self {
             name,
-            item_type: ty.into(),
+            ty: ty.into(),
         }
     }
 
     /// Returns the import name.
-    pub(crate) fn name(&self) -> &ImportName {
+    pub(crate) fn import_name(&self) -> &ImportName {
         self.name
     }
 
     /// Returns the module import name.
-    pub fn module(&self) -> &str {
+    pub fn module(&self) -> &'module str {
         self.name.module()
     }
 
     /// Returns the field import name.
-    pub fn field(&self) -> &str {
-        self.name.field()
+    pub fn name(&self) -> &'module str {
+        self.name.name()
     }
 
     /// Returns the import item type.
-    pub fn item_type(&self) -> &ModuleImportType {
-        &self.item_type
-    }
-}
-
-/// The type of the imported module item.
-#[derive(Debug, Clone)]
-pub enum ModuleImportType {
-    /// An imported [`Func`].
-    ///
-    /// [`Func`]: [`crate::Func`]
-    Func(FuncType),
-    /// An imported [`Table`].
-    ///
-    /// [`Table`]: [`crate::Table`]
-    Table(TableType),
-    /// An imported [`Memory`].
-    ///
-    /// [`Memory`]: [`crate::Memory`]
-    Memory(MemoryType),
-    /// An imported [`Global`].
-    ///
-    /// [`Global`]: [`crate::Global`]
-    Global(GlobalType),
-}
-
-impl From<FuncType> for ModuleImportType {
-    fn from(func_type: FuncType) -> Self {
-        Self::Func(func_type)
-    }
-}
-
-impl From<TableType> for ModuleImportType {
-    fn from(table_type: TableType) -> Self {
-        Self::Table(table_type)
-    }
-}
-
-impl From<MemoryType> for ModuleImportType {
-    fn from(memory_type: MemoryType) -> Self {
-        Self::Memory(memory_type)
-    }
-}
-
-impl From<GlobalType> for ModuleImportType {
-    fn from(global_type: GlobalType) -> Self {
-        Self::Global(global_type)
+    pub fn ty(&self) -> &ExternType {
+        &self.ty
     }
 }
 

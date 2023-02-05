@@ -142,7 +142,7 @@ impl Engine {
     ///
     /// - If the deduplicated function type is not owned by the engine.
     /// - If the deduplicated function type cannot be resolved to its entity.
-    pub(super) fn resolve_func_type<F, R>(&self, func_type: DedupFuncType, f: F) -> R
+    pub(super) fn resolve_func_type<F, R>(&self, func_type: &DedupFuncType, f: F) -> R
     where
         F: FnOnce(&FuncType) -> R,
     {
@@ -371,7 +371,7 @@ impl EngineInner {
             .alloc(len_locals, max_stack_height, insts)
     }
 
-    fn resolve_func_type<F, R>(&self, func_type: DedupFuncType, f: F) -> R
+    fn resolve_func_type<F, R>(&self, func_type: &DedupFuncType, f: F) -> R
     where
         F: FnOnce(&FuncType) -> R,
     {
@@ -625,7 +625,7 @@ impl<'engine> EngineExecutor<'engine> {
     {
         self.stack
             .values
-            .drop(host_func.func_type(ctx.as_context()).params().len());
+            .drop(host_func.ty(ctx.as_context()).params().len());
         self.stack.values.extend(params.call_params());
         let mut frame = self
             .stack
@@ -714,7 +714,7 @@ impl<'engine> EngineExecutor<'engine> {
     #[inline(always)]
     fn execute_frame(
         &mut self,
-        ctx: impl AsContextMut,
+        mut ctx: impl AsContextMut,
         frame: &mut FuncFrame,
         cache: &mut InstanceCache,
     ) -> Result<CallOutcome, Trap> {
@@ -729,6 +729,12 @@ impl<'engine> EngineExecutor<'engine> {
         }
 
         let value_stack = &mut self.stack.values;
-        execute_frame(ctx, value_stack, cache, frame).map_err(make_trap)
+        execute_frame(
+            &mut ctx.as_context_mut().store.inner,
+            value_stack,
+            cache,
+            frame,
+        )
+        .map_err(make_trap)
     }
 }

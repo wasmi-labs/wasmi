@@ -1,7 +1,5 @@
-use crate::{core::ValueType, func::FuncError};
+use crate::{core::ValueType, func::FuncError, Value};
 use alloc::{sync::Arc, vec::Vec};
-use core::fmt::{self, Display};
-use wasmi_core::Value;
 
 /// A function type representing a function's parameter and result types.
 ///
@@ -22,43 +20,6 @@ pub struct FuncType {
     /// The `len_params` field denotes how many parameters there are in
     /// the head of the vector before the results.
     params_results: Arc<[ValueType]>,
-}
-
-impl Display for FuncType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "fn(")?;
-        let (params, results) = self.params_results();
-        write_slice(f, params, ",")?;
-        write!(f, ")")?;
-        if let Some((first, rest)) = results.split_first() {
-            write!(f, " -> ")?;
-            if !rest.is_empty() {
-                write!(f, "(")?;
-            }
-            write!(f, "{first}")?;
-            for result in rest {
-                write!(f, ", {result}")?;
-            }
-            if !rest.is_empty() {
-                write!(f, ")")?;
-            }
-        }
-        Ok(())
-    }
-}
-
-/// Writes the elements of a `slice` separated by the `separator`.
-fn write_slice<T>(f: &mut fmt::Formatter, slice: &[T], separator: &str) -> fmt::Result
-where
-    T: Display,
-{
-    if let Some((first, rest)) = slice.split_first() {
-        write!(f, "{first}")?;
-        for param in rest {
-            write!(f, "{separator} {param}")?;
-        }
-    }
-    Ok(())
 }
 
 impl FuncType {
@@ -103,7 +64,7 @@ impl FuncType {
         T: Ty,
     {
         if self.params().len() != params.len() {
-            return Err(FuncError::MismatchingParameterLen).map_err(Into::into);
+            return Err(FuncError::MismatchingParameterLen);
         }
         if self
             .params()
@@ -111,7 +72,7 @@ impl FuncType {
             .copied()
             .ne(params.iter().map(<T as Ty>::ty))
         {
-            return Err(FuncError::MismatchingParameterType).map_err(Into::into);
+            return Err(FuncError::MismatchingParameterType);
         }
         Ok(())
     }
@@ -131,7 +92,7 @@ impl FuncType {
         T: Ty,
     {
         if self.results().len() != results.len() {
-            return Err(FuncError::MismatchingResultLen).map_err(Into::into);
+            return Err(FuncError::MismatchingResultLen);
         }
         if check_type
             && self
@@ -140,7 +101,7 @@ impl FuncType {
                 .copied()
                 .ne(results.iter().map(<T as Ty>::ty))
         {
-            return Err(FuncError::MismatchingResultType).map_err(Into::into);
+            return Err(FuncError::MismatchingResultType);
         }
         Ok(())
     }
@@ -187,14 +148,13 @@ impl Ty for ValueType {
 
 impl Ty for Value {
     fn ty(&self) -> ValueType {
-        self.value_type()
+        self.ty()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core::borrow::Borrow;
 
     #[test]
     fn new_empty_works() {
@@ -246,85 +206,5 @@ mod tests {
                 assert_eq!(ft.results(), ft.params_results().1);
             }
         }
-    }
-
-    fn assert_display(func_type: impl Borrow<FuncType>, expected: &str) {
-        assert_eq!(format!("{}", func_type.borrow()), String::from(expected),);
-    }
-
-    #[test]
-    fn display_0in_0out() {
-        assert_display(FuncType::new([], []), "fn()");
-    }
-
-    #[test]
-    fn display_1in_0out() {
-        assert_display(FuncType::new([ValueType::I32], []), "fn(i32)");
-    }
-
-    #[test]
-    fn display_0in_1out() {
-        assert_display(FuncType::new([], [ValueType::I32]), "fn() -> i32");
-    }
-
-    #[test]
-    fn display_1in_1out() {
-        assert_display(
-            FuncType::new([ValueType::I32], [ValueType::I32]),
-            "fn(i32) -> i32",
-        );
-    }
-
-    #[test]
-    fn display_4in_0out() {
-        assert_display(
-            FuncType::new(
-                [
-                    ValueType::I32,
-                    ValueType::I64,
-                    ValueType::F32,
-                    ValueType::F64,
-                ],
-                [],
-            ),
-            "fn(i32, i64, f32, f64)",
-        );
-    }
-
-    #[test]
-    fn display_0in_4out() {
-        assert_display(
-            FuncType::new(
-                [],
-                [
-                    ValueType::I32,
-                    ValueType::I64,
-                    ValueType::F32,
-                    ValueType::F64,
-                ],
-            ),
-            "fn() -> (i32, i64, f32, f64)",
-        );
-    }
-
-    #[test]
-    fn display_4in_4out() {
-        assert_display(
-            FuncType::new(
-                [
-                    ValueType::I32,
-                    ValueType::I64,
-                    ValueType::F32,
-                    ValueType::F64,
-                ],
-                [
-                    ValueType::I32,
-                    ValueType::I64,
-                    ValueType::F32,
-                    ValueType::F64,
-                ],
-            ),
-            "fn(i32, i64, f32, f64) -> (i32, i64, f32, f64)",
-        );
     }
 }

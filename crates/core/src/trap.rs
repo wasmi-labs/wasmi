@@ -1,5 +1,5 @@
 use crate::HostError;
-use alloc::{boxed::Box, string::String, sync::Arc};
+use alloc::{boxed::Box, string::String};
 use core::fmt::{self, Display};
 
 #[cfg(feature = "std")]
@@ -11,10 +11,10 @@ use std::error::Error as StdError;
 /// which immediately aborts execution.
 /// Traps cannot be handled by WebAssembly code, but are reported to the
 /// host embedder.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Trap {
     /// The cloneable reason of a [`Trap`].
-    reason: Arc<TrapReason>,
+    reason: Box<TrapReason>,
 }
 
 #[test]
@@ -62,6 +62,24 @@ impl TrapReason {
         None
     }
 
+    /// Returns an exclusive reference to the [`HostError`] if any.
+    #[inline]
+    pub fn as_host_mut(&mut self) -> Option<&mut dyn HostError> {
+        if let Self::Host(host_error) = self {
+            return Some(&mut **host_error);
+        }
+        None
+    }
+
+    /// Consumes `self` to return the [`HostError`] if any.
+    #[inline]
+    pub fn into_host(self) -> Option<Box<dyn HostError>> {
+        if let Self::Host(host_error) = self {
+            return Some(host_error);
+        }
+        None
+    }
+
     /// Returns the [`TrapCode`] traps originating from Wasm execution.
     #[inline]
     pub fn trap_code(&self) -> Option<TrapCode> {
@@ -76,7 +94,7 @@ impl Trap {
     /// Create a new [`Trap`] from the [`TrapReason`].
     fn with_reason(reason: TrapReason) -> Self {
         Self {
-            reason: Arc::new(reason),
+            reason: Box::new(reason),
         }
     }
 
@@ -100,6 +118,33 @@ impl Trap {
         self.reason
             .as_host()
             .and_then(<(dyn HostError + 'static)>::downcast_ref)
+    }
+
+    /// Downcasts the [`Trap`] into the `T: HostError` if possible.
+    ///
+    /// Returns `None` otherwise.
+    #[inline]
+    pub fn downcast_mut<T>(&mut self) -> Option<&mut T>
+    where
+        T: HostError,
+    {
+        self.reason
+            .as_host_mut()
+            .and_then(<(dyn HostError + 'static)>::downcast_mut)
+    }
+
+    /// Consumes `self` to downcast the [`Trap`] into the `T: HostError` if possible.
+    ///
+    /// Returns `None` otherwise.
+    #[inline]
+    pub fn downcast<T>(self) -> Option<T>
+    where
+        T: HostError,
+    {
+        self.reason
+            .into_host()
+            .and_then(|error| error.downcast().ok())
+            .map(|boxed| *boxed)
     }
 
     /// Creates a new `Trap` representing an explicit program exit with a classic `i32`
@@ -243,10 +288,10 @@ impl TrapCode {
     /// other uses since it avoid heap memory allocation in certain cases.
     pub fn trap_message(&self) -> &'static str {
         match self {
-            Self::UnreachableCodeReached => "unreachable",
+            Self::UnreachableCodeReached => "wasm `unreachable` instruction executed",
             Self::MemoryOutOfBounds => "out of bounds memory access",
-            Self::TableOutOfBounds => "undefined element",
-            Self::IndirectCallToNull => "uninitialized element",
+            Self::TableOutOfBounds => "undefined element: out of bounds table access",
+            Self::IndirectCallToNull => "uninitialized element 2", // TODO: fixme, remove the trailing " 2" again
             Self::IntegerDivisionByZero => "integer divide by zero",
             Self::IntegerOverflow => "integer overflow",
             Self::BadConversionToInteger => "invalid conversion to integer",

@@ -17,18 +17,18 @@
     clippy::items_after_statements
 )]
 #[cfg(not(feature = "std"))]
-#[macro_use]
 extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std as alloc;
 
+mod component_vec;
 mod dedup;
 mod guarded;
 
 #[cfg(test)]
 mod tests;
 
-pub use self::{dedup::DedupArena, guarded::GuardedEntity};
+pub use self::{component_vec::ComponentVec, dedup::DedupArena, guarded::GuardedEntity};
 use alloc::vec::Vec;
 use core::{
     iter::{DoubleEndedIterator, Enumerate, ExactSizeIterator},
@@ -147,6 +147,28 @@ where
     #[inline]
     pub fn get_mut(&mut self, index: Idx) -> Option<&mut T> {
         self.entities.get_mut(index.into_usize())
+    }
+
+    /// Returns an exclusive reference to the pair of entities at the given indices if any.
+    ///
+    /// Returns `None` if `fst` and `snd` refer to the same entity.
+    /// Returns `None` if either `fst` or `snd` is invalid for this [`Arena`].
+    #[inline]
+    pub fn get_pair_mut(&mut self, fst: Idx, snd: Idx) -> Option<(&mut T, &mut T)> {
+        let fst_index = fst.into_usize();
+        let snd_index = snd.into_usize();
+        if fst_index == snd_index {
+            return None;
+        }
+        if fst_index > snd_index {
+            let (fst, snd) = self.get_pair_mut(snd, fst)?;
+            return Some((snd, fst));
+        }
+        // At this point we know that fst_index < snd_index.
+        let (fst_set, snd_set) = self.entities.split_at_mut(snd_index);
+        let fst = fst_set.get_mut(fst_index)?;
+        let snd = snd_set.get_mut(0)?;
+        Some((fst, snd))
     }
 }
 

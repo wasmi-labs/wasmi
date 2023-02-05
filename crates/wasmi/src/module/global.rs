@@ -1,21 +1,22 @@
 use super::InitExpr;
-use crate::{GlobalType, ModuleError};
+use crate::GlobalType;
 
 /// The index of a global variable within a [`Module`].
 ///
 /// [`Module`]: [`super::Module`]
 #[derive(Debug, Copy, Clone)]
-pub struct GlobalIdx(pub(crate) u32);
+pub struct GlobalIdx(u32);
+
+impl From<u32> for GlobalIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
 
 impl GlobalIdx {
     /// Returns the [`GlobalIdx`] as `u32`.
     pub fn into_u32(self) -> u32 {
         self.0
-    }
-
-    /// Returns the [`GlobalIdx`] as `usize`.
-    pub fn into_usize(self) -> usize {
-        self.0 as usize
     }
 }
 
@@ -35,16 +36,14 @@ pub struct Global {
     init_expr: InitExpr,
 }
 
-impl TryFrom<wasmparser::Global<'_>> for Global {
-    type Error = ModuleError;
-
-    fn try_from(global: wasmparser::Global<'_>) -> Result<Self, Self::Error> {
-        let global_type = global.ty.try_into()?;
-        let init_expr = global.init_expr.try_into()?;
-        Ok(Global {
+impl From<wasmparser::Global<'_>> for Global {
+    fn from(global: wasmparser::Global<'_>) -> Self {
+        let global_type = GlobalType::from_wasmparser(global.ty);
+        let init_expr = InitExpr::new(global.init_expr);
+        Self {
             global_type,
             init_expr,
-        })
+        }
     }
 }
 

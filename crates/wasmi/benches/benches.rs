@@ -7,18 +7,9 @@ use self::bench::{
     load_wasm_from_file,
     wat2wasm,
 };
+use core::{slice, time::Duration};
 use criterion::{criterion_group, criterion_main, Bencher, Criterion};
-use std::{slice, time::Duration};
-use wasmi::{
-    core::{TrapCode, Value},
-    Engine,
-    Extern,
-    Func,
-    Linker,
-    Memory,
-    Module,
-    Store,
-};
+use wasmi::{core::TrapCode, Engine, Extern, Func, Linker, Memory, Module, Store, Value};
 use wasmi_core::{Pages, ValueType, F32, F64};
 
 criterion_group!(
@@ -302,8 +293,8 @@ fn bench_execute_rev_comp(c: &mut Criterion) {
         prepare_rev_complement
             .call(&mut store, &[input_size], slice::from_mut(&mut result))
             .unwrap();
-        let test_data_ptr = match result {
-            value @ Value::I32(_) => value,
+        let test_data_ptr = match &result {
+            Value::I32(value) => Value::I32(*value),
             _ => panic!("unexpected non-I32 result found for prepare_rev_complement"),
         };
 
@@ -313,10 +304,14 @@ fn bench_execute_rev_comp(c: &mut Criterion) {
             .and_then(Extern::into_func)
             .unwrap();
         rev_complement_input_ptr
-            .call(&mut store, &[test_data_ptr], slice::from_mut(&mut result))
+            .call(
+                &mut store,
+                slice::from_ref(&test_data_ptr),
+                slice::from_mut(&mut result),
+            )
             .unwrap();
-        let input_data_mem_offset = match result {
-            Value::I32(value) => value,
+        let input_data_mem_offset = match &result {
+            Value::I32(value) => *value,
             _ => panic!("unexpected non-I32 result found for prepare_rev_complement"),
         };
 
@@ -336,7 +331,7 @@ fn bench_execute_rev_comp(c: &mut Criterion) {
 
         b.iter(|| {
             bench_rev_complement
-                .call(&mut store, &[test_data_ptr], &mut [])
+                .call(&mut store, slice::from_ref(&test_data_ptr), &mut [])
                 .unwrap();
         });
 
@@ -346,10 +341,14 @@ fn bench_execute_rev_comp(c: &mut Criterion) {
             .and_then(Extern::into_func)
             .unwrap();
         rev_complement_output_ptr
-            .call(&mut store, &[test_data_ptr], slice::from_mut(&mut result))
+            .call(
+                &mut store,
+                slice::from_ref(&test_data_ptr),
+                slice::from_mut(&mut result),
+            )
             .unwrap();
-        let output_data_mem_offset = match result {
-            Value::I32(value) => value,
+        let output_data_mem_offset = match &result {
+            Value::I32(value) => *value,
             _ => panic!("unexpected non-I32 result found for prepare_rev_complement"),
         };
 
@@ -375,8 +374,8 @@ fn bench_execute_regex_redux(c: &mut Criterion) {
         prepare_regex_redux
             .call(&mut store, &[input_size], slice::from_mut(&mut result))
             .unwrap();
-        let test_data_ptr = match result {
-            value @ Value::I32(_) => value,
+        let test_data_ptr = match &result {
+            Value::I32(value) => Value::I32(*value),
             _ => panic!("unexpected non-I32 result found for prepare_regex_redux"),
         };
 
@@ -386,10 +385,14 @@ fn bench_execute_regex_redux(c: &mut Criterion) {
             .and_then(Extern::into_func)
             .unwrap();
         regex_redux_input_ptr
-            .call(&mut store, &[test_data_ptr], slice::from_mut(&mut result))
+            .call(
+                &mut store,
+                slice::from_ref(&test_data_ptr),
+                slice::from_mut(&mut result),
+            )
             .unwrap();
-        let input_data_mem_offset = match result {
-            Value::I32(value) => value,
+        let input_data_mem_offset = match &result {
+            Value::I32(value) => *value,
             _ => panic!("unexpected non-I32 result found for regex_redux_input_ptr"),
         };
 
@@ -409,7 +412,7 @@ fn bench_execute_regex_redux(c: &mut Criterion) {
 
         b.iter(|| {
             bench_regex_redux
-                .call(&mut store, &[test_data_ptr], &mut [])
+                .call(&mut store, slice::from_ref(&test_data_ptr), &mut [])
                 .unwrap();
         })
     });
@@ -636,7 +639,7 @@ fn bench_execute_bare_call_4(c: &mut Criterion) {
             Value::default(ValueType::F32),
             Value::default(ValueType::F64),
         ];
-        let results = &mut [Value::I32(0); 4];
+        let results = &mut [0; 4].map(Value::I32);
         b.iter(|| {
             for _ in 0..REPETITIONS {
                 bare_call.call(&mut store, params, results).unwrap();
@@ -671,7 +674,7 @@ fn bench_execute_bare_call_16(c: &mut Criterion) {
             Value::default(ValueType::F32),
             Value::default(ValueType::F64),
         ];
-        let results = &mut [Value::I32(0); 16];
+        let results = &mut [0; 16].map(Value::I32);
         b.iter(|| {
             for _ in 0..REPETITIONS {
                 bare_call.call(&mut store, params, results).unwrap();
@@ -688,13 +691,17 @@ fn bench_execute_global_bump(c: &mut Criterion) {
             .get_export(&store, "bump")
             .and_then(Extern::into_func)
             .unwrap();
-        let mut result = [Value::I32(0)];
+        let mut result = Value::I32(0);
 
         b.iter(|| {
             count_until
-                .call(&mut store, &[Value::I32(BUMP_AMOUNT)], &mut result)
+                .call(
+                    &mut store,
+                    &[Value::I32(BUMP_AMOUNT)],
+                    slice::from_mut(&mut result),
+                )
                 .unwrap();
-            assert_eq!(result, [Value::I32(BUMP_AMOUNT)]);
+            assert_eq!(result.i32(), Some(BUMP_AMOUNT));
         })
     });
 }
@@ -707,13 +714,17 @@ fn bench_execute_global_const(c: &mut Criterion) {
             .get_export(&store, "call")
             .and_then(Extern::into_func)
             .unwrap();
-        let mut result = [Value::I32(0)];
+        let mut result = Value::I32(0);
 
         b.iter(|| {
             count_until
-                .call(&mut store, &[Value::I32(LIMIT)], &mut result)
+                .call(
+                    &mut store,
+                    &[Value::I32(LIMIT)],
+                    slice::from_mut(&mut result),
+                )
                 .unwrap();
-            assert_eq!(result, [Value::I32(LIMIT)]);
+            assert_eq!(result.i32(), Some(LIMIT));
         })
     });
 }
@@ -750,13 +761,17 @@ fn bench_execute_recursive_ok(c: &mut Criterion) {
             .get_export(&store, "call")
             .and_then(Extern::into_func)
             .unwrap();
-        let mut result = [Value::I32(0)];
+        let mut result = Value::I32(0);
 
         b.iter(|| {
             bench_call
-                .call(&mut store, &[Value::I32(RECURSIVE_DEPTH)], &mut result)
+                .call(
+                    &mut store,
+                    &[Value::I32(RECURSIVE_DEPTH)],
+                    slice::from_mut(&mut result),
+                )
                 .unwrap();
-            assert_eq!(result, [Value::I32(0)]);
+            assert_eq!(result.i32(), Some(0));
         })
     });
 }
@@ -772,13 +787,17 @@ fn bench_execute_recursive_scan(c: &mut Criterion) {
             .get_export(&store, "func")
             .and_then(Extern::into_func)
             .unwrap();
-        let mut result = [Value::I32(0)];
+        let mut result = Value::I32(0);
 
         b.iter(|| {
             bench_call
-                .call(&mut store, &[Value::I32(RECURSIVE_SCAN_DEPTH)], &mut result)
+                .call(
+                    &mut store,
+                    &[Value::I32(RECURSIVE_SCAN_DEPTH)],
+                    slice::from_mut(&mut result),
+                )
                 .unwrap();
-            assert_eq!(result, [Value::I32(RECURSIVE_SCAN_EXPECTED)]);
+            assert_eq!(result.i32(), Some(RECURSIVE_SCAN_EXPECTED));
         })
     });
 }
@@ -815,15 +834,18 @@ fn bench_execute_recursive_is_even(c: &mut Criterion) {
             .get_export(&store, "is_even")
             .and_then(Extern::into_func)
             .unwrap();
-        let mut result = [Value::I32(0)];
+        let mut result = Value::I32(0);
 
         b.iter(|| {
             bench_call
-                .call(&mut store, &[Value::I32(50_000)], &mut result)
+                .call(
+                    &mut store,
+                    &[Value::I32(50_000)],
+                    slice::from_mut(&mut result),
+                )
                 .unwrap();
         });
-
-        assert_eq!(result, [Value::I32(1)]);
+        assert_eq!(result.i32(), Some(1));
     });
 }
 
@@ -848,16 +870,16 @@ fn bench_execute_host_calls(c: &mut Criterion) {
             .get_export(&store, "call")
             .and_then(Extern::into_func)
             .unwrap();
-        let mut result = [Value::I64(0)];
+        let mut result = Value::I64(0);
 
         b.iter(|| {
             call.call(
                 &mut store,
                 &[Value::I64(HOST_CALLS_REPETITIONS)],
-                &mut result,
+                slice::from_mut(&mut result),
             )
             .unwrap();
-            assert_eq!(result, [Value::I64(0)]);
+            assert_eq!(result.i64(), Some(0));
         })
     });
 }
@@ -930,12 +952,16 @@ fn bench_execute_memory_sum(c: &mut Criterion) {
             *byte = new_byte;
             expected_sum += new_byte as u64 as i64;
         }
-        let mut result = [Value::I32(0)];
+        let mut result = Value::I64(0);
         b.iter(|| {
-            sum.call(&mut store, &[Value::I32(len as i32)], &mut result)
-                .unwrap();
+            sum.call(
+                &mut store,
+                &[Value::I32(len as i32)],
+                slice::from_mut(&mut result),
+            )
+            .unwrap();
         });
-        assert_eq!(result, [Value::I64(expected_sum)]);
+        assert_eq!(result.i64(), Some(expected_sum));
     });
 }
 

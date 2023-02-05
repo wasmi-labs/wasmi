@@ -8,7 +8,157 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
-## [0.21.0] - 2023-01-04
+## [`0.25.0`] - 2023-02-04
+
+### Added
+
+- Added `Config::floats` option to enable or disable Wasm float operators during Wasm validation.
+- `Trap::downcast_mut` and `Trap::downcast` methods. (https://github.com/paritytech/wasmi/pull/650)
+  - This helps users to downcast into `T: HostError`.
+- Added `WasmType` impls for `FuncRef` and `ExternRef` types. (https://github.com/paritytech/wasmi/pull/642)
+  - This allows `FuncRef` and `ExternRef` instances to be used in `TypedFunc` parameters and results.
+
+### Removed
+
+- Removed from `From` impls from `wasmparser-nostd` types to `wasmi` types.
+  - For example `From<wasmparser::FuncType> for wasmi::FuncType` got removed.
+
+### Changed
+
+- Update the `wasmparser-nostd` dependency from version `0.91.0` to `0.99.0`. (https://github.com/paritytech/wasmi/pull/640)
+- The `Trap` type is no longer `Clone`. (https://github.com/paritytech/wasmi/pull/650)
+
+### Internal
+
+- Resolved plenty of technical debt and improved structure of the `wasmi` crate.
+  - PRs: https://github.com/paritytech/wasmi/pull/648, https://github.com/paritytech/wasmi/pull/647, https://github.com/paritytech/wasmi/pull/646, https://github.com/paritytech/wasmi/pull/645, https://github.com/paritytech/wasmi/pull/644, https://github.com/paritytech/wasmi/pull/641
+
+## [`0.24.0`] - 2023-01-31
+
+### Added
+
+- Added support for the [`bulk-memory`] Wasm proposal. (https://github.com/paritytech/wasmi/pull/628)
+- Added support for the [`reference-types`] Wasm proposal. (https://github.com/paritytech/wasmi/pull/635)
+- Added `ValueType::{is_ref, is_num`} methods. (https://github.com/paritytech/wasmi/pull/635)
+- Added `Value::{i32, i64, f32, f64, externref, funcref}` accessor methods to `Value`.
+
+[`bulk-memory`]: https://github.com/WebAssembly/bulk-memory-operations
+[`reference-types`]: https://github.com/WebAssembly/reference-types
+
+### Fixed
+
+- Fix a bug with `Table` and `Memory` imports not respecting the current size. (https://github.com/paritytech/wasmi/pull/635)
+  - This sometimes led to the problem that valid `Table` and `Memory` imports
+    could incorrectly be rejected for having an invalid size for the subtype check.
+  - This has been fixed as part of the [`reference-types`] Wasm proposal implementation.
+
+### Changed
+
+- Use more references in places to provide the compiler with more optimization opportunities. (https://github.com/paritytech/wasmi/pull/634)
+  - This led to a speed-up across the board for Wasm targets of about 15-20%.
+- Move the `Value` type from `wasmi_core` to `wasmi`. (https://github.com/paritytech/wasmi/pull/636)
+  - This change was necessary in order to support the [`reference-types`] Wasm proposal.
+- There has been some consequences from implementing the [`reference-types`] Wasm proposal which are listed below:
+  - The `Value` type no longer implements `Copy` and `PartialEq`.
+  - The `From<&Value> for UntypedValue` impl has been removed.
+  - Remove some `From` impls for `Value`.
+  - Moved some `Display` impls for types like `FuncType` and `Value` to the `wasmi_cli` crate.
+  - Remove the `try_into` API from the `Value` type.
+    - Users should use the new accessor methods as in the Wasmtime API.
+
+### Internal
+
+- Update `wast` dependency from version `0.44` to `0.52`. (https://github.com/paritytech/wasmi/pull/632)
+- Update the Wasm spec testsuite to the most recent commit: `3a04b2cf9`
+- Improve error reporting for the internal Wasm spec testsuite runner.
+  - It will now show proper span information in many more cases.
+
+## [`0.23.0`] - 2023-01-19
+
+> **Note:** This is the Wasmtime API Compatibility update.
+
+### Added
+
+- Add `Module::get_export` method. (https://github.com/paritytech/wasmi/pull/617)
+
+### Changed
+
+- Removed `ModuleError` export from crate root. (https://github.com/paritytech/wasmi/pull/618)
+  - Now `ModuleError` is exported from `crate::errors` just like all the other error types.
+- Refactor and cleanup traits underlying to `IntoFunc`. (https://github.com/paritytech/wasmi/pull/620)
+  - This is only the first step in moving closer to the Wasmtime API traits.
+- Mirror Wasmtime API more closely. (https://github.com/paritytech/wasmi/pull/615, https://github.com/paritytech/wasmi/pull/616)
+  - Renamed `Caller::host_data` method to `Caller::data`.
+  - Renamed `Caller::host_data_mut` method to `Caller::data_mut`.
+  - Add `Extern::ty` method and the `ExternType` type.
+  - Rename `ExportItem` to `ExportType`:
+    - Rename the `ExportItem::kind` method to `ty` and return `ExternType` instead of `ExportItemKind`.
+    - Remove the no longer used `ExportItemKind` entirely.
+  - The `ExportsIter` now yields items of the new type `Export` instead of pairs of `(&str, Extern)`.
+  - Rename `ModuleImport` to `ImportType`.
+    - Rename `ImportType::item_type` to `ty`.
+    - Rename `ImportType::field` to `name`.
+    - Properly forward `&str` lifetimes in `ImportType::{module, name}`.
+    - Replace `ModuleImportType` by `ExternType`.
+  - Add new convenience methods to `Instance`:
+    - `Instance::get_func`
+    - `Instance::get_typed_func`
+    - `Instance::get_global`
+    - `Instance::get_table`
+    - `Instance::get_memory`
+  - Rename getters for querying types of runtime objects:
+    - `Func::func_type` => `Func::ty`
+    - `Global::global_type` => `Global::ty`
+    - `Table::table_type` => `Table::ty`
+    - `Memory::memory_type` => `Memory::ty`
+    - `Value::value_type` => `Value::ty`
+  - Remove `Global::value_type` getter.
+    - Use `global.ty().content()` instead.
+  - Remove `Global::is_mutable` getter.
+    - Use `global.ty().mutability().is_mut()` instead.
+  - Rename `Mutability::Mutable` to `Var`.
+  - Add `Mutability::is_mut` getter.
+    - While this API is not included in Wasmtime it is a useful convenience method.
+  - Rename `TableType::initial` method to `minimum`.
+  - Rename `Table::len` method to `size`.
+  - `Table` and `TableType` now operate on `u32` instead of `usize` just like in Wasmtime.
+    - This affects `Table::{new, size, set, get, grow}` methods and `TableType::{new, minimum, maximum}` methods and their users.
+
+## [`0.22.0`] - 2023-01-16
+
+### Added
+
+- Add missing `TypedFunc::call_resumable` API. (https://github.com/paritytech/wasmi/pull/605)
+  - So far resumable calls were only available for the `Func` type.
+    However, there was no technical reason why it was not implemented
+    for `TypedFunc` so this mirrored API now exists.
+  - This also cleans up rough edges with the `Func::call_resumable` API.
+
+### Changed
+
+- Clean up the `wasmi_core` crate API. (https://github.com/paritytech/wasmi/pull/607, https://github.com/paritytech/wasmi/pull/608, https://github.com/paritytech/wasmi/pull/609)
+  - This removes plenty of traits from the public interface of the crate
+    which greatly simplifies the API surface for users.
+  - The `UntypedValue` type gained some new methods to replace functionality
+    that was provided in parts by the removed traits.
+- The `wasmi` crate now follows the Wasmtime API a bit more closely. (https://github.com/paritytech/wasmi/pull/613)
+  - `StoreContext` new methods:
+    - `fn engine(&self) -> &Engine`
+    - `fn data(&self) -> &T` 
+  - `StoreContextMut` new methods:
+    - `fn engine(&self) -> &Engine`
+    - `fn data(&self) -> &T` 
+    - `fn data_mut(&mut self) -> &mut T`
+  - Renamed `Store::state` method to `Store::data`.
+  - Renamed `Store::state_mut` method to `Store::data_mut`.
+  - Renamed `Store::into_state` method to `Store::into_data`.
+### Internal
+
+- The `Store` and `Engine` types are better decoupled from their generic parts. (https://github.com/paritytech/wasmi/pull/610, https://github.com/paritytech/wasmi/pull/611)
+  - This might reduce binary bloat and may have positive effects on the performance.
+    In fact we measured significant performance improvements on the Wasm target.
+
+## [`0.21.0`] - 2023-01-04
 
 ### Added
 
@@ -35,7 +185,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - The `wasmi` CLI now prints exported functions names if the function name CLI argument is missing. (https://github.com/paritytech/wasmi/pull/579)
 - Improve feedback when running a Wasm module without exported function using `wasmi` CLI. (https://github.com/paritytech/wasmi/pull/584)
 
-## [0.20.0] - 2022-11-04
+## [`0.20.0`] - 2022-11-04
 
 ### Added
 
@@ -68,7 +218,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - https://github.com/paritytech/wasmi/pull/542 https://github.com/paritytech/wasmi/pull/541
   https://github.com/paritytech/wasmi/pull/508 https://github.com/paritytech/wasmi/pull/543
 
-## [0.19.0] - 2022-10-20
+## [`0.19.0`] - 2022-10-20
 
 ### Fixed
 
@@ -97,7 +247,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   https://github.com/paritytech/wasmi/pull/521
 - Add `miri` testing to `wasmi` CI (https://github.com/paritytech/wasmi/pull/523)
 
-## [0.18.1] - 2022-10-13
+## [`0.18.1`] - 2022-10-13
 
 ### Changed
 
@@ -121,7 +271,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   (https://github.com/paritytech/wasmi/pull/494, https://github.com/paritytech/wasmi/pull/501,
   https://github.com/paritytech/wasmi/pull/506, https://github.com/paritytech/wasmi/pull/509)
 
-## [0.18.0] - 2022-10-02
+## [`0.18.0`] - 2022-10-02
 
 ### Added
 
@@ -142,7 +292,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   (https://github.com/paritytech/wasmi/pull/483, https://github.com/paritytech/wasmi/pull/487)
   - This allows us to optimize `wasmi` towards Wasm performance more easily in the future.
 
-## [0.17.0] - 2022-09-23
+## [`0.17.0`] - 2022-09-23
 
 ### Added
 
@@ -174,7 +324,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Enabled more useful `clippy` lints for `wasmi` and `wasmi_core`. (https://github.com/paritytech/wasmi/pull/438)
 - Reorganized the `wasmi` workspace. (https://github.com/paritytech/wasmi/pull/466)
 
-## [0.16.0] - 2022-08-30
+## [`0.16.0`] - 2022-08-30
 
 ### Changed
 
@@ -191,7 +341,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
       Wasm to `wasmi` bytecode translation performance by avoiding many
       unnecessary unpredictable branches in the process.
 
-## [0.15.0] - 2022-08-22
+## [`0.15.0`] - 2022-08-22
 
 ### Fixed
 
@@ -239,7 +389,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   `wasmi` bytecode translation.
   [**Link**](https://github.com/paritytech/wasmi/commit/4d1f2ad6cbf07e61656185101bbd0bd5a941335f)
 
-## [0.14.0] - 2022-07-26
+## [`0.14.0`] - 2022-07-26
 
 ### Added
 
@@ -288,17 +438,17 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   free to [open an issue](https://github.com/paritytech/wasmi/issues)
   and provide us with your use case.
 
-## [0.13.2] - 2022-09-20
+## [`0.13.2`] - 2022-09-20
 
 ### Fixed
 
 - Support allocating 4GB of memory (https://github.com/paritytech/wasmi/pull/452)
 
-## [0.13.1] - 2022-09-20
+## [`0.13.1`] - 2022-09-20
 
 **Note:** Yanked because of missing `wasmi_core` bump.
 
-## [0.13.0] - 2022-07-25
+## [`0.13.0`] - 2022-07-25
 
 **Note:** This is the last major release of the legacy `wasmi` engine.
           Future releases are using the new Wasm execution engines
@@ -310,7 +460,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 - Update dependency: `wasmi-validation v0.4.2 -> v0.5.0`
 
-## [0.12.0] - 2022-07-24
+## [`0.12.0`] - 2022-07-24
 
 ### Changed
 
@@ -335,7 +485,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     - `rand 0.4.2 -> 0.8.2`
 - Fix some `clippy` warnings.
 
-## [0.11.0] - 2022-01-06
+## [`0.11.0`] - 2022-01-06
 
 ### Fixed
 
@@ -358,7 +508,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Improve Rust code formatting of imports.
 - Improve debug impl of `ValueStack` so that only the live parts are printed.
 
-## [0.10.0] - 2021-12-14
+## [`0.10.0`] - 2021-12-14
 
 ### Added
 
@@ -395,7 +545,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     - Check Wasm builds.
     - File test coverage reports to codecov.io.
 
-## [0.9.1] - 2021-09-23
+## [`0.9.1`] - 2021-09-23
 
 ### Changed
 
@@ -407,7 +557,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Fixed some warnings associated to Rust edition 2021.
     - Note: The crate itself remains in Rust edition 2018.
 
-## [0.9.0] - 2021-05-27
+## [`0.9.0`] - 2021-05-27
 
 ### Changed
 

@@ -8,13 +8,16 @@ mod tests;
 pub use self::utils::{
     BranchOffset,
     BranchParams,
+    DataSegmentIdx,
     DropKeep,
     DropKeepError,
+    ElementSegmentIdx,
     FuncIdx,
     GlobalIdx,
     LocalDepth,
     Offset,
     SignatureIdx,
+    TableIdx,
 };
 use core::fmt::Debug;
 use wasmi_core::UntypedValue;
@@ -29,18 +32,29 @@ use wasmi_core::UntypedValue;
 /// each representing either the `BrTable` head or one of its branching targets.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Instruction {
-    LocalGet { local_depth: LocalDepth },
-    LocalSet { local_depth: LocalDepth },
-    LocalTee { local_depth: LocalDepth },
+    LocalGet {
+        local_depth: LocalDepth,
+    },
+    LocalSet {
+        local_depth: LocalDepth,
+    },
+    LocalTee {
+        local_depth: LocalDepth,
+    },
     Br(BranchParams),
     BrIfEqz(BranchParams),
     BrIfNez(BranchParams),
-    BrTable { len_targets: usize },
+    BrTable {
+        len_targets: usize,
+    },
     Unreachable,
     Return(DropKeep),
     ReturnIfNez(DropKeep),
     Call(FuncIdx),
-    CallIndirect(SignatureIdx),
+    CallIndirect {
+        table: TableIdx,
+        func_type: SignatureIdx,
+    },
     Drop,
     Select,
     GlobalGet(GlobalIdx),
@@ -70,6 +84,37 @@ pub enum Instruction {
     I64Store32(Offset),
     MemorySize,
     MemoryGrow,
+    MemoryFill,
+    MemoryCopy,
+    MemoryInit(DataSegmentIdx),
+    DataDrop(DataSegmentIdx),
+    TableSize {
+        table: TableIdx,
+    },
+    TableGrow {
+        table: TableIdx,
+    },
+    TableFill {
+        table: TableIdx,
+    },
+    TableGet {
+        table: TableIdx,
+    },
+    TableSet {
+        table: TableIdx,
+    },
+    TableCopy {
+        dst: TableIdx,
+        src: TableIdx,
+    },
+    TableInit {
+        table: TableIdx,
+        elem: ElementSegmentIdx,
+    },
+    ElemDrop(ElementSegmentIdx),
+    RefFunc {
+        func_index: FuncIdx,
+    },
     Const(UntypedValue),
     I32Eqz,
     I32Eq,

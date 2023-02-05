@@ -1,9 +1,9 @@
 [package]
 name = "wasmi_cli"
-version = "0.11.0"
+version = "0.25.0"
 documentation = "https://docs.rs/wasmi/"
 description = "WebAssembly interpreter"
-publish = false                          # We might want to publish this crate when dust has settled.
+publish = true
 authors.workspace = true
 repository.workspace = true
 edition.workspace = true
@@ -14,10 +14,17 @@ categories.workspace = true
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
-wasmi = { path = "../wasmi" }
+wasmi = { path = "../wasmi", version = "0.25.0" }
 wat = "1"
 anyhow = "1"
 wasmi_wasi = { path = "../wasi" }
 
 [dev-dependencies]
 assert_cmd = "2.0.7"
+
+# We need to put this [profile.release] section due to this bug in Cargo:
+# https://github.com/rust-lang/cargo/issues/8264
+# Uncomment the lines below before publishing a new `wasmi_cli` release to crates.io.
+# [profile.release]
+# lto = "fat"
+# codegen-units = 1

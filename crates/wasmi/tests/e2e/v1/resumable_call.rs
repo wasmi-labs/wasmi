@@ -1,5 +1,7 @@
 //! Test to assert that resumable call feature works as intended.
 
+use core::slice;
+
 use wasmi::{
     Engine,
     Error,
@@ -12,8 +14,9 @@ use wasmi::{
     Store,
     TypedResumableCall,
     TypedResumableInvocation,
+    Value,
 };
-use wasmi_core::{Trap, TrapCode, Value, ValueType};
+use wasmi_core::{Trap, TrapCode, ValueType};
 
 fn test_setup() -> Store<()> {
     let engine = Engine::default();
@@ -123,10 +126,7 @@ impl AssertResumable for ResumableCall {
         match self {
             Self::Resumable(invocation) => {
                 assert_eq!(invocation.host_error().i32_exit_status(), Some(exit_status));
-                assert_eq!(
-                    invocation.host_func().func_type(store).results(),
-                    host_results,
-                );
+                assert_eq!(invocation.host_func().ty(store).results(), host_results,);
                 invocation
             }
             Self::Finished => panic!("expected host function trap with exit code 10"),
@@ -142,20 +142,20 @@ impl AssertResumable for ResumableCall {
 }
 
 fn run_test(wasm_fn: Func, mut store: &mut Store<()>, wasm_trap: bool) {
-    let mut results = [Value::I32(0)];
+    let mut results = Value::I32(0);
     let invocation = wasm_fn
         .call_resumable(
             &mut store,
             &[Value::I32(wasm_trap as i32)],
-            &mut results[..],
+            slice::from_mut(&mut results),
         )
         .unwrap()
         .assert_resumable(store, 10, &[ValueType::I32]);
     let invocation = invocation
-        .resume(&mut store, &[Value::I32(2)], &mut results[..])
+        .resume(&mut store, &[Value::I32(2)], slice::from_mut(&mut results))
         .unwrap()
         .assert_resumable(store, 20, &[ValueType::I32]);
-    let call = invocation.resume(&mut store, &[Value::I32(3)], &mut results[..]);
+    let call = invocation.resume(&mut store, &[Value::I32(3)], slice::from_mut(&mut results));
     if wasm_trap {
         match call.unwrap_err() {
             Error::Trap(trap) => {
@@ -168,7 +168,7 @@ fn run_test(wasm_fn: Func, mut store: &mut Store<()>, wasm_trap: bool) {
         }
     } else {
         call.unwrap().assert_finish();
-        assert_eq!(results, [Value::I32(4)]);
+        assert_eq!(results.i32(), Some(4));
     }
 }
 
@@ -185,10 +185,7 @@ impl<Results> AssertResumable for TypedResumableCall<Results> {
         match self {
             Self::Resumable(invocation) => {
                 assert_eq!(invocation.host_error().i32_exit_status(), Some(exit_status));
-                assert_eq!(
-                    invocation.host_func().func_type(store).results(),
-                    host_results,
-                );
+                assert_eq!(invocation.host_func().ty(store).results(), host_results,);
                 invocation
             }
             Self::Finished(_) => panic!("expected host function trap with exit code 10"),

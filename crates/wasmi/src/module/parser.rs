@@ -1,11 +1,10 @@
-use core::{
-    mem::{replace, take},
-    ops::Range,
-};
-
 use super::{
     compile::translate,
-    import::FuncTypeIdx,
+    export::ExternIdx,
+    global::Global,
+    import::{FuncTypeIdx, Import},
+    DataSegment,
+    ElementSegment,
     FuncIdx,
     Module,
     ModuleBuilder,
@@ -13,8 +12,12 @@ use super::{
     ModuleResources,
     Read,
 };
-use crate::{engine::FunctionBuilderAllocations, Engine};
-use alloc::vec::Vec;
+use crate::{engine::FunctionBuilderAllocations, Engine, FuncType, MemoryType, TableType};
+use alloc::{boxed::Box, vec::Vec};
+use core::{
+    mem::{replace, take},
+    ops::Range,
+};
 use wasmparser::{
     Chunk,
     DataSectionReader,
@@ -29,7 +32,6 @@ use wasmparser::{
     MemorySectionReader,
     Parser as WasmParser,
     Payload,
-    SectionReader,
     TableSectionReader,
     TypeSectionReader,
     Validator,
@@ -79,7 +81,7 @@ impl<'engine> ModuleParser<'engine> {
             builder,
             validator,
             parser,
-            func: FuncIdx(0),
+            func: FuncIdx::from(0),
             allocations: ReusableAllocations::default(),
         }
     }
@@ -195,8 +197,8 @@ impl<'engine> ModuleParser<'engine> {
             Payload::ComponentCanonicalSection(section) => {
                 self.process_unsupported_component_model(section.range())
             }
-            Payload::ComponentStartSection(section) => {
-                self.process_unsupported_component_model(section.range())
+            Payload::ComponentStartSection { start: _, range } => {
+                self.process_unsupported_component_model(range)
             }
             Payload::ComponentImportSection(section) => {
                 self.process_unsupported_component_model(section.range())
@@ -221,7 +223,7 @@ impl<'engine> ModuleParser<'engine> {
     /// Validates the Wasm version section.
     fn process_version(
         &mut self,
-        num: u32,
+        num: u16,
         encoding: Encoding,
         range: Range<usize>,
     ) -> Result<(), ModuleError> {
@@ -239,11 +241,10 @@ impl<'engine> ModuleParser<'engine> {
     /// # Errors
     ///
     /// If an unsupported function type is encountered.
-    fn process_types(&mut self, mut section: TypeSectionReader) -> Result<(), ModuleError> {
+    fn process_types(&mut self, section: TypeSectionReader) -> Result<(), ModuleError> {
         self.validator.type_section(&section)?;
-        let len_types = section.get_count();
-        let func_types = (0..len_types).map(|_| match section.read()? {
-            wasmparser::Type::Func(ty) => ty.try_into(),
+        let func_types = section.into_iter().map(|result| match result? {
+            wasmparser::Type::Func(ty) => Ok(FuncType::from_wasmparser(ty)),
         });
         self.builder.push_func_types(func_types)?;
         Ok(())
@@ -259,10 +260,11 @@ impl<'engine> ModuleParser<'engine> {
     ///
     /// - If an import fails to validate.
     /// - If an unsupported import declaration is encountered.
-    fn process_imports(&mut self, mut section: ImportSectionReader) -> Result<(), ModuleError> {
+    fn process_imports(&mut self, section: ImportSectionReader) -> Result<(), ModuleError> {
         self.validator.import_section(&section)?;
-        let len_imports = section.get_count();
-        let imports = (0..len_imports).map(|_| section.read()?.try_into());
+        let imports = section
+            .into_iter()
+            .map(|import| import.map(Import::from).map_err(ModuleError::from));
         self.builder.push_imports(imports)?;
         Ok(())
     }
@@ -291,10 +293,11 @@ impl<'engine> ModuleParser<'engine> {
     /// # Errors
     ///
     /// If a function declaration fails to validate.
-    fn process_functions(&mut self, mut section: FunctionSectionReader) -> Result<(), ModuleError> {
+    fn process_functions(&mut self, section: FunctionSectionReader) -> Result<(), ModuleError> {
         self.validator.function_section(&section)?;
-        let len_funcs = section.get_count();
-        let funcs = (0..len_funcs).map(|_| section.read().map(FuncTypeIdx).map_err(Into::into));
+        let funcs = section
+            .into_iter()
+            .map(|func| func.map(FuncTypeIdx::from).map_err(ModuleError::from));
         self.builder.push_funcs(funcs)?;
         Ok(())
     }
@@ -308,10 +311,13 @@ impl<'engine> ModuleParser<'engine> {
     /// # Errors
     ///
     /// If a table declaration fails to validate.
-    fn process_tables(&mut self, mut section: TableSectionReader) -> Result<(), ModuleError> {
+    fn process_tables(&mut self, section: TableSectionReader) -> Result<(), ModuleError> {
         self.validator.table_section(&section)?;
-        let len_tables = section.get_count();
-        let tables = (0..len_tables).map(|_| section.read()?.try_into());
+        let tables = section.into_iter().map(|table| {
+            table
+                .map(TableType::from_wasmparser)
+                .map_err(ModuleError::from)
+        });
         self.builder.push_tables(tables)?;
         Ok(())
     }
@@ -325,10 +331,13 @@ impl<'engine> ModuleParser<'engine> {
     /// # Errors
     ///
     /// If a linear memory declaration fails to validate.
-    fn process_memories(&mut self, mut section: MemorySectionReader) -> Result<(), ModuleError> {
+    fn process_memories(&mut self, section: MemorySectionReader) -> Result<(), ModuleError> {
         self.validator.memory_section(&section)?;
-        let len_memories = section.get_count();
-        let memories = (0..len_memories).map(|_| section.read()?.try_into());
+        let memories = section.into_iter().map(|memory| {
+            memory
+                .map(MemoryType::from_wasmparser)
+                .map_err(ModuleError::from)
+        });
         self.builder.push_memories(memories)?;
         Ok(())
     }
@@ -352,10 +361,11 @@ impl<'engine> ModuleParser<'engine> {
     /// # Errors
     ///
     /// If a global variable declaration fails to validate.
-    fn process_globals(&mut self, mut section: GlobalSectionReader) -> Result<(), ModuleError> {
+    fn process_globals(&mut self, section: GlobalSectionReader) -> Result<(), ModuleError> {
         self.validator.global_section(&section)?;
-        let len_globals = section.get_count();
-        let globals = (0..len_globals).map(|_| section.read()?.try_into());
+        let globals = section
+            .into_iter()
+            .map(|global| global.map(Global::from).map_err(ModuleError::from));
         self.builder.push_globals(globals)?;
         Ok(())
     }
@@ -369,10 +379,14 @@ impl<'engine> ModuleParser<'engine> {
     /// # Errors
     ///
     /// If an export declaration fails to validate.
-    fn process_exports(&mut self, mut section: ExportSectionReader) -> Result<(), ModuleError> {
+    fn process_exports(&mut self, section: ExportSectionReader) -> Result<(), ModuleError> {
         self.validator.export_section(&section)?;
-        let len_exports = section.get_count();
-        let exports = (0..len_exports).map(|_| section.read()?.try_into());
+        let exports = section.into_iter().map(|export| {
+            let export = export?;
+            let field: Box<str> = export.name.into();
+            let idx = ExternIdx::new(export.kind, export.index)?;
+            Ok((field, idx))
+        });
         self.builder.push_exports(exports)?;
         Ok(())
     }
@@ -388,7 +402,7 @@ impl<'engine> ModuleParser<'engine> {
     /// If the start function declaration fails to validate.
     fn process_start(&mut self, func: u32, range: Range<usize>) -> Result<(), ModuleError> {
         self.validator.start_section(func, &range)?;
-        self.builder.set_start(FuncIdx(func));
+        self.builder.set_start(FuncIdx::from(func));
         Ok(())
     }
 
@@ -401,10 +415,11 @@ impl<'engine> ModuleParser<'engine> {
     /// # Errors
     ///
     /// If any of the table element segments fail to validate.
-    fn process_element(&mut self, mut section: ElementSectionReader) -> Result<(), ModuleError> {
+    fn process_element(&mut self, section: ElementSectionReader) -> Result<(), ModuleError> {
         self.validator.element_section(&section)?;
-        let len_segments = section.get_count();
-        let segments = (0..len_segments).map(|_| section.read()?.try_into());
+        let segments = section
+            .into_iter()
+            .map(|segment| segment.map(ElementSegment::from).map_err(ModuleError::from));
         self.builder.push_element_segments(segments)?;
         Ok(())
     }
@@ -430,10 +445,11 @@ impl<'engine> ModuleParser<'engine> {
     /// # Errors
     ///
     /// If any of the table elements fail to validate.
-    fn process_data(&mut self, mut section: DataSectionReader) -> Result<(), ModuleError> {
+    fn process_data(&mut self, section: DataSectionReader) -> Result<(), ModuleError> {
         self.validator.data_section(&section)?;
-        let len_segments = section.get_count();
-        let segments = (0..len_segments).map(|_| section.read()?.try_into());
+        let segments = section
+            .into_iter()
+            .map(|segment| segment.map(DataSegment::from).map_err(ModuleError::from));
         self.builder.push_data_segments(segments)?;
         Ok(())
     }
@@ -454,15 +470,15 @@ impl<'engine> ModuleParser<'engine> {
         // We have to adjust the initial func reference to the first
         // internal function before we process any of the internal functions.
         let len_func_imports = self.builder.imports.funcs.len() as u32;
-        self.func = FuncIdx(len_func_imports);
+        self.func = FuncIdx::from(len_func_imports);
         Ok(())
     }
 
     /// Returns the next `FuncIdx` for processing of its function body.
     fn next_func(&mut self) -> FuncIdx {
-        let next @ FuncIdx(value) = self.func;
-        self.func = FuncIdx(value + 1);
-        next
+        let old = self.func;
+        self.func = FuncIdx::from(self.func.into_u32() + 1);
+        old
     }
 
     /// Process a single module code section entry.
@@ -500,9 +516,10 @@ impl<'engine> ModuleParser<'engine> {
         &mut self,
         range: Range<usize>,
     ) -> Result<(), ModuleError> {
-        Err(ModuleError::unsupported(format!(
-            "encountered unsupported Wasm component model section: {range:?}",
-        )))
+        panic!(
+            "wasmi does not support the `component-model` Wasm proposal: bytes[{}..{}]",
+            range.start, range.end
+        )
     }
 
     /// Process an unknown Wasm module section.

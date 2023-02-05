@@ -1,8 +1,8 @@
-use super::ModuleImportType;
 use crate::{
     errors::{MemoryError, TableError},
     global::GlobalError,
     Extern,
+    ExternType,
     FuncType,
     Table,
 };
@@ -18,7 +18,7 @@ pub enum InstantiationError {
     /// type of the required import for module instantiation.
     ImportsExternalsMismatch {
         /// The expected external value for the module import.
-        expected: ModuleImportType,
+        expected: ExternType,
         /// The actually found external value for the module import.
         actual: Extern,
     },
@@ -40,9 +40,9 @@ pub enum InstantiationError {
         /// The table of the element segment.
         table: Table,
         /// The offset to store the `amount` of elements into the table.
-        offset: usize,
+        offset: u32,
         /// The amount of elements with which the table is initialized at the `offset`.
-        amount: usize,
+        amount: u32,
     },
     /// Caused when the `start` function was unexpectedly found in the instantiated module.
     FoundStartFn {
@@ -77,7 +77,7 @@ impl Display for InstantiationError {
                 amount,
             } => write!(
                 f,
-                "table {table:?} does not fit {offset} elements starting from offset {amount}",
+                "out of bounds table access: {table:?} does not fit {amount} elements starting from offset {offset}",
             ),
             Self::FoundStartFn { index } => {
                 write!(f, "found an unexpected start function with index {index}")
