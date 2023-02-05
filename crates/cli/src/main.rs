@@ -8,9 +8,8 @@ use std::{
     path::{Path, PathBuf},
 };
 use wasmi::{
-    core::{Value, ValueType, F32, F64},
+    core::{ValueType, F32, F64},
     Engine,
-    ExportItemKind,
     ExternType,
     Func,
     FuncType,
@@ -60,6 +59,9 @@ struct Args {
     wasm_file: PathBuf,
 
     /// The function to invoke
+    /// If this argument is missing, wasmi CLI will try to run `""` or `_start`
+    /// If neither of exported  the wasmi CLI will print out all
+    /// exported functions and their parameters of the given Wasm module and return with an error.
     #[clap(long = "invoke", value_name = "FUNCTION")]
     invoke: Option<String>,
 
