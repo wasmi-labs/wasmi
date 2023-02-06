@@ -325,6 +325,22 @@ impl Instruction {
         )
     }
 
+    /// Returns the [`DropKeep`] field of the [`Instruction`] if existing.
+    ///
+    /// # Note
+    ///
+    /// Only branch and return instructions do have a [`DropKeep`] field.
+    pub fn drop_keep(&self) -> Option<DropKeep> {
+        let drop_keep = match self {
+            Instruction::Br(params)
+            | Instruction::BrIfEqz(params)
+            | Instruction::BrIfNez(params) => params.drop_keep(),
+            Instruction::Return(drop_keep) | Instruction::ReturnIfNez(drop_keep) => *drop_keep,
+            _ => return None,
+        };
+        Some(drop_keep)
+    }
+
     /// Returns the amount of fuel that the `Instruction` will consume if statically known.
     ///
     /// Returns `None` if the amount of fuel cannot be statically known for the [`Instruction`].
@@ -348,7 +364,19 @@ impl Instruction {
             | Instruction::TableInit { .. } => None,
             instr if instr.is_load() => Some(FUEL_LOAD),
             instr if instr.is_store() => Some(FUEL_STORE),
-            _ => Some(FUEL_SIMPLE),
+            instr => {
+                // Keeping values requires to copy the kept values around which
+                // creates overhead in dependence of the number of kept values.
+                // The drop value does not affect the computational intensity
+                // since it is just the offset for copying the kept values.
+                // However, if drop is zero nothing needs to be copied around.
+                let keep_fuel = instr
+                    .drop_keep()
+                    .filter(|drop_keep| drop_keep.drop() == 0)
+                    .map(|drop_keep| drop_keep.keep())
+                    .unwrap_or(0) as u64;
+                Some(FUEL_SIMPLE + keep_fuel)
+            }
         }
     }
 }
