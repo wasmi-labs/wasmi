@@ -18,8 +18,8 @@ fn wat2wasm(wat: &str) -> Vec<u8> {
 /// # Panics
 ///
 /// If an error occurred upon module compilation, validation or translation.
-fn create_module(bytes: &[u8]) -> Module {
-    let engine = Engine::default();
+fn create_module(config: &Config, bytes: &[u8]) -> Module {
+    let engine = Engine::new(config);
     Module::new(&engine, bytes).unwrap()
 }
 
@@ -68,6 +68,30 @@ fn assert_func_body<E>(
 
 /// Asserts that the given `wasm` bytes yield functions with expected instructions.
 ///
+/// Uses the given [`Config`] to configure the [`Engine`] that the tests are run on.
+///
+/// # Panics
+///
+/// If any of the yielded functions consists of instruction different from the
+/// expected instructions for that function.
+fn assert_func_bodies_with_config<E, T>(config: &Config, wasm_bytes: impl AsRef<[u8]>, expected: E)
+where
+    E: IntoIterator<Item = T>,
+    T: IntoIterator<Item = Instruction>,
+    <T as IntoIterator>::IntoIter: ExactSizeIterator,
+{
+    let wasm_bytes = wasm_bytes.as_ref();
+    let module = create_module(config, wasm_bytes);
+    let engine = module.engine();
+    for ((func_type, func_body), expected) in module.internal_funcs().zip(expected) {
+        assert_func_body(engine, func_type, func_body, expected);
+    }
+}
+
+/// Asserts that the given `wasm` bytes yield functions with expected instructions.
+///
+/// Uses a default [`Config`] for the tests.
+///
 /// # Panics
 ///
 /// If any of the yielded functions consists of instruction different from the
@@ -78,12 +102,26 @@ where
     T: IntoIterator<Item = Instruction>,
     <T as IntoIterator>::IntoIter: ExactSizeIterator,
 {
-    let wasm_bytes = wasm_bytes.as_ref();
-    let module = create_module(wasm_bytes);
-    let engine = module.engine();
-    for ((func_type, func_body), expected) in module.internal_funcs().zip(expected) {
-        assert_func_body(engine, func_type, func_body, expected);
-    }
+    assert_func_bodies_with_config(&Config::default(), wasm_bytes, expected)
+}
+
+/// Asserts that the given `wasm` bytes yield functions with expected instructions.
+///
+/// Uses a [`Config`] for the tests where fuel metering is enabled.
+///
+/// # Panics
+///
+/// If any of the yielded functions consists of instruction different from the
+/// expected instructions for that function.
+fn assert_func_bodies_metered<E, T>(wasm_bytes: impl AsRef<[u8]>, expected: E)
+where
+    E: IntoIterator<Item = T>,
+    T: IntoIterator<Item = Instruction>,
+    <T as IntoIterator>::IntoIter: ExactSizeIterator,
+{
+    let mut config = Config::default();
+    config.consume_fuel(true);
+    assert_func_bodies_with_config(&config, wasm_bytes, expected)
 }
 
 fn drop_keep(drop: usize, keep: usize) -> DropKeep {
@@ -720,4 +758,23 @@ fn br_table_return() {
         /* 5 */ Instruction::Return(drop_keep(1, 0)),
     ];
     assert_func_bodies(&wasm, [expected]);
+}
+
+#[test]
+fn metered_simple_01() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param $p0 i32) (result i32)
+                local.get $p0
+            )
+        )
+    "#,
+    );
+    let expected = [
+        Instruction::consume_fuel(1),
+        Instruction::local_get(1),
+        Instruction::Return(drop_keep(1, 1)),
+    ];
+    assert_func_bodies_metered(&wasm, [expected]);
 }
