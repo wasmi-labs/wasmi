@@ -122,6 +122,19 @@ impl<'parser> FuncTranslator<'parser> {
         self.alloc
     }
 
+    /// Returns `true` if fuel metering is enabled for the [`Engine`].
+    ///
+    /// # Note
+    ///
+    /// This is important for the [`FunctionTranslator`] to know since it
+    /// has to create [`Instruction::ConsumeFuel`] instructions on the start
+    /// of basic blocks such as Wasm `block`, `if` and `loop` that account
+    /// for all the instructions that are going to be executed within their
+    /// respective scope.
+    fn is_fuel_metering_enabled(&self) -> bool {
+        self.engine.config().get_consume_fuel()
+    }
+
     /// Returns the [`FuncType`] of the function that is currently translated.
     fn func_type(&self) -> FuncType {
         let dedup_func_type = self.res.get_type_of_func(self.func);
