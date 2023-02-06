@@ -760,6 +760,18 @@ fn br_table_return() {
     assert_func_bodies(&wasm, [expected]);
 }
 
+/// Returns the total consumed fuel of all instructions in `instr`.
+///
+/// # Panics
+///
+/// If the fuel cost of any of the instructions is not known statically.
+fn fuel(instrs: impl IntoIterator<Item = Instruction>) -> u64 {
+    instrs
+        .into_iter()
+        .map(|instr| instr.consumed_fuel().unwrap())
+        .sum()
+}
+
 #[test]
 fn metered_simple_01() {
     let wasm = wat2wasm(
@@ -771,9 +783,123 @@ fn metered_simple_01() {
         )
     "#,
     );
+    let expected_fuel = fuel([Instruction::local_get(1)]);
     let expected = [
-        Instruction::consume_fuel(1),
+        Instruction::consume_fuel(expected_fuel),
         Instruction::local_get(1),
+        Instruction::Return(drop_keep(1, 1)),
+    ];
+    assert_func_bodies_metered(&wasm, [expected]);
+}
+
+#[test]
+fn metered_simple_02() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param $p0 i32) (result i32)
+                local.get $p0
+                (block (result i32)
+                    local.get $p0
+                )
+                drop
+            )
+        )
+    "#,
+    );
+    let expected_fuel = fuel([
+        Instruction::local_get(1),
+        Instruction::local_get(2),
+        Instruction::Drop,
+    ]);
+    let expected = [
+        Instruction::consume_fuel(expected_fuel),
+        Instruction::local_get(1),
+        Instruction::local_get(2),
+        Instruction::Drop,
+        Instruction::Return(drop_keep(1, 1)),
+    ];
+    assert_func_bodies_metered(&wasm, [expected]);
+}
+
+#[test]
+fn metered_simple_03() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param $a i32) (param $b i32) (result i32)
+                (local.set $a ;; c = a + b
+                    (i32.add
+                        (local.get $a)
+                        (local.get $b)
+                    )
+                )
+                (i32.mul (local.get $a) (local.get $a))
+            )
+        )
+    "#,
+    );
+    let expected_fuel = fuel([
+        Instruction::local_get(2),
+        Instruction::local_get(2),
+        Instruction::I32Add,
+        Instruction::local_set(2),
+        Instruction::local_get(2),
+        Instruction::local_get(3),
+        Instruction::I32Mul,
+    ]);
+    let expected = [
+        Instruction::consume_fuel(expected_fuel),
+        Instruction::local_get(2),
+        Instruction::local_get(2),
+        Instruction::I32Add,
+        Instruction::local_set(2),
+        Instruction::local_get(2),
+        Instruction::local_get(3),
+        Instruction::I32Mul,
+        Instruction::Return(drop_keep(2, 1)),
+    ];
+    assert_func_bodies_metered(&wasm, [expected]);
+}
+
+#[test]
+fn metered_nested_blocks() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param $p0 i32) (result i32)
+                local.get $p0
+                (block
+                    local.get $p0
+                    (block
+                        local.get $p0
+                        (block
+                            local.get $p0
+                            (block
+                                local.get $p0
+                                drop
+                            )
+                            drop
+                        )
+                        drop
+                    )
+                    drop
+                )
+            )
+        )
+    "#,
+    );
+    let expected = [
+        Instruction::consume_fuel(9),
+        Instruction::local_get(1),
+        Instruction::local_get(2),
+        Instruction::local_get(3),
+        Instruction::local_get(4),
+        Instruction::local_get(5),
+        Instruction::Drop,
+        Instruction::Drop,
+        Instruction::Drop,
+        Instruction::Drop,
         Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies_metered(&wasm, [expected]);
