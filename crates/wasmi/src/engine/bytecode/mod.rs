@@ -351,6 +351,8 @@ impl Instruction {
         const FUEL_LOAD: u64 = 50;
         /// The fuel cost of `memory.store` instructions.
         const FUEL_STORE: u64 = 30;
+        /// THe fueld cost per kept value in `DropKeep` instructions.
+        const FUEL_PER_KEPT: u64 = 2;
         match self {
             Instruction::Call(_)
             | Instruction::CallIndirect { .. }
@@ -373,7 +375,7 @@ impl Instruction {
                 let keep_fuel = instr
                     .drop_keep()
                     .filter(|drop_keep| drop_keep.drop() == 0)
-                    .map(|drop_keep| drop_keep.keep())
+                    .map(|drop_keep| drop_keep.keep() as u64 * FUEL_PER_KEPT)
                     .unwrap_or(0) as u64;
                 Some(FUEL_SIMPLE + keep_fuel)
             }
