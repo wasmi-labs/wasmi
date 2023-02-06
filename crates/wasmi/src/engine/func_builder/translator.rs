@@ -690,7 +690,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_block(&mut self, block_type: wasmparser::BlockType) -> Result<(), TranslationError> {
-        let block_type = BlockType::try_from_wasmparser(block_type, self.res)?;
+        let block_type = BlockType::new(block_type, self.res);
         if self.is_reachable() {
             let stack_height = self.frame_stack_height(block_type);
             let end_label = self.alloc.inst_builder.new_label();
@@ -711,7 +711,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_loop(&mut self, block_type: wasmparser::BlockType) -> Result<(), TranslationError> {
-        let block_type = BlockType::try_from_wasmparser(block_type, self.res)?;
+        let block_type = BlockType::new(block_type, self.res);
         if self.is_reachable() {
             let stack_height = self.frame_stack_height(block_type);
             let header = self.alloc.inst_builder.new_label();
@@ -733,7 +733,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_if(&mut self, block_type: wasmparser::BlockType) -> Result<(), TranslationError> {
-        let block_type = BlockType::try_from_wasmparser(block_type, self.res)?;
+        let block_type = BlockType::new(block_type, self.res);
         if self.is_reachable() {
             self.stack_height.pop1();
             let stack_height = self.frame_stack_height(block_type);

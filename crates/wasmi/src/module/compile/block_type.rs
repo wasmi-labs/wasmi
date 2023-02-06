@@ -1,9 +1,5 @@
 use super::super::{utils::WasmiValueType, FuncTypeIdx, ModuleResources};
-use crate::{
-    core::ValueType,
-    engine::{DedupFuncType, TranslationError},
-    Engine,
-};
+use crate::{core::ValueType, engine::DedupFuncType, Engine};
 
 /// The type of a Wasm control flow block.
 #[derive(Debug, Copy, Clone)]
@@ -28,11 +24,8 @@ impl BlockType {
     /// # Errors
     ///
     /// If the conversion is not valid or unsupported.
-    pub(crate) fn try_from_wasmparser(
-        block_type: wasmparser::BlockType,
-        res: ModuleResources,
-    ) -> Result<Self, TranslationError> {
-        let block_type = match block_type {
+    pub fn new(block_type: wasmparser::BlockType, res: ModuleResources) -> Self {
+        match block_type {
             wasmparser::BlockType::Empty => Self::empty(),
             wasmparser::BlockType::Type(return_type) => {
                 let return_type = WasmiValueType::from(return_type).into_inner();
@@ -42,8 +35,7 @@ impl BlockType {
                 let dedup_func_type = res.get_func_type(FuncTypeIdx::from(func_type_idx));
                 Self::func_type(dedup_func_type)
             }
-        };
-        Ok(block_type)
+        }
     }
 
     /// Creates a [`BlockType`] from the underlying type.
