@@ -376,7 +376,7 @@ impl Instruction {
                     .drop_keep()
                     .filter(|drop_keep| drop_keep.drop() == 0)
                     .map(|drop_keep| drop_keep.keep() as u64 * FUEL_PER_KEPT)
-                    .unwrap_or(0) as u64;
+                    .unwrap_or(0);
                 Some(FUEL_SIMPLE + keep_fuel)
             }
         }
