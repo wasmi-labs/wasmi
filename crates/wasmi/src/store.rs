@@ -194,7 +194,7 @@ impl Fuel {
                 self.total
             )
         });
-        // No need to check as well since `self.total > self.remaining`.
+        // No need to check as well since `self.total >= self.remaining`.
         self.remaining = self.remaining.wrapping_add(delta);
     }
 
