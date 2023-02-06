@@ -282,4 +282,9 @@ impl Instruction {
             local_depth: LocalDepth::from(local_depth),
         }
     }
+
+    /// Convenience method to create a new `ConsumeFuel` instruction.
+    pub fn consume_fuel(amount: u64) -> Self {
+        Self::ConsumeFuel { amount }
+    }
 }
